@@ -1,6 +1,6 @@
 import { Shield, Droplets, Wind, Heart, Pill, Stethoscope, Syringe, Thermometer, Scissors, Package, FlaskConical, Bandage, Hand, Eye, Pipette, Beaker } from "lucide-react";
+import type { Product } from "@/hooks/useProducts";
 
-// Re-export Product type from hooks
 export type { Product } from "@/hooks/useProducts";
 
 // Color palette for product placeholders

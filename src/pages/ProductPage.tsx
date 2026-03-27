@@ -6,7 +6,7 @@ import { useCart } from "@/hooks/useCart";
 import { useAuth } from "@/contexts/AuthContext";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { Copy, Sliders, ShoppingCart, ExternalLink, Eye, Shield, Check, Truck, Globe, ChevronDown, Minus, Plus, Bell } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from "recharts";
 import { motion, AnimatePresence } from "framer-motion";
 import { PageTransition, AnimatedSection } from "@/components/shared/PageTransition";
@@ -42,6 +42,18 @@ export default function ProductPage() {
   const [copied, setCopied] = useState(false);
   const [buyPrice, setBuyPrice] = useState("");
   const [sellPrice, setSellPrice] = useState("");
+  const [showStickyBar, setShowStickyBar] = useState(false);
+  const offerSectionRef = useRef<HTMLDivElement>(null);
+  const [stickyQty, setStickyQty] = useState(1);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => setShowStickyBar(!entry.isIntersecting),
+      { threshold: 0, rootMargin: "-80px 0px 0px 0px" }
+    );
+    if (offerSectionRef.current) observer.observe(offerSectionRef.current);
+    return () => observer.disconnect();
+  }, [product]);
 
   const effectiveBuyPrice = buyPrice || (product ? product.price.toString() : "0");
   const effectiveSellPrice = sellPrice || (product ? (product.price * 1.7).toFixed(2) : "0");
@@ -128,6 +140,7 @@ export default function ProductPage() {
               <div className="border-t border-mk-line my-4" />
 
               {/* Filter offers */}
+              <div ref={offerSectionRef}>
               <AnimatedSection delay={0.1}>
                 <div className="bg-mk-alt border border-mk-line rounded-lg p-4 md:p-5 mb-6">
                   <div className="flex items-center gap-2 mb-4">
@@ -326,6 +339,7 @@ export default function ProductPage() {
                   </motion.div>
                 )}
               </AnimatePresence>
+              </div>{/* end offerSectionRef */}
 
               {/* Accordions */}
               <AnimatedSection className="mt-8 space-y-2" delay={0.1}>
@@ -477,6 +491,67 @@ export default function ProductPage() {
           </div>
         </div>
       </PageTransition>
+
+      {/* Sticky bottom bar - Apple style */}
+      <AnimatePresence>
+        {showStickyBar && (
+          <motion.div
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            className="fixed bottom-0 left-0 right-0 z-50 border-t border-mk-line"
+            style={{ backgroundColor: "rgba(255,255,255,0.92)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" }}
+          >
+            <div className="mk-container py-3 flex items-center justify-between gap-4">
+              {/* Product info */}
+              <div className="flex items-center gap-3 min-w-0 flex-1">
+                <div className="w-10 h-10 rounded-lg border border-mk-line overflow-hidden shrink-0 bg-mk-alt flex items-center justify-center">
+                  {product.iconName && productIconMap[product.iconName] ? (
+                    (() => {
+                      const IconComp = productIconMap[product.iconName!];
+                      const colors = productColors[product.color || "blue"] || productColors.blue;
+                      return <IconComp size={18} style={{ color: colors.fg }} />;
+                    })()
+                  ) : (
+                    <ShoppingCart size={14} className="text-mk-ter" />
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-mk-navy truncate">{product.name}</p>
+                  <p className="text-xs text-mk-sec">{product.brand} · Meilleure offre</p>
+                </div>
+              </div>
+
+              {/* Price + CTA */}
+              <div className="flex items-center gap-3 shrink-0">
+                <div className="text-right hidden sm:block">
+                  <p className="text-lg font-bold text-mk-navy">{formatPrice(product.price)} EUR</p>
+                  <p className="text-[11px] text-mk-ter">HT · {product.unit}</p>
+                </div>
+                <div className="flex items-center border border-mk-line rounded-md bg-white">
+                  <button onClick={() => setStickyQty(Math.max(1, stickyQty - 1))} className="px-2 py-1.5 text-mk-sec hover:text-mk-navy"><Minus size={14} /></button>
+                  <span className="px-2 text-sm font-medium text-mk-navy">{stickyQty}</span>
+                  <button onClick={() => setStickyQty(stickyQty + 1)} className="px-2 py-1.5 text-mk-sec hover:text-mk-navy"><Plus size={14} /></button>
+                </div>
+                <motion.button
+                  className="bg-mk-navy text-white text-sm font-semibold px-5 py-2.5 rounded-lg flex items-center gap-2 shadow-lg"
+                  whileHover={{ scale: 1.04 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => {
+                    if (!user) { navigate("/connexion"); return; }
+                    addToCart.mutate({ productId: product.id, quantity: stickyQty });
+                  }}
+                >
+                  <ShoppingCart size={15} />
+                  <span className="hidden sm:inline">Ajouter au panier</span>
+                  <span className="sm:hidden">Ajouter</span>
+                </motion.button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </Layout>
   );
 }

@@ -22,6 +22,7 @@ import CategoryPage from "./pages/CategoryPage";
 import PromotionsPage from "./pages/PromotionsPage";
 import SellerOnboardingPage from "./pages/SellerOnboardingPage";
 import NotFound from "./pages/NotFound";
+import InvestPage from "./pages/InvestPage";
 import AdminLayout from "./components/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminPlaceholder from "./pages/admin/AdminPlaceholder";

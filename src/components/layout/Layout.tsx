@@ -4,6 +4,7 @@ import { SubNav } from "./SubNav";
 import { Breadcrumbs } from "./Breadcrumbs";
 import { Footer } from "./Footer";
 import { PageTransition } from "@/components/shared/PageTransition";
+import CartDrawer from "@/components/cart/CartDrawer";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -16,6 +17,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <PageTransition>{children}</PageTransition>
       </main>
       <Footer />
+      <CartDrawer />
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useI18n } from "@/contexts/I18nContext";
+import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { supabase } from "@/integrations/supabase/client";
 import {
   LayoutDashboard, Store, UserPlus, Package, Layers, Tag, SlidersHorizontal,

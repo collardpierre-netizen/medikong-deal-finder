@@ -1,6 +1,7 @@
 import { Layout } from "@/components/layout/Layout";
 import { ProductImage } from "@/components/shared/ProductCard";
-import { products, competitors, formatPrice, sellers, productColors, productIconMap } from "@/data/mock";
+import { competitors, formatPrice, sellers, productColors, productIconMap } from "@/data/mock";
+import { useProducts, useProduct } from "@/hooks/useProducts";
 import { useParams, Link } from "react-router-dom";
 import { Copy, Sliders, ShoppingCart, ExternalLink, Eye, Shield, Check, Truck, Globe, ChevronDown, Minus, Plus, Bell } from "lucide-react";
 import { useState } from "react";
@@ -28,17 +29,21 @@ const techSpecs = [
 
 export default function ProductPage() {
   const { slug } = useParams();
-  const product = products.find(p => p.slug === slug) || products[0];
+  const { data: product, isLoading } = useProduct(slug);
+  const { data: products = [] } = useProducts();
   const [tab, setTab] = useState<"mk" | "ext" | "market">("mk");
   const [qty, setQty] = useState(1);
   const [openAccordion, setOpenAccordion] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
-  const [buyPrice, setBuyPrice] = useState(product.price.toString());
-  const [sellPrice, setSellPrice] = useState((product.price * 1.7).toFixed(2));
+  const [buyPrice, setBuyPrice] = useState("");
+  const [sellPrice, setSellPrice] = useState("");
 
-  const margin = sellPrice && buyPrice ? (((parseFloat(sellPrice) - parseFloat(buyPrice)) / parseFloat(sellPrice)) * 100).toFixed(1) : "0";
+  const effectiveBuyPrice = buyPrice || (product ? product.price.toString() : "0");
+  const effectiveSellPrice = sellPrice || (product ? (product.price * 1.7).toFixed(2) : "0");
+  const margin = effectiveSellPrice && effectiveBuyPrice ? (((parseFloat(effectiveSellPrice) - parseFloat(effectiveBuyPrice)) / parseFloat(effectiveSellPrice)) * 100).toFixed(1) : "0";
 
   const handleCopy = () => {
+    if (!product) return;
     navigator.clipboard.writeText(product.ean);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
@@ -49,6 +54,13 @@ export default function ProductPage() {
     { key: "ext" as const, label: "Externes", fullLabel: "Offres externes", icon: ExternalLink, count: 3 },
     { key: "market" as const, label: "Marche", fullLabel: "Prix du marche", icon: Eye, count: 5 },
   ];
+
+  if (isLoading) {
+    return <Layout><div className="mk-container py-20 text-center text-mk-sec">Chargement...</div></Layout>;
+  }
+  if (!product) {
+    return <Layout><div className="mk-container py-20 text-center text-mk-sec">Produit introuvable</div></Layout>;
+  }
 
   return (
     <Layout>
@@ -394,11 +406,11 @@ export default function ProductPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
                     <label className="text-xs text-mk-sec mb-1 block">Prix d'achat HT</label>
-                    <input value={buyPrice} onChange={e => setBuyPrice(e.target.value)} className="w-full border border-mk-line rounded-md px-3 py-2 text-sm" />
+                    <input value={buyPrice || product.price.toString()} onChange={e => setBuyPrice(e.target.value)} className="w-full border border-mk-line rounded-md px-3 py-2 text-sm" />
                   </div>
                   <div>
                     <label className="text-xs text-mk-sec mb-1 block">Prix de vente TTC</label>
-                    <input value={sellPrice} onChange={e => setSellPrice(e.target.value)} className="w-full border border-mk-line rounded-md px-3 py-2 text-sm" />
+                    <input value={sellPrice || (product.price * 1.7).toFixed(2)} onChange={e => setSellPrice(e.target.value)} className="w-full border border-mk-line rounded-md px-3 py-2 text-sm" />
                   </div>
                   <div>
                     <label className="text-xs text-mk-sec mb-1 block">Marge brute</label>

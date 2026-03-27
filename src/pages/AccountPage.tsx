@@ -3,7 +3,8 @@ import { ProductImage } from "@/components/shared/ProductCard";
 import { Users, MapPin, Package, AlertCircle, Heart, Zap, Download, Layers, Mail, Phone } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { products, formatPrice } from "@/data/mock";
+import { formatPrice } from "@/data/mock";
+import { useProducts } from "@/hooks/useProducts";
 
 const tabs = [
   { key: "profil", label: "Profil", icon: Users },
@@ -23,6 +24,7 @@ const orders = [
 ];
 
 export default function AccountPage() {
+  const { data: products = [] } = useProducts();
   const [activeTab, setActiveTab] = useState("profil");
 
   return (

@@ -2,7 +2,8 @@ import { Layout } from "@/components/layout/Layout";
 import { UniversePills } from "@/components/layout/UniversePills";
 import { ProductCard, ProductImage, ProductImageSmall } from "@/components/shared/ProductCard";
 import { SkeletonList } from "@/components/shared/SkeletonCard";
-import { products, formatPrice } from "@/data/mock";
+import { formatPrice } from "@/data/mock";
+import { useProducts } from "@/hooks/useProducts";
 import { Sliders, Grid, List, Columns, Bell, Plus, Minus, TrendingDown, ExternalLink } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
@@ -17,14 +18,11 @@ type ViewMode = "grid" | "list" | "trivago";
 
 export default function ResultsPage() {
   const [view, setView] = useState<ViewMode>("grid");
-  const [loading, setLoading] = useState(true);
+  const { data: products = [], isLoading: dbLoading } = useProducts();
   const [activePill, setActivePill] = useState(0);
   const [showFilters, setShowFilters] = useState(false);
+  const loading = dbLoading;
 
-  useEffect(() => {
-    const t = setTimeout(() => setLoading(false), 1500);
-    return () => clearTimeout(t);
-  }, []);
 
   return (
     <Layout>

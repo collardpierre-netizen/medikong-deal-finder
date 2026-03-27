@@ -183,7 +183,7 @@ export default function CartPage() {
             ))}
           </motion.div>
 
-          <div className="flex flex-col lg:flex-row gap-6">
+          <div className="flex flex-col lg:flex-row gap-6 lg:items-start">
             {/* Supplier cards */}
             <div className="flex-1 min-w-0 space-y-4">
               <AnimatePresence mode="popLayout">

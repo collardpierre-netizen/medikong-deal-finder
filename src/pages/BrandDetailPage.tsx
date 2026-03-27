@@ -1,0 +1,144 @@
+import { Layout } from "@/components/layout/Layout";
+import { useParams, Link } from "react-router-dom";
+import { brands, products } from "@/data/mock";
+import { ProductCard } from "@/components/shared/ProductCard";
+import { Star, ExternalLink, Heart, Download, Upload, Users, Grid, List, Columns } from "lucide-react";
+import { useState } from "react";
+
+const catChips = [
+  { name: "Incontinence legere", count: 89 },
+  { name: "Incontinence moderee", count: 67 },
+  { name: "Incontinence severe", count: 45 },
+  { name: "Hygiene", count: 33 },
+];
+
+export default function BrandDetailPage() {
+  const { slug } = useParams();
+  const brand = brands.find(b => b.slug === slug) || { name: slug || "TENA", count: 234, slug: slug || "tena" };
+  const [view, setView] = useState<"grid" | "list" | "trivago">("grid");
+
+  return (
+    <Layout>
+      {/* Hero */}
+      <div className="py-10" style={{ background: "linear-gradient(135deg, #EFF6FF, #F0FDF4)" }}>
+        <div className="mk-container">
+          <div className="text-xs text-mk-sec mb-4">
+            <Link to="/" className="hover:text-mk-blue">Accueil</Link> &gt; <Link to="/marques" className="hover:text-mk-blue">Marques</Link> &gt; {brand.name}
+          </div>
+          <div className="flex items-start gap-6">
+            <div className="w-[100px] h-[100px] border border-mk-line bg-white rounded-lg flex items-center justify-center text-xs text-mk-ter shrink-0">Logo</div>
+            <div>
+              <h1 className="text-[28px] font-bold text-mk-navy mb-1">{brand.name}</h1>
+              <div className="flex items-center gap-3 mb-2">
+                <div className="flex items-center gap-1 text-yellow-500">
+                  {[1, 2, 3, 4].map(i => <Star key={i} size={14} fill="currentColor" />)}
+                  <Star size={14} />
+                </div>
+                <span className="text-xs text-mk-sec">Belgique</span>
+              </div>
+              <p className="text-sm text-mk-sec max-w-[700px] mb-4">Marque leader en solutions d'hygiene et d'incontinence pour les professionnels de sante.</p>
+              <div className="flex gap-2">
+                <button className="border border-mk-line text-sm px-4 py-2 rounded-md flex items-center gap-1.5 text-mk-sec"><ExternalLink size={13} /> Site officiel</button>
+                <button className="bg-mk-blue text-white text-sm px-4 py-2 rounded-md flex items-center gap-1.5"><Download size={13} /> Telecharger catalogue</button>
+                <button className="border border-mk-line text-sm px-4 py-2 rounded-md flex items-center gap-1.5 text-mk-sec"><Heart size={13} /> Suivre la marque</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div className="bg-mk-alt border-y border-mk-line py-4">
+        <div className="mk-container flex justify-center gap-12">
+          {[["234+", "Produits"], ["4", "Categories"], ["-45%", "Economie moy."], ["4.4/5", "Note"], ["12+", "Fournisseurs"]].map(([v, l]) => (
+            <div key={l} className="text-center">
+              <div className="text-lg font-bold text-mk-navy">{v}</div>
+              <div className="text-xs text-mk-sec">{l}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="mk-container py-8">
+        {/* Import CTA */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Upload size={18} className="text-mk-blue" />
+            <span className="text-sm text-mk-navy">Importez votre liste de produits pour des prix personnalises</span>
+          </div>
+          <button className="bg-mk-blue text-white text-sm font-semibold px-4 py-2 rounded-md flex items-center gap-1.5">
+            <Upload size={13} /> Importer une liste
+          </button>
+        </div>
+
+        {/* Category chips */}
+        <div className="flex gap-2 mb-6">
+          {catChips.map((c, i) => (
+            <button key={c.name} className={`px-3 py-1.5 rounded-full text-sm ${i === 0 ? "bg-mk-navy text-white" : "border border-mk-line text-mk-sec"}`}>
+              {c.name} ({c.count})
+            </button>
+          ))}
+        </div>
+
+        {/* Group buy CTA */}
+        <div className="rounded-lg p-4 mb-6 flex items-center justify-between" style={{ background: "linear-gradient(135deg, #FEF3C7, #FDE68A)" }}>
+          <div className="flex items-center gap-3">
+            <Users size={18} className="text-mk-amber" />
+            <div>
+              <span className="text-sm font-bold text-mk-navy">Achat groupe {brand.name}</span>
+              <p className="text-xs text-mk-sec">Regroupez vos commandes avec d'autres pharmacies pour de meilleurs prix</p>
+            </div>
+          </div>
+          <button className="bg-mk-amber text-white text-sm font-semibold px-4 py-2 rounded-md">Rejoindre le groupe</button>
+        </div>
+
+        <div className="flex gap-7">
+          {/* Sidebar */}
+          <aside className="w-[220px] shrink-0 sticky top-20 self-start">
+            <div className="mb-6">
+              <h4 className="text-sm font-semibold text-mk-navy mb-3">Preferences</h4>
+              {["Tout afficher", "Mes favoris", "Prix cible atteint"].map((p, i) => (
+                <label key={p} className="flex items-center gap-2 mb-2 text-sm text-mk-sec cursor-pointer">
+                  <input type="radio" name="pref" defaultChecked={i === 0} className="text-mk-navy" /> {p}
+                </label>
+              ))}
+            </div>
+            <div className="mb-6">
+              <h4 className="text-sm font-semibold text-mk-navy mb-3">Prix</h4>
+              <div className="flex gap-2">
+                <input placeholder="Min" className="w-full border border-mk-line rounded-md px-2 py-1.5 text-sm" />
+                <input placeholder="Max" className="w-full border border-mk-line rounded-md px-2 py-1.5 text-sm" />
+              </div>
+            </div>
+            <div>
+              <h4 className="text-sm font-semibold text-mk-navy mb-3">Disponibilite</h4>
+              <label className="flex items-center gap-2 mb-2 text-sm text-mk-sec cursor-pointer">
+                <input type="checkbox" /> En stock
+              </label>
+              <label className="flex items-center gap-2 mb-2 text-sm text-mk-sec cursor-pointer">
+                <input type="checkbox" /> MediKong uniquement
+              </label>
+            </div>
+          </aside>
+
+          {/* Content */}
+          <div className="flex-1 min-w-0 overflow-hidden">
+            <div className="flex items-center justify-between mb-5">
+              <span className="text-sm text-mk-sec">{brand.count} produits</span>
+              <div className="flex items-center gap-3">
+                <div className="flex border border-mk-line rounded-md overflow-hidden">
+                  {([["grid", Grid], ["list", List], ["trivago", Columns]] as const).map(([v, Icon]) => (
+                    <button key={v} onClick={() => setView(v)} className={`p-2 ${view === v ? "bg-mk-navy text-white" : "text-mk-sec"}`}><Icon size={16} /></button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              {products.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
+            </div>
+          </div>
+        </div>
+      </div>
+    </Layout>
+  );
+}

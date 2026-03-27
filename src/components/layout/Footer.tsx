@@ -7,9 +7,8 @@ export function Footer() {
       <div className="mk-container py-10">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
           <div className="col-span-2 md:col-span-1">
-            <div className="flex items-center mb-3">
-              <span className="text-mk-navy font-bold text-lg">MediKong</span>
-              <span className="text-mk-blue font-bold text-lg">.pro</span>
+            <div className="mb-3">
+              <img src={logoHorizontal} alt="MediKong.pro" className="h-8" />
             </div>
             <p className="text-sm text-mk-sec mb-3">La marketplace B2B pour les fournitures medicales en Belgique.</p>
             <p className="text-xs text-mk-ter">Balooh SRL · TVA: BE 1005.771.323</p>

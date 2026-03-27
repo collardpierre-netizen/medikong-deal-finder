@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCart } from "@/hooks/useCart";
 import logoHorizontal from "@/assets/logo-horizontal.png";
 
 export function Navbar() {
@@ -11,6 +12,7 @@ export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
+  const { cartCount } = useCart();
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,7 +58,9 @@ export function Navbar() {
           <Link to="/panier" className="relative">
             <motion.div whileHover={{ scale: 1.15 }}>
               <ShoppingCart className="text-white" size={18} />
-              <span className="absolute -top-1.5 -right-2 bg-mk-red text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">3</span>
+              {cartCount > 0 && (
+                <span className="absolute -top-1.5 -right-2 bg-mk-red text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{cartCount}</span>
+              )}
             </motion.div>
           </Link>
           <div className="w-px h-5 bg-white/20 mx-1" />
@@ -82,7 +86,9 @@ export function Navbar() {
         <div className="flex md:hidden items-center gap-3 shrink-0">
           <Link to="/panier" className="relative">
             <ShoppingCart className="text-white" size={18} />
-            <span className="absolute -top-1.5 -right-2 bg-mk-red text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">3</span>
+            {cartCount > 0 && (
+              <span className="absolute -top-1.5 -right-2 bg-mk-red text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{cartCount}</span>
+            )}
           </Link>
           <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="text-white">
             {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}

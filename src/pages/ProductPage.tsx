@@ -2,7 +2,9 @@ import { Layout } from "@/components/layout/Layout";
 import { ProductImage } from "@/components/shared/ProductCard";
 import { competitors, formatPrice, sellers, productColors, productIconMap } from "@/data/mock";
 import { useProducts, useProduct } from "@/hooks/useProducts";
-import { useParams, Link } from "react-router-dom";
+import { useCart } from "@/hooks/useCart";
+import { useAuth } from "@/contexts/AuthContext";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { Copy, Sliders, ShoppingCart, ExternalLink, Eye, Shield, Check, Truck, Globe, ChevronDown, Minus, Plus, Bell } from "lucide-react";
 import { useState } from "react";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from "recharts";
@@ -29,8 +31,11 @@ const techSpecs = [
 
 export default function ProductPage() {
   const { slug } = useParams();
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const { data: product, isLoading } = useProduct(slug);
   const { data: products = [] } = useProducts();
+  const { addToCart } = useCart();
   const [tab, setTab] = useState<"mk" | "ext" | "market">("mk");
   const [qty, setQty] = useState(1);
   const [openAccordion, setOpenAccordion] = useState<number | null>(null);
@@ -223,6 +228,10 @@ export default function ProductPage() {
                               className="bg-mk-navy text-white text-sm font-semibold px-4 md:px-5 py-2 rounded-md flex items-center gap-2"
                               whileHover={{ scale: 1.04 }}
                               whileTap={{ scale: 0.95 }}
+                              onClick={() => {
+                                if (!user) { navigate("/connexion"); return; }
+                                addToCart.mutate({ productId: product.id, quantity: qty });
+                              }}
                             >
                               <ShoppingCart size={14} /> Ajouter
                             </motion.button>

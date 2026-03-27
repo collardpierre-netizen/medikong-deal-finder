@@ -99,6 +99,6 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
           Ajouter
         </button>
       </div>
-    </div>
+    </motion.div>
   );
 }

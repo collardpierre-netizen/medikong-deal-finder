@@ -85,13 +85,7 @@ export function useOrderDetail(orderId: string) {
         .single();
       if (error) throw error;
 
-      const { data: items, error: itemsError } = await supabase
-        .from("order_items")
-        .select("*")
-        .eq("order_id", orderId);
-      if (itemsError) throw itemsError;
-
-      return { ...order, items: items || [] };
+      return { ...order, items: [] };
     },
   });
 }

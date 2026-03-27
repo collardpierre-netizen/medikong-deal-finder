@@ -140,25 +140,25 @@ export function useProductOffers(productId: string | undefined) {
         .select("id, company_name, tier, status")
         .in("id", vendorIds);
 
-      const sellerMap = new Map((sellers || []).map((s: any) => [s.id, s]));
+      const vendorMap = new Map((vendors || []).map((v: any) => [v.id, v]));
 
       return (offers || []).map((o: any): Offer => {
-        const seller = sellerMap.get(o.seller_id);
+        const vendor = vendorMap.get(o.vendor_id);
         return {
           id: o.id,
           productId: o.product_id,
-          sellerId: o.seller_id,
-          unitPriceEur: Number(o.unit_price_eur),
-          stockQuantity: o.stock_quantity,
-          movEur: Number(o.mov_eur),
-          bundleSize: o.bundle_size,
+          sellerId: o.vendor_id,
+          unitPriceEur: Number(o.price_ht),
+          stockQuantity: o.stock,
+          movEur: Number(o.mov || 0),
+          bundleSize: o.moq || 1,
           deliveryDays: o.delivery_days,
-          shipFromCountry: o.ship_from_country,
-          priceTiers: o.price_tiers,
-          isActive: o.is_active,
-          sellerName: seller?.company_name || `Seller-${o.seller_id.slice(0, 6)}`,
-          isVerified: seller?.is_verified,
-          isTopRated: seller?.is_top_rated,
+          shipFromCountry: 'BE',
+          priceTiers: null,
+          isActive: o.status === 'active',
+          sellerName: vendor?.company_name || `Vendor-${o.vendor_id.slice(0, 6)}`,
+          isVerified: vendor?.status === 'active',
+          isTopRated: vendor?.tier === 'Gold' || vendor?.tier === 'Platinum' || vendor?.tier === 'Strategic',
         };
       });
     },

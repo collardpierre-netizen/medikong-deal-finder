@@ -14,7 +14,239 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      cart_items: {
+        Row: {
+          created_at: string
+          id: string
+          product_id: string
+          quantity: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          product_id: string
+          quantity?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          product_id?: string
+          quantity?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cart_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_items: {
+        Row: {
+          created_at: string
+          id: string
+          order_id: string
+          product_id: string
+          quantity: number
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          order_id: string
+          product_id: string
+          quantity?: number
+          unit_price: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          order_id?: string
+          product_id?: string
+          quantity?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          billing_address: Json | null
+          created_at: string
+          id: string
+          notes: string | null
+          shipping_address: Json | null
+          status: string
+          total: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          billing_address?: Json | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          shipping_address?: Json | null
+          status?: string
+          total?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          billing_address?: Json | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          shipping_address?: Json | null
+          status?: string
+          total?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      products: {
+        Row: {
+          best_seller: string | null
+          brand: string
+          category: string | null
+          cnk: string | null
+          color: string | null
+          created_at: string
+          description: string | null
+          discount_pct: number | null
+          ean: string | null
+          icon_name: string | null
+          id: string
+          image_url: string | null
+          in_stock: boolean | null
+          is_medikong: boolean | null
+          name: string
+          price: number
+          pub_price: number | null
+          rating: number | null
+          reviews_count: number | null
+          sellers_count: number | null
+          slug: string
+          unit_price: string | null
+          updated_at: string
+        }
+        Insert: {
+          best_seller?: string | null
+          brand: string
+          category?: string | null
+          cnk?: string | null
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          discount_pct?: number | null
+          ean?: string | null
+          icon_name?: string | null
+          id?: string
+          image_url?: string | null
+          in_stock?: boolean | null
+          is_medikong?: boolean | null
+          name: string
+          price: number
+          pub_price?: number | null
+          rating?: number | null
+          reviews_count?: number | null
+          sellers_count?: number | null
+          slug: string
+          unit_price?: string | null
+          updated_at?: string
+        }
+        Update: {
+          best_seller?: string | null
+          brand?: string
+          category?: string | null
+          cnk?: string | null
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          discount_pct?: number | null
+          ean?: string | null
+          icon_name?: string | null
+          id?: string
+          image_url?: string | null
+          in_stock?: boolean | null
+          is_medikong?: boolean | null
+          name?: string
+          price?: number
+          pub_price?: number | null
+          rating?: number | null
+          reviews_count?: number | null
+          sellers_count?: number | null
+          slug?: string
+          unit_price?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          company_name: string | null
+          country: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          phone: string | null
+          sector: string | null
+          updated_at: string
+          user_id: string
+          vat_number: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          company_name?: string | null
+          country?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          sector?: string | null
+          updated_at?: string
+          user_id: string
+          vat_number?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          company_name?: string | null
+          country?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          sector?: string | null
+          updated_at?: string
+          user_id?: string
+          vat_number?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

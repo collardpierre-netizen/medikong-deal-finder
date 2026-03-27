@@ -1,7 +1,7 @@
 import { Layout } from "@/components/layout/Layout";
 import { useParams, Link } from "react-router-dom";
 import { Shield, Check, Package, ExternalLink, Award, Globe } from "lucide-react";
-import { products } from "@/data/mock";
+import { useProducts } from "@/hooks/useProducts";
 import { ProductCard } from "@/components/shared/ProductCard";
 
 const brandsList = [

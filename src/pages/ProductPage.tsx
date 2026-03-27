@@ -406,11 +406,11 @@ export default function ProductPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
                     <label className="text-xs text-mk-sec mb-1 block">Prix d'achat HT</label>
-                    <input value={buyPrice} onChange={e => setBuyPrice(e.target.value)} className="w-full border border-mk-line rounded-md px-3 py-2 text-sm" />
+                    <input value={buyPrice || product.price.toString()} onChange={e => setBuyPrice(e.target.value)} className="w-full border border-mk-line rounded-md px-3 py-2 text-sm" />
                   </div>
                   <div>
                     <label className="text-xs text-mk-sec mb-1 block">Prix de vente TTC</label>
-                    <input value={sellPrice} onChange={e => setSellPrice(e.target.value)} className="w-full border border-mk-line rounded-md px-3 py-2 text-sm" />
+                    <input value={sellPrice || (product.price * 1.7).toFixed(2)} onChange={e => setSellPrice(e.target.value)} className="w-full border border-mk-line rounded-md px-3 py-2 text-sm" />
                   </div>
                   <div>
                     <label className="text-xs text-mk-sec mb-1 block">Marge brute</label>

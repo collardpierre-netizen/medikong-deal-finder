@@ -55,39 +55,46 @@ const AdminVendeurDetail = () => {
     enabled: !!id,
   });
 
-  // Fetch brands/manufacturers linked to this vendor's products
-  const { data: vendorProducts = [] } = useQuery({
-    queryKey: ["vendor-products", id],
-    queryFn: async () => {
-      const { data: offers } = await supabase
-        .from("offers_direct")
-        .select("product_id, products(brand, brand_id, manufacturer_id)")
-        .eq("vendor_id", id!);
-      return offers || [];
-    },
-    enabled: !!id,
-  });
-
+  // Fetch brands/manufacturers linked to this vendor via offers_direct → products
   const { data: vendorBrands = [] } = useQuery({
     queryKey: ["vendor-brands", id],
     queryFn: async () => {
-      const brandIds = [...new Set(vendorProducts.map(p => (p.products as any)?.brand_id).filter(Boolean))];
-      if (brandIds.length === 0) return [];
-      const { data } = await supabase.from("brands").select("name").in("id", brandIds);
-      return data || [];
+      // Get distinct brand names via offers_direct join
+      const { data: offers } = await supabase
+        .from("offers_direct")
+        .select("product_id, products(brand, brand_id)")
+        .eq("vendor_id", id!);
+      const brandNames = [...new Set((offers || []).map(o => (o.products as any)?.brand).filter(Boolean))];
+      return brandNames.map(name => ({ name }));
     },
-    enabled: vendorProducts.length > 0,
+    enabled: !!id,
   });
 
   const { data: vendorManufacturers = [] } = useQuery({
     queryKey: ["vendor-manufacturers", id],
     queryFn: async () => {
-      const mfrIds = [...new Set(vendorProducts.map(p => (p.products as any)?.manufacturer_id).filter(Boolean))];
+      const { data: offers } = await supabase
+        .from("offers_direct")
+        .select("product_id, products(manufacturer_id)")
+        .eq("vendor_id", id!);
+      const mfrIds = [...new Set((offers || []).map(o => (o.products as any)?.manufacturer_id).filter(Boolean))];
       if (mfrIds.length === 0) return [];
       const { data } = await supabase.from("manufacturers").select("name").in("id", mfrIds);
       return data || [];
     },
-    enabled: vendorProducts.length > 0,
+    enabled: !!id,
+  });
+
+  const { data: vendorProducts = [] } = useQuery({
+    queryKey: ["vendor-products-list", id],
+    queryFn: async () => {
+      const { data: offers } = await supabase
+        .from("offers_direct")
+        .select("product_id, price_ht, stock, status, products(product_name, brand)")
+        .eq("vendor_id", id!);
+      return offers || [];
+    },
+    enabled: !!id,
   });
 
   if (isLoading) {
@@ -222,9 +229,9 @@ const AdminVendeurDetail = () => {
                 <tr key={offer.product_id} style={{ borderBottom: "1px solid #F1F5F9" }}>
                   <td className="px-4 py-3 text-[13px] font-medium" style={{ color: "#1D2530" }}>{offer.products?.product_name || "—"}</td>
                   <td className="px-4 py-3 text-[12px]" style={{ color: "#616B7C" }}>{offer.products?.brand || "—"}</td>
-                  <td className="px-4 py-3 text-[13px] font-bold" style={{ color: "#1D2530" }}>—</td>
-                  <td className="px-4 py-3 text-[12px]" style={{ color: "#616B7C" }}>—</td>
-                  <td className="px-4 py-3"><StatusBadge status="active" /></td>
+                  <td className="px-4 py-3 text-[13px] font-bold" style={{ color: "#1D2530" }}>{offer.price_ht ? `${offer.price_ht} €` : "—"}</td>
+                  <td className="px-4 py-3 text-[12px]" style={{ color: "#616B7C" }}>{offer.stock ?? "—"}</td>
+                  <td className="px-4 py-3"><StatusBadge status={offer.status || "active"} /></td>
                 </tr>
               ))}
             </tbody>

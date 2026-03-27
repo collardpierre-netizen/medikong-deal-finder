@@ -32,6 +32,7 @@ export default function CartPage() {
   const { items, isLoading, cartCount, updateQuantity, removeFromCart, clearCart } = useCart();
   const [expandedSuppliers, setExpandedSuppliers] = useState<Record<string, boolean>>({});
   const [filter, setFilter] = useState<FilterType>("all");
+  const [remark, setRemark] = useState("");
 
   // Fetch real vendor data for all vendor_ids in cart
   const vendorIds = useMemo(() => [...new Set(items.map(i => i.vendor_id).filter(Boolean))], [items]);

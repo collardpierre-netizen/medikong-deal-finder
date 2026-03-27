@@ -211,7 +211,6 @@ export default function CartPage() {
                             <span className="font-semibold text-mk-navy underline cursor-pointer">
                               {group.vendorName}
                             </span>
-                            </span>
                             <CheckCircle2 size={16} className="text-mk-green" />
                           </div>
                           <p className="text-sm text-mk-sec">

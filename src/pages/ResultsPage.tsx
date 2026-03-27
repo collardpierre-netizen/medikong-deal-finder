@@ -127,7 +127,7 @@ export default function ResultsPage() {
                 </div>
                 {products.map(p => (
                   <Link key={p.id} to={`/produit/${p.slug}`} className="grid grid-cols-[60px_1fr_80px_100px_80px_80px_100px] gap-3 px-4 py-3 items-center border-t border-mk-line hover:bg-mk-alt text-sm min-w-[700px]">
-                    <div className="w-12 h-12 bg-mk-alt rounded flex items-center justify-center text-[8px] text-mk-ter">IMG</div>
+                    <ProductImageSmall product={p} />
                     <span className="text-mk-text font-medium truncate">{p.name}</span>
                     <span className="text-mk-sec">{p.cnk}</span>
                     <span className="text-mk-sec">{p.brand}</span>

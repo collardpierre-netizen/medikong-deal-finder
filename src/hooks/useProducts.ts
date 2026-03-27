@@ -37,7 +37,7 @@ function slugify(text: string): string {
 function mapDbProduct(row: any, offersData?: any[]): Product {
   const productOffers = offersData?.filter((o: any) => o.product_id === row.id) || [];
   const lowestPrice = productOffers.length > 0
-    ? Math.min(...productOffers.map((o: any) => Number(o.unit_price_eur)))
+    ? Math.min(...productOffers.map((o: any) => Number(o.price_ht)))
     : Number(row.rrp_eur) || 0;
   const rrp = Number(row.rrp_eur) || lowestPrice * 1.5;
   const pct = rrp > 0 ? Math.round(((rrp - lowestPrice) / rrp) * 100) : 0;

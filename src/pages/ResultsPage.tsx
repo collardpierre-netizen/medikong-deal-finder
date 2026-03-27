@@ -155,7 +155,7 @@ export default function ResultsPage() {
                   <div key={p.id} className="border border-mk-line rounded-lg flex flex-col md:flex-row overflow-hidden animate-fadeInUp" style={{ animationDelay: `${i * 70}ms` }}>
                     <div className="w-full md:w-[200px] shrink-0 relative p-4">
                       <span className="absolute top-3 left-3 bg-mk-red text-white text-[11px] font-bold px-2 py-0.5 rounded">{p.pct}%</span>
-                      <div className="aspect-square bg-mk-alt rounded-lg flex items-center justify-center text-xs text-mk-ter">IMG</div>
+                      <ProductImage product={p} />
                     </div>
                     <div className="flex-1 p-4 border-t md:border-t-0 md:border-l border-mk-line">
                       <p className="text-xs text-mk-sec">{p.brand}</p>

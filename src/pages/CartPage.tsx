@@ -89,7 +89,7 @@ export default function CartPage() {
               <button onClick={() => setShowProducts2(!showProducts2)} className="text-xs text-mk-blue px-4 mb-2">{showProducts2 ? "Masquer" : "Afficher"} les produits</button>
               {showProducts2 && cartItems2.map(p => (
                 <div key={p.id} className="px-4 py-3 border-t border-mk-line flex items-center gap-3 md:gap-4 flex-wrap">
-                  <div className="w-12 h-12 bg-mk-alt rounded flex items-center justify-center text-[8px] text-mk-ter shrink-0">IMG</div>
+                  <ProductImageSmall product={p} />
                   <div className="flex-1 min-w-[120px]">
                     <p className="text-sm font-medium text-mk-text truncate">{p.name}</p>
                     <p className="text-xs text-mk-ter">GTIN: {p.ean}</p>

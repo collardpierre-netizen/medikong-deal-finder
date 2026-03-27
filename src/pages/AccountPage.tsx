@@ -165,7 +165,7 @@ export default function AccountPage() {
                   {products.slice(0, 4).map((p, i) => (
                     <div key={p.id} className="border border-mk-line rounded-lg p-4 relative">
                       <button className="absolute top-3 right-3"><Heart size={16} fill="#EF4343" className="text-mk-red" /></button>
-                      <div className="aspect-square bg-mk-alt rounded-lg mb-3 flex items-center justify-center text-xs text-mk-ter">IMG</div>
+                      <ProductImage product={p} className="mb-3" />
                       <p className="text-xs text-mk-sec">{p.brand}</p>
                       <p className="text-sm font-medium text-mk-text mb-2 truncate">{p.name}</p>
                       <div className="flex items-baseline gap-2">

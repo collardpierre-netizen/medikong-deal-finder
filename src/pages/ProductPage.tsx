@@ -300,7 +300,7 @@ export default function ProductPage() {
               <div className="flex gap-3 overflow-x-auto pb-2">
                 {products.filter(p => p.id !== product.id).slice(0, 6).map(p => (
                   <Link key={p.id} to={`/produit/${p.slug}`} className="w-36 shrink-0 border border-mk-line rounded-lg p-3 hover:shadow-sm">
-                    <div className="aspect-square bg-mk-alt rounded mb-2 flex items-center justify-center text-[8px] text-mk-ter">IMG</div>
+                    <ProductImage product={p} className="mb-2" />
                     <p className="text-xs text-mk-text truncate font-medium">{p.name}</p>
                     <p className="text-sm font-bold text-mk-navy">{formatPrice(p.price)} EUR</p>
                   </Link>

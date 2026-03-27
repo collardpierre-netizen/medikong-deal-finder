@@ -1,17 +1,24 @@
-import { Search, Globe, Bell, ShoppingCart, Users, Menu, X } from "lucide-react";
+import { Search, Globe, Bell, ShoppingCart, Users, Menu, X, LogOut } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function Navbar() {
   const [query, setQuery] = useState("");
   const [isTVAC, setIsTVAC] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
+  const { user, signOut } = useAuth();
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (query.trim()) navigate(`/recherche?q=${encodeURIComponent(query)}`);
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/");
   };
 
   return (
@@ -53,10 +60,22 @@ export function Navbar() {
             </motion.div>
           </Link>
           <div className="w-px h-5 bg-white/20 mx-1" />
-          <Link to="/compte" className="flex items-center gap-1.5 text-white text-sm">
-            <Users size={16} />
-            <span>Mon compte</span>
-          </Link>
+          {user ? (
+            <div className="flex items-center gap-2">
+              <Link to="/compte" className="flex items-center gap-1.5 text-white text-sm">
+                <Users size={16} />
+                <span className="max-w-[100px] truncate">{user.email}</span>
+              </Link>
+              <button onClick={handleSignOut} className="text-white/70 hover:text-white">
+                <LogOut size={16} />
+              </button>
+            </div>
+          ) : (
+            <Link to="/connexion" className="flex items-center gap-1.5 text-white text-sm">
+              <Users size={16} />
+              <span>Connexion</span>
+            </Link>
+          )}
         </div>
 
         {/* Mobile icons */}
@@ -84,24 +103,23 @@ export function Navbar() {
             <form onSubmit={handleSearch} className="sm:hidden">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-mk-sec" size={16} />
-                <input
-                  value={query}
-                  onChange={e => setQuery(e.target.value)}
-                  placeholder="Rechercher..."
-                  className="w-full pl-9 pr-3 py-2 rounded-md text-sm bg-white text-mk-text"
-                />
+                <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Rechercher..." className="w-full pl-9 pr-3 py-2 rounded-md text-sm bg-white text-mk-text" />
               </div>
             </form>
-            <button
-              onClick={() => setIsTVAC(!isTVAC)}
-              className="text-white text-xs font-semibold px-3 py-1.5 rounded-md self-start"
-              style={{ background: "rgba(255,255,255,0.15)" }}
-            >
-              {isTVAC ? "TVAC" : "HTVA"}
-            </button>
-            <Link to="/compte" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 text-white text-sm">
-              <Users size={16} /> Mon compte
-            </Link>
+            {user ? (
+              <>
+                <Link to="/compte" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 text-white text-sm">
+                  <Users size={16} /> Mon compte
+                </Link>
+                <button onClick={() => { handleSignOut(); setMobileMenuOpen(false); }} className="flex items-center gap-2 text-white/70 text-sm">
+                  <LogOut size={16} /> Deconnexion
+                </button>
+              </>
+            ) : (
+              <Link to="/connexion" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 text-white text-sm">
+                <Users size={16} /> Connexion
+              </Link>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

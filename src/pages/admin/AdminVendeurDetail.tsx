@@ -55,39 +55,34 @@ const AdminVendeurDetail = () => {
     enabled: !!id,
   });
 
-  // Fetch brands/manufacturers linked to this vendor's products
-  const { data: vendorProducts = [] } = useQuery({
-    queryKey: ["vendor-products", id],
-    queryFn: async () => {
-      const { data: offers } = await supabase
-        .from("offers_direct")
-        .select("product_id, products(brand, brand_id, manufacturer_id)")
-        .eq("vendor_id", id!);
-      return offers || [];
-    },
-    enabled: !!id,
-  });
-
+  // Fetch brands/manufacturers linked to this vendor via offers_direct → products
   const { data: vendorBrands = [] } = useQuery({
     queryKey: ["vendor-brands", id],
     queryFn: async () => {
-      const brandIds = [...new Set(vendorProducts.map(p => (p.products as any)?.brand_id).filter(Boolean))];
-      if (brandIds.length === 0) return [];
-      const { data } = await supabase.from("brands").select("name").in("id", brandIds);
-      return data || [];
+      // Get distinct brand names via offers_direct join
+      const { data: offers } = await supabase
+        .from("offers_direct")
+        .select("product_id, products(brand, brand_id)")
+        .eq("vendor_id", id!);
+      const brandNames = [...new Set((offers || []).map(o => (o.products as any)?.brand).filter(Boolean))];
+      return brandNames.map(name => ({ name }));
     },
-    enabled: vendorProducts.length > 0,
+    enabled: !!id,
   });
 
   const { data: vendorManufacturers = [] } = useQuery({
     queryKey: ["vendor-manufacturers", id],
     queryFn: async () => {
-      const mfrIds = [...new Set(vendorProducts.map(p => (p.products as any)?.manufacturer_id).filter(Boolean))];
+      const { data: offers } = await supabase
+        .from("offers_direct")
+        .select("product_id, products(manufacturer_id)")
+        .eq("vendor_id", id!);
+      const mfrIds = [...new Set((offers || []).map(o => (o.products as any)?.manufacturer_id).filter(Boolean))];
       if (mfrIds.length === 0) return [];
       const { data } = await supabase.from("manufacturers").select("name").in("id", mfrIds);
       return data || [];
     },
-    enabled: vendorProducts.length > 0,
+    enabled: !!id,
   });
 
   if (isLoading) {

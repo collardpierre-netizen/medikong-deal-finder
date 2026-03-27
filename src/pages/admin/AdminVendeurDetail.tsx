@@ -77,6 +77,7 @@ const notes = [
 
 const tabList = [
   { key: "resume", label: "Résumé", icon: Building2 },
+  { key: "portfolio", label: "Portefeuille", icon: Tag },
   { key: "products", label: "Produits", icon: Package },
   { key: "orders", label: "Commandes", icon: ShoppingCart },
   { key: "disputes", label: "Litiges", icon: AlertTriangle },

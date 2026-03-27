@@ -72,9 +72,9 @@ const App = () => (
               <Route path="categories" element={<AdminPlaceholder titleKey="categories" />} />
               <Route path="marques" element={<AdminPlaceholder titleKey="brands" />} />
               <Route path="schemas-pim" element={<AdminSchemasPIM />} />
-              <Route path="commandes" element={<AdminPlaceholder titleKey="orders" />} />
-              <Route path="litiges" element={<AdminPlaceholder titleKey="disputes" />} />
-              <Route path="finances" element={<AdminPlaceholder titleKey="finances" />} />
+              <Route path="commandes" element={<AdminCommandes />} />
+              <Route path="litiges" element={<AdminLitiges />} />
+              <Route path="finances" element={<AdminFinances />} />
               <Route path="veille-prix" element={<AdminPlaceholder titleKey="priceWatch" />} />
               <Route path="leads" element={<AdminPlaceholder titleKey="leads" />} />
               <Route path="analytics" element={<AdminPlaceholder titleKey="analytics" />} />

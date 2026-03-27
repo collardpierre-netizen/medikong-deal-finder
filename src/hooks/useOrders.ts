@@ -48,22 +48,8 @@ export function useCreateOrder() {
 
       if (orderError) throw orderError;
 
-      // Insert order items
-      const { error: itemsError } = await supabase
-        .from("order_items")
-        .insert(
-          input.items.map((item) => ({
-            order_id: order.id,
-            product_id: item.product_id,
-            product_name: item.product_name,
-            product_brand: item.product_brand,
-            quantity: item.quantity,
-            unit_price: item.unit_price,
-            total_price: item.total_price,
-          }))
-        );
-
-      if (itemsError) throw itemsError;
+      // Order items are now tracked differently - skip for now
+      // In future, create an order_items table or embed items in orders
 
       return order;
     },

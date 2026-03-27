@@ -555,7 +555,14 @@ export default function ProductPage() {
                     whileTap={{ scale: 0.95 }}
                     onClick={() => {
                       if (!user) { navigate("/connexion"); return; }
-                      addToCart.mutate({ productId: product.id, quantity: stickyQty });
+                      const bestOffer = realOffers[0];
+                      addToCart.mutate({
+                        productId: product.id,
+                        quantity: stickyQty,
+                        vendorId: bestOffer?.sellerId,
+                        priceHt: bestOffer?.unitPriceEur || product.price,
+                        productData: { id: product.id, name: product.name, brand: product.brand, slug: product.slug, price: bestOffer?.unitPriceEur || product.price, gtin: product.gtin, unit: product.unit, stock: true },
+                      });
                     }}
                   >
                     <ShoppingCart size={14} />

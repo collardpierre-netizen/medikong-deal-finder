@@ -30,6 +30,9 @@ import AdminOnboarding from "./pages/admin/AdminOnboarding";
 import AdminProduits from "./pages/admin/AdminProduits";
 import AdminProduitDetail from "./pages/admin/AdminProduitDetail";
 import AdminSchemasPIM from "./pages/admin/AdminSchemasPIM";
+import AdminCommandes from "./pages/admin/AdminCommandes";
+import AdminFinances from "./pages/admin/AdminFinances";
+import AdminLitiges from "./pages/admin/AdminLitiges";
 
 const queryClient = new QueryClient();
 

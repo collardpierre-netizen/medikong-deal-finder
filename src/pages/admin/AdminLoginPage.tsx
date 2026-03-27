@@ -2,11 +2,12 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Shield, Lock, Mail, AlertCircle } from "lucide-react";
+import { Shield, Lock, Mail, AlertCircle, Eye, EyeOff } from "lucide-react";
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { signIn } = useAuth();
@@ -24,7 +25,6 @@ export default function AdminLoginPage() {
       return;
     }
 
-    // Check admin role
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       setError("Erreur d'authentification.");
@@ -81,8 +81,11 @@ export default function AdminLoginPage() {
             <label className="text-[11px] font-semibold uppercase tracking-wider mb-1.5 block" style={{ color: "#64748B" }}>Mot de passe</label>
             <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg" style={{ backgroundColor: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)" }}>
               <Lock size={15} style={{ color: "#64748B" }} />
-              <input value={password} onChange={(e) => setPassword(e.target.value)} type="password" required placeholder="••••••••"
+              <input value={password} onChange={(e) => setPassword(e.target.value)} type={showPassword ? "text" : "password"} required placeholder="••••••••"
                 className="flex-1 bg-transparent text-[13px] text-white outline-none placeholder:text-gray-600" />
+              <button type="button" onClick={() => setShowPassword(!showPassword)} className="transition-colors" style={{ color: "#64748B" }}>
+                {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+              </button>
             </div>
           </div>
 

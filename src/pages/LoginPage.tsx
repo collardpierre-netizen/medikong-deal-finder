@@ -2,10 +2,12 @@ import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const { signIn } = useAuth();
   const navigate = useNavigate();
@@ -42,9 +44,14 @@ export default function LoginPage() {
           <div>
             <div className="flex justify-between mb-1">
               <label className="text-xs text-mk-sec">Mot de passe</label>
-              <Link to="#" className="text-xs text-mk-blue">Mot de passe oublie ?</Link>
+              <Link to="/mot-de-passe-oublie" className="text-xs text-mk-blue">Mot de passe oublié ?</Link>
             </div>
-            <input value={password} onChange={e => setPassword(e.target.value)} type="password" required className="w-full border border-mk-line rounded-md px-3 py-2.5 text-sm" />
+            <div className="relative">
+              <input value={password} onChange={e => setPassword(e.target.value)} type={showPassword ? "text" : "password"} required className="w-full border border-mk-line rounded-md px-3 py-2.5 text-sm pr-10" />
+              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-mk-sec hover:text-mk-navy transition-colors">
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
           </div>
           <button disabled={loading} className="w-full bg-mk-navy text-white font-bold py-3 rounded-md text-sm disabled:opacity-50">
             {loading ? "Connexion..." : "Se connecter"}

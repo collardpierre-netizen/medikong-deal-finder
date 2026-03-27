@@ -87,9 +87,9 @@ export default function CartDrawer() {
                               Conditionnement: {item.quantity}
                             </p>
                             <p className="text-sm text-mk-navy mt-1">
-                              <span className="font-medium">{formatPrice(item.product?.price || 0)}€</span>
+                              <span className="font-medium">{formatPrice(item.price_ht || item.product?.price || 0)}€</span>
                               <span className="text-mk-ter"> × {item.quantity} = </span>
-                              <span className="font-bold">{formatPrice((item.product?.price || 0) * item.quantity)}€</span>
+                              <span className="font-bold">{formatPrice((item.price_ht || item.product?.price || 0) * item.quantity)}€</span>
                             </p>
                           </div>
                           <div className="flex items-center gap-2 shrink-0">

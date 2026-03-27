@@ -98,9 +98,9 @@ export default function CartPage() {
                         <Link to={`/produit/${item.product?.slug}`} className="text-sm font-medium text-mk-text truncate block hover:text-mk-blue">
                           {item.product?.name || "Produit"}
                         </Link>
-                        <p className="text-xs text-mk-ter">{item.product?.brand} · GTIN: {item.product?.ean || "N/A"}</p>
+                        <p className="text-xs text-mk-ter">{item.product?.brand} · GTIN: {item.product?.gtin || "N/A"}</p>
                       </div>
-                      <span className="text-xs text-mk-sec hidden md:block">{item.product?.unit_price || ""}</span>
+                      <span className="text-xs text-mk-sec hidden md:block">{item.product?.unit || ""}</span>
                       <div className="flex items-center border border-mk-line rounded-md">
                         <button
                           className="px-2 py-1"

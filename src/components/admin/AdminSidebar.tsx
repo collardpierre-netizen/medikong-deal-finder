@@ -1,0 +1,147 @@
+import { NavLink, useLocation } from "react-router-dom";
+import { useI18n } from "@/contexts/I18nContext";
+import {
+  LayoutDashboard, Store, UserPlus, Package, Layers, Tag, SlidersHorizontal,
+  ShoppingCart, AlertCircle, DollarSign, Eye, Link, BarChart3,
+  Shield, Upload, MessageSquare, Layout, Truck, ShieldCheck, Settings, FileText,
+} from "lucide-react";
+
+interface NavItem {
+  labelKey: string;
+  path: string;
+  icon: React.ElementType;
+}
+
+interface NavSection {
+  labelKey: string;
+  items: NavItem[];
+}
+
+const sections: NavSection[] = [
+  {
+    labelKey: "management",
+    items: [
+      { labelKey: "sellers", path: "/admin/vendeurs", icon: Store },
+      { labelKey: "onboarding", path: "/admin/onboarding", icon: UserPlus },
+      { labelKey: "products", path: "/admin/produits", icon: Package },
+      { labelKey: "categories", path: "/admin/categories", icon: Layers },
+      { labelKey: "brands", path: "/admin/marques", icon: Tag },
+      { labelKey: "pimSchemas", path: "/admin/schemas-pim", icon: SlidersHorizontal },
+      { labelKey: "orders", path: "/admin/commandes", icon: ShoppingCart },
+      { labelKey: "disputes", path: "/admin/litiges", icon: AlertCircle },
+      { labelKey: "finances", path: "/admin/finances", icon: DollarSign },
+    ],
+  },
+  {
+    labelKey: "intelligence",
+    items: [
+      { labelKey: "priceWatch", path: "/admin/veille-prix", icon: Eye },
+      { labelKey: "leads", path: "/admin/leads", icon: Link },
+      { labelKey: "analytics", path: "/admin/analytics", icon: BarChart3 },
+    ],
+  },
+  {
+    labelKey: "compliance",
+    items: [
+      { labelKey: "regulatory", path: "/admin/reglementaire", icon: Shield },
+      { labelKey: "importExport", path: "/admin/import-export", icon: Upload },
+    ],
+  },
+  {
+    labelKey: "engagement",
+    items: [
+      { labelKey: "crm", path: "/admin/crm", icon: MessageSquare },
+      { labelKey: "cms", path: "/admin/cms", icon: Layout },
+    ],
+  },
+  {
+    labelKey: "operations",
+    items: [
+      { labelKey: "logistics", path: "/admin/logistique", icon: Truck },
+      { labelKey: "team", path: "/admin/equipe", icon: ShieldCheck },
+      { labelKey: "settings", path: "/admin/parametres", icon: Settings },
+      { labelKey: "logs", path: "/admin/logs", icon: FileText },
+    ],
+  },
+];
+
+const AdminSidebar = () => {
+  const { t } = useI18n();
+  const location = useLocation();
+
+  const isActive = (path: string) => location.pathname === path;
+
+  return (
+    <aside
+      className="fixed left-0 top-0 bottom-0 w-[240px] z-50 overflow-y-auto flex flex-col"
+      style={{ backgroundColor: "#1E293B" }}
+    >
+      {/* Logo */}
+      <div className="px-5 py-5 border-b border-white/10">
+        <div className="flex items-center gap-2">
+          <div
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-sm"
+            style={{ backgroundColor: "#1B5BDA" }}
+          >
+            M
+          </div>
+          <div>
+            <span className="text-white font-bold text-[15px]">MediKong</span>
+            <span style={{ color: "#1B5BDA" }} className="font-bold text-[15px]">.pro</span>
+          </div>
+        </div>
+        <p className="text-[11px] mt-1" style={{ color: "#8B95A5" }}>
+          {t("superadminPanel")}
+        </p>
+      </div>
+
+      {/* Dashboard link */}
+      <div className="px-3 pt-3 pb-1">
+        <NavLink
+          to="/admin"
+          end
+          className={`flex items-center gap-2.5 px-3 py-2 rounded-md text-[13px] font-medium transition-colors ${
+            isActive("/admin")
+              ? "text-white"
+              : "text-slate-400 hover:text-white hover:bg-white/5"
+          }`}
+          style={isActive("/admin") ? { backgroundColor: "#1B5BDA" } : {}}
+        >
+          <LayoutDashboard size={17} strokeWidth={1.8} />
+          {t("dashboard")}
+        </NavLink>
+      </div>
+
+      {/* Sections */}
+      <nav className="flex-1 px-3 pb-4">
+        {sections.map((section) => (
+          <div key={section.labelKey} className="mt-4">
+            <p
+              className="px-3 mb-1.5 text-[10px] font-semibold tracking-wider"
+              style={{ color: "#8B95A5" }}
+            >
+              {t(section.labelKey)}
+            </p>
+            {section.items.map((item) => (
+              <NavLink
+                key={item.path}
+                to={item.path}
+                className={`flex items-center gap-2.5 px-3 py-[7px] rounded-md text-[13px] transition-colors ${
+                  isActive(item.path)
+                    ? "text-white font-medium"
+                    : "text-slate-400 hover:text-white hover:bg-white/5"
+                }`}
+                style={isActive(item.path) ? { backgroundColor: "#1B5BDA" } : {}}
+              >
+                <item.icon size={16} strokeWidth={1.8} />
+                {t(item.labelKey)}
+              </NavLink>
+            ))}
+          </div>
+        ))}
+      </nav>
+    </aside>
+  );
+};
+
+export default AdminSidebar;

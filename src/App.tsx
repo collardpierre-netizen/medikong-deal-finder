@@ -21,6 +21,9 @@ import CategoryPage from "./pages/CategoryPage";
 import PromotionsPage from "./pages/PromotionsPage";
 import SellerOnboardingPage from "./pages/SellerOnboardingPage";
 import NotFound from "./pages/NotFound";
+import AdminLayout from "./components/admin/AdminLayout";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminPlaceholder from "./pages/admin/AdminPlaceholder";
 
 const queryClient = new QueryClient();
 
@@ -48,6 +51,32 @@ const App = () => (
             <Route path="/categorie/:slug" element={<CategoryPage />} />
             <Route path="/promotions" element={<PromotionsPage />} />
             <Route path="/seller-onboarding" element={<SellerOnboardingPage />} />
+
+            {/* Admin Back-Office */}
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route index element={<AdminDashboard />} />
+              <Route path="vendeurs" element={<AdminPlaceholder titleKey="sellers" />} />
+              <Route path="onboarding" element={<AdminPlaceholder titleKey="onboarding" />} />
+              <Route path="produits" element={<AdminPlaceholder titleKey="products" />} />
+              <Route path="categories" element={<AdminPlaceholder titleKey="categories" />} />
+              <Route path="marques" element={<AdminPlaceholder titleKey="brands" />} />
+              <Route path="schemas-pim" element={<AdminPlaceholder titleKey="pimSchemas" />} />
+              <Route path="commandes" element={<AdminPlaceholder titleKey="orders" />} />
+              <Route path="litiges" element={<AdminPlaceholder titleKey="disputes" />} />
+              <Route path="finances" element={<AdminPlaceholder titleKey="finances" />} />
+              <Route path="veille-prix" element={<AdminPlaceholder titleKey="priceWatch" />} />
+              <Route path="leads" element={<AdminPlaceholder titleKey="leads" />} />
+              <Route path="analytics" element={<AdminPlaceholder titleKey="analytics" />} />
+              <Route path="reglementaire" element={<AdminPlaceholder titleKey="regulatory" />} />
+              <Route path="import-export" element={<AdminPlaceholder titleKey="importExport" />} />
+              <Route path="crm" element={<AdminPlaceholder titleKey="crm" />} />
+              <Route path="cms" element={<AdminPlaceholder titleKey="cms" />} />
+              <Route path="logistique" element={<AdminPlaceholder titleKey="logistics" />} />
+              <Route path="equipe" element={<AdminPlaceholder titleKey="team" />} />
+              <Route path="parametres" element={<AdminPlaceholder titleKey="settings" />} />
+              <Route path="logs" element={<AdminPlaceholder titleKey="logs" />} />
+            </Route>
+
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

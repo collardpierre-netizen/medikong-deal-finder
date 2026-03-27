@@ -36,6 +36,10 @@ import AdminLitiges from "./pages/admin/AdminLitiges";
 import AdminVeillePrix from "./pages/admin/AdminVeillePrix";
 import AdminLeads from "./pages/admin/AdminLeads";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
+import AdminReglementaire from "./pages/admin/AdminReglementaire";
+import AdminImportExport from "./pages/admin/AdminImportExport";
+import AdminCategories from "./pages/admin/AdminCategories";
+import AdminMarques from "./pages/admin/AdminMarques";
 
 const queryClient = new QueryClient();
 

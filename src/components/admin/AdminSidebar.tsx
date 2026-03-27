@@ -1,5 +1,6 @@
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useI18n } from "@/contexts/I18nContext";
+import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { supabase } from "@/integrations/supabase/client";
 import {
   LayoutDashboard, Store, UserPlus, Package, Layers, Tag, SlidersHorizontal,
@@ -71,6 +72,7 @@ const AdminSidebar = () => {
   const { t } = useI18n();
   const location = useLocation();
   const navigate = useNavigate();
+  const { adminName, role } = useAdminAuth();
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -148,14 +150,25 @@ const AdminSidebar = () => {
           </div>
         ))}
       </nav>
-      {/* Logout */}
-      <div className="px-3 pb-4 border-t border-white/10 pt-3">
+      {/* Admin info + Logout */}
+      <div className="px-3 pb-4 border-t border-white/10 pt-3 space-y-3">
+        {adminName && (
+          <div className="flex items-center gap-2.5 px-3">
+            <div className="w-8 h-8 rounded-full flex items-center justify-center text-[12px] font-bold text-white" style={{ backgroundColor: "#334155" }}>
+              {adminName.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase()}
+            </div>
+            <div className="min-w-0">
+              <p className="text-[12px] font-medium text-white truncate">{adminName}</p>
+              <p className="text-[10px] capitalize" style={{ color: "#8B95A5" }}>{role?.replace("_", " ")}</p>
+            </div>
+          </div>
+        )}
         <button
           onClick={handleLogout}
           className="flex items-center gap-2.5 px-3 py-2 rounded-md text-[13px] text-slate-400 hover:text-red-400 hover:bg-white/5 transition-colors w-full"
         >
           <LogOut size={16} strokeWidth={1.8} />
-          {t("logout")}
+          Déconnexion
         </button>
       </div>
     </aside>

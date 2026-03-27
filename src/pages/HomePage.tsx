@@ -1,7 +1,8 @@
 import { Layout } from "@/components/layout/Layout";
 import { Link } from "react-router-dom";
 import { Search, Shield, Truck, Award, Package, Heart, Activity, Droplet, Droplets, Wrench, ChevronRight, Check, Armchair } from "lucide-react";
-import { products, categories, formatPrice } from "@/data/mock";
+import { categories, formatPrice } from "@/data/mock";
+import { useProducts } from "@/hooks/useProducts";
 import { ProductCard } from "@/components/shared/ProductCard";
 import { useState } from "react";
 import { motion } from "framer-motion";

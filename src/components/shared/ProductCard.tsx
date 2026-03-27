@@ -58,9 +58,12 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
   const [qty, setQty] = useState(1);
 
   return (
-    <div
-      className="border border-mk-line rounded-lg p-4 hover:shadow-md transition-shadow animate-fadeInUp"
-      style={{ animationDelay: `${index * 70}ms` }}
+    <motion.div
+      className="border border-mk-line rounded-lg p-4"
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, delay: index * 0.05, ease: "easeOut" }}
+      whileHover={{ y: -4, boxShadow: "0 8px 24px -8px rgba(0,0,0,0.12)" }}
     >
       <div className="relative mb-3">
         <span className="absolute top-2 left-2 bg-mk-red text-white text-[11px] font-bold px-2 py-0.5 rounded z-10">

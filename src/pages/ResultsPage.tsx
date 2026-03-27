@@ -42,6 +42,29 @@ export default function ResultsPage() {
       <PageTransition>
         <UniversePills />
         <div className="mk-container py-6">
+          {/* Search bar */}
+          <form onSubmit={handleSearch} className="mb-4">
+            <div className="flex border border-mk-line rounded-md overflow-hidden max-w-xl">
+              <div className="flex items-center pl-3">
+                <Search size={16} className="text-mk-sec" />
+              </div>
+              <input
+                value={localQuery}
+                onChange={e => setLocalQuery(e.target.value)}
+                placeholder="Rechercher par nom, marque, GTIN ou CNK..."
+                className="flex-1 px-3 py-2.5 text-sm focus:outline-none min-w-0"
+              />
+              <button type="submit" className="bg-mk-blue text-white px-5 py-2.5 text-sm font-semibold hover:opacity-90 whitespace-nowrap">
+                Rechercher
+              </button>
+            </div>
+            {searchQuery && (
+              <p className="text-sm text-mk-sec mt-2">
+                Résultats pour « <span className="font-semibold text-mk-navy">{searchQuery}</span> »
+                <button onClick={() => { setLocalQuery(""); setSearchParams({}); }} className="text-mk-blue ml-2 hover:underline">Effacer</button>
+              </p>
+            )}
+          </form>
           {/* Filter pills */}
           <motion.div
             className="flex items-center gap-2 mb-4 overflow-x-auto pb-1"

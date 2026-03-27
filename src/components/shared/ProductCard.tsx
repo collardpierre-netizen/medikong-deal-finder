@@ -1,7 +1,57 @@
 import { Bell, Plus, Minus } from "lucide-react";
 import { Link } from "react-router-dom";
-import { type Product, formatPrice } from "@/data/mock";
+import { type Product, formatPrice, productColors, productIconMap } from "@/data/mock";
 import { useState } from "react";
+import { Package } from "lucide-react";
+
+export function ProductImage({ product, className = "" }: { product: Product; className?: string }) {
+  const colorKey = product.color || "blue";
+  const colors = productColors[colorKey] || productColors.blue;
+  const IconComponent = product.iconName ? productIconMap[product.iconName] : Package;
+  const FinalIcon = IconComponent || Package;
+
+  return (
+    <div
+      className={`aspect-square rounded-lg flex flex-col items-center justify-center gap-2 relative overflow-hidden ${className}`}
+      style={{ backgroundColor: colors.bg }}
+    >
+      {/* Decorative circles */}
+      <div
+        className="absolute -top-6 -right-6 w-24 h-24 rounded-full opacity-20"
+        style={{ backgroundColor: colors.fg }}
+      />
+      <div
+        className="absolute -bottom-4 -left-4 w-16 h-16 rounded-full opacity-10"
+        style={{ backgroundColor: colors.fg }}
+      />
+      {/* Icon */}
+      <FinalIcon size={36} style={{ color: colors.fg }} />
+      {/* Brand label */}
+      <span
+        className="text-[10px] font-bold tracking-wider uppercase opacity-60"
+        style={{ color: colors.fg }}
+      >
+        {product.brand}
+      </span>
+    </div>
+  );
+}
+
+export function ProductImageSmall({ product }: { product: Product }) {
+  const colorKey = product.color || "blue";
+  const colors = productColors[colorKey] || productColors.blue;
+  const IconComponent = product.iconName ? productIconMap[product.iconName] : Package;
+  const FinalIcon = IconComponent || Package;
+
+  return (
+    <div
+      className="w-12 h-12 rounded flex items-center justify-center"
+      style={{ backgroundColor: colors.bg }}
+    >
+      <FinalIcon size={18} style={{ color: colors.fg }} />
+    </div>
+  );
+}
 
 export function ProductCard({ product, index = 0 }: { product: Product; index?: number }) {
   const [qty, setQty] = useState(1);
@@ -12,16 +62,14 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
       style={{ animationDelay: `${index * 70}ms` }}
     >
       <div className="relative mb-3">
-        <span className="absolute top-2 left-2 bg-mk-red text-white text-[11px] font-bold px-2 py-0.5 rounded">
+        <span className="absolute top-2 left-2 bg-mk-red text-white text-[11px] font-bold px-2 py-0.5 rounded z-10">
           {product.pct}%
         </span>
-        <button className="absolute top-2 right-2 w-7 h-7 rounded-full border border-mk-line bg-white flex items-center justify-center hover:border-mk-blue">
+        <button className="absolute top-2 right-2 w-7 h-7 rounded-full border border-mk-line bg-white flex items-center justify-center hover:border-mk-blue z-10">
           <Bell size={13} className="text-mk-sec" />
         </button>
         <Link to={`/produit/${product.slug}`}>
-          <div className="aspect-square bg-mk-alt rounded-lg flex items-center justify-center">
-            <span className="text-mk-ter text-xs">Image produit</span>
-          </div>
+          <ProductImage product={product} />
         </Link>
       </div>
       <Link to={`/produit/${product.slug}`}>

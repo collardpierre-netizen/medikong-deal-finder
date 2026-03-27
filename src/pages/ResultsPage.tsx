@@ -1,6 +1,6 @@
 import { Layout } from "@/components/layout/Layout";
 import { UniversePills } from "@/components/layout/UniversePills";
-import { ProductCard } from "@/components/shared/ProductCard";
+import { ProductCard, ProductImage, ProductImageSmall } from "@/components/shared/ProductCard";
 import { SkeletonList } from "@/components/shared/SkeletonCard";
 import { products, formatPrice } from "@/data/mock";
 import { Sliders, Grid, List, Columns, Bell, Plus, Minus, TrendingDown, ExternalLink } from "lucide-react";
@@ -127,7 +127,7 @@ export default function ResultsPage() {
                 </div>
                 {products.map(p => (
                   <Link key={p.id} to={`/produit/${p.slug}`} className="grid grid-cols-[60px_1fr_80px_100px_80px_80px_100px] gap-3 px-4 py-3 items-center border-t border-mk-line hover:bg-mk-alt text-sm min-w-[700px]">
-                    <div className="w-12 h-12 bg-mk-alt rounded flex items-center justify-center text-[8px] text-mk-ter">IMG</div>
+                    <ProductImageSmall product={p} />
                     <span className="text-mk-text font-medium truncate">{p.name}</span>
                     <span className="text-mk-sec">{p.cnk}</span>
                     <span className="text-mk-sec">{p.brand}</span>
@@ -155,7 +155,7 @@ export default function ResultsPage() {
                   <div key={p.id} className="border border-mk-line rounded-lg flex flex-col md:flex-row overflow-hidden animate-fadeInUp" style={{ animationDelay: `${i * 70}ms` }}>
                     <div className="w-full md:w-[200px] shrink-0 relative p-4">
                       <span className="absolute top-3 left-3 bg-mk-red text-white text-[11px] font-bold px-2 py-0.5 rounded">{p.pct}%</span>
-                      <div className="aspect-square bg-mk-alt rounded-lg flex items-center justify-center text-xs text-mk-ter">IMG</div>
+                      <ProductImage product={p} />
                     </div>
                     <div className="flex-1 p-4 border-t md:border-t-0 md:border-l border-mk-line">
                       <p className="text-xs text-mk-sec">{p.brand}</p>

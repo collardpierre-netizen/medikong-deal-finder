@@ -1,5 +1,6 @@
 import { Layout } from "@/components/layout/Layout";
-import { products, competitors, formatPrice, sellers } from "@/data/mock";
+import { ProductImage } from "@/components/shared/ProductCard";
+import { products, competitors, formatPrice, sellers, productColors, productIconMap } from "@/data/mock";
 import { useParams, Link } from "react-router-dom";
 import { Copy, Sliders, ShoppingCart, ExternalLink, Eye, Shield, Check, Truck, Globe, ChevronDown, Minus, Plus, Bell } from "lucide-react";
 import { useState } from "react";
@@ -53,15 +54,18 @@ export default function ProductPage() {
         <div className="flex flex-col md:flex-row gap-6 md:gap-8">
           {/* Image */}
           <div className="w-full md:w-[400px] shrink-0 md:sticky md:top-20 self-start">
-            <div className="border border-mk-line rounded-lg aspect-square bg-mk-alt flex items-center justify-center mb-3">
-              <span className="text-mk-ter text-sm">Image produit</span>
-            </div>
+            <ProductImage product={product} className="border border-mk-line mb-3" />
             <div className="flex gap-2">
-              {[0, 1, 2, 3].map(i => (
-                <div key={i} className={`w-[52px] h-[52px] border rounded-md bg-mk-alt flex items-center justify-center text-[8px] text-mk-ter ${i === 0 ? "border-mk-navy border-2" : "border-mk-line"}`}>
-                  IMG
-                </div>
-              ))}
+              {[0, 1, 2, 3].map(i => {
+                const colorKey = product.color || "blue";
+                const colors = productColors[colorKey] || productColors.blue;
+                const IconComp = product.iconName ? productIconMap[product.iconName] : null;
+                return (
+                  <div key={i} className={`w-[52px] h-[52px] border rounded-md flex items-center justify-center ${i === 0 ? "border-mk-navy border-2" : "border-mk-line"}`} style={{ backgroundColor: colors.bg }}>
+                    {IconComp ? <IconComp size={16} style={{ color: colors.fg }} /> : <span className="text-[8px] text-mk-ter">IMG</span>}
+                  </div>
+                );
+              })}
             </div>
           </div>
 
@@ -296,7 +300,7 @@ export default function ProductPage() {
               <div className="flex gap-3 overflow-x-auto pb-2">
                 {products.filter(p => p.id !== product.id).slice(0, 6).map(p => (
                   <Link key={p.id} to={`/produit/${p.slug}`} className="w-36 shrink-0 border border-mk-line rounded-lg p-3 hover:shadow-sm">
-                    <div className="aspect-square bg-mk-alt rounded mb-2 flex items-center justify-center text-[8px] text-mk-ter">IMG</div>
+                    <ProductImage product={p} className="mb-2" />
                     <p className="text-xs text-mk-text truncate font-medium">{p.name}</p>
                     <p className="text-sm font-bold text-mk-navy">{formatPrice(p.price)} EUR</p>
                   </Link>

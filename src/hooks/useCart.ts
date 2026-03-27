@@ -98,5 +98,5 @@ export function useCart() {
 
   const cartCount = items.reduce((s, i) => s + i.quantity, 0);
 
-  return { items, isLoading, cartCount, addToCart, updateQuantity, removeFromCart, clearCart };
+  return { items, isLoading, cartCount, addToCart, updateQuantity, removeFromCart, clearCart, isDrawerOpen, openDrawer, closeDrawer };
 }

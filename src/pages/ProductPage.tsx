@@ -503,50 +503,59 @@ export default function ProductPage() {
             className="fixed bottom-0 left-0 right-0 z-50 border-t border-mk-line"
             style={{ backgroundColor: "rgba(255,255,255,0.92)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" }}
           >
-            <div className="mk-container py-3 flex items-center justify-between gap-4">
-              {/* Product info */}
-              <div className="flex items-center gap-3 min-w-0 flex-1">
-                <div className="w-10 h-10 rounded-lg border border-mk-line overflow-hidden shrink-0 bg-mk-alt flex items-center justify-center">
-                  {product.iconName && productIconMap[product.iconName] ? (
-                    (() => {
-                      const IconComp = productIconMap[product.iconName!];
-                      const colors = productColors[product.color || "blue"] || productColors.blue;
-                      return <IconComp size={18} style={{ color: colors.fg }} />;
-                    })()
-                  ) : (
-                    <ShoppingCart size={14} className="text-mk-ter" />
-                  )}
+            <div className="mk-container py-2.5 sm:py-3">
+              {/* Mobile: stacked layout */}
+              <div className="flex items-center justify-between gap-3 sm:gap-4">
+                {/* Product info - hidden on very small screens to save space */}
+                <div className="hidden sm:flex items-center gap-3 min-w-0 flex-1">
+                  <div className="w-10 h-10 rounded-lg border border-mk-line overflow-hidden shrink-0 bg-mk-alt flex items-center justify-center">
+                    {product.iconName && productIconMap[product.iconName] ? (
+                      (() => {
+                        const IconComp = productIconMap[product.iconName!];
+                        const colors = productColors[product.color || "blue"] || productColors.blue;
+                        return <IconComp size={18} style={{ color: colors.fg }} />;
+                      })()
+                    ) : (
+                      <ShoppingCart size={14} className="text-mk-ter" />
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-mk-navy truncate">{product.name}</p>
+                    <p className="text-xs text-mk-sec">{product.brand} · Meilleure offre</p>
+                  </div>
                 </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-mk-navy truncate">{product.name}</p>
-                  <p className="text-xs text-mk-sec">{product.brand} · Meilleure offre</p>
-                </div>
-              </div>
 
-              {/* Price + CTA */}
-              <div className="flex items-center gap-3 shrink-0">
-                <div className="text-right hidden sm:block">
-                  <p className="text-lg font-bold text-mk-navy">{formatPrice(product.price)} EUR</p>
-                  <p className="text-[11px] text-mk-ter">HT · {product.unit}</p>
+                {/* Mobile: price on left */}
+                <div className="sm:hidden min-w-0">
+                  <p className="text-base font-bold text-mk-navy">{formatPrice(product.price)} €</p>
+                  <p className="text-[10px] text-mk-ter truncate">HT · {product.brand}</p>
                 </div>
-                <div className="flex items-center border border-mk-line rounded-md bg-white">
-                  <button onClick={() => setStickyQty(Math.max(1, stickyQty - 1))} className="px-2 py-1.5 text-mk-sec hover:text-mk-navy"><Minus size={14} /></button>
-                  <span className="px-2 text-sm font-medium text-mk-navy">{stickyQty}</span>
-                  <button onClick={() => setStickyQty(stickyQty + 1)} className="px-2 py-1.5 text-mk-sec hover:text-mk-navy"><Plus size={14} /></button>
+
+                {/* Price (desktop) + Qty + CTA */}
+                <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                  <div className="text-right hidden sm:block">
+                    <p className="text-lg font-bold text-mk-navy">{formatPrice(product.price)} EUR</p>
+                    <p className="text-[11px] text-mk-ter">HT · {product.unit}</p>
+                  </div>
+                  <div className="flex items-center border border-mk-line rounded-md bg-white">
+                    <button onClick={() => setStickyQty(Math.max(1, stickyQty - 1))} className="px-1.5 sm:px-2 py-1.5 text-mk-sec hover:text-mk-navy"><Minus size={14} /></button>
+                    <span className="px-1.5 sm:px-2 text-sm font-medium text-mk-navy">{stickyQty}</span>
+                    <button onClick={() => setStickyQty(stickyQty + 1)} className="px-1.5 sm:px-2 py-1.5 text-mk-sec hover:text-mk-navy"><Plus size={14} /></button>
+                  </div>
+                  <motion.button
+                    className="bg-mk-navy text-white text-xs sm:text-sm font-semibold px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg flex items-center gap-1.5 sm:gap-2 shadow-lg"
+                    whileHover={{ scale: 1.04 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => {
+                      if (!user) { navigate("/connexion"); return; }
+                      addToCart.mutate({ productId: product.id, quantity: stickyQty });
+                    }}
+                  >
+                    <ShoppingCart size={14} />
+                    <span className="hidden sm:inline">Ajouter au panier</span>
+                    <span className="sm:hidden">Ajouter</span>
+                  </motion.button>
                 </div>
-                <motion.button
-                  className="bg-mk-navy text-white text-sm font-semibold px-5 py-2.5 rounded-lg flex items-center gap-2 shadow-lg"
-                  whileHover={{ scale: 1.04 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => {
-                    if (!user) { navigate("/connexion"); return; }
-                    addToCart.mutate({ productId: product.id, quantity: stickyQty });
-                  }}
-                >
-                  <ShoppingCart size={15} />
-                  <span className="hidden sm:inline">Ajouter au panier</span>
-                  <span className="sm:hidden">Ajouter</span>
-                </motion.button>
               </div>
             </div>
           </motion.div>

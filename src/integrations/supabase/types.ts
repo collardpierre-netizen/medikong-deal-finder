@@ -335,7 +335,39 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      search_products: {
+        Args: { search_query: string }
+        Returns: {
+          brand: string
+          category_l1: string
+          category_l2: string
+          category_l3: string
+          category_l4: string | null
+          created_at: string | null
+          created_by: string | null
+          depth_cm: number | null
+          description_short: string | null
+          gtin: string
+          height_cm: number | null
+          id: string
+          ingredients: string | null
+          mpn: string | null
+          primary_image_url: string
+          product_name: string
+          rrp_eur: number | null
+          secondary_images: Json | null
+          status: Database["public"]["Enums"]["product_status"] | null
+          updated_at: string | null
+          weight_g: number
+          width_cm: number | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "products"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
     }
     Enums: {
       product_status: "draft" | "active" | "archived"

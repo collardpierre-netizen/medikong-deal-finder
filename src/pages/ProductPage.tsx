@@ -4,7 +4,7 @@ import { competitors, formatPrice, sellers, productColors, productIconMap } from
 import { useProducts, useProduct } from "@/hooks/useProducts";
 import { useCart } from "@/hooks/useCart";
 import { useAuth } from "@/contexts/AuthContext";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { Copy, Sliders, ShoppingCart, ExternalLink, Eye, Shield, Check, Truck, Globe, ChevronDown, Minus, Plus, Bell } from "lucide-react";
 import { useState } from "react";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from "recharts";

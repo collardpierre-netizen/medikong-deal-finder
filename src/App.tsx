@@ -33,6 +33,9 @@ import AdminSchemasPIM from "./pages/admin/AdminSchemasPIM";
 import AdminCommandes from "./pages/admin/AdminCommandes";
 import AdminFinances from "./pages/admin/AdminFinances";
 import AdminLitiges from "./pages/admin/AdminLitiges";
+import AdminVeillePrix from "./pages/admin/AdminVeillePrix";
+import AdminLeads from "./pages/admin/AdminLeads";
+import AdminAnalytics from "./pages/admin/AdminAnalytics";
 
 const queryClient = new QueryClient();
 
@@ -75,9 +78,9 @@ const App = () => (
               <Route path="commandes" element={<AdminCommandes />} />
               <Route path="litiges" element={<AdminLitiges />} />
               <Route path="finances" element={<AdminFinances />} />
-              <Route path="veille-prix" element={<AdminPlaceholder titleKey="priceWatch" />} />
-              <Route path="leads" element={<AdminPlaceholder titleKey="leads" />} />
-              <Route path="analytics" element={<AdminPlaceholder titleKey="analytics" />} />
+              <Route path="veille-prix" element={<AdminVeillePrix />} />
+              <Route path="leads" element={<AdminLeads />} />
+              <Route path="analytics" element={<AdminAnalytics />} />
               <Route path="reglementaire" element={<AdminPlaceholder titleKey="regulatory" />} />
               <Route path="import-export" element={<AdminPlaceholder titleKey="importExport" />} />
               <Route path="crm" element={<AdminPlaceholder titleKey="crm" />} />

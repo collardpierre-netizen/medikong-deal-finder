@@ -33,6 +33,9 @@ import AdminSchemasPIM from "./pages/admin/AdminSchemasPIM";
 import AdminCommandes from "./pages/admin/AdminCommandes";
 import AdminFinances from "./pages/admin/AdminFinances";
 import AdminLitiges from "./pages/admin/AdminLitiges";
+import AdminVeillePrix from "./pages/admin/AdminVeillePrix";
+import AdminLeads from "./pages/admin/AdminLeads";
+import AdminAnalytics from "./pages/admin/AdminAnalytics";
 
 const queryClient = new QueryClient();
 

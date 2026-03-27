@@ -1,5 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
@@ -13,116 +12,86 @@ export interface CartItem {
     brand: string;
     slug: string;
     price: number;
-    ean: string | null;
-    unit_price: string | null;
-    in_stock: boolean | null;
-    image_url: string | null;
+    gtin: string;
+    unit: string;
+    stock: boolean;
+    imageUrl?: string;
   };
+}
+
+const CART_KEY = "medikong_cart";
+
+function loadCart(): CartItem[] {
+  try {
+    return JSON.parse(localStorage.getItem(CART_KEY) || "[]");
+  } catch { return []; }
+}
+
+function saveCart(items: CartItem[]) {
+  localStorage.setItem(CART_KEY, JSON.stringify(items));
 }
 
 export function useCart() {
   const { user } = useAuth();
-  const queryClient = useQueryClient();
+  const [items, setItems] = useState<CartItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const cartQuery = useQuery({
-    queryKey: ["cart", user?.id],
-    queryFn: async () => {
-      if (!user) return [];
-      const { data, error } = await supabase
-        .from("cart_items")
-        .select("id, product_id, quantity, products(id, name, brand, slug, price, ean, unit_price, in_stock, image_url)")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: true });
-      if (error) throw error;
-      return (data || []).map((item: any) => ({
-        id: item.id,
-        product_id: item.product_id,
-        quantity: item.quantity,
-        product: item.products,
-      })) as CartItem[];
-    },
-    enabled: !!user,
-  });
+  useEffect(() => {
+    setItems(loadCart());
+    setIsLoading(false);
+  }, []);
 
-  const addToCart = useMutation({
-    mutationFn: async ({ productId, quantity = 1 }: { productId: string; quantity?: number }) => {
-      if (!user) throw new Error("Non connecté");
-      // Check if already in cart
-      const { data: existing } = await supabase
-        .from("cart_items")
-        .select("id, quantity")
-        .eq("user_id", user.id)
-        .eq("product_id", productId)
-        .maybeSingle();
-
-      if (existing) {
-        const { error } = await supabase
-          .from("cart_items")
-          .update({ quantity: existing.quantity + quantity })
-          .eq("id", existing.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from("cart_items")
-          .insert({ user_id: user.id, product_id: productId, quantity });
-        if (error) throw error;
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["cart"] });
+  const addToCart = {
+    mutate: useCallback(({ productId, quantity = 1, productData }: { productId: string; quantity?: number; productData?: CartItem["product"] }) => {
+      setItems(prev => {
+        const existing = prev.find(i => i.product_id === productId);
+        let next: CartItem[];
+        if (existing) {
+          next = prev.map(i => i.product_id === productId ? { ...i, quantity: i.quantity + quantity } : i);
+        } else {
+          next = [...prev, { id: crypto.randomUUID(), product_id: productId, quantity, product: productData }];
+        }
+        saveCart(next);
+        return next;
+      });
       toast.success("Produit ajouté au panier");
-    },
-    onError: () => toast.error("Erreur lors de l'ajout au panier"),
-  });
-
-  const updateQuantity = useMutation({
-    mutationFn: async ({ itemId, quantity }: { itemId: string; quantity: number }) => {
-      if (quantity <= 0) {
-        const { error } = await supabase.from("cart_items").delete().eq("id", itemId);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from("cart_items").update({ quantity }).eq("id", itemId);
-        if (error) throw error;
-      }
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["cart"] }),
-    onError: () => toast.error("Erreur de mise à jour"),
-  });
-
-  const removeFromCart = useMutation({
-    mutationFn: async (itemId: string) => {
-      const { error } = await supabase.from("cart_items").delete().eq("id", itemId);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["cart"] });
-      toast.success("Produit retiré du panier");
-    },
-    onError: () => toast.error("Erreur lors de la suppression"),
-  });
-
-  const clearCart = useMutation({
-    mutationFn: async () => {
-      if (!user) throw new Error("Non connecté");
-      const { error } = await supabase.from("cart_items").delete().eq("user_id", user.id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["cart"] });
-      toast.success("Panier vidé");
-    },
-    onError: () => toast.error("Erreur"),
-  });
-
-  const cartCount = (cartQuery.data || []).reduce((s, i) => s + i.quantity, 0);
-
-  return {
-    items: cartQuery.data || [],
-    isLoading: cartQuery.isLoading,
-    cartCount,
-    addToCart,
-    updateQuantity,
-    removeFromCart,
-    clearCart,
+    }, []),
+    isPending: false,
   };
+
+  const updateQuantity = {
+    mutate: useCallback(({ itemId, quantity }: { itemId: string; quantity: number }) => {
+      setItems(prev => {
+        const next = quantity <= 0 ? prev.filter(i => i.id !== itemId) : prev.map(i => i.id === itemId ? { ...i, quantity } : i);
+        saveCart(next);
+        return next;
+      });
+    }, []),
+    isPending: false,
+  };
+
+  const removeFromCart = {
+    mutate: useCallback((itemId: string) => {
+      setItems(prev => {
+        const next = prev.filter(i => i.id !== itemId);
+        saveCart(next);
+        return next;
+      });
+      toast.success("Produit retiré du panier");
+    }, []),
+    isPending: false,
+  };
+
+  const clearCart = {
+    mutate: useCallback(() => {
+      setItems([]);
+      saveCart([]);
+      toast.success("Panier vidé");
+    }, []),
+    isPending: false,
+  };
+
+  const cartCount = items.reduce((s, i) => s + i.quantity, 0);
+
+  return { items, isLoading, cartCount, addToCart, updateQuantity, removeFromCart, clearCart };
 }

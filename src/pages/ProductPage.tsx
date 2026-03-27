@@ -1,7 +1,7 @@
 import { Layout } from "@/components/layout/Layout";
 import { ProductImage } from "@/components/shared/ProductCard";
-import { competitors, formatPrice, sellers, productColors, productIconMap } from "@/data/mock";
-import { useProducts, useProduct } from "@/hooks/useProducts";
+import { competitors, formatPrice, productColors, productIconMap } from "@/data/mock";
+import { useProducts, useProduct, useProductOffers } from "@/hooks/useProducts";
 import { useCart } from "@/hooks/useCart";
 import { useAuth } from "@/contexts/AuthContext";
 import { useParams, Link, useNavigate } from "react-router-dom";

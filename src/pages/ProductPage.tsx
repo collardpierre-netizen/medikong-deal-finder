@@ -31,8 +31,11 @@ const techSpecs = [
 
 export default function ProductPage() {
   const { slug } = useParams();
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const { data: product, isLoading } = useProduct(slug);
   const { data: products = [] } = useProducts();
+  const { addToCart } = useCart();
   const [tab, setTab] = useState<"mk" | "ext" | "market">("mk");
   const [qty, setQty] = useState(1);
   const [openAccordion, setOpenAccordion] = useState<number | null>(null);

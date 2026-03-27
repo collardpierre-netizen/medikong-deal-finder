@@ -46,6 +46,7 @@ import AdminLogistique from "./pages/admin/AdminLogistique";
 import AdminEquipe from "./pages/admin/AdminEquipe";
 import AdminParametres from "./pages/admin/AdminParametres";
 import AdminLogs from "./pages/admin/AdminLogs";
+import AdminLoginPage from "./pages/admin/AdminLoginPage";
 
 const queryClient = new QueryClient();
 

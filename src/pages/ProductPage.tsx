@@ -339,6 +339,7 @@ export default function ProductPage() {
                   </motion.div>
                 )}
               </AnimatePresence>
+              </div>{/* end offerSectionRef */}
 
               {/* Accordions */}
               <AnimatedSection className="mt-8 space-y-2" delay={0.1}>

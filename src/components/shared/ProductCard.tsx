@@ -95,9 +95,14 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
             <Plus size={14} />
           </button>
         </div>
-        <button className="flex-1 bg-mk-blue text-white text-sm font-semibold py-1.5 rounded-md hover:opacity-90 transition-opacity">
+        <motion.button
+          className="flex-1 bg-mk-blue text-white text-sm font-semibold py-1.5 rounded-md"
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.96 }}
+          transition={{ type: "spring", stiffness: 400, damping: 17 }}
+        >
           Ajouter
-        </button>
+        </motion.button>
       </div>
     </motion.div>
   );

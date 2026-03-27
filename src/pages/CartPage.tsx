@@ -7,24 +7,16 @@ import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { PageTransition } from "@/components/shared/PageTransition";
-
-// Generate a deterministic anonymous supplier code from product_id
-function supplierCode(seed: string): string {
-  let hash = 0;
-  for (let i = 0; i < seed.length; i++) hash = ((hash << 5) - hash + seed.charCodeAt(i)) | 0;
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  let code = "";
-  for (let i = 0; i < 6; i++) {
-    code += chars[Math.abs(hash * (i + 1) * 7) % chars.length];
-  }
-  return code;
-}
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 // MOV tiers per supplier
 const MOV_TIERS = [500, 1500, 5000, 10000];
 
 interface SupplierGroup {
-  code: string;
+  vendorId: string;
+  vendorName: string;
+  isVerified: boolean;
   items: ReturnType<typeof useCart>["items"];
   total: number;
   currentMov: number;
@@ -41,34 +33,53 @@ export default function CartPage() {
   const [expandedSuppliers, setExpandedSuppliers] = useState<Record<string, boolean>>({});
   const [filter, setFilter] = useState<FilterType>("all");
 
-  // Group items by "supplier" (we simulate suppliers based on product_id prefix)
+  // Fetch real vendor data for all vendor_ids in cart
+  const vendorIds = useMemo(() => [...new Set(items.map(i => i.vendor_id).filter(Boolean))], [items]);
+  const { data: vendors = [] } = useQuery({
+    queryKey: ["cart-vendors", vendorIds],
+    queryFn: async () => {
+      if (vendorIds.length === 0) return [];
+      const { data } = await supabase
+        .from("vendors")
+        .select("id, company_name, display_name, tier, status, franco_ht, min_order_ht")
+        .in("id", vendorIds as string[]);
+      return data || [];
+    },
+    enabled: vendorIds.length > 0,
+  });
+
+  const vendorMap = useMemo(() => new Map(vendors.map(v => [v.id, v])), [vendors]);
+
+  // Group items by vendor_id
   const supplierGroups = useMemo<SupplierGroup[]>(() => {
     const groups: Record<string, typeof items> = {};
     items.forEach(item => {
-      // Use first 8 chars of product_id as supplier key for grouping
-      const key = item.product_id.slice(0, 8);
+      const key = item.vendor_id || "unknown";
       if (!groups[key]) groups[key] = [];
       groups[key].push(item);
     });
-    return Object.entries(groups).map(([key, groupItems]) => {
-      const total = groupItems.reduce((s, i) => s + (i.product?.price || 0) * i.quantity, 0);
-      // Find applicable MOV tier
-      const currentMov = MOV_TIERS.find(t => total < t) || MOV_TIERS[0];
+    return Object.entries(groups).map(([vendorId, groupItems]) => {
+      const total = groupItems.reduce((s, i) => s + (i.price_ht || i.product?.price || 0) * i.quantity, 0);
+      const vendor = vendorMap.get(vendorId);
+      const vendorMov = Number(vendor?.min_order_ht || vendor?.franco_ht || MOV_TIERS[0]);
+      const currentMov = vendorMov > 0 ? vendorMov : MOV_TIERS[0];
       const remaining = Math.max(currentMov - total, 0);
       const progress = Math.min((total / currentMov) * 100, 100);
       return {
-        code: supplierCode(key),
+        vendorId,
+        vendorName: vendor?.display_name || vendor?.company_name || `Fournisseur #${vendorId.slice(0, 6).toUpperCase()}`,
+        isVerified: vendor?.status === "active",
         items: groupItems,
         total,
         currentMov,
         remaining,
         progress,
-        meetsMinimum: total >= MOV_TIERS[0],
+        meetsMinimum: total >= currentMov,
       };
     });
-  }, [items]);
+  }, [items, vendorMap]);
 
-  const totalCart = items.reduce((s, i) => s + (i.product?.price || 0) * i.quantity, 0);
+  const totalCart = items.reduce((s, i) => s + (i.price_ht || i.product?.price || 0) * i.quantity, 0);
   const readyCount = supplierGroups.filter(g => g.meetsMinimum).length;
   const belowCount = supplierGroups.filter(g => !g.meetsMinimum).length;
   const totalReady = supplierGroups.filter(g => g.meetsMinimum).reduce((s, g) => s + g.total, 0);
@@ -178,7 +189,7 @@ export default function CartPage() {
               <AnimatePresence mode="popLayout">
                 {filteredGroups.map((group, gi) => (
                   <motion.div
-                    key={group.code}
+                    key={group.vendorId}
                     className="border border-mk-line rounded-lg bg-white overflow-hidden"
                     initial={{ opacity: 0, y: 16 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -198,7 +209,7 @@ export default function CartPage() {
                         <div>
                           <div className="flex items-center gap-2 mb-1">
                             <span className="font-semibold text-mk-navy underline cursor-pointer">
-                              Fournisseur #{group.code}
+                              {group.vendorName}
                             </span>
                             <CheckCircle2 size={16} className="text-mk-green" />
                           </div>
@@ -281,11 +292,11 @@ export default function CartPage() {
                             <Package size={16} className="text-mk-sec" />
                           </div>
                           <button
-                            onClick={() => toggleSupplier(group.code)}
+                            onClick={() => toggleSupplier(group.vendorId)}
                             className="text-sm text-mk-blue font-medium flex items-center gap-1 hover:underline"
                           >
-                            {expandedSuppliers[group.code] ? "Masquer" : "Afficher"} les produits
-                            {expandedSuppliers[group.code] ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                            {expandedSuppliers[group.vendorId] ? "Masquer" : "Afficher"} les produits
+                            {expandedSuppliers[group.vendorId] ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                           </button>
                         </div>
                         <Link
@@ -298,7 +309,7 @@ export default function CartPage() {
 
                       {/* Expanded products */}
                       <AnimatePresence>
-                        {expandedSuppliers[group.code] && (
+                        {expandedSuppliers[group.vendorId] && (
                           <motion.div
                             initial={{ height: 0, opacity: 0 }}
                             animate={{ height: "auto", opacity: 1 }}
@@ -324,7 +335,7 @@ export default function CartPage() {
                                       {item.product?.unit && ` · ${item.product.unit}`}
                                     </p>
                                     <p className="text-sm text-mk-navy mt-0.5">
-                                      {formatPrice(item.product?.price || 0)}€ × {item.quantity} = <span className="font-bold">{formatPrice((item.product?.price || 0) * item.quantity)}€</span>
+                                      {formatPrice(item.price_ht || item.product?.price || 0)}€ × {item.quantity} = <span className="font-bold">{formatPrice((item.price_ht || item.product?.price || 0) * item.quantity)}€</span>
                                     </p>
                                   </div>
                                   <div className="flex items-center gap-2 shrink-0">
@@ -451,7 +462,7 @@ export default function CartPage() {
                 {/* Footer info */}
                 <div className="border-t border-mk-line px-5 py-3 text-center space-y-1">
                   <p className="text-xs text-mk-ter">
-                    Réf. panier #{supplierCode(items[0]?.product_id || "cart").slice(0, 7)}
+                    Réf. panier #{(items[0]?.product_id || "cart").slice(0, 7).toUpperCase()}
                   </p>
                   <button className="text-xs text-mk-blue hover:underline flex items-center gap-1 mx-auto">
                     💬 Besoin d'aide avec votre panier ?

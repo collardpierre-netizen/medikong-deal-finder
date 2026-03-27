@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 export default function CartDrawer() {
   const { items, cartCount, isDrawerOpen, closeDrawer, updateQuantity, removeFromCart } = useCart();
 
-  const total = items.reduce((s, i) => s + (i.product?.price || 0) * i.quantity, 0);
+  const total = items.reduce((s, i) => s + (i.price_ht || i.product?.price || 0) * i.quantity, 0);
   const francoTarget = 250;
   const francoProgress = Math.min((total / francoTarget) * 100, 100);
   const francoRemaining = Math.max(francoTarget - total, 0);
@@ -87,9 +87,9 @@ export default function CartDrawer() {
                               Conditionnement: {item.quantity}
                             </p>
                             <p className="text-sm text-mk-navy mt-1">
-                              <span className="font-medium">{formatPrice(item.product?.price || 0)}€</span>
+                              <span className="font-medium">{formatPrice(item.price_ht || item.product?.price || 0)}€</span>
                               <span className="text-mk-ter"> × {item.quantity} = </span>
-                              <span className="font-bold">{formatPrice((item.product?.price || 0) * item.quantity)}€</span>
+                              <span className="font-bold">{formatPrice((item.price_ht || item.product?.price || 0) * item.quantity)}€</span>
                             </p>
                           </div>
                           <div className="flex items-center gap-2 shrink-0">

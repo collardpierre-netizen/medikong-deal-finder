@@ -5,6 +5,8 @@ import { toast } from "sonner";
 export interface CartItem {
   id: string;
   product_id: string;
+  vendor_id?: string;
+  price_ht?: number;
   quantity: number;
   product?: {
     id: string;
@@ -46,14 +48,15 @@ export function useCart() {
   }, []);
 
   const addToCart = {
-    mutate: useCallback(({ productId, quantity = 1, productData }: { productId: string; quantity?: number; productData?: CartItem["product"] }) => {
+    mutate: useCallback(({ productId, quantity = 1, productData, vendorId, priceHt }: { productId: string; quantity?: number; productData?: CartItem["product"]; vendorId?: string; priceHt?: number }) => {
       setItems(prev => {
-        const existing = prev.find(i => i.product_id === productId);
+        // Match by product_id AND vendor_id for proper grouping
+        const existing = prev.find(i => i.product_id === productId && i.vendor_id === vendorId);
         let next: CartItem[];
         if (existing) {
-          next = prev.map(i => i.product_id === productId ? { ...i, quantity: i.quantity + quantity } : i);
+          next = prev.map(i => (i.product_id === productId && i.vendor_id === vendorId) ? { ...i, quantity: i.quantity + quantity } : i);
         } else {
-          next = [...prev, { id: crypto.randomUUID(), product_id: productId, quantity, product: productData }];
+          next = [...prev, { id: crypto.randomUUID(), product_id: productId, vendor_id: vendorId, price_ht: priceHt, quantity, product: productData }];
         }
         saveCart(next);
         return next;

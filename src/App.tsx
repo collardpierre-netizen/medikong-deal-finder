@@ -58,8 +58,9 @@ const App = () => (
             {/* Admin Back-Office */}
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<AdminDashboard />} />
-              <Route path="vendeurs" element={<AdminPlaceholder titleKey="sellers" />} />
-              <Route path="onboarding" element={<AdminPlaceholder titleKey="onboarding" />} />
+              <Route path="vendeurs" element={<AdminVendeurs />} />
+              <Route path="vendeurs/:id" element={<AdminVendeurDetail />} />
+              <Route path="onboarding" element={<AdminOnboarding />} />
               <Route path="produits" element={<AdminPlaceholder titleKey="products" />} />
               <Route path="categories" element={<AdminPlaceholder titleKey="categories" />} />
               <Route path="marques" element={<AdminPlaceholder titleKey="brands" />} />

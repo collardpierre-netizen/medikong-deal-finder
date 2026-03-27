@@ -1,9 +1,9 @@
 import { Layout } from "@/components/layout/Layout";
 import { useParams, Link } from "react-router-dom";
-import { brands } from "@/data/mock";
+import { brands, sellers, sellerPortfolios } from "@/data/mock";
 import { useProducts } from "@/hooks/useProducts";
 import { ProductCard } from "@/components/shared/ProductCard";
-import { Star, ExternalLink, Heart, Download, Upload, Users, Grid, List, Columns } from "lucide-react";
+import { Star, ExternalLink, Heart, Download, Upload, Users, Grid, List, Columns, Factory, Store, MapPin, ShoppingCart, Award } from "lucide-react";
 import { useState } from "react";
 
 const catChips = [
@@ -16,18 +16,21 @@ const catChips = [
 export default function BrandDetailPage() {
   const { slug } = useParams();
   const { data: products = [] } = useProducts();
-  const brand = brands.find(b => b.slug === slug) || { name: slug || "TENA", count: 234, slug: slug || "tena" };
+  const brand = brands.find(b => b.slug === slug) || { name: slug || "TENA", count: 234, slug: slug || "tena", manufacturer: "Essity AB", manufacturerSlug: "essity" };
   const [view, setView] = useState<"grid" | "list" | "trivago">("grid");
   const [showFilters, setShowFilters] = useState(false);
+
+  // Find sellers that carry this brand
+  const brandSellers = sellers.filter(s => sellerPortfolios[s.name]?.brands.includes(brand.name));
+
+  // Find sibling brands from same manufacturer
+  const siblingBrands = brands.filter(b => b.manufacturerSlug === brand.manufacturerSlug && b.slug !== brand.slug);
 
   return (
     <Layout>
       {/* Hero */}
       <div className="py-8 md:py-10" style={{ background: "linear-gradient(135deg, #EFF6FF, #F0FDF4)" }}>
         <div className="mk-container">
-          <div className="text-xs text-mk-sec mb-4">
-            <Link to="/" className="hover:text-mk-blue">Accueil</Link> &gt; <Link to="/marques" className="hover:text-mk-blue">Marques</Link> &gt; {brand.name}
-          </div>
           <div className="flex flex-col sm:flex-row items-start gap-4 md:gap-6">
             <div className="w-[80px] h-[80px] md:w-[100px] md:h-[100px] border border-mk-line bg-white rounded-lg flex items-center justify-center text-xs text-mk-ter shrink-0">Logo</div>
             <div>
@@ -38,6 +41,14 @@ export default function BrandDetailPage() {
                   <Star size={14} />
                 </div>
                 <span className="text-xs text-mk-sec">Belgique</span>
+              </div>
+              {/* Manufacturer link */}
+              <div className="flex items-center gap-2 mb-3">
+                <Factory size={14} className="text-mk-sec" />
+                <span className="text-sm text-mk-sec">Fabricant :</span>
+                <Link to={`/fabricant/${brand.manufacturerSlug}`} className="text-sm font-semibold text-mk-blue hover:underline">
+                  {brand.manufacturer}
+                </Link>
               </div>
               <p className="text-sm text-mk-sec max-w-[700px] mb-4">Marque leader en solutions d'hygiene et d'incontinence pour les professionnels de sante.</p>
               <div className="flex gap-2 flex-wrap">
@@ -53,7 +64,7 @@ export default function BrandDetailPage() {
       {/* Stats */}
       <div className="bg-mk-alt border-y border-mk-line py-4 overflow-x-auto">
         <div className="mk-container flex justify-center gap-6 md:gap-12 min-w-max">
-          {[["234+", "Produits"], ["4", "Categories"], ["-45%", "Economie moy."], ["4.4/5", "Note"], ["12+", "Fournisseurs"]].map(([v, l]) => (
+          {[["234+", "Produits"], ["4", "Categories"], ["-45%", "Economie moy."], ["4.4/5", "Note"], [String(brandSellers.length), "Vendeurs"]].map(([v, l]) => (
             <div key={l} className="text-center">
               <div className="text-lg font-bold text-mk-navy">{v}</div>
               <div className="text-xs text-mk-sec">{l}</div>
@@ -63,6 +74,48 @@ export default function BrandDetailPage() {
       </div>
 
       <div className="mk-container py-6 md:py-8">
+        {/* Sellers for this brand */}
+        {brandSellers.length > 0 && (
+          <div className="mb-6">
+            <h2 className="text-lg font-bold text-mk-navy mb-3 flex items-center gap-2"><Store size={18} /> Vendeurs proposant {brand.name}</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {brandSellers.map(s => (
+                <div key={s.name} className="border border-mk-line rounded-lg p-4 flex items-center gap-3 hover:shadow-sm transition-shadow">
+                  <div className="w-10 h-10 rounded-full bg-mk-alt flex items-center justify-center text-sm font-bold text-mk-navy shrink-0">
+                    {s.name[0]}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold text-mk-navy">{s.name}</span>
+                      {s.verified && <span className="text-[10px] bg-mk-deal text-mk-green px-1.5 py-0.5 rounded font-medium">Vérifié</span>}
+                      {s.topRated && <span className="text-[10px] bg-yellow-50 text-yellow-700 px-1.5 py-0.5 rounded font-medium">Top</span>}
+                    </div>
+                    <div className="flex items-center gap-3 text-[11px] text-mk-sec mt-0.5">
+                      <span className="flex items-center gap-1"><MapPin size={10} />{s.location}</span>
+                      <span className="flex items-center gap-1"><Star size={10} fill="currentColor" className="text-yellow-500" />{s.rating}</span>
+                      <span className="flex items-center gap-1"><ShoppingCart size={10} />{s.orders.toLocaleString("fr-BE")}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Sibling brands from same manufacturer */}
+        {siblingBrands.length > 0 && (
+          <div className="mb-6">
+            <h2 className="text-lg font-bold text-mk-navy mb-3 flex items-center gap-2"><Award size={18} /> Autres marques de {brand.manufacturer}</h2>
+            <div className="flex gap-2 flex-wrap">
+              {siblingBrands.map(b => (
+                <Link key={b.slug} to={`/marque/${b.slug}`} className="border border-mk-line rounded-full px-4 py-1.5 text-sm text-mk-sec hover:border-mk-blue hover:text-mk-blue transition-colors">
+                  {b.name} ({b.count})
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Import CTA */}
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">

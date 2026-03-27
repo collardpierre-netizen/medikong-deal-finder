@@ -4,12 +4,13 @@ import AdminTopBar from "@/components/admin/AdminTopBar";
 import KpiCard from "@/components/admin/KpiCard";
 import StatusBadge from "@/components/admin/StatusBadge";
 import { useI18n } from "@/contexts/I18nContext";
+import { sellerPortfolios } from "@/data/mock";
 import {
   ArrowLeft, Building2, Mail, Phone, Globe, MapPin,
   DollarSign, ShoppingCart, Star, TrendingUp, Percent,
   RotateCcw, Package, Award, Shield, Users, FileText,
   MessageSquare, StickyNote, Activity, CheckCircle2,
-  Clock, AlertTriangle, Download, Upload,
+  Clock, AlertTriangle, Download, Upload, Tag, Factory,
 } from "lucide-react";
 
 // Mock seller data

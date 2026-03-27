@@ -2,6 +2,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function RegisterPage() {
   const [step, setStep] = useState(1);
@@ -9,6 +10,7 @@ export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [companyName, setCompanyName] = useState("");
   const [vatNumber, setVatNumber] = useState("");
   const [country, setCountry] = useState("Belgique");
@@ -57,7 +59,15 @@ export default function RegisterPage() {
             <div><label className="text-xs text-mk-sec mb-1 block">Nom complet</label><input value={fullName} onChange={e => setFullName(e.target.value)} className="w-full border border-mk-line rounded-md px-3 py-2.5 text-sm" /></div>
             <div><label className="text-xs text-mk-sec mb-1 block">Email</label><input value={email} onChange={e => setEmail(e.target.value)} type="email" className="w-full border border-mk-line rounded-md px-3 py-2.5 text-sm" /></div>
             <div><label className="text-xs text-mk-sec mb-1 block">Telephone</label><input value={phone} onChange={e => setPhone(e.target.value)} type="tel" className="w-full border border-mk-line rounded-md px-3 py-2.5 text-sm" placeholder="+32" /></div>
-            <div><label className="text-xs text-mk-sec mb-1 block">Mot de passe</label><input value={password} onChange={e => setPassword(e.target.value)} type="password" className="w-full border border-mk-line rounded-md px-3 py-2.5 text-sm" /></div>
+            <div>
+              <label className="text-xs text-mk-sec mb-1 block">Mot de passe</label>
+              <div className="relative">
+                <input value={password} onChange={e => setPassword(e.target.value)} type={showPassword ? "text" : "password"} className="w-full border border-mk-line rounded-md px-3 py-2.5 text-sm pr-10" />
+                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-mk-sec hover:text-mk-navy transition-colors">
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
             <button onClick={() => setStep(2)} disabled={!email || !password || !fullName} className="w-full bg-mk-navy text-white font-bold py-3 rounded-md text-sm disabled:opacity-50">Continuer</button>
           </div>
         ) : (

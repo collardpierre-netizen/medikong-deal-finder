@@ -47,6 +47,8 @@ import AdminEquipe from "./pages/admin/AdminEquipe";
 import AdminParametres from "./pages/admin/AdminParametres";
 import AdminLogs from "./pages/admin/AdminLogs";
 import AdminLoginPage from "./pages/admin/AdminLoginPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 
 const queryClient = new QueryClient();
 
@@ -74,8 +76,10 @@ const App = () => (
             <Route path="/categorie/:slug" element={<CategoryPage />} />
             <Route path="/promotions" element={<PromotionsPage />} />
             <Route path="/seller-onboarding" element={<SellerOnboardingPage />} />
+            <Route path="/mot-de-passe-oublie" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-            {/* Admin Login */}
+
             <Route path="/admin/login" element={<AdminLoginPage />} />
 
             {/* Admin Back-Office */}

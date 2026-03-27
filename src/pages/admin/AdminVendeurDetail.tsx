@@ -301,6 +301,7 @@ const AdminVendeurDetail = () => {
         );
       })()}
 
+      {activeTab === "team" && (
         <div className="rounded-[10px] overflow-hidden" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
           <table className="w-full text-left">
             <thead>

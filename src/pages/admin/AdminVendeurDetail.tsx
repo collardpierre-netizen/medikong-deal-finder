@@ -229,9 +229,9 @@ const AdminVendeurDetail = () => {
                 <tr key={offer.product_id} style={{ borderBottom: "1px solid #F1F5F9" }}>
                   <td className="px-4 py-3 text-[13px] font-medium" style={{ color: "#1D2530" }}>{offer.products?.product_name || "—"}</td>
                   <td className="px-4 py-3 text-[12px]" style={{ color: "#616B7C" }}>{offer.products?.brand || "—"}</td>
-                  <td className="px-4 py-3 text-[13px] font-bold" style={{ color: "#1D2530" }}>—</td>
-                  <td className="px-4 py-3 text-[12px]" style={{ color: "#616B7C" }}>—</td>
-                  <td className="px-4 py-3"><StatusBadge status="active" /></td>
+                  <td className="px-4 py-3 text-[13px] font-bold" style={{ color: "#1D2530" }}>{offer.price_ht ? `${offer.price_ht} €` : "—"}</td>
+                  <td className="px-4 py-3 text-[12px]" style={{ color: "#616B7C" }}>{offer.stock ?? "—"}</td>
+                  <td className="px-4 py-3"><StatusBadge status={offer.status || "active"} /></td>
                 </tr>
               ))}
             </tbody>

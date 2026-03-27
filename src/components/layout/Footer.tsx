@@ -4,8 +4,8 @@ export function Footer() {
   return (
     <footer className="border-t border-mk-line mt-10">
       <div className="mk-container py-10">
-        <div className="grid grid-cols-4 gap-8">
-          <div className="col-span-1">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+          <div className="col-span-2 md:col-span-1">
             <div className="flex items-center mb-3">
               <span className="text-mk-navy font-bold text-lg">MediKong</span>
               <span className="text-mk-blue font-bold text-lg">.pro</span>
@@ -35,9 +35,9 @@ export function Footer() {
         </div>
       </div>
       <div className="border-t border-mk-line py-4">
-        <div className="mk-container flex items-center justify-between text-xs text-mk-ter">
-          <span>MediKong 2026 — Plateforme B2B reservee aux professionnels de sante — Conformite FAGG/AFMPS</span>
-          <div className="flex items-center gap-3">
+        <div className="mk-container flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-mk-ter">
+          <span className="text-center md:text-left">MediKong 2026 — Plateforme B2B reservee aux professionnels de sante — Conformite FAGG/AFMPS</span>
+          <div className="flex items-center gap-2 flex-wrap justify-center">
             {["Visa", "Mastercard", "Bancontact", "SEPA", "Mondu", "Stripe"].map(p => (
               <span key={p} className="px-2 py-1 border border-mk-line rounded text-[10px] font-medium text-mk-sec">{p}</span>
             ))}

@@ -14,15 +14,15 @@ export function SubNav() {
   const { pathname } = useLocation();
 
   return (
-    <div className="border-b border-mk-line">
-      <div className="mk-container flex items-center gap-1">
+    <div className="border-b border-mk-line overflow-x-auto">
+      <div className="mk-container flex items-center gap-1 min-w-max">
         {tabs.map(tab => {
           const active = pathname === tab.path || (tab.path === "/" && pathname === "/");
           return (
             <Link
               key={tab.label}
               to={tab.path}
-              className={`px-4 py-3 text-sm font-medium transition-colors relative ${
+              className={`px-3 md:px-4 py-3 text-xs md:text-sm font-medium transition-colors relative whitespace-nowrap ${
                 tab.pink ? "text-mk-pink" : active ? "text-mk-navy font-bold" : "text-mk-sec hover:text-mk-text"
               }`}
             >

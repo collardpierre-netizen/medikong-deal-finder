@@ -94,6 +94,8 @@ const AdminVendeurDetail = () => {
         .eq("vendor_id", id!);
       return offers || [];
     },
+    enabled: !!id,
+  });
 
   if (isLoading) {
     return <div className="py-12 text-center text-[13px]" style={{ color: "#8B95A5" }}>Chargement...</div>;

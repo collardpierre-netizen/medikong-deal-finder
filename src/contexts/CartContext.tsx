@@ -119,7 +119,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
         saveCart(next);
         return next;
       });
-      toast.success("Produit ajouté au panier");
       setIsDrawerOpen(true);
     },
     isPending: false,

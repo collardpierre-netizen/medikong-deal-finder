@@ -1,26 +1,7 @@
 import { Shield, Droplets, Wind, Heart, Pill, Stethoscope, Syringe, Thermometer, Scissors, Package, FlaskConical, Bandage, Hand, Eye, Pipette, Beaker } from "lucide-react";
 
-export interface Product {
-  id: number;
-  slug: string;
-  name: string;
-  brand: string;
-  cnk: string;
-  ean: string;
-  price: number;
-  pub: number;
-  pct: number;
-  sellers: number;
-  rating: number;
-  reviews: number;
-  best: string;
-  unit: string;
-  stock: boolean;
-  mk: boolean;
-  category?: string;
-  color?: string;
-  iconName?: string;
-}
+// Re-export Product type from hooks
+export type { Product } from "@/hooks/useProducts";
 
 // Color palette for product placeholders
 export const productColors: Record<string, { bg: string; fg: string }> = {

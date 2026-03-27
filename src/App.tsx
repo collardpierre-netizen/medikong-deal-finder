@@ -85,8 +85,8 @@ const App = () => (
               <Route path="veille-prix" element={<AdminVeillePrix />} />
               <Route path="leads" element={<AdminLeads />} />
               <Route path="analytics" element={<AdminAnalytics />} />
-              <Route path="reglementaire" element={<AdminPlaceholder titleKey="regulatory" />} />
-              <Route path="import-export" element={<AdminPlaceholder titleKey="importExport" />} />
+              <Route path="reglementaire" element={<AdminReglementaire />} />
+              <Route path="import-export" element={<AdminImportExport />} />
               <Route path="crm" element={<AdminPlaceholder titleKey="crm" />} />
               <Route path="cms" element={<AdminPlaceholder titleKey="cms" />} />
               <Route path="logistique" element={<AdminPlaceholder titleKey="logistics" />} />

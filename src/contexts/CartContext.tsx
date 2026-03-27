@@ -104,6 +104,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
           });
         });
     }
+  }, []);
 
   const addToCart = useMemo(() => ({
     mutate: ({ productId, quantity = 1, productData, vendorId, priceHt }: { productId: string; quantity?: number; productData?: CartItem["product"]; vendorId?: string; priceHt?: number }) => {

@@ -38,9 +38,12 @@ export default function ProductPage() {
   const [buyPrice, setBuyPrice] = useState("");
   const [sellPrice, setSellPrice] = useState("");
 
-  const margin = sellPrice && buyPrice ? (((parseFloat(sellPrice) - parseFloat(buyPrice)) / parseFloat(sellPrice)) * 100).toFixed(1) : "0";
+  const effectiveBuyPrice = buyPrice || (product ? product.price.toString() : "0");
+  const effectiveSellPrice = sellPrice || (product ? (product.price * 1.7).toFixed(2) : "0");
+  const margin = effectiveSellPrice && effectiveBuyPrice ? (((parseFloat(effectiveSellPrice) - parseFloat(effectiveBuyPrice)) / parseFloat(effectiveSellPrice)) * 100).toFixed(1) : "0";
 
   const handleCopy = () => {
+    if (!product) return;
     navigator.clipboard.writeText(product.ean);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
@@ -51,6 +54,13 @@ export default function ProductPage() {
     { key: "ext" as const, label: "Externes", fullLabel: "Offres externes", icon: ExternalLink, count: 3 },
     { key: "market" as const, label: "Marche", fullLabel: "Prix du marche", icon: Eye, count: 5 },
   ];
+
+  if (isLoading) {
+    return <Layout><div className="mk-container py-20 text-center text-mk-sec">Chargement...</div></Layout>;
+  }
+  if (!product) {
+    return <Layout><div className="mk-container py-20 text-center text-mk-sec">Produit introuvable</div></Layout>;
+  }
 
   return (
     <Layout>

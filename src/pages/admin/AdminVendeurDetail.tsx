@@ -264,7 +264,43 @@ const AdminVendeurDetail = () => {
         </div>
       )}
 
-      {activeTab === "team" && (
+      {activeTab === "portfolio" && (() => {
+        const portfolio = sellerPortfolios[seller.company] || { brands: [], manufacturers: [] };
+        return (
+          <div className="space-y-4">
+            {/* Brands */}
+            <div className="p-5 rounded-[10px]" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
+              <h3 className="text-[14px] font-bold mb-4 flex items-center gap-2" style={{ color: "#1D2530" }}>
+                <Tag size={16} style={{ color: "#1B5BDA" }} /> Marques en portefeuille ({portfolio.brands.length})
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {portfolio.brands.map((b) => (
+                  <span key={b} className="px-3 py-1.5 rounded-full text-[12px] font-medium" style={{ backgroundColor: "#EFF6FF", color: "#1B5BDA", border: "1px solid #DBEAFE" }}>
+                    {b}
+                  </span>
+                ))}
+                {portfolio.brands.length === 0 && <span className="text-[12px]" style={{ color: "#8B95A5" }}>Aucune marque enregistrée</span>}
+              </div>
+            </div>
+
+            {/* Manufacturers */}
+            <div className="p-5 rounded-[10px]" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
+              <h3 className="text-[14px] font-bold mb-4 flex items-center gap-2" style={{ color: "#1D2530" }}>
+                <Factory size={16} style={{ color: "#7C3AED" }} /> Fabricants ({portfolio.manufacturers.length})
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {portfolio.manufacturers.map((m) => (
+                  <span key={m} className="px-3 py-1.5 rounded-full text-[12px] font-medium" style={{ backgroundColor: "#F3F0FF", color: "#7C3AED", border: "1px solid #DDD6FE" }}>
+                    {m}
+                  </span>
+                ))}
+                {portfolio.manufacturers.length === 0 && <span className="text-[12px]" style={{ color: "#8B95A5" }}>Aucun fabricant enregistré</span>}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
         <div className="rounded-[10px] overflow-hidden" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
           <table className="w-full text-left">
             <thead>

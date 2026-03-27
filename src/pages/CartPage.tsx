@@ -463,7 +463,7 @@ export default function CartPage() {
                 {/* Footer info */}
                 <div className="border-t border-mk-line px-5 py-3 text-center space-y-1">
                   <p className="text-xs text-mk-ter">
-                    Réf. panier #{supplierCode(items[0]?.product_id || "cart").slice(0, 7)}
+                    Réf. panier #{(items[0]?.product_id || "cart").slice(0, 7).toUpperCase()}
                   </p>
                   <button className="text-xs text-mk-blue hover:underline flex items-center gap-1 mx-auto">
                     💬 Besoin d'aide avec votre panier ?

@@ -86,7 +86,9 @@ export function Navbar() {
         <div className="flex md:hidden items-center gap-3 shrink-0">
           <Link to="/panier" className="relative">
             <ShoppingCart className="text-white" size={18} />
-            <span className="absolute -top-1.5 -right-2 bg-mk-red text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">3</span>
+            {cartCount > 0 && (
+              <span className="absolute -top-1.5 -right-2 bg-mk-red text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{cartCount}</span>
+            )}
           </Link>
           <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="text-white">
             {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}

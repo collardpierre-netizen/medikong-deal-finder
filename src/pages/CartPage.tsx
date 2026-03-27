@@ -2,18 +2,92 @@ import { Layout } from "@/components/layout/Layout";
 import { formatPrice } from "@/data/mock";
 import { useCart } from "@/hooks/useCart";
 import { useAuth } from "@/contexts/AuthContext";
-import { Download, Upload, Trash2, Check, Minus, Plus, ShoppingCart } from "lucide-react";
-import { useState } from "react";
+import { Download, Upload, Trash2, Minus, Plus, ShoppingCart, ChevronDown, ChevronUp, Package, AlertTriangle, HelpCircle, CheckCircle2, Store } from "lucide-react";
+import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { PageTransition } from "@/components/shared/PageTransition";
 
+// Generate a deterministic anonymous supplier code from product_id
+function supplierCode(seed: string): string {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) hash = ((hash << 5) - hash + seed.charCodeAt(i)) | 0;
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  let code = "";
+  for (let i = 0; i < 6; i++) {
+    code += chars[Math.abs(hash * (i + 1) * 7) % chars.length];
+  }
+  return code;
+}
+
+// MOV tiers per supplier
+const MOV_TIERS = [500, 1500, 5000, 10000];
+
+interface SupplierGroup {
+  code: string;
+  items: ReturnType<typeof useCart>["items"];
+  total: number;
+  currentMov: number;
+  remaining: number;
+  progress: number;
+  meetsMinimum: boolean;
+}
+
+type FilterType = "all" | "ready" | "below" | "changes";
+
 export default function CartPage() {
   const { user } = useAuth();
   const { items, isLoading, cartCount, updateQuantity, removeFromCart, clearCart } = useCart();
-  const [showProducts, setShowProducts] = useState(true);
+  const [expandedSuppliers, setExpandedSuppliers] = useState<Record<string, boolean>>({});
+  const [filter, setFilter] = useState<FilterType>("all");
 
-  const total = items.reduce((s, i) => s + (i.product?.price || 0) * i.quantity, 0);
+  // Group items by "supplier" (we simulate suppliers based on product_id prefix)
+  const supplierGroups = useMemo<SupplierGroup[]>(() => {
+    const groups: Record<string, typeof items> = {};
+    items.forEach(item => {
+      // Use first 8 chars of product_id as supplier key for grouping
+      const key = item.product_id.slice(0, 8);
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(item);
+    });
+    return Object.entries(groups).map(([key, groupItems]) => {
+      const total = groupItems.reduce((s, i) => s + (i.product?.price || 0) * i.quantity, 0);
+      // Find applicable MOV tier
+      const currentMov = MOV_TIERS.find(t => total < t) || MOV_TIERS[0];
+      const remaining = Math.max(currentMov - total, 0);
+      const progress = Math.min((total / currentMov) * 100, 100);
+      return {
+        code: supplierCode(key),
+        items: groupItems,
+        total,
+        currentMov,
+        remaining,
+        progress,
+        meetsMinimum: total >= MOV_TIERS[0],
+      };
+    });
+  }, [items]);
+
+  const totalCart = items.reduce((s, i) => s + (i.product?.price || 0) * i.quantity, 0);
+  const readyCount = supplierGroups.filter(g => g.meetsMinimum).length;
+  const belowCount = supplierGroups.filter(g => !g.meetsMinimum).length;
+  const totalReady = supplierGroups.filter(g => g.meetsMinimum).reduce((s, g) => s + g.total, 0);
+
+  const filteredGroups = supplierGroups.filter(g => {
+    if (filter === "ready") return g.meetsMinimum;
+    if (filter === "below") return !g.meetsMinimum;
+    return true;
+  });
+
+  const toggleSupplier = (code: string) => {
+    setExpandedSuppliers(prev => ({ ...prev, [code]: !prev[code] }));
+  };
+
+  const filters: { key: FilterType; label: string; count: number }[] = [
+    { key: "ready", label: "Prêt au checkout", count: readyCount },
+    { key: "below", label: "Sous le minimum", count: belowCount },
+    { key: "changes", label: "Avec modifications", count: 0 },
+  ];
 
   if (!user) {
     return (
@@ -48,122 +122,341 @@ export default function CartPage() {
     <Layout>
       <PageTransition>
         <div className="mk-container py-6 md:py-8">
+          {/* Header */}
           <motion.div
             className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-3"
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
           >
-            <h1 className="text-2xl md:text-[28px] font-bold text-mk-navy">Votre panier ({cartCount} article{cartCount > 1 ? "s" : ""})</h1>
-            <div className="flex gap-2 flex-wrap">
-              <motion.button
-                className="border border-mk-red text-mk-red text-sm px-3 py-1.5 rounded-md flex items-center gap-1.5"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+            <h1 className="text-2xl md:text-[28px] font-bold text-mk-navy">
+              Votre panier ({supplierGroups.length} fournisseur{supplierGroups.length > 1 ? "s" : ""})
+            </h1>
+            <div className="flex gap-3 flex-wrap text-sm">
+              <button className="flex items-center gap-1.5 text-mk-navy hover:underline">
+                <Download size={14} /> Télécharger
+              </button>
+              <span className="text-mk-line">|</span>
+              <button className="flex items-center gap-1.5 text-mk-navy hover:underline">
+                <Upload size={14} /> Importer une liste
+              </button>
+              <span className="text-mk-line">|</span>
+              <button
+                className="flex items-center gap-1.5 text-mk-red hover:underline"
                 onClick={() => clearCart.mutate()}
               >
-                <Trash2 size={13} /> Vider le panier
-              </motion.button>
+                <Trash2 size={14} /> Vider
+              </button>
             </div>
           </motion.div>
 
-          <div className="flex flex-col lg:flex-row gap-6">
-            <div className="flex-1 min-w-0">
-              <motion.div
-                className="border border-mk-line rounded-lg"
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.1 }}
+          {/* Filter pills */}
+          <motion.div
+            className="flex items-center gap-3 mb-6 flex-wrap"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.05 }}
+          >
+            <span className="text-sm font-medium text-mk-sec">Filtrer fournisseurs:</span>
+            {filters.map(f => (
+              <button
+                key={f.key}
+                onClick={() => setFilter(filter === f.key ? "all" : f.key)}
+                className={`px-4 py-2 rounded-full text-sm border transition-colors ${
+                  filter === f.key
+                    ? "bg-mk-navy text-white border-mk-navy"
+                    : "bg-white text-mk-navy border-mk-line hover:border-mk-navy"
+                }`}
               >
-                <div className="p-4 flex items-center justify-between">
-                  <span className="font-semibold text-mk-navy">{items.length} produit{items.length > 1 ? "s" : ""}</span>
-                  <button onClick={() => setShowProducts(!showProducts)} className="text-xs text-mk-blue">
-                    {showProducts ? "Masquer" : "Afficher"}
-                  </button>
-                </div>
-                <AnimatePresence>
-                  {showProducts && items.map((item, i) => (
-                    <motion.div
-                      key={item.id}
-                      className="px-4 py-3 border-t border-mk-line flex items-center gap-3 md:gap-4 flex-wrap"
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      transition={{ duration: 0.25, delay: i * 0.05 }}
-                    >
-                      <div className="w-12 h-12 bg-mk-alt rounded-md flex items-center justify-center shrink-0">
-                        <ShoppingCart size={20} className="text-mk-sec" />
+                {f.label} ({f.count})
+              </button>
+            ))}
+          </motion.div>
+
+          <div className="flex flex-col lg:flex-row gap-6">
+            {/* Supplier cards */}
+            <div className="flex-1 min-w-0 space-y-4">
+              <AnimatePresence mode="popLayout">
+                {filteredGroups.map((group, gi) => (
+                  <motion.div
+                    key={group.code}
+                    className="border border-mk-line rounded-lg bg-white overflow-hidden"
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -12 }}
+                    transition={{ delay: gi * 0.06 }}
+                  >
+                    {/* Stock status */}
+                    <div className="px-5 py-3 border-b border-mk-line bg-mk-alt flex items-center gap-2">
+                      <Store size={16} className="text-mk-navy" />
+                      <span className="text-sm font-medium text-mk-navy">En stock</span>
+                      <HelpCircle size={13} className="text-mk-ter" />
+                    </div>
+
+                    {/* Supplier info + MOV */}
+                    <div className="px-5 py-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-semibold text-mk-navy underline cursor-pointer">
+                              Fournisseur #{group.code}
+                            </span>
+                            <CheckCircle2 size={16} className="text-mk-green" />
+                          </div>
+                          <p className="text-sm text-mk-sec">
+                            Total: <span className="font-semibold text-mk-navy">{formatPrice(group.total)}€</span>
+                            <span className="mx-1.5">|</span>
+                            {group.items.length} produit{group.items.length > 1 ? "s" : ""}
+                          </p>
+                        </div>
+
+                        {/* MOV progress */}
+                        <div className="flex items-center gap-3 sm:min-w-[280px]">
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between text-xs mb-1">
+                              <span className="text-mk-sec flex items-center gap-1">
+                                Minimum: <span className="font-medium text-mk-navy">{formatPrice(group.currentMov)}€</span>
+                                <HelpCircle size={11} className="text-mk-ter" />
+                              </span>
+                              <span className="text-mk-sec">
+                                {group.remaining > 0
+                                  ? `${formatPrice(group.remaining)}€ restant`
+                                  : "✓ Atteint"
+                                }
+                              </span>
+                            </div>
+                            <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden relative">
+                              <motion.div
+                                className="h-full rounded-full"
+                                style={{
+                                  backgroundColor: group.meetsMinimum ? "#16A34A" : "#F59E0B",
+                                }}
+                                initial={{ width: 0 }}
+                                animate={{ width: `${group.progress}%` }}
+                                transition={{ duration: 0.6, ease: "easeOut" }}
+                              />
+                              {/* Dot at end */}
+                              <motion.div
+                                className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full border-2 border-white"
+                                style={{
+                                  backgroundColor: group.meetsMinimum ? "#16A34A" : "#F59E0B",
+                                  left: `calc(${Math.min(group.progress, 97)}% - 6px)`,
+                                }}
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                transition={{ delay: 0.5 }}
+                              />
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => {
+                              // Remove all items from this supplier group
+                              group.items.forEach(item => removeFromCart.mutate(item.id));
+                            }}
+                            className="text-mk-ter hover:text-mk-red transition-colors p-1"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
                       </div>
-                      <div className="flex-1 min-w-[120px]">
-                        <Link to={`/produit/${item.product?.slug}`} className="text-sm font-medium text-mk-text truncate block hover:text-mk-blue">
-                          {item.product?.name || "Produit"}
+
+                      {/* MOV tiers */}
+                      <div className="flex items-center gap-2 text-xs text-mk-sec mb-4 border-t border-mk-line pt-3">
+                        <span className="flex items-center gap-1 font-medium">
+                          Paliers MOV: <HelpCircle size={11} className="text-mk-ter" />
+                        </span>
+                        {MOV_TIERS.map((tier, i) => (
+                          <span key={tier} className="flex items-center gap-1">
+                            {i > 0 && <span className="text-mk-line">|</span>}
+                            <span className={group.total >= tier ? "font-semibold text-mk-navy" : ""}>
+                              {formatPrice(tier)}€
+                            </span>
+                          </span>
+                        ))}
+                      </div>
+
+                      {/* Products toggle */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-mk-alt rounded border border-mk-line flex items-center justify-center">
+                            <Package size={16} className="text-mk-sec" />
+                          </div>
+                          <button
+                            onClick={() => toggleSupplier(group.code)}
+                            className="text-sm text-mk-blue font-medium flex items-center gap-1 hover:underline"
+                          >
+                            {expandedSuppliers[group.code] ? "Masquer" : "Afficher"} les produits
+                            {expandedSuppliers[group.code] ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                          </button>
+                        </div>
+                        <Link
+                          to="/recherche"
+                          className="border border-mk-line text-mk-navy text-sm font-medium px-4 py-2 rounded-md hover:bg-mk-alt transition-colors"
+                        >
+                          Voir inventaire fournisseur
                         </Link>
-                        <p className="text-xs text-mk-ter">{item.product?.brand} · GTIN: {item.product?.gtin || "N/A"}</p>
                       </div>
-                      <span className="text-xs text-mk-sec hidden md:block">{item.product?.unit || ""}</span>
-                      <div className="flex items-center border border-mk-line rounded-md">
-                        <button
-                          className="px-2 py-1"
-                          onClick={() => updateQuantity.mutate({ itemId: item.id, quantity: item.quantity - 1 })}
-                        >
-                          <Minus size={12} />
-                        </button>
-                        <span className="px-2 text-sm">{item.quantity}</span>
-                        <button
-                          className="px-2 py-1"
-                          onClick={() => updateQuantity.mutate({ itemId: item.id, quantity: item.quantity + 1 })}
-                        >
-                          <Plus size={12} />
-                        </button>
-                      </div>
-                      <span className="font-bold text-mk-navy">{formatPrice((item.product?.price || 0) * item.quantity)} EUR</span>
-                      <motion.button
-                        className="text-mk-red"
-                        whileHover={{ scale: 1.2 }}
-                        whileTap={{ scale: 0.8 }}
-                        onClick={() => removeFromCart.mutate(item.id)}
-                      >
-                        <Trash2 size={14} />
-                      </motion.button>
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
-              </motion.div>
+
+                      {/* Expanded products */}
+                      <AnimatePresence>
+                        {expandedSuppliers[group.code] && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.25 }}
+                            className="overflow-hidden"
+                          >
+                            <div className="mt-4 border border-mk-line rounded-lg divide-y divide-mk-line">
+                              {group.items.map(item => (
+                                <div key={item.id} className="px-4 py-3 flex items-center gap-3 flex-wrap">
+                                  <div className="w-10 h-10 bg-mk-alt rounded flex items-center justify-center shrink-0">
+                                    <Package size={16} className="text-mk-sec" />
+                                  </div>
+                                  <div className="flex-1 min-w-[140px]">
+                                    <Link
+                                      to={`/produit/${item.product?.slug}`}
+                                      className="text-sm font-medium text-mk-navy hover:text-mk-blue block truncate"
+                                    >
+                                      {item.product?.name || "Produit"}
+                                    </Link>
+                                    <p className="text-xs text-mk-ter">
+                                      CNK: {item.product?.gtin?.slice(-7) || "N/A"}
+                                      {item.product?.unit && ` · ${item.product.unit}`}
+                                    </p>
+                                    <p className="text-sm text-mk-navy mt-0.5">
+                                      {formatPrice(item.product?.price || 0)}€ × {item.quantity} = <span className="font-bold">{formatPrice((item.product?.price || 0) * item.quantity)}€</span>
+                                    </p>
+                                  </div>
+                                  <div className="flex items-center gap-2 shrink-0">
+                                    <div className="flex items-center border border-mk-line rounded-md">
+                                      <button
+                                        className="px-2 py-1.5 text-mk-sec hover:text-mk-navy"
+                                        onClick={() => updateQuantity.mutate({ itemId: item.id, quantity: item.quantity - 1 })}
+                                      >
+                                        <Minus size={13} />
+                                      </button>
+                                      <span className="px-2.5 text-sm font-medium min-w-[32px] text-center">{item.quantity}</span>
+                                      <button
+                                        className="px-2 py-1.5 text-mk-sec hover:text-mk-navy"
+                                        onClick={() => updateQuantity.mutate({ itemId: item.id, quantity: item.quantity + 1 })}
+                                      >
+                                        <Plus size={13} />
+                                      </button>
+                                    </div>
+                                    <button
+                                      className="text-mk-ter hover:text-mk-red transition-colors p-1"
+                                      onClick={() => removeFromCart.mutate(item.id)}
+                                    >
+                                      <Trash2 size={15} />
+                                    </button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
             </div>
 
-            {/* Sidebar */}
+            {/* Cart summary sidebar */}
             <motion.aside
-              className="w-full lg:w-[320px] shrink-0"
+              className="w-full lg:w-[360px] shrink-0"
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
+              transition={{ duration: 0.4, delay: 0.2 }}
             >
-              <div className="border border-mk-line rounded-lg p-5 lg:sticky lg:top-20">
-                <h3 className="text-lg font-bold text-mk-navy mb-4">Récapitulatif panier</h3>
-                <motion.div
-                  className="text-2xl font-bold text-mk-navy mb-4"
-                  key={total}
-                  initial={{ scale: 1.1, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                >
-                  {formatPrice(total)} EUR
-                </motion.div>
-                <div className="space-y-2 text-sm mb-4">
-                  <div className="flex justify-between"><span className="text-mk-sec">Sous-total</span><span className="text-mk-navy">{formatPrice(total)} EUR</span></div>
-                  <div className="flex justify-between"><span className="text-mk-sec">Livraison</span><span className="text-mk-green">Incluse</span></div>
-                  <div className="flex justify-between"><span className="text-mk-sec">TVA</span><span className="text-mk-sec">Au checkout</span></div>
-                </div>
-                <div className="border-t border-mk-line pt-3 mb-4">
-                  <div className="flex justify-between font-bold text-mk-navy">
-                    <span>Total commande</span><span>{formatPrice(total)} EUR</span>
+              <div className="border border-mk-line rounded-lg bg-white lg:sticky lg:top-20">
+                <div className="p-5">
+                  <h3 className="text-lg font-bold text-mk-navy mb-4">Récapitulatif panier</h3>
+
+                  {/* Warning if suppliers below minimum */}
+                  {belowCount > 0 && (
+                    <div className="flex items-start gap-2 mb-4 p-3 bg-amber-50 rounded-lg border border-amber-200">
+                      <AlertTriangle size={16} className="text-amber-500 mt-0.5 shrink-0" />
+                      <div>
+                        <p className="text-sm font-semibold text-mk-navy">
+                          {belowCount} fournisseur{belowCount > 1 ? "s" : ""} sous le minimum
+                        </p>
+                        <p className="text-xs text-mk-sec mt-0.5">
+                          Augmentez les quantités ou ajoutez des produits de ces fournisseurs.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Total ready */}
+                  <div className="mb-4">
+                    <div className="flex justify-between items-baseline">
+                      <span className="text-sm font-bold text-mk-navy">Total prêt au checkout</span>
+                      <span className="text-xl font-bold text-mk-navy">{formatPrice(totalReady)}€</span>
+                    </div>
+                    <p className="text-xs text-mk-sec mt-1">
+                      Les fournisseurs en stock et pré-commande sont traités séparément.
+                    </p>
                   </div>
+
+                  <div className="border-t border-mk-line pt-4 mb-4">
+                    {/* Tabs: In stock / Pre-order */}
+                    <div className="flex border-b border-mk-line mb-4">
+                      <button className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium text-mk-navy border-b-2 border-mk-navy">
+                        <Store size={14} />
+                        En stock ({readyCount})
+                      </button>
+                      <button className="flex items-center gap-1.5 px-4 py-2.5 text-sm text-mk-sec">
+                        <Package size={14} />
+                        Pré-commande (0)
+                      </button>
+                    </div>
+
+                    {/* Details */}
+                    <div className="space-y-2.5 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-mk-sec">Livraison</span>
+                        <span className="text-mk-navy font-medium">Incluse</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-mk-sec">TVA</span>
+                        <span className="text-mk-sec">Ajoutée au checkout</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Order total */}
+                  <div className="border-t border-mk-line pt-4 mb-5">
+                    <div className="flex justify-between items-baseline">
+                      <span className="font-bold text-mk-navy">Total commande</span>
+                      <span className="text-xl font-bold text-mk-navy">{formatPrice(totalCart)}€</span>
+                    </div>
+                  </div>
+
+                  {/* Checkout button */}
+                  <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                    <Link
+                      to="/checkout"
+                      className={`block w-full text-center font-bold py-3.5 rounded-lg text-sm transition-colors ${
+                        readyCount > 0
+                          ? "bg-mk-navy text-white hover:opacity-90"
+                          : "bg-gray-200 text-mk-sec cursor-not-allowed pointer-events-none"
+                      }`}
+                    >
+                      Passer commande
+                    </Link>
+                  </motion.div>
                 </div>
-                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                  <Link to="/checkout" className="block w-full bg-mk-navy text-white text-center font-bold py-3 rounded-md text-sm hover:opacity-90">
-                    Passer commande
-                  </Link>
-                </motion.div>
+
+                {/* Footer info */}
+                <div className="border-t border-mk-line px-5 py-3 text-center space-y-1">
+                  <p className="text-xs text-mk-ter">
+                    Réf. panier #{supplierCode(items[0]?.product_id || "cart").slice(0, 7)}
+                  </p>
+                  <button className="text-xs text-mk-blue hover:underline flex items-center gap-1 mx-auto">
+                    💬 Besoin d'aide avec votre panier ?
+                  </button>
+                </div>
               </div>
             </motion.aside>
           </div>

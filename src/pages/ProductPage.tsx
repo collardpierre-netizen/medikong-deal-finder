@@ -42,6 +42,18 @@ export default function ProductPage() {
   const [copied, setCopied] = useState(false);
   const [buyPrice, setBuyPrice] = useState("");
   const [sellPrice, setSellPrice] = useState("");
+  const [showStickyBar, setShowStickyBar] = useState(false);
+  const offerSectionRef = useRef<HTMLDivElement>(null);
+  const [stickyQty, setStickyQty] = useState(1);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => setShowStickyBar(!entry.isIntersecting),
+      { threshold: 0, rootMargin: "-80px 0px 0px 0px" }
+    );
+    if (offerSectionRef.current) observer.observe(offerSectionRef.current);
+    return () => observer.disconnect();
+  }, [product]);
 
   const effectiveBuyPrice = buyPrice || (product ? product.price.toString() : "0");
   const effectiveSellPrice = sellPrice || (product ? (product.price * 1.7).toFixed(2) : "0");

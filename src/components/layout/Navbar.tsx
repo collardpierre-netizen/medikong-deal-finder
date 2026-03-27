@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
+import logoHorizontal from "@/assets/logo-horizontal.png";
 
 export function Navbar() {
   const [query, setQuery] = useState("");
@@ -25,8 +26,7 @@ export function Navbar() {
     <nav className="bg-mk-navy h-14 flex items-center px-4 sticky top-0 z-50">
       <div className="mk-container flex items-center w-full gap-4">
         <Link to="/" className="flex items-center shrink-0">
-          <span className="text-white font-bold text-lg">MediKong</span>
-          <span className="text-mk-blue font-bold text-lg">.pro</span>
+          <img src={logoHorizontal} alt="MediKong.pro" className="h-8" />
         </Link>
 
         <form onSubmit={handleSearch} className="flex-1 max-w-[440px] mx-auto hidden sm:block">

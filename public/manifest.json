@@ -1,0 +1,21 @@
+{
+  "name": "MediKong.pro",
+  "short_name": "MediKong",
+  "description": "Marketplace B2B pour fournitures médicales en Belgique",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FFFFFF",
+  "theme_color": "#1E293B",
+  "icons": [
+    {
+      "src": "/logo-pwa-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/logo-pwa-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

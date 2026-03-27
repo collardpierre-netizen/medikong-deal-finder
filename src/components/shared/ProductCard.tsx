@@ -69,7 +69,7 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
         <span className="absolute top-2 left-2 bg-mk-red text-white text-[11px] font-bold px-2 py-0.5 rounded z-10">
           {product.pct}%
         </span>
-        <button className="absolute top-2 right-2 w-7 h-7 rounded-full border border-mk-line bg-white flex items-center justify-center hover:border-mk-blue z-10">
+        <button className="absolute top-2 right-2 w-7 h-7 rounded-full border border-mk-line bg-white flex items-center justify-center hover:border-mk-blue z-10 transition-colors">
           <Bell size={13} className="text-mk-sec" />
         </button>
         <Link to={`/produit/${product.slug}`}>
@@ -95,9 +95,14 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
             <Plus size={14} />
           </button>
         </div>
-        <button className="flex-1 bg-mk-blue text-white text-sm font-semibold py-1.5 rounded-md hover:opacity-90 transition-opacity">
+        <motion.button
+          className="flex-1 bg-mk-blue text-white text-sm font-semibold py-1.5 rounded-md"
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.96 }}
+          transition={{ type: "spring", stiffness: 400, damping: 17 }}
+        >
           Ajouter
-        </button>
+        </motion.button>
       </div>
     </motion.div>
   );

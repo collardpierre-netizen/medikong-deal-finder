@@ -68,7 +68,7 @@ export default function ProductPage() {
   };
 
   const tabs = [
-    { key: "mk" as const, label: "Marketplace", fullLabel: "Marketplace MediKong", icon: ShoppingCart, count: 2 },
+    { key: "mk" as const, label: "Marketplace", fullLabel: "Marketplace MediKong", icon: ShoppingCart, count: realOffers.length },
     { key: "ext" as const, label: "Externes", fullLabel: "Offres externes", icon: ExternalLink, count: 3 },
     { key: "market" as const, label: "Marche", fullLabel: "Prix du marche", icon: Eye, count: 5 },
   ];

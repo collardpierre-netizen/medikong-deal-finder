@@ -58,7 +58,7 @@ function mapDbProduct(row: any, offersData?: any[]): Product {
     reviews: 0,
     best: productOffers.length > 0 ? "Meilleur prix" : "",
     unit: `${row.weight_g || 0}g`,
-    stock: productOffers.some((o: any) => o.stock_quantity > 0),
+    stock: productOffers.some((o: any) => o.stock > 0),
     mk: productOffers.length > 0,
     category: row.category_l1 || undefined,
     color: ["blue", "teal", "green", "amber", "rose", "purple", "orange", "cyan"][

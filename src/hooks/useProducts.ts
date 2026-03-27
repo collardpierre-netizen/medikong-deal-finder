@@ -94,7 +94,7 @@ export function useProduct(slug: string | undefined) {
     queryFn: async () => {
       const [productsRes, offersRes] = await Promise.all([
         supabase.from("products").select("*").eq("status", "active"),
-        supabase.from("offers").select("*").eq("is_active", true),
+        supabase.from("offers_direct").select("*").eq("status", "active"),
       ]);
       if (productsRes.error) throw productsRes.error;
       const match = (productsRes.data || []).find((row: any) => slugify(row.product_name) === slug);

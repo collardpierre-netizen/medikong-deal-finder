@@ -434,6 +434,22 @@ export default function CartPage() {
                     </div>
                   </div>
 
+                  {/* Remark field */}
+                  <div className="mb-5">
+                    <label htmlFor="cart-remark" className="text-sm font-medium text-mk-navy mb-1.5 block">
+                      Remarque <span className="text-mk-ter font-normal">(optionnel)</span>
+                    </label>
+                    <textarea
+                      id="cart-remark"
+                      value={remark}
+                      onChange={e => setRemark(e.target.value.slice(0, 500))}
+                      placeholder="Message pour le fournisseur, instruction de livraison…"
+                      rows={3}
+                      className="w-full border border-mk-line rounded-lg px-3 py-2 text-sm text-mk-navy placeholder:text-mk-ter focus:outline-none focus:ring-2 focus:ring-mk-navy/20 focus:border-mk-navy resize-none"
+                    />
+                    <p className="text-xs text-mk-ter mt-1 text-right">{remark.length}/500</p>
+                  </div>
+
                   {/* Checkout button */}
                   <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                     <Link

@@ -189,7 +189,7 @@ export default function CartPage() {
               <AnimatePresence mode="popLayout">
                 {filteredGroups.map((group, gi) => (
                   <motion.div
-                    key={group.code}
+                    key={group.vendorId}
                     className="border border-mk-line rounded-lg bg-white overflow-hidden"
                     initial={{ opacity: 0, y: 16 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -209,7 +209,7 @@ export default function CartPage() {
                         <div>
                           <div className="flex items-center gap-2 mb-1">
                             <span className="font-semibold text-mk-navy underline cursor-pointer">
-                              Fournisseur #{group.code}
+                              Fournisseur #{group.vendorId}
                             </span>
                             <CheckCircle2 size={16} className="text-mk-green" />
                           </div>
@@ -292,11 +292,11 @@ export default function CartPage() {
                             <Package size={16} className="text-mk-sec" />
                           </div>
                           <button
-                            onClick={() => toggleSupplier(group.code)}
+                            onClick={() => toggleSupplier(group.vendorId)}
                             className="text-sm text-mk-blue font-medium flex items-center gap-1 hover:underline"
                           >
-                            {expandedSuppliers[group.code] ? "Masquer" : "Afficher"} les produits
-                            {expandedSuppliers[group.code] ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                            {expandedSuppliers[group.vendorId] ? "Masquer" : "Afficher"} les produits
+                            {expandedSuppliers[group.vendorId] ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                           </button>
                         </div>
                         <Link
@@ -309,7 +309,7 @@ export default function CartPage() {
 
                       {/* Expanded products */}
                       <AnimatePresence>
-                        {expandedSuppliers[group.code] && (
+                        {expandedSuppliers[group.vendorId] && (
                           <motion.div
                             initial={{ height: 0, opacity: 0 }}
                             animate={{ height: "auto", opacity: 1 }}

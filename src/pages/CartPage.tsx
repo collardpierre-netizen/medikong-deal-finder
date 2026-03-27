@@ -335,7 +335,7 @@ export default function CartPage() {
                                       {item.product?.unit && ` · ${item.product.unit}`}
                                     </p>
                                     <p className="text-sm text-mk-navy mt-0.5">
-                                      {formatPrice(item.product?.price || 0)}€ × {item.quantity} = <span className="font-bold">{formatPrice((item.product?.price || 0) * item.quantity)}€</span>
+                                      {formatPrice(item.price_ht || item.product?.price || 0)}€ × {item.quantity} = <span className="font-bold">{formatPrice((item.price_ht || item.product?.price || 0) * item.quantity)}€</span>
                                     </p>
                                   </div>
                                   <div className="flex items-center gap-2 shrink-0">

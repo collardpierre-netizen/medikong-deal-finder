@@ -18,9 +18,10 @@ type ViewMode = "grid" | "list" | "trivago";
 
 export default function ResultsPage() {
   const [view, setView] = useState<ViewMode>("grid");
-  const [loading, setLoading] = useState(true);
+  const { data: products = [], isLoading: dbLoading } = useProducts();
   const [activePill, setActivePill] = useState(0);
   const [showFilters, setShowFilters] = useState(false);
+  const loading = dbLoading;
 
   useEffect(() => {
     const t = setTimeout(() => setLoading(false), 1500);

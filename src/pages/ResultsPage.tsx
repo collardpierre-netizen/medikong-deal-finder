@@ -98,7 +98,7 @@ export default function ResultsPage() {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.3, delay: 0.15 }}
           >
-            <span className="text-sm text-mk-sec">248 produits trouves sur 12 fournisseurs</span>
+            <span className="text-sm text-mk-sec">{products.length} produit{products.length !== 1 ? 's' : ''} trouvé{products.length !== 1 ? 's' : ''}</span>
             <div className="flex items-center gap-3">
               <div className="flex border border-mk-line rounded-md overflow-hidden">
                 {([["grid", Grid], ["list", List], ["trivago", Columns]] as const).map(([v, Icon]) => (
@@ -113,11 +113,11 @@ export default function ResultsPage() {
                   </motion.button>
                 ))}
               </div>
-              <select className="border border-mk-line rounded-md px-3 py-1.5 text-sm text-mk-sec">
-                <option>Pertinence</option>
-                <option>Prix croissant</option>
-                <option>Prix decroissant</option>
-                <option>Meilleures notes</option>
+              <select value={sort} onChange={handleSortChange} className="border border-mk-line rounded-md px-3 py-1.5 text-sm text-mk-sec">
+                <option value="relevance">Pertinence</option>
+                <option value="price_asc">Prix croissant</option>
+                <option value="price_desc">Prix décroissant</option>
+                <option value="offers">Nombre d'offres</option>
               </select>
             </div>
           </motion.div>

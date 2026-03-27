@@ -28,7 +28,7 @@ export function Navbar() {
     <nav className="bg-mk-navy h-14 flex items-center px-4 sticky top-0 z-50">
       <div className="mk-container flex items-center w-full gap-4">
         <Link to="/" className="flex items-center shrink-0">
-          <img src={logoHorizontal} alt="MediKong.pro" className="h-8" />
+          <img src={logoHorizontal} alt="MediKong.pro" className="h-12" />
         </Link>
 
         <form onSubmit={handleSearch} className="flex-1 max-w-[440px] mx-auto hidden sm:block">

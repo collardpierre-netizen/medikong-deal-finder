@@ -127,18 +127,18 @@ export function useProductOffers(productId: string | undefined) {
     queryKey: ["offers", productId],
     queryFn: async () => {
       const { data: offers, error } = await supabase
-        .from("offers")
+        .from("offers_direct")
         .select("*")
         .eq("product_id", productId!)
-        .eq("is_active", true)
-        .order("unit_price_eur", { ascending: true });
+        .eq("status", "active")
+        .order("price_ht", { ascending: true });
       if (error) throw error;
 
-      const sellerIds = [...new Set((offers || []).map((o: any) => o.seller_id))];
-      const { data: sellers } = await supabase
-        .from("sellers")
-        .select("id, company_name, is_verified, is_top_rated")
-        .in("id", sellerIds);
+      const vendorIds = [...new Set((offers || []).map((o: any) => o.vendor_id))];
+      const { data: vendors } = await supabase
+        .from("vendors")
+        .select("id, company_name, tier, status")
+        .in("id", vendorIds);
 
       const sellerMap = new Map((sellers || []).map((s: any) => [s.id, s]));
 

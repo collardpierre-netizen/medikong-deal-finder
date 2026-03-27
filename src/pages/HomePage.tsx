@@ -1,5 +1,5 @@
 import { Layout } from "@/components/layout/Layout";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Search, Shield, Truck, Award, Package, Heart, Activity, Droplet, Droplets, Wrench, ChevronRight, Check, Armchair } from "lucide-react";
 import { categories, formatPrice } from "@/data/mock";
 import { useProducts } from "@/hooks/useProducts";

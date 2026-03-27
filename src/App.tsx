@@ -27,6 +27,9 @@ import AdminPlaceholder from "./pages/admin/AdminPlaceholder";
 import AdminVendeurs from "./pages/admin/AdminVendeurs";
 import AdminVendeurDetail from "./pages/admin/AdminVendeurDetail";
 import AdminOnboarding from "./pages/admin/AdminOnboarding";
+import AdminProduits from "./pages/admin/AdminProduits";
+import AdminProduitDetail from "./pages/admin/AdminProduitDetail";
+import AdminSchemasPIM from "./pages/admin/AdminSchemasPIM";
 
 const queryClient = new QueryClient();
 

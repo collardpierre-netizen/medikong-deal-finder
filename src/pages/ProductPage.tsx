@@ -36,6 +36,7 @@ export default function ProductPage() {
   const { data: product, isLoading } = useProduct(slug);
   const { data: products = [] } = useProducts();
   const { addToCart } = useCart();
+  const { data: realOffers = [] } = useProductOffers(product?.id);
   const [tab, setTab] = useState<"mk" | "ext" | "market">("mk");
   const [qty, setQty] = useState(1);
   const [openAccordion, setOpenAccordion] = useState<number | null>(null);

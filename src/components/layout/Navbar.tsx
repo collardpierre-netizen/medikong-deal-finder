@@ -1,10 +1,11 @@
-import { Search, Globe, Bell, ShoppingCart, Users } from "lucide-react";
+import { Search, Globe, Bell, ShoppingCart, Users, Menu, X } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 
 export function Navbar() {
   const [query, setQuery] = useState("");
   const [isTVAC, setIsTVAC] = useState(true);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
 
   const handleSearch = (e: React.FormEvent) => {
@@ -20,7 +21,7 @@ export function Navbar() {
           <span className="text-mk-blue font-bold text-lg">.pro</span>
         </Link>
 
-        <form onSubmit={handleSearch} className="flex-1 max-w-[440px] mx-auto">
+        <form onSubmit={handleSearch} className="flex-1 max-w-[440px] mx-auto hidden sm:block">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-mk-sec" size={16} />
             <input
@@ -32,7 +33,7 @@ export function Navbar() {
           </div>
         </form>
 
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="hidden md:flex items-center gap-3 shrink-0">
           <button
             onClick={() => setIsTVAC(!isTVAC)}
             className="text-white text-xs font-semibold px-3 py-1.5 rounded-md"
@@ -52,7 +53,45 @@ export function Navbar() {
             <span>Mon compte</span>
           </Link>
         </div>
+
+        {/* Mobile icons */}
+        <div className="flex md:hidden items-center gap-3 shrink-0">
+          <Link to="/panier" className="relative">
+            <ShoppingCart className="text-white" size={18} />
+            <span className="absolute -top-1.5 -right-2 bg-mk-red text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">3</span>
+          </Link>
+          <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="text-white">
+            {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
+          </button>
+        </div>
       </div>
+
+      {/* Mobile menu */}
+      {mobileMenuOpen && (
+        <div className="absolute top-14 left-0 right-0 bg-mk-navy border-t border-white/10 p-4 flex flex-col gap-3 md:hidden animate-slideDown z-50">
+          <form onSubmit={handleSearch} className="sm:hidden">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-mk-sec" size={16} />
+              <input
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                placeholder="Rechercher..."
+                className="w-full pl-9 pr-3 py-2 rounded-md text-sm bg-white text-mk-text"
+              />
+            </div>
+          </form>
+          <button
+            onClick={() => setIsTVAC(!isTVAC)}
+            className="text-white text-xs font-semibold px-3 py-1.5 rounded-md self-start"
+            style={{ background: "rgba(255,255,255,0.15)" }}
+          >
+            {isTVAC ? "TVAC" : "HTVA"}
+          </button>
+          <Link to="/compte" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 text-white text-sm">
+            <Users size={16} /> Mon compte
+          </Link>
+        </div>
+      )}
     </nav>
   );
 }

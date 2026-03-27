@@ -2,7 +2,7 @@ import { Layout } from "@/components/layout/Layout";
 import { useParams, Link } from "react-router-dom";
 import { products } from "@/data/mock";
 import { ProductCard } from "@/components/shared/ProductCard";
-import { Grid, List } from "lucide-react";
+import { Grid, List, Sliders } from "lucide-react";
 import { useState } from "react";
 
 const subcategories = ["Gants", "Masques", "Compresses", "Desinfectants", "Bandages", "Equipement PPE"];
@@ -12,6 +12,7 @@ export default function CategoryPage() {
   const { slug } = useParams();
   const [view, setView] = useState<"grid" | "list">("grid");
   const [activeSub, setActiveSub] = useState(0);
+  const [showFilters, setShowFilters] = useState(false);
 
   return (
     <Layout>
@@ -21,20 +22,25 @@ export default function CategoryPage() {
         </div>
       </div>
       <div className="mk-container py-6">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
           <div>
-            <h1 className="text-[28px] font-bold text-mk-navy">Consommables medicaux</h1>
+            <h1 className="text-2xl md:text-[28px] font-bold text-mk-navy">Consommables medicaux</h1>
             <p className="text-sm text-mk-sec">847 produits</p>
           </div>
-          <div className="flex border border-mk-line rounded-md overflow-hidden">
-            {([["grid", Grid], ["list", List]] as const).map(([v, Icon]) => (
-              <button key={v} onClick={() => setView(v)} className={`p-2 ${view === v ? "bg-mk-navy text-white" : "text-mk-sec"}`}><Icon size={16} /></button>
-            ))}
+          <div className="flex items-center gap-2">
+            <button onClick={() => setShowFilters(!showFilters)} className="lg:hidden flex items-center gap-1.5 border border-mk-line text-sm px-3 py-1.5 rounded-md text-mk-sec">
+              <Sliders size={14} /> Filtres
+            </button>
+            <div className="flex border border-mk-line rounded-md overflow-hidden">
+              {([["grid", Grid], ["list", List]] as const).map(([v, Icon]) => (
+                <button key={v} onClick={() => setView(v)} className={`p-2 ${view === v ? "bg-mk-navy text-white" : "text-mk-sec"}`}><Icon size={16} /></button>
+              ))}
+            </div>
           </div>
         </div>
 
         <div className="flex gap-6">
-          <aside className="w-[220px] shrink-0">
+          <aside className={`${showFilters ? 'block' : 'hidden'} lg:block w-full lg:w-[220px] shrink-0 ${showFilters ? 'mb-4' : ''}`}>
             <div className="mb-6">
               <h4 className="text-sm font-semibold text-mk-navy mb-3">Sous-categories</h4>
               {subcategories.map((s, i) => (
@@ -58,7 +64,7 @@ export default function CategoryPage() {
           </aside>
 
           <div className="flex-1 min-w-0 overflow-hidden">
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
               {products.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
             </div>
           </div>

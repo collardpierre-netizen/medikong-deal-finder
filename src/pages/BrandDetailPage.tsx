@@ -16,19 +16,20 @@ export default function BrandDetailPage() {
   const { slug } = useParams();
   const brand = brands.find(b => b.slug === slug) || { name: slug || "TENA", count: 234, slug: slug || "tena" };
   const [view, setView] = useState<"grid" | "list" | "trivago">("grid");
+  const [showFilters, setShowFilters] = useState(false);
 
   return (
     <Layout>
       {/* Hero */}
-      <div className="py-10" style={{ background: "linear-gradient(135deg, #EFF6FF, #F0FDF4)" }}>
+      <div className="py-8 md:py-10" style={{ background: "linear-gradient(135deg, #EFF6FF, #F0FDF4)" }}>
         <div className="mk-container">
           <div className="text-xs text-mk-sec mb-4">
             <Link to="/" className="hover:text-mk-blue">Accueil</Link> &gt; <Link to="/marques" className="hover:text-mk-blue">Marques</Link> &gt; {brand.name}
           </div>
-          <div className="flex items-start gap-6">
-            <div className="w-[100px] h-[100px] border border-mk-line bg-white rounded-lg flex items-center justify-center text-xs text-mk-ter shrink-0">Logo</div>
+          <div className="flex flex-col sm:flex-row items-start gap-4 md:gap-6">
+            <div className="w-[80px] h-[80px] md:w-[100px] md:h-[100px] border border-mk-line bg-white rounded-lg flex items-center justify-center text-xs text-mk-ter shrink-0">Logo</div>
             <div>
-              <h1 className="text-[28px] font-bold text-mk-navy mb-1">{brand.name}</h1>
+              <h1 className="text-2xl md:text-[28px] font-bold text-mk-navy mb-1">{brand.name}</h1>
               <div className="flex items-center gap-3 mb-2">
                 <div className="flex items-center gap-1 text-yellow-500">
                   {[1, 2, 3, 4].map(i => <Star key={i} size={14} fill="currentColor" />)}
@@ -37,10 +38,10 @@ export default function BrandDetailPage() {
                 <span className="text-xs text-mk-sec">Belgique</span>
               </div>
               <p className="text-sm text-mk-sec max-w-[700px] mb-4">Marque leader en solutions d'hygiene et d'incontinence pour les professionnels de sante.</p>
-              <div className="flex gap-2">
-                <button className="border border-mk-line text-sm px-4 py-2 rounded-md flex items-center gap-1.5 text-mk-sec"><ExternalLink size={13} /> Site officiel</button>
-                <button className="bg-mk-blue text-white text-sm px-4 py-2 rounded-md flex items-center gap-1.5"><Download size={13} /> Telecharger catalogue</button>
-                <button className="border border-mk-line text-sm px-4 py-2 rounded-md flex items-center gap-1.5 text-mk-sec"><Heart size={13} /> Suivre la marque</button>
+              <div className="flex gap-2 flex-wrap">
+                <button className="border border-mk-line text-sm px-3 md:px-4 py-2 rounded-md flex items-center gap-1.5 text-mk-sec"><ExternalLink size={13} /> Site officiel</button>
+                <button className="bg-mk-blue text-white text-sm px-3 md:px-4 py-2 rounded-md flex items-center gap-1.5"><Download size={13} /> Catalogue</button>
+                <button className="border border-mk-line text-sm px-3 md:px-4 py-2 rounded-md flex items-center gap-1.5 text-mk-sec"><Heart size={13} /> Suivre</button>
               </div>
             </div>
           </div>
@@ -48,8 +49,8 @@ export default function BrandDetailPage() {
       </div>
 
       {/* Stats */}
-      <div className="bg-mk-alt border-y border-mk-line py-4">
-        <div className="mk-container flex justify-center gap-12">
+      <div className="bg-mk-alt border-y border-mk-line py-4 overflow-x-auto">
+        <div className="mk-container flex justify-center gap-6 md:gap-12 min-w-max">
           {[["234+", "Produits"], ["4", "Categories"], ["-45%", "Economie moy."], ["4.4/5", "Note"], ["12+", "Fournisseurs"]].map(([v, l]) => (
             <div key={l} className="text-center">
               <div className="text-lg font-bold text-mk-navy">{v}</div>
@@ -59,42 +60,42 @@ export default function BrandDetailPage() {
         </div>
       </div>
 
-      <div className="mk-container py-8">
+      <div className="mk-container py-6 md:py-8">
         {/* Import CTA */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 flex items-center justify-between">
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <Upload size={18} className="text-mk-blue" />
+            <Upload size={18} className="text-mk-blue shrink-0" />
             <span className="text-sm text-mk-navy">Importez votre liste de produits pour des prix personnalises</span>
           </div>
-          <button className="bg-mk-blue text-white text-sm font-semibold px-4 py-2 rounded-md flex items-center gap-1.5">
-            <Upload size={13} /> Importer une liste
+          <button className="bg-mk-blue text-white text-sm font-semibold px-4 py-2 rounded-md flex items-center gap-1.5 whitespace-nowrap">
+            <Upload size={13} /> Importer
           </button>
         </div>
 
         {/* Category chips */}
-        <div className="flex gap-2 mb-6">
+        <div className="flex gap-2 mb-6 overflow-x-auto pb-1">
           {catChips.map((c, i) => (
-            <button key={c.name} className={`px-3 py-1.5 rounded-full text-sm ${i === 0 ? "bg-mk-navy text-white" : "border border-mk-line text-mk-sec"}`}>
+            <button key={c.name} className={`px-3 py-1.5 rounded-full text-sm whitespace-nowrap ${i === 0 ? "bg-mk-navy text-white" : "border border-mk-line text-mk-sec"}`}>
               {c.name} ({c.count})
             </button>
           ))}
         </div>
 
         {/* Group buy CTA */}
-        <div className="rounded-lg p-4 mb-6 flex items-center justify-between" style={{ background: "linear-gradient(135deg, #FEF3C7, #FDE68A)" }}>
+        <div className="rounded-lg p-4 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3" style={{ background: "linear-gradient(135deg, #FEF3C7, #FDE68A)" }}>
           <div className="flex items-center gap-3">
-            <Users size={18} className="text-mk-amber" />
+            <Users size={18} className="text-mk-amber shrink-0" />
             <div>
               <span className="text-sm font-bold text-mk-navy">Achat groupe {brand.name}</span>
-              <p className="text-xs text-mk-sec">Regroupez vos commandes avec d'autres pharmacies pour de meilleurs prix</p>
+              <p className="text-xs text-mk-sec">Regroupez vos commandes avec d'autres pharmacies</p>
             </div>
           </div>
-          <button className="bg-mk-amber text-white text-sm font-semibold px-4 py-2 rounded-md">Rejoindre le groupe</button>
+          <button className="bg-mk-amber text-white text-sm font-semibold px-4 py-2 rounded-md whitespace-nowrap">Rejoindre le groupe</button>
         </div>
 
         <div className="flex gap-7">
           {/* Sidebar */}
-          <aside className="w-[220px] shrink-0 sticky top-20 self-start">
+          <aside className={`${showFilters ? 'block' : 'hidden'} lg:block w-full lg:w-[220px] shrink-0 lg:sticky lg:top-20 lg:self-start ${showFilters ? 'mb-4' : ''}`}>
             <div className="mb-6">
               <h4 className="text-sm font-semibold text-mk-navy mb-3">Preferences</h4>
               {["Tout afficher", "Mes favoris", "Prix cible atteint"].map((p, i) => (
@@ -123,9 +124,10 @@ export default function BrandDetailPage() {
 
           {/* Content */}
           <div className="flex-1 min-w-0 overflow-hidden">
-            <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center justify-between mb-5 gap-3">
               <span className="text-sm text-mk-sec">{brand.count} produits</span>
               <div className="flex items-center gap-3">
+                <button onClick={() => setShowFilters(!showFilters)} className="lg:hidden border border-mk-line text-sm px-3 py-1.5 rounded-md text-mk-sec">Filtres</button>
                 <div className="flex border border-mk-line rounded-md overflow-hidden">
                   {([["grid", Grid], ["list", List], ["trivago", Columns]] as const).map(([v, Icon]) => (
                     <button key={v} onClick={() => setView(v)} className={`p-2 ${view === v ? "bg-mk-navy text-white" : "text-mk-sec"}`}><Icon size={16} /></button>
@@ -133,7 +135,7 @@ export default function BrandDetailPage() {
                 </div>
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
               {products.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
             </div>
           </div>

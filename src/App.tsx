@@ -64,10 +64,11 @@ const App = () => (
               <Route path="vendeurs" element={<AdminVendeurs />} />
               <Route path="vendeurs/:id" element={<AdminVendeurDetail />} />
               <Route path="onboarding" element={<AdminOnboarding />} />
-              <Route path="produits" element={<AdminPlaceholder titleKey="products" />} />
+              <Route path="produits" element={<AdminProduits />} />
+              <Route path="produits/:id" element={<AdminProduitDetail />} />
               <Route path="categories" element={<AdminPlaceholder titleKey="categories" />} />
               <Route path="marques" element={<AdminPlaceholder titleKey="brands" />} />
-              <Route path="schemas-pim" element={<AdminPlaceholder titleKey="pimSchemas" />} />
+              <Route path="schemas-pim" element={<AdminSchemasPIM />} />
               <Route path="commandes" element={<AdminPlaceholder titleKey="orders" />} />
               <Route path="litiges" element={<AdminPlaceholder titleKey="disputes" />} />
               <Route path="finances" element={<AdminPlaceholder titleKey="finances" />} />

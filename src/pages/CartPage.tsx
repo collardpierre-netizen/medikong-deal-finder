@@ -17,29 +17,28 @@ export default function CartPage() {
 
   return (
     <Layout>
-      <div className="mk-container py-8">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-[28px] font-bold text-mk-navy">Votre panier (2 fournisseurs)</h1>
-          <div className="flex gap-2">
+      <div className="mk-container py-6 md:py-8">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-3">
+          <h1 className="text-2xl md:text-[28px] font-bold text-mk-navy">Votre panier (2 fournisseurs)</h1>
+          <div className="flex gap-2 flex-wrap">
             <button className="border border-mk-line text-sm px-3 py-1.5 rounded-md text-mk-sec flex items-center gap-1.5"><Download size={13} /> Telecharger</button>
-            <button className="border border-mk-line text-sm px-3 py-1.5 rounded-md text-mk-sec flex items-center gap-1.5"><Upload size={13} /> Importer liste</button>
+            <button className="border border-mk-line text-sm px-3 py-1.5 rounded-md text-mk-sec flex items-center gap-1.5"><Upload size={13} /> Importer</button>
             <button className="border border-mk-red text-sm px-3 py-1.5 rounded-md text-mk-red flex items-center gap-1.5"><Trash2 size={13} /> Vider</button>
           </div>
         </div>
 
-        {/* Filter pills */}
-        <div className="flex gap-2 mb-6">
-          <button className="bg-mk-navy text-white text-sm px-4 py-1.5 rounded-full font-medium">Pret a commander (1)</button>
-          <button className="bg-mk-mov-bg text-mk-amber text-sm px-4 py-1.5 rounded-full font-medium border border-mk-mov-border">Sous le minimum (1)</button>
-          <button className="border border-mk-line text-sm px-4 py-1.5 rounded-full text-mk-sec">Fournisseurs modifies (0)</button>
+        <div className="flex gap-2 mb-6 overflow-x-auto pb-1">
+          <button className="bg-mk-navy text-white text-sm px-4 py-1.5 rounded-full font-medium whitespace-nowrap">Pret a commander (1)</button>
+          <button className="bg-mk-mov-bg text-mk-amber text-sm px-4 py-1.5 rounded-full font-medium border border-mk-mov-border whitespace-nowrap">Sous le minimum (1)</button>
+          <button className="border border-mk-line text-sm px-4 py-1.5 rounded-full text-mk-sec whitespace-nowrap">Fournisseurs modifies (0)</button>
         </div>
 
-        <div className="flex gap-6">
+        <div className="flex flex-col lg:flex-row gap-6">
           <div className="flex-1 min-w-0 space-y-4">
             {/* Supplier 1 */}
             <div className="border border-mk-line rounded-lg">
-              <div className="p-4 flex items-center justify-between">
-                <div className="flex items-center gap-2">
+              <div className="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-xs bg-mk-deal text-mk-green px-2 py-0.5 rounded font-medium">En stock</span>
                   <span className="text-xs bg-purple-50 text-purple-600 px-2 py-0.5 rounded font-medium">Top rated</span>
                   <span className="font-semibold text-mk-navy">#MedDistri</span>
@@ -58,19 +57,19 @@ export default function CartPage() {
               </div>
               <button onClick={() => setShowProducts1(!showProducts1)} className="text-xs text-mk-blue px-4 mb-2">{showProducts1 ? "Masquer" : "Afficher"} les produits</button>
               {showProducts1 && cartItems.map(p => (
-                <div key={p.id} className="px-4 py-3 border-t border-mk-line flex items-center gap-4">
+                <div key={p.id} className="px-4 py-3 border-t border-mk-line flex items-center gap-3 md:gap-4 flex-wrap">
                   <div className="w-12 h-12 bg-mk-alt rounded flex items-center justify-center text-[8px] text-mk-ter shrink-0">IMG</div>
-                  <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-[120px]">
                     <p className="text-sm font-medium text-mk-text truncate">{p.name}</p>
                     <p className="text-xs text-mk-ter">GTIN: {p.ean} · En stock</p>
                   </div>
-                  <span className="text-xs text-mk-sec">{p.unit}</span>
+                  <span className="text-xs text-mk-sec hidden md:block">{p.unit}</span>
                   <div className="flex items-center border border-mk-line rounded-md">
                     <button className="px-2 py-1"><Minus size={12} /></button>
                     <span className="px-2 text-sm">1</span>
                     <button className="px-2 py-1"><Plus size={12} /></button>
                   </div>
-                  <span className="font-bold text-mk-navy w-20 text-right">{formatPrice(p.price)} EUR</span>
+                  <span className="font-bold text-mk-navy">{formatPrice(p.price)} EUR</span>
                   <button className="text-mk-red"><Trash2 size={14} /></button>
                 </div>
               ))}
@@ -78,7 +77,7 @@ export default function CartPage() {
 
             {/* Supplier 2 */}
             <div className="border border-mk-line rounded-lg">
-              <div className="p-4 flex items-center justify-between">
+              <div className="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <span className="text-xs bg-mk-deal text-mk-green px-2 py-0.5 rounded font-medium">En stock</span>
                   <span className="font-semibold text-mk-navy">#Pharmamed</span>
@@ -88,9 +87,9 @@ export default function CartPage() {
               </div>
               <button onClick={() => setShowProducts2(!showProducts2)} className="text-xs text-mk-blue px-4 mb-2">{showProducts2 ? "Masquer" : "Afficher"} les produits</button>
               {showProducts2 && cartItems2.map(p => (
-                <div key={p.id} className="px-4 py-3 border-t border-mk-line flex items-center gap-4">
+                <div key={p.id} className="px-4 py-3 border-t border-mk-line flex items-center gap-3 md:gap-4 flex-wrap">
                   <div className="w-12 h-12 bg-mk-alt rounded flex items-center justify-center text-[8px] text-mk-ter shrink-0">IMG</div>
-                  <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-[120px]">
                     <p className="text-sm font-medium text-mk-text truncate">{p.name}</p>
                     <p className="text-xs text-mk-ter">GTIN: {p.ean}</p>
                   </div>
@@ -99,7 +98,7 @@ export default function CartPage() {
                     <span className="px-2 text-sm">1</span>
                     <button className="px-2 py-1"><Plus size={12} /></button>
                   </div>
-                  <span className="font-bold text-mk-navy w-20 text-right">{formatPrice(p.price)} EUR</span>
+                  <span className="font-bold text-mk-navy">{formatPrice(p.price)} EUR</span>
                   <button className="text-mk-red"><Trash2 size={14} /></button>
                 </div>
               ))}
@@ -107,8 +106,8 @@ export default function CartPage() {
           </div>
 
           {/* Sidebar */}
-          <aside className="w-[320px] shrink-0">
-            <div className="border border-mk-line rounded-lg p-5 sticky top-20">
+          <aside className="w-full lg:w-[320px] shrink-0">
+            <div className="border border-mk-line rounded-lg p-5 lg:sticky lg:top-20">
               <h3 className="text-lg font-bold text-mk-navy mb-4">Recapitulatif panier</h3>
               <div className="bg-mk-mov-bg border border-mk-mov-border rounded-md p-3 mb-4 text-xs text-mk-amber">
                 1 fournisseur sous le minimum de commande

@@ -28,25 +28,27 @@ export default function AccountPage() {
     <Layout>
       <div className="bg-mk-alt border-b border-mk-line py-6">
         <div className="mk-container">
-          <h1 className="text-[28px] font-bold text-mk-navy">Mon compte</h1>
+          <h1 className="text-2xl md:text-[28px] font-bold text-mk-navy">Mon compte</h1>
           <p className="text-sm text-mk-sec">Gerez votre profil, commandes et preferences</p>
         </div>
       </div>
-      <div className="mk-container py-8">
-        <div className="flex gap-8">
-          {/* Sidebar */}
-          <aside className="w-[220px] shrink-0 border-r border-mk-line pr-6">
-            {tabs.map(t => (
-              <button
-                key={t.key}
-                onClick={() => setActiveTab(t.key)}
-                className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-md text-sm mb-1 transition-colors ${
-                  activeTab === t.key ? "bg-mk-blue text-white font-medium" : "text-mk-sec hover:bg-mk-alt"
-                }`}
-              >
-                <t.icon size={16} /> {t.label}
-              </button>
-            ))}
+      <div className="mk-container py-6 md:py-8">
+        <div className="flex flex-col md:flex-row gap-6 md:gap-8">
+          {/* Sidebar - horizontal scroll on mobile */}
+          <aside className="md:w-[220px] shrink-0 md:border-r border-mk-line md:pr-6">
+            <div className="flex md:flex-col gap-1 overflow-x-auto pb-2 md:pb-0">
+              {tabs.map(t => (
+                <button
+                  key={t.key}
+                  onClick={() => setActiveTab(t.key)}
+                  className={`flex items-center gap-2 px-3 py-2.5 rounded-md text-sm whitespace-nowrap transition-colors ${
+                    activeTab === t.key ? "bg-mk-blue text-white font-medium" : "text-mk-sec hover:bg-mk-alt"
+                  }`}
+                >
+                  <t.icon size={16} /> {t.label}
+                </button>
+              ))}
+            </div>
           </aside>
 
           {/* Content */}
@@ -54,13 +56,13 @@ export default function AccountPage() {
             {activeTab === "profil" && (
               <div>
                 <h2 className="text-xl font-bold text-mk-navy mb-5">Informations personnelles</h2>
-                <div className="grid grid-cols-2 gap-4 mb-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
                   {[["Prenom", "Jean"], ["Nom", "Dupont"], ["Email", "jean@pharmacie.be"], ["Telephone", "+32 478 12 34 56"]].map(([l, v]) => (
                     <div key={l}><label className="text-xs text-mk-sec mb-1 block">{l}</label><input defaultValue={v} className="w-full border border-mk-line rounded-md px-3 py-2 text-sm" /></div>
                   ))}
                 </div>
                 <h2 className="text-xl font-bold text-mk-navy mb-5">Informations entreprise</h2>
-                <div className="grid grid-cols-2 gap-4 mb-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
                   <div><label className="text-xs text-mk-sec mb-1 block">Nom entreprise</label><input defaultValue="Pharmacie Centrale" className="w-full border border-mk-line rounded-md px-3 py-2 text-sm" /></div>
                   <div><label className="text-xs text-mk-sec mb-1 block">Pays</label>
                     <select className="w-full border border-mk-line rounded-md px-3 py-2 text-sm"><option>Belgique</option><option>France</option><option>Suisse</option></select>
@@ -73,11 +75,11 @@ export default function AccountPage() {
 
             {activeTab === "adresses" && (
               <div>
-                <div className="flex items-center justify-between mb-5">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-5 gap-3">
                   <h2 className="text-xl font-bold text-mk-navy">Adresses</h2>
                   <button className="bg-mk-blue text-white text-sm px-4 py-2 rounded-md">Ajouter une adresse</button>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {[
                     { label: "Adresse principale", type: "Livraison", addr: "23 rue de la Procession\nB-7822 Ath, Belgique" },
                     { label: "Siege social", type: "Facturation", addr: "15 avenue Louise\nB-1050 Bruxelles, Belgique" },
@@ -100,13 +102,33 @@ export default function AccountPage() {
 
             {activeTab === "commandes" && (
               <div>
-                <div className="flex items-center justify-between mb-5">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-5 gap-3">
                   <h2 className="text-xl font-bold text-mk-navy">Commandes</h2>
                   <select className="border border-mk-line rounded-md px-3 py-1.5 text-sm">
                     <option>Toutes</option><option>Confirmee</option><option>Expediee</option><option>Livree</option><option>Annulee</option>
                   </select>
                 </div>
-                <div className="border border-mk-line rounded-lg overflow-hidden">
+                {/* Mobile cards */}
+                <div className="sm:hidden space-y-3">
+                  {orders.map(o => (
+                    <Link key={o.id} to={`/commande/${o.id}`} className="block border border-mk-line rounded-lg p-4">
+                      <div className="flex justify-between mb-2">
+                        <span className="font-medium text-mk-navy text-sm">{o.id}</span>
+                        <span className={`text-xs font-medium px-2 py-0.5 rounded ${
+                          o.status === "Livree" ? "bg-mk-deal text-mk-green" :
+                          o.status === "Confirmee" ? "bg-blue-50 text-mk-blue" :
+                          "bg-mk-mov-bg text-mk-amber"
+                        }`}>{o.status}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-mk-sec">{o.date} · {o.articles} articles</span>
+                        <span className="font-bold text-mk-navy">{formatPrice(o.montant)} EUR</span>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+                {/* Desktop table */}
+                <div className="hidden sm:block border border-mk-line rounded-lg overflow-hidden">
                   <div className="grid grid-cols-5 gap-3 px-4 py-2 bg-mk-alt text-xs font-semibold text-mk-sec">
                     <span>ID Commande</span><span>Date</span><span>Statut</span><span>Articles</span><span>Montant</span>
                   </div>
@@ -138,7 +160,7 @@ export default function AccountPage() {
             {activeTab === "suivi" && (
               <div>
                 <h2 className="text-xl font-bold text-mk-navy mb-5">Liste de suivi</h2>
-                <div className="grid grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                   {products.slice(0, 4).map((p, i) => (
                     <div key={p.id} className="border border-mk-line rounded-lg p-4 relative">
                       <button className="absolute top-3 right-3"><Heart size={16} fill="#EF4343" className="text-mk-red" /></button>
@@ -159,7 +181,7 @@ export default function AccountPage() {
               <div>
                 <h2 className="text-xl font-bold text-mk-navy mb-5">Portefeuille</h2>
                 <div className="text-center py-8">
-                  <div className="text-5xl font-bold text-mk-navy mb-4">0,00 EUR</div>
+                  <div className="text-4xl md:text-5xl font-bold text-mk-navy mb-4">0,00 EUR</div>
                   <div className="flex justify-center gap-3">
                     <button className="bg-mk-blue text-white text-sm px-5 py-2 rounded-md">Recharger</button>
                     <button className="border border-mk-line text-sm px-5 py-2 rounded-md text-mk-sec">Retirer</button>
@@ -197,7 +219,7 @@ export default function AccountPage() {
             {activeTab === "bnpl" && (
               <div>
                 <h2 className="text-xl font-bold text-mk-navy mb-5">Payer plus tard</h2>
-                <div className="grid grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div>
                     <h3 className="text-sm font-bold text-mk-navy mb-3">Conditions</h3>
                     <ul className="text-sm text-mk-sec space-y-2">
@@ -217,7 +239,7 @@ export default function AccountPage() {
                     ))}
                   </div>
                 </div>
-                <div className="grid grid-cols-4 gap-3 mt-6">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-6">
                   {["Aujourd'hui", "1 mois", "2 mois", "3 mois"].map(p => (
                     <div key={p} className="bg-mk-mov-bg border border-mk-mov-border rounded-lg p-4 text-center">
                       <div className="text-xs text-mk-sec mb-1">{p}</div>

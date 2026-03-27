@@ -42,17 +42,17 @@ export default function ProductPage() {
   };
 
   const tabs = [
-    { key: "mk" as const, label: "Marketplace MediKong", icon: ShoppingCart, count: 2 },
-    { key: "ext" as const, label: "Offres externes", icon: ExternalLink, count: 3 },
-    { key: "market" as const, label: "Prix du marche", icon: Eye, count: 5 },
+    { key: "mk" as const, label: "Marketplace", fullLabel: "Marketplace MediKong", icon: ShoppingCart, count: 2 },
+    { key: "ext" as const, label: "Externes", fullLabel: "Offres externes", icon: ExternalLink, count: 3 },
+    { key: "market" as const, label: "Marche", fullLabel: "Prix du marche", icon: Eye, count: 5 },
   ];
 
   return (
     <Layout>
-      <div className="mk-container py-8">
-        <div className="flex gap-8">
+      <div className="mk-container py-6 md:py-8">
+        <div className="flex flex-col md:flex-row gap-6 md:gap-8">
           {/* Image */}
-          <div className="w-[400px] shrink-0 sticky top-20 self-start">
+          <div className="w-full md:w-[400px] shrink-0 md:sticky md:top-20 self-start">
             <div className="border border-mk-line rounded-lg aspect-square bg-mk-alt flex items-center justify-center mb-3">
               <span className="text-mk-ter text-sm">Image produit</span>
             </div>
@@ -68,8 +68,8 @@ export default function ProductPage() {
           {/* Details */}
           <div className="flex-1 min-w-0">
             <p className="text-sm text-mk-sec mb-1">{product.brand}</p>
-            <h1 className="text-2xl font-bold text-mk-navy mb-3">{product.name}</h1>
-            <div className="flex items-center gap-3 mb-1">
+            <h1 className="text-xl md:text-2xl font-bold text-mk-navy mb-3">{product.name}</h1>
+            <div className="flex items-center gap-3 mb-1 flex-wrap">
               <span className="text-xs text-mk-ter">GTIN: {product.ean}</span>
               <button onClick={handleCopy} className="text-mk-blue text-xs flex items-center gap-1">
                 <Copy size={12} /> {copied ? "Copie !" : "Copier"}
@@ -80,12 +80,12 @@ export default function ProductPage() {
             <div className="border-t border-mk-line my-4" />
 
             {/* Filter offers */}
-            <div className="bg-mk-alt border border-mk-line rounded-lg p-5 mb-6">
+            <div className="bg-mk-alt border border-mk-line rounded-lg p-4 md:p-5 mb-6">
               <div className="flex items-center gap-2 mb-4">
                 <Sliders size={14} className="text-mk-navy" />
                 <span className="text-sm font-bold text-mk-navy">Filtrer les offres</span>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs text-mk-sec mb-1 block">MOV maximum</label>
                   <select className="w-full border border-mk-line rounded-md px-3 py-2 text-sm">
@@ -102,14 +102,14 @@ export default function ProductPage() {
             </div>
 
             {/* Tabs */}
-            <div className="flex gap-1 mb-6">
+            <div className="flex gap-1 mb-6 overflow-x-auto pb-1">
               {tabs.map(t => (
                 <button
                   key={t.key}
                   onClick={() => setTab(t.key)}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-md text-sm font-medium ${tab === t.key ? "bg-mk-navy text-white" : "border border-mk-line text-mk-sec"}`}
+                  className={`flex items-center gap-1.5 px-3 md:px-4 py-2.5 rounded-md text-xs md:text-sm font-medium whitespace-nowrap ${tab === t.key ? "bg-mk-navy text-white" : "border border-mk-line text-mk-sec"}`}
                 >
-                  <t.icon size={14} /> {t.label}
+                  <t.icon size={14} /> <span className="hidden sm:inline">{t.fullLabel}</span><span className="sm:hidden">{t.label}</span>
                   <span className={`text-xs px-1.5 py-0.5 rounded-full ${tab === t.key ? "bg-white/20" : "bg-mk-alt"}`}>{t.count}</span>
                 </button>
               ))}
@@ -120,9 +120,9 @@ export default function ProductPage() {
               <div className="space-y-4">
                 <p className="text-sm text-mk-sec">Meilleure offre · 2 disponibles</p>
                 {sellers.slice(0, 2).map(s => (
-                  <div key={s.name} className="border border-mk-line rounded-lg p-5">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-2">
+                  <div key={s.name} className="border border-mk-line rounded-lg p-4 md:p-5">
+                    <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-xs bg-mk-deal text-mk-green px-2 py-0.5 rounded font-medium">En stock</span>
                         {s.topRated && <span className="text-xs bg-purple-50 text-purple-600 px-2 py-0.5 rounded font-medium">Top rated</span>}
                         <span className="font-semibold text-mk-navy">{s.name}</span>
@@ -140,7 +140,7 @@ export default function ProductPage() {
                       </div>
                     </div>
                     <div className="text-xs text-mk-sec mb-3">500 EUR | 1 500 EUR | 5 000 EUR</div>
-                    <div className="flex items-end justify-between">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-3">
                       <div>
                         <p className="text-2xl font-bold text-mk-navy">{formatPrice(product.price)} EUR</p>
                         <p className="text-xs text-mk-ter">{product.unit}</p>
@@ -151,7 +151,7 @@ export default function ProductPage() {
                           <span className="px-3 text-sm font-medium">{qty}</span>
                           <button onClick={() => setQty(qty + 1)} className="px-2 py-1.5"><Plus size={14} /></button>
                         </div>
-                        <button className="bg-mk-navy text-white text-sm font-semibold px-5 py-2 rounded-md flex items-center gap-2">
+                        <button className="bg-mk-navy text-white text-sm font-semibold px-4 md:px-5 py-2 rounded-md flex items-center gap-2">
                           <ShoppingCart size={14} /> Ajouter
                         </button>
                       </div>
@@ -164,8 +164,8 @@ export default function ProductPage() {
             {tab === "ext" && (
               <div>
                 <p className="text-sm text-mk-sec mb-4">Vous serez redirige vers le site du fournisseur.</p>
-                <div className="border border-mk-line rounded-lg overflow-hidden">
-                  <div className="grid grid-cols-5 gap-3 px-4 py-2 bg-mk-alt text-xs font-semibold text-mk-sec">
+                <div className="border border-mk-line rounded-lg overflow-x-auto">
+                  <div className="grid grid-cols-5 gap-3 px-4 py-2 bg-mk-alt text-xs font-semibold text-mk-sec min-w-[500px]">
                     <span>Fournisseur</span><span>Prix unit.</span><span>MOV</span><span>Delai</span><span>Action</span>
                   </div>
                   {[
@@ -173,13 +173,13 @@ export default function ProductPage() {
                     { name: "MedSupply BE", price: 13.20, mov: "500 EUR", delay: "72h" },
                     { name: "Distri-Med NL", price: 10.80, mov: "2 000 EUR", delay: "5j" },
                   ].map(f => (
-                    <div key={f.name} className="grid grid-cols-5 gap-3 px-4 py-3 border-t border-mk-line text-sm items-center">
+                    <div key={f.name} className="grid grid-cols-5 gap-3 px-4 py-3 border-t border-mk-line text-sm items-center min-w-[500px]">
                       <span className="font-medium text-mk-navy">{f.name}</span>
                       <span className="font-bold text-mk-navy">{formatPrice(f.price)} EUR</span>
                       <span className="text-mk-sec">{f.mov}</span>
                       <span className="text-mk-sec">{f.delay}</span>
                       <button className="border border-mk-navy text-mk-navy text-xs font-semibold px-3 py-1.5 rounded-md flex items-center gap-1">
-                        Voir l'offre <ExternalLink size={11} />
+                        Voir <ExternalLink size={11} />
                       </button>
                     </div>
                   ))}
@@ -193,12 +193,12 @@ export default function ProductPage() {
                   <Eye size={14} className="text-mk-sec" />
                   <span className="text-sm text-mk-sec">Prix publics. Consultation uniquement.</span>
                 </div>
-                <div className="border border-mk-line rounded-lg overflow-hidden">
-                  <div className="grid grid-cols-4 gap-3 px-4 py-2 bg-mk-alt text-xs font-semibold text-mk-sec">
+                <div className="border border-mk-line rounded-lg overflow-x-auto">
+                  <div className="grid grid-cols-4 gap-3 px-4 py-2 bg-mk-alt text-xs font-semibold text-mk-sec min-w-[400px]">
                     <span>Enseigne</span><span>Prix TTC</span><span>Statut</span><span>MAJ</span>
                   </div>
                   {competitors.map((c, i) => (
-                    <div key={c.name} className={`grid grid-cols-4 gap-3 px-4 py-3 border-t border-mk-line text-sm items-center ${i % 2 === 1 ? "bg-mk-alt" : ""}`}>
+                    <div key={c.name} className={`grid grid-cols-4 gap-3 px-4 py-3 border-t border-mk-line text-sm items-center min-w-[400px] ${i % 2 === 1 ? "bg-mk-alt" : ""}`}>
                       <span className="font-medium text-mk-navy">{c.name}</span>
                       <span className="font-bold text-mk-navy">{formatPrice(c.price)} EUR</span>
                       <span className={`text-xs font-medium px-2 py-0.5 rounded inline-block w-fit ${
@@ -248,7 +248,7 @@ export default function ProductPage() {
             {/* Price history */}
             <div className="mt-8">
               <h2 className="text-lg font-bold text-mk-navy mb-4">Historique des prix</h2>
-              <div className="flex gap-6 mb-4">
+              <div className="grid grid-cols-2 md:flex gap-4 md:gap-6 mb-4">
                 {[["Min", "10,80"], ["Max", "15,00"], ["Median", "13,20"], ["Moyen", "13,05"]].map(([l, v]) => (
                   <div key={l}><span className="text-xs text-mk-sec">{l}</span><div className="text-[15px] font-bold text-mk-navy">{v} EUR</div></div>
                 ))}
@@ -267,7 +267,7 @@ export default function ProductPage() {
             {/* Margin calculator */}
             <div className="mt-8">
               <h2 className="text-lg font-bold text-mk-navy mb-4">Calculateur de marge</h2>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                   <label className="text-xs text-mk-sec mb-1 block">Prix d'achat HT</label>
                   <input value={buyPrice} onChange={e => setBuyPrice(e.target.value)} className="w-full border border-mk-line rounded-md px-3 py-2 text-sm" />
@@ -293,7 +293,7 @@ export default function ProductPage() {
             {/* Similar products */}
             <div className="mt-8">
               <h2 className="text-lg font-bold text-mk-navy mb-4">Plus de produits {product.brand}</h2>
-              <div className="flex gap-3 overflow-x-auto">
+              <div className="flex gap-3 overflow-x-auto pb-2">
                 {products.filter(p => p.id !== product.id).slice(0, 6).map(p => (
                   <Link key={p.id} to={`/produit/${p.slug}`} className="w-36 shrink-0 border border-mk-line rounded-lg p-3 hover:shadow-sm">
                     <div className="aspect-square bg-mk-alt rounded mb-2 flex items-center justify-center text-[8px] text-mk-ter">IMG</div>

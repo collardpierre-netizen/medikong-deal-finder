@@ -76,8 +76,8 @@ const App = () => (
               <Route path="onboarding" element={<AdminOnboarding />} />
               <Route path="produits" element={<AdminProduits />} />
               <Route path="produits/:id" element={<AdminProduitDetail />} />
-              <Route path="categories" element={<AdminPlaceholder titleKey="categories" />} />
-              <Route path="marques" element={<AdminPlaceholder titleKey="brands" />} />
+              <Route path="categories" element={<AdminCategories />} />
+              <Route path="marques" element={<AdminMarques />} />
               <Route path="schemas-pim" element={<AdminSchemasPIM />} />
               <Route path="commandes" element={<AdminCommandes />} />
               <Route path="litiges" element={<AdminLitiges />} />

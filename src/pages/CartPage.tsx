@@ -8,13 +8,13 @@ import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { PageTransition } from "@/components/shared/PageTransition";
 
-const cartItems = products.slice(0, 3);
-const cartItems2 = products.slice(3, 5);
-
 export default function CartPage() {
+  const { data: products = [] } = useProducts();
   const [showProducts1, setShowProducts1] = useState(true);
   const [showProducts2, setShowProducts2] = useState(true);
 
+  const cartItems = products.slice(0, 3);
+  const cartItems2 = products.slice(3, 5);
   const total1 = cartItems.reduce((s, p) => s + p.price, 0);
   const total2 = cartItems2.reduce((s, p) => s + p.price, 0);
   const grandTotal = total1 + total2;

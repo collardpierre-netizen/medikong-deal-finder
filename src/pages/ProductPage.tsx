@@ -29,13 +29,14 @@ const techSpecs = [
 
 export default function ProductPage() {
   const { slug } = useParams();
-  const product = products.find(p => p.slug === slug) || products[0];
+  const { data: product, isLoading } = useProduct(slug);
+  const { data: products = [] } = useProducts();
   const [tab, setTab] = useState<"mk" | "ext" | "market">("mk");
   const [qty, setQty] = useState(1);
   const [openAccordion, setOpenAccordion] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
-  const [buyPrice, setBuyPrice] = useState(product.price.toString());
-  const [sellPrice, setSellPrice] = useState((product.price * 1.7).toFixed(2));
+  const [buyPrice, setBuyPrice] = useState("");
+  const [sellPrice, setSellPrice] = useState("");
 
   const margin = sellPrice && buyPrice ? (((parseFloat(sellPrice) - parseFloat(buyPrice)) / parseFloat(sellPrice)) * 100).toFixed(1) : "0";
 

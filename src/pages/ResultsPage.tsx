@@ -23,10 +23,6 @@ export default function ResultsPage() {
   const [showFilters, setShowFilters] = useState(false);
   const loading = dbLoading;
 
-  useEffect(() => {
-    const t = setTimeout(() => setLoading(false), 1500);
-    return () => clearTimeout(t);
-  }, []);
 
   return (
     <Layout>

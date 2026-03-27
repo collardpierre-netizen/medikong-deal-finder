@@ -35,6 +35,10 @@ export function useCart() {
   const { user } = useAuth();
   const [items, setItems] = useState<CartItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
+  const openDrawer = useCallback(() => setIsDrawerOpen(true), []);
+  const closeDrawer = useCallback(() => setIsDrawerOpen(false), []);
 
   useEffect(() => {
     setItems(loadCart());
@@ -55,6 +59,7 @@ export function useCart() {
         return next;
       });
       toast.success("Produit ajouté au panier");
+      setIsDrawerOpen(true);
     }, []),
     isPending: false,
   };

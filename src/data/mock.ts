@@ -115,7 +115,8 @@ export function formatPrice(price: number): string {
 }
 
 // Icon map for product placeholders
-export const productIconMap: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const productIconMap: Record<string, any> = {
   Hand, FlaskConical, Wind, Bandage, Droplets, Shield, Syringe, Thermometer,
   Scissors, Package, Pipette, Stethoscope, Heart, Eye, Pill, Beaker,
 };

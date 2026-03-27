@@ -1,11 +1,29 @@
-import { Outlet } from "react-router-dom";
+import { Outlet, Navigate } from "react-router-dom";
 import { I18nProvider } from "@/contexts/I18nContext";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "react-router-dom";
+import { useAdminAuth } from "@/hooks/useAdminAuth";
+import { Shield } from "lucide-react";
 
 const AdminLayout = () => {
   const location = useLocation();
+  const { isAdmin, loading } = useAdminAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#0F172A" }}>
+        <div className="text-center">
+          <Shield size={32} style={{ color: "#3B82F6" }} className="mx-auto mb-3 animate-pulse" />
+          <p className="text-[13px]" style={{ color: "#8B95A5" }}>Vérification des droits...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return <Navigate to="/admin/login" replace />;
+  }
 
   return (
     <I18nProvider>

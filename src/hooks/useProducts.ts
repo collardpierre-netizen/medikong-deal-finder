@@ -80,7 +80,7 @@ export function useProducts() {
     queryFn: async () => {
       const [productsRes, offersRes] = await Promise.all([
         supabase.from("products").select("*").eq("status", "active").order("created_at", { ascending: true }),
-        supabase.from("offers").select("*").eq("is_active", true),
+        supabase.from("offers_direct").select("*").eq("status", "active"),
       ]);
       if (productsRes.error) throw productsRes.error;
       return (productsRes.data || []).map((row: any) => mapDbProduct(row, offersRes.data || []));

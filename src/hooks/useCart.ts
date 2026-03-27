@@ -5,6 +5,8 @@ import { toast } from "sonner";
 export interface CartItem {
   id: string;
   product_id: string;
+  vendor_id?: string;
+  price_ht?: number;
   quantity: number;
   product?: {
     id: string;

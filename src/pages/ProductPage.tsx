@@ -140,7 +140,7 @@ export default function ProductPage() {
               <div className="border-t border-mk-line my-4" />
 
               {/* Filter offers */}
-              <AnimatedSection delay={0.1}>
+              <div ref={offerSectionRef}>
                 <div className="bg-mk-alt border border-mk-line rounded-lg p-4 md:p-5 mb-6">
                   <div className="flex items-center gap-2 mb-4">
                     <Sliders size={14} className="text-mk-navy" />

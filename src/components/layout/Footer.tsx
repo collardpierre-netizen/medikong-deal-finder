@@ -8,7 +8,7 @@ export function Footer() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
           <div className="col-span-2 md:col-span-1">
             <div className="mb-3">
-              <img src={logoHorizontal} alt="MediKong.pro" className="h-12" />
+              <img src={logoHorizontal} alt="MediKong.pro" className="h-12 brightness-0 opacity-80" />
             </div>
             <p className="text-sm text-mk-sec mb-3">La marketplace B2B pour les fournitures medicales en Belgique.</p>
             <p className="text-xs text-mk-ter">Balooh SRL · TVA: BE 1005.771.323</p>

@@ -225,6 +225,10 @@ export default function ProductPage() {
                               className="bg-mk-navy text-white text-sm font-semibold px-4 md:px-5 py-2 rounded-md flex items-center gap-2"
                               whileHover={{ scale: 1.04 }}
                               whileTap={{ scale: 0.95 }}
+                              onClick={() => {
+                                if (!user) { navigate("/connexion"); return; }
+                                addToCart.mutate({ productId: product.id, quantity: qty });
+                              }}
                             >
                               <ShoppingCart size={14} /> Ajouter
                             </motion.button>

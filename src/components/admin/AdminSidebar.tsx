@@ -148,6 +148,16 @@ const AdminSidebar = () => {
           </div>
         ))}
       </nav>
+      {/* Logout */}
+      <div className="px-3 pb-4 border-t border-white/10 pt-3">
+        <button
+          onClick={handleLogout}
+          className="flex items-center gap-2.5 px-3 py-2 rounded-md text-[13px] text-slate-400 hover:text-red-400 hover:bg-white/5 transition-colors w-full"
+        >
+          <LogOut size={16} strokeWidth={1.8} />
+          {t("logout")}
+        </button>
+      </div>
     </aside>
   );
 };

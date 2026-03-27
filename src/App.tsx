@@ -87,12 +87,12 @@ const App = () => (
               <Route path="analytics" element={<AdminAnalytics />} />
               <Route path="reglementaire" element={<AdminReglementaire />} />
               <Route path="import-export" element={<AdminImportExport />} />
-              <Route path="crm" element={<AdminPlaceholder titleKey="crm" />} />
-              <Route path="cms" element={<AdminPlaceholder titleKey="cms" />} />
-              <Route path="logistique" element={<AdminPlaceholder titleKey="logistics" />} />
-              <Route path="equipe" element={<AdminPlaceholder titleKey="team" />} />
-              <Route path="parametres" element={<AdminPlaceholder titleKey="settings" />} />
-              <Route path="logs" element={<AdminPlaceholder titleKey="logs" />} />
+              <Route path="crm" element={<AdminCRM />} />
+              <Route path="cms" element={<AdminCMS />} />
+              <Route path="logistique" element={<AdminLogistique />} />
+              <Route path="equipe" element={<AdminEquipe />} />
+              <Route path="parametres" element={<AdminParametres />} />
+              <Route path="logs" element={<AdminLogs />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />

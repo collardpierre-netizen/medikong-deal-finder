@@ -2,6 +2,8 @@ import { Layout } from "@/components/layout/Layout";
 import { ProductImage } from "@/components/shared/ProductCard";
 import { competitors, formatPrice, sellers, productColors, productIconMap } from "@/data/mock";
 import { useProducts, useProduct } from "@/hooks/useProducts";
+import { useCart } from "@/hooks/useCart";
+import { useAuth } from "@/contexts/AuthContext";
 import { useParams, Link } from "react-router-dom";
 import { Copy, Sliders, ShoppingCart, ExternalLink, Eye, Shield, Check, Truck, Globe, ChevronDown, Minus, Plus, Bell } from "lucide-react";
 import { useState } from "react";

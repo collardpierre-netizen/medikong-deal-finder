@@ -193,10 +193,10 @@ export default function ProductPage() {
                     exit={{ opacity: 0, y: -8 }}
                     transition={{ duration: 0.3 }}
                   >
-                    <p className="text-sm text-mk-sec">Meilleure offre · 2 disponibles</p>
-                    {sellers.slice(0, 2).map((s, i) => (
+                    <p className="text-sm text-mk-sec">Meilleure offre · {realOffers.length} disponible{realOffers.length > 1 ? "s" : ""}</p>
+                    {(realOffers.length > 0 ? realOffers : [{ id: "fallback", productId: product.id, sellerId: "", sellerName: "MediKong", unitPriceEur: product.price, stockQuantity: 1, movEur: 500, bundleSize: 1, deliveryDays: 3, shipFromCountry: "BE", priceTiers: null, isActive: true, isVerified: true, isTopRated: false }]).map((offer, i) => (
                       <motion.div
-                        key={s.name}
+                        key={offer.id}
                         className="border border-mk-line rounded-lg p-4 md:p-5"
                         initial={{ opacity: 0, y: 14 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -205,23 +205,23 @@ export default function ProductPage() {
                       >
                         <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-xs bg-mk-deal text-mk-green px-2 py-0.5 rounded font-medium">En stock</span>
-                            {s.topRated && <span className="text-xs bg-purple-50 text-purple-600 px-2 py-0.5 rounded font-medium">Top rated</span>}
-                            <span className="font-semibold text-mk-navy">{s.name}</span>
-                            {s.name === product.best && <span className="text-xs bg-mk-deal text-mk-green px-2 py-0.5 rounded font-medium">Meilleur prix</span>}
+                            <span className="text-xs bg-mk-deal text-mk-green px-2 py-0.5 rounded font-medium">{offer.stockQuantity > 0 ? "En stock" : "Rupture"}</span>
+                            {offer.isTopRated && <span className="text-xs bg-purple-50 text-purple-600 px-2 py-0.5 rounded font-medium">Top rated</span>}
+                            <span className="font-semibold text-mk-navy">{offer.sellerName}</span>
+                            {i === 0 && <span className="text-xs bg-mk-deal text-mk-green px-2 py-0.5 rounded font-medium">Meilleur prix</span>}
                           </div>
-                          <span className="text-xs text-mk-sec">48h</span>
+                          <span className="text-xs text-mk-sec">{offer.deliveryDays}h</span>
                         </div>
                         <div className="bg-mk-mov-bg border border-mk-mov-border rounded-md p-3 mb-3">
                           <div className="flex justify-between text-xs mb-1">
-                            <span className="text-mk-amber font-medium">Minimum: 500 EUR</span>
-                            <span className="text-mk-sec">Encore 367,10 EUR</span>
+                            <span className="text-mk-amber font-medium">Minimum: {formatPrice(offer.movEur)} EUR</span>
+                            <span className="text-mk-sec">Encore {formatPrice(Math.max(offer.movEur - offer.unitPriceEur * qty, 0))} EUR</span>
                           </div>
                           <div className="h-1.5 bg-mk-mov-border rounded-full overflow-hidden">
                             <motion.div
                               className="h-full bg-mk-amber rounded-full"
                               initial={{ width: 0 }}
-                              animate={{ width: "27%" }}
+                              animate={{ width: `${Math.min((offer.unitPriceEur * qty / Math.max(offer.movEur, 1)) * 100, 100)}%` }}
                               transition={{ duration: 0.8, delay: 0.3 }}
                             />
                           </div>
@@ -229,7 +229,7 @@ export default function ProductPage() {
                         <div className="text-xs text-mk-sec mb-3">500 EUR | 1 500 EUR | 5 000 EUR</div>
                         <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-3">
                           <div>
-                            <p className="text-2xl font-bold text-mk-navy">{formatPrice(product.price)} EUR</p>
+                            <p className="text-2xl font-bold text-mk-navy">{formatPrice(offer.unitPriceEur)} EUR</p>
                             <p className="text-xs text-mk-ter">{product.unit}</p>
                           </div>
                           <div className="flex items-center gap-2">
@@ -244,7 +244,13 @@ export default function ProductPage() {
                               whileTap={{ scale: 0.95 }}
                               onClick={() => {
                                 if (!user) { navigate("/connexion"); return; }
-                                addToCart.mutate({ productId: product.id, quantity: qty });
+                                addToCart.mutate({
+                                  productId: product.id,
+                                  quantity: qty,
+                                  vendorId: offer.sellerId,
+                                  priceHt: offer.unitPriceEur,
+                                  productData: { id: product.id, name: product.name, brand: product.brand, slug: product.slug, price: offer.unitPriceEur, gtin: product.gtin, unit: product.unit, stock: offer.stockQuantity > 0 },
+                                });
                               }}
                             >
                               <ShoppingCart size={14} /> Ajouter

@@ -1,4 +1,5 @@
 import { Layout } from "@/components/layout/Layout";
+import { ProductImageSmall } from "@/components/shared/ProductCard";
 import { products, formatPrice } from "@/data/mock";
 import { Download, Upload, Trash2, Check, Minus, Plus } from "lucide-react";
 import { useState } from "react";

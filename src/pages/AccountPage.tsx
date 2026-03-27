@@ -24,6 +24,7 @@ const orders = [
 ];
 
 export default function AccountPage() {
+  const { data: products = [] } = useProducts();
   const [activeTab, setActiveTab] = useState("profil");
 
   return (

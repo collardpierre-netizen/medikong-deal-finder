@@ -72,6 +72,7 @@ const AdminSidebar = () => {
   const { t } = useI18n();
   const location = useLocation();
   const navigate = useNavigate();
+  const { adminName, role } = useAdminAuth();
 
   const isActive = (path: string) => location.pathname === path;
 

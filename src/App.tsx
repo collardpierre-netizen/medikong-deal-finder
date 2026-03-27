@@ -19,6 +19,7 @@ import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import CategoryPage from "./pages/CategoryPage";
 import PromotionsPage from "./pages/PromotionsPage";
+import SellerOnboardingPage from "./pages/SellerOnboardingPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -46,6 +47,7 @@ const App = () => (
             <Route path="/inscription" element={<RegisterPage />} />
             <Route path="/categorie/:slug" element={<CategoryPage />} />
             <Route path="/promotions" element={<PromotionsPage />} />
+            <Route path="/seller-onboarding" element={<SellerOnboardingPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

@@ -50,6 +50,7 @@ const popularBrands = ["3M", "TENA", "Hartmann", "B.Braun", "Essity", "Molnlycke
 
 export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState("");
+  const { data: products = [] } = useProducts();
 
   return (
     <Layout>

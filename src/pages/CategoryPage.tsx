@@ -10,6 +10,7 @@ const sidebarBrands = ["Aurelia", "Kolmi", "Hartmann", "Ecolab", "Meda Pharma"];
 
 export default function CategoryPage() {
   const { slug } = useParams();
+  const { data: products = [] } = useProducts();
   const [view, setView] = useState<"grid" | "list">("grid");
   const [activeSub, setActiveSub] = useState(0);
   const [showFilters, setShowFilters] = useState(false);

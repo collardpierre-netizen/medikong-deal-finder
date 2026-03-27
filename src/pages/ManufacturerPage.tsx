@@ -13,6 +13,7 @@ const brandsList = [
 
 export default function ManufacturerPage() {
   const { slug } = useParams();
+  const { data: products = [] } = useProducts();
   const name = slug === "essity" ? "Essity" : "Essity";
 
   return (

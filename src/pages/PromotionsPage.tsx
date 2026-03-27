@@ -3,9 +3,10 @@ import { formatPrice } from "@/data/mock";
 import { useProducts } from "@/hooks/useProducts";
 import { ProductCard } from "@/components/shared/ProductCard";
 import { Tag, TrendingDown, Truck, Calendar } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function PromotionsPage() {
+  const { data: products = [] } = useProducts();
   const [activeFilter, setActiveFilter] = useState(0);
   const filters = ["Toutes", "-20% et plus", "-40% et plus", "Flash (< 24h)"];
 

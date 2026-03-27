@@ -15,6 +15,7 @@ const catChips = [
 
 export default function BrandDetailPage() {
   const { slug } = useParams();
+  const { data: products = [] } = useProducts();
   const brand = brands.find(b => b.slug === slug) || { name: slug || "TENA", count: 234, slug: slug || "tena" };
   const [view, setView] = useState<"grid" | "list" | "trivago">("grid");
   const [showFilters, setShowFilters] = useState(false);

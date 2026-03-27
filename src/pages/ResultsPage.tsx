@@ -3,10 +3,10 @@ import { UniversePills } from "@/components/layout/UniversePills";
 import { ProductCard, ProductImage, ProductImageSmall } from "@/components/shared/ProductCard";
 import { SkeletonList } from "@/components/shared/SkeletonCard";
 import { formatPrice } from "@/data/mock";
-import { useProducts } from "@/hooks/useProducts";
-import { Sliders, Grid, List, Columns, Bell, Plus, Minus, TrendingDown, ExternalLink } from "lucide-react";
-import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { useSearchProducts, type SortOption } from "@/hooks/useSearchProducts";
+import { Sliders, Grid, List, Columns, Bell, Plus, Minus, TrendingDown, ExternalLink, Search } from "lucide-react";
+import { useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { PageTransition, AnimatedSection } from "@/components/shared/PageTransition";
 
@@ -17,11 +17,24 @@ const sidebarBrands = ["Aurelia", "Ecolab", "Kolmi", "Hartmann", "TENA"];
 type ViewMode = "grid" | "list" | "trivago";
 
 export default function ResultsPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const searchQuery = searchParams.get("q") || "";
+  const [localQuery, setLocalQuery] = useState(searchQuery);
+  const [sort, setSort] = useState<SortOption>("relevance");
   const [view, setView] = useState<ViewMode>("grid");
-  const { data: products = [], isLoading: dbLoading } = useProducts();
+  const { data: products = [], isLoading: dbLoading } = useSearchProducts(searchQuery, sort);
   const [activePill, setActivePill] = useState(0);
   const [showFilters, setShowFilters] = useState(false);
   const loading = dbLoading;
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSearchParams(localQuery.trim() ? { q: localQuery.trim() } : {});
+  };
+
+  const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSort(e.target.value as SortOption);
+  };
 
 
   return (

@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { type Product, formatPrice, productColors, productIconMap } from "@/data/mock";
 import { useState } from "react";
 import { Package } from "lucide-react";
+import { motion } from "framer-motion";
 
 export function ProductImage({ product, className = "" }: { product: Product; className?: string }) {
   const colorKey = product.color || "blue";

@@ -75,6 +75,9 @@ const App = () => (
             <Route path="/promotions" element={<PromotionsPage />} />
             <Route path="/seller-onboarding" element={<SellerOnboardingPage />} />
 
+            {/* Admin Login */}
+            <Route path="/admin/login" element={<AdminLoginPage />} />
+
             {/* Admin Back-Office */}
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<AdminDashboard />} />

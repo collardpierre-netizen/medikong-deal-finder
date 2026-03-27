@@ -1,5 +1,5 @@
 import { Layout } from "@/components/layout/Layout";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Search, Shield, Truck, Award, Package, Heart, Activity, Droplet, Droplets, Wrench, ChevronRight, Check, Armchair } from "lucide-react";
 import { categories, formatPrice } from "@/data/mock";
 import { useProducts } from "@/hooks/useProducts";
@@ -51,6 +51,12 @@ const popularBrands = ["3M", "TENA", "Hartmann", "B.Braun", "Essity", "Molnlycke
 export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const { data: products = [] } = useProducts();
+  const navigate = useNavigate();
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) navigate(`/recherche?q=${encodeURIComponent(searchQuery.trim())}`);
+  };
 
   return (
     <Layout>
@@ -74,7 +80,7 @@ export default function HomePage() {
             Comparez les prix de centaines de fournisseurs. Achetez directement ou trouvez la meilleure offre externe.
           </motion.p>
           <motion.form
-            onSubmit={e => { e.preventDefault(); }}
+            onSubmit={handleSearch}
             className="max-w-[520px] mx-auto mb-3"
             initial={{ opacity: 0, y: 14, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}

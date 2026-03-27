@@ -3,10 +3,10 @@ import { UniversePills } from "@/components/layout/UniversePills";
 import { ProductCard, ProductImage, ProductImageSmall } from "@/components/shared/ProductCard";
 import { SkeletonList } from "@/components/shared/SkeletonCard";
 import { formatPrice } from "@/data/mock";
-import { useProducts } from "@/hooks/useProducts";
-import { Sliders, Grid, List, Columns, Bell, Plus, Minus, TrendingDown, ExternalLink } from "lucide-react";
-import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { useSearchProducts, type SortOption } from "@/hooks/useSearchProducts";
+import { Sliders, Grid, List, Columns, Bell, Plus, Minus, TrendingDown, ExternalLink, Search } from "lucide-react";
+import { useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { PageTransition, AnimatedSection } from "@/components/shared/PageTransition";
 
@@ -17,11 +17,24 @@ const sidebarBrands = ["Aurelia", "Ecolab", "Kolmi", "Hartmann", "TENA"];
 type ViewMode = "grid" | "list" | "trivago";
 
 export default function ResultsPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const searchQuery = searchParams.get("q") || "";
+  const [localQuery, setLocalQuery] = useState(searchQuery);
+  const [sort, setSort] = useState<SortOption>("relevance");
   const [view, setView] = useState<ViewMode>("grid");
-  const { data: products = [], isLoading: dbLoading } = useProducts();
+  const { data: products = [], isLoading: dbLoading } = useSearchProducts(searchQuery, sort);
   const [activePill, setActivePill] = useState(0);
   const [showFilters, setShowFilters] = useState(false);
   const loading = dbLoading;
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSearchParams(localQuery.trim() ? { q: localQuery.trim() } : {});
+  };
+
+  const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSort(e.target.value as SortOption);
+  };
 
 
   return (
@@ -29,6 +42,29 @@ export default function ResultsPage() {
       <PageTransition>
         <UniversePills />
         <div className="mk-container py-6">
+          {/* Search bar */}
+          <form onSubmit={handleSearch} className="mb-4">
+            <div className="flex border border-mk-line rounded-md overflow-hidden max-w-xl">
+              <div className="flex items-center pl-3">
+                <Search size={16} className="text-mk-sec" />
+              </div>
+              <input
+                value={localQuery}
+                onChange={e => setLocalQuery(e.target.value)}
+                placeholder="Rechercher par nom, marque, GTIN ou CNK..."
+                className="flex-1 px-3 py-2.5 text-sm focus:outline-none min-w-0"
+              />
+              <button type="submit" className="bg-mk-blue text-white px-5 py-2.5 text-sm font-semibold hover:opacity-90 whitespace-nowrap">
+                Rechercher
+              </button>
+            </div>
+            {searchQuery && (
+              <p className="text-sm text-mk-sec mt-2">
+                Résultats pour « <span className="font-semibold text-mk-navy">{searchQuery}</span> »
+                <button onClick={() => { setLocalQuery(""); setSearchParams({}); }} className="text-mk-blue ml-2 hover:underline">Effacer</button>
+              </p>
+            )}
+          </form>
           {/* Filter pills */}
           <motion.div
             className="flex items-center gap-2 mb-4 overflow-x-auto pb-1"
@@ -62,7 +98,7 @@ export default function ResultsPage() {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.3, delay: 0.15 }}
           >
-            <span className="text-sm text-mk-sec">248 produits trouves sur 12 fournisseurs</span>
+            <span className="text-sm text-mk-sec">{products.length} produit{products.length !== 1 ? 's' : ''} trouvé{products.length !== 1 ? 's' : ''}</span>
             <div className="flex items-center gap-3">
               <div className="flex border border-mk-line rounded-md overflow-hidden">
                 {([["grid", Grid], ["list", List], ["trivago", Columns]] as const).map(([v, Icon]) => (
@@ -77,11 +113,11 @@ export default function ResultsPage() {
                   </motion.button>
                 ))}
               </div>
-              <select className="border border-mk-line rounded-md px-3 py-1.5 text-sm text-mk-sec">
-                <option>Pertinence</option>
-                <option>Prix croissant</option>
-                <option>Prix decroissant</option>
-                <option>Meilleures notes</option>
+              <select value={sort} onChange={handleSortChange} className="border border-mk-line rounded-md px-3 py-1.5 text-sm text-mk-sec">
+                <option value="relevance">Pertinence</option>
+                <option value="price_asc">Prix croissant</option>
+                <option value="price_desc">Prix décroissant</option>
+                <option value="offers">Nombre d'offres</option>
               </select>
             </div>
           </motion.div>

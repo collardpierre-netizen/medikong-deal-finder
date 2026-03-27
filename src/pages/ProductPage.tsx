@@ -1,5 +1,6 @@
 import { Layout } from "@/components/layout/Layout";
-import { products, competitors, formatPrice, sellers } from "@/data/mock";
+import { ProductImage } from "@/components/shared/ProductCard";
+import { products, competitors, formatPrice, sellers, productColors, productIconMap } from "@/data/mock";
 import { useParams, Link } from "react-router-dom";
 import { Copy, Sliders, ShoppingCart, ExternalLink, Eye, Shield, Check, Truck, Globe, ChevronDown, Minus, Plus, Bell } from "lucide-react";
 import { useState } from "react";

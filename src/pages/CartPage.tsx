@@ -209,7 +209,8 @@ export default function CartPage() {
                         <div>
                           <div className="flex items-center gap-2 mb-1">
                             <span className="font-semibold text-mk-navy underline cursor-pointer">
-                              Fournisseur #{group.vendorId}
+                              {group.vendorName}
+                            </span>
                             </span>
                             <CheckCircle2 size={16} className="text-mk-green" />
                           </div>

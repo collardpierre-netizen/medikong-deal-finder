@@ -58,7 +58,9 @@ export function Navbar() {
           <Link to="/panier" className="relative">
             <motion.div whileHover={{ scale: 1.15 }}>
               <ShoppingCart className="text-white" size={18} />
-              <span className="absolute -top-1.5 -right-2 bg-mk-red text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">3</span>
+              {cartCount > 0 && (
+                <span className="absolute -top-1.5 -right-2 bg-mk-red text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{cartCount}</span>
+              )}
             </motion.div>
           </Link>
           <div className="w-px h-5 bg-white/20 mx-1" />

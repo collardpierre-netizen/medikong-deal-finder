@@ -69,9 +69,41 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const closeDrawer = useCallback(() => setIsDrawerOpen(false), []);
 
   useEffect(() => {
-    setItems(loadCart());
+    const loaded = loadCart();
+    setItems(loaded);
     setIsLoading(false);
-  }, []);
+
+    // Enrich items missing prices with real offer data
+    const itemsMissingPrice = loaded.filter(i => !i.price_ht && (!i.product?.price || i.product.price === 0));
+    if (itemsMissingPrice.length > 0) {
+      const productIds = [...new Set(itemsMissingPrice.map(i => i.product_id))];
+      supabase
+        .from("offers_direct")
+        .select("product_id, vendor_id, price_ht")
+        .in("product_id", productIds)
+        .eq("status", "active")
+        .then(({ data: offers }) => {
+          if (!offers || offers.length === 0) return;
+          setItems(prev => {
+            const next = prev.map(item => {
+              if (item.price_ht && item.price_ht > 0) return item;
+              // Find matching offer by product_id + vendor_id, or best price for product
+              const match = offers.find(o => o.product_id === item.product_id && o.vendor_id === item.vendor_id)
+                || offers.find(o => o.product_id === item.product_id);
+              if (!match) return item;
+              const price = Number(match.price_ht);
+              return {
+                ...item,
+                price_ht: price,
+                vendor_id: item.vendor_id || match.vendor_id,
+                product: item.product ? { ...item.product, price: price } : item.product,
+              };
+            });
+            saveCart(next);
+            return next;
+          });
+        });
+    }
 
   const addToCart = useMemo(() => ({
     mutate: ({ productId, quantity = 1, productData, vendorId, priceHt }: { productId: string; quantity?: number; productData?: CartItem["product"]; vendorId?: string; priceHt?: number }) => {

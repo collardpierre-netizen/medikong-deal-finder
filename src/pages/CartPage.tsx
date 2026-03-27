@@ -380,7 +380,7 @@ export default function CartPage() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.4, delay: 0.2 }}
             >
-              <div className="border border-mk-line rounded-lg bg-white lg:sticky lg:top-20">
+              <div className="border border-mk-line rounded-lg bg-white lg:sticky lg:top-24 lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto">
                 <div className="p-5">
                   <h3 className="text-lg font-bold text-mk-navy mb-4">Récapitulatif panier</h3>
 

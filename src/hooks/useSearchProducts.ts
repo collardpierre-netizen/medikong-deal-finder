@@ -9,7 +9,7 @@ function slugify(text: string): string {
 function mapSearchResult(row: any, offersData?: any[]): Product {
   const productOffers = offersData?.filter((o: any) => o.product_id === row.id) || [];
   const lowestPrice = productOffers.length > 0
-    ? Math.min(...productOffers.map((o: any) => Number(o.unit_price_eur)))
+    ? Math.min(...productOffers.map((o: any) => Number(o.price_ht)))
     : Number(row.rrp_eur) || 0;
   const rrp = Number(row.rrp_eur) || lowestPrice * 1.5;
   const pct = rrp > 0 ? Math.round(((rrp - lowestPrice) / rrp) * 100) : 0;
@@ -25,12 +25,12 @@ function mapSearchResult(row: any, offersData?: any[]): Product {
     price: lowestPrice,
     pub: rrp,
     pct: Math.max(0, pct),
-    sellers: productOffers.filter((o: any) => o.is_active).length || 1,
+    sellers: productOffers.filter((o: any) => o.status === 'active').length || 1,
     rating: 0,
     reviews: 0,
     best: productOffers.length > 0 ? "Meilleur prix" : "",
     unit: `${row.weight_g || 0}g`,
-    stock: productOffers.some((o: any) => o.stock_quantity > 0),
+    stock: productOffers.some((o: any) => o.stock > 0),
     mk: productOffers.length > 0,
     category: row.category_l1 || undefined,
     color: ["blue", "teal", "green", "amber", "rose", "purple", "orange", "cyan"][row.product_name.length % 8],
@@ -69,8 +69,8 @@ export function useSearchProducts(query: string, sort: SortOption = "relevance")
       // Fetch offers for these products
       const productIds = productsData.map((p: any) => p.id);
       const { data: offersData } = productIds.length > 0
-        ? await supabase.from("offers").select("*").eq("is_active", true).in("product_id", productIds)
-        : { data: [] };
+        ? await supabase.from("offers_direct").select("*").eq("status", "active").in("product_id", productIds)
+        : { data: [] as any[] };
 
       let results = productsData.map((row: any) => mapSearchResult(row, offersData || []));
 

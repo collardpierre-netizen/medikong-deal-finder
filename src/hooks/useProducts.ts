@@ -37,7 +37,7 @@ function slugify(text: string): string {
 function mapDbProduct(row: any, offersData?: any[]): Product {
   const productOffers = offersData?.filter((o: any) => o.product_id === row.id) || [];
   const lowestPrice = productOffers.length > 0
-    ? Math.min(...productOffers.map((o: any) => Number(o.unit_price_eur)))
+    ? Math.min(...productOffers.map((o: any) => Number(o.price_ht)))
     : Number(row.rrp_eur) || 0;
   const rrp = Number(row.rrp_eur) || lowestPrice * 1.5;
   const pct = rrp > 0 ? Math.round(((rrp - lowestPrice) / rrp) * 100) : 0;
@@ -53,12 +53,12 @@ function mapDbProduct(row: any, offersData?: any[]): Product {
     price: lowestPrice,
     pub: rrp,
     pct: Math.max(0, pct),
-    sellers: productOffers.filter((o: any) => o.is_active).length || 1,
-    rating: 0,
+    sellers: productOffers.filter((o: any) => o.status === 'active').length || 1,
+    rating: productOffers.length > 0 ? Number(productOffers[0].rating) || 0 : 0,
     reviews: 0,
     best: productOffers.length > 0 ? "Meilleur prix" : "",
     unit: `${row.weight_g || 0}g`,
-    stock: productOffers.some((o: any) => o.stock_quantity > 0),
+    stock: productOffers.some((o: any) => o.stock > 0),
     mk: productOffers.length > 0,
     category: row.category_l1 || undefined,
     color: ["blue", "teal", "green", "amber", "rose", "purple", "orange", "cyan"][
@@ -80,7 +80,7 @@ export function useProducts() {
     queryFn: async () => {
       const [productsRes, offersRes] = await Promise.all([
         supabase.from("products").select("*").eq("status", "active").order("created_at", { ascending: true }),
-        supabase.from("offers").select("*").eq("is_active", true),
+        supabase.from("offers_direct").select("*").eq("status", "active"),
       ]);
       if (productsRes.error) throw productsRes.error;
       return (productsRes.data || []).map((row: any) => mapDbProduct(row, offersRes.data || []));
@@ -94,7 +94,7 @@ export function useProduct(slug: string | undefined) {
     queryFn: async () => {
       const [productsRes, offersRes] = await Promise.all([
         supabase.from("products").select("*").eq("status", "active"),
-        supabase.from("offers").select("*").eq("is_active", true),
+        supabase.from("offers_direct").select("*").eq("status", "active"),
       ]);
       if (productsRes.error) throw productsRes.error;
       const match = (productsRes.data || []).find((row: any) => slugify(row.product_name) === slug);
@@ -127,38 +127,38 @@ export function useProductOffers(productId: string | undefined) {
     queryKey: ["offers", productId],
     queryFn: async () => {
       const { data: offers, error } = await supabase
-        .from("offers")
+        .from("offers_direct")
         .select("*")
         .eq("product_id", productId!)
-        .eq("is_active", true)
-        .order("unit_price_eur", { ascending: true });
+        .eq("status", "active")
+        .order("price_ht", { ascending: true });
       if (error) throw error;
 
-      const sellerIds = [...new Set((offers || []).map((o: any) => o.seller_id))];
-      const { data: sellers } = await supabase
-        .from("sellers")
-        .select("id, company_name, is_verified, is_top_rated")
-        .in("id", sellerIds);
+      const vendorIds = [...new Set((offers || []).map((o: any) => o.vendor_id))];
+      const { data: vendors } = await supabase
+        .from("vendors")
+        .select("id, company_name, tier, status")
+        .in("id", vendorIds);
 
-      const sellerMap = new Map((sellers || []).map((s: any) => [s.id, s]));
+      const vendorMap = new Map((vendors || []).map((v: any) => [v.id, v]));
 
       return (offers || []).map((o: any): Offer => {
-        const seller = sellerMap.get(o.seller_id);
+        const vendor = vendorMap.get(o.vendor_id);
         return {
           id: o.id,
           productId: o.product_id,
-          sellerId: o.seller_id,
-          unitPriceEur: Number(o.unit_price_eur),
-          stockQuantity: o.stock_quantity,
-          movEur: Number(o.mov_eur),
-          bundleSize: o.bundle_size,
+          sellerId: o.vendor_id,
+          unitPriceEur: Number(o.price_ht),
+          stockQuantity: o.stock,
+          movEur: Number(o.mov || 0),
+          bundleSize: o.moq || 1,
           deliveryDays: o.delivery_days,
-          shipFromCountry: o.ship_from_country,
-          priceTiers: o.price_tiers,
-          isActive: o.is_active,
-          sellerName: seller?.company_name || `Seller-${o.seller_id.slice(0, 6)}`,
-          isVerified: seller?.is_verified,
-          isTopRated: seller?.is_top_rated,
+          shipFromCountry: 'BE',
+          priceTiers: null,
+          isActive: o.status === 'active',
+          sellerName: vendor?.company_name || `Vendor-${o.vendor_id.slice(0, 6)}`,
+          isVerified: vendor?.status === 'active',
+          isTopRated: vendor?.tier === 'Gold' || vendor?.tier === 'Platinum' || vendor?.tier === 'Strategic',
         };
       });
     },

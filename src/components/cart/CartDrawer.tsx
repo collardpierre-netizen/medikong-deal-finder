@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 export default function CartDrawer() {
   const { items, cartCount, isDrawerOpen, closeDrawer, updateQuantity, removeFromCart } = useCart();
 
-  const total = items.reduce((s, i) => s + (i.product?.price || 0) * i.quantity, 0);
+  const total = items.reduce((s, i) => s + (i.price_ht || i.product?.price || 0) * i.quantity, 0);
   const francoTarget = 250;
   const francoProgress = Math.min((total / francoTarget) * 100, 100);
   const francoRemaining = Math.max(francoTarget - total, 0);

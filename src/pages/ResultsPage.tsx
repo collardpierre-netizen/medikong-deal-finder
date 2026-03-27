@@ -1,6 +1,6 @@
 import { Layout } from "@/components/layout/Layout";
 import { UniversePills } from "@/components/layout/UniversePills";
-import { ProductCard } from "@/components/shared/ProductCard";
+import { ProductCard, ProductImage, ProductImageSmall } from "@/components/shared/ProductCard";
 import { SkeletonList } from "@/components/shared/SkeletonCard";
 import { products, formatPrice } from "@/data/mock";
 import { Sliders, Grid, List, Columns, Bell, Plus, Minus, TrendingDown, ExternalLink } from "lucide-react";

@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import logoHorizontal from "@/assets/logo-horizontal.png";
+import logoDark from "@/assets/Logo_horizontal_sombre2.png";
 
 export function Footer() {
   return (

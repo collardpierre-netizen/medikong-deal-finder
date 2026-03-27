@@ -24,6 +24,9 @@ import NotFound from "./pages/NotFound";
 import AdminLayout from "./components/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminPlaceholder from "./pages/admin/AdminPlaceholder";
+import AdminVendeurs from "./pages/admin/AdminVendeurs";
+import AdminVendeurDetail from "./pages/admin/AdminVendeurDetail";
+import AdminOnboarding from "./pages/admin/AdminOnboarding";
 
 const queryClient = new QueryClient();
 

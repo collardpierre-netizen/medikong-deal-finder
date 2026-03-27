@@ -85,6 +85,16 @@ const AdminVendeurDetail = () => {
     enabled: !!id,
   });
 
+  const { data: vendorProducts = [] } = useQuery({
+    queryKey: ["vendor-products-list", id],
+    queryFn: async () => {
+      const { data: offers } = await supabase
+        .from("offers_direct")
+        .select("product_id, price_ht, stock, status, products(product_name, brand)")
+        .eq("vendor_id", id!);
+      return offers || [];
+    },
+
   if (isLoading) {
     return <div className="py-12 text-center text-[13px]" style={{ color: "#8B95A5" }}>Chargement...</div>;
   }

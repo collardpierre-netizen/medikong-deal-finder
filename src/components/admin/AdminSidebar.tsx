@@ -70,8 +70,14 @@ const sections: NavSection[] = [
 const AdminSidebar = () => {
   const { t } = useI18n();
   const location = useLocation();
+  const navigate = useNavigate();
 
   const isActive = (path: string) => location.pathname === path;
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate("/admin/login");
+  };
 
   return (
     <aside

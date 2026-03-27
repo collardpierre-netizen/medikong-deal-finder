@@ -245,17 +245,6 @@ export default function CartPage() {
                                 animate={{ width: `${group.progress}%` }}
                                 transition={{ duration: 0.6, ease: "easeOut" }}
                               />
-                              {/* Dot at end */}
-                              <motion.div
-                                className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full border-2 border-white"
-                                style={{
-                                  backgroundColor: group.meetsMinimum ? "#16A34A" : "#F59E0B",
-                                  left: `calc(${Math.min(group.progress, 97)}% - 6px)`,
-                                }}
-                                initial={{ scale: 0 }}
-                                animate={{ scale: 1 }}
-                                transition={{ delay: 0.5 }}
-                              />
                             </div>
                           </div>
                           <button

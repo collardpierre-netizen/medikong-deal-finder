@@ -54,15 +54,18 @@ export default function ProductPage() {
         <div className="flex flex-col md:flex-row gap-6 md:gap-8">
           {/* Image */}
           <div className="w-full md:w-[400px] shrink-0 md:sticky md:top-20 self-start">
-            <div className="border border-mk-line rounded-lg aspect-square bg-mk-alt flex items-center justify-center mb-3">
-              <span className="text-mk-ter text-sm">Image produit</span>
-            </div>
+            <ProductImage product={product} className="border border-mk-line mb-3" />
             <div className="flex gap-2">
-              {[0, 1, 2, 3].map(i => (
-                <div key={i} className={`w-[52px] h-[52px] border rounded-md bg-mk-alt flex items-center justify-center text-[8px] text-mk-ter ${i === 0 ? "border-mk-navy border-2" : "border-mk-line"}`}>
-                  IMG
-                </div>
-              ))}
+              {[0, 1, 2, 3].map(i => {
+                const colorKey = product.color || "blue";
+                const colors = productColors[colorKey] || productColors.blue;
+                const IconComp = product.iconName ? productIconMap[product.iconName] : null;
+                return (
+                  <div key={i} className={`w-[52px] h-[52px] border rounded-md flex items-center justify-center ${i === 0 ? "border-mk-navy border-2" : "border-mk-line"}`} style={{ backgroundColor: colors.bg }}>
+                    {IconComp ? <IconComp size={16} style={{ color: colors.fg }} /> : <span className="text-[8px] text-mk-ter">IMG</span>}
+                  </div>
+                );
+              })}
             </div>
           </div>
 

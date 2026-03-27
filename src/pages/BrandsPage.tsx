@@ -16,8 +16,8 @@ export default function BrandsPage() {
   return (
     <Layout>
       <UniversePills />
-      <div className="mk-container py-8">
-        <h1 className="text-[28px] font-bold text-mk-navy mb-1">Toutes nos marques</h1>
+      <div className="mk-container py-6 md:py-8">
+        <h1 className="text-2xl md:text-[28px] font-bold text-mk-navy mb-1">Toutes nos marques</h1>
         <p className="text-sm text-mk-sec mb-6">350+ marques referencees · 12 500+ produits</p>
 
         <div className="flex gap-1.5 mb-8 flex-wrap">
@@ -38,7 +38,7 @@ export default function BrandsPage() {
         {Object.entries(grouped).sort().map(([letter, list]) => (
           <div key={letter} className="mb-8">
             <h2 className="text-xl font-bold text-mk-navy pb-2 border-b border-mk-line mb-4">{letter}</h2>
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {list.map(b => (
                 <Link key={b.slug} to={`/marque/${b.slug}`} className="text-sm font-medium text-mk-navy hover:text-mk-blue">
                   {b.name} <span className="text-mk-ter font-normal">({b.count})</span>

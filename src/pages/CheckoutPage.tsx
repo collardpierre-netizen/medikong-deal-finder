@@ -22,26 +22,26 @@ export default function CheckoutPage() {
 
   return (
     <Layout>
-      <div className="mk-container py-8">
+      <div className="mk-container py-6 md:py-8">
         {/* Stepper */}
-        <div className="flex items-center justify-center gap-6 mb-10">
+        <div className="flex items-center justify-center gap-3 md:gap-6 mb-8 md:mb-10">
           {["Livraison", "Paiement", "Verification"].map((s, i) => (
-            <div key={s} className="flex items-center gap-3">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${step > i ? "bg-mk-green text-white" : step === i + 1 ? "bg-mk-navy text-white" : "bg-mk-alt text-mk-sec"}`}>
+            <div key={s} className="flex items-center gap-2 md:gap-3">
+              <div className={`w-7 h-7 md:w-8 md:h-8 rounded-full flex items-center justify-center text-xs md:text-sm font-bold ${step > i ? "bg-mk-green text-white" : step === i + 1 ? "bg-mk-navy text-white" : "bg-mk-alt text-mk-sec"}`}>
                 {i + 1}
               </div>
-              <span className={`text-sm ${step === i + 1 ? "font-bold text-mk-navy" : "text-mk-sec"}`}>{s}</span>
-              {i < 2 && <div className="w-16 h-px bg-mk-line" />}
+              <span className={`text-xs md:text-sm hidden sm:inline ${step === i + 1 ? "font-bold text-mk-navy" : "text-mk-sec"}`}>{s}</span>
+              {i < 2 && <div className="w-8 md:w-16 h-px bg-mk-line" />}
             </div>
           ))}
         </div>
 
-        <div className="flex gap-6">
+        <div className="flex flex-col lg:flex-row gap-6">
           <div className="flex-1 min-w-0">
             {step === 1 && (
               <div>
                 <h2 className="text-xl font-bold text-mk-navy mb-5">Adresse de livraison</h2>
-                <div className="grid grid-cols-2 gap-4 mb-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
                   {addresses.map((a, i) => (
                     <button key={i} onClick={() => setSelectedAddr(i)} className={`border rounded-lg p-4 text-left ${selectedAddr === i ? "border-mk-blue border-2 bg-blue-50" : "border-mk-line"}`}>
                       <p className="text-sm font-bold text-mk-navy mb-1">{a.label}</p>
@@ -50,7 +50,7 @@ export default function CheckoutPage() {
                   ))}
                 </div>
                 <h3 className="text-lg font-bold text-mk-navy mb-4">Options de livraison</h3>
-                <div className="grid grid-cols-3 gap-4 mb-6">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
                   {shippingOpts.map((s, i) => (
                     <button key={i} onClick={() => setShipping(i)} className={`border rounded-lg p-4 text-center ${shipping === i ? "border-mk-blue border-2 bg-blue-50" : "border-mk-line"}`}>
                       <p className="text-sm font-bold text-mk-navy">{s.name}</p>
@@ -59,14 +59,14 @@ export default function CheckoutPage() {
                     </button>
                   ))}
                 </div>
-                <button onClick={() => setStep(2)} className="bg-mk-navy text-white font-bold text-sm px-6 py-3 rounded-md">Continuer vers le paiement</button>
+                <button onClick={() => setStep(2)} className="w-full sm:w-auto bg-mk-navy text-white font-bold text-sm px-6 py-3 rounded-md">Continuer vers le paiement</button>
               </div>
             )}
 
             {step === 2 && (
               <div>
                 <h2 className="text-xl font-bold text-mk-navy mb-5">Methode de paiement</h2>
-                <div className="grid grid-cols-2 gap-4 mb-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
                   {paymentMethods.map((m, i) => (
                     <button key={i} onClick={() => setPayment(i)} className={`border rounded-lg p-4 text-left ${payment === i ? "border-mk-blue border-2 bg-blue-50" : "border-mk-line"}`}>
                       <p className="text-sm font-bold text-mk-navy">{m}</p>
@@ -90,7 +90,7 @@ export default function CheckoutPage() {
             {step === 3 && (
               <div>
                 <h2 className="text-xl font-bold text-mk-navy mb-5">Verification</h2>
-                <div className="grid grid-cols-3 gap-4 mb-6">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
                   <div className="border border-mk-line rounded-lg p-4">
                     <p className="text-xs text-mk-sec mb-1">Adresse</p>
                     <p className="text-sm font-medium text-mk-navy">{addresses[selectedAddr].addr}</p>
@@ -113,8 +113,8 @@ export default function CheckoutPage() {
           </div>
 
           {/* Sidebar */}
-          <aside className="w-[320px] shrink-0">
-            <div className="border border-mk-line rounded-lg p-5 sticky top-20">
+          <aside className="w-full lg:w-[320px] shrink-0">
+            <div className="border border-mk-line rounded-lg p-5 lg:sticky lg:top-20">
               <h3 className="text-lg font-bold text-mk-navy mb-4">Recapitulatif</h3>
               <div className="space-y-2 text-sm mb-4">
                 <div className="flex justify-between"><span className="text-mk-sec">Sous-total</span><span className="text-mk-navy">77,94 EUR</span></div>

@@ -80,7 +80,7 @@ export default function HomePage() {
             Comparez les prix de centaines de fournisseurs. Achetez directement ou trouvez la meilleure offre externe.
           </motion.p>
           <motion.form
-            onSubmit={e => { e.preventDefault(); }}
+            onSubmit={handleSearch}
             className="max-w-[520px] mx-auto mb-3"
             initial={{ opacity: 0, y: 14, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}

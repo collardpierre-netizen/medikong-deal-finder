@@ -32,6 +32,7 @@ export default function CartPage() {
   const { items, isLoading, cartCount, updateQuantity, removeFromCart, clearCart } = useCart();
   const [expandedSuppliers, setExpandedSuppliers] = useState<Record<string, boolean>>({});
   const [filter, setFilter] = useState<FilterType>("all");
+  const [remark, setRemark] = useState("");
 
   // Fetch real vendor data for all vendor_ids in cart
   const vendorIds = useMemo(() => [...new Set(items.map(i => i.vendor_id).filter(Boolean))], [items]);
@@ -431,6 +432,22 @@ export default function CartPage() {
                       <span className="font-bold text-mk-navy">Total commande</span>
                       <span className="text-xl font-bold text-mk-navy">{formatPrice(totalCart)}€</span>
                     </div>
+                  </div>
+
+                  {/* Remark field */}
+                  <div className="mb-5">
+                    <label htmlFor="cart-remark" className="text-sm font-medium text-mk-navy mb-1.5 block">
+                      Remarque <span className="text-mk-ter font-normal">(optionnel)</span>
+                    </label>
+                    <textarea
+                      id="cart-remark"
+                      value={remark}
+                      onChange={e => setRemark(e.target.value.slice(0, 500))}
+                      placeholder="Message pour le fournisseur, instruction de livraison…"
+                      rows={3}
+                      className="w-full border border-mk-line rounded-lg px-3 py-2 text-sm text-mk-navy placeholder:text-mk-ter focus:outline-none focus:ring-2 focus:ring-mk-navy/20 focus:border-mk-navy resize-none"
+                    />
+                    <p className="text-xs text-mk-ter mt-1 text-right">{remark.length}/500</p>
                   </div>
 
                   {/* Checkout button */}

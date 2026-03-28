@@ -102,18 +102,22 @@ function OfferRow({ offer, product, user, navigate, addToCart, isBest, delay = 0
         {/* Unit price + tiers */}
         <div>
           {hasTiers ? (
-            <div className="flex flex-col gap-0">
+            <div className="relative pl-4">
+              {/* Continuous dotted vertical line */}
+              <div
+                className="absolute left-[3px] top-[7px] w-px border-l border-dashed border-mk-ter"
+                style={{ height: `calc(100% - 14px)` }}
+              />
               {tiers.map((tier: any, i: number) => (
-                <div key={i} className="flex items-center gap-2">
-                  {i > 0 && (
-                    <div className="flex flex-col items-center w-3">
-                      <div className="w-px h-3 border-l border-dashed border-mk-ter" />
-                      <div className="w-1.5 h-1.5 rounded-full bg-mk-navy" />
-                    </div>
-                  )}
-                  {i === 0 && <div className="w-1.5 h-1.5 rounded-full bg-mk-navy ml-0.5" />}
-                  <span className={`text-sm ${i === 0 ? "font-bold text-mk-navy" : "text-mk-sec"}`}>€{tier.price.toFixed(2)}</span>
-                  <span className="text-sm text-mk-sec">€{formatPrice(tier.minAmount)}</span>
+                <div key={i} className="flex items-center gap-2 relative" style={{ marginTop: i > 0 ? 6 : 0 }}>
+                  {/* Bullet dot */}
+                  <div className="absolute left-[-14px] w-[7px] h-[7px] rounded-full bg-mk-navy" />
+                  <span className={`text-sm ${i === 0 ? "font-bold text-mk-navy" : "text-mk-sec"}`}>
+                    €{tier.price.toFixed(2)}
+                  </span>
+                  <span className="text-sm text-mk-sec">
+                    €{formatPrice(tier.minAmount)}
+                  </span>
                 </div>
               ))}
             </div>
@@ -181,18 +185,17 @@ function OfferRow({ offer, product, user, navigate, addToCart, isBest, delay = 0
 
         {/* Price tiers on mobile */}
         {hasTiers && (
-          <div className="flex flex-col gap-0 pl-1">
+          <div className="relative pl-4">
+            {/* Continuous dotted vertical line */}
+            <div
+              className="absolute left-[3px] top-[5px] w-px border-l border-dashed border-mk-ter"
+              style={{ height: `calc(100% - 10px)` }}
+            />
             {tiers.map((tier: any, i: number) => (
-              <div key={i} className="flex items-center gap-2">
-                {i > 0 && (
-                  <div className="flex flex-col items-center w-3">
-                    <div className="w-px h-3 border-l border-dashed border-mk-ter" />
-                    <div className="w-1.5 h-1.5 rounded-full bg-mk-navy" />
-                  </div>
-                )}
-                {i === 0 && <div className="w-1.5 h-1.5 rounded-full bg-mk-navy ml-0.5" />}
+              <div key={i} className="flex items-center gap-2 relative" style={{ marginTop: i > 0 ? 4 : 0 }}>
+                <div className="absolute left-[-14px] w-[5px] h-[5px] rounded-full bg-mk-navy" />
                 <span className={`text-xs ${i === 0 ? "font-bold text-mk-navy" : "text-mk-sec"}`}>€{tier.price.toFixed(2)}</span>
-                <span className="text-xs text-mk-sec">min €{formatPrice(tier.minAmount)}</span>
+                <span className="text-xs text-mk-sec">€{formatPrice(tier.minAmount)}</span>
               </div>
             ))}
           </div>

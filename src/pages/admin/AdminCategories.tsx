@@ -42,7 +42,15 @@ const AdminCategories = () => {
 
   return (
     <div>
-      <AdminTopBar title="Catégories" subtitle="Arborescence du catalogue produits" />
+      <AdminTopBar title="Catégories" subtitle="Arborescence du catalogue produits"
+        actions={
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => exportCategories()}><Download size={14} className="mr-1" />Export XLSX</Button>
+            <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()}><Upload size={14} className="mr-1" />Import XLSX</Button>
+            <input ref={fileRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={e => { if (e.target.files?.[0]) handleImport(e.target.files[0]); e.target.value = ""; }} />
+          </div>
+        }
+      />
 
       <div className="grid grid-cols-4 gap-4 mb-6">
         <KpiCard icon={Layers} label="Catégories parentes" value={String(totalParents)} iconColor="#1B5BDA" iconBg="#EFF6FF" />

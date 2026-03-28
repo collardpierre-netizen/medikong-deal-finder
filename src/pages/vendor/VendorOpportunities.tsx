@@ -225,7 +225,7 @@ export default function VendorOpportunities() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-[12px] text-[#616B7C]">
               <div>
                 <p className="font-semibold text-[#1D2530] mb-1">Belgique</p>
-                <p>Forte demande en EPI et diagnostics en Flandre. Wallonie plus orientee consommables et hygiene. Bruxelles : mix equilibre avec forte composante hospitality.</p>
+                <p>Forte demande en EPI et diagnostics en Flandre. Wallonie plus orientée consommables et hygiène. Bruxelles : mix équilibré avec forte composante hospitality.</p>
               </div>
               <div>
                 <p className="font-semibold text-[#1D2530] mb-1">Luxembourg</p>

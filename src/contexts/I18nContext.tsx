@@ -107,6 +107,8 @@ const translations: Record<Lang, Record<string, string>> = {
     team: "Team & Rollen",
     settings: "Instellingen",
     logs: "Logs",
+    users: "Gebruikers",
+    auditLog: "Audit Log",
     management: "BEHEER",
     intelligence: "INTELLIGENTIE",
     compliance: "COMPLIANCE",

@@ -1,27 +1,24 @@
 import { Button } from "@/components/ui/button";
 
-type HeroVariant = "dark" | "warm" | "pink" | "image" | "blue" | "green" | "light";
+type HeroVariant = "dark" | "blue" | "light" | "green";
 
 interface EntrepriseHeroProps {
   variant: HeroVariant;
   badge?: string;
   title: string;
   subtitle: string;
-  cta?: { label: string; onClick?: () => void; variant: "pink" | "white" | "outline" }[];
+  cta?: { label: string; onClick?: () => void; variant: "blue" | "white" | "outline" }[];
 }
 
 const bgMap: Record<HeroVariant, string> = {
   dark: "bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#334155] text-white",
-  warm: "bg-gradient-to-br from-[#FFF7ED] via-[#FEF3C7] to-[#FECDD3] text-[#1E293B]",
-  pink: "bg-gradient-to-br from-[#E70866] via-[#DB2777] to-[#9333EA] text-white",
-  image: "bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#334155] text-white",
   blue: "bg-gradient-to-br from-[#1B5BDA] via-[#1549b8] to-[#0F3280] text-white",
   green: "bg-gradient-to-br from-[#059669] via-[#047857] to-[#065F46] text-white",
   light: "bg-[#F8FAFC] text-[#1E293B]",
 };
 
 export function EntrepriseHero({ variant, badge, title, subtitle, cta }: EntrepriseHeroProps) {
-  const isLight = variant === "light" || variant === "warm";
+  const isLight = variant === "light";
 
   return (
     <section className={`${bgMap[variant]} min-h-[420px] flex items-center`}>
@@ -46,8 +43,8 @@ export function EntrepriseHero({ variant, badge, title, subtitle, cta }: Entrepr
                 key={c.label}
                 onClick={c.onClick}
                 className={
-                  c.variant === "pink"
-                    ? "bg-[#E70866] hover:bg-[#C70758] text-white px-6 h-11"
+                  c.variant === "blue"
+                    ? "bg-[#1B5BDA] hover:bg-[#1549b8] text-white px-6 h-11"
                     : c.variant === "white"
                     ? "bg-white text-[#1E293B] hover:bg-white/90 px-6 h-11"
                     : "border-2 border-white/40 bg-transparent text-white hover:bg-white/10 px-6 h-11"

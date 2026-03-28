@@ -10,7 +10,7 @@ export function HorizontalTimeline({ nodes }: { nodes: TimelineNode[] }) {
         {/* Track */}
         <div className="absolute top-[20px] left-0 right-0 h-[3px] bg-border" />
         <div
-          className="absolute top-[20px] left-0 h-[3px] bg-gradient-to-r from-[#E70866] to-[#DB2777]"
+          className="absolute top-[20px] left-0 h-[3px] bg-gradient-to-r from-[#1B5BDA] to-[#1549b8]"
           style={{ width: `${progressPercent}%` }}
         />
 
@@ -20,13 +20,13 @@ export function HorizontalTimeline({ nodes }: { nodes: TimelineNode[] }) {
             <div
               className={`absolute top-[12px] left-1/2 -translate-x-1/2 w-[16px] h-[16px] rounded-full border-2 transition-all ${
                 node.status === "past"
-                  ? "bg-[#E70866] border-[#E70866]"
+                  ? "bg-[#1B5BDA] border-[#1B5BDA]"
                   : node.status === "active"
-                  ? "bg-[#E70866] border-[#E70866] shadow-[0_0_0_6px_rgba(231,8,102,0.15)]"
-                  : "bg-white border-border group-hover:border-[#E70866]"
+                  ? "bg-[#1B5BDA] border-[#1B5BDA] shadow-[0_0_0_6px_rgba(27,91,218,0.15)]"
+                  : "bg-white border-border group-hover:border-[#1B5BDA]"
               }`}
             />
-            <p className="text-xs font-bold text-[#E70866] uppercase tracking-wide mb-1">{node.year}</p>
+            <p className="text-xs font-bold text-[#1B5BDA] uppercase tracking-wide mb-1">{node.year}</p>
             <p className="text-sm font-semibold text-[#1E293B] mb-1">{node.title}</p>
             <p className="text-xs text-muted-foreground px-2">{node.desc}</p>
           </div>

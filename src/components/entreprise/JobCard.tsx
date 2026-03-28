@@ -22,7 +22,7 @@ export function JobCard({ title, department, location, contract }: Job) {
           <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" />{contract}</span>
         </div>
       </div>
-      <Button className="bg-[#E70866] hover:bg-[#C70758] text-white w-full md:w-auto">Postuler</Button>
+      <Button className="bg-[#1B5BDA] hover:bg-[#1549b8] text-white w-full md:w-auto">Postuler</Button>
     </div>
   );
 }

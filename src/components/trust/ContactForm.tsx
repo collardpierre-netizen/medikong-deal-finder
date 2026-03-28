@@ -54,7 +54,7 @@ export function ContactForm({ subjects }: { subjects: string[] }) {
         <label className={labelClass}>Message *</label>
         <textarea required className={`${inputClass} min-h-[120px]`} value={form.message} onChange={e => setForm({ ...form, message: e.target.value })} />
       </div>
-      <button type="submit" className="w-full bg-[#E70866] hover:bg-[#C70758] text-white py-3.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-colors">
+      <button type="submit" className="w-full bg-[#1B5BDA] hover:bg-[#1549b8] text-white py-3.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-colors">
         <Send size={16} /> Envoyer le message
       </button>
     </form>

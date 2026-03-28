@@ -25,7 +25,7 @@ export function PricingCards({ cards }: { cards: PricingCardData[] }) {
             onClick={() => navigate("/onboarding")}
             className={`w-full py-3 rounded-xl text-sm font-bold transition-colors ${
               card.cta.variant === "pink"
-                ? "bg-[#E70866] hover:bg-[#C70758] text-white"
+                ? "bg-[#1B5BDA] hover:bg-[#1549b8] text-white"
                 : "bg-mk-navy hover:bg-mk-navy/90 text-white"
             }`}
           >

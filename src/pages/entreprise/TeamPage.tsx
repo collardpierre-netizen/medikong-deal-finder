@@ -44,7 +44,7 @@ export default function TeamPage() {
         title="Envie de rejoindre l'aventure ?"
         buttons={[
           { label: "Voir les offres d'emploi", variant: "pink", to: "/carrieres" },
-          { label: "Prendre rendez-vous", variant: "outline" },
+          { label: "Nous contacter", variant: "outline", to: "/contact" },
         ]}
       />
     </EntrepriseLayout>

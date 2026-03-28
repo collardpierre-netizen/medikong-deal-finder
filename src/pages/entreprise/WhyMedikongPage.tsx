@@ -70,7 +70,7 @@ export default function WhyMedikongPage() {
         title="Prêt à économiser ?"
         buttons={[
           { label: "Créer un compte gratuit", variant: "pink", to: "/inscription" },
-          { label: "Demander une démo", variant: "outline" },
+          { label: "Demander une démo", variant: "outline", to: "/contact" },
         ]}
       />
     </EntrepriseLayout>

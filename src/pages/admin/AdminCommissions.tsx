@@ -2,84 +2,34 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import AdminTopBar from "@/components/admin/AdminTopBar";
 import { Plus, Pencil, Trash2, Percent, Layers, BarChart3, Split, Star, UserPlus, Building2 } from "lucide-react";
+import { useCategories, useBrands } from "@/hooks/useAdminData";
+import type { Tables } from "@/integrations/supabase/types";
 
-type CommissionModel = "fixed_rate" | "tiered_gmv" | "category_based" | "margin_split";
-
-interface Tier { from: number; to: number | null; rate: number }
-
-interface CommissionRule {
-  id: string;
-  vendor_id: string | null;
-  model: CommissionModel;
-  name: string;
-  is_default: boolean;
-  fixed_rate: number | null;
-  tiers: Tier[];
-  category_rates: Record<string, number>;
-  margin_split_mk: number;
-  margin_split_vendor: number;
-  min_commission: number;
-  max_commission: number;
-  effective_from: string;
-  effective_to: string | null;
-  notes: string | null;
-  created_at: string;
-}
-
-const modelLabels: Record<CommissionModel, string> = {
-  fixed_rate: "Taux fixe",
-  tiered_gmv: "Paliers GMV",
-  category_based: "Par catégorie",
-  margin_split: "Split marge",
-};
-
-const modelIcons: Record<CommissionModel, React.ElementType> = {
-  fixed_rate: Percent,
-  tiered_gmv: BarChart3,
-  category_based: Layers,
-  margin_split: Split,
-};
-
-const modelColors: Record<CommissionModel, string> = {
-  fixed_rate: "bg-blue-100 text-blue-700",
-  tiered_gmv: "bg-purple-100 text-purple-700",
-  category_based: "bg-amber-100 text-amber-700",
-  margin_split: "bg-emerald-100 text-emerald-700",
-};
-
-const emptyRule: Partial<CommissionRule> = {
-  name: "",
-  model: "fixed_rate",
-  is_default: false,
-  fixed_rate: 12,
-  tiers: [],
-  category_rates: {},
-  margin_split_mk: 50,
-  margin_split_vendor: 50,
-  min_commission: 0,
-  max_commission: 100,
-  notes: "",
-};
+type MarginRule = Tables<"margin_rules">;
 
 export default function AdminCommissions() {
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [assignOpen, setAssignOpen] = useState(false);
-  const [editingRule, setEditingRule] = useState<Partial<CommissionRule> | null>(null);
+  const [editingRule, setEditingRule] = useState<Partial<MarginRule> | null>(null);
   const [assignVendorId, setAssignVendorId] = useState("");
   const [assignRuleId, setAssignRuleId] = useState("");
 
-  const { data: rules = [], isLoading } = useQuery({
+  const { data: categories = [] } = useCategories();
+  const { data: brands = [] } = useBrands();
+
+  // Global rules (no vendor_id)
+  const { data: rules = [] } = useQuery({
     queryKey: ["admin-commission-rules"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -88,46 +38,56 @@ export default function AdminCommissions() {
         .is("vendor_id", null)
         .order("priority", { ascending: false });
       if (error) throw error;
-      return data as unknown as CommissionRule[];
+      return data;
     },
   });
 
+  // Vendor-specific rules
   const { data: vendorRules = [] } = useQuery({
     queryKey: ["admin-commission-vendor-rules"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("margin_rules")
-        .select("*, vendors(company_name)")
+        .select("*, vendors(company_name, name)")
         .not("vendor_id", "is", null)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data as any[];
+      return data;
     },
   });
 
   const { data: vendors = [] } = useQuery({
     queryKey: ["admin-vendors-for-commission"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("vendors").select("id, company_name, is_active, name").eq("is_active", true).order("company_name");
+      const { data, error } = await supabase
+        .from("vendors")
+        .select("id, company_name, name, is_active")
+        .eq("is_active", true)
+        .order("name");
       if (error) throw error;
       return data;
     },
   });
 
+  const invalidateAll = () => {
+    queryClient.invalidateQueries({ queryKey: ["admin-commission-rules"] });
+    queryClient.invalidateQueries({ queryKey: ["admin-commission-vendor-rules"] });
+  };
+
   const saveMutation = useMutation({
-    mutationFn: async (rule: Partial<CommissionRule>) => {
-      const payload = {
-        name: rule.name,
-        model: rule.model,
-        is_default: rule.is_default,
-        fixed_rate: rule.fixed_rate,
-        tiers: JSON.parse(JSON.stringify(rule.tiers || [])),
-        category_rates: JSON.parse(JSON.stringify(rule.category_rates || {})),
-        margin_split_mk: rule.margin_split_mk,
-        margin_split_vendor: rule.margin_split_vendor,
-        min_commission: rule.min_commission,
-        max_commission: rule.max_commission,
-        notes: rule.notes,
+    mutationFn: async (rule: Partial<MarginRule>) => {
+      const payload: any = {
+        name: rule.name || "Nouvelle règle",
+        margin_percentage: rule.margin_percentage ?? 15,
+        priority: rule.priority ?? 0,
+        extra_delay_days: rule.extra_delay_days ?? 2,
+        round_price_to: rule.round_price_to ?? 0.01,
+        is_active: rule.is_active ?? true,
+        category_id: rule.category_id || null,
+        brand_id: rule.brand_id || null,
+        vendor_id: rule.vendor_id || null,
+        min_base_price: rule.min_base_price || null,
+        max_base_price: rule.max_base_price || null,
       };
       if (rule.id) {
         const { error } = await supabase.from("margin_rules").update(payload).eq("id", rule.id);
@@ -138,11 +98,11 @@ export default function AdminCommissions() {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-commission-rules"] });
-      toast.success("Règle de commission sauvegardée");
+      invalidateAll();
+      toast.success("Règle de marge sauvegardée");
       setDialogOpen(false);
     },
-    onError: () => toast.error("Erreur lors de la sauvegarde"),
+    onError: (e: any) => toast.error(e.message || "Erreur lors de la sauvegarde"),
   });
 
   const deleteMutation = useMutation({
@@ -151,8 +111,7 @@ export default function AdminCommissions() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-commission-rules"] });
-      queryClient.invalidateQueries({ queryKey: ["admin-commission-vendor-rules"] });
+      invalidateAll();
       toast.success("Règle supprimée");
     },
   });
@@ -161,26 +120,25 @@ export default function AdminCommissions() {
     mutationFn: async ({ vendorId, templateId }: { vendorId: string; templateId: string }) => {
       const template = rules.find(r => r.id === templateId);
       if (!template) throw new Error("Règle introuvable");
-      // Delete existing vendor-specific rules
+      // Remove existing vendor-specific rules
       await supabase.from("margin_rules").delete().eq("vendor_id", vendorId);
       const { error } = await supabase.from("margin_rules").insert({
         vendor_id: vendorId,
-        name: template.name,
-        model: template.model,
-        is_default: false,
-        fixed_rate: template.fixed_rate,
-        tiers: JSON.parse(JSON.stringify(template.tiers || [])),
-        category_rates: JSON.parse(JSON.stringify(template.category_rates || {})),
-        margin_split_mk: template.margin_split_mk,
-        margin_split_vendor: template.margin_split_vendor,
-        min_commission: template.min_commission,
-        max_commission: template.max_commission,
-        notes: `Assigné depuis le template "${template.name}"`,
+        name: `${template.name} (vendeur)`,
+        margin_percentage: template.margin_percentage,
+        priority: template.priority,
+        extra_delay_days: template.extra_delay_days,
+        round_price_to: template.round_price_to,
+        category_id: template.category_id,
+        brand_id: template.brand_id,
+        min_base_price: template.min_base_price,
+        max_base_price: template.max_base_price,
+        is_active: true,
       });
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-commission-vendor-rules"] });
+      invalidateAll();
       toast.success("Règle assignée au vendeur");
       setAssignOpen(false);
       setAssignVendorId("");
@@ -189,16 +147,63 @@ export default function AdminCommissions() {
     onError: (e: any) => toast.error(e.message || "Erreur"),
   });
 
-  const openNew = () => { setEditingRule({ ...emptyRule }); setDialogOpen(true); };
-  const openEdit = (r: CommissionRule) => { setEditingRule({ ...r }); setDialogOpen(true); };
+  const openNew = () => {
+    setEditingRule({
+      name: "",
+      margin_percentage: 15,
+      priority: 0,
+      extra_delay_days: 2,
+      round_price_to: 0.01,
+      is_active: true,
+      category_id: null,
+      brand_id: null,
+      vendor_id: null,
+      min_base_price: null,
+      max_base_price: null,
+    });
+    setDialogOpen(true);
+  };
+  const openEdit = (r: MarginRule) => { setEditingRule({ ...r }); setDialogOpen(true); };
 
-  // Vendors without a specific rule
   const vendorsWithRules = new Set(vendorRules.map((r: any) => r.vendor_id));
   const vendorsWithoutRule = vendors.filter(v => !vendorsWithRules.has(v.id));
 
+  const getCategoryName = (id: string | null) => categories.find(c => c.id === id)?.name || "—";
+  const getBrandName = (id: string | null) => brands.find(b => b.id === id)?.name || "—";
+
+  const getRuleDetail = (r: MarginRule) => {
+    const parts = [`${r.margin_percentage}%`];
+    if (r.category_id) parts.push(`cat: ${getCategoryName(r.category_id)}`);
+    if (r.brand_id) parts.push(`marque: ${getBrandName(r.brand_id)}`);
+    if (r.min_base_price) parts.push(`≥${r.min_base_price}€`);
+    if (r.max_base_price) parts.push(`≤${r.max_base_price}€`);
+    parts.push(`+${r.extra_delay_days}j`);
+    return parts.join(" · ");
+  };
+
+  const getRuleType = (r: MarginRule) => {
+    if (r.category_id) return { label: "Par catégorie", color: "bg-amber-100 text-amber-700", icon: Layers };
+    if (r.brand_id) return { label: "Par marque", color: "bg-purple-100 text-purple-700", icon: BarChart3 };
+    if (r.min_base_price || r.max_base_price) return { label: "Par tranche de prix", color: "bg-emerald-100 text-emerald-700", icon: Split };
+    return { label: "Taux fixe", color: "bg-blue-100 text-blue-700", icon: Percent };
+  };
+
+  // Stats for cards
+  const fixedCount = rules.filter(r => !r.category_id && !r.brand_id && !r.min_base_price && !r.max_base_price).length;
+  const categoryCount = rules.filter(r => r.category_id).length;
+  const brandCount = rules.filter(r => r.brand_id).length;
+  const priceCount = rules.filter(r => r.min_base_price || r.max_base_price).length;
+
+  const cards = [
+    { label: "Taux fixe", desc: "Pourcentage unique sur chaque vente", count: fixedCount, color: "bg-blue-100 text-blue-700", Icon: Percent },
+    { label: "Par catégorie", desc: "Taux différencié par catégorie produit", count: categoryCount, color: "bg-amber-100 text-amber-700", Icon: Layers },
+    { label: "Par marque", desc: "Taux spécifique par marque", count: brandCount, color: "bg-purple-100 text-purple-700", Icon: BarChart3 },
+    { label: "Par tranche de prix", desc: "Taux selon le prix de base", count: priceCount, color: "bg-emerald-100 text-emerald-700", Icon: Split },
+  ];
+
   return (
     <div>
-      <AdminTopBar title="Commissions" subtitle="Gérez les modèles de commission appliqués aux vendeurs"
+      <AdminTopBar title="Commissions" subtitle="Gérez les règles de marge appliquées aux offres Qogita"
         actions={
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={() => setAssignOpen(true)}><UserPlus size={14} className="mr-1" />Assigner à un vendeur</Button>
@@ -209,32 +214,19 @@ export default function AdminCommissions() {
 
       {/* 4 model cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
-        {(["fixed_rate", "tiered_gmv", "category_based", "margin_split"] as CommissionModel[]).map(m => {
-          const Icon = modelIcons[m];
-          const count = rules.filter(r => r.model === m).length;
-          const vendorCount = vendorRules.filter((r: any) => r.model === m).length;
-          return (
-            <div key={m} className="bg-white rounded-lg border p-4 flex items-start gap-3" style={{ borderColor: "#E2E8F0" }}>
-              <div className={`p-2.5 rounded-lg ${modelColors[m]}`}><Icon className="h-5 w-5" /></div>
-              <div>
-                <p className="font-semibold text-sm" style={{ color: "#1D2530" }}>{modelLabels[m]}</p>
-                <p className="text-xs mt-0.5" style={{ color: "#8B95A5" }}>
-                  {m === "fixed_rate" && "Pourcentage unique sur chaque vente"}
-                  {m === "tiered_gmv" && "Taux dégressif selon le volume mensuel"}
-                  {m === "category_based" && "Taux différencié par catégorie produit"}
-                  {m === "margin_split" && "Partage de la marge vendeur/MediKong"}
-                </p>
-                <div className="flex gap-2 mt-2">
-                  <Badge variant="secondary" className="text-[11px]">{count} template{count > 1 ? "s" : ""}</Badge>
-                  {vendorCount > 0 && <Badge variant="outline" className="text-[11px]">{vendorCount} vendeur{vendorCount > 1 ? "s" : ""}</Badge>}
-                </div>
-              </div>
+        {cards.map(c => (
+          <div key={c.label} className="bg-white rounded-lg border p-4 flex items-start gap-3" style={{ borderColor: "#E2E8F0" }}>
+            <div className={`p-2.5 rounded-lg ${c.color}`}><c.Icon className="h-5 w-5" /></div>
+            <div>
+              <p className="font-semibold text-sm" style={{ color: "#1D2530" }}>{c.label}</p>
+              <p className="text-xs mt-0.5" style={{ color: "#8B95A5" }}>{c.desc}</p>
+              <Badge variant="secondary" className="text-[11px] mt-2">{c.count} template{c.count > 1 ? "s" : ""}</Badge>
             </div>
-          );
-        })}
+          </div>
+        ))}
       </div>
 
-      {/* Rules table */}
+      {/* Global rules table */}
       <div className="bg-white rounded-lg border mb-6" style={{ borderColor: "#E2E8F0" }}>
         <div className="px-5 py-3 border-b" style={{ borderColor: "#E2E8F0" }}>
           <h3 className="text-[14px] font-semibold" style={{ color: "#1D2530" }}>Règles globales (templates)</h3>
@@ -244,43 +236,36 @@ export default function AdminCommissions() {
             <thead>
               <tr className="border-b text-[11px] uppercase tracking-wide" style={{ backgroundColor: "#F8FAFC", color: "#8B95A5", borderColor: "#E2E8F0" }}>
                 <th className="text-left py-2.5 px-4 font-medium">Nom</th>
-                <th className="text-left py-2.5 px-4 font-medium">Modèle</th>
+                <th className="text-left py-2.5 px-4 font-medium">Type</th>
                 <th className="text-left py-2.5 px-4 font-medium">Détail</th>
-                <th className="text-center py-2.5 px-4 font-medium">Défaut</th>
-                <th className="text-center py-2.5 px-4 font-medium">Vendeurs</th>
+                <th className="text-center py-2.5 px-4 font-medium">Priorité</th>
+                <th className="text-center py-2.5 px-4 font-medium">Actif</th>
                 <th className="text-right py-2.5 px-4 font-medium">Actions</th>
               </tr>
             </thead>
             <tbody>
               {rules.map(r => {
-                const vendorsOnRule = vendorRules.filter((vr: any) => vr.name === r.name).length;
+                const rType = getRuleType(r);
                 return (
                   <tr key={r.id} className="border-b hover:bg-[#F8FAFC]" style={{ borderColor: "#E2E8F0" }}>
                     <td className="py-2.5 px-4 font-medium text-[13px]" style={{ color: "#1D2530" }}>{r.name}</td>
                     <td className="py-2.5 px-4">
-                      <Badge className={`${modelColors[r.model]} border-0 text-[11px]`}>{modelLabels[r.model]}</Badge>
+                      <Badge className={`${rType.color} border-0 text-[11px]`}>{rType.label}</Badge>
                     </td>
-                    <td className="py-2.5 px-4 text-xs" style={{ color: "#8B95A5" }}>
-                      {r.model === "fixed_rate" && `${r.fixed_rate}%`}
-                      {r.model === "tiered_gmv" && `${(r.tiers as Tier[])?.length || 0} paliers (${(r.tiers as Tier[])?.map(t => t.rate + "%").join(" → ")})`}
-                      {r.model === "category_based" && `${Object.keys(r.category_rates || {}).length} catégories`}
-                      {r.model === "margin_split" && `MK ${r.margin_split_mk}% / Vendeur ${r.margin_split_vendor}%`}
-                    </td>
+                    <td className="py-2.5 px-4 text-xs" style={{ color: "#8B95A5" }}>{getRuleDetail(r)}</td>
+                    <td className="py-2.5 px-4 text-center text-[12px]" style={{ color: "#616B7C" }}>{r.priority}</td>
                     <td className="py-2.5 px-4 text-center">
-                      {r.is_default && <Star className="h-4 w-4 text-amber-500 mx-auto fill-amber-500" />}
+                      {r.is_active ? <Badge className="bg-green-100 text-green-700 border-0 text-[11px]">Actif</Badge> : <Badge variant="secondary" className="text-[11px]">Inactif</Badge>}
                     </td>
-                    <td className="py-2.5 px-4 text-center text-[12px]" style={{ color: "#616B7C" }}>{vendorsOnRule}</td>
                     <td className="py-2.5 px-4 text-right space-x-1">
                       <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(r)}><Pencil className="h-3.5 w-3.5" /></Button>
-                      {!r.is_default && (
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteMutation.mutate(r.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
-                      )}
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteMutation.mutate(r.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
                     </td>
                   </tr>
                 );
               })}
               {rules.length === 0 && (
-                <tr><td colSpan={6} className="py-8 text-center text-[13px]" style={{ color: "#8B95A5" }}>Aucune règle. Créez votre première règle de commission.</td></tr>
+                <tr><td colSpan={6} className="py-8 text-center text-[13px]" style={{ color: "#8B95A5" }}>Aucune règle. Créez votre première règle de marge.</td></tr>
               )}
             </tbody>
           </table>
@@ -291,7 +276,7 @@ export default function AdminCommissions() {
       <div className="bg-white rounded-lg border" style={{ borderColor: "#E2E8F0" }}>
         <div className="px-5 py-3 border-b flex items-center justify-between" style={{ borderColor: "#E2E8F0" }}>
           <h3 className="text-[14px] font-semibold" style={{ color: "#1D2530" }}>Règles spécifiques vendeurs ({vendorRules.length})</h3>
-          <span className="text-[11px]" style={{ color: "#8B95A5" }}>{vendorsWithoutRule.length} vendeur{vendorsWithoutRule.length > 1 ? "s" : ""} sans règle spécifique (utilise le template par défaut)</span>
+          <span className="text-[11px]" style={{ color: "#8B95A5" }}>{vendorsWithoutRule.length} vendeur(s) sans règle spécifique</span>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -299,7 +284,7 @@ export default function AdminCommissions() {
               <tr className="border-b text-[11px] uppercase tracking-wide" style={{ backgroundColor: "#F8FAFC", color: "#8B95A5", borderColor: "#E2E8F0" }}>
                 <th className="text-left py-2.5 px-4 font-medium">Vendeur</th>
                 <th className="text-left py-2.5 px-4 font-medium">Règle</th>
-                <th className="text-left py-2.5 px-4 font-medium">Modèle</th>
+                <th className="text-left py-2.5 px-4 font-medium">Marge</th>
                 <th className="text-left py-2.5 px-4 font-medium">Détail</th>
                 <th className="text-right py-2.5 px-4 font-medium">Actions</th>
               </tr>
@@ -312,19 +297,14 @@ export default function AdminCommissions() {
                       <div className="w-7 h-7 rounded-full bg-[#1B5BDA14] flex items-center justify-center">
                         <Building2 size={13} className="text-[#1B5BDA]" />
                       </div>
-                      <span className="font-medium text-[13px]" style={{ color: "#1D2530" }}>{r.vendors?.company_name || "—"}</span>
+                      <span className="font-medium text-[13px]" style={{ color: "#1D2530" }}>{r.vendors?.company_name || r.vendors?.name || "—"}</span>
                     </div>
                   </td>
                   <td className="py-2.5 px-4 text-[13px]" style={{ color: "#616B7C" }}>{r.name}</td>
                   <td className="py-2.5 px-4">
-                    <Badge className={`${modelColors[r.model as CommissionModel]} border-0 text-[11px]`}>{modelLabels[r.model as CommissionModel]}</Badge>
+                    <Badge className="bg-blue-100 text-blue-700 border-0 text-[11px]">{r.margin_percentage}%</Badge>
                   </td>
-                  <td className="py-2.5 px-4 text-xs" style={{ color: "#8B95A5" }}>
-                    {r.model === "fixed_rate" && `${r.fixed_rate}%`}
-                    {r.model === "tiered_gmv" && `${(r.tiers as Tier[])?.length || 0} paliers`}
-                    {r.model === "category_based" && `${Object.keys(r.category_rates || {}).length} catégories`}
-                    {r.model === "margin_split" && `MK ${r.margin_split_mk}% / V ${r.margin_split_vendor}%`}
-                  </td>
+                  <td className="py-2.5 px-4 text-xs" style={{ color: "#8B95A5" }}>+{r.extra_delay_days}j délai</td>
                   <td className="py-2.5 px-4 text-right space-x-1">
                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(r)}><Pencil className="h-3.5 w-3.5" /></Button>
                     <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteMutation.mutate(r.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
@@ -332,7 +312,7 @@ export default function AdminCommissions() {
                 </tr>
               ))}
               {vendorRules.length === 0 && (
-                <tr><td colSpan={5} className="py-8 text-center text-[13px]" style={{ color: "#8B95A5" }}>Aucune règle spécifique. Tous les vendeurs utilisent le template par défaut.</td></tr>
+                <tr><td colSpan={5} className="py-8 text-center text-[13px]" style={{ color: "#8B95A5" }}>Aucune règle spécifique. Tous les vendeurs utilisent les règles globales.</td></tr>
               )}
             </tbody>
           </table>
@@ -361,13 +341,13 @@ export default function AdminCommissions() {
               </Select>
             </div>
             <div>
-              <Label>Template de commission</Label>
+              <Label>Template de marge</Label>
               <Select value={assignRuleId} onValueChange={setAssignRuleId}>
                 <SelectTrigger><SelectValue placeholder="Sélectionner un template" /></SelectTrigger>
                 <SelectContent>
                   {rules.map(r => (
                     <SelectItem key={r.id} value={r.id}>
-                      {r.name} — {modelLabels[r.model]}
+                      {r.name} — {r.margin_percentage}%
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -381,7 +361,10 @@ export default function AdminCommissions() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setAssignOpen(false)}>Annuler</Button>
-            <Button onClick={() => assignVendorId && assignRuleId && assignMutation.mutate({ vendorId: assignVendorId, templateId: assignRuleId })} disabled={!assignVendorId || !assignRuleId || assignMutation.isPending}>
+            <Button
+              onClick={() => assignVendorId && assignRuleId && assignMutation.mutate({ vendorId: assignVendorId, templateId: assignRuleId })}
+              disabled={!assignVendorId || !assignRuleId || assignMutation.isPending}
+            >
               {assignMutation.isPending ? "Assignation…" : "Assigner"}
             </Button>
           </DialogFooter>
@@ -392,135 +375,80 @@ export default function AdminCommissions() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editingRule?.id ? "Modifier la règle" : "Nouvelle règle de commission"}</DialogTitle>
+            <DialogTitle>{editingRule?.id ? "Modifier la règle" : "Nouvelle règle de marge"}</DialogTitle>
           </DialogHeader>
           {editingRule && (
             <div className="space-y-4">
               <div>
                 <Label>Nom</Label>
-                <Input value={editingRule.name || ""} onChange={e => setEditingRule({ ...editingRule, name: e.target.value })} />
+                <Input value={editingRule.name || ""} onChange={e => setEditingRule({ ...editingRule, name: e.target.value })} placeholder="Ex: Marge standard 15%" />
               </div>
+
               <div>
-                <Label>Modèle</Label>
-                <Select value={editingRule.model} onValueChange={v => setEditingRule({ ...editingRule, model: v as CommissionModel })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                <Label>Marge (%)</Label>
+                <Input type="number" step="0.01" value={editingRule.margin_percentage ?? 15} onChange={e => setEditingRule({ ...editingRule, margin_percentage: Number(e.target.value) })} />
+                <p className="text-[11px] text-muted-foreground mt-1">Pourcentage ajouté au prix de base Qogita</p>
+              </div>
+
+              <div>
+                <Label>Priorité</Label>
+                <Input type="number" value={editingRule.priority ?? 0} onChange={e => setEditingRule({ ...editingRule, priority: Number(e.target.value) })} />
+                <p className="text-[11px] text-muted-foreground mt-1">Plus la priorité est haute, plus la règle est prioritaire</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Délai supplémentaire (jours)</Label>
+                  <Input type="number" value={editingRule.extra_delay_days ?? 2} onChange={e => setEditingRule({ ...editingRule, extra_delay_days: Number(e.target.value) })} />
+                </div>
+                <div>
+                  <Label>Arrondi prix à</Label>
+                  <Input type="number" step="0.01" value={editingRule.round_price_to ?? 0.01} onChange={e => setEditingRule({ ...editingRule, round_price_to: Number(e.target.value) })} />
+                </div>
+              </div>
+
+              <div>
+                <Label>Catégorie (optionnel)</Label>
+                <Select value={editingRule.category_id || "__none__"} onValueChange={v => setEditingRule({ ...editingRule, category_id: v === "__none__" ? null : v })}>
+                  <SelectTrigger><SelectValue placeholder="Toutes les catégories" /></SelectTrigger>
                   <SelectContent>
-                    {Object.entries(modelLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+                    <SelectItem value="__none__">Toutes les catégories</SelectItem>
+                    {categories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
 
-              {editingRule.model === "fixed_rate" && (
-                <div>
-                  <Label>Taux (%)</Label>
-                  <Input type="number" value={editingRule.fixed_rate ?? 12} onChange={e => setEditingRule({ ...editingRule, fixed_rate: Number(e.target.value) })} />
-                </div>
-              )}
-
-              {editingRule.model === "tiered_gmv" && (
-                <div className="space-y-2">
-                  <Label>Paliers de GMV</Label>
-                  {((editingRule.tiers as Tier[]) || []).map((t, i) => (
-                    <div key={i} className="flex gap-2 items-center text-sm">
-                      <Input type="number" placeholder="De €" value={t.from} className="w-24" onChange={e => {
-                        const tiers = [...(editingRule.tiers as Tier[])];
-                        tiers[i] = { ...tiers[i], from: Number(e.target.value) };
-                        setEditingRule({ ...editingRule, tiers });
-                      }} />
-                      <span>→</span>
-                      <Input type="number" placeholder="À €" value={t.to ?? ""} className="w-24" onChange={e => {
-                        const tiers = [...(editingRule.tiers as Tier[])];
-                        tiers[i] = { ...tiers[i], to: e.target.value ? Number(e.target.value) : null };
-                        setEditingRule({ ...editingRule, tiers });
-                      }} />
-                      <Input type="number" placeholder="%" value={t.rate} className="w-20" onChange={e => {
-                        const tiers = [...(editingRule.tiers as Tier[])];
-                        tiers[i] = { ...tiers[i], rate: Number(e.target.value) };
-                        setEditingRule({ ...editingRule, tiers });
-                      }} />
-                      <span className="text-xs text-muted-foreground">%</span>
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
-                        const tiers = (editingRule.tiers as Tier[]).filter((_, j) => j !== i);
-                        setEditingRule({ ...editingRule, tiers });
-                      }}><Trash2 className="h-3 w-3" /></Button>
-                    </div>
-                  ))}
-                  <Button variant="outline" size="sm" onClick={() => {
-                    const tiers = [...((editingRule.tiers as Tier[]) || []), { from: 0, to: null, rate: 12 }];
-                    setEditingRule({ ...editingRule, tiers });
-                  }}><Plus className="mr-1 h-3 w-3" />Ajouter un palier</Button>
-                </div>
-              )}
-
-              {editingRule.model === "category_based" && (
-                <div className="space-y-2">
-                  <Label>Taux par catégorie</Label>
-                  {Object.entries(editingRule.category_rates || {}).map(([cat, rate]) => (
-                    <div key={cat} className="flex gap-2 items-center text-sm">
-                      <Input value={cat} className="flex-1" onChange={e => {
-                        const rates = { ...editingRule.category_rates };
-                        delete rates[cat];
-                        rates[e.target.value] = rate;
-                        setEditingRule({ ...editingRule, category_rates: rates });
-                      }} />
-                      <Input type="number" value={rate} className="w-20" onChange={e => {
-                        setEditingRule({ ...editingRule, category_rates: { ...editingRule.category_rates, [cat]: Number(e.target.value) } });
-                      }} />
-                      <span className="text-xs text-muted-foreground">%</span>
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
-                        const rates = { ...editingRule.category_rates };
-                        delete rates[cat];
-                        setEditingRule({ ...editingRule, category_rates: rates });
-                      }}><Trash2 className="h-3 w-3" /></Button>
-                    </div>
-                  ))}
-                  <Button variant="outline" size="sm" onClick={() => {
-                    setEditingRule({ ...editingRule, category_rates: { ...editingRule.category_rates, "Nouvelle catégorie": 12 } });
-                  }}><Plus className="mr-1 h-3 w-3" />Ajouter une catégorie</Button>
-                </div>
-              )}
-
-              {editingRule.model === "margin_split" && (
-                <div className="space-y-3">
-                  <div>
-                    <Label>Part MediKong (%)</Label>
-                    <Input type="number" value={editingRule.margin_split_mk ?? 50} onChange={e => {
-                      const mk = Number(e.target.value);
-                      setEditingRule({ ...editingRule, margin_split_mk: mk, margin_split_vendor: 100 - mk });
-                    }} />
-                  </div>
-                  <div>
-                    <Label>Part Vendeur (%)</Label>
-                    <Input type="number" value={editingRule.margin_split_vendor ?? 50} disabled className="bg-muted" />
-                  </div>
-                </div>
-              )}
+              <div>
+                <Label>Marque (optionnel)</Label>
+                <Select value={editingRule.brand_id || "__none__"} onValueChange={v => setEditingRule({ ...editingRule, brand_id: v === "__none__" ? null : v })}>
+                  <SelectTrigger><SelectValue placeholder="Toutes les marques" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">Toutes les marques</SelectItem>
+                    {brands.map(b => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label>Commission min (%)</Label>
-                  <Input type="number" value={editingRule.min_commission ?? 0} onChange={e => setEditingRule({ ...editingRule, min_commission: Number(e.target.value) })} />
+                  <Label>Prix min base (€, optionnel)</Label>
+                  <Input type="number" step="0.01" value={editingRule.min_base_price ?? ""} onChange={e => setEditingRule({ ...editingRule, min_base_price: e.target.value ? Number(e.target.value) : null })} placeholder="—" />
                 </div>
                 <div>
-                  <Label>Commission max (%)</Label>
-                  <Input type="number" value={editingRule.max_commission ?? 100} onChange={e => setEditingRule({ ...editingRule, max_commission: Number(e.target.value) })} />
+                  <Label>Prix max base (€, optionnel)</Label>
+                  <Input type="number" step="0.01" value={editingRule.max_base_price ?? ""} onChange={e => setEditingRule({ ...editingRule, max_base_price: e.target.value ? Number(e.target.value) : null })} placeholder="—" />
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <input type="checkbox" id="is_default" checked={editingRule.is_default || false} onChange={e => setEditingRule({ ...editingRule, is_default: e.target.checked })} />
-                <Label htmlFor="is_default" className="text-sm">Règle par défaut</Label>
-              </div>
-
-              <div>
-                <Label>Notes</Label>
-                <Textarea value={editingRule.notes || ""} onChange={e => setEditingRule({ ...editingRule, notes: e.target.value })} rows={2} />
+              <div className="flex items-center gap-3">
+                <Switch checked={editingRule.is_active ?? true} onCheckedChange={v => setEditingRule({ ...editingRule, is_active: v })} />
+                <Label>Règle active</Label>
               </div>
             </div>
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Annuler</Button>
-            <Button onClick={() => editingRule && saveMutation.mutate(editingRule)} disabled={saveMutation.isPending}>
+            <Button onClick={() => editingRule && saveMutation.mutate(editingRule)} disabled={saveMutation.isPending || !editingRule?.name}>
               {saveMutation.isPending ? "Sauvegarde…" : "Sauvegarder"}
             </Button>
           </DialogFooter>

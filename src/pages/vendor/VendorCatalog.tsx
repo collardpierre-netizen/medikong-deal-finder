@@ -66,7 +66,7 @@ export default function VendorCatalog() {
           {/* KPIs */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <VStat label="References catalogue" value={totalRefs} icon="Package" color="#1B5BDA" />
-            <VStat label="Categories actives" value={categoryStats.length} icon="Grid3X3" color="#7C3AED" />
+            <VStat label="Categories actives" value={categoryStats.length} icon="Grid3x3" color="#7C3AED" />
             <VStat label="Demande moyenne" value="78%" icon="TrendingUp" color="#059669" />
             <VStat label="Concurrence moyenne" value="4,8 offres/ref" icon="Users" color="#F59E0B" />
           </div>

@@ -1,4 +1,5 @@
 import { vendorProfile } from "@/lib/vendor-tokens";
+import logoLight from "@/assets/logo-horizontal.png";
 
 interface OrderLine {
   sku: string; name: string; cat: string; qty: number; unitPrice: number; lineTotal: number;

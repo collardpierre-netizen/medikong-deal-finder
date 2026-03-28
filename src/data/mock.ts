@@ -53,7 +53,7 @@ export const sellerPortfolios: Record<string, { brands: string[]; manufacturers:
 
 export const categories = [
   { name: "EPI & Protection", count: "2 400+", icon: "Shield", slug: "epi" },
-  { name: "Desinfection", count: "1 800+", icon: "Droplets", slug: "desinfection" },
+  { name: "Désinfection", count: "1 800+", icon: "Droplets", slug: "desinfection" },
   { name: "Instruments", count: "950+", icon: "Wrench", slug: "instruments" },
   { name: "Pansements & Soins", count: "1 200+", icon: "Heart", slug: "pansements" },
   { name: "Diagnostic", count: "680+", icon: "Activity", slug: "diagnostic" },

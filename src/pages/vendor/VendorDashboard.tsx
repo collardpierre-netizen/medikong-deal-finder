@@ -71,7 +71,7 @@ export default function VendorDashboard() {
             {pendingOrders.map(o => {
               const age = orderAgeBadge(o.age);
               return (
-                <div key={o.id} className="bg-white rounded-lg border border-[#E2E8F0] p-3">
+                <div key={o.id} className="bg-white rounded-lg border border-[#E2E8F0] p-3 cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate(`/vendor/orders/${o.id}`)}>
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-[11px] font-mono text-[#8B95A5]">{o.id}</span>
                     <VBadge color={age.color}>{age.label}</VBadge>

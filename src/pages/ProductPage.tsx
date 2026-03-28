@@ -12,6 +12,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { PageTransition, AnimatedSection } from "@/components/shared/PageTransition";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { ScrollableTable } from "@/components/shared/ScrollableTable";
 
 const priceHistory = [
   { month: "Oct", price: 14.2 }, { month: "Nov", price: 13.5 }, { month: "Dec", price: 15.0 },

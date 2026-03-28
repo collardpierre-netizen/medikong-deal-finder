@@ -3,7 +3,7 @@ import AdminTopBar from "@/components/admin/AdminTopBar";
 import KpiCard from "@/components/admin/KpiCard";
 import StatusBadge from "@/components/admin/StatusBadge";
 import { useI18n } from "@/contexts/I18nContext";
-import { useOrders, useBuyers } from "@/hooks/useAdminData";
+import { useOrders } from "@/hooks/useAdminData";
 import {
   ShoppingCart, TrendingUp, Clock, CreditCard, Truck,
   Search, Filter, Download, Eye,

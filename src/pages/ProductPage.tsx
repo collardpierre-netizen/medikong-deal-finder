@@ -40,6 +40,33 @@ export default function ProductPage() {
   const { data: products = [] } = useProducts();
   const { addToCart } = useCart();
   const { data: realOffers = [] } = useProductOffers(product?.id);
+
+  // Fetch indirect (external) offers
+  const { data: indirectOffers = [] } = useQuery({
+    queryKey: ["indirect-offers", product?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("offers_indirect")
+        .select("*, leads_partners(name)")
+        .eq("product_id", product!.id)
+        .eq("status", "active");
+      return data || [];
+    },
+    enabled: !!product?.id,
+  });
+
+  // Fetch market price offers
+  const { data: marketOffers = [] } = useQuery({
+    queryKey: ["market-offers", product?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("offers_market")
+        .select("*")
+        .eq("product_id", product!.id);
+      return data || [];
+    },
+    enabled: !!product?.id,
+  });
   
   // Fetch brand and manufacturer details for CTA links
   const { data: brandData } = useQuery({
@@ -94,10 +121,25 @@ export default function ProductPage() {
     setTimeout(() => setCopied(false), 1500);
   };
 
+  const extMock = [
+    { name: "Pharma-Grossiste", price: 11.50, mov: "1 000 EUR", delay: "48h", url: "https://pharma-grossiste.be" },
+    { name: "MedSupply BE", price: 13.20, mov: "500 EUR", delay: "72h", url: "https://medsupply.be" },
+    { name: "Distri-Med NL", price: 10.80, mov: "2 000 EUR", delay: "5j", url: "https://distri-med.nl" },
+  ];
+  const extOffers = indirectOffers.length > 0
+    ? indirectOffers.map((o: any) => ({
+        name: o.leads_partners?.name || o.source_type || "Externe",
+        price: o.price,
+        mov: "–",
+        delay: "–",
+        url: o.external_url || "#",
+      }))
+    : extMock;
+
   const tabs = [
     { key: "mk" as const, label: "Marketplace", fullLabel: "Marketplace MediKong", icon: ShoppingCart, count: realOffers.length },
-    { key: "ext" as const, label: "Externes", fullLabel: "Offres externes", icon: ExternalLink, count: 3 },
-    { key: "market" as const, label: "Marche", fullLabel: "Prix du marche", icon: Eye, count: 5 },
+    { key: "ext" as const, label: "Externes", fullLabel: "Offres externes", icon: ExternalLink, count: extOffers.length },
+    { key: "market" as const, label: "Marche", fullLabel: "Prix du marche", icon: Eye, count: marketOffers.length || 5 },
   ];
 
   if (isLoading) {
@@ -339,18 +381,14 @@ export default function ProductPage() {
                     exit={{ opacity: 0, y: -8 }}
                     transition={{ duration: 0.3 }}
                   >
-                    <p className="text-sm text-mk-sec mb-4">Vous serez redirige vers le site du fournisseur.</p>
+                    <p className="text-sm text-mk-sec mb-4">Vous serez redirigé vers le site du fournisseur dans un nouvel onglet.</p>
                     <ScrollableTable className="border border-mk-line rounded-lg">
                       <div className="grid grid-cols-5 gap-3 px-4 py-2 bg-mk-alt text-xs font-semibold text-mk-sec min-w-[500px]">
-                        <span>Fournisseur</span><span>Prix unit.</span><span>MOV</span><span>Delai</span><span>Action</span>
+                        <span>Fournisseur</span><span>Prix unit.</span><span>MOV</span><span>Délai</span><span>Action</span>
                       </div>
-                      {[
-                        { name: "Pharma-Grossiste", price: 11.50, mov: "1 000 EUR", delay: "48h" },
-                        { name: "MedSupply BE", price: 13.20, mov: "500 EUR", delay: "72h" },
-                        { name: "Distri-Med NL", price: 10.80, mov: "2 000 EUR", delay: "5j" },
-                      ].map((f, i) => (
+                      {extOffers.map((f: any, i: number) => (
                         <motion.div
-                          key={f.name}
+                          key={f.name + i}
                           className="grid grid-cols-5 gap-3 px-4 py-3 border-t border-mk-line text-sm items-center min-w-[500px]"
                           initial={{ opacity: 0, x: -10 }}
                           animate={{ opacity: 1, x: 0 }}
@@ -358,16 +396,19 @@ export default function ProductPage() {
                           whileHover={{ backgroundColor: "rgba(0,0,0,0.02)" }}
                         >
                           <span className="font-medium text-mk-navy">{f.name}</span>
-                          <span className="font-bold text-mk-navy">{formatPrice(f.price)} EUR</span>
+                          <span className="font-bold text-mk-navy">{f.price ? `${formatPrice(f.price)} EUR` : "–"}</span>
                           <span className="text-mk-sec">{f.mov}</span>
                           <span className="text-mk-sec">{f.delay}</span>
-                          <motion.button
-                            className="border border-mk-navy text-mk-navy text-xs font-semibold px-3 py-1.5 rounded-md flex items-center gap-1"
+                          <motion.a
+                            href={f.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="border border-mk-navy text-mk-navy text-xs font-semibold px-3 py-1.5 rounded-md flex items-center gap-1 hover:bg-mk-navy hover:text-white transition-colors"
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
                           >
                             Voir <ExternalLink size={11} />
-                          </motion.button>
+                          </motion.a>
                         </motion.div>
                       ))}
                     </ScrollableTable>

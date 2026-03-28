@@ -567,7 +567,7 @@ export default function VendorOffers() {
                     })}
                   </tbody>
                 </table>
-              </div>
+              </ScrollableTable>
             </VCard>
 
             {/* Pricing Coach */}

@@ -130,10 +130,10 @@ export default function AdminCommissions() {
         notes: rule.notes,
       };
       if (rule.id) {
-        const { error } = await supabase.from("commission_rules").update(payload).eq("id", rule.id);
+        const { error } = await supabase.from("margin_rules").update(payload).eq("id", rule.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("commission_rules").insert(payload);
+        const { error } = await supabase.from("margin_rules").insert(payload);
         if (error) throw error;
       }
     },

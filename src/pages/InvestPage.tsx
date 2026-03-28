@@ -97,26 +97,55 @@ function TaxShelterSimulator() {
   const reduction = Math.round(amount * 0.45);
   const net = amount - reduction;
   const remaining = 15000 - amount;
+  const pct = ((amount - 1000) / (15000 - 1000)) * 100;
 
   return (
-    <div className="bg-white border border-mk-line rounded-2xl p-6 md:p-8">
-      <h3 className="text-lg font-bold text-mk-navy mb-1">Simulateur Tax Shelter</h3>
-      <p className="text-sm text-mk-sec mb-6">Déplacez le curseur pour ajuster votre investissement</p>
-      <div className="flex justify-between text-xs text-mk-sec mb-2">
-        <span>1 000 €</span><span>10 000 €</span><span>15 000 €</span>
+    <div className="rounded-2xl p-6 md:p-8" style={{ background: "linear-gradient(135deg, #0f172a 0%, #1e3a5f 60%, #1a365d 100%)" }}>
+      <h3 className="text-lg font-bold text-white mb-1">Simulateur Tax Shelter</h3>
+      <p className="text-sm text-white/50 mb-6">Déplacez le curseur pour ajuster votre investissement</p>
+
+      {/* Labels + selected amount */}
+      <div className="flex items-end justify-between mb-2">
+        <span className="text-xs text-white/40">1 000 €</span>
+        <span className="text-xl font-bold text-white">{amount.toLocaleString("fr-BE")} €</span>
+        <span className="text-xs text-white/40">15 000 €</span>
       </div>
-      <input type="range" min={1000} max={15000} step={500} value={amount} onChange={e => setAmount(Number(e.target.value))}
-        className="w-full h-2 bg-mk-alt rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-mk-green [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:cursor-pointer" />
-      <div className="mt-6 space-y-3">
-        <div className="flex justify-between text-sm"><span className="text-mk-sec">Montant investi</span><span className="font-semibold text-mk-navy">{amount.toLocaleString("fr-BE")} €</span></div>
-        <div className="flex justify-between text-sm"><span className="text-mk-sec">Montant éligible</span><span className="font-semibold text-mk-navy">{amount.toLocaleString("fr-BE")} €</span></div>
-        <div className="flex justify-between text-sm"><span className="text-mk-sec">Réduction d'impôt (45%)</span><span className="font-semibold text-mk-green">– {reduction.toLocaleString("fr-BE")} €</span></div>
-        <div className="border-t border-mk-line pt-3 flex justify-between text-sm"><span className="font-bold text-mk-navy">Coût réel net</span><span className="font-bold text-mk-navy">{net.toLocaleString("fr-BE")} €</span></div>
-        {remaining > 0 && <div className="flex justify-between text-sm"><span className="text-mk-sec">Solde Tax Shelter disponible</span><span className="font-semibold text-mk-navy">{remaining.toLocaleString("fr-BE")} €</span></div>}
+
+      {/* Custom slider track */}
+      <div className="relative h-2 rounded-full bg-white/10 mb-8">
+        <div className="absolute inset-y-0 left-0 rounded-full bg-mk-green" style={{ width: `${pct}%` }} />
+        <input type="range" min={1000} max={15000} step={500} value={amount} onChange={e => setAmount(Number(e.target.value))}
+          className="absolute inset-0 w-full h-full appearance-none bg-transparent cursor-pointer [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-[0_0_8px_rgba(5,150,105,0.5)] [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-track]:bg-transparent" />
       </div>
-      <p className="text-xs text-mk-ter mt-5">
+
+      {/* Breakdown rows */}
+      <div className="space-y-3">
+        <div className="flex justify-between text-sm border-b border-white/10 pb-3">
+          <span className="text-white/60">Montant investi</span>
+          <span className="font-semibold text-white">{amount.toLocaleString("fr-BE")} €</span>
+        </div>
+        <div className="flex justify-between text-sm border-b border-white/10 pb-3">
+          <span className="text-white/60">Montant éligible</span>
+          <span className="font-semibold text-white">{amount.toLocaleString("fr-BE")} €</span>
+        </div>
+        <div className="flex justify-between text-sm border-b border-white/10 pb-3">
+          <span className="text-white/60">Réduction d'impôt (45%)</span>
+          <span className="font-semibold text-mk-green">– {reduction.toLocaleString("fr-BE")} €</span>
+        </div>
+        <div className="bg-white/5 rounded-lg px-4 py-3 flex justify-between text-sm">
+          <span className="font-bold text-white">Coût réel net</span>
+          <span className="font-bold text-mk-green text-lg">{net.toLocaleString("fr-BE")} €</span>
+        </div>
+        {remaining > 0 && (
+          <div className="flex justify-between text-sm pt-1">
+            <span className="text-white/40">Solde Tax Shelter disponible</span>
+            <span className="font-medium text-white/70">{remaining.toLocaleString("fr-BE")} €</span>
+          </div>
+        )}
+      </div>
+      <p className="text-xs text-white/30 mt-5">
         Éligible de 5 000 € à 15 000 € / an (personnes physiques).{" "}
-        <a href="https://economie.fgov.be/fr/themes/entreprises/pme-et-independants-en/tax-shelter" target="_blank" rel="noopener noreferrer" className="text-mk-blue hover:underline">Voir le site officiel du SPF Économie →</a>
+        <a href="https://economie.fgov.be/fr/themes/entreprises/pme-et-independants-en/tax-shelter" target="_blank" rel="noopener noreferrer" className="text-mk-green hover:underline">Voir le site officiel du SPF Économie →</a>
       </p>
     </div>
   );

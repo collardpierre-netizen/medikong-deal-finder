@@ -109,6 +109,7 @@ import CategoriesPage from "./pages/CategoriesPage";
 const queryClient = new QueryClient();
 
 const App = () => (
+  <HelmetProvider>
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <I18nProvider>

@@ -152,7 +152,13 @@ export default function ProductPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
             >
-              <p className="text-sm text-mk-sec mb-1">{product.brand}</p>
+              {brandData ? (
+                <Link to={`/marques/${brandData.slug}`} className="text-sm text-mk-blue hover:underline mb-1 inline-flex items-center gap-1">
+                  <Tag size={13} /> {product.brand}
+                </Link>
+              ) : (
+                <p className="text-sm text-mk-sec mb-1">{product.brand}</p>
+              )}
               <h1 className="text-xl md:text-2xl font-bold text-mk-navy mb-3">{product.name}</h1>
               <div className="flex items-center gap-3 mb-1 flex-wrap">
                 <span className="text-xs text-mk-ter">GTIN: {product.ean}</span>
@@ -165,7 +171,29 @@ export default function ProductPage() {
                   <Copy size={12} /> {copied ? "Copie !" : "Copier"}
                 </motion.button>
               </div>
-              <p className="text-xs text-mk-ter mb-4">CNK: {product.cnk} · {product.unit} · Belgique</p>
+              <div className="flex items-center gap-3 text-xs text-mk-ter mb-2 flex-wrap">
+                <span>CNK: {product.cnk} · {product.unit} · Belgique</span>
+              </div>
+
+              {/* Brand / Manufacturer CTA chips */}
+              <div className="flex items-center gap-2 mb-4 flex-wrap">
+                {brandData && (
+                  <Link
+                    to={`/marques/${brandData.slug}`}
+                    className="inline-flex items-center gap-1.5 text-xs font-medium border border-mk-line rounded-full px-3 py-1.5 text-mk-navy hover:border-mk-blue hover:text-mk-blue transition-colors"
+                  >
+                    <Tag size={12} /> Marque : {brandData.name}
+                  </Link>
+                )}
+                {manufacturerData && (
+                  <Link
+                    to={`/fabricants/${manufacturerData.slug}`}
+                    className="inline-flex items-center gap-1.5 text-xs font-medium border border-mk-line rounded-full px-3 py-1.5 text-mk-navy hover:border-mk-blue hover:text-mk-blue transition-colors"
+                  >
+                    <Building2 size={12} /> Fabricant : {manufacturerData.name}
+                  </Link>
+                )}
+              </div>
 
               <div className="border-t border-mk-line my-4" />
 

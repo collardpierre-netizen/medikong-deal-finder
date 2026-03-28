@@ -365,7 +365,7 @@ export default function ProductPage() {
                           </motion.button>
                         </motion.div>
                       ))}
-                    </div>
+                    </ScrollableTable>
                   </motion.div>
                 )}
 

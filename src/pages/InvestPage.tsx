@@ -242,37 +242,74 @@ export default function InvestPage() {
             <h2 className="text-2xl md:text-4xl font-bold text-mk-navy mb-3">Un marché colossal, une digitalisation naissante</h2>
             <p className="text-mk-sec max-w-2xl mx-auto text-sm md:text-base">Le secteur de la distribution de produits de santé reste dominé par un oligopole peu innovant. MediKong apporte la couche digitale qui manque à ce marché de €52 milliards.</p>
           </div>
-          <div className="grid md:grid-cols-3 gap-5 mb-12">
-            {tamSamSom.map((t) => (
-              <div key={t.label} className="border border-mk-line rounded-xl p-6 text-center">
-                <p className="text-xs font-semibold text-mk-blue uppercase tracking-wider mb-2">{t.label}</p>
-                <p className="text-3xl md:text-4xl font-bold text-mk-navy mb-2">{t.value}</p>
-                <p className="text-sm text-mk-sec">{t.desc}</p>
+          {/* TAM / SAM / SOM cards with colored backgrounds like reference */}
+          <div className="grid md:grid-cols-3 gap-5 mb-14">
+            {[
+              { label: "TAM EUROPE", value: "52 Mrd €", desc: "Marché total de la distribution de produits de santé en Europe.", icon: Globe, bg: "bg-slate-100", iconBg: "bg-slate-200", iconColor: "text-slate-600" },
+              { label: "SAM BELGIQUE", value: "2,4 Mrd €", desc: "Marché adressable : pharmacies, hôpitaux et MR/MRS.", icon: Shield, bg: "bg-emerald-50", iconBg: "bg-emerald-100", iconColor: "text-emerald-600" },
+              { label: "SOM – OBJECTIF Y5", value: "150 M €", desc: "Volume de transactions visé — 6,25% de part de marché belge.", icon: TrendingUp, bg: "bg-amber-50", iconBg: "bg-amber-100", iconColor: "text-amber-600" },
+            ].map((t) => (
+              <div key={t.label} className={`${t.bg} rounded-2xl p-8 text-center`}>
+                <div className={`w-12 h-12 ${t.iconBg} rounded-xl flex items-center justify-center mx-auto mb-4`}>
+                  <t.icon size={22} className={t.iconColor} />
+                </div>
+                <p className="text-xs font-semibold text-mk-sec uppercase tracking-wider mb-3">{t.label}</p>
+                <p className="text-3xl md:text-4xl font-bold text-mk-navy mb-3">{t.value}</p>
+                <p className="text-sm text-mk-sec leading-relaxed">{t.desc}</p>
               </div>
             ))}
           </div>
 
-          {/* EBITDA */}
-          <div className="border border-mk-line rounded-xl p-6 md:p-8 mb-8">
-            <h3 className="text-sm font-semibold text-mk-sec uppercase tracking-wider mb-5">Potentiel de création de valeur</h3>
-            <p className="text-xs text-mk-ter mb-6">Projection à 5 ans basée sur les multiples de valorisation des marketplaces B2B santé comparables.</p>
-            <div className="flex flex-wrap items-center justify-center gap-3 md:gap-5 text-center">
-              <div className="bg-mk-alt rounded-xl px-5 py-4"><p className="text-2xl md:text-3xl font-bold text-mk-navy">16M€</p><p className="text-xs text-mk-sec mt-1">EBITDA cible</p><p className="text-[10px] text-mk-ter">Rentabilité opérationnelle à maturité</p></div>
-              <span className="text-2xl font-bold text-mk-sec">×</span>
-              <div className="bg-mk-alt rounded-xl px-5 py-4"><p className="text-2xl md:text-3xl font-bold text-mk-navy">10x</p><p className="text-xs text-mk-sec mt-1">Multiple</p><p className="text-[10px] text-mk-ter">Standard marketplaces B2B santé</p></div>
-              <span className="text-2xl font-bold text-mk-sec">=</span>
-              <div className="bg-mk-green/10 border border-mk-green/20 rounded-xl px-5 py-4"><p className="text-2xl md:text-3xl font-bold text-mk-green">160M€</p><p className="text-xs text-mk-sec mt-1">Valorisation visée</p><p className="text-[10px] text-mk-ter">Objectif à horizon 5 ans</p></div>
+          {/* ── POTENTIEL DE CRÉATION DE VALEUR — dark card ── */}
+          <div className="rounded-2xl p-8 md:p-12 mb-8" style={{ background: "linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #1a365d 100%)" }}>
+            <div className="text-center mb-10">
+              <p className="text-amber-400 text-sm font-semibold uppercase tracking-widest mb-2">✨ Potentiel de création de valeur ✨</p>
+              <p className="text-white/50 text-sm max-w-xl mx-auto">Projection à 5 ans basée sur les multiples de valorisation des marketplaces B2B santé comparables.</p>
             </div>
-          </div>
 
-          {/* Investor scenario */}
-          <div className="border border-mk-line rounded-xl p-6 md:p-8 mb-8">
-            <h3 className="text-sm font-semibold text-mk-sec uppercase tracking-wider mb-4">Scénario investisseur illustratif</h3>
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div className="bg-mk-alt rounded-lg p-4"><p className="text-xs text-mk-sec mb-1">Investissement aujourd'hui</p><p className="text-2xl font-bold text-mk-navy">5 000 €</p><p className="text-xs text-mk-ter">Coût net : 2 750 € (Tax Shelter)</p></div>
-              <div className="bg-mk-green/10 rounded-lg p-4"><p className="text-xs text-mk-sec mb-1">Potentiel à 5 ans*</p><p className="text-2xl font-bold text-mk-green">x10 à x20</p><p className="text-xs text-mk-ter">selon le scénario de sortie</p></div>
+            {/* EBITDA × Multiple = Valorisation */}
+            <div className="flex flex-wrap items-center justify-center gap-4 md:gap-8 text-center mb-12">
+              <div>
+                <p className="text-4xl md:text-5xl font-bold text-white/80">16M€</p>
+                <p className="text-xs font-semibold text-mk-blue uppercase tracking-wider mt-2">EBITDA Cible</p>
+                <p className="text-[11px] text-white/40 mt-1">Rentabilité opérationnelle<br/>à maturité</p>
+              </div>
+              <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center">
+                <span className="text-white/50 text-lg font-bold">×</span>
+              </div>
+              <div>
+                <p className="text-4xl md:text-5xl font-bold text-mk-green">10x</p>
+                <p className="text-xs font-semibold text-mk-green uppercase tracking-wider mt-2">Multiple</p>
+                <p className="text-[11px] text-white/40 mt-1">Standard marketplaces<br/>B2B santé</p>
+              </div>
+              <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center">
+                <span className="text-white/50 text-lg font-bold">=</span>
+              </div>
+              <div>
+                <p className="text-4xl md:text-6xl font-bold text-amber-400">160M€</p>
+                <p className="text-xs font-semibold text-amber-400 uppercase tracking-wider mt-2">Valorisation visée</p>
+                <p className="text-[11px] text-white/40 mt-1">Objectif à horizon 5 ans</p>
+              </div>
             </div>
-            <p className="text-[10px] text-mk-ter mt-4">* Illustration non contractuelle. Tout investissement comporte des risques, y compris la perte totale du capital.</p>
+
+            {/* Separator */}
+            <div className="border-t border-white/10 pt-8">
+              <p className="text-center text-xs font-semibold text-white/40 uppercase tracking-widest mb-6">Scénario investisseur illustratif</p>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 md:gap-6">
+                <div className="bg-white/5 border border-white/10 rounded-xl px-8 py-5 text-center">
+                  <p className="text-[11px] text-white/40 mb-1">Investissement aujourd'hui</p>
+                  <p className="text-2xl md:text-3xl font-bold text-white">5 000 €</p>
+                  <p className="text-xs text-mk-green mt-1 font-medium">Coût net : 2 750 € (Tax Shelter)</p>
+                </div>
+                <ArrowRight size={24} className="text-white/30 rotate-0 sm:rotate-0" />
+                <div className="bg-amber-400/10 border border-amber-400/20 rounded-xl px-8 py-5 text-center">
+                  <p className="text-[11px] text-amber-400/60 mb-1">Potentiel à 5 ans*</p>
+                  <p className="text-2xl md:text-3xl font-bold text-amber-400">x10 à x20</p>
+                  <p className="text-xs text-white/40 mt-1">selon le scénario de sortie</p>
+                </div>
+              </div>
+              <p className="text-center text-[10px] text-white/30 mt-6">* Illustration non contractuelle. Tout investissement comporte des risques, y compris la perte totale du capital.</p>
+            </div>
           </div>
 
           {/* Pourquoi maintenant */}

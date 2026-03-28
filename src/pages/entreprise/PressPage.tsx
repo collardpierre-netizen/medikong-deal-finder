@@ -14,7 +14,7 @@ export default function PressPage() {
         badge="Médias"
         title="MediKong dans les médias"
         subtitle="Suivez notre actualité et nos annonces les plus récentes."
-        cta={[{ label: "Télécharger le dossier de presse", variant: "pink" }]}
+        cta={[{ label: "Contactez-nous", variant: "pink", onClick: () => window.location.href = "/contact" }]}
       />
 
       <Section label="Actualités" title="Articles récents">

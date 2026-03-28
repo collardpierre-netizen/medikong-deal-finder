@@ -32,8 +32,8 @@ export default function AboutPage() {
         title="Là où transparence, innovation et santé s'unissent"
         subtitle="MediKong connecte les professionnels de santé avec des fournisseurs vérifiés pour des achats médicaux transparents, compétitifs et conformes."
         cta={[
-          { label: "Découvrir la plateforme", variant: "pink" },
-          { label: "Regarder la vidéo", variant: "white" },
+          { label: "Découvrir la plateforme", variant: "pink", onClick: () => window.location.href = "/" },
+          { label: "Nous contacter", variant: "white", onClick: () => window.location.href = "/contact" },
         ]}
       />
 

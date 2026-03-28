@@ -38,8 +38,8 @@ export default function InvestirPage() {
         title="Investissez dans MediKong"
         subtitle="Participez à la transformation du secteur médical en Benelux et bénéficiez du Tax Shelter 45%."
         cta={[
-          { label: "Demander le dossier investisseur", variant: "white" },
-          { label: "Prendre rendez-vous", variant: "outline" },
+          { label: "Demander le dossier investisseur", variant: "white", onClick: () => window.location.href = "/contact" },
+          { label: "Souscrire maintenant", variant: "outline", onClick: () => window.location.href = "/invest" },
         ]}
       />
 

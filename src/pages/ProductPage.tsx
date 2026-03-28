@@ -249,34 +249,7 @@ export default function ProductPage() {
   const { addToCart } = useCart();
   const { data: realOffers = [] } = useProductOffers(product?.id);
 
-  // Fetch indirect (external) offers
-  const { data: indirectOffers = [] } = useQuery({
-    queryKey: ["indirect-offers", product?.id],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("offers_indirect")
-        .select("*, leads_partners(name)")
-        .eq("product_id", product!.id)
-        .eq("status", "active");
-      return data || [];
-    },
-    enabled: !!product?.id,
-  });
-
-  // Fetch market price offers
-  const { data: marketOffers = [] } = useQuery({
-    queryKey: ["market-offers", product?.id],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("offers_market")
-        .select("*")
-        .eq("product_id", product!.id);
-      return data || [];
-    },
-    enabled: !!product?.id,
-  });
-  
-  // Fetch brand and manufacturer details for CTA links
+  // Fetch brand details for CTA links
   const { data: brandData } = useQuery({
     queryKey: ["brand-detail", product?.brandId, product?.brand],
     queryFn: async () => {
@@ -284,19 +257,10 @@ export default function ProductPage() {
         const { data } = await supabase.from("brands").select("id, name, slug").eq("id", product!.brandId).single();
         if (data) return data;
       }
-      // Fallback: match by name
       const { data } = await supabase.from("brands").select("id, name, slug").ilike("name", product!.brand).single();
       return data;
     },
     enabled: !!product,
-  });
-  const { data: manufacturerData } = useQuery({
-    queryKey: ["manufacturer-detail", product?.manufacturerId],
-    queryFn: async () => {
-      const { data } = await supabase.from("manufacturers").select("id, name, slug").eq("id", product!.manufacturerId!).single();
-      return data;
-    },
-    enabled: !!product?.manufacturerId,
   });
 
   const [tab, setTab] = useState<"mk" | "ext" | "market">("mk");
@@ -330,24 +294,16 @@ export default function ProductPage() {
   };
 
   const extMock = [
-    { name: "Pharma-Grossiste", price: 11.50, mov: "1 000 EUR", delay: "48h", url: "https://pharma-grossiste.be" },
-    { name: "MedSupply BE", price: 13.20, mov: "500 EUR", delay: "72h", url: "https://medsupply.be" },
-    { name: "Distri-Med NL", price: 10.80, mov: "2 000 EUR", delay: "5j", url: "https://distri-med.nl" },
+    { name: "Pharma-Grossiste", price: 11.50, mov: "1 000 EUR", delay: "48h", url: "#" },
+    { name: "MedSupply BE", price: 13.20, mov: "500 EUR", delay: "72h", url: "#" },
+    { name: "Distri-Med NL", price: 10.80, mov: "2 000 EUR", delay: "5j", url: "#" },
   ];
-  const extOffers = indirectOffers.length > 0
-    ? indirectOffers.map((o: any) => ({
-        name: o.leads_partners?.name || o.source_type || "Externe",
-        price: o.price,
-        mov: "–",
-        delay: "–",
-        url: o.external_url || "#",
-      }))
-    : extMock;
+  const extOffers = extMock;
 
   const tabs = [
     { key: "mk" as const, label: "Marketplace", fullLabel: "Marketplace MediKong", icon: ShoppingCart, count: realOffers.length },
     { key: "ext" as const, label: "Externes", fullLabel: "Offres externes", icon: ExternalLink, count: extOffers.length },
-    { key: "market" as const, label: "Marche", fullLabel: "Prix du marche", icon: Eye, count: marketOffers.length || 5 },
+    { key: "market" as const, label: "Marche", fullLabel: "Prix du marche", icon: Eye, count: 5 },
   ];
 
   if (isLoading) {
@@ -439,14 +395,6 @@ export default function ProductPage() {
                     className="inline-flex items-center gap-1.5 text-xs font-medium border border-mk-line rounded-full px-3 py-1.5 text-mk-navy hover:border-mk-blue hover:text-mk-blue transition-colors"
                   >
                     <Tag size={12} /> Marque : {brandData.name}
-                  </Link>
-                )}
-                {manufacturerData && (
-                  <Link
-                    to={`/fabricant/${manufacturerData.slug}`}
-                    className="inline-flex items-center gap-1.5 text-xs font-medium border border-mk-line rounded-full px-3 py-1.5 text-mk-navy hover:border-mk-blue hover:text-mk-blue transition-colors"
-                  >
-                    <Building2 size={12} /> Fabricant : {manufacturerData.name}
                   </Link>
                 )}
               </div>
@@ -877,11 +825,12 @@ export default function ProductPage() {
                       if (!user) { navigate("/connexion"); return; }
                       const bestOffer = realOffers[0];
                       addToCart.mutate({
+                        offerId: bestOffer?.id || product.id,
                         productId: product.id,
                         quantity: stickyQty,
                         vendorId: bestOffer?.sellerId,
-                        priceHt: bestOffer?.unitPriceEur || product.price,
-                        productData: { id: product.id, name: product.name, brand: product.brand, slug: product.slug, price: bestOffer?.unitPriceEur || product.price, gtin: product.gtin, unit: product.unit, stock: true },
+                        priceExclVat: bestOffer?.unitPriceEur || product.price,
+                        productData: { id: product.id, name: product.name, brand: product.brand, slug: product.slug, price: bestOffer?.unitPriceEur || product.price },
                       });
                     }}
                   >

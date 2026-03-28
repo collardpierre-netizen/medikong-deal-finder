@@ -18,14 +18,7 @@ export default function AdminInvestPipeline() {
 
   const { data: subs = [], isLoading } = useQuery({
     queryKey: ["invest-subscriptions"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("invest_subscriptions")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data;
-    },
+    queryFn: async () => [] as any[],
   });
 
   const filtered = statusFilter === "all" ? subs : subs.filter((s: any) => s.status === statusFilter);

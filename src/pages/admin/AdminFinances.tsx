@@ -22,8 +22,8 @@ const AdminFinances = () => {
   const pendingInvoices = invoicesData.filter(i => i.status === "pending");
   const paidInvoices = invoicesData.filter(i => i.status === "paid");
 
-  const commissionData = vendors.filter(v => v.status === "active").slice(0, 5).map(v => ({
-    seller: v.company_name.length > 15 ? v.company_name.substring(0, 15) + "…" : v.company_name,
+  const commissionData = vendors.filter(v => v.is_active).slice(0, 5).map(v => ({
+    seller: (v.company_name || v.name || "").length > 15 ? (v.company_name || v.name || "").substring(0, 15) + "…" : (v.company_name || v.name || ""),
     commission: Number(v.commission_rate) || 12,
   }));
 
@@ -138,11 +138,11 @@ const AdminFinances = () => {
               </tr>
             </thead>
             <tbody>
-              {vendors.filter(v => v.status === "active").map((v) => (
+              {vendors.filter(v => v.is_active).map((v) => (
                 <tr key={v.id} style={{ borderBottom: "1px solid #F1F5F9" }}>
-                  <td className="px-4 py-3 text-[13px] font-semibold" style={{ color: "#1B5BDA" }}>{v.company_name}</td>
+                  <td className="px-4 py-3 text-[13px] font-semibold" style={{ color: "#1B5BDA" }}>{v.company_name || v.name}</td>
                   <td className="px-4 py-3 text-[12px] font-mono" style={{ color: "#616B7C" }}>{v.commission_rate}%</td>
-                  <td className="px-4 py-3 text-[12px]" style={{ color: "#616B7C" }}>{v.tier}</td>
+                  <td className="px-4 py-3 text-[12px]" style={{ color: "#616B7C" }}>{v.type}</td>
                   <td className="px-4 py-3">
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ backgroundColor: "#ECFDF5", color: "#059669" }}>Actif</span>
                   </td>

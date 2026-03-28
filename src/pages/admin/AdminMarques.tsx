@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useBrands, useManufacturers } from "@/hooks/useAdminData";
 import { BrandFormDialog } from "@/components/admin/BrandFormDialog";
 import { ManufacturerFormDialog } from "@/components/admin/ManufacturerFormDialog";
-import { exportBrands, exportManufacturers, importBrands, importManufacturers } from "@/lib/xlsx-utils";
+import { exportBrands, importBrands } from "@/lib/xlsx-utils";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Tag, Factory, Package, DollarSign, Shield, Plus, Download, Upload } from "lucide-react";
@@ -76,11 +76,10 @@ const AdminMarques = () => {
         }
       />
 
-      <div className="grid grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-3 gap-4 mb-6">
         <KpiCard icon={Tag} label="Marques actives" value={String(brandsData.length)} evolution={{ value: 2, label: "ce mois" }} iconColor="#1B5BDA" iconBg="#EFF6FF" />
         <KpiCard icon={Factory} label="Fabricants" value={String(manufacturersData.length)} iconColor="#7C3AED" iconBg="#F3F0FF" />
-        <KpiCard icon={Package} label="Produits total" value={fmt(brandsData.reduce((a, b) => a + (b.products_count || 0), 0))} iconColor="#059669" iconBg="#ECFDF5" />
-        <KpiCard icon={DollarSign} label="GMV marques" value={`€${fmt(brandsData.reduce((a, b) => a + Number(b.gmv_month || 0), 0))}`} evolution={{ value: 11, label: "vs mois dernier" }} iconColor="#F59E0B" iconBg="#FFFBEB" />
+        <KpiCard icon={Package} label="Produits total" value={fmt(brandsData.reduce((a, b) => a + (b.product_count || 0), 0))} iconColor="#059669" iconBg="#ECFDF5" />
       </div>
 
       <Tabs value={tab} onValueChange={setTab}>
@@ -107,17 +106,17 @@ const AdminMarques = () => {
                         onClick={() => setSelectedBrand(selectedBrand === b.name ? null : b.name)}
                         style={selectedBrand === b.name ? { backgroundColor: "#EFF6FF" } : {}}>
                         <TableCell className="text-[12px] font-semibold" style={{ color: "#1D2530" }}>{b.name}</TableCell>
-                        <TableCell className="text-[11px]" style={{ color: "#616B7C" }}>{(b.manufacturers as any)?.name || "—"}</TableCell>
-                        <TableCell className="text-[11px]" style={{ color: "#8B95A5" }}>{b.country || "—"}</TableCell>
-                        <TableCell className="text-[11px] text-right" style={{ color: "#616B7C" }}>{b.products_count || 0}</TableCell>
-                        <TableCell className="text-[11px] text-right font-semibold" style={{ color: "#059669" }}>€{fmt(Number(b.gmv_month) || 0)}</TableCell>
+                        <TableCell className="text-[11px]" style={{ color: "#616B7C" }}>—</TableCell>
+                        <TableCell className="text-[11px]" style={{ color: "#8B95A5" }}>—</TableCell>
+                        <TableCell className="text-[11px] text-right" style={{ color: "#616B7C" }}>{b.product_count || 0}</TableCell>
+                        <TableCell className="text-[11px] text-right font-semibold" style={{ color: "#059669" }}>—</TableCell>
                         <TableCell>
-                          <Badge variant="outline" className="text-[10px] font-bold" style={{ backgroundColor: (tierColors[b.tier || "Bronze"] || tierColors.Bronze).bg, color: (tierColors[b.tier || "Bronze"] || tierColors.Bronze).text, borderColor: "transparent" }}>
-                            {b.tier || "Bronze"}
+                          <Badge variant="outline" className="text-[10px] font-bold">
+                            {b.is_featured ? "Featured" : "Standard"}
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          {(b.certifications || []).includes("CE") ? <Shield size={13} style={{ color: "#059669" }} /> : <span className="text-[10px]" style={{ color: "#8B95A5" }}>—</span>}
+                          <span className="text-[10px]" style={{ color: "#8B95A5" }}>—</span>
                         </TableCell>
                         <TableCell>
                           <Button variant="ghost" size="sm" className="text-[11px] h-7" onClick={(e) => { e.stopPropagation(); setEditBrand(b); setBrandDialogOpen(true); }}>Éditer</Button>
@@ -133,8 +132,8 @@ const AdminMarques = () => {
               <div className="w-[300px] bg-white rounded-lg border p-5 shrink-0" style={{ borderColor: "#E2E8F0" }}>
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-[16px] font-bold" style={{ color: "#1D2530" }}>{selected.name}</h3>
-                  <Badge variant="outline" className="text-[10px] font-bold" style={{ backgroundColor: (tierColors[selected.tier || "Bronze"]).bg, color: (tierColors[selected.tier || "Bronze"]).text, borderColor: "transparent" }}>
-                    {selected.tier}
+                  <Badge variant="outline" className="text-[10px] font-bold">
+                    {selected.is_featured ? "Featured" : "Standard"}
                   </Badge>
                 </div>
                 <div className="space-y-3 text-[12px] mb-4">

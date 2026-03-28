@@ -83,10 +83,10 @@ export default function AdminCommissions() {
     queryKey: ["admin-commission-rules"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("commission_rules")
+        .from("margin_rules")
         .select("*")
         .is("vendor_id", null)
-        .order("is_default", { ascending: false });
+        .order("priority", { ascending: false });
       if (error) throw error;
       return data as unknown as CommissionRule[];
     },
@@ -96,7 +96,7 @@ export default function AdminCommissions() {
     queryKey: ["admin-commission-vendor-rules"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("commission_rules")
+        .from("margin_rules")
         .select("*, vendors(company_name)")
         .not("vendor_id", "is", null)
         .order("created_at", { ascending: false });
@@ -108,7 +108,7 @@ export default function AdminCommissions() {
   const { data: vendors = [] } = useQuery({
     queryKey: ["admin-vendors-for-commission"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("vendors").select("id, company_name, tier, status").eq("status", "active").order("company_name");
+      const { data, error } = await supabase.from("vendors").select("id, company_name, is_active, name").eq("is_active", true).order("company_name");
       if (error) throw error;
       return data;
     },
@@ -130,10 +130,10 @@ export default function AdminCommissions() {
         notes: rule.notes,
       };
       if (rule.id) {
-        const { error } = await supabase.from("commission_rules").update(payload).eq("id", rule.id);
+        const { error } = await supabase.from("margin_rules").update(payload).eq("id", rule.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("commission_rules").insert(payload);
+        const { error } = await supabase.from("margin_rules").insert(payload);
         if (error) throw error;
       }
     },
@@ -147,7 +147,7 @@ export default function AdminCommissions() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("commission_rules").delete().eq("id", id);
+      const { error } = await supabase.from("margin_rules").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -162,9 +162,8 @@ export default function AdminCommissions() {
       const template = rules.find(r => r.id === templateId);
       if (!template) throw new Error("Règle introuvable");
       // Delete existing vendor-specific rules
-      await supabase.from("commission_rules").delete().eq("vendor_id", vendorId);
-      // Clone template for vendor
-      const { error } = await supabase.from("commission_rules").insert({
+      await supabase.from("margin_rules").delete().eq("vendor_id", vendorId);
+      const { error } = await supabase.from("margin_rules").insert({
         vendor_id: vendorId,
         name: template.name,
         model: template.model,
@@ -354,7 +353,7 @@ export default function AdminCommissions() {
                 <SelectContent>
                   {vendors.map(v => (
                     <SelectItem key={v.id} value={v.id}>
-                      {v.company_name} ({v.tier})
+                      {v.company_name || v.name}
                       {vendorsWithRules.has(v.id) && " ✓"}
                     </SelectItem>
                   ))}

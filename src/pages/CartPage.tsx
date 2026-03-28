@@ -42,7 +42,7 @@ export default function CartPage() {
       if (vendorIds.length === 0) return [];
       const { data } = await supabase
         .from("vendors")
-        .select("id, company_name, display_name, tier, status, franco_ht, min_order_ht")
+        .select("id, name, company_name, is_verified")
         .in("id", vendorIds as string[]);
       return data || [];
     },
@@ -60,16 +60,15 @@ export default function CartPage() {
       groups[key].push(item);
     });
     return Object.entries(groups).map(([vendorId, groupItems]) => {
-      const total = groupItems.reduce((s, i) => s + (i.price_ht || i.product?.price || 0) * i.quantity, 0);
+      const total = groupItems.reduce((s, i) => s + (i.price_excl_vat || i.product?.price || 0) * i.quantity, 0);
       const vendor = vendorMap.get(vendorId);
-      const vendorMov = Number(vendor?.min_order_ht || vendor?.franco_ht || MOV_TIERS[0]);
-      const currentMov = vendorMov > 0 ? vendorMov : MOV_TIERS[0];
+      const currentMov = MOV_TIERS[0];
       const remaining = Math.max(currentMov - total, 0);
       const progress = Math.min((total / currentMov) * 100, 100);
       return {
         vendorId,
-        vendorName: vendor?.display_name || vendor?.company_name || `Fournisseur #${vendorId.slice(0, 6).toUpperCase()}`,
-        isVerified: vendor?.status === "active",
+        vendorName: vendor?.company_name || vendor?.name || `Fournisseur #${vendorId.slice(0, 6).toUpperCase()}`,
+        isVerified: vendor?.is_verified || false,
         items: groupItems,
         total,
         currentMov,
@@ -80,7 +79,7 @@ export default function CartPage() {
     });
   }, [items, vendorMap]);
 
-  const totalCart = items.reduce((s, i) => s + (i.price_ht || i.product?.price || 0) * i.quantity, 0);
+  const totalCart = items.reduce((s, i) => s + (i.price_excl_vat || i.product?.price || 0) * i.quantity, 0);
   const readyCount = supplierGroups.filter(g => g.meetsMinimum).length;
   const belowCount = supplierGroups.filter(g => !g.meetsMinimum).length;
   const totalReady = supplierGroups.filter(g => g.meetsMinimum).reduce((s, g) => s + g.total, 0);
@@ -321,11 +320,10 @@ export default function CartPage() {
                                       {item.product?.name || "Produit"}
                                     </Link>
                                     <p className="text-xs text-mk-ter">
-                                      CNK: {item.product?.gtin?.slice(-7) || "N/A"}
-                                      {item.product?.unit && ` · ${item.product.unit}`}
+                                      Réf: {item.product_id?.slice(0, 8) || "N/A"}
                                     </p>
                                     <p className="text-sm text-mk-navy mt-0.5">
-                                      {formatPrice(item.price_ht || item.product?.price || 0)}€ × {item.quantity} = <span className="font-bold">{formatPrice((item.price_ht || item.product?.price || 0) * item.quantity)}€</span>
+                                      {formatPrice(item.price_excl_vat || item.product?.price || 0)}€ × {item.quantity} = <span className="font-bold">{formatPrice((item.price_excl_vat || item.product?.price || 0) * item.quantity)}€</span>
                                     </p>
                                   </div>
                                   <div className="flex items-center gap-2 shrink-0">

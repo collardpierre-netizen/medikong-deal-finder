@@ -66,43 +66,12 @@ const AdminCMS = () => {
     setSections(prev => prev.map((s, i) => i === idx ? { ...s, visible: !s.visible } : s));
   };
 
-  const { data: heroImages = [] } = useQuery({
-    queryKey: ["admin-hero-images"],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("cms_hero_images")
-        .select("*")
-        .order("sort_order");
-      return (data || []) as HeroImage[];
-    },
-  });
+  // CMS hero images - placeholder since table doesn't exist yet
+  const heroImages: HeroImage[] = [];
+  const toggleImage = { mutate: (_args: { id: string; is_active: boolean }) => { toast.info("Fonctionnalité CMS à venir"); } };
 
-  const toggleImage = useMutation({
-    mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
-      await supabase.from("cms_hero_images").update({ is_active }).eq("id", id);
-    },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-hero-images"] }); toast.success("Image mise à jour"); },
-  });
-
-  const deleteImage = useMutation({
-    mutationFn: async (id: string) => {
-      await supabase.from("cms_hero_images").delete().eq("id", id);
-    },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-hero-images"] }); toast.success("Image supprimée"); },
-  });
-
-  const addImage = useMutation({
-    mutationFn: async () => {
-      const maxOrder = heroImages.length > 0 ? Math.max(...heroImages.map(i => i.sort_order)) + 1 : 1;
-      await supabase.from("cms_hero_images").insert({ image_url: newImageUrl, alt_text: newImageAlt, sort_order: maxOrder });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-hero-images"] });
-      setNewImageUrl("");
-      setNewImageAlt("");
-      toast.success("Image ajoutée");
-    },
-  });
+  const deleteImage = { mutate: (_id: string) => { toast.info("Fonctionnalité CMS à venir"); } };
+  const addImage = { mutate: () => { toast.info("Fonctionnalité CMS à venir"); }, isPending: false };
 
   return (
     <div>

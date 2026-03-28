@@ -31,6 +31,12 @@ export default function ConfirmationPage() {
   deliveryDate.setDate(deliveryDate.getDate() + 7);
   const formattedDate = deliveryDate.toLocaleDateString("fr-BE");
 
+  const shippingStr = order?.shipping_address
+    ? typeof order.shipping_address === "object" && order.shipping_address !== null
+      ? (order.shipping_address as any).line1 || JSON.stringify(order.shipping_address)
+      : String(order.shipping_address)
+    : "";
+
   return (
     <Layout>
       <PageTransition>
@@ -56,18 +62,18 @@ export default function ConfirmationPage() {
               {order && (
                 <>
                   <div><span className="text-xs text-mk-sec">Méthode de paiement</span><div className="text-sm font-medium text-mk-navy">{order.payment_method}</div></div>
-                  <div><span className="text-xs text-mk-sec">Montant total</span><div className="text-sm font-bold text-mk-navy">{formatPrice(Number(order.total))} EUR</div></div>
+                  <div><span className="text-xs text-mk-sec">Montant total</span><div className="text-sm font-bold text-mk-navy">{formatPrice(Number(order.total_incl_vat))} EUR</div></div>
                 </>
               )}
               <div className="sm:col-span-2"><span className="text-xs text-mk-sec">Livraison prévue</span><div className="text-sm font-medium text-mk-green flex items-center gap-1"><Truck size={14} /> {formattedDate}</div></div>
             </div>
           </motion.div>
 
-          {order && (
+          {order && shippingStr && (
             <motion.div className="border border-mk-line rounded-lg p-4 mb-6 text-left"
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}>
               <p className="text-xs text-mk-sec mb-1">Adresse de livraison</p>
-              <p className="text-sm text-mk-navy">{order.shipping_address}</p>
+              <p className="text-sm text-mk-navy">{shippingStr}</p>
             </motion.div>
           )}
 

@@ -38,29 +38,14 @@ const AdminProduitDetail = () => {
   const { data: directOffers = [] } = useQuery({
     queryKey: ["product-direct-offers", id],
     queryFn: async () => {
-      const { data } = await supabase.from("offers_direct").select("*, vendors(company_name)").eq("product_id", id!);
+      const { data } = await supabase.from("offers").select("*, vendors(name, company_name)").eq("product_id", id!);
       return data || [];
     },
     enabled: !!id,
   });
 
-  const { data: indirectOffers = [] } = useQuery({
-    queryKey: ["product-indirect-offers", id],
-    queryFn: async () => {
-      const { data } = await supabase.from("offers_indirect").select("*").eq("product_id", id!);
-      return data || [];
-    },
-    enabled: !!id,
-  });
-
-  const { data: marketOffers = [] } = useQuery({
-    queryKey: ["product-market-offers", id],
-    queryFn: async () => {
-      const { data } = await supabase.from("offers_market").select("*").eq("product_id", id!);
-      return data || [];
-    },
-    enabled: !!id,
-  });
+  const indirectOffers: any[] = [];
+  const marketOffers: any[] = [];
 
   const { data: compliance } = useQuery({
     queryKey: ["product-compliance", id],

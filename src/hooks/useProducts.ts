@@ -167,6 +167,7 @@ export function useProductOffers(productId: string | undefined) {
           priceTiers: null,
           isActive: o.status === 'active',
           sellerName: vendor?.company_name || `Vendor-${o.vendor_id.slice(0, 6)}`,
+          sellerSlug: vendor?.slug || undefined,
           isVerified: vendor?.status === 'active',
           isTopRated: vendor?.tier === 'Gold' || vendor?.tier === 'Platinum' || vendor?.tier === 'Strategic',
         };

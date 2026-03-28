@@ -40,7 +40,7 @@ export interface TestimonialData {
 }
 
 export interface HelpCategoryData {
-  icon: string;
+  icon: React.ComponentType<{ size?: number; className?: string }>;
   title: string;
   description: string;
   articleCount: number;

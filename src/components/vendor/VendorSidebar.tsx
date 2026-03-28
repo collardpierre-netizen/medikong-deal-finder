@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { useI18n } from "@/contexts/I18nContext";
 import { cn } from "@/lib/utils";
+import logoLight from "@/assets/logo-horizontal.png";
 
 const sidebarSections = [
   {

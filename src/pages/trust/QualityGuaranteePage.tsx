@@ -51,7 +51,7 @@ export default function QualityGuaranteePage() {
           paragraphs={["Chaque produit est tracé de bout en bout : du fabricant à votre porte. Numéros de lot, dates d'expiration et certificats disponibles dans votre espace client."]}
           checklist={["Numéros de lot intégrés", "Dates d'expiration vérifiées", "Certificats téléchargeables", "Historique de commande complet"]}
           imagePlaceholder="Traçabilité produit"
-          imageGradient="from-[#059669] to-[#065F46]"
+          imageGradient="from-[#1B5BDA] to-[#0F3280]"
           reverse
         />
       </Section>

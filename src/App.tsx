@@ -38,6 +38,9 @@ import VendorAnalytics from "./pages/vendor/VendorAnalytics";
 import VendorFinance from "./pages/vendor/VendorFinance";
 import VendorLogistics from "./pages/vendor/VendorLogistics";
 import VendorHealth from "./pages/vendor/VendorHealth";
+import VendorAcademy from "./pages/vendor/VendorAcademy";
+import VendorSettings from "./pages/vendor/VendorSettings";
+import VendorMessages from "./pages/vendor/VendorMessages";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminPlaceholder from "./pages/admin/AdminPlaceholder";
 import AdminVendeurs from "./pages/admin/AdminVendeurs";
@@ -141,9 +144,9 @@ const App = () => (
               <Route path="finance" element={<VendorFinance />} />
               <Route path="logistics" element={<VendorLogistics />} />
               <Route path="health" element={<VendorHealth />} />
-              <Route path="messages" element={<VendorPlaceholder pageKey="messages" />} />
-              <Route path="academy" element={<VendorPlaceholder pageKey="academy" />} />
-              <Route path="settings" element={<VendorPlaceholder pageKey="settings" />} />
+              <Route path="messages" element={<VendorMessages />} />
+              <Route path="academy" element={<VendorAcademy />} />
+              <Route path="settings" element={<VendorSettings />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />

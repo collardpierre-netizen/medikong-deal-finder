@@ -381,18 +381,14 @@ export default function ProductPage() {
                     exit={{ opacity: 0, y: -8 }}
                     transition={{ duration: 0.3 }}
                   >
-                    <p className="text-sm text-mk-sec mb-4">Vous serez redirige vers le site du fournisseur.</p>
+                    <p className="text-sm text-mk-sec mb-4">Vous serez redirigé vers le site du fournisseur dans un nouvel onglet.</p>
                     <ScrollableTable className="border border-mk-line rounded-lg">
                       <div className="grid grid-cols-5 gap-3 px-4 py-2 bg-mk-alt text-xs font-semibold text-mk-sec min-w-[500px]">
-                        <span>Fournisseur</span><span>Prix unit.</span><span>MOV</span><span>Delai</span><span>Action</span>
+                        <span>Fournisseur</span><span>Prix unit.</span><span>MOV</span><span>Délai</span><span>Action</span>
                       </div>
-                      {[
-                        { name: "Pharma-Grossiste", price: 11.50, mov: "1 000 EUR", delay: "48h" },
-                        { name: "MedSupply BE", price: 13.20, mov: "500 EUR", delay: "72h" },
-                        { name: "Distri-Med NL", price: 10.80, mov: "2 000 EUR", delay: "5j" },
-                      ].map((f, i) => (
+                      {extOffers.map((f: any, i: number) => (
                         <motion.div
-                          key={f.name}
+                          key={f.name + i}
                           className="grid grid-cols-5 gap-3 px-4 py-3 border-t border-mk-line text-sm items-center min-w-[500px]"
                           initial={{ opacity: 0, x: -10 }}
                           animate={{ opacity: 1, x: 0 }}
@@ -400,16 +396,19 @@ export default function ProductPage() {
                           whileHover={{ backgroundColor: "rgba(0,0,0,0.02)" }}
                         >
                           <span className="font-medium text-mk-navy">{f.name}</span>
-                          <span className="font-bold text-mk-navy">{formatPrice(f.price)} EUR</span>
+                          <span className="font-bold text-mk-navy">{f.price ? `${formatPrice(f.price)} EUR` : "–"}</span>
                           <span className="text-mk-sec">{f.mov}</span>
                           <span className="text-mk-sec">{f.delay}</span>
-                          <motion.button
-                            className="border border-mk-navy text-mk-navy text-xs font-semibold px-3 py-1.5 rounded-md flex items-center gap-1"
+                          <motion.a
+                            href={f.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="border border-mk-navy text-mk-navy text-xs font-semibold px-3 py-1.5 rounded-md flex items-center gap-1 hover:bg-mk-navy hover:text-white transition-colors"
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
                           >
                             Voir <ExternalLink size={11} />
-                          </motion.button>
+                          </motion.a>
                         </motion.div>
                       ))}
                     </ScrollableTable>

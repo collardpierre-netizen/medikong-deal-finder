@@ -76,6 +76,38 @@ export async function importBrands(file: File): Promise<{ created: number; error
   return { created, errors };
 }
 
+export async function exportCategories() {
+  const { data, error } = await supabase.from("categories").select("*").order("display_order");
+  if (error) { toast.error("Erreur export catégories"); return; }
+  const rows = (data || []).map(c => ({
+    name: c.name, slug: c.slug, description: c.description,
+    parent_id: c.parent_id || "", display_order: c.display_order,
+    vat_rate: c.vat_rate, hs_code: c.hs_code, is_active: c.is_active,
+  }));
+  exportToXlsx(rows, "medikong-categories", "Catégories");
+}
+
+export async function importCategories(file: File): Promise<{ created: number; errors: string[] }> {
+  const rows = await readXlsx(file);
+  let created = 0;
+  const errors: string[] = [];
+  for (const row of rows) {
+    const r = row as any;
+    if (!r.name) { errors.push("Ligne ignorée: nom manquant"); continue; }
+    const { error } = await supabase.from("categories").upsert({
+      name: r.name,
+      slug: r.slug || slugify(r.name),
+      description: r.description || null,
+      display_order: r.display_order ? Number(r.display_order) : 0,
+      vat_rate: r.vat_rate ? Number(r.vat_rate) : null,
+      hs_code: r.hs_code || null,
+    }, { onConflict: "slug" });
+    if (error) errors.push(`${r.name}: ${error.message}`);
+    else created++;
+  }
+  return { created, errors };
+}
+
 function readXlsx(file: File): Promise<any[]> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();

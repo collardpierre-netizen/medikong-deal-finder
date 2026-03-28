@@ -1,12 +1,30 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import AdminTopBar from "@/components/admin/AdminTopBar";
 import KpiCard from "@/components/admin/KpiCard";
+import { Button } from "@/components/ui/button";
 import { useCategories } from "@/hooks/useAdminData";
-import { Layers, Tag, Package, ChevronDown, ChevronRight } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { exportCategories, importCategories } from "@/lib/xlsx-utils";
+import { toast } from "sonner";
+import { Layers, Tag, Package, ChevronDown, ChevronRight, Download, Upload } from "lucide-react";
 
 const AdminCategories = () => {
+  const qc = useQueryClient();
   const { data: categoriesData = [], isLoading } = useCategories();
   const [expanded, setExpanded] = useState<string[]>([]);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const handleImport = async (file: File) => {
+    toast.info("Import en cours...");
+    try {
+      const result = await importCategories(file);
+      toast.success(`${result.created} catégories importée(s)`);
+      if (result.errors.length > 0) toast.warning(`${result.errors.length} erreur(s): ${result.errors[0]}`);
+      qc.invalidateQueries({ queryKey: ["admin-categories"] });
+    } catch (e: any) {
+      toast.error(e.message || "Erreur import");
+    }
+  };
 
   const toggle = (name: string) => {
     setExpanded(prev => prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name]);
@@ -24,7 +42,15 @@ const AdminCategories = () => {
 
   return (
     <div>
-      <AdminTopBar title="Catégories" subtitle="Arborescence du catalogue produits" />
+      <AdminTopBar title="Catégories" subtitle="Arborescence du catalogue produits"
+        actions={
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => exportCategories()}><Download size={14} className="mr-1" />Export XLSX</Button>
+            <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()}><Upload size={14} className="mr-1" />Import XLSX</Button>
+            <input ref={fileRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={e => { if (e.target.files?.[0]) handleImport(e.target.files[0]); e.target.value = ""; }} />
+          </div>
+        }
+      />
 
       <div className="grid grid-cols-4 gap-4 mb-6">
         <KpiCard icon={Layers} label="Catégories parentes" value={String(totalParents)} iconColor="#1B5BDA" iconBg="#EFF6FF" />

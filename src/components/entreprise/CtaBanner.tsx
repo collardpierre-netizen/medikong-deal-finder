@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 
 interface CtaBannerProps {
-  variant: "warm" | "dark";
+  variant: "warm" | "dark" | "blue";
   title: string;
   subtitle?: string;
   buttons: { label: string; variant: "pink" | "outline" | "white"; to?: string }[];
@@ -11,17 +11,17 @@ interface CtaBannerProps {
 export function CtaBanner({ variant, title, subtitle, buttons }: CtaBannerProps) {
   const navigate = useNavigate();
 
+  const bgClass = variant === "warm"
+    ? "bg-gradient-to-br from-[#FFF7ED] via-[#FECDD3] to-[#F5F3FF] text-[#1E293B]"
+    : variant === "blue"
+    ? "bg-gradient-to-br from-[#1B5BDA] to-[#0F3280] text-white"
+    : "bg-gradient-to-br from-[#0F172A] to-[#1E293B] text-white";
+
   return (
     <div className="max-w-[1200px] mx-auto px-6 md:px-12 py-10">
-      <div
-        className={`p-10 md:p-14 rounded-[20px] text-center ${
-          variant === "warm"
-            ? "bg-gradient-to-br from-[#FFF7ED] via-[#FECDD3] to-[#F5F3FF] text-[#1E293B]"
-            : "bg-gradient-to-br from-[#0F172A] to-[#1E293B] text-white"
-        }`}
-      >
+      <div className={`p-10 md:p-14 rounded-[20px] text-center ${bgClass}`}>
         <h3 className="text-2xl md:text-[28px] font-bold mb-3">{title}</h3>
-        {subtitle && <p className="text-sm text-muted-foreground mb-6">{subtitle}</p>}
+        {subtitle && <p className={`text-sm mb-6 ${variant === "warm" ? "text-muted-foreground" : "text-white/70"}`}>{subtitle}</p>}
         <div className="flex flex-wrap justify-center gap-3">
           {buttons.map((b) => (
             <Button

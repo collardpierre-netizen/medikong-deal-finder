@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 
-type HeroVariant = "dark" | "warm" | "pink" | "image";
+type HeroVariant = "dark" | "warm" | "pink" | "image" | "blue" | "green" | "light";
 
 interface EntrepriseHeroProps {
   variant: HeroVariant;
@@ -15,21 +15,28 @@ const bgMap: Record<HeroVariant, string> = {
   warm: "bg-gradient-to-br from-[#FFF7ED] via-[#FEF3C7] to-[#FECDD3] text-[#1E293B]",
   pink: "bg-gradient-to-br from-[#E70866] via-[#DB2777] to-[#9333EA] text-white",
   image: "bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#334155] text-white",
+  blue: "bg-gradient-to-br from-[#1B5BDA] via-[#1549b8] to-[#0F3280] text-white",
+  green: "bg-gradient-to-br from-[#059669] via-[#047857] to-[#065F46] text-white",
+  light: "bg-[#F8FAFC] text-[#1E293B]",
 };
 
 export function EntrepriseHero({ variant, badge, title, subtitle, cta }: EntrepriseHeroProps) {
+  const isLight = variant === "light" || variant === "warm";
+
   return (
     <section className={`${bgMap[variant]} min-h-[420px] flex items-center`}>
       <div className="mk-container py-20 md:py-24 text-center w-full">
         {badge && (
-          <span className="inline-block px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide mb-6 bg-white/15 backdrop-blur-sm">
+          <span className={`inline-block px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide mb-6 ${
+            isLight ? "bg-mk-blue/10 text-mk-blue" : "bg-white/15 backdrop-blur-sm"
+          }`}>
             {badge}
           </span>
         )}
         <h1 className="text-3xl md:text-5xl font-bold tracking-tight leading-[1.12] mb-5 max-w-[800px] mx-auto">
           {title}
         </h1>
-        <p className="text-base md:text-lg leading-relaxed max-w-[720px] mx-auto opacity-80 mb-8">
+        <p className={`text-base md:text-lg leading-relaxed max-w-[720px] mx-auto mb-8 ${isLight ? "text-muted-foreground" : "opacity-80"}`}>
           {subtitle}
         </p>
         {cta && cta.length > 0 && (

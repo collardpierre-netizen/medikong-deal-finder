@@ -272,8 +272,9 @@ export default function InvestPage() {
       </section>
 
       {/* ════════════ MARCHÉ ════════════ */}
-      <section id="chiffres" className="py-16 md:py-24 bg-white scroll-mt-14">
-        <div className="max-w-5xl mx-auto px-5">
+      <section id="chiffres" className="relative py-16 md:py-24 bg-white scroll-mt-14 overflow-hidden">
+        <div className="absolute inset-0 invest-light-dots" />
+        <div className="max-w-5xl mx-auto px-5 relative z-10">
           <div className="text-center mb-12">
             <h2 className="text-2xl md:text-4xl font-bold text-mk-navy mb-3">Un marché colossal, une digitalisation naissante</h2>
             <p className="text-mk-sec max-w-2xl mx-auto text-sm md:text-base">Le secteur de la distribution de produits de santé reste dominé par un oligopole peu innovant. MediKong apporte la couche digitale qui manque à ce marché de €52 milliards.</p>

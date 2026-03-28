@@ -103,7 +103,9 @@ import LegalNoticePage from "./pages/legal/LegalNoticePage";
 import TermsPage from "./pages/legal/TermsPage";
 import PrivacyPage from "./pages/legal/PrivacyPage";
 import CookiePolicyPage from "./pages/legal/CookiePolicyPage";
-
+import ProfessionnelsPage from "./pages/ProfessionnelsPage";
+import SourcingPage from "./pages/SourcingPage";
+import CategoriesPage from "./pages/CategoriesPage";
 const queryClient = new QueryClient();
 
 const App = () => (

@@ -79,7 +79,7 @@ export default function CartPage() {
     });
   }, [items, vendorMap]);
 
-  const totalCart = items.reduce((s, i) => s + (i.price_ht || i.product?.price || 0) * i.quantity, 0);
+  const totalCart = items.reduce((s, i) => s + (i.price_excl_vat || i.product?.price || 0) * i.quantity, 0);
   const readyCount = supplierGroups.filter(g => g.meetsMinimum).length;
   const belowCount = supplierGroups.filter(g => !g.meetsMinimum).length;
   const totalReady = supplierGroups.filter(g => g.meetsMinimum).reduce((s, g) => s + g.total, 0);

@@ -7,8 +7,7 @@ import { ProductCard } from "@/components/shared/ProductCard";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { AnimatedSection, StaggerContainer, StaggerItem, HoverCard } from "@/components/shared/PageTransition";
-import heroMedical from "@/assets/hero-medical-supplies.png";
-import heroPackages from "@/assets/hero-packages.png";
+import { HeroImageGallery } from "@/components/home/HeroImageGallery";
 
 const iconMap: Record<string, React.ReactNode> = {
   Shield: <Shield size={20} className="text-mk-navy" />,

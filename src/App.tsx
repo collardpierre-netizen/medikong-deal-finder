@@ -114,7 +114,7 @@ const App = () => (
             <Route path="/confirmation" element={<ConfirmationPage />} />
             <Route path="/commande/:id" element={<OrderDetailPage />} />
             <Route path="/connexion" element={<LoginPage />} />
-            <Route path="/inscription" element={<RegisterPage />} />
+            <Route path="/inscription" element={<Navigate to="/onboarding" replace />} />
             <Route path="/categorie/:slug" element={<CategoryPage />} />
             <Route path="/promotions" element={<PromotionsPage />} />
             <Route path="/seller-onboarding" element={<SellerOnboardingPage />} />

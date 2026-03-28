@@ -1,12 +1,13 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, type ReactNode } from "react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 
 export interface CartItem {
   id: string;
+  offer_id: string;
   product_id: string;
   vendor_id?: string;
-  price_ht?: number;
+  price_excl_vat?: number;
+  price_incl_vat?: number;
   quantity: number;
   product?: {
     id: string;
@@ -14,9 +15,6 @@ export interface CartItem {
     brand: string;
     slug: string;
     price: number;
-    gtin: string;
-    unit: string;
-    stock: boolean;
     imageUrl?: string;
   };
 }
@@ -41,7 +39,7 @@ interface CartContextType {
   openDrawer: () => void;
   closeDrawer: () => void;
   addToCart: {
-    mutate: (args: { productId: string; quantity?: number; productData?: CartItem["product"]; vendorId?: string; priceHt?: number }) => void;
+    mutate: (args: { offerId: string; productId: string; quantity?: number; productData?: CartItem["product"]; vendorId?: string; priceExclVat?: number; priceInclVat?: number }) => void;
     isPending: boolean;
   };
   updateQuantity: {
@@ -69,52 +67,21 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const closeDrawer = useCallback(() => setIsDrawerOpen(false), []);
 
   useEffect(() => {
-    const loaded = loadCart();
-    setItems(loaded);
+    setItems(loadCart());
     setIsLoading(false);
-
-    // Enrich items missing prices with real offer data
-    const itemsMissingPrice = loaded.filter(i => !i.price_ht && (!i.product?.price || i.product.price === 0));
-    if (itemsMissingPrice.length > 0) {
-      const productIds = [...new Set(itemsMissingPrice.map(i => i.product_id))];
-      supabase
-        .from("offers_direct")
-        .select("product_id, vendor_id, price_ht")
-        .in("product_id", productIds)
-        .eq("status", "active")
-        .then(({ data: offers }) => {
-          if (!offers || offers.length === 0) return;
-          setItems(prev => {
-            const next = prev.map(item => {
-              if (item.price_ht && item.price_ht > 0) return item;
-              // Find matching offer by product_id + vendor_id, or best price for product
-              const match = offers.find(o => o.product_id === item.product_id && o.vendor_id === item.vendor_id)
-                || offers.find(o => o.product_id === item.product_id);
-              if (!match) return item;
-              const price = Number(match.price_ht);
-              return {
-                ...item,
-                price_ht: price,
-                vendor_id: item.vendor_id || match.vendor_id,
-                product: item.product ? { ...item.product, price: price } : item.product,
-              };
-            });
-            saveCart(next);
-            return next;
-          });
-        });
-    }
   }, []);
 
   const addToCart = useMemo(() => ({
-    mutate: ({ productId, quantity = 1, productData, vendorId, priceHt }: { productId: string; quantity?: number; productData?: CartItem["product"]; vendorId?: string; priceHt?: number }) => {
+    mutate: ({ offerId, productId, quantity = 1, productData, vendorId, priceExclVat, priceInclVat }: {
+      offerId: string; productId: string; quantity?: number; productData?: CartItem["product"]; vendorId?: string; priceExclVat?: number; priceInclVat?: number;
+    }) => {
       setItems(prev => {
-        const existing = prev.find(i => i.product_id === productId && i.vendor_id === vendorId);
+        const existing = prev.find(i => i.offer_id === offerId);
         let next: CartItem[];
         if (existing) {
-          next = prev.map(i => (i.product_id === productId && i.vendor_id === vendorId) ? { ...i, quantity: i.quantity + quantity } : i);
+          next = prev.map(i => i.offer_id === offerId ? { ...i, quantity: i.quantity + quantity } : i);
         } else {
-          next = [...prev, { id: crypto.randomUUID(), product_id: productId, vendor_id: vendorId, price_ht: priceHt, quantity, product: productData }];
+          next = [...prev, { id: crypto.randomUUID(), offer_id: offerId, product_id: productId, vendor_id: vendorId, price_excl_vat: priceExclVat, price_incl_vat: priceInclVat, quantity, product: productData }];
         }
         saveCart(next);
         return next;

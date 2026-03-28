@@ -33,7 +33,7 @@ export function Navbar() {
       const { data: vendorData } = await supabase
         .from("vendors")
         .select("id")
-        .eq("user_id", user.id)
+        .eq("auth_user_id", user.id)
         .maybeSingle();
       setIsVendor(!!vendorData);
     };

@@ -145,6 +145,23 @@ const App = () => (
             <Route path="/presse" element={<PressPage />} />
             <Route path="/investir" element={<InvestirPage />} />
 
+            {/* Trust & Process */}
+            <Route path="/verification-fournisseurs" element={<SupplierVerificationPage />} />
+            <Route path="/garantie-qualite" element={<QualityGuaranteePage />} />
+            <Route path="/comment-commander" element={<HowToOrderPage />} />
+            <Route path="/paiement-differe" element={<BuyNowPayLaterPage />} />
+            <Route path="/logistique" element={<LogisticsPage />} />
+            <Route path="/devenir-vendeur" element={<BecomeSellerPage />} />
+            <Route path="/temoignages" element={<TestimonialsPage />} />
+            <Route path="/contact" element={<ContactPage />} />
+            <Route path="/centre-aide" element={<HelpCenterPage />} />
+
+            {/* Legal */}
+            <Route path="/mentions-legales" element={<LegalNoticePage />} />
+            <Route path="/cgv" element={<TermsPage />} />
+            <Route path="/politique-confidentialite" element={<PrivacyPage />} />
+            <Route path="/cookies" element={<CookiePolicyPage />} />
+
             <Route path="/admin/login" element={<AdminLoginPage />} />
 
             {/* Admin Back-Office */}

@@ -586,6 +586,7 @@ export default function InvestPage() {
           <p className="text-white/40 text-xs mt-6">Vous avez des questions ? Contactez-nous à <a href="mailto:invest@medikong.pro" className="underline hover:text-white">invest@medikong.pro</a></p>
         </div>
       </section>
+      <InvestSubscriptionModal open={showSubscribe} onClose={() => setShowSubscribe(false)} />
     </Layout>
   );
 }

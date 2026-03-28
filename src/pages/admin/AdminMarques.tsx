@@ -106,17 +106,17 @@ const AdminMarques = () => {
                         onClick={() => setSelectedBrand(selectedBrand === b.name ? null : b.name)}
                         style={selectedBrand === b.name ? { backgroundColor: "#EFF6FF" } : {}}>
                         <TableCell className="text-[12px] font-semibold" style={{ color: "#1D2530" }}>{b.name}</TableCell>
-                        <TableCell className="text-[11px]" style={{ color: "#616B7C" }}>{(b.manufacturers as any)?.name || "—"}</TableCell>
-                        <TableCell className="text-[11px]" style={{ color: "#8B95A5" }}>{b.country || "—"}</TableCell>
-                        <TableCell className="text-[11px] text-right" style={{ color: "#616B7C" }}>{b.products_count || 0}</TableCell>
-                        <TableCell className="text-[11px] text-right font-semibold" style={{ color: "#059669" }}>€{fmt(Number(b.gmv_month) || 0)}</TableCell>
+                        <TableCell className="text-[11px]" style={{ color: "#616B7C" }}>—</TableCell>
+                        <TableCell className="text-[11px]" style={{ color: "#8B95A5" }}>—</TableCell>
+                        <TableCell className="text-[11px] text-right" style={{ color: "#616B7C" }}>{b.product_count || 0}</TableCell>
+                        <TableCell className="text-[11px] text-right font-semibold" style={{ color: "#059669" }}>—</TableCell>
                         <TableCell>
-                          <Badge variant="outline" className="text-[10px] font-bold" style={{ backgroundColor: (tierColors[b.tier || "Bronze"] || tierColors.Bronze).bg, color: (tierColors[b.tier || "Bronze"] || tierColors.Bronze).text, borderColor: "transparent" }}>
-                            {b.tier || "Bronze"}
+                          <Badge variant="outline" className="text-[10px] font-bold">
+                            {b.is_featured ? "Featured" : "Standard"}
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          {(b.certifications || []).includes("CE") ? <Shield size={13} style={{ color: "#059669" }} /> : <span className="text-[10px]" style={{ color: "#8B95A5" }}>—</span>}
+                          <span className="text-[10px]" style={{ color: "#8B95A5" }}>—</span>
                         </TableCell>
                         <TableCell>
                           <Button variant="ghost" size="sm" className="text-[11px] h-7" onClick={(e) => { e.stopPropagation(); setEditBrand(b); setBrandDialogOpen(true); }}>Éditer</Button>

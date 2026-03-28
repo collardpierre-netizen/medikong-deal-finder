@@ -156,6 +156,7 @@ function TaxShelterSimulator() {
 export default function InvestPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [activeSection, setActiveSection] = useState("");
+  const [showSubscribe, setShowSubscribe] = useState(false);
 
   useEffect(() => {
     const observer = new IntersectionObserver(

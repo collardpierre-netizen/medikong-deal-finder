@@ -47,7 +47,11 @@ const sidebarSections = [
   },
 ];
 
-export function VendorSidebar() {
+interface VendorSidebarProps {
+  onNavigate?: () => void;
+}
+
+export function VendorSidebar({ onNavigate }: VendorSidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const { t } = useI18n();
   const location = useLocation();

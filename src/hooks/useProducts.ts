@@ -78,6 +78,8 @@ function mapDbProduct(row: any, offersData?: any[]): Product {
     categoryL3: row.category_l3,
     descriptionShort: row.description_short,
     weightG: row.weight_g ? Number(row.weight_g) : undefined,
+    brandId: row.brand_id || undefined,
+    manufacturerId: row.manufacturer_id || undefined,
   };
 }
 

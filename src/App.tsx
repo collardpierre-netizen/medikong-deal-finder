@@ -85,6 +85,7 @@ import TeamPage from "./pages/entreprise/TeamPage";
 import CareersPage from "./pages/entreprise/CareersPage";
 import PressPage from "./pages/entreprise/PressPage";
 import InvestirPage from "./pages/entreprise/InvestirPage";
+import VendorPublicPage from "./pages/VendorPublicPage";
 
 const queryClient = new QueryClient();
 

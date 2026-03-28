@@ -11,6 +11,7 @@ import { vendorOffers } from "@/data/vendor-offers-mock";
 import { vendorProfile, buyerTypeColors } from "@/lib/vendor-tokens";
 import { Check, Eye, Edit2, Info, TrendingDown, TrendingUp, Sliders, AlertTriangle, Layers } from "lucide-react";
 import EditOfferPopup from "@/components/vendor/EditOfferPopup";
+import PrixRefDetailPopup from "@/components/vendor/PrixRefDetailPopup";
 import { mockPrixPublicByProduct, mockPrixParProfilByProduct } from "@/lib/mock/prix-ref-mock";
 import { getPrixRef, calcSavings, formatPrixRef } from "@/lib/utils/prix-ref";
 

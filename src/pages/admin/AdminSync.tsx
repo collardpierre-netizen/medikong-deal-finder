@@ -2,8 +2,8 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import AdminTopBar from "@/components/admin/AdminTopBar";
-import { KpiCard } from "@/components/admin/KpiCard";
-import { StatusBadge } from "@/components/admin/StatusBadge";
+import KpiCard from "@/components/admin/KpiCard";
+import StatusBadge from "@/components/admin/StatusBadge";
 import {
   RefreshCw, Database, Tag, Package, Store, Layers, Clock, AlertTriangle,
   Play, Settings, Eye, EyeOff, CheckCircle, XCircle, Loader2,

@@ -11,6 +11,7 @@ import { vendorOffers } from "@/data/vendor-offers-mock";
 import { vendorProfile, buyerTypeColors } from "@/lib/vendor-tokens";
 import { Check, Eye, Edit2, Info, TrendingDown, TrendingUp, Sliders, AlertTriangle, Layers } from "lucide-react";
 import EditOfferPopup from "@/components/vendor/EditOfferPopup";
+import PrixRefDetailPopup from "@/components/vendor/PrixRefDetailPopup";
 import { mockPrixPublicByProduct, mockPrixParProfilByProduct } from "@/lib/mock/prix-ref-mock";
 import { getPrixRef, calcSavings, formatPrixRef } from "@/lib/utils/prix-ref";
 
@@ -23,6 +24,7 @@ export default function VendorOffers() {
   const [selected, setSelected] = useState<string[]>([]);
   const [editOffer, setEditOffer] = useState<string | null>(null);
   const [showNew, setShowNew] = useState(false);
+  const [prixRefDetail, setPrixRefDetail] = useState<string | null>(null);
   const [simProduct, setSimProduct] = useState(vendorOffers[0]?.id || "");
   const [simPriceHT, setSimPriceHT] = useState(vendorOffers[0]?.price || 0);
   const [simPort, setSimPort] = useState(vendorOffers[0]?.port || 0);
@@ -550,7 +552,7 @@ export default function VendorOffers() {
                       };
 
                       return (
-                        <tr key={o.id} className="border-b border-[#E2E8F0] last:border-0 hover:bg-[#F8FAFC]">
+                        <tr key={o.id} className="border-b border-[#E2E8F0] last:border-0 hover:bg-[#F8FAFC] cursor-pointer" onClick={() => setPrixRefDetail(o.id)}>
                           <td className="py-2.5 px-3">
                             <p className="font-medium text-[#1D2530]">{o.name}</p>
                             <p className="text-[10px] text-[#8B95A5]">{o.ean}</p>
@@ -608,6 +610,10 @@ export default function VendorOffers() {
       {/* Edit Offer Popup */}
       {editOffer && <EditOfferPopup offerId={editOffer} onClose={() => setEditOffer(null)} />}
       {showNew && <EditOfferPopup onClose={() => setShowNew(false)} />}
+      {prixRefDetail && (() => {
+        const o = vendorOffers.find(x => x.id === prixRefDetail);
+        return o ? <PrixRefDetailPopup offer={o} onClose={() => setPrixRefDetail(null)} /> : null;
+      })()}
     </div>
   );
 }

@@ -63,11 +63,11 @@ export const categories = [
 ];
 
 export const sellers = [
-  { name: "MedDistri", verified: true, topRated: true, location: "Bruxelles", rating: 4.8, orders: 12500 },
-  { name: "Pharmamed", verified: true, topRated: true, location: "Liege", rating: 4.7, orders: 9800 },
-  { name: "Brussels Med", verified: true, topRated: false, location: "Bruxelles", rating: 4.5, orders: 6200 },
-  { name: "Valerco", verified: true, topRated: false, location: "Gand", rating: 4.3, orders: 4100 },
-  { name: "Pharma-GDD", verified: true, topRated: false, location: "Anvers", rating: 4.2, orders: 3500 },
+  { name: "MedDistri", slug: "meddistri", verified: true, topRated: true, location: "Bruxelles", rating: 4.8, orders: 12500 },
+  { name: "Pharmamed", slug: "pharmamed", verified: true, topRated: true, location: "Liege", rating: 4.7, orders: 9800 },
+  { name: "Brussels Med", slug: "brussels-med", verified: true, topRated: false, location: "Bruxelles", rating: 4.5, orders: 6200 },
+  { name: "Valerco", slug: "valerco", verified: true, topRated: false, location: "Gand", rating: 4.3, orders: 4100 },
+  { name: "Pharma-GDD", slug: "pharma-gdd", verified: true, topRated: false, location: "Anvers", rating: 4.2, orders: 3500 },
 ];
 
 export const competitors = [

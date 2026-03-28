@@ -5,7 +5,7 @@ const messages = [
   { icon: Rocket, text: "Investissez dans MediKong — Tax Shelter 45% — Levée de fonds Phase 2 ouverte" },
   { icon: Coins, text: "Dès 1 000 € — Tax Shelter 45% dès 5 000 € — Réduction d'impôt immédiate" },
   { icon: TrendingUp, text: "Investissez dans MediKong — Tax Shelter 45% — Levée de fonds Phase 2 ouverte" },
-  { icon: Coins, text: "Dès 1 000 € — Valorisation 160 M€ — Réduction d'impôt immédiate" },
+  { icon: Coins, text: "Dès 1 000 € — Tax Shelter 45% dès 5 000 € — Réduction d'impôt immédiate" },
 ];
 
 export function AnnouncementBar() {

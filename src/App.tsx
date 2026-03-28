@@ -122,7 +122,7 @@ const App = () => (
             {/* Vendor Dashboard */}
             <Route path="/vendor" element={<VendorLayout />}>
               <Route index element={<VendorDashboard />} />
-              <Route path="catalog" element={<VendorPlaceholder pageKey="catalog" />} />
+              <Route path="catalog" element={<VendorCatalog />} />
               <Route path="offers" element={<VendorPlaceholder pageKey="myOffers" />} />
               <Route path="orders" element={<VendorPlaceholder pageKey="orders" />} />
               <Route path="opportunities" element={<VendorPlaceholder pageKey="opportunities" />} />

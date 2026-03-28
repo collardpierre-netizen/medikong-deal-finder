@@ -195,6 +195,7 @@ const App = () => (
               <Route path="users" element={<AdminUsers />} />
               <Route path="audit-log" element={<AdminAuditLog />} />
               <Route path="onboarding-cms" element={<AdminOnboardingCMS />} />
+              <Route path="commissions" element={<AdminCommissions />} />
             </Route>
 
             {/* Vendor Dashboard */}

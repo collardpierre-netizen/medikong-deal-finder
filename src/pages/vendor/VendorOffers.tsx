@@ -103,7 +103,7 @@ export default function VendorOffers() {
 
           {/* Table */}
           <VCard className="!p-0 overflow-hidden">
-            <div className="overflow-x-auto">
+            <ScrollableTable>
               <table className="w-full text-[13px]">
                 <thead>
                   <tr className="bg-[#F8FAFC] border-b border-[#E2E8F0] text-[11px] text-[#8B95A5] uppercase tracking-wide">
@@ -273,7 +273,7 @@ export default function VendorOffers() {
           {/* Price history */}
           <VCard>
             <h3 className="text-sm font-semibold text-[#1D2530] mb-3">Historique des prix</h3>
-            <div className="overflow-x-auto mb-4">
+            <ScrollableTable className="mb-4">
               <table className="w-full text-[13px]">
                 <thead>
                   <tr className="border-b border-[#E2E8F0] text-[11px] text-[#8B95A5] uppercase tracking-wide">
@@ -310,7 +310,7 @@ export default function VendorOffers() {
         <div className="space-y-4">
           <VCard>
             <h3 className="text-sm font-semibold text-[#1D2530] mb-3">Configuration par profil / pays</h3>
-            <div className="overflow-x-auto">
+            <ScrollableTable>
               <table className="w-full text-[13px]">
                 <thead>
                   <tr className="border-b border-[#E2E8F0] text-[11px] text-[#8B95A5] uppercase tracking-wide">
@@ -350,7 +350,7 @@ export default function VendorOffers() {
 
           <VCard>
             <h3 className="text-sm font-semibold text-[#1D2530] mb-3">Seuils d'alerte stock</h3>
-            <div className="overflow-x-auto">
+            <ScrollableTable>
               <table className="w-full text-[13px]">
                 <thead>
                   <tr className="border-b border-[#E2E8F0] text-[11px] text-[#8B95A5] uppercase tracking-wide">
@@ -388,7 +388,7 @@ export default function VendorOffers() {
 
           <VCard>
             <h3 className="text-sm font-semibold text-[#1D2530] mb-3">Regles existantes</h3>
-            <div className="overflow-x-auto">
+            <ScrollableTable>
               <table className="w-full text-[13px]">
                 <thead>
                   <tr className="border-b border-[#E2E8F0] text-[11px] text-[#8B95A5] uppercase tracking-wide">
@@ -503,7 +503,7 @@ export default function VendorOffers() {
             </div>
 
             <VCard className="!p-0 overflow-hidden">
-              <div className="overflow-x-auto">
+              <ScrollableTable>
                 <table className="w-full text-[13px]">
                   <thead>
                     <tr className="bg-[#F8FAFC] border-b border-[#E2E8F0] text-[11px] text-[#8B95A5] uppercase tracking-wide">

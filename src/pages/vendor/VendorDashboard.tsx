@@ -142,7 +142,7 @@ export default function VendorDashboard() {
                 {dashboardOrders.map(o => {
                   const bt = buyerTypeColors[o.buyerType] || { text: "#616B7C", bg: "#616B7C18" };
                   return (
-                    <tr key={o.id} className="border-b border-[#E2E8F0] last:border-0 hover:bg-[#F8FAFC] transition-colors cursor-pointer" onClick={() => navigate(`/vendor/orders/${o.id}`)}>
+                    <tr key={o.id} className="border-b border-[#E2E8F0] last:border-0 hover:bg-[#F8FAFC] transition-colors cursor-pointer" onClick={() => setSelectedOrderId(o.id)}>
                       <td className="py-2.5 font-mono text-[11px] text-[#8B95A5]">{o.id}</td>
                       <td className="py-2.5 font-medium text-[#1D2530]">{o.buyer}</td>
                       <td className="py-2.5"><VBadge color={bt.text} bg={bt.bg}>{o.buyerType}</VBadge></td>

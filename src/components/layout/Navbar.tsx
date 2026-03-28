@@ -95,22 +95,21 @@ export function Navbar() {
           {user ? (
             <div className="flex items-center gap-2">
               {isAdmin && (
-                <Link to="/admin" className="flex items-center gap-1 text-blue-400 hover:text-blue-300 text-xs font-semibold px-2 py-1 rounded" style={{ background: "rgba(59,130,246,0.15)" }}>
+                <Link to="/admin" className="flex items-center gap-1.5 text-emerald-400 hover:text-emerald-300 text-xs font-semibold px-2.5 py-1 rounded-full" style={{ background: "rgba(16,185,129,0.15)" }}>
                   <Shield size={14} />
                   <span>Admin</span>
                 </Link>
               )}
               {isVendor && (
-                <Link to="/vendor" className="flex items-center gap-1 text-pink-400 hover:text-pink-300 text-xs font-semibold px-2 py-1 rounded" style={{ background: "rgba(231,8,102,0.15)" }}>
+                <Link to="/vendor" className="flex items-center gap-1.5 text-pink-400 hover:text-pink-300 text-xs font-semibold px-2.5 py-1 rounded-full" style={{ background: "rgba(231,8,102,0.15)" }}>
                   <Store size={14} />
                   <span>Vendeur</span>
                 </Link>
               )}
-              <Link to="/compte" className="flex items-center gap-1.5 text-white text-sm">
-                <Users size={16} />
-                <span className="max-w-[100px] truncate">{user.email}</span>
+              <Link to="/compte" className="flex items-center text-white text-sm max-w-[120px] truncate">
+                {user.email?.split("@")[0]}
               </Link>
-              <button onClick={handleSignOut} className="text-white/70 hover:text-white">
+              <button onClick={handleSignOut} className="text-white/60 hover:text-white transition-colors">
                 <LogOut size={16} />
               </button>
             </div>

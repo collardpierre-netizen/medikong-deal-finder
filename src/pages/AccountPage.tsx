@@ -21,6 +21,7 @@ const tabs = [
   { key: "favoris", label: "Favoris", icon: Heart },
   { key: "listes", label: "Mes listes", icon: List },
   { key: "activite", label: "Activité récente", icon: Clock },
+  { key: "mesprix", label: "Mes prix", icon: BarChart3 },
   { key: "portefeuille", label: "Portefeuille", icon: Zap },
   { key: "catalogue", label: "Catalogue", icon: Download },
   { key: "bnpl", label: "Payer plus tard", icon: Layers },

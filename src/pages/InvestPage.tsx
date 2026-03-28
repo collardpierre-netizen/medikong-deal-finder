@@ -464,22 +464,33 @@ export default function InvestPage() {
 
       {/* ════════════ FONDS ════════════ */}
       <section className="py-16 md:py-24 bg-white">
-        <div className="max-w-4xl mx-auto px-5">
+        <div className="max-w-3xl mx-auto px-5">
           <div className="text-center mb-12">
             <h2 className="text-2xl md:text-4xl font-bold text-mk-navy mb-3">Utilisation des fonds</h2>
             <p className="text-mk-sec max-w-xl mx-auto text-sm">Une allocation claire et orientée croissance pour accélérer le développement de MediKong.</p>
           </div>
-          <div className="space-y-3 max-w-lg mx-auto">
+
+          {/* Stacked horizontal bar */}
+          <div className="flex h-4 rounded-full overflow-hidden mb-8">
             {fundsAllocation.map((f, i) => (
-              <div key={f.label}>
-                <div className="flex justify-between text-sm mb-1"><span className="text-mk-navy font-medium">{f.label}</span><span className="font-bold text-mk-navy">{f.pct}%</span></div>
-                <div className="h-3 bg-mk-alt rounded-full overflow-hidden">
-                  <motion.div className="h-full rounded-full" style={{ backgroundColor: fundColors[i] }} initial={{ width: 0 }} whileInView={{ width: `${f.pct}%` }} viewport={{ once: true }} transition={{ duration: 0.8, delay: i * 0.1 }} />
+              <motion.div key={f.label} style={{ backgroundColor: fundColors[i], width: `${f.pct}%` }} initial={{ width: 0 }} whileInView={{ width: `${f.pct}%` }} viewport={{ once: true }} transition={{ duration: 0.8, delay: i * 0.1 }} />
+            ))}
+          </div>
+
+          {/* List rows */}
+          <div className="divide-y divide-mk-line">
+            {fundsAllocation.map((f, i) => (
+              <div key={f.label} className="flex items-center justify-between py-4 px-4">
+                <div className="flex items-center gap-3">
+                  <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: fundColors[i] }} />
+                  <span className="text-sm font-medium text-mk-navy">{f.label}</span>
                 </div>
+                <span className="text-sm font-bold text-mk-navy">{f.pct}%</span>
               </div>
             ))}
           </div>
-          <p className="text-xs text-mk-ter text-center mt-6">Priorité N°1 : investir massivement dans la technologie et le développement commercial pour accélérer la croissance de la plateforme.</p>
+
+          <p className="text-xs text-mk-ter text-center mt-8">Priorité N°1 : investir massivement dans la technologie et le développement commercial pour accélérer la croissance de la plateforme.</p>
         </div>
       </section>
 

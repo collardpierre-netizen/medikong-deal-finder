@@ -6,6 +6,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { I18nProvider } from "@/contexts/I18nContext";
 import { CartProvider } from "@/contexts/CartContext";
+import { ImpersonationProvider } from "@/contexts/ImpersonationContext";
+import ImpersonationBanner from "@/components/admin/ImpersonationBanner";
 import HomePage from "./pages/HomePage";
 import ResultsPage from "./pages/ResultsPage";
 import ProductPage from "./pages/ProductPage";
@@ -70,6 +72,8 @@ import AdminEquipe from "./pages/admin/AdminEquipe";
 import AdminParametres from "./pages/admin/AdminParametres";
 import AdminLogs from "./pages/admin/AdminLogs";
 import AdminLoginPage from "./pages/admin/AdminLoginPage";
+import AdminUsers from "./pages/admin/AdminUsers";
+import AdminAuditLog from "./pages/admin/AdminAuditLog";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 
@@ -80,10 +84,12 @@ const App = () => (
     <AuthProvider>
       <I18nProvider>
       <CartProvider>
+      <ImpersonationProvider>
       <TooltipProvider>
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <ImpersonationBanner />
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/recherche" element={<ResultsPage />} />
@@ -106,7 +112,6 @@ const App = () => (
             <Route path="/invest" element={<InvestPage />} />
             <Route path="/mot-de-passe-oublie" element={<ForgotPasswordPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
-
 
             <Route path="/admin/login" element={<AdminLoginPage />} />
 
@@ -137,6 +142,8 @@ const App = () => (
               <Route path="equipe" element={<AdminEquipe />} />
               <Route path="parametres" element={<AdminParametres />} />
               <Route path="logs" element={<AdminLogs />} />
+              <Route path="users" element={<AdminUsers />} />
+              <Route path="audit-log" element={<AdminAuditLog />} />
             </Route>
 
             {/* Vendor Dashboard */}
@@ -161,6 +168,7 @@ const App = () => (
           </Routes>
         </BrowserRouter>
       </TooltipProvider>
+      </ImpersonationProvider>
       </CartProvider>
       </I18nProvider>
     </AuthProvider>

@@ -147,66 +147,7 @@ export default function VendorSettings() {
         </div>
       )}
 
-      {activeTab === "commission" && activeRule && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <VCard>
-            <h3 className="text-sm font-semibold text-[#1D2530] mb-4">Votre modèle de commission actif</h3>
-            <div className="flex items-center gap-3 mb-4">
-              {(() => { const Icon = modelIcons[activeRule.model] || Percent; return <div className="w-10 h-10 rounded-lg bg-[#1B5BDA14] flex items-center justify-center"><Icon size={20} className="text-[#1B5BDA]" /></div>; })()}
-              <div>
-                <p className="font-semibold text-[#1D2530]">{activeRule.name}</p>
-                <p className="text-[11px] text-[#8B95A5]">{modelLabels[activeRule.model] || activeRule.model}</p>
-              </div>
-            </div>
-            <div className="space-y-2 text-[13px]">
-              {activeRule.model === "fixed_rate" && (
-                <div className="flex justify-between"><span className="text-[#8B95A5]">Taux</span><span className="font-semibold text-[#1D2530]">{activeRule.fixed_rate}%</span></div>
-              )}
-              {activeRule.model === "tiered_gmv" && (activeRule.tiers as any[])?.map((t: any, i: number) => (
-                <div key={i} className="flex justify-between">
-                  <span className="text-[#8B95A5]">{t.to ? `${t.from.toLocaleString()}€ → ${t.to.toLocaleString()}€` : `> ${t.from.toLocaleString()}€`}</span>
-                  <span className="font-semibold text-[#1D2530]">{t.rate}%</span>
-                </div>
-              ))}
-              {activeRule.model === "category_based" && Object.entries(activeRule.category_rates || {}).map(([cat, rate]) => (
-                <div key={cat} className="flex justify-between">
-                  <span className="text-[#8B95A5]">{cat}</span>
-                  <span className="font-semibold text-[#1D2530]">{String(rate)}%</span>
-                </div>
-              ))}
-              {activeRule.model === "margin_split" && (
-                <>
-                  <div className="flex justify-between"><span className="text-[#8B95A5]">Part MediKong</span><span className="font-semibold text-[#1D2530]">{activeRule.margin_split_mk}%</span></div>
-                  <div className="flex justify-between"><span className="text-[#8B95A5]">Votre part</span><span className="font-semibold text-[#059669]">{activeRule.margin_split_vendor}%</span></div>
-                </>
-              )}
-            </div>
-            {activeRule.notes && <p className="text-[11px] text-[#8B95A5] mt-3 border-t border-[#E2E8F0] pt-2">{activeRule.notes}</p>}
-          </VCard>
-
-          <VCard>
-            <h3 className="text-sm font-semibold text-[#1D2530] mb-4">Comment ça fonctionne</h3>
-            <div className="space-y-3 text-[13px] text-[#616B7C]">
-              <div className="bg-[#F8FAFC] rounded-lg p-3">
-                <p className="font-medium text-[#1D2530] mb-1">Taux fixe</p>
-                <p>Un pourcentage unique prélevé sur chaque vente HT.</p>
-              </div>
-              <div className="bg-[#F8FAFC] rounded-lg p-3">
-                <p className="font-medium text-[#1D2530] mb-1">Paliers GMV</p>
-                <p>Le taux diminue à mesure que votre volume mensuel augmente.</p>
-              </div>
-              <div className="bg-[#F8FAFC] rounded-lg p-3">
-                <p className="font-medium text-[#1D2530] mb-1">Par catégorie</p>
-                <p>Chaque catégorie de produit a un taux de commission différent.</p>
-              </div>
-              <div className="bg-[#F8FAFC] rounded-lg p-3">
-                <p className="font-medium text-[#1D2530] mb-1">Split marge</p>
-                <p>La marge entre le prix d'achat et le prix de vente est partagée entre vous et MediKong.</p>
-              </div>
-            </div>
-          </VCard>
-        </div>
-      )}
+      {activeTab === "commission" && <VendorCommissionTab />}
 
       {activeTab === "team" && (
         <div className="space-y-4">

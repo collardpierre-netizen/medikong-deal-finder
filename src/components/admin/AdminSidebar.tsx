@@ -35,6 +35,7 @@ const sections: NavSection[] = [
       { labelKey: "orders", path: "/admin/commandes", icon: ShoppingCart },
       { labelKey: "disputes", path: "/admin/litiges", icon: AlertCircle },
       { labelKey: "finances", path: "/admin/finances", icon: DollarSign },
+      { labelKey: "commissions", path: "/admin/commissions", icon: Percent },
     ],
   },
   {

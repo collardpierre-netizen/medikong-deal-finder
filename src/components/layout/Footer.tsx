@@ -10,7 +10,7 @@ export function Footer() {
             <div className="mb-3">
               <img src={logoDark} alt="MediKong.pro" className="h-[72px]" />
             </div>
-            <p className="text-sm text-mk-sec mb-3">La marketplace B2B pour les fournitures medicales en Belgique.</p>
+            <p className="text-sm text-mk-sec mb-3">La marketplace B2B pour les fournitures médicales en Belgique.</p>
             <p className="text-xs text-mk-ter">Balooh SRL · TVA: BE 1005.771.323</p>
             <p className="text-xs text-mk-ter">23 rue de la Procession, B-7822 Ath</p>
           </div>
@@ -19,8 +19,8 @@ export function Footer() {
             {[
               { label: "Catalogue", to: "/" },
               { label: "Vérification fournisseurs", to: "/verification-fournisseurs" },
-              { label: "Comment commander", to: "/comment-commander" },
               { label: "Garantie qualité", to: "/garantie-qualite" },
+              { label: "Comment commander", to: "/comment-commander" },
             ].map(l => (
               <Link key={l.to} to={l.to} className="block text-sm text-mk-sec hover:text-mk-blue mb-2">{l.label}</Link>
             ))}
@@ -28,9 +28,9 @@ export function Footer() {
           <div>
             <h4 className="font-semibold text-sm text-mk-navy mb-3">Comment on travaille</h4>
             {[
-              { label: "Partenariats fournisseurs", to: "/verification-fournisseurs" },
-              { label: "Paiement différé", to: "/paiement-differe" },
               { label: "Logistique", to: "/logistique" },
+              { label: "Paiement différé", to: "/paiement-differe" },
+              { label: "Devenir vendeur", to: "/devenir-vendeur" },
               { label: "Témoignages", to: "/temoignages" },
             ].map(l => (
               <Link key={l.label} to={l.to} className="block text-sm text-mk-sec hover:text-mk-blue mb-2">{l.label}</Link>
@@ -40,10 +40,11 @@ export function Footer() {
             <h4 className="font-semibold text-sm text-mk-navy mb-3">Entreprise</h4>
             {[
               { label: "À propos", to: "/a-propos" },
-              { label: "Devenir vendeur", to: "/devenir-vendeur" },
+              { label: "Équipe", to: "/equipe" },
               { label: "Carrières", to: "/carrieres" },
-              { label: "Contact", to: "/contact" },
+              { label: "Presse", to: "/presse" },
               { label: "Investir", to: "/investir" },
+              { label: "Contact", to: "/contact" },
               { label: "Centre d'aide", to: "/centre-aide" },
             ].map(l => (
               <Link key={l.to} to={l.to} className="block text-sm text-mk-sec hover:text-mk-blue mb-2">{l.label}</Link>

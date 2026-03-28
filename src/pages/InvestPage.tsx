@@ -233,7 +233,7 @@ export default function InvestPage() {
               <a key={a.id} href={`#${a.id}`} className={`whitespace-nowrap px-4 py-3.5 text-sm font-medium transition-colors border-b-2 ${activeSection === a.id ? "text-mk-navy border-mk-blue" : "text-mk-sec border-transparent hover:text-mk-navy"}`}>{a.label}</a>
             ))}
           </div>
-          <a href="mailto:invest@medikong.pro?subject=Souscription%20MediKong" className="hidden md:inline-flex items-center gap-2 bg-mk-blue text-white px-5 py-2 rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity shrink-0 ml-4">Souscrire maintenant</a>
+          <button onClick={() => setShowSubscribe(true)} className="hidden md:inline-flex items-center gap-2 bg-mk-blue text-white px-5 py-2 rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity shrink-0 ml-4">Souscrire maintenant</button>
         </div>
       </nav>
 

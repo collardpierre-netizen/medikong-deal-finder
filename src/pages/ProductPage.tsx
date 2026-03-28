@@ -456,7 +456,7 @@ export default function ProductPage() {
               {/* Filter offers */}
               <div ref={offerSectionRef}>
               <AnimatedSection delay={0.1}>
-                <div className="bg-mk-alt border border-mk-line rounded-lg p-3 md:p-5 mb-4 md:mb-6">
+                <div className="hidden md:block bg-mk-alt border border-mk-line rounded-lg p-3 md:p-5 mb-4 md:mb-6">
                   <div className="flex items-center gap-2 mb-4">
                     <Sliders size={14} className="text-mk-navy" />
                     <span className="text-sm font-bold text-mk-navy">Filtrer les offres</span>

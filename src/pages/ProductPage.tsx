@@ -264,7 +264,13 @@ export default function ProductPage() {
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="text-xs bg-mk-deal text-mk-green px-2 py-0.5 rounded font-medium">{offer.stockQuantity > 0 ? "En stock" : "Rupture"}</span>
                             {offer.isTopRated && <span className="text-xs bg-purple-50 text-purple-600 px-2 py-0.5 rounded font-medium">Top rated</span>}
-                            <span className="font-semibold text-mk-navy">{offer.sellerName}</span>
+                            {offer.sellerSlug ? (
+                              <Link to={`/vendeur/${offer.sellerSlug}`} className="font-semibold text-mk-blue hover:underline inline-flex items-center gap-1">
+                                <Store size={13} /> {offer.sellerName}
+                              </Link>
+                            ) : (
+                              <span className="font-semibold text-mk-navy">{offer.sellerName}</span>
+                            )}
                             {i === 0 && <span className="text-xs bg-mk-deal text-mk-green px-2 py-0.5 rounded font-medium">Meilleur prix</span>}
                           </div>
                           <span className="text-xs text-mk-sec">{offer.deliveryDays}h</span>

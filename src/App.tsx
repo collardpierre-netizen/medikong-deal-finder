@@ -22,6 +22,8 @@ import RegisterPage from "./pages/RegisterPage";
 import CategoryPage from "./pages/CategoryPage";
 import PromotionsPage from "./pages/PromotionsPage";
 import SellerOnboardingPage from "./pages/SellerOnboardingPage";
+import BuyerOnboardingPage from "./pages/BuyerOnboardingPage";
+import BuyerCompletionPage from "./pages/BuyerCompletionPage";
 import NotFound from "./pages/NotFound";
 import InvestPage from "./pages/InvestPage";
 import AdminLayout from "./components/admin/AdminLayout";
@@ -97,6 +99,8 @@ const App = () => (
             <Route path="/categorie/:slug" element={<CategoryPage />} />
             <Route path="/promotions" element={<PromotionsPage />} />
             <Route path="/seller-onboarding" element={<SellerOnboardingPage />} />
+            <Route path="/buyer-onboarding" element={<BuyerOnboardingPage />} />
+            <Route path="/buyer-completion" element={<BuyerCompletionPage />} />
             <Route path="/invest" element={<InvestPage />} />
             <Route path="/mot-de-passe-oublie" element={<ForgotPasswordPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />

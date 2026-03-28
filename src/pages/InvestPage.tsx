@@ -298,7 +298,9 @@ export default function InvestPage() {
           </div>
 
           {/* ── POTENTIEL DE CRÉATION DE VALEUR — dark card ── */}
-          <div className="rounded-2xl p-8 md:p-12 mb-8" style={{ background: "linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #1a365d 100%)" }}>
+          <div className="relative rounded-2xl p-8 md:p-12 mb-8 overflow-hidden" style={{ background: "linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #1a365d 100%)" }}>
+            <div className="absolute inset-0 invest-dots" />
+            <div className="absolute inset-0 invest-glow-center" />
             <div className="text-center mb-10">
               <p className="text-amber-400 text-sm font-semibold uppercase tracking-widest mb-2">✨ Potentiel de création de valeur ✨</p>
               <p className="text-white/50 text-sm max-w-xl mx-auto">Projection à 5 ans basée sur les multiples de valorisation des marketplaces B2B santé comparables.</p>

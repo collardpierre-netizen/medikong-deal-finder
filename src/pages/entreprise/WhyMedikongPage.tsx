@@ -48,7 +48,7 @@ export default function WhyMedikongPage() {
               "Paiement sécurisé via Stripe, paiement différé via Mondu, et protection litiges 24h pour une tranquillité d'esprit totale.",
             ]}
             imagePlaceholder="Illustration : bouclier de sécurité"
-            imageGradient="from-emerald-100 to-teal-200"
+            imageGradient="from-blue-100 to-indigo-200"
           />
         </div>
       </Section>

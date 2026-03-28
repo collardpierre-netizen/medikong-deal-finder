@@ -159,6 +159,16 @@ export const useSourcingRequests = () =>
     },
   });
 
+// Stub hooks for removed tables (V5 migration)
+export const useBuyers = () => useQuery({ queryKey: ["stub-buyers"], queryFn: async () => [] as any[] });
+export const useInvoices = () => useQuery({ queryKey: ["stub-invoices"], queryFn: async () => [] as any[] });
+export const useImportJobs = () => useQuery({ queryKey: ["stub-import-jobs"], queryFn: async () => [] as any[] });
+export const useLeadsPartners = () => useQuery({ queryKey: ["stub-leads"], queryFn: async () => [] as any[] });
+export const useOffersIndirect = () => useQuery({ queryKey: ["stub-offers-indirect"], queryFn: async () => [] as any[] });
+export const useDisputes = () => useQuery({ queryKey: ["stub-disputes"], queryFn: async () => [] as any[] });
+export const useManufacturers = () => useQuery({ queryKey: ["stub-manufacturers"], queryFn: async () => [] as any[] });
+export const useOffersDirectAdmin = () => useOffers();
+
 // Dashboard aggregated data
 export const useDashboardStats = () => {
   const vendors = useVendors();
@@ -176,6 +186,7 @@ export const useDashboardStats = () => {
     totalProducts,
     totalOrders,
     gmv,
+    disputeRate: 0,
     isLoading: vendors.isLoading || products.isLoading || orders.isLoading,
   };
 };

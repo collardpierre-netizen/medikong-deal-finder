@@ -38,6 +38,7 @@ export default function VendorOffers() {
     { id: "performance", label: "Performance" },
     { id: "profiles", label: "Par profil / pays" },
     { id: "rules", label: "Regles client" },
+    { id: "prixref", label: "vs Prix Ref.", badge: vendorOffers.filter(o => mockPrixParProfilByProduct[o.name]).length },
   ];
 
   const filtered = statusFilter === "all" ? vendorOffers : vendorOffers.filter(o => o.status === statusFilter);

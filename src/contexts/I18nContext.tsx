@@ -98,6 +98,7 @@ const translations: Record<Lang, Record<string, string>> = {
     orders: "Bestellingen",
     disputes: "Geschillen",
     finances: "Financiën",
+    commissions: "Commissies",
     priceWatch: "Prijsbewaking",
     leads: "Leads & Affiliatie",
     analytics: "Analytics",

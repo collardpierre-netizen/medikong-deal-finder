@@ -259,12 +259,14 @@ export default function ProductPage() {
                       <select className="w-full border border-mk-line rounded-md px-3 py-2 text-sm">
                         <option>500 EUR</option><option>1 500 EUR</option><option>5 000 EUR</option><option>10 000 EUR</option>
                       </select>
+                      <p className="text-xs text-mk-ter mt-1">Show only offers with MOV up to this amount</p>
                     </div>
                     <div>
                       <label className="text-xs text-mk-sec mb-1 block">Delai livraison max</label>
                       <select className="w-full border border-mk-line rounded-md px-3 py-2 text-sm">
                         <option>24h</option><option>48h</option><option>3-5 jours</option><option>7+ jours</option>
                       </select>
+                      <p className="text-xs text-mk-ter mt-1">Show only offers delivered within this timeframe</p>
                     </div>
                   </div>
                 </div>
@@ -292,84 +294,84 @@ export default function ProductPage() {
                 {tab === "mk" && (
                   <motion.div
                     key="mk"
-                    className="space-y-4"
+                    className="space-y-6"
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -8 }}
                     transition={{ duration: 0.3 }}
                   >
-                    <p className="text-sm text-mk-sec">Meilleure offre · {realOffers.length} disponible{realOffers.length > 1 ? "s" : ""}</p>
-                    {(realOffers.length > 0 ? realOffers : [{ id: "fallback", productId: product.id, sellerId: "", sellerName: "MediKong", unitPriceEur: product.price, stockQuantity: 1, movEur: 500, bundleSize: 1, deliveryDays: 3, shipFromCountry: "BE", priceTiers: null, isActive: true, isVerified: true, isTopRated: false }]).map((offer, i) => (
-                      <motion.div
-                        key={offer.id}
-                        className="border border-mk-line rounded-lg p-4 md:p-5"
-                        initial={{ opacity: 0, y: 14 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.1, duration: 0.35 }}
-                        whileHover={{ borderColor: "hsl(var(--mk-blue))", boxShadow: "0 4px 16px -4px rgba(0,0,0,0.08)" }}
-                      >
-                        <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-xs bg-mk-deal text-mk-green px-2 py-0.5 rounded font-medium">{offer.stockQuantity > 0 ? "En stock" : "Rupture"}</span>
-                            {offer.isTopRated && <span className="text-xs bg-purple-50 text-purple-600 px-2 py-0.5 rounded font-medium">Top rated</span>}
-                            {offer.sellerSlug ? (
-                              <Link to={`/vendeur/${offer.sellerSlug}`} className="font-semibold text-mk-blue hover:underline inline-flex items-center gap-1">
-                                <Store size={13} /> {offer.sellerName}
-                              </Link>
-                            ) : (
-                              <span className="font-semibold text-mk-navy">{offer.sellerName}</span>
-                            )}
-                            {i === 0 && <span className="text-xs bg-mk-deal text-mk-green px-2 py-0.5 rounded font-medium">Meilleur prix</span>}
-                          </div>
-                          <span className="text-xs text-mk-sec">{offer.deliveryDays}h</span>
-                        </div>
-                        <div className="bg-mk-mov-bg border border-mk-mov-border rounded-md p-3 mb-3">
-                          <div className="flex justify-between text-xs mb-1">
-                            <span className="text-mk-amber font-medium">Minimum: {formatPrice(offer.movEur)} EUR</span>
-                            <span className="text-mk-sec">Encore {formatPrice(Math.max(offer.movEur - offer.unitPriceEur * qty, 0))} EUR</span>
-                          </div>
-                          <div className="h-1.5 bg-mk-mov-border rounded-full overflow-hidden">
-                            <motion.div
-                              className="h-full bg-mk-amber rounded-full"
-                              initial={{ width: 0 }}
-                              animate={{ width: `${Math.min((offer.unitPriceEur * qty / Math.max(offer.movEur, 1)) * 100, 100)}%` }}
-                              transition={{ duration: 0.8, delay: 0.3 }}
+                    {/* === BEST OFFER === */}
+                    {(() => {
+                      const allOffers = realOffers.length > 0 ? realOffers : [{ id: "fallback", productId: product.id, sellerId: "", sellerName: "MediKong", sellerSlug: undefined, unitPriceEur: product.price, stockQuantity: 1160, movEur: 10000, bundleSize: 20, deliveryDays: 3, shipFromCountry: "BE", priceTiers: [{ minAmount: 10000, price: product.price }, { minAmount: 5000, price: product.price * 1.02 }] as any, isActive: true, isVerified: true, isTopRated: false }];
+                      const bestOffer = allOffers[0];
+                      const otherOffers = allOffers.slice(1);
+                      const totalStock = allOffers.reduce((sum, o) => sum + o.stockQuantity, 0);
+
+                      return (
+                        <>
+                          {/* Best offer card */}
+                          <div className="border border-mk-line rounded-lg p-5 md:p-6">
+                            <div className="flex items-center justify-between mb-5 flex-wrap gap-2">
+                              <h3 className="text-lg font-bold text-mk-navy">Lowest priced offer</h3>
+                              <span className="text-sm text-mk-blue font-medium">{formatPrice(totalStock).replace('.', ',')} available</span>
+                            </div>
+
+                            {/* Table header */}
+                            <div className="grid grid-cols-[1.5fr_1fr_1fr_0.8fr_1.5fr] gap-3 px-1 pb-3 text-xs font-semibold text-mk-sec border-b border-mk-line">
+                              <span>Supplier</span>
+                              <span>Unit price</span>
+                              <span>MOV</span>
+                              <span>Stock</span>
+                              <span className="text-right">Actions</span>
+                            </div>
+
+                            {/* Offer row */}
+                            <OfferRow
+                              offer={bestOffer}
+                              product={product}
+                              user={user}
+                              navigate={navigate}
+                              addToCart={addToCart}
+                              isBest
                             />
                           </div>
-                        </div>
-                        <div className="text-xs text-mk-sec mb-3">500 EUR | 1 500 EUR | 5 000 EUR</div>
-                        <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-3">
-                          <div>
-                            <p className="text-2xl font-bold text-mk-navy">{formatPrice(offer.unitPriceEur)} EUR</p>
-                            <p className="text-xs text-mk-ter">{product.unit}</p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <div className="flex items-center border border-mk-line rounded-md">
-                              <button onClick={() => setQty(Math.max(1, qty - 1))} className="px-2 py-1.5"><Minus size={14} /></button>
-                              <span className="px-3 text-sm font-medium">{qty}</span>
-                              <button onClick={() => setQty(qty + 1)} className="px-2 py-1.5"><Plus size={14} /></button>
+
+                          {/* === OTHER OFFERS === */}
+                          {otherOffers.length > 0 && (
+                            <div className="border border-mk-line rounded-lg p-5 md:p-6">
+                              <div className="flex items-center justify-between mb-5 flex-wrap gap-2">
+                                <div className="flex items-center gap-2">
+                                  <h3 className="text-lg font-bold text-mk-navy">{otherOffers.length} other offer{otherOffers.length > 1 ? 's' : ''}</h3>
+                                  <span className="text-sm text-mk-sec">Sorted by price</span>
+                                </div>
+                                <span className="text-sm text-mk-blue font-medium">{formatPrice(otherOffers.reduce((s, o) => s + o.stockQuantity, 0)).replace('.', ',')} available</span>
+                              </div>
+
+                              {/* Table header */}
+                              <div className="grid grid-cols-[1.5fr_1fr_1fr_0.8fr_1.5fr] gap-3 px-1 pb-3 text-xs font-semibold text-mk-sec border-b border-mk-line">
+                                <span>Supplier</span>
+                                <span>Unit price</span>
+                                <span>MOV</span>
+                                <span>Stock</span>
+                                <span className="text-right">Actions</span>
+                              </div>
+
+                              {otherOffers.map((offer, i) => (
+                                <OfferRow
+                                  key={offer.id}
+                                  offer={offer}
+                                  product={product}
+                                  user={user}
+                                  navigate={navigate}
+                                  addToCart={addToCart}
+                                  delay={i * 0.06}
+                                />
+                              ))}
                             </div>
-                            <motion.button
-                              className="bg-mk-navy text-white text-sm font-semibold px-4 md:px-5 py-2 rounded-md flex items-center gap-2"
-                              whileHover={{ scale: 1.04 }}
-                              whileTap={{ scale: 0.95 }}
-                              onClick={() => {
-                                if (!user) { navigate("/connexion"); return; }
-                                addToCart.mutate({
-                                  productId: product.id,
-                                  quantity: qty,
-                                  vendorId: offer.sellerId,
-                                  priceHt: offer.unitPriceEur,
-                                  productData: { id: product.id, name: product.name, brand: product.brand, slug: product.slug, price: offer.unitPriceEur, gtin: product.gtin, unit: product.unit, stock: offer.stockQuantity > 0 },
-                                });
-                              }}
-                            >
-                              <ShoppingCart size={14} /> Ajouter
-                            </motion.button>
-                          </div>
-                        </div>
-                      </motion.div>
-                    ))}
+                          )}
+                        </>
+                      );
+                    })()}
                   </motion.div>
                 )}
 

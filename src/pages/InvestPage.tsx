@@ -580,9 +580,9 @@ export default function InvestPage() {
         <div className="max-w-3xl mx-auto px-5 text-center text-white relative z-10">
           <h2 className="text-2xl md:text-4xl font-bold mb-4">Prêt à investir dans l'avenir de la santé ?</h2>
           <p className="text-white/60 max-w-lg mx-auto mb-10 text-sm md:text-base">Rejoignez les premiers investisseurs de MediKong et bénéficiez du Tax Shelter.</p>
-          <a href="mailto:invest@medikong.pro?subject=Souscription%20MediKong" className="inline-flex items-center gap-2 bg-white/10 border border-white/20 text-white px-8 py-4 rounded-xl font-semibold text-sm hover:bg-white/15 transition-all">
+          <button onClick={() => setShowSubscribe(true)} className="inline-flex items-center gap-2 bg-white/10 border border-white/20 text-white px-8 py-4 rounded-xl font-semibold text-sm hover:bg-white/15 transition-all">
             Souscrire maintenant — dès 1 000 € <ArrowRight size={16} />
-          </a>
+          </button>
           <p className="text-white/40 text-xs mt-6">Vous avez des questions ? Contactez-nous à <a href="mailto:invest@medikong.pro" className="underline hover:text-white">invest@medikong.pro</a></p>
         </div>
       </section>

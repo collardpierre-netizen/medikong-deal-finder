@@ -610,6 +610,10 @@ export default function VendorOffers() {
       {/* Edit Offer Popup */}
       {editOffer && <EditOfferPopup offerId={editOffer} onClose={() => setEditOffer(null)} />}
       {showNew && <EditOfferPopup onClose={() => setShowNew(false)} />}
+      {prixRefDetail && (() => {
+        const o = vendorOffers.find(x => x.id === prixRefDetail);
+        return o ? <PrixRefDetailPopup offer={o} onClose={() => setPrixRefDetail(null)} /> : null;
+      })()}
     </div>
   );
 }

@@ -122,7 +122,7 @@ export default function ManufacturerPage() {
                 const portfolio = sellerPortfolios[s.name];
                 const carriedBrands = manufacturerBrands.filter(b => portfolio?.brands.includes(b.name));
                 return (
-                  <div key={s.name} className="border border-mk-line rounded-lg p-4 hover:shadow-sm transition-shadow">
+                  <Link key={s.name} to={`/vendeur/${s.slug}`} className="border border-mk-line rounded-lg p-4 hover:shadow-sm hover:border-mk-blue transition-all block">
                     <div className="flex items-center gap-3 mb-2">
                       <div className="w-10 h-10 rounded-full bg-mk-alt flex items-center justify-center text-sm font-bold text-mk-navy shrink-0">
                         {s.name[0]}
@@ -140,12 +140,12 @@ export default function ManufacturerPage() {
                     </div>
                     <div className="flex gap-1.5 flex-wrap">
                       {carriedBrands.map(b => (
-                        <Link key={b.slug} to={`/marque/${b.slug}`} className="text-[10px] px-2 py-0.5 rounded-full bg-blue-50 text-mk-blue hover:bg-blue-100">
+                        <span key={b.slug} className="text-[10px] px-2 py-0.5 rounded-full bg-blue-50 text-mk-blue">
                           {b.name}
-                        </Link>
+                        </span>
                       ))}
                     </div>
-                  </div>
+                  </Link>
                 );
               })}
             </div>

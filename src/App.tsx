@@ -118,11 +118,30 @@ const App = () => (
               <Route path="logs" element={<AdminLogs />} />
             </Route>
 
+            {/* Vendor Dashboard */}
+            <Route path="/vendor" element={<VendorLayout />}>
+              <Route index element={<VendorDashboard />} />
+              <Route path="catalog" element={<VendorPlaceholder pageKey="catalog" />} />
+              <Route path="offers" element={<VendorPlaceholder pageKey="myOffers" />} />
+              <Route path="orders" element={<VendorPlaceholder pageKey="orders" />} />
+              <Route path="opportunities" element={<VendorPlaceholder pageKey="opportunities" />} />
+              <Route path="alerts" element={<VendorPlaceholder pageKey="alerts" />} />
+              <Route path="tenders" element={<VendorPlaceholder pageKey="tenders" />} />
+              <Route path="analytics" element={<VendorPlaceholder pageKey="analytics" />} />
+              <Route path="finance" element={<VendorPlaceholder pageKey="finances" />} />
+              <Route path="logistics" element={<VendorPlaceholder pageKey="logistics" />} />
+              <Route path="health" element={<VendorPlaceholder pageKey="health" />} />
+              <Route path="messages" element={<VendorPlaceholder pageKey="messages" />} />
+              <Route path="academy" element={<VendorPlaceholder pageKey="academy" />} />
+              <Route path="settings" element={<VendorPlaceholder pageKey="settings" />} />
+            </Route>
+
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
       </TooltipProvider>
       </CartProvider>
+      </I18nProvider>
     </AuthProvider>
   </QueryClientProvider>
 );

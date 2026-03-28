@@ -179,6 +179,7 @@ const translations: Record<Lang, Record<string, string>> = {
     disputes: "Streitfälle",
     finances: "Finanzen",
     commissions: "Provisionen",
+    syncQogita: "Sync Qogita",
     priceWatch: "Preisüberwachung",
     leads: "Leads & Affiliate",
     analytics: "Analytics",

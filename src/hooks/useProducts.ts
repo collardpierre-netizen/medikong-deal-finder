@@ -28,6 +28,8 @@ export interface Product {
   categoryL3?: string;
   descriptionShort?: string;
   weightG?: number;
+  brandId?: string;
+  manufacturerId?: string;
 }
 
 function slugify(text: string): string {
@@ -76,6 +78,8 @@ function mapDbProduct(row: any, offersData?: any[]): Product {
     categoryL3: row.category_l3,
     descriptionShort: row.description_short,
     weightG: row.weight_g ? Number(row.weight_g) : undefined,
+    brandId: row.brand_id || undefined,
+    manufacturerId: row.manufacturer_id || undefined,
   };
 }
 
@@ -123,6 +127,7 @@ export interface Offer {
   priceTiers: any[] | null;
   isActive: boolean;
   sellerName?: string;
+  sellerSlug?: string;
   isVerified?: boolean;
   isTopRated?: boolean;
 }
@@ -142,7 +147,7 @@ export function useProductOffers(productId: string | undefined) {
       const vendorIds = [...new Set((offers || []).map((o: any) => o.vendor_id))];
       const { data: vendors } = await supabase
         .from("vendors")
-        .select("id, company_name, tier, status")
+        .select("id, company_name, slug, tier, status")
         .in("id", vendorIds);
 
       const vendorMap = new Map((vendors || []).map((v: any) => [v.id, v]));
@@ -162,6 +167,7 @@ export function useProductOffers(productId: string | undefined) {
           priceTiers: null,
           isActive: o.status === 'active',
           sellerName: vendor?.company_name || `Vendor-${o.vendor_id.slice(0, 6)}`,
+          sellerSlug: vendor?.slug || undefined,
           isVerified: vendor?.status === 'active',
           isTopRated: vendor?.tier === 'Gold' || vendor?.tier === 'Platinum' || vendor?.tier === 'Strategic',
         };

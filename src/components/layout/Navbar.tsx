@@ -150,11 +150,21 @@ export function Navbar() {
             </form>
             {user ? (
               <>
+                {isAdmin && (
+                  <Link to="/admin" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 text-blue-400 text-sm font-semibold">
+                    <Shield size={16} /> Administration
+                  </Link>
+                )}
+                {isVendor && (
+                  <Link to="/vendor" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 text-pink-400 text-sm font-semibold">
+                    <Store size={16} /> Espace Vendeur
+                  </Link>
+                )}
                 <Link to="/compte" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 text-white text-sm">
                   <Users size={16} /> Mon compte
                 </Link>
                 <button onClick={() => { handleSignOut(); setMobileMenuOpen(false); }} className="flex items-center gap-2 text-white/70 text-sm">
-                  <LogOut size={16} /> Deconnexion
+                  <LogOut size={16} /> Déconnexion
                 </button>
               </>
             ) : (

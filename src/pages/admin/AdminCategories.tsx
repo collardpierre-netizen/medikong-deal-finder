@@ -9,8 +9,22 @@ import { toast } from "sonner";
 import { Layers, Tag, Package, ChevronDown, ChevronRight, Download, Upload } from "lucide-react";
 
 const AdminCategories = () => {
+  const qc = useQueryClient();
   const { data: categoriesData = [], isLoading } = useCategories();
   const [expanded, setExpanded] = useState<string[]>([]);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const handleImport = async (file: File) => {
+    toast.info("Import en cours...");
+    try {
+      const result = await importCategories(file);
+      toast.success(`${result.created} catégories importée(s)`);
+      if (result.errors.length > 0) toast.warning(`${result.errors.length} erreur(s): ${result.errors[0]}`);
+      qc.invalidateQueries({ queryKey: ["admin-categories"] });
+    } catch (e: any) {
+      toast.error(e.message || "Erreur import");
+    }
+  };
 
   const toggle = (name: string) => {
     setExpanded(prev => prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name]);

@@ -80,8 +80,8 @@ export default function CheckoutPage() {
           product_name: i.product?.name || "Produit",
           product_brand: i.product?.brand || "",
           quantity: i.quantity,
-          unit_price: i.product?.price || 0,
-          total_price: (i.product?.price || 0) * i.quantity,
+          unit_price: i.price_ht || i.product?.price || 0,
+          total_price: (i.price_ht || i.product?.price || 0) * i.quantity,
         })),
       });
       clearCart.mutate();

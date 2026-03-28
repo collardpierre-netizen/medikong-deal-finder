@@ -42,12 +42,12 @@ export default function BecomeSellerPage() {
       </Section>
       <Section bg="gray">
         <SplitSection
-          tag={{ label: "Outils vendeur", color: "#E70866", bg: "#FFF1F3" }}
+          tag={{ label: "Outils vendeur", color: "#1B5BDA", bg: "#EFF6FF" }}
           title="Un dashboard vendeur complet"
           paragraphs={["Gérez votre activité depuis un seul endroit : catalogue, commandes, analytics, finances et logistique."]}
           checklist={["Gestion du catalogue et des prix", "Suivi des commandes en temps réel", "Analytics et rapports de vente", "Gestion financière et paiements", "Alertes et opportunités marché"]}
           imagePlaceholder="Dashboard vendeur"
-          imageGradient="from-[#E70866] to-[#9333EA]"
+          imageGradient="from-[#1B5BDA] to-[#0F3280]"
           reverse
         />
       </Section>

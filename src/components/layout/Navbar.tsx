@@ -95,7 +95,7 @@ export function Navbar() {
           {user ? (
             <div className="flex items-center gap-2">
               {isAdmin && (
-                <Link to="/admin" className="flex items-center gap-1.5 text-emerald-400 hover:text-emerald-300 text-xs font-semibold px-2.5 py-1 rounded-full" style={{ background: "rgba(16,185,129,0.15)" }}>
+                <Link to="/admin" className="flex items-center gap-1.5 text-blue-400 hover:text-blue-300 text-xs font-semibold px-2.5 py-1 rounded-full" style={{ background: "rgba(27,91,218,0.15)" }}>
                   <Shield size={14} />
                   <span>Admin</span>
                 </Link>

@@ -1,14 +1,24 @@
-import { Search, Bell, MessageSquare, Globe } from "lucide-react";
+import { Search, Bell, MessageSquare, Globe, Menu } from "lucide-react";
 import { useI18n, type Lang } from "@/contexts/I18nContext";
 import { vendorProfile } from "@/lib/vendor-tokens";
 
 const langs: Lang[] = ["fr", "nl", "de"];
 
-export function VendorTopBar() {
+interface VendorTopBarProps {
+  onMenuClick?: () => void;
+}
+
+export function VendorTopBar({ onMenuClick }: VendorTopBarProps) {
   const { lang, setLang, t } = useI18n();
 
   return (
-    <header className="h-14 bg-white border-b border-[#E2E8F0] flex items-center gap-4 px-5 shrink-0">
+    <header className="h-14 bg-white border-b border-[#E2E8F0] flex items-center gap-2 md:gap-4 px-3 md:px-5 shrink-0">
+      {/* Hamburger on mobile */}
+      {onMenuClick && (
+        <button onClick={onMenuClick} className="p-2 rounded-md hover:bg-[#F1F5F9] md:hidden">
+          <Menu size={20} className="text-[#1D2530]" />
+        </button>
+      )}
       {/* Search */}
       <div className="flex-1 max-w-md relative">
         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8B95A5]" />

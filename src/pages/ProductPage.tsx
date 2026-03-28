@@ -381,7 +381,18 @@ export default function ProductPage() {
               ) : (
                 <p className="text-sm text-mk-sec mb-1">{product.brand}</p>
               )}
-              <h1 className="text-xl md:text-2xl font-bold text-mk-navy mb-3">{product.name}</h1>
+              <div className="flex items-start justify-between gap-3">
+                <h1 className="text-xl md:text-2xl font-bold text-mk-navy mb-3">{product.name}</h1>
+                {user && (
+                  <motion.button
+                    onClick={() => toggleFavorite.mutate(product.id)}
+                    className="shrink-0 mt-1 p-2 rounded-lg hover:bg-red-50 transition-colors"
+                    whileTap={{ scale: 0.85 }}
+                  >
+                    <Heart size={20} className={isFavorite(product.id) ? "text-mk-red fill-current" : "text-mk-ter"} />
+                  </motion.button>
+                )}
+              </div>
               <div className="flex items-center gap-3 mb-1 flex-wrap">
                 <span className="text-xs text-mk-ter">GTIN: {product.ean}</span>
                 <motion.button

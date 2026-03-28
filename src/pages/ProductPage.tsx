@@ -360,7 +360,7 @@ export default function ProductPage() {
   return (
     <Layout>
       <PageTransition>
-         <div className="mk-container py-6 md:py-8">
+         <div className="mk-container py-4 md:py-8 pb-24 md:pb-8">
            {/* Back to results */}
            <button
              onClick={() => navigate(-1)}

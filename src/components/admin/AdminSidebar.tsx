@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Store, UserPlus, Package, Layers, Tag, SlidersHorizontal,
   ShoppingCart, AlertCircle, DollarSign, Eye, Link, BarChart3,
   Shield, Upload, MessageSquare, Layout, Truck, ShieldCheck, Settings, FileText,
-  LogOut, Users, ClipboardList,
+  LogOut, Users, ClipboardList, Percent,
 } from "lucide-react";
 
 interface NavItem {
@@ -35,6 +35,7 @@ const sections: NavSection[] = [
       { labelKey: "orders", path: "/admin/commandes", icon: ShoppingCart },
       { labelKey: "disputes", path: "/admin/litiges", icon: AlertCircle },
       { labelKey: "finances", path: "/admin/finances", icon: DollarSign },
+      { labelKey: "commissions", path: "/admin/commissions", icon: Percent },
     ],
   },
   {

@@ -288,6 +288,74 @@ export type Database = {
         }
         Relationships: []
       }
+      commission_rules: {
+        Row: {
+          category_rates: Json | null
+          created_at: string
+          effective_from: string | null
+          effective_to: string | null
+          fixed_rate: number | null
+          id: string
+          is_default: boolean
+          margin_split_mk: number | null
+          margin_split_vendor: number | null
+          max_commission: number | null
+          min_commission: number | null
+          model: Database["public"]["Enums"]["commission_model"]
+          name: string
+          notes: string | null
+          tiers: Json | null
+          updated_at: string
+          vendor_id: string | null
+        }
+        Insert: {
+          category_rates?: Json | null
+          created_at?: string
+          effective_from?: string | null
+          effective_to?: string | null
+          fixed_rate?: number | null
+          id?: string
+          is_default?: boolean
+          margin_split_mk?: number | null
+          margin_split_vendor?: number | null
+          max_commission?: number | null
+          min_commission?: number | null
+          model?: Database["public"]["Enums"]["commission_model"]
+          name?: string
+          notes?: string | null
+          tiers?: Json | null
+          updated_at?: string
+          vendor_id?: string | null
+        }
+        Update: {
+          category_rates?: Json | null
+          created_at?: string
+          effective_from?: string | null
+          effective_to?: string | null
+          fixed_rate?: number | null
+          id?: string
+          is_default?: boolean
+          margin_split_mk?: number | null
+          margin_split_vendor?: number | null
+          max_commission?: number | null
+          min_commission?: number | null
+          model?: Database["public"]["Enums"]["commission_model"]
+          name?: string
+          notes?: string | null
+          tiers?: Json | null
+          updated_at?: string
+          vendor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commission_rules_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       compliance_records: {
         Row: {
           afmps_notification: string | null
@@ -1587,6 +1655,11 @@ export type Database = {
         | "parapharmacie"
         | "infirmier"
         | "dentiste"
+      commission_model:
+        | "fixed_rate"
+        | "tiered_gmv"
+        | "category_based"
+        | "margin_split"
       dispute_status:
         | "reclamation"
         | "enquete"
@@ -1756,6 +1829,12 @@ export const Constants = {
         "parapharmacie",
         "infirmier",
         "dentiste",
+      ],
+      commission_model: [
+        "fixed_rate",
+        "tiered_gmv",
+        "category_based",
+        "margin_split",
       ],
       dispute_status: [
         "reclamation",

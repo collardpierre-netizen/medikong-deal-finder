@@ -929,6 +929,48 @@ export type Database = {
           },
         ]
       }
+      onboarding_testimonials: {
+        Row: {
+          created_at: string
+          gradient: string
+          id: string
+          is_active: boolean
+          name: string
+          photo_url: string | null
+          quote: string
+          role_visibility: string
+          sort_order: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          gradient?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          photo_url?: string | null
+          quote: string
+          role_visibility?: string
+          sort_order?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          gradient?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          photo_url?: string | null
+          quote?: string
+          role_visibility?: string
+          sort_order?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       orders: {
         Row: {
           buyer_id: string | null

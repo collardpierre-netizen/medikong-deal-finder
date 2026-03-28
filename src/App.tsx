@@ -25,6 +25,7 @@ import CategoryPage from "./pages/CategoryPage";
 import PromotionsPage from "./pages/PromotionsPage";
 import SellerOnboardingPage from "./pages/SellerOnboardingPage";
 import BuyerOnboardingPage from "./pages/BuyerOnboardingPage";
+import OnboardingPage from "./pages/OnboardingPage";
 import BuyerCompletionPage from "./pages/BuyerCompletionPage";
 import NotFound from "./pages/NotFound";
 import InvestPage from "./pages/InvestPage";
@@ -74,6 +75,7 @@ import AdminLogs from "./pages/admin/AdminLogs";
 import AdminLoginPage from "./pages/admin/AdminLoginPage";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminAuditLog from "./pages/admin/AdminAuditLog";
+import AdminOnboardingCMS from "./pages/admin/AdminOnboardingCMS";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 
@@ -108,6 +110,7 @@ const App = () => (
             <Route path="/promotions" element={<PromotionsPage />} />
             <Route path="/seller-onboarding" element={<SellerOnboardingPage />} />
             <Route path="/buyer-onboarding" element={<BuyerOnboardingPage />} />
+            <Route path="/onboarding" element={<OnboardingPage />} />
             <Route path="/buyer-completion" element={<BuyerCompletionPage />} />
             <Route path="/invest" element={<InvestPage />} />
             <Route path="/mot-de-passe-oublie" element={<ForgotPasswordPage />} />
@@ -144,6 +147,7 @@ const App = () => (
               <Route path="logs" element={<AdminLogs />} />
               <Route path="users" element={<AdminUsers />} />
               <Route path="audit-log" element={<AdminAuditLog />} />
+              <Route path="onboarding-cms" element={<AdminOnboardingCMS />} />
             </Route>
 
             {/* Vendor Dashboard */}

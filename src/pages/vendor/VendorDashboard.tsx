@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { VCard } from "@/components/vendor/ui/VCard";
 import { VStat } from "@/components/vendor/ui/VStat";
 import { VMiniBar } from "@/components/vendor/ui/VMiniBar";
@@ -7,6 +8,7 @@ import { VBtn } from "@/components/vendor/ui/VBtn";
 import { vendorProfile, buyerTypeColors } from "@/lib/vendor-tokens";
 import { dashboardAlerts, dashboardOrders, dashboardMessages, pricingCoachSuggestions } from "@/data/vendor-mock";
 import { AlertTriangle, MessageSquare, ArrowRight, Sparkles, CircleDot } from "lucide-react";
+import OrderDetailPopup from "@/components/vendor/OrderDetailPopup";
 
 const statusLabels: Record<string, string> = { pending: "En attente", confirmed: "A expedier", shipped: "Expedie", delivered: "Livre" };
 const statusColors: Record<string, string> = { pending: "#F59E0B", confirmed: "#1B5BDA", shipped: "#7C3AED", delivered: "#059669" };
@@ -23,6 +25,7 @@ const today = new Date();
 const dateStr = today.toLocaleDateString("fr-BE", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 
 export default function VendorDashboard() {
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const pendingOrders = dashboardOrders.filter(o => o.status === "pending" || o.status === "confirmed");
   const sparkData = [5800, 6200, 7100, 5400, 6800, 7200, 6700];
   const dayOfWeek = today.getDay();
@@ -69,7 +72,7 @@ export default function VendorDashboard() {
             {pendingOrders.map(o => {
               const age = orderAgeBadge(o.age);
               return (
-                <div key={o.id} className="bg-white rounded-lg border border-[#E2E8F0] p-3">
+                <div key={o.id} className="bg-white rounded-lg border border-[#E2E8F0] p-3 cursor-pointer hover:shadow-md transition-shadow" onClick={() => setSelectedOrderId(o.id)}>
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-[11px] font-mono text-[#8B95A5]">{o.id}</span>
                     <VBadge color={age.color}>{age.label}</VBadge>
@@ -139,7 +142,7 @@ export default function VendorDashboard() {
                 {dashboardOrders.map(o => {
                   const bt = buyerTypeColors[o.buyerType] || { text: "#616B7C", bg: "#616B7C18" };
                   return (
-                    <tr key={o.id} className="border-b border-[#E2E8F0] last:border-0 hover:bg-[#F8FAFC] transition-colors">
+                    <tr key={o.id} className="border-b border-[#E2E8F0] last:border-0 hover:bg-[#F8FAFC] transition-colors cursor-pointer" onClick={() => setSelectedOrderId(o.id)}>
                       <td className="py-2.5 font-mono text-[11px] text-[#8B95A5]">{o.id}</td>
                       <td className="py-2.5 font-medium text-[#1D2530]">{o.buyer}</td>
                       <td className="py-2.5"><VBadge color={bt.text} bg={bt.bg}>{o.buyerType}</VBadge></td>
@@ -221,6 +224,11 @@ export default function VendorDashboard() {
           ))}
         </div>
       </VCard>
+
+      {/* Order Detail Popup */}
+      {selectedOrderId && (
+        <OrderDetailPopup orderId={selectedOrderId} onClose={() => setSelectedOrderId(null)} />
+      )}
     </div>
   );
 }

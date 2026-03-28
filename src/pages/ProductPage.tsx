@@ -83,7 +83,15 @@ export default function ProductPage() {
   return (
     <Layout>
       <PageTransition>
-        <div className="mk-container py-6 md:py-8">
+         <div className="mk-container py-6 md:py-8">
+           {/* Back to results */}
+           <button
+             onClick={() => navigate(-1)}
+             className="inline-flex items-center gap-1.5 text-sm text-mk-sec hover:text-mk-blue transition-colors mb-4"
+           >
+             <ArrowLeft size={16} />
+             <span>Retour aux résultats</span>
+           </button>
           <div className="flex flex-col md:flex-row gap-6 md:gap-8">
             {/* Image */}
             <motion.div

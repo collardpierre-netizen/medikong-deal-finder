@@ -237,6 +237,7 @@ const App = () => (
       </I18nProvider>
     </AuthProvider>
   </QueryClientProvider>
+  </HelmetProvider>
 );
 
 export default App;

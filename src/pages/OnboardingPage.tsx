@@ -66,11 +66,10 @@ const fulfillmentOptions = [
 const leadTimeOptions = ["24h", "48h", "3-5 jours", "1-2 semaines"];
 
 /* ─── Logo ─── */
+import logoLight from "@/assets/logo-horizontal.png";
+import logoDark from "@/assets/Logo_horizontal_sombre2.png";
 const Logo = ({ white = false, size = 22 }: { white?: boolean; size?: number }) => (
-  <span style={{ fontWeight: 700, fontSize: size, fontFamily: "'DM Sans', sans-serif" }}>
-    <span style={{ color: white ? "#fff" : S.navy }}>MediKong</span>
-    <span style={{ color: S.pink }}>.pro</span>
-  </span>
+  <img src={white ? logoLight : logoDark} alt="MediKong.pro" style={{ height: size + 14 }} />
 );
 
 /* ─── Reusable UI ─── */

@@ -14,6 +14,29 @@ export function Navbar() {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { cartCount } = useCart();
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isVendor, setIsVendor] = useState(false);
+
+  useEffect(() => {
+    if (!user) { setIsAdmin(false); setIsVendor(false); return; }
+    const check = async () => {
+      const { data: adminData } = await supabase
+        .from("admin_users")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("is_active", true)
+        .maybeSingle();
+      setIsAdmin(!!adminData);
+
+      const { data: vendorData } = await supabase
+        .from("vendors")
+        .select("id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      setIsVendor(!!vendorData);
+    };
+    check();
+  }, [user]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();

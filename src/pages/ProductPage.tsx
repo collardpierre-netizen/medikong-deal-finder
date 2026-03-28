@@ -164,7 +164,7 @@ function OfferRow({ offer, product, user, navigate, addToCart, isBest, delay = 0
   );
 }
 
-
+export default function ProductPage() {
   const { slug } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();

@@ -152,6 +152,10 @@ const App = () => (
             <Route path="/presse" element={<PressPage />} />
             <Route path="/investir" element={<InvestirPage />} />
 
+            <Route path="/professionnels" element={<ProfessionnelsPage />} />
+            <Route path="/sourcing" element={<SourcingPage />} />
+            <Route path="/categories" element={<CategoriesPage />} />
+
             {/* Trust & Process */}
             <Route path="/verification-fournisseurs" element={<SupplierVerificationPage />} />
             <Route path="/garantie-qualite" element={<QualityGuaranteePage />} />

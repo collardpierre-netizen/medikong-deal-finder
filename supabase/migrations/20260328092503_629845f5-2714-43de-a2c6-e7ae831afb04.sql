@@ -1,0 +1,2 @@
+UPDATE vendors SET user_id = '2f60e0ec-bb7a-4bff-88d5-0a0c9ad1ae42' WHERE id = '79081f80-4a5f-4d81-8770-bcc11484bfcb';
+UPDATE vendors SET user_id = '2f60e0ec-bb7a-4bff-88d5-0a0c9ad1ae42' WHERE id = 'cb688e04-22c7-48ef-b7c6-d286be8d05ae';

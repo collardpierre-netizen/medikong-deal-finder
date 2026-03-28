@@ -138,6 +138,37 @@
 }
 
 @keyframes fadeInUp { from { opacity:0; transform:translateY(12px) } to { opacity:1; transform:translateY(0) } }
+
+/* Invest page background patterns */
+.invest-dots {
+  background-image: radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+.invest-grid {
+  background-image:
+    linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+.invest-glow-tl {
+  background: radial-gradient(ellipse 600px 400px at 10% 20%, rgba(27,91,218,0.15), transparent);
+}
+.invest-glow-br {
+  background: radial-gradient(ellipse 500px 500px at 90% 80%, rgba(5,150,105,0.12), transparent);
+}
+.invest-glow-center {
+  background: radial-gradient(ellipse 700px 400px at 50% 50%, rgba(27,91,218,0.08), transparent);
+}
+.invest-light-dots {
+  background-image: radial-gradient(circle, rgba(27,91,218,0.04) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+.invest-light-grid {
+  background-image:
+    linear-gradient(rgba(27,91,218,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(27,91,218,0.03) 1px, transparent 1px);
+  background-size: 80px 80px;
+}
 @keyframes fadeIn { from { opacity:0 } to { opacity:1 } }
 .anim-up { animation: fadeInUp 350ms ease-out both; }
 .anim-fade { animation: fadeIn 300ms ease-out both; }

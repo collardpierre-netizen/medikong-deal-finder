@@ -169,6 +169,11 @@ export default function InvestPage() {
     <Layout>
       {/* ════════════ HERO ════════════ */}
       <section className="relative overflow-hidden" style={{ background: "linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #1a365d 100%)" }}>
+        {/* Background patterns */}
+        <div className="absolute inset-0 invest-dots" />
+        <div className="absolute inset-0 invest-grid" />
+        <div className="absolute inset-0 invest-glow-tl" />
+        <div className="absolute inset-0 invest-glow-br" />
         <div className="max-w-4xl mx-auto px-5 py-24 md:py-32 text-center text-white relative z-10">
           <motion.span className="inline-flex items-center gap-2 bg-mk-green/90 rounded-full px-5 py-2 text-sm mb-10 text-white font-medium"
             initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
@@ -228,8 +233,9 @@ export default function InvestPage() {
       </nav>
 
       {/* ════════════ CHIFFRES CLÉS LEVÉE ════════════ */}
-      <section id="opportunite" className="py-16 md:py-24 bg-white scroll-mt-14">
-        <div className="max-w-5xl mx-auto px-5">
+      <section id="opportunite" className="relative py-16 md:py-24 bg-white scroll-mt-14">
+        <div className="absolute inset-0 invest-light-dots" />
+        <div className="max-w-5xl mx-auto px-5 relative z-10">
           <div className="text-center mb-12">
             <h2 className="text-2xl md:text-4xl font-bold text-mk-navy mb-3">Chiffres clés de la levée</h2>
             <p className="text-mk-sec max-w-xl mx-auto text-sm md:text-base">Toutes les informations essentielles pour prendre votre décision d'investissement.</p>
@@ -246,8 +252,9 @@ export default function InvestPage() {
       </section>
 
       {/* ════════════ PLATEFORME ════════════ */}
-      <section className="py-16 md:py-24 bg-mk-alt">
-        <div className="max-w-5xl mx-auto px-5">
+      <section className="relative py-16 md:py-24 bg-mk-alt overflow-hidden">
+        <div className="absolute inset-0 invest-light-grid" />
+        <div className="max-w-5xl mx-auto px-5 relative z-10">
           <div className="text-center mb-12">
             <h2 className="text-2xl md:text-4xl font-bold text-mk-navy mb-3">La plateforme que les professionnels de santé attendaient</h2>
             <p className="text-mk-sec max-w-2xl mx-auto text-sm md:text-base">L'outil d'achat B2B qui modernise les échanges entre professionnels de santé et fournisseurs.</p>
@@ -265,8 +272,9 @@ export default function InvestPage() {
       </section>
 
       {/* ════════════ MARCHÉ ════════════ */}
-      <section id="chiffres" className="py-16 md:py-24 bg-white scroll-mt-14">
-        <div className="max-w-5xl mx-auto px-5">
+      <section id="chiffres" className="relative py-16 md:py-24 bg-white scroll-mt-14 overflow-hidden">
+        <div className="absolute inset-0 invest-light-dots" />
+        <div className="max-w-5xl mx-auto px-5 relative z-10">
           <div className="text-center mb-12">
             <h2 className="text-2xl md:text-4xl font-bold text-mk-navy mb-3">Un marché colossal, une digitalisation naissante</h2>
             <p className="text-mk-sec max-w-2xl mx-auto text-sm md:text-base">Le secteur de la distribution de produits de santé reste dominé par un oligopole peu innovant. MediKong apporte la couche digitale qui manque à ce marché de €52 milliards.</p>
@@ -290,7 +298,9 @@ export default function InvestPage() {
           </div>
 
           {/* ── POTENTIEL DE CRÉATION DE VALEUR — dark card ── */}
-          <div className="rounded-2xl p-8 md:p-12 mb-8" style={{ background: "linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #1a365d 100%)" }}>
+          <div className="relative rounded-2xl p-8 md:p-12 mb-8 overflow-hidden" style={{ background: "linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #1a365d 100%)" }}>
+            <div className="absolute inset-0 invest-dots" />
+            <div className="absolute inset-0 invest-glow-center" />
             <div className="text-center mb-10">
               <p className="text-amber-400 text-sm font-semibold uppercase tracking-widest mb-2">✨ Potentiel de création de valeur ✨</p>
               <p className="text-white/50 text-sm max-w-xl mx-auto">Projection à 5 ans basée sur les multiples de valorisation des marketplaces B2B santé comparables.</p>
@@ -354,8 +364,9 @@ export default function InvestPage() {
       </section>
 
       {/* ════════════ MODÈLE HYBRIDE ════════════ */}
-      <section className="py-16 md:py-24 bg-mk-alt">
-        <div className="max-w-5xl mx-auto px-5">
+      <section className="relative py-16 md:py-24 bg-mk-alt overflow-hidden">
+        <div className="absolute inset-0 invest-light-grid" />
+        <div className="max-w-5xl mx-auto px-5 relative z-10">
           <div className="text-center mb-12">
             <h2 className="text-2xl md:text-4xl font-bold text-mk-navy mb-3">Un modèle hybride à forte scalabilité</h2>
             <p className="text-mk-sec max-w-2xl mx-auto text-sm md:text-base">Distribution + Marketplace + Data — à mesure que la part marketplace croît, les marges s'élèvent significativement.</p>
@@ -511,8 +522,9 @@ export default function InvestPage() {
       </section>
 
       {/* ════════════ COMMENT INVESTIR ════════════ */}
-      <section id="comment" className="py-16 md:py-24 bg-mk-alt scroll-mt-14">
-        <div className="max-w-4xl mx-auto px-5 text-center">
+      <section id="comment" className="relative py-16 md:py-24 bg-mk-alt scroll-mt-14 overflow-hidden">
+        <div className="absolute inset-0 invest-light-dots" />
+        <div className="max-w-4xl mx-auto px-5 text-center relative z-10">
           <h2 className="text-2xl md:text-4xl font-bold text-mk-navy mb-3">Investissez en 3 étapes simples</h2>
           <p className="text-mk-sec text-sm mb-10">Un processus simple et sécurisé.</p>
           <div className="grid md:grid-cols-3 gap-6 mb-10">
@@ -554,6 +566,9 @@ export default function InvestPage() {
 
       {/* ════════════ FINAL CTA ════════════ */}
       <section className="py-16 md:py-24 relative overflow-hidden" style={{ background: "linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #1a365d 100%)" }}>
+        <div className="absolute inset-0 invest-dots" />
+        <div className="absolute inset-0 invest-grid" />
+        <div className="absolute inset-0 invest-glow-tl" />
         <div className="max-w-3xl mx-auto px-5 text-center text-white relative z-10">
           <h2 className="text-2xl md:text-4xl font-bold mb-4">Prêt à investir dans l'avenir de la santé ?</h2>
           <p className="text-white/60 max-w-lg mx-auto mb-10 text-sm md:text-base">Rejoignez les premiers investisseurs de MediKong et bénéficiez du Tax Shelter.</p>

@@ -144,9 +144,9 @@ const App = () => (
               <Route path="finance" element={<VendorFinance />} />
               <Route path="logistics" element={<VendorLogistics />} />
               <Route path="health" element={<VendorHealth />} />
-              <Route path="messages" element={<VendorPlaceholder pageKey="messages" />} />
-              <Route path="academy" element={<VendorPlaceholder pageKey="academy" />} />
-              <Route path="settings" element={<VendorPlaceholder pageKey="settings" />} />
+              <Route path="messages" element={<VendorMessages />} />
+              <Route path="academy" element={<VendorAcademy />} />
+              <Route path="settings" element={<VendorSettings />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />

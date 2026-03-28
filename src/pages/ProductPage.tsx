@@ -405,7 +405,7 @@ export default function ProductPage() {
                           <span className="text-mk-ter">{c.date}</span>
                         </motion.div>
                       ))}
-                    </div>
+                    </ScrollableTable>
                     <p className="text-xs text-mk-ter italic mt-3">Prix releves le 25/03/2026. MediKong n'est pas responsable des prix tiers.</p>
                   </motion.div>
                 )}

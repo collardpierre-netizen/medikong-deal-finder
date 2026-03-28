@@ -536,7 +536,7 @@ export default function BuyerOnboardingPage() {
               {acceptTerms && <Check size={12} color="#fff" />}
             </div>
             <span style={{ fontSize: 12, color: S.sec }}>
-              J'accepte les <a href="#" style={{ color: S.blue }}>conditions générales</a> et la <a href="#" style={{ color: S.blue }}>politique de confidentialité</a>
+              J'accepte les <a href="/cgv" style={{ color: S.blue }}>conditions générales</a> et la <a href="/politique-confidentialite" style={{ color: S.blue }}>politique de confidentialité</a>
             </span>
           </label>
           <p style={{ fontSize: 11, color: S.ter, marginTop: 8, marginLeft: 26 }}>RGPD · Balooh SRL · TVA BE 1005.771.323</p>

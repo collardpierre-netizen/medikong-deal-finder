@@ -724,32 +724,114 @@ export default function ProductPage() {
 
               {/* Margin calculator */}
               <AnimatedSection className="mt-8" delay={0.1}>
-                <h2 className="text-lg font-bold text-mk-navy mb-4">Calculateur de marge</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div>
-                    <label className="text-xs text-mk-sec mb-1 block">Prix d'achat HT</label>
-                    <input value={buyPrice || product.price.toString()} onChange={e => setBuyPrice(e.target.value)} className="w-full border border-mk-line rounded-md px-3 py-2 text-sm" />
-                  </div>
-                  <div>
-                    <label className="text-xs text-mk-sec mb-1 block">Prix de vente TTC</label>
-                    <input value={sellPrice || (product.price * 1.7).toFixed(2)} onChange={e => setSellPrice(e.target.value)} className="w-full border border-mk-line rounded-md px-3 py-2 text-sm" />
-                  </div>
-                  <div>
-                    <label className="text-xs text-mk-sec mb-1 block">Marge brute</label>
-                    <motion.div
-                      className="text-2xl font-bold text-mk-green mt-1"
-                      key={margin}
-                      initial={{ scale: 1.2, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                    >
-                      +{margin}%
-                    </motion.div>
-                  </div>
-                </div>
-              </AnimatedSection>
+                {(() => {
+                  const existingWatch = product ? getWatchForProduct(product.id) : undefined;
+                  const bestMkPrice = product?.price || 0;
+                  const userEnteredPrice = buyPrice ? parseFloat(buyPrice) : (existingWatch?.user_price_excl_vat || 0);
+                  const diff = userEnteredPrice > 0 ? bestMkPrice - userEnteredPrice : 0;
+                  const diffPct = userEnteredPrice > 0 ? ((diff / userEnteredPrice) * 100) : 0;
+                  const hasSaving = diff < 0; // MediKong is cheaper
+                  const isMoreExpensive = diff > 0; // user pays less currently
 
-              {/* Seller CTA */}
+                  return (
+                    <div className="border border-mk-line rounded-xl p-5">
+                      <div className="flex items-center gap-2 mb-4">
+                        <div className="w-8 h-8 rounded-lg bg-[#EFF6FF] flex items-center justify-center">
+                          <Sliders size={16} className="text-[#1B5BDA]" />
+                        </div>
+                        <h2 className="text-base font-bold text-mk-navy">Calculateur de marge personnalisé</h2>
+                      </div>
+
+                      <div className="space-y-4">
+                        <div>
+                          <label className="text-xs font-medium text-mk-sec mb-1.5 block">Votre prix d'achat HT</label>
+                          <div className="relative">
+                            <input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              value={buyPrice || (existingWatch ? existingWatch.user_price_excl_vat.toString() : "")}
+                              onChange={e => setBuyPrice(e.target.value)}
+                              placeholder="0,00"
+                              className="w-full border border-mk-line rounded-lg px-3 py-2.5 text-sm pr-8 focus:border-[#1B5BDA] focus:ring-1 focus:ring-[#1B5BDA]/20 outline-none transition-all"
+                            />
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-mk-ter">€</span>
+                          </div>
+                          <p className="text-xs text-[#1B5BDA] mt-1.5">
+                            Entrez votre prix d'achat pour voir votre économie potentielle et le sauvegarder 💾
+                          </p>
+                        </div>
+
+                        {userEnteredPrice > 0 && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="bg-[#F8FAFC] rounded-lg p-4 space-y-3"
+                          >
+                            <div className="grid grid-cols-3 gap-3 text-center">
+                              <div>
+                                <p className="text-xs text-mk-sec mb-1">Votre prix</p>
+                                <p className="text-base font-bold text-mk-navy">{formatPrice(userEnteredPrice)} €</p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-mk-sec mb-1">Meilleur MediKong</p>
+                                <p className="text-base font-bold text-[#1B5BDA]">{formatPrice(bestMkPrice)} €</p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-mk-sec mb-1">Différence</p>
+                                <p className={`text-base font-bold ${hasSaving ? "text-mk-green" : isMoreExpensive ? "text-mk-red" : "text-mk-navy"}`}>
+                                  {diff > 0 ? "+" : ""}{formatPrice(Math.abs(diff))} €
+                                </p>
+                                <p className={`text-xs ${hasSaving ? "text-mk-green" : isMoreExpensive ? "text-mk-red" : "text-mk-ter"}`}>
+                                  ({diffPct > 0 ? "+" : ""}{diffPct.toFixed(1)}%)
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className={`flex items-center gap-2 text-sm font-medium px-3 py-2 rounded-lg ${
+                              hasSaving ? "bg-green-50 text-mk-green" : isMoreExpensive ? "bg-blue-50 text-[#1B5BDA]" : "bg-gray-50 text-mk-sec"
+                            }`}>
+                              {hasSaving ? (
+                                <>📉 Économie possible de {formatPrice(Math.abs(diff))} € par unité</>
+                              ) : isMoreExpensive ? (
+                                <>✅ Vous avez déjà un meilleur prix ! MediKong cherche à négocier pour vous.</>
+                              ) : (
+                                <>➡️ Prix identique</>
+                              )}
+                            </div>
+
+                            {user && (
+                              <motion.button
+                                onClick={() => {
+                                  savePrice.mutate(
+                                    { productId: product.id, price: userEnteredPrice },
+                                    { onSuccess: () => toast.success("Prix sauvegardé ! Retrouvez-le dans Mes Prix.") }
+                                  );
+                                }}
+                                className="w-full bg-[#1B5BDA] hover:bg-[#1549b8] text-white font-semibold text-sm py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2"
+                                whileTap={{ scale: 0.97 }}
+                              >
+                                💾 {existingWatch ? "Mettre à jour mon prix" : "Sauvegarder et suivre"}
+                              </motion.button>
+                            )}
+                            {!user && (
+                              <Link to="/connexion" className="block w-full text-center bg-[#1B5BDA] hover:bg-[#1549b8] text-white font-semibold text-sm py-2.5 rounded-lg transition-colors">
+                                Se connecter pour sauvegarder
+                              </Link>
+                            )}
+                          </motion.div>
+                        )}
+
+                        {existingWatch && !buyPrice && (
+                          <div className="bg-blue-50 rounded-lg p-3 text-sm text-[#1B5BDA] flex items-center gap-2">
+                            ✅ Prix suivi : {formatPrice(existingWatch.user_price_excl_vat)} € · Mis à jour le {new Date(existingWatch.updated_at).toLocaleDateString("fr-BE")}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
+              </AnimatedSection>
               <AnimatedSection className="mt-8" delay={0.1}>
                 <motion.div
                   className="border-2 border-dashed border-mk-line rounded-lg p-6 text-center"

@@ -104,7 +104,7 @@ export default function VendorOffers() {
           )}
 
           {/* Table */}
-          <VCard className="!p-0 overflow-hidden">
+          <VCard className="!p-0">
             <ScrollableTable>
               <table className="w-full text-[13px]">
                 <thead>

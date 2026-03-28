@@ -372,7 +372,7 @@ export default function ProductPage() {
           <div className="flex flex-col md:flex-row gap-6 md:gap-8">
             {/* Image */}
             <motion.div
-              className="w-full md:w-[400px] shrink-0 md:sticky md:top-20 self-start"
+              className="w-full md:w-[400px] shrink-0 md:sticky md:top-20 self-start max-h-[220px] md:max-h-none overflow-hidden"
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}

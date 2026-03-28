@@ -67,8 +67,8 @@ export default function LoginPage() {
         </Link>
 
         <div className="mt-6 bg-mk-deal rounded-lg p-4">
-          <p className="text-xs text-mk-green font-medium">Plateforme B2B reservee aux professionnels</p>
-          <p className="text-xs text-mk-sec mt-1">Donnees securisees et conformes RGPD</p>
+          <p className="text-xs text-mk-green font-medium">Plateforme B2B réservée aux professionnels</p>
+          <p className="text-xs text-mk-sec mt-1">Données sécurisées et conformes RGPD</p>
         </div>
       </div>
     </div>

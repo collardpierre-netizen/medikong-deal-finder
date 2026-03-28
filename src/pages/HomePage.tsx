@@ -78,8 +78,29 @@ export default function HomePage() {
     if (searchQuery.trim()) navigate(`/recherche?q=${encodeURIComponent(searchQuery.trim())}`);
   };
 
+  const orgJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "MediKong",
+    "url": "https://medikong-deal-finder.lovable.app",
+    "logo": "https://medikong-deal-finder.lovable.app/logo-pwa-512.png",
+    "description": "Marketplace B2B de fournitures médicales en Belgique",
+    "address": { "@type": "PostalAddress", "streetAddress": "23 rue de la Procession", "addressLocality": "Ath", "postalCode": "7822", "addressCountry": "BE" },
+    "taxID": "BE 1005.771.323"
+  };
+
+  const faqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": faqs.map(f => ({ "@type": "Question", "name": f.q, "acceptedAnswer": { "@type": "Answer", "text": f.a } }))
+  };
+
   return (
-    <Layout>
+    <Layout title="MediKong — Fournitures médicales B2B en Belgique | Comparez & Commandez" description="MediKong.pro : marketplace B2B + comparateur de prix pour fournitures médicales en Belgique. Comparez, commandez, économisez.">
+      <Helmet>
+        <script type="application/ld+json">{JSON.stringify(orgJsonLd)}</script>
+        <script type="application/ld+json">{JSON.stringify(faqJsonLd)}</script>
+      </Helmet>
       {/* ═══ HERO — centered, clean ═══ */}
       <section className="pt-10 md:pt-20 pb-6 md:pb-10">
         <div className="mk-container text-center max-w-2xl mx-auto">

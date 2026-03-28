@@ -99,6 +99,8 @@ const App = () => (
             <Route path="/categorie/:slug" element={<CategoryPage />} />
             <Route path="/promotions" element={<PromotionsPage />} />
             <Route path="/seller-onboarding" element={<SellerOnboardingPage />} />
+            <Route path="/buyer-onboarding" element={<BuyerOnboardingPage />} />
+            <Route path="/buyer-completion" element={<BuyerCompletionPage />} />
             <Route path="/invest" element={<InvestPage />} />
             <Route path="/mot-de-passe-oublie" element={<ForgotPasswordPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />

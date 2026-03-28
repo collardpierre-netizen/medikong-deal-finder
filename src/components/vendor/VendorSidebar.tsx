@@ -91,6 +91,7 @@ export function VendorSidebar({ onNavigate }: VendorSidebarProps) {
                   <NavLink
                     key={item.key}
                     to={item.path}
+                    onClick={onNavigate}
                     className={cn(
                       "flex items-center gap-3 rounded-md text-[13px] font-medium transition-colors relative",
                       collapsed ? "justify-center px-2 py-2.5" : "px-3 py-2",

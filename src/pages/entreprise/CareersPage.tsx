@@ -25,7 +25,7 @@ export default function CareersPage() {
   return (
     <EntrepriseLayout>
       <EntrepriseHero
-        variant="pink"
+        variant="blue"
         badge="On recrute"
         title="Rejoignez l'aventure MediKong"
         subtitle="Construisez la marketplace médicale de demain avec nous."

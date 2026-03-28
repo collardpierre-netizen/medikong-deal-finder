@@ -101,7 +101,7 @@ export function Navbar() {
                 </Link>
               )}
               {isVendor && (
-                <Link to="/vendor" className="flex items-center gap-1.5 text-pink-400 hover:text-pink-300 text-xs font-semibold px-2.5 py-1 rounded-full" style={{ background: "rgba(231,8,102,0.15)" }}>
+                <Link to="/vendor" className="flex items-center gap-1.5 text-blue-300 hover:text-blue-200 text-xs font-semibold px-2.5 py-1 rounded-full" style={{ background: "rgba(27,91,218,0.12)" }}>
                   <Store size={14} />
                   <span>Vendeur</span>
                 </Link>

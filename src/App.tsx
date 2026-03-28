@@ -35,6 +35,9 @@ import VendorOpportunities from "./pages/vendor/VendorOpportunities";
 import VendorAlerts from "./pages/vendor/VendorAlerts";
 import VendorTenders from "./pages/vendor/VendorTenders";
 import VendorAnalytics from "./pages/vendor/VendorAnalytics";
+import VendorFinance from "./pages/vendor/VendorFinance";
+import VendorLogistics from "./pages/vendor/VendorLogistics";
+import VendorHealth from "./pages/vendor/VendorHealth";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminPlaceholder from "./pages/admin/AdminPlaceholder";
 import AdminVendeurs from "./pages/admin/AdminVendeurs";
@@ -135,9 +138,9 @@ const App = () => (
               <Route path="alerts" element={<VendorAlerts />} />
               <Route path="tenders" element={<VendorTenders />} />
               <Route path="analytics" element={<VendorAnalytics />} />
-              <Route path="finance" element={<VendorPlaceholder pageKey="finances" />} />
-              <Route path="logistics" element={<VendorPlaceholder pageKey="logistics" />} />
-              <Route path="health" element={<VendorPlaceholder pageKey="health" />} />
+              <Route path="finance" element={<VendorFinance />} />
+              <Route path="logistics" element={<VendorLogistics />} />
+              <Route path="health" element={<VendorHealth />} />
               <Route path="messages" element={<VendorPlaceholder pageKey="messages" />} />
               <Route path="academy" element={<VendorPlaceholder pageKey="academy" />} />
               <Route path="settings" element={<VendorPlaceholder pageKey="settings" />} />

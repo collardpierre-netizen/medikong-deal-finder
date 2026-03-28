@@ -45,6 +45,7 @@ export default function AccountPage() {
   const { favorites, isFavorite, toggleFavorite } = useFavorites();
   const { lists, createList, deleteList } = useFavoriteLists();
   const { activities } = useRecentActivity();
+  const { watches, removeWatch } = usePriceWatches();
   const [activeTab, setActiveTab] = useState("profil");
   const [newListName, setNewListName] = useState("");
 

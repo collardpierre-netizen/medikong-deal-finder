@@ -296,7 +296,7 @@ export default function VendorOffers() {
                   ))}
                 </tbody>
               </table>
-            </div>
+            </ScrollableTable>
             <div className="bg-[#FFFBEB] border border-[#FDE68A] rounded-lg p-3 text-[12px] text-[#92400E]">
               <AlertTriangle size={12} className="inline mr-1.5 text-[#F59E0B]" />
               Les changements de prix s'appliquent uniquement aux commandes futures. Les commandes passees conservent le prix au moment de la vente.

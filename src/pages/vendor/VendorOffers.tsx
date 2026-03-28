@@ -66,7 +66,7 @@ export default function VendorOffers() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <VStat label="Offres actives" value={activeOffers.length} icon="Tag" color="#059669" />
         <VStat label="Buy Box detenues" value={`${buyBoxCount}/${activeOffers.length}`} icon="Trophy" color="#1B5BDA" />
-        <VStat label="En rupture" value={ruptureCount} icon="AlertTriangle" color="#EF4343" />
+        <VStat label="En rupture" value={ruptureCount} icon="TriangleAlert" color="#EF4343" />
         <VStat label="Net en poche (mois)" value={`${netMonth.toLocaleString("fr-BE", { minimumFractionDigits: 0 })} EUR`} icon="Euro" color="#7C3AED" />
       </div>
 

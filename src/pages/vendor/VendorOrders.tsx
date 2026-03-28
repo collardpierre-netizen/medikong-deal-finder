@@ -40,7 +40,7 @@ export default function VendorOrders() {
         <VStat label="Commandes (mois)" value={vendorOrders.length} icon="ShoppingCart" color="#1B5BDA" trend={12} />
         <VStat label="CA mois" value={`${totalCA.toLocaleString("fr-BE", { minimumFractionDigits: 2 })} EUR`} icon="Euro" color="#059669" trend={8.3} />
         <VStat label="En cours" value={inProgress} icon="Loader" color="#7C3AED" />
-        <VStat label="Litiges" value={disputes} icon="AlertTriangle" color="#EF4343" />
+        <VStat label="Litiges" value={disputes} icon="TriangleAlert" color="#EF4343" />
       </div>
 
       <VTabBar tabs={tabs} active={activeTab} onChange={setActiveTab} />

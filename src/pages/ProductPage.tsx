@@ -1,5 +1,5 @@
 import { Layout } from "@/components/layout/Layout";
-import { ProductImage } from "@/components/shared/ProductCard";
+import { ProductImage, getProductImages } from "@/components/shared/ProductCard";
 import { competitors, formatPrice, productColors, productIconMap } from "@/data/mock";
 import { useProducts, useProduct, useProductOffers } from "@/hooks/useProducts";
 import { useCart } from "@/hooks/useCart";

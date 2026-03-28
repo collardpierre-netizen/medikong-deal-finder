@@ -60,16 +60,15 @@ export default function CartPage() {
       groups[key].push(item);
     });
     return Object.entries(groups).map(([vendorId, groupItems]) => {
-      const total = groupItems.reduce((s, i) => s + (i.price_ht || i.product?.price || 0) * i.quantity, 0);
+      const total = groupItems.reduce((s, i) => s + (i.price_excl_vat || i.product?.price || 0) * i.quantity, 0);
       const vendor = vendorMap.get(vendorId);
-      const vendorMov = Number(vendor?.min_order_ht || vendor?.franco_ht || MOV_TIERS[0]);
-      const currentMov = vendorMov > 0 ? vendorMov : MOV_TIERS[0];
+      const currentMov = MOV_TIERS[0];
       const remaining = Math.max(currentMov - total, 0);
       const progress = Math.min((total / currentMov) * 100, 100);
       return {
         vendorId,
-        vendorName: vendor?.display_name || vendor?.company_name || `Fournisseur #${vendorId.slice(0, 6).toUpperCase()}`,
-        isVerified: vendor?.status === "active",
+        vendorName: vendor?.company_name || vendor?.name || `Fournisseur #${vendorId.slice(0, 6).toUpperCase()}`,
+        isVerified: vendor?.is_verified || false,
         items: groupItems,
         total,
         currentMov,

@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { VCard } from "@/components/vendor/ui/VCard";
 import { VBadge } from "@/components/vendor/ui/VBadge";
-import { Percent, BarChart3, TrendingDown, Zap, Target, ArrowRight, Info } from "lucide-react";
+import { Percent, BarChart3, TrendingDown, Zap, Target, Info, Layers, Split } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 
@@ -27,12 +27,26 @@ function getNextTier(tiers: Tier[], gmv: number): Tier | null {
   return null;
 }
 
+const modelLabels: Record<string, string> = {
+  fixed_rate: "Taux fixe",
+  tiered_gmv: "Paliers GMV",
+  category_based: "Par catégorie",
+  margin_split: "Split marge",
+};
+
+const modelIcons: Record<string, React.ElementType> = {
+  fixed_rate: Percent,
+  tiered_gmv: BarChart3,
+  category_based: Layers,
+  margin_split: Split,
+};
+
 export default function VendorCommissionTab() {
-  // Mock current vendor GMV — in production this comes from orders aggregation
   const currentGmv = 28500;
   const [simGmv, setSimGmv] = useState(currentGmv);
   const [simRevenue, setSimRevenue] = useState(currentGmv);
 
+  // Fetch vendor-specific rule OR default rules
   const { data: rules = [] } = useQuery({
     queryKey: ["vendor-commission-rules"],
     queryFn: async () => {
@@ -46,17 +60,27 @@ export default function VendorCommissionTab() {
     },
   });
 
-  // Find the tiered rule (or default)
-  const tieredRule = rules.find((r: any) => r.model === "tiered_gmv") || rules.find((r: any) => r.is_default);
-  const tiers: Tier[] = (tieredRule?.model === "tiered_gmv" ? tieredRule.tiers : []) as Tier[];
-  const sortedTiers = [...tiers].sort((a, b) => a.from - b.from);
+  // Determine which rule applies to this vendor
+  const activeRule = useMemo(() => {
+    // Vendor-specific first, then default
+    const vendorSpecific = rules.find((r: any) => r.vendor_id);
+    if (vendorSpecific) return vendorSpecific;
+    const defaultRule = rules.find((r: any) => r.is_default);
+    return defaultRule || rules[0] || null;
+  }, [rules]);
 
+  const model = activeRule?.model || "fixed_rate";
+  const ModelIcon = modelIcons[model] || Percent;
+
+  // Tiered model logic
+  const tiers: Tier[] = (model === "tiered_gmv" ? activeRule?.tiers : []) as Tier[];
+  const sortedTiers = [...tiers].sort((a, b) => a.from - b.from);
   const currentTier = getTierForGmv(sortedTiers, currentGmv);
   const simTier = getTierForGmv(sortedTiers, simGmv);
   const nextTier = getNextTier(sortedTiers, currentGmv);
 
-  const currentRate = currentTier?.rate ?? tieredRule?.fixed_rate ?? 12;
-  const simRate = simTier?.rate ?? currentRate;
+  const currentRate = model === "tiered_gmv" ? (currentTier?.rate ?? 12) : (activeRule?.fixed_rate ?? 12);
+  const simRate = model === "tiered_gmv" ? (simTier?.rate ?? currentRate) : currentRate;
 
   const currentCommission = currentGmv * (currentRate / 100);
   const simCommission = simRevenue * (simRate / 100);
@@ -69,9 +93,31 @@ export default function VendorCommissionTab() {
 
   const gapToNext = nextTier ? nextTier.from - currentGmv : null;
 
+  // Category rates for display
+  const categoryRates = (model === "category_based" ? activeRule?.category_rates : {}) as Record<string, number>;
+
   return (
     <div className="space-y-4">
-      {/* Current status */}
+      {/* Active rule info */}
+      <VCard className="!p-4 bg-gradient-to-r from-[#1B5BDA]/5 to-transparent border-[#1B5BDA]/20">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-[#1B5BDA]/10 flex items-center justify-center">
+            <ModelIcon size={20} className="text-[#1B5BDA]" />
+          </div>
+          <div>
+            <p className="text-[13px] font-semibold text-[#1D2530]">
+              Votre modèle : {modelLabels[model]}
+            </p>
+            <p className="text-[11px] text-[#8B95A5]">
+              {activeRule?.name || "Règle standard"} 
+              {activeRule?.vendor_id ? " — Règle personnalisée" : " — Template par défaut"}
+            </p>
+          </div>
+          <VBadge color="#1B5BDA" className="ml-auto">{modelLabels[model]}</VBadge>
+        </div>
+      </VCard>
+
+      {/* KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <VCard className="!p-4">
           <div className="flex items-center gap-2 mb-2">
@@ -97,74 +143,128 @@ export default function VendorCommissionTab() {
             <div className="w-8 h-8 rounded-lg bg-[#F59E0B]/10 flex items-center justify-center">
               <Target size={16} className="text-[#F59E0B]" />
             </div>
-            <span className="text-[11px] text-[#8B95A5] uppercase tracking-wide">Prochain palier</span>
+            <span className="text-[11px] text-[#8B95A5] uppercase tracking-wide">
+              {model === "tiered_gmv" ? "Prochain palier" : "Min/Max"}
+            </span>
           </div>
-          {nextTier ? (
+          {model === "tiered_gmv" && nextTier ? (
             <>
               <p className="text-xl font-bold text-[#1D2530]">{nextTier.rate}%</p>
               <p className="text-[11px] text-[#8B95A5]">Encore {fmtEur(gapToNext!)} de GMV</p>
             </>
-          ) : (
+          ) : model === "tiered_gmv" ? (
             <p className="text-sm font-medium text-[#059669]">Palier maximum atteint ✓</p>
+          ) : (
+            <>
+              <p className="text-xl font-bold text-[#1D2530]">{activeRule?.min_commission ?? 0}% — {activeRule?.max_commission ?? 100}%</p>
+              <p className="text-[11px] text-[#8B95A5]">Bornes de commission</p>
+            </>
           )}
         </VCard>
       </div>
 
-      {/* Tier visualization */}
-      <VCard>
-        <h3 className="text-sm font-semibold text-[#1D2530] mb-4 flex items-center gap-2">
-          <Zap size={16} className="text-[#1B5BDA]" />
-          Grille de paliers — Commission dégressive
-        </h3>
-        <div className="space-y-1.5">
-          {sortedTiers.map((t, i) => {
-            const isActive = currentTier?.from === t.from;
-            const isSimActive = simTier?.from === t.from;
-            const barWidth = Math.max(20, 100 - (i * 15));
-            return (
-              <div key={i} className="relative">
-                <div className={`flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all ${isActive ? "bg-[#1B5BDA]/5 ring-1 ring-[#1B5BDA]/30" : isSimActive ? "bg-[#F59E0B]/5 ring-1 ring-[#F59E0B]/30" : "bg-[#F8FAFC]"}`}>
-                  {/* Tier range */}
-                  <div className="w-[180px] shrink-0 text-[13px]">
-                    <span className={isActive ? "font-semibold text-[#1B5BDA]" : "text-[#616B7C]"}>
-                      {t.to ? `${fmtEur(t.from)} → ${fmtEur(t.to)}` : `> ${fmtEur(t.from)}`}
-                    </span>
-                  </div>
-                  {/* Visual bar */}
-                  <div className="flex-1 h-6 bg-[#E2E8F0] rounded-full overflow-hidden relative">
-                    <div
-                      className={`h-full rounded-full transition-all ${isActive ? "bg-[#1B5BDA]" : isSimActive ? "bg-[#F59E0B]" : "bg-[#94A3B8]"}`}
-                      style={{ width: `${barWidth}%` }}
-                    />
-                    {isActive && (
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <span className="text-[10px] font-bold text-white drop-shadow">ACTUEL</span>
-                      </div>
-                    )}
-                    {isSimActive && !isActive && (
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <span className="text-[10px] font-bold text-white drop-shadow">SIMULÉ</span>
-                      </div>
-                    )}
-                  </div>
-                  {/* Rate */}
-                  <div className={`w-14 text-right text-sm font-bold ${isActive ? "text-[#1B5BDA]" : isSimActive ? "text-[#F59E0B]" : "text-[#1D2530]"}`}>
-                    {t.rate}%
+      {/* Model-specific content */}
+      {model === "tiered_gmv" && sortedTiers.length > 0 && (
+        <VCard>
+          <h3 className="text-sm font-semibold text-[#1D2530] mb-4 flex items-center gap-2">
+            <Zap size={16} className="text-[#1B5BDA]" />
+            Grille de paliers — Commission dégressive
+          </h3>
+          <div className="space-y-1.5">
+            {sortedTiers.map((t, i) => {
+              const isActive = currentTier?.from === t.from;
+              const isSimActive = simTier?.from === t.from;
+              const barWidth = Math.max(20, 100 - (i * 15));
+              return (
+                <div key={i} className="relative">
+                  <div className={`flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all ${isActive ? "bg-[#1B5BDA]/5 ring-1 ring-[#1B5BDA]/30" : isSimActive ? "bg-[#F59E0B]/5 ring-1 ring-[#F59E0B]/30" : "bg-[#F8FAFC]"}`}>
+                    <div className="w-[180px] shrink-0 text-[13px]">
+                      <span className={isActive ? "font-semibold text-[#1B5BDA]" : "text-[#616B7C]"}>
+                        {t.to ? `${fmtEur(t.from)} → ${fmtEur(t.to)}` : `> ${fmtEur(t.from)}`}
+                      </span>
+                    </div>
+                    <div className="flex-1 h-6 bg-[#E2E8F0] rounded-full overflow-hidden relative">
+                      <div
+                        className={`h-full rounded-full transition-all ${isActive ? "bg-[#1B5BDA]" : isSimActive ? "bg-[#F59E0B]" : "bg-[#94A3B8]"}`}
+                        style={{ width: `${barWidth}%` }}
+                      />
+                      {isActive && (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <span className="text-[10px] font-bold text-white drop-shadow">ACTUEL</span>
+                        </div>
+                      )}
+                      {isSimActive && !isActive && (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <span className="text-[10px] font-bold text-white drop-shadow">SIMULÉ</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className={`w-14 text-right text-sm font-bold ${isActive ? "text-[#1B5BDA]" : isSimActive ? "text-[#F59E0B]" : "text-[#1D2530]"}`}>
+                      {t.rate}%
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
-        {sortedTiers.length === 0 && tieredRule && (
-          <div className="text-center py-6 text-[13px] text-[#8B95A5]">
-            Votre modèle est à taux fixe ({tieredRule.fixed_rate}%). Contactez votre account manager pour passer en paliers dégressifs.
+              );
+            })}
           </div>
-        )}
-      </VCard>
+        </VCard>
+      )}
 
-      {/* Simulator */}
-      {sortedTiers.length > 0 && (
+      {model === "category_based" && Object.keys(categoryRates).length > 0 && (
+        <VCard>
+          <h3 className="text-sm font-semibold text-[#1D2530] mb-4 flex items-center gap-2">
+            <Layers size={16} className="text-[#F59E0B]" />
+            Taux par catégorie
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {Object.entries(categoryRates).sort(([,a],[,b]) => a - b).map(([cat, rate]) => (
+              <div key={cat} className="flex items-center justify-between bg-[#F8FAFC] rounded-lg px-3 py-2.5">
+                <span className="text-[13px] text-[#616B7C]">{cat}</span>
+                <span className="text-[13px] font-bold text-[#1D2530]">{rate}%</span>
+              </div>
+            ))}
+          </div>
+        </VCard>
+      )}
+
+      {model === "margin_split" && (
+        <VCard>
+          <h3 className="text-sm font-semibold text-[#1D2530] mb-4 flex items-center gap-2">
+            <Split size={16} className="text-[#059669]" />
+            Partage de marge
+          </h3>
+          <div className="flex items-center gap-3">
+            <div className="flex-1 bg-[#1B5BDA]/10 rounded-lg p-4 text-center">
+              <p className="text-[11px] text-[#8B95A5] mb-1">Part MediKong</p>
+              <p className="text-3xl font-bold text-[#1B5BDA]">{activeRule?.margin_split_mk}%</p>
+            </div>
+            <div className="text-[#8B95A5] text-lg font-bold">/</div>
+            <div className="flex-1 bg-[#059669]/10 rounded-lg p-4 text-center">
+              <p className="text-[11px] text-[#8B95A5] mb-1">Votre part</p>
+              <p className="text-3xl font-bold text-[#059669]">{activeRule?.margin_split_vendor}%</p>
+            </div>
+          </div>
+          <p className="text-[11px] text-[#8B95A5] mt-3 text-center">
+            Sur chaque vente, la marge brute est partagée selon ce ratio.
+          </p>
+        </VCard>
+      )}
+
+      {model === "fixed_rate" && (
+        <VCard>
+          <h3 className="text-sm font-semibold text-[#1D2530] mb-4 flex items-center gap-2">
+            <Percent size={16} className="text-[#1B5BDA]" />
+            Taux fixe appliqué
+          </h3>
+          <div className="bg-[#F8FAFC] rounded-lg p-6 text-center">
+            <p className="text-5xl font-bold text-[#1B5BDA]">{activeRule?.fixed_rate ?? 12}%</p>
+            <p className="text-[13px] text-[#8B95A5] mt-2">Commission sur chaque vente HT</p>
+          </div>
+        </VCard>
+      )}
+
+      {/* Simulator — available for tiered model */}
+      {model === "tiered_gmv" && sortedTiers.length > 0 && (
         <VCard>
           <h3 className="text-sm font-semibold text-[#1D2530] mb-1 flex items-center gap-2">
             <TrendingDown size={16} className="text-[#059669]" />
@@ -173,7 +273,6 @@ export default function VendorCommissionTab() {
           <p className="text-[11px] text-[#8B95A5] mb-5">Estimez votre commission en ajustant votre volume de ventes mensuel</p>
 
           <div className="space-y-5">
-            {/* GMV Slider */}
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="text-[12px] font-medium text-[#616B7C]">GMV mensuel estimé</label>
@@ -205,7 +304,6 @@ export default function VendorCommissionTab() {
               </div>
             </div>
 
-            {/* Results */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="bg-[#F8FAFC] rounded-lg p-3 text-center">
                 <p className="text-[11px] text-[#8B95A5] mb-1">Taux simulé</p>
@@ -232,7 +330,6 @@ export default function VendorCommissionTab() {
               </div>
             </div>
 
-            {/* Recommendation */}
             {nextTier && simGmv < nextTier.from && (
               <div className="bg-[#1B5BDA]/5 border border-[#1B5BDA]/20 rounded-lg p-3 flex items-start gap-2.5">
                 <Info size={16} className="text-[#1B5BDA] mt-0.5 shrink-0" />

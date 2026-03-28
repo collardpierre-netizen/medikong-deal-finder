@@ -10,7 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, Percent, Layers, BarChart3, Split, Star } from "lucide-react";
+import AdminTopBar from "@/components/admin/AdminTopBar";
+import { Plus, Pencil, Trash2, Percent, Layers, BarChart3, Split, Star, UserPlus, Building2 } from "lucide-react";
 
 type CommissionModel = "fixed_rate" | "tiered_gmv" | "category_based" | "margin_split";
 
@@ -73,7 +74,10 @@ const emptyRule: Partial<CommissionRule> = {
 export default function AdminCommissions() {
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [assignOpen, setAssignOpen] = useState(false);
   const [editingRule, setEditingRule] = useState<Partial<CommissionRule> | null>(null);
+  const [assignVendorId, setAssignVendorId] = useState("");
+  const [assignRuleId, setAssignRuleId] = useState("");
 
   const { data: rules = [], isLoading } = useQuery({
     queryKey: ["admin-commission-rules"],
@@ -98,6 +102,15 @@ export default function AdminCommissions() {
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data as any[];
+    },
+  });
+
+  const { data: vendors = [] } = useQuery({
+    queryKey: ["admin-vendors-for-commission"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("vendors").select("id, company_name, tier, status").eq("status", "active").order("company_name");
+      if (error) throw error;
+      return data;
     },
   });
 
@@ -139,81 +152,125 @@ export default function AdminCommissions() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-commission-rules"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-commission-vendor-rules"] });
       toast.success("Règle supprimée");
     },
+  });
+
+  const assignMutation = useMutation({
+    mutationFn: async ({ vendorId, templateId }: { vendorId: string; templateId: string }) => {
+      const template = rules.find(r => r.id === templateId);
+      if (!template) throw new Error("Règle introuvable");
+      // Delete existing vendor-specific rules
+      await supabase.from("commission_rules").delete().eq("vendor_id", vendorId);
+      // Clone template for vendor
+      const { error } = await supabase.from("commission_rules").insert({
+        vendor_id: vendorId,
+        name: template.name,
+        model: template.model,
+        is_default: false,
+        fixed_rate: template.fixed_rate,
+        tiers: JSON.parse(JSON.stringify(template.tiers || [])),
+        category_rates: JSON.parse(JSON.stringify(template.category_rates || {})),
+        margin_split_mk: template.margin_split_mk,
+        margin_split_vendor: template.margin_split_vendor,
+        min_commission: template.min_commission,
+        max_commission: template.max_commission,
+        notes: `Assigné depuis le template "${template.name}"`,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-commission-vendor-rules"] });
+      toast.success("Règle assignée au vendeur");
+      setAssignOpen(false);
+      setAssignVendorId("");
+      setAssignRuleId("");
+    },
+    onError: (e: any) => toast.error(e.message || "Erreur"),
   });
 
   const openNew = () => { setEditingRule({ ...emptyRule }); setDialogOpen(true); };
   const openEdit = (r: CommissionRule) => { setEditingRule({ ...r }); setDialogOpen(true); };
 
+  // Vendors without a specific rule
+  const vendorsWithRules = new Set(vendorRules.map((r: any) => r.vendor_id));
+  const vendorsWithoutRule = vendors.filter(v => !vendorsWithRules.has(v.id));
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Commissions</h1>
-          <p className="text-sm text-muted-foreground mt-1">Gérez les modèles de commission appliqués aux vendeurs</p>
-        </div>
-        <Button onClick={openNew}><Plus className="mr-2 h-4 w-4" />Nouvelle règle</Button>
-      </div>
+    <div>
+      <AdminTopBar title="Commissions" subtitle="Gérez les modèles de commission appliqués aux vendeurs"
+        actions={
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => setAssignOpen(true)}><UserPlus size={14} className="mr-1" />Assigner à un vendeur</Button>
+            <Button size="sm" onClick={openNew} className="bg-[#1E293B] hover:bg-[#1E293B]/90"><Plus size={14} className="mr-1" />Nouvelle règle</Button>
+          </div>
+        }
+      />
 
       {/* 4 model cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
         {(["fixed_rate", "tiered_gmv", "category_based", "margin_split"] as CommissionModel[]).map(m => {
           const Icon = modelIcons[m];
           const count = rules.filter(r => r.model === m).length;
+          const vendorCount = vendorRules.filter((r: any) => r.model === m).length;
           return (
-            <Card key={m} className="border">
-              <CardContent className="p-4 flex items-start gap-3">
-                <div className={`p-2.5 rounded-lg ${modelColors[m]}`}><Icon className="h-5 w-5" /></div>
-                <div>
-                  <p className="font-semibold text-sm">{modelLabels[m]}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {m === "fixed_rate" && "Pourcentage unique sur chaque vente"}
-                    {m === "tiered_gmv" && "Taux dégressif selon le volume mensuel"}
-                    {m === "category_based" && "Taux différencié par catégorie produit"}
-                    {m === "margin_split" && "Partage de la marge vendeur/MediKong"}
-                  </p>
-                  <Badge variant="secondary" className="mt-2 text-[11px]">{count} règle{count > 1 ? "s" : ""}</Badge>
+            <div key={m} className="bg-white rounded-lg border p-4 flex items-start gap-3" style={{ borderColor: "#E2E8F0" }}>
+              <div className={`p-2.5 rounded-lg ${modelColors[m]}`}><Icon className="h-5 w-5" /></div>
+              <div>
+                <p className="font-semibold text-sm" style={{ color: "#1D2530" }}>{modelLabels[m]}</p>
+                <p className="text-xs mt-0.5" style={{ color: "#8B95A5" }}>
+                  {m === "fixed_rate" && "Pourcentage unique sur chaque vente"}
+                  {m === "tiered_gmv" && "Taux dégressif selon le volume mensuel"}
+                  {m === "category_based" && "Taux différencié par catégorie produit"}
+                  {m === "margin_split" && "Partage de la marge vendeur/MediKong"}
+                </p>
+                <div className="flex gap-2 mt-2">
+                  <Badge variant="secondary" className="text-[11px]">{count} template{count > 1 ? "s" : ""}</Badge>
+                  {vendorCount > 0 && <Badge variant="outline" className="text-[11px]">{vendorCount} vendeur{vendorCount > 1 ? "s" : ""}</Badge>}
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           );
         })}
       </div>
 
       {/* Rules table */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Règles globales (templates)</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b bg-muted/40 text-muted-foreground text-xs uppercase tracking-wide">
-                  <th className="text-left py-2.5 px-4 font-medium">Nom</th>
-                  <th className="text-left py-2.5 px-4 font-medium">Modèle</th>
-                  <th className="text-left py-2.5 px-4 font-medium">Détail</th>
-                  <th className="text-center py-2.5 px-4 font-medium">Défaut</th>
-                  <th className="text-right py-2.5 px-4 font-medium">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rules.map(r => (
-                  <tr key={r.id} className="border-b hover:bg-muted/20">
-                    <td className="py-2.5 px-4 font-medium">{r.name}</td>
+      <div className="bg-white rounded-lg border mb-6" style={{ borderColor: "#E2E8F0" }}>
+        <div className="px-5 py-3 border-b" style={{ borderColor: "#E2E8F0" }}>
+          <h3 className="text-[14px] font-semibold" style={{ color: "#1D2530" }}>Règles globales (templates)</h3>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b text-[11px] uppercase tracking-wide" style={{ backgroundColor: "#F8FAFC", color: "#8B95A5", borderColor: "#E2E8F0" }}>
+                <th className="text-left py-2.5 px-4 font-medium">Nom</th>
+                <th className="text-left py-2.5 px-4 font-medium">Modèle</th>
+                <th className="text-left py-2.5 px-4 font-medium">Détail</th>
+                <th className="text-center py-2.5 px-4 font-medium">Défaut</th>
+                <th className="text-center py-2.5 px-4 font-medium">Vendeurs</th>
+                <th className="text-right py-2.5 px-4 font-medium">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rules.map(r => {
+                const vendorsOnRule = vendorRules.filter((vr: any) => vr.name === r.name).length;
+                return (
+                  <tr key={r.id} className="border-b hover:bg-[#F8FAFC]" style={{ borderColor: "#E2E8F0" }}>
+                    <td className="py-2.5 px-4 font-medium text-[13px]" style={{ color: "#1D2530" }}>{r.name}</td>
                     <td className="py-2.5 px-4">
                       <Badge className={`${modelColors[r.model]} border-0 text-[11px]`}>{modelLabels[r.model]}</Badge>
                     </td>
-                    <td className="py-2.5 px-4 text-muted-foreground text-xs">
+                    <td className="py-2.5 px-4 text-xs" style={{ color: "#8B95A5" }}>
                       {r.model === "fixed_rate" && `${r.fixed_rate}%`}
-                      {r.model === "tiered_gmv" && `${(r.tiers as Tier[])?.length || 0} paliers`}
+                      {r.model === "tiered_gmv" && `${(r.tiers as Tier[])?.length || 0} paliers (${(r.tiers as Tier[])?.map(t => t.rate + "%").join(" → ")})`}
                       {r.model === "category_based" && `${Object.keys(r.category_rates || {}).length} catégories`}
                       {r.model === "margin_split" && `MK ${r.margin_split_mk}% / Vendeur ${r.margin_split_vendor}%`}
                     </td>
                     <td className="py-2.5 px-4 text-center">
                       {r.is_default && <Star className="h-4 w-4 text-amber-500 mx-auto fill-amber-500" />}
                     </td>
+                    <td className="py-2.5 px-4 text-center text-[12px]" style={{ color: "#616B7C" }}>{vendorsOnRule}</td>
                     <td className="py-2.5 px-4 text-right space-x-1">
                       <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(r)}><Pencil className="h-3.5 w-3.5" /></Button>
                       {!r.is_default && (
@@ -221,58 +278,120 @@ export default function AdminCommissions() {
                       )}
                     </td>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
+                );
+              })}
+              {rules.length === 0 && (
+                <tr><td colSpan={6} className="py-8 text-center text-[13px]" style={{ color: "#8B95A5" }}>Aucune règle. Créez votre première règle de commission.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
       {/* Vendor-specific rules */}
-      {vendorRules.length > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Règles spécifiques vendeurs</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b bg-muted/40 text-muted-foreground text-xs uppercase tracking-wide">
-                    <th className="text-left py-2.5 px-4 font-medium">Vendeur</th>
-                    <th className="text-left py-2.5 px-4 font-medium">Règle</th>
-                    <th className="text-left py-2.5 px-4 font-medium">Modèle</th>
-                    <th className="text-left py-2.5 px-4 font-medium">Détail</th>
-                    <th className="text-right py-2.5 px-4 font-medium">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {vendorRules.map((r: any) => (
-                    <tr key={r.id} className="border-b hover:bg-muted/20">
-                      <td className="py-2.5 px-4 font-medium">{r.vendors?.company_name || "—"}</td>
-                      <td className="py-2.5 px-4">{r.name}</td>
-                      <td className="py-2.5 px-4">
-                        <Badge className={`${modelColors[r.model as CommissionModel]} border-0 text-[11px]`}>{modelLabels[r.model as CommissionModel]}</Badge>
-                      </td>
-                      <td className="py-2.5 px-4 text-muted-foreground text-xs">
-                        {r.model === "fixed_rate" && `${r.fixed_rate}%`}
-                        {r.model === "margin_split" && `MK ${r.margin_split_mk}% / V ${r.margin_split_vendor}%`}
-                      </td>
-                      <td className="py-2.5 px-4 text-right">
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(r)}><Pencil className="h-3.5 w-3.5" /></Button>
-                      </td>
-                    </tr>
+      <div className="bg-white rounded-lg border" style={{ borderColor: "#E2E8F0" }}>
+        <div className="px-5 py-3 border-b flex items-center justify-between" style={{ borderColor: "#E2E8F0" }}>
+          <h3 className="text-[14px] font-semibold" style={{ color: "#1D2530" }}>Règles spécifiques vendeurs ({vendorRules.length})</h3>
+          <span className="text-[11px]" style={{ color: "#8B95A5" }}>{vendorsWithoutRule.length} vendeur{vendorsWithoutRule.length > 1 ? "s" : ""} sans règle spécifique (utilise le template par défaut)</span>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b text-[11px] uppercase tracking-wide" style={{ backgroundColor: "#F8FAFC", color: "#8B95A5", borderColor: "#E2E8F0" }}>
+                <th className="text-left py-2.5 px-4 font-medium">Vendeur</th>
+                <th className="text-left py-2.5 px-4 font-medium">Règle</th>
+                <th className="text-left py-2.5 px-4 font-medium">Modèle</th>
+                <th className="text-left py-2.5 px-4 font-medium">Détail</th>
+                <th className="text-right py-2.5 px-4 font-medium">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {vendorRules.map((r: any) => (
+                <tr key={r.id} className="border-b hover:bg-[#F8FAFC]" style={{ borderColor: "#E2E8F0" }}>
+                  <td className="py-2.5 px-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-full bg-[#1B5BDA14] flex items-center justify-center">
+                        <Building2 size={13} className="text-[#1B5BDA]" />
+                      </div>
+                      <span className="font-medium text-[13px]" style={{ color: "#1D2530" }}>{r.vendors?.company_name || "—"}</span>
+                    </div>
+                  </td>
+                  <td className="py-2.5 px-4 text-[13px]" style={{ color: "#616B7C" }}>{r.name}</td>
+                  <td className="py-2.5 px-4">
+                    <Badge className={`${modelColors[r.model as CommissionModel]} border-0 text-[11px]`}>{modelLabels[r.model as CommissionModel]}</Badge>
+                  </td>
+                  <td className="py-2.5 px-4 text-xs" style={{ color: "#8B95A5" }}>
+                    {r.model === "fixed_rate" && `${r.fixed_rate}%`}
+                    {r.model === "tiered_gmv" && `${(r.tiers as Tier[])?.length || 0} paliers`}
+                    {r.model === "category_based" && `${Object.keys(r.category_rates || {}).length} catégories`}
+                    {r.model === "margin_split" && `MK ${r.margin_split_mk}% / V ${r.margin_split_vendor}%`}
+                  </td>
+                  <td className="py-2.5 px-4 text-right space-x-1">
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(r)}><Pencil className="h-3.5 w-3.5" /></Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteMutation.mutate(r.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                  </td>
+                </tr>
+              ))}
+              {vendorRules.length === 0 && (
+                <tr><td colSpan={5} className="py-8 text-center text-[13px]" style={{ color: "#8B95A5" }}>Aucune règle spécifique. Tous les vendeurs utilisent le template par défaut.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Assign Dialog */}
+      <Dialog open={assignOpen} onOpenChange={setAssignOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Assigner une règle à un vendeur</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Vendeur</Label>
+              <Select value={assignVendorId} onValueChange={setAssignVendorId}>
+                <SelectTrigger><SelectValue placeholder="Sélectionner un vendeur" /></SelectTrigger>
+                <SelectContent>
+                  {vendors.map(v => (
+                    <SelectItem key={v.id} value={v.id}>
+                      {v.company_name} ({v.tier})
+                      {vendorsWithRules.has(v.id) && " ✓"}
+                    </SelectItem>
                   ))}
-                </tbody>
-              </table>
+                </SelectContent>
+              </Select>
             </div>
-          </CardContent>
-        </Card>
-      )}
+            <div>
+              <Label>Template de commission</Label>
+              <Select value={assignRuleId} onValueChange={setAssignRuleId}>
+                <SelectTrigger><SelectValue placeholder="Sélectionner un template" /></SelectTrigger>
+                <SelectContent>
+                  {rules.map(r => (
+                    <SelectItem key={r.id} value={r.id}>
+                      {r.name} — {modelLabels[r.model]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {assignVendorId && vendorsWithRules.has(assignVendorId) && (
+              <p className="text-[12px] text-amber-600 bg-amber-50 rounded-lg px-3 py-2">
+                ⚠️ Ce vendeur a déjà une règle spécifique. Elle sera remplacée.
+              </p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAssignOpen(false)}>Annuler</Button>
+            <Button onClick={() => assignVendorId && assignRuleId && assignMutation.mutate({ vendorId: assignVendorId, templateId: assignRuleId })} disabled={!assignVendorId || !assignRuleId || assignMutation.isPending}>
+              {assignMutation.isPending ? "Assignation…" : "Assigner"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Edit/Create Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingRule?.id ? "Modifier la règle" : "Nouvelle règle de commission"}</DialogTitle>
           </DialogHeader>
@@ -377,6 +496,22 @@ export default function AdminCommissions() {
                   </div>
                 </div>
               )}
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Commission min (%)</Label>
+                  <Input type="number" value={editingRule.min_commission ?? 0} onChange={e => setEditingRule({ ...editingRule, min_commission: Number(e.target.value) })} />
+                </div>
+                <div>
+                  <Label>Commission max (%)</Label>
+                  <Input type="number" value={editingRule.max_commission ?? 100} onChange={e => setEditingRule({ ...editingRule, max_commission: Number(e.target.value) })} />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input type="checkbox" id="is_default" checked={editingRule.is_default || false} onChange={e => setEditingRule({ ...editingRule, is_default: e.target.checked })} />
+                <Label htmlFor="is_default" className="text-sm">Règle par défaut</Label>
+              </div>
 
               <div>
                 <Label>Notes</Label>

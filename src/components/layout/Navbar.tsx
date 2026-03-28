@@ -1,5 +1,5 @@
 import { Search, Globe, Bell, ShoppingCart, Users, Menu, X, LogOut, Shield, Store } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
@@ -12,6 +12,8 @@ export function Navbar() {
   const [isTVAC, setIsTVAC] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const isHomePage = location.pathname === "/" || location.pathname === "";
   const { user, signOut } = useAuth();
   const { cartCount } = useCart();
   const [isAdmin, setIsAdmin] = useState(false);
@@ -55,17 +57,19 @@ export function Navbar() {
           <img src={logoHorizontal} alt="MediKong.pro" className="h-[72px]" />
         </Link>
 
-        <form onSubmit={handleSearch} className="flex-1 max-w-[440px] mx-auto hidden sm:block">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-mk-sec" size={16} />
-            <input
-              value={query}
-              onChange={e => setQuery(e.target.value)}
-              placeholder="Rechercher produits, CNK, EAN, marques..."
-              className="w-full pl-9 pr-3 py-2 rounded-md text-sm bg-white text-mk-text placeholder:text-mk-ter border-0 focus:outline-none focus:ring-2 focus:ring-mk-blue"
-            />
-          </div>
-        </form>
+        {!isHomePage && (
+          <form onSubmit={handleSearch} className="flex-1 max-w-[440px] mx-auto hidden sm:block">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-mk-sec" size={16} />
+              <input
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                placeholder="Rechercher produits, CNK, EAN, marques..."
+                className="w-full pl-9 pr-3 py-2 rounded-md text-sm bg-white text-mk-text placeholder:text-mk-ter border-0 focus:outline-none focus:ring-2 focus:ring-mk-blue"
+              />
+            </div>
+          </form>
+        )}
 
         <div className="hidden md:flex items-center gap-3 shrink-0">
           <motion.button
@@ -142,12 +146,14 @@ export function Navbar() {
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.25, ease: "easeOut" }}
           >
-            <form onSubmit={handleSearch} className="sm:hidden">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-mk-sec" size={16} />
-                <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Rechercher..." className="w-full pl-9 pr-3 py-2 rounded-md text-sm bg-white text-mk-text" />
-              </div>
-            </form>
+            {!isHomePage && (
+              <form onSubmit={handleSearch} className="sm:hidden">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-mk-sec" size={16} />
+                  <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Rechercher..." className="w-full pl-9 pr-3 py-2 rounded-md text-sm bg-white text-mk-text" />
+                </div>
+              </form>
+            )}
             {user ? (
               <>
                 {isAdmin && (

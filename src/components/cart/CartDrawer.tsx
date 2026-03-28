@@ -178,11 +178,11 @@ export default function CartDrawer() {
                 )}
                 <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                   <Link
-                    to="/checkout"
+                    to="/panier"
                     onClick={closeDrawer}
                     className="flex items-center justify-center gap-2 w-full bg-mk-navy text-white font-bold py-3.5 rounded-lg text-sm hover:opacity-90 transition-opacity"
                   >
-                    Passer la commande <ArrowRight size={16} />
+                    Voir mon panier <ArrowRight size={16} />
                   </Link>
                 </motion.div>
               </div>

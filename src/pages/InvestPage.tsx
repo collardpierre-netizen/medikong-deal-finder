@@ -168,12 +168,15 @@ export default function InvestPage() {
   return (
     <Layout>
       {/* ════════════ HERO ════════════ */}
-      <section className="relative overflow-hidden" style={{ background: "linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #1a365d 100%)" }}>
-        {/* Background patterns */}
+      <section className="relative overflow-hidden" style={{ background: "linear-gradient(135deg, #0a1628 0%, #122a4a 30%, #1a365d 60%, #0f2440 100%)" }}>
+        {/* Animated orbs */}
+        <div className="invest-orb-1" />
+        <div className="invest-orb-2" />
+        <div className="invest-orb-3" />
+        <div className="invest-orb-4" />
+        {/* Static patterns */}
         <div className="absolute inset-0 invest-dots" />
         <div className="absolute inset-0 invest-grid" />
-        <div className="absolute inset-0 invest-glow-tl" />
-        <div className="absolute inset-0 invest-glow-br" />
         <div className="max-w-4xl mx-auto px-5 py-24 md:py-32 text-center text-white relative z-10">
           <motion.span className="inline-flex items-center gap-2 bg-mk-green/90 rounded-full px-5 py-2 text-sm mb-10 text-white font-medium"
             initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
@@ -298,9 +301,10 @@ export default function InvestPage() {
           </div>
 
           {/* ── POTENTIEL DE CRÉATION DE VALEUR — dark card ── */}
-          <div className="relative rounded-2xl p-8 md:p-12 mb-8 overflow-hidden" style={{ background: "linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #1a365d 100%)" }}>
+          <div className="relative rounded-2xl p-8 md:p-12 mb-8 overflow-hidden" style={{ background: "linear-gradient(135deg, #0a1628 0%, #122a4a 40%, #1a365d 100%)" }}>
+            <div className="invest-orb-1" style={{ width: 300, height: 300, top: "-20%", left: "-10%" }} />
+            <div className="invest-orb-2" style={{ width: 250, height: 250, bottom: "-15%", right: "-5%" }} />
             <div className="absolute inset-0 invest-dots" />
-            <div className="absolute inset-0 invest-glow-center" />
             <div className="text-center mb-10">
               <p className="text-amber-400 text-sm font-semibold uppercase tracking-widest mb-2">✨ Potentiel de création de valeur ✨</p>
               <p className="text-white/50 text-sm max-w-xl mx-auto">Projection à 5 ans basée sur les multiples de valorisation des marketplaces B2B santé comparables.</p>
@@ -565,10 +569,12 @@ export default function InvestPage() {
       </section>
 
       {/* ════════════ FINAL CTA ════════════ */}
-      <section className="py-16 md:py-24 relative overflow-hidden" style={{ background: "linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #1a365d 100%)" }}>
+      <section className="py-16 md:py-24 relative overflow-hidden" style={{ background: "linear-gradient(135deg, #0a1628 0%, #122a4a 30%, #1a365d 60%, #0f2440 100%)" }}>
+        <div className="invest-orb-1" style={{ width: 400, height: 400 }} />
+        <div className="invest-orb-2" style={{ width: 350, height: 350 }} />
+        <div className="invest-orb-3" style={{ width: 250, height: 250 }} />
         <div className="absolute inset-0 invest-dots" />
         <div className="absolute inset-0 invest-grid" />
-        <div className="absolute inset-0 invest-glow-tl" />
         <div className="max-w-3xl mx-auto px-5 text-center text-white relative z-10">
           <h2 className="text-2xl md:text-4xl font-bold mb-4">Prêt à investir dans l'avenir de la santé ?</h2>
           <p className="text-white/60 max-w-lg mx-auto mb-10 text-sm md:text-base">Rejoignez les premiers investisseurs de MediKong et bénéficiez du Tax Shelter.</p>

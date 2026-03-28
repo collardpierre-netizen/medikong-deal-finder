@@ -146,18 +146,18 @@
 }
 .invest-grid {
   background-image:
-    linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
   background-size: 60px 60px;
 }
 .invest-glow-tl {
-  background: radial-gradient(ellipse 600px 400px at 10% 20%, rgba(27,91,218,0.15), transparent);
+  background: radial-gradient(ellipse 700px 500px at 10% 15%, rgba(27,91,218,0.25), transparent);
 }
 .invest-glow-br {
-  background: radial-gradient(ellipse 500px 500px at 90% 80%, rgba(5,150,105,0.12), transparent);
+  background: radial-gradient(ellipse 600px 600px at 90% 85%, rgba(16,185,129,0.18), transparent);
 }
 .invest-glow-center {
-  background: radial-gradient(ellipse 700px 400px at 50% 50%, rgba(27,91,218,0.08), transparent);
+  background: radial-gradient(ellipse 800px 500px at 50% 50%, rgba(27,91,218,0.12), transparent);
 }
 .invest-light-dots {
   background-image: radial-gradient(circle, rgba(27,91,218,0.04) 1px, transparent 1px);
@@ -168,6 +168,62 @@
     linear-gradient(rgba(27,91,218,0.03) 1px, transparent 1px),
     linear-gradient(90deg, rgba(27,91,218,0.03) 1px, transparent 1px);
   background-size: 80px 80px;
+}
+
+/* Animated floating orbs for invest hero */
+@keyframes investOrbFloat1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25% { transform: translate(60px, -40px) scale(1.1); }
+  50% { transform: translate(-30px, 50px) scale(0.95); }
+  75% { transform: translate(40px, 20px) scale(1.05); }
+}
+@keyframes investOrbFloat2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(-50px, 30px) scale(1.08); }
+  66% { transform: translate(40px, -60px) scale(0.92); }
+}
+@keyframes investOrbFloat3 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  20% { transform: translate(30px, 40px) scale(1.12); }
+  40% { transform: translate(-60px, -20px) scale(0.9); }
+  60% { transform: translate(20px, -50px) scale(1.06); }
+  80% { transform: translate(-40px, 30px) scale(0.95); }
+}
+.invest-orb-1 {
+  position: absolute;
+  width: 500px; height: 500px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(27,91,218,0.3) 0%, rgba(27,91,218,0) 70%);
+  filter: blur(80px);
+  animation: investOrbFloat1 20s ease-in-out infinite;
+  top: -10%; left: -5%;
+}
+.invest-orb-2 {
+  position: absolute;
+  width: 400px; height: 400px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(16,185,129,0.25) 0%, rgba(16,185,129,0) 70%);
+  filter: blur(70px);
+  animation: investOrbFloat2 15s ease-in-out infinite;
+  bottom: -5%; right: -5%;
+}
+.invest-orb-3 {
+  position: absolute;
+  width: 350px; height: 350px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(124,58,237,0.15) 0%, rgba(124,58,237,0) 70%);
+  filter: blur(60px);
+  animation: investOrbFloat3 25s ease-in-out infinite;
+  top: 30%; right: 15%;
+}
+.invest-orb-4 {
+  position: absolute;
+  width: 300px; height: 300px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(245,158,11,0.12) 0%, rgba(245,158,11,0) 70%);
+  filter: blur(60px);
+  animation: investOrbFloat2 18s ease-in-out infinite reverse;
+  top: 60%; left: 10%;
 }
 @keyframes fadeIn { from { opacity:0 } to { opacity:1 } }
 .anim-up { animation: fadeInUp 350ms ease-out both; }

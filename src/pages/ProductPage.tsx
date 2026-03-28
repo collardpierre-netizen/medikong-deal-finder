@@ -277,6 +277,7 @@ export default function ProductPage() {
   const [stickyQty, setStickyQty] = useState(1);
   const { isFavorite, toggleFavorite } = useFavorites();
   const { trackActivity } = useRecentActivity();
+  const { getWatchForProduct, savePrice } = usePriceWatches();
 
   // Track product view
   useEffect(() => {

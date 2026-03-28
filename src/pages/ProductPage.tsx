@@ -78,8 +78,8 @@ function OfferRow({ offer, product, user, navigate, addToCart, isBest, delay = 0
         )}
       </div>
 
-      {/* Main row with optional tiers */}
-      <div className="grid grid-cols-[1.5fr_1fr_1fr_0.8fr_1.5fr] gap-3 items-start">
+      {/* Main row — stacked on mobile, grid on desktop */}
+      <div className="hidden md:grid grid-cols-[1.5fr_1fr_1fr_0.8fr_1.5fr] gap-3 items-start">
         {/* Supplier */}
         <div className="flex items-center gap-2">
           {offer.sellerSlug ? (
@@ -152,6 +152,82 @@ function OfferRow({ offer, product, user, navigate, addToCart, isBest, delay = 0
             }}
           >
             <ShoppingCart size={16} />
+          </motion.button>
+        </div>
+      </div>
+
+      {/* Mobile layout — stacked */}
+      <div className="md:hidden space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            {offer.sellerSlug ? (
+              <Link to={`/vendeur/${offer.sellerSlug}`} className="font-bold text-mk-navy hover:text-mk-blue transition-colors text-sm">
+                {offer.sellerName}
+              </Link>
+            ) : (
+              <span className="font-bold text-mk-navy text-sm">{offer.sellerName}</span>
+            )}
+            {offer.isVerified && (
+              <span className="inline-flex items-center justify-center w-5 h-5 bg-mk-alt rounded border border-mk-line" title="Verified">
+                <Shield size={11} className="text-mk-navy" />
+              </span>
+            )}
+          </div>
+          <span className="text-base font-bold text-mk-navy">€{offer.unitPriceEur.toFixed(2)}</span>
+        </div>
+
+        {/* Price tiers on mobile */}
+        {hasTiers && (
+          <div className="flex flex-col gap-0 pl-1">
+            {tiers.map((tier: any, i: number) => (
+              <div key={i} className="flex items-center gap-2">
+                {i > 0 && (
+                  <div className="flex flex-col items-center w-3">
+                    <div className="w-px h-3 border-l border-dashed border-mk-ter" />
+                    <div className="w-1.5 h-1.5 rounded-full bg-mk-navy" />
+                  </div>
+                )}
+                {i === 0 && <div className="w-1.5 h-1.5 rounded-full bg-mk-navy ml-0.5" />}
+                <span className={`text-xs ${i === 0 ? "font-bold text-mk-navy" : "text-mk-sec"}`}>€{tier.price.toFixed(2)}</span>
+                <span className="text-xs text-mk-sec">min €{formatPrice(tier.minAmount)}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Meta row */}
+        <div className="flex items-center gap-4 text-xs text-mk-sec">
+          <span>MOV €{formatPrice(offer.movEur)}</span>
+          <span>Stock {offer.stockQuantity.toLocaleString()}</span>
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center gap-2">
+          <div className="flex items-center border border-mk-line rounded-md flex-1">
+            <button onClick={() => setQty(Math.max(offer.bundleSize > 1 ? offer.bundleSize : 1, qty - (offer.bundleSize > 1 ? offer.bundleSize : 1)))} className="px-2.5 py-2 text-mk-sec hover:text-mk-navy transition-colors">
+              <Minus size={14} />
+            </button>
+            <span className="px-3 py-2 text-sm font-medium text-mk-navy min-w-[40px] text-center flex-1">{qty}</span>
+            <button onClick={() => setQty(qty + (offer.bundleSize > 1 ? offer.bundleSize : 1))} className="px-2.5 py-2 text-mk-sec hover:text-mk-navy transition-colors">
+              <Plus size={14} />
+            </button>
+          </div>
+          <motion.button
+            className="bg-mk-navy text-white px-4 py-2.5 rounded-md text-sm font-medium flex items-center gap-2"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => {
+              if (!user) { navigate("/connexion"); return; }
+              addToCart.mutate({
+                productId: product.id,
+                quantity: qty,
+                vendorId: offer.sellerId,
+                priceHt: offer.unitPriceEur,
+                productData: { id: product.id, name: product.name, brand: product.brand, slug: product.slug, price: offer.unitPriceEur, gtin: product.gtin, unit: product.unit, stock: offer.stockQuantity > 0 },
+              });
+            }}
+          >
+            <ShoppingCart size={14} /> Ajouter
           </motion.button>
         </div>
       </div>
@@ -449,7 +525,7 @@ export default function ProductPage() {
                             </div>
 
                             {/* Table header */}
-                            <div className="grid grid-cols-[1.5fr_1fr_1fr_0.8fr_1.5fr] gap-3 px-1 pb-3 text-xs font-semibold text-mk-sec border-b border-mk-line">
+                            <div className="hidden md:grid grid-cols-[1.5fr_1fr_1fr_0.8fr_1.5fr] gap-3 px-1 pb-3 text-xs font-semibold text-mk-sec border-b border-mk-line">
                               <span>Supplier</span>
                               <span>Unit price</span>
                               <span>MOV</span>
@@ -480,7 +556,7 @@ export default function ProductPage() {
                               </div>
 
                               {/* Table header */}
-                              <div className="grid grid-cols-[1.5fr_1fr_1fr_0.8fr_1.5fr] gap-3 px-1 pb-3 text-xs font-semibold text-mk-sec border-b border-mk-line">
+                              <div className="hidden md:grid grid-cols-[1.5fr_1fr_1fr_0.8fr_1.5fr] gap-3 px-1 pb-3 text-xs font-semibold text-mk-sec border-b border-mk-line">
                                 <span>Supplier</span>
                                 <span>Unit price</span>
                                 <span>MOV</span>

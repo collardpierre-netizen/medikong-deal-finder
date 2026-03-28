@@ -25,7 +25,7 @@ const today = new Date();
 const dateStr = today.toLocaleDateString("fr-BE", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 
 export default function VendorDashboard() {
-  const navigate = useNavigate();
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const pendingOrders = dashboardOrders.filter(o => o.status === "pending" || o.status === "confirmed");
   const sparkData = [5800, 6200, 7100, 5400, 6800, 7200, 6700];
   const dayOfWeek = today.getDay();

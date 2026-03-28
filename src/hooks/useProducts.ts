@@ -127,6 +127,7 @@ export interface Offer {
   priceTiers: any[] | null;
   isActive: boolean;
   sellerName?: string;
+  sellerSlug?: string;
   isVerified?: boolean;
   isTopRated?: boolean;
 }

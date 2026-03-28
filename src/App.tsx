@@ -9,6 +9,7 @@ import { CartProvider } from "@/contexts/CartContext";
 import { ImpersonationProvider } from "@/contexts/ImpersonationContext";
 import ImpersonationBanner from "@/components/admin/ImpersonationBanner";
 import { CookieConsent } from "@/components/layout/CookieConsent";
+import { HelmetProvider } from "react-helmet-async";
 import HomePage from "./pages/HomePage";
 import ResultsPage from "./pages/ResultsPage";
 import ProductPage from "./pages/ProductPage";

@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useBrands, useManufacturers } from "@/hooks/useAdminData";
 import { BrandFormDialog } from "@/components/admin/BrandFormDialog";
 import { ManufacturerFormDialog } from "@/components/admin/ManufacturerFormDialog";
-import { exportBrands, exportManufacturers, importBrands, importManufacturers } from "@/lib/xlsx-utils";
+import { exportBrands, importBrands } from "@/lib/xlsx-utils";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Tag, Factory, Package, DollarSign, Shield, Plus, Download, Upload } from "lucide-react";

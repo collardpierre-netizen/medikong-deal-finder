@@ -63,7 +63,7 @@ const fundsAllocation = [
   { label: "Opérations & Logistique", pct: 8 },
   { label: "Frais généraux (SG&A)", pct: 5 },
 ];
-const fundColors = ["#1B5BDA", "#059669", "#F59E0B", "#8B5CF6", "#EC4899", "#6B7280"];
+const fundColors = ["#1B5BDA", "#059669", "#34D399", "#6B9FE8", "#10B981", "#CBD5E1"];
 
 const investSteps = [
   { n: "01", title: "Inscrivez-vous", desc: "Créez votre compte sur la plateforme en 2 minutes" },

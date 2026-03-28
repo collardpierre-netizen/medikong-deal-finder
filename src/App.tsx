@@ -63,6 +63,7 @@ import AdminCategories from "./pages/admin/AdminCategories";
 import AdminMarques from "./pages/admin/AdminMarques";
 import AdminCRM from "./pages/admin/AdminCRM";
 import AdminCMS from "./pages/admin/AdminCMS";
+import AdminPrixReference from "./pages/admin/AdminPrixReference";
 import AdminLogistique from "./pages/admin/AdminLogistique";
 import AdminEquipe from "./pages/admin/AdminEquipe";
 import AdminParametres from "./pages/admin/AdminParametres";
@@ -129,6 +130,7 @@ const App = () => (
               <Route path="import-export" element={<AdminImportExport />} />
               <Route path="crm" element={<AdminCRM />} />
               <Route path="cms" element={<AdminCMS />} />
+              <Route path="prix-reference" element={<AdminPrixReference />} />
               <Route path="logistique" element={<AdminLogistique />} />
               <Route path="equipe" element={<AdminEquipe />} />
               <Route path="parametres" element={<AdminParametres />} />

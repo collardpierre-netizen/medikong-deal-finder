@@ -8,8 +8,10 @@ import { VProgressBar } from "@/components/vendor/ui/VProgressBar";
 import { VProductIcon } from "@/components/vendor/ui/VProductIcon";
 import { vendorOffers } from "@/data/vendor-offers-mock";
 import { vendorProfile, buyerTypeColors } from "@/lib/vendor-tokens";
-import { Check, Eye, Edit2, Info, TrendingDown, TrendingUp, Sliders, AlertTriangle } from "lucide-react";
+import { Check, Eye, Edit2, Info, TrendingDown, TrendingUp, Sliders, AlertTriangle, Layers } from "lucide-react";
 import EditOfferPopup from "@/components/vendor/EditOfferPopup";
+import { mockPrixPublicByProduct, mockPrixParProfilByProduct } from "@/lib/mock/prix-ref-mock";
+import { getPrixRef, calcSavings, formatPrixRef } from "@/lib/utils/prix-ref";
 
 const statusLabels: Record<string, string> = { active: "Active", inactive: "Inactive", rupture: "Rupture", pending: "En attente" };
 const statusColors: Record<string, string> = { active: "#059669", inactive: "#616B7C", rupture: "#EF4343", pending: "#F59E0B" };
@@ -36,6 +38,7 @@ export default function VendorOffers() {
     { id: "performance", label: "Performance" },
     { id: "profiles", label: "Par profil / pays" },
     { id: "rules", label: "Regles client" },
+    { id: "prixref", label: "vs Prix Ref.", badge: vendorOffers.filter(o => mockPrixParProfilByProduct[o.name]).length },
   ];
 
   const filtered = statusFilter === "all" ? vendorOffers : vendorOffers.filter(o => o.status === statusFilter);
@@ -466,6 +469,140 @@ export default function VendorOffers() {
           </VCard>
         </div>
       )}
+
+      {/* VS PRIX REF TAB */}
+      {activeTab === "prixref" && (() => {
+        const offersWithRef = vendorOffers.filter(o => mockPrixParProfilByProduct[o.name]);
+        const offersWithoutRef = vendorOffers.filter(o => !mockPrixParProfilByProduct[o.name]);
+        const competitive = offersWithRef.filter(o => {
+          const ref = getPrixRef(mockPrixParProfilByProduct[o.name], mockPrixPublicByProduct[o.name], "Pharmacie", "BE");
+          return ref && o.priceLivr < ref.price;
+        }).length;
+        const above = offersWithRef.length - competitive;
+        const avgSavings = offersWithRef.length > 0
+          ? Math.round(offersWithRef.reduce((sum, o) => {
+              const ref = getPrixRef(mockPrixParProfilByProduct[o.name], mockPrixPublicByProduct[o.name], "Pharmacie", "BE");
+              if (!ref) return sum;
+              return sum + Math.round(((ref.price - o.priceLivr) / ref.price) * 100);
+            }, 0) / offersWithRef.length)
+          : 0;
+
+        return (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-semibold text-[#1D2530]">Positionnement vs Prix de Reference</p>
+              <span className="text-[11px] text-[#8B95A5]">Lecture seule — Prix de reference geres par MediKong</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <VStat label="Offres competitives" value={`${competitive}/${offersWithRef.length}`} icon="TrendingDown" color="#059669" />
+              <VStat label="Economie moy. acheteur" value={`-${avgSavings}%`} icon="Percent" color="#1B5BDA" />
+              <VStat label="Au-dessus du ref." value={above} icon="TrendingUp" color="#F59E0B" />
+              <VStat label="Sans prix ref." value={offersWithoutRef.length} icon="CircleHelp" color="#8B95A5" />
+            </div>
+
+            <VCard className="!p-0 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-[13px]">
+                  <thead>
+                    <tr className="bg-[#F8FAFC] border-b border-[#E2E8F0] text-[11px] text-[#8B95A5] uppercase tracking-wide">
+                      <th className="text-left py-2.5 px-3 font-medium">Produit</th>
+                      <th className="text-right py-2.5 px-2 font-medium">Votre prix HT</th>
+                      <th className="text-center py-2.5 px-2 font-medium">Pharmacie BE</th>
+                      <th className="text-center py-2.5 px-2 font-medium">Hopital BE</th>
+                      <th className="text-center py-2.5 px-2 font-medium">Infirmier BE</th>
+                      <th className="text-center py-2.5 px-2 font-medium">Impact</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {vendorOffers.map(o => {
+                      const profilData = mockPrixParProfilByProduct[o.name];
+                      const pubData = mockPrixPublicByProduct[o.name];
+                      const getRefFor = (profil: "Pharmacie" | "Hopital" | "Infirmier") => getPrixRef(profilData, pubData, profil, "BE");
+                      const pharma = getRefFor("Pharmacie");
+                      const hop = getRefFor("Hopital");
+                      const inf = getRefFor("Infirmier");
+
+                      const savings = (ref: ReturnType<typeof getPrixRef>) => {
+                        if (!ref) return null;
+                        return calcSavings(ref.price, o.priceLivr, ref.source, ref.date);
+                      };
+                      const sPharma = savings(pharma);
+                      const sHop = savings(hop);
+                      const sInf = savings(inf);
+
+                      const greens = [sPharma, sHop, sInf].filter(s => s && s.pct > 0).length;
+                      const reds = [sPharma, sHop, sInf].filter(s => s && s.pct < 0).length;
+                      const impact = greens >= 2 && reds === 0 ? "Fort" : reds >= 2 ? "Risque" : "Moyen";
+                      const impactColor = impact === "Fort" ? "#059669" : impact === "Risque" ? "#EF4343" : "#F59E0B";
+                      const impactBg = impact === "Fort" ? "#ECFDF5" : impact === "Risque" ? "#FEF2F2" : "#FFFBEB";
+
+                      const renderRef = (s: ReturnType<typeof calcSavings> | null, ref: ReturnType<typeof getPrixRef>) => {
+                        if (!ref) return <span className="text-[#CBD5E1]">—</span>;
+                        const color = s && s.pct > 0 ? "#059669" : s && s.pct < 0 ? "#EF4343" : "#8B95A5";
+                        return (
+                          <div>
+                            <p className="text-[11px] text-[#8B95A5]">Ref: {formatPrixRef(ref.price)}</p>
+                            <p className="text-[12px] font-bold" style={{ color }}>{s ? (s.pct > 0 ? `-${s.pct}%` : `+${Math.abs(s.pct)}%`) : "="}</p>
+                          </div>
+                        );
+                      };
+
+                      return (
+                        <tr key={o.id} className="border-b border-[#E2E8F0] last:border-0 hover:bg-[#F8FAFC]">
+                          <td className="py-2.5 px-3">
+                            <p className="font-medium text-[#1D2530]">{o.name}</p>
+                            <p className="text-[10px] text-[#8B95A5]">{o.ean}</p>
+                          </td>
+                          <td className="py-2.5 px-2 text-right font-bold text-[#1D2530]">{o.priceLivr.toFixed(2)} EUR</td>
+                          <td className="py-2.5 px-2 text-center">{renderRef(sPharma, pharma)}</td>
+                          <td className="py-2.5 px-2 text-center">{renderRef(sHop, hop)}</td>
+                          <td className="py-2.5 px-2 text-center">{renderRef(sInf, inf)}</td>
+                          <td className="py-2.5 px-2 text-center">
+                            <span className="text-[11px] font-bold px-2 py-1 rounded-full" style={{ color: impactColor, backgroundColor: impactBg }}>{impact}</span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </VCard>
+
+            {/* Pricing Coach */}
+            <div className="bg-gradient-to-br from-blue-50 to-purple-50 border border-indigo-200 rounded-[10px] p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Layers size={16} className="text-indigo-700" />
+                <span className="text-[14px] font-bold text-indigo-700">Pricing Coach — Recommandations</span>
+              </div>
+              <ul className="space-y-2 text-[13px] text-[#1D2530]">
+                {vendorOffers.filter(o => {
+                  const profilData = mockPrixParProfilByProduct[o.name];
+                  if (!profilData) return false;
+                  const pharma = getPrixRef(profilData, mockPrixPublicByProduct[o.name], "Pharmacie", "BE");
+                  return pharma && o.priceLivr > pharma.price;
+                }).slice(0, 3).map(o => {
+                  const profilData = mockPrixParProfilByProduct[o.name]!;
+                  const pharma = getPrixRef(profilData, mockPrixPublicByProduct[o.name], "Pharmacie", "BE")!;
+                  const hop = getPrixRef(profilData, mockPrixPublicByProduct[o.name], "Hopital", "BE");
+                  const pharmaPct = Math.round(((o.priceLivr - pharma.price) / pharma.price) * 100);
+                  const hopPct = hop ? Math.round(((o.priceLivr - hop.price) / hop.price) * 100) : null;
+                  const targetPrice = Math.min(pharma.price, hop?.price || Infinity) * 0.98;
+
+                  return (
+                    <li key={o.id}>
+                      <span className="text-purple-700 font-bold mr-1">→</span>
+                      <strong>{o.name}</strong> — Votre prix est au-dessus du ref. Pharmacie (+{pharmaPct}%)
+                      {hopPct && hopPct > 0 ? ` et Hopital (+${hopPct}%)` : ""}.
+                      {" "}Baissez a {formatPrixRef(targetPrice)} pour etre competitif.
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Edit Offer Popup */}
       {editOffer && <EditOfferPopup offerId={editOffer} onClose={() => setEditOffer(null)} />}

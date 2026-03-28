@@ -70,6 +70,8 @@ import AdminEquipe from "./pages/admin/AdminEquipe";
 import AdminParametres from "./pages/admin/AdminParametres";
 import AdminLogs from "./pages/admin/AdminLogs";
 import AdminLoginPage from "./pages/admin/AdminLoginPage";
+import AdminUsers from "./pages/admin/AdminUsers";
+import AdminAuditLog from "./pages/admin/AdminAuditLog";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 

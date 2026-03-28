@@ -60,11 +60,11 @@ export default function HomePage() {
 
   return (
     <Layout>
-      {/* Hero */}
-      <section className="py-10 md:py-14">
-        <div className="mk-container text-center">
+      {/* Hero — generous whitespace like Trivago */}
+      <section className="py-16 md:py-28">
+        <div className="mk-container text-center max-w-3xl mx-auto">
           <motion.h1
-            className="text-2xl md:text-[32px] font-bold text-mk-navy mb-3"
+            className="text-3xl md:text-[42px] leading-tight font-bold text-mk-navy mb-4"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
@@ -72,7 +72,7 @@ export default function HomePage() {
             La marketplace B2B pour les fournitures medicales en Belgique
           </motion.h1>
           <motion.p
-            className="text-sm md:text-base text-mk-sec mb-6 max-w-2xl mx-auto"
+            className="text-base md:text-lg text-mk-sec mb-8 max-w-xl mx-auto"
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
@@ -81,28 +81,28 @@ export default function HomePage() {
           </motion.p>
           <motion.form
             onSubmit={handleSearch}
-            className="max-w-[520px] mx-auto mb-3"
+            className="max-w-[560px] mx-auto mb-4"
             initial={{ opacity: 0, y: 14, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 0.5, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
           >
-            <div className="flex border border-mk-line rounded-md overflow-hidden">
-              <div className="flex items-center pl-3">
-                <Search size={16} className="text-mk-sec" />
+            <div className="flex border border-mk-line rounded-lg overflow-hidden shadow-sm">
+              <div className="flex items-center pl-4">
+                <Search size={18} className="text-mk-sec" />
               </div>
               <input
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 placeholder="Rechercher produits, marques, CNK..."
-                className="flex-1 px-3 py-2.5 text-sm focus:outline-none min-w-0"
+                className="flex-1 px-3 py-3.5 text-sm focus:outline-none min-w-0"
               />
-              <Link to={`/recherche?q=${encodeURIComponent(searchQuery)}`} className="bg-mk-blue text-white px-4 md:px-5 py-2.5 text-sm font-semibold hover:opacity-90 whitespace-nowrap">
+              <Link to={`/recherche?q=${encodeURIComponent(searchQuery)}`} className="bg-mk-blue text-white px-6 py-3.5 text-sm font-semibold hover:opacity-90 whitespace-nowrap">
                 Rechercher
               </Link>
             </div>
           </motion.form>
           <motion.div
-            className="flex items-center justify-center gap-3 text-xs text-mk-ter flex-wrap"
+            className="flex items-center justify-center gap-4 text-xs text-mk-ter flex-wrap"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.4, delay: 0.35 }}

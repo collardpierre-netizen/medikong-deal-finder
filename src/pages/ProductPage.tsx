@@ -39,6 +39,25 @@ export default function ProductPage() {
   const { data: products = [] } = useProducts();
   const { addToCart } = useCart();
   const { data: realOffers = [] } = useProductOffers(product?.id);
+  
+  // Fetch brand and manufacturer details for CTA links
+  const { data: brandData } = useQuery({
+    queryKey: ["brand-detail", product?.brandId],
+    queryFn: async () => {
+      const { data } = await supabase.from("brands").select("id, name, slug").eq("id", product!.brandId!).single();
+      return data;
+    },
+    enabled: !!product?.brandId,
+  });
+  const { data: manufacturerData } = useQuery({
+    queryKey: ["manufacturer-detail", product?.manufacturerId],
+    queryFn: async () => {
+      const { data } = await supabase.from("manufacturers").select("id, name, slug").eq("id", product!.manufacturerId!).single();
+      return data;
+    },
+    enabled: !!product?.manufacturerId,
+  });
+
   const [tab, setTab] = useState<"mk" | "ext" | "market">("mk");
   const [qty, setQty] = useState(1);
   const [openAccordion, setOpenAccordion] = useState<number | null>(null);

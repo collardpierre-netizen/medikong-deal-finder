@@ -8,6 +8,7 @@ import { I18nProvider } from "@/contexts/I18nContext";
 import { CartProvider } from "@/contexts/CartContext";
 import { ImpersonationProvider } from "@/contexts/ImpersonationContext";
 import ImpersonationBanner from "@/components/admin/ImpersonationBanner";
+import { CookieConsent } from "@/components/layout/CookieConsent";
 import HomePage from "./pages/HomePage";
 import ResultsPage from "./pages/ResultsPage";
 import ProductPage from "./pages/ProductPage";
@@ -218,6 +219,7 @@ const App = () => (
 
             <Route path="*" element={<NotFound />} />
           </Routes>
+          <CookieConsent />
         </BrowserRouter>
       </TooltipProvider>
       </ImpersonationProvider>

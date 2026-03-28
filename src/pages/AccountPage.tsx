@@ -1,19 +1,25 @@
 import { Layout } from "@/components/layout/Layout";
 import { ProductImage } from "@/components/shared/ProductCard";
-import { Users, MapPin, Package, AlertCircle, Heart, Zap, Download, Layers, Mail, Phone } from "lucide-react";
+import { Users, MapPin, Package, AlertCircle, Heart, Zap, Download, Layers, Mail, Phone, Clock, List, Plus, Trash2, Eye, ShoppingCart, Search } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { formatPrice } from "@/data/mock";
 import { useProducts } from "@/hooks/useProducts";
+import { useFavorites, useFavoriteLists, useRecentActivity } from "@/hooks/useFavorites";
+import { useAuth } from "@/contexts/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { PageTransition } from "@/components/shared/PageTransition";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 const tabs = [
   { key: "profil", label: "Profil", icon: Users },
   { key: "adresses", label: "Adresses", icon: MapPin },
   { key: "commandes", label: "Commandes", icon: Package },
-  { key: "reclamations", label: "Reclamations", icon: AlertCircle },
-  { key: "suivi", label: "Liste de suivi", icon: Heart },
+  { key: "reclamations", label: "Réclamations", icon: AlertCircle },
+  { key: "favoris", label: "Favoris", icon: Heart },
+  { key: "listes", label: "Mes listes", icon: List },
+  { key: "activite", label: "Activité récente", icon: Clock },
   { key: "portefeuille", label: "Portefeuille", icon: Zap },
   { key: "catalogue", label: "Catalogue", icon: Download },
   { key: "bnpl", label: "Payer plus tard", icon: Layers },
@@ -33,7 +39,12 @@ const contentVariants = {
 
 export default function AccountPage() {
   const { data: products = [] } = useProducts();
+  const { user } = useAuth();
+  const { favorites, isFavorite, toggleFavorite } = useFavorites();
+  const { lists, createList, deleteList } = useFavoriteLists();
+  const { activities } = useRecentActivity();
   const [activeTab, setActiveTab] = useState("profil");
+  const [newListName, setNewListName] = useState("");
 
   return (
     <Layout>
@@ -209,30 +220,202 @@ export default function AccountPage() {
                     </motion.div>
                   )}
 
-                  {activeTab === "suivi" && (
+                  {activeTab === "favoris" && (
                     <div>
-                      <h2 className="text-xl font-bold text-mk-navy mb-5">Liste de suivi</h2>
-                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                        {products.slice(0, 4).map((p, i) => (
-                          <motion.div
-                            key={p.id}
-                            className="border border-mk-line rounded-lg p-4 relative"
-                            initial={{ opacity: 0, y: 16 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: i * 0.08 }}
-                            whileHover={{ y: -4, boxShadow: "0 8px 20px rgba(0,0,0,0.08)" }}
-                          >
-                            <button className="absolute top-3 right-3"><Heart size={16} fill="#EF4343" className="text-mk-red" /></button>
-                            <ProductImage product={p} className="mb-3" />
-                            <p className="text-xs text-mk-sec">{p.brand}</p>
-                            <p className="text-sm font-medium text-mk-text mb-2 truncate">{p.name}</p>
-                            <div className="flex items-baseline gap-2">
-                              <span className="font-bold text-mk-navy">{formatPrice(p.price)} EUR</span>
-                              <span className="text-xs text-mk-green">{p.pct}%</span>
-                            </div>
-                          </motion.div>
-                        ))}
+                      <h2 className="text-xl font-bold text-mk-navy mb-5">Mes favoris</h2>
+                      {!user ? (
+                        <div className="text-center py-12 border border-mk-line rounded-xl">
+                          <Heart size={36} className="mx-auto text-mk-ter mb-3" />
+                          <p className="text-sm text-mk-sec mb-3">Connectez-vous pour sauvegarder vos favoris</p>
+                          <Link to="/connexion"><Button className="bg-mk-blue hover:bg-[#1549b8] text-white">Se connecter</Button></Link>
+                        </div>
+                      ) : favorites.length === 0 ? (
+                        <div className="text-center py-12 border border-mk-line rounded-xl">
+                          <Heart size={36} className="mx-auto text-mk-ter mb-3" />
+                          <h3 className="text-lg font-bold text-mk-navy mb-1">Aucun favori</h3>
+                          <p className="text-sm text-mk-sec">Ajoutez des produits à vos favoris en cliquant sur le cœur</p>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                          {favorites.map((f: any, i: number) => (
+                            <motion.div
+                              key={f.id}
+                              className="border border-mk-line rounded-lg p-4 relative"
+                              initial={{ opacity: 0, y: 16 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: i * 0.06 }}
+                              whileHover={{ y: -4, boxShadow: "0 8px 20px rgba(0,0,0,0.08)" }}
+                            >
+                              <button
+                                onClick={() => toggleFavorite.mutate(f.product_id)}
+                                className="absolute top-3 right-3 z-10"
+                              >
+                                <Heart size={16} fill="#EF4343" className="text-mk-red" />
+                              </button>
+                              <Link to={`/produit/${f.products?.slug || f.product_id}`}>
+                                <div className="aspect-square bg-mk-alt rounded-md mb-3 flex items-center justify-center">
+                                  {f.products?.image_urls?.[0] ? (
+                                    <img src={f.products.image_urls[0]} alt={f.products.name} className="object-contain w-full h-full p-2" />
+                                  ) : (
+                                    <Package size={32} className="text-mk-ter" />
+                                  )}
+                                </div>
+                                <p className="text-xs text-mk-sec truncate">{f.products?.label || "Produit"}</p>
+                                <p className="text-sm font-medium text-mk-text mb-2 truncate">{f.products?.name}</p>
+                                {f.products?.best_price_incl_vat && (
+                                  <span className="font-bold text-mk-navy text-sm">{formatPrice(f.products.best_price_incl_vat)} €</span>
+                                )}
+                              </Link>
+                            </motion.div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {activeTab === "listes" && (
+                    <div>
+                      <div className="flex items-center justify-between mb-5">
+                        <h2 className="text-xl font-bold text-mk-navy">Mes listes</h2>
                       </div>
+                      {!user ? (
+                        <div className="text-center py-12 border border-mk-line rounded-xl">
+                          <List size={36} className="mx-auto text-mk-ter mb-3" />
+                          <p className="text-sm text-mk-sec mb-3">Connectez-vous pour créer des listes</p>
+                          <Link to="/connexion"><Button className="bg-mk-blue hover:bg-[#1549b8] text-white">Se connecter</Button></Link>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="flex gap-2 mb-5">
+                            <input
+                              value={newListName}
+                              onChange={e => setNewListName(e.target.value)}
+                              placeholder="Nom de la nouvelle liste..."
+                              className="flex-1 border border-mk-line rounded-md px-3 py-2 text-sm"
+                            />
+                            <Button
+                              onClick={() => {
+                                if (newListName.trim()) {
+                                  createList.mutate({ name: newListName.trim() });
+                                  setNewListName("");
+                                  toast.success("Liste créée");
+                                }
+                              }}
+                              className="bg-mk-blue hover:bg-[#1549b8] text-white gap-1.5"
+                              size="sm"
+                            >
+                              <Plus size={14} /> Créer
+                            </Button>
+                          </div>
+                          {lists.length === 0 ? (
+                            <div className="text-center py-12 border border-mk-line rounded-xl">
+                              <List size={36} className="mx-auto text-mk-ter mb-3" />
+                              <h3 className="text-lg font-bold text-mk-navy mb-1">Aucune liste</h3>
+                              <p className="text-sm text-mk-sec">Créez votre première liste pour organiser vos produits favoris</p>
+                            </div>
+                          ) : (
+                            <div className="space-y-3">
+                              {lists.map((list: any, i: number) => (
+                                <motion.div
+                                  key={list.id}
+                                  className="border border-mk-line rounded-xl p-5"
+                                  initial={{ opacity: 0, y: 12 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  transition={{ delay: i * 0.06 }}
+                                >
+                                  <div className="flex items-center justify-between mb-3">
+                                    <div>
+                                      <h3 className="text-base font-bold text-mk-navy">{list.name}</h3>
+                                      <p className="text-xs text-mk-sec">{list.favorite_list_items?.length || 0} produits</p>
+                                    </div>
+                                    <button
+                                      onClick={() => { deleteList.mutate(list.id); toast.success("Liste supprimée"); }}
+                                      className="text-mk-red hover:bg-red-50 p-2 rounded-lg transition-colors"
+                                    >
+                                      <Trash2 size={16} />
+                                    </button>
+                                  </div>
+                                  {list.favorite_list_items?.length > 0 ? (
+                                    <div className="flex gap-2 overflow-x-auto pb-1">
+                                      {list.favorite_list_items.slice(0, 6).map((item: any) => (
+                                        <Link key={item.id} to={`/produit/${item.products?.slug || item.product_id}`} className="shrink-0 w-16 h-16 rounded-lg bg-mk-alt flex items-center justify-center overflow-hidden">
+                                          {item.products?.image_urls?.[0] ? (
+                                            <img src={item.products.image_urls[0]} alt="" className="object-contain w-full h-full p-1" />
+                                          ) : (
+                                            <Package size={20} className="text-mk-ter" />
+                                          )}
+                                        </Link>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <p className="text-xs text-mk-ter italic">Liste vide — ajoutez des produits depuis le catalogue</p>
+                                  )}
+                                </motion.div>
+                              ))}
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  )}
+
+                  {activeTab === "activite" && (
+                    <div>
+                      <h2 className="text-xl font-bold text-mk-navy mb-5">Activité récente</h2>
+                      {!user ? (
+                        <div className="text-center py-12 border border-mk-line rounded-xl">
+                          <Clock size={36} className="mx-auto text-mk-ter mb-3" />
+                          <p className="text-sm text-mk-sec mb-3">Connectez-vous pour voir votre activité</p>
+                          <Link to="/connexion"><Button className="bg-mk-blue hover:bg-[#1549b8] text-white">Se connecter</Button></Link>
+                        </div>
+                      ) : activities.length === 0 ? (
+                        <div className="text-center py-12 border border-mk-line rounded-xl">
+                          <Clock size={36} className="mx-auto text-mk-ter mb-3" />
+                          <h3 className="text-lg font-bold text-mk-navy mb-1">Aucune activité</h3>
+                          <p className="text-sm text-mk-sec">Votre historique de navigation apparaîtra ici</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          {activities.map((a: any, i: number) => {
+                            const iconMap: Record<string, any> = {
+                              view_product: Eye,
+                              search: Search,
+                              add_to_cart: ShoppingCart,
+                              order: Package,
+                            };
+                            const labelMap: Record<string, string> = {
+                              view_product: "Produit consulté",
+                              search: "Recherche",
+                              add_to_cart: "Ajouté au panier",
+                              order: "Commande",
+                            };
+                            const Icon = iconMap[a.activity_type] || Clock;
+                            return (
+                              <motion.div
+                                key={a.id}
+                                className="flex items-center gap-3 border border-mk-line rounded-lg p-3"
+                                initial={{ opacity: 0, x: -8 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: i * 0.04 }}
+                              >
+                                <div className="w-9 h-9 rounded-lg bg-[#EFF6FF] flex items-center justify-center shrink-0">
+                                  <Icon size={16} className="text-[#1B5BDA]" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium text-mk-navy truncate">
+                                    {labelMap[a.activity_type] || a.activity_type}
+                                    {a.products?.name && <span className="text-mk-sec font-normal"> — {a.products.name}</span>}
+                                  </p>
+                                  <p className="text-xs text-mk-ter">{new Date(a.created_at).toLocaleString("fr-BE")}</p>
+                                </div>
+                                {a.products?.slug && (
+                                  <Link to={`/produit/${a.products.slug}`} className="text-xs text-mk-blue hover:underline shrink-0">Voir</Link>
+                                )}
+                              </motion.div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                   )}
 

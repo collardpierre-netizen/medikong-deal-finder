@@ -5,7 +5,8 @@ import { useProducts, useProduct, useProductOffers } from "@/hooks/useProducts";
 import { useCart } from "@/hooks/useCart";
 import { useAuth } from "@/contexts/AuthContext";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { Copy, Sliders, ShoppingCart, ExternalLink, Eye, Shield, Check, Truck, Globe, ChevronDown, Minus, Plus, Bell, ArrowLeft, Building2, Tag, Store } from "lucide-react";
+import { Copy, Sliders, ShoppingCart, ExternalLink, Eye, Shield, Check, Truck, Globe, ChevronDown, Minus, Plus, Bell, ArrowLeft, Building2, Tag, Store, Heart } from "lucide-react";
+import { useFavorites, useRecentActivity } from "@/hooks/useFavorites";
 import { useState, useEffect, useRef } from "react";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from "recharts";
 import { motion, AnimatePresence } from "framer-motion";
@@ -272,6 +273,15 @@ export default function ProductPage() {
   const [showStickyBar, setShowStickyBar] = useState(false);
   const offerSectionRef = useRef<HTMLDivElement>(null);
   const [stickyQty, setStickyQty] = useState(1);
+  const { isFavorite, toggleFavorite } = useFavorites();
+  const { trackActivity } = useRecentActivity();
+
+  // Track product view
+  useEffect(() => {
+    if (product?.id && user) {
+      trackActivity.mutate({ activityType: "view_product", productId: product.id });
+    }
+  }, [product?.id, user?.id]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -371,7 +381,18 @@ export default function ProductPage() {
               ) : (
                 <p className="text-sm text-mk-sec mb-1">{product.brand}</p>
               )}
-              <h1 className="text-xl md:text-2xl font-bold text-mk-navy mb-3">{product.name}</h1>
+              <div className="flex items-start justify-between gap-3">
+                <h1 className="text-xl md:text-2xl font-bold text-mk-navy mb-3">{product.name}</h1>
+                {user && (
+                  <motion.button
+                    onClick={() => toggleFavorite.mutate(product.id)}
+                    className="shrink-0 mt-1 p-2 rounded-lg hover:bg-red-50 transition-colors"
+                    whileTap={{ scale: 0.85 }}
+                  >
+                    <Heart size={20} className={isFavorite(product.id) ? "text-mk-red fill-current" : "text-mk-ter"} />
+                  </motion.button>
+                )}
+              </div>
               <div className="flex items-center gap-3 mb-1 flex-wrap">
                 <span className="text-xs text-mk-ter">GTIN: {product.ean}</span>
                 <motion.button

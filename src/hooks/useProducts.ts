@@ -28,6 +28,8 @@ export interface Product {
   categoryL3?: string;
   descriptionShort?: string;
   weightG?: number;
+  brandId?: string;
+  manufacturerId?: string;
 }
 
 function slugify(text: string): string {

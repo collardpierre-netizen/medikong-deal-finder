@@ -498,7 +498,7 @@ export default function VendorOffers() {
               <VStat label="Offres competitives" value={`${competitive}/${offersWithRef.length}`} icon="TrendingDown" color="#059669" />
               <VStat label="Economie moy. acheteur" value={`-${avgSavings}%`} icon="Percent" color="#1B5BDA" />
               <VStat label="Au-dessus du ref." value={above} icon="TrendingUp" color="#F59E0B" />
-              <VStat label="Sans prix ref." value={offersWithoutRef.length} icon="HelpCircle" color="#8B95A5" />
+              <VStat label="Sans prix ref." value={offersWithoutRef.length} icon="CircleHelp" color="#8B95A5" />
             </div>
 
             <VCard className="!p-0 overflow-hidden">

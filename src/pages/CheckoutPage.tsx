@@ -32,7 +32,7 @@ export default function CheckoutPage() {
   ];
   const paymentMethods = ["Carte bancaire", "Virement SEPA", "Paiement differe Mondu"];
 
-  const subtotal = items.reduce((s, i) => s + (i.product?.price || 0) * i.quantity, 0);
+  const subtotal = items.reduce((s, i) => s + (i.price_ht || i.product?.price || 0) * i.quantity, 0);
   const shippingCost = shippingOpts[shipping].price;
   const total = subtotal + shippingCost;
 

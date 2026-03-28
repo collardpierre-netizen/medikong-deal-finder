@@ -1,12 +1,10 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { VCard } from "@/components/vendor/ui/VCard";
 import { VTabBar } from "@/components/vendor/ui/VTabBar";
 import { VBadge } from "@/components/vendor/ui/VBadge";
 import { VBtn } from "@/components/vendor/ui/VBtn";
 import VendorCommissionTab from "@/components/vendor/VendorCommissionTab";
-import { Check, Eye, Edit2, AlertTriangle, Percent, BarChart3, Layers, Split } from "lucide-react";
+import { Check, Eye, Edit2 } from "lucide-react";
 
 const teamMembers = [
   { id: 1, name: "Pierre Collard", email: "pierre@pharmamed.be", role: "Admin", lastActive: "27/03 10:14", avatar: "PC" },
@@ -52,12 +50,6 @@ const notifCategories = [
       { name: "Facture disponible", email: true, push: false, webhook: false },
     ]
   },
-  {
-    label: "Appels d'offres", items: [
-      { name: "Nouvel AO matching", email: true, push: true, webhook: false },
-      { name: "Resultat AO", email: true, push: true, webhook: false },
-    ]
-  },
 ];
 
 export default function VendorSettings() {
@@ -69,35 +61,6 @@ export default function VendorSettings() {
     { id: "api", label: "API & Webhooks" },
     { id: "notifications", label: "Notifications" },
   ];
-
-  const { data: commissionRules = [] } = useQuery({
-    queryKey: ["vendor-commission-rules"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("commission_rules")
-        .select("*")
-        .or("vendor_id.is.null,is_default.eq.true")
-        .order("is_default", { ascending: false });
-      if (error) throw error;
-      return data as any[];
-    },
-  });
-
-  const activeRule = commissionRules.find((r: any) => r.is_default) || commissionRules[0];
-
-  const modelLabels: Record<string, string> = {
-    fixed_rate: "Taux fixe",
-    tiered_gmv: "Paliers GMV",
-    category_based: "Par catégorie",
-    margin_split: "Split marge",
-  };
-
-  const modelIcons: Record<string, React.ElementType> = {
-    fixed_rate: Percent,
-    tiered_gmv: BarChart3,
-    category_based: Layers,
-    margin_split: Split,
-  };
 
   return (
     <div className="space-y-5">
@@ -114,7 +77,6 @@ export default function VendorSettings() {
                 ["N° TVA", "BE0123.456.789"],
                 ["Pays", "Belgique"],
                 ["Membre depuis", "Juin 2024"],
-                ["Niveau", "Gold"],
                 ["Commission", "12%"],
               ].map(([k, v]) => (
                 <div key={k} className="flex justify-between">
@@ -189,23 +151,6 @@ export default function VendorSettings() {
               </table>
             </div>
           </VCard>
-
-          <VCard>
-            <h3 className="text-sm font-semibold text-[#1D2530] mb-3">Roles disponibles</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              {[
-                { role: "Admin", desc: "Acces complet" },
-                { role: "Commercial", desc: "Offres, prix, catalogue, analytics" },
-                { role: "Logistique", desc: "Commandes, expeditions, retours" },
-                { role: "Lecture seule", desc: "Consultation uniquement" },
-              ].map(r => (
-                <div key={r.role} className="bg-[#F8FAFC] rounded-lg p-3">
-                  <VBadge color={roleColors[r.role]}>{r.role}</VBadge>
-                  <p className="text-[11px] text-[#616B7C] mt-1.5">{r.desc}</p>
-                </div>
-              ))}
-            </div>
-          </VCard>
         </div>
       )}
 
@@ -230,13 +175,10 @@ export default function VendorSettings() {
               </div>
             </div>
             <VBtn small className="mt-3" icon="RefreshCw">Regenerer les cles</VBtn>
-            <p className="text-[11px] text-[#1B5BDA] mt-2 cursor-pointer hover:underline">docs.medikong.pro/api/v1</p>
           </VCard>
 
           <VCard>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-[#1D2530]">Webhooks configures</h3>
-            </div>
+            <h3 className="text-sm font-semibold text-[#1D2530] mb-4">Webhooks configures</h3>
             <div className="space-y-3">
               {webhooks.map(w => (
                 <div key={w.event} className="bg-[#F8FAFC] rounded-lg p-3">
@@ -249,7 +191,6 @@ export default function VendorSettings() {
                 </div>
               ))}
             </div>
-            <VBtn small className="mt-3 w-full !justify-center" icon="Plus">Ajouter un webhook</VBtn>
           </VCard>
         </div>
       )}
@@ -268,8 +209,8 @@ export default function VendorSettings() {
               </thead>
               <tbody>
                 {notifCategories.map(cat => (
-                  <>
-                    <tr key={cat.label} className="bg-[#F8FAFC]">
+                  <tbody key={cat.label}>
+                    <tr className="bg-[#F8FAFC]">
                       <td colSpan={4} className="py-2 px-3 text-[11px] font-semibold text-[#1D2530] uppercase tracking-wide">{cat.label}</td>
                     </tr>
                     {cat.items.map(item => (
@@ -288,7 +229,7 @@ export default function VendorSettings() {
                         ))}
                       </tr>
                     ))}
-                  </>
+                  </tbody>
                 ))}
               </tbody>
             </table>

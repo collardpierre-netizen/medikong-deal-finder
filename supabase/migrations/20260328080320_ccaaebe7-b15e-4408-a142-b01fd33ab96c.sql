@@ -1,0 +1,1 @@
+UPDATE public.admin_users SET user_id = '988440e3-d79f-4945-9709-db21b6c3b36d' WHERE email = 'pierre@medikong.pro' AND role = 'super_admin';

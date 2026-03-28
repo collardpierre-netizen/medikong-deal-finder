@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { MapPin, FileText, CreditCard, Shield, Check, Lock } from "lucide-react";
+import logoDark from "@/assets/Logo_horizontal_sombre2.png";
 
 const S = {
   bg: "#F1F5F9", card: "#FFFFFF", text: "#1D2530", sec: "#616B7C", ter: "#8B95A5",
@@ -11,9 +12,7 @@ const S = {
 };
 
 const Logo = () => (
-  <span style={{ fontWeight: 700, fontSize: 20, fontFamily: "'DM Sans', sans-serif" }}>
-    <span style={{ color: S.navy }}>MediKong</span><span style={{ color: S.pink }}>.pro</span>
-  </span>
+  <img src={logoDark} alt="MediKong.pro" style={{ height: 36 }} />
 );
 
 const Input = ({ value, onChange, placeholder, style: extra, half }: any) => (

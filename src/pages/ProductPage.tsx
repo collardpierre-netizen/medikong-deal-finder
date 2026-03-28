@@ -43,12 +43,17 @@ export default function ProductPage() {
   
   // Fetch brand and manufacturer details for CTA links
   const { data: brandData } = useQuery({
-    queryKey: ["brand-detail", product?.brandId],
+    queryKey: ["brand-detail", product?.brandId, product?.brand],
     queryFn: async () => {
-      const { data } = await supabase.from("brands").select("id, name, slug").eq("id", product!.brandId!).single();
+      if (product!.brandId) {
+        const { data } = await supabase.from("brands").select("id, name, slug").eq("id", product!.brandId).single();
+        if (data) return data;
+      }
+      // Fallback: match by name
+      const { data } = await supabase.from("brands").select("id, name, slug").ilike("name", product!.brand).single();
       return data;
     },
-    enabled: !!product?.brandId,
+    enabled: !!product,
   });
   const { data: manufacturerData } = useQuery({
     queryKey: ["manufacturer-detail", product?.manufacturerId],
@@ -154,7 +159,7 @@ export default function ProductPage() {
               transition={{ duration: 0.5, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
             >
               {brandData ? (
-                <Link to={`/marques/${brandData.slug}`} className="text-sm text-mk-blue hover:underline mb-1 inline-flex items-center gap-1">
+                <Link to={`/marque/${brandData.slug}`} className="text-sm text-mk-blue hover:underline mb-1 inline-flex items-center gap-1">
                   <Tag size={13} /> {product.brand}
                 </Link>
               ) : (
@@ -180,7 +185,7 @@ export default function ProductPage() {
               <div className="flex items-center gap-2 mb-4 flex-wrap">
                 {brandData && (
                   <Link
-                    to={`/marques/${brandData.slug}`}
+                    to={`/marque/${brandData.slug}`}
                     className="inline-flex items-center gap-1.5 text-xs font-medium border border-mk-line rounded-full px-3 py-1.5 text-mk-navy hover:border-mk-blue hover:text-mk-blue transition-colors"
                   >
                     <Tag size={12} /> Marque : {brandData.name}
@@ -188,7 +193,7 @@ export default function ProductPage() {
                 )}
                 {manufacturerData && (
                   <Link
-                    to={`/fabricants/${manufacturerData.slug}`}
+                    to={`/fabricant/${manufacturerData.slug}`}
                     className="inline-flex items-center gap-1.5 text-xs font-medium border border-mk-line rounded-full px-3 py-1.5 text-mk-navy hover:border-mk-blue hover:text-mk-blue transition-colors"
                   >
                     <Building2 size={12} /> Fabricant : {manufacturerData.name}

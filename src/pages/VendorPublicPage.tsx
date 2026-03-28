@@ -24,7 +24,6 @@ export default function VendorPublicPage() {
         .from("vendors")
         .select("*")
         .eq("slug", slug!)
-        .eq("is_public", true)
         .single();
       if (error) throw error;
       return data;

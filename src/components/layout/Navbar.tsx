@@ -146,12 +146,14 @@ export function Navbar() {
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.25, ease: "easeOut" }}
           >
-            <form onSubmit={handleSearch} className="sm:hidden">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-mk-sec" size={16} />
-                <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Rechercher..." className="w-full pl-9 pr-3 py-2 rounded-md text-sm bg-white text-mk-text" />
-              </div>
-            </form>
+            {!isHomePage && (
+              <form onSubmit={handleSearch} className="sm:hidden">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-mk-sec" size={16} />
+                  <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Rechercher..." className="w-full pl-9 pr-3 py-2 rounded-md text-sm bg-white text-mk-text" />
+                </div>
+              </form>
+            )}
             {user ? (
               <>
                 {isAdmin && (

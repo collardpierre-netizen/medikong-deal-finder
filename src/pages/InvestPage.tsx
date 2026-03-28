@@ -169,6 +169,11 @@ export default function InvestPage() {
     <Layout>
       {/* ════════════ HERO ════════════ */}
       <section className="relative overflow-hidden" style={{ background: "linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #1a365d 100%)" }}>
+        {/* Background patterns */}
+        <div className="absolute inset-0 invest-dots" />
+        <div className="absolute inset-0 invest-grid" />
+        <div className="absolute inset-0 invest-glow-tl" />
+        <div className="absolute inset-0 invest-glow-br" />
         <div className="max-w-4xl mx-auto px-5 py-24 md:py-32 text-center text-white relative z-10">
           <motion.span className="inline-flex items-center gap-2 bg-mk-green/90 rounded-full px-5 py-2 text-sm mb-10 text-white font-medium"
             initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>

@@ -20,6 +20,7 @@ const translations: Record<Lang, Record<string, string>> = {
     orders: "Commandes",
     disputes: "Litiges",
     finances: "Finances",
+    commissions: "Commissions",
     priceWatch: "Veille prix",
     leads: "Leads & Affiliation",
     analytics: "Analytics",

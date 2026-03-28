@@ -27,8 +27,8 @@ export default function QualityGuaranteePage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {guarantees.map(g => (
             <div key={g.title} className="bg-white border border-mk-line rounded-2xl p-7 text-center hover:-translate-y-1 hover:shadow-lg transition-all duration-300">
-              <div className="w-14 h-14 rounded-2xl bg-mk-green/10 flex items-center justify-center mx-auto mb-5">
-                <g.icon size={22} className="text-mk-green" />
+              <div className="w-14 h-14 rounded-2xl bg-[#EFF6FF] flex items-center justify-center mx-auto mb-5">
+                <g.icon size={22} className="text-[#1B5BDA]" />
               </div>
               <h3 className="text-base font-bold text-mk-navy mb-2">{g.title}</h3>
               <p className="text-sm text-muted-foreground leading-relaxed">{g.desc}</p>

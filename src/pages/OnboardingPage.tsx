@@ -69,7 +69,11 @@ const leadTimeOptions = ["24h", "48h", "3-5 jours", "1-2 semaines"];
 import logoLight from "@/assets/logo-horizontal.png";
 import logoDark from "@/assets/Logo_horizontal_sombre2.png";
 const Logo = ({ white = false, size = 22 }: { white?: boolean; size?: number }) => (
-  <img src={white ? logoLight : logoDark} alt="MediKong.pro" style={{ height: size + 14 }} />
+  <img
+    src={white ? logoLight : logoDark}
+    alt="MediKong.pro"
+    style={{ height: size + 20, filter: white ? "brightness(1.15)" : "none" }}
+  />
 );
 
 /* ─── Reusable UI ─── */

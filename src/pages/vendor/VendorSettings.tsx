@@ -1,9 +1,11 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { VCard } from "@/components/vendor/ui/VCard";
 import { VTabBar } from "@/components/vendor/ui/VTabBar";
 import { VBadge } from "@/components/vendor/ui/VBadge";
 import { VBtn } from "@/components/vendor/ui/VBtn";
-import { Check, Eye, Edit2, AlertTriangle } from "lucide-react";
+import { Check, Eye, Edit2, AlertTriangle, Percent, BarChart3, Layers, Split } from "lucide-react";
 
 const teamMembers = [
   { id: 1, name: "Pierre Collard", email: "pierre@pharmamed.be", role: "Admin", lastActive: "27/03 10:14", avatar: "PC" },

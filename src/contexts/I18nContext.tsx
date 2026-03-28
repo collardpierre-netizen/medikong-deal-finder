@@ -27,6 +27,7 @@ const translations: Record<Lang, Record<string, string>> = {
     importExport: "Import / Export",
     crm: "CRM",
     cms: "CMS",
+    onboardingCms: "Onboarding CMS",
     logistics: "Logistique",
     team: "Équipe & Rôles",
     settings: "Paramètres",

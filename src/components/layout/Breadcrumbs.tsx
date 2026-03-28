@@ -18,6 +18,9 @@ const routeLabels: Record<string, string> = {
   categorie: "Catégorie",
   promotions: "Promotions",
   "seller-onboarding": "Devenir vendeur",
+  professionnels: "Professionnels",
+  sourcing: "Sourcing",
+  categories: "Catégories",
 };
 
 export function Breadcrumbs() {

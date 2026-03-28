@@ -176,6 +176,7 @@ const translations: Record<Lang, Record<string, string>> = {
     orders: "Bestellungen",
     disputes: "Streitfälle",
     finances: "Finanzen",
+    commissions: "Provisionen",
     priceWatch: "Preisüberwachung",
     leads: "Leads & Affiliate",
     analytics: "Analytics",

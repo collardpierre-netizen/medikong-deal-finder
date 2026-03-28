@@ -38,7 +38,7 @@ export default function WhyMedikongPage() {
               "Notre Pricing Coach vous aide à positionner vos offres de manière optimale, avec des recommandations basées sur l'IA.",
             ]}
             imagePlaceholder="Screenshot : dashboard analytique"
-            imageGradient="from-purple-100 to-violet-200"
+            imageGradient="from-blue-100 to-indigo-200"
           />
           <SplitSection
             tag={{ label: "Sécurité", color: "#059669", bg: "#ECFDF5" }}

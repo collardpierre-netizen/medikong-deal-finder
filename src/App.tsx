@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -10,103 +11,137 @@ import { ImpersonationProvider } from "@/contexts/ImpersonationContext";
 import ImpersonationBanner from "@/components/admin/ImpersonationBanner";
 import { CookieConsent } from "@/components/layout/CookieConsent";
 import { HelmetProvider } from "react-helmet-async";
-import HomePage from "./pages/HomePage";
-import ResultsPage from "./pages/ResultsPage";
-import ProductPage from "./pages/ProductPage";
-import BrandsPage from "./pages/BrandsPage";
-import BrandDetailPage from "./pages/BrandDetailPage";
-import ManufacturerPage from "./pages/ManufacturerPage";
-import CartPage from "./pages/CartPage";
-import AccountPage from "./pages/AccountPage";
-import CheckoutPage from "./pages/CheckoutPage";
-import ConfirmationPage from "./pages/ConfirmationPage";
-import OrderDetailPage from "./pages/OrderDetailPage";
-import LoginPage from "./pages/LoginPage";
-import RegisterPage from "./pages/RegisterPage";
-import CategoryPage from "./pages/CategoryPage";
-import PromotionsPage from "./pages/PromotionsPage";
-import SellerOnboardingPage from "./pages/SellerOnboardingPage";
-import BuyerOnboardingPage from "./pages/BuyerOnboardingPage";
-import OnboardingPage from "./pages/OnboardingPage";
-import BuyerCompletionPage from "./pages/BuyerCompletionPage";
-import NotFound from "./pages/NotFound";
-import InvestPage from "./pages/InvestPage";
-import AdminLayout from "./components/admin/AdminLayout";
-import VendorLayout from "./components/vendor/VendorLayout";
-import VendorDashboard from "./pages/vendor/VendorDashboard";
-import VendorPlaceholder from "./pages/vendor/VendorPlaceholder";
-import VendorCatalog from "./pages/vendor/VendorCatalog";
-import VendorOffers from "./pages/vendor/VendorOffers";
-import VendorOrders from "./pages/vendor/VendorOrders";
-import VendorOpportunities from "./pages/vendor/VendorOpportunities";
-import VendorAlerts from "./pages/vendor/VendorAlerts";
-import VendorTenders from "./pages/vendor/VendorTenders";
-import VendorAnalytics from "./pages/vendor/VendorAnalytics";
-import VendorFinance from "./pages/vendor/VendorFinance";
-import VendorLogistics from "./pages/vendor/VendorLogistics";
-import VendorHealth from "./pages/vendor/VendorHealth";
-import VendorAcademy from "./pages/vendor/VendorAcademy";
-import VendorSettings from "./pages/vendor/VendorSettings";
-import VendorMessages from "./pages/vendor/VendorMessages";
-import AdminDashboard from "./pages/admin/AdminDashboard";
-import AdminPlaceholder from "./pages/admin/AdminPlaceholder";
-import AdminVendeurs from "./pages/admin/AdminVendeurs";
-import AdminVendeurDetail from "./pages/admin/AdminVendeurDetail";
-import AdminOnboarding from "./pages/admin/AdminOnboarding";
-import AdminProduits from "./pages/admin/AdminProduits";
-import AdminProduitDetail from "./pages/admin/AdminProduitDetail";
-import AdminSchemasPIM from "./pages/admin/AdminSchemasPIM";
-import AdminCommandes from "./pages/admin/AdminCommandes";
-import AdminFinances from "./pages/admin/AdminFinances";
-import AdminLitiges from "./pages/admin/AdminLitiges";
-import AdminVeillePrix from "./pages/admin/AdminVeillePrix";
-import AdminLeads from "./pages/admin/AdminLeads";
-import AdminAnalytics from "./pages/admin/AdminAnalytics";
-import AdminReglementaire from "./pages/admin/AdminReglementaire";
-import AdminImportExport from "./pages/admin/AdminImportExport";
-import AdminCategories from "./pages/admin/AdminCategories";
-import AdminMarques from "./pages/admin/AdminMarques";
-import AdminCRM from "./pages/admin/AdminCRM";
-import AdminCMS from "./pages/admin/AdminCMS";
-import AdminPrixReference from "./pages/admin/AdminPrixReference";
-import AdminInvestPipeline from "./pages/admin/AdminInvestPipeline";
-import AdminLogistique from "./pages/admin/AdminLogistique";
-import AdminEquipe from "./pages/admin/AdminEquipe";
-import AdminParametres from "./pages/admin/AdminParametres";
-import AdminLogs from "./pages/admin/AdminLogs";
-import AdminLoginPage from "./pages/admin/AdminLoginPage";
-import AdminUsers from "./pages/admin/AdminUsers";
-import AdminAuditLog from "./pages/admin/AdminAuditLog";
-import AdminCommissions from "./pages/admin/AdminCommissions";
-import AdminOnboardingCMS from "./pages/admin/AdminOnboardingCMS";
-import AdminSync from "./pages/admin/AdminSync";
-import ForgotPasswordPage from "./pages/ForgotPasswordPage";
-import ResetPasswordPage from "./pages/ResetPasswordPage";
-import AboutPage from "./pages/entreprise/AboutPage";
-import WhyMedikongPage from "./pages/entreprise/WhyMedikongPage";
-import HowItWorksPage from "./pages/entreprise/HowItWorksPage";
-import TeamPage from "./pages/entreprise/TeamPage";
-import CareersPage from "./pages/entreprise/CareersPage";
-import PressPage from "./pages/entreprise/PressPage";
-import InvestirPage from "./pages/entreprise/InvestirPage";
-import VendorPublicPage from "./pages/VendorPublicPage";
-import SupplierVerificationPage from "./pages/trust/SupplierVerificationPage";
-import QualityGuaranteePage from "./pages/trust/QualityGuaranteePage";
-import HowToOrderPage from "./pages/trust/HowToOrderPage";
-import BuyNowPayLaterPage from "./pages/trust/BuyNowPayLaterPage";
-import LogisticsPage from "./pages/trust/LogisticsPage";
-import BecomeSellerPage from "./pages/trust/BecomeSellerPage";
-import TestimonialsPage from "./pages/trust/TestimonialsPage";
-import ContactPage from "./pages/trust/ContactPage";
-import HelpCenterPage from "./pages/trust/HelpCenterPage";
-import LegalNoticePage from "./pages/legal/LegalNoticePage";
-import TermsPage from "./pages/legal/TermsPage";
-import PrivacyPage from "./pages/legal/PrivacyPage";
-import CookiePolicyPage from "./pages/legal/CookiePolicyPage";
-import ProfessionnelsPage from "./pages/ProfessionnelsPage";
-import SourcingPage from "./pages/SourcingPage";
-import CategoriesPage from "./pages/CategoriesPage";
-const queryClient = new QueryClient();
+import { Loader2 } from "lucide-react";
+
+// Page loader for lazy routes
+function PageLoader() {
+  return (
+    <div className="flex items-center justify-center min-h-[60vh]">
+      <Loader2 className="w-8 h-8 animate-spin text-mk-blue" />
+    </div>
+  );
+}
+
+// Lazy load ALL pages
+const HomePage = lazy(() => import("./pages/HomePage"));
+const ResultsPage = lazy(() => import("./pages/ResultsPage"));
+const ProductPage = lazy(() => import("./pages/ProductPage"));
+const BrandsPage = lazy(() => import("./pages/BrandsPage"));
+const BrandDetailPage = lazy(() => import("./pages/BrandDetailPage"));
+const ManufacturerPage = lazy(() => import("./pages/ManufacturerPage"));
+const CartPage = lazy(() => import("./pages/CartPage"));
+const AccountPage = lazy(() => import("./pages/AccountPage"));
+const CheckoutPage = lazy(() => import("./pages/CheckoutPage"));
+const ConfirmationPage = lazy(() => import("./pages/ConfirmationPage"));
+const OrderDetailPage = lazy(() => import("./pages/OrderDetailPage"));
+const LoginPage = lazy(() => import("./pages/LoginPage"));
+const RegisterPage = lazy(() => import("./pages/RegisterPage"));
+const CategoryPage = lazy(() => import("./pages/CategoryPage"));
+const PromotionsPage = lazy(() => import("./pages/PromotionsPage"));
+const SellerOnboardingPage = lazy(() => import("./pages/SellerOnboardingPage"));
+const BuyerOnboardingPage = lazy(() => import("./pages/BuyerOnboardingPage"));
+const OnboardingPage = lazy(() => import("./pages/OnboardingPage"));
+const BuyerCompletionPage = lazy(() => import("./pages/BuyerCompletionPage"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const InvestPage = lazy(() => import("./pages/InvestPage"));
+const ForgotPasswordPage = lazy(() => import("./pages/ForgotPasswordPage"));
+const ResetPasswordPage = lazy(() => import("./pages/ResetPasswordPage"));
+const VendorPublicPage = lazy(() => import("./pages/VendorPublicPage"));
+const ProfessionnelsPage = lazy(() => import("./pages/ProfessionnelsPage"));
+const SourcingPage = lazy(() => import("./pages/SourcingPage"));
+const CategoriesPage = lazy(() => import("./pages/CategoriesPage"));
+
+// Entreprise pages
+const AboutPage = lazy(() => import("./pages/entreprise/AboutPage"));
+const WhyMedikongPage = lazy(() => import("./pages/entreprise/WhyMedikongPage"));
+const HowItWorksPage = lazy(() => import("./pages/entreprise/HowItWorksPage"));
+const TeamPage = lazy(() => import("./pages/entreprise/TeamPage"));
+const CareersPage = lazy(() => import("./pages/entreprise/CareersPage"));
+const PressPage = lazy(() => import("./pages/entreprise/PressPage"));
+const InvestirPage = lazy(() => import("./pages/entreprise/InvestirPage"));
+
+// Trust pages
+const SupplierVerificationPage = lazy(() => import("./pages/trust/SupplierVerificationPage"));
+const QualityGuaranteePage = lazy(() => import("./pages/trust/QualityGuaranteePage"));
+const HowToOrderPage = lazy(() => import("./pages/trust/HowToOrderPage"));
+const BuyNowPayLaterPage = lazy(() => import("./pages/trust/BuyNowPayLaterPage"));
+const LogisticsPage = lazy(() => import("./pages/trust/LogisticsPage"));
+const BecomeSellerPage = lazy(() => import("./pages/trust/BecomeSellerPage"));
+const TestimonialsPage = lazy(() => import("./pages/trust/TestimonialsPage"));
+const ContactPage = lazy(() => import("./pages/trust/ContactPage"));
+const HelpCenterPage = lazy(() => import("./pages/trust/HelpCenterPage"));
+
+// Legal pages
+const LegalNoticePage = lazy(() => import("./pages/legal/LegalNoticePage"));
+const TermsPage = lazy(() => import("./pages/legal/TermsPage"));
+const PrivacyPage = lazy(() => import("./pages/legal/PrivacyPage"));
+const CookiePolicyPage = lazy(() => import("./pages/legal/CookiePolicyPage"));
+
+// Admin pages
+const AdminLoginPage = lazy(() => import("./pages/admin/AdminLoginPage"));
+const AdminLayout = lazy(() => import("./components/admin/AdminLayout"));
+const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
+const AdminVendeurs = lazy(() => import("./pages/admin/AdminVendeurs"));
+const AdminVendeurDetail = lazy(() => import("./pages/admin/AdminVendeurDetail"));
+const AdminOnboarding = lazy(() => import("./pages/admin/AdminOnboarding"));
+const AdminProduits = lazy(() => import("./pages/admin/AdminProduits"));
+const AdminProduitDetail = lazy(() => import("./pages/admin/AdminProduitDetail"));
+const AdminSchemasPIM = lazy(() => import("./pages/admin/AdminSchemasPIM"));
+const AdminCommandes = lazy(() => import("./pages/admin/AdminCommandes"));
+const AdminFinances = lazy(() => import("./pages/admin/AdminFinances"));
+const AdminLitiges = lazy(() => import("./pages/admin/AdminLitiges"));
+const AdminVeillePrix = lazy(() => import("./pages/admin/AdminVeillePrix"));
+const AdminLeads = lazy(() => import("./pages/admin/AdminLeads"));
+const AdminAnalytics = lazy(() => import("./pages/admin/AdminAnalytics"));
+const AdminReglementaire = lazy(() => import("./pages/admin/AdminReglementaire"));
+const AdminImportExport = lazy(() => import("./pages/admin/AdminImportExport"));
+const AdminCategories = lazy(() => import("./pages/admin/AdminCategories"));
+const AdminMarques = lazy(() => import("./pages/admin/AdminMarques"));
+const AdminCRM = lazy(() => import("./pages/admin/AdminCRM"));
+const AdminCMS = lazy(() => import("./pages/admin/AdminCMS"));
+const AdminPrixReference = lazy(() => import("./pages/admin/AdminPrixReference"));
+const AdminInvestPipeline = lazy(() => import("./pages/admin/AdminInvestPipeline"));
+const AdminLogistique = lazy(() => import("./pages/admin/AdminLogistique"));
+const AdminEquipe = lazy(() => import("./pages/admin/AdminEquipe"));
+const AdminParametres = lazy(() => import("./pages/admin/AdminParametres"));
+const AdminLogs = lazy(() => import("./pages/admin/AdminLogs"));
+const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
+const AdminAuditLog = lazy(() => import("./pages/admin/AdminAuditLog"));
+const AdminCommissions = lazy(() => import("./pages/admin/AdminCommissions"));
+const AdminOnboardingCMS = lazy(() => import("./pages/admin/AdminOnboardingCMS"));
+const AdminSync = lazy(() => import("./pages/admin/AdminSync"));
+
+// Vendor pages
+const VendorLayout = lazy(() => import("./components/vendor/VendorLayout"));
+const VendorDashboard = lazy(() => import("./pages/vendor/VendorDashboard"));
+const VendorCatalog = lazy(() => import("./pages/vendor/VendorCatalog"));
+const VendorOffers = lazy(() => import("./pages/vendor/VendorOffers"));
+const VendorOrders = lazy(() => import("./pages/vendor/VendorOrders"));
+const VendorOpportunities = lazy(() => import("./pages/vendor/VendorOpportunities"));
+const VendorAlerts = lazy(() => import("./pages/vendor/VendorAlerts"));
+const VendorTenders = lazy(() => import("./pages/vendor/VendorTenders"));
+const VendorAnalytics = lazy(() => import("./pages/vendor/VendorAnalytics"));
+const VendorFinance = lazy(() => import("./pages/vendor/VendorFinance"));
+const VendorLogistics = lazy(() => import("./pages/vendor/VendorLogistics"));
+const VendorHealth = lazy(() => import("./pages/vendor/VendorHealth"));
+const VendorAcademy = lazy(() => import("./pages/vendor/VendorAcademy"));
+const VendorSettings = lazy(() => import("./pages/vendor/VendorSettings"));
+const VendorMessages = lazy(() => import("./pages/vendor/VendorMessages"));
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000,
+      gcTime: 30 * 60 * 1000,
+      refetchOnWindowFocus: false,
+      retry: 2,
+    },
+  },
+});
+
+function LP({ children }: { children: React.ReactNode }) {
+  return <Suspense fallback={<PageLoader />}>{children}</Suspense>;
+}
 
 const App = () => (
   <HelmetProvider>
@@ -120,115 +155,117 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <ImpersonationBanner />
+          <Suspense fallback={<PageLoader />}>
           <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/recherche" element={<ResultsPage />} />
-            <Route path="/produit/:slug" element={<ProductPage />} />
-            <Route path="/marques" element={<BrandsPage />} />
-            <Route path="/marque/:slug" element={<BrandDetailPage />} />
-            <Route path="/fabricant/:slug" element={<ManufacturerPage />} />
-            <Route path="/vendeur/:slug" element={<VendorPublicPage />} />
-            <Route path="/panier" element={<CartPage />} />
-            <Route path="/compte" element={<AccountPage />} />
-            <Route path="/checkout" element={<CheckoutPage />} />
-            <Route path="/confirmation" element={<ConfirmationPage />} />
-            <Route path="/commande/:id" element={<OrderDetailPage />} />
-            <Route path="/connexion" element={<LoginPage />} />
+            <Route path="/" element={<LP><HomePage /></LP>} />
+            <Route path="/recherche" element={<LP><ResultsPage /></LP>} />
+            <Route path="/produit/:slug" element={<LP><ProductPage /></LP>} />
+            <Route path="/marques" element={<LP><BrandsPage /></LP>} />
+            <Route path="/marque/:slug" element={<LP><BrandDetailPage /></LP>} />
+            <Route path="/fabricant/:slug" element={<LP><ManufacturerPage /></LP>} />
+            <Route path="/vendeur/:slug" element={<LP><VendorPublicPage /></LP>} />
+            <Route path="/panier" element={<LP><CartPage /></LP>} />
+            <Route path="/compte" element={<LP><AccountPage /></LP>} />
+            <Route path="/checkout" element={<LP><CheckoutPage /></LP>} />
+            <Route path="/confirmation" element={<LP><ConfirmationPage /></LP>} />
+            <Route path="/commande/:id" element={<LP><OrderDetailPage /></LP>} />
+            <Route path="/connexion" element={<LP><LoginPage /></LP>} />
             <Route path="/inscription" element={<Navigate to="/onboarding" replace />} />
-            <Route path="/categorie/:slug" element={<CategoryPage />} />
-            <Route path="/promotions" element={<PromotionsPage />} />
-            <Route path="/seller-onboarding" element={<SellerOnboardingPage />} />
-            <Route path="/buyer-onboarding" element={<BuyerOnboardingPage />} />
-            <Route path="/onboarding" element={<OnboardingPage />} />
-            <Route path="/buyer-completion" element={<BuyerCompletionPage />} />
-            <Route path="/invest" element={<InvestPage />} />
-            <Route path="/mot-de-passe-oublie" element={<ForgotPasswordPage />} />
-            <Route path="/reset-password" element={<ResetPasswordPage />} />
-            <Route path="/a-propos" element={<AboutPage />} />
-            <Route path="/pourquoi-medikong" element={<WhyMedikongPage />} />
-            <Route path="/comment-ca-marche" element={<HowItWorksPage />} />
-            <Route path="/equipe" element={<TeamPage />} />
-            <Route path="/carrieres" element={<CareersPage />} />
-            <Route path="/presse" element={<PressPage />} />
-            <Route path="/investir" element={<InvestirPage />} />
+            <Route path="/categorie/:slug" element={<LP><CategoryPage /></LP>} />
+            <Route path="/promotions" element={<LP><PromotionsPage /></LP>} />
+            <Route path="/seller-onboarding" element={<LP><SellerOnboardingPage /></LP>} />
+            <Route path="/buyer-onboarding" element={<LP><BuyerOnboardingPage /></LP>} />
+            <Route path="/onboarding" element={<LP><OnboardingPage /></LP>} />
+            <Route path="/buyer-completion" element={<LP><BuyerCompletionPage /></LP>} />
+            <Route path="/invest" element={<LP><InvestPage /></LP>} />
+            <Route path="/mot-de-passe-oublie" element={<LP><ForgotPasswordPage /></LP>} />
+            <Route path="/reset-password" element={<LP><ResetPasswordPage /></LP>} />
+            <Route path="/a-propos" element={<LP><AboutPage /></LP>} />
+            <Route path="/pourquoi-medikong" element={<LP><WhyMedikongPage /></LP>} />
+            <Route path="/comment-ca-marche" element={<LP><HowItWorksPage /></LP>} />
+            <Route path="/equipe" element={<LP><TeamPage /></LP>} />
+            <Route path="/carrieres" element={<LP><CareersPage /></LP>} />
+            <Route path="/presse" element={<LP><PressPage /></LP>} />
+            <Route path="/investir" element={<LP><InvestirPage /></LP>} />
 
-            <Route path="/professionnels" element={<ProfessionnelsPage />} />
-            <Route path="/sourcing" element={<SourcingPage />} />
-            <Route path="/categories" element={<CategoriesPage />} />
+            <Route path="/professionnels" element={<LP><ProfessionnelsPage /></LP>} />
+            <Route path="/sourcing" element={<LP><SourcingPage /></LP>} />
+            <Route path="/categories" element={<LP><CategoriesPage /></LP>} />
 
             {/* Trust & Process */}
-            <Route path="/verification-fournisseurs" element={<SupplierVerificationPage />} />
-            <Route path="/garantie-qualite" element={<QualityGuaranteePage />} />
-            <Route path="/comment-commander" element={<HowToOrderPage />} />
-            <Route path="/paiement-differe" element={<BuyNowPayLaterPage />} />
-            <Route path="/logistique" element={<LogisticsPage />} />
-            <Route path="/devenir-vendeur" element={<BecomeSellerPage />} />
-            <Route path="/temoignages" element={<TestimonialsPage />} />
-            <Route path="/contact" element={<ContactPage />} />
-            <Route path="/centre-aide" element={<HelpCenterPage />} />
+            <Route path="/verification-fournisseurs" element={<LP><SupplierVerificationPage /></LP>} />
+            <Route path="/garantie-qualite" element={<LP><QualityGuaranteePage /></LP>} />
+            <Route path="/comment-commander" element={<LP><HowToOrderPage /></LP>} />
+            <Route path="/paiement-differe" element={<LP><BuyNowPayLaterPage /></LP>} />
+            <Route path="/logistique" element={<LP><LogisticsPage /></LP>} />
+            <Route path="/devenir-vendeur" element={<LP><BecomeSellerPage /></LP>} />
+            <Route path="/temoignages" element={<LP><TestimonialsPage /></LP>} />
+            <Route path="/contact" element={<LP><ContactPage /></LP>} />
+            <Route path="/centre-aide" element={<LP><HelpCenterPage /></LP>} />
 
             {/* Legal */}
-            <Route path="/mentions-legales" element={<LegalNoticePage />} />
-            <Route path="/cgv" element={<TermsPage />} />
-            <Route path="/politique-confidentialite" element={<PrivacyPage />} />
-            <Route path="/cookies" element={<CookiePolicyPage />} />
+            <Route path="/mentions-legales" element={<LP><LegalNoticePage /></LP>} />
+            <Route path="/cgv" element={<LP><TermsPage /></LP>} />
+            <Route path="/politique-confidentialite" element={<LP><PrivacyPage /></LP>} />
+            <Route path="/cookies" element={<LP><CookiePolicyPage /></LP>} />
 
-            <Route path="/admin/login" element={<AdminLoginPage />} />
+            <Route path="/admin/login" element={<LP><AdminLoginPage /></LP>} />
 
             {/* Admin Back-Office */}
-            <Route path="/admin" element={<AdminLayout />}>
-              <Route index element={<AdminDashboard />} />
-              <Route path="vendeurs" element={<AdminVendeurs />} />
-              <Route path="vendeurs/:id" element={<AdminVendeurDetail />} />
-              <Route path="onboarding" element={<AdminOnboarding />} />
-              <Route path="produits" element={<AdminProduits />} />
-              <Route path="produits/:id" element={<AdminProduitDetail />} />
-              <Route path="categories" element={<AdminCategories />} />
-              <Route path="marques" element={<AdminMarques />} />
-              <Route path="schemas-pim" element={<AdminSchemasPIM />} />
-              <Route path="commandes" element={<AdminCommandes />} />
-              <Route path="litiges" element={<AdminLitiges />} />
-              <Route path="finances" element={<AdminFinances />} />
-              <Route path="veille-prix" element={<AdminVeillePrix />} />
-              <Route path="leads" element={<AdminLeads />} />
-              <Route path="analytics" element={<AdminAnalytics />} />
-              <Route path="reglementaire" element={<AdminReglementaire />} />
-              <Route path="import-export" element={<AdminImportExport />} />
-              <Route path="crm" element={<AdminCRM />} />
-              <Route path="cms" element={<AdminCMS />} />
-              <Route path="prix-reference" element={<AdminPrixReference />} />
-              <Route path="invest-pipeline" element={<AdminInvestPipeline />} />
-              <Route path="logistique" element={<AdminLogistique />} />
-              <Route path="equipe" element={<AdminEquipe />} />
-              <Route path="parametres" element={<AdminParametres />} />
-              <Route path="logs" element={<AdminLogs />} />
-              <Route path="users" element={<AdminUsers />} />
-              <Route path="audit-log" element={<AdminAuditLog />} />
-              <Route path="onboarding-cms" element={<AdminOnboardingCMS />} />
-              <Route path="commissions" element={<AdminCommissions />} />
-              <Route path="sync" element={<AdminSync />} />
+            <Route path="/admin" element={<LP><AdminLayout /></LP>}>
+              <Route index element={<LP><AdminDashboard /></LP>} />
+              <Route path="vendeurs" element={<LP><AdminVendeurs /></LP>} />
+              <Route path="vendeurs/:id" element={<LP><AdminVendeurDetail /></LP>} />
+              <Route path="onboarding" element={<LP><AdminOnboarding /></LP>} />
+              <Route path="produits" element={<LP><AdminProduits /></LP>} />
+              <Route path="produits/:id" element={<LP><AdminProduitDetail /></LP>} />
+              <Route path="categories" element={<LP><AdminCategories /></LP>} />
+              <Route path="marques" element={<LP><AdminMarques /></LP>} />
+              <Route path="schemas-pim" element={<LP><AdminSchemasPIM /></LP>} />
+              <Route path="commandes" element={<LP><AdminCommandes /></LP>} />
+              <Route path="litiges" element={<LP><AdminLitiges /></LP>} />
+              <Route path="finances" element={<LP><AdminFinances /></LP>} />
+              <Route path="veille-prix" element={<LP><AdminVeillePrix /></LP>} />
+              <Route path="leads" element={<LP><AdminLeads /></LP>} />
+              <Route path="analytics" element={<LP><AdminAnalytics /></LP>} />
+              <Route path="reglementaire" element={<LP><AdminReglementaire /></LP>} />
+              <Route path="import-export" element={<LP><AdminImportExport /></LP>} />
+              <Route path="crm" element={<LP><AdminCRM /></LP>} />
+              <Route path="cms" element={<LP><AdminCMS /></LP>} />
+              <Route path="prix-reference" element={<LP><AdminPrixReference /></LP>} />
+              <Route path="invest-pipeline" element={<LP><AdminInvestPipeline /></LP>} />
+              <Route path="logistique" element={<LP><AdminLogistique /></LP>} />
+              <Route path="equipe" element={<LP><AdminEquipe /></LP>} />
+              <Route path="parametres" element={<LP><AdminParametres /></LP>} />
+              <Route path="logs" element={<LP><AdminLogs /></LP>} />
+              <Route path="users" element={<LP><AdminUsers /></LP>} />
+              <Route path="audit-log" element={<LP><AdminAuditLog /></LP>} />
+              <Route path="onboarding-cms" element={<LP><AdminOnboardingCMS /></LP>} />
+              <Route path="commissions" element={<LP><AdminCommissions /></LP>} />
+              <Route path="sync" element={<LP><AdminSync /></LP>} />
             </Route>
 
             {/* Vendor Dashboard */}
-            <Route path="/vendor" element={<VendorLayout />}>
-              <Route index element={<VendorDashboard />} />
-              <Route path="catalog" element={<VendorCatalog />} />
-              <Route path="offers" element={<VendorOffers />} />
-              <Route path="orders" element={<VendorOrders />} />
-              <Route path="opportunities" element={<VendorOpportunities />} />
-              <Route path="alerts" element={<VendorAlerts />} />
-              <Route path="tenders" element={<VendorTenders />} />
-              <Route path="analytics" element={<VendorAnalytics />} />
-              <Route path="finance" element={<VendorFinance />} />
-              <Route path="logistics" element={<VendorLogistics />} />
-              <Route path="health" element={<VendorHealth />} />
-              <Route path="messages" element={<VendorMessages />} />
-              <Route path="academy" element={<VendorAcademy />} />
-              <Route path="settings" element={<VendorSettings />} />
+            <Route path="/vendor" element={<LP><VendorLayout /></LP>}>
+              <Route index element={<LP><VendorDashboard /></LP>} />
+              <Route path="catalog" element={<LP><VendorCatalog /></LP>} />
+              <Route path="offers" element={<LP><VendorOffers /></LP>} />
+              <Route path="orders" element={<LP><VendorOrders /></LP>} />
+              <Route path="opportunities" element={<LP><VendorOpportunities /></LP>} />
+              <Route path="alerts" element={<LP><VendorAlerts /></LP>} />
+              <Route path="tenders" element={<LP><VendorTenders /></LP>} />
+              <Route path="analytics" element={<LP><VendorAnalytics /></LP>} />
+              <Route path="finance" element={<LP><VendorFinance /></LP>} />
+              <Route path="logistics" element={<LP><VendorLogistics /></LP>} />
+              <Route path="health" element={<LP><VendorHealth /></LP>} />
+              <Route path="messages" element={<LP><VendorMessages /></LP>} />
+              <Route path="academy" element={<LP><VendorAcademy /></LP>} />
+              <Route path="settings" element={<LP><VendorSettings /></LP>} />
             </Route>
 
-            <Route path="*" element={<NotFound />} />
+            <Route path="*" element={<LP><NotFound /></LP>} />
           </Routes>
+          </Suspense>
           <CookieConsent />
         </BrowserRouter>
       </TooltipProvider>

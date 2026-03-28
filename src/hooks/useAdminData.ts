@@ -27,13 +27,13 @@ export const useProducts = () =>
     },
   });
 
-export const useOffersDirectAdmin = () =>
+export const useOffers = () =>
   useQuery({
-    queryKey: ["admin-offers-direct"],
+    queryKey: ["admin-offers"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("offers_direct")
-        .select("*, vendors(company_name), products(product_name)")
+        .from("offers")
+        .select("*, vendors(name), products(name)")
         .order("updated_at", { ascending: false });
       if (error) throw error;
       return data;
@@ -46,7 +46,7 @@ export const useOrders = () =>
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
-        .select("*, vendors(company_name), buyers(company_name, type)")
+        .select("*, customers(company_name, customer_type)")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
@@ -59,47 +59,8 @@ export const useBrands = () =>
     queryFn: async () => {
       const { data, error } = await supabase
         .from("brands")
-        .select("*, manufacturers(name, country)")
-        .order("gmv_month", { ascending: false });
-      if (error) throw error;
-      return data;
-    },
-  });
-
-export const useManufacturers = () =>
-  useQuery({
-    queryKey: ["admin-manufacturers"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("manufacturers")
         .select("*")
-        .order("products_on_mk", { ascending: false });
-      if (error) throw error;
-      return data;
-    },
-  });
-
-export const useDisputes = () =>
-  useQuery({
-    queryKey: ["admin-disputes"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("disputes")
-        .select("*, vendors(company_name), buyers(company_name), orders(order_number)")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data;
-    },
-  });
-
-export const useInvoices = () =>
-  useQuery({
-    queryKey: ["admin-invoices"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("invoices")
-        .select("*")
-        .order("created_at", { ascending: false });
+        .order("product_count", { ascending: false });
       if (error) throw error;
       return data;
     },
@@ -119,84 +80,6 @@ export const useAuditLogs = () =>
     },
   });
 
-export const useVendorOnboarding = () =>
-  useQuery({
-    queryKey: ["admin-vendor-onboarding"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("vendor_onboarding")
-        .select("*, vendors(company_name, legal_form, email, contact_name)")
-        .order("updated_at", { ascending: false });
-      if (error) throw error;
-      return data;
-    },
-  });
-
-export const useOffersMarket = () =>
-  useQuery({
-    queryKey: ["admin-offers-market"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("offers_market")
-        .select("*, products(product_name, cnk)")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data;
-    },
-  });
-
-export const useLeadsPartners = () =>
-  useQuery({
-    queryKey: ["admin-leads-partners"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("leads_partners")
-        .select("*")
-        .order("revenue_30d", { ascending: false });
-      if (error) throw error;
-      return data;
-    },
-  });
-
-export const useOffersIndirect = () =>
-  useQuery({
-    queryKey: ["admin-offers-indirect"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("offers_indirect")
-        .select("*, products(product_name)")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data;
-    },
-  });
-
-export const useComplianceRecords = () =>
-  useQuery({
-    queryKey: ["admin-compliance"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("compliance_records")
-        .select("*, products(product_name, brand, category_l1)")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data;
-    },
-  });
-
-export const useImportJobs = () =>
-  useQuery({
-    queryKey: ["admin-import-jobs"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("import_jobs")
-        .select("*, vendors(company_name)")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data;
-    },
-  });
-
 export const useCategories = () =>
   useQuery({
     queryKey: ["admin-categories"],
@@ -204,19 +87,72 @@ export const useCategories = () =>
       const { data, error } = await supabase
         .from("categories")
         .select("*")
-        .order("sort_order", { ascending: true });
+        .order("display_order", { ascending: true });
       if (error) throw error;
       return data;
     },
   });
 
-export const useBuyers = () =>
+export const useCustomers = () =>
   useQuery({
-    queryKey: ["admin-buyers"],
+    queryKey: ["admin-customers"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("buyers")
+        .from("customers")
         .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+export const useMarginRules = () =>
+  useQuery({
+    queryKey: ["admin-margin-rules"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("margin_rules")
+        .select("*")
+        .order("priority", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+export const useApiKeys = () =>
+  useQuery({
+    queryKey: ["admin-api-keys"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("api_keys")
+        .select("*, customers(company_name)")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+export const useSyncLogs = () =>
+  useQuery({
+    queryKey: ["admin-sync-logs"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("sync_logs")
+        .select("*")
+        .order("started_at", { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      return data;
+    },
+  });
+
+export const useSourcingRequests = () =>
+  useQuery({
+    queryKey: ["admin-sourcing"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("sourcing_requests")
+        .select("*, customers(company_name)")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
@@ -228,25 +164,18 @@ export const useDashboardStats = () => {
   const vendors = useVendors();
   const products = useProducts();
   const orders = useOrders();
-  const disputes = useDisputes();
 
-  const activeVendors = vendors.data?.filter(v => v.status === "active").length ?? 0;
+  const activeVendors = vendors.data?.filter(v => v.is_active).length ?? 0;
   const totalProducts = products.data?.length ?? 0;
   const totalOrders = orders.data?.length ?? 0;
-  const totalDisputes = disputes.data?.length ?? 0;
-  const openDisputes = disputes.data?.filter(d => d.status !== "resolu" && d.status !== "rejete").length ?? 0;
   
-  // Calculate GMV from orders
-  const gmv = orders.data?.reduce((sum, o) => sum + (Number(o.total_ht) || Number(o.total) || 0), 0) ?? 0;
+  const gmv = orders.data?.reduce((sum, o) => sum + (Number(o.total_incl_vat) || 0), 0) ?? 0;
 
   return {
     activeVendors,
     totalProducts,
     totalOrders,
     gmv,
-    totalDisputes,
-    openDisputes,
-    disputeRate: totalOrders > 0 ? ((openDisputes / totalOrders) * 100).toFixed(1) : "0",
-    isLoading: vendors.isLoading || products.isLoading || orders.isLoading || disputes.isLoading,
+    isLoading: vendors.isLoading || products.isLoading || orders.isLoading,
   };
 };

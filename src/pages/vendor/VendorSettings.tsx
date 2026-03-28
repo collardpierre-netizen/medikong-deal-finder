@@ -90,7 +90,7 @@ export default function VendorSettings() {
                 </div>
               ))}
             </div>
-            <VBtn small className="mt-4" icon="Edit">Modifier</VBtn>
+            <VBtn small className="mt-4" icon="Pencil">Modifier</VBtn>
           </VCard>
 
           <VCard>

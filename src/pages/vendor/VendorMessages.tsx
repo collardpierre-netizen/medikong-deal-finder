@@ -36,7 +36,7 @@ export default function VendorMessages() {
           <h1 className="text-xl font-bold text-[#1D2530]">Messages</h1>
           {unreadCount > 0 && <VBadge color="#E70866">{unreadCount} non lus</VBadge>}
         </div>
-        <VBtn primary icon="PenSquare">Nouveau message</VBtn>
+        <VBtn primary icon="SquarePen">Nouveau message</VBtn>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4" style={{ minHeight: 500 }}>

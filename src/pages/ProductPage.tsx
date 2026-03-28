@@ -342,33 +342,59 @@ export default function ProductPage() {
           <div className="flex flex-col md:flex-row gap-6 md:gap-8">
             {/* Image */}
             <motion.div
-              className="w-full md:w-[400px] shrink-0 md:sticky md:top-20 self-start max-h-[220px] md:max-h-none overflow-hidden"
+              className="w-full md:w-[400px] shrink-0 md:sticky md:top-20 self-start"
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
             >
-              <ProductImage product={product} className="border border-mk-line mb-3" />
-               <div className="hidden md:flex gap-2">
-                {[0, 1, 2, 3].map(i => {
-                  const colorKey = product.color || "blue";
-                  const colors = productColors[colorKey] || productColors.blue;
-                  const IconComp = product.iconName ? productIconMap[product.iconName] : null;
-                  return (
-                    <motion.div
-                      key={i}
-                      className={`w-[52px] h-[52px] border rounded-md flex items-center justify-center cursor-pointer ${i === 0 ? "border-mk-navy border-2" : "border-mk-line"}`}
-                      style={{ backgroundColor: colors.bg }}
-                      whileHover={{ scale: 1.1, y: -2 }}
-                      whileTap={{ scale: 0.95 }}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.3 + i * 0.08 }}
-                    >
-                      {IconComp ? <IconComp size={16} style={{ color: colors.fg }} /> : <span className="text-[8px] text-mk-ter">IMG</span>}
-                    </motion.div>
-                  );
-                })}
-              </div>
+              {(() => {
+                const images = getProductImages(product);
+                return (
+                  <>
+                    <div className="aspect-square rounded-lg overflow-hidden border border-mk-line mb-3 bg-muted">
+                      <img
+                        src={images[selectedImageIdx] || images[0]}
+                        alt={`${product.name} - image ${selectedImageIdx + 1}`}
+                        className="w-full h-full object-cover"
+                        onError={(e) => { e.currentTarget.src = images[0]; }}
+                      />
+                    </div>
+                    {images.length > 1 && (
+                      <div className="hidden md:flex gap-2">
+                        {images.slice(0, 6).map((img, i) => (
+                          <motion.button
+                            key={i}
+                            onClick={() => setSelectedImageIdx(i)}
+                            className={`w-[52px] h-[52px] border rounded-md overflow-hidden cursor-pointer ${i === selectedImageIdx ? "border-mk-navy border-2" : "border-mk-line"}`}
+                            whileHover={{ scale: 1.1, y: -2 }}
+                            whileTap={{ scale: 0.95 }}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.3 + i * 0.08 }}
+                          >
+                            <img src={img} alt={`${product.name} - miniature ${i + 1}`} className="w-full h-full object-cover" loading="lazy" />
+                          </motion.button>
+                        ))}
+                      </div>
+                    )}
+                    {images.length <= 1 && (
+                      <div className="hidden md:flex gap-2">
+                        {[0, 1, 2, 3].map(i => (
+                          <motion.div
+                            key={i}
+                            className={`w-[52px] h-[52px] border rounded-md overflow-hidden ${i === 0 ? "border-mk-navy border-2" : "border-mk-line"}`}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.3 + i * 0.08 }}
+                          >
+                            <img src={images[0]} alt={`${product.name} - vue ${i + 1}`} className="w-full h-full object-cover opacity-60" loading="lazy" />
+                          </motion.div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
             </motion.div>
 
             {/* Details */}

@@ -31,8 +31,140 @@ const techSpecs = [
   ["Categorie", "EPI & Protection"], ["Marque", "Aurelia"], ["Certification", "CE, EN 455"],
   ["Code CNK", "12450"], ["Code EAN", "5412345678901"],
 ];
+// Mock volume price tiers for demo
+function generatePriceTiers(basePrice: number, movEur: number) {
+  if (movEur >= 10000) {
+    return [
+      { minAmount: 10000, price: basePrice },
+      { minAmount: 5000, price: +(basePrice * 1.02).toFixed(2) },
+      { minAmount: 1500, price: +(basePrice * 1.04).toFixed(2) },
+    ];
+  }
+  if (movEur >= 5000) {
+    return [
+      { minAmount: 5000, price: basePrice },
+      { minAmount: 1500, price: +(basePrice * 1.01).toFixed(2) },
+    ];
+  }
+  return [];
+}
 
-export default function ProductPage() {
+function OfferRow({ offer, product, user, navigate, addToCart, isBest, delay = 0 }: {
+  offer: any; product: any; user: any; navigate: any; addToCart: any; isBest?: boolean; delay?: number;
+}) {
+  const [qty, setQty] = useState(offer.bundleSize > 1 ? offer.bundleSize : 1);
+  const tiers = offer.priceTiers && offer.priceTiers.length > 0 ? offer.priceTiers : generatePriceTiers(offer.unitPriceEur, offer.movEur);
+  const hasTiers = tiers.length > 1;
+
+  return (
+    <motion.div
+      className="border-b border-mk-line last:border-b-0 py-5"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay, duration: 0.3 }}
+    >
+      {/* Delivery / stock badge */}
+      <div className="flex items-center gap-2 mb-3">
+        {offer.stockQuantity > 0 ? (
+          <>
+            <Store size={18} className="text-mk-navy" />
+            <span className="text-sm font-medium text-mk-navy">In stock</span>
+          </>
+        ) : (
+          <>
+            <Truck size={18} className="text-mk-blue" />
+            <span className="text-sm font-medium text-mk-sec">Estimated delivery: {offer.deliveryDays > 7 ? `${Math.ceil(offer.deliveryDays / 7)} weeks` : `${offer.deliveryDays} days`}</span>
+          </>
+        )}
+      </div>
+
+      {/* Main row with optional tiers */}
+      <div className="grid grid-cols-[1.5fr_1fr_1fr_0.8fr_1.5fr] gap-3 items-start">
+        {/* Supplier */}
+        <div className="flex items-center gap-2">
+          {offer.sellerSlug ? (
+            <Link to={`/vendeur/${offer.sellerSlug}`} className="font-bold text-mk-navy hover:text-mk-blue transition-colors text-sm">
+              {offer.sellerName}
+            </Link>
+          ) : (
+            <span className="font-bold text-mk-navy text-sm">{offer.sellerName}</span>
+          )}
+          {offer.isVerified && (
+            <span className="inline-flex items-center justify-center w-5 h-5 bg-mk-alt rounded border border-mk-line" title="Verified">
+              <Shield size={11} className="text-mk-navy" />
+            </span>
+          )}
+        </div>
+
+        {/* Unit price + tiers */}
+        <div>
+          {hasTiers ? (
+            <div className="flex flex-col gap-0">
+              {tiers.map((tier: any, i: number) => (
+                <div key={i} className="flex items-center gap-2">
+                  {i > 0 && (
+                    <div className="flex flex-col items-center w-3">
+                      <div className="w-px h-3 border-l border-dashed border-mk-ter" />
+                      <div className="w-1.5 h-1.5 rounded-full bg-mk-navy" />
+                    </div>
+                  )}
+                  {i === 0 && <div className="w-1.5 h-1.5 rounded-full bg-mk-navy ml-0.5" />}
+                  <span className={`text-sm ${i === 0 ? "font-bold text-mk-navy" : "text-mk-sec"}`}>€{tier.price.toFixed(2)}</span>
+                  <span className="text-sm text-mk-sec">€{formatPrice(tier.minAmount)}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <span className="text-sm font-bold text-mk-navy">€{offer.unitPriceEur.toFixed(2)}</span>
+          )}
+        </div>
+
+        {/* MOV */}
+        <span className="text-sm text-mk-navy">€{formatPrice(offer.movEur)}</span>
+
+        {/* Stock */}
+        <span className="text-sm text-mk-navy">{offer.stockQuantity.toLocaleString()}</span>
+
+        {/* Actions */}
+        <div className="flex items-center justify-end gap-2">
+          <div className="flex items-center border border-mk-line rounded-md">
+            <button onClick={() => setQty(Math.max(offer.bundleSize > 1 ? offer.bundleSize : 1, qty - (offer.bundleSize > 1 ? offer.bundleSize : 1)))} className="px-2.5 py-2 text-mk-sec hover:text-mk-navy transition-colors">
+              <Minus size={14} />
+            </button>
+            <span className="px-3 py-2 text-sm font-medium text-mk-navy min-w-[40px] text-center">{qty}</span>
+            <button onClick={() => setQty(qty + (offer.bundleSize > 1 ? offer.bundleSize : 1))} className="px-2.5 py-2 text-mk-sec hover:text-mk-navy transition-colors">
+              <Plus size={14} />
+            </button>
+          </div>
+          <motion.button
+            className="bg-mk-navy text-white p-2.5 rounded-md"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => {
+              if (!user) { navigate("/connexion"); return; }
+              addToCart.mutate({
+                productId: product.id,
+                quantity: qty,
+                vendorId: offer.sellerId,
+                priceHt: offer.unitPriceEur,
+                productData: { id: product.id, name: product.name, brand: product.brand, slug: product.slug, price: offer.unitPriceEur, gtin: product.gtin, unit: product.unit, stock: offer.stockQuantity > 0 },
+              });
+            }}
+          >
+            <ShoppingCart size={16} />
+          </motion.button>
+        </div>
+      </div>
+
+      {/* Bundle note */}
+      {offer.bundleSize > 1 && (
+        <p className="text-xs text-mk-sec mt-2 ml-0">Bundles of {offer.bundleSize}</p>
+      )}
+    </motion.div>
+  );
+}
+
+
   const { slug } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();

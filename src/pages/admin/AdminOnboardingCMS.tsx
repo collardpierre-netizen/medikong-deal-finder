@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { Plus, Pencil, Trash2, GripVertical, Eye, EyeOff, Save, X, Image } from "lucide-react";
+import { Plus, Save, X, Eye, EyeOff, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+
+// Stub: onboarding_testimonials table was removed in V5 migration.
+// This page now manages testimonials via local state until a CMS table is re-added.
 
 interface Testimonial {
   id: string;
@@ -21,8 +22,6 @@ const gradientPresets = [
   { label: "Emerald", value: "linear-gradient(135deg, #064e3b, #1e3a5f, #1a202c)" },
   { label: "Purple", value: "linear-gradient(135deg, #4c1d95, #1e3a5f, #1a202c)" },
   { label: "Amber", value: "linear-gradient(135deg, #7c2d12, #1e3a5f, #1a202c)" },
-  { label: "Teal", value: "linear-gradient(135deg, #064e3b, #1a365d, #1a202c)" },
-  { label: "Indigo", value: "linear-gradient(135deg, #1e3a5f, #4c1d95, #1a202c)" },
 ];
 
 const roleLabels: Record<string, string> = { buyer: "Acheteur", seller: "Vendeur", both: "Les deux" };
@@ -33,61 +32,9 @@ const roleBadgeColors: Record<string, string> = {
 };
 
 export default function AdminOnboardingCMS() {
-  const queryClient = useQueryClient();
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [editing, setEditing] = useState<Testimonial | null>(null);
   const [creating, setCreating] = useState(false);
-
-  const { data: testimonials = [], isLoading } = useQuery({
-    queryKey: ["admin-onboarding-testimonials"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("onboarding_testimonials")
-        .select("*")
-        .order("role_visibility")
-        .order("sort_order");
-      if (error) throw error;
-      return data as Testimonial[];
-    },
-  });
-
-  const saveMutation = useMutation({
-    mutationFn: async (t: Partial<Testimonial> & { id?: string }) => {
-      if (t.id) {
-        const { error } = await supabase.from("onboarding_testimonials").update({
-          quote: t.quote, name: t.name, title: t.title, gradient: t.gradient,
-          role_visibility: t.role_visibility, sort_order: t.sort_order,
-          is_active: t.is_active, photo_url: t.photo_url,
-        }).eq("id", t.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from("onboarding_testimonials").insert({
-          quote: t.quote!, name: t.name!, title: t.title!, gradient: t.gradient!,
-          role_visibility: t.role_visibility!, sort_order: t.sort_order ?? 0,
-          is_active: t.is_active ?? true, photo_url: t.photo_url,
-        });
-        if (error) throw error;
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-onboarding-testimonials"] });
-      toast.success("Testimonial sauvegardé");
-      setEditing(null);
-      setCreating(false);
-    },
-    onError: () => toast.error("Erreur lors de la sauvegarde"),
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("onboarding_testimonials").delete().eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-onboarding-testimonials"] });
-      toast.success("Testimonial supprimé");
-    },
-  });
-
   const [form, setForm] = useState<Partial<Testimonial>>({});
 
   const openEdit = (t: Testimonial) => { setForm({ ...t }); setEditing(t); setCreating(false); };
@@ -97,27 +44,41 @@ export default function AdminOnboardingCMS() {
   };
   const closeForm = () => { setEditing(null); setCreating(false); setForm({}); };
 
-  const buyerTestimonials = testimonials.filter(t => t.role_visibility === "buyer" || t.role_visibility === "both");
-  const sellerTestimonials = testimonials.filter(t => t.role_visibility === "seller" || t.role_visibility === "both");
+  const handleSave = () => {
+    if (!form.quote || !form.name || !form.title) return;
+    if (editing) {
+      setTestimonials(prev => prev.map(t => t.id === editing.id ? { ...t, ...form } as Testimonial : t));
+    } else {
+      setTestimonials(prev => [...prev, { ...form, id: crypto.randomUUID() } as Testimonial]);
+    }
+    toast.success("Testimonial sauvegardé (local)");
+    closeForm();
+  };
+
+  const handleDelete = (id: string) => {
+    if (confirm("Supprimer ce testimonial ?")) {
+      setTestimonials(prev => prev.filter(t => t.id !== id));
+      toast.success("Testimonial supprimé");
+    }
+  };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-mk-navy">Onboarding — Testimonials</h1>
-          <p className="text-sm text-mk-sec">Gérez les témoignages affichés sur la page d'inscription (panneau gauche).</p>
+          <p className="text-sm text-mk-sec">Gérez les témoignages affichés sur la page d'inscription.</p>
         </div>
         <button onClick={openCreate} className="bg-mk-navy text-white text-sm font-semibold px-4 py-2 rounded-md flex items-center gap-2 hover:opacity-90">
           <Plus size={16} /> Ajouter
         </button>
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-3 gap-4">
         {[
           { label: "Total", count: testimonials.length },
-          { label: "Acheteurs", count: buyerTestimonials.length },
-          { label: "Vendeurs", count: sellerTestimonials.length },
+          { label: "Acheteurs", count: testimonials.filter(t => t.role_visibility === "buyer" || t.role_visibility === "both").length },
+          { label: "Vendeurs", count: testimonials.filter(t => t.role_visibility === "seller" || t.role_visibility === "both").length },
         ].map(s => (
           <div key={s.label} className="bg-white border border-mk-line rounded-lg p-4 text-center">
             <div className="text-2xl font-bold text-mk-navy">{s.count}</div>
@@ -126,7 +87,6 @@ export default function AdminOnboardingCMS() {
         ))}
       </div>
 
-      {/* Edit / Create form */}
       {(editing || creating) && (
         <div className="bg-white border border-mk-line rounded-lg p-6">
           <div className="flex items-center justify-between mb-4">
@@ -144,10 +104,6 @@ export default function AdminOnboardingCMS() {
                 <input value={form.title || ""} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} className="w-full border border-mk-line rounded-md px-3 py-2 text-sm" />
               </div>
               <div>
-                <label className="text-xs text-mk-sec mb-1 block">URL Photo (optionnel)</label>
-                <input value={form.photo_url || ""} onChange={e => setForm(f => ({ ...f, photo_url: e.target.value }))} className="w-full border border-mk-line rounded-md px-3 py-2 text-sm" placeholder="https://..." />
-              </div>
-              <div>
                 <label className="text-xs text-mk-sec mb-1 block">Visibilité</label>
                 <div className="flex gap-2">
                   {(["buyer", "seller", "both"] as const).map(r => (
@@ -157,10 +113,6 @@ export default function AdminOnboardingCMS() {
                     </button>
                   ))}
                 </div>
-              </div>
-              <div>
-                <label className="text-xs text-mk-sec mb-1 block">Ordre</label>
-                <input type="number" value={form.sort_order ?? 0} onChange={e => setForm(f => ({ ...f, sort_order: parseInt(e.target.value) || 0 }))} className="w-20 border border-mk-line rounded-md px-3 py-2 text-sm" />
               </div>
             </div>
             <div className="space-y-3">
@@ -178,7 +130,6 @@ export default function AdminOnboardingCMS() {
                   ))}
                 </div>
               </div>
-              {/* Preview */}
               <div className="rounded-lg p-4 text-white text-xs" style={{ background: form.gradient || gradientPresets[0].value }}>
                 <p className="italic mb-2">« {form.quote || "..."} »</p>
                 <p className="font-bold">{form.name || "Nom"}</p>
@@ -188,7 +139,7 @@ export default function AdminOnboardingCMS() {
           </div>
           <div className="flex justify-end gap-3 mt-4">
             <button onClick={closeForm} className="text-sm text-mk-sec px-4 py-2 border border-mk-line rounded-md">Annuler</button>
-            <button onClick={() => saveMutation.mutate(form)} disabled={!form.quote || !form.name || !form.title}
+            <button onClick={handleSave} disabled={!form.quote || !form.name || !form.title}
               className="bg-mk-navy text-white text-sm font-semibold px-4 py-2 rounded-md flex items-center gap-2 disabled:opacity-50">
               <Save size={14} /> Sauvegarder
             </button>
@@ -196,52 +147,46 @@ export default function AdminOnboardingCMS() {
         </div>
       )}
 
-      {/* List */}
-      {isLoading ? (
-        <div className="text-center py-12 text-mk-sec">Chargement...</div>
-      ) : (
-        <div className="bg-white border border-mk-line rounded-lg overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-mk-alt border-b border-mk-line text-xs text-mk-sec">
-                <th className="text-left py-2.5 px-4 font-medium w-8">#</th>
-                <th className="text-left py-2.5 px-4 font-medium">Nom</th>
-                <th className="text-left py-2.5 px-4 font-medium">Titre</th>
-                <th className="text-left py-2.5 px-4 font-medium">Visibilité</th>
-                <th className="text-center py-2.5 px-4 font-medium">Actif</th>
-                <th className="text-center py-2.5 px-4 font-medium">Gradient</th>
-                <th className="text-right py-2.5 px-4 font-medium">Actions</th>
+      <div className="bg-white border border-mk-line rounded-lg overflow-hidden">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="bg-mk-alt border-b border-mk-line text-xs text-mk-sec">
+              <th className="text-left py-2.5 px-4 font-medium w-8">#</th>
+              <th className="text-left py-2.5 px-4 font-medium">Nom</th>
+              <th className="text-left py-2.5 px-4 font-medium">Titre</th>
+              <th className="text-left py-2.5 px-4 font-medium">Visibilité</th>
+              <th className="text-center py-2.5 px-4 font-medium">Actif</th>
+              <th className="text-right py-2.5 px-4 font-medium">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {testimonials.length === 0 && (
+              <tr><td colSpan={6} className="py-8 text-center text-mk-sec text-xs">Aucun testimonial. Cliquez "Ajouter" pour commencer.</td></tr>
+            )}
+            {testimonials.map(t => (
+              <tr key={t.id} className="border-b border-mk-line last:border-0 hover:bg-mk-alt/50">
+                <td className="py-3 px-4 text-mk-ter">{t.sort_order}</td>
+                <td className="py-3 px-4 font-medium text-mk-navy">{t.name}</td>
+                <td className="py-3 px-4 text-mk-sec text-xs">{t.title}</td>
+                <td className="py-3 px-4">
+                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${roleBadgeColors[t.role_visibility]}`}>
+                    {roleLabels[t.role_visibility]}
+                  </span>
+                </td>
+                <td className="py-3 px-4 text-center">
+                  {t.is_active ? <Eye size={14} className="text-mk-green mx-auto" /> : <EyeOff size={14} className="text-mk-ter mx-auto" />}
+                </td>
+                <td className="py-3 px-4 text-right">
+                  <div className="flex items-center justify-end gap-2">
+                    <button onClick={() => openEdit(t)} className="text-mk-sec hover:text-mk-blue"><Pencil size={14} /></button>
+                    <button onClick={() => handleDelete(t.id)} className="text-mk-sec hover:text-mk-red"><Trash2 size={14} /></button>
+                  </div>
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {testimonials.map(t => (
-                <tr key={t.id} className="border-b border-mk-line last:border-0 hover:bg-mk-alt/50">
-                  <td className="py-3 px-4 text-mk-ter">{t.sort_order}</td>
-                  <td className="py-3 px-4 font-medium text-mk-navy">{t.name}</td>
-                  <td className="py-3 px-4 text-mk-sec text-xs">{t.title}</td>
-                  <td className="py-3 px-4">
-                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${roleBadgeColors[t.role_visibility]}`}>
-                      {roleLabels[t.role_visibility]}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 text-center">
-                    {t.is_active ? <Eye size={14} className="text-mk-green mx-auto" /> : <EyeOff size={14} className="text-mk-ter mx-auto" />}
-                  </td>
-                  <td className="py-3 px-4 text-center">
-                    <div className="w-6 h-6 rounded mx-auto" style={{ background: t.gradient }} />
-                  </td>
-                  <td className="py-3 px-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <button onClick={() => openEdit(t)} className="text-mk-sec hover:text-mk-blue"><Pencil size={14} /></button>
-                      <button onClick={() => { if (confirm("Supprimer ce testimonial ?")) deleteMutation.mutate(t.id); }} className="text-mk-sec hover:text-mk-red"><Trash2 size={14} /></button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

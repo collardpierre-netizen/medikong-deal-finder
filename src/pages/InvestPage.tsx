@@ -2,6 +2,7 @@ import { Layout } from "@/components/layout/Layout";
 import { motion } from "framer-motion";
 import { ArrowRight, Download, Shield, TrendingUp, Users, Globe, ChevronDown, ShoppingCart, Lock, BarChart3, CheckCircle2, Building2 } from "lucide-react";
 import { useState, useEffect } from "react";
+import InvestSubscriptionModal from "@/components/invest/InvestSubscriptionModal";
 
 /* ───────── DATA ───────── */
 

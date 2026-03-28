@@ -76,11 +76,10 @@ const AdminMarques = () => {
         }
       />
 
-      <div className="grid grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-3 gap-4 mb-6">
         <KpiCard icon={Tag} label="Marques actives" value={String(brandsData.length)} evolution={{ value: 2, label: "ce mois" }} iconColor="#1B5BDA" iconBg="#EFF6FF" />
         <KpiCard icon={Factory} label="Fabricants" value={String(manufacturersData.length)} iconColor="#7C3AED" iconBg="#F3F0FF" />
-        <KpiCard icon={Package} label="Produits total" value={fmt(brandsData.reduce((a, b) => a + (b.products_count || 0), 0))} iconColor="#059669" iconBg="#ECFDF5" />
-        <KpiCard icon={DollarSign} label="GMV marques" value={`€${fmt(brandsData.reduce((a, b) => a + Number(b.gmv_month || 0), 0))}`} evolution={{ value: 11, label: "vs mois dernier" }} iconColor="#F59E0B" iconBg="#FFFBEB" />
+        <KpiCard icon={Package} label="Produits total" value={fmt(brandsData.reduce((a, b) => a + (b.product_count || 0), 0))} iconColor="#059669" iconBg="#ECFDF5" />
       </div>
 
       <Tabs value={tab} onValueChange={setTab}>

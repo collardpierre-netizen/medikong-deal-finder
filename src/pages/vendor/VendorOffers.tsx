@@ -8,8 +8,10 @@ import { VProgressBar } from "@/components/vendor/ui/VProgressBar";
 import { VProductIcon } from "@/components/vendor/ui/VProductIcon";
 import { vendorOffers } from "@/data/vendor-offers-mock";
 import { vendorProfile, buyerTypeColors } from "@/lib/vendor-tokens";
-import { Check, Eye, Edit2, Info, TrendingDown, TrendingUp, Sliders, AlertTriangle } from "lucide-react";
+import { Check, Eye, Edit2, Info, TrendingDown, TrendingUp, Sliders, AlertTriangle, Layers } from "lucide-react";
 import EditOfferPopup from "@/components/vendor/EditOfferPopup";
+import { mockPrixPublicByProduct, mockPrixParProfilByProduct } from "@/lib/mock/prix-ref-mock";
+import { getPrixRef, calcSavings, formatPrixRef } from "@/lib/utils/prix-ref";
 
 const statusLabels: Record<string, string> = { active: "Active", inactive: "Inactive", rupture: "Rupture", pending: "En attente" };
 const statusColors: Record<string, string> = { active: "#059669", inactive: "#616B7C", rupture: "#EF4343", pending: "#F59E0B" };

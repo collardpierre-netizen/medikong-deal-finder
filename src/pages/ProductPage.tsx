@@ -378,7 +378,7 @@ export default function ProductPage() {
               transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
             >
               <ProductImage product={product} className="border border-mk-line mb-3" />
-              <div className="flex gap-2">
+               <div className="hidden md:flex gap-2">
                 {[0, 1, 2, 3].map(i => {
                   const colorKey = product.color || "blue";
                   const colors = productColors[colorKey] || productColors.blue;

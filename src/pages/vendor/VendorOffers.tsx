@@ -552,7 +552,7 @@ export default function VendorOffers() {
                       };
 
                       return (
-                        <tr key={o.id} className="border-b border-[#E2E8F0] last:border-0 hover:bg-[#F8FAFC]">
+                        <tr key={o.id} className="border-b border-[#E2E8F0] last:border-0 hover:bg-[#F8FAFC] cursor-pointer" onClick={() => setPrixRefDetail(o.id)}>
                           <td className="py-2.5 px-3">
                             <p className="font-medium text-[#1D2530]">{o.name}</p>
                             <p className="text-[10px] text-[#8B95A5]">{o.ean}</p>

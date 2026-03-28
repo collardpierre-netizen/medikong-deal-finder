@@ -233,8 +233,9 @@ export default function InvestPage() {
       </nav>
 
       {/* ════════════ CHIFFRES CLÉS LEVÉE ════════════ */}
-      <section id="opportunite" className="py-16 md:py-24 bg-white scroll-mt-14">
-        <div className="max-w-5xl mx-auto px-5">
+      <section id="opportunite" className="relative py-16 md:py-24 bg-white scroll-mt-14">
+        <div className="absolute inset-0 invest-light-dots" />
+        <div className="max-w-5xl mx-auto px-5 relative z-10">
           <div className="text-center mb-12">
             <h2 className="text-2xl md:text-4xl font-bold text-mk-navy mb-3">Chiffres clés de la levée</h2>
             <p className="text-mk-sec max-w-xl mx-auto text-sm md:text-base">Toutes les informations essentielles pour prendre votre décision d'investissement.</p>

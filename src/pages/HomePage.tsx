@@ -116,12 +116,12 @@ export default function HomePage() {
       </section>
 
       {/* Stats */}
-      <AnimatedSection className="border-t border-b border-mk-line py-6">
-        <StaggerContainer className="mk-container grid grid-cols-2 md:flex md:items-center md:justify-center gap-6 md:gap-16">
+      <AnimatedSection className="border-t border-b border-mk-line py-10 md:py-12">
+        <StaggerContainer className="mk-container grid grid-cols-2 md:flex md:items-center md:justify-center gap-8 md:gap-20">
           {stats.map(s => (
             <StaggerItem key={s.label} className="text-center">
-              <div className="text-xl md:text-2xl font-bold text-mk-navy">{s.value}</div>
-              <div className="text-xs text-mk-sec">{s.label}</div>
+              <div className="text-2xl md:text-3xl font-bold text-mk-navy">{s.value}</div>
+              <div className="text-sm text-mk-sec mt-1">{s.label}</div>
             </StaggerItem>
           ))}
         </StaggerContainer>

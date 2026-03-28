@@ -59,7 +59,7 @@ export default function InvestirPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {taxShelterSteps.map((s, i) => (
             <div key={i} className="p-6 rounded-2xl border border-border bg-white text-center">
-              <div className="w-10 h-10 rounded-full bg-[#FFF1F5] text-[#E70866] font-bold flex items-center justify-center mx-auto mb-4">{i + 1}</div>
+              <div className="w-10 h-10 rounded-full bg-[#ECFDF5] text-[#059669] font-bold flex items-center justify-center mx-auto mb-4">{i + 1}</div>
               <h4 className="text-base font-bold text-[#1E293B] mb-2">{s.title}</h4>
               <p className="text-sm text-muted-foreground">{s.desc}</p>
             </div>

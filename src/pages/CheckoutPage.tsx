@@ -193,7 +193,7 @@ export default function CheckoutPage() {
                       {items.map((item) => (
                         <div key={item.id} className="px-3 py-2 border-b border-mk-line last:border-0 flex justify-between text-sm">
                           <span className="text-mk-text">{item.product?.name} × {item.quantity}</span>
-                          <span className="font-medium text-mk-navy">{formatPrice((item.product?.price || 0) * item.quantity)} EUR</span>
+                          <span className="font-medium text-mk-navy">{formatPrice((item.price_ht || item.product?.price || 0) * item.quantity)} EUR</span>
                         </div>
                       ))}
                     </div>

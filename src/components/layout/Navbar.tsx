@@ -71,7 +71,7 @@ export function Navbar() {
           </form>
         )}
 
-        <div className="hidden md:flex items-center gap-3 shrink-0">
+        <div className="hidden md:flex items-center gap-3 shrink-0 ml-auto">
           <motion.button
             onClick={() => setIsTVAC(!isTVAC)}
             className="text-white text-xs font-semibold px-3 py-1.5 rounded-md"
@@ -122,7 +122,7 @@ export function Navbar() {
         </div>
 
         {/* Mobile icons */}
-        <div className="flex md:hidden items-center gap-3 shrink-0">
+        <div className="flex md:hidden items-center gap-3 shrink-0 ml-auto">
           <Link to="/panier" className="relative">
             <ShoppingCart className="text-white" size={18} />
             {cartCount > 0 && (

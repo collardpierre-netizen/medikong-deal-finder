@@ -28,8 +28,16 @@ export function Footer() {
           </div>
           <div>
             <h4 className="font-semibold text-sm text-mk-navy mb-3">Entreprise</h4>
-            {["A propos", "Carrieres", "Devenir vendeur", "Contact", "Investir", "Centre d'aide"].map(l => (
-              <Link key={l} to="#" className="block text-sm text-mk-sec hover:text-mk-blue mb-2">{l}</Link>
+            {[
+              { label: "À propos", to: "/a-propos" },
+              { label: "Pourquoi MediKong", to: "/pourquoi-medikong" },
+              { label: "Comment ça marche", to: "/comment-ca-marche" },
+              { label: "Notre équipe", to: "/equipe" },
+              { label: "Carrières", to: "/carrieres" },
+              { label: "Presse", to: "/presse" },
+              { label: "Investir", to: "/investir" },
+            ].map(l => (
+              <Link key={l.to} to={l.to} className="block text-sm text-mk-sec hover:text-mk-blue mb-2">{l.label}</Link>
             ))}
           </div>
         </div>

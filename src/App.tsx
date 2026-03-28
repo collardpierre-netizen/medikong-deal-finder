@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { I18nProvider } from "@/contexts/I18nContext";
 import { CartProvider } from "@/contexts/CartContext";
 import HomePage from "./pages/HomePage";
 import ResultsPage from "./pages/ResultsPage";
@@ -24,6 +25,9 @@ import SellerOnboardingPage from "./pages/SellerOnboardingPage";
 import NotFound from "./pages/NotFound";
 import InvestPage from "./pages/InvestPage";
 import AdminLayout from "./components/admin/AdminLayout";
+import VendorLayout from "./components/vendor/VendorLayout";
+import VendorDashboard from "./pages/vendor/VendorDashboard";
+import VendorPlaceholder from "./pages/vendor/VendorPlaceholder";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminPlaceholder from "./pages/admin/AdminPlaceholder";
 import AdminVendeurs from "./pages/admin/AdminVendeurs";
@@ -57,6 +61,7 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
+      <I18nProvider>
       <CartProvider>
       <TooltipProvider>
         <Toaster />
@@ -113,11 +118,30 @@ const App = () => (
               <Route path="logs" element={<AdminLogs />} />
             </Route>
 
+            {/* Vendor Dashboard */}
+            <Route path="/vendor" element={<VendorLayout />}>
+              <Route index element={<VendorDashboard />} />
+              <Route path="catalog" element={<VendorPlaceholder pageKey="catalog" />} />
+              <Route path="offers" element={<VendorPlaceholder pageKey="myOffers" />} />
+              <Route path="orders" element={<VendorPlaceholder pageKey="orders" />} />
+              <Route path="opportunities" element={<VendorPlaceholder pageKey="opportunities" />} />
+              <Route path="alerts" element={<VendorPlaceholder pageKey="alerts" />} />
+              <Route path="tenders" element={<VendorPlaceholder pageKey="tenders" />} />
+              <Route path="analytics" element={<VendorPlaceholder pageKey="analytics" />} />
+              <Route path="finance" element={<VendorPlaceholder pageKey="finances" />} />
+              <Route path="logistics" element={<VendorPlaceholder pageKey="logistics" />} />
+              <Route path="health" element={<VendorPlaceholder pageKey="health" />} />
+              <Route path="messages" element={<VendorPlaceholder pageKey="messages" />} />
+              <Route path="academy" element={<VendorPlaceholder pageKey="academy" />} />
+              <Route path="settings" element={<VendorPlaceholder pageKey="settings" />} />
+            </Route>
+
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
       </TooltipProvider>
       </CartProvider>
+      </I18nProvider>
     </AuthProvider>
   </QueryClientProvider>
 );

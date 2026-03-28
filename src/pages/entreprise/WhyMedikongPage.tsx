@@ -31,7 +31,7 @@ export default function WhyMedikongPage() {
           />
           <SplitSection
             reverse
-            tag={{ label: "Intelligence", color: "#7C3AED", bg: "#F5F3FF" }}
+            tag={{ label: "Intelligence", color: "#1B5BDA", bg: "#EFF6FF" }}
             title="Market Intelligence intégrée"
             paragraphs={[
               "Suivez l'évolution des prix du marché grâce à notre veille concurrentielle automatisée. Recevez des alertes quand les prix baissent.",

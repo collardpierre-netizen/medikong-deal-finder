@@ -24,6 +24,7 @@ export default function VendorOffers() {
   const [selected, setSelected] = useState<string[]>([]);
   const [editOffer, setEditOffer] = useState<string | null>(null);
   const [showNew, setShowNew] = useState(false);
+  const [prixRefDetail, setPrixRefDetail] = useState<string | null>(null);
   const [simProduct, setSimProduct] = useState(vendorOffers[0]?.id || "");
   const [simPriceHT, setSimPriceHT] = useState(vendorOffers[0]?.price || 0);
   const [simPort, setSimPort] = useState(vendorOffers[0]?.port || 0);

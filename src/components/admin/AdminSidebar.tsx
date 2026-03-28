@@ -57,6 +57,7 @@ const sections: NavSection[] = [
     items: [
       { labelKey: "crm", path: "/admin/crm", icon: MessageSquare },
       { labelKey: "cms", path: "/admin/cms", icon: Layout },
+      { labelKey: "onboardingCms", path: "/admin/onboarding-cms", icon: ClipboardList },
       { labelKey: "investPipeline", path: "/admin/invest-pipeline", icon: DollarSign },
     ],
   },

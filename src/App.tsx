@@ -28,6 +28,7 @@ import AdminLayout from "./components/admin/AdminLayout";
 import VendorLayout from "./components/vendor/VendorLayout";
 import VendorDashboard from "./pages/vendor/VendorDashboard";
 import VendorPlaceholder from "./pages/vendor/VendorPlaceholder";
+import VendorCatalog from "./pages/vendor/VendorCatalog";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminPlaceholder from "./pages/admin/AdminPlaceholder";
 import AdminVendeurs from "./pages/admin/AdminVendeurs";

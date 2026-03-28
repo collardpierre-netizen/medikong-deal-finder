@@ -522,8 +522,9 @@ export default function InvestPage() {
       </section>
 
       {/* ════════════ COMMENT INVESTIR ════════════ */}
-      <section id="comment" className="py-16 md:py-24 bg-mk-alt scroll-mt-14">
-        <div className="max-w-4xl mx-auto px-5 text-center">
+      <section id="comment" className="relative py-16 md:py-24 bg-mk-alt scroll-mt-14 overflow-hidden">
+        <div className="absolute inset-0 invest-light-dots" />
+        <div className="max-w-4xl mx-auto px-5 text-center relative z-10">
           <h2 className="text-2xl md:text-4xl font-bold text-mk-navy mb-3">Investissez en 3 étapes simples</h2>
           <p className="text-mk-sec text-sm mb-10">Un processus simple et sécurisé.</p>
           <div className="grid md:grid-cols-3 gap-6 mb-10">

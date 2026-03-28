@@ -25,7 +25,7 @@ export function VTabBar({ tabs, active, onChange }: VTabBarProps) {
         >
           {tab.label}
           {tab.badge !== undefined && tab.badge > 0 && (
-            <span className="ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] rounded-full text-[10px] font-bold bg-[#E70866] text-white px-1">
+            <span className="ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] rounded-full text-[10px] font-bold bg-[#1B5BDA] text-white px-1">
               {tab.badge}
             </span>
           )}

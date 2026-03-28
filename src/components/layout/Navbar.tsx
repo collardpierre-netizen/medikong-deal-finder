@@ -161,7 +161,7 @@ export function Navbar() {
                   </Link>
                 )}
                 {isVendor && (
-                  <Link to="/vendor" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 text-pink-400 text-sm font-semibold">
+                  <Link to="/vendor" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 text-blue-400 text-sm font-semibold">
                     <Store size={16} /> Espace Vendeur
                   </Link>
                 )}

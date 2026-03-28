@@ -428,6 +428,72 @@ export type Database = {
           },
         ]
       }
+      invest_subscriptions: {
+        Row: {
+          address: string
+          amount: number
+          city: string
+          company: string | null
+          country: string
+          created_at: string
+          email: string
+          first_name: string
+          id: string
+          last_name: string
+          national_number: string | null
+          net_cost: number
+          notes: string | null
+          phone: string
+          postal_code: string
+          shares: number
+          status: string
+          tax_reduction: number
+          user_id: string | null
+        }
+        Insert: {
+          address: string
+          amount: number
+          city: string
+          company?: string | null
+          country?: string
+          created_at?: string
+          email: string
+          first_name: string
+          id?: string
+          last_name: string
+          national_number?: string | null
+          net_cost?: number
+          notes?: string | null
+          phone: string
+          postal_code: string
+          shares: number
+          status?: string
+          tax_reduction?: number
+          user_id?: string | null
+        }
+        Update: {
+          address?: string
+          amount?: number
+          city?: string
+          company?: string | null
+          country?: string
+          created_at?: string
+          email?: string
+          first_name?: string
+          id?: string
+          last_name?: string
+          national_number?: string | null
+          net_cost?: number
+          notes?: string | null
+          phone?: string
+          postal_code?: string
+          shares?: number
+          status?: string
+          tax_reduction?: number
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       invoices: {
         Row: {
           amount_ht: number

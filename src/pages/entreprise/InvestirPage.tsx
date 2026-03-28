@@ -80,7 +80,7 @@ export default function InvestirPage() {
         title="Prêt à devenir actionnaire de MediKong ?"
         buttons={[
           { label: "Souscrire maintenant", variant: "pink", to: "/invest" },
-          { label: "Contacter l'équipe", variant: "outline" },
+          { label: "Contacter l'équipe", variant: "outline", to: "/contact" },
         ]}
       />
 

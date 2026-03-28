@@ -353,7 +353,7 @@ export default function AdminCommissions() {
                 <SelectContent>
                   {vendors.map(v => (
                     <SelectItem key={v.id} value={v.id}>
-                      {v.company_name} ({v.tier})
+                      {v.company_name || v.name}
                       {vendorsWithRules.has(v.id) && " ✓"}
                     </SelectItem>
                   ))}

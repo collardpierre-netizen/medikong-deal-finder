@@ -37,19 +37,19 @@ const AdminDashboard = () => {
   const ordersQuery = useOrders();
 
   const topSellers = (vendorsQuery.data || [])
-    .filter(v => v.status === "active")
+    .filter(v => v.is_active)
     .slice(0, 5)
     .map(v => ({
-      name: v.company_name,
+      name: v.company_name || v.name,
       commission: Number(v.commission_rate) || 12,
     }));
 
   const recentOrders = (ordersQuery.data || []).slice(0, 6).map(o => ({
     id: o.order_number,
-    buyer: (o.buyers as any)?.company_name || "—",
-    seller: (o.vendors as any)?.company_name || "—",
-    amount: `€ ${Number(o.total_ttc || o.total || 0).toLocaleString("fr-BE", { minimumFractionDigits: 2 })}`,
-    status: o.status === "pending" ? "pending" : o.status === "confirmed" ? "processing" : o.status === "shipped" ? "shipped" : o.status === "delivered" ? "delivered" : o.status === "cancelled" ? "cancelled" : o.status,
+    buyer: (o.customers as any)?.company_name || "—",
+    seller: "—",
+    amount: `€ ${Number(o.total_incl_vat || 0).toLocaleString("fr-BE", { minimumFractionDigits: 2 })}`,
+    status: o.status,
     date: new Date(o.created_at).toLocaleDateString("fr-BE", { day: "2-digit", month: "2-digit" }),
   }));
 

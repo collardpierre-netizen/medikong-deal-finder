@@ -132,8 +132,8 @@ const AdminMarques = () => {
               <div className="w-[300px] bg-white rounded-lg border p-5 shrink-0" style={{ borderColor: "#E2E8F0" }}>
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-[16px] font-bold" style={{ color: "#1D2530" }}>{selected.name}</h3>
-                  <Badge variant="outline" className="text-[10px] font-bold" style={{ backgroundColor: (tierColors[selected.tier || "Bronze"]).bg, color: (tierColors[selected.tier || "Bronze"]).text, borderColor: "transparent" }}>
-                    {selected.tier}
+                  <Badge variant="outline" className="text-[10px] font-bold">
+                    {selected.is_featured ? "Featured" : "Standard"}
                   </Badge>
                 </div>
                 <div className="space-y-3 text-[12px] mb-4">

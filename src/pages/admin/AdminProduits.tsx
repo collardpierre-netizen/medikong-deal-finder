@@ -5,7 +5,7 @@ import KpiCard from "@/components/admin/KpiCard";
 import StatusBadge from "@/components/admin/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/contexts/I18nContext";
-import { useProducts as useAdminProducts, useOffersDirectAdmin, useBrands, useManufacturers } from "@/hooks/useAdminData";
+import { useProducts as useAdminProducts, useOffers as useOffersDirectAdmin, useBrands, useManufacturers } from "@/hooks/useAdminData";
 import { ProductFormDialog } from "@/components/admin/ProductFormDialog";
 import { exportProducts, importProducts } from "@/lib/xlsx-utils";
 import { useQueryClient } from "@tanstack/react-query";

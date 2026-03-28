@@ -59,38 +59,24 @@ const AdminVendeurDetail = () => {
   const { data: vendorBrands = [] } = useQuery({
     queryKey: ["vendor-brands", id],
     queryFn: async () => {
-      // Get distinct brand names via offers_direct join
       const { data: offers } = await supabase
-        .from("offers_direct")
-        .select("product_id, products(brand, brand_id)")
+        .from("offers")
+        .select("product_id, products(name, brand_id)")
         .eq("vendor_id", id!);
-      const brandNames = [...new Set((offers || []).map(o => (o.products as any)?.brand).filter(Boolean))];
-      return brandNames.map(name => ({ name }));
+      const brandNames = [...new Set((offers || []).map(o => (o.products as any)?.name).filter(Boolean))];
+      return brandNames.slice(0, 10).map(name => ({ name }));
     },
     enabled: !!id,
   });
 
-  const { data: vendorManufacturers = [] } = useQuery({
-    queryKey: ["vendor-manufacturers", id],
-    queryFn: async () => {
-      const { data: offers } = await supabase
-        .from("offers_direct")
-        .select("product_id, products(manufacturer_id)")
-        .eq("vendor_id", id!);
-      const mfrIds = [...new Set((offers || []).map(o => (o.products as any)?.manufacturer_id).filter(Boolean))];
-      if (mfrIds.length === 0) return [];
-      const { data } = await supabase.from("manufacturers").select("name").in("id", mfrIds);
-      return data || [];
-    },
-    enabled: !!id,
-  });
+  const vendorManufacturers: any[] = [];
 
   const { data: vendorProducts = [] } = useQuery({
     queryKey: ["vendor-products-list", id],
     queryFn: async () => {
       const { data: offers } = await supabase
-        .from("offers_direct")
-        .select("product_id, price_ht, stock, status, products(product_name, brand)")
+        .from("offers")
+        .select("product_id, price_excl_vat, stock_quantity, is_active, products(name)")
         .eq("vendor_id", id!);
       return offers || [];
     },

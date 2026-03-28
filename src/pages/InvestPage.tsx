@@ -2,6 +2,7 @@ import { Layout } from "@/components/layout/Layout";
 import { motion } from "framer-motion";
 import { ArrowRight, Download, Shield, TrendingUp, Users, Globe, ChevronDown, ShoppingCart, Lock, BarChart3, CheckCircle2, Building2 } from "lucide-react";
 import { useState, useEffect } from "react";
+import InvestSubscriptionModal from "@/components/invest/InvestSubscriptionModal";
 
 /* ───────── DATA ───────── */
 
@@ -155,6 +156,7 @@ function TaxShelterSimulator() {
 export default function InvestPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [activeSection, setActiveSection] = useState("");
+  const [showSubscribe, setShowSubscribe] = useState(false);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -213,9 +215,9 @@ export default function InvestPage() {
           {/* CTA */}
           <motion.div className="flex flex-col sm:flex-row gap-3 justify-center"
             initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.4 }}>
-            <a href="mailto:invest@medikong.pro?subject=Souscription%20MediKong" className="inline-flex items-center justify-center gap-2 bg-mk-green hover:brightness-110 text-white px-8 py-4 rounded-xl font-semibold text-sm transition-all">
+            <button onClick={() => setShowSubscribe(true)} className="inline-flex items-center justify-center gap-2 bg-mk-green hover:brightness-110 text-white px-8 py-4 rounded-xl font-semibold text-sm transition-all">
               Souscrire dès 1 000 € <ArrowRight size={16} />
-            </a>
+            </button>
             <a href="https://www.medikong.pro/documents/MediKong_Fundraising_Pitch_Seed.pdf" target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-2 bg-white/10 border border-white/20 text-white px-8 py-4 rounded-xl font-semibold text-sm hover:bg-white/15 transition-all">
               <Download size={16} /> Mémo d'investissement
             </a>
@@ -231,7 +233,7 @@ export default function InvestPage() {
               <a key={a.id} href={`#${a.id}`} className={`whitespace-nowrap px-4 py-3.5 text-sm font-medium transition-colors border-b-2 ${activeSection === a.id ? "text-mk-navy border-mk-blue" : "text-mk-sec border-transparent hover:text-mk-navy"}`}>{a.label}</a>
             ))}
           </div>
-          <a href="mailto:invest@medikong.pro?subject=Souscription%20MediKong" className="hidden md:inline-flex items-center gap-2 bg-mk-blue text-white px-5 py-2 rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity shrink-0 ml-4">Souscrire maintenant</a>
+          <button onClick={() => setShowSubscribe(true)} className="hidden md:inline-flex items-center gap-2 bg-mk-blue text-white px-5 py-2 rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity shrink-0 ml-4">Souscrire maintenant</button>
         </div>
       </nav>
 
@@ -578,12 +580,13 @@ export default function InvestPage() {
         <div className="max-w-3xl mx-auto px-5 text-center text-white relative z-10">
           <h2 className="text-2xl md:text-4xl font-bold mb-4">Prêt à investir dans l'avenir de la santé ?</h2>
           <p className="text-white/60 max-w-lg mx-auto mb-10 text-sm md:text-base">Rejoignez les premiers investisseurs de MediKong et bénéficiez du Tax Shelter.</p>
-          <a href="mailto:invest@medikong.pro?subject=Souscription%20MediKong" className="inline-flex items-center gap-2 bg-white/10 border border-white/20 text-white px-8 py-4 rounded-xl font-semibold text-sm hover:bg-white/15 transition-all">
+          <button onClick={() => setShowSubscribe(true)} className="inline-flex items-center gap-2 bg-white/10 border border-white/20 text-white px-8 py-4 rounded-xl font-semibold text-sm hover:bg-white/15 transition-all">
             Souscrire maintenant — dès 1 000 € <ArrowRight size={16} />
-          </a>
+          </button>
           <p className="text-white/40 text-xs mt-6">Vous avez des questions ? Contactez-nous à <a href="mailto:invest@medikong.pro" className="underline hover:text-white">invest@medikong.pro</a></p>
         </div>
       </section>
+      <InvestSubscriptionModal open={showSubscribe} onClose={() => setShowSubscribe(false)} />
     </Layout>
   );
 }

@@ -75,6 +75,7 @@ import AdminLogs from "./pages/admin/AdminLogs";
 import AdminLoginPage from "./pages/admin/AdminLoginPage";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminAuditLog from "./pages/admin/AdminAuditLog";
+import AdminOnboardingCMS from "./pages/admin/AdminOnboardingCMS";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 

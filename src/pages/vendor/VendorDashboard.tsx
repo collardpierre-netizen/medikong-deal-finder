@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import { VCard } from "@/components/vendor/ui/VCard";
 import { VStat } from "@/components/vendor/ui/VStat";
 import { VMiniBar } from "@/components/vendor/ui/VMiniBar";

@@ -198,6 +198,7 @@ const App = () => (
               <Route path="audit-log" element={<AdminAuditLog />} />
               <Route path="onboarding-cms" element={<AdminOnboardingCMS />} />
               <Route path="commissions" element={<AdminCommissions />} />
+              <Route path="sync" element={<AdminSync />} />
             </Route>
 
             {/* Vendor Dashboard */}

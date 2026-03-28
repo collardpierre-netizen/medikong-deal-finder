@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Store, UserPlus, Package, Layers, Tag, SlidersHorizontal,
   ShoppingCart, AlertCircle, DollarSign, Eye, Link, BarChart3,
   Shield, Upload, MessageSquare, Layout, Truck, ShieldCheck, Settings, FileText,
-  LogOut, Users, ClipboardList, Percent,
+  LogOut, Users, ClipboardList, Percent, RefreshCw,
 } from "lucide-react";
 
 interface NavItem {

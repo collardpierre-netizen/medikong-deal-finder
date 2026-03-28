@@ -63,10 +63,40 @@ export default function VendorSettings() {
   const [activeTab, setActiveTab] = useState("profile");
   const tabs = [
     { id: "profile", label: "Profil entreprise" },
+    { id: "commission", label: "Commission" },
     { id: "team", label: "Equipe", badge: teamMembers.length },
     { id: "api", label: "API & Webhooks" },
     { id: "notifications", label: "Notifications" },
   ];
+
+  const { data: commissionRules = [] } = useQuery({
+    queryKey: ["vendor-commission-rules"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("commission_rules")
+        .select("*")
+        .or("vendor_id.is.null,is_default.eq.true")
+        .order("is_default", { ascending: false });
+      if (error) throw error;
+      return data as any[];
+    },
+  });
+
+  const activeRule = commissionRules.find((r: any) => r.is_default) || commissionRules[0];
+
+  const modelLabels: Record<string, string> = {
+    fixed_rate: "Taux fixe",
+    tiered_gmv: "Paliers GMV",
+    category_based: "Par catégorie",
+    margin_split: "Split marge",
+  };
+
+  const modelIcons: Record<string, React.ElementType> = {
+    fixed_rate: Percent,
+    tiered_gmv: BarChart3,
+    category_based: Layers,
+    margin_split: Split,
+  };
 
   return (
     <div className="space-y-5">

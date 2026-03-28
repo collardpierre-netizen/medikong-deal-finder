@@ -566,6 +566,9 @@ export default function InvestPage() {
 
       {/* ════════════ FINAL CTA ════════════ */}
       <section className="py-16 md:py-24 relative overflow-hidden" style={{ background: "linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #1a365d 100%)" }}>
+        <div className="absolute inset-0 invest-dots" />
+        <div className="absolute inset-0 invest-grid" />
+        <div className="absolute inset-0 invest-glow-tl" />
         <div className="max-w-3xl mx-auto px-5 text-center text-white relative z-10">
           <h2 className="text-2xl md:text-4xl font-bold mb-4">Prêt à investir dans l'avenir de la santé ?</h2>
           <p className="text-white/60 max-w-lg mx-auto mb-10 text-sm md:text-base">Rejoignez les premiers investisseurs de MediKong et bénéficiez du Tax Shelter.</p>

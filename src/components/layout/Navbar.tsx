@@ -12,6 +12,8 @@ export function Navbar() {
   const [isTVAC, setIsTVAC] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const isHomePage = location.pathname === "/" || location.pathname === "";
   const { user, signOut } = useAuth();
   const { cartCount } = useCart();
   const [isAdmin, setIsAdmin] = useState(false);

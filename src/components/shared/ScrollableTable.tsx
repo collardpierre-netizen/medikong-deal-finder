@@ -30,10 +30,10 @@ export function ScrollableTable({ children, className = "" }: ScrollableTablePro
   }, []);
 
   return (
-    <div className={`relative overflow-hidden ${className}`}>
+    <div className={`relative ${className}`}>
       {/* Left fade */}
       {canScrollLeft && (
-        <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none md:hidden" />
+        <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-white to-transparent z-20 pointer-events-none md:hidden" />
       )}
 
       <div ref={ref} className="overflow-x-auto scrollbar-thin">
@@ -42,7 +42,7 @@ export function ScrollableTable({ children, className = "" }: ScrollableTablePro
 
       {/* Right fade + arrow */}
       {canScrollRight && (
-        <div className="absolute right-0 top-0 bottom-0 w-10 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none md:hidden flex items-center justify-end pr-1">
+        <div className="absolute right-0 top-0 bottom-0 w-10 bg-gradient-to-l from-white to-transparent z-20 pointer-events-none md:hidden flex items-center justify-end pr-1">
           <div className="animate-pulse bg-mk-navy/10 rounded-full p-1">
             <ChevronRight size={16} className="text-mk-navy" />
           </div>

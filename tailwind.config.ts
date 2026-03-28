@@ -13,6 +13,7 @@ export default {
     extend: {
       fontFamily: {
         sans: ['"DM Sans"', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'sans-serif'],
+        display: ['"Plus Jakarta Sans"', '"DM Sans"', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",

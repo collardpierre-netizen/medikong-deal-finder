@@ -26,21 +26,24 @@ export function AnimatedCounter({ target, suffix = "", prefix = "", duration = 1
     return () => observer.disconnect();
   }, [started]);
 
+  const decimals = target % 1 !== 0 ? (target.toString().split(".")[1]?.length || 1) : 0;
+
   useEffect(() => {
     if (!started) return;
     const startTime = performance.now();
     const step = (now: number) => {
       const progress = Math.min((now - startTime) / duration, 1);
       const eased = 1 - Math.pow(1 - progress, 3);
-      setCount(Math.round(eased * target));
+      const current = eased * target;
+      setCount(decimals > 0 ? parseFloat(current.toFixed(decimals)) : Math.round(current));
       if (progress < 1) requestAnimationFrame(step);
     };
     requestAnimationFrame(step);
-  }, [started, target, duration]);
+  }, [started, target, duration, decimals]);
 
   return (
     <span ref={ref}>
-      {prefix}{count.toLocaleString("fr-BE")}{suffix}
+      {prefix}{decimals > 0 ? count.toFixed(decimals).replace(".", ",") : count.toLocaleString("fr-BE")}{suffix}
     </span>
   );
 }

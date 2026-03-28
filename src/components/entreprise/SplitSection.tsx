@@ -1,15 +1,17 @@
 import { useScrollReveal } from "@/hooks/useScrollReveal";
+import { Check } from "lucide-react";
 
 interface SplitSectionProps {
   tag?: { label: string; color: string; bg: string };
   title: string;
   paragraphs: string[];
+  checklist?: string[];
   imagePlaceholder: string;
   imageGradient: string;
   reverse?: boolean;
 }
 
-export function SplitSection({ tag, title, paragraphs, imagePlaceholder, imageGradient, reverse }: SplitSectionProps) {
+export function SplitSection({ tag, title, paragraphs, checklist, imagePlaceholder, imageGradient, reverse }: SplitSectionProps) {
   const { ref, isVisible } = useScrollReveal();
 
   return (
@@ -32,6 +34,16 @@ export function SplitSection({ tag, title, paragraphs, imagePlaceholder, imageGr
         {paragraphs.map((p, i) => (
           <p key={i} className="text-base text-muted-foreground leading-relaxed mb-4">{p}</p>
         ))}
+        {checklist && (
+          <ul className="space-y-2.5 mt-4">
+            {checklist.map(item => (
+              <li key={item} className="flex items-start gap-2.5 text-sm text-mk-navy">
+                <Check size={16} className="text-mk-green shrink-0 mt-0.5" />
+                {item}
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
       <div className={`aspect-[4/3] rounded-2xl overflow-hidden bg-gradient-to-br ${imageGradient} flex items-center justify-center`}>
         <span className="text-sm text-white/70 px-6 text-center">{imagePlaceholder}</span>

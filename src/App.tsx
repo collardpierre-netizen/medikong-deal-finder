@@ -86,6 +86,19 @@ import CareersPage from "./pages/entreprise/CareersPage";
 import PressPage from "./pages/entreprise/PressPage";
 import InvestirPage from "./pages/entreprise/InvestirPage";
 import VendorPublicPage from "./pages/VendorPublicPage";
+import SupplierVerificationPage from "./pages/trust/SupplierVerificationPage";
+import QualityGuaranteePage from "./pages/trust/QualityGuaranteePage";
+import HowToOrderPage from "./pages/trust/HowToOrderPage";
+import BuyNowPayLaterPage from "./pages/trust/BuyNowPayLaterPage";
+import LogisticsPage from "./pages/trust/LogisticsPage";
+import BecomeSellerPage from "./pages/trust/BecomeSellerPage";
+import TestimonialsPage from "./pages/trust/TestimonialsPage";
+import ContactPage from "./pages/trust/ContactPage";
+import HelpCenterPage from "./pages/trust/HelpCenterPage";
+import LegalNoticePage from "./pages/legal/LegalNoticePage";
+import TermsPage from "./pages/legal/TermsPage";
+import PrivacyPage from "./pages/legal/PrivacyPage";
+import CookiePolicyPage from "./pages/legal/CookiePolicyPage";
 
 const queryClient = new QueryClient();
 

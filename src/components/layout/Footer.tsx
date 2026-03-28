@@ -5,7 +5,7 @@ export function Footer() {
   return (
     <footer className="border-t border-mk-line mt-10">
       <div className="mk-container py-10">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
           <div className="col-span-2 md:col-span-1">
             <div className="mb-3">
               <img src={logoDark} alt="MediKong.pro" className="h-[72px]" />
@@ -16,26 +16,46 @@ export function Footer() {
           </div>
           <div>
             <h4 className="font-semibold text-sm text-mk-navy mb-3">Nos solutions</h4>
-            {["Catalogue", "Verification fournisseurs", "Comment commander", "Garantie qualite"].map(l => (
-              <Link key={l} to="#" className="block text-sm text-mk-sec hover:text-mk-blue mb-2">{l}</Link>
+            {[
+              { label: "Catalogue", to: "/" },
+              { label: "Vérification fournisseurs", to: "/verification-fournisseurs" },
+              { label: "Comment commander", to: "/comment-commander" },
+              { label: "Garantie qualité", to: "/garantie-qualite" },
+            ].map(l => (
+              <Link key={l.to} to={l.to} className="block text-sm text-mk-sec hover:text-mk-blue mb-2">{l.label}</Link>
             ))}
           </div>
           <div>
             <h4 className="font-semibold text-sm text-mk-navy mb-3">Comment on travaille</h4>
-            {["Partenariats fournisseurs", "Paiement differe", "Logistique", "Temoignages"].map(l => (
-              <Link key={l} to="#" className="block text-sm text-mk-sec hover:text-mk-blue mb-2">{l}</Link>
+            {[
+              { label: "Partenariats fournisseurs", to: "/verification-fournisseurs" },
+              { label: "Paiement différé", to: "/paiement-differe" },
+              { label: "Logistique", to: "/logistique" },
+              { label: "Témoignages", to: "/temoignages" },
+            ].map(l => (
+              <Link key={l.label} to={l.to} className="block text-sm text-mk-sec hover:text-mk-blue mb-2">{l.label}</Link>
             ))}
           </div>
           <div>
             <h4 className="font-semibold text-sm text-mk-navy mb-3">Entreprise</h4>
             {[
               { label: "À propos", to: "/a-propos" },
-              { label: "Pourquoi MediKong", to: "/pourquoi-medikong" },
-              { label: "Comment ça marche", to: "/comment-ca-marche" },
-              { label: "Notre équipe", to: "/equipe" },
+              { label: "Devenir vendeur", to: "/devenir-vendeur" },
               { label: "Carrières", to: "/carrieres" },
-              { label: "Presse", to: "/presse" },
+              { label: "Contact", to: "/contact" },
               { label: "Investir", to: "/investir" },
+              { label: "Centre d'aide", to: "/centre-aide" },
+            ].map(l => (
+              <Link key={l.to} to={l.to} className="block text-sm text-mk-sec hover:text-mk-blue mb-2">{l.label}</Link>
+            ))}
+          </div>
+          <div>
+            <h4 className="font-semibold text-sm text-mk-navy mb-3">Légal</h4>
+            {[
+              { label: "Mentions légales", to: "/mentions-legales" },
+              { label: "CGV", to: "/cgv" },
+              { label: "Confidentialité", to: "/politique-confidentialite" },
+              { label: "Cookies", to: "/cookies" },
             ].map(l => (
               <Link key={l.to} to={l.to} className="block text-sm text-mk-sec hover:text-mk-blue mb-2">{l.label}</Link>
             ))}

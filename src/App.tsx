@@ -130,6 +130,7 @@ const App = () => (
               <Route path="import-export" element={<AdminImportExport />} />
               <Route path="crm" element={<AdminCRM />} />
               <Route path="cms" element={<AdminCMS />} />
+              <Route path="prix-reference" element={<AdminPrixReference />} />
               <Route path="logistique" element={<AdminLogistique />} />
               <Route path="equipe" element={<AdminEquipe />} />
               <Route path="parametres" element={<AdminParametres />} />

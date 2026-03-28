@@ -74,9 +74,9 @@ export default function AdminAuditLog() {
       <h1 className="text-xl font-bold text-[#1D2530]">Audit Log — Impersonation</h1>
 
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-        <KpiCard label="Sessions totales" value={totalSessions} icon={<Shield size={20} className="text-red-500" />} />
-        <KpiCard label="Actions tracées" value={totalActions} icon={<FileText size={20} className="text-[#1B5BDA]" />} />
-        <KpiCard label="Sessions actives" value={activeSessions} icon={<Clock size={20} className="text-amber-500" />} />
+        <KpiCard label="Sessions totales" value={String(totalSessions)} icon={Shield} iconColor="#EF4343" />
+        <KpiCard label="Actions tracées" value={String(totalActions)} icon={FileText} iconColor="#1B5BDA" />
+        <KpiCard label="Sessions actives" value={String(activeSessions)} icon={Clock} iconColor="#F59E0B" />
       </div>
 
       <div className="bg-white rounded-lg border border-[#E2E8F0] overflow-hidden">

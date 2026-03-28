@@ -120,10 +120,10 @@ export default function AdminUsers() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiCard label="Total utilisateurs" value={users.length} icon={<Users size={20} className="text-[#1B5BDA]" />} />
-        <KpiCard label="Vendeurs actifs" value={vendorCount} icon={<Store size={20} className="text-amber-500" />} />
-        <KpiCard label="Acheteurs actifs" value={buyerCount} icon={<ShoppingBag size={20} className="text-emerald-500" />} />
-        <KpiCard label="Suspendus" value={suspendedCount} icon={<AlertTriangle size={20} className="text-red-500" />} />
+        <KpiCard label="Total utilisateurs" value={String(users.length)} icon={Users} iconColor="#1B5BDA" />
+        <KpiCard label="Vendeurs actifs" value={String(vendorCount)} icon={Store} iconColor="#F59E0B" />
+        <KpiCard label="Acheteurs actifs" value={String(buyerCount)} icon={ShoppingBag} iconColor="#059669" />
+        <KpiCard label="Suspendus" value={String(suspendedCount)} icon={AlertTriangle} iconColor="#EF4343" />
       </div>
 
       {/* Filters */}

@@ -18,7 +18,7 @@ export default function QualityGuaranteePage() {
   return (
     <TrustProcessLayout>
       <EntrepriseHero
-        variant="green"
+        variant="blue"
         badge="Qualité"
         title="Votre garantie qualité sur chaque commande"
         subtitle="Chaque produit sur MediKong est conforme, tracé et garanti. Notre engagement : 0 compromis sur la qualité."

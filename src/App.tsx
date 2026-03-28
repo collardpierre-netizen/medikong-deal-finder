@@ -31,6 +31,10 @@ import VendorPlaceholder from "./pages/vendor/VendorPlaceholder";
 import VendorCatalog from "./pages/vendor/VendorCatalog";
 import VendorOffers from "./pages/vendor/VendorOffers";
 import VendorOrders from "./pages/vendor/VendorOrders";
+import VendorOpportunities from "./pages/vendor/VendorOpportunities";
+import VendorAlerts from "./pages/vendor/VendorAlerts";
+import VendorTenders from "./pages/vendor/VendorTenders";
+import VendorAnalytics from "./pages/vendor/VendorAnalytics";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminPlaceholder from "./pages/admin/AdminPlaceholder";
 import AdminVendeurs from "./pages/admin/AdminVendeurs";
@@ -127,10 +131,10 @@ const App = () => (
               <Route path="catalog" element={<VendorCatalog />} />
               <Route path="offers" element={<VendorOffers />} />
               <Route path="orders" element={<VendorOrders />} />
-              <Route path="opportunities" element={<VendorPlaceholder pageKey="opportunities" />} />
-              <Route path="alerts" element={<VendorPlaceholder pageKey="alerts" />} />
-              <Route path="tenders" element={<VendorPlaceholder pageKey="tenders" />} />
-              <Route path="analytics" element={<VendorPlaceholder pageKey="analytics" />} />
+              <Route path="opportunities" element={<VendorOpportunities />} />
+              <Route path="alerts" element={<VendorAlerts />} />
+              <Route path="tenders" element={<VendorTenders />} />
+              <Route path="analytics" element={<VendorAnalytics />} />
               <Route path="finance" element={<VendorPlaceholder pageKey="finances" />} />
               <Route path="logistics" element={<VendorPlaceholder pageKey="logistics" />} />
               <Route path="health" element={<VendorPlaceholder pageKey="health" />} />

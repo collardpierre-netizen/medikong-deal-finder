@@ -156,8 +156,6 @@ const translations: Record<Lang, Record<string, string>> = {
     confirm: "Bevestigen",
     filter: "Filteren",
     messages: "Berichten",
-    finance: "Financiën",
-    logistics: "Logistiek",
   },
   de: {
     dashboard: "Dashboard",

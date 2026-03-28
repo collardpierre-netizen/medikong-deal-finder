@@ -99,26 +99,26 @@ export default function AdminSync() {
       {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <KpiCard
-          title="Derniere sync produits"
+          label="Derniere sync produits"
           value={config?.last_full_sync_at
             ? formatDistanceToNow(new Date(config.last_full_sync_at), { addSuffix: true, locale: fr })
             : "Jamais"}
           icon={Package}
         />
         <KpiCard
-          title="Derniere sync offres"
+          label="Derniere sync offres"
           value={config?.last_offers_sync_at
             ? formatDistanceToNow(new Date(config.last_offers_sync_at), { addSuffix: true, locale: fr })
             : "Jamais"}
           icon={Store}
         />
         <KpiCard
-          title="Statut sync"
+          label="Statut sync"
           value={config?.sync_status || "idle"}
           icon={config?.sync_status === "error" ? AlertTriangle : CheckCircle}
         />
         <KpiCard
-          title="Mode livraison"
+          label="Mode livraison"
           value={config?.shipping_mode === "via_warehouse" ? "Via entrepot" : "Direct client"}
           icon={Database}
         />

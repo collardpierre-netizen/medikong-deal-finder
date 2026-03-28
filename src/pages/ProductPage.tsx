@@ -154,7 +154,7 @@ export default function ProductPage() {
               transition={{ duration: 0.5, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
             >
               {brandData ? (
-                <Link to={`/marques/${brandData.slug}`} className="text-sm text-mk-blue hover:underline mb-1 inline-flex items-center gap-1">
+                <Link to={`/marque/${brandData.slug}`} className="text-sm text-mk-blue hover:underline mb-1 inline-flex items-center gap-1">
                   <Tag size={13} /> {product.brand}
                 </Link>
               ) : (

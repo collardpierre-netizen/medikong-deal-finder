@@ -7,8 +7,7 @@ import { ProductCard } from "@/components/shared/ProductCard";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { AnimatedSection, StaggerContainer, StaggerItem, HoverCard } from "@/components/shared/PageTransition";
-import heroMedical from "@/assets/hero-medical-supplies.png";
-import heroPackages from "@/assets/hero-packages.png";
+import { HeroImageGallery } from "@/components/home/HeroImageGallery";
 
 const iconMap: Record<string, React.ReactNode> = {
   Shield: <Shield size={20} className="text-mk-navy" />,
@@ -119,33 +118,17 @@ export default function HomePage() {
               </motion.div>
             </div>
 
-            {/* Right — hero illustration */}
+            {/* Right — hero image gallery */}
             <motion.div
-              className="relative hidden md:flex items-center justify-center"
+              className="relative hidden md:block"
               initial={{ opacity: 0, x: 40 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.7, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
             >
-              <img
-                src={heroMedical}
-                alt="Fournitures médicales professionnelles"
-                width={480}
-                height={360}
-                className="w-full max-w-[480px] drop-shadow-xl"
-              />
-              {/* Floating packages card */}
-              <motion.div
-                className="absolute -bottom-4 -left-6 bg-white rounded-xl shadow-lg p-3 border border-mk-line/50"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.5 }}
-              >
-                <img src={heroPackages} alt="Livraison" width={120} height={120} className="w-[120px]" />
-                <p className="text-[11px] font-medium text-mk-navy text-center mt-1">Livraison 24-48h</p>
-              </motion.div>
+              <HeroImageGallery />
               {/* Floating badge */}
               <motion.div
-                className="absolute top-4 -right-2 bg-mk-blue text-white rounded-full px-4 py-2 text-sm font-semibold shadow-lg"
+                className="absolute top-2 -right-2 bg-mk-blue text-white rounded-full px-4 py-2 text-sm font-semibold shadow-lg z-10"
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.4, delay: 0.6, type: "spring" }}

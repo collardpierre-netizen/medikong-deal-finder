@@ -1,11 +1,16 @@
 import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import AdminTopBar from "@/components/admin/AdminTopBar";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
-  Layout, Image, Layers, GripVertical, Eye, EyeOff, FileText, ToggleLeft,
+  Layout, Image, Layers, GripVertical, Eye, EyeOff, FileText, ToggleLeft, Trash2, Plus, ArrowUp, ArrowDown,
 } from "lucide-react";
+import { toast } from "sonner";
 
 const pages = [
   { name: "Homepage", slug: "/", status: "published", lastEdit: "27/03 14:00" },
@@ -42,13 +47,62 @@ const homepageSections = [
   { name: "FAQ", visible: true, order: 9 },
 ];
 
+interface HeroImage {
+  id: string;
+  image_url: string;
+  alt_text: string;
+  sort_order: number;
+  is_active: boolean;
+}
+
 const AdminCMS = () => {
   const [tab, setTab] = useState("pages");
   const [sections, setSections] = useState(homepageSections);
+  const [newImageUrl, setNewImageUrl] = useState("");
+  const [newImageAlt, setNewImageAlt] = useState("");
+  const queryClient = useQueryClient();
 
   const toggleSection = (idx: number) => {
     setSections(prev => prev.map((s, i) => i === idx ? { ...s, visible: !s.visible } : s));
   };
+
+  const { data: heroImages = [] } = useQuery({
+    queryKey: ["admin-hero-images"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("cms_hero_images")
+        .select("*")
+        .order("sort_order");
+      return (data || []) as HeroImage[];
+    },
+  });
+
+  const toggleImage = useMutation({
+    mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
+      await supabase.from("cms_hero_images").update({ is_active }).eq("id", id);
+    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-hero-images"] }); toast.success("Image mise à jour"); },
+  });
+
+  const deleteImage = useMutation({
+    mutationFn: async (id: string) => {
+      await supabase.from("cms_hero_images").delete().eq("id", id);
+    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-hero-images"] }); toast.success("Image supprimée"); },
+  });
+
+  const addImage = useMutation({
+    mutationFn: async () => {
+      const maxOrder = heroImages.length > 0 ? Math.max(...heroImages.map(i => i.sort_order)) + 1 : 1;
+      await supabase.from("cms_hero_images").insert({ image_url: newImageUrl, alt_text: newImageAlt, sort_order: maxOrder });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-hero-images"] });
+      setNewImageUrl("");
+      setNewImageAlt("");
+      toast.success("Image ajoutée");
+    },
+  });
 
   return (
     <div>
@@ -60,6 +114,7 @@ const AdminCMS = () => {
           <TabsTrigger value="bannieres" className="text-[13px]">Bannières</TabsTrigger>
           <TabsTrigger value="collections" className="text-[13px]">Collections</TabsTrigger>
           <TabsTrigger value="homepage" className="text-[13px]">Sections Homepage</TabsTrigger>
+          <TabsTrigger value="hero-images" className="text-[13px]">Images Hero</TabsTrigger>
         </TabsList>
 
         <TabsContent value="pages">
@@ -159,6 +214,66 @@ const AdminCMS = () => {
                   </button>
                 </div>
               ))}
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="hero-images">
+          <div className="bg-white rounded-lg border p-5" style={{ borderColor: "#E2E8F0" }}>
+            <h3 className="text-[14px] font-semibold mb-4" style={{ color: "#1D2530" }}>Images Hero Homepage</h3>
+            <p className="text-[12px] mb-4" style={{ color: "#8B95A5" }}>Gérez les photos affichées dans la galerie hero de la homepage. Max 5 images recommandé.</p>
+
+            {/* Add new image */}
+            <div className="flex gap-2 mb-6">
+              <Input
+                placeholder="URL de l'image..."
+                value={newImageUrl}
+                onChange={e => setNewImageUrl(e.target.value)}
+                className="text-[13px] flex-1"
+              />
+              <Input
+                placeholder="Texte alt..."
+                value={newImageAlt}
+                onChange={e => setNewImageAlt(e.target.value)}
+                className="text-[13px] w-[200px]"
+              />
+              <Button
+                size="sm"
+                onClick={() => newImageUrl && addImage.mutate()}
+                disabled={!newImageUrl || addImage.isPending}
+                className="bg-[#1B5BDA] hover:bg-[#1548B0] text-white gap-1.5"
+              >
+                <Plus size={14} /> Ajouter
+              </Button>
+            </div>
+
+            {/* Image list */}
+            <div className="space-y-3">
+              {heroImages.map((img) => (
+                <div key={img.id} className="flex items-center gap-4 px-4 py-3 rounded-lg" style={{ backgroundColor: "#F8FAFC" }}>
+                  <img src={img.image_url} alt={img.alt_text} className="w-20 h-14 object-cover rounded-lg border border-border" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[12px] font-medium truncate" style={{ color: "#1D2530" }}>{img.alt_text || "Sans description"}</p>
+                    <p className="text-[10px] truncate" style={{ color: "#8B95A5" }}>{img.image_url}</p>
+                  </div>
+                  <span className="text-[11px] font-bold" style={{ color: "#8B95A5" }}>#{img.sort_order}</span>
+                  <button
+                    onClick={() => toggleImage.mutate({ id: img.id, is_active: !img.is_active })}
+                    className="flex items-center gap-1.5"
+                  >
+                    {img.is_active ? <Eye size={14} style={{ color: "#059669" }} /> : <EyeOff size={14} style={{ color: "#8B95A5" }} />}
+                    <span className="text-[11px]" style={{ color: img.is_active ? "#059669" : "#8B95A5" }}>
+                      {img.is_active ? "Actif" : "Masqué"}
+                    </span>
+                  </button>
+                  <button onClick={() => deleteImage.mutate(img.id)} className="text-red-400 hover:text-red-600">
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              ))}
+              {heroImages.length === 0 && (
+                <p className="text-center text-[12px] py-6" style={{ color: "#8B95A5" }}>Aucune image hero configurée</p>
+              )}
             </div>
           </div>
         </TabsContent>

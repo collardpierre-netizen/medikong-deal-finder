@@ -147,7 +147,7 @@ export function useProductOffers(productId: string | undefined) {
       const vendorIds = [...new Set((offers || []).map((o: any) => o.vendor_id))];
       const { data: vendors } = await supabase
         .from("vendors")
-        .select("id, company_name, tier, status")
+        .select("id, company_name, slug, tier, status")
         .in("id", vendorIds);
 
       const vendorMap = new Map((vendors || []).map((v: any) => [v.id, v]));

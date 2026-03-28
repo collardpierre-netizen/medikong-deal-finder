@@ -53,7 +53,7 @@ export function BrandFormDialog({ open, onOpenChange, brand, manufacturers }: Br
       country: form.country || null,
       website: form.website || null,
       description_fr: form.description_fr || null,
-      manufacturer_id: form.manufacturer_id || null,
+      manufacturer_id: form.manufacturer_id && form.manufacturer_id !== "none" ? form.manufacturer_id : null,
       tier: form.tier,
       certifications: form.certifications ? form.certifications.split(",").map(s => s.trim()).filter(Boolean) : [],
     };
@@ -108,7 +108,7 @@ export function BrandFormDialog({ open, onOpenChange, brand, manufacturers }: Br
             <Select value={form.manufacturer_id} onValueChange={v => setForm({ ...form, manufacturer_id: v })}>
               <SelectTrigger><SelectValue placeholder="Aucun" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Aucun</SelectItem>
+                <SelectItem value="none">Aucun</SelectItem>
                 {manufacturers.map(m => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}
               </SelectContent>
             </Select>

@@ -22,8 +22,8 @@ const AdminFinances = () => {
   const pendingInvoices = invoicesData.filter(i => i.status === "pending");
   const paidInvoices = invoicesData.filter(i => i.status === "paid");
 
-  const commissionData = vendors.filter(v => v.status === "active").slice(0, 5).map(v => ({
-    seller: v.company_name.length > 15 ? v.company_name.substring(0, 15) + "…" : v.company_name,
+  const commissionData = vendors.filter(v => v.is_active).slice(0, 5).map(v => ({
+    seller: (v.company_name || v.name || "").length > 15 ? (v.company_name || v.name || "").substring(0, 15) + "…" : (v.company_name || v.name || ""),
     commission: Number(v.commission_rate) || 12,
   }));
 

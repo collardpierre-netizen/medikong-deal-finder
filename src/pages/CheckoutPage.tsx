@@ -32,7 +32,7 @@ export default function CheckoutPage() {
   ];
   const paymentMethods = ["Carte bancaire", "Virement SEPA", "Paiement differe Mondu"];
 
-  const subtotal = items.reduce((s, i) => s + (i.product?.price || 0) * i.quantity, 0);
+  const subtotal = items.reduce((s, i) => s + (i.price_ht || i.product?.price || 0) * i.quantity, 0);
   const shippingCost = shippingOpts[shipping].price;
   const total = subtotal + shippingCost;
 
@@ -80,8 +80,8 @@ export default function CheckoutPage() {
           product_name: i.product?.name || "Produit",
           product_brand: i.product?.brand || "",
           quantity: i.quantity,
-          unit_price: i.product?.price || 0,
-          total_price: (i.product?.price || 0) * i.quantity,
+          unit_price: i.price_ht || i.product?.price || 0,
+          total_price: (i.price_ht || i.product?.price || 0) * i.quantity,
         })),
       });
       clearCart.mutate();
@@ -193,7 +193,7 @@ export default function CheckoutPage() {
                       {items.map((item) => (
                         <div key={item.id} className="px-3 py-2 border-b border-mk-line last:border-0 flex justify-between text-sm">
                           <span className="text-mk-text">{item.product?.name} × {item.quantity}</span>
-                          <span className="font-medium text-mk-navy">{formatPrice((item.product?.price || 0) * item.quantity)} EUR</span>
+                          <span className="font-medium text-mk-navy">{formatPrice((item.price_ht || item.product?.price || 0) * item.quantity)} EUR</span>
                         </div>
                       ))}
                     </div>

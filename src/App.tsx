@@ -85,6 +85,7 @@ import TeamPage from "./pages/entreprise/TeamPage";
 import CareersPage from "./pages/entreprise/CareersPage";
 import PressPage from "./pages/entreprise/PressPage";
 import InvestirPage from "./pages/entreprise/InvestirPage";
+import VendorPublicPage from "./pages/VendorPublicPage";
 
 const queryClient = new QueryClient();
 
@@ -106,6 +107,7 @@ const App = () => (
             <Route path="/marques" element={<BrandsPage />} />
             <Route path="/marque/:slug" element={<BrandDetailPage />} />
             <Route path="/fabricant/:slug" element={<ManufacturerPage />} />
+            <Route path="/vendeur/:slug" element={<VendorPublicPage />} />
             <Route path="/panier" element={<CartPage />} />
             <Route path="/compte" element={<AccountPage />} />
             <Route path="/checkout" element={<CheckoutPage />} />

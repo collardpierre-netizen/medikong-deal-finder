@@ -11,7 +11,7 @@ export default function WhyMedikongPage() {
   return (
     <EntrepriseLayout>
       <EntrepriseHero
-        variant="warm"
+        variant="blue"
         badge="La différence MediKong"
         title="Pourquoi choisir MediKong ?"
         subtitle="Trois raisons qui transforment vos achats médicaux au quotidien."
@@ -31,24 +31,24 @@ export default function WhyMedikongPage() {
           />
           <SplitSection
             reverse
-            tag={{ label: "Intelligence", color: "#7C3AED", bg: "#F5F3FF" }}
+            tag={{ label: "Intelligence", color: "#1B5BDA", bg: "#EFF6FF" }}
             title="Market Intelligence intégrée"
             paragraphs={[
               "Suivez l'évolution des prix du marché grâce à notre veille concurrentielle automatisée. Recevez des alertes quand les prix baissent.",
               "Notre Pricing Coach vous aide à positionner vos offres de manière optimale, avec des recommandations basées sur l'IA.",
             ]}
             imagePlaceholder="Screenshot : dashboard analytique"
-            imageGradient="from-purple-100 to-violet-200"
+            imageGradient="from-blue-100 to-indigo-200"
           />
           <SplitSection
-            tag={{ label: "Sécurité", color: "#059669", bg: "#ECFDF5" }}
+            tag={{ label: "Sécurité", color: "#1B5BDA", bg: "#EFF6FF" }}
             title="Sécurité et conformité"
             paragraphs={[
               "Tous nos fournisseurs sont vérifiés : numéro AFMPS, licence de distribution, marquage CE. Aucun compromis sur la qualité.",
               "Paiement sécurisé via Stripe, paiement différé via Mondu, et protection litiges 24h pour une tranquillité d'esprit totale.",
             ]}
             imagePlaceholder="Illustration : bouclier de sécurité"
-            imageGradient="from-emerald-100 to-teal-200"
+            imageGradient="from-blue-100 to-indigo-200"
           />
         </div>
       </Section>
@@ -66,10 +66,10 @@ export default function WhyMedikongPage() {
       </Section>
 
       <CtaBanner
-        variant="warm"
+        variant="blue"
         title="Prêt à économiser ?"
         buttons={[
-          { label: "Créer un compte gratuit", variant: "pink", to: "/inscription" },
+          { label: "Créer un compte gratuit", variant: "white", to: "/inscription" },
           { label: "Demander une démo", variant: "outline", to: "/contact" },
         ]}
       />

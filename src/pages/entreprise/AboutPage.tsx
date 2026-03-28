@@ -17,22 +17,22 @@ const stats = [
 ];
 
 const values = [
-  { icon: Eye, color: "text-[#E70866]", bg: "bg-[#FFF1F5]", title: "Transparence", desc: "Prix clairs, commissions visibles, aucun frais caché." },
-  { icon: Users, color: "text-[#1B5BDA]", bg: "bg-[#EFF6FF]", title: "Collaboration", desc: "Acheteurs et vendeurs construisent ensemble un marché plus juste." },
-  { icon: Star, color: "text-[#7C3AED]", bg: "bg-[#F5F3FF]", title: "Innovation", desc: "IA, market intelligence et outils de pricing avancés." },
-  { icon: CheckCircle, color: "text-[#059669]", bg: "bg-[#ECFDF5]", title: "Excellence", desc: "Vérification fournisseurs, conformité AFMPS, qualité garantie." },
+  { icon: Eye, color: "text-[#1B5BDA]", bg: "bg-[#EFF6FF]", title: "Transparence", desc: "Prix clairs, commissions visibles, aucun frais caché." },
+  { icon: Users, color: "text-[#1549b8]", bg: "bg-[#E8F0FE]", title: "Collaboration", desc: "Acheteurs et vendeurs construisent ensemble un marché plus juste." },
+  { icon: Star, color: "text-[#0F3280]", bg: "bg-[#E0EAFF]", title: "Innovation", desc: "IA, market intelligence et outils de pricing avancés." },
+  { icon: CheckCircle, color: "text-[#1B5BDA]", bg: "bg-[#EFF6FF]", title: "Excellence", desc: "Vérification fournisseurs, conformité AFMPS, qualité garantie." },
 ];
 
 export default function AboutPage() {
   return (
     <EntrepriseLayout>
       <EntrepriseHero
-        variant="image"
+        variant="dark"
         badge="La marketplace médicale B2B"
         title="Là où transparence, innovation et santé s'unissent"
         subtitle="MediKong connecte les professionnels de santé avec des fournisseurs vérifiés pour des achats médicaux transparents, compétitifs et conformes."
         cta={[
-          { label: "Découvrir la plateforme", variant: "pink", onClick: () => window.location.href = "/" },
+          { label: "Découvrir la plateforme", variant: "blue", onClick: () => window.location.href = "/" },
           { label: "Nous contacter", variant: "white", onClick: () => window.location.href = "/contact" },
         ]}
       />
@@ -43,7 +43,7 @@ export default function AboutPage() {
 
       <Section bg="gray">
         <SplitSection
-          tag={{ label: "Notre mission", color: "#E70866", bg: "#FFF1F5" }}
+          tag={{ label: "Notre mission", color: "#1B5BDA", bg: "#EFF6FF" }}
           title="Moderniser les échanges B2B dans le secteur médical"
           paragraphs={[
             "MediKong a été créée pour transformer la manière dont les professionnels de santé s'approvisionnent en fournitures médicales. Fini les catalogues papier, les appels chronophages et l'opacité des prix.",

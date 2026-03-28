@@ -63,7 +63,7 @@ export default function LogisticsPage() {
         variant="dark"
         title="Expédition sous 24h pour toute commande"
         subtitle="Livraison gratuite dès 500€ HT."
-        buttons={[{ label: "Découvrir le catalogue →", variant: "pink", to: "/" }]}
+        buttons={[{ label: "Découvrir le catalogue →", variant: "white", to: "/" }]}
       />
     </TrustProcessLayout>
   );

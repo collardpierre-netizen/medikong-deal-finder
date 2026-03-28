@@ -19,7 +19,7 @@ export default function BecomeSellerPage() {
   return (
     <TrustProcessLayout>
       <EntrepriseHero
-        variant="pink"
+        variant="blue"
         badge="Vendeurs"
         title="Vendez sur MediKong et touchez 500+ pharmacies"
         subtitle="Rejoignez la marketplace B2B médicale de référence en Belgique. Commission dégressive, support dédié et outils puissants."
@@ -42,12 +42,12 @@ export default function BecomeSellerPage() {
       </Section>
       <Section bg="gray">
         <SplitSection
-          tag={{ label: "Outils vendeur", color: "#E70866", bg: "#FFF1F3" }}
+          tag={{ label: "Outils vendeur", color: "#1B5BDA", bg: "#EFF6FF" }}
           title="Un dashboard vendeur complet"
           paragraphs={["Gérez votre activité depuis un seul endroit : catalogue, commandes, analytics, finances et logistique."]}
           checklist={["Gestion du catalogue et des prix", "Suivi des commandes en temps réel", "Analytics et rapports de vente", "Gestion financière et paiements", "Alertes et opportunités marché"]}
           imagePlaceholder="Dashboard vendeur"
-          imageGradient="from-[#E70866] to-[#9333EA]"
+          imageGradient="from-[#1B5BDA] to-[#0F3280]"
           reverse
         />
       </Section>
@@ -55,7 +55,7 @@ export default function BecomeSellerPage() {
         variant="dark"
         title="Prêt à développer votre business ?"
         subtitle="Inscription gratuite, commission dégressive, paiement sous 15 jours."
-        buttons={[{ label: "Devenir vendeur →", variant: "pink", to: "/onboarding" }]}
+        buttons={[{ label: "Devenir vendeur →", variant: "white", to: "/onboarding" }]}
       />
     </TrustProcessLayout>
   );

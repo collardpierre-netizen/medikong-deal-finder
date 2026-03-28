@@ -17,7 +17,7 @@ export default function TeamPage() {
   return (
     <EntrepriseLayout>
       <EntrepriseHero
-        variant="image"
+        variant="dark"
         badge="L'équipe"
         title="Les visages derrière MediKong"
         subtitle="Une équipe passionnée par l'innovation dans le secteur médical."
@@ -40,10 +40,10 @@ export default function TeamPage() {
       </Section>
 
       <CtaBanner
-        variant="warm"
+        variant="blue"
         title="Envie de rejoindre l'aventure ?"
         buttons={[
-          { label: "Voir les offres d'emploi", variant: "pink", to: "/carrieres" },
+          { label: "Voir les offres d'emploi", variant: "white", to: "/carrieres" },
           { label: "Nous contacter", variant: "outline", to: "/contact" },
         ]}
       />

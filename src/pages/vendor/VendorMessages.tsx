@@ -34,7 +34,7 @@ export default function VendorMessages() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
           <h1 className="text-xl font-bold text-[#1D2530]">Messages</h1>
-          {unreadCount > 0 && <VBadge color="#E70866">{unreadCount} non lus</VBadge>}
+          {unreadCount > 0 && <VBadge color="#1B5BDA">{unreadCount} non lus</VBadge>}
         </div>
         <VBtn primary icon="SquarePen">Nouveau message</VBtn>
       </div>

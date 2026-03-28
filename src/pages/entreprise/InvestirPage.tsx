@@ -18,8 +18,8 @@ const investStats = [
 ];
 
 const whyInvest = [
-  { icon: TrendingUp, color: "text-[#E70866]", bg: "bg-[#FFF1F5]", title: "Marché en croissance", desc: "Le marché des fournitures médicales B2B en Europe pèse 120 milliards d'euros, avec une digitalisation encore inférieure à 5%." },
-  { icon: CreditCard, color: "text-[#1B5BDA]", bg: "bg-[#EFF6FF]", title: "Business model éprouvé", desc: "Commission sur transaction, récurrence naturelle des achats médicaux, et forte rétention client (>90% après 6 mois)." },
+  { icon: TrendingUp, color: "text-[#059669]", bg: "bg-[#ECFDF5]", title: "Marché en croissance", desc: "Le marché des fournitures médicales B2B en Europe pèse 120 milliards d'euros, avec une digitalisation encore inférieure à 5%." },
+  { icon: CreditCard, color: "text-[#047857]", bg: "bg-[#D1FAE5]", title: "Business model éprouvé", desc: "Commission sur transaction, récurrence naturelle des achats médicaux, et forte rétention client (>90% après 6 mois)." },
   { icon: Users, color: "text-[#059669]", bg: "bg-[#ECFDF5]", title: "Équipe expérimentée", desc: "Fondateurs avec 15+ ans d'expérience combinée dans la distribution médicale et le digital santé." },
 ];
 
@@ -33,7 +33,7 @@ export default function InvestirPage() {
   return (
     <EntrepriseLayout>
       <EntrepriseHero
-        variant="pink"
+        variant="green"
         badge="Investissement"
         title="Investissez dans MediKong"
         subtitle="Participez à la transformation du secteur médical en Benelux et bénéficiez du Tax Shelter 45%."
@@ -59,7 +59,7 @@ export default function InvestirPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {taxShelterSteps.map((s, i) => (
             <div key={i} className="p-6 rounded-2xl border border-border bg-white text-center">
-              <div className="w-10 h-10 rounded-full bg-[#FFF1F5] text-[#E70866] font-bold flex items-center justify-center mx-auto mb-4">{i + 1}</div>
+              <div className="w-10 h-10 rounded-full bg-[#ECFDF5] text-[#059669] font-bold flex items-center justify-center mx-auto mb-4">{i + 1}</div>
               <h4 className="text-base font-bold text-[#1E293B] mb-2">{s.title}</h4>
               <p className="text-sm text-muted-foreground">{s.desc}</p>
             </div>
@@ -76,10 +76,10 @@ export default function InvestirPage() {
       </Section>
 
       <CtaBanner
-        variant="warm"
+        variant="dark"
         title="Prêt à devenir actionnaire de MediKong ?"
         buttons={[
-          { label: "Souscrire maintenant", variant: "pink", to: "/invest" },
+          { label: "Souscrire maintenant", variant: "white", to: "/invest" },
           { label: "Contacter l'équipe", variant: "outline", to: "/contact" },
         ]}
       />

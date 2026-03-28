@@ -18,7 +18,7 @@ export default function QualityGuaranteePage() {
   return (
     <TrustProcessLayout>
       <EntrepriseHero
-        variant="green"
+        variant="blue"
         badge="Qualité"
         title="Votre garantie qualité sur chaque commande"
         subtitle="Chaque produit sur MediKong est conforme, tracé et garanti. Notre engagement : 0 compromis sur la qualité."
@@ -27,8 +27,8 @@ export default function QualityGuaranteePage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {guarantees.map(g => (
             <div key={g.title} className="bg-white border border-mk-line rounded-2xl p-7 text-center hover:-translate-y-1 hover:shadow-lg transition-all duration-300">
-              <div className="w-14 h-14 rounded-2xl bg-mk-green/10 flex items-center justify-center mx-auto mb-5">
-                <g.icon size={22} className="text-mk-green" />
+              <div className="w-14 h-14 rounded-2xl bg-[#EFF6FF] flex items-center justify-center mx-auto mb-5">
+                <g.icon size={22} className="text-[#1B5BDA]" />
               </div>
               <h3 className="text-base font-bold text-mk-navy mb-2">{g.title}</h3>
               <p className="text-sm text-muted-foreground leading-relaxed">{g.desc}</p>
@@ -51,7 +51,7 @@ export default function QualityGuaranteePage() {
           paragraphs={["Chaque produit est tracé de bout en bout : du fabricant à votre porte. Numéros de lot, dates d'expiration et certificats disponibles dans votre espace client."]}
           checklist={["Numéros de lot intégrés", "Dates d'expiration vérifiées", "Certificats téléchargeables", "Historique de commande complet"]}
           imagePlaceholder="Traçabilité produit"
-          imageGradient="from-[#059669] to-[#065F46]"
+          imageGradient="from-[#1B5BDA] to-[#0F3280]"
           reverse
         />
       </Section>
@@ -62,7 +62,7 @@ export default function QualityGuaranteePage() {
         variant="dark"
         title="Commandez en toute confiance"
         subtitle="Garantie qualité sur chaque produit, chaque commande."
-        buttons={[{ label: "Découvrir le catalogue →", variant: "pink", to: "/" }]}
+        buttons={[{ label: "Découvrir le catalogue →", variant: "white", to: "/" }]}
       />
     </TrustProcessLayout>
   );

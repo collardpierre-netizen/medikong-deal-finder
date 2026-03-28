@@ -95,13 +95,13 @@ export function Navbar() {
           {user ? (
             <div className="flex items-center gap-2">
               {isAdmin && (
-                <Link to="/admin" className="flex items-center gap-1.5 text-emerald-400 hover:text-emerald-300 text-xs font-semibold px-2.5 py-1 rounded-full" style={{ background: "rgba(16,185,129,0.15)" }}>
+                <Link to="/admin" className="flex items-center gap-1.5 text-blue-400 hover:text-blue-300 text-xs font-semibold px-2.5 py-1 rounded-full" style={{ background: "rgba(27,91,218,0.15)" }}>
                   <Shield size={14} />
                   <span>Admin</span>
                 </Link>
               )}
               {isVendor && (
-                <Link to="/vendor" className="flex items-center gap-1.5 text-pink-400 hover:text-pink-300 text-xs font-semibold px-2.5 py-1 rounded-full" style={{ background: "rgba(231,8,102,0.15)" }}>
+                <Link to="/vendor" className="flex items-center gap-1.5 text-blue-300 hover:text-blue-200 text-xs font-semibold px-2.5 py-1 rounded-full" style={{ background: "rgba(27,91,218,0.12)" }}>
                   <Store size={14} />
                   <span>Vendeur</span>
                 </Link>
@@ -161,7 +161,7 @@ export function Navbar() {
                   </Link>
                 )}
                 {isVendor && (
-                  <Link to="/vendor" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 text-pink-400 text-sm font-semibold">
+                  <Link to="/vendor" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 text-blue-400 text-sm font-semibold">
                     <Store size={16} /> Espace Vendeur
                   </Link>
                 )}

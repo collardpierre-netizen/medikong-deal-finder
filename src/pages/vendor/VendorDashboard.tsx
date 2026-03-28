@@ -162,7 +162,7 @@ export default function VendorDashboard() {
           {/* Health */}
           <VCard>
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-semibold text-[#1D2530]">Sante du compte</h3>
+              <h3 className="text-sm font-semibold text-[#1D2530]">Santé du compte</h3>
               <span className="text-lg font-bold text-[#1D2530]">{vendorProfile.score}<span className="text-[13px] text-[#8B95A5] font-normal">/100</span></span>
             </div>
             <VProgressBar value={vendorProfile.score} color="#1B5BDA" />

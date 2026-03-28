@@ -80,6 +80,7 @@ export function Breadcrumbs() {
           </li>
         ))}
       </ol>
-    </nav>
+      </nav>
+    </>
   );
 }

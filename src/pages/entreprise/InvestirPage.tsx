@@ -76,10 +76,10 @@ export default function InvestirPage() {
       </Section>
 
       <CtaBanner
-        variant="warm"
+        variant="dark"
         title="Prêt à devenir actionnaire de MediKong ?"
         buttons={[
-          { label: "Souscrire maintenant", variant: "pink", to: "/invest" },
+          { label: "Souscrire maintenant", variant: "white", to: "/invest" },
           { label: "Contacter l'équipe", variant: "outline", to: "/contact" },
         ]}
       />

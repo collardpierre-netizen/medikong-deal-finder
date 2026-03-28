@@ -62,7 +62,7 @@ export default function QualityGuaranteePage() {
         variant="dark"
         title="Commandez en toute confiance"
         subtitle="Garantie qualité sur chaque produit, chaque commande."
-        buttons={[{ label: "Découvrir le catalogue →", variant: "pink", to: "/" }]}
+        buttons={[{ label: "Découvrir le catalogue →", variant: "white", to: "/" }]}
       />
     </TrustProcessLayout>
   );

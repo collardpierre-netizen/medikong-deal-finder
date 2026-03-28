@@ -55,7 +55,7 @@ export default function BecomeSellerPage() {
         variant="dark"
         title="Prêt à développer votre business ?"
         subtitle="Inscription gratuite, commission dégressive, paiement sous 15 jours."
-        buttons={[{ label: "Devenir vendeur →", variant: "pink", to: "/onboarding" }]}
+        buttons={[{ label: "Devenir vendeur →", variant: "white", to: "/onboarding" }]}
       />
     </TrustProcessLayout>
   );

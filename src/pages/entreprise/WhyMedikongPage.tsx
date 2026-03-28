@@ -66,10 +66,10 @@ export default function WhyMedikongPage() {
       </Section>
 
       <CtaBanner
-        variant="warm"
+        variant="blue"
         title="Prêt à économiser ?"
         buttons={[
-          { label: "Créer un compte gratuit", variant: "pink", to: "/inscription" },
+          { label: "Créer un compte gratuit", variant: "white", to: "/inscription" },
           { label: "Demander une démo", variant: "outline", to: "/contact" },
         ]}
       />

@@ -43,7 +43,7 @@ export default function AboutPage() {
 
       <Section bg="gray">
         <SplitSection
-          tag={{ label: "Notre mission", color: "#E70866", bg: "#FFF1F5" }}
+          tag={{ label: "Notre mission", color: "#1B5BDA", bg: "#EFF6FF" }}
           title="Moderniser les échanges B2B dans le secteur médical"
           paragraphs={[
             "MediKong a été créée pour transformer la manière dont les professionnels de santé s'approvisionnent en fournitures médicales. Fini les catalogues papier, les appels chronophages et l'opacité des prix.",

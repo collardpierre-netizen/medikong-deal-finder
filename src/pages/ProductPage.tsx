@@ -335,7 +335,7 @@ export default function ProductPage() {
                     transition={{ duration: 0.3 }}
                   >
                     <p className="text-sm text-mk-sec mb-4">Vous serez redirige vers le site du fournisseur.</p>
-                    <div className="border border-mk-line rounded-lg overflow-x-auto">
+                    <ScrollableTable className="border border-mk-line rounded-lg">
                       <div className="grid grid-cols-5 gap-3 px-4 py-2 bg-mk-alt text-xs font-semibold text-mk-sec min-w-[500px]">
                         <span>Fournisseur</span><span>Prix unit.</span><span>MOV</span><span>Delai</span><span>Action</span>
                       </div>

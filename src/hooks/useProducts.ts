@@ -23,6 +23,7 @@ export interface Product {
   color?: string;
   iconName?: string;
   imageUrl?: string;
+  imageUrls?: string[];
   categoryL1?: string;
   categoryL2?: string;
   categoryL3?: string;
@@ -67,6 +68,7 @@ function mapDbProduct(row: any, offersData?: any[]): Product {
     color: ["blue", "teal", "green", "amber", "rose", "purple", "orange", "cyan"][row.name.length % 8],
     iconName: "Package",
     imageUrl: row.image_urls?.[0] || undefined,
+    imageUrls: row.image_urls?.filter(Boolean) || [],
     descriptionShort: row.short_description || undefined,
     brandId: row.brand_id || undefined,
   };

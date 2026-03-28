@@ -58,7 +58,7 @@ export const categories = [
   { name: "Pansements & Soins", count: "1 200+", icon: "Heart", slug: "pansements" },
   { name: "Diagnostic", count: "680+", icon: "Activity", slug: "diagnostic" },
   { name: "Incontinence", count: "420+", icon: "Droplet", slug: "incontinence" },
-  { name: "Mobilier medical", count: "310+", icon: "Armchair", slug: "mobilier" },
+  { name: "Mobilier médical", count: "310+", icon: "Armchair", slug: "mobilier" },
   { name: "Consommables", count: "3 100+", icon: "Package", slug: "consommables" },
 ];
 

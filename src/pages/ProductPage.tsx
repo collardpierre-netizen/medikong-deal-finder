@@ -381,7 +381,7 @@ export default function ProductPage() {
                       <Eye size={14} className="text-mk-sec" />
                       <span className="text-sm text-mk-sec">Prix publics. Consultation uniquement.</span>
                     </div>
-                    <div className="border border-mk-line rounded-lg overflow-x-auto">
+                    <ScrollableTable className="border border-mk-line rounded-lg">
                       <div className="grid grid-cols-4 gap-3 px-4 py-2 bg-mk-alt text-xs font-semibold text-mk-sec min-w-[400px]">
                         <span>Enseigne</span><span>Prix TTC</span><span>Statut</span><span>MAJ</span>
                       </div>

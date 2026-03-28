@@ -518,10 +518,10 @@ export default function ProductPage() {
                       return (
                         <>
                           {/* Best offer card */}
-                          <div className="border border-mk-line rounded-lg p-5 md:p-6">
-                            <div className="flex items-center justify-between mb-5 flex-wrap gap-2">
-                              <h3 className="text-lg font-bold text-mk-navy">Lowest priced offer</h3>
-                              <span className="text-sm text-mk-blue font-medium">{formatPrice(totalStock).replace('.', ',')} available</span>
+                          <div className="border border-mk-line rounded-lg p-3 md:p-6">
+                            <div className="flex items-center justify-between mb-3 md:mb-5 flex-wrap gap-2">
+                              <h3 className="text-base md:text-lg font-bold text-mk-navy">Meilleure offre</h3>
+                              <span className="text-xs md:text-sm text-mk-blue font-medium">{formatPrice(totalStock).replace('.', ',')} dispo</span>
                             </div>
 
                             {/* Table header */}

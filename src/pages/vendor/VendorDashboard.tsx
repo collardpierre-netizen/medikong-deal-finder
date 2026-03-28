@@ -24,7 +24,7 @@ export default function VendorDashboard() {
         <VStat label="CA du mois" value="€ 24 830" icon="Euro" color="#1B5BDA" trend={12} sub="vs mois dernier" />
         <VStat label="Commandes" value="47" icon="ShoppingCart" color="#059669" trend={8} sub="en cours : 12" />
         <VStat label="Offres actives" value="312" icon="Tag" color="#7C3AED" trend={-3} sub="sur 340 produits" />
-        <VStat label="Taux de service" value="94%" icon="CheckCircle" color="#059669" trend={2} sub="objectif : 95%" />
+        <VStat label="Taux de service" value="94%" icon="CircleCheck" color="#059669" trend={2} sub="objectif : 95%" />
       </div>
 
       {/* Score card */}

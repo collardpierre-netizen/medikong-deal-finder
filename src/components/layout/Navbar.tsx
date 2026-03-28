@@ -122,7 +122,7 @@ export function Navbar() {
         </div>
 
         {/* Mobile icons */}
-        <div className="flex md:hidden items-center gap-3 shrink-0">
+        <div className="flex md:hidden items-center gap-3 shrink-0 ml-auto">
           <Link to="/panier" className="relative">
             <ShoppingCart className="text-white" size={18} />
             {cartCount > 0 && (

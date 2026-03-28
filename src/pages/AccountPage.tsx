@@ -1,12 +1,16 @@
 import { Layout } from "@/components/layout/Layout";
 import { ProductImage } from "@/components/shared/ProductCard";
-import { Users, MapPin, Package, AlertCircle, Heart, Zap, Download, Layers, Mail, Phone } from "lucide-react";
+import { Users, MapPin, Package, AlertCircle, Heart, Zap, Download, Layers, Mail, Phone, Clock, List, Plus, Trash2, Eye, ShoppingCart, Search } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { formatPrice } from "@/data/mock";
 import { useProducts } from "@/hooks/useProducts";
+import { useFavorites, useFavoriteLists, useRecentActivity } from "@/hooks/useFavorites";
+import { useAuth } from "@/contexts/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { PageTransition } from "@/components/shared/PageTransition";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 const tabs = [
   { key: "profil", label: "Profil", icon: Users },

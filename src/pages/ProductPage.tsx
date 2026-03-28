@@ -121,10 +121,25 @@ export default function ProductPage() {
     setTimeout(() => setCopied(false), 1500);
   };
 
+  const extMock = [
+    { name: "Pharma-Grossiste", price: 11.50, mov: "1 000 EUR", delay: "48h", url: "https://pharma-grossiste.be" },
+    { name: "MedSupply BE", price: 13.20, mov: "500 EUR", delay: "72h", url: "https://medsupply.be" },
+    { name: "Distri-Med NL", price: 10.80, mov: "2 000 EUR", delay: "5j", url: "https://distri-med.nl" },
+  ];
+  const extOffers = indirectOffers.length > 0
+    ? indirectOffers.map((o: any) => ({
+        name: o.leads_partners?.name || o.source_type || "Externe",
+        price: o.price,
+        mov: "–",
+        delay: "–",
+        url: o.external_url || "#",
+      }))
+    : extMock;
+
   const tabs = [
     { key: "mk" as const, label: "Marketplace", fullLabel: "Marketplace MediKong", icon: ShoppingCart, count: realOffers.length },
-    { key: "ext" as const, label: "Externes", fullLabel: "Offres externes", icon: ExternalLink, count: 3 },
-    { key: "market" as const, label: "Marche", fullLabel: "Prix du marche", icon: Eye, count: 5 },
+    { key: "ext" as const, label: "Externes", fullLabel: "Offres externes", icon: ExternalLink, count: extOffers.length },
+    { key: "market" as const, label: "Marche", fullLabel: "Prix du marche", icon: Eye, count: marketOffers.length || 5 },
   ];
 
   if (isLoading) {

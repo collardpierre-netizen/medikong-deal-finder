@@ -421,8 +421,8 @@ export default function OnboardingPage() {
           <h1 style={{ fontSize: 20, fontWeight: 700, color: S.text, textAlign: "center" }}>Bienvenue sur MediKong</h1>
           <p style={{ fontSize: 13, color: S.sec, textAlign: "center" }}>Le marketplace médical et pharmaceutique pour les professionnels belges.</p>
           <div style={{ display: "flex", flexDirection: "column", gap: 12, width: "100%", marginTop: 8 }}>
-            <Cta icon={ShoppingBag} onClick={() => { setRole("buyer"); goNext(); }}>Je souhaite acheter</Cta>
-            <Cta variant="secondary" icon={Store} onClick={() => { setRole("seller"); goNext(); }}>Je souhaite vendre</Cta>
+            <Cta icon={ShoppingBag} onClick={() => { setRole("buyer"); goTo(1, "up"); }}>Je souhaite acheter</Cta>
+            <Cta variant="secondary" icon={Store} onClick={() => { setRole("seller"); goTo(11, "up"); }}>Je souhaite vendre</Cta>
           </div>
           <p style={{ fontSize: 11, color: S.ter, textAlign: "center" }}>Inscription gratuite · Moins de 3 minutes</p>
         </div>

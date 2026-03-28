@@ -1,4 +1,5 @@
 import type { FaqItem } from "@/data/entreprise-data";
+import { ShoppingCart, Package, UserCircle, Store, ShieldCheck, Lightbulb } from "lucide-react";
 
 export interface ProcessStep {
   number: number;

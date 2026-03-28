@@ -556,7 +556,7 @@ export default function ProductPage() {
                               </div>
 
                               {/* Table header */}
-                              <div className="grid grid-cols-[1.5fr_1fr_1fr_0.8fr_1.5fr] gap-3 px-1 pb-3 text-xs font-semibold text-mk-sec border-b border-mk-line">
+                              <div className="hidden md:grid grid-cols-[1.5fr_1fr_1fr_0.8fr_1.5fr] gap-3 px-1 pb-3 text-xs font-semibold text-mk-sec border-b border-mk-line">
                                 <span>Supplier</span>
                                 <span>Unit price</span>
                                 <span>MOV</span>

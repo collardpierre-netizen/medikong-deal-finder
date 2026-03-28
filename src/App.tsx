@@ -78,6 +78,13 @@ import AdminAuditLog from "./pages/admin/AdminAuditLog";
 import AdminOnboardingCMS from "./pages/admin/AdminOnboardingCMS";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
+import AboutPage from "./pages/entreprise/AboutPage";
+import WhyMedikongPage from "./pages/entreprise/WhyMedikongPage";
+import HowItWorksPage from "./pages/entreprise/HowItWorksPage";
+import TeamPage from "./pages/entreprise/TeamPage";
+import CareersPage from "./pages/entreprise/CareersPage";
+import PressPage from "./pages/entreprise/PressPage";
+import InvestirPage from "./pages/entreprise/InvestirPage";
 
 const queryClient = new QueryClient();
 

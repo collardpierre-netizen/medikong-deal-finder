@@ -215,9 +215,9 @@ export default function InvestPage() {
           {/* CTA */}
           <motion.div className="flex flex-col sm:flex-row gap-3 justify-center"
             initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.4 }}>
-            <a href="mailto:invest@medikong.pro?subject=Souscription%20MediKong" className="inline-flex items-center justify-center gap-2 bg-mk-green hover:brightness-110 text-white px-8 py-4 rounded-xl font-semibold text-sm transition-all">
+            <button onClick={() => setShowSubscribe(true)} className="inline-flex items-center justify-center gap-2 bg-mk-green hover:brightness-110 text-white px-8 py-4 rounded-xl font-semibold text-sm transition-all">
               Souscrire dès 1 000 € <ArrowRight size={16} />
-            </a>
+            </button>
             <a href="https://www.medikong.pro/documents/MediKong_Fundraising_Pitch_Seed.pdf" target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-2 bg-white/10 border border-white/20 text-white px-8 py-4 rounded-xl font-semibold text-sm hover:bg-white/15 transition-all">
               <Download size={16} /> Mémo d'investissement
             </a>

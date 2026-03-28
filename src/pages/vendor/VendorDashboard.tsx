@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { VCard } from "@/components/vendor/ui/VCard";
 import { VStat } from "@/components/vendor/ui/VStat";
 import { VMiniBar } from "@/components/vendor/ui/VMiniBar";
@@ -8,6 +8,7 @@ import { VBtn } from "@/components/vendor/ui/VBtn";
 import { vendorProfile, buyerTypeColors } from "@/lib/vendor-tokens";
 import { dashboardAlerts, dashboardOrders, dashboardMessages, pricingCoachSuggestions } from "@/data/vendor-mock";
 import { AlertTriangle, MessageSquare, ArrowRight, Sparkles, CircleDot } from "lucide-react";
+import OrderDetailPopup from "@/components/vendor/OrderDetailPopup";
 
 const statusLabels: Record<string, string> = { pending: "En attente", confirmed: "A expedier", shipped: "Expedie", delivered: "Livre" };
 const statusColors: Record<string, string> = { pending: "#F59E0B", confirmed: "#1B5BDA", shipped: "#7C3AED", delivered: "#059669" };

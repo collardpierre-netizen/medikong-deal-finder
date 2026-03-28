@@ -84,10 +84,12 @@ const App = () => (
     <AuthProvider>
       <I18nProvider>
       <CartProvider>
+      <ImpersonationProvider>
       <TooltipProvider>
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <ImpersonationBanner />
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/recherche" element={<ResultsPage />} />
@@ -110,7 +112,6 @@ const App = () => (
             <Route path="/invest" element={<InvestPage />} />
             <Route path="/mot-de-passe-oublie" element={<ForgotPasswordPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
-
 
             <Route path="/admin/login" element={<AdminLoginPage />} />
 
@@ -141,6 +142,8 @@ const App = () => (
               <Route path="equipe" element={<AdminEquipe />} />
               <Route path="parametres" element={<AdminParametres />} />
               <Route path="logs" element={<AdminLogs />} />
+              <Route path="users" element={<AdminUsers />} />
+              <Route path="audit-log" element={<AdminAuditLog />} />
             </Route>
 
             {/* Vendor Dashboard */}
@@ -165,6 +168,7 @@ const App = () => (
           </Routes>
         </BrowserRouter>
       </TooltipProvider>
+      </ImpersonationProvider>
       </CartProvider>
       </I18nProvider>
     </AuthProvider>

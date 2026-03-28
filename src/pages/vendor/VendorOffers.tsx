@@ -104,7 +104,7 @@ export default function VendorOffers() {
           )}
 
           {/* Table */}
-          <VCard className="!p-0 overflow-hidden">
+          <VCard className="!p-0">
             <ScrollableTable>
               <table className="w-full text-[13px]">
                 <thead>
@@ -504,7 +504,7 @@ export default function VendorOffers() {
               <VStat label="Sans prix ref." value={offersWithoutRef.length} icon="CircleHelp" color="#8B95A5" />
             </div>
 
-            <VCard className="!p-0 overflow-hidden">
+            <VCard className="!p-0">
               <ScrollableTable>
                 <table className="w-full text-[13px]">
                   <thead>

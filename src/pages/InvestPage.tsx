@@ -170,9 +170,9 @@ export default function InvestPage() {
       {/* ════════════ HERO ════════════ */}
       <section className="relative overflow-hidden" style={{ background: "linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #1a365d 100%)" }}>
         <div className="max-w-4xl mx-auto px-5 py-24 md:py-32 text-center text-white relative z-10">
-          <motion.span className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-5 py-2 text-sm mb-10 backdrop-blur-sm"
+          <motion.span className="inline-flex items-center gap-2 bg-mk-green/90 rounded-full px-5 py-2 text-sm mb-10 text-white font-medium"
             initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-            <Shield size={14} className="text-mk-green" /> Tax Shelter : récupérez 45% de votre investissement
+            <Shield size={14} /> Tax Shelter : récupérez 45% de votre investissement
           </motion.span>
 
           <motion.h1 className="text-4xl sm:text-5xl md:text-[64px] font-bold leading-[1.08] tracking-tight mb-6"

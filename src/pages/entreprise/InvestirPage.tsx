@@ -33,7 +33,7 @@ export default function InvestirPage() {
   return (
     <EntrepriseLayout>
       <EntrepriseHero
-        variant="pink"
+        variant="green"
         badge="Investissement"
         title="Investissez dans MediKong"
         subtitle="Participez à la transformation du secteur médical en Benelux et bénéficiez du Tax Shelter 45%."

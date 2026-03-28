@@ -125,8 +125,8 @@ const App = () => (
             <Route path="/vendor" element={<VendorLayout />}>
               <Route index element={<VendorDashboard />} />
               <Route path="catalog" element={<VendorCatalog />} />
-              <Route path="offers" element={<VendorPlaceholder pageKey="myOffers" />} />
-              <Route path="orders" element={<VendorPlaceholder pageKey="orders" />} />
+              <Route path="offers" element={<VendorOffers />} />
+              <Route path="orders" element={<VendorOrders />} />
               <Route path="opportunities" element={<VendorPlaceholder pageKey="opportunities" />} />
               <Route path="alerts" element={<VendorPlaceholder pageKey="alerts" />} />
               <Route path="tenders" element={<VendorPlaceholder pageKey="tenders" />} />

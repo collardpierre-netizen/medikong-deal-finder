@@ -374,7 +374,7 @@ export default function OnboardingPage() {
           marginTop: 1, cursor: "pointer", transition: "all .2s",
         }}>{acceptTerms && <Check size={12} color="#fff" />}</div>
         <span style={{ fontSize: 12, color: S.sec }}>
-          J'accepte les <a href="#" style={{ color: S.blue }}>conditions générales</a> et la <a href="#" style={{ color: S.blue }}>politique de confidentialité</a>
+          J'accepte les <a href="/cgv" style={{ color: S.blue }}>conditions générales</a> et la <a href="/politique-confidentialite" style={{ color: S.blue }}>politique de confidentialité</a>
         </span>
       </label>
       <div style={{ marginTop: 16 }}>

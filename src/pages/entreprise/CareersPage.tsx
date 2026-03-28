@@ -55,7 +55,7 @@ export default function CareersPage() {
         variant="dark"
         title="Vous ne voyez pas le poste idéal ?"
         subtitle="Envoyez-nous votre profil, nous aimons les candidatures spontanées."
-        buttons={[{ label: "Envoyer mon CV", variant: "pink" }]}
+        buttons={[{ label: "Envoyer mon CV", variant: "pink", to: "/contact" }]}
       />
     </EntrepriseLayout>
   );

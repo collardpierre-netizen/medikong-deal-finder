@@ -5,8 +5,8 @@ const tabs = [
   { label: "Promotions", path: "/promotions", pink: true },
   { label: "Categories", path: "/categorie/consommables" },
   { label: "Marques", path: "/marques" },
-  { label: "Professionnels", path: "#" },
-  { label: "Sourcing", path: "#" },
+  { label: "Professionnels", path: "/verification-fournisseurs" },
+  { label: "Sourcing", path: "/devenir-vendeur" },
   { label: "Mon compte", path: "/compte" },
 ];
 

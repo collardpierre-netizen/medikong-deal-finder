@@ -1,4 +1,5 @@
 import type { FaqItem } from "@/data/entreprise-data";
+import { ShoppingCart, Package, UserCircle, Store, ShieldCheck, Lightbulb } from "lucide-react";
 
 export interface ProcessStep {
   number: number;
@@ -40,7 +41,7 @@ export interface TestimonialData {
 }
 
 export interface HelpCategoryData {
-  icon: string;
+  icon: React.ElementType;
   title: string;
   description: string;
   articleCount: number;
@@ -136,12 +137,12 @@ export const contactSubjects = [
 ];
 
 export const helpCategories: HelpCategoryData[] = [
-  { icon: "🛒", title: "Commandes & Paiements", description: "Passer commande, moyens de paiement, factures et paiement différé.", articleCount: 12 },
-  { icon: "📦", title: "Livraison & Retours", description: "Délais, suivi de colis, retours et remboursements.", articleCount: 8 },
-  { icon: "👤", title: "Mon compte", description: "Inscription, paramètres, gestion des utilisateurs et sécurité.", articleCount: 6 },
-  { icon: "🏪", title: "Vendeurs", description: "Devenir vendeur, catalogue, commissions et paiements.", articleCount: 10 },
-  { icon: "✅", title: "Qualité & Conformité", description: "Marquage CE, AFMPS, garantie et traçabilité.", articleCount: 5 },
-  { icon: "💡", title: "Fonctionnalités", description: "Recherche, comparaison des prix, alertes et API.", articleCount: 7 },
+  { icon: ShoppingCart, title: "Commandes & Paiements", description: "Passer commande, moyens de paiement, factures et paiement différé.", articleCount: 12 },
+  { icon: Package, title: "Livraison & Retours", description: "Délais, suivi de colis, retours et remboursements.", articleCount: 8 },
+  { icon: UserCircle, title: "Mon compte", description: "Inscription, paramètres, gestion des utilisateurs et sécurité.", articleCount: 6 },
+  { icon: Store, title: "Vendeurs", description: "Devenir vendeur, catalogue, commissions et paiements.", articleCount: 10 },
+  { icon: ShieldCheck, title: "Qualité & Conformité", description: "Marquage CE, AFMPS, garantie et traçabilité.", articleCount: 5 },
+  { icon: Lightbulb, title: "Fonctionnalités", description: "Recherche, comparaison des prix, alertes et API.", articleCount: 7 },
 ];
 
 export const helpFaqItems: FaqItem[] = [

@@ -57,17 +57,19 @@ export function Navbar() {
           <img src={logoHorizontal} alt="MediKong.pro" className="h-[72px]" />
         </Link>
 
-        <form onSubmit={handleSearch} className="flex-1 max-w-[440px] mx-auto hidden sm:block">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-mk-sec" size={16} />
-            <input
-              value={query}
-              onChange={e => setQuery(e.target.value)}
-              placeholder="Rechercher produits, CNK, EAN, marques..."
-              className="w-full pl-9 pr-3 py-2 rounded-md text-sm bg-white text-mk-text placeholder:text-mk-ter border-0 focus:outline-none focus:ring-2 focus:ring-mk-blue"
-            />
-          </div>
-        </form>
+        {!isHomePage && (
+          <form onSubmit={handleSearch} className="flex-1 max-w-[440px] mx-auto hidden sm:block">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-mk-sec" size={16} />
+              <input
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                placeholder="Rechercher produits, CNK, EAN, marques..."
+                className="w-full pl-9 pr-3 py-2 rounded-md text-sm bg-white text-mk-text placeholder:text-mk-ter border-0 focus:outline-none focus:ring-2 focus:ring-mk-blue"
+              />
+            </div>
+          </form>
+        )}
 
         <div className="hidden md:flex items-center gap-3 shrink-0">
           <motion.button

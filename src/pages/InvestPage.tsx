@@ -1,6 +1,6 @@
 import { Layout } from "@/components/layout/Layout";
 import { motion } from "framer-motion";
-import { ArrowRight, Download, Shield, TrendingUp, Users, Globe, ChevronDown, ShoppingCart, Lock, BarChart3, CheckCircle2 } from "lucide-react";
+import { ArrowRight, Download, Shield, TrendingUp, Users, Globe, ChevronDown, ShoppingCart, Lock, BarChart3, CheckCircle2, Building2 } from "lucide-react";
 import { useState, useEffect } from "react";
 
 /* ───────── DATA ───────── */
@@ -442,21 +442,37 @@ export default function InvestPage() {
       </section>
 
       {/* ════════════ SPV ════════════ */}
-      <section className="py-16 md:py-24 bg-mk-alt">
-        <div className="max-w-4xl mx-auto px-5 text-center">
-          <h2 className="text-2xl md:text-4xl font-bold text-mk-navy mb-3">Vos actions, regroupées et protégées</h2>
-          <p className="text-mk-sec max-w-xl mx-auto text-sm mb-10">Tous les investisseurs sont regroupés au sein d'une fondation privée (SPV) pour une gouvernance simplifiée.</p>
-          <div className="flex flex-col md:flex-row items-center justify-center gap-4 mb-10">
-            {["Investisseurs", "Fondation", "MediKong"].map((label, i) => (
-              <div key={label} className="flex items-center gap-4">
-                <div className={`px-6 py-4 rounded-xl font-semibold text-sm ${i === 2 ? "bg-mk-navy text-white" : i === 1 ? "bg-mk-blue text-white" : "bg-white border border-mk-line text-mk-navy"}`}>{label}</div>
-                {i < 2 && <ArrowRight size={20} className="text-mk-sec hidden md:block" />}
+      <section className="py-16 md:py-24 bg-white">
+        <div className="max-w-3xl mx-auto px-5">
+          <div className="text-center mb-10">
+            <h2 className="text-2xl md:text-4xl font-bold text-mk-navy mb-3">Vos actions, regroupées et protégées</h2>
+            <p className="text-mk-sec max-w-xl mx-auto text-sm">Tous les investisseurs sont regroupés au sein d'une fondation privée (SPV) pour une gouvernance simplifiée.</p>
+          </div>
+
+          {/* Flow: Investisseurs → Fondation → MediKong */}
+          <div className="flex items-center justify-center gap-3 md:gap-5 mb-10">
+            {[
+              { label: "Investisseurs", icon: <Users size={18} /> },
+              { label: "Fondation", icon: <Shield size={18} /> },
+              { label: "MediKong", icon: <Building2 size={18} /> },
+            ].map((item, i) => (
+              <div key={item.label} className="flex items-center gap-3 md:gap-5">
+                <div className="flex items-center gap-2 px-5 py-3 rounded-full border border-mk-line bg-white text-sm font-medium text-mk-navy">
+                  <span className="text-mk-sec">{item.icon}</span>
+                  {item.label}
+                </div>
+                {i < 2 && <ArrowRight size={16} className="text-mk-ter shrink-0" />}
               </div>
             ))}
           </div>
-          <div className="grid sm:grid-cols-2 gap-4 max-w-2xl mx-auto text-left">
+
+          {/* Bullet points */}
+          <div className="space-y-4 max-w-xl mx-auto">
             {["Simplifie la gouvernance (une seule ligne au capital de MediKong)", "Protège les droits des petits actionnaires", "Facilite les futures opérations (revente, dividendes, exit)", "Donne accès à un reporting transparent et régulier"].map((b) => (
-              <div key={b} className="flex items-start gap-2 text-sm text-mk-sec"><CheckCircle2 size={16} className="text-mk-green shrink-0 mt-0.5" />{b}</div>
+              <div key={b} className="flex items-start gap-3 text-sm text-mk-navy">
+                <span className="w-2 h-2 rounded-full bg-mk-navy shrink-0 mt-1.5" />
+                {b}
+              </div>
             ))}
           </div>
         </div>

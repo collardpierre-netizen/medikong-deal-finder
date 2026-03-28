@@ -47,6 +47,103 @@ export type Database = {
         }
         Relationships: []
       }
+      api_keys: {
+        Row: {
+          created_at: string
+          customer_id: string | null
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          key_hash: string
+          key_prefix: string
+          last_used_at: string | null
+          name: string
+          permissions: string[]
+          rate_limit_per_day: number
+          rate_limit_per_minute: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          key_hash: string
+          key_prefix: string
+          last_used_at?: string | null
+          name: string
+          permissions?: string[]
+          rate_limit_per_day?: number
+          rate_limit_per_minute?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          key_hash?: string
+          key_prefix?: string
+          last_used_at?: string | null
+          name?: string
+          permissions?: string[]
+          rate_limit_per_day?: number
+          rate_limit_per_minute?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_keys_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      api_request_logs: {
+        Row: {
+          api_key_id: string
+          created_at: string
+          id: string
+          ip_address: string | null
+          method: string
+          path: string
+          response_time_ms: number | null
+          status_code: number
+        }
+        Insert: {
+          api_key_id: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          method: string
+          path: string
+          response_time_ms?: number | null
+          status_code: number
+        }
+        Update: {
+          api_key_id?: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          method?: string
+          path?: string
+          response_time_ms?: number | null
+          status_code?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_request_logs_api_key_id_fkey"
+            columns: ["api_key_id"]
+            isOneToOne: false
+            referencedRelation: "api_keys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           action: string
@@ -85,171 +182,130 @@ export type Database = {
       }
       brands: {
         Row: {
-          categories: string[] | null
-          certifications: string[] | null
-          country: string | null
-          created_at: string
-          description_fr: string | null
-          founded: number | null
-          gmv_month: number | null
+          description: string | null
           id: string
+          is_active: boolean
+          is_featured: boolean
           logo_url: string | null
-          manufacturer_id: string | null
           name: string
-          products_count: number | null
+          product_count: number
+          qogita_qid: string | null
           slug: string
-          status: string
-          tier: string | null
-          website: string | null
+          synced_at: string | null
         }
         Insert: {
-          categories?: string[] | null
-          certifications?: string[] | null
-          country?: string | null
-          created_at?: string
-          description_fr?: string | null
-          founded?: number | null
-          gmv_month?: number | null
+          description?: string | null
           id?: string
+          is_active?: boolean
+          is_featured?: boolean
           logo_url?: string | null
-          manufacturer_id?: string | null
           name: string
-          products_count?: number | null
+          product_count?: number
+          qogita_qid?: string | null
           slug: string
-          status?: string
-          tier?: string | null
-          website?: string | null
+          synced_at?: string | null
         }
         Update: {
-          categories?: string[] | null
-          certifications?: string[] | null
-          country?: string | null
-          created_at?: string
-          description_fr?: string | null
-          founded?: number | null
-          gmv_month?: number | null
+          description?: string | null
           id?: string
+          is_active?: boolean
+          is_featured?: boolean
           logo_url?: string | null
-          manufacturer_id?: string | null
           name?: string
-          products_count?: number | null
+          product_count?: number
+          qogita_qid?: string | null
           slug?: string
-          status?: string
-          tier?: string | null
-          website?: string | null
+          synced_at?: string | null
+        }
+        Relationships: []
+      }
+      cart_items: {
+        Row: {
+          created_at: string
+          customer_id: string
+          id: string
+          offer_id: string
+          quantity: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          id?: string
+          offer_id: string
+          quantity?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          id?: string
+          offer_id?: string
+          quantity?: number
+          updated_at?: string
         }
         Relationships: [
           {
-            foreignKeyName: "brands_manufacturer_id_fkey"
-            columns: ["manufacturer_id"]
+            foreignKeyName: "cart_items_customer_id_fkey"
+            columns: ["customer_id"]
             isOneToOne: false
-            referencedRelation: "manufacturers"
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cart_items_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers"
             referencedColumns: ["id"]
           },
         ]
       }
-      buyers: {
-        Row: {
-          address: string | null
-          avg_payment_delay: string | null
-          city: string | null
-          company_name: string
-          contact_name: string | null
-          country: string | null
-          created_at: string
-          credit_limit: number | null
-          credit_used: number | null
-          email: string | null
-          id: string
-          payment_terms_default: string | null
-          phone: string | null
-          postal_code: string | null
-          risk_score: string | null
-          type: Database["public"]["Enums"]["buyer_type"]
-          user_id: string | null
-          vat_number: string | null
-        }
-        Insert: {
-          address?: string | null
-          avg_payment_delay?: string | null
-          city?: string | null
-          company_name: string
-          contact_name?: string | null
-          country?: string | null
-          created_at?: string
-          credit_limit?: number | null
-          credit_used?: number | null
-          email?: string | null
-          id?: string
-          payment_terms_default?: string | null
-          phone?: string | null
-          postal_code?: string | null
-          risk_score?: string | null
-          type?: Database["public"]["Enums"]["buyer_type"]
-          user_id?: string | null
-          vat_number?: string | null
-        }
-        Update: {
-          address?: string | null
-          avg_payment_delay?: string | null
-          city?: string | null
-          company_name?: string
-          contact_name?: string | null
-          country?: string | null
-          created_at?: string
-          credit_limit?: number | null
-          credit_used?: number | null
-          email?: string | null
-          id?: string
-          payment_terms_default?: string | null
-          phone?: string | null
-          postal_code?: string | null
-          risk_score?: string | null
-          type?: Database["public"]["Enums"]["buyer_type"]
-          user_id?: string | null
-          vat_number?: string | null
-        }
-        Relationships: []
-      }
       categories: {
         Row: {
-          created_at: string
+          description: string | null
+          display_order: number
+          hs_code: string | null
           icon: string | null
           id: string
-          name_de: string | null
-          name_fr: string
-          name_nl: string | null
+          image_url: string | null
+          is_active: boolean
+          name: string
           parent_id: string | null
-          product_count: number | null
+          qogita_qid: string | null
           slug: string
-          sort_order: number | null
-          status: string
+          synced_at: string | null
+          vat_rate: number | null
         }
         Insert: {
-          created_at?: string
+          description?: string | null
+          display_order?: number
+          hs_code?: string | null
           icon?: string | null
           id?: string
-          name_de?: string | null
-          name_fr: string
-          name_nl?: string | null
+          image_url?: string | null
+          is_active?: boolean
+          name: string
           parent_id?: string | null
-          product_count?: number | null
+          qogita_qid?: string | null
           slug: string
-          sort_order?: number | null
-          status?: string
+          synced_at?: string | null
+          vat_rate?: number | null
         }
         Update: {
-          created_at?: string
+          description?: string | null
+          display_order?: number
+          hs_code?: string | null
           icon?: string | null
           id?: string
-          name_de?: string | null
-          name_fr?: string
-          name_nl?: string | null
+          image_url?: string | null
+          is_active?: boolean
+          name?: string
           parent_id?: string | null
-          product_count?: number | null
+          qogita_qid?: string | null
           slug?: string
-          sort_order?: number | null
-          status?: string
+          synced_at?: string | null
+          vat_rate?: number | null
         }
         Relationships: [
           {
@@ -261,94 +317,135 @@ export type Database = {
           },
         ]
       }
-      cms_hero_images: {
+      customers: {
         Row: {
-          alt_text: string
+          address_line1: string
+          address_line2: string | null
+          auth_user_id: string | null
+          city: string
+          company_name: string
+          country_code: string
           created_at: string
+          credit_limit: number | null
+          customer_type: Database["public"]["Enums"]["customer_type"]
+          email: string
           id: string
-          image_url: string
-          is_active: boolean
-          sort_order: number
+          is_professional: boolean
+          is_verified: boolean
+          payment_terms_days: number
+          phone: string | null
+          postal_code: string
+          updated_at: string
+          vat_number: string | null
         }
         Insert: {
-          alt_text?: string
+          address_line1: string
+          address_line2?: string | null
+          auth_user_id?: string | null
+          city: string
+          company_name: string
+          country_code?: string
           created_at?: string
+          credit_limit?: number | null
+          customer_type?: Database["public"]["Enums"]["customer_type"]
+          email: string
           id?: string
-          image_url: string
-          is_active?: boolean
-          sort_order?: number
+          is_professional?: boolean
+          is_verified?: boolean
+          payment_terms_days?: number
+          phone?: string | null
+          postal_code: string
+          updated_at?: string
+          vat_number?: string | null
         }
         Update: {
-          alt_text?: string
+          address_line1?: string
+          address_line2?: string | null
+          auth_user_id?: string | null
+          city?: string
+          company_name?: string
+          country_code?: string
           created_at?: string
+          credit_limit?: number | null
+          customer_type?: Database["public"]["Enums"]["customer_type"]
+          email?: string
           id?: string
-          image_url?: string
-          is_active?: boolean
-          sort_order?: number
+          is_professional?: boolean
+          is_verified?: boolean
+          payment_terms_days?: number
+          phone?: string | null
+          postal_code?: string
+          updated_at?: string
+          vat_number?: string | null
         }
         Relationships: []
       }
-      commission_rules: {
+      margin_rules: {
         Row: {
-          category_rates: Json | null
+          brand_id: string | null
+          category_id: string | null
           created_at: string
-          effective_from: string | null
-          effective_to: string | null
-          fixed_rate: number | null
+          extra_delay_days: number
           id: string
-          is_default: boolean
-          margin_split_mk: number | null
-          margin_split_vendor: number | null
-          max_commission: number | null
-          min_commission: number | null
-          model: Database["public"]["Enums"]["commission_model"]
+          is_active: boolean
+          margin_percentage: number
+          max_base_price: number | null
+          min_base_price: number | null
           name: string
-          notes: string | null
-          tiers: Json | null
+          priority: number
+          round_price_to: number
           updated_at: string
           vendor_id: string | null
         }
         Insert: {
-          category_rates?: Json | null
+          brand_id?: string | null
+          category_id?: string | null
           created_at?: string
-          effective_from?: string | null
-          effective_to?: string | null
-          fixed_rate?: number | null
+          extra_delay_days?: number
           id?: string
-          is_default?: boolean
-          margin_split_mk?: number | null
-          margin_split_vendor?: number | null
-          max_commission?: number | null
-          min_commission?: number | null
-          model?: Database["public"]["Enums"]["commission_model"]
-          name?: string
-          notes?: string | null
-          tiers?: Json | null
+          is_active?: boolean
+          margin_percentage?: number
+          max_base_price?: number | null
+          min_base_price?: number | null
+          name: string
+          priority?: number
+          round_price_to?: number
           updated_at?: string
           vendor_id?: string | null
         }
         Update: {
-          category_rates?: Json | null
+          brand_id?: string | null
+          category_id?: string | null
           created_at?: string
-          effective_from?: string | null
-          effective_to?: string | null
-          fixed_rate?: number | null
+          extra_delay_days?: number
           id?: string
-          is_default?: boolean
-          margin_split_mk?: number | null
-          margin_split_vendor?: number | null
-          max_commission?: number | null
-          min_commission?: number | null
-          model?: Database["public"]["Enums"]["commission_model"]
+          is_active?: boolean
+          margin_percentage?: number
+          max_base_price?: number | null
+          min_base_price?: number | null
           name?: string
-          notes?: string | null
-          tiers?: Json | null
+          priority?: number
+          round_price_to?: number
           updated_at?: string
           vendor_id?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "commission_rules_vendor_id_fkey"
+            foreignKeyName: "margin_rules_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brands"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "margin_rules_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "margin_rules_vendor_id_fkey"
             columns: ["vendor_id"]
             isOneToOne: false
             referencedRelation: "vendors"
@@ -356,914 +453,426 @@ export type Database = {
           },
         ]
       }
-      compliance_records: {
+      offers: {
         Row: {
-          afmps_notification: string | null
-          afmps_status: string | null
-          ce_expiry: string | null
-          ce_marked: boolean | null
+          applied_margin_percentage: number | null
+          applied_margin_rule_id: string | null
           created_at: string
+          delivery_days: number
           id: string
-          last_audit: string | null
-          mdr_class: Database["public"]["Enums"]["mdr_class"] | null
-          next_audit: string | null
-          product_id: string | null
-          risk_level: string | null
+          is_active: boolean
+          is_qogita_backed: boolean
+          margin_amount: number | null
+          moq: number
+          mov: number | null
+          price_excl_vat: number
+          price_incl_vat: number
+          price_tiers: Json | null
+          product_id: string
+          qogita_base_delay_days: number | null
+          qogita_base_price: number | null
+          qogita_offer_qid: string | null
+          shipping_from_country: string
+          stock_quantity: number
+          stock_status: Database["public"]["Enums"]["stock_status_enum"]
+          synced_at: string | null
+          updated_at: string
+          vat_rate: number
+          vendor_id: string
         }
         Insert: {
-          afmps_notification?: string | null
-          afmps_status?: string | null
-          ce_expiry?: string | null
-          ce_marked?: boolean | null
+          applied_margin_percentage?: number | null
+          applied_margin_rule_id?: string | null
           created_at?: string
+          delivery_days?: number
           id?: string
-          last_audit?: string | null
-          mdr_class?: Database["public"]["Enums"]["mdr_class"] | null
-          next_audit?: string | null
-          product_id?: string | null
-          risk_level?: string | null
+          is_active?: boolean
+          is_qogita_backed?: boolean
+          margin_amount?: number | null
+          moq?: number
+          mov?: number | null
+          price_excl_vat: number
+          price_incl_vat: number
+          price_tiers?: Json | null
+          product_id: string
+          qogita_base_delay_days?: number | null
+          qogita_base_price?: number | null
+          qogita_offer_qid?: string | null
+          shipping_from_country?: string
+          stock_quantity?: number
+          stock_status?: Database["public"]["Enums"]["stock_status_enum"]
+          synced_at?: string | null
+          updated_at?: string
+          vat_rate?: number
+          vendor_id: string
         }
         Update: {
-          afmps_notification?: string | null
-          afmps_status?: string | null
-          ce_expiry?: string | null
-          ce_marked?: boolean | null
+          applied_margin_percentage?: number | null
+          applied_margin_rule_id?: string | null
           created_at?: string
+          delivery_days?: number
           id?: string
-          last_audit?: string | null
-          mdr_class?: Database["public"]["Enums"]["mdr_class"] | null
-          next_audit?: string | null
-          product_id?: string | null
-          risk_level?: string | null
+          is_active?: boolean
+          is_qogita_backed?: boolean
+          margin_amount?: number | null
+          moq?: number
+          mov?: number | null
+          price_excl_vat?: number
+          price_incl_vat?: number
+          price_tiers?: Json | null
+          product_id?: string
+          qogita_base_delay_days?: number | null
+          qogita_base_price?: number | null
+          qogita_offer_qid?: string | null
+          shipping_from_country?: string
+          stock_quantity?: number
+          stock_status?: Database["public"]["Enums"]["stock_status_enum"]
+          synced_at?: string | null
+          updated_at?: string
+          vat_rate?: number
+          vendor_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "compliance_records_product_id_fkey"
+            foreignKeyName: "offers_applied_margin_rule_id_fkey"
+            columns: ["applied_margin_rule_id"]
+            isOneToOne: false
+            referencedRelation: "margin_rules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offers_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "offers_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
         ]
       }
-      disputes: {
+      order_line_sub_orders: {
         Row: {
-          amount: number | null
-          buyer_id: string | null
-          created_at: string
-          dispute_number: string
-          id: string
-          order_id: string | null
-          reason: string
-          resolved_at: string | null
-          sla_deadline: string | null
-          status: Database["public"]["Enums"]["dispute_status"]
-          vendor_id: string | null
+          order_line_id: string
+          sub_order_id: string
         }
         Insert: {
-          amount?: number | null
-          buyer_id?: string | null
-          created_at?: string
-          dispute_number: string
-          id?: string
-          order_id?: string | null
-          reason: string
-          resolved_at?: string | null
-          sla_deadline?: string | null
-          status?: Database["public"]["Enums"]["dispute_status"]
-          vendor_id?: string | null
+          order_line_id: string
+          sub_order_id: string
         }
         Update: {
-          amount?: number | null
-          buyer_id?: string | null
-          created_at?: string
-          dispute_number?: string
-          id?: string
-          order_id?: string | null
-          reason?: string
-          resolved_at?: string | null
-          sla_deadline?: string | null
-          status?: Database["public"]["Enums"]["dispute_status"]
-          vendor_id?: string | null
+          order_line_id?: string
+          sub_order_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "disputes_buyer_id_fkey"
-            columns: ["buyer_id"]
-            isOneToOne: false
-            referencedRelation: "buyers"
+            foreignKeyName: "order_line_sub_orders_order_line_id_fkey"
+            columns: ["order_line_id"]
+            isOneToOne: true
+            referencedRelation: "order_lines"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "disputes_order_id_fkey"
+            foreignKeyName: "order_line_sub_orders_sub_order_id_fkey"
+            columns: ["sub_order_id"]
+            isOneToOne: false
+            referencedRelation: "sub_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_lines: {
+        Row: {
+          cost_price: number | null
+          fulfillment_status: Database["public"]["Enums"]["fulfillment_status"]
+          fulfillment_type: Database["public"]["Enums"]["fulfillment_type"]
+          id: string
+          line_cost: number | null
+          line_margin: number | null
+          line_total_excl_vat: number
+          line_total_incl_vat: number
+          offer_id: string
+          order_id: string
+          product_id: string
+          qogita_offer_qid: string | null
+          quantity: number
+          tracking_number: string | null
+          tracking_url: string | null
+          unit_price_excl_vat: number
+          unit_price_incl_vat: number
+          vat_rate: number
+          vendor_id: string
+        }
+        Insert: {
+          cost_price?: number | null
+          fulfillment_status?: Database["public"]["Enums"]["fulfillment_status"]
+          fulfillment_type?: Database["public"]["Enums"]["fulfillment_type"]
+          id?: string
+          line_cost?: number | null
+          line_margin?: number | null
+          line_total_excl_vat: number
+          line_total_incl_vat: number
+          offer_id: string
+          order_id: string
+          product_id: string
+          qogita_offer_qid?: string | null
+          quantity: number
+          tracking_number?: string | null
+          tracking_url?: string | null
+          unit_price_excl_vat: number
+          unit_price_incl_vat: number
+          vat_rate: number
+          vendor_id: string
+        }
+        Update: {
+          cost_price?: number | null
+          fulfillment_status?: Database["public"]["Enums"]["fulfillment_status"]
+          fulfillment_type?: Database["public"]["Enums"]["fulfillment_type"]
+          id?: string
+          line_cost?: number | null
+          line_margin?: number | null
+          line_total_excl_vat?: number
+          line_total_incl_vat?: number
+          offer_id?: string
+          order_id?: string
+          product_id?: string
+          qogita_offer_qid?: string | null
+          quantity?: number
+          tracking_number?: string | null
+          tracking_url?: string | null
+          unit_price_excl_vat?: number
+          unit_price_incl_vat?: number
+          vat_rate?: number
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_lines_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_lines_order_id_fkey"
             columns: ["order_id"]
             isOneToOne: false
             referencedRelation: "orders"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "disputes_vendor_id_fkey"
-            columns: ["vendor_id"]
-            isOneToOne: false
-            referencedRelation: "vendors"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      impersonation_actions: {
-        Row: {
-          action: string
-          admin_user_id: string
-          created_at: string
-          entity_id: string
-          entity_type: string
-          id: string
-          ip_address: string | null
-          payload: Json
-          session_id: string
-          target_user_id: string
-        }
-        Insert: {
-          action: string
-          admin_user_id: string
-          created_at?: string
-          entity_id: string
-          entity_type: string
-          id?: string
-          ip_address?: string | null
-          payload?: Json
-          session_id: string
-          target_user_id: string
-        }
-        Update: {
-          action?: string
-          admin_user_id?: string
-          created_at?: string
-          entity_id?: string
-          entity_type?: string
-          id?: string
-          ip_address?: string | null
-          payload?: Json
-          session_id?: string
-          target_user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "impersonation_actions_session_id_fkey"
-            columns: ["session_id"]
-            isOneToOne: false
-            referencedRelation: "impersonation_sessions"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      impersonation_sessions: {
-        Row: {
-          actions_count: number
-          admin_email: string
-          admin_user_id: string
-          ended_at: string | null
-          id: string
-          started_at: string
-          target_company_name: string
-          target_email: string
-          target_type: string
-          target_user_id: string
-        }
-        Insert: {
-          actions_count?: number
-          admin_email: string
-          admin_user_id: string
-          ended_at?: string | null
-          id?: string
-          started_at?: string
-          target_company_name: string
-          target_email: string
-          target_type: string
-          target_user_id: string
-        }
-        Update: {
-          actions_count?: number
-          admin_email?: string
-          admin_user_id?: string
-          ended_at?: string | null
-          id?: string
-          started_at?: string
-          target_company_name?: string
-          target_email?: string
-          target_type?: string
-          target_user_id?: string
-        }
-        Relationships: []
-      }
-      import_jobs: {
-        Row: {
-          column_mapping: Json | null
-          created_at: string
-          duration_seconds: number | null
-          file_name: string
-          format: string
-          id: string
-          rows_created: number | null
-          rows_errors: number | null
-          rows_total: number | null
-          rows_updated: number | null
-          status: string
-          vendor_id: string | null
-        }
-        Insert: {
-          column_mapping?: Json | null
-          created_at?: string
-          duration_seconds?: number | null
-          file_name: string
-          format?: string
-          id?: string
-          rows_created?: number | null
-          rows_errors?: number | null
-          rows_total?: number | null
-          rows_updated?: number | null
-          status?: string
-          vendor_id?: string | null
-        }
-        Update: {
-          column_mapping?: Json | null
-          created_at?: string
-          duration_seconds?: number | null
-          file_name?: string
-          format?: string
-          id?: string
-          rows_created?: number | null
-          rows_errors?: number | null
-          rows_total?: number | null
-          rows_updated?: number | null
-          status?: string
-          vendor_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "import_jobs_vendor_id_fkey"
-            columns: ["vendor_id"]
-            isOneToOne: false
-            referencedRelation: "vendors"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      invest_subscriptions: {
-        Row: {
-          address: string
-          amount: number
-          city: string
-          company: string | null
-          country: string
-          created_at: string
-          email: string
-          first_name: string
-          id: string
-          last_name: string
-          national_number: string | null
-          net_cost: number
-          notes: string | null
-          phone: string
-          postal_code: string
-          shares: number
-          status: string
-          tax_reduction: number
-          user_id: string | null
-        }
-        Insert: {
-          address: string
-          amount: number
-          city: string
-          company?: string | null
-          country?: string
-          created_at?: string
-          email: string
-          first_name: string
-          id?: string
-          last_name: string
-          national_number?: string | null
-          net_cost?: number
-          notes?: string | null
-          phone: string
-          postal_code: string
-          shares: number
-          status?: string
-          tax_reduction?: number
-          user_id?: string | null
-        }
-        Update: {
-          address?: string
-          amount?: number
-          city?: string
-          company?: string | null
-          country?: string
-          created_at?: string
-          email?: string
-          first_name?: string
-          id?: string
-          last_name?: string
-          national_number?: string | null
-          net_cost?: number
-          notes?: string | null
-          phone?: string
-          postal_code?: string
-          shares?: number
-          status?: string
-          tax_reduction?: number
-          user_id?: string | null
-        }
-        Relationships: []
-      }
-      invoices: {
-        Row: {
-          amount_ht: number
-          amount_ttc: number | null
-          created_at: string
-          due_date: string | null
-          id: string
-          invoice_number: string
-          party_id: string | null
-          party_type: string
-          status: string
-          tva_amount: number | null
-          tva_rate: number | null
-          type: string
-        }
-        Insert: {
-          amount_ht?: number
-          amount_ttc?: number | null
-          created_at?: string
-          due_date?: string | null
-          id?: string
-          invoice_number: string
-          party_id?: string | null
-          party_type?: string
-          status?: string
-          tva_amount?: number | null
-          tva_rate?: number | null
-          type?: string
-        }
-        Update: {
-          amount_ht?: number
-          amount_ttc?: number | null
-          created_at?: string
-          due_date?: string | null
-          id?: string
-          invoice_number?: string
-          party_id?: string | null
-          party_type?: string
-          status?: string
-          tva_amount?: number | null
-          tva_rate?: number | null
-          type?: string
-        }
-        Relationships: []
-      }
-      leads_partners: {
-        Row: {
-          clicks_30d: number | null
-          conversions_30d: number | null
-          cpa_cpc_amount: number | null
-          created_at: string
-          feed_type: string | null
-          id: string
-          last_sync: string | null
-          model: Database["public"]["Enums"]["lead_model"] | null
-          name: string
-          products_count: number | null
-          revenue_30d: number | null
-          status: string
-          top_categories: string[] | null
-          type: string | null
-          url: string | null
-        }
-        Insert: {
-          clicks_30d?: number | null
-          conversions_30d?: number | null
-          cpa_cpc_amount?: number | null
-          created_at?: string
-          feed_type?: string | null
-          id?: string
-          last_sync?: string | null
-          model?: Database["public"]["Enums"]["lead_model"] | null
-          name: string
-          products_count?: number | null
-          revenue_30d?: number | null
-          status?: string
-          top_categories?: string[] | null
-          type?: string | null
-          url?: string | null
-        }
-        Update: {
-          clicks_30d?: number | null
-          conversions_30d?: number | null
-          cpa_cpc_amount?: number | null
-          created_at?: string
-          feed_type?: string | null
-          id?: string
-          last_sync?: string | null
-          model?: Database["public"]["Enums"]["lead_model"] | null
-          name?: string
-          products_count?: number | null
-          revenue_30d?: number | null
-          status?: string
-          top_categories?: string[] | null
-          type?: string | null
-          url?: string | null
-        }
-        Relationships: []
-      }
-      manufacturers: {
-        Row: {
-          brands: string[] | null
-          certifications: string[] | null
-          city: string | null
-          compliance_status: string | null
-          contacts: Json | null
-          country: string | null
-          created_at: string
-          description_fr: string | null
-          employees: string | null
-          founded: number | null
-          id: string
-          name: string
-          products_on_mk: number | null
-          revenue: string | null
-          slug: string
-          status: string
-          website: string | null
-        }
-        Insert: {
-          brands?: string[] | null
-          certifications?: string[] | null
-          city?: string | null
-          compliance_status?: string | null
-          contacts?: Json | null
-          country?: string | null
-          created_at?: string
-          description_fr?: string | null
-          employees?: string | null
-          founded?: number | null
-          id?: string
-          name: string
-          products_on_mk?: number | null
-          revenue?: string | null
-          slug: string
-          status?: string
-          website?: string | null
-        }
-        Update: {
-          brands?: string[] | null
-          certifications?: string[] | null
-          city?: string | null
-          compliance_status?: string | null
-          contacts?: Json | null
-          country?: string | null
-          created_at?: string
-          description_fr?: string | null
-          employees?: string | null
-          founded?: number | null
-          id?: string
-          name?: string
-          products_on_mk?: number | null
-          revenue?: string | null
-          slug?: string
-          status?: string
-          website?: string | null
-        }
-        Relationships: []
-      }
-      offers_direct: {
-        Row: {
-          commission_rate: number | null
-          created_at: string
-          delivery_days: number | null
-          id: string
-          is_buy_box: boolean | null
-          moq: number | null
-          mov: number | null
-          price_ht: number
-          price_ttc: number | null
-          product_id: string
-          rating: number | null
-          status: string
-          stock: number
-          tva_rate: number
-          updated_at: string
-          vendor_id: string
-        }
-        Insert: {
-          commission_rate?: number | null
-          created_at?: string
-          delivery_days?: number | null
-          id?: string
-          is_buy_box?: boolean | null
-          moq?: number | null
-          mov?: number | null
-          price_ht: number
-          price_ttc?: number | null
-          product_id: string
-          rating?: number | null
-          status?: string
-          stock?: number
-          tva_rate?: number
-          updated_at?: string
-          vendor_id: string
-        }
-        Update: {
-          commission_rate?: number | null
-          created_at?: string
-          delivery_days?: number | null
-          id?: string
-          is_buy_box?: boolean | null
-          moq?: number | null
-          mov?: number | null
-          price_ht?: number
-          price_ttc?: number | null
-          product_id?: string
-          rating?: number | null
-          status?: string
-          stock?: number
-          tva_rate?: number
-          updated_at?: string
-          vendor_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "offers_direct_product_id_fkey"
+            foreignKeyName: "order_lines_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "offers_direct_vendor_id_fkey"
+            foreignKeyName: "order_lines_vendor_id_fkey"
             columns: ["vendor_id"]
             isOneToOne: false
             referencedRelation: "vendors"
             referencedColumns: ["id"]
           },
         ]
-      }
-      offers_indirect: {
-        Row: {
-          clicks_30d: number | null
-          conversion_rate: number | null
-          conversions_30d: number | null
-          cpa_amount: number | null
-          created_at: string
-          external_url: string | null
-          id: string
-          in_stock: boolean | null
-          last_sync: string | null
-          model: Database["public"]["Enums"]["lead_model"] | null
-          partner_id: string | null
-          price: number | null
-          product_id: string
-          revenue_30d: number | null
-          source_type: string | null
-          status: string
-        }
-        Insert: {
-          clicks_30d?: number | null
-          conversion_rate?: number | null
-          conversions_30d?: number | null
-          cpa_amount?: number | null
-          created_at?: string
-          external_url?: string | null
-          id?: string
-          in_stock?: boolean | null
-          last_sync?: string | null
-          model?: Database["public"]["Enums"]["lead_model"] | null
-          partner_id?: string | null
-          price?: number | null
-          product_id: string
-          revenue_30d?: number | null
-          source_type?: string | null
-          status?: string
-        }
-        Update: {
-          clicks_30d?: number | null
-          conversion_rate?: number | null
-          conversions_30d?: number | null
-          cpa_amount?: number | null
-          created_at?: string
-          external_url?: string | null
-          id?: string
-          in_stock?: boolean | null
-          last_sync?: string | null
-          model?: Database["public"]["Enums"]["lead_model"] | null
-          partner_id?: string | null
-          price?: number | null
-          product_id?: string
-          revenue_30d?: number | null
-          source_type?: string | null
-          status?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "offers_indirect_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      offers_market: {
-        Row: {
-          created_at: string
-          id: string
-          in_stock: boolean | null
-          last_change_date: string | null
-          last_change_from: number | null
-          last_change_to: number | null
-          match_confidence: number | null
-          method: string | null
-          price: number | null
-          product_id: string
-          source_name: string
-          source_url: string | null
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          in_stock?: boolean | null
-          last_change_date?: string | null
-          last_change_from?: number | null
-          last_change_to?: number | null
-          match_confidence?: number | null
-          method?: string | null
-          price?: number | null
-          product_id: string
-          source_name: string
-          source_url?: string | null
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          in_stock?: boolean | null
-          last_change_date?: string | null
-          last_change_from?: number | null
-          last_change_to?: number | null
-          match_confidence?: number | null
-          method?: string | null
-          price?: number | null
-          product_id?: string
-          source_name?: string
-          source_url?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "offers_market_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      onboarding_testimonials: {
-        Row: {
-          created_at: string
-          gradient: string
-          id: string
-          is_active: boolean
-          name: string
-          photo_url: string | null
-          quote: string
-          role_visibility: string
-          sort_order: number
-          title: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          gradient?: string
-          id?: string
-          is_active?: boolean
-          name: string
-          photo_url?: string | null
-          quote: string
-          role_visibility?: string
-          sort_order?: number
-          title: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          gradient?: string
-          id?: string
-          is_active?: boolean
-          name?: string
-          photo_url?: string | null
-          quote?: string
-          role_visibility?: string
-          sort_order?: number
-          title?: string
-          updated_at?: string
-        }
-        Relationships: []
       }
       orders: {
         Row: {
-          buyer_id: string | null
-          buyer_type: string | null
-          channel: string | null
+          admin_notes: string | null
+          api_key_id: string | null
+          billing_address: Json
           created_at: string
-          due_date: string | null
+          customer_id: string
+          estimated_delivery_date: string | null
           id: string
-          items_count: number | null
+          notes: string | null
           order_number: string
-          payment_method: string
-          po_reference: string | null
-          shipping_address: string
-          shipping_cost: number
-          shipping_method: string
-          status: string
-          subtotal: number
-          total: number
-          total_ht: number | null
-          total_ttc: number | null
-          tva_amount: number | null
-          tva_rate: number | null
+          payment_due_date: string | null
+          payment_method: Database["public"]["Enums"]["payment_method_enum"]
+          payment_status: Database["public"]["Enums"]["payment_status_enum"]
+          shipping_address: Json
+          source: Database["public"]["Enums"]["order_source"]
+          status: Database["public"]["Enums"]["order_status"]
+          subtotal_excl_vat: number
+          total_cost: number | null
+          total_incl_vat: number
+          total_margin: number | null
           updated_at: string
-          user_id: string
-          vendor_id: string | null
+          vat_amount: number
         }
         Insert: {
-          buyer_id?: string | null
-          buyer_type?: string | null
-          channel?: string | null
+          admin_notes?: string | null
+          api_key_id?: string | null
+          billing_address?: Json
           created_at?: string
-          due_date?: string | null
+          customer_id: string
+          estimated_delivery_date?: string | null
           id?: string
-          items_count?: number | null
+          notes?: string | null
           order_number: string
-          payment_method?: string
-          po_reference?: string | null
-          shipping_address: string
-          shipping_cost?: number
-          shipping_method?: string
-          status?: string
-          subtotal: number
-          total: number
-          total_ht?: number | null
-          total_ttc?: number | null
-          tva_amount?: number | null
-          tva_rate?: number | null
+          payment_due_date?: string | null
+          payment_method?: Database["public"]["Enums"]["payment_method_enum"]
+          payment_status?: Database["public"]["Enums"]["payment_status_enum"]
+          shipping_address?: Json
+          source?: Database["public"]["Enums"]["order_source"]
+          status?: Database["public"]["Enums"]["order_status"]
+          subtotal_excl_vat?: number
+          total_cost?: number | null
+          total_incl_vat?: number
+          total_margin?: number | null
           updated_at?: string
-          user_id: string
-          vendor_id?: string | null
+          vat_amount?: number
         }
         Update: {
-          buyer_id?: string | null
-          buyer_type?: string | null
-          channel?: string | null
+          admin_notes?: string | null
+          api_key_id?: string | null
+          billing_address?: Json
           created_at?: string
-          due_date?: string | null
+          customer_id?: string
+          estimated_delivery_date?: string | null
           id?: string
-          items_count?: number | null
+          notes?: string | null
           order_number?: string
-          payment_method?: string
-          po_reference?: string | null
-          shipping_address?: string
-          shipping_cost?: number
-          shipping_method?: string
-          status?: string
-          subtotal?: number
-          total?: number
-          total_ht?: number | null
-          total_ttc?: number | null
-          tva_amount?: number | null
-          tva_rate?: number | null
+          payment_due_date?: string | null
+          payment_method?: Database["public"]["Enums"]["payment_method_enum"]
+          payment_status?: Database["public"]["Enums"]["payment_status_enum"]
+          shipping_address?: Json
+          source?: Database["public"]["Enums"]["order_source"]
+          status?: Database["public"]["Enums"]["order_status"]
+          subtotal_excl_vat?: number
+          total_cost?: number | null
+          total_incl_vat?: number
+          total_margin?: number | null
           updated_at?: string
-          user_id?: string
-          vendor_id?: string | null
+          vat_amount?: number
         }
         Relationships: [
           {
-            foreignKeyName: "orders_buyer_id_fkey"
-            columns: ["buyer_id"]
+            foreignKeyName: "orders_api_key_id_fkey"
+            columns: ["api_key_id"]
             isOneToOne: false
-            referencedRelation: "buyers"
+            referencedRelation: "api_keys"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "orders_vendor_id_fkey"
-            columns: ["vendor_id"]
+            foreignKeyName: "orders_customer_id_fkey"
+            columns: ["customer_id"]
             isOneToOne: false
-            referencedRelation: "vendors"
+            referencedRelation: "customers"
             referencedColumns: ["id"]
           },
         ]
       }
       products: {
         Row: {
-          afmps_notification: string | null
-          attributes: Json | null
-          brand: string
+          best_price_excl_vat: number | null
+          best_price_incl_vat: number | null
           brand_id: string | null
           category_id: string | null
-          category_l1: string
-          category_l2: string
-          category_l3: string
-          category_l4: string | null
-          ce_marked: boolean | null
-          cnk: string | null
-          created_at: string | null
-          created_by: string | null
-          depth_cm: number | null
-          description_de: string | null
-          description_nl: string | null
-          description_short: string | null
-          gtin: string
-          height_cm: number | null
+          cnk_code: string | null
+          created_at: string
+          description: string | null
+          dimensions: Json | null
+          gtin: string | null
           id: string
-          ingredients: string | null
-          manufacturer_id: string | null
-          mdr_class: string | null
-          mpn: string | null
-          primary_image_url: string
-          product_name: string
-          rrp_eur: number | null
-          secondary_images: Json | null
-          status: Database["public"]["Enums"]["product_status"] | null
-          sub_category_id: string | null
-          updated_at: string | null
-          weight_g: number
-          width_cm: number | null
+          image_urls: string[] | null
+          is_active: boolean
+          is_in_stock: boolean
+          is_promotion: boolean
+          is_published: boolean
+          label: string | null
+          min_delivery_days: number | null
+          name: string
+          offer_count: number
+          origin_country: string | null
+          promotion_end_date: string | null
+          promotion_label: string | null
+          promotion_start_date: string | null
+          qogita_fid: string | null
+          qogita_qid: string | null
+          short_description: string | null
+          sku: string | null
+          slug: string
+          source: Database["public"]["Enums"]["product_source"]
+          synced_at: string | null
+          total_stock: number
+          unit_quantity: number
+          updated_at: string
         }
         Insert: {
-          afmps_notification?: string | null
-          attributes?: Json | null
-          brand: string
+          best_price_excl_vat?: number | null
+          best_price_incl_vat?: number | null
           brand_id?: string | null
           category_id?: string | null
-          category_l1: string
-          category_l2: string
-          category_l3: string
-          category_l4?: string | null
-          ce_marked?: boolean | null
-          cnk?: string | null
-          created_at?: string | null
-          created_by?: string | null
-          depth_cm?: number | null
-          description_de?: string | null
-          description_nl?: string | null
-          description_short?: string | null
-          gtin: string
-          height_cm?: number | null
+          cnk_code?: string | null
+          created_at?: string
+          description?: string | null
+          dimensions?: Json | null
+          gtin?: string | null
           id?: string
-          ingredients?: string | null
-          manufacturer_id?: string | null
-          mdr_class?: string | null
-          mpn?: string | null
-          primary_image_url?: string
-          product_name: string
-          rrp_eur?: number | null
-          secondary_images?: Json | null
-          status?: Database["public"]["Enums"]["product_status"] | null
-          sub_category_id?: string | null
-          updated_at?: string | null
-          weight_g: number
-          width_cm?: number | null
+          image_urls?: string[] | null
+          is_active?: boolean
+          is_in_stock?: boolean
+          is_promotion?: boolean
+          is_published?: boolean
+          label?: string | null
+          min_delivery_days?: number | null
+          name: string
+          offer_count?: number
+          origin_country?: string | null
+          promotion_end_date?: string | null
+          promotion_label?: string | null
+          promotion_start_date?: string | null
+          qogita_fid?: string | null
+          qogita_qid?: string | null
+          short_description?: string | null
+          sku?: string | null
+          slug: string
+          source?: Database["public"]["Enums"]["product_source"]
+          synced_at?: string | null
+          total_stock?: number
+          unit_quantity?: number
+          updated_at?: string
         }
         Update: {
-          afmps_notification?: string | null
-          attributes?: Json | null
-          brand?: string
+          best_price_excl_vat?: number | null
+          best_price_incl_vat?: number | null
           brand_id?: string | null
           category_id?: string | null
-          category_l1?: string
-          category_l2?: string
-          category_l3?: string
-          category_l4?: string | null
-          ce_marked?: boolean | null
-          cnk?: string | null
-          created_at?: string | null
-          created_by?: string | null
-          depth_cm?: number | null
-          description_de?: string | null
-          description_nl?: string | null
-          description_short?: string | null
-          gtin?: string
-          height_cm?: number | null
+          cnk_code?: string | null
+          created_at?: string
+          description?: string | null
+          dimensions?: Json | null
+          gtin?: string | null
           id?: string
-          ingredients?: string | null
-          manufacturer_id?: string | null
-          mdr_class?: string | null
-          mpn?: string | null
-          primary_image_url?: string
-          product_name?: string
-          rrp_eur?: number | null
-          secondary_images?: Json | null
-          status?: Database["public"]["Enums"]["product_status"] | null
-          sub_category_id?: string | null
-          updated_at?: string | null
-          weight_g?: number
-          width_cm?: number | null
+          image_urls?: string[] | null
+          is_active?: boolean
+          is_in_stock?: boolean
+          is_promotion?: boolean
+          is_published?: boolean
+          label?: string | null
+          min_delivery_days?: number | null
+          name?: string
+          offer_count?: number
+          origin_country?: string | null
+          promotion_end_date?: string | null
+          promotion_label?: string | null
+          promotion_start_date?: string | null
+          qogita_fid?: string | null
+          qogita_qid?: string | null
+          short_description?: string | null
+          sku?: string | null
+          slug?: string
+          source?: Database["public"]["Enums"]["product_source"]
+          synced_at?: string | null
+          total_stock?: number
+          unit_quantity?: number
+          updated_at?: string
         }
         Relationships: [
           {
@@ -1276,20 +885,6 @@ export type Database = {
           {
             foreignKeyName: "products_category_id_fkey"
             columns: ["category_id"]
-            isOneToOne: false
-            referencedRelation: "categories"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "products_manufacturer_id_fkey"
-            columns: ["manufacturer_id"]
-            isOneToOne: false
-            referencedRelation: "manufacturers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "products_sub_category_id_fkey"
-            columns: ["sub_category_id"]
             isOneToOne: false
             referencedRelation: "categories"
             referencedColumns: ["id"]
@@ -1338,82 +933,268 @@ export type Database = {
         }
         Relationships: []
       }
-      sellers: {
+      qogita_config: {
         Row: {
-          company_name: string
-          company_registration: string | null
-          contact_email: string
-          contact_phone: string | null
-          country: string
-          created_at: string | null
-          id: string
-          is_top_rated: boolean | null
-          is_verified: boolean | null
-          user_id: string | null
-          vat_number: string | null
+          base_url: string
+          bearer_token: string | null
+          default_country: string
+          id: number
+          last_full_sync_at: string | null
+          last_offers_sync_at: string | null
+          shipping_mode: Database["public"]["Enums"]["shipping_mode_enum"]
+          sync_enabled: boolean
+          sync_error_message: string | null
+          sync_status: Database["public"]["Enums"]["sync_status_enum"]
+          warehouse_address_line1: string | null
+          warehouse_address_line2: string | null
+          warehouse_city: string | null
+          warehouse_contact_name: string | null
+          warehouse_contact_phone: string | null
+          warehouse_country_code: string
+          warehouse_postal_code: string | null
         }
         Insert: {
-          company_name: string
-          company_registration?: string | null
-          contact_email: string
-          contact_phone?: string | null
-          country?: string
-          created_at?: string | null
-          id?: string
-          is_top_rated?: boolean | null
-          is_verified?: boolean | null
-          user_id?: string | null
-          vat_number?: string | null
+          base_url?: string
+          bearer_token?: string | null
+          default_country?: string
+          id?: number
+          last_full_sync_at?: string | null
+          last_offers_sync_at?: string | null
+          shipping_mode?: Database["public"]["Enums"]["shipping_mode_enum"]
+          sync_enabled?: boolean
+          sync_error_message?: string | null
+          sync_status?: Database["public"]["Enums"]["sync_status_enum"]
+          warehouse_address_line1?: string | null
+          warehouse_address_line2?: string | null
+          warehouse_city?: string | null
+          warehouse_contact_name?: string | null
+          warehouse_contact_phone?: string | null
+          warehouse_country_code?: string
+          warehouse_postal_code?: string | null
         }
         Update: {
-          company_name?: string
-          company_registration?: string | null
-          contact_email?: string
-          contact_phone?: string | null
-          country?: string
-          created_at?: string | null
-          id?: string
-          is_top_rated?: boolean | null
-          is_verified?: boolean | null
-          user_id?: string | null
-          vat_number?: string | null
+          base_url?: string
+          bearer_token?: string | null
+          default_country?: string
+          id?: number
+          last_full_sync_at?: string | null
+          last_offers_sync_at?: string | null
+          shipping_mode?: Database["public"]["Enums"]["shipping_mode_enum"]
+          sync_enabled?: boolean
+          sync_error_message?: string | null
+          sync_status?: Database["public"]["Enums"]["sync_status_enum"]
+          warehouse_address_line1?: string | null
+          warehouse_address_line2?: string | null
+          warehouse_city?: string | null
+          warehouse_contact_name?: string | null
+          warehouse_contact_phone?: string | null
+          warehouse_country_code?: string
+          warehouse_postal_code?: string | null
         }
         Relationships: []
       }
-      vendor_onboarding: {
+      site_config: {
         Row: {
-          documents: Json | null
+          country: string
+          currency: string
+          default_vat_rate: number
+          display_prices_incl_vat: boolean
+          id: number
+          investment_banner_enabled: boolean
+          investment_banner_text: string | null
+          reduced_vat_rate: number
+          site_name: string
+          tagline: string
+        }
+        Insert: {
+          country?: string
+          currency?: string
+          default_vat_rate?: number
+          display_prices_incl_vat?: boolean
+          id?: number
+          investment_banner_enabled?: boolean
+          investment_banner_text?: string | null
+          reduced_vat_rate?: number
+          site_name?: string
+          tagline?: string
+        }
+        Update: {
+          country?: string
+          currency?: string
+          default_vat_rate?: number
+          display_prices_incl_vat?: boolean
+          id?: number
+          investment_banner_enabled?: boolean
+          investment_banner_text?: string | null
+          reduced_vat_rate?: number
+          site_name?: string
+          tagline?: string
+        }
+        Relationships: []
+      }
+      sourcing_requests: {
+        Row: {
+          admin_notes: string | null
+          budget_max: number | null
+          cnk_code: string | null
+          contact_email: string
+          contact_name: string
+          contact_phone: string | null
+          created_at: string
+          customer_id: string | null
+          gtin: string | null
           id: string
-          notes: string | null
-          progress_percent: number | null
-          started_at: string
-          step: string
+          product_description: string
+          quantity_needed: number | null
+          quoted_price: number | null
+          request_number: string
+          status: Database["public"]["Enums"]["sourcing_status"]
+          updated_at: string
+          urgency: Database["public"]["Enums"]["urgency_enum"]
+        }
+        Insert: {
+          admin_notes?: string | null
+          budget_max?: number | null
+          cnk_code?: string | null
+          contact_email: string
+          contact_name: string
+          contact_phone?: string | null
+          created_at?: string
+          customer_id?: string | null
+          gtin?: string | null
+          id?: string
+          product_description: string
+          quantity_needed?: number | null
+          quoted_price?: number | null
+          request_number: string
+          status?: Database["public"]["Enums"]["sourcing_status"]
+          updated_at?: string
+          urgency?: Database["public"]["Enums"]["urgency_enum"]
+        }
+        Update: {
+          admin_notes?: string | null
+          budget_max?: number | null
+          cnk_code?: string | null
+          contact_email?: string
+          contact_name?: string
+          contact_phone?: string | null
+          created_at?: string
+          customer_id?: string | null
+          gtin?: string | null
+          id?: string
+          product_description?: string
+          quantity_needed?: number | null
+          quoted_price?: number | null
+          request_number?: string
+          status?: Database["public"]["Enums"]["sourcing_status"]
+          updated_at?: string
+          urgency?: Database["public"]["Enums"]["urgency_enum"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sourcing_requests_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sub_orders: {
+        Row: {
+          cost_total: number | null
+          created_at: string
+          estimated_delivery_date: string | null
+          fulfillment_type: Database["public"]["Enums"]["fulfillment_type"]
+          id: string
+          margin_total: number | null
+          order_id: string
+          qogita_cart_qid: string | null
+          qogita_checkout_qid: string | null
+          qogita_order_qid: string | null
+          qogita_order_status: string | null
+          qogita_shipping_address: Json | null
+          qogita_shipping_mode:
+            | Database["public"]["Enums"]["shipping_mode_enum"]
+            | null
+          reshipment_status:
+            | Database["public"]["Enums"]["reshipment_status_enum"]
+            | null
+          reshipment_tracking_number: string | null
+          reshipment_tracking_url: string | null
+          status: Database["public"]["Enums"]["fulfillment_status"]
+          subtotal_incl_vat: number
+          tracking_number: string | null
+          tracking_url: string | null
           updated_at: string
           vendor_id: string
         }
         Insert: {
-          documents?: Json | null
+          cost_total?: number | null
+          created_at?: string
+          estimated_delivery_date?: string | null
+          fulfillment_type: Database["public"]["Enums"]["fulfillment_type"]
           id?: string
-          notes?: string | null
-          progress_percent?: number | null
-          started_at?: string
-          step?: string
+          margin_total?: number | null
+          order_id: string
+          qogita_cart_qid?: string | null
+          qogita_checkout_qid?: string | null
+          qogita_order_qid?: string | null
+          qogita_order_status?: string | null
+          qogita_shipping_address?: Json | null
+          qogita_shipping_mode?:
+            | Database["public"]["Enums"]["shipping_mode_enum"]
+            | null
+          reshipment_status?:
+            | Database["public"]["Enums"]["reshipment_status_enum"]
+            | null
+          reshipment_tracking_number?: string | null
+          reshipment_tracking_url?: string | null
+          status?: Database["public"]["Enums"]["fulfillment_status"]
+          subtotal_incl_vat?: number
+          tracking_number?: string | null
+          tracking_url?: string | null
           updated_at?: string
           vendor_id: string
         }
         Update: {
-          documents?: Json | null
+          cost_total?: number | null
+          created_at?: string
+          estimated_delivery_date?: string | null
+          fulfillment_type?: Database["public"]["Enums"]["fulfillment_type"]
           id?: string
-          notes?: string | null
-          progress_percent?: number | null
-          started_at?: string
-          step?: string
+          margin_total?: number | null
+          order_id?: string
+          qogita_cart_qid?: string | null
+          qogita_checkout_qid?: string | null
+          qogita_order_qid?: string | null
+          qogita_order_status?: string | null
+          qogita_shipping_address?: Json | null
+          qogita_shipping_mode?:
+            | Database["public"]["Enums"]["shipping_mode_enum"]
+            | null
+          reshipment_status?:
+            | Database["public"]["Enums"]["reshipment_status_enum"]
+            | null
+          reshipment_tracking_number?: string | null
+          reshipment_tracking_url?: string | null
+          status?: Database["public"]["Enums"]["fulfillment_status"]
+          subtotal_incl_vat?: number
+          tracking_number?: string | null
+          tracking_url?: string | null
           updated_at?: string
           vendor_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "vendor_onboarding_vendor_id_fkey"
+            foreignKeyName: "sub_orders_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sub_orders_vendor_id_fkey"
             columns: ["vendor_id"]
             isOneToOne: false
             referencedRelation: "vendors"
@@ -1421,165 +1202,117 @@ export type Database = {
           },
         ]
       }
-      vendors: {
+      sync_logs: {
         Row: {
-          about_text: string | null
-          account_manager: string | null
-          activation_date: string | null
-          address: string | null
-          afmps_number: string | null
-          bce: string | null
-          bic: string | null
-          city: string | null
-          commission_rate: number | null
-          company_name: string
-          contact_name: string | null
-          contact_role: string | null
-          country: string | null
-          cover_image_url: string | null
-          created_at: string
-          default_language: string | null
-          delivery_days: number | null
-          display_name: string | null
-          email: string
-          franco_ht: number | null
-          hours: Json | null
-          iban: string | null
+          completed_at: string | null
+          error_message: string | null
           id: string
-          insurance_expiry: string | null
-          insurance_number: string | null
-          insurance_provider: string | null
-          internal_score: number | null
-          is_public: boolean | null
-          languages: string[] | null
-          legal_form: string | null
-          legal_name: string | null
-          logo_url: string | null
-          min_order_ht: number | null
-          onboarding_date: string | null
-          payment_terms: string | null
-          phone: string | null
-          postal_code: string | null
-          risk_level: string | null
-          shipping_methods: Json | null
-          slug: string
-          status: Database["public"]["Enums"]["vendor_status"]
-          tagline: string | null
-          tier: Database["public"]["Enums"]["vendor_tier"]
-          updated_at: string
-          user_id: string | null
-          vat_number: string | null
-          vat_verified: boolean | null
-          warehouse_address: string | null
-          website: string | null
-          wholesale_license: string | null
-          wholesale_license_expiry: string | null
+          started_at: string
+          stats: Json | null
+          status: Database["public"]["Enums"]["sync_log_status"]
+          sync_type: Database["public"]["Enums"]["sync_type_enum"]
         }
         Insert: {
-          about_text?: string | null
-          account_manager?: string | null
-          activation_date?: string | null
-          address?: string | null
-          afmps_number?: string | null
-          bce?: string | null
-          bic?: string | null
-          city?: string | null
-          commission_rate?: number | null
-          company_name: string
-          contact_name?: string | null
-          contact_role?: string | null
-          country?: string | null
-          cover_image_url?: string | null
-          created_at?: string
-          default_language?: string | null
-          delivery_days?: number | null
-          display_name?: string | null
-          email: string
-          franco_ht?: number | null
-          hours?: Json | null
-          iban?: string | null
+          completed_at?: string | null
+          error_message?: string | null
           id?: string
-          insurance_expiry?: string | null
-          insurance_number?: string | null
-          insurance_provider?: string | null
-          internal_score?: number | null
-          is_public?: boolean | null
-          languages?: string[] | null
-          legal_form?: string | null
-          legal_name?: string | null
-          logo_url?: string | null
-          min_order_ht?: number | null
-          onboarding_date?: string | null
-          payment_terms?: string | null
-          phone?: string | null
-          postal_code?: string | null
-          risk_level?: string | null
-          shipping_methods?: Json | null
-          slug: string
-          status?: Database["public"]["Enums"]["vendor_status"]
-          tagline?: string | null
-          tier?: Database["public"]["Enums"]["vendor_tier"]
-          updated_at?: string
-          user_id?: string | null
-          vat_number?: string | null
-          vat_verified?: boolean | null
-          warehouse_address?: string | null
-          website?: string | null
-          wholesale_license?: string | null
-          wholesale_license_expiry?: string | null
+          started_at?: string
+          stats?: Json | null
+          status?: Database["public"]["Enums"]["sync_log_status"]
+          sync_type: Database["public"]["Enums"]["sync_type_enum"]
         }
         Update: {
-          about_text?: string | null
-          account_manager?: string | null
-          activation_date?: string | null
-          address?: string | null
-          afmps_number?: string | null
-          bce?: string | null
-          bic?: string | null
-          city?: string | null
-          commission_rate?: number | null
-          company_name?: string
-          contact_name?: string | null
-          contact_role?: string | null
-          country?: string | null
-          cover_image_url?: string | null
-          created_at?: string
-          default_language?: string | null
-          delivery_days?: number | null
-          display_name?: string | null
-          email?: string
-          franco_ht?: number | null
-          hours?: Json | null
-          iban?: string | null
+          completed_at?: string | null
+          error_message?: string | null
           id?: string
-          insurance_expiry?: string | null
-          insurance_number?: string | null
-          insurance_provider?: string | null
-          internal_score?: number | null
-          is_public?: boolean | null
-          languages?: string[] | null
-          legal_form?: string | null
-          legal_name?: string | null
+          started_at?: string
+          stats?: Json | null
+          status?: Database["public"]["Enums"]["sync_log_status"]
+          sync_type?: Database["public"]["Enums"]["sync_type_enum"]
+        }
+        Relationships: []
+      }
+      vendors: {
+        Row: {
+          address_line1: string | null
+          auth_user_id: string | null
+          auto_forward_to_qogita: boolean
+          can_manage_offers: boolean
+          city: string | null
+          commission_rate: number
+          company_name: string | null
+          country_code: string
+          created_at: string
+          description: string | null
+          email: string | null
+          id: string
+          is_active: boolean
+          is_verified: boolean
+          logo_url: string | null
+          name: string
+          phone: string | null
+          postal_code: string | null
+          qogita_seller_alias: string | null
+          rating: number | null
+          slug: string
+          total_sales: number
+          type: Database["public"]["Enums"]["vendor_type"]
+          updated_at: string
+          vat_number: string | null
+        }
+        Insert: {
+          address_line1?: string | null
+          auth_user_id?: string | null
+          auto_forward_to_qogita?: boolean
+          can_manage_offers?: boolean
+          city?: string | null
+          commission_rate?: number
+          company_name?: string | null
+          country_code?: string
+          created_at?: string
+          description?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          is_verified?: boolean
           logo_url?: string | null
-          min_order_ht?: number | null
-          onboarding_date?: string | null
-          payment_terms?: string | null
+          name: string
           phone?: string | null
           postal_code?: string | null
-          risk_level?: string | null
-          shipping_methods?: Json | null
-          slug?: string
-          status?: Database["public"]["Enums"]["vendor_status"]
-          tagline?: string | null
-          tier?: Database["public"]["Enums"]["vendor_tier"]
+          qogita_seller_alias?: string | null
+          rating?: number | null
+          slug: string
+          total_sales?: number
+          type?: Database["public"]["Enums"]["vendor_type"]
           updated_at?: string
-          user_id?: string | null
           vat_number?: string | null
-          vat_verified?: boolean | null
-          warehouse_address?: string | null
-          website?: string | null
-          wholesale_license?: string | null
-          wholesale_license_expiry?: string | null
+        }
+        Update: {
+          address_line1?: string | null
+          auth_user_id?: string | null
+          auto_forward_to_qogita?: boolean
+          can_manage_offers?: boolean
+          city?: string | null
+          commission_rate?: number
+          company_name?: string | null
+          country_code?: string
+          created_at?: string
+          description?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          is_verified?: boolean
+          logo_url?: string | null
+          name?: string
+          phone?: string | null
+          postal_code?: string | null
+          qogita_seller_alias?: string | null
+          rating?: number | null
+          slug?: string
+          total_sales?: number
+          type?: Database["public"]["Enums"]["vendor_type"]
+          updated_at?: string
+          vat_number?: string | null
         }
         Relationships: []
       }
@@ -1588,57 +1321,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      generate_order_number: { Args: never; Returns: string }
       get_admin_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["admin_role"]
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
-      search_products: {
-        Args: { search_query: string }
-        Returns: {
-          afmps_notification: string | null
-          attributes: Json | null
-          brand: string
-          brand_id: string | null
-          category_id: string | null
-          category_l1: string
-          category_l2: string
-          category_l3: string
-          category_l4: string | null
-          ce_marked: boolean | null
-          cnk: string | null
-          created_at: string | null
-          created_by: string | null
-          depth_cm: number | null
-          description_de: string | null
-          description_nl: string | null
-          description_short: string | null
-          gtin: string
-          height_cm: number | null
-          id: string
-          ingredients: string | null
-          manufacturer_id: string | null
-          mdr_class: string | null
-          mpn: string | null
-          primary_image_url: string
-          product_name: string
-          rrp_eur: number | null
-          secondary_images: Json | null
-          status: Database["public"]["Enums"]["product_status"] | null
-          sub_category_id: string | null
-          updated_at: string | null
-          weight_g: number
-          width_cm: number | null
-        }[]
-        SetofOptions: {
-          from: "*"
-          to: "products"
-          isOneToOne: false
-          isSetofReturn: true
-        }
-      }
     }
     Enums: {
       admin_role:
@@ -1647,46 +1335,56 @@ export type Database = {
         | "moderateur"
         | "support"
         | "comptable"
-      buyer_type:
-        | "pharmacie"
-        | "mrs"
-        | "hopital"
-        | "cabinet"
-        | "parapharmacie"
-        | "infirmier"
-        | "dentiste"
-      commission_model:
-        | "fixed_rate"
-        | "tiered_gmv"
-        | "category_based"
-        | "margin_split"
-      dispute_status:
-        | "reclamation"
-        | "enquete"
-        | "reponse_vendeur"
-        | "decision"
-        | "resolu"
-        | "rejete"
-      lead_model: "CPA" | "CPC"
-      mdr_class: "I" | "IIa" | "IIb" | "III"
-      product_status: "draft" | "active" | "archived"
-      report_status: "open" | "in_review" | "resolved" | "dismissed"
-      report_type:
-        | "wrong_name"
-        | "wrong_image"
-        | "wrong_category"
-        | "wrong_brand"
-        | "duplicate"
-        | "other"
-      reporter_role: "seller" | "buyer"
-      suggestion_status: "pending" | "approved" | "rejected"
-      vendor_status:
+      customer_type: "pharmacy" | "hospital" | "clinic" | "lab" | "other"
+      fulfillment_status:
         | "pending"
-        | "active"
-        | "probation"
-        | "suspended"
+        | "processing"
+        | "shipped"
+        | "delivered"
+        | "cancelled"
+      fulfillment_type: "qogita" | "medikong_direct" | "vendor_direct"
+      order_source: "web" | "api"
+      order_status:
+        | "draft"
+        | "pending"
+        | "confirmed"
+        | "processing"
+        | "partially_shipped"
+        | "shipped"
+        | "delivered"
+        | "cancelled"
+        | "error"
+      payment_method_enum: "invoice" | "bank_transfer" | "card"
+      payment_status_enum: "pending" | "paid" | "overdue" | "refunded"
+      product_source: "qogita" | "medikong" | "vendor"
+      reshipment_status_enum:
+        | "not_applicable"
+        | "awaiting_reception"
+        | "received_at_warehouse"
+        | "repackaging"
+        | "reshipped"
+      shipping_mode_enum: "direct_to_customer" | "via_warehouse"
+      sourcing_status:
+        | "new"
+        | "reviewing"
+        | "quoted"
+        | "accepted"
         | "rejected"
-      vendor_tier: "Bronze" | "Silver" | "Gold" | "Platinum" | "Strategic"
+        | "fulfilled"
+      stock_status_enum: "in_stock" | "low_stock" | "out_of_stock" | "on_demand"
+      sync_log_status: "running" | "completed" | "error" | "partial"
+      sync_status_enum: "idle" | "running" | "error" | "completed"
+      sync_type_enum:
+        | "full"
+        | "incremental"
+        | "prices"
+        | "categories"
+        | "brands"
+        | "products"
+        | "offers_detail"
+        | "manual"
+      urgency_enum: "low" | "medium" | "high"
+      vendor_type: "medikong" | "qogita_virtual" | "real"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1821,51 +1519,61 @@ export const Constants = {
         "support",
         "comptable",
       ],
-      buyer_type: [
-        "pharmacie",
-        "mrs",
-        "hopital",
-        "cabinet",
-        "parapharmacie",
-        "infirmier",
-        "dentiste",
-      ],
-      commission_model: [
-        "fixed_rate",
-        "tiered_gmv",
-        "category_based",
-        "margin_split",
-      ],
-      dispute_status: [
-        "reclamation",
-        "enquete",
-        "reponse_vendeur",
-        "decision",
-        "resolu",
-        "rejete",
-      ],
-      lead_model: ["CPA", "CPC"],
-      mdr_class: ["I", "IIa", "IIb", "III"],
-      product_status: ["draft", "active", "archived"],
-      report_status: ["open", "in_review", "resolved", "dismissed"],
-      report_type: [
-        "wrong_name",
-        "wrong_image",
-        "wrong_category",
-        "wrong_brand",
-        "duplicate",
-        "other",
-      ],
-      reporter_role: ["seller", "buyer"],
-      suggestion_status: ["pending", "approved", "rejected"],
-      vendor_status: [
+      customer_type: ["pharmacy", "hospital", "clinic", "lab", "other"],
+      fulfillment_status: [
         "pending",
-        "active",
-        "probation",
-        "suspended",
-        "rejected",
+        "processing",
+        "shipped",
+        "delivered",
+        "cancelled",
       ],
-      vendor_tier: ["Bronze", "Silver", "Gold", "Platinum", "Strategic"],
+      fulfillment_type: ["qogita", "medikong_direct", "vendor_direct"],
+      order_source: ["web", "api"],
+      order_status: [
+        "draft",
+        "pending",
+        "confirmed",
+        "processing",
+        "partially_shipped",
+        "shipped",
+        "delivered",
+        "cancelled",
+        "error",
+      ],
+      payment_method_enum: ["invoice", "bank_transfer", "card"],
+      payment_status_enum: ["pending", "paid", "overdue", "refunded"],
+      product_source: ["qogita", "medikong", "vendor"],
+      reshipment_status_enum: [
+        "not_applicable",
+        "awaiting_reception",
+        "received_at_warehouse",
+        "repackaging",
+        "reshipped",
+      ],
+      shipping_mode_enum: ["direct_to_customer", "via_warehouse"],
+      sourcing_status: [
+        "new",
+        "reviewing",
+        "quoted",
+        "accepted",
+        "rejected",
+        "fulfilled",
+      ],
+      stock_status_enum: ["in_stock", "low_stock", "out_of_stock", "on_demand"],
+      sync_log_status: ["running", "completed", "error", "partial"],
+      sync_status_enum: ["idle", "running", "error", "completed"],
+      sync_type_enum: [
+        "full",
+        "incremental",
+        "prices",
+        "categories",
+        "brands",
+        "products",
+        "offers_detail",
+        "manual",
+      ],
+      urgency_enum: ["low", "medium", "high"],
+      vendor_type: ["medikong", "qogita_virtual", "real"],
     },
   },
 } as const

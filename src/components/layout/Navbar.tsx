@@ -1,9 +1,10 @@
-import { Search, Globe, Bell, ShoppingCart, Users, Menu, X, LogOut } from "lucide-react";
+import { Search, Globe, Bell, ShoppingCart, Users, Menu, X, LogOut, Shield, Store } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/hooks/useCart";
+import { supabase } from "@/integrations/supabase/client";
 import logoHorizontal from "@/assets/logo-horizontal.png";
 
 export function Navbar() {

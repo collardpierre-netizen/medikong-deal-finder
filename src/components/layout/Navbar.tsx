@@ -1,9 +1,10 @@
-import { Search, Globe, Bell, ShoppingCart, Users, Menu, X, LogOut } from "lucide-react";
+import { Search, Globe, Bell, ShoppingCart, Users, Menu, X, LogOut, Shield, Store } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/hooks/useCart";
+import { supabase } from "@/integrations/supabase/client";
 import logoHorizontal from "@/assets/logo-horizontal.png";
 
 export function Navbar() {
@@ -13,6 +14,29 @@ export function Navbar() {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { cartCount } = useCart();
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isVendor, setIsVendor] = useState(false);
+
+  useEffect(() => {
+    if (!user) { setIsAdmin(false); setIsVendor(false); return; }
+    const check = async () => {
+      const { data: adminData } = await supabase
+        .from("admin_users")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("is_active", true)
+        .maybeSingle();
+      setIsAdmin(!!adminData);
+
+      const { data: vendorData } = await supabase
+        .from("vendors")
+        .select("id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      setIsVendor(!!vendorData);
+    };
+    check();
+  }, [user]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,6 +90,18 @@ export function Navbar() {
           <div className="w-px h-5 bg-white/20 mx-1" />
           {user ? (
             <div className="flex items-center gap-2">
+              {isAdmin && (
+                <Link to="/admin" className="flex items-center gap-1 text-blue-400 hover:text-blue-300 text-xs font-semibold px-2 py-1 rounded" style={{ background: "rgba(59,130,246,0.15)" }}>
+                  <Shield size={14} />
+                  <span>Admin</span>
+                </Link>
+              )}
+              {isVendor && (
+                <Link to="/vendor" className="flex items-center gap-1 text-pink-400 hover:text-pink-300 text-xs font-semibold px-2 py-1 rounded" style={{ background: "rgba(231,8,102,0.15)" }}>
+                  <Store size={14} />
+                  <span>Vendeur</span>
+                </Link>
+              )}
               <Link to="/compte" className="flex items-center gap-1.5 text-white text-sm">
                 <Users size={16} />
                 <span className="max-w-[100px] truncate">{user.email}</span>
@@ -114,11 +150,21 @@ export function Navbar() {
             </form>
             {user ? (
               <>
+                {isAdmin && (
+                  <Link to="/admin" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 text-blue-400 text-sm font-semibold">
+                    <Shield size={16} /> Administration
+                  </Link>
+                )}
+                {isVendor && (
+                  <Link to="/vendor" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 text-pink-400 text-sm font-semibold">
+                    <Store size={16} /> Espace Vendeur
+                  </Link>
+                )}
                 <Link to="/compte" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 text-white text-sm">
                   <Users size={16} /> Mon compte
                 </Link>
                 <button onClick={() => { handleSignOut(); setMobileMenuOpen(false); }} className="flex items-center gap-2 text-white/70 text-sm">
-                  <LogOut size={16} /> Deconnexion
+                  <LogOut size={16} /> Déconnexion
                 </button>
               </>
             ) : (

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ScrollableTable } from "@/components/shared/ScrollableTable";
 import { VCard } from "@/components/vendor/ui/VCard";
 import { VTabBar } from "@/components/vendor/ui/VTabBar";
 import { VStat } from "@/components/vendor/ui/VStat";

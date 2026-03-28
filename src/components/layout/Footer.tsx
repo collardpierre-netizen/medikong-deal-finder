@@ -17,7 +17,7 @@ export function Footer() {
           <div>
             <h4 className="font-semibold text-sm text-mk-navy mb-3">Nos solutions</h4>
             {[
-              { label: "Catalogue", to: "/" },
+              { label: "Catalogue", to: "/categories" },
               { label: "Vérification fournisseurs", to: "/verification-fournisseurs" },
               { label: "Garantie qualité", to: "/garantie-qualite" },
               { label: "Comment commander", to: "/comment-commander" },
@@ -65,7 +65,7 @@ export function Footer() {
       </div>
       <div className="border-t border-mk-line py-4">
         <div className="mk-container flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-mk-ter">
-          <span className="text-center md:text-left">MediKong 2026 — Plateforme B2B reservee aux professionnels de sante — Conformite FAGG/AFMPS</span>
+          <span className="text-center md:text-left">MediKong 2026 — Plateforme B2B réservée aux professionnels de santé — Conformité FAGG/AFMPS</span>
           <div className="flex items-center gap-2 flex-wrap justify-center">
             {["Visa", "Mastercard", "Bancontact", "SEPA", "Mondu", "Stripe"].map(p => (
               <span key={p} className="px-2 py-1 border border-mk-line rounded text-[10px] font-medium text-mk-sec">{p}</span>

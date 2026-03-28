@@ -625,7 +625,7 @@ export default function AccountPage() {
                           transition={{ delay: 0.15 }}
                         >
                           <h3 className="text-sm font-bold text-mk-navy mb-3">Avantages</h3>
-                          {["Tresorerie preservee", "Process 100% digital", "Aucun frais cache", "Compatible toutes commandes", "Support dedie"].map((a, i) => (
+                          {["Trésorerie préservée", "Process 100% digital", "Aucun frais caché", "Compatible toutes commandes", "Support dédié"].map((a, i) => (
                             <motion.div key={a} className="flex items-center gap-2 text-sm text-mk-green mb-2" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 + i * 0.05 }}>
                               <span className="w-4 h-4 rounded-full bg-mk-green/20 flex items-center justify-center"><span className="text-xs">✓</span></span> {a}
                             </motion.div>

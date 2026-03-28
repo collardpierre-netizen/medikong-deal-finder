@@ -3,10 +3,10 @@ import { Link, useLocation } from "react-router-dom";
 const tabs = [
   { label: "Shop", path: "/" },
   { label: "Promotions", path: "/promotions", pink: true },
-  { label: "Categories", path: "/categorie/consommables" },
+  { label: "Catégories", path: "/categories" },
   { label: "Marques", path: "/marques" },
-  { label: "Professionnels", path: "/verification-fournisseurs" },
-  { label: "Sourcing", path: "/devenir-vendeur" },
+  { label: "Professionnels", path: "/professionnels" },
+  { label: "Sourcing", path: "/sourcing" },
   { label: "Mon compte", path: "/compte" },
 ];
 

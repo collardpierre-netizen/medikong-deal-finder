@@ -81,8 +81,8 @@ export function Navbar() {
           >
             {isTVAC ? "TVAC" : "HTVA"}
           </motion.button>
-          <motion.div whileHover={{ scale: 1.15 }} className="cursor-pointer"><Globe className="text-white" size={18} /></motion.div>
-          <motion.div whileHover={{ scale: 1.15 }} className="cursor-pointer"><Bell className="text-white" size={18} /></motion.div>
+          <motion.div whileHover={{ scale: 1.15 }} className="cursor-pointer"><Globe className="text-white" size={18} aria-label="Changer de langue" /></motion.div>
+          <motion.div whileHover={{ scale: 1.15 }} className="cursor-pointer"><Bell className="text-white" size={18} aria-label="Notifications" /></motion.div>
           <Link to="/panier" className="relative">
             <motion.div whileHover={{ scale: 1.15 }}>
               <ShoppingCart className="text-white" size={18} />

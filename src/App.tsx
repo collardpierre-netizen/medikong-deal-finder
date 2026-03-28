@@ -9,6 +9,7 @@ import { CartProvider } from "@/contexts/CartContext";
 import { ImpersonationProvider } from "@/contexts/ImpersonationContext";
 import ImpersonationBanner from "@/components/admin/ImpersonationBanner";
 import { CookieConsent } from "@/components/layout/CookieConsent";
+import { HelmetProvider } from "react-helmet-async";
 import HomePage from "./pages/HomePage";
 import ResultsPage from "./pages/ResultsPage";
 import ProductPage from "./pages/ProductPage";
@@ -102,10 +103,13 @@ import LegalNoticePage from "./pages/legal/LegalNoticePage";
 import TermsPage from "./pages/legal/TermsPage";
 import PrivacyPage from "./pages/legal/PrivacyPage";
 import CookiePolicyPage from "./pages/legal/CookiePolicyPage";
-
+import ProfessionnelsPage from "./pages/ProfessionnelsPage";
+import SourcingPage from "./pages/SourcingPage";
+import CategoriesPage from "./pages/CategoriesPage";
 const queryClient = new QueryClient();
 
 const App = () => (
+  <HelmetProvider>
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <I18nProvider>
@@ -147,6 +151,10 @@ const App = () => (
             <Route path="/carrieres" element={<CareersPage />} />
             <Route path="/presse" element={<PressPage />} />
             <Route path="/investir" element={<InvestirPage />} />
+
+            <Route path="/professionnels" element={<ProfessionnelsPage />} />
+            <Route path="/sourcing" element={<SourcingPage />} />
+            <Route path="/categories" element={<CategoriesPage />} />
 
             {/* Trust & Process */}
             <Route path="/verification-fournisseurs" element={<SupplierVerificationPage />} />
@@ -229,6 +237,7 @@ const App = () => (
       </I18nProvider>
     </AuthProvider>
   </QueryClientProvider>
+  </HelmetProvider>
 );
 
 export default App;

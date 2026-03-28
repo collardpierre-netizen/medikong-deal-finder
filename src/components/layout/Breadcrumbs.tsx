@@ -1,5 +1,6 @@
-import { Link, useLocation, useParams } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { ChevronRight, Home } from "lucide-react";
+import { Helmet } from "react-helmet-async";
 
 const routeLabels: Record<string, string> = {
   recherche: "Recherche",
@@ -17,6 +18,9 @@ const routeLabels: Record<string, string> = {
   categorie: "Catégorie",
   promotions: "Promotions",
   "seller-onboarding": "Devenir vendeur",
+  professionnels: "Professionnels",
+  sourcing: "Sourcing",
+  categories: "Catégories",
 };
 
 export function Breadcrumbs() {
@@ -36,8 +40,26 @@ export function Breadcrumbs() {
     return { path, label, isLast };
   });
 
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "Accueil", "item": "https://medikong-deal-finder.lovable.app/" },
+      ...crumbs.map((c, i) => ({
+        "@type": "ListItem",
+        "position": i + 2,
+        "name": c.label,
+        "item": `https://medikong-deal-finder.lovable.app${c.path}`
+      }))
+    ]
+  };
+
   return (
-    <nav aria-label="Fil d'Ariane" className="mk-container py-3">
+    <>
+      <Helmet>
+        <script type="application/ld+json">{JSON.stringify(breadcrumbJsonLd)}</script>
+      </Helmet>
+      <nav aria-label="Fil d'Ariane" className="mk-container py-3">
       <ol className="flex items-center gap-1.5 text-[12px] flex-wrap">
         <li className="inline-flex items-center">
           <Link to="/" className="inline-flex items-center gap-1 text-mk-sec hover:text-mk-blue transition-colors">
@@ -58,6 +80,7 @@ export function Breadcrumbs() {
           </li>
         ))}
       </ol>
-    </nav>
+      </nav>
+    </>
   );
 }

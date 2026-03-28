@@ -50,7 +50,7 @@ export default function BrandDetailPage() {
                   {brand.manufacturer}
                 </Link>
               </div>
-              <p className="text-sm text-mk-sec max-w-[700px] mb-4">Marque leader en solutions d'hygiene et d'incontinence pour les professionnels de sante.</p>
+              <p className="text-sm text-mk-sec max-w-[700px] mb-4">Marque leader en solutions d'hygiène et d'incontinence pour les professionnels de santé.</p>
               <div className="flex gap-2 flex-wrap">
                 <button className="border border-mk-line text-sm px-3 md:px-4 py-2 rounded-md flex items-center gap-1.5 text-mk-sec"><ExternalLink size={13} /> Site officiel</button>
                 <button className="bg-mk-blue text-white text-sm px-3 md:px-4 py-2 rounded-md flex items-center gap-1.5"><Download size={13} /> Catalogue</button>

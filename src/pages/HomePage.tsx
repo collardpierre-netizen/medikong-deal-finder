@@ -8,6 +8,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AnimatedSection, StaggerContainer, StaggerItem, HoverCard } from "@/components/shared/PageTransition";
 import { HeroImageGallery } from "@/components/home/HeroImageGallery";
+import { Helmet } from "react-helmet-async";
 
 const iconMap: Record<string, React.ReactNode> = {
   Shield: <Shield size={20} className="text-mk-navy" />,
@@ -77,8 +78,29 @@ export default function HomePage() {
     if (searchQuery.trim()) navigate(`/recherche?q=${encodeURIComponent(searchQuery.trim())}`);
   };
 
+  const orgJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "MediKong",
+    "url": "https://medikong-deal-finder.lovable.app",
+    "logo": "https://medikong-deal-finder.lovable.app/logo-pwa-512.png",
+    "description": "Marketplace B2B de fournitures médicales en Belgique",
+    "address": { "@type": "PostalAddress", "streetAddress": "23 rue de la Procession", "addressLocality": "Ath", "postalCode": "7822", "addressCountry": "BE" },
+    "taxID": "BE 1005.771.323"
+  };
+
+  const faqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": faqs.map(f => ({ "@type": "Question", "name": f.q, "acceptedAnswer": { "@type": "Answer", "text": f.a } }))
+  };
+
   return (
-    <Layout>
+    <Layout title="MediKong — Fournitures médicales B2B en Belgique | Comparez & Commandez" description="MediKong.pro : marketplace B2B + comparateur de prix pour fournitures médicales en Belgique. Comparez, commandez, économisez.">
+      <Helmet>
+        <script type="application/ld+json">{JSON.stringify(orgJsonLd)}</script>
+        <script type="application/ld+json">{JSON.stringify(faqJsonLd)}</script>
+      </Helmet>
       {/* ═══ HERO — centered, clean ═══ */}
       <section className="pt-10 md:pt-20 pb-6 md:pb-10">
         <div className="mk-container text-center max-w-2xl mx-auto">
@@ -89,7 +111,7 @@ export default function HomePage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
           >
-            Vos fournitures B2B, para/médicales, au meilleur prix !
+            La marketplace médicale B2B de référence en Belgique
           </motion.h1>
           <motion.p
             className="text-base md:text-lg text-mk-sec mb-8 max-w-xl mx-auto"
@@ -254,7 +276,7 @@ export default function HomePage() {
         <div className="mk-container">
           <div className="flex items-center justify-between mb-8">
             <h2 className="text-2xl font-bold text-mk-navy">Catégories populaires</h2>
-            <Link to="/categorie/consommables" className="text-sm text-mk-blue hover:underline flex items-center gap-1">
+            <Link to="/categories" className="text-sm text-mk-blue hover:underline flex items-center gap-1">
               Voir tout <ChevronRight size={14} />
             </Link>
           </div>

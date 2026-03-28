@@ -1,14 +1,10 @@
-User-agent: Googlebot
-Allow: /
-
-User-agent: Bingbot
-Allow: /
-
-User-agent: Twitterbot
-Allow: /
-
-User-agent: facebookexternalhit
-Allow: /
-
 User-agent: *
 Allow: /
+Disallow: /compte
+Disallow: /panier
+Disallow: /connexion
+Disallow: /onboarding
+Disallow: /admin
+Disallow: /vendor
+
+Sitemap: https://medikong-deal-finder.lovable.app/sitemap.xml

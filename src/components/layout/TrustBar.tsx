@@ -1,6 +1,6 @@
 import { Check } from "lucide-react";
 
-const items = ["Produits certifies CE", "Fournisseurs verifies", "Protection acheteur"];
+const items = ["Produits certifiés CE", "Fournisseurs vérifiés", "Protection acheteur"];
 
 export function TrustBar() {
   return (

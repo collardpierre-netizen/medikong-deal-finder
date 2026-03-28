@@ -53,12 +53,12 @@ export const sellerPortfolios: Record<string, { brands: string[]; manufacturers:
 
 export const categories = [
   { name: "EPI & Protection", count: "2 400+", icon: "Shield", slug: "epi" },
-  { name: "Desinfection", count: "1 800+", icon: "Droplets", slug: "desinfection" },
+  { name: "Désinfection", count: "1 800+", icon: "Droplets", slug: "desinfection" },
   { name: "Instruments", count: "950+", icon: "Wrench", slug: "instruments" },
   { name: "Pansements & Soins", count: "1 200+", icon: "Heart", slug: "pansements" },
   { name: "Diagnostic", count: "680+", icon: "Activity", slug: "diagnostic" },
   { name: "Incontinence", count: "420+", icon: "Droplet", slug: "incontinence" },
-  { name: "Mobilier medical", count: "310+", icon: "Armchair", slug: "mobilier" },
+  { name: "Mobilier médical", count: "310+", icon: "Armchair", slug: "mobilier" },
   { name: "Consommables", count: "3 100+", icon: "Package", slug: "consommables" },
 ];
 
@@ -78,7 +78,7 @@ export const competitors = [
   { name: "Pharmacie.be", price: 7.85, status: "En stock" as const, date: "25/03/2026" },
 ];
 
-export const universes = ["EPI", "Desinfection", "Instruments", "Pansements", "Diagnostic", "Mobilier", "Nutrition", "Marques A-Z"];
+export const universes = ["EPI", "Désinfection", "Instruments", "Pansements", "Diagnostic", "Mobilier", "Nutrition", "Marques A-Z"];
 
 export function formatPrice(price: number): string {
   return price.toFixed(2).replace('.', ',');

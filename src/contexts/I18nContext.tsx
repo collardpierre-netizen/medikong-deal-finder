@@ -183,6 +183,8 @@ const translations: Record<Lang, Record<string, string>> = {
     team: "Team & Rollen",
     settings: "Einstellungen",
     logs: "Logs",
+    users: "Benutzer",
+    auditLog: "Audit Log",
     management: "VERWALTUNG",
     intelligence: "INTELLIGENZ",
     compliance: "COMPLIANCE",

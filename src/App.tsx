@@ -78,6 +78,7 @@ import AdminUsers from "./pages/admin/AdminUsers";
 import AdminAuditLog from "./pages/admin/AdminAuditLog";
 import AdminCommissions from "./pages/admin/AdminCommissions";
 import AdminOnboardingCMS from "./pages/admin/AdminOnboardingCMS";
+import AdminSync from "./pages/admin/AdminSync";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import AboutPage from "./pages/entreprise/AboutPage";
@@ -197,6 +198,7 @@ const App = () => (
               <Route path="audit-log" element={<AdminAuditLog />} />
               <Route path="onboarding-cms" element={<AdminOnboardingCMS />} />
               <Route path="commissions" element={<AdminCommissions />} />
+              <Route path="sync" element={<AdminSync />} />
             </Route>
 
             {/* Vendor Dashboard */}

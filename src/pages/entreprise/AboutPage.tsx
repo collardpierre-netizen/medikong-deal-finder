@@ -17,10 +17,10 @@ const stats = [
 ];
 
 const values = [
-  { icon: Eye, color: "text-[#E70866]", bg: "bg-[#FFF1F5]", title: "Transparence", desc: "Prix clairs, commissions visibles, aucun frais caché." },
-  { icon: Users, color: "text-[#1B5BDA]", bg: "bg-[#EFF6FF]", title: "Collaboration", desc: "Acheteurs et vendeurs construisent ensemble un marché plus juste." },
-  { icon: Star, color: "text-[#7C3AED]", bg: "bg-[#F5F3FF]", title: "Innovation", desc: "IA, market intelligence et outils de pricing avancés." },
-  { icon: CheckCircle, color: "text-[#059669]", bg: "bg-[#ECFDF5]", title: "Excellence", desc: "Vérification fournisseurs, conformité AFMPS, qualité garantie." },
+  { icon: Eye, color: "text-[#1B5BDA]", bg: "bg-[#EFF6FF]", title: "Transparence", desc: "Prix clairs, commissions visibles, aucun frais caché." },
+  { icon: Users, color: "text-[#1549b8]", bg: "bg-[#E8F0FE]", title: "Collaboration", desc: "Acheteurs et vendeurs construisent ensemble un marché plus juste." },
+  { icon: Star, color: "text-[#0F3280]", bg: "bg-[#E0EAFF]", title: "Innovation", desc: "IA, market intelligence et outils de pricing avancés." },
+  { icon: CheckCircle, color: "text-[#1B5BDA]", bg: "bg-[#EFF6FF]", title: "Excellence", desc: "Vérification fournisseurs, conformité AFMPS, qualité garantie." },
 ];
 
 export default function AboutPage() {

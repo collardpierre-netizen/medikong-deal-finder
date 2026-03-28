@@ -67,13 +67,12 @@ export function VendorSidebar({ onNavigate }: VendorSidebarProps) {
     >
       {/* Logo */}
       <div className="flex items-center gap-3 px-4 h-14 shrink-0">
-        <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-sm shrink-0" style={{ backgroundColor: "#E70866" }}>
-          M
-        </div>
-        {!collapsed && (
+        {collapsed ? (
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-sm shrink-0" style={{ backgroundColor: "#1B5BDA" }}>M</div>
+        ) : (
           <div className="overflow-hidden">
-            <p className="text-white text-sm font-bold leading-tight">MediKong</p>
-            <p className="text-white/40 text-[10px] font-medium">Espace Vendeur</p>
+            <img src={logoLight} alt="MediKong.pro" className="h-9" />
+            <p className="text-white/40 text-[10px] font-medium mt-0.5">Espace Vendeur</p>
           </div>
         )}
       </div>

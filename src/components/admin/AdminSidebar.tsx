@@ -90,19 +90,8 @@ const AdminSidebar = () => {
       style={{ backgroundColor: "#1E293B" }}
     >
       {/* Logo */}
-      <div className="px-5 py-5 border-b border-white/10">
-        <div className="flex items-center gap-2">
-          <div
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-sm"
-            style={{ backgroundColor: "#1B5BDA" }}
-          >
-            M
-          </div>
-          <div>
-            <span className="text-white font-bold text-[15px]">MediKong</span>
-            <span style={{ color: "#1B5BDA" }} className="font-bold text-[15px]">.pro</span>
-          </div>
-        </div>
+      <div className="px-5 py-4 border-b border-white/10">
+        <img src={logoLight} alt="MediKong.pro" className="h-10" />
         <p className="text-[11px] mt-1" style={{ color: "#8B95A5" }}>
           {t("superadminPanel")}
         </p>

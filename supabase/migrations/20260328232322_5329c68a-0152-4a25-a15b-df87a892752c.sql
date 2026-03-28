@@ -1,0 +1,20 @@
+-- Performance indexes
+CREATE INDEX IF NOT EXISTS idx_products_is_active ON products(is_active);
+CREATE INDEX IF NOT EXISTS idx_products_brand_id ON products(brand_id);
+CREATE INDEX IF NOT EXISTS idx_products_category_id ON products(category_id);
+CREATE INDEX IF NOT EXISTS idx_products_slug ON products(slug);
+CREATE INDEX IF NOT EXISTS idx_products_gtin ON products(gtin);
+CREATE INDEX IF NOT EXISTS idx_offers_product_id ON offers(product_id);
+CREATE INDEX IF NOT EXISTS idx_offers_vendor_id ON offers(vendor_id);
+CREATE INDEX IF NOT EXISTS idx_offers_is_active ON offers(is_active);
+CREATE INDEX IF NOT EXISTS idx_orders_customer_id ON orders(customer_id);
+CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
+CREATE INDEX IF NOT EXISTS idx_order_lines_order_id ON order_lines(order_id);
+CREATE INDEX IF NOT EXISTS idx_sub_orders_order_id ON sub_orders(order_id);
+CREATE INDEX IF NOT EXISTS idx_categories_slug ON categories(slug);
+CREATE INDEX IF NOT EXISTS idx_brands_slug ON brands(slug);
+CREATE INDEX IF NOT EXISTS idx_vendors_slug ON vendors(slug);
+CREATE INDEX IF NOT EXISTS idx_favorites_user_id ON favorites(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_price_watches_user_id ON user_price_watches(user_id);
+CREATE INDEX IF NOT EXISTS idx_recent_activity_user_id ON recent_activity(user_id);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON audit_logs(created_at);

@@ -197,15 +197,8 @@ export default function OnboardingPage() {
   const [leadTime, setLeadTime] = useState("");
 
   /* ─── Testimonials from DB ─── */
-  const { data: allTestimonials = [] } = useQuery({
-    queryKey: ["onboarding-testimonials"],
-    queryFn: async () => {
-      const { data } = await supabase.from("onboarding_testimonials").select("*").eq("is_active", true).order("sort_order");
-      return data || [];
-    },
-  });
-
-  const testimonials = allTestimonials.filter(t => !role || t.role_visibility === role || t.role_visibility === "both");
+  // Testimonials - hardcoded since table doesn't exist in V5
+  const testimonials: any[] = [];
   const fallbackTestimonials = [
     { gradient: "linear-gradient(135deg, #1a365d, #2d3748, #1a202c)", quote: "MediKong a transformé nos achats médicaux.", name: "Équipe MediKong", title: "Marketplace B2B", photo_url: null },
   ];

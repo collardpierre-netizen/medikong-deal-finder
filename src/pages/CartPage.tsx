@@ -320,11 +320,10 @@ export default function CartPage() {
                                       {item.product?.name || "Produit"}
                                     </Link>
                                     <p className="text-xs text-mk-ter">
-                                      CNK: {item.product?.gtin?.slice(-7) || "N/A"}
-                                      {item.product?.unit && ` · ${item.product.unit}`}
+                                      Réf: {item.product_id?.slice(0, 8) || "N/A"}
                                     </p>
                                     <p className="text-sm text-mk-navy mt-0.5">
-                                      {formatPrice(item.price_ht || item.product?.price || 0)}€ × {item.quantity} = <span className="font-bold">{formatPrice((item.price_ht || item.product?.price || 0) * item.quantity)}€</span>
+                                      {formatPrice(item.price_excl_vat || item.product?.price || 0)}€ × {item.quantity} = <span className="font-bold">{formatPrice((item.price_excl_vat || item.product?.price || 0) * item.quantity)}€</span>
                                     </p>
                                   </div>
                                   <div className="flex items-center gap-2 shrink-0">

@@ -66,23 +66,9 @@ const AdminCMS = () => {
     setSections(prev => prev.map((s, i) => i === idx ? { ...s, visible: !s.visible } : s));
   };
 
-  const { data: heroImages = [] } = useQuery({
-    queryKey: ["admin-hero-images"],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("cms_hero_images")
-        .select("*")
-        .order("sort_order");
-      return (data || []) as HeroImage[];
-    },
-  });
-
-  const toggleImage = useMutation({
-    mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
-      await supabase.from("cms_hero_images").update({ is_active }).eq("id", id);
-    },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-hero-images"] }); toast.success("Image mise à jour"); },
-  });
+  // CMS hero images - placeholder since table doesn't exist yet
+  const heroImages: HeroImage[] = [];
+  const toggleImage = { mutate: (_args: { id: string; is_active: boolean }) => { toast.info("Fonctionnalité CMS à venir"); } };
 
   const deleteImage = useMutation({
     mutationFn: async (id: string) => {

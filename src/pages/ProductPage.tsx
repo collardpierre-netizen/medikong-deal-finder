@@ -833,11 +833,12 @@ export default function ProductPage() {
                       if (!user) { navigate("/connexion"); return; }
                       const bestOffer = realOffers[0];
                       addToCart.mutate({
+                        offerId: bestOffer?.id || product.id,
                         productId: product.id,
                         quantity: stickyQty,
                         vendorId: bestOffer?.sellerId,
-                        priceHt: bestOffer?.unitPriceEur || product.price,
-                        productData: { id: product.id, name: product.name, brand: product.brand, slug: product.slug, price: bestOffer?.unitPriceEur || product.price, gtin: product.gtin, unit: product.unit, stock: true },
+                        priceExclVat: bestOffer?.unitPriceEur || product.price,
+                        productData: { id: product.id, name: product.name, brand: product.brand, slug: product.slug, price: bestOffer?.unitPriceEur || product.price },
                       });
                     }}
                   >

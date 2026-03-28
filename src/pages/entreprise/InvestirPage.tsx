@@ -18,8 +18,8 @@ const investStats = [
 ];
 
 const whyInvest = [
-  { icon: TrendingUp, color: "text-[#E70866]", bg: "bg-[#FFF1F5]", title: "Marché en croissance", desc: "Le marché des fournitures médicales B2B en Europe pèse 120 milliards d'euros, avec une digitalisation encore inférieure à 5%." },
-  { icon: CreditCard, color: "text-[#1B5BDA]", bg: "bg-[#EFF6FF]", title: "Business model éprouvé", desc: "Commission sur transaction, récurrence naturelle des achats médicaux, et forte rétention client (>90% après 6 mois)." },
+  { icon: TrendingUp, color: "text-[#059669]", bg: "bg-[#ECFDF5]", title: "Marché en croissance", desc: "Le marché des fournitures médicales B2B en Europe pèse 120 milliards d'euros, avec une digitalisation encore inférieure à 5%." },
+  { icon: CreditCard, color: "text-[#047857]", bg: "bg-[#D1FAE5]", title: "Business model éprouvé", desc: "Commission sur transaction, récurrence naturelle des achats médicaux, et forte rétention client (>90% après 6 mois)." },
   { icon: Users, color: "text-[#059669]", bg: "bg-[#ECFDF5]", title: "Équipe expérimentée", desc: "Fondateurs avec 15+ ans d'expérience combinée dans la distribution médicale et le digital santé." },
 ];
 

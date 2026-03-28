@@ -43,12 +43,17 @@ export default function ProductPage() {
   
   // Fetch brand and manufacturer details for CTA links
   const { data: brandData } = useQuery({
-    queryKey: ["brand-detail", product?.brandId],
+    queryKey: ["brand-detail", product?.brandId, product?.brand],
     queryFn: async () => {
-      const { data } = await supabase.from("brands").select("id, name, slug").eq("id", product!.brandId!).single();
+      if (product!.brandId) {
+        const { data } = await supabase.from("brands").select("id, name, slug").eq("id", product!.brandId).single();
+        if (data) return data;
+      }
+      // Fallback: match by name
+      const { data } = await supabase.from("brands").select("id, name, slug").ilike("name", product!.brand).single();
       return data;
     },
-    enabled: !!product?.brandId,
+    enabled: !!product,
   });
   const { data: manufacturerData } = useQuery({
     queryKey: ["manufacturer-detail", product?.manufacturerId],

@@ -17,7 +17,7 @@ export function Footer() {
           <div>
             <h4 className="font-semibold text-sm text-mk-navy mb-3">Nos solutions</h4>
             {[
-              { label: "Catalogue", to: "/" },
+              { label: "Catalogue", to: "/categories" },
               { label: "Vérification fournisseurs", to: "/verification-fournisseurs" },
               { label: "Garantie qualité", to: "/garantie-qualite" },
               { label: "Comment commander", to: "/comment-commander" },

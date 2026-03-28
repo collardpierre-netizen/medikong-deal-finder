@@ -254,7 +254,7 @@ export default function HomePage() {
         <div className="mk-container">
           <div className="flex items-center justify-between mb-8">
             <h2 className="text-2xl font-bold text-mk-navy">Catégories populaires</h2>
-            <Link to="/categorie/consommables" className="text-sm text-mk-blue hover:underline flex items-center gap-1">
+            <Link to="/categories" className="text-sm text-mk-blue hover:underline flex items-center gap-1">
               Voir tout <ChevronRight size={14} />
             </Link>
           </div>

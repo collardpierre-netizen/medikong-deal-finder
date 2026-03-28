@@ -78,7 +78,7 @@ export const competitors = [
   { name: "Pharmacie.be", price: 7.85, status: "En stock" as const, date: "25/03/2026" },
 ];
 
-export const universes = ["EPI", "Desinfection", "Instruments", "Pansements", "Diagnostic", "Mobilier", "Nutrition", "Marques A-Z"];
+export const universes = ["EPI", "Désinfection", "Instruments", "Pansements", "Diagnostic", "Mobilier", "Nutrition", "Marques A-Z"];
 
 export function formatPrice(price: number): string {
   return price.toFixed(2).replace('.', ',');

@@ -41,25 +41,24 @@ const fmt = (n: number) => n.toLocaleString("fr-BE", { minimumFractionDigits: 2,
 const AdminCommandes = () => {
   const { t } = useI18n();
   const { data: ordersData = [], isLoading } = useOrders();
-  const { data: buyersData = [] } = useBuyers();
   const [activeTab, setActiveTab] = useState<"list" | "timeline" | "aging" | "buyers">("list");
   const [statusFilter, setStatusFilter] = useState("all");
   const [search, setSearch] = useState("");
 
   const orders = ordersData.map(o => ({
     id: o.order_number,
-    refPO: o.po_reference || "—",
-    buyer: (o.buyers as any)?.company_name || "—",
-    buyerType: ((o.buyers as any)?.type || o.buyer_type || "pharmacie") as string,
-    seller: (o.vendors as any)?.company_name || "—",
-    amountHT: Number(o.total_ht) || Number(o.subtotal) || 0,
-    tva: Number(o.tva_amount) || 0,
-    ttc: Number(o.total_ttc) || Number(o.total) || 0,
-    paymentTerms: o.payment_method || "Net 30",
-    dueDate: o.due_date ? new Date(o.due_date).toLocaleDateString("fr-BE") : "—",
+    refPO: "—",
+    buyer: (o.customers as any)?.company_name || "—",
+    buyerType: (o.customers as any)?.customer_type || "pharmacy",
+    seller: "—",
+    amountHT: Number(o.subtotal_excl_vat) || 0,
+    tva: Number(o.vat_amount) || 0,
+    ttc: Number(o.total_incl_vat) || 0,
+    paymentTerms: o.payment_method || "invoice",
+    dueDate: o.payment_due_date ? new Date(o.payment_due_date).toLocaleDateString("fr-BE") : "—",
     status: o.status as "pending" | "confirmed" | "shipped" | "delivered" | "cancelled",
     date: new Date(o.created_at).toLocaleDateString("fr-BE"),
-    items: o.items_count || 0,
+    items: 0,
   }));
 
   // Fallback mock data if no orders in DB

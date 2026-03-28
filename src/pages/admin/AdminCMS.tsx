@@ -70,25 +70,8 @@ const AdminCMS = () => {
   const heroImages: HeroImage[] = [];
   const toggleImage = { mutate: (_args: { id: string; is_active: boolean }) => { toast.info("Fonctionnalité CMS à venir"); } };
 
-  const deleteImage = useMutation({
-    mutationFn: async (id: string) => {
-      await supabase.from("cms_hero_images").delete().eq("id", id);
-    },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-hero-images"] }); toast.success("Image supprimée"); },
-  });
-
-  const addImage = useMutation({
-    mutationFn: async () => {
-      const maxOrder = heroImages.length > 0 ? Math.max(...heroImages.map(i => i.sort_order)) + 1 : 1;
-      await supabase.from("cms_hero_images").insert({ image_url: newImageUrl, alt_text: newImageAlt, sort_order: maxOrder });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-hero-images"] });
-      setNewImageUrl("");
-      setNewImageAlt("");
-      toast.success("Image ajoutée");
-    },
-  });
+  const deleteImage = { mutate: (_id: string) => { toast.info("Fonctionnalité CMS à venir"); } };
+  const addImage = { mutate: () => { toast.info("Fonctionnalité CMS à venir"); }, isPending: false };
 
   return (
     <div>

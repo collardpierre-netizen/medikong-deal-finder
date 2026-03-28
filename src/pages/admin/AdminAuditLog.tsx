@@ -18,9 +18,9 @@ export default function AdminAuditLog() {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <KpiCard title="Total actions" value={logs.length} icon={FileText} />
-        <KpiCard title="Modules" value={[...new Set(logs.map(l => l.module).filter(Boolean))].length} icon={Shield} />
-        <KpiCard title="Dernière action" value={logs[0] ? format(new Date(logs[0].created_at), "dd/MM HH:mm", { locale: fr }) : "–"} icon={Clock} />
+        <KpiCard icon={FileText} label="Total actions" value={String(logs.length)} />
+        <KpiCard icon={Shield} label="Modules" value={String([...new Set(logs.map(l => l.module).filter(Boolean))].length)} />
+        <KpiCard icon={Clock} label="Dernière action" value={logs[0] ? format(new Date(logs[0].created_at), "dd/MM HH:mm", { locale: fr }) : "–"} />
       </div>
 
       {isLoading ? (

@@ -11,7 +11,7 @@ export default function WhyMedikongPage() {
   return (
     <EntrepriseLayout>
       <EntrepriseHero
-        variant="warm"
+        variant="blue"
         badge="La différence MediKong"
         title="Pourquoi choisir MediKong ?"
         subtitle="Trois raisons qui transforment vos achats médicaux au quotidien."

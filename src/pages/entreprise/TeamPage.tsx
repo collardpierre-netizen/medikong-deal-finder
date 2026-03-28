@@ -17,7 +17,7 @@ export default function TeamPage() {
   return (
     <EntrepriseLayout>
       <EntrepriseHero
-        variant="image"
+        variant="dark"
         badge="L'équipe"
         title="Les visages derrière MediKong"
         subtitle="Une équipe passionnée par l'innovation dans le secteur médical."

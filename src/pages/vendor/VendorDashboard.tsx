@@ -224,6 +224,11 @@ export default function VendorDashboard() {
           ))}
         </div>
       </VCard>
+
+      {/* Order Detail Popup */}
+      {selectedOrderId && (
+        <OrderDetailPopup orderId={selectedOrderId} onClose={() => setSelectedOrderId(null)} />
+      )}
     </div>
   );
 }

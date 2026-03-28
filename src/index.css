@@ -136,3 +136,8 @@
 .animate-marquee {
   animation: marquee 30s linear infinite;
 }
+
+@keyframes fadeInUp { from { opacity:0; transform:translateY(12px) } to { opacity:1; transform:translateY(0) } }
+@keyframes fadeIn { from { opacity:0 } to { opacity:1 } }
+.anim-up { animation: fadeInUp 350ms ease-out both; }
+.anim-fade { animation: fadeIn 300ms ease-out both; }

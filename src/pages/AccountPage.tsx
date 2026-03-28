@@ -6,6 +6,7 @@ import { Link } from "react-router-dom";
 import { formatPrice } from "@/data/mock";
 import { useProducts } from "@/hooks/useProducts";
 import { useFavorites, useFavoriteLists, useRecentActivity } from "@/hooks/useFavorites";
+import { usePriceWatches } from "@/hooks/usePriceWatches";
 import { useAuth } from "@/contexts/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { PageTransition } from "@/components/shared/PageTransition";

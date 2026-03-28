@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { KpiCard } from "@/components/admin/KpiCard";
+import KpiCard from "@/components/admin/KpiCard";
 import { FileText, Clock, Shield, ChevronDown, ChevronUp } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
 import { fr } from "date-fns/locale";

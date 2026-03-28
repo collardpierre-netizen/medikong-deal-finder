@@ -83,10 +83,10 @@ export default function AdminCommissions() {
     queryKey: ["admin-commission-rules"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("commission_rules")
+        .from("margin_rules")
         .select("*")
         .is("vendor_id", null)
-        .order("is_default", { ascending: false });
+        .order("priority", { ascending: false });
       if (error) throw error;
       return data as unknown as CommissionRule[];
     },
@@ -96,7 +96,7 @@ export default function AdminCommissions() {
     queryKey: ["admin-commission-vendor-rules"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("commission_rules")
+        .from("margin_rules")
         .select("*, vendors(company_name)")
         .not("vendor_id", "is", null)
         .order("created_at", { ascending: false });
@@ -108,7 +108,7 @@ export default function AdminCommissions() {
   const { data: vendors = [] } = useQuery({
     queryKey: ["admin-vendors-for-commission"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("vendors").select("id, company_name, tier, status").eq("status", "active").order("company_name");
+      const { data, error } = await supabase.from("vendors").select("id, company_name, is_active, name").eq("is_active", true).order("company_name");
       if (error) throw error;
       return data;
     },

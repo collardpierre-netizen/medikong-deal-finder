@@ -19,7 +19,7 @@ export default function BecomeSellerPage() {
   return (
     <TrustProcessLayout>
       <EntrepriseHero
-        variant="pink"
+        variant="blue"
         badge="Vendeurs"
         title="Vendez sur MediKong et touchez 500+ pharmacies"
         subtitle="Rejoignez la marketplace B2B médicale de référence en Belgique. Commission dégressive, support dédié et outils puissants."

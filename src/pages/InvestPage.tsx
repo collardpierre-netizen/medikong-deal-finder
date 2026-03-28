@@ -73,7 +73,7 @@ const investSteps = [
 ];
 
 const faqs = [
-  { q: "Quel est le montant minimum pour investir ?", a: "Vous pouvez investir à partir de 1 000 €. Les souscriptions se font par multiples de 1 000 €. Il n'y a pas de montant maximum, mais l'avantage fiscal Tax Shelter est plafonné à 15 000 € par personne par an." },
+  { q: "Quel est le montant minimum pour investir ?", a: "Vous pouvez investir à partir de 1 000 €. Les souscriptions se font par multiples de 1 000 €. Il n'y a pas de montant maximum, mais l'avantage fiscal Tax Shelter n'est applicable qu'à partir de 5 000 € et est plafonné à 15 000 € par personne par an." },
   { q: "Qu'est-ce que le Tax Shelter ?", a: "Le Tax Shelter est un incitant fiscal belge permettant aux investisseurs particuliers de récupérer 45% de leur investissement dans une startup via une réduction d'impôt sur les personnes physiques." },
   { q: "Pourquoi une fondation pour les actionnaires ?", a: "La fondation privée (SPV) regroupe tous les petits actionnaires en une seule entité juridique. Cela simplifie la gouvernance de MediKong, protège vos droits et facilite les futures opérations (dividendes, exit)." },
   { q: "Quand vais-je recevoir mes actions ?", a: "Après signature de la convention et réception de votre virement, vos actions sont émises sous 15 jours ouvrables. Vous recevez un certificat d'actionnaire et votre attestation Tax Shelter." },

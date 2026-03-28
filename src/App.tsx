@@ -29,6 +29,8 @@ import VendorLayout from "./components/vendor/VendorLayout";
 import VendorDashboard from "./pages/vendor/VendorDashboard";
 import VendorPlaceholder from "./pages/vendor/VendorPlaceholder";
 import VendorCatalog from "./pages/vendor/VendorCatalog";
+import VendorOffers from "./pages/vendor/VendorOffers";
+import VendorOrders from "./pages/vendor/VendorOrders";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminPlaceholder from "./pages/admin/AdminPlaceholder";
 import AdminVendeurs from "./pages/admin/AdminVendeurs";
@@ -123,8 +125,8 @@ const App = () => (
             <Route path="/vendor" element={<VendorLayout />}>
               <Route index element={<VendorDashboard />} />
               <Route path="catalog" element={<VendorCatalog />} />
-              <Route path="offers" element={<VendorPlaceholder pageKey="myOffers" />} />
-              <Route path="orders" element={<VendorPlaceholder pageKey="orders" />} />
+              <Route path="offers" element={<VendorOffers />} />
+              <Route path="orders" element={<VendorOrders />} />
               <Route path="opportunities" element={<VendorPlaceholder pageKey="opportunities" />} />
               <Route path="alerts" element={<VendorPlaceholder pageKey="alerts" />} />
               <Route path="tenders" element={<VendorPlaceholder pageKey="tenders" />} />

@@ -128,21 +128,21 @@ export default function HomePage() {
       </AnimatedSection>
 
       {/* Categories */}
-      <AnimatedSection className="py-10">
+      <AnimatedSection className="py-14 md:py-20">
         <div className="mk-container">
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="text-xl font-bold text-mk-navy">Categories</h2>
+          <div className="flex items-center justify-between mb-8">
+            <h2 className="text-2xl font-bold text-mk-navy">Categories</h2>
             <Link to="/categorie/consommables" className="text-sm text-mk-blue hover:underline">Voir tout</Link>
           </div>
-          <StaggerContainer className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <StaggerContainer className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {categories.map(cat => (
               <StaggerItem key={cat.slug}>
                 <HoverCard className="border border-mk-line rounded-lg">
-                  <Link to={`/categorie/${cat.slug}`} className="flex items-center gap-3 p-3 md:p-4">
+                  <Link to={`/categorie/${cat.slug}`} className="flex items-center gap-3 p-4 md:p-5">
                     {iconMap[cat.icon]}
                     <div>
                       <div className="text-sm font-medium text-mk-navy">{cat.name}</div>
-                      <div className="text-xs text-mk-sec">{cat.count}</div>
+                      <div className="text-xs text-mk-sec mt-0.5">{cat.count}</div>
                     </div>
                   </Link>
                 </HoverCard>

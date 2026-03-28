@@ -41,7 +41,7 @@ export default function WhyMedikongPage() {
             imageGradient="from-blue-100 to-indigo-200"
           />
           <SplitSection
-            tag={{ label: "Sécurité", color: "#059669", bg: "#ECFDF5" }}
+            tag={{ label: "Sécurité", color: "#1B5BDA", bg: "#EFF6FF" }}
             title="Sécurité et conformité"
             paragraphs={[
               "Tous nos fournisseurs sont vérifiés : numéro AFMPS, licence de distribution, marquage CE. Aucun compromis sur la qualité.",

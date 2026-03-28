@@ -32,7 +32,7 @@ const sidebarSections = [
   {
     label: "COMPTE",
     items: [
-      { key: "finance", icon: DollarSign, path: "/vendor/finance" },
+      { key: "finances", icon: DollarSign, path: "/vendor/finance" },
       { key: "logistics", icon: Truck, path: "/vendor/logistics" },
       { key: "health", icon: HeartPulse, path: "/vendor/health" },
       { key: "messages", icon: MessageSquare, path: "/vendor/messages", badge: 2 },

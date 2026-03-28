@@ -39,7 +39,12 @@ const contentVariants = {
 
 export default function AccountPage() {
   const { data: products = [] } = useProducts();
+  const { user } = useAuth();
+  const { favorites, isFavorite, toggleFavorite } = useFavorites();
+  const { lists, createList, deleteList } = useFavoriteLists();
+  const { activities } = useRecentActivity();
   const [activeTab, setActiveTab] = useState("profil");
+  const [newListName, setNewListName] = useState("");
 
   return (
     <Layout>

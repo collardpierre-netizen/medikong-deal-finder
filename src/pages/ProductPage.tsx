@@ -405,14 +405,6 @@ export default function ProductPage() {
                     <Tag size={12} /> Marque : {brandData.name}
                   </Link>
                 )}
-                {manufacturerData && (
-                  <Link
-                    to={`/fabricant/${manufacturerData.slug}`}
-                    className="inline-flex items-center gap-1.5 text-xs font-medium border border-mk-line rounded-full px-3 py-1.5 text-mk-navy hover:border-mk-blue hover:text-mk-blue transition-colors"
-                  >
-                    <Building2 size={12} /> Fabricant : {manufacturerData.name}
-                  </Link>
-                )}
               </div>
 
               <div className="border-t border-mk-line my-4" />

@@ -546,13 +546,13 @@ export default function ProductPage() {
 
                           {/* === OTHER OFFERS === */}
                           {otherOffers.length > 0 && (
-                            <div className="border border-mk-line rounded-lg p-5 md:p-6">
-                              <div className="flex items-center justify-between mb-5 flex-wrap gap-2">
+                            <div className="border border-mk-line rounded-lg p-3 md:p-6">
+                              <div className="flex items-center justify-between mb-3 md:mb-5 flex-wrap gap-2">
                                 <div className="flex items-center gap-2">
-                                  <h3 className="text-lg font-bold text-mk-navy">{otherOffers.length} other offer{otherOffers.length > 1 ? 's' : ''}</h3>
-                                  <span className="text-sm text-mk-sec">Sorted by price</span>
+                                  <h3 className="text-base md:text-lg font-bold text-mk-navy">{otherOffers.length} autre{otherOffers.length > 1 ? 's' : ''} offre{otherOffers.length > 1 ? 's' : ''}</h3>
+                                  <span className="text-xs text-mk-sec">Par prix</span>
                                 </div>
-                                <span className="text-sm text-mk-blue font-medium">{formatPrice(otherOffers.reduce((s, o) => s + o.stockQuantity, 0)).replace('.', ',')} available</span>
+                                <span className="text-xs md:text-sm text-mk-blue font-medium">{formatPrice(otherOffers.reduce((s, o) => s + o.stockQuantity, 0)).replace('.', ',')} dispo</span>
                               </div>
 
                               {/* Table header */}

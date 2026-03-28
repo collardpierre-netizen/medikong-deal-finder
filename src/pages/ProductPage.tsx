@@ -273,6 +273,15 @@ export default function ProductPage() {
   const [showStickyBar, setShowStickyBar] = useState(false);
   const offerSectionRef = useRef<HTMLDivElement>(null);
   const [stickyQty, setStickyQty] = useState(1);
+  const { isFavorite, toggleFavorite } = useFavorites();
+  const { trackActivity } = useRecentActivity();
+
+  // Track product view
+  useEffect(() => {
+    if (product?.id && user) {
+      trackActivity.mutate({ activityType: "view_product", productId: product.id });
+    }
+  }, [product?.id, user?.id]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(

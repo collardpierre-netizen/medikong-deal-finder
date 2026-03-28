@@ -1,13 +1,17 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import AdminTopBar from "@/components/admin/AdminTopBar";
 import KpiCard from "@/components/admin/KpiCard";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { useBrands, useManufacturers } from "@/hooks/useAdminData";
-import {
-  Tag, Factory, Package, DollarSign, Star, Shield,
-} from "lucide-react";
+import { BrandFormDialog } from "@/components/admin/BrandFormDialog";
+import { ManufacturerFormDialog } from "@/components/admin/ManufacturerFormDialog";
+import { exportBrands, exportManufacturers, importBrands, importManufacturers } from "@/lib/xlsx-utils";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { Tag, Factory, Package, DollarSign, Shield, Plus, Download, Upload } from "lucide-react";
 
 const tierColors: Record<string, { bg: string; text: string }> = {
   Strategic: { bg: "#FCE7F3", text: "#BE185D" },
@@ -20,16 +24,57 @@ const tierColors: Record<string, { bg: string; text: string }> = {
 const fmt = (n: number) => n.toLocaleString("fr-BE");
 
 const AdminMarques = () => {
+  const qc = useQueryClient();
   const [tab, setTab] = useState("marques");
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
   const { data: brandsData = [], isLoading: loadingBrands } = useBrands();
   const { data: manufacturersData = [], isLoading: loadingMfrs } = useManufacturers();
 
+  const [brandDialogOpen, setBrandDialogOpen] = useState(false);
+  const [editBrand, setEditBrand] = useState<any>(null);
+  const [mfrDialogOpen, setMfrDialogOpen] = useState(false);
+  const [editMfr, setEditMfr] = useState<any>(null);
+
+  const brandFileRef = useRef<HTMLInputElement>(null);
+  const mfrFileRef = useRef<HTMLInputElement>(null);
+
   const selected = brandsData.find(b => b.name === selectedBrand);
+
+  const handleImport = async (file: File, type: "brands" | "manufacturers") => {
+    toast.info("Import en cours...");
+    try {
+      const result = type === "brands" ? await importBrands(file) : await importManufacturers(file);
+      toast.success(`${result.created} ${type === "brands" ? "marques" : "fabricants"} importé(e)s`);
+      if (result.errors.length > 0) toast.warning(`${result.errors.length} erreur(s): ${result.errors[0]}`);
+      qc.invalidateQueries({ queryKey: [type === "brands" ? "admin-brands" : "admin-manufacturers"] });
+    } catch (e: any) {
+      toast.error(e.message || "Erreur import");
+    }
+  };
 
   return (
     <div>
-      <AdminTopBar title="Marques & Fabricants" subtitle="Gestion du portefeuille marques" />
+      <AdminTopBar title="Marques & Fabricants" subtitle="Gestion du portefeuille marques"
+        actions={
+          <div className="flex gap-2">
+            {tab === "marques" ? (
+              <>
+                <Button variant="outline" size="sm" onClick={() => exportBrands()}><Download size={14} className="mr-1" />Export XLSX</Button>
+                <Button variant="outline" size="sm" onClick={() => brandFileRef.current?.click()}><Upload size={14} className="mr-1" />Import XLSX</Button>
+                <input ref={brandFileRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={e => { if (e.target.files?.[0]) handleImport(e.target.files[0], "brands"); e.target.value = ""; }} />
+                <Button size="sm" onClick={() => { setEditBrand(null); setBrandDialogOpen(true); }} className="bg-[#1E293B] hover:bg-[#1E293B]/90"><Plus size={14} className="mr-1" />Marque</Button>
+              </>
+            ) : (
+              <>
+                <Button variant="outline" size="sm" onClick={() => exportManufacturers()}><Download size={14} className="mr-1" />Export XLSX</Button>
+                <Button variant="outline" size="sm" onClick={() => mfrFileRef.current?.click()}><Upload size={14} className="mr-1" />Import XLSX</Button>
+                <input ref={mfrFileRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={e => { if (e.target.files?.[0]) handleImport(e.target.files[0], "manufacturers"); e.target.value = ""; }} />
+                <Button size="sm" onClick={() => { setEditMfr(null); setMfrDialogOpen(true); }} className="bg-[#1E293B] hover:bg-[#1E293B]/90"><Plus size={14} className="mr-1" />Fabricant</Button>
+              </>
+            )}
+          </div>
+        }
+      />
 
       <div className="grid grid-cols-4 gap-4 mb-6">
         <KpiCard icon={Tag} label="Marques actives" value={String(brandsData.length)} evolution={{ value: 2, label: "ce mois" }} iconColor="#1B5BDA" iconBg="#EFF6FF" />
@@ -51,7 +96,7 @@ const AdminMarques = () => {
                 <Table>
                   <TableHeader>
                     <TableRow style={{ backgroundColor: "#F8FAFC" }}>
-                      {["Marque", "Fabricant", "Pays", "Produits", "GMV mois", "Tier", "CE"].map(h => (
+                      {["Marque", "Fabricant", "Pays", "Produits", "GMV mois", "Tier", "CE", ""].map(h => (
                         <TableHead key={h} className="text-[11px] font-semibold" style={{ color: "#8B95A5" }}>{h}</TableHead>
                       ))}
                     </TableRow>
@@ -73,6 +118,9 @@ const AdminMarques = () => {
                         </TableCell>
                         <TableCell>
                           {(b.certifications || []).includes("CE") ? <Shield size={13} style={{ color: "#059669" }} /> : <span className="text-[10px]" style={{ color: "#8B95A5" }}>—</span>}
+                        </TableCell>
+                        <TableCell>
+                          <Button variant="ghost" size="sm" className="text-[11px] h-7" onClick={(e) => { e.stopPropagation(); setEditBrand(b); setBrandDialogOpen(true); }}>Éditer</Button>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -103,6 +151,7 @@ const AdminMarques = () => {
                     ))}
                   </div>
                 </div>
+                <Button variant="outline" size="sm" className="w-full mt-4 text-[12px]" onClick={() => { setEditBrand(selected); setBrandDialogOpen(true); }}>Modifier</Button>
               </div>
             )}
           </div>
@@ -114,7 +163,7 @@ const AdminMarques = () => {
               <Table>
                 <TableHeader>
                   <TableRow style={{ backgroundColor: "#F8FAFC" }}>
-                    {["Fabricant", "Pays", "Marques", "Produits sur MK", "Statut"].map(h => (
+                    {["Fabricant", "Pays", "Marques", "Produits sur MK", "Statut", ""].map(h => (
                       <TableHead key={h} className="text-[11px] font-semibold" style={{ color: "#8B95A5" }}>{h}</TableHead>
                     ))}
                   </TableRow>
@@ -143,6 +192,9 @@ const AdminMarques = () => {
                           {m.status === "active" ? "Actif" : m.status}
                         </Badge>
                       </TableCell>
+                      <TableCell>
+                        <Button variant="ghost" size="sm" className="text-[11px] h-7" onClick={() => { setEditMfr(m); setMfrDialogOpen(true); }}>Éditer</Button>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -151,6 +203,9 @@ const AdminMarques = () => {
           </div>
         </TabsContent>
       </Tabs>
+
+      <BrandFormDialog open={brandDialogOpen} onOpenChange={setBrandDialogOpen} brand={editBrand} manufacturers={manufacturersData} />
+      <ManufacturerFormDialog open={mfrDialogOpen} onOpenChange={setMfrDialogOpen} manufacturer={editMfr} />
     </div>
   );
 };

@@ -1,11 +1,12 @@
 import { Layout } from "@/components/layout/Layout";
 import { ProductImage } from "@/components/shared/ProductCard";
-import { Users, MapPin, Package, AlertCircle, Heart, Zap, Download, Layers, Mail, Phone, Clock, List, Plus, Trash2, Eye, ShoppingCart, Search } from "lucide-react";
+import { Users, MapPin, Package, AlertCircle, Heart, Zap, Download, Layers, Mail, Phone, Clock, List, Plus, Trash2, Eye, ShoppingCart, Search, TrendingDown, BarChart3 } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { formatPrice } from "@/data/mock";
 import { useProducts } from "@/hooks/useProducts";
 import { useFavorites, useFavoriteLists, useRecentActivity } from "@/hooks/useFavorites";
+import { usePriceWatches } from "@/hooks/usePriceWatches";
 import { useAuth } from "@/contexts/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { PageTransition } from "@/components/shared/PageTransition";
@@ -20,6 +21,7 @@ const tabs = [
   { key: "favoris", label: "Favoris", icon: Heart },
   { key: "listes", label: "Mes listes", icon: List },
   { key: "activite", label: "Activité récente", icon: Clock },
+  { key: "mesprix", label: "Mes prix", icon: BarChart3 },
   { key: "portefeuille", label: "Portefeuille", icon: Zap },
   { key: "catalogue", label: "Catalogue", icon: Download },
   { key: "bnpl", label: "Payer plus tard", icon: Layers },
@@ -43,6 +45,7 @@ export default function AccountPage() {
   const { favorites, isFavorite, toggleFavorite } = useFavorites();
   const { lists, createList, deleteList } = useFavoriteLists();
   const { activities } = useRecentActivity();
+  const { watches, removeWatch } = usePriceWatches();
   const [activeTab, setActiveTab] = useState("profil");
   const [newListName, setNewListName] = useState("");
 
@@ -415,6 +418,135 @@ export default function AccountPage() {
                             );
                           })}
                         </div>
+                      )}
+                    </div>
+                  )}
+
+                  {activeTab === "mesprix" && (
+                    <div>
+                      <div className="flex items-center justify-between mb-5">
+                        <div>
+                          <h2 className="text-xl font-bold text-mk-navy">Mes prix</h2>
+                          <p className="text-sm text-mk-sec">Suivez vos prix d'achat et comparez-les avec MediKong</p>
+                        </div>
+                      </div>
+                      {!user ? (
+                        <div className="text-center py-12 border border-mk-line rounded-xl">
+                          <BarChart3 size={36} className="mx-auto text-mk-ter mb-3" />
+                          <p className="text-sm text-mk-sec mb-3">Connectez-vous pour suivre vos prix</p>
+                          <Link to="/connexion"><Button className="bg-mk-blue hover:bg-[#1549b8] text-white">Se connecter</Button></Link>
+                        </div>
+                      ) : watches.length === 0 ? (
+                        <div className="text-center py-12 border border-mk-line rounded-xl">
+                          <TrendingDown size={36} className="mx-auto text-mk-ter mb-3" />
+                          <h3 className="text-lg font-bold text-mk-navy mb-1">Aucun prix suivi</h3>
+                          <p className="text-sm text-mk-sec">Saisissez votre prix d'achat sur une fiche produit pour commencer</p>
+                        </div>
+                      ) : (
+                        <>
+                          {/* Summary stats */}
+                          {(() => {
+                            const totalSavings = watches.reduce((sum, w: any) => {
+                              const mkPrice = w.products?.best_price_excl_vat || 0;
+                              const diff = w.user_price_excl_vat - mkPrice;
+                              return sum + (diff > 0 ? diff : 0);
+                            }, 0);
+                            const savingsCount = watches.filter((w: any) => {
+                              const mkPrice = w.products?.best_price_excl_vat || 0;
+                              return w.user_price_excl_vat > mkPrice;
+                            }).length;
+                            return (
+                              <div className="grid grid-cols-3 gap-3 mb-5">
+                                <div className="bg-[#EFF6FF] rounded-xl p-4 text-center">
+                                  <p className="text-2xl font-bold text-[#1B5BDA]">{watches.length}</p>
+                                  <p className="text-xs text-mk-sec mt-1">Produits suivis</p>
+                                </div>
+                                <div className="bg-green-50 rounded-xl p-4 text-center">
+                                  <p className="text-2xl font-bold text-mk-green">{savingsCount}</p>
+                                  <p className="text-xs text-mk-sec mt-1">Économies possibles</p>
+                                </div>
+                                <div className="bg-green-50 rounded-xl p-4 text-center">
+                                  <p className="text-2xl font-bold text-mk-green">{formatPrice(totalSavings)} €</p>
+                                  <p className="text-xs text-mk-sec mt-1">Économie totale</p>
+                                </div>
+                              </div>
+                            );
+                          })()}
+
+                          {/* Table */}
+                          <div className="border border-mk-line rounded-xl overflow-hidden">
+                            <div className="hidden sm:grid grid-cols-6 gap-2 px-4 py-2.5 bg-mk-alt text-xs font-semibold text-mk-sec">
+                              <span className="col-span-2">Produit</span>
+                              <span className="text-right">Mon prix (HTVA)</span>
+                              <span className="text-right">Meilleur MediKong</span>
+                              <span className="text-right">Différence</span>
+                              <span className="text-center">Actions</span>
+                            </div>
+                            {watches.map((w: any, i: number) => {
+                              const mkPrice = w.products?.best_price_excl_vat || 0;
+                              const diff = w.user_price_excl_vat - mkPrice;
+                              const diffPct = w.user_price_excl_vat > 0 ? ((diff / w.user_price_excl_vat) * 100) : 0;
+                              const hasSaving = diff > 0;
+                              return (
+                                <motion.div
+                                  key={w.id}
+                                  initial={{ opacity: 0, y: 8 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  transition={{ delay: i * 0.04 }}
+                                >
+                                  {/* Mobile card */}
+                                  <div className="sm:hidden border-t border-mk-line p-4 space-y-2">
+                                    <Link to={`/produit/${w.products?.slug || w.product_id}`} className="text-sm font-medium text-mk-navy hover:text-mk-blue">
+                                      {w.products?.name || "Produit"}
+                                    </Link>
+                                    <div className="flex justify-between text-sm">
+                                      <span className="text-mk-sec">Mon prix: <strong>{formatPrice(w.user_price_excl_vat)} €</strong></span>
+                                      <span className="text-mk-sec">MK: <strong className="text-[#1B5BDA]">{formatPrice(mkPrice)} €</strong></span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                      <span className={`text-sm font-semibold ${hasSaving ? "text-mk-green" : "text-mk-red"}`}>
+                                        {hasSaving ? "+" : ""}{formatPrice(diff)} € ({diffPct.toFixed(1)}%)
+                                      </span>
+                                      <button onClick={() => { removeWatch.mutate(w.id); toast.success("Suivi supprimé"); }} className="text-mk-red p-1">
+                                        <Trash2 size={14} />
+                                      </button>
+                                    </div>
+                                    <div className={`text-xs font-medium px-2 py-1 rounded w-fit ${hasSaving ? "bg-green-50 text-mk-green" : "bg-blue-50 text-[#1B5BDA]"}`}>
+                                      {hasSaving ? "📉 Économie possible" : "📊 MediKong plus cher"}
+                                    </div>
+                                  </div>
+                                  {/* Desktop row */}
+                                  <div className="hidden sm:grid grid-cols-6 gap-2 px-4 py-3 border-t border-mk-line items-center text-sm hover:bg-mk-alt">
+                                    <div className="col-span-2">
+                                      <Link to={`/produit/${w.products?.slug || w.product_id}`} className="font-medium text-mk-navy hover:text-mk-blue">
+                                        {w.products?.name || "Produit"}
+                                      </Link>
+                                      <p className="text-xs text-mk-ter">{w.products?.label} · CNK: {w.products?.cnk_code}</p>
+                                    </div>
+                                    <p className="text-right font-medium">{formatPrice(w.user_price_excl_vat)} €</p>
+                                    <p className="text-right font-medium text-[#1B5BDA]">{formatPrice(mkPrice)} €</p>
+                                    <div className="text-right">
+                                      <p className={`font-semibold ${hasSaving ? "text-mk-green" : "text-mk-red"}`}>
+                                        {hasSaving ? "+" : ""}{formatPrice(diff)} €
+                                      </p>
+                                      <p className={`text-xs ${hasSaving ? "text-mk-green" : "text-mk-red"}`}>
+                                        ({diffPct > 0 ? "+" : ""}{diffPct.toFixed(1)}%)
+                                      </p>
+                                    </div>
+                                    <div className="flex items-center justify-center gap-2">
+                                      <span className={`text-xs font-medium px-2 py-1 rounded ${hasSaving ? "bg-green-50 text-mk-green" : "bg-blue-50 text-[#1B5BDA]"}`}>
+                                        {hasSaving ? "📉 Économie" : "📊 Plus cher"}
+                                      </span>
+                                      <button onClick={() => { removeWatch.mutate(w.id); toast.success("Supprimé"); }} className="text-mk-red hover:bg-red-50 p-1.5 rounded transition-colors">
+                                        <Trash2 size={14} />
+                                      </button>
+                                    </div>
+                                  </div>
+                                </motion.div>
+                              );
+                            })}
+                          </div>
+                        </>
                       )}
                     </div>
                   )}

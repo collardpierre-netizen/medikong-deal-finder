@@ -1359,6 +1359,44 @@ export type Database = {
         }
         Relationships: []
       }
+      user_price_watches: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          product_id: string
+          updated_at: string
+          user_id: string
+          user_price_excl_vat: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          product_id: string
+          updated_at?: string
+          user_id: string
+          user_price_excl_vat: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          product_id?: string
+          updated_at?: string
+          user_id?: string
+          user_price_excl_vat?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_price_watches_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vendors: {
         Row: {
           address_line1: string | null

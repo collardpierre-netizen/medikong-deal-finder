@@ -73,7 +73,7 @@ const investSteps = [
 ];
 
 const faqs = [
-  { q: "Quel est le montant minimum pour investir ?", a: "Vous pouvez investir à partir de 1 000 €. Les souscriptions se font par multiples de 1 000 €. Il n'y a pas de montant maximum, mais l'avantage fiscal Tax Shelter est plafonné à 15 000 € par personne par an." },
+  { q: "Quel est le montant minimum pour investir ?", a: "Vous pouvez investir à partir de 1 000 €. Les souscriptions se font par multiples de 1 000 €. Il n'y a pas de montant maximum, mais l'avantage fiscal Tax Shelter n'est applicable qu'à partir de 5 000 € et est plafonné à 15 000 € par personne par an." },
   { q: "Qu'est-ce que le Tax Shelter ?", a: "Le Tax Shelter est un incitant fiscal belge permettant aux investisseurs particuliers de récupérer 45% de leur investissement dans une startup via une réduction d'impôt sur les personnes physiques." },
   { q: "Pourquoi une fondation pour les actionnaires ?", a: "La fondation privée (SPV) regroupe tous les petits actionnaires en une seule entité juridique. Cela simplifie la gouvernance de MediKong, protège vos droits et facilite les futures opérations (dividendes, exit)." },
   { q: "Quand vais-je recevoir mes actions ?", a: "Après signature de la convention et réception de votre virement, vos actions sont émises sous 15 jours ouvrables. Vous recevez un certificat d'actionnaire et votre attestation Tax Shelter." },
@@ -94,10 +94,11 @@ const navAnchors = [
 
 /* ───────── TAX SHELTER SLIDER ───────── */
 function TaxShelterSimulator() {
-  const [amount, setAmount] = useState(10000);
-  const reduction = Math.round(amount * 0.45);
+  const [amount, setAmount] = useState(7500);
+  const eligible = amount >= 5000 ? amount : 0;
+  const reduction = Math.round(eligible * 0.45);
   const net = amount - reduction;
-  const remaining = 15000 - amount;
+  const remaining = eligible > 0 ? 15000 - amount : 15000;
   const pct = ((amount - 1000) / (15000 - 1000)) * 100;
 
   return (
@@ -119,6 +120,12 @@ function TaxShelterSimulator() {
           className="absolute inset-0 w-full h-full appearance-none bg-transparent cursor-pointer [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-[0_0_8px_rgba(5,150,105,0.5)] [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-track]:bg-transparent" />
       </div>
 
+      {amount < 5000 && (
+        <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg px-4 py-2.5 mb-4 text-xs text-amber-300">
+          ⚠️ Le Tax Shelter n'est éligible qu'à partir de 5 000 €. En dessous, aucune réduction d'impôt ne s'applique.
+        </div>
+      )}
+
       {/* Breakdown rows */}
       <div className="space-y-3">
         <div className="flex justify-between text-sm border-b border-white/10 pb-3">
@@ -127,17 +134,17 @@ function TaxShelterSimulator() {
         </div>
         <div className="flex justify-between text-sm border-b border-white/10 pb-3">
           <span className="text-white/60">Montant éligible</span>
-          <span className="font-semibold text-white">{amount.toLocaleString("fr-BE")} €</span>
+          <span className="font-semibold text-white">{eligible.toLocaleString("fr-BE")} €</span>
         </div>
         <div className="flex justify-between text-sm border-b border-white/10 pb-3">
           <span className="text-white/60">Réduction d'impôt (45%)</span>
-          <span className="font-semibold text-mk-green">– {reduction.toLocaleString("fr-BE")} €</span>
+          <span className={`font-semibold ${reduction > 0 ? "text-mk-green" : "text-white/40"}`}>– {reduction.toLocaleString("fr-BE")} €</span>
         </div>
         <div className="bg-white/5 rounded-lg px-4 py-3 flex justify-between text-sm">
           <span className="font-bold text-white">Coût réel net</span>
-          <span className="font-bold text-mk-green text-lg">{net.toLocaleString("fr-BE")} €</span>
+          <span className={`font-bold text-lg ${reduction > 0 ? "text-mk-green" : "text-white"}`}>{net.toLocaleString("fr-BE")} €</span>
         </div>
-        {remaining > 0 && (
+        {remaining > 0 && eligible > 0 && (
           <div className="flex justify-between text-sm pt-1">
             <span className="text-white/40">Solde Tax Shelter disponible</span>
             <span className="font-medium text-white/70">{remaining.toLocaleString("fr-BE")} €</span>

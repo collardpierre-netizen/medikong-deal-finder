@@ -46,7 +46,7 @@ export default function VendorLogistics() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <VStat label="A expedier" value="3" icon="Package" color="#F59E0B" />
         <VStat label="En transit" value="5" icon="Truck" color="#1B5BDA" />
-        <VStat label="Livrees (mois)" value="48" icon="CheckCircle" color="#059669" />
+        <VStat label="Livrees (mois)" value="48" icon="CircleCheckBig" color="#059669" />
         <VStat label="Delai moyen" value="1,8j" icon="Clock" color="#059669" />
       </div>
 

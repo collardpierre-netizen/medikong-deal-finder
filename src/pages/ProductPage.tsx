@@ -360,7 +360,7 @@ export default function ProductPage() {
   return (
     <Layout>
       <PageTransition>
-         <div className="mk-container py-6 md:py-8">
+         <div className="mk-container py-4 md:py-8 pb-24 md:pb-8">
            {/* Back to results */}
            <button
              onClick={() => navigate(-1)}
@@ -372,13 +372,13 @@ export default function ProductPage() {
           <div className="flex flex-col md:flex-row gap-6 md:gap-8">
             {/* Image */}
             <motion.div
-              className="w-full md:w-[400px] shrink-0 md:sticky md:top-20 self-start"
+              className="w-full md:w-[400px] shrink-0 md:sticky md:top-20 self-start max-h-[220px] md:max-h-none overflow-hidden"
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
             >
               <ProductImage product={product} className="border border-mk-line mb-3" />
-              <div className="flex gap-2">
+               <div className="hidden md:flex gap-2">
                 {[0, 1, 2, 3].map(i => {
                   const colorKey = product.color || "blue";
                   const colors = productColors[colorKey] || productColors.blue;
@@ -456,7 +456,7 @@ export default function ProductPage() {
               {/* Filter offers */}
               <div ref={offerSectionRef}>
               <AnimatedSection delay={0.1}>
-                <div className="bg-mk-alt border border-mk-line rounded-lg p-4 md:p-5 mb-6">
+                <div className="hidden md:block bg-mk-alt border border-mk-line rounded-lg p-3 md:p-5 mb-4 md:mb-6">
                   <div className="flex items-center gap-2 mb-4">
                     <Sliders size={14} className="text-mk-navy" />
                     <span className="text-sm font-bold text-mk-navy">Filtrer les offres</span>
@@ -518,10 +518,10 @@ export default function ProductPage() {
                       return (
                         <>
                           {/* Best offer card */}
-                          <div className="border border-mk-line rounded-lg p-5 md:p-6">
-                            <div className="flex items-center justify-between mb-5 flex-wrap gap-2">
-                              <h3 className="text-lg font-bold text-mk-navy">Lowest priced offer</h3>
-                              <span className="text-sm text-mk-blue font-medium">{formatPrice(totalStock).replace('.', ',')} available</span>
+                          <div className="border border-mk-line rounded-lg p-3 md:p-6">
+                            <div className="flex items-center justify-between mb-3 md:mb-5 flex-wrap gap-2">
+                              <h3 className="text-base md:text-lg font-bold text-mk-navy">Meilleure offre</h3>
+                              <span className="text-xs md:text-sm text-mk-blue font-medium">{formatPrice(totalStock).replace('.', ',')} dispo</span>
                             </div>
 
                             {/* Table header */}
@@ -546,13 +546,13 @@ export default function ProductPage() {
 
                           {/* === OTHER OFFERS === */}
                           {otherOffers.length > 0 && (
-                            <div className="border border-mk-line rounded-lg p-5 md:p-6">
-                              <div className="flex items-center justify-between mb-5 flex-wrap gap-2">
+                            <div className="border border-mk-line rounded-lg p-3 md:p-6">
+                              <div className="flex items-center justify-between mb-3 md:mb-5 flex-wrap gap-2">
                                 <div className="flex items-center gap-2">
-                                  <h3 className="text-lg font-bold text-mk-navy">{otherOffers.length} other offer{otherOffers.length > 1 ? 's' : ''}</h3>
-                                  <span className="text-sm text-mk-sec">Sorted by price</span>
+                                  <h3 className="text-base md:text-lg font-bold text-mk-navy">{otherOffers.length} autre{otherOffers.length > 1 ? 's' : ''} offre{otherOffers.length > 1 ? 's' : ''}</h3>
+                                  <span className="text-xs text-mk-sec">Par prix</span>
                                 </div>
-                                <span className="text-sm text-mk-blue font-medium">{formatPrice(otherOffers.reduce((s, o) => s + o.stockQuantity, 0)).replace('.', ',')} available</span>
+                                <span className="text-xs md:text-sm text-mk-blue font-medium">{formatPrice(otherOffers.reduce((s, o) => s + o.stockQuantity, 0)).replace('.', ',')} dispo</span>
                               </div>
 
                               {/* Table header */}

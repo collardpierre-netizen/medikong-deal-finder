@@ -162,9 +162,8 @@ export default function AdminCommissions() {
       const template = rules.find(r => r.id === templateId);
       if (!template) throw new Error("Règle introuvable");
       // Delete existing vendor-specific rules
-      await supabase.from("commission_rules").delete().eq("vendor_id", vendorId);
-      // Clone template for vendor
-      const { error } = await supabase.from("commission_rules").insert({
+      await supabase.from("margin_rules").delete().eq("vendor_id", vendorId);
+      const { error } = await supabase.from("margin_rules").insert({
         vendor_id: vendorId,
         name: template.name,
         model: template.model,

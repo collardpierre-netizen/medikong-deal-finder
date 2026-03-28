@@ -78,6 +78,13 @@ import AdminAuditLog from "./pages/admin/AdminAuditLog";
 import AdminOnboardingCMS from "./pages/admin/AdminOnboardingCMS";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
+import AboutPage from "./pages/entreprise/AboutPage";
+import WhyMedikongPage from "./pages/entreprise/WhyMedikongPage";
+import HowItWorksPage from "./pages/entreprise/HowItWorksPage";
+import TeamPage from "./pages/entreprise/TeamPage";
+import CareersPage from "./pages/entreprise/CareersPage";
+import PressPage from "./pages/entreprise/PressPage";
+import InvestirPage from "./pages/entreprise/InvestirPage";
 
 const queryClient = new QueryClient();
 
@@ -115,6 +122,13 @@ const App = () => (
             <Route path="/invest" element={<InvestPage />} />
             <Route path="/mot-de-passe-oublie" element={<ForgotPasswordPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route path="/a-propos" element={<AboutPage />} />
+            <Route path="/pourquoi-medikong" element={<WhyMedikongPage />} />
+            <Route path="/comment-ca-marche" element={<HowItWorksPage />} />
+            <Route path="/equipe" element={<TeamPage />} />
+            <Route path="/carrieres" element={<CareersPage />} />
+            <Route path="/presse" element={<PressPage />} />
+            <Route path="/investir" element={<InvestirPage />} />
 
             <Route path="/admin/login" element={<AdminLoginPage />} />
 

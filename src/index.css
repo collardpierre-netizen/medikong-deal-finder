@@ -5,6 +5,9 @@
 @tailwind utilities;
 
 @layer base {
+  h1, .font-display {
+    font-family: 'Plus Jakarta Sans', 'DM Sans', sans-serif;
+  }
   :root {
     --background: 0 0% 100%;
     --foreground: 215 22% 15%;

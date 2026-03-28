@@ -147,7 +147,7 @@ export default function AdminCommissions() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("commission_rules").delete().eq("id", id);
+      const { error } = await supabase.from("margin_rules").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {

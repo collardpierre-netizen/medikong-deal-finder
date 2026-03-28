@@ -40,6 +40,33 @@ export default function ProductPage() {
   const { data: products = [] } = useProducts();
   const { addToCart } = useCart();
   const { data: realOffers = [] } = useProductOffers(product?.id);
+
+  // Fetch indirect (external) offers
+  const { data: indirectOffers = [] } = useQuery({
+    queryKey: ["indirect-offers", product?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("offers_indirect")
+        .select("*, leads_partners(name)")
+        .eq("product_id", product!.id)
+        .eq("status", "active");
+      return data || [];
+    },
+    enabled: !!product?.id,
+  });
+
+  // Fetch market price offers
+  const { data: marketOffers = [] } = useQuery({
+    queryKey: ["market-offers", product?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("offers_market")
+        .select("*")
+        .eq("product_id", product!.id);
+      return data || [];
+    },
+    enabled: !!product?.id,
+  });
   
   // Fetch brand and manufacturer details for CTA links
   const { data: brandData } = useQuery({

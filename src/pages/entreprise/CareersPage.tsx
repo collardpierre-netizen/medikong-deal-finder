@@ -15,10 +15,10 @@ const careerStats = [
 ];
 
 const perks = [
-  { icon: Star, color: "text-[#E70866]", bg: "bg-[#FFF1F5]", title: "Equity", desc: "Participation au capital dès le premier jour. Vous construisez, vous possédez." },
-  { icon: Home, color: "text-[#1B5BDA]", bg: "bg-[#EFF6FF]", title: "Remote-first", desc: "Travaillez d'où vous voulez. Réunions async, horaires flexibles." },
-  { icon: Heart, color: "text-[#059669]", bg: "bg-[#ECFDF5]", title: "Impact santé", desc: "Votre travail améliore directement l'accès aux soins de milliers de patients." },
-  { icon: BookOpen, color: "text-[#7C3AED]", bg: "bg-[#F5F3FF]", title: "Formation continue", desc: "1 500€/an de budget formation, conférences et livres inclus." },
+  { icon: Star, color: "text-[#1B5BDA]", bg: "bg-[#EFF6FF]", title: "Equity", desc: "Participation au capital dès le premier jour. Vous construisez, vous possédez." },
+  { icon: Home, color: "text-[#1549b8]", bg: "bg-[#E8F0FE]", title: "Remote-first", desc: "Travaillez d'où vous voulez. Réunions async, horaires flexibles." },
+  { icon: Heart, color: "text-[#0F3280]", bg: "bg-[#E0EAFF]", title: "Impact santé", desc: "Votre travail améliore directement l'accès aux soins de milliers de patients." },
+  { icon: BookOpen, color: "text-[#1B5BDA]", bg: "bg-[#EFF6FF]", title: "Formation continue", desc: "1 500€/an de budget formation, conférences et livres inclus." },
 ];
 
 export default function CareersPage() {

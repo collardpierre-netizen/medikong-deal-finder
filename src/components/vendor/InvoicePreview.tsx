@@ -37,8 +37,7 @@ export default function InvoicePreview({ order, docType }: Props) {
       {/* Header band */}
       <div className="bg-[#2B4C9B] text-white rounded-t-lg px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-[#E70866] rounded-md flex items-center justify-center text-white font-bold text-sm">M</div>
-          <span className="text-lg font-bold">MediKong</span>
+          <img src={logoLight} alt="MediKong.pro" className="h-8" />
         </div>
         <span className="text-sm font-semibold uppercase tracking-wider">{isInvoice ? "Facture finale" : "Bon de livraison"}</span>
       </div>

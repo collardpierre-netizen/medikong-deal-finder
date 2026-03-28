@@ -23,6 +23,7 @@ export interface Product {
   color?: string;
   iconName?: string;
   imageUrl?: string;
+  imageUrls?: string[];
   categoryL1?: string;
   categoryL2?: string;
   categoryL3?: string;

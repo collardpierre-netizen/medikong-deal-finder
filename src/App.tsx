@@ -25,6 +25,7 @@ import CategoryPage from "./pages/CategoryPage";
 import PromotionsPage from "./pages/PromotionsPage";
 import SellerOnboardingPage from "./pages/SellerOnboardingPage";
 import BuyerOnboardingPage from "./pages/BuyerOnboardingPage";
+import OnboardingPage from "./pages/OnboardingPage";
 import BuyerCompletionPage from "./pages/BuyerCompletionPage";
 import NotFound from "./pages/NotFound";
 import InvestPage from "./pages/InvestPage";

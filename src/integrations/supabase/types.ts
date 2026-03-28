@@ -375,6 +375,92 @@ export type Database = {
           },
         ]
       }
+      impersonation_actions: {
+        Row: {
+          action: string
+          admin_user_id: string
+          created_at: string
+          entity_id: string
+          entity_type: string
+          id: string
+          ip_address: string | null
+          payload: Json
+          session_id: string
+          target_user_id: string
+        }
+        Insert: {
+          action: string
+          admin_user_id: string
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          id?: string
+          ip_address?: string | null
+          payload?: Json
+          session_id: string
+          target_user_id: string
+        }
+        Update: {
+          action?: string
+          admin_user_id?: string
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          ip_address?: string | null
+          payload?: Json
+          session_id?: string
+          target_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "impersonation_actions_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "impersonation_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      impersonation_sessions: {
+        Row: {
+          actions_count: number
+          admin_email: string
+          admin_user_id: string
+          ended_at: string | null
+          id: string
+          started_at: string
+          target_company_name: string
+          target_email: string
+          target_type: string
+          target_user_id: string
+        }
+        Insert: {
+          actions_count?: number
+          admin_email: string
+          admin_user_id: string
+          ended_at?: string | null
+          id?: string
+          started_at?: string
+          target_company_name: string
+          target_email: string
+          target_type: string
+          target_user_id: string
+        }
+        Update: {
+          actions_count?: number
+          admin_email?: string
+          admin_user_id?: string
+          ended_at?: string | null
+          id?: string
+          started_at?: string
+          target_company_name?: string
+          target_email?: string
+          target_type?: string
+          target_user_id?: string
+        }
+        Relationships: []
+      }
       import_jobs: {
         Row: {
           column_mapping: Json | null

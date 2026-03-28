@@ -132,14 +132,14 @@ export default function ResultsPage() {
                     {[12, 28, 45, 38, 22, 55, 15, 30].map((h, i) => (
                       <motion.div
                         key={i}
-                        className={`w-full rounded-t ${i === 5 ? "bg-mk-navy" : "bg-mk-alt"}`}
+                        className={`w-full rounded-t ${i === 5 ? "bg-mk-navy" : "bg-mk-lb"}`}
                         initial={{ height: 0 }}
                         animate={{ height: `${h}%` }}
                         transition={{ duration: 0.5, delay: i * 0.05 }}
                       />
                     ))}
                   </div>
-                  <div className="flex justify-between text-xs text-mk-ter">
+                  <div className="flex justify-between text-xs font-medium text-mk-sec">
                     <span>0 EUR</span><span>100 EUR</span>
                   </div>
                 </div>

@@ -101,6 +101,7 @@ const AdminCMS = () => {
     queryClient.invalidateQueries({ queryKey: ["cms-hero-images"] });
   };
 
+  const insertHeroImage = async (imageUrl: string, altText: string) => {
     const maxOrder = heroImages.length ? Math.max(...heroImages.map(i => i.sort_order)) + 1 : 0;
     const { error } = await sb.from("cms_hero_images").insert({ image_url: imageUrl, alt_text: altText || "", sort_order: maxOrder });
     if (error) throw error;

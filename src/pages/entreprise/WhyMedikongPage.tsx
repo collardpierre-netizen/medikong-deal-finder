@@ -1,3 +1,4 @@
+import { usePageImages } from "@/hooks/usePageImages";
 import { EntrepriseLayout } from "@/components/entreprise/EntrepriseLayout";
 import { EntrepriseHero } from "@/components/entreprise/EntrepriseHero";
 import { Section } from "@/components/entreprise/Section";

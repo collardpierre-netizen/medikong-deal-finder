@@ -88,7 +88,19 @@ const AdminCMS = () => {
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-hero-images"] }); queryClient.invalidateQueries({ queryKey: ["cms-hero-images"] }); toast.success("Image supprimée"); },
   });
 
-  const insertHeroImage = async (imageUrl: string, altText: string) => {
+  const reorderImage = async (idx: number, direction: "up" | "down") => {
+    const swapIdx = direction === "up" ? idx - 1 : idx + 1;
+    if (swapIdx < 0 || swapIdx >= heroImages.length) return;
+    const a = heroImages[idx];
+    const b = heroImages[swapIdx];
+    await Promise.all([
+      sb.from("cms_hero_images").update({ sort_order: b.sort_order }).eq("id", a.id),
+      sb.from("cms_hero_images").update({ sort_order: a.sort_order }).eq("id", b.id),
+    ]);
+    queryClient.invalidateQueries({ queryKey: ["admin-hero-images"] });
+    queryClient.invalidateQueries({ queryKey: ["cms-hero-images"] });
+  };
+
     const maxOrder = heroImages.length ? Math.max(...heroImages.map(i => i.sort_order)) + 1 : 0;
     const { error } = await sb.from("cms_hero_images").insert({ image_url: imageUrl, alt_text: altText || "", sort_order: maxOrder });
     if (error) throw error;

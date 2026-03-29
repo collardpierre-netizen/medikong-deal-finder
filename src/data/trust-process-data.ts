@@ -193,4 +193,8 @@ export const helpFaqItems: FaqItem[] = [
   { question: "Comment modifier ou annuler une commande ?", answer: "Vous pouvez modifier ou annuler une commande tant qu'elle n'a pas été expédiée. Rendez-vous dans 'Mes commandes' de votre espace client." },
   { question: "Quels sont les moyens de paiement acceptés ?", answer: "Nous acceptons Visa, Mastercard, Bancontact, virement SEPA et le paiement différé 30/60 jours via Mondu (sous conditions)." },
   { question: "Comment contacter le support ?", answer: "Envoyez un email à support@medikong.pro (réponse sous 24h) ou via le formulaire de contact. Le chat en ligne sera bientôt disponible." },
+  { question: "Comment suivre ma commande ?", answer: "Un numéro de suivi vous est envoyé par email dès l'expédition. Vous pouvez aussi suivre votre commande en temps réel depuis votre espace client dans 'Mes commandes'." },
+  { question: "Quels sont les délais de livraison ?", answer: "La plupart des commandes sont expédiées sous 24-48h. La livraison standard prend 2-5 jours ouvrables en Belgique, et 3-7 jours dans le reste de l'UE." },
+  { question: "Comment devenir vendeur sur MediKong ?", answer: "Rendez-vous sur la page 'Devenir vendeur' et remplissez le formulaire d'inscription. Notre équipe vérifiera vos documents sous 48h." },
+  { question: "Comment fonctionne la TVA sur MediKong ?", answer: "Les prix affichés sont HT. La TVA applicable est calculée automatiquement selon le pays de livraison et le type de produit (taux standard ou réduit)." },
 ];

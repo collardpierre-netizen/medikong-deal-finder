@@ -17,8 +17,9 @@ export function HelpCategoryCard({ icon: Icon, title, description, articleCount,
             <li key={a.label}>
               <Link
                 to={a.href}
-                className="text-sm text-foreground/80 hover:text-primary transition-colors leading-snug block"
+                className="text-sm text-foreground/80 hover:text-primary transition-colors leading-snug flex items-start gap-1.5 group"
               >
+                <ChevronRight size={14} className="mt-0.5 shrink-0 text-muted-foreground group-hover:text-primary transition-colors" />
                 {a.label}
               </Link>
             </li>

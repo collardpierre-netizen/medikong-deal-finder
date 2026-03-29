@@ -9,6 +9,10 @@ import { CtaBanner } from "@/components/entreprise/CtaBanner";
 import { testimonials } from "@/data/entreprise-data";
 
 export default function WhyMedikongPage() {
+  const { getImage } = usePageImages("why-medikong");
+  const compImg = getImage("split-comparateur");
+  const analImg = getImage("split-analytics");
+  const secImg = getImage("split-security");
   return (
     <EntrepriseLayout>
       <EntrepriseHero

@@ -1,0 +1,169 @@
+{
+  "common": {
+    "search": "Search",
+    "searchPlaceholder": "Search products, CNK, EAN, brands...",
+    "login": "Sign in",
+    "signup": "Create free account",
+    "cart": "Cart",
+    "account": "My account",
+    "addToCart": "Add",
+    "viewAll": "View all",
+    "allBrands": "View all brands",
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "retry": "Retry",
+    "close": "Close",
+    "save": "Save",
+    "cancel": "Cancel",
+    "back": "Back",
+    "next": "Next",
+    "priceVat": "VAT incl.",
+    "priceExVat": "VAT excl.",
+    "seller": "seller",
+    "sellers": "sellers",
+    "products": "products",
+    "autoTranslated": "Automatically translated",
+    "showOriginal": "Show original",
+    "translationActivated": "Translation enabled",
+    "translationDescription": "This symbol indicates that content written by sellers has been automatically translated. You can change this setting at any time.",
+    "translationSettings": "Translation settings",
+    "admin": "Admin",
+    "vendor": "Seller",
+    "vendorSpace": "Seller Area",
+    "administration": "Administration",
+    "signOut": "Sign out"
+  },
+  "nav": {
+    "shop": "Shop",
+    "promotions": "Deals",
+    "categories": "Categories",
+    "brands": "Brands",
+    "professionals": "Professionals",
+    "sourcing": "Sourcing",
+    "account": "My account"
+  },
+  "trustBar": {
+    "certifiedCE": "CE certified products",
+    "verifiedSuppliers": "Verified suppliers",
+    "buyerProtection": "Buyer protection"
+  },
+  "hero": {
+    "title": "Your medical supplies at the best B2B price",
+    "subtitle": "Compare prices from hundreds of suppliers. Buy directly or find the best external deal.",
+    "searchExamples": "E.g.:",
+    "exampleGloves": "Nitrile gloves",
+    "exampleBetadine": "Betadine",
+    "exampleTena": "TENA",
+    "exampleMasks": "FFP2 masks"
+  },
+  "stats": {
+    "suppliers": "Verified suppliers",
+    "products": "Products",
+    "pharmacies": "Partner pharmacies"
+  },
+  "valueProps": {
+    "bestPrices": "Best B2B prices",
+    "bestPricesDesc": "Compare offers from 350+ wholesalers, brands and distributors in one unified catalog.",
+    "simpleOrders": "Simplified ordering",
+    "simpleOrdersDesc": "Low MOQ, integrated payment and tracked delivery. Access wholesale prices usually reserved for large groups.",
+    "guaranteed": "Guaranteed authenticity",
+    "guaranteedDesc": "Every product comes from verified suppliers. 100% CE and FAMHP compliant."
+  },
+  "brands": {
+    "title": "Premium & trending brands",
+    "filters": {
+      "bestSellers": "Best sellers",
+      "care": "Care",
+      "diagnostic": "Diagnostic",
+      "hygiene": "Hygiene",
+      "equipment": "Equipment"
+    }
+  },
+  "comparison": {
+    "title": "MediKong vs. traditional sourcing",
+    "traditional": "Traditional sourcing",
+    "medikong": "MediKong.pro",
+    "trad1": "Rigid supplier contracts",
+    "trad2": "High minimum orders (€10K+)",
+    "trad3": "Long negotiation process",
+    "trad4": "Frequent stockouts",
+    "trad5": "Manual catalog comparison",
+    "trad6": "No protection in case of errors",
+    "mk1": "No contract, no commitment",
+    "mk2": "MOV from €150 excl. VAT",
+    "mk3": "Instant access to 350+ suppliers",
+    "mk4": "15+ suppliers per reference",
+    "mk5": "Real-time stock analysis",
+    "mk6": "Buyer protection included"
+  },
+  "categories": {
+    "title": "Explore popular categories"
+  },
+  "popularProducts": {
+    "title": "Popular products"
+  },
+  "howToOrder": {
+    "title": "How to order",
+    "step1Title": "Search & select",
+    "step1Desc": "Browse the catalog to find the best deals and add them to your cart.",
+    "step2Title": "Compare & adjust",
+    "step2Desc": "Review your cart, compare direct and external offers, adjust quantities.",
+    "step3Title": "Order & pay",
+    "step3Desc": "Confirm and pay by card, bank transfer or deferred payment (30/60 days).",
+    "step4Title": "Delivery & support",
+    "step4Desc": "Shipping within 24-48h. A problem? Guaranteed resolution within 24h."
+  },
+  "faq": {
+    "title": "Frequently asked questions",
+    "q1": "How does MediKong work?",
+    "a1": "MediKong is a B2B marketplace that aggregates offers from over 350 verified medical suppliers. You can buy directly, compare market prices, or be redirected to the most competitive external offers.",
+    "q2": "Which professionals can sign up?",
+    "a2": "All healthcare professionals in Belgium: pharmacies, hospitals, clinics, nursing homes, medical practices, physiotherapists, dentists, purchasing centers and authorized resellers.",
+    "q3": "Do prices include VAT?",
+    "a3": "Prices are displayed excluding VAT. The applicable VAT is added at checkout based on your status and location.",
+    "q4": "How does delivery work?",
+    "a4": "Orders are shipped within 24-48h from our suppliers' warehouses in Belgium and Europe. Tracking is integrated in your customer area."
+  },
+  "cta": {
+    "title": "Find the best deals on thousands of medical references.",
+    "subtitle": "One place for all your B2B medical purchases."
+  },
+  "footer": {
+    "description": "The B2B marketplace for medical supplies in Belgium.",
+    "solutions": "Our solutions",
+    "catalog": "Catalog",
+    "supplierVerification": "Supplier verification",
+    "qualityGuarantee": "Quality guarantee",
+    "howToOrder": "How to order",
+    "howWeWork": "How we work",
+    "logistics": "Logistics",
+    "deferredPayment": "Deferred payment",
+    "becomeSeller": "Become a seller",
+    "testimonials": "Testimonials",
+    "company": "Company",
+    "about": "About",
+    "team": "Team",
+    "careers": "Careers",
+    "press": "Press",
+    "invest": "Invest",
+    "contact": "Contact",
+    "helpCenter": "Help center",
+    "legal": "Legal",
+    "legalNotice": "Legal notice",
+    "terms": "Terms & Conditions",
+    "privacy": "Privacy policy",
+    "cookies": "Cookies",
+    "copyright": "MediKong {{year}} — B2B platform reserved for healthcare professionals — FAMHP compliance"
+  },
+  "investBanner": {
+    "msg1": "Invest in MediKong — Tax Shelter 45% — Phase 2 fundraising open",
+    "msg2": "From €1,000 — Tax Shelter 45% from €5,000 — Immediate tax deduction"
+  },
+  "languageSelector": {
+    "title": "Language and region",
+    "suggested": "Suggested languages and regions",
+    "chooseLanguage": "Choose a language and region",
+    "translation": "Translation",
+    "autoTranslateDesc": "Automatically translate descriptions and seller content to {{language}}"
+  }
+}

@@ -1,0 +1,169 @@
+{
+  "common": {
+    "search": "Zoeken",
+    "searchPlaceholder": "Zoek producten, CNK, EAN, merken...",
+    "login": "Inloggen",
+    "signup": "Gratis account aanmaken",
+    "cart": "Winkelwagen",
+    "account": "Mijn account",
+    "addToCart": "Toevoegen",
+    "viewAll": "Alles bekijken",
+    "allBrands": "Alle merken bekijken",
+    "loading": "Laden...",
+    "error": "Er is een fout opgetreden",
+    "retry": "Opnieuw proberen",
+    "close": "Sluiten",
+    "save": "Opslaan",
+    "cancel": "Annuleren",
+    "back": "Terug",
+    "next": "Volgende",
+    "priceVat": "Incl. BTW",
+    "priceExVat": "Excl. BTW",
+    "seller": "verkoper",
+    "sellers": "verkopers",
+    "products": "producten",
+    "autoTranslated": "Automatisch vertaald",
+    "showOriginal": "Origineel tonen",
+    "translationActivated": "Vertaling geactiveerd",
+    "translationDescription": "Dit symbool geeft aan dat de door verkopers geschreven inhoud automatisch is vertaald. U kunt deze instelling op elk moment wijzigen.",
+    "translationSettings": "Vertaalinstellingen",
+    "admin": "Admin",
+    "vendor": "Verkoper",
+    "vendorSpace": "Verkopersruimte",
+    "administration": "Administratie",
+    "signOut": "Uitloggen"
+  },
+  "nav": {
+    "shop": "Shop",
+    "promotions": "Promoties",
+    "categories": "Categorieën",
+    "brands": "Merken",
+    "professionals": "Professionals",
+    "sourcing": "Sourcing",
+    "account": "Mijn account"
+  },
+  "trustBar": {
+    "certifiedCE": "CE-gecertificeerde producten",
+    "verifiedSuppliers": "Geverifieerde leveranciers",
+    "buyerProtection": "Kopersbescherming"
+  },
+  "hero": {
+    "title": "Uw medische benodigdheden aan de beste B2B-prijs",
+    "subtitle": "Vergelijk prijzen van honderden leveranciers. Koop rechtstreeks of vind de beste externe aanbieding.",
+    "searchExamples": "Bv:",
+    "exampleGloves": "Nitrilhandschoenen",
+    "exampleBetadine": "Betadine",
+    "exampleTena": "TENA",
+    "exampleMasks": "FFP2-maskers"
+  },
+  "stats": {
+    "suppliers": "Geverifieerde leveranciers",
+    "products": "Producten",
+    "pharmacies": "Partnerapotheken"
+  },
+  "valueProps": {
+    "bestPrices": "Beste B2B-prijzen",
+    "bestPricesDesc": "Vergelijk aanbiedingen van 350+ groothandels, merken en distributeurs in één uniforme catalogus.",
+    "simpleOrders": "Vereenvoudigde bestellingen",
+    "simpleOrdersDesc": "Lage MOQ, geïntegreerde betaling en tracked levering. Toegang tot groothandelsprijzen.",
+    "guaranteed": "Gegarandeerde authenticiteit",
+    "guaranteedDesc": "Elk product komt van geverifieerde leveranciers. 100% CE- en FAGG-conform."
+  },
+  "brands": {
+    "title": "Premium & trending merken",
+    "filters": {
+      "bestSellers": "Bestverkocht",
+      "care": "Verzorging",
+      "diagnostic": "Diagnostiek",
+      "hygiene": "Hygiëne",
+      "equipment": "Apparatuur"
+    }
+  },
+  "comparison": {
+    "title": "MediKong vs. traditionele sourcing",
+    "traditional": "Traditionele sourcing",
+    "medikong": "MediKong.pro",
+    "trad1": "Rigide leverancierscontracten",
+    "trad2": "Hoge minimumbestellingen (10K€+)",
+    "trad3": "Lang onderhandelingsproces",
+    "trad4": "Frequente voorraadtekorten",
+    "trad5": "Handmatige catalogusvergelijking",
+    "trad6": "Geen bescherming bij fouten",
+    "mk1": "Zonder contract, zonder verplichting",
+    "mk2": "MOV vanaf €150 excl. BTW",
+    "mk3": "Directe toegang tot 350+ leveranciers",
+    "mk4": "15+ leveranciers per referentie",
+    "mk5": "Realtime voorraadanalyse",
+    "mk6": "Kopersbescherming inbegrepen"
+  },
+  "categories": {
+    "title": "Ontdek populaire categorieën"
+  },
+  "popularProducts": {
+    "title": "Populaire producten"
+  },
+  "howToOrder": {
+    "title": "Hoe bestellen",
+    "step1Title": "Zoek & selecteer",
+    "step1Desc": "Blader door de catalogus om de beste aanbiedingen te vinden en voeg ze toe aan uw winkelwagen.",
+    "step2Title": "Vergelijk & pas aan",
+    "step2Desc": "Controleer uw winkelwagen, vergelijk directe en externe aanbiedingen, pas hoeveelheden aan.",
+    "step3Title": "Bestel & betaal",
+    "step3Desc": "Bevestig en betaal per kaart, overschrijving of uitgestelde betaling (30/60 dagen).",
+    "step4Title": "Levering & support",
+    "step4Desc": "Verzending binnen 24-48u. Een probleem? Gegarandeerde oplossing binnen 24u."
+  },
+  "faq": {
+    "title": "Veelgestelde vragen",
+    "q1": "Hoe werkt MediKong?",
+    "a1": "MediKong is een B2B-marketplace die aanbiedingen van meer dan 350 geverifieerde medische leveranciers samenbrengt. U kunt rechtstreeks kopen, prijzen vergelijken of worden doorverwezen naar de meest competitieve externe aanbiedingen.",
+    "q2": "Welke professionals kunnen zich inschrijven?",
+    "a2": "Alle zorgprofessionals in België: apotheken, ziekenhuizen, klinieken, woonzorgcentra, artsenpraktijken, kinesitherapeuten, tandartsen, aankoopcentra en erkende wederverkopers.",
+    "q3": "Zijn de prijzen inclusief BTW?",
+    "a3": "De prijzen worden exclusief BTW weergegeven. De toepasselijke BTW wordt toegevoegd bij het afrekenen op basis van uw status en locatie.",
+    "q4": "Hoe werkt de levering?",
+    "a4": "Bestellingen worden binnen 24-48u verzonden vanuit de magazijnen van onze leveranciers in België en Europa. Tracking is geïntegreerd in uw klantenruimte."
+  },
+  "cta": {
+    "title": "Vind de beste aanbiedingen op duizenden medische referenties.",
+    "subtitle": "Eén plek voor al uw medische B2B-aankopen."
+  },
+  "footer": {
+    "description": "Dé B2B-marketplace voor medische benodigdheden in België.",
+    "solutions": "Onze oplossingen",
+    "catalog": "Catalogus",
+    "supplierVerification": "Leveranciersverificatie",
+    "qualityGuarantee": "Kwaliteitsgarantie",
+    "howToOrder": "Hoe bestellen",
+    "howWeWork": "Hoe wij werken",
+    "logistics": "Logistiek",
+    "deferredPayment": "Uitgestelde betaling",
+    "becomeSeller": "Verkoper worden",
+    "testimonials": "Getuigenissen",
+    "company": "Bedrijf",
+    "about": "Over ons",
+    "team": "Team",
+    "careers": "Vacatures",
+    "press": "Pers",
+    "invest": "Investeren",
+    "contact": "Contact",
+    "helpCenter": "Helpcentrum",
+    "legal": "Juridisch",
+    "legalNotice": "Wettelijke vermeldingen",
+    "terms": "Algemene voorwaarden",
+    "privacy": "Privacybeleid",
+    "cookies": "Cookies",
+    "copyright": "MediKong {{year}} — B2B-platform voorbehouden aan zorgprofessionals — FAGG/AFMPS-conformiteit"
+  },
+  "investBanner": {
+    "msg1": "Investeer in MediKong — Tax Shelter 45% — Fondsenwerving Fase 2 open",
+    "msg2": "Vanaf €1.000 — Tax Shelter 45% vanaf €5.000 — Onmiddellijke belastingvermindering"
+  },
+  "languageSelector": {
+    "title": "Taal en regio",
+    "suggested": "Voorgestelde talen en regio's",
+    "chooseLanguage": "Kies een taal en regio",
+    "translation": "Vertaling",
+    "autoTranslateDesc": "Beschrijvingen en verkopersinhoud automatisch vertalen naar het {{language}}"
+  }
+}

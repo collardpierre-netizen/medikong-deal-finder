@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { AnimatedSection, StaggerContainer, StaggerItem, HoverCard } from "@/components/shared/PageTransition";
 import { HeroImageGallery } from "@/components/home/HeroImageGallery";
 import { Helmet } from "react-helmet-async";
+import { HomeTestimonials } from "@/components/home/HomeTestimonials";
 
 const iconMap: Record<string, React.ReactNode> = {
   Shield: <Shield size={20} className="text-mk-navy" />,

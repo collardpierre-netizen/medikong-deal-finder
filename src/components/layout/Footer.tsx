@@ -39,11 +39,11 @@ export function Footer() {
           <div>
             <h4 className="font-semibold text-sm text-mk-navy mb-3">Entreprise</h4>
             {[
-              { label: "À propos", to: "/a-propos" },
-              { label: "Équipe", to: "/equipe" },
-              { label: "Carrières", to: "/carrieres" },
-              { label: "Presse", to: "/presse" },
-              { label: "Investir", to: "/investir" },
+              { label: "À propos", to: "/entreprise/a-propos" },
+              { label: "Équipe", to: "/entreprise/equipe" },
+              { label: "Carrières", to: "/entreprise/carrieres" },
+              { label: "Presse", to: "/entreprise/presse" },
+              { label: "Investir", to: "/entreprise/investir" },
               { label: "Contact", to: "/contact" },
               { label: "Centre d'aide", to: "/centre-aide" },
             ].map(l => (

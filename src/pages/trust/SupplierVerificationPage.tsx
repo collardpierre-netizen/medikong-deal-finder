@@ -1,4 +1,5 @@
 import { usePageImages } from "@/hooks/usePageImages";
+import supplierPartnersImg from "@/assets/pages/supplier-partners.jpg";
 import { TrustProcessLayout } from "@/components/trust/TrustProcessLayout";
 import { EntrepriseHero } from "@/components/entreprise/EntrepriseHero";
 import { Section } from "@/components/entreprise/Section";
@@ -43,8 +44,8 @@ export default function SupplierVerificationPage() {
           checklist={["Accords directs avec les fabricants", "Prix négociés et exclusifs", "Stock garanti sur les références clés", "Support technique dédié"]}
           imagePlaceholder="Partenariats fournisseurs"
           imageGradient="from-[#1B5BDA] to-[#0F3280]"
-          imageUrl={partImg?.image_url}
-          imageAlt={partImg?.alt_text}
+          imageUrl={partImg?.image_url || supplierPartnersImg}
+          imageAlt={partImg?.alt_text || "Partenariats fournisseurs MediKong"}
         />
       </Section>
       <CtaBanner

@@ -4,6 +4,7 @@ import { EntrepriseHero } from "@/components/entreprise/EntrepriseHero";
 import { Section } from "@/components/entreprise/Section";
 import { StatsRow } from "@/components/entreprise/StatsRow";
 import { SplitSection } from "@/components/entreprise/SplitSection";
+import aboutMissionImg from "@/assets/pages/about-mission.jpg";
 import { HorizontalTimeline } from "@/components/entreprise/HorizontalTimeline";
 import { Eye, Users, Star, CheckCircle, Mail, Phone, MapPin } from "lucide-react";
 import { aboutTimeline, companyInfo } from "@/data/entreprise-data";
@@ -54,8 +55,8 @@ export default function AboutPage() {
           ]}
           imagePlaceholder="Photo : équipe dans un entrepôt médical"
           imageGradient="from-blue-100 to-indigo-200"
-          imageUrl={missionImg?.image_url}
-          imageAlt={missionImg?.alt_text}
+          imageUrl={missionImg?.image_url || aboutMissionImg}
+          imageAlt={missionImg?.alt_text || "Équipe MediKong dans un entrepôt médical"}
         />
       </Section>
 

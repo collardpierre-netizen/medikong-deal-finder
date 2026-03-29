@@ -7,6 +7,9 @@ import { ComparisonTable } from "@/components/entreprise/ComparisonTable";
 import { TestimonialCard } from "@/components/entreprise/TestimonialCard";
 import { CtaBanner } from "@/components/entreprise/CtaBanner";
 import { testimonials } from "@/data/entreprise-data";
+import whyComparateurImg from "@/assets/pages/why-comparateur.jpg";
+import whyAnalyticsImg from "@/assets/pages/why-analytics.jpg";
+import whySecurityImg from "@/assets/pages/why-security.jpg";
 
 export default function WhyMedikongPage() {
   const { getImage } = usePageImages("why-medikong");
@@ -33,8 +36,8 @@ export default function WhyMedikongPage() {
             ]}
             imagePlaceholder="Screenshot : comparateur de prix"
             imageGradient="from-blue-100 to-indigo-200"
-            imageUrl={compImg?.image_url}
-            imageAlt={compImg?.alt_text}
+            imageUrl={compImg?.image_url || whyComparateurImg}
+            imageAlt={compImg?.alt_text || "Comparateur de prix MediKong"}
           />
           <SplitSection
             reverse
@@ -46,8 +49,8 @@ export default function WhyMedikongPage() {
             ]}
             imagePlaceholder="Screenshot : dashboard analytique"
             imageGradient="from-blue-100 to-indigo-200"
-            imageUrl={analImg?.image_url}
-            imageAlt={analImg?.alt_text}
+            imageUrl={analImg?.image_url || whyAnalyticsImg}
+            imageAlt={analImg?.alt_text || "Dashboard analytique MediKong"}
           />
           <SplitSection
             tag={{ label: "Sécurité", color: "#1B5BDA", bg: "#EFF6FF" }}
@@ -58,8 +61,8 @@ export default function WhyMedikongPage() {
             ]}
             imagePlaceholder="Illustration : bouclier de sécurité"
             imageGradient="from-blue-100 to-indigo-200"
-            imageUrl={secImg?.image_url}
-            imageAlt={secImg?.alt_text}
+            imageUrl={secImg?.image_url || whySecurityImg}
+            imageAlt={secImg?.alt_text || "Sécurité et conformité MediKong"}
           />
         </div>
       </Section>

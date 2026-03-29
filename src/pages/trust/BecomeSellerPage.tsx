@@ -1,4 +1,5 @@
 import { usePageImages } from "@/hooks/usePageImages";
+import sellerDashboardImg from "@/assets/pages/seller-dashboard.jpg";
 import { TrustProcessLayout } from "@/components/trust/TrustProcessLayout";
 import { EntrepriseHero } from "@/components/entreprise/EntrepriseHero";
 import { Section } from "@/components/entreprise/Section";
@@ -52,8 +53,8 @@ export default function BecomeSellerPage() {
           checklist={["Gestion du catalogue et des prix", "Suivi des commandes en temps réel", "Analytics et rapports de vente", "Gestion financière et paiements", "Alertes et opportunités marché"]}
           imagePlaceholder="Dashboard vendeur"
           imageGradient="from-[#1B5BDA] to-[#0F3280]"
-          imageUrl={dashImg?.image_url}
-          imageAlt={dashImg?.alt_text}
+          imageUrl={dashImg?.image_url || sellerDashboardImg}
+          imageAlt={dashImg?.alt_text || "Dashboard vendeur MediKong"}
           reverse
         />
       </Section>

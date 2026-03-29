@@ -14,6 +14,8 @@ const bnplFaq: FaqItem[] = [
 ];
 
 export default function BuyNowPayLaterPage() {
+  const { getImage } = usePageImages("buy-now-pay-later");
+  const monduImg = getImage("split-mondu");
   return (
     <TrustProcessLayout>
       <EntrepriseHero

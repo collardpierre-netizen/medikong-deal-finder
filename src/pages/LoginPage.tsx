@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff } from "lucide-react";
+import logoDark from "@/assets/Logo_horizontal_sombre2.png";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");

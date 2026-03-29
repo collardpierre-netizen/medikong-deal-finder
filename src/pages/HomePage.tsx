@@ -215,26 +215,34 @@ export default function HomePage() {
         </StaggerContainer>
       </AnimatedSection>
 
-      {/* ═══ POPULAR BRANDS — horizontal scroll ═══ */}
+      {/* ═══ POPULAR BRANDS — carousel with filter pills ═══ */}
       <AnimatedSection className="py-14 md:py-20">
         <div className="mk-container">
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-2xl font-bold text-mk-navy">Marques populaires</h2>
-            <Link to="/marques" className="text-sm text-mk-blue hover:underline flex items-center gap-1">
-              Toutes les marques <ChevronRight size={14} />
+          <h2 className="text-2xl md:text-3xl font-bold text-mk-navy mb-8 text-center">Marques premium & tendances</h2>
+          <div className="flex items-center justify-center gap-2 flex-wrap mb-8">
+            {["Meilleures ventes", "Soins", "Diagnostic", "Hygiène", "Équipement"].map((pill, i) => (
+              <span key={pill} className={`px-4 py-2 rounded-full text-xs font-semibold border cursor-pointer transition-all ${i === 0 ? 'bg-mk-navy text-white border-mk-navy' : 'bg-white text-mk-navy border-mk-line hover:border-mk-navy'}`}>
+                {pill}
+              </span>
+            ))}
+          </div>
+          <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
+            {popularBrands.map(b => (
+              <motion.div key={b} whileHover={{ scale: 1.03 }} className="shrink-0">
+                <Link to={`/marque/${b.toLowerCase().replace('.', '-')}`} className="block w-[160px]">
+                  <div className="aspect-square rounded-xl bg-gradient-to-br from-mk-alt to-white border border-mk-line flex items-center justify-center mb-2 overflow-hidden hover:shadow-md transition-shadow">
+                    <span className="text-lg font-bold text-mk-navy/70">{b}</span>
+                  </div>
+                  <p className="text-xs font-semibold text-mk-navy text-center uppercase tracking-wide">{b}</p>
+                </Link>
+              </motion.div>
+            ))}
+          </div>
+          <div className="text-center mt-8">
+            <Link to="/marques" className="inline-flex items-center gap-2 px-8 py-3 border border-mk-line rounded-lg text-sm font-semibold text-mk-navy hover:border-mk-navy hover:shadow-sm transition-all">
+              Voir toutes les marques
             </Link>
           </div>
-          <StaggerContainer className="flex gap-3 flex-wrap">
-            {popularBrands.map(b => (
-              <StaggerItem key={b}>
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }} transition={{ type: "spring", stiffness: 400, damping: 17 }}>
-                  <Link to={`/marque/${b.toLowerCase().replace('.', '-')}`} className="flex items-center justify-center px-6 py-3 border border-mk-line rounded-xl text-sm font-medium text-mk-navy hover:border-mk-navy hover:shadow-sm transition-all bg-white">
-                    {b}
-                  </Link>
-                </motion.div>
-              </StaggerItem>
-            ))}
-          </StaggerContainer>
         </div>
       </AnimatedSection>
 

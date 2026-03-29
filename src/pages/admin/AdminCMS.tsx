@@ -8,9 +8,10 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Layout, Image, Layers, GripVertical, Eye, EyeOff, FileText, ToggleLeft, Trash2, Plus, Upload, ArrowUp, ArrowDown,
+  Layout, Image, Layers, GripVertical, Eye, EyeOff, FileText, ToggleLeft, Trash2, Plus, Upload, ArrowUp, ArrowDown, ImageIcon,
 } from "lucide-react";
 import { toast } from "sonner";
+import { PAGE_IMAGE_REGISTRY } from "@/data/page-image-registry";
 
 // --- Static mock data for non-DB tabs ---
 const pages = [

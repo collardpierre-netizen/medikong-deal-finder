@@ -45,6 +45,66 @@ export default function VendorCommissionTab() {
         </div>
       </VCard>
 
+      {/* Progress bar toward next tier */}
+      {currentTier.name !== "Expert" && (() => {
+        const nextTier = TIERS[TIERS.indexOf(currentTier) + 1];
+        const progress = ((currentGmv - currentTier.min) / (currentTier.max - currentTier.min)) * 100;
+        const remaining = currentTier.max - currentGmv;
+        return (
+          <VCard className="!p-4">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">{currentTier.icon}</span>
+                <span className="text-[12px] font-semibold text-[#1D2530]">{currentTier.name}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-[12px] font-semibold text-[#1D2530]">{nextTier.name}</span>
+                <span className="text-lg">{nextTier.icon}</span>
+              </div>
+            </div>
+            <div className="relative h-3 bg-[#F1F5F9] rounded-full overflow-hidden">
+              <div
+                className="absolute inset-y-0 left-0 rounded-full transition-all duration-700 ease-out"
+                style={{
+                  width: `${Math.min(progress, 100)}%`,
+                  background: `linear-gradient(90deg, ${currentTier.color}, ${nextTier.color})`,
+                }}
+              />
+              {/* Milestone markers */}
+              <div className="absolute inset-y-0 left-1/4 w-px bg-white/60" />
+              <div className="absolute inset-y-0 left-1/2 w-px bg-white/60" />
+              <div className="absolute inset-y-0 left-3/4 w-px bg-white/60" />
+            </div>
+            <div className="flex items-center justify-between mt-2">
+              <span className="text-[11px] text-[#8B95A5]">{fmtEur(currentTier.min)}</span>
+              <span className="text-[11px] font-semibold" style={{ color: nextTier.color }}>
+                Plus que {fmtEur(remaining)} pour passer à {nextTier.name} ({nextTier.rate}%)
+              </span>
+              <span className="text-[11px] text-[#8B95A5]">{fmtEur(currentTier.max)}</span>
+            </div>
+            <div className="mt-2 text-center">
+              <span className="text-[20px] font-bold" style={{ color: currentTier.color }}>{Math.round(progress)}%</span>
+              <span className="text-[11px] text-[#8B95A5] ml-1">complété</span>
+            </div>
+          </VCard>
+        );
+      })()}
+
+      {currentTier.name === "Expert" && (
+        <VCard className="!p-4 bg-gradient-to-r from-[#059669]/5 to-transparent border-[#059669]/20">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">🎉</span>
+            <div>
+              <p className="text-[13px] font-semibold text-[#059669]">Félicitations ! Vous êtes au palier maximum</p>
+              <p className="text-[11px] text-[#8B95A5]">Vous bénéficiez du meilleur taux de commission à 10%</p>
+            </div>
+          </div>
+          <div className="relative h-3 bg-[#F1F5F9] rounded-full overflow-hidden mt-3">
+            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-[#059669] to-[#34D399]" />
+          </div>
+        </VCard>
+      )}
+
       {/* Tier cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         {TIERS.map(tier => {

@@ -29,7 +29,7 @@ Deno.serve(async (req) => {
     if (!config?.bearer_token) throw new Error("Qogita bearer token not configured");
 
     const baseUrl = config.base_url || "https://api.qogita.com";
-    const headers = { Authorization: `Bearer ${config.bearer_token}`, Accept: "application/json" };
+    const headers = { Authorization: `Bearer ${config.bearer_token}`, "Content-Type": "application/json", Accept: "application/json" };
 
     // Get all Qogita products
     const { data: products, error: pError } = await supabase

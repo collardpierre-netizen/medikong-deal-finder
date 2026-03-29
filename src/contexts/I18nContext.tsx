@@ -198,6 +198,8 @@ const translations: Record<Lang, Record<string, string>> = {
     logs: "Logs",
     users: "Benutzer",
     auditLog: "Audit Log",
+    apiKeys: "API Schlüssel",
+    apiDocs: "API Doku",
     management: "VERWALTUNG",
     intelligence: "INTELLIGENZ",
     compliance: "COMPLIANCE",

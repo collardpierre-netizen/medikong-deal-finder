@@ -385,6 +385,9 @@ export default function HomePage() {
         </div>
       </AnimatedSection>
 
+      {/* ═══ TESTIMONIALS ═══ */}
+      <HomeTestimonials />
+
       {/* ═══ FINAL CTA BANNER — Qogita style ═══ */}
       <section className="py-16 md:py-24">
         <div className="mk-container max-w-3xl text-center">

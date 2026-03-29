@@ -148,6 +148,7 @@ const AdminCMS = () => {
           <TabsTrigger value="collections" className="text-[13px]">Collections</TabsTrigger>
           <TabsTrigger value="homepage" className="text-[13px]">Sections Homepage</TabsTrigger>
           <TabsTrigger value="hero-images" className="text-[13px]">Images Hero</TabsTrigger>
+          <TabsTrigger value="page-images" className="text-[13px]">Images Pages</TabsTrigger>
         </TabsList>
 
         {/* Pages tab */}

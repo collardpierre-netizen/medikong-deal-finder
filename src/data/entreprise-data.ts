@@ -165,10 +165,9 @@ export const faqItems: FaqItem[] = [
 ];
 
 export const commissionTiers: Tier[] = [
-  { name: "Bronze", rate: "14%", range: "0 - 10k€/mois" },
-  { name: "Silver", rate: "13%", range: "10k - 50k€/mois" },
-  { name: "Gold", rate: "12%", range: "50k - 200k€/mois", highlighted: true },
-  { name: "Platinum", rate: "10%", range: "200k+€/mois" },
+  { name: "Starter", rate: "20%", range: "0 – 10k€/mois" },
+  { name: "Pro", rate: "15%", range: "10k – 50k€/mois", highlighted: true },
+  { name: "Expert", rate: "10%", range: "50k+€/mois" },
 ];
 
 export const investTimeline: VTimelineNode[] = [

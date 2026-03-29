@@ -110,10 +110,9 @@ export const logisticsFaqItems: FaqItem[] = [
 ];
 
 export const commissionTiers: CommissionTierData[] = [
-  { icon: "🥉", name: "Bronze", rate: "14%", volumeRange: "0 – 5 000 €/mois", features: ["Accès marketplace", "Support standard", "Dashboard vendeur", "Paiement J+15"], highlighted: false },
-  { icon: "🥈", name: "Silver", rate: "13%", volumeRange: "5 000 – 15 000 €/mois", features: ["Tout Bronze", "Badge vérifié", "Priorité Buy Box", "Paiement J+10"], highlighted: false },
-  { icon: "🥇", name: "Gold", rate: "12%", volumeRange: "15 000 – 50 000 €/mois", features: ["Tout Silver", "Account manager", "Promotions sponsorisées", "Paiement J+7"], highlighted: true },
-  { icon: "💎", name: "Platinum", rate: "10%", volumeRange: "50 000 €+/mois", features: ["Tout Gold", "Commission négociée", "API dédiée", "Paiement J+3"], highlighted: false },
+  { icon: "🥉", name: "Starter", rate: "20%", volumeRange: "0 – 10 000 €/mois", features: ["Référencement standard", "Accès marketplace", "Dashboard vendeur", "Support par email", "Paiement J+30"], highlighted: false },
+  { icon: "🥈", name: "Pro", rate: "15%", volumeRange: "10 000 – 50 000 €/mois", features: ["Boost référencement (+15%)", "Priorité Buy Box", "Badge \"Vendeur vérifié\"", "Account manager dédié", "Support prioritaire", "Paiement J+20"], highlighted: true },
+  { icon: "🥇", name: "Expert", rate: "10%", volumeRange: "50 000 €+/mois", features: ["Référencement premium (top positions)", "Badge \"Top Vendeur\"", "Promotions sponsorisées incluses", "API dédiée", "Support VIP", "Paiement J+15"], highlighted: false },
 ];
 
 export const testimonials: TestimonialData[] = [

@@ -1,4 +1,5 @@
 import { usePageImages } from "@/hooks/usePageImages";
+import bnplMonduImg from "@/assets/pages/bnpl-mondu.jpg";
 import { TrustProcessLayout } from "@/components/trust/TrustProcessLayout";
 import { EntrepriseHero } from "@/components/entreprise/EntrepriseHero";
 import { Section } from "@/components/entreprise/Section";

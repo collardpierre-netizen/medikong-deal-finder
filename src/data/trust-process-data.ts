@@ -114,9 +114,6 @@ export const commissionTiers: CommissionTierData[] = [
   { icon: "🥈", name: "Pro", rate: "15%", volumeRange: "10 000 – 50 000 €/mois", features: ["Boost référencement (+15%)", "Priorité Buy Box", "Badge \"Vendeur vérifié\"", "Account manager dédié", "Support prioritaire", "Paiement J+20"], highlighted: true },
   { icon: "🥇", name: "Expert", rate: "10%", volumeRange: "50 000 €+/mois", features: ["Référencement premium (top positions)", "Badge \"Top Vendeur\"", "Promotions sponsorisées incluses", "API dédiée", "Support VIP", "Paiement J+15"], highlighted: false },
 ];
-  { icon: "🥇", name: "Gold", rate: "12%", volumeRange: "15 000 – 50 000 €/mois", features: ["Tout Silver", "Account manager", "Promotions sponsorisées", "Paiement J+7"], highlighted: true },
-  { icon: "💎", name: "Platinum", rate: "10%", volumeRange: "50 000 €+/mois", features: ["Tout Gold", "Commission négociée", "API dédiée", "Paiement J+3"], highlighted: false },
-];
 
 export const testimonials: TestimonialData[] = [
   { quote: "MediKong nous a permis de centraliser nos achats de consommables avec une transparence totale sur les prix. Un vrai gain de temps au quotidien.", authorName: "Dr. Sophie Claessens", authorRole: "Directrice médicale — Clinique Saint-Luc, Bruxelles", authorInitials: "SC" },

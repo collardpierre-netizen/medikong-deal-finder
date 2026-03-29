@@ -126,6 +126,7 @@ const AdminCMS = () => {
       if (pageFileInputRef.current) pageFileInputRef.current.value = "";
     }
   };
+  const toggleImage = useMutation({
     mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
       const { error } = await sb.from("cms_hero_images").update({ is_active }).eq("id", id);
       if (error) throw error;

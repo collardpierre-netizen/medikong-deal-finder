@@ -355,6 +355,60 @@ const AdminCMS = () => {
             </div>
           </div>
         </TabsContent>
+
+        {/* Page Images tab */}
+        <TabsContent value="page-images">
+          <div className="bg-white rounded-lg border p-5" style={{ borderColor: "#E2E8F0" }}>
+            <h3 className="text-[14px] font-semibold mb-2" style={{ color: "#1D2530" }}>Images des pages statiques</h3>
+            <p className="text-[12px] mb-5" style={{ color: "#8B95A5" }}>
+              Uploadez des images pour remplacer les placeholders sur les pages publiques (Devenir vendeur, Vérification fournisseurs, etc.).
+            </p>
+            <input type="file" accept="image/*" ref={pageFileInputRef} onChange={handlePageImageUpload} className="hidden" />
+            <div className="space-y-2">
+              {PAGE_IMAGE_REGISTRY.map((slot) => {
+                const existing = pageImages.find(
+                  (i) => i.page_key === slot.pageKey && i.section_key === slot.sectionKey
+                );
+                return (
+                  <div key={`${slot.pageKey}-${slot.sectionKey}`} className="flex items-center gap-4 px-4 py-3 rounded-lg" style={{ backgroundColor: "#F8FAFC" }}>
+                    {existing ? (
+                      <img src={existing.image_url} alt={existing.alt_text} className="w-20 h-14 object-cover rounded-lg border border-border" />
+                    ) : (
+                      <div className="w-20 h-14 rounded-lg border border-dashed border-gray-300 flex items-center justify-center bg-gray-50">
+                        <ImageIcon size={16} className="text-gray-400" />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[12px] font-semibold" style={{ color: "#1D2530" }}>{slot.label}</p>
+                      <p className="text-[10px]" style={{ color: "#8B95A5" }}>
+                        {existing ? existing.image_url.split("/").pop() : "Aucune image configurée"}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="gap-1.5 text-[11px]"
+                        disabled={pageUploading}
+                        onClick={() => {
+                          setActivePageUpload({ pageKey: slot.pageKey, sectionKey: slot.sectionKey });
+                          pageFileInputRef.current?.click();
+                        }}
+                      >
+                        <Upload size={12} /> {existing ? "Remplacer" : "Uploader"}
+                      </Button>
+                      {existing && (
+                        <button onClick={() => deletePageImage.mutate(existing.id)} className="text-red-400 hover:text-red-600">
+                          <Trash2 size={14} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </TabsContent>
       </Tabs>
     </div>
   );

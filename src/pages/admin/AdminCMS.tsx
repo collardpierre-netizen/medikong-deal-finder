@@ -262,8 +262,12 @@ const AdminCMS = () => {
             </div>
 
             <div className="space-y-3">
-              {heroImages.map((img) => (
+              {heroImages.map((img, idx) => (
                 <div key={img.id} className="flex items-center gap-4 px-4 py-3 rounded-lg" style={{ backgroundColor: "#F8FAFC" }}>
+                  <div className="flex flex-col gap-0.5">
+                    <button onClick={() => reorderImage(idx, "up")} disabled={idx === 0} className="text-muted-foreground hover:text-foreground disabled:opacity-30"><ArrowUp size={14} /></button>
+                    <button onClick={() => reorderImage(idx, "down")} disabled={idx === heroImages.length - 1} className="text-muted-foreground hover:text-foreground disabled:opacity-30"><ArrowDown size={14} /></button>
+                  </div>
                   <img src={img.image_url} alt={img.alt_text} className="w-20 h-14 object-cover rounded-lg border border-border" />
                   <div className="flex-1 min-w-0">
                     <p className="text-[12px] font-medium truncate" style={{ color: "#1D2530" }}>{img.alt_text || "Sans description"}</p>

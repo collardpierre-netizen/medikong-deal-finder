@@ -1,4 +1,5 @@
 import { usePageImages } from "@/hooks/usePageImages";
+import supplierPartnersImg from "@/assets/pages/supplier-partners.jpg";
 import { TrustProcessLayout } from "@/components/trust/TrustProcessLayout";
 import { EntrepriseHero } from "@/components/entreprise/EntrepriseHero";
 import { Section } from "@/components/entreprise/Section";

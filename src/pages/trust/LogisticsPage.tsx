@@ -16,6 +16,8 @@ const deliveryOptions = [
 ];
 
 export default function LogisticsPage() {
+  const { getImage } = usePageImages("logistics");
+  const trackImg = getImage("split-tracking");
   return (
     <TrustProcessLayout>
       <EntrepriseHero

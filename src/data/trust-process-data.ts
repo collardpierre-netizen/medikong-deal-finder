@@ -137,6 +137,11 @@ export const contactSubjects = [
 ];
 
 export const helpCategories: HelpCategoryData[] = [
+  { icon: Rocket, title: "Premiers pas", description: "Créer votre compte, passer votre première commande et naviguer le catalogue.", articleCount: 5, articles: [
+    { label: "Comment créer un compte professionnel ?", href: "/onboarding" },
+    { label: "Comment passer ma première commande ?", href: "#" },
+    { label: "Comment naviguer le catalogue ?", href: "#" },
+  ]},
   { icon: ShoppingCart, title: "Commandes & Paiements", description: "Passer commande, moyens de paiement, factures et paiement différé.", articleCount: 12, articles: [
     { label: "Comment passer une commande ?", href: "#" },
     { label: "Quels modes de paiement sont acceptés ?", href: "#" },
@@ -146,6 +151,11 @@ export const helpCategories: HelpCategoryData[] = [
     { label: "Comment suivre ma commande ?", href: "#" },
     { label: "Quels sont les délais de livraison ?", href: "/logistique" },
     { label: "Comment retourner un produit ?", href: "#" },
+  ]},
+  { icon: FileText, title: "TVA & Facturation", description: "Comprendre la TVA, télécharger vos factures et gérer vos données fiscales.", articleCount: 4, articles: [
+    { label: "Comment fonctionne la TVA sur MediKong ?", href: "#" },
+    { label: "Où télécharger mes factures ?", href: "#" },
+    { label: "Comment modifier mes données de facturation ?", href: "#" },
   ]},
   { icon: UserCircle, title: "Mon compte", description: "Inscription, paramètres, gestion des utilisateurs et sécurité.", articleCount: 6, articles: [
     { label: "Comment créer un compte professionnel ?", href: "/onboarding" },

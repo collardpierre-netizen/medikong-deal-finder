@@ -49,8 +49,8 @@ export default function WhyMedikongPage() {
             ]}
             imagePlaceholder="Screenshot : dashboard analytique"
             imageGradient="from-blue-100 to-indigo-200"
-            imageUrl={analImg?.image_url}
-            imageAlt={analImg?.alt_text}
+            imageUrl={analImg?.image_url || whyAnalyticsImg}
+            imageAlt={analImg?.alt_text || "Dashboard analytique MediKong"}
           />
           <SplitSection
             tag={{ label: "Sécurité", color: "#1B5BDA", bg: "#EFF6FF" }}

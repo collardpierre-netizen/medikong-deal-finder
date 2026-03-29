@@ -137,12 +137,36 @@ export const contactSubjects = [
 ];
 
 export const helpCategories: HelpCategoryData[] = [
-  { icon: ShoppingCart, title: "Commandes & Paiements", description: "Passer commande, moyens de paiement, factures et paiement différé.", articleCount: 12 },
-  { icon: Package, title: "Livraison & Retours", description: "Délais, suivi de colis, retours et remboursements.", articleCount: 8 },
-  { icon: UserCircle, title: "Mon compte", description: "Inscription, paramètres, gestion des utilisateurs et sécurité.", articleCount: 6 },
-  { icon: Store, title: "Vendeurs", description: "Devenir vendeur, catalogue, commissions et paiements.", articleCount: 10 },
-  { icon: ShieldCheck, title: "Qualité & Conformité", description: "Marquage CE, AFMPS, garantie et traçabilité.", articleCount: 5 },
-  { icon: Lightbulb, title: "Fonctionnalités", description: "Recherche, comparaison des prix, alertes et API.", articleCount: 7 },
+  { icon: ShoppingCart, title: "Commandes & Paiements", description: "Passer commande, moyens de paiement, factures et paiement différé.", articleCount: 12, articles: [
+    { label: "Comment passer une commande ?", href: "#" },
+    { label: "Quels modes de paiement sont acceptés ?", href: "#" },
+    { label: "Comment activer le paiement différé ?", href: "/paiement-differe" },
+  ]},
+  { icon: Package, title: "Livraison & Retours", description: "Délais, suivi de colis, retours et remboursements.", articleCount: 8, articles: [
+    { label: "Comment suivre ma commande ?", href: "#" },
+    { label: "Quels sont les délais de livraison ?", href: "/logistique" },
+    { label: "Comment retourner un produit ?", href: "#" },
+  ]},
+  { icon: UserCircle, title: "Mon compte", description: "Inscription, paramètres, gestion des utilisateurs et sécurité.", articleCount: 6, articles: [
+    { label: "Comment créer un compte professionnel ?", href: "/onboarding" },
+    { label: "Comment modifier mes informations ?", href: "#" },
+    { label: "J'ai oublié mon mot de passe", href: "/mot-de-passe-oublie" },
+  ]},
+  { icon: Store, title: "Vendeurs", description: "Devenir vendeur, catalogue, commissions et paiements.", articleCount: 10, articles: [
+    { label: "Comment devenir vendeur sur MediKong ?", href: "/devenir-vendeur" },
+    { label: "Comment fonctionne la commission ?", href: "/entreprise/comment-ca-marche" },
+    { label: "Comment importer mon catalogue ?", href: "#" },
+  ]},
+  { icon: ShieldCheck, title: "Qualité & Conformité", description: "Marquage CE, AFMPS, garantie et traçabilité.", articleCount: 5, articles: [
+    { label: "Comment les fournisseurs sont vérifiés ?", href: "/verification-fournisseurs" },
+    { label: "Qu'est-ce que la garantie qualité ?", href: "/qualite-garantie" },
+    { label: "Comment fonctionne la traçabilité ?", href: "#" },
+  ]},
+  { icon: Lightbulb, title: "Fonctionnalités", description: "Recherche, comparaison des prix, alertes et API.", articleCount: 7, articles: [
+    { label: "Comment comparer les prix ?", href: "#" },
+    { label: "Comment configurer des alertes prix ?", href: "#" },
+    { label: "Existe-t-il une API pour mes commandes ?", href: "#" },
+  ]},
 ];
 
 export const helpFaqItems: FaqItem[] = [

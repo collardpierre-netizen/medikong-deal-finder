@@ -76,7 +76,56 @@ const AdminCMS = () => {
     },
   });
 
-  const toggleImage = useMutation({
+  // ---- CMS Page Images from DB ----
+  const { data: pageImages = [] } = useQuery<{ id: string; page_key: string; section_key: string; image_url: string; alt_text: string }[]>({
+    queryKey: ["admin-page-images"],
+    queryFn: async () => {
+      const { data, error } = await sb.from("cms_page_images").select("*");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const deletePageImage = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await sb.from("cms_page_images").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-page-images"] }); queryClient.invalidateQueries({ queryKey: ["cms-page-images"] }); toast.success("Image supprimée"); },
+  });
+
+  const handlePageImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !activePageUpload) return;
+    if (!file.type.startsWith("image/")) { toast.error("Fichier non supporté"); return; }
+    if (file.size > 5 * 1024 * 1024) { toast.error("Image trop lourde (max 5 Mo)"); return; }
+    setPageUploading(true);
+    try {
+      const ext = file.name.split(".").pop() || "jpg";
+      const fileName = `${activePageUpload.pageKey}-${activePageUpload.sectionKey}-${Date.now()}.${ext}`;
+      const { error: uploadError } = await supabase.storage.from("cms-images").upload(`pages/${fileName}`, file, { upsert: false });
+      if (uploadError) throw uploadError;
+      const { data: urlData } = supabase.storage.from("cms-images").getPublicUrl(`pages/${fileName}`);
+      // Upsert: delete existing then insert
+      await sb.from("cms_page_images").delete().eq("page_key", activePageUpload.pageKey).eq("section_key", activePageUpload.sectionKey);
+      const { error } = await sb.from("cms_page_images").insert({
+        page_key: activePageUpload.pageKey,
+        section_key: activePageUpload.sectionKey,
+        image_url: urlData.publicUrl,
+        alt_text: file.name,
+      });
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ["admin-page-images"] });
+      queryClient.invalidateQueries({ queryKey: ["cms-page-images"] });
+      toast.success("Image uploadée");
+    } catch (err: any) {
+      toast.error("Erreur : " + (err.message || "inconnue"));
+    } finally {
+      setPageUploading(false);
+      setActivePageUpload(null);
+      if (pageFileInputRef.current) pageFileInputRef.current.value = "";
+    }
+  };
     mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
       const { error } = await sb.from("cms_hero_images").update({ is_active }).eq("id", id);
       if (error) throw error;

@@ -1,3 +1,4 @@
+import { usePageImages } from "@/hooks/usePageImages";
 import { EntrepriseLayout } from "@/components/entreprise/EntrepriseLayout";
 import { EntrepriseHero } from "@/components/entreprise/EntrepriseHero";
 import { Section } from "@/components/entreprise/Section";
@@ -24,6 +25,8 @@ const values = [
 ];
 
 export default function AboutPage() {
+  const { getImage } = usePageImages("about");
+  const missionImg = getImage("split-mission");
   return (
     <EntrepriseLayout>
       <EntrepriseHero
@@ -51,6 +54,8 @@ export default function AboutPage() {
           ]}
           imagePlaceholder="Photo : équipe dans un entrepôt médical"
           imageGradient="from-blue-100 to-indigo-200"
+          imageUrl={missionImg?.image_url}
+          imageAlt={missionImg?.alt_text}
         />
       </Section>
 

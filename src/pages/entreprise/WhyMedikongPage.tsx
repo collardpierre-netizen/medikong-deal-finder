@@ -1,3 +1,4 @@
+import { usePageImages } from "@/hooks/usePageImages";
 import { EntrepriseLayout } from "@/components/entreprise/EntrepriseLayout";
 import { EntrepriseHero } from "@/components/entreprise/EntrepriseHero";
 import { Section } from "@/components/entreprise/Section";
@@ -8,6 +9,10 @@ import { CtaBanner } from "@/components/entreprise/CtaBanner";
 import { testimonials } from "@/data/entreprise-data";
 
 export default function WhyMedikongPage() {
+  const { getImage } = usePageImages("why-medikong");
+  const compImg = getImage("split-comparateur");
+  const analImg = getImage("split-analytics");
+  const secImg = getImage("split-security");
   return (
     <EntrepriseLayout>
       <EntrepriseHero
@@ -28,6 +33,8 @@ export default function WhyMedikongPage() {
             ]}
             imagePlaceholder="Screenshot : comparateur de prix"
             imageGradient="from-blue-100 to-indigo-200"
+            imageUrl={compImg?.image_url}
+            imageAlt={compImg?.alt_text}
           />
           <SplitSection
             reverse
@@ -39,6 +46,8 @@ export default function WhyMedikongPage() {
             ]}
             imagePlaceholder="Screenshot : dashboard analytique"
             imageGradient="from-blue-100 to-indigo-200"
+            imageUrl={analImg?.image_url}
+            imageAlt={analImg?.alt_text}
           />
           <SplitSection
             tag={{ label: "Sécurité", color: "#1B5BDA", bg: "#EFF6FF" }}
@@ -49,6 +58,8 @@ export default function WhyMedikongPage() {
             ]}
             imagePlaceholder="Illustration : bouclier de sécurité"
             imageGradient="from-blue-100 to-indigo-200"
+            imageUrl={secImg?.image_url}
+            imageAlt={secImg?.alt_text}
           />
         </div>
       </Section>

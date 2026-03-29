@@ -1,3 +1,4 @@
+import { usePageImages } from "@/hooks/usePageImages";
 import { TrustProcessLayout } from "@/components/trust/TrustProcessLayout";
 import { EntrepriseHero } from "@/components/entreprise/EntrepriseHero";
 import { Section } from "@/components/entreprise/Section";
@@ -17,6 +18,8 @@ const sellerSteps = [
 ];
 
 export default function BecomeSellerPage() {
+  const { getImage } = usePageImages("become-seller");
+  const dashImg = getImage("split-dashboard");
   return (
     <TrustProcessLayout>
       <EntrepriseHero
@@ -49,6 +52,8 @@ export default function BecomeSellerPage() {
           checklist={["Gestion du catalogue et des prix", "Suivi des commandes en temps réel", "Analytics et rapports de vente", "Gestion financière et paiements", "Alertes et opportunités marché"]}
           imagePlaceholder="Dashboard vendeur"
           imageGradient="from-[#1B5BDA] to-[#0F3280]"
+          imageUrl={dashImg?.image_url}
+          imageAlt={dashImg?.alt_text}
           reverse
         />
       </Section>

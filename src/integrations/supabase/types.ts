@@ -344,6 +344,33 @@ export type Database = {
         }
         Relationships: []
       }
+      cms_page_images: {
+        Row: {
+          alt_text: string | null
+          created_at: string
+          id: string
+          image_url: string
+          page_key: string
+          section_key: string
+        }
+        Insert: {
+          alt_text?: string | null
+          created_at?: string
+          id?: string
+          image_url: string
+          page_key: string
+          section_key: string
+        }
+        Update: {
+          alt_text?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string
+          page_key?: string
+          section_key?: string
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           address_line1: string

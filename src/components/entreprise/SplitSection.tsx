@@ -8,10 +8,12 @@ interface SplitSectionProps {
   checklist?: string[];
   imagePlaceholder: string;
   imageGradient: string;
+  imageUrl?: string;
+  imageAlt?: string;
   reverse?: boolean;
 }
 
-export function SplitSection({ tag, title, paragraphs, checklist, imagePlaceholder, imageGradient, reverse }: SplitSectionProps) {
+export function SplitSection({ tag, title, paragraphs, checklist, imagePlaceholder, imageGradient, imageUrl, imageAlt, reverse }: SplitSectionProps) {
   const { ref, isVisible } = useScrollReveal();
 
   return (
@@ -46,7 +48,11 @@ export function SplitSection({ tag, title, paragraphs, checklist, imagePlacehold
         )}
       </div>
       <div className={`aspect-[4/3] rounded-2xl overflow-hidden bg-gradient-to-br ${imageGradient} flex items-center justify-center`}>
-        <span className="text-sm text-white/70 px-6 text-center">{imagePlaceholder}</span>
+        {imageUrl ? (
+          <img src={imageUrl} alt={imageAlt || imagePlaceholder} className="w-full h-full object-cover" />
+        ) : (
+          <span className="text-sm text-white/70 px-6 text-center">{imagePlaceholder}</span>
+        )}
       </div>
     </div>
   );

@@ -1,3 +1,4 @@
+import { usePageImages } from "@/hooks/usePageImages";
 import { TrustProcessLayout } from "@/components/trust/TrustProcessLayout";
 import { EntrepriseHero } from "@/components/entreprise/EntrepriseHero";
 import { Section } from "@/components/entreprise/Section";
@@ -16,6 +17,8 @@ const guarantees = [
 ];
 
 export default function QualityGuaranteePage() {
+  const { getImage } = usePageImages("quality-guarantee");
+  const traceImg = getImage("split-traceability");
   return (
     <TrustProcessLayout>
       <EntrepriseHero
@@ -53,6 +56,8 @@ export default function QualityGuaranteePage() {
           checklist={["Numéros de lot intégrés", "Dates d'expiration vérifiées", "Certificats téléchargeables", "Historique de commande complet"]}
           imagePlaceholder="Traçabilité produit"
           imageGradient="from-[#1B5BDA] to-[#0F3280]"
+          imageUrl={traceImg?.image_url}
+          imageAlt={traceImg?.alt_text}
           reverse
         />
       </Section>

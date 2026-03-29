@@ -1,3 +1,4 @@
+import { usePageImages } from "@/hooks/usePageImages";
 import { TrustProcessLayout } from "@/components/trust/TrustProcessLayout";
 import { EntrepriseHero } from "@/components/entreprise/EntrepriseHero";
 import { Section } from "@/components/entreprise/Section";
@@ -9,6 +10,8 @@ import { ComparisonTable } from "@/components/trust/ComparisonTable";
 import { verificationSteps, comparisonRows } from "@/data/trust-process-data";
 
 export default function SupplierVerificationPage() {
+  const { getImage } = usePageImages("supplier-verification");
+  const partImg = getImage("split-partners");
   return (
     <TrustProcessLayout>
       <EntrepriseHero
@@ -40,6 +43,8 @@ export default function SupplierVerificationPage() {
           checklist={["Accords directs avec les fabricants", "Prix négociés et exclusifs", "Stock garanti sur les références clés", "Support technique dédié"]}
           imagePlaceholder="Partenariats fournisseurs"
           imageGradient="from-[#1B5BDA] to-[#0F3280]"
+          imageUrl={partImg?.image_url}
+          imageAlt={partImg?.alt_text}
         />
       </Section>
       <CtaBanner

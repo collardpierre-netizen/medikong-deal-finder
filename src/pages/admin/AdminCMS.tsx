@@ -8,9 +8,10 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Layout, Image, Layers, GripVertical, Eye, EyeOff, FileText, ToggleLeft, Trash2, Plus, Upload, ArrowUp, ArrowDown,
+  Layout, Image, Layers, GripVertical, Eye, EyeOff, FileText, ToggleLeft, Trash2, Plus, Upload, ArrowUp, ArrowDown, ImageIcon,
 } from "lucide-react";
 import { toast } from "sonner";
+import { PAGE_IMAGE_REGISTRY } from "@/data/page-image-registry";
 
 // --- Static mock data for non-DB tabs ---
 const pages = [
@@ -57,6 +58,9 @@ const AdminCMS = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
   const sb = supabase as any;
+  const pageFileInputRef = useRef<HTMLInputElement>(null);
+  const [pageUploading, setPageUploading] = useState(false);
+  const [activePageUpload, setActivePageUpload] = useState<{ pageKey: string; sectionKey: string } | null>(null);
 
   const toggleSection = (idx: number) => {
     setSections(prev => prev.map((s, i) => i === idx ? { ...s, visible: !s.visible } : s));
@@ -72,6 +76,56 @@ const AdminCMS = () => {
     },
   });
 
+  // ---- CMS Page Images from DB ----
+  const { data: pageImages = [] } = useQuery<{ id: string; page_key: string; section_key: string; image_url: string; alt_text: string }[]>({
+    queryKey: ["admin-page-images"],
+    queryFn: async () => {
+      const { data, error } = await sb.from("cms_page_images").select("*");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const deletePageImage = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await sb.from("cms_page_images").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-page-images"] }); queryClient.invalidateQueries({ queryKey: ["cms-page-images"] }); toast.success("Image supprimée"); },
+  });
+
+  const handlePageImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !activePageUpload) return;
+    if (!file.type.startsWith("image/")) { toast.error("Fichier non supporté"); return; }
+    if (file.size > 5 * 1024 * 1024) { toast.error("Image trop lourde (max 5 Mo)"); return; }
+    setPageUploading(true);
+    try {
+      const ext = file.name.split(".").pop() || "jpg";
+      const fileName = `${activePageUpload.pageKey}-${activePageUpload.sectionKey}-${Date.now()}.${ext}`;
+      const { error: uploadError } = await supabase.storage.from("cms-images").upload(`pages/${fileName}`, file, { upsert: false });
+      if (uploadError) throw uploadError;
+      const { data: urlData } = supabase.storage.from("cms-images").getPublicUrl(`pages/${fileName}`);
+      // Upsert: delete existing then insert
+      await sb.from("cms_page_images").delete().eq("page_key", activePageUpload.pageKey).eq("section_key", activePageUpload.sectionKey);
+      const { error } = await sb.from("cms_page_images").insert({
+        page_key: activePageUpload.pageKey,
+        section_key: activePageUpload.sectionKey,
+        image_url: urlData.publicUrl,
+        alt_text: file.name,
+      });
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ["admin-page-images"] });
+      queryClient.invalidateQueries({ queryKey: ["cms-page-images"] });
+      toast.success("Image uploadée");
+    } catch (err: any) {
+      toast.error("Erreur : " + (err.message || "inconnue"));
+    } finally {
+      setPageUploading(false);
+      setActivePageUpload(null);
+      if (pageFileInputRef.current) pageFileInputRef.current.value = "";
+    }
+  };
   const toggleImage = useMutation({
     mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
       const { error } = await sb.from("cms_hero_images").update({ is_active }).eq("id", id);
@@ -147,6 +201,7 @@ const AdminCMS = () => {
           <TabsTrigger value="collections" className="text-[13px]">Collections</TabsTrigger>
           <TabsTrigger value="homepage" className="text-[13px]">Sections Homepage</TabsTrigger>
           <TabsTrigger value="hero-images" className="text-[13px]">Images Hero</TabsTrigger>
+          <TabsTrigger value="page-images" className="text-[13px]">Images Pages</TabsTrigger>
         </TabsList>
 
         {/* Pages tab */}
@@ -297,6 +352,60 @@ const AdminCMS = () => {
               {heroImages.length === 0 && (
                 <p className="text-center text-[12px] py-6" style={{ color: "#8B95A5" }}>Aucune image hero configurée</p>
               )}
+            </div>
+          </div>
+        </TabsContent>
+
+        {/* Page Images tab */}
+        <TabsContent value="page-images">
+          <div className="bg-white rounded-lg border p-5" style={{ borderColor: "#E2E8F0" }}>
+            <h3 className="text-[14px] font-semibold mb-2" style={{ color: "#1D2530" }}>Images des pages statiques</h3>
+            <p className="text-[12px] mb-5" style={{ color: "#8B95A5" }}>
+              Uploadez des images pour remplacer les placeholders sur les pages publiques (Devenir vendeur, Vérification fournisseurs, etc.).
+            </p>
+            <input type="file" accept="image/*" ref={pageFileInputRef} onChange={handlePageImageUpload} className="hidden" />
+            <div className="space-y-2">
+              {PAGE_IMAGE_REGISTRY.map((slot) => {
+                const existing = pageImages.find(
+                  (i) => i.page_key === slot.pageKey && i.section_key === slot.sectionKey
+                );
+                return (
+                  <div key={`${slot.pageKey}-${slot.sectionKey}`} className="flex items-center gap-4 px-4 py-3 rounded-lg" style={{ backgroundColor: "#F8FAFC" }}>
+                    {existing ? (
+                      <img src={existing.image_url} alt={existing.alt_text} className="w-20 h-14 object-cover rounded-lg border border-border" />
+                    ) : (
+                      <div className="w-20 h-14 rounded-lg border border-dashed border-gray-300 flex items-center justify-center bg-gray-50">
+                        <ImageIcon size={16} className="text-gray-400" />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[12px] font-semibold" style={{ color: "#1D2530" }}>{slot.label}</p>
+                      <p className="text-[10px]" style={{ color: "#8B95A5" }}>
+                        {existing ? existing.image_url.split("/").pop() : "Aucune image configurée"}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="gap-1.5 text-[11px]"
+                        disabled={pageUploading}
+                        onClick={() => {
+                          setActivePageUpload({ pageKey: slot.pageKey, sectionKey: slot.sectionKey });
+                          pageFileInputRef.current?.click();
+                        }}
+                      >
+                        <Upload size={12} /> {existing ? "Remplacer" : "Uploader"}
+                      </Button>
+                      {existing && (
+                        <button onClick={() => deletePageImage.mutate(existing.id)} className="text-red-400 hover:text-red-600">
+                          <Trash2 size={14} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </TabsContent>

@@ -1,3 +1,4 @@
+import { usePageImages } from "@/hooks/usePageImages";
 import { TrustProcessLayout } from "@/components/trust/TrustProcessLayout";
 import { EntrepriseHero } from "@/components/entreprise/EntrepriseHero";
 import { Section } from "@/components/entreprise/Section";
@@ -15,6 +16,8 @@ const deliveryOptions = [
 ];
 
 export default function LogisticsPage() {
+  const { getImage } = usePageImages("logistics");
+  const trackImg = getImage("split-tracking");
   return (
     <TrustProcessLayout>
       <EntrepriseHero
@@ -53,6 +56,8 @@ export default function LogisticsPage() {
           checklist={["Notification d'expédition", "Suivi en temps réel", "Alerte de livraison", "Preuve de livraison"]}
           imagePlaceholder="Suivi de livraison"
           imageGradient="from-[#1B5BDA] to-[#0F3280]"
+          imageUrl={trackImg?.image_url}
+          imageAlt={trackImg?.alt_text}
           reverse
         />
       </Section>

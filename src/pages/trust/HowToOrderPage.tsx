@@ -4,6 +4,7 @@ import { Section } from "@/components/entreprise/Section";
 import { CtaBanner } from "@/components/entreprise/CtaBanner";
 import { PricingCards } from "@/components/trust/PricingCards";
 import { ProcessStepsVertical } from "@/components/trust/ProcessStepsVertical";
+import { TrustTestimonials } from "@/components/trust/TrustTestimonials";
 import { orderSteps, pricingCards } from "@/data/trust-process-data";
 
 export default function HowToOrderPage() {
@@ -22,6 +23,7 @@ export default function HowToOrderPage() {
       <Section bg="gray" title="Choisissez votre plan" subtitle="Un plan pour chaque taille d'entreprise.">
         <PricingCards cards={pricingCards} />
       </Section>
+      <TrustTestimonials title="Ils commandent sur MediKong" />
       <CtaBanner
         variant="blue"
         title="Prêt à commander ?"

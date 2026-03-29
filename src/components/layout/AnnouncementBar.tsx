@@ -1,14 +1,17 @@
 import { Link } from "react-router-dom";
 import { ArrowRight, Rocket, TrendingUp, Coins } from "lucide-react";
-
-const messages = [
-  { icon: Rocket, text: "Investissez dans MediKong — Tax Shelter 45% — Levée de fonds Phase 2 ouverte" },
-  { icon: Coins, text: "Dès 1 000 € — Tax Shelter 45% dès 5 000 € — Réduction d'impôt immédiate" },
-  { icon: TrendingUp, text: "Investissez dans MediKong — Tax Shelter 45% — Levée de fonds Phase 2 ouverte" },
-  { icon: Coins, text: "Dès 1 000 € — Tax Shelter 45% dès 5 000 € — Réduction d'impôt immédiate" },
-];
+import { useTranslation } from "react-i18next";
 
 export function AnnouncementBar() {
+  const { t } = useTranslation();
+
+  const messages = [
+    { icon: Rocket, text: t("investBanner.msg1") },
+    { icon: Coins, text: t("investBanner.msg2") },
+    { icon: TrendingUp, text: t("investBanner.msg1") },
+    { icon: Coins, text: t("investBanner.msg2") },
+  ];
+
   return (
     <div className="bg-mk-blue border-b border-white/10 overflow-hidden relative h-9">
       <Link

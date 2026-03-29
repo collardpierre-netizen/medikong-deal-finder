@@ -6,9 +6,11 @@ import { Footer } from "./Footer";
 import { AnnouncementBar } from "./AnnouncementBar";
 import { PageTransition } from "@/components/shared/PageTransition";
 import CartDrawer from "@/components/cart/CartDrawer";
+import { TranslationActivatedPopup } from "@/components/TranslationActivatedPopup";
 import { useLocation } from "react-router-dom";
 import { useEffect } from "react";
 import { Helmet } from "react-helmet-async";
+import { useTranslation } from "react-i18next";
 
 declare global {
   interface Window { dataLayer: Record<string, unknown>[]; }
@@ -16,12 +18,18 @@ declare global {
 
 export function Layout({ children, title, description }: { children: React.ReactNode; title?: string; description?: string }) {
   const location = useLocation();
+  const { i18n } = useTranslation();
   const canonicalUrl = `https://medikong-deal-finder.lovable.app${location.pathname}`;
 
   useEffect(() => {
     window.dataLayer = window.dataLayer || [];
     window.dataLayer.push({ event: 'page_view', page_path: location.pathname });
   }, [location.pathname]);
+
+  // Sync HTML lang attribute
+  useEffect(() => {
+    document.documentElement.lang = i18n.language?.substring(0, 2) || "fr";
+  }, [i18n.language]);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -40,6 +48,7 @@ export function Layout({ children, title, description }: { children: React.React
       </main>
       <Footer />
       <CartDrawer />
+      <TranslationActivatedPopup />
     </div>
   );
 }

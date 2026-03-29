@@ -1,17 +1,19 @@
 import { Link, useLocation } from "react-router-dom";
-
-const tabs = [
-  { label: "Shop", path: "/" },
-  { label: "Promotions", path: "/promotions", pink: true },
-  { label: "Catégories", path: "/categories" },
-  { label: "Marques", path: "/marques" },
-  { label: "Professionnels", path: "/professionnels" },
-  { label: "Sourcing", path: "/sourcing" },
-  { label: "Mon compte", path: "/compte" },
-];
+import { useTranslation } from "react-i18next";
 
 export function SubNav() {
   const { pathname } = useLocation();
+  const { t } = useTranslation();
+
+  const tabs = [
+    { label: t("nav.shop"), path: "/" },
+    { label: t("nav.promotions"), path: "/promotions", pink: true },
+    { label: t("nav.categories"), path: "/categories" },
+    { label: t("nav.brands"), path: "/marques" },
+    { label: t("nav.professionals"), path: "/professionnels" },
+    { label: t("nav.sourcing"), path: "/sourcing" },
+    { label: t("nav.account"), path: "/compte" },
+  ];
 
   return (
     <div className="border-b border-mk-line overflow-x-auto">
@@ -20,7 +22,7 @@ export function SubNav() {
           const active = pathname === tab.path || (tab.path === "/" && pathname === "/");
           return (
             <Link
-              key={tab.label}
+              key={tab.path}
               to={tab.path}
               className={`px-3 md:px-4 py-3 text-xs md:text-sm font-medium transition-colors relative whitespace-nowrap ${
                 tab.pink ? "text-mk-pink" : active ? "text-mk-navy font-bold" : "text-mk-sec hover:text-mk-text"

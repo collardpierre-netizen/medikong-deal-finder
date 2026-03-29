@@ -8,10 +8,11 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Layout, Image, Layers, GripVertical, Eye, EyeOff, FileText, ToggleLeft, Trash2, Plus, ArrowUp, ArrowDown,
+  Layout, Image, Layers, GripVertical, Eye, EyeOff, FileText, ToggleLeft, Trash2, Plus,
 } from "lucide-react";
 import { toast } from "sonner";
 
+// --- Static mock data for non-DB tabs ---
 const pages = [
   { name: "Homepage", slug: "/", status: "published", lastEdit: "27/03 14:00" },
   { name: "FAQ", slug: "/faq", status: "published", lastEdit: "22/03 09:30" },
@@ -19,32 +20,24 @@ const pages = [
   { name: "À propos", slug: "/a-propos", status: "draft", lastEdit: "20/03 16:45" },
   { name: "Politique de confidentialité", slug: "/confidentialite", status: "published", lastEdit: "10/03 10:00" },
 ];
-
 const banners = [
   { name: "Promo printemps -20% EPI", position: "Homepage hero", active: true, start: "01/03", end: "31/03" },
   { name: "Livraison gratuite >200€", position: "Barre supérieure", active: true, start: "01/01", end: "31/12" },
   { name: "Nouveau : gamme Hartmann", position: "Homepage milieu", active: false, start: "15/03", end: "15/04" },
-  { name: "Black Friday médical", position: "Homepage hero", active: false, start: "25/11", end: "02/12" },
 ];
-
 const collections = [
   { name: "Meilleures ventes", type: "auto", products: 50, rule: "Top 50 ventes 30j" },
   { name: "Nouveautés mars", type: "auto", products: 34, rule: "Créés < 30j" },
   { name: "Essentiels pharmacie", type: "manual", products: 28, rule: "Sélection manuelle" },
-  { name: "Kit premiers soins", type: "manual", products: 12, rule: "Sélection manuelle" },
-  { name: "Promo printemps", type: "manual", products: 45, rule: "Sélection manuelle" },
 ];
-
 const homepageSections = [
   { name: "Hero Banner", visible: true, order: 1 },
   { name: "Stats marketplace", visible: true, order: 2 },
   { name: "Catégories", visible: true, order: 3 },
-  { name: "3 Piliers", visible: true, order: 4 },
-  { name: "Produits populaires", visible: true, order: 5 },
-  { name: "Marques partenaires", visible: true, order: 6 },
-  { name: "Pourquoi MediKong", visible: true, order: 7 },
-  { name: "CTA Vendeur", visible: true, order: 8 },
-  { name: "FAQ", visible: true, order: 9 },
+  { name: "Produits populaires", visible: true, order: 4 },
+  { name: "Marques partenaires", visible: true, order: 5 },
+  { name: "CTA Vendeur", visible: true, order: 6 },
+  { name: "FAQ", visible: true, order: 7 },
 ];
 
 interface HeroImage {
@@ -61,22 +54,55 @@ const AdminCMS = () => {
   const [newImageUrl, setNewImageUrl] = useState("");
   const [newImageAlt, setNewImageAlt] = useState("");
   const queryClient = useQueryClient();
+  const sb = supabase as any;
 
   const toggleSection = (idx: number) => {
     setSections(prev => prev.map((s, i) => i === idx ? { ...s, visible: !s.visible } : s));
   };
 
-  // CMS hero images - placeholder since table doesn't exist yet
-  const heroImages: HeroImage[] = [];
-  const toggleImage = { mutate: (_args: { id: string; is_active: boolean }) => { toast.info("Fonctionnalité CMS à venir"); } };
+  // ---- CMS Hero Images from DB ----
+  const { data: heroImages = [] } = useQuery<HeroImage[]>({
+    queryKey: ["admin-hero-images"],
+    queryFn: async () => {
+      const { data, error } = await sb.from("cms_hero_images").select("*").order("sort_order");
+      if (error) throw error;
+      return data;
+    },
+  });
 
-  const deleteImage = { mutate: (_id: string) => { toast.info("Fonctionnalité CMS à venir"); } };
-  const addImage = { mutate: () => { toast.info("Fonctionnalité CMS à venir"); }, isPending: false };
+  const toggleImage = useMutation({
+    mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
+      const { error } = await sb.from("cms_hero_images").update({ is_active }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-hero-images"] }); queryClient.invalidateQueries({ queryKey: ["cms-hero-images"] }); toast.success("Image mise à jour"); },
+  });
+
+  const deleteImage = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await sb.from("cms_hero_images").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-hero-images"] }); queryClient.invalidateQueries({ queryKey: ["cms-hero-images"] }); toast.success("Image supprimée"); },
+  });
+
+  const addImage = useMutation({
+    mutationFn: async () => {
+      const maxOrder = heroImages.length ? Math.max(...heroImages.map(i => i.sort_order)) + 1 : 0;
+      const { error } = await sb.from("cms_hero_images").insert({ image_url: newImageUrl, alt_text: newImageAlt || "", sort_order: maxOrder });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-hero-images"] });
+      queryClient.invalidateQueries({ queryKey: ["cms-hero-images"] });
+      setNewImageUrl(""); setNewImageAlt("");
+      toast.success("Image ajoutée");
+    },
+  });
 
   return (
     <div>
       <AdminTopBar title="CMS & Merchandising" subtitle="Gestion du contenu et de la mise en avant" />
-
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="mb-4" style={{ backgroundColor: "#E2E8F0" }}>
           <TabsTrigger value="pages" className="text-[13px]">Pages</TabsTrigger>
@@ -86,6 +112,7 @@ const AdminCMS = () => {
           <TabsTrigger value="hero-images" className="text-[13px]">Images Hero</TabsTrigger>
         </TabsList>
 
+        {/* Pages tab */}
         <TabsContent value="pages">
           <div className="bg-white rounded-lg border overflow-hidden" style={{ borderColor: "#E2E8F0" }}>
             <Table>
@@ -120,6 +147,7 @@ const AdminCMS = () => {
           </div>
         </TabsContent>
 
+        {/* Banners tab */}
         <TabsContent value="bannieres">
           <div className="space-y-3">
             {banners.map((b) => (
@@ -133,15 +161,14 @@ const AdminCMS = () => {
                 </div>
                 <div className="flex items-center gap-2">
                   <ToggleLeft size={20} style={{ color: b.active ? "#059669" : "#CBD5E1" }} />
-                  <span className="text-[11px] font-medium" style={{ color: b.active ? "#059669" : "#8B95A5" }}>
-                    {b.active ? "Actif" : "Inactif"}
-                  </span>
+                  <span className="text-[11px] font-medium" style={{ color: b.active ? "#059669" : "#8B95A5" }}>{b.active ? "Actif" : "Inactif"}</span>
                 </div>
               </div>
             ))}
           </div>
         </TabsContent>
 
+        {/* Collections tab */}
         <TabsContent value="collections">
           <div className="grid grid-cols-3 gap-4">
             {collections.map((c) => (
@@ -166,6 +193,7 @@ const AdminCMS = () => {
           </div>
         </TabsContent>
 
+        {/* Homepage sections tab */}
         <TabsContent value="homepage">
           <div className="bg-white rounded-lg border p-5" style={{ borderColor: "#E2E8F0" }}>
             <h3 className="text-[14px] font-semibold mb-4" style={{ color: "#1D2530" }}>Sections Homepage (ordre d'affichage)</h3>
@@ -177,9 +205,7 @@ const AdminCMS = () => {
                   <span className="text-[13px] font-medium flex-1" style={{ color: "#1D2530" }}>{s.name}</span>
                   <button onClick={() => toggleSection(i)} className="flex items-center gap-1.5">
                     {s.visible ? <Eye size={14} style={{ color: "#059669" }} /> : <EyeOff size={14} style={{ color: "#8B95A5" }} />}
-                    <span className="text-[11px]" style={{ color: s.visible ? "#059669" : "#8B95A5" }}>
-                      {s.visible ? "Visible" : "Masqué"}
-                    </span>
+                    <span className="text-[11px]" style={{ color: s.visible ? "#059669" : "#8B95A5" }}>{s.visible ? "Visible" : "Masqué"}</span>
                   </button>
                 </div>
               ))}
@@ -187,36 +213,20 @@ const AdminCMS = () => {
           </div>
         </TabsContent>
 
+        {/* Hero Images tab — LIVE from DB */}
         <TabsContent value="hero-images">
           <div className="bg-white rounded-lg border p-5" style={{ borderColor: "#E2E8F0" }}>
             <h3 className="text-[14px] font-semibold mb-4" style={{ color: "#1D2530" }}>Images Hero Homepage</h3>
-            <p className="text-[12px] mb-4" style={{ color: "#8B95A5" }}>Gérez les photos affichées dans la galerie hero de la homepage. Max 5 images recommandé.</p>
+            <p className="text-[12px] mb-4" style={{ color: "#8B95A5" }}>Gérez les photos du carrousel hero. Les modifications sont appliquées en temps réel sur la homepage.</p>
 
-            {/* Add new image */}
             <div className="flex gap-2 mb-6">
-              <Input
-                placeholder="URL de l'image..."
-                value={newImageUrl}
-                onChange={e => setNewImageUrl(e.target.value)}
-                className="text-[13px] flex-1"
-              />
-              <Input
-                placeholder="Texte alt..."
-                value={newImageAlt}
-                onChange={e => setNewImageAlt(e.target.value)}
-                className="text-[13px] w-[200px]"
-              />
-              <Button
-                size="sm"
-                onClick={() => newImageUrl && addImage.mutate()}
-                disabled={!newImageUrl || addImage.isPending}
-                className="bg-[#1B5BDA] hover:bg-[#1548B0] text-white gap-1.5"
-              >
+              <Input placeholder="URL de l'image..." value={newImageUrl} onChange={e => setNewImageUrl(e.target.value)} className="text-[13px] flex-1" />
+              <Input placeholder="Texte alt..." value={newImageAlt} onChange={e => setNewImageAlt(e.target.value)} className="text-[13px] w-[200px]" />
+              <Button size="sm" onClick={() => newImageUrl && addImage.mutate()} disabled={!newImageUrl || addImage.isPending} className="bg-[#1B5BDA] hover:bg-[#1548B0] text-white gap-1.5">
                 <Plus size={14} /> Ajouter
               </Button>
             </div>
 
-            {/* Image list */}
             <div className="space-y-3">
               {heroImages.map((img) => (
                 <div key={img.id} className="flex items-center gap-4 px-4 py-3 rounded-lg" style={{ backgroundColor: "#F8FAFC" }}>
@@ -226,18 +236,11 @@ const AdminCMS = () => {
                     <p className="text-[10px] truncate" style={{ color: "#8B95A5" }}>{img.image_url}</p>
                   </div>
                   <span className="text-[11px] font-bold" style={{ color: "#8B95A5" }}>#{img.sort_order}</span>
-                  <button
-                    onClick={() => toggleImage.mutate({ id: img.id, is_active: !img.is_active })}
-                    className="flex items-center gap-1.5"
-                  >
+                  <button onClick={() => toggleImage.mutate({ id: img.id, is_active: !img.is_active })} className="flex items-center gap-1.5">
                     {img.is_active ? <Eye size={14} style={{ color: "#059669" }} /> : <EyeOff size={14} style={{ color: "#8B95A5" }} />}
-                    <span className="text-[11px]" style={{ color: img.is_active ? "#059669" : "#8B95A5" }}>
-                      {img.is_active ? "Actif" : "Masqué"}
-                    </span>
+                    <span className="text-[11px]" style={{ color: img.is_active ? "#059669" : "#8B95A5" }}>{img.is_active ? "Actif" : "Masqué"}</span>
                   </button>
-                  <button onClick={() => deleteImage.mutate(img.id)} className="text-red-400 hover:text-red-600">
-                    <Trash2 size={14} />
-                  </button>
+                  <button onClick={() => deleteImage.mutate(img.id)} className="text-red-400 hover:text-red-600"><Trash2 size={14} /></button>
                 </div>
               ))}
               {heroImages.length === 0 && (

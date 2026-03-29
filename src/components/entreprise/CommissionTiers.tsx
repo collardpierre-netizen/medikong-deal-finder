@@ -2,7 +2,7 @@ import type { Tier } from "@/data/entreprise-data";
 
 export function CommissionTiers({ tiers }: { tiers: Tier[] }) {
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       {tiers.map((t) => (
         <div
           key={t.name}

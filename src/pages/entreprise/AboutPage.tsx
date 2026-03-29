@@ -25,6 +25,8 @@ const values = [
 ];
 
 export default function AboutPage() {
+  const { getImage } = usePageImages("about");
+  const missionImg = getImage("split-mission");
   return (
     <EntrepriseLayout>
       <EntrepriseHero

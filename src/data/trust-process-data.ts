@@ -45,6 +45,7 @@ export interface HelpCategoryData {
   title: string;
   description: string;
   articleCount: number;
+  articles?: { label: string; href: string }[];
 }
 
 export const verificationSteps: ProcessStep[] = [

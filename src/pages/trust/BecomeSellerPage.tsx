@@ -6,6 +6,7 @@ import { CtaBanner } from "@/components/entreprise/CtaBanner";
 import { StatsRow } from "@/components/entreprise/StatsRow";
 import { CommissionTiersCards } from "@/components/trust/CommissionTiers";
 import { ProcessStepsVertical } from "@/components/trust/ProcessStepsVertical";
+import { TrustTestimonials } from "@/components/trust/TrustTestimonials";
 import { commissionTiers } from "@/data/trust-process-data";
 
 const sellerSteps = [

@@ -7,6 +7,9 @@ import { ComparisonTable } from "@/components/entreprise/ComparisonTable";
 import { TestimonialCard } from "@/components/entreprise/TestimonialCard";
 import { CtaBanner } from "@/components/entreprise/CtaBanner";
 import { testimonials } from "@/data/entreprise-data";
+import whyComparateurImg from "@/assets/pages/why-comparateur.jpg";
+import whyAnalyticsImg from "@/assets/pages/why-analytics.jpg";
+import whySecurityImg from "@/assets/pages/why-security.jpg";
 
 export default function WhyMedikongPage() {
   const { getImage } = usePageImages("why-medikong");

@@ -53,6 +53,8 @@ const AdminCMS = () => {
   const [sections, setSections] = useState(homepageSections);
   const [newImageUrl, setNewImageUrl] = useState("");
   const [newImageAlt, setNewImageAlt] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
   const sb = supabase as any;
 

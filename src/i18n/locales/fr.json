@@ -1,0 +1,169 @@
+{
+  "common": {
+    "search": "Rechercher",
+    "searchPlaceholder": "Rechercher produits, CNK, EAN, marques...",
+    "login": "Connexion",
+    "signup": "Créer un compte gratuit",
+    "cart": "Panier",
+    "account": "Mon compte",
+    "addToCart": "Ajouter",
+    "viewAll": "Voir tout",
+    "allBrands": "Voir toutes les marques",
+    "loading": "Chargement...",
+    "error": "Une erreur est survenue",
+    "retry": "Réessayer",
+    "close": "Fermer",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "back": "Retour",
+    "next": "Suivant",
+    "priceVat": "TVAC",
+    "priceExVat": "HTVA",
+    "seller": "vendeur",
+    "sellers": "vendeurs",
+    "products": "produits",
+    "autoTranslated": "Traduit automatiquement",
+    "showOriginal": "Afficher l'original",
+    "translationActivated": "Traduction activée",
+    "translationDescription": "Ce symbole indique que le contenu rédigé par les vendeurs a été traduit automatiquement. Vous pouvez modifier ce paramètre à tout moment.",
+    "translationSettings": "Paramètres de traduction",
+    "admin": "Admin",
+    "vendor": "Vendeur",
+    "vendorSpace": "Espace Vendeur",
+    "administration": "Administration",
+    "signOut": "Déconnexion"
+  },
+  "nav": {
+    "shop": "Shop",
+    "promotions": "Promotions",
+    "categories": "Catégories",
+    "brands": "Marques",
+    "professionals": "Professionnels",
+    "sourcing": "Sourcing",
+    "account": "Mon compte"
+  },
+  "trustBar": {
+    "certifiedCE": "Produits certifiés CE",
+    "verifiedSuppliers": "Fournisseurs vérifiés",
+    "buyerProtection": "Protection acheteur"
+  },
+  "hero": {
+    "title": "Vos fournitures médicales au meilleur prix B2B",
+    "subtitle": "Comparez les prix de centaines de fournisseurs. Achetez directement ou trouvez la meilleure offre externe.",
+    "searchExamples": "Ex:",
+    "exampleGloves": "Gants nitrile",
+    "exampleBetadine": "Betadine",
+    "exampleTena": "TENA",
+    "exampleMasks": "Masques FFP2"
+  },
+  "stats": {
+    "suppliers": "Fournisseurs vérifiés",
+    "products": "Produits",
+    "pharmacies": "Pharmacies partenaires"
+  },
+  "valueProps": {
+    "bestPrices": "Meilleurs prix B2B",
+    "bestPricesDesc": "Comparez les offres de 350+ grossistes, marques et distributeurs dans un catalogue unifié.",
+    "simpleOrders": "Commandes simplifiées",
+    "simpleOrdersDesc": "MOQ bas, paiement intégré et livraison suivie. Accédez aux prix de gros habituellement réservés aux grandes structures.",
+    "guaranteed": "Authenticité garantie",
+    "guaranteedDesc": "Chaque produit provient de fournisseurs vérifiés. 100% conforme CE et FAGG."
+  },
+  "brands": {
+    "title": "Marques premium & tendances",
+    "filters": {
+      "bestSellers": "Meilleures ventes",
+      "care": "Soins",
+      "diagnostic": "Diagnostic",
+      "hygiene": "Hygiène",
+      "equipment": "Équipement"
+    }
+  },
+  "comparison": {
+    "title": "MediKong vs. sourcing traditionnel",
+    "traditional": "Sourcing traditionnel",
+    "medikong": "MediKong.pro",
+    "trad1": "Contrats fournisseurs rigides",
+    "trad2": "Commandes minimum élevées (10K€+)",
+    "trad3": "Processus de négociation long",
+    "trad4": "Ruptures de stock fréquentes",
+    "trad5": "Comparaison manuelle des catalogues",
+    "trad6": "Aucune protection en cas d'erreur",
+    "mk1": "Sans contrat, sans engagement",
+    "mk2": "MOV à partir de 150€ HT",
+    "mk3": "Accès instantané à 350+ fournisseurs",
+    "mk4": "15+ fournisseurs par référence",
+    "mk5": "Analyse en temps réel des stocks",
+    "mk6": "Protection acheteur incluse"
+  },
+  "categories": {
+    "title": "Explorez les catégories populaires"
+  },
+  "popularProducts": {
+    "title": "Produits populaires"
+  },
+  "howToOrder": {
+    "title": "Comment commander",
+    "step1Title": "Recherchez & sélectionnez",
+    "step1Desc": "Parcourez le catalogue pour trouver les meilleures offres et ajoutez-les au panier.",
+    "step2Title": "Comparez & ajustez",
+    "step2Desc": "Vérifiez votre panier, comparez les offres directes et externes, ajustez les quantités.",
+    "step3Title": "Commandez & payez",
+    "step3Desc": "Validez et réglez par carte, virement ou paiement différé (30/60 jours).",
+    "step4Title": "Livraison & support",
+    "step4Desc": "Expédition sous 24-48h. Un problème ? Résolution garantie sous 24h."
+  },
+  "faq": {
+    "title": "Questions fréquentes",
+    "q1": "Comment fonctionne MediKong ?",
+    "a1": "MediKong est un marketplace B2B qui regroupe les offres de 350+ fournisseurs médicaux vérifiés. Vous pouvez acheter directement via la marketplace, comparer les prix du marché, ou être redirigé vers les offres externes les plus compétitives.",
+    "q2": "Quels professionnels peuvent s'inscrire ?",
+    "a2": "Tous les professionnels de santé en Belgique : pharmacies, hôpitaux, cliniques, MR/MRS, cabinets médicaux, kinésithérapeutes, dentistes, centrales d'achat et revendeurs agréés.",
+    "q3": "Les prix incluent-ils la TVA ?",
+    "a3": "Les prix affichés sont hors TVA (HT). La TVA applicable est ajoutée au moment du checkout selon votre statut et localisation.",
+    "q4": "Comment fonctionne la livraison ?",
+    "a4": "Les commandes sont expédiées sous 24-48h depuis les entrepôts de nos fournisseurs en Belgique et en Europe. Le suivi est intégré dans votre espace client."
+  },
+  "cta": {
+    "title": "Trouvez les meilleures offres sur des milliers de références médicales.",
+    "subtitle": "Un seul endroit pour tous vos achats médicaux B2B."
+  },
+  "footer": {
+    "description": "La marketplace B2B pour les fournitures médicales en Belgique.",
+    "solutions": "Nos solutions",
+    "catalog": "Catalogue",
+    "supplierVerification": "Vérification fournisseurs",
+    "qualityGuarantee": "Garantie qualité",
+    "howToOrder": "Comment commander",
+    "howWeWork": "Comment on travaille",
+    "logistics": "Logistique",
+    "deferredPayment": "Paiement différé",
+    "becomeSeller": "Devenir vendeur",
+    "testimonials": "Témoignages",
+    "company": "Entreprise",
+    "about": "À propos",
+    "team": "Équipe",
+    "careers": "Carrières",
+    "press": "Presse",
+    "invest": "Investir",
+    "contact": "Contact",
+    "helpCenter": "Centre d'aide",
+    "legal": "Légal",
+    "legalNotice": "Mentions légales",
+    "terms": "CGV",
+    "privacy": "Confidentialité",
+    "cookies": "Cookies",
+    "copyright": "MediKong {{year}} — Plateforme B2B réservée aux professionnels de santé — Conformité FAGG/AFMPS"
+  },
+  "investBanner": {
+    "msg1": "Investissez dans MediKong — Tax Shelter 45% — Levée de fonds Phase 2 ouverte",
+    "msg2": "Dès 1 000 € — Tax Shelter 45% dès 5 000 € — Réduction d'impôt immédiate"
+  },
+  "languageSelector": {
+    "title": "Langue et région",
+    "suggested": "Langues et régions suggérées",
+    "chooseLanguage": "Choisissez une langue et une région",
+    "translation": "Traduction",
+    "autoTranslateDesc": "Traduire automatiquement les descriptions et le contenu des vendeurs en {{language}}"
+  }
+}

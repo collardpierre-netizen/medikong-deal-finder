@@ -1,13 +1,16 @@
-import { Search, Globe, Bell, ShoppingCart, Users, Menu, X, LogOut, Shield, Store } from "lucide-react";
+import { Search, Bell, ShoppingCart, Users, Menu, X, LogOut, Shield, Store } from "lucide-react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/hooks/useCart";
 import { supabase } from "@/integrations/supabase/client";
+import { useTranslation } from "react-i18next";
+import { LanguageSelector } from "@/components/LanguageSelector";
 import logoHorizontal from "@/assets/logo-horizontal.png";
 
 export function Navbar() {
+  const { t } = useTranslation();
   const [query, setQuery] = useState("");
   const [isTVAC, setIsTVAC] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -64,7 +67,7 @@ export function Navbar() {
               <input
                 value={query}
                 onChange={e => setQuery(e.target.value)}
-                placeholder="Rechercher produits, CNK, EAN, marques..."
+                placeholder={t("common.searchPlaceholder")}
                 className="w-full pl-9 pr-3 py-2 rounded-md text-sm bg-white text-mk-text placeholder:text-mk-ter border-0 focus:outline-none focus:ring-2 focus:ring-mk-blue"
               />
             </div>
@@ -79,9 +82,9 @@ export function Navbar() {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
-            {isTVAC ? "TVAC" : "HTVA"}
+            {isTVAC ? t("common.priceVat") : t("common.priceExVat")}
           </motion.button>
-          <motion.div whileHover={{ scale: 1.15 }} className="cursor-pointer"><Globe className="text-white" size={18} aria-label="Changer de langue" /></motion.div>
+          <LanguageSelector />
           <motion.div whileHover={{ scale: 1.15 }} className="cursor-pointer"><Bell className="text-white" size={18} aria-label="Notifications" /></motion.div>
           <Link to="/panier" className="relative">
             <motion.div whileHover={{ scale: 1.15 }}>
@@ -97,13 +100,13 @@ export function Navbar() {
               {isAdmin && (
                 <Link to="/admin" className="flex items-center gap-1.5 text-blue-400 hover:text-blue-300 text-xs font-semibold px-2.5 py-1 rounded-full" style={{ background: "rgba(27,91,218,0.15)" }}>
                   <Shield size={14} />
-                  <span>Admin</span>
+                  <span>{t("common.admin")}</span>
                 </Link>
               )}
               {isVendor && (
                 <Link to="/vendor" className="flex items-center gap-1.5 text-blue-300 hover:text-blue-200 text-xs font-semibold px-2.5 py-1 rounded-full" style={{ background: "rgba(27,91,218,0.12)" }}>
                   <Store size={14} />
-                  <span>Vendeur</span>
+                  <span>{t("common.vendor")}</span>
                 </Link>
               )}
               <Link to="/compte" className="flex items-center text-white text-sm max-w-[120px] truncate">
@@ -116,7 +119,7 @@ export function Navbar() {
           ) : (
             <Link to="/connexion" className="flex items-center gap-1.5 text-white text-sm">
               <Users size={16} />
-              <span>Connexion</span>
+              <span>{t("common.login")}</span>
             </Link>
           )}
         </div>
@@ -149,7 +152,7 @@ export function Navbar() {
               <form onSubmit={handleSearch} className="sm:hidden">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-mk-sec" size={16} />
-                  <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Rechercher..." className="w-full pl-9 pr-3 py-2 rounded-md text-sm bg-white text-mk-text" />
+                  <input value={query} onChange={e => setQuery(e.target.value)} placeholder={t("common.search") + "..."} className="w-full pl-9 pr-3 py-2 rounded-md text-sm bg-white text-mk-text" />
                 </div>
               </form>
             )}
@@ -157,24 +160,24 @@ export function Navbar() {
               <>
                 {isAdmin && (
                   <Link to="/admin" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 text-blue-400 text-sm font-semibold">
-                    <Shield size={16} /> Administration
+                    <Shield size={16} /> {t("common.administration")}
                   </Link>
                 )}
                 {isVendor && (
                   <Link to="/vendor" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 text-blue-400 text-sm font-semibold">
-                    <Store size={16} /> Espace Vendeur
+                    <Store size={16} /> {t("common.vendorSpace")}
                   </Link>
                 )}
                 <Link to="/compte" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 text-white text-sm">
-                  <Users size={16} /> Mon compte
+                  <Users size={16} /> {t("common.account")}
                 </Link>
                 <button onClick={() => { handleSignOut(); setMobileMenuOpen(false); }} className="flex items-center gap-2 text-white/70 text-sm">
-                  <LogOut size={16} /> Déconnexion
+                  <LogOut size={16} /> {t("common.signOut")}
                 </button>
               </>
             ) : (
               <Link to="/connexion" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 text-white text-sm">
-                <Users size={16} /> Connexion
+                <Users size={16} /> {t("common.login")}
               </Link>
             )}
           </motion.div>

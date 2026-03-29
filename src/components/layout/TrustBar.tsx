@@ -1,8 +1,14 @@
 import { Check } from "lucide-react";
-
-const items = ["Produits certifiés CE", "Fournisseurs vérifiés", "Protection acheteur"];
+import { useTranslation } from "react-i18next";
 
 export function TrustBar() {
+  const { t } = useTranslation();
+  const items = [
+    t("trustBar.certifiedCE"),
+    t("trustBar.verifiedSuppliers"),
+    t("trustBar.buyerProtection"),
+  ];
+
   return (
     <div className="bg-mk-trust border-b border-mk-line py-2.5">
       <div className="mk-container flex items-center justify-center gap-4 md:gap-8 overflow-x-auto">

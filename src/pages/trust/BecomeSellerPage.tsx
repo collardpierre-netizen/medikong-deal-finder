@@ -18,6 +18,8 @@ const sellerSteps = [
 ];
 
 export default function BecomeSellerPage() {
+  const { getImage } = usePageImages("become-seller");
+  const dashImg = getImage("split-dashboard");
   return (
     <TrustProcessLayout>
       <EntrepriseHero

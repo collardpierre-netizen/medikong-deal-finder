@@ -17,6 +17,8 @@ const guarantees = [
 ];
 
 export default function QualityGuaranteePage() {
+  const { getImage } = usePageImages("quality-guarantee");
+  const traceImg = getImage("split-traceability");
   return (
     <TrustProcessLayout>
       <EntrepriseHero

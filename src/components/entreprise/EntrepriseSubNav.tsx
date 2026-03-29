@@ -1,13 +1,13 @@
 import { Link, useLocation } from "react-router-dom";
 
 const navItems = [
-  { label: "À propos", path: "/a-propos" },
-  { label: "Pourquoi MediKong", path: "/pourquoi-medikong" },
-  { label: "Comment ça marche", path: "/comment-ca-marche" },
-  { label: "Notre équipe", path: "/equipe" },
-  { label: "Carrières", path: "/carrieres" },
-  { label: "Presse", path: "/presse" },
-  { label: "Investir", path: "/investir" },
+  { label: "À propos", path: "/entreprise/a-propos" },
+  { label: "Pourquoi MediKong", path: "/entreprise/pourquoi-medikong" },
+  { label: "Comment ça marche", path: "/entreprise/comment-ca-marche" },
+  { label: "Notre équipe", path: "/entreprise/equipe" },
+  { label: "Carrières", path: "/entreprise/carrieres" },
+  { label: "Presse", path: "/entreprise/presse" },
+  { label: "Investir", path: "/entreprise/investir" },
 ];
 
 export function EntrepriseSubNav() {

@@ -182,13 +182,21 @@ const App = () => (
             <Route path="/invest" element={<LP><InvestPage /></LP>} />
             <Route path="/mot-de-passe-oublie" element={<LP><ForgotPasswordPage /></LP>} />
             <Route path="/reset-password" element={<LP><ResetPasswordPage /></LP>} />
-            <Route path="/a-propos" element={<LP><AboutPage /></LP>} />
-            <Route path="/pourquoi-medikong" element={<LP><WhyMedikongPage /></LP>} />
-            <Route path="/comment-ca-marche" element={<LP><HowItWorksPage /></LP>} />
-            <Route path="/equipe" element={<LP><TeamPage /></LP>} />
-            <Route path="/carrieres" element={<LP><CareersPage /></LP>} />
-            <Route path="/presse" element={<LP><PressPage /></LP>} />
-            <Route path="/investir" element={<LP><InvestirPage /></LP>} />
+            <Route path="/entreprise/a-propos" element={<LP><AboutPage /></LP>} />
+            <Route path="/entreprise/pourquoi-medikong" element={<LP><WhyMedikongPage /></LP>} />
+            <Route path="/entreprise/comment-ca-marche" element={<LP><HowItWorksPage /></LP>} />
+            <Route path="/entreprise/equipe" element={<LP><TeamPage /></LP>} />
+            <Route path="/entreprise/carrieres" element={<LP><CareersPage /></LP>} />
+            <Route path="/entreprise/presse" element={<LP><PressPage /></LP>} />
+            <Route path="/entreprise/investir" element={<LP><InvestirPage /></LP>} />
+            {/* Redirects from old paths */}
+            <Route path="/a-propos" element={<Navigate to="/entreprise/a-propos" replace />} />
+            <Route path="/pourquoi-medikong" element={<Navigate to="/entreprise/pourquoi-medikong" replace />} />
+            <Route path="/comment-ca-marche" element={<Navigate to="/entreprise/comment-ca-marche" replace />} />
+            <Route path="/equipe" element={<Navigate to="/entreprise/equipe" replace />} />
+            <Route path="/carrieres" element={<Navigate to="/entreprise/carrieres" replace />} />
+            <Route path="/presse" element={<Navigate to="/entreprise/presse" replace />} />
+            <Route path="/investir" element={<Navigate to="/entreprise/investir" replace />} />
 
             <Route path="/professionnels" element={<LP><ProfessionnelsPage /></LP>} />
             <Route path="/sourcing" element={<LP><SourcingPage /></LP>} />

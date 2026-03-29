@@ -43,7 +43,7 @@ export default function TeamPage() {
         variant="blue"
         title="Envie de rejoindre l'aventure ?"
         buttons={[
-          { label: "Voir les offres d'emploi", variant: "white", to: "/carrieres" },
+          { label: "Voir les offres d'emploi", variant: "white", to: "/entreprise/carrieres" },
           { label: "Nous contacter", variant: "outline", to: "/contact" },
         ]}
       />

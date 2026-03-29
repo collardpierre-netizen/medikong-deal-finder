@@ -4,6 +4,7 @@ import { EntrepriseHero } from "@/components/entreprise/EntrepriseHero";
 import { Section } from "@/components/entreprise/Section";
 import { StatsRow } from "@/components/entreprise/StatsRow";
 import { SplitSection } from "@/components/entreprise/SplitSection";
+import aboutMissionImg from "@/assets/pages/about-mission.jpg";
 import { HorizontalTimeline } from "@/components/entreprise/HorizontalTimeline";
 import { Eye, Users, Star, CheckCircle, Mail, Phone, MapPin } from "lucide-react";
 import { aboutTimeline, companyInfo } from "@/data/entreprise-data";

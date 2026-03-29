@@ -61,8 +61,8 @@ export default function WhyMedikongPage() {
             ]}
             imagePlaceholder="Illustration : bouclier de sécurité"
             imageGradient="from-blue-100 to-indigo-200"
-            imageUrl={secImg?.image_url}
-            imageAlt={secImg?.alt_text}
+            imageUrl={secImg?.image_url || whySecurityImg}
+            imageAlt={secImg?.alt_text || "Sécurité et conformité MediKong"}
           />
         </div>
       </Section>

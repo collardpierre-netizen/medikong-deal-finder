@@ -88,19 +88,41 @@ const AdminCMS = () => {
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-hero-images"] }); queryClient.invalidateQueries({ queryKey: ["cms-hero-images"] }); toast.success("Image supprimée"); },
   });
 
+  const insertHeroImage = async (imageUrl: string, altText: string) => {
+    const maxOrder = heroImages.length ? Math.max(...heroImages.map(i => i.sort_order)) + 1 : 0;
+    const { error } = await sb.from("cms_hero_images").insert({ image_url: imageUrl, alt_text: altText || "", sort_order: maxOrder });
+    if (error) throw error;
+    queryClient.invalidateQueries({ queryKey: ["admin-hero-images"] });
+    queryClient.invalidateQueries({ queryKey: ["cms-hero-images"] });
+  };
+
   const addImage = useMutation({
-    mutationFn: async () => {
-      const maxOrder = heroImages.length ? Math.max(...heroImages.map(i => i.sort_order)) + 1 : 0;
-      const { error } = await sb.from("cms_hero_images").insert({ image_url: newImageUrl, alt_text: newImageAlt || "", sort_order: maxOrder });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-hero-images"] });
-      queryClient.invalidateQueries({ queryKey: ["cms-hero-images"] });
-      setNewImageUrl(""); setNewImageAlt("");
-      toast.success("Image ajoutée");
-    },
+    mutationFn: async () => { await insertHeroImage(newImageUrl, newImageAlt); },
+    onSuccess: () => { setNewImageUrl(""); setNewImageAlt(""); toast.success("Image ajoutée"); },
   });
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) { toast.error("Fichier non supporté, veuillez choisir une image"); return; }
+    if (file.size > 5 * 1024 * 1024) { toast.error("Image trop lourde (max 5 Mo)"); return; }
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop() || "jpg";
+      const fileName = `hero-${Date.now()}.${ext}`;
+      const { error: uploadError } = await supabase.storage.from("cms-images").upload(`hero/${fileName}`, file, { upsert: false });
+      if (uploadError) throw uploadError;
+      const { data: urlData } = supabase.storage.from("cms-images").getPublicUrl(`hero/${fileName}`);
+      await insertHeroImage(urlData.publicUrl, newImageAlt || file.name);
+      setNewImageAlt("");
+      toast.success("Image uploadée et ajoutée");
+    } catch (err: any) {
+      toast.error("Erreur upload : " + (err.message || "inconnue"));
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
 
   return (
     <div>

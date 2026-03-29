@@ -4,6 +4,7 @@ import { Section } from "@/components/entreprise/Section";
 import { CtaBanner } from "@/components/entreprise/CtaBanner";
 import { PricingCards } from "@/components/trust/PricingCards";
 import { ProcessStepsVertical } from "@/components/trust/ProcessStepsVertical";
+import { TrustTestimonials } from "@/components/trust/TrustTestimonials";
 import { orderSteps, pricingCards } from "@/data/trust-process-data";
 
 export default function HowToOrderPage() {

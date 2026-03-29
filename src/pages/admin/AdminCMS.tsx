@@ -8,7 +8,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Layout, Image, Layers, GripVertical, Eye, EyeOff, FileText, ToggleLeft, Trash2, Plus, Upload,
+  Layout, Image, Layers, GripVertical, Eye, EyeOff, FileText, ToggleLeft, Trash2, Plus, Upload, ArrowUp, ArrowDown,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -87,6 +87,19 @@ const AdminCMS = () => {
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-hero-images"] }); queryClient.invalidateQueries({ queryKey: ["cms-hero-images"] }); toast.success("Image supprimée"); },
   });
+
+  const reorderImage = async (idx: number, direction: "up" | "down") => {
+    const swapIdx = direction === "up" ? idx - 1 : idx + 1;
+    if (swapIdx < 0 || swapIdx >= heroImages.length) return;
+    const a = heroImages[idx];
+    const b = heroImages[swapIdx];
+    await Promise.all([
+      sb.from("cms_hero_images").update({ sort_order: b.sort_order }).eq("id", a.id),
+      sb.from("cms_hero_images").update({ sort_order: a.sort_order }).eq("id", b.id),
+    ]);
+    queryClient.invalidateQueries({ queryKey: ["admin-hero-images"] });
+    queryClient.invalidateQueries({ queryKey: ["cms-hero-images"] });
+  };
 
   const insertHeroImage = async (imageUrl: string, altText: string) => {
     const maxOrder = heroImages.length ? Math.max(...heroImages.map(i => i.sort_order)) + 1 : 0;
@@ -262,8 +275,12 @@ const AdminCMS = () => {
             </div>
 
             <div className="space-y-3">
-              {heroImages.map((img) => (
+              {heroImages.map((img, idx) => (
                 <div key={img.id} className="flex items-center gap-4 px-4 py-3 rounded-lg" style={{ backgroundColor: "#F8FAFC" }}>
+                  <div className="flex flex-col gap-0.5">
+                    <button onClick={() => reorderImage(idx, "up")} disabled={idx === 0} className="text-muted-foreground hover:text-foreground disabled:opacity-30"><ArrowUp size={14} /></button>
+                    <button onClick={() => reorderImage(idx, "down")} disabled={idx === heroImages.length - 1} className="text-muted-foreground hover:text-foreground disabled:opacity-30"><ArrowDown size={14} /></button>
+                  </div>
                   <img src={img.image_url} alt={img.alt_text} className="w-20 h-14 object-cover rounded-lg border border-border" />
                   <div className="flex-1 min-w-0">
                     <p className="text-[12px] font-medium truncate" style={{ color: "#1D2530" }}>{img.alt_text || "Sans description"}</p>

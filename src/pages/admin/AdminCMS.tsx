@@ -58,6 +58,9 @@ const AdminCMS = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
   const sb = supabase as any;
+  const pageFileInputRef = useRef<HTMLInputElement>(null);
+  const [pageUploading, setPageUploading] = useState(false);
+  const [activePageUpload, setActivePageUpload] = useState<{ pageKey: string; sectionKey: string } | null>(null);
 
   const toggleSection = (idx: number) => {
     setSections(prev => prev.map((s, i) => i === idx ? { ...s, visible: !s.visible } : s));

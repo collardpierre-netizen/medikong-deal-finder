@@ -279,27 +279,29 @@ export default function HomePage() {
         </div>
       </AnimatedSection>
 
-      {/* ═══ CATEGORIES ═══ */}
+      {/* ═══ CATEGORIES — visual grid with images ═══ */}
       <AnimatedSection className="py-14 md:py-20">
         <div className="mk-container">
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-2xl font-bold text-mk-navy">Catégories populaires</h2>
-            <Link to="/categories" className="text-sm text-mk-blue hover:underline flex items-center gap-1">
-              Voir tout <ChevronRight size={14} />
-            </Link>
-          </div>
-          <StaggerContainer className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <h2 className="text-2xl md:text-3xl font-bold text-mk-navy mb-10 text-center">Explorez les catégories populaires</h2>
+          <StaggerContainer className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-5">
             {categories.map(cat => (
               <StaggerItem key={cat.slug}>
-                <HoverCard className="border border-mk-line rounded-xl bg-white">
-                  <Link to={`/categorie/${cat.slug}`} className="flex items-center gap-3 p-4 md:p-5">
-                    {iconMap[cat.icon]}
-                    <div>
-                      <div className="text-sm font-semibold text-mk-navy">{cat.name}</div>
-                      <div className="text-xs text-mk-sec mt-0.5">{cat.count}</div>
+                <Link to={`/categorie/${cat.slug}`} className="group block relative rounded-xl overflow-hidden aspect-[4/3]">
+                  <div className="absolute inset-0 bg-gradient-to-br from-mk-blue/20 to-mk-navy/40 transition-all group-hover:from-mk-blue/30 group-hover:to-mk-navy/50" />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="text-white/20">
+                      {iconMap[cat.icon] ? <div className="w-16 h-16 flex items-center justify-center [&_svg]:w-16 [&_svg]:h-16 [&_svg]:text-white/30">{iconMap[cat.icon]}</div> : null}
                     </div>
-                  </Link>
-                </HoverCard>
+                  </div>
+                  <div className="absolute top-3 right-3">
+                    <span className="bg-white text-mk-navy text-xs font-semibold px-3 py-1.5 rounded-full shadow-sm">
+                      {cat.count}
+                    </span>
+                  </div>
+                  <div className="absolute bottom-0 left-0 right-0 p-4">
+                    <h3 className="text-sm md:text-base font-bold text-white uppercase tracking-wide drop-shadow-md">{cat.name}</h3>
+                  </div>
+                </Link>
               </StaggerItem>
             ))}
           </StaggerContainer>

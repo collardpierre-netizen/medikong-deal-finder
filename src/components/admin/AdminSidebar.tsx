@@ -69,6 +69,8 @@ const sections: NavSection[] = [
       { labelKey: "users", path: "/admin/users", icon: Users },
       { labelKey: "logistics", path: "/admin/logistique", icon: Truck },
       { labelKey: "team", path: "/admin/equipe", icon: ShieldCheck },
+      { labelKey: "apiKeys", path: "/admin/api-keys", icon: Key },
+      { labelKey: "apiDocs", path: "/admin/api-docs", icon: Book },
       { labelKey: "settings", path: "/admin/parametres", icon: Settings },
       { labelKey: "logs", path: "/admin/logs", icon: FileText },
       { labelKey: "auditLog", path: "/admin/audit-log", icon: ClipboardList },

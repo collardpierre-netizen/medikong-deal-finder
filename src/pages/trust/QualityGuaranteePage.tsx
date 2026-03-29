@@ -6,6 +6,7 @@ import { CtaBanner } from "@/components/entreprise/CtaBanner";
 import { FaqAccordion } from "@/components/entreprise/FaqAccordion";
 import { StatsRow } from "@/components/entreprise/StatsRow";
 import { Shield, Award, RotateCcw } from "lucide-react";
+import { TrustTestimonials } from "@/components/trust/TrustTestimonials";
 import { qualityFaqItems } from "@/data/trust-process-data";
 
 const guarantees = [

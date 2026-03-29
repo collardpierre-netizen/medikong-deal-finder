@@ -157,10 +157,10 @@ const AdminApiKeys = () => {
 
       {/* KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-        <KpiCard title="Clés actives" value={activeKeys} icon={Key} />
-        <KpiCard title="Total clés" value={apiKeys.length} icon={Shield} />
-        <KpiCard title="Requêtes aujourd'hui" value={todayRequests} icon={Activity} />
-        <KpiCard title="Requêtes (récentes)" value={totalRequests} icon={Activity} />
+        <KpiCard label="Clés actives" value={String(activeKeys)} icon={Key} />
+        <KpiCard label="Total clés" value={String(apiKeys.length)} icon={Shield} />
+        <KpiCard label="Requêtes aujourd'hui" value={String(todayRequests)} icon={Activity} />
+        <KpiCard label="Requêtes (récentes)" value={String(totalRequests)} icon={Activity} />
       </div>
 
       {/* Actions */}

@@ -112,7 +112,7 @@ export default function HomePage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
           >
-            La marketplace médicale B2B de référence en Belgique
+            Vos fournitures médicales au meilleur prix B2B
           </motion.h1>
           <motion.p
             className="text-base md:text-lg text-mk-sec mb-8 max-w-xl mx-auto"

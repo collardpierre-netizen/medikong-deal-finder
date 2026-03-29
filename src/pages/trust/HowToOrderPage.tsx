@@ -23,6 +23,7 @@ export default function HowToOrderPage() {
       <Section bg="gray" title="Choisissez votre plan" subtitle="Un plan pour chaque taille d'entreprise.">
         <PricingCards cards={pricingCards} />
       </Section>
+      <TrustTestimonials title="Ils commandent sur MediKong" />
       <CtaBanner
         variant="blue"
         title="Prêt à commander ?"

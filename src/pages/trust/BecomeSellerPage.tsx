@@ -52,6 +52,7 @@ export default function BecomeSellerPage() {
           reverse
         />
       </Section>
+      <TrustTestimonials title="Ils vendent sur MediKong" />
       <CtaBanner
         variant="dark"
         title="Prêt à développer votre business ?"

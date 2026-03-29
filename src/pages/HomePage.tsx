@@ -215,26 +215,34 @@ export default function HomePage() {
         </StaggerContainer>
       </AnimatedSection>
 
-      {/* ═══ POPULAR BRANDS — horizontal scroll ═══ */}
+      {/* ═══ POPULAR BRANDS — carousel with filter pills ═══ */}
       <AnimatedSection className="py-14 md:py-20">
         <div className="mk-container">
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-2xl font-bold text-mk-navy">Marques populaires</h2>
-            <Link to="/marques" className="text-sm text-mk-blue hover:underline flex items-center gap-1">
-              Toutes les marques <ChevronRight size={14} />
+          <h2 className="text-2xl md:text-3xl font-bold text-mk-navy mb-8 text-center">Marques premium & tendances</h2>
+          <div className="flex items-center justify-center gap-2 flex-wrap mb-8">
+            {["Meilleures ventes", "Soins", "Diagnostic", "Hygiène", "Équipement"].map((pill, i) => (
+              <span key={pill} className={`px-4 py-2 rounded-full text-xs font-semibold border cursor-pointer transition-all ${i === 0 ? 'bg-mk-navy text-white border-mk-navy' : 'bg-white text-mk-navy border-mk-line hover:border-mk-navy'}`}>
+                {pill}
+              </span>
+            ))}
+          </div>
+          <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
+            {popularBrands.map(b => (
+              <motion.div key={b} whileHover={{ scale: 1.03 }} className="shrink-0">
+                <Link to={`/marque/${b.toLowerCase().replace('.', '-')}`} className="block w-[160px]">
+                  <div className="aspect-square rounded-xl bg-gradient-to-br from-mk-alt to-white border border-mk-line flex items-center justify-center mb-2 overflow-hidden hover:shadow-md transition-shadow">
+                    <span className="text-lg font-bold text-mk-navy/70">{b}</span>
+                  </div>
+                  <p className="text-xs font-semibold text-mk-navy text-center uppercase tracking-wide">{b}</p>
+                </Link>
+              </motion.div>
+            ))}
+          </div>
+          <div className="text-center mt-8">
+            <Link to="/marques" className="inline-flex items-center gap-2 px-8 py-3 border border-mk-line rounded-lg text-sm font-semibold text-mk-navy hover:border-mk-navy hover:shadow-sm transition-all">
+              Voir toutes les marques
             </Link>
           </div>
-          <StaggerContainer className="flex gap-3 flex-wrap">
-            {popularBrands.map(b => (
-              <StaggerItem key={b}>
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }} transition={{ type: "spring", stiffness: 400, damping: 17 }}>
-                  <Link to={`/marque/${b.toLowerCase().replace('.', '-')}`} className="flex items-center justify-center px-6 py-3 border border-mk-line rounded-xl text-sm font-medium text-mk-navy hover:border-mk-navy hover:shadow-sm transition-all bg-white">
-                    {b}
-                  </Link>
-                </motion.div>
-              </StaggerItem>
-            ))}
-          </StaggerContainer>
         </div>
       </AnimatedSection>
 
@@ -271,27 +279,29 @@ export default function HomePage() {
         </div>
       </AnimatedSection>
 
-      {/* ═══ CATEGORIES ═══ */}
+      {/* ═══ CATEGORIES — visual grid with images ═══ */}
       <AnimatedSection className="py-14 md:py-20">
         <div className="mk-container">
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-2xl font-bold text-mk-navy">Catégories populaires</h2>
-            <Link to="/categories" className="text-sm text-mk-blue hover:underline flex items-center gap-1">
-              Voir tout <ChevronRight size={14} />
-            </Link>
-          </div>
-          <StaggerContainer className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <h2 className="text-2xl md:text-3xl font-bold text-mk-navy mb-10 text-center">Explorez les catégories populaires</h2>
+          <StaggerContainer className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-5">
             {categories.map(cat => (
               <StaggerItem key={cat.slug}>
-                <HoverCard className="border border-mk-line rounded-xl bg-white">
-                  <Link to={`/categorie/${cat.slug}`} className="flex items-center gap-3 p-4 md:p-5">
-                    {iconMap[cat.icon]}
-                    <div>
-                      <div className="text-sm font-semibold text-mk-navy">{cat.name}</div>
-                      <div className="text-xs text-mk-sec mt-0.5">{cat.count}</div>
+                <Link to={`/categorie/${cat.slug}`} className="group block relative rounded-xl overflow-hidden aspect-[4/3]">
+                  <div className="absolute inset-0 bg-gradient-to-br from-mk-blue/20 to-mk-navy/40 transition-all group-hover:from-mk-blue/30 group-hover:to-mk-navy/50" />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="text-white/20">
+                      {iconMap[cat.icon] ? <div className="w-16 h-16 flex items-center justify-center [&_svg]:w-16 [&_svg]:h-16 [&_svg]:text-white/30">{iconMap[cat.icon]}</div> : null}
                     </div>
-                  </Link>
-                </HoverCard>
+                  </div>
+                  <div className="absolute top-3 right-3">
+                    <span className="bg-white text-mk-navy text-xs font-semibold px-3 py-1.5 rounded-full shadow-sm">
+                      {cat.count}
+                    </span>
+                  </div>
+                  <div className="absolute bottom-0 left-0 right-0 p-4">
+                    <h3 className="text-sm md:text-base font-bold text-white uppercase tracking-wide drop-shadow-md">{cat.name}</h3>
+                  </div>
+                </Link>
               </StaggerItem>
             ))}
           </StaggerContainer>

@@ -58,6 +58,8 @@ export default function WhyMedikongPage() {
             ]}
             imagePlaceholder="Illustration : bouclier de sécurité"
             imageGradient="from-blue-100 to-indigo-200"
+            imageUrl={secImg?.image_url}
+            imageAlt={secImg?.alt_text}
           />
         </div>
       </Section>

@@ -54,6 +54,8 @@ export default function AboutPage() {
           ]}
           imagePlaceholder="Photo : équipe dans un entrepôt médical"
           imageGradient="from-blue-100 to-indigo-200"
+          imageUrl={missionImg?.image_url}
+          imageAlt={missionImg?.alt_text}
         />
       </Section>
 

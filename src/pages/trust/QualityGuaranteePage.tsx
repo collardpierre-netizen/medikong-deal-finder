@@ -57,8 +57,8 @@ export default function QualityGuaranteePage() {
           checklist={["Numéros de lot intégrés", "Dates d'expiration vérifiées", "Certificats téléchargeables", "Historique de commande complet"]}
           imagePlaceholder="Traçabilité produit"
           imageGradient="from-[#1B5BDA] to-[#0F3280]"
-          imageUrl={traceImg?.image_url}
-          imageAlt={traceImg?.alt_text}
+          imageUrl={traceImg?.image_url || qualityTraceabilityImg}
+          imageAlt={traceImg?.alt_text || "Traçabilité produit MediKong"}
           reverse
         />
       </Section>

@@ -57,8 +57,8 @@ export default function LogisticsPage() {
           checklist={["Notification d'expédition", "Suivi en temps réel", "Alerte de livraison", "Preuve de livraison"]}
           imagePlaceholder="Suivi de livraison"
           imageGradient="from-[#1B5BDA] to-[#0F3280]"
-          imageUrl={trackImg?.image_url}
-          imageAlt={trackImg?.alt_text}
+          imageUrl={trackImg?.image_url || logisticsTrackingImg}
+          imageAlt={trackImg?.alt_text || "Suivi de livraison MediKong"}
           reverse
         />
       </Section>

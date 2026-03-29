@@ -10,6 +10,7 @@ import { AnimatedSection, StaggerContainer, StaggerItem, HoverCard } from "@/com
 import { HeroImageGallery } from "@/components/home/HeroImageGallery";
 import { Helmet } from "react-helmet-async";
 import { HomeTestimonials } from "@/components/home/HomeTestimonials";
+import { useTranslation } from "react-i18next";
 
 const iconMap: Record<string, React.ReactNode> = {
   Shield: <Shield size={20} className="text-mk-navy" />,
@@ -22,57 +23,62 @@ const iconMap: Record<string, React.ReactNode> = {
   Package: <Package size={20} className="text-mk-navy" />,
 };
 
-const heroStats = [
-  { value: "350+", label: "Fournisseurs vérifiés" },
-  { value: "12 500+", label: "Produits" },
-  { value: "500+", label: "Pharmacies partenaires" },
-];
-
-const valueProps = [
-  { icon: <TrendingDown size={22} />, title: "Meilleurs prix B2B", desc: "Comparez les offres de 350+ grossistes, marques et distributeurs dans un catalogue unifié." },
-  { icon: <ShoppingCart size={22} />, title: "Commandes simplifiées", desc: "MOQ bas, paiement intégré et livraison suivie. Accédez aux prix de gros habituellement réservés aux grandes structures." },
-  { icon: <Shield size={22} />, title: "Authenticité garantie", desc: "Chaque produit provient de fournisseurs vérifiés. 100% conforme CE et FAGG." },
-];
-
-const comparisonOld = [
-  "Contrats fournisseurs rigides",
-  "Commandes minimum élevées (10K€+)",
-  "Processus de négociation long",
-  "Ruptures de stock fréquentes",
-  "Comparaison manuelle des catalogues",
-  "Aucune protection en cas d'erreur",
-];
-
-const comparisonNew = [
-  "Sans contrat, sans engagement",
-  "MOV à partir de 150€ HT",
-  "Accès instantané à 350+ fournisseurs",
-  "15+ fournisseurs par référence",
-  "Analyse en temps réel des stocks",
-  "Protection acheteur incluse",
-];
-
-const howItWorks = [
-  { step: "1", title: "Recherchez & sélectionnez", desc: "Parcourez le catalogue pour trouver les meilleures offres et ajoutez-les au panier." },
-  { step: "2", title: "Comparez & ajustez", desc: "Vérifiez votre panier, comparez les offres directes et externes, ajustez les quantités." },
-  { step: "3", title: "Commandez & payez", desc: "Validez et réglez par carte, virement ou paiement différé (30/60 jours)." },
-  { step: "4", title: "Livraison & support", desc: "Expédition sous 24-48h. Un problème ? Résolution garantie sous 24h." },
-];
-
-const faqs = [
-  { q: "Comment fonctionne MediKong ?", a: "MediKong est un marketplace B2B qui regroupe les offres de 350+ fournisseurs médicaux vérifiés. Vous pouvez acheter directement via la marketplace, comparer les prix du marché, ou être redirigé vers les offres externes les plus compétitives." },
-  { q: "Quels professionnels peuvent s'inscrire ?", a: "Tous les professionnels de santé en Belgique : pharmacies, hôpitaux, cliniques, MR/MRS, cabinets médicaux, kinésithérapeutes, dentistes, centrales d'achat et revendeurs agréés." },
-  { q: "Les prix incluent-ils la TVA ?", a: "Les prix affichés sont hors TVA (HT). La TVA applicable est ajoutée au moment du checkout selon votre statut et localisation." },
-  { q: "Comment fonctionne la livraison ?", a: "Les commandes sont expédiées sous 24-48h depuis les entrepôts de nos fournisseurs en Belgique et en Europe. Le suivi est intégré dans votre espace client." },
-];
-
 const popularBrands = ["3M", "TENA", "Hartmann", "B.Braun", "Essity", "Molnlycke", "Ecolab", "Kolmi"];
 
 export default function HomePage() {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const { data: products = [] } = useProducts();
   const navigate = useNavigate();
+
+  const heroStats = [
+    { value: "350+", label: t("stats.suppliers") },
+    { value: "12 500+", label: t("stats.products") },
+    { value: "500+", label: t("stats.pharmacies") },
+  ];
+
+  const valueProps = [
+    { icon: <TrendingDown size={22} />, title: t("valueProps.bestPrices"), desc: t("valueProps.bestPricesDesc") },
+    { icon: <ShoppingCart size={22} />, title: t("valueProps.simpleOrders"), desc: t("valueProps.simpleOrdersDesc") },
+    { icon: <Shield size={22} />, title: t("valueProps.guaranteed"), desc: t("valueProps.guaranteedDesc") },
+  ];
+
+  const comparisonOld = [
+    t("comparison.trad1"), t("comparison.trad2"), t("comparison.trad3"),
+    t("comparison.trad4"), t("comparison.trad5"), t("comparison.trad6"),
+  ];
+
+  const comparisonNew = [
+    t("comparison.mk1"), t("comparison.mk2"), t("comparison.mk3"),
+    t("comparison.mk4"), t("comparison.mk5"), t("comparison.mk6"),
+  ];
+
+  const howItWorks = [
+    { step: "1", title: t("howToOrder.step1Title"), desc: t("howToOrder.step1Desc") },
+    { step: "2", title: t("howToOrder.step2Title"), desc: t("howToOrder.step2Desc") },
+    { step: "3", title: t("howToOrder.step3Title"), desc: t("howToOrder.step3Desc") },
+    { step: "4", title: t("howToOrder.step4Title"), desc: t("howToOrder.step4Desc") },
+  ];
+
+  const faqs = [
+    { q: t("faq.q1"), a: t("faq.a1") },
+    { q: t("faq.q2"), a: t("faq.a2") },
+    { q: t("faq.q3"), a: t("faq.a3") },
+    { q: t("faq.q4"), a: t("faq.a4") },
+  ];
+
+  const brandFilters = [
+    t("brands.filters.bestSellers"), t("brands.filters.care"), t("brands.filters.diagnostic"),
+    t("brands.filters.hygiene"), t("brands.filters.equipment"),
+  ];
+
+  const searchExamples = [
+    { label: t("hero.exampleGloves"), q: "Gants nitrile" },
+    { label: t("hero.exampleBetadine"), q: "Betadine" },
+    { label: t("hero.exampleTena"), q: "TENA" },
+    { label: t("hero.exampleMasks"), q: "Masques FFP2" },
+  ];
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -112,7 +118,7 @@ export default function HomePage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
           >
-            Vos fournitures médicales au meilleur prix B2B
+            {t("hero.title")}
           </motion.h1>
           <motion.p
             className="text-base md:text-lg text-mk-sec mb-8 max-w-xl mx-auto"
@@ -120,7 +126,7 @@ export default function HomePage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
           >
-            Comparez les prix de centaines de fournisseurs. Achetez directement ou trouvez la meilleure offre externe.
+            {t("hero.subtitle")}
           </motion.p>
 
           {/* Search */}
@@ -138,11 +144,11 @@ export default function HomePage() {
               <input
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                placeholder="Rechercher produits, marques, CNK..."
+                placeholder={t("common.searchPlaceholder")}
                 className="flex-1 px-3 py-3.5 text-sm focus:outline-none min-w-0"
               />
               <button type="submit" className="bg-mk-blue text-white px-6 py-3.5 text-sm font-semibold hover:opacity-90 whitespace-nowrap transition-opacity">
-                Rechercher
+                {t("common.search")}
               </button>
             </div>
           </motion.form>
@@ -153,13 +159,13 @@ export default function HomePage() {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.4, delay: 0.35 }}
           >
-            <span>Ex:</span>
-            {["Gants nitrile", "Betadine", "TENA", "Masques FFP2"].map(ex => (
-              <Link key={ex} to={`/recherche?q=${encodeURIComponent(ex)}`} className="text-mk-blue hover:underline">{ex}</Link>
+            <span>{t("hero.searchExamples")}</span>
+            {searchExamples.map(ex => (
+              <Link key={ex.q} to={`/recherche?q=${encodeURIComponent(ex.q)}`} className="text-mk-blue hover:underline">{ex.label}</Link>
             ))}
           </motion.div>
 
-          {/* Inline stats — Qogita style */}
+          {/* Inline stats */}
           <motion.div
             className="flex items-center justify-center gap-0 divide-x divide-mk-line"
             initial={{ opacity: 0, y: 10 }}
@@ -182,7 +188,7 @@ export default function HomePage() {
             transition={{ delay: 0.5 }}
           >
             <Link to="/onboarding" className="inline-flex items-center gap-2 bg-mk-navy text-white font-semibold text-sm px-7 py-3 rounded-lg hover:opacity-90 transition-opacity">
-              Créer un compte gratuit <ArrowRight size={16} />
+              {t("common.signup")} <ArrowRight size={16} />
             </Link>
           </motion.div>
         </div>
@@ -201,7 +207,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ═══ 3 VALUE PROPS — Qogita style ═══ */}
+      {/* ═══ 3 VALUE PROPS ═══ */}
       <AnimatedSection className="py-14 md:py-20 border-t border-mk-line">
         <StaggerContainer className="mk-container grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
           {valueProps.map(vp => (
@@ -216,12 +222,12 @@ export default function HomePage() {
         </StaggerContainer>
       </AnimatedSection>
 
-      {/* ═══ POPULAR BRANDS — carousel with filter pills ═══ */}
+      {/* ═══ POPULAR BRANDS ═══ */}
       <AnimatedSection className="py-14 md:py-20">
         <div className="mk-container">
-          <h2 className="text-2xl md:text-3xl font-bold text-mk-navy mb-8 text-center">Marques premium & tendances</h2>
+          <h2 className="text-2xl md:text-3xl font-bold text-mk-navy mb-8 text-center">{t("brands.title")}</h2>
           <div className="flex items-center justify-center gap-2 flex-wrap mb-8">
-            {["Meilleures ventes", "Soins", "Diagnostic", "Hygiène", "Équipement"].map((pill, i) => (
+            {brandFilters.map((pill, i) => (
               <span key={pill} className={`px-4 py-2 rounded-full text-xs font-semibold border cursor-pointer transition-all ${i === 0 ? 'bg-mk-navy text-white border-mk-navy' : 'bg-white text-mk-navy border-mk-line hover:border-mk-navy'}`}>
                 {pill}
               </span>
@@ -241,20 +247,19 @@ export default function HomePage() {
           </div>
           <div className="text-center mt-8">
             <Link to="/marques" className="inline-flex items-center gap-2 px-8 py-3 border border-mk-line rounded-lg text-sm font-semibold text-mk-navy hover:border-mk-navy hover:shadow-sm transition-all">
-              Voir toutes les marques
+              {t("common.allBrands")}
             </Link>
           </div>
         </div>
       </AnimatedSection>
 
-      {/* ═══ COMPARISON TABLE — Qogita style ═══ */}
+      {/* ═══ COMPARISON TABLE ═══ */}
       <AnimatedSection className="py-14 md:py-20 bg-mk-alt/30">
         <div className="mk-container max-w-4xl">
-          <h2 className="text-2xl font-bold text-mk-navy mb-10 text-center">MediKong vs. sourcing traditionnel</h2>
+          <h2 className="text-2xl font-bold text-mk-navy mb-10 text-center">{t("comparison.title")}</h2>
           <div className="grid md:grid-cols-2 gap-6">
-            {/* Old way */}
             <div className="bg-white border border-mk-line rounded-2xl p-6 md:p-8">
-              <h3 className="text-sm font-bold text-mk-ter uppercase tracking-wider mb-5">Sourcing traditionnel</h3>
+              <h3 className="text-sm font-bold text-mk-ter uppercase tracking-wider mb-5">{t("comparison.traditional")}</h3>
               <div className="space-y-3.5">
                 {comparisonOld.map(item => (
                   <div key={item} className="flex items-start gap-3 text-sm text-mk-sec">
@@ -264,9 +269,8 @@ export default function HomePage() {
                 ))}
               </div>
             </div>
-            {/* MediKong */}
             <div className="bg-mk-navy text-white rounded-2xl p-6 md:p-8 shadow-lg">
-              <h3 className="text-sm font-bold uppercase tracking-wider mb-5 text-white/60">MediKong.pro</h3>
+              <h3 className="text-sm font-bold uppercase tracking-wider mb-5 text-white/60">{t("comparison.medikong")}</h3>
               <div className="space-y-3.5">
                 {comparisonNew.map(item => (
                   <div key={item} className="flex items-start gap-3 text-sm">
@@ -280,10 +284,10 @@ export default function HomePage() {
         </div>
       </AnimatedSection>
 
-      {/* ═══ CATEGORIES — visual grid with images ═══ */}
+      {/* ═══ CATEGORIES ═══ */}
       <AnimatedSection className="py-14 md:py-20">
         <div className="mk-container">
-          <h2 className="text-2xl md:text-3xl font-bold text-mk-navy mb-10 text-center">Explorez les catégories populaires</h2>
+          <h2 className="text-2xl md:text-3xl font-bold text-mk-navy mb-10 text-center">{t("categories.title")}</h2>
           <StaggerContainer className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-5">
             {categories.map(cat => (
               <StaggerItem key={cat.slug}>
@@ -313,9 +317,9 @@ export default function HomePage() {
       <AnimatedSection className="py-14 md:py-20 bg-mk-alt/30">
         <div className="mk-container">
           <div className="flex items-center justify-between mb-8">
-            <h2 className="text-2xl font-bold text-mk-navy">Produits populaires</h2>
+            <h2 className="text-2xl font-bold text-mk-navy">{t("popularProducts.title")}</h2>
             <Link to="/recherche" className="text-sm text-mk-blue hover:underline flex items-center gap-1">
-              Voir tout <ChevronRight size={14} />
+              {t("common.viewAll")} <ChevronRight size={14} />
             </Link>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
@@ -326,10 +330,10 @@ export default function HomePage() {
         </div>
       </AnimatedSection>
 
-      {/* ═══ HOW IT WORKS — Qogita style ═══ */}
+      {/* ═══ HOW IT WORKS ═══ */}
       <AnimatedSection className="py-14 md:py-20">
         <div className="mk-container max-w-4xl">
-          <h2 className="text-2xl font-bold text-mk-navy mb-10 text-center">Comment commander</h2>
+          <h2 className="text-2xl font-bold text-mk-navy mb-10 text-center">{t("howToOrder.title")}</h2>
           <StaggerContainer className="grid grid-cols-1 md:grid-cols-4 gap-6">
             {howItWorks.map(s => (
               <StaggerItem key={s.step} className="text-center">
@@ -342,10 +346,10 @@ export default function HomePage() {
         </div>
       </AnimatedSection>
 
-      {/* ═══ FAQ ACCORDION — Qogita style ═══ */}
+      {/* ═══ FAQ ACCORDION ═══ */}
       <AnimatedSection className="py-14 md:py-20 bg-mk-alt/30">
         <div className="mk-container max-w-2xl">
-          <h2 className="text-2xl font-bold text-mk-navy mb-8">Questions fréquentes</h2>
+          <h2 className="text-2xl font-bold text-mk-navy mb-8">{t("faq.title")}</h2>
           <div className="space-y-3">
             {faqs.map((faq, i) => (
               <motion.div
@@ -388,7 +392,7 @@ export default function HomePage() {
       {/* ═══ TESTIMONIALS ═══ */}
       <HomeTestimonials />
 
-      {/* ═══ FINAL CTA BANNER — Qogita style ═══ */}
+      {/* ═══ FINAL CTA BANNER ═══ */}
       <section className="py-16 md:py-24">
         <div className="mk-container max-w-3xl text-center">
           <motion.div
@@ -399,13 +403,13 @@ export default function HomePage() {
             transition={{ duration: 0.5 }}
           >
             <h2 className="text-2xl md:text-3xl font-bold mb-3" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-              Trouvez les meilleures offres sur des milliers de références médicales.
+              {t("cta.title")}
             </h2>
             <p className="text-sm text-white/60 mb-8 max-w-md mx-auto">
-              Un seul endroit pour tous vos achats médicaux B2B.
+              {t("cta.subtitle")}
             </p>
             <Link to="/onboarding" className="inline-flex items-center gap-2 bg-white text-mk-navy font-bold text-sm px-8 py-3.5 rounded-lg hover:bg-gray-100 transition-colors">
-              Créer un compte gratuit <ArrowRight size={16} />
+              {t("common.signup")} <ArrowRight size={16} />
             </Link>
           </motion.div>
         </div>

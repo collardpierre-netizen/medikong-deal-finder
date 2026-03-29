@@ -10,6 +10,8 @@ import { ComparisonTable } from "@/components/trust/ComparisonTable";
 import { verificationSteps, comparisonRows } from "@/data/trust-process-data";
 
 export default function SupplierVerificationPage() {
+  const { getImage } = usePageImages("supplier-verification");
+  const partImg = getImage("split-partners");
   return (
     <TrustProcessLayout>
       <EntrepriseHero

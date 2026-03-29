@@ -33,6 +33,8 @@ export default function WhyMedikongPage() {
             ]}
             imagePlaceholder="Screenshot : comparateur de prix"
             imageGradient="from-blue-100 to-indigo-200"
+            imageUrl={compImg?.image_url}
+            imageAlt={compImg?.alt_text}
           />
           <SplitSection
             reverse

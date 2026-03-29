@@ -47,6 +47,8 @@ export default function BuyNowPayLaterPage() {
           checklist={["Vérification instantanée", "Aucun document requis", "Protection anti-fraude", "Intégration transparente"]}
           imagePlaceholder="Partenariat Mondu"
           imageGradient="from-[#0F172A] to-[#334155]"
+          imageUrl={monduImg?.image_url}
+          imageAlt={monduImg?.alt_text}
         />
       </Section>
       <Section title="Questions fréquentes">

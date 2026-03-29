@@ -243,12 +243,22 @@ const AdminCMS = () => {
             <h3 className="text-[14px] font-semibold mb-4" style={{ color: "#1D2530" }}>Images Hero Homepage</h3>
             <p className="text-[12px] mb-4" style={{ color: "#8B95A5" }}>Gérez les photos du carrousel hero. Les modifications sont appliquées en temps réel sur la homepage.</p>
 
-            <div className="flex gap-2 mb-6">
-              <Input placeholder="URL de l'image..." value={newImageUrl} onChange={e => setNewImageUrl(e.target.value)} className="text-[13px] flex-1" />
-              <Input placeholder="Texte alt..." value={newImageAlt} onChange={e => setNewImageAlt(e.target.value)} className="text-[13px] w-[200px]" />
-              <Button size="sm" onClick={() => newImageUrl && addImage.mutate()} disabled={!newImageUrl || addImage.isPending} className="bg-[#1B5BDA] hover:bg-[#1548B0] text-white gap-1.5">
-                <Plus size={14} /> Ajouter
-              </Button>
+            {/* Upload file */}
+            <div className="flex flex-col gap-3 mb-6">
+              <div className="flex gap-2 items-center">
+                <input type="file" accept="image/*" ref={fileInputRef} onChange={handleFileUpload} className="hidden" />
+                <Button size="sm" variant="outline" onClick={() => fileInputRef.current?.click()} disabled={uploading} className="gap-1.5">
+                  <Upload size={14} /> {uploading ? "Upload en cours…" : "Uploader une image"}
+                </Button>
+                <Input placeholder="Texte alt (optionnel)..." value={newImageAlt} onChange={e => setNewImageAlt(e.target.value)} className="text-[13px] w-[220px]" />
+              </div>
+              <div className="flex gap-2 items-center">
+                <span className="text-[11px] text-muted-foreground">ou</span>
+                <Input placeholder="URL externe de l'image..." value={newImageUrl} onChange={e => setNewImageUrl(e.target.value)} className="text-[13px] flex-1" />
+                <Button size="sm" onClick={() => newImageUrl && addImage.mutate()} disabled={!newImageUrl || addImage.isPending} className="bg-[#1B5BDA] hover:bg-[#1548B0] text-white gap-1.5">
+                  <Plus size={14} /> Ajouter URL
+                </Button>
+              </div>
             </div>
 
             <div className="space-y-3">

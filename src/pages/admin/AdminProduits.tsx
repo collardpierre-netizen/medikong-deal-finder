@@ -10,7 +10,7 @@ import { ProductFormDialog } from "@/components/admin/ProductFormDialog";
 import { exportProducts, importProducts, downloadProductTemplate } from "@/lib/xlsx-utils";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Package, Tag, ShoppingCart, AlertTriangle, Search, Filter, Download, Upload, Plus, ImageOff } from "lucide-react";
+import { Package, Tag, ShoppingCart, AlertTriangle, Search, Filter, Download, Upload, Plus, ImageOff, FileSpreadsheet } from "lucide-react";
 
 const AdminProduits = () => {
   const { t } = useI18n();

@@ -85,6 +85,7 @@ export function Navbar() {
           >
             {isTVAC ? t("common.priceVat") : t("common.priceExVat")}
           </motion.button>
+          <CountrySelector />
           <LanguageSelector />
           <motion.div whileHover={{ scale: 1.15 }} className="cursor-pointer"><Bell className="text-white" size={18} aria-label="Notifications" /></motion.div>
           <Link to="/panier" className="relative">

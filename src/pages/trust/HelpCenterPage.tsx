@@ -52,9 +52,11 @@ export default function HelpCenterPage() {
 
       <Section>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {filtered.map((cat) => (
-            <HelpCategoryCard key={cat.title} {...cat} />
-          ))}
+          {filtered.map((cat, i) => {
+            const keys = ["gettingStarted","orders","delivery","vat","claims","account","sellers","quality","features","resources"];
+            const originalIndex = categories.indexOf(cat);
+            return <HelpCategoryCard key={cat.title} {...cat} categoryKey={keys[originalIndex]} />;
+          })}
         </div>
         {filtered.length === 0 && (
           <p className="text-center text-muted-foreground py-12 text-sm">

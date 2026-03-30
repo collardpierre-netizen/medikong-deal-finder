@@ -52,6 +52,7 @@ export function CatalogProductCard({ product, index = 0, view = "grid" }: Props)
   const [qty, setQty] = useState(1);
   const [adding, setAdding] = useState(false);
   const { addToCart } = useCart();
+  const { user } = useAuth();
   const { country } = useCountry();
   const navigate = useNavigate();
   const price = product.best_price_excl_vat || 0;

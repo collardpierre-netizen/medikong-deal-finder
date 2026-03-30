@@ -45,13 +45,13 @@ export function CatalogPagination({ page, perPage, total, onPageChange }: Props)
             <button
               key={p}
               onClick={() => onPageChange(p)}
-              className={`w-8 h-8 rounded-md text-sm font-medium transition-colors ${
+              className={`min-w-8 h-8 px-2 rounded-md text-sm font-medium transition-colors ${
                 p === page
                   ? "bg-primary text-primary-foreground"
                   : "border border-border text-foreground hover:bg-muted"
               }`}
             >
-              {p}
+              {p.toLocaleString("fr-FR")}
             </button>
           )
         )}

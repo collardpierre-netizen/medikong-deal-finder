@@ -139,53 +139,53 @@ export const contactSubjects = [
 export function getHelpCategories(t: (key: string) => string): HelpCategoryData[] {
   return [
     { icon: Rocket, title: t("helpCenter.categories.gettingStarted.title"), description: t("helpCenter.categories.gettingStarted.description"), articleCount: 5, articles: [
-      { label: t("helpCenter.categories.gettingStarted.a1"), href: "/onboarding" },
-      { label: t("helpCenter.categories.gettingStarted.a2"), href: "#" },
-      { label: t("helpCenter.categories.gettingStarted.a3"), href: "#" },
+      { label: t("helpCenter.categories.gettingStarted.a1"), href: "/centre-aide/creer-compte-professionnel" },
+      { label: t("helpCenter.categories.gettingStarted.a2"), href: "/centre-aide/premiere-commande" },
+      { label: t("helpCenter.categories.gettingStarted.a3"), href: "/centre-aide/naviguer-catalogue" },
     ]},
     { icon: ShoppingCart, title: t("helpCenter.categories.orders.title"), description: t("helpCenter.categories.orders.description"), articleCount: 12, articles: [
-      { label: t("helpCenter.categories.orders.a1"), href: "#" },
-      { label: t("helpCenter.categories.orders.a2"), href: "#" },
+      { label: t("helpCenter.categories.orders.a1"), href: "/centre-aide/passer-commande" },
+      { label: t("helpCenter.categories.orders.a2"), href: "/centre-aide/moyens-paiement" },
       { label: t("helpCenter.categories.orders.a3"), href: "/paiement-differe" },
     ]},
     { icon: Package, title: t("helpCenter.categories.delivery.title"), description: t("helpCenter.categories.delivery.description"), articleCount: 8, articles: [
-      { label: t("helpCenter.categories.delivery.a1"), href: "#" },
+      { label: t("helpCenter.categories.delivery.a1"), href: "/centre-aide/suivre-colis" },
       { label: t("helpCenter.categories.delivery.a2"), href: "/logistique" },
-      { label: t("helpCenter.categories.delivery.a3"), href: "#" },
+      { label: t("helpCenter.categories.delivery.a3"), href: "/centre-aide/retourner-produit" },
     ]},
     { icon: FileText, title: t("helpCenter.categories.vat.title"), description: t("helpCenter.categories.vat.description"), articleCount: 4, articles: [
-      { label: t("helpCenter.categories.vat.a1"), href: "#" },
-      { label: t("helpCenter.categories.vat.a2"), href: "#" },
-      { label: t("helpCenter.categories.vat.a3"), href: "#" },
+      { label: t("helpCenter.categories.vat.a1"), href: "/centre-aide/tva-medikong" },
+      { label: t("helpCenter.categories.vat.a2"), href: "/centre-aide/telecharger-factures" },
+      { label: t("helpCenter.categories.vat.a3"), href: "/centre-aide/modifier-facturation" },
     ]},
     { icon: ShieldAlert, title: t("helpCenter.categories.claims.title"), description: t("helpCenter.categories.claims.description"), articleCount: 6, articles: [
-      { label: t("helpCenter.categories.claims.a1"), href: "#" },
-      { label: t("helpCenter.categories.claims.a2"), href: "#" },
-      { label: t("helpCenter.categories.claims.a3"), href: "#" },
+      { label: t("helpCenter.categories.claims.a1"), href: "/centre-aide/signaler-probleme" },
+      { label: t("helpCenter.categories.claims.a2"), href: "/centre-aide/delai-remboursement" },
+      { label: t("helpCenter.categories.claims.a3"), href: "/centre-aide/suivre-reclamation" },
     ]},
     { icon: UserCircle, title: t("helpCenter.categories.account.title"), description: t("helpCenter.categories.account.description"), articleCount: 6, articles: [
-      { label: t("helpCenter.categories.account.a1"), href: "#" },
-      { label: t("helpCenter.categories.account.a2"), href: "#" },
+      { label: t("helpCenter.categories.account.a1"), href: "/centre-aide/ajouter-utilisateur" },
+      { label: t("helpCenter.categories.account.a2"), href: "/centre-aide/securiser-compte" },
       { label: t("helpCenter.categories.account.a3"), href: "/mot-de-passe-oublie" },
     ]},
     { icon: Store, title: t("helpCenter.categories.sellers.title"), description: t("helpCenter.categories.sellers.description"), articleCount: 10, articles: [
       { label: t("helpCenter.categories.sellers.a1"), href: "/devenir-vendeur" },
-      { label: t("helpCenter.categories.sellers.a2"), href: "#" },
+      { label: t("helpCenter.categories.sellers.a2"), href: "/centre-aide/gerer-catalogue" },
       { label: t("helpCenter.categories.sellers.a3"), href: "/entreprise/comment-ca-marche" },
     ]},
     { icon: ShieldCheck, title: t("helpCenter.categories.quality.title"), description: t("helpCenter.categories.quality.description"), articleCount: 5, articles: [
-      { label: t("helpCenter.categories.quality.a1"), href: "#" },
+      { label: t("helpCenter.categories.quality.a1"), href: "/centre-aide/marquage-ce" },
       { label: t("helpCenter.categories.quality.a2"), href: "/verification-fournisseurs" },
       { label: t("helpCenter.categories.quality.a3"), href: "/qualite-garantie" },
     ]},
     { icon: Lightbulb, title: t("helpCenter.categories.features.title"), description: t("helpCenter.categories.features.description"), articleCount: 7, articles: [
-      { label: t("helpCenter.categories.features.a1"), href: "#" },
-      { label: t("helpCenter.categories.features.a2"), href: "#" },
-      { label: t("helpCenter.categories.features.a3"), href: "#" },
+      { label: t("helpCenter.categories.features.a1"), href: "/centre-aide/comparaison-prix" },
+      { label: t("helpCenter.categories.features.a2"), href: "/centre-aide/configurer-alertes" },
+      { label: t("helpCenter.categories.features.a3"), href: "/centre-aide/acceder-api" },
     ]},
     { icon: BookOpen, title: t("helpCenter.categories.resources.title"), description: t("helpCenter.categories.resources.description"), articleCount: 4, articles: [
-      { label: t("helpCenter.categories.resources.a1"), href: "#" },
-      { label: t("helpCenter.categories.resources.a2"), href: "#" },
+      { label: t("helpCenter.categories.resources.a1"), href: "/centre-aide/guide-achat-pharmacies" },
+      { label: t("helpCenter.categories.resources.a2"), href: "/centre-aide/bonnes-pratiques-b2b" },
     ]},
   ];
 }

@@ -29,6 +29,7 @@ const OrderConfirmationEmail = ({
     <Preview>Confirmation de votre commande {orderNumber} — {SITE_NAME}</Preview>
     <Body style={main}>
       <Container style={container}>
+        <Img src={LOGO_URL} width="180" alt="MediKong" style={{ marginBottom: '24px' }} />
         <Heading style={h1}>
           {customerName ? `Merci, ${customerName} !` : 'Merci pour votre commande !'}
         </Heading>

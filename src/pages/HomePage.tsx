@@ -11,6 +11,10 @@ import { HeroImageGallery } from "@/components/home/HeroImageGallery";
 import { Helmet } from "react-helmet-async";
 import { HomeTestimonials } from "@/components/home/HomeTestimonials";
 import { useTranslation } from "react-i18next";
+import { useCountry } from "@/contexts/CountryContext";
+import { AnimatedCounter } from "@/components/entreprise/AnimatedCounter";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 const iconMap: Record<string, React.ReactNode> = {
   Shield: <Shield size={20} className="text-mk-navy" />,
@@ -30,13 +34,27 @@ export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const { data: products = [] } = useProducts();
+  const { country, currentCountry } = useCountry();
   const navigate = useNavigate();
 
-  const heroStats = [
-    { value: "350+", label: t("stats.suppliers") },
-    { value: "12 500+", label: t("stats.products") },
-    { value: "500+", label: t("stats.pharmacies") },
-  ];
+  const { data: countryStats } = useQuery({
+    queryKey: ["homepage-stats", country],
+    queryFn: async () => {
+      const [productsRes, offersRes, vendorsRes] = await Promise.all([
+        supabase.from("product_country_stats").select("product_id", { count: "exact", head: true }).eq("country_code", country).gt("offer_count", 0),
+        supabase.from("offers").select("vendor_id", { count: "exact", head: true }).eq("country_code", country).eq("is_active", true),
+        supabase.from("offers").select("vendor_id").eq("country_code", country).eq("is_active", true),
+      ]);
+      const uniqueVendors = new Set((vendorsRes.data || []).map((o: any) => o.vendor_id)).size;
+      return {
+        products: productsRes.count || 0,
+        offers: offersRes.count || 0,
+        vendors: uniqueVendors || 0,
+      };
+    },
+  });
+
+  const countryLabel = currentCountry?.name || "Belgique";
 
   const valueProps = [
     { icon: <TrendingDown size={22} />, title: t("valueProps.bestPrices"), desc: t("valueProps.bestPricesDesc") },
@@ -165,19 +183,31 @@ export default function HomePage() {
             ))}
           </motion.div>
 
-          {/* Inline stats */}
+          {/* Inline stats — dynamic per country */}
           <motion.div
             className="flex items-center justify-center gap-0 divide-x divide-mk-line"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.4 }}
           >
-            {heroStats.map(s => (
-              <div key={s.label} className="px-6 md:px-8 text-center">
-                <div className="text-xl md:text-2xl font-bold text-mk-navy">{s.value}</div>
-                <div className="text-xs text-mk-sec mt-0.5">{s.label}</div>
+            <div className="px-6 md:px-8 text-center">
+              <div className="text-xl md:text-2xl font-bold text-mk-navy">
+                <AnimatedCounter target={countryStats?.vendors || 0} suffix="+" />
               </div>
-            ))}
+              <div className="text-xs text-mk-sec mt-0.5">{t("stats.suppliers")}</div>
+            </div>
+            <div className="px-6 md:px-8 text-center">
+              <div className="text-xl md:text-2xl font-bold text-mk-navy">
+                <AnimatedCounter target={countryStats?.products || 0} suffix="+" />
+              </div>
+              <div className="text-xs text-mk-sec mt-0.5">{t("stats.products")} {countryLabel}</div>
+            </div>
+            <div className="px-6 md:px-8 text-center">
+              <div className="text-xl md:text-2xl font-bold text-mk-navy">
+                <AnimatedCounter target={countryStats?.offers || 0} suffix="+" />
+              </div>
+              <div className="text-xs text-mk-sec mt-0.5">{t("stats.offers", "Offres")}</div>
+            </div>
           </motion.div>
 
           {/* CTA */}

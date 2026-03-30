@@ -5,12 +5,13 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const CHUNK = 150; // small chunks to stay under memory
+const CHUNK = 100;
 
-async function getQogitaToken(sb: any) {
+async function getToken(sb: any) {
   const { data: c } = await sb.from("qogita_config").select("*").eq("id", 1).single();
   if (!c?.qogita_email || !c?.qogita_password) throw new Error("Qogita credentials missing");
-  const r = await fetch(`${c.base_url || "https://api.qogita.com"}/auth/login/`, {
+  const base = c.base_url || "https://api.qogita.com";
+  const r = await fetch(`${base}/auth/login/`, {
     method: "POST", headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email: c.qogita_email, password: c.qogita_password }),
   });
@@ -18,37 +19,27 @@ async function getQogitaToken(sb: any) {
   const { accessToken } = await r.json();
   if (!accessToken) throw new Error("No accessToken");
   await sb.from("qogita_config").update({ bearer_token: accessToken }).eq("id", 1);
-  return { token: accessToken, baseUrl: c.base_url || "https://api.qogita.com" };
+  return { token: accessToken, baseUrl: base };
 }
 
-function slug(t: string) {
+function sl(t: string) {
   return t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 }
 
-function qid(url: string) { const m = url?.match(/\/products\/([a-f0-9]+)\//); return m?.[1] || null; }
-
-/** Parse CSV headers only, return {headers, lines} where lines is array of raw strings */
-function splitCSV(text: string): { headers: string[]; lines: string[] } {
-  const nl = text.indexOf("\n");
-  if (nl === -1) return { headers: [], lines: [] };
-  const headers = text.substring(0, nl).split(",").map(h => h.trim().replace(/^"|"$/g, ""));
-  const rest = text.substring(nl + 1);
-  const lines = rest.split("\n").filter(l => l.trim());
-  return { headers, lines };
-}
+function extractQid(url: string) { const m = url?.match(/\/products\/([a-f0-9]+)\//); return m?.[1] || null; }
 
 function parseLine(line: string, headers: string[]): Record<string, string> {
-  const values: string[] = [];
+  const vals: string[] = [];
   let cur = "", inQ = false;
   for (let i = 0; i < line.length; i++) {
     const ch = line[i];
     if (ch === '"') { inQ = !inQ; continue; }
-    if (ch === "," && !inQ) { values.push(cur.trim()); cur = ""; continue; }
+    if (ch === "," && !inQ) { vals.push(cur.trim()); cur = ""; continue; }
     cur += ch;
   }
-  values.push(cur.trim());
+  vals.push(cur.trim());
   const obj: Record<string, string> = {};
-  for (let i = 0; i < headers.length; i++) obj[headers[i]] = values[i] || "";
+  for (let i = 0; i < headers.length; i++) obj[headers[i]] = vals[i] || "";
   return obj;
 }
 
@@ -70,87 +61,96 @@ Deno.serve(async (req) => {
   let countries = sc || [{ code: "BE", name: "Belgique", default_vat_rate: 21 }];
   if (reqCountries) countries = countries.filter((c: any) => reqCountries!.includes(c.code));
 
-  // Multi-country → process only first, return remaining
-  if (!single && countries.length > 1) {
-    const first = countries[0] as any;
-    const remaining = countries.slice(1).map((c: any) => c.code);
-    const { data: log } = await sb.from("sync_logs").insert({
-      sync_type: "products", status: "running",
-      stats: { countries_total: countries.length }, progress_current: 0, progress_total: countries.length,
-      progress_message: `Pays 1/${countries.length} (${first.code})...`,
-    }).select().single();
-
-    try {
-      const r = await syncCountry(sb, first, log!.id);
-      await sb.from("sync_logs").update({
-        stats: { ...r, countries_done: [first.code], remaining: remaining },
-        progress_current: 1,
-        progress_message: `${first.code}: ${r.products} produits. Restant: ${remaining.join(", ")}`,
-        ...(remaining.length === 0 ? { status: "completed", completed_at: new Date().toISOString() } : {}),
-      }).eq("id", log!.id);
-      return new Response(JSON.stringify({ success: true, country_done: first.code, remaining_countries: remaining, stats: r }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    } catch (e: any) {
-      await sb.from("sync_logs").update({ status: "error", completed_at: new Date().toISOString(), error_message: e.message }).eq("id", log!.id);
-      return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
+  if (countries.length === 0) {
+    return new Response(JSON.stringify({ error: "No country to sync" }), {
+      status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 
-  // Single country
+  // Always process only the FIRST country
   const ctry = countries[0] as any;
-  if (!ctry) return new Response(JSON.stringify({ error: "No country" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+  const remaining = countries.slice(1).map((c: any) => c.code);
 
-  const { data: ex } = await sb.from("sync_logs").select("id").eq("sync_type", "products").eq("status", "running").order("started_at", { ascending: false }).limit(1).maybeSingle();
-  let logId: string;
-  if (ex) { logId = ex.id; await sb.from("sync_logs").update({ progress_message: `${ctry.code}: démarrage...` }).eq("id", logId); }
-  else { const { data: nl } = await sb.from("sync_logs").insert({ sync_type: "products", status: "running", stats: {}, progress_current: 0, progress_total: 0, progress_message: `${ctry.code}: auth...` }).select().single(); logId = nl!.id; }
+  // Create sync log immediately
+  const { data: log } = await sb.from("sync_logs").insert({
+    sync_type: "products", status: "running",
+    stats: { country: ctry.code, countries_total: countries.length },
+    progress_current: 0, progress_total: 0,
+    progress_message: `${ctry.code}: démarrage en arrière-plan...`,
+  }).select().single();
 
-  try {
-    const r = await syncCountry(sb, ctry, logId);
-    await sb.from("sync_logs").update({ status: "completed", completed_at: new Date().toISOString(), stats: r, progress_current: r.products, progress_total: r.products, progress_message: `${ctry.code}: ${r.products} produits, ${r.brands} marques, ${r.categories} catégories` }).eq("id", logId);
-    await sb.from("qogita_config").update({ last_full_sync_at: new Date().toISOString(), sync_status: "completed" }).eq("id", 1);
-    return new Response(JSON.stringify({ success: true, stats: r }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
-  } catch (e: any) {
-    console.error("Sync error:", e);
-    await sb.from("sync_logs").update({ status: "error", completed_at: new Date().toISOString(), error_message: e.message }).eq("id", logId);
-    await sb.from("qogita_config").update({ sync_status: "error", sync_error_message: e.message }).eq("id", 1);
-    return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-  }
+  const logId = log!.id;
+
+  // Launch background processing via EdgeRuntime.waitUntil
+  (globalThis as any).EdgeRuntime.waitUntil(
+    syncCountry(sb, ctry, logId, remaining).catch(async (e: any) => {
+      console.error("Background sync error:", e);
+      await sb.from("sync_logs").update({
+        status: "error", completed_at: new Date().toISOString(),
+        error_message: e.message, progress_message: `Erreur: ${e.message}`,
+      }).eq("id", logId);
+      await sb.from("qogita_config").update({ sync_status: "error", sync_error_message: e.message }).eq("id", 1);
+    })
+  );
+
+  // Return immediately
+  return new Response(JSON.stringify({
+    success: true,
+    sync_log_id: logId,
+    country: ctry.code,
+    remaining_countries: remaining,
+    message: `Sync ${ctry.code} lancée en arrière-plan. Suivez la progression via sync_logs.`,
+  }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
 });
 
-async function syncCountry(sb: any, ctry: any, logId: string) {
-  const { token, baseUrl } = await getQogitaToken(sb);
+async function syncCountry(sb: any, ctry: any, logId: string, remaining: string[]) {
+  const { token, baseUrl } = await getToken(sb);
   const vat = ctry.default_vat_rate || 21;
 
-  await sb.from("sync_logs").update({ progress_message: `${ctry.code}: CSV...` }).eq("id", logId);
+  await sb.from("sync_logs").update({ progress_message: `${ctry.code}: téléchargement CSV...` }).eq("id", logId);
 
   const res = await fetch(`${baseUrl}/variants/search/download/?country=${ctry.code}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new Error(`CSV ${ctry.code}: ${res.status}`);
-  const csvText = await res.text();
-  const { headers, lines } = splitCSV(csvText);
 
-  const totalLines = lines.length;
-  await sb.from("sync_logs").update({ progress_total: totalLines, progress_message: `${ctry.code}: ${totalLines} lignes, import...` }).eq("id", logId);
+  // Stream the response to reduce memory: read as text but process line-by-line
+  const csvText = await res.text();
+  const nl = csvText.indexOf("\n");
+  if (nl === -1) throw new Error("Empty CSV");
+  const headers = csvText.substring(0, nl).split(",").map(h => h.trim().replace(/^"|"$/g, ""));
+
+  // Split into lines — keep only raw strings
+  const rawLines = csvText.substring(nl + 1).split("\n");
+  // Free csvText reference
+  const totalLines = rawLines.filter(l => l.trim()).length;
+
+  await sb.from("sync_logs").update({
+    progress_total: totalLines,
+    progress_message: `${ctry.code}: ${totalLines} lignes, import...`,
+  }).eq("id", logId);
 
   let processed = 0;
   const brandNames = new Set<string>();
   const catNames = new Set<string>();
-  // Process in small chunks — parse lines just-in-time, don't hold parsed objects
-  for (let i = 0; i < totalLines; i += CHUNK) {
+
+  // Filter non-empty lines, then free rawLines
+  const filteredLines: string[] = [];
+  for (const l of rawLines) { if (l.trim()) filteredLines.push(l); }
+  rawLines.length = 0;
+
+  for (let i = 0; i < filteredLines.length; i += CHUNK) {
     const batch: any[] = [];
-    const statsBatch: { qid: string; cc: string; pe: number | null; pi: number | null; oc: number; ts: number; iis: boolean }[] = [];
-    const end = Math.min(i + CHUNK, totalLines);
+    const statsBatch: any[] = [];
+    const end = Math.min(i + CHUNK, filteredLines.length);
 
     for (let j = i; j < end; j++) {
-      const row = parseLine(lines[j], headers);
+      const row = parseLine(filteredLines[j], headers);
       const name = row["Name"];
       if (!name) continue;
       const gtin = row["GTIN"] || "";
       const pUrl = row["Product URL"] || "";
-      const id = qid(pUrl) || gtin || slug(name).slice(0, 32);
+      const id = extractQid(pUrl) || gtin || sl(name).slice(0, 32);
       if (!id) continue;
 
       const bn = row["Brand"] || null;
@@ -162,7 +162,7 @@ async function syncCountry(sb: any, ctry: any, logId: string) {
       const stock = parseInt(row["Total Inventory of All Offers"] || "0", 10);
       const sellers = parseInt(row["Number of Offers"] || "0", 10);
       const img = row["Image URL"] || "";
-      const s = slug(name) + (gtin ? `-${gtin.slice(-6)}` : `-${id.slice(0, 6)}`);
+      const s = sl(name) + (gtin ? `-${gtin.slice(-6)}` : `-${id.slice(0, 6)}`);
       const pe = bp > 0 ? Math.round((bp / (1 + vat / 100)) * 100) / 100 : 0;
 
       batch.push({
@@ -174,7 +174,7 @@ async function syncCountry(sb: any, ctry: any, logId: string) {
         ...(pe > 0 ? { best_price_excl_vat: pe, best_price_incl_vat: bp } : {}),
       });
 
-      statsBatch.push({ qid: id, cc: ctry.code, pe: pe > 0 ? pe : null, pi: bp > 0 ? bp : null, oc: sellers, ts: stock, iis: stock > 0 });
+      statsBatch.push({ qid: id, pe: pe > 0 ? pe : null, pi: bp > 0 ? bp : null, oc: sellers, ts: stock, iis: stock > 0 });
     }
 
     if (batch.length > 0) {
@@ -182,13 +182,13 @@ async function syncCountry(sb: any, ctry: any, logId: string) {
       if (error) throw error;
     }
 
-    // Upsert country stats inline (avoid accumulating large array)
+    // Inline country stats
     if (statsBatch.length > 0) {
-      const qids = statsBatch.map(s => s.qid);
+      const qids = statsBatch.map((s: any) => s.qid);
       const { data: prods } = await sb.from("products").select("id, qogita_qid").in("qogita_qid", qids);
       const m = new Map((prods || []).map((p: any) => [p.qogita_qid, p.id]));
-      const toUp = statsBatch.filter(s => m.has(s.qid)).map(s => ({
-        product_id: m.get(s.qid)!, country_code: s.cc,
+      const toUp = statsBatch.filter((s: any) => m.has(s.qid)).map((s: any) => ({
+        product_id: m.get(s.qid)!, country_code: ctry.code,
         best_price_excl_vat: s.pe, best_price_incl_vat: s.pi,
         offer_count: s.oc, total_stock: s.ts, min_delivery_days: null, is_in_stock: s.iis,
       }));
@@ -198,45 +198,59 @@ async function syncCountry(sb: any, ctry: any, logId: string) {
     }
 
     processed += batch.length;
-    if (i % (CHUNK * 5) === 0) {
-      await sb.from("sync_logs").update({ progress_current: processed, progress_message: `${ctry.code}: ${processed}/${totalLines}...` }).eq("id", logId);
+    if (i % (CHUNK * 3) === 0) {
+      await sb.from("sync_logs").update({
+        progress_current: processed,
+        progress_message: `${ctry.code}: ${processed}/${totalLines}...`,
+      }).eq("id", logId);
     }
   }
 
-  // Auto-create brands
-  await sb.from("sync_logs").update({ progress_message: `${ctry.code}: marques...` }).eq("id", logId);
-  const bd = Array.from(brandNames).map(n => ({ name: n, slug: slug(n), is_active: true, synced_at: new Date().toISOString() }));
+  // Brands
+  await sb.from("sync_logs").update({ progress_message: `${ctry.code}: marques (${brandNames.size})...` }).eq("id", logId);
+  const bd = Array.from(brandNames).map(n => ({ name: n, slug: sl(n), is_active: true, synced_at: new Date().toISOString() }));
   for (let j = 0; j < bd.length; j += 200) {
     await sb.from("brands").upsert(bd.slice(j, j + 200), { onConflict: "slug", ignoreDuplicates: true });
   }
 
-  // Auto-create categories
-  const cd = Array.from(catNames).map(n => ({ name: n, slug: slug(n), is_active: true, synced_at: new Date().toISOString() }));
+  // Categories
+  const cd = Array.from(catNames).map(n => ({ name: n, slug: sl(n), is_active: true, synced_at: new Date().toISOString() }));
   for (let j = 0; j < cd.length; j += 200) {
     await sb.from("categories").upsert(cd.slice(j, j + 200), { onConflict: "slug", ignoreDuplicates: true });
   }
 
   // Link brand_id & category_id
-  await sb.from("sync_logs").update({ progress_message: `${ctry.code}: liaison...` }).eq("id", logId);
+  await sb.from("sync_logs").update({ progress_message: `${ctry.code}: liaison marques/catégories...` }).eq("id", logId);
   const { data: ab } = await sb.from("brands").select("id, name");
   const bm = new Map((ab || []).map((b: any) => [b.name, b.id]));
   const { data: ac } = await sb.from("categories").select("id, name");
   const cm = new Map((ac || []).map((c: any) => [c.name, c.id]));
 
-  const { data: nb } = await sb.from("products").select("id, brand_name").eq("source", "qogita").is("brand_id", null).not("brand_name", "is", null).limit(2000);
+  const { data: nb } = await sb.from("products").select("id, brand_name").eq("source", "qogita").is("brand_id", null).not("brand_name", "is", null).limit(1000);
   if (nb?.length) {
     const byB = new Map<string, string[]>();
     for (const p of nb) { const bid = bm.get(p.brand_name); if (bid) { if (!byB.has(bid)) byB.set(bid, []); byB.get(bid)!.push(p.id); } }
-    for (const [bid, pids] of byB) { for (let k = 0; k < pids.length; k += 200) await sb.from("products").update({ brand_id: bid }).in("id", pids.slice(k, k + 200)); }
+    for (const [bid, pids] of byB) { for (let k = 0; k < pids.length; k += 100) await sb.from("products").update({ brand_id: bid }).in("id", pids.slice(k, k + 100)); }
   }
 
-  const { data: nc } = await sb.from("products").select("id, category_name").eq("source", "qogita").is("category_id", null).not("category_name", "is", null).limit(2000);
+  const { data: nc } = await sb.from("products").select("id, category_name").eq("source", "qogita").is("category_id", null).not("category_name", "is", null).limit(1000);
   if (nc?.length) {
     const byC = new Map<string, string[]>();
     for (const p of nc) { const cid = cm.get(p.category_name); if (cid) { if (!byC.has(cid)) byC.set(cid, []); byC.get(cid)!.push(p.id); } }
-    for (const [cid, pids] of byC) { for (let k = 0; k < pids.length; k += 200) await sb.from("products").update({ category_id: cid }).in("id", pids.slice(k, k + 200)); }
+    for (const [cid, pids] of byC) { for (let k = 0; k < pids.length; k += 100) await sb.from("products").update({ category_id: cid }).in("id", pids.slice(k, k + 100)); }
   }
 
   await sb.from("countries").update({ last_sync_at: new Date().toISOString() } as any).eq("code", ctry.code);
-  return { products: processed, brands: brandNames.size, categories: catNames.size, country: ctry.code };
+
+  // Mark completed
+  await sb.from("sync_logs").update({
+    status: "completed", completed_at: new Date().toISOString(),
+    stats: { products: processed, brands: brandNames.size, categories: catNames.size, country: ctry.code, remaining: remaining },
+    progress_current: processed, progress_total: totalLines,
+    progress_message: remaining.length > 0
+      ? `${ctry.code}: ${processed} produits. Restant: ${remaining.join(", ")}`
+      : `${ctry.code}: ${processed} produits, ${brandNames.size} marques, ${catNames.size} catégories ✓`,
+  }).eq("id", logId);
+
+  await sb.from("qogita_config").update({ last_full_sync_at: new Date().toISOString(), sync_status: "completed" }).eq("id", 1);
 }

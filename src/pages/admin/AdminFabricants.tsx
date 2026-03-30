@@ -325,12 +325,11 @@ function ManufacturerFormDialog({ open, onOpenChange, item, onSave, saving }: { 
     }
   };
 
-  // Reset form when dialog opens
-  const needsReset = open && ((!form.name && !item) || (item && form.id !== item.id));
-  if (needsReset) {
-    // Use a microtask to avoid setState during render
-    Promise.resolve().then(reset);
-  }
+  // Reset form when dialog opens or item changes
+  useEffect(() => {
+    if (open) reset();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, item?.id]);
 
   return (
     <Dialog open={open} onOpenChange={o => { onOpenChange(o); if (!o) setForm({}); }}>

@@ -919,6 +919,55 @@ export default function ProductPage() {
                       </div>
                     </div>
                   </div>
+                  {/* Supplier + Save */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">Fournisseur actuel (optionnel)</label>
+                      <div className="flex items-center border border-border rounded-lg overflow-hidden">
+                        <input
+                          type="text"
+                          value={supplierName}
+                          onChange={(e) => setSupplierName(e.target.value)}
+                          placeholder="Ex: Alliance Healthcare"
+                          className="flex-1 px-3 py-2.5 text-sm bg-background outline-none"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-end">
+                      <button
+                        onClick={async () => {
+                          if (!user) {
+                            toast.error("Connectez-vous pour sauvegarder votre prix", {
+                              action: { label: "Se connecter", onClick: () => navigate("/connexion") },
+                            });
+                            return;
+                          }
+                          const price = parseFloat(userPrice.replace(",", "."));
+                          if (!price || price <= 0) { toast.error("Entrez un prix valide"); return; }
+                          setSavingPrice(true);
+                          const { error } = await supabase.from("user_prices").upsert({
+                            user_id: user.id,
+                            product_id: product.id,
+                            my_purchase_price: price,
+                            supplier_name: supplierName || null,
+                            updated_at: new Date().toISOString(),
+                          }, { onConflict: "user_id,product_id" });
+                          setSavingPrice(false);
+                          if (!error) {
+                            toast.success("Prix sauvegarde ! Retrouvez-le dans Mes Prix.");
+                            queryClient.invalidateQueries({ queryKey: ["user-price", product.id] });
+                          } else {
+                            toast.error("Erreur lors de la sauvegarde");
+                          }
+                        }}
+                        disabled={savingPrice || !userPriceNum}
+                        className="w-full bg-primary text-primary-foreground py-2.5 rounded-lg font-medium text-sm hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
+                      >
+                        <Tag size={14} />
+                        {savingPrice ? "Sauvegarde..." : savedUserPrice ? "Mettre a jour mon prix" : "Sauvegarder mon prix"}
+                      </button>
+                    </div>
+                  </div>
                   {userPriceNum > 0 && savingsAbs > 0 && (
                     <motion.div
                       initial={{ opacity: 0, y: 8 }}

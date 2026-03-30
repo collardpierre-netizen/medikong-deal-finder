@@ -7,10 +7,10 @@ import { Button } from "@/components/ui/button";
 import { useI18n } from "@/contexts/I18nContext";
 import { useProducts as useAdminProducts, useOffers as useOffersDirectAdmin, useBrands, useManufacturers, useProductCount, useBrandCount, useActiveOfferCount } from "@/hooks/useAdminData";
 import { ProductFormDialog } from "@/components/admin/ProductFormDialog";
-import { exportProducts, importProducts } from "@/lib/xlsx-utils";
+import { exportProducts, importProducts, downloadProductTemplate } from "@/lib/xlsx-utils";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Package, Tag, ShoppingCart, AlertTriangle, Search, Filter, Download, Upload, Plus, ImageOff } from "lucide-react";
+import { Package, Tag, ShoppingCart, AlertTriangle, Search, Filter, Download, Upload, Plus, ImageOff, FileSpreadsheet } from "lucide-react";
 
 const AdminProduits = () => {
   const { t } = useI18n();
@@ -66,6 +66,7 @@ const AdminProduits = () => {
       <AdminTopBar title={t("products")} subtitle="Catalogue PIM centralisé"
         actions={
           <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => downloadProductTemplate()} title="Télécharger le template d'import"><FileSpreadsheet size={14} className="mr-1" />Template</Button>
             <Button variant="outline" size="sm" onClick={() => exportProducts()}><Download size={14} className="mr-1" />Export XLSX</Button>
             <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()}><Upload size={14} className="mr-1" />Import XLSX</Button>
             <input ref={fileRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={e => { if (e.target.files?.[0]) handleImport(e.target.files[0]); e.target.value = ""; }} />

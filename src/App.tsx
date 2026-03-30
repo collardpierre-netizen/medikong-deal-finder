@@ -114,6 +114,7 @@ const AdminAuditLog = lazy(() => import("./pages/admin/AdminAuditLog"));
 const AdminCommissions = lazy(() => import("./pages/admin/AdminCommissions"));
 const AdminOnboardingCMS = lazy(() => import("./pages/admin/AdminOnboardingCMS"));
 const AdminSync = lazy(() => import("./pages/admin/AdminSync"));
+const AdminFabricants = lazy(() => import("./pages/admin/AdminFabricants"));
 const AdminApiKeys = lazy(() => import("./pages/admin/AdminApiKeys"));
 const AdminApiDocs = lazy(() => import("./pages/admin/AdminApiDocs"));
 

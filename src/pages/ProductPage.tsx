@@ -602,7 +602,7 @@ export default function ProductPage() {
 
             {/* ═══ RIGHT COLUMN — Product info + Offers ═══ */}
             <motion.div
-              className="w-full md:w-1/2 min-w-0"
+              className="w-full md:w-[60%] min-w-0"
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}

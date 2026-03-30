@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { useCategories } from "@/hooks/useAdminData";
+import { useCategories, useCategoryCount } from "@/hooks/useAdminData";
 import { useEntityTranslations, useBatchSaveTranslations, getTranslated } from "@/hooks/useTranslations";
 import { autoTranslate } from "@/lib/translation-mappings";
 import { useQueryClient, useMutation } from "@tanstack/react-query";

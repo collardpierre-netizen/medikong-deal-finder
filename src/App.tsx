@@ -8,6 +8,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { I18nProvider } from "@/contexts/I18nContext";
 import { CartProvider } from "@/contexts/CartContext";
 import { ImpersonationProvider } from "@/contexts/ImpersonationContext";
+import { CountryProvider } from "@/contexts/CountryContext";
 import ImpersonationBanner from "@/components/admin/ImpersonationBanner";
 import { CookieConsent } from "@/components/layout/CookieConsent";
 import { HelmetProvider } from "react-helmet-async";

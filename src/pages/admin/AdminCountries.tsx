@@ -127,7 +127,9 @@ export default function AdminCountries() {
                       onCheckedChange={(v) => toggleField(c.code, "qogita_sync_enabled", v)}
                     />
                     {c.last_sync_at && (
-                      <RefreshCw size={12} className="text-muted-foreground" title={`Dernière sync: ${new Date(c.last_sync_at).toLocaleString()}`} />
+                      <span title={`Dernière sync: ${new Date(c.last_sync_at).toLocaleString()}`}>
+                        <RefreshCw size={12} className="text-muted-foreground" />
+                      </span>
                     )}
                   </div>
                 </td>

@@ -103,6 +103,29 @@ serve(async (req) => {
     const action = body.action || "webhook";
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
+    if (action === "get-search-key") {
+      // Generate or retrieve a search-only API key
+      try {
+        const keys = await meiliRequest("/keys", "GET");
+        let searchKey = keys.results?.find((k: any) => k.actions?.includes("search") && k.name === "medikong-search");
+        if (!searchKey) {
+          searchKey = await meiliRequest("/keys", "POST", {
+            name: "medikong-search",
+            actions: ["search"],
+            indexes: ["*"],
+            expiresAt: null,
+          });
+        }
+        return new Response(JSON.stringify({ url: MEILI_URL, searchKey: searchKey.key }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      } catch (e: any) {
+        return new Response(JSON.stringify({ error: e.message }), {
+          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
     if (action === "setup") {
       await setupIndexes();
       return new Response(JSON.stringify({ success: true, message: "Indexes configured" }), {

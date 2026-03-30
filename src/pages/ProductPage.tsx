@@ -679,7 +679,134 @@ export default function ProductPage() {
                 </div>
               </div>
 
-              {/* ── CTA Seller ── */}
+              {/* ── Guarantee Accordion ── */}
+              <div className="mb-8">
+                <Accordion type="single" collapsible>
+                  <AccordionItem value="guarantee" className="border border-border rounded-xl px-4">
+                    <AccordionTrigger className="text-sm font-bold text-foreground hover:no-underline">
+                      <div className="flex items-center gap-2">
+                        <Shield size={16} className="text-primary" />
+                        Garantie satisfaction et remboursement
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="text-sm text-muted-foreground space-y-2 pb-4">
+                      <p>Tous les produits vendus sur MediKong sont couverts par notre garantie satisfaction :</p>
+                      <ul className="list-disc pl-5 space-y-1">
+                        <li>Produits 100% authentiques et conformes</li>
+                        <li>Remboursement integral si le produit ne correspond pas a la description</li>
+                        <li>Retour gratuit sous 14 jours pour tout defaut de conformite</li>
+                        <li>Service client disponible pour toute reclamation</li>
+                      </ul>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
+              </div>
+
+              {/* ── Margin Calculator ── */}
+              <div className="mb-8">
+                <div className="border border-border rounded-xl p-5">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Calculator size={18} className="text-primary" />
+                    <h2 className="text-lg font-bold text-foreground">Calculateur de marge</h2>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">Votre prix d'achat actuel ({isTVAC ? "TVAC" : "HTVA"})</label>
+                      <div className="flex items-center border border-border rounded-lg overflow-hidden">
+                        <span className="px-3 py-2.5 bg-muted text-sm text-muted-foreground">€</span>
+                        <input
+                          type="text"
+                          value={userPrice}
+                          onChange={(e) => setUserPrice(e.target.value)}
+                          placeholder={clientPrice > 0 ? formatEur(clientPrice * 1.3) : "0,00"}
+                          className="flex-1 px-3 py-2.5 text-sm bg-background outline-none"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">Prix MediKong ({isTVAC ? "TVAC" : "HTVA"})</label>
+                      <div className="flex items-center border border-border rounded-lg overflow-hidden bg-muted">
+                        <span className="px-3 py-2.5 bg-muted text-sm text-muted-foreground">€</span>
+                        <span className="flex-1 px-3 py-2.5 text-sm font-bold text-green-700">{formatEur(clientPrice)}</span>
+                      </div>
+                    </div>
+                  </div>
+                  {userPriceNum > 0 && savingsAbs > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="mt-4 bg-green-50 border border-green-200 rounded-lg p-3 flex items-center gap-3"
+                    >
+                      <TrendingDown size={20} className="text-green-600 shrink-0" />
+                      <div>
+                        <p className="text-sm font-bold text-green-700">
+                          Economie estimee : {formatEur(savingsAbs)} € ({savingsPct.toFixed(1)}%)
+                        </p>
+                        <p className="text-xs text-green-600">par unite en passant par MediKong</p>
+                      </div>
+                    </motion.div>
+                  )}
+                  {userPriceNum > 0 && savingsAbs <= 0 && (
+                    <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-700">
+                      Votre prix actuel est deja competitif ! MediKong vous offre neanmoins la garantie d'authenticite et la simplification logistique.
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* ── Price History ── */}
+              <div className="mb-8">
+                <div className="border border-border rounded-xl p-5">
+                  <div className="flex items-center gap-2 mb-4">
+                    <BarChart3 size={18} className="text-primary" />
+                    <h2 className="text-lg font-bold text-foreground">Historique des prix</h2>
+                  </div>
+                  {priceHistoryData.length > 0 ? (
+                    <div className="space-y-3">
+                      {(() => {
+                        const prices = priceHistoryData.map((h: any) => isTVAC ? Number(h.price_incl_vat || h.price_excl_vat * 1.21) : Number(h.price_excl_vat));
+                        const min = Math.min(...prices);
+                        const max = Math.max(...prices);
+                        const avg = prices.reduce((a: number, b: number) => a + b, 0) / prices.length;
+                        const sorted = [...prices].sort((a, b) => a - b);
+                        const median = sorted.length % 2 === 0 ? (sorted[sorted.length / 2 - 1] + sorted[sorted.length / 2]) / 2 : sorted[Math.floor(sorted.length / 2)];
+                        return (
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            {[["Min", min], ["Max", max], ["Median", median], ["Moyen", avg]].map(([label, value]) => (
+                              <div key={label as string} className="bg-muted/50 rounded-lg p-3 text-center">
+                                <p className="text-[11px] text-muted-foreground">{label as string}</p>
+                                <p className="text-sm font-bold text-foreground">{formatEur(value as number)} €</p>
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      })()}
+                      {/* Simple bar chart */}
+                      <div className="flex items-end gap-1 h-24 mt-2">
+                        {priceHistoryData.slice(-30).map((h: any, i: number) => {
+                          const price = isTVAC ? Number(h.price_incl_vat || h.price_excl_vat * 1.21) : Number(h.price_excl_vat);
+                          const allPrices = priceHistoryData.map((p: any) => Number(p.price_excl_vat));
+                          const maxP = Math.max(...allPrices);
+                          const minP = Math.min(...allPrices);
+                          const range = maxP - minP || 1;
+                          const heightPct = ((price - minP) / range) * 80 + 20;
+                          return (
+                            <div key={i} className="flex-1 bg-primary/20 hover:bg-primary/40 rounded-t transition-colors" style={{ height: `${heightPct}%` }} title={`${formatEur(price)} € - ${new Date(h.recorded_at).toLocaleDateString("fr-FR")}`} />
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-6">
+                      <BarChart3 size={32} className="mx-auto mb-2 text-muted-foreground/30" />
+                      <p className="text-sm text-muted-foreground">
+                        Historique des prix en cours de collecte. Disponible apres quelques synchronisations.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               <div className="border-2 border-dashed border-border rounded-xl p-6 text-center mb-8">
                 <h3 className="font-bold text-foreground mb-1">Vous proposez un meilleur prix ?</h3>
                 <p className="text-sm text-muted-foreground mb-4">Vendez via MediKong et touchez 500+ pharmacies</p>

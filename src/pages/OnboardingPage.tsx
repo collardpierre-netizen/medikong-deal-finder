@@ -439,7 +439,9 @@ export default function OnboardingPage() {
         </span>
       </label>
       <div style={{ marginTop: 16 }}>
-        <Cta variant="green" onClick={handleSubmit} disabled={!isPasswordValid}>Créer mon compte</Cta>
+        <Cta variant="green" onClick={handleSubmit} disabled={!isPasswordValid || submitting}>
+          {submitting ? "Création en cours..." : "Créer mon compte"}
+        </Cta>
         <KbdHint />
       </div>
     </div>

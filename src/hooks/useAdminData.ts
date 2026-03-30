@@ -14,16 +14,54 @@ export const useVendors = () =>
     },
   });
 
-export const useProducts = () =>
+export const useProducts = (limit = 100) =>
   useQuery({
-    queryKey: ["admin-products"],
+    queryKey: ["admin-products", limit],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("products")
         .select("*")
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(limit);
       if (error) throw error;
       return data;
+    },
+  });
+
+export const useProductCount = () =>
+  useQuery({
+    queryKey: ["admin-products-count"],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("products")
+        .select("*", { count: "exact", head: true });
+      if (error) throw error;
+      return count ?? 0;
+    },
+  });
+
+export const useBrandCount = () =>
+  useQuery({
+    queryKey: ["admin-brands-count"],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("brands")
+        .select("*", { count: "exact", head: true });
+      if (error) throw error;
+      return count ?? 0;
+    },
+  });
+
+export const useActiveOfferCount = () =>
+  useQuery({
+    queryKey: ["admin-active-offers-count"],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("offers")
+        .select("*", { count: "exact", head: true })
+        .eq("is_active", true);
+      if (error) throw error;
+      return count ?? 0;
     },
   });
 

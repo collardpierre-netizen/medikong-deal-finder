@@ -6,7 +6,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useBrands, useManufacturers } from "@/hooks/useAdminData";
+import { useBrands, useManufacturers, useBrandCount } from "@/hooks/useAdminData";
 import { BrandFormDialog } from "@/components/admin/BrandFormDialog";
 import { exportBrands, importBrands } from "@/lib/xlsx-utils";
 import { useQueryClient } from "@tanstack/react-query";
@@ -20,6 +20,7 @@ const AdminMarques = () => {
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
   const { data: brandsData = [], isLoading: loadingBrands } = useBrands();
   const { data: manufacturersData = [] } = useManufacturers();
+  const { data: totalBrandCount = 0 } = useBrandCount();
 
   const [brandDialogOpen, setBrandDialogOpen] = useState(false);
   const [editBrand, setEditBrand] = useState<any>(null);
@@ -55,7 +56,7 @@ const AdminMarques = () => {
       />
 
       <div className="grid grid-cols-2 gap-4 mb-6">
-        <KpiCard icon={Tag} label="Marques actives" value={String(brandsData.length)} evolution={{ value: 2, label: "ce mois" }} iconColor="#1B5BDA" iconBg="#EFF6FF" />
+        <KpiCard icon={Tag} label="Marques actives" value={totalBrandCount.toLocaleString("fr-BE")} evolution={{ value: 2, label: "ce mois" }} iconColor="#1B5BDA" iconBg="#EFF6FF" />
         <KpiCard icon={Package} label="Produits total" value={fmt(brandsData.reduce((a, b) => a + (b.product_count || 0), 0))} iconColor="#059669" iconBg="#ECFDF5" />
       </div>
 

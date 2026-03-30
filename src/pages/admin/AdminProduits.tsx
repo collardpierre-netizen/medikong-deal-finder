@@ -5,7 +5,7 @@ import KpiCard from "@/components/admin/KpiCard";
 import StatusBadge from "@/components/admin/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/contexts/I18nContext";
-import { useProducts as useAdminProducts, useOffers as useOffersDirectAdmin, useBrands, useManufacturers } from "@/hooks/useAdminData";
+import { useProducts as useAdminProducts, useOffers as useOffersDirectAdmin, useBrands, useManufacturers, useProductCount, useBrandCount, useActiveOfferCount } from "@/hooks/useAdminData";
 import { ProductFormDialog } from "@/components/admin/ProductFormDialog";
 import { exportProducts, importProducts } from "@/lib/xlsx-utils";
 import { useQueryClient } from "@tanstack/react-query";
@@ -16,10 +16,13 @@ const AdminProduits = () => {
   const { t } = useI18n();
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const { data: products = [], isLoading: loadingProducts } = useAdminProducts();
+  const { data: products = [], isLoading: loadingProducts } = useAdminProducts(100);
   const { data: offers = [], isLoading: loadingOffers } = useOffersDirectAdmin();
   const { data: brands = [] } = useBrands();
   const { data: manufacturers = [] } = useManufacturers();
+  const { data: totalProductCount = 0 } = useProductCount();
+  const { data: totalBrandCount = 0 } = useBrandCount();
+  const { data: totalActiveOfferCount = 0 } = useActiveOfferCount();
   const [activeTab, setActiveTab] = useState<"catalog" | "offers">("catalog");
   const [search, setSearch] = useState("");
   const [productDialogOpen, setProductDialogOpen] = useState(false);
@@ -29,7 +32,7 @@ const AdminProduits = () => {
   const activeOffers = offers.filter(o => o.is_active).length;
 
   const tabs = [
-    { key: "catalog" as const, label: "Catalogue master", count: String(products.length) },
+    { key: "catalog" as const, label: "Catalogue master", count: totalProductCount.toLocaleString("fr-BE") },
     { key: "offers" as const, label: "Offres vendeurs", count: String(offers.length) },
   ];
 
@@ -72,9 +75,9 @@ const AdminProduits = () => {
       />
 
       <div className="grid grid-cols-3 gap-4 mb-5">
-        <KpiCard icon={Package} label="Produits catalogue" value={String(products.length)} evolution={{ value: 4.2, label: "vs mois dernier" }} />
-        <KpiCard icon={Tag} label="Marques" value={String(brands.length)} iconColor="#7C3AED" iconBg="#F5F3FF" />
-        <KpiCard icon={ShoppingCart} label="Offres actives" value={String(activeOffers)} evolution={{ value: 8.7, label: "vs mois dernier" }} iconColor="#059669" iconBg="#F0FDF4" />
+        <KpiCard icon={Package} label="Produits catalogue" value={totalProductCount.toLocaleString("fr-BE")} evolution={{ value: 4.2, label: "vs mois dernier" }} />
+        <KpiCard icon={Tag} label="Marques" value={totalBrandCount.toLocaleString("fr-BE")} iconColor="#7C3AED" iconBg="#F5F3FF" />
+        <KpiCard icon={ShoppingCart} label="Offres actives" value={totalActiveOfferCount.toLocaleString("fr-BE")} evolution={{ value: 8.7, label: "vs mois dernier" }} iconColor="#059669" iconBg="#F0FDF4" />
       </div>
 
       <div className="flex items-center gap-1 mb-4 p-1 rounded-lg" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0", display: "inline-flex" }}>

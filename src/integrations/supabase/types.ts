@@ -1222,6 +1222,50 @@ export type Database = {
           },
         ]
       }
+      product_alerts: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          last_notified_at: string | null
+          min_quantity: number | null
+          product_id: string
+          target_price: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_notified_at?: string | null
+          min_quantity?: number | null
+          product_id: string
+          target_price?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_notified_at?: string | null
+          min_quantity?: number | null
+          product_id?: string
+          target_price?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_alerts_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_country_stats: {
         Row: {
           best_price_excl_vat: number | null

@@ -1,0 +1,1 @@
+ALTER TABLE offers ADD CONSTRAINT offers_product_vendor_country_unique UNIQUE (product_id, vendor_id, country_code);

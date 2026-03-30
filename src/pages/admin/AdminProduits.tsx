@@ -66,6 +66,7 @@ const AdminProduits = () => {
       <AdminTopBar title={t("products")} subtitle="Catalogue PIM centralisé"
         actions={
           <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => downloadProductTemplate()} title="Télécharger le template d'import"><FileSpreadsheet size={14} className="mr-1" />Template</Button>
             <Button variant="outline" size="sm" onClick={() => exportProducts()}><Download size={14} className="mr-1" />Export XLSX</Button>
             <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()}><Upload size={14} className="mr-1" />Import XLSX</Button>
             <input ref={fileRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={e => { if (e.target.files?.[0]) handleImport(e.target.files[0]); e.target.value = ""; }} />

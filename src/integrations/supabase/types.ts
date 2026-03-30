@@ -820,6 +820,38 @@ export type Database = {
           },
         ]
       }
+      offer_price_tiers: {
+        Row: {
+          created_at: string | null
+          id: string
+          min_order_value: number
+          offer_id: string
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          min_order_value: number
+          offer_id: string
+          unit_price: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          min_order_value?: number
+          offer_id?: string
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "offer_price_tiers_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       offers: {
         Row: {
           applied_margin_percentage: number | null

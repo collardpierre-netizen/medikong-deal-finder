@@ -42,7 +42,7 @@ function OfferRow({
       quantity: qty,
       vendorId: offer.sellerId,
       priceExclVat: offer.unitPriceEur,
-      productData: { id: productId, name: productName, slug: productSlug, price: offer.unitPriceEur },
+      productData: { id: productId, name: productName, brand: "", slug: productSlug, price: offer.unitPriceEur },
     });
   };
 

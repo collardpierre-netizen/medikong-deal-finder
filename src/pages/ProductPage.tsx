@@ -484,6 +484,7 @@ export default function ProductPage() {
                         <option value="5000">5 000 €</option>
                         <option value="10000">10 000 €</option>
                       </select>
+                      <p className="text-[11px] text-muted-foreground mt-1">Afficher uniquement les offres avec un MOV jusqu'a ce montant</p>
                     </div>
                     <div>
                       <label className="text-xs text-muted-foreground mb-1 block">Delai de livraison max</label>
@@ -498,6 +499,7 @@ export default function ProductPage() {
                         <option value="21">3 semaines</option>
                         <option value="30">1 mois</option>
                       </select>
+                      <p className="text-[11px] text-muted-foreground mt-1">Afficher uniquement les offres livrees dans ce delai</p>
                     </div>
                   </div>
                 </div>

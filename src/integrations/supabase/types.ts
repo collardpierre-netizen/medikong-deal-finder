@@ -1087,6 +1087,8 @@ export type Database = {
           id: number
           last_full_sync_at: string | null
           last_offers_sync_at: string | null
+          qogita_email: string | null
+          qogita_password: string | null
           shipping_mode: Database["public"]["Enums"]["shipping_mode_enum"]
           sync_enabled: boolean
           sync_error_message: string | null
@@ -1106,6 +1108,8 @@ export type Database = {
           id?: number
           last_full_sync_at?: string | null
           last_offers_sync_at?: string | null
+          qogita_email?: string | null
+          qogita_password?: string | null
           shipping_mode?: Database["public"]["Enums"]["shipping_mode_enum"]
           sync_enabled?: boolean
           sync_error_message?: string | null
@@ -1125,6 +1129,8 @@ export type Database = {
           id?: number
           last_full_sync_at?: string | null
           last_offers_sync_at?: string | null
+          qogita_email?: string | null
+          qogita_password?: string | null
           shipping_mode?: Database["public"]["Enums"]["shipping_mode_enum"]
           sync_enabled?: boolean
           sync_error_message?: string | null

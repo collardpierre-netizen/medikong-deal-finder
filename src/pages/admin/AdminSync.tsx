@@ -6,7 +6,7 @@ import KpiCard from "@/components/admin/KpiCard";
 import StatusBadge from "@/components/admin/StatusBadge";
 import {
   RefreshCw, Database, Tag, Package, Store, Layers, Clock, AlertTriangle,
-  Play, Settings, Eye, EyeOff, CheckCircle, XCircle, Loader2,
+  Play, Settings, Eye, EyeOff, CheckCircle, XCircle, Loader2, Wifi,
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
@@ -44,7 +44,17 @@ export default function AdminSync() {
   const { data: logs, isLoading: logsLoading } = useSyncLogs();
   const { data: config } = useQogitaConfig();
   const [showToken, setShowToken] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [runningSyncs, setRunningSyncs] = useState<Set<string>>(new Set());
+  const [qogitaEmail, setQogitaEmail] = useState("");
+  const [qogitaPassword, setQogitaPassword] = useState("");
+  const [emailDirty, setEmailDirty] = useState(false);
+  const [passwordDirty, setPasswordDirty] = useState(false);
+  const [testingConnection, setTestingConnection] = useState(false);
+
+  // Initialize local state from config
+  const displayEmail = emailDirty ? qogitaEmail : ((config as any)?.qogita_email || "");
+  const displayPassword = passwordDirty ? qogitaPassword : ((config as any)?.qogita_password || "");
 
   const runSync = useMutation({
     mutationFn: async (type: SyncType) => {
@@ -56,7 +66,7 @@ export default function AdminSync() {
     },
     onSuccess: (data, type) => {
       setRunningSyncs(prev => { const s = new Set(prev); s.delete(type); return s; });
-      toast.success(`Sync ${type} terminee`, { description: JSON.stringify(data?.stats || data) });
+      toast.success(`Sync ${type} terminée`, { description: JSON.stringify(data?.stats || data) });
       qc.invalidateQueries({ queryKey: ["sync-logs"] });
       qc.invalidateQueries({ queryKey: ["qogita-config"] });
     },
@@ -72,16 +82,69 @@ export default function AdminSync() {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Configuration mise a jour");
+      toast.success("Configuration mise à jour");
       qc.invalidateQueries({ queryKey: ["qogita-config"] });
+      setEmailDirty(false);
+      setPasswordDirty(false);
     },
   });
 
+  const saveCredentials = () => {
+    const updates: any = {};
+    if (emailDirty) updates.qogita_email = qogitaEmail;
+    if (passwordDirty) updates.qogita_password = qogitaPassword;
+    if (Object.keys(updates).length > 0) {
+      updateConfig.mutate(updates);
+    }
+  };
+
+  const testConnection = async () => {
+    setTestingConnection(true);
+    try {
+      const email = emailDirty ? qogitaEmail : (config as any)?.qogita_email;
+      const password = passwordDirty ? qogitaPassword : (config as any)?.qogita_password;
+      
+      if (!email || !password) {
+        toast.error("Email et mot de passe Qogita requis");
+        return;
+      }
+
+      const baseUrl = config?.base_url || "https://api.qogita.com";
+      const res = await fetch(`${baseUrl}/auth/login/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        toast.error(`Connexion échouée (${res.status})`, { description: errText.slice(0, 100) });
+        return;
+      }
+
+      const data = await res.json();
+      if (data.accessToken) {
+        toast.success("Connexion Qogita réussie ✅", { description: "Token obtenu avec succès" });
+        // Save credentials + token
+        const updates: any = { bearer_token: data.accessToken };
+        if (emailDirty) updates.qogita_email = qogitaEmail;
+        if (passwordDirty) updates.qogita_password = qogitaPassword;
+        updateConfig.mutate(updates);
+      } else {
+        toast.error("Réponse inattendue", { description: "Pas de accessToken dans la réponse" });
+      }
+    } catch (err: any) {
+      toast.error("Erreur de connexion", { description: err.message });
+    } finally {
+      setTestingConnection(false);
+    }
+  };
+
   const syncButtons: { type: SyncType; label: string; icon: React.ElementType; desc: string }[] = [
-    { type: "categories", label: "Categories", icon: Layers, desc: "Sync arborescence Qogita" },
+    { type: "categories", label: "Catégories", icon: Layers, desc: "Sync arborescence Qogita" },
     { type: "brands", label: "Marques", icon: Tag, desc: "Sync marques Qogita" },
     { type: "products", label: "Produits (CSV)", icon: Package, desc: "Bulk CSV tous produits" },
-    { type: "offers_detail", label: "Offres detail", icon: Store, desc: "Sync fine offre par offre" },
+    { type: "offers_detail", label: "Offres détail", icon: Store, desc: "Sync fine offre par offre" },
     { type: "recalculate", label: "Recalculer prix", icon: RefreshCw, desc: "Recalcule toutes les marges" },
   ];
 
@@ -99,14 +162,14 @@ export default function AdminSync() {
       {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <KpiCard
-          label="Derniere sync produits"
+          label="Dernière sync produits"
           value={config?.last_full_sync_at
             ? formatDistanceToNow(new Date(config.last_full_sync_at), { addSuffix: true, locale: fr })
             : "Jamais"}
           icon={Package}
         />
         <KpiCard
-          label="Derniere sync offres"
+          label="Dernière sync offres"
           value={config?.last_offers_sync_at
             ? formatDistanceToNow(new Date(config.last_offers_sync_at), { addSuffix: true, locale: fr })
             : "Jamais"}
@@ -119,7 +182,7 @@ export default function AdminSync() {
         />
         <KpiCard
           label="Mode livraison"
-          value={config?.shipping_mode === "via_warehouse" ? "Via entrepot" : "Direct client"}
+          value={config?.shipping_mode === "via_warehouse" ? "Via entrepôt" : "Direct client"}
           icon={Database}
         />
       </div>
@@ -158,38 +221,94 @@ export default function AdminSync() {
             <Settings size={16} className="inline mr-2" />Configuration Qogita
           </h3>
           <div className="space-y-3">
+            {/* Email Qogita */}
             <div>
-              <label className="text-[11px] font-medium block mb-1" style={{ color: "#616B7C" }}>Bearer Token</label>
+              <label className="text-[11px] font-medium block mb-1" style={{ color: "#616B7C" }}>Email Qogita</label>
+              <input
+                type="email"
+                value={displayEmail}
+                onChange={(e) => { setQogitaEmail(e.target.value); setEmailDirty(true); }}
+                placeholder="votre-email@example.com"
+                className="w-full text-[12px] border rounded-md px-3 py-2 focus:border-[#1B5BDA] focus:outline-none focus:ring-1 focus:ring-[#1B5BDA]"
+                style={{ borderColor: "#E2E8F0" }}
+              />
+            </div>
+
+            {/* Mot de passe Qogita */}
+            <div>
+              <label className="text-[11px] font-medium block mb-1" style={{ color: "#616B7C" }}>Mot de passe Qogita</label>
+              <div className="flex gap-2">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={displayPassword}
+                  onChange={(e) => { setQogitaPassword(e.target.value); setPasswordDirty(true); }}
+                  placeholder="••••••••"
+                  className="flex-1 text-[12px] border rounded-md px-3 py-2 focus:border-[#1B5BDA] focus:outline-none focus:ring-1 focus:ring-[#1B5BDA]"
+                  style={{ borderColor: "#E2E8F0" }}
+                />
+                <button onClick={() => setShowPassword(!showPassword)} className="p-2 border rounded-md hover:bg-[#F8FAFC]" style={{ borderColor: "#E2E8F0" }}>
+                  {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                </button>
+              </div>
+            </div>
+
+            {/* Save + Test buttons */}
+            <div className="flex gap-2 pt-1">
+              <button
+                onClick={saveCredentials}
+                disabled={!emailDirty && !passwordDirty}
+                className="flex-1 px-3 py-2 bg-[#1B5BDA] text-white rounded-md text-[12px] font-semibold disabled:opacity-40 hover:bg-[#1549B5] transition-colors"
+              >
+                Sauvegarder
+              </button>
+              <button
+                onClick={testConnection}
+                disabled={testingConnection}
+                className="flex items-center gap-1.5 px-3 py-2 border rounded-md text-[12px] font-semibold hover:bg-[#EFF6FF] hover:border-[#1B5BDA] transition-colors disabled:opacity-50"
+                style={{ borderColor: "#E2E8F0", color: "#1B5BDA" }}
+              >
+                {testingConnection ? <Loader2 size={13} className="animate-spin" /> : <Wifi size={13} />}
+                Tester la connexion
+              </button>
+            </div>
+
+            {/* Bearer Token (read-only) */}
+            <div className="pt-2 border-t" style={{ borderColor: "#F1F5F9" }}>
+              <label className="text-[11px] font-medium block mb-1" style={{ color: "#8B95A5" }}>
+                Bearer Token (auto-généré)
+              </label>
               <div className="flex gap-2">
                 <input
                   type={showToken ? "text" : "password"}
-                  value={config?.bearer_token || ""}
+                  value={config?.bearer_token || "Aucun token — testez la connexion"}
                   readOnly
-                  className="flex-1 text-[12px] border rounded-md px-3 py-2"
-                  style={{ borderColor: "#E2E8F0" }}
+                  className="flex-1 text-[11px] border rounded-md px-3 py-2 bg-[#F8FAFC]"
+                  style={{ borderColor: "#E2E8F0", color: "#8B95A5" }}
                 />
-                <button onClick={() => setShowToken(!showToken)} className="p-2 border rounded-md" style={{ borderColor: "#E2E8F0" }}>
+                <button onClick={() => setShowToken(!showToken)} className="p-2 border rounded-md hover:bg-[#F8FAFC]" style={{ borderColor: "#E2E8F0" }}>
                   {showToken ? <EyeOff size={14} /> : <Eye size={14} />}
                 </button>
               </div>
             </div>
+
+            {/* URL & Country */}
             <div>
               <label className="text-[11px] font-medium block mb-1" style={{ color: "#616B7C" }}>URL de base</label>
               <input
                 type="text"
                 value={config?.base_url || ""}
                 readOnly
-                className="w-full text-[12px] border rounded-md px-3 py-2"
+                className="w-full text-[12px] border rounded-md px-3 py-2 bg-[#F8FAFC]"
                 style={{ borderColor: "#E2E8F0" }}
               />
             </div>
             <div>
-              <label className="text-[11px] font-medium block mb-1" style={{ color: "#616B7C" }}>Pays par defaut</label>
+              <label className="text-[11px] font-medium block mb-1" style={{ color: "#616B7C" }}>Pays par défaut</label>
               <input
                 type="text"
                 value={config?.default_country || "BE"}
                 readOnly
-                className="w-full text-[12px] border rounded-md px-3 py-2"
+                className="w-full text-[12px] border rounded-md px-3 py-2 bg-[#F8FAFC]"
                 style={{ borderColor: "#E2E8F0" }}
               />
             </div>
@@ -201,7 +320,7 @@ export default function AdminSync() {
                   config?.sync_enabled ? "bg-green-50 text-green-700" : "bg-red-50 text-red-600"
                 }`}
               >
-                {config?.sync_enabled ? "Active" : "Desactive"}
+                {config?.sync_enabled ? "Activé" : "Désactivé"}
               </button>
             </div>
           </div>
@@ -221,15 +340,15 @@ export default function AdminSync() {
                   }`}
                   style={config?.shipping_mode !== mode ? { borderColor: "#E2E8F0", color: "#616B7C" } : {}}
                 >
-                  {mode === "direct_to_customer" ? "Direct client" : "Via entrepot MediKong"}
+                  {mode === "direct_to_customer" ? "Direct client" : "Via entrepôt MediKong"}
                 </button>
               ))}
             </div>
             {config?.shipping_mode === "via_warehouse" && (
               <div className="space-y-2 pt-2 border-t" style={{ borderColor: "#F1F5F9" }}>
-                <p className="text-[11px] font-semibold" style={{ color: "#616B7C" }}>Adresse entrepot</p>
+                <p className="text-[11px] font-semibold" style={{ color: "#616B7C" }}>Adresse entrepôt</p>
                 <div className="text-[12px]" style={{ color: "#1E293B" }}>
-                  {config?.warehouse_address_line1 || "Non configuree"}<br />
+                  {config?.warehouse_address_line1 || "Non configurée"}<br />
                   {config?.warehouse_postal_code} {config?.warehouse_city}<br />
                   {config?.warehouse_country_code}
                 </div>
@@ -246,7 +365,7 @@ export default function AdminSync() {
       <div className="bg-white rounded-xl border" style={{ borderColor: "#E2E8F0" }}>
         <div className="px-5 py-3 border-b flex items-center justify-between" style={{ borderColor: "#F1F5F9" }}>
           <h3 className="text-[14px] font-bold" style={{ color: "#1E293B" }}>Historique des synchronisations</h3>
-          <span className="text-[11px]" style={{ color: "#8B95A5" }}>{logs?.length || 0} entrees</span>
+          <span className="text-[11px]" style={{ color: "#8B95A5" }}>{logs?.length || 0} entrées</span>
         </div>
 
         {logsLoading ? (
@@ -259,8 +378,8 @@ export default function AdminSync() {
             <div className="hidden sm:grid grid-cols-6 gap-2 px-5 py-2 text-[11px] font-semibold" style={{ color: "#8B95A5", backgroundColor: "#F8FAFC" }}>
               <span>Type</span>
               <span>Statut</span>
-              <span>Debut</span>
-              <span>Duree</span>
+              <span>Début</span>
+              <span>Durée</span>
               <span className="col-span-2">Statistiques</span>
             </div>
             {logs.map(log => {
@@ -305,7 +424,7 @@ export default function AdminSync() {
         <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
           <XCircle size={18} className="text-red-500 mt-0.5" />
           <div>
-            <p className="text-[13px] font-semibold text-red-700">Derniere erreur de synchronisation</p>
+            <p className="text-[13px] font-semibold text-red-700">Dernière erreur de synchronisation</p>
             <p className="text-[12px] text-red-600 mt-1">{config.sync_error_message}</p>
           </div>
         </div>

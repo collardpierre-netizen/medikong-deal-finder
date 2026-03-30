@@ -5,6 +5,46 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+async function getQogitaToken(supabaseClient: any): Promise<{ token: string; baseUrl: string; config: any }> {
+  const { data: config } = await supabaseClient
+    .from("qogita_config")
+    .select("*")
+    .eq("id", 1)
+    .single();
+
+  if (!config) throw new Error("qogita_config not found");
+  if (!config.qogita_email || !config.qogita_password) {
+    throw new Error("Qogita email/password not configured — go to Sync Qogita settings");
+  }
+
+  const baseUrl = config.base_url || "https://api.qogita.com";
+
+  const authResponse = await fetch(`${baseUrl}/auth/login/`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      email: config.qogita_email,
+      password: config.qogita_password,
+    }),
+  });
+
+  if (!authResponse.ok) {
+    const error = await authResponse.text();
+    throw new Error(`Qogita auth failed (${authResponse.status}): ${error}`);
+  }
+
+  const authData = await authResponse.json();
+  const token = authData.accessToken;
+  if (!token) throw new Error("No accessToken in Qogita auth response");
+
+  await supabaseClient
+    .from("qogita_config")
+    .update({ bearer_token: token })
+    .eq("id", 1);
+
+  return { token, baseUrl, config };
+}
+
 function parseCSV(text: string): any[] {
   const lines = text.split("\n").filter(l => l.trim());
   if (lines.length < 2) return [];
@@ -41,16 +81,13 @@ Deno.serve(async (req) => {
   }).select().single();
 
   try {
-    const { data: config } = await supabase.from("qogita_config").select("*").eq("id", 1).single();
-    if (!config?.bearer_token) throw new Error("Qogita bearer token not configured");
-
-    const baseUrl = config.base_url || "https://api.qogita.com";
+    const { token, baseUrl, config } = await getQogitaToken(supabase);
     const country = config.default_country || "BE";
 
     // Download CSV bulk
     const csvUrl = `${baseUrl}/variants/search/download/?country=${country}`;
     const res = await fetch(csvUrl, {
-      headers: { Authorization: `Bearer ${config.bearer_token}`, Accept: "text/csv" },
+      headers: { Authorization: `Bearer ${token}`, Accept: "text/csv" },
     });
     if (!res.ok) throw new Error(`Qogita CSV download failed ${res.status}: ${await res.text()}`);
 
@@ -99,7 +136,6 @@ Deno.serve(async (req) => {
         synced_at: new Date().toISOString(),
       };
 
-      // Aggregate data from CSV
       const bestPrice = parseFloat(row.bestPrice || row.best_price || "0");
       const stockQty = parseInt(row.totalStock || row.total_stock || "0", 10);
       const sellerCount = parseInt(row.sellerCount || row.seller_count || row.offerCount || "0", 10);

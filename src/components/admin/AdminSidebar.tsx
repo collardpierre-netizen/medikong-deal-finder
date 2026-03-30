@@ -100,7 +100,7 @@ const AdminSidebar = () => {
     >
       {/* Logo */}
       <div className="px-5 py-4 border-b border-white/10">
-        <img src={logoLight} alt="MediKong.pro" className="h-14" />
+        <img src={logoLight} alt="MediKong.pro" className="h-16" />
         <p className="text-[11px] mt-1" style={{ color: "#8B95A5" }}>
           {t("superadminPanel")}
         </p>

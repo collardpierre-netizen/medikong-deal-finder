@@ -161,6 +161,7 @@ const App = () => (
       <I18nProvider>
       <CartProvider>
       <CountryProvider>
+      <PriceDisplayProvider>
       <ImpersonationProvider>
       <TooltipProvider>
         <Toaster />

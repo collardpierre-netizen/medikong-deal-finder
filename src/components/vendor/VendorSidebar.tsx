@@ -71,7 +71,7 @@ export function VendorSidebar({ onNavigate }: VendorSidebarProps) {
           <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-sm shrink-0" style={{ backgroundColor: "#1B5BDA" }}>M</div>
         ) : (
           <div className="overflow-hidden">
-            <img src={logoLight} alt="MediKong.pro" className="h-9" />
+            <img src={logoLight} alt="MediKong.pro" className="h-14" />
             <p className="text-white/40 text-[10px] font-medium mt-0.5">Espace Vendeur</p>
           </div>
         )}

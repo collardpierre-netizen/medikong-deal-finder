@@ -119,10 +119,44 @@ function formatDurationStr(seconds: number): string {
   return `${m}m ${s < 10 ? "0" : ""}${s}s`;
 }
 
+const useSyncCountries = () =>
+  useQuery({
+    queryKey: ["sync-countries"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("countries")
+        .select("code, name, flag_emoji, qogita_sync_enabled")
+        .eq("is_active", true)
+        .eq("qogita_sync_enabled", true)
+        .order("display_order");
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+const useCountryProductCounts = () =>
+  useQuery({
+    queryKey: ["country-product-counts"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("product_country_stats")
+        .select("country_code");
+      if (error) throw error;
+      const counts: Record<string, number> = {};
+      for (const row of (data || [])) {
+        counts[row.country_code] = (counts[row.country_code] || 0) + 1;
+      }
+      return counts;
+    },
+  });
+
 export default function AdminSync() {
   const qc = useQueryClient();
   const { data: logs, isLoading: logsLoading } = useSyncLogs();
   const { data: config } = useQogitaConfig();
+  const { data: syncCountries } = useSyncCountries();
+  const { data: countryCounts } = useCountryProductCounts();
+  const [selectedCountry, setSelectedCountry] = useState("BE");
   const [showToken, setShowToken] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [runningSyncs, setRunningSyncs] = useState<Set<string>>(new Set());
@@ -173,15 +207,18 @@ export default function AdminSync() {
         offers_detail: "sync-qogita-offers-detail",
       };
       const fnName = fnMap[type] || `sync-qogita-${type}`;
-      const { data, error } = await supabase.functions.invoke(fnName);
+      const { data, error } = await supabase.functions.invoke(fnName, {
+        body: { country: selectedCountry },
+      });
       if (error) throw error;
       return data;
     },
     onSuccess: (data, type) => {
       setRunningSyncs(prev => { const s = new Set(prev); s.delete(type); return s; });
-      toast.success(`Sync ${type} terminée`, { description: JSON.stringify(data?.stats || data) });
+      toast.success(`Sync ${type} (${selectedCountry}) lancée`, { description: JSON.stringify(data?.stats || data) });
       qc.invalidateQueries({ queryKey: ["sync-logs"] });
       qc.invalidateQueries({ queryKey: ["qogita-config"] });
+      qc.invalidateQueries({ queryKey: ["country-product-counts"] });
     },
     onError: (err: any, type) => {
       setRunningSyncs(prev => { const s = new Set(prev); s.delete(type); return s; });
@@ -322,6 +359,37 @@ export default function AdminSync() {
       {/* Sync Actions */}
       <div className="bg-white rounded-xl border p-5" style={{ borderColor: "#E2E8F0" }}>
         <h3 className="text-[15px] font-bold mb-4" style={{ color: "#1E293B" }}>Actions de synchronisation</h3>
+
+        {/* Country selector */}
+        <div className="flex items-center gap-3 mb-4 p-3 rounded-lg" style={{ backgroundColor: "#F8FAFC", borderColor: "#E2E8F0" }}>
+          <span className="text-[12px] font-semibold" style={{ color: "#616B7C" }}>Pays cible :</span>
+          <Select value={selectedCountry} onValueChange={setSelectedCountry}>
+            <SelectTrigger className="w-[200px] h-9 text-[13px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {(syncCountries || []).map((c: any) => (
+                <SelectItem key={c.code} value={c.code}>
+                  <span className="flex items-center gap-2">
+                    <span>{c.flag_emoji}</span>
+                    <span>{c.name}</span>
+                    {countryCounts?.[c.code] != null && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ backgroundColor: "#EFF6FF", color: "#2563EB" }}>
+                        {(countryCounts[c.code] || 0).toLocaleString("fr-BE")}
+                      </span>
+                    )}
+                  </span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {countryCounts?.[selectedCountry] != null && (
+            <span className="text-[11px] px-2 py-1 rounded-md font-medium" style={{ backgroundColor: "#EFF6FF", color: "#2563EB" }}>
+              {(countryCounts[selectedCountry] || 0).toLocaleString("fr-BE")} produits importés
+            </span>
+          )}
+        </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
           {syncButtons.map(({ type, label, icon: Icon, desc }) => {
             const isRunning = runningSyncs.has(type);

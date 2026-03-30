@@ -894,7 +894,12 @@ export default function ProductPage() {
                   <button
                     className="bg-primary text-primary-foreground text-sm font-semibold px-4 py-2.5 rounded-lg flex items-center gap-2 shadow-lg hover:opacity-90 transition-opacity"
                     onClick={() => {
-                      if (!user) { navigate("/connexion"); return; }
+                      if (!user) {
+                        toast.error("Connectez-vous pour ajouter des produits au panier", {
+                          action: { label: "Se connecter", onClick: () => navigate("/connexion") },
+                        });
+                        return;
+                      }
                       addToCart.mutate({
                         offerId: bestOffer.id,
                         productId: product.id,
@@ -903,6 +908,7 @@ export default function ProductPage() {
                         priceExclVat: bestOffer.unitPriceEur,
                         productData: { id: product.id, name: product.name, brand: product.brand || "", slug: product.slug, price: bestOffer.unitPriceEur },
                       });
+                      toast.success("Produit ajouté au panier ✓");
                     }}
                   >
                     <ShoppingCart size={14} />

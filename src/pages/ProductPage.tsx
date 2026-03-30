@@ -1,5 +1,4 @@
 import { Layout } from "@/components/layout/Layout";
-import { getProductImages } from "@/components/shared/ProductCard";
 import { useProduct, useProductOffers, type Offer } from "@/hooks/useProducts";
 import { useCart } from "@/hooks/useCart";
 import { useAuth } from "@/contexts/AuthContext";

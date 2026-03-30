@@ -390,6 +390,9 @@ export default function AdminSync() {
           )}
         </div>
 
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+          {syncButtons.map(({ type, label, icon: Icon, desc }) => {
+            const isRunning = runningSyncs.has(type);
             return (
               <button
                 key={type}

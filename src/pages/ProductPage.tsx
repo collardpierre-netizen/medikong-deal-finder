@@ -607,6 +607,7 @@ export default function ProductPage() {
                       <Link to="/devenir-vendeur" className="inline-block bg-primary text-primary-foreground font-semibold text-sm px-5 py-2.5 rounded-lg hover:opacity-90 transition-opacity">
                         Devenir fournisseur
                       </Link>
+                    </div>
                   </TabsContent>
 
                   {/* ── Tab: Prix du marché ── */}

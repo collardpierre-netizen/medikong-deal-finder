@@ -103,6 +103,10 @@ export function Navbar() {
                   <span>{t("common.vendor")}</span>
                 </Link>
               )}
+              <Link to="/mes-prix" className="flex items-center gap-1.5 text-emerald-400 hover:text-emerald-300 text-xs font-semibold px-2.5 py-1 rounded-full" style={{ background: "rgba(16,185,129,0.12)" }}>
+                <Tag size={14} />
+                <span>Mes Prix</span>
+              </Link>
               <Link to="/compte" className="flex items-center text-white text-sm max-w-[120px] truncate">
                 {user.email?.split("@")[0]}
               </Link>

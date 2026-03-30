@@ -42,8 +42,9 @@ function mapSearchResult(row: any, offersData?: any[]): Product {
 export type SortOption = "relevance" | "price_asc" | "price_desc" | "offers";
 
 export function useSearchProducts(query: string, sort: SortOption = "relevance") {
+  const { country } = useCountry();
   return useQuery({
-    queryKey: ["search-products", query, sort],
+    queryKey: ["search-products", query, sort, country],
     queryFn: async () => {
       let productsData: any[];
 

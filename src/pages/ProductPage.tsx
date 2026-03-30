@@ -566,7 +566,7 @@ export default function ProductPage() {
                           <span>Prix unitaire</span>
                           <span>MOV</span>
                           <span>Stock</span>
-                          <span className="text-right">Actions</span>
+                          <span className="text-right">Commander</span>
                         </div>
 
                         <OfferRow

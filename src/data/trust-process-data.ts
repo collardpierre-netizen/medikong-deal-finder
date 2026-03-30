@@ -136,6 +136,74 @@ export const contactSubjects = [
   "Autre",
 ];
 
+export function getHelpCategories(t: (key: string) => string): HelpCategoryData[] {
+  return [
+    { icon: Rocket, title: t("helpCenter.categories.gettingStarted.title"), description: t("helpCenter.categories.gettingStarted.description"), articleCount: 5, articles: [
+      { label: t("helpCenter.categories.gettingStarted.a1"), href: "/onboarding" },
+      { label: t("helpCenter.categories.gettingStarted.a2"), href: "#" },
+      { label: t("helpCenter.categories.gettingStarted.a3"), href: "#" },
+    ]},
+    { icon: ShoppingCart, title: t("helpCenter.categories.orders.title"), description: t("helpCenter.categories.orders.description"), articleCount: 12, articles: [
+      { label: t("helpCenter.categories.orders.a1"), href: "#" },
+      { label: t("helpCenter.categories.orders.a2"), href: "#" },
+      { label: t("helpCenter.categories.orders.a3"), href: "/paiement-differe" },
+    ]},
+    { icon: Package, title: t("helpCenter.categories.delivery.title"), description: t("helpCenter.categories.delivery.description"), articleCount: 8, articles: [
+      { label: t("helpCenter.categories.delivery.a1"), href: "#" },
+      { label: t("helpCenter.categories.delivery.a2"), href: "/logistique" },
+      { label: t("helpCenter.categories.delivery.a3"), href: "#" },
+    ]},
+    { icon: FileText, title: t("helpCenter.categories.vat.title"), description: t("helpCenter.categories.vat.description"), articleCount: 4, articles: [
+      { label: t("helpCenter.categories.vat.a1"), href: "#" },
+      { label: t("helpCenter.categories.vat.a2"), href: "#" },
+      { label: t("helpCenter.categories.vat.a3"), href: "#" },
+    ]},
+    { icon: ShieldAlert, title: t("helpCenter.categories.claims.title"), description: t("helpCenter.categories.claims.description"), articleCount: 6, articles: [
+      { label: t("helpCenter.categories.claims.a1"), href: "#" },
+      { label: t("helpCenter.categories.claims.a2"), href: "#" },
+      { label: t("helpCenter.categories.claims.a3"), href: "#" },
+    ]},
+    { icon: UserCircle, title: t("helpCenter.categories.account.title"), description: t("helpCenter.categories.account.description"), articleCount: 6, articles: [
+      { label: t("helpCenter.categories.account.a1"), href: "#" },
+      { label: t("helpCenter.categories.account.a2"), href: "#" },
+      { label: t("helpCenter.categories.account.a3"), href: "/mot-de-passe-oublie" },
+    ]},
+    { icon: Store, title: t("helpCenter.categories.sellers.title"), description: t("helpCenter.categories.sellers.description"), articleCount: 10, articles: [
+      { label: t("helpCenter.categories.sellers.a1"), href: "/devenir-vendeur" },
+      { label: t("helpCenter.categories.sellers.a2"), href: "#" },
+      { label: t("helpCenter.categories.sellers.a3"), href: "/entreprise/comment-ca-marche" },
+    ]},
+    { icon: ShieldCheck, title: t("helpCenter.categories.quality.title"), description: t("helpCenter.categories.quality.description"), articleCount: 5, articles: [
+      { label: t("helpCenter.categories.quality.a1"), href: "#" },
+      { label: t("helpCenter.categories.quality.a2"), href: "/verification-fournisseurs" },
+      { label: t("helpCenter.categories.quality.a3"), href: "/qualite-garantie" },
+    ]},
+    { icon: Lightbulb, title: t("helpCenter.categories.features.title"), description: t("helpCenter.categories.features.description"), articleCount: 7, articles: [
+      { label: t("helpCenter.categories.features.a1"), href: "#" },
+      { label: t("helpCenter.categories.features.a2"), href: "#" },
+      { label: t("helpCenter.categories.features.a3"), href: "#" },
+    ]},
+    { icon: BookOpen, title: t("helpCenter.categories.resources.title"), description: t("helpCenter.categories.resources.description"), articleCount: 4, articles: [
+      { label: t("helpCenter.categories.resources.a1"), href: "#" },
+      { label: t("helpCenter.categories.resources.a2"), href: "#" },
+    ]},
+  ];
+}
+
+export function getHelpFaqItems(t: (key: string) => string): FaqItem[] {
+  return [
+    { question: t("helpCenter.faq.q1"), answer: t("helpCenter.faq.a1") },
+    { question: t("helpCenter.faq.q2"), answer: t("helpCenter.faq.a2") },
+    { question: t("helpCenter.faq.q3"), answer: t("helpCenter.faq.a3") },
+    { question: t("helpCenter.faq.q4"), answer: t("helpCenter.faq.a4") },
+    { question: t("helpCenter.faq.q5"), answer: t("helpCenter.faq.a5") },
+    { question: t("helpCenter.faq.q6"), answer: t("helpCenter.faq.a6") },
+    { question: t("helpCenter.faq.q7"), answer: t("helpCenter.faq.a7") },
+    { question: t("helpCenter.faq.q8"), answer: t("helpCenter.faq.a8") },
+  ];
+}
+
+// Keep backward-compatible static exports for non-i18n usage
 export const helpCategories: HelpCategoryData[] = [
   { icon: Rocket, title: "Premiers pas", description: "Créer votre compte, passer votre première commande et naviguer le catalogue.", articleCount: 5, articles: [
     { label: "Comment créer un compte professionnel ?", href: "/onboarding" },

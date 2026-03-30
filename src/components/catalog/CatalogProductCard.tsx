@@ -4,8 +4,10 @@ import { Plus, Minus, Package, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { formatPrice } from "@/data/mock";
 import { useCart } from "@/contexts/CartContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useCountry } from "@/contexts/CountryContext";
+import { toast } from "sonner";
 import type { CatalogProduct } from "@/hooks/useCatalog";
 
 interface Props {

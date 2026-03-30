@@ -288,6 +288,7 @@ export type Database = {
           image_url: string | null
           is_active: boolean
           name: string
+          name_fr: string | null
           parent_id: string | null
           qogita_qid: string | null
           slug: string
@@ -303,6 +304,7 @@ export type Database = {
           image_url?: string | null
           is_active?: boolean
           name: string
+          name_fr?: string | null
           parent_id?: string | null
           qogita_qid?: string | null
           slug: string
@@ -318,6 +320,7 @@ export type Database = {
           image_url?: string | null
           is_active?: boolean
           name?: string
+          name_fr?: string | null
           parent_id?: string | null
           qogita_qid?: string | null
           slug?: string

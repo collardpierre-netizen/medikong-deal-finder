@@ -25,7 +25,9 @@ export function SubNav() {
               key={tab.path}
               to={tab.path}
               className={`px-3 md:px-4 py-3 text-xs md:text-sm font-medium transition-colors relative whitespace-nowrap ${
-                tab.pink ? "text-mk-pink" : active ? "text-mk-navy font-bold" : "text-mk-sec hover:text-mk-text"
+                tab.pink
+                  ? (active ? "text-mk-pink font-bold" : "text-mk-pink")
+                  : active ? "text-mk-navy font-bold" : "text-mk-sec hover:text-mk-text"
               }`}
             >
               {tab.label}

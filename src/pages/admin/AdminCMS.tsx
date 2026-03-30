@@ -159,9 +159,9 @@ const AdminCMS = () => {
     queryClient.invalidateQueries({ queryKey: ["cms-hero-images"] });
   };
 
-  const insertHeroImage = async (imageUrl: string, altText: string) => {
+  const insertHeroImage = async (imageUrl: string, altText: string, linkUrl?: string, ctaText?: string) => {
     const maxOrder = heroImages.length ? Math.max(...heroImages.map(i => i.sort_order)) + 1 : 0;
-    const { error } = await sb.from("cms_hero_images").insert({ image_url: imageUrl, alt_text: altText || "", sort_order: maxOrder });
+    const { error } = await sb.from("cms_hero_images").insert({ image_url: imageUrl, alt_text: altText || "", sort_order: maxOrder, link_url: linkUrl || null, cta_text: ctaText || null });
     if (error) throw error;
     queryClient.invalidateQueries({ queryKey: ["admin-hero-images"] });
     queryClient.invalidateQueries({ queryKey: ["cms-hero-images"] });

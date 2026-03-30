@@ -595,6 +595,7 @@ export default function ProductPage() {
                             navigate={navigate}
                             addToCart={addToCart}
                             delay={i * 0.06}
+                            isTVAC={isTVAC}
                           />
                         ))}
                       </div>

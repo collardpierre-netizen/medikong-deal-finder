@@ -326,38 +326,51 @@ async function linkBrandsAndCategories(sb: any, country: string, logId: string) 
     progress_message: `${country}: liaison marques/catégories...`,
   }).eq("id", logId);
 
-  const { data: ab } = await sb.from("brands").select("id, name");
+  // Load ALL brands and categories (no limit issue — these tables are small)
+  const { data: ab } = await sb.from("brands").select("id, name").limit(10000);
   const bm = new Map((ab || []).map((b: any) => [b.name, b.id]));
-  const { data: ac } = await sb.from("categories").select("id, name");
+  const { data: ac } = await sb.from("categories").select("id, name").limit(10000);
   const cm = new Map((ac || []).map((c: any) => [c.name, c.id]));
 
-  // Link brands (1000 at a time due to query limit)
-  const { data: nb } = await sb.from("products").select("id, brand_name")
-    .eq("source", "qogita").is("brand_id", null).not("brand_name", "is", null).limit(1000);
-  if (nb?.length) {
+  // Link brands in pages of 1000 until none remain
+  let linked = 0;
+  while (true) {
+    const { data: nb } = await sb.from("products").select("id, brand_name")
+      .eq("source", "qogita").is("brand_id", null).not("brand_name", "is", null).limit(1000);
+    if (!nb?.length) break;
+
     const byB = new Map<string, string[]>();
     for (const p of nb) {
       const bid = bm.get(p.brand_name);
       if (bid) { if (!byB.has(bid)) byB.set(bid, []); byB.get(bid)!.push(p.id); }
     }
+    if (byB.size === 0) break; // no matches possible
     for (const [bid, pids] of byB) {
       for (let k = 0; k < pids.length; k += 100)
         await sb.from("products").update({ brand_id: bid }).in("id", pids.slice(k, k + 100));
     }
+    linked += nb.length;
+    if (linked > 100000) break; // safety
   }
 
-  // Link categories
-  const { data: nc } = await sb.from("products").select("id, category_name")
-    .eq("source", "qogita").is("category_id", null).not("category_name", "is", null).limit(1000);
-  if (nc?.length) {
+  // Link categories in pages
+  linked = 0;
+  while (true) {
+    const { data: nc } = await sb.from("products").select("id, category_name")
+      .eq("source", "qogita").is("category_id", null).not("category_name", "is", null).limit(1000);
+    if (!nc?.length) break;
+
     const byC = new Map<string, string[]>();
     for (const p of nc) {
       const cid = cm.get(p.category_name);
       if (cid) { if (!byC.has(cid)) byC.set(cid, []); byC.get(cid)!.push(p.id); }
     }
+    if (byC.size === 0) break;
     for (const [cid, pids] of byC) {
       for (let k = 0; k < pids.length; k += 100)
         await sb.from("products").update({ category_id: cid }).in("id", pids.slice(k, k + 100));
     }
+    linked += nc.length;
+    if (linked > 100000) break;
   }
 }

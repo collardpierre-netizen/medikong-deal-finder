@@ -601,10 +601,12 @@ export default function ProductPage() {
                     <div className="border border-border rounded-xl p-8 text-center">
                       <Globe size={40} className="mx-auto mb-3 text-muted-foreground/40" />
                       <h3 className="text-base font-bold text-foreground mb-2">Offres externes</h3>
-                      <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                        Aucune offre externe disponible pour le moment. Les offres de nos partenaires grossistes seront bientot disponibles ici.
+                      <p className="text-sm text-muted-foreground max-w-md mx-auto mb-4">
+                        Aucune offre externe disponible pour le moment. Vous etes fournisseur ? Proposez votre prix.
                       </p>
-                    </div>
+                      <Link to="/devenir-vendeur" className="inline-block bg-primary text-primary-foreground font-semibold text-sm px-5 py-2.5 rounded-lg hover:opacity-90 transition-opacity">
+                        Devenir fournisseur
+                      </Link>
                   </TabsContent>
 
                   {/* ── Tab: Prix du marché ── */}

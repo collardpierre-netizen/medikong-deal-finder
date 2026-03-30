@@ -119,7 +119,7 @@ export function CatalogSidebar({ filters, setFilter, clearAll }: Props) {
           </button>
         )}
         <div className="relative">
-          <ScrollArea className="max-h-[220px] pr-2">
+          <div className="max-h-[220px] overflow-y-auto pr-2">
             <div className="space-y-0.5">
               {displayCategories.map((cat: any) => (
                 <button
@@ -135,7 +135,7 @@ export function CatalogSidebar({ filters, setFilter, clearAll }: Props) {
                 </button>
               ))}
             </div>
-          </ScrollArea>
+          </div>
           {displayCategories.length > 8 && (
             <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-background to-transparent" />
           )}

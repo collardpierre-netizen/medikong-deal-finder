@@ -7,7 +7,6 @@ const corsHeaders = {
 
 const MAX_EXECUTION_TIME = 250000;
 const CHUNK_SIZE = 500;
-const PAGE_SIZE = 100;
 
 async function getQogitaToken(supabaseClient: any): Promise<{ token: string; baseUrl: string; config: any }> {
   const { data: config } = await supabaseClient.from("qogita_config").select("*").eq("id", 1).single();
@@ -26,8 +25,34 @@ async function getQogitaToken(supabaseClient: any): Promise<{ token: string; bas
   return { token, baseUrl, config };
 }
 
+function parseCSV(text: string): any[] {
+  const lines = text.split("\n").filter(l => l.trim());
+  if (lines.length < 2) return [];
+  const headers = lines[0].split(",").map(h => h.trim().replace(/^"|"$/g, ""));
+  return lines.slice(1).map(line => {
+    const values: string[] = [];
+    let current = "", inQuotes = false;
+    for (const ch of line) {
+      if (ch === '"') { inQuotes = !inQuotes; continue; }
+      if (ch === "," && !inQuotes) { values.push(current.trim()); current = ""; continue; }
+      current += ch;
+    }
+    values.push(current.trim());
+    const obj: any = {};
+    headers.forEach((h, i) => { obj[h] = values[i] || ""; });
+    return obj;
+  });
+}
+
 function slugify(text: string): string {
   return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+}
+
+// Extract QID from Product URL like https://www.qogita.com/products/XXXXX/slug/
+function extractQidFromUrl(url: string): string | null {
+  if (!url) return null;
+  const match = url.match(/\/products\/([a-f0-9]+)\//);
+  return match ? match[1] : null;
 }
 
 Deno.serve(async (req) => {
@@ -56,7 +81,7 @@ Deno.serve(async (req) => {
     .order("started_at", { ascending: false }).limit(1).maybeSingle();
 
   let syncLogId: string;
-  let stats: any = { items_processed: 0, items_total: 0, chunks_done: 0, brands_created: 0, categories_created: 0, countries_done: [], current_country: "", last_page: {} };
+  let stats: any = { items_processed: 0, items_total: 0, chunks_done: 0, brands_created: 0, categories_created: 0, countries_done: [], current_country: "" };
   let skipCountries: string[] = [];
 
   if (existingSync && (existingSync.stats as any)?.items_processed > 0) {
@@ -77,6 +102,7 @@ Deno.serve(async (req) => {
 
   try {
     const { token, baseUrl } = await getQogitaToken(supabase);
+    let totalProducts = 0;
 
     for (let ci = 0; ci < countriesToSync.length; ci++) {
       const ctry = countriesToSync[ci] as any;
@@ -85,87 +111,105 @@ Deno.serve(async (req) => {
       stats.current_country = ctry.code;
       const vatRate = ctry.default_vat_rate || 21;
 
-      // Resume from last page if interrupted
-      let page = (stats.last_page && stats.last_page[ctry.code]) || 1;
-      let totalPages = 1;
-      let countryProcessed = 0;
-      const countryStatsBatch: any[] = [];
-
+      // Download CSV for this country (NO Accept header — default returns CSV)
       await supabase.from("sync_logs").update({
-        progress_message: `Pays ${ci + 1}/${countriesToSync.length} (${ctry.code}) — Page ${page}...`,
+        progress_message: `Pays ${ci + 1}/${countriesToSync.length} (${ctry.code}) — Téléchargement catalogue...`,
       }).eq("id", syncLogId);
 
-      while (page <= totalPages) {
-        if (Date.now() - startTime > MAX_EXECUTION_TIME) {
-          stats.last_page = { ...(stats.last_page || {}), [ctry.code]: page };
+      const csvUrl = `${baseUrl}/variants/search/download/?country=${ctry.code}`;
+      const res = await fetch(csvUrl, { headers: { Authorization: `Bearer ${token}` } });
+      if (!res.ok) {
+        const errBody = await res.text();
+        // If throttled, save state and return partial
+        if (res.status === 429) {
           await supabase.from("sync_logs").update({
             stats, progress_current: stats.items_processed,
-            progress_message: `Pause timeout — ${ctry.code} page ${page}/${totalPages}`,
+            progress_message: `Rate limited — reprise automatique nécessaire`,
+          }).eq("id", syncLogId);
+          return new Response(JSON.stringify({ status: "throttled", message: errBody, stats }), {
+            status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        throw new Error(`CSV download failed for ${ctry.code}: ${res.status} — ${errBody.substring(0, 200)}`);
+      }
+      const csvText = await res.text();
+      
+      // CSV columns: "GTIN","Name","Category","Brand","€ Lowest Price inc. shipping","Unit",
+      // "Lowest Priced Offer Inventory","Is a pre-order?","Estimated Delivery Time (weeks)",
+      // "Number of Offers","Total Inventory of All Offers","Product URL","Image URL"
+      const rows = parseCSV(csvText);
+      totalProducts += rows.length;
+
+      await supabase.from("sync_logs").update({
+        progress_total: totalProducts,
+        progress_message: `Pays ${ci + 1}/${countriesToSync.length} (${ctry.code}) — ${rows.length} produits trouvés`,
+      }).eq("id", syncLogId);
+
+      const countryStatsBatch: any[] = [];
+
+      for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
+        if (Date.now() - startTime > MAX_EXECUTION_TIME) {
+          await supabase.from("sync_logs").update({
+            stats, progress_current: stats.items_processed,
+            progress_message: `Pause timeout — ${ctry.code} ${i}/${rows.length}`,
           }).eq("id", syncLogId);
           return new Response(JSON.stringify({ status: "partial", stats }), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
 
-        const url = `${baseUrl}/variants/search/?country=${ctry.code}&page=${page}&page_size=${PAGE_SIZE}`;
-        const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-        if (!res.ok) {
-          const errText = await res.text();
-          throw new Error(`Qogita API ${res.status} for ${ctry.code} page ${page}: ${errText.substring(0, 200)}`);
-        }
-
-        const data = await res.json();
-        const results = data.results || [];
-        const count = data.count || 0;
-        totalPages = Math.ceil(count / PAGE_SIZE);
-
-        if (page === 1) {
-          stats.items_total = (stats.items_total || 0) + count;
-          await supabase.from("sync_logs").update({ progress_total: stats.items_total }).eq("id", syncLogId);
-        }
-
-        // Build batch
+        const chunk = rows.slice(i, i + CHUNK_SIZE);
         const batchData: any[] = [];
-        for (const row of results) {
-          const qid = row.qid;
-          if (!qid) continue;
-          const name = row.name || "";
+
+        for (const row of chunk) {
+          const gtin = row["GTIN"] || "";
+          const name = row["Name"] || "";
           if (!name) continue;
 
-          const gtin = row.gtin || "";
+          const productUrl = row["Product URL"] || "";
+          const qid = extractQidFromUrl(productUrl) || gtin || slugify(name).slice(0, 32);
+          if (!qid) continue;
+
+          const brandName = row["Brand"] || null;
+          const categoryName = row["Category"] || null;
+          const bestPrice = parseFloat(row["€ Lowest Price inc. shipping"] || "0");
+          const stockQty = parseInt(row["Total Inventory of All Offers"] || "0", 10);
+          const sellerCount = parseInt(row["Number of Offers"] || "0", 10);
+          const imageUrl = row["Image URL"] || "";
           const slug = slugify(name) + (gtin ? `-${gtin.slice(-6)}` : `-${qid.slice(0, 6)}`);
-          const bestPrice = parseFloat(row.bestPrice || row.best_price || "0");
-          const stockQty = parseInt(row.totalStock || row.total_stock || "0", 10);
-          const sellerCount = parseInt(row.sellerCount || row.seller_count || row.offerCount || "0", 10);
+
+          // bestPrice from CSV is already including shipping, treat as incl VAT price
+          // Compute excl VAT from that
+          const priceInclVat = bestPrice;
+          const priceExclVat = bestPrice > 0 ? Math.round((bestPrice / (1 + vatRate / 100)) * 100) / 100 : 0;
 
           const productRow: any = {
             qogita_qid: qid,
-            qogita_fid: row.familyQid || null,
-            gtin: gtin || null, name, slug,
-            description: row.description || null,
-            short_description: row.shortDescription || null,
-            label: row.label || null,
-            image_urls: row.imageUrl ? [row.imageUrl] : (row.images ? row.images.map((img: any) => img.url || img) : []),
-            origin_country: row.originCountry || null,
-            source: "qogita", is_active: true, is_published: true,
+            gtin: gtin || null,
+            name,
+            slug,
+            brand_name: brandName,
+            category_name: categoryName,
+            image_urls: imageUrl ? [imageUrl] : [],
+            source: "qogita",
+            is_active: true,
+            is_published: true,
             synced_at: new Date().toISOString(),
-            total_stock: stockQty, offer_count: sellerCount, is_in_stock: stockQty > 0,
-            brand_name: row.brandName || (row.brand && typeof row.brand === "object" ? row.brand.name : row.brand) || null,
-            brand_qid: row.brandQid || (row.brand && typeof row.brand === "object" ? row.brand.qid : null) || null,
-            category_name: row.categoryName || (row.category && typeof row.category === "object" ? row.category.name : row.category) || null,
-            category_qid: row.categoryQid || (row.category && typeof row.category === "object" ? row.category.qid : null) || null,
+            total_stock: stockQty,
+            offer_count: sellerCount,
+            is_in_stock: stockQty > 0,
           };
-          if (bestPrice > 0) {
-            productRow.best_price_excl_vat = bestPrice;
-            productRow.best_price_incl_vat = Math.round(bestPrice * (1 + vatRate / 100) * 100) / 100;
+          if (priceExclVat > 0) {
+            productRow.best_price_excl_vat = priceExclVat;
+            productRow.best_price_incl_vat = priceInclVat;
           }
           batchData.push(productRow);
 
           countryStatsBatch.push({
             qogita_qid: qid,
             country_code: ctry.code,
-            best_price_excl_vat: bestPrice > 0 ? bestPrice : null,
-            best_price_incl_vat: bestPrice > 0 ? Math.round(bestPrice * (1 + vatRate / 100) * 100) / 100 : null,
+            best_price_excl_vat: priceExclVat > 0 ? priceExclVat : null,
+            best_price_incl_vat: priceInclVat > 0 ? priceInclVat : null,
             offer_count: sellerCount,
             total_stock: stockQty,
             min_delivery_days: null,
@@ -180,20 +224,18 @@ Deno.serve(async (req) => {
           if (error) throw error;
         }
 
-        countryProcessed += batchData.length;
         stats.items_processed = (stats.items_processed || 0) + batchData.length;
-        stats.last_page = { ...(stats.last_page || {}), [ctry.code]: page + 1 };
+        stats.chunks_done++;
 
         await supabase.from("sync_logs").update({
-          stats, progress_current: stats.items_processed, progress_total: stats.items_total,
-          progress_message: `${ctry.code}: Page ${page}/${totalPages} — ${countryProcessed}/${count} produits`,
+          stats, progress_current: stats.items_processed, progress_total: totalProducts,
+          progress_message: `${ctry.code} — ${i + chunk.length}/${rows.length} produits`,
         }).eq("id", syncLogId);
 
-        page++;
-        if (page <= totalPages) await new Promise(r => setTimeout(r, 200));
+        await new Promise(r => setTimeout(r, 50));
       }
 
-      // Populate product_country_stats for this country
+      // Populate product_country_stats
       if (countryStatsBatch.length > 0) {
         await supabase.from("sync_logs").update({
           progress_message: `${ctry.code}: Stats par pays (${countryStatsBatch.length})...`,

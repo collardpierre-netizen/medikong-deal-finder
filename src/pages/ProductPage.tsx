@@ -309,6 +309,7 @@ export default function ProductPage() {
   const [showStickyBar, setShowStickyBar] = useState(false);
   const [stickyQty, setStickyQty] = useState(1);
   const offerSectionRef = useRef<HTMLDivElement>(null);
+  const queryClient = useQueryClient();
 
   const { slug } = useParams();
   const navigate = useNavigate();
@@ -440,6 +441,30 @@ export default function ProductPage() {
 
   // Margin calculator state (must be before early returns)
   const [userPrice, setUserPrice] = useState<string>("");
+  const [supplierName, setSupplierName] = useState<string>("");
+  const [savingPrice, setSavingPrice] = useState(false);
+
+  // Load saved user price
+  const { data: savedUserPrice } = useQuery({
+    queryKey: ["user-price", product?.id, user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("user_prices")
+        .select("my_purchase_price, supplier_name")
+        .eq("user_id", user!.id)
+        .eq("product_id", product!.id)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!product?.id && !!user?.id,
+  });
+
+  useEffect(() => {
+    if (savedUserPrice) {
+      setUserPrice(savedUserPrice.my_purchase_price?.toString() || "");
+      setSupplierName(savedUserPrice.supplier_name || "");
+    }
+  }, [savedUserPrice]);
 
   if (isLoading) {
     return (
@@ -893,6 +918,55 @@ export default function ProductPage() {
                         <span className="px-3 py-2.5 bg-muted text-sm text-muted-foreground">€</span>
                         <span className="flex-1 px-3 py-2.5 text-sm font-bold text-green-700">{formatEur(clientPrice)}</span>
                       </div>
+                    </div>
+                  </div>
+                  {/* Supplier + Save */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">Fournisseur actuel (optionnel)</label>
+                      <div className="flex items-center border border-border rounded-lg overflow-hidden">
+                        <input
+                          type="text"
+                          value={supplierName}
+                          onChange={(e) => setSupplierName(e.target.value)}
+                          placeholder="Ex: Alliance Healthcare"
+                          className="flex-1 px-3 py-2.5 text-sm bg-background outline-none"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-end">
+                      <button
+                        onClick={async () => {
+                          if (!user) {
+                            toast.error("Connectez-vous pour sauvegarder votre prix", {
+                              action: { label: "Se connecter", onClick: () => navigate("/connexion") },
+                            });
+                            return;
+                          }
+                          const price = parseFloat(userPrice.replace(",", "."));
+                          if (!price || price <= 0) { toast.error("Entrez un prix valide"); return; }
+                          setSavingPrice(true);
+                          const { error } = await supabase.from("user_prices").upsert({
+                            user_id: user.id,
+                            product_id: product.id,
+                            my_purchase_price: price,
+                            supplier_name: supplierName || null,
+                            updated_at: new Date().toISOString(),
+                          }, { onConflict: "user_id,product_id" });
+                          setSavingPrice(false);
+                          if (!error) {
+                            toast.success("Prix sauvegarde ! Retrouvez-le dans Mes Prix.");
+                            queryClient.invalidateQueries({ queryKey: ["user-price", product.id] });
+                          } else {
+                            toast.error("Erreur lors de la sauvegarde");
+                          }
+                        }}
+                        disabled={savingPrice || !userPriceNum}
+                        className="w-full bg-primary text-primary-foreground py-2.5 rounded-lg font-medium text-sm hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
+                      >
+                        <Tag size={14} />
+                        {savingPrice ? "Sauvegarde..." : savedUserPrice ? "Mettre a jour mon prix" : "Sauvegarder mon prix"}
+                      </button>
                     </div>
                   </div>
                   {userPriceNum > 0 && savingsAbs > 0 && (

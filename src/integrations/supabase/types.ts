@@ -1977,6 +1977,47 @@ export type Database = {
           },
         ]
       }
+      user_prices: {
+        Row: {
+          created_at: string | null
+          id: string
+          my_purchase_price: number
+          notes: string | null
+          product_id: string
+          supplier_name: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          my_purchase_price: number
+          notes?: string | null
+          product_id: string
+          supplier_name?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          my_purchase_price?: number
+          notes?: string | null
+          product_id?: string
+          supplier_name?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_prices_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vendors: {
         Row: {
           address_line1: string | null

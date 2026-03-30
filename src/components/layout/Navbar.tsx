@@ -1,4 +1,4 @@
-import { Search, Bell, ShoppingCart, Users, Menu, X, LogOut, Shield, Store } from "lucide-react";
+import { Search, Bell, ShoppingCart, Users, Menu, X, LogOut, Shield, Store, Tag } from "lucide-react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { usePriceDisplay } from "@/contexts/PriceDisplayContext";
@@ -103,6 +103,10 @@ export function Navbar() {
                   <span>{t("common.vendor")}</span>
                 </Link>
               )}
+              <Link to="/mes-prix" className="flex items-center gap-1.5 text-emerald-400 hover:text-emerald-300 text-xs font-semibold px-2.5 py-1 rounded-full" style={{ background: "rgba(16,185,129,0.12)" }}>
+                <Tag size={14} />
+                <span>Mes Prix</span>
+              </Link>
               <Link to="/compte" className="flex items-center text-white text-sm max-w-[120px] truncate">
                 {user.email?.split("@")[0]}
               </Link>
@@ -157,6 +161,9 @@ export function Navbar() {
                     <Store size={16} /> {t("common.vendorSpace")}
                   </Link>
                 )}
+                <Link to="/mes-prix" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 text-emerald-400 text-sm font-semibold">
+                  <Tag size={16} /> Mes Prix
+                </Link>
                 <Link to="/compte" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 text-white text-sm">
                   <Users size={16} /> {t("common.account")}
                 </Link>

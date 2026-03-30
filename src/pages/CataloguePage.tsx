@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import { CatalogSidebar } from "@/components/catalog/CatalogSidebar";
@@ -11,7 +12,15 @@ import { Loader2, SlidersHorizontal, X } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 
 export default function CataloguePage() {
+  const { slug } = useParams();
   const { filters, setFilter, clearAll } = useCatalogFilters();
+  
+  // Sync route param slug to category filter
+  useEffect(() => {
+    if (slug && slug !== filters.category) {
+      setFilter("category", slug);
+    }
+  }, [slug]);
   const { data, isLoading } = useCatalogProducts(filters);
   const products = data?.products || [];
   const total = data?.total || 0;

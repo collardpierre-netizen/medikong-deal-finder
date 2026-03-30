@@ -1086,7 +1086,11 @@ export type Database = {
           best_price_excl_vat: number | null
           best_price_incl_vat: number | null
           brand_id: string | null
+          brand_name: string | null
+          brand_qid: string | null
           category_id: string | null
+          category_name: string | null
+          category_qid: string | null
           cnk_code: string | null
           created_at: string
           description: string | null
@@ -1122,7 +1126,11 @@ export type Database = {
           best_price_excl_vat?: number | null
           best_price_incl_vat?: number | null
           brand_id?: string | null
+          brand_name?: string | null
+          brand_qid?: string | null
           category_id?: string | null
+          category_name?: string | null
+          category_qid?: string | null
           cnk_code?: string | null
           created_at?: string
           description?: string | null
@@ -1158,7 +1166,11 @@ export type Database = {
           best_price_excl_vat?: number | null
           best_price_incl_vat?: number | null
           brand_id?: string | null
+          brand_name?: string | null
+          brand_qid?: string | null
           category_id?: string | null
+          category_name?: string | null
+          category_qid?: string | null
           cnk_code?: string | null
           created_at?: string
           description?: string | null

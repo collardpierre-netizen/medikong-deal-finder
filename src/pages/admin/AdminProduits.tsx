@@ -104,19 +104,29 @@ const AdminProduits = () => {
             <table className="w-full text-left">
               <thead>
                 <tr style={{ borderBottom: "1px solid #E2E8F0", backgroundColor: "#F8FAFC" }}>
-                  {["Produit", "CNK", "EAN", "Offres", "Stock", "Meilleur prix", "Statut", ""].map((h) => (
+                  {["", "Produit", "CNK", "EAN", "Offres", "Stock", "Meilleur prix", "Statut", ""].map((h) => (
                     <th key={h} className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider" style={{ color: "#8B95A5" }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {filteredProducts.map((p) => (
+                {filteredProducts.map((p) => {
+                  const imgUrl = (p.image_urls as string[] | null)?.[0];
+                  return (
                   <tr key={p.id} className="cursor-pointer transition-colors" style={{ borderBottom: "1px solid #F1F5F9" }}
                     onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#F8FAFC")}
                     onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}>
+                    <td className="px-4 py-3 w-12">
+                      {imgUrl ? (
+                        <img src={imgUrl} alt="" className="w-9 h-9 rounded object-contain bg-gray-50 border" style={{ borderColor: "#E2E8F0" }} onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; (e.target as HTMLImageElement).nextElementSibling && ((e.target as HTMLImageElement).nextElementSibling as HTMLElement).style.removeProperty("display"); }} />
+                      ) : null}
+                      <div className={`w-9 h-9 rounded bg-gray-50 border flex items-center justify-center ${imgUrl ? "hidden" : ""}`} style={{ borderColor: "#E2E8F0" }}>
+                        <Package size={14} className="text-gray-300" />
+                      </div>
+                    </td>
                     <td className="px-4 py-3" onClick={() => navigate(`/admin/produits/${p.id}`)}>
                       <span className="text-[13px] font-semibold block" style={{ color: "#1D2530" }}>{p.name}</span>
-                      <span className="text-[11px]" style={{ color: "#8B95A5" }}>{p.source}</span>
+                      <span className="text-[11px]" style={{ color: "#8B95A5" }}>{(p as any).brand_name || p.source}</span>
                     </td>
                     <td className="px-4 py-3 text-[12px] font-mono" style={{ color: "#1B5BDA" }}>{p.cnk_code || "—"}</td>
                     <td className="px-4 py-3 text-[11px] font-mono" style={{ color: "#616B7C" }}>{p.gtin || "—"}</td>

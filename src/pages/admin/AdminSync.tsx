@@ -352,6 +352,27 @@ export default function AdminSync() {
           {meiliSyncing ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
           {meiliSyncing ? "Synchronisation en cours..." : "Sync complète Meilisearch"}
         </button>
+        <button
+          onClick={async () => {
+            setResolving(true);
+            try {
+              await supabase.rpc("resolve_product_brands");
+              await supabase.rpc("resolve_product_categories");
+              await supabase.rpc("update_brand_product_counts");
+              toast.success("Liens résolus ✅", { description: "brand_id, category_id et compteurs mis à jour" });
+            } catch (err: any) {
+              toast.error("Erreur résolution", { description: err.message });
+            } finally {
+              setResolving(false);
+            }
+          }}
+          disabled={resolving}
+          className="flex items-center gap-2 px-4 py-2.5 border rounded-lg text-[13px] font-semibold disabled:opacity-50 hover:bg-[#F8FAFC] transition-colors"
+          style={{ borderColor: "#E2E8F0", color: "#1E293B" }}
+        >
+          {resolving ? <Loader2 size={14} className="animate-spin" /> : <Database size={14} />}
+          {resolving ? "Résolution en cours..." : "Résoudre liens manquants"}
+        </button>
       </div>
       </div>
 

@@ -56,6 +56,8 @@ const AdminCMS = () => {
   const [sections, setSections] = useState(homepageSections);
   const [newImageUrl, setNewImageUrl] = useState("");
   const [newImageAlt, setNewImageAlt] = useState("");
+  const [newLinkUrl, setNewLinkUrl] = useState("");
+  const [newCtaText, setNewCtaText] = useState("");
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();

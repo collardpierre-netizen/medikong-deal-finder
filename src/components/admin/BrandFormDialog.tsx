@@ -195,9 +195,14 @@ export function BrandFormDialog({ open, onOpenChange, brand, manufacturers }: Br
 
           {/* Translation fields */}
           <div className="border-t pt-3 mt-1">
-            <Label className="text-xs font-semibold flex items-center gap-1 mb-2">
-              <Languages size={14} /> Traductions du nom
-            </Label>
+            <div className="flex items-center justify-between mb-2">
+              <Label className="text-xs font-semibold flex items-center gap-1">
+                <Languages size={14} /> Traductions du nom
+              </Label>
+              <Button type="button" variant="outline" size="sm" className="h-7 text-[11px] gap-1" onClick={handleAutoTranslate} disabled={translating}>
+                <Wand2 size={12} /> {translating ? "Traduction..." : "Auto-traduire"}
+              </Button>
+            </div>
             <div className="grid grid-cols-3 gap-2">
               {LOCALES.map(l => (
                 <div key={l}>

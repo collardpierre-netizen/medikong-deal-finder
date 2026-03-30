@@ -190,6 +190,7 @@ export default function AdminSync() {
   const { data: config } = useQogitaConfig();
   const { data: syncCountries } = useSyncCountries();
   const { data: countryCounts } = useCountryProductCounts();
+  const { data: lastSyncDates } = useLastSyncDates();
   const [selectedCountry, setSelectedCountry] = useState("BE");
   const [showToken, setShowToken] = useState(false);
   const [showPassword, setShowPassword] = useState(false);

@@ -40,7 +40,7 @@ const contentVariants = {
 };
 
 export default function AccountPage() {
-  const { data: products = [] } = useProducts();
+  const { data: products = [] } = useFeaturedProducts(20);
   const { user } = useAuth();
   const { favorites, isFavorite, toggleFavorite } = useFavorites();
   const { lists, createList, deleteList } = useFavoriteLists();

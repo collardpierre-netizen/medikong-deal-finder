@@ -47,6 +47,8 @@ interface HeroImage {
   alt_text: string;
   sort_order: number;
   is_active: boolean;
+  link_url: string | null;
+  cta_text: string | null;
 }
 
 const AdminCMS = () => {
@@ -54,6 +56,8 @@ const AdminCMS = () => {
   const [sections, setSections] = useState(homepageSections);
   const [newImageUrl, setNewImageUrl] = useState("");
   const [newImageAlt, setNewImageAlt] = useState("");
+  const [newLinkUrl, setNewLinkUrl] = useState("");
+  const [newCtaText, setNewCtaText] = useState("");
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
@@ -155,17 +159,17 @@ const AdminCMS = () => {
     queryClient.invalidateQueries({ queryKey: ["cms-hero-images"] });
   };
 
-  const insertHeroImage = async (imageUrl: string, altText: string) => {
+  const insertHeroImage = async (imageUrl: string, altText: string, linkUrl?: string, ctaText?: string) => {
     const maxOrder = heroImages.length ? Math.max(...heroImages.map(i => i.sort_order)) + 1 : 0;
-    const { error } = await sb.from("cms_hero_images").insert({ image_url: imageUrl, alt_text: altText || "", sort_order: maxOrder });
+    const { error } = await sb.from("cms_hero_images").insert({ image_url: imageUrl, alt_text: altText || "", sort_order: maxOrder, link_url: linkUrl || null, cta_text: ctaText || null });
     if (error) throw error;
     queryClient.invalidateQueries({ queryKey: ["admin-hero-images"] });
     queryClient.invalidateQueries({ queryKey: ["cms-hero-images"] });
   };
 
   const addImage = useMutation({
-    mutationFn: async () => { await insertHeroImage(newImageUrl, newImageAlt); },
-    onSuccess: () => { setNewImageUrl(""); setNewImageAlt(""); toast.success("Image ajoutée"); },
+    mutationFn: async () => { await insertHeroImage(newImageUrl, newImageAlt, newLinkUrl, newCtaText); },
+    onSuccess: () => { setNewImageUrl(""); setNewImageAlt(""); setNewLinkUrl(""); setNewCtaText(""); toast.success("Image ajoutée"); },
   });
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -180,8 +184,10 @@ const AdminCMS = () => {
       const { error: uploadError } = await supabase.storage.from("cms-images").upload(`hero/${fileName}`, file, { upsert: false });
       if (uploadError) throw uploadError;
       const { data: urlData } = supabase.storage.from("cms-images").getPublicUrl(`hero/${fileName}`);
-      await insertHeroImage(urlData.publicUrl, newImageAlt || file.name);
+      await insertHeroImage(urlData.publicUrl, newImageAlt || file.name, newLinkUrl, newCtaText);
       setNewImageAlt("");
+      setNewLinkUrl("");
+      setNewCtaText("");
       toast.success("Image uploadée et ajoutée");
     } catch (err: any) {
       toast.error("Erreur upload : " + (err.message || "inconnue"));
@@ -312,7 +318,7 @@ const AdminCMS = () => {
             <p className="text-[12px] mb-4" style={{ color: "#8B95A5" }}>Gérez les photos du carrousel hero. Les modifications sont appliquées en temps réel sur la homepage.</p>
 
             {/* Upload file */}
-            <div className="flex flex-col gap-3 mb-6">
+            <div className="flex flex-col gap-3 mb-6 p-4 rounded-lg border border-dashed" style={{ borderColor: "#CBD5E1" }}>
               <div className="flex gap-2 items-center">
                 <input type="file" accept="image/*" ref={fileInputRef} onChange={handleFileUpload} className="hidden" />
                 <Button size="sm" variant="outline" onClick={() => fileInputRef.current?.click()} disabled={uploading} className="gap-1.5">
@@ -327,6 +333,10 @@ const AdminCMS = () => {
                   <Plus size={14} /> Ajouter URL
                 </Button>
               </div>
+              <div className="flex gap-2 items-center">
+                <Input placeholder="URL de destination (ex: /promotions)..." value={newLinkUrl} onChange={e => setNewLinkUrl(e.target.value)} className="text-[13px] flex-1" />
+                <Input placeholder="Texte CTA (ex: Découvrir →)..." value={newCtaText} onChange={e => setNewCtaText(e.target.value)} className="text-[13px] w-[220px]" />
+              </div>
             </div>
 
             <div className="space-y-3">
@@ -340,6 +350,12 @@ const AdminCMS = () => {
                   <div className="flex-1 min-w-0">
                     <p className="text-[12px] font-medium truncate" style={{ color: "#1D2530" }}>{img.alt_text || "Sans description"}</p>
                     <p className="text-[10px] truncate" style={{ color: "#8B95A5" }}>{img.image_url}</p>
+                    {(img.link_url || img.cta_text) && (
+                      <p className="text-[10px] mt-0.5" style={{ color: "#1B5BDA" }}>
+                        {img.cta_text && <span className="font-medium">[{img.cta_text}]</span>}
+                        {img.link_url && <span className="ml-1">→ {img.link_url}</span>}
+                      </p>
+                    )}
                   </div>
                   <span className="text-[11px] font-bold" style={{ color: "#8B95A5" }}>#{img.sort_order}</span>
                   <button onClick={() => toggleImage.mutate({ id: img.id, is_active: !img.is_active })} className="flex items-center gap-1.5">

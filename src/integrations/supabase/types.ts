@@ -338,25 +338,31 @@ export type Database = {
         Row: {
           alt_text: string | null
           created_at: string
+          cta_text: string | null
           id: string
           image_url: string
           is_active: boolean
+          link_url: string | null
           sort_order: number
         }
         Insert: {
           alt_text?: string | null
           created_at?: string
+          cta_text?: string | null
           id?: string
           image_url: string
           is_active?: boolean
+          link_url?: string | null
           sort_order?: number
         }
         Update: {
           alt_text?: string | null
           created_at?: string
+          cta_text?: string | null
           id?: string
           image_url?: string
           is_active?: boolean
+          link_url?: string | null
           sort_order?: number
         }
         Relationships: []

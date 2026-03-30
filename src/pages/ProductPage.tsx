@@ -270,6 +270,25 @@ export default function ProductPage() {
   const otherOffers = filteredOffers.slice(1);
   const totalStock = filteredOffers.reduce((s, o) => s + o.stockQuantity, 0);
 
+  // Price history query (must be before early returns)
+  const { data: priceHistoryData = [] } = useQuery({
+    queryKey: ["price-history", product?.id, country],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("price_history")
+        .select("price_excl_vat, price_incl_vat, recorded_at")
+        .eq("product_id", product!.id)
+        .eq("country_code", country)
+        .order("recorded_at", { ascending: true })
+        .limit(180);
+      return data || [];
+    },
+    enabled: !!product?.id,
+  });
+
+  // Margin calculator state (must be before early returns)
+  const [userPrice, setUserPrice] = useState<string>("");
+
   if (isLoading) {
     return (
       <Layout>
@@ -293,6 +312,11 @@ export default function ProductPage() {
   const hasImages = images.length > 0;
   const description = productDetails?.description || (productDetails as any)?.label || product.descriptionShort || "";
 
+  const clientPrice = bestOffer ? (isTVAC ? bestOffer.unitPriceInclVat : bestOffer.unitPriceEur) : 0;
+  const userPriceNum = parseFloat(userPrice.replace(",", ".")) || 0;
+  const savingsAbs = userPriceNum > 0 ? userPriceNum - clientPrice : 0;
+  const savingsPct = userPriceNum > 0 ? ((savingsAbs / userPriceNum) * 100) : 0;
+
   // Specs table — only show rows with real data
   const specsRaw: [string, string | undefined | null][] = [
     ["Marque", brandData?.name || product.brand],
@@ -306,29 +330,6 @@ export default function ProductPage() {
     ["Pays d'origine", productDetails?.origin_country],
   ];
   const specs = specsRaw.filter(([, val]) => val && val !== "—" && val !== "null") as [string, string][];
-
-  // Price history query
-  const { data: priceHistoryData = [] } = useQuery({
-    queryKey: ["price-history", product?.id, country],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("price_history")
-        .select("price_excl_vat, price_incl_vat, recorded_at")
-        .eq("product_id", product!.id)
-        .eq("country_code", country)
-        .order("recorded_at", { ascending: true })
-        .limit(180);
-      return data || [];
-    },
-    enabled: !!product?.id,
-  });
-
-  // Margin calculator state
-  const [userPrice, setUserPrice] = useState<string>("");
-  const clientPrice = bestOffer ? (isTVAC ? bestOffer.unitPriceInclVat : bestOffer.unitPriceEur) : 0;
-  const userPriceNum = parseFloat(userPrice.replace(",", ".")) || 0;
-  const savingsAbs = userPriceNum > 0 ? userPriceNum - clientPrice : 0;
-  const savingsPct = userPriceNum > 0 ? ((savingsAbs / userPriceNum) * 100) : 0;
 
   return (
     <Layout>

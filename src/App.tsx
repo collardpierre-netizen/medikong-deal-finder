@@ -300,6 +300,7 @@ const App = () => (
         </BrowserRouter>
       </TooltipProvider>
       </ImpersonationProvider>
+      </PriceDisplayProvider>
       </CountryProvider>
       </CartProvider>
       </I18nProvider>

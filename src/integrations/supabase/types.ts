@@ -388,6 +388,51 @@ export type Database = {
         }
         Relationships: []
       }
+      countries: {
+        Row: {
+          code: string
+          created_at: string | null
+          currency: string | null
+          default_language: string | null
+          default_vat_rate: number | null
+          display_order: number | null
+          flag_emoji: string | null
+          is_active: boolean | null
+          last_sync_at: string | null
+          name: string
+          name_local: string | null
+          qogita_sync_enabled: boolean | null
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          currency?: string | null
+          default_language?: string | null
+          default_vat_rate?: number | null
+          display_order?: number | null
+          flag_emoji?: string | null
+          is_active?: boolean | null
+          last_sync_at?: string | null
+          name: string
+          name_local?: string | null
+          qogita_sync_enabled?: boolean | null
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          currency?: string | null
+          default_language?: string | null
+          default_vat_rate?: number | null
+          display_order?: number | null
+          flag_emoji?: string | null
+          is_active?: boolean | null
+          last_sync_at?: string | null
+          name?: string
+          name_local?: string | null
+          qogita_sync_enabled?: boolean | null
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           address_line1: string
@@ -770,6 +815,7 @@ export type Database = {
         Row: {
           applied_margin_percentage: number | null
           applied_margin_rule_id: string | null
+          country_code: string | null
           created_at: string
           delivery_days: number
           id: string
@@ -796,6 +842,7 @@ export type Database = {
         Insert: {
           applied_margin_percentage?: number | null
           applied_margin_rule_id?: string | null
+          country_code?: string | null
           created_at?: string
           delivery_days?: number
           id?: string
@@ -822,6 +869,7 @@ export type Database = {
         Update: {
           applied_margin_percentage?: number | null
           applied_margin_rule_id?: string | null
+          country_code?: string | null
           created_at?: string
           delivery_days?: number
           id?: string
@@ -852,6 +900,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "margin_rules"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offers_country_code_fkey"
+            columns: ["country_code"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["code"]
           },
           {
             foreignKeyName: "offers_product_id_fkey"
@@ -1077,6 +1132,54 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_country_stats: {
+        Row: {
+          best_price_excl_vat: number | null
+          best_price_incl_vat: number | null
+          country_code: string
+          is_in_stock: boolean | null
+          min_delivery_days: number | null
+          offer_count: number | null
+          product_id: string
+          total_stock: number | null
+        }
+        Insert: {
+          best_price_excl_vat?: number | null
+          best_price_incl_vat?: number | null
+          country_code: string
+          is_in_stock?: boolean | null
+          min_delivery_days?: number | null
+          offer_count?: number | null
+          product_id: string
+          total_stock?: number | null
+        }
+        Update: {
+          best_price_excl_vat?: number | null
+          best_price_incl_vat?: number | null
+          country_code?: string
+          is_in_stock?: boolean | null
+          min_delivery_days?: number | null
+          offer_count?: number | null
+          product_id?: string
+          total_stock?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_country_stats_country_code_fkey"
+            columns: ["country_code"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "product_country_stats_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
             referencedColumns: ["id"]
           },
         ]

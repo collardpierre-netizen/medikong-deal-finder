@@ -168,7 +168,11 @@ export default function AdminSync() {
   const runSync = useMutation({
     mutationFn: async (type: SyncType) => {
       setRunningSyncs(prev => new Set(prev).add(type));
-      const fnName = type === "recalculate" ? "recalculate-all-prices" : `sync-qogita-${type}`;
+      const fnMap: Record<string, string> = {
+        recalculate: "recalculate-all-prices",
+        offers_detail: "sync-qogita-offers-detail",
+      };
+      const fnName = fnMap[type] || `sync-qogita-${type}`;
       const { data, error } = await supabase.functions.invoke(fnName);
       if (error) throw error;
       return data;

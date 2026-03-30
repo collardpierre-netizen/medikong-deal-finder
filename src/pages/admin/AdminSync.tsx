@@ -138,16 +138,50 @@ const useCountryProductCounts = () =>
   useQuery({
     queryKey: ["country-product-counts"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("product_country_stats")
-        .select("country_code");
-      if (error) throw error;
+      // Get all active sync countries first
+      const { data: countries } = await supabase
+        .from("countries")
+        .select("code")
+        .eq("is_active", true)
+        .eq("qogita_sync_enabled", true);
       const counts: Record<string, number> = {};
-      for (const row of (data || [])) {
-        counts[row.country_code] = (counts[row.country_code] || 0) + 1;
+      for (const c of (countries || [])) {
+        const { count, error } = await supabase
+          .from("product_country_stats")
+          .select("*", { count: "exact", head: true })
+          .eq("country_code", c.code);
+        if (!error) counts[c.code] = count ?? 0;
       }
       return counts;
     },
+  });
+
+const useLastSyncDates = () =>
+  useQuery({
+    queryKey: ["last-sync-dates"],
+    queryFn: async () => {
+      const { data: lastProducts } = await supabase
+        .from("sync_logs")
+        .select("completed_at")
+        .eq("status", "completed")
+        .eq("sync_type", "products")
+        .order("completed_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      const { data: lastOffers } = await supabase
+        .from("sync_logs")
+        .select("completed_at")
+        .eq("status", "completed")
+        .eq("sync_type", "offers_detail")
+        .order("completed_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      return {
+        lastProductsSync: lastProducts?.completed_at || null,
+        lastOffersSync: lastOffers?.completed_at || null,
+      };
+    },
+    refetchInterval: 10000,
   });
 
 export default function AdminSync() {
@@ -156,6 +190,7 @@ export default function AdminSync() {
   const { data: config } = useQogitaConfig();
   const { data: syncCountries } = useSyncCountries();
   const { data: countryCounts } = useCountryProductCounts();
+  const { data: lastSyncDates } = useLastSyncDates();
   const [selectedCountry, setSelectedCountry] = useState("BE");
   const [showToken, setShowToken] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -332,15 +367,15 @@ export default function AdminSync() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <KpiCard
           label="Dernière sync produits"
-          value={config?.last_full_sync_at
-            ? formatDistanceToNow(new Date(config.last_full_sync_at), { addSuffix: true, locale: fr })
+          value={lastSyncDates?.lastProductsSync
+            ? formatDistanceToNow(new Date(lastSyncDates.lastProductsSync), { addSuffix: true, locale: fr })
             : "Jamais"}
           icon={Package}
         />
         <KpiCard
           label="Dernière sync offres"
-          value={config?.last_offers_sync_at
-            ? formatDistanceToNow(new Date(config.last_offers_sync_at), { addSuffix: true, locale: fr })
+          value={lastSyncDates?.lastOffersSync
+            ? formatDistanceToNow(new Date(lastSyncDates.lastOffersSync), { addSuffix: true, locale: fr })
             : "Jamais"}
           icon={Store}
         />

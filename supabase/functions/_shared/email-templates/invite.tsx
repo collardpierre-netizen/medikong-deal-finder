@@ -12,7 +12,7 @@ interface InviteEmailProps {
   confirmationUrl: string
 }
 
-const LOGO_URL = 'https://iokwqxhhpblcbkrxgcje.supabase.co/storage/v1/object/public/cms-images/email-logo.png'
+const LOGO_URL = 'https://iokwqxhhpblcbkrxgcje.supabase.co/storage/v1/object/public/cms-images/email-logo-horizontal.png'
 
 export const InviteEmail = ({ siteName, siteUrl, confirmationUrl }: InviteEmailProps) => (
   <Html lang="fr" dir="ltr">
@@ -20,7 +20,7 @@ export const InviteEmail = ({ siteName, siteUrl, confirmationUrl }: InviteEmailP
     <Preview>Vous êtes invité à rejoindre MediKong</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Img src={LOGO_URL} width="48" height="48" alt="MediKong" style={logo} />
+        <Img src={LOGO_URL} width="180" alt="MediKong" style={logo} />
         <Heading style={h1}>Vous êtes invité !</Heading>
         <Text style={text}>
           Vous avez été invité à rejoindre{' '}

@@ -10,7 +10,7 @@ interface ReauthenticationEmailProps {
   token: string
 }
 
-const LOGO_URL = 'https://iokwqxhhpblcbkrxgcje.supabase.co/storage/v1/object/public/cms-images/email-logo.png'
+const LOGO_URL = 'https://iokwqxhhpblcbkrxgcje.supabase.co/storage/v1/object/public/cms-images/email-logo-horizontal.png'
 
 export const ReauthenticationEmail = ({ token }: ReauthenticationEmailProps) => (
   <Html lang="fr" dir="ltr">
@@ -18,7 +18,7 @@ export const ReauthenticationEmail = ({ token }: ReauthenticationEmailProps) => 
     <Preview>Votre code de vérification — MediKong</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Img src={LOGO_URL} width="48" height="48" alt="MediKong" style={logo} />
+        <Img src={LOGO_URL} width="180" alt="MediKong" style={logo} />
         <Heading style={h1}>Code de vérification</Heading>
         <Text style={text}>Utilisez le code ci-dessous pour confirmer votre identité :</Text>
         <Text style={codeStyle}>{token}</Text>

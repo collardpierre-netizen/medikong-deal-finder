@@ -11,7 +11,7 @@ interface RecoveryEmailProps {
   confirmationUrl: string
 }
 
-const LOGO_URL = 'https://iokwqxhhpblcbkrxgcje.supabase.co/storage/v1/object/public/cms-images/email-logo.png'
+const LOGO_URL = 'https://iokwqxhhpblcbkrxgcje.supabase.co/storage/v1/object/public/cms-images/email-logo-horizontal.png'
 
 export const RecoveryEmail = ({ siteName, confirmationUrl }: RecoveryEmailProps) => (
   <Html lang="fr" dir="ltr">
@@ -19,7 +19,7 @@ export const RecoveryEmail = ({ siteName, confirmationUrl }: RecoveryEmailProps)
     <Preview>Réinitialisez votre mot de passe — MediKong</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Img src={LOGO_URL} width="48" height="48" alt="MediKong" style={logo} />
+        <Img src={LOGO_URL} width="180" alt="MediKong" style={logo} />
         <Heading style={h1}>Réinitialisation du mot de passe</Heading>
         <Text style={text}>
           Nous avons reçu une demande de réinitialisation de votre mot de passe MediKong. Cliquez sur le bouton ci-dessous pour en choisir un nouveau.

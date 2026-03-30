@@ -11,7 +11,7 @@ interface MagicLinkEmailProps {
   confirmationUrl: string
 }
 
-const LOGO_URL = 'https://iokwqxhhpblcbkrxgcje.supabase.co/storage/v1/object/public/cms-images/email-logo.png'
+const LOGO_URL = 'https://iokwqxhhpblcbkrxgcje.supabase.co/storage/v1/object/public/cms-images/email-logo-horizontal.png'
 
 export const MagicLinkEmail = ({ siteName, confirmationUrl }: MagicLinkEmailProps) => (
   <Html lang="fr" dir="ltr">
@@ -19,7 +19,7 @@ export const MagicLinkEmail = ({ siteName, confirmationUrl }: MagicLinkEmailProp
     <Preview>Votre lien de connexion — MediKong</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Img src={LOGO_URL} width="48" height="48" alt="MediKong" style={logo} />
+        <Img src={LOGO_URL} width="180" alt="MediKong" style={logo} />
         <Heading style={h1}>Votre lien de connexion</Heading>
         <Text style={text}>
           Cliquez sur le bouton ci-dessous pour vous connecter à MediKong. Ce lien expire dans quelques minutes.

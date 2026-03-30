@@ -175,13 +175,13 @@ export function useCatalogCategories() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("categories")
-        .select("id, name, slug, parent_id")
+        .select("id, name, name_fr, slug, parent_id")
         .eq("is_active", true)
         .order("display_order", { ascending: true });
       if (error) throw error;
 
       // Build tree
-      const all = data || [];
+      const all = (data || []).map((c: any) => ({ ...c, name: c.name_fr || c.name }));
       const roots = all.filter(c => !c.parent_id);
       return roots.map(r => ({
         ...r,

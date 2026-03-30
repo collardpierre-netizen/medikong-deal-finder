@@ -4,8 +4,10 @@ import { Plus, Minus, Package, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { formatPrice } from "@/data/mock";
 import { useCart } from "@/contexts/CartContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useCountry } from "@/contexts/CountryContext";
+import { toast } from "sonner";
 import type { CatalogProduct } from "@/hooks/useCatalog";
 
 interface Props {
@@ -50,6 +52,7 @@ export function CatalogProductCard({ product, index = 0, view = "grid" }: Props)
   const [qty, setQty] = useState(1);
   const [adding, setAdding] = useState(false);
   const { addToCart } = useCart();
+  const { user } = useAuth();
   const { country } = useCountry();
   const navigate = useNavigate();
   const price = product.best_price_excl_vat || 0;
@@ -59,6 +62,14 @@ export function CatalogProductCard({ product, index = 0, view = "grid" }: Props)
     // If multiple offers, open product page to let user choose
     if (product.offer_count > 1) {
       navigate(`/produit/${product.slug}`);
+      return;
+    }
+
+    // Auth check
+    if (!user) {
+      toast.error("Connectez-vous pour ajouter des produits au panier", {
+        action: { label: "Se connecter", onClick: () => navigate("/connexion") },
+      });
       return;
     }
 
@@ -95,6 +106,7 @@ export function CatalogProductCard({ product, index = 0, view = "grid" }: Props)
           imageUrl: product.image_urls?.[0] || undefined,
         },
       });
+      toast.success("Produit ajouté au panier ✓");
     } finally {
       setAdding(false);
       setQty(1);

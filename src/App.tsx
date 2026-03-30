@@ -195,9 +195,9 @@ const App = () => (
             <Route path="/entreprise/pourquoi-medikong" element={<LP><WhyMedikongPage /></LP>} />
             <Route path="/entreprise/comment-ca-marche" element={<LP><HowItWorksPage /></LP>} />
             <Route path="/entreprise/equipe" element={<LP><TeamPage /></LP>} />
-            <Route path="/entreprise/carrieres" element={<LP><CareersPage /></LP>} />
-            <Route path="/entreprise/presse" element={<LP><PressPage /></LP>} />
-            <Route path="/entreprise/investir" element={<LP><InvestirPage /></LP>} />
+            <Route path="/entreprise/carrieres" element={<Navigate to="/" replace />} />
+            <Route path="/entreprise/presse" element={<Navigate to="/" replace />} />
+            <Route path="/entreprise/investir" element={<Navigate to="/invest" replace />} />
             {/* Redirects from old paths */}
             <Route path="/a-propos" element={<Navigate to="/entreprise/a-propos" replace />} />
             <Route path="/pourquoi-medikong" element={<Navigate to="/entreprise/pourquoi-medikong" replace />} />

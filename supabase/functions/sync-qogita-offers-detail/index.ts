@@ -234,6 +234,23 @@ async function syncOffers(
 
       const variant = await res.json();
 
+      // Diagnostic: log API response structure for the first enriched product
+      if (stats.first_api_response_keys === null) {
+        stats.first_api_response_keys = Object.keys(variant);
+        const offersArr = variant.offers || [];
+        stats.first_offers_sample = {
+          offers_count: offersArr.length,
+          offers_is_array: Array.isArray(offersArr),
+          first_offer_keys: offersArr.length > 0 ? Object.keys(offersArr[0]) : [],
+          first_offer_preview: offersArr.length > 0 ? {
+            qid: offersArr[0].qid, unitPrice: offersArr[0].unitPrice,
+            inventory: offersArr[0].inventory, seller: offersArr[0].seller,
+          } : null,
+        };
+        console.log("API response keys:", stats.first_api_response_keys);
+        console.log("Offers sample:", JSON.stringify(stats.first_offers_sample));
+      }
+
       // Update product with enriched data
       const productUpdate: any = { synced_at: new Date().toISOString() };
       if (variant.qid) productUpdate.qogita_qid = variant.qid;

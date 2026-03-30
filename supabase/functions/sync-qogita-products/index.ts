@@ -78,21 +78,40 @@ Deno.serve(async (req) => {
 
   const { data: syncLog } = await supabase.from("sync_logs").insert({
     sync_type: "products", status: "running", stats: {},
+    progress_current: 0,
+    progress_total: 0,
+    progress_message: "Authentification Qogita...",
   }).select().single();
 
   try {
     const { token, baseUrl, config } = await getQogitaToken(supabase);
     const country = config.default_country || "BE";
 
-    // Download CSV bulk
+    // Phase 1: Download CSV
+    await supabase.from("sync_logs").update({
+      progress_message: "Téléchargement CSV...",
+    }).eq("id", syncLog?.id);
+
     const csvUrl = `${baseUrl}/variants/search/download/?country=${country}`;
     const res = await fetch(csvUrl, {
       headers: { Authorization: `Bearer ${token}`, Accept: "text/csv" },
     });
     if (!res.ok) throw new Error(`Qogita CSV download failed ${res.status}: ${await res.text()}`);
 
+    // Phase 2: Parse CSV
+    await supabase.from("sync_logs").update({
+      progress_current: 0,
+      progress_total: 100,
+      progress_message: "Parsing CSV...",
+    }).eq("id", syncLog?.id);
+
     const csvText = await res.text();
     const rows = parseCSV(csvText);
+
+    await supabase.from("sync_logs").update({
+      progress_total: rows.length,
+      progress_message: `${rows.length} produits trouvés dans le CSV`,
+    }).eq("id", syncLog?.id);
 
     let created = 0, updated = 0, skipped = 0;
     const processedQids = new Set<string>();
@@ -103,7 +122,9 @@ Deno.serve(async (req) => {
     const catMap = new Map((categories || []).map(c => [c.qogita_qid, c.id]));
     const brandMap = new Map((brands || []).map(b => [b.qogita_qid, b.id]));
 
-    for (const row of rows) {
+    // Phase 3: Import products
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
       const qid = row.qid || row.variantQid || row.variant_qid;
       if (!qid) { skipped++; continue; }
       processedQids.add(qid);
@@ -161,9 +182,22 @@ Deno.serve(async (req) => {
         await supabase.from("products").insert(productRow);
         created++;
       }
+
+      // Update progress every 50 items
+      if ((i + 1) % 50 === 0 || i === rows.length - 1) {
+        await supabase.from("sync_logs").update({
+          progress_current: i + 1,
+          progress_total: rows.length,
+          progress_message: `Import produits ${i + 1}/${rows.length} (${created} créés, ${updated} mis à jour, ${skipped} ignorés)`,
+        }).eq("id", syncLog?.id);
+      }
     }
 
     // Mark absent products as out of stock
+    await supabase.from("sync_logs").update({
+      progress_message: "Désactivation des produits absents...",
+    }).eq("id", syncLog?.id);
+
     const { data: qProducts } = await supabase
       .from("products")
       .select("id, qogita_qid")
@@ -181,6 +215,9 @@ Deno.serve(async (req) => {
     const stats = { total: rows.length, created, updated, skipped, deactivated };
     await supabase.from("sync_logs").update({
       status: "completed", completed_at: new Date().toISOString(), stats,
+      progress_current: rows.length,
+      progress_total: rows.length,
+      progress_message: `Terminé — ${rows.length} produits (${created} créés, ${updated} mis à jour, ${deactivated} désactivés)`,
     }).eq("id", syncLog?.id);
 
     await supabase.from("qogita_config").update({
@@ -195,6 +232,7 @@ Deno.serve(async (req) => {
     console.error("Sync products error:", error);
     await supabase.from("sync_logs").update({
       status: "error", completed_at: new Date().toISOString(), error_message: error.message,
+      progress_message: `Erreur: ${error.message}`,
     }).eq("id", syncLog?.id);
     await supabase.from("qogita_config").update({
       sync_status: "error", sync_error_message: error.message,

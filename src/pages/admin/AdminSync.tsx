@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import AdminTopBar from "@/components/admin/AdminTopBar";
@@ -39,6 +39,85 @@ const useQogitaConfig = () =>
 
 type SyncType = "categories" | "brands" | "products" | "offers_detail" | "recalculate";
 
+// ─── SyncProgressBar ─────────────────────────────
+function SyncProgressBar({ log }: { log: any }) {
+  const [elapsed, setElapsed] = useState(0);
+
+  useEffect(() => {
+    const start = new Date(log.started_at).getTime();
+    const tick = () => setElapsed(Math.floor((Date.now() - start) / 1000));
+    tick();
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, [log.started_at]);
+
+  const current = (log as any).progress_current || 0;
+  const total = (log as any).progress_total || 0;
+  const message = (log as any).progress_message || "Synchronisation en cours...";
+  const pct = total > 0 ? Math.min(Math.round((current / total) * 100), 100) : 0;
+
+  // Estimate remaining time
+  const speed = elapsed > 0 && current > 0 ? current / elapsed : 0;
+  const remaining = speed > 0 && total > current ? Math.round((total - current) / speed) : 0;
+
+  const formatDuration = (s: number) => {
+    if (s < 60) return `${s}s`;
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return `${m}m ${sec < 10 ? "0" : ""}${sec}s`;
+  };
+
+  return (
+    <div className="bg-white rounded-xl border p-5 mb-5" style={{ borderColor: "#BFDBFE" }}>
+      <div className="flex items-center gap-3 mb-3">
+        <Loader2 size={18} className="text-[#2563EB] animate-spin" />
+        <span className="text-[14px] font-bold capitalize" style={{ color: "#1E293B" }}>
+          {log.sync_type.replace("_", " ")} en cours
+        </span>
+        <span className="ml-auto text-[20px] font-bold" style={{ color: "#2563EB" }}>{pct}%</span>
+      </div>
+
+      {/* Progress bar */}
+      <div className="w-full h-3 rounded-full overflow-hidden mb-3" style={{ backgroundColor: "#EFF6FF" }}>
+        <div
+          className="h-full rounded-full transition-all duration-500 ease-out"
+          style={{
+            width: `${total > 0 ? pct : 100}%`,
+            backgroundColor: "#2563EB",
+            ...(total === 0 ? { animation: "pulse 2s ease-in-out infinite" } : {}),
+          }}
+        />
+      </div>
+
+      <div className="flex items-center justify-between text-[12px]" style={{ color: "#616B7C" }}>
+        <span>{message}</span>
+        <div className="flex gap-4">
+          <span className="flex items-center gap-1">
+            <Clock size={12} /> Durée : {formatDuration(elapsed)}
+          </span>
+          {remaining > 0 && (
+            <span>~{formatDuration(remaining)} restant</span>
+          )}
+        </div>
+      </div>
+
+      {total > 0 && (
+        <div className="mt-2 text-[11px]" style={{ color: "#8B95A5" }}>
+          {current.toLocaleString()} / {total.toLocaleString()} éléments
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Format duration for history ─────────────────
+function formatDurationStr(seconds: number): string {
+  if (seconds < 60) return `${seconds}s`;
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}m ${s < 10 ? "0" : ""}${s}s`;
+}
+
 export default function AdminSync() {
   const qc = useQueryClient();
   const { data: logs, isLoading: logsLoading } = useSyncLogs();
@@ -51,6 +130,32 @@ export default function AdminSync() {
   const [emailDirty, setEmailDirty] = useState(false);
   const [passwordDirty, setPasswordDirty] = useState(false);
   const [testingConnection, setTestingConnection] = useState(false);
+
+  // Polling for running sync progress
+  const [runningLog, setRunningLog] = useState<any>(null);
+
+  useEffect(() => {
+    const hasRunning = logs?.some(l => l.status === "running");
+    if (!hasRunning) {
+      setRunningLog(null);
+      return;
+    }
+
+    const poll = async () => {
+      const { data } = await supabase
+        .from("sync_logs")
+        .select("*")
+        .eq("status", "running")
+        .order("started_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (data) setRunningLog(data);
+      else setRunningLog(null);
+    };
+    poll();
+    const interval = setInterval(poll, 3000);
+    return () => clearInterval(interval);
+  }, [logs]);
 
   // Initialize local state from config
   const displayEmail = emailDirty ? qogitaEmail : ((config as any)?.qogita_email || "");
@@ -125,7 +230,6 @@ export default function AdminSync() {
       const data = await res.json();
       if (data.accessToken) {
         toast.success("Connexion Qogita réussie ✅", { description: "Token obtenu avec succès" });
-        // Save credentials + token
         const updates: any = { bearer_token: data.accessToken };
         if (emailDirty) updates.qogita_email = qogitaEmail;
         if (passwordDirty) updates.qogita_password = qogitaPassword;
@@ -158,6 +262,9 @@ export default function AdminSync() {
   return (
     <div className="space-y-6">
       <AdminTopBar title="Synchronisation Qogita" subtitle="Gestion du catalogue et des offres Qogita" />
+
+      {/* Running sync progress bar */}
+      {runningLog && <SyncProgressBar log={runningLog} />}
 
       {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -221,7 +328,6 @@ export default function AdminSync() {
             <Settings size={16} className="inline mr-2" />Configuration Qogita
           </h3>
           <div className="space-y-3">
-            {/* Email Qogita */}
             <div>
               <label className="text-[11px] font-medium block mb-1" style={{ color: "#616B7C" }}>Email Qogita</label>
               <input
@@ -234,7 +340,6 @@ export default function AdminSync() {
               />
             </div>
 
-            {/* Mot de passe Qogita */}
             <div>
               <label className="text-[11px] font-medium block mb-1" style={{ color: "#616B7C" }}>Mot de passe Qogita</label>
               <div className="flex gap-2">
@@ -252,7 +357,6 @@ export default function AdminSync() {
               </div>
             </div>
 
-            {/* Save + Test buttons */}
             <div className="flex gap-2 pt-1">
               <button
                 onClick={saveCredentials}
@@ -272,7 +376,6 @@ export default function AdminSync() {
               </button>
             </div>
 
-            {/* Bearer Token (read-only) */}
             <div className="pt-2 border-t" style={{ borderColor: "#F1F5F9" }}>
               <label className="text-[11px] font-medium block mb-1" style={{ color: "#8B95A5" }}>
                 Bearer Token (auto-généré)
@@ -291,7 +394,6 @@ export default function AdminSync() {
               </div>
             </div>
 
-            {/* URL & Country */}
             <div>
               <label className="text-[11px] font-medium block mb-1" style={{ color: "#616B7C" }}>URL de base</label>
               <input
@@ -380,36 +482,62 @@ export default function AdminSync() {
               <span>Statut</span>
               <span>Début</span>
               <span>Durée</span>
-              <span className="col-span-2">Statistiques</span>
+              <span className="col-span-2">Détails</span>
             </div>
             {logs.map(log => {
               const duration = log.completed_at && log.started_at
                 ? Math.round((new Date(log.completed_at).getTime() - new Date(log.started_at).getTime()) / 1000)
                 : null;
               const stats = (log.stats as any) || {};
+              const isRunning = log.status === "running";
+              const progressMsg = (log as any).progress_message;
+              const progressCurrent = (log as any).progress_current || 0;
+              const progressTotal = (log as any).progress_total || 0;
+              const pct = progressTotal > 0 ? Math.round((progressCurrent / progressTotal) * 100) : 0;
+
               return (
                 <div key={log.id} className="grid grid-cols-1 sm:grid-cols-6 gap-2 px-5 py-3 items-center hover:bg-[#F8FAFC]">
-                  <span className="text-[12px] font-medium capitalize" style={{ color: "#1E293B" }}>
+                  <span className="text-[12px] font-medium capitalize flex items-center gap-1.5" style={{ color: "#1E293B" }}>
+                    {isRunning && <Loader2 size={12} className="text-[#2563EB] animate-spin" />}
                     {log.sync_type.replace("_", " ")}
                   </span>
                   <StatusBadge
                     status={statusColor(log.status)}
-                    label={log.status === "completed" ? "OK" : log.status === "error" ? "Erreur" : log.status}
+                    label={log.status === "completed" ? "OK" : log.status === "error" ? "Erreur" : log.status === "partial" ? "Partiel" : log.status}
                   />
                   <span className="text-[11px]" style={{ color: "#616B7C" }}>
                     {formatDistanceToNow(new Date(log.started_at), { addSuffix: true, locale: fr })}
                   </span>
                   <span className="text-[11px]" style={{ color: "#616B7C" }}>
-                    {duration !== null ? `${duration}s` : "—"}
+                    {duration !== null ? formatDurationStr(duration) : isRunning ? "En cours..." : "—"}
                   </span>
-                  <div className="col-span-2 text-[11px] flex flex-wrap gap-2" style={{ color: "#616B7C" }}>
-                    {Object.entries(stats).map(([k, v]) => (
-                      <span key={k} className="bg-[#F1F5F9] px-2 py-0.5 rounded">
-                        {k}: <strong>{String(v)}</strong>
-                      </span>
-                    ))}
-                    {log.error_message && (
-                      <span className="text-red-500 text-[10px]">{log.error_message.slice(0, 60)}</span>
+                  <div className="col-span-2 text-[11px]" style={{ color: "#616B7C" }}>
+                    {isRunning && progressTotal > 0 ? (
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: "#EFF6FF" }}>
+                            <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: "#2563EB" }} />
+                          </div>
+                          <span className="text-[10px] font-semibold" style={{ color: "#2563EB" }}>{pct}%</span>
+                        </div>
+                        {progressMsg && <span className="text-[10px]">{progressMsg}</span>}
+                      </div>
+                    ) : (
+                      <div className="flex flex-wrap gap-1.5">
+                        {Object.entries(stats).map(([k, v]) => (
+                          <span key={k} className="bg-[#F1F5F9] px-2 py-0.5 rounded text-[10px]">
+                            {k}: <strong>{String(v)}</strong>
+                          </span>
+                        ))}
+                        {log.error_message && (
+                          <span className="text-red-500 text-[10px]">{log.error_message.slice(0, 80)}</span>
+                        )}
+                        {duration !== null && Object.keys(stats).length > 0 && (
+                          <span className="bg-[#EFF6FF] text-[#2563EB] px-2 py-0.5 rounded text-[10px] font-medium">
+                            durée: {formatDurationStr(duration)}
+                          </span>
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>

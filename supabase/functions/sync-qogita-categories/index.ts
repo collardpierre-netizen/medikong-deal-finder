@@ -57,6 +57,9 @@ Deno.serve(async (req) => {
     sync_type: "categories",
     status: "running",
     stats: {},
+    progress_current: 0,
+    progress_total: 0,
+    progress_message: "Authentification Qogita...",
   }).select().single();
 
   try {
@@ -65,18 +68,37 @@ Deno.serve(async (req) => {
 
     let allCategories: any[] = [];
     let nextUrl: string | null = `${baseUrl}/categories/?page_size=100`;
+    let currentPage = 0;
+    let totalCount = 0;
 
+    // Fetch all pages
     while (nextUrl) {
+      currentPage++;
       const res = await fetch(nextUrl, { headers });
       if (!res.ok) throw new Error(`Qogita API ${res.status}: ${await res.text()}`);
       const data = await res.json();
+      
+      if (currentPage === 1 && data.count) totalCount = data.count;
+      
       allCategories = allCategories.concat(data.results || []);
       nextUrl = data.next || null;
+      
+      const totalPages = totalCount > 0 ? Math.ceil(totalCount / 100) : currentPage;
+      await supabase.from("sync_logs").update({
+        progress_current: allCategories.length,
+        progress_total: totalCount || allCategories.length,
+        progress_message: `Page ${currentPage}/${totalPages} — ${allCategories.length} catégories récupérées`,
+      }).eq("id", syncLog?.id);
     }
 
     let created = 0, updated = 0;
 
-    for (const cat of allCategories) {
+    await supabase.from("sync_logs").update({
+      progress_message: `Import de ${allCategories.length} catégories en base...`,
+    }).eq("id", syncLog?.id);
+
+    for (let i = 0; i < allCategories.length; i++) {
+      const cat = allCategories[i];
       const slug = cat.slug || cat.name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
       const { data: existing } = await supabase
         .from("categories")
@@ -100,9 +122,22 @@ Deno.serve(async (req) => {
         await supabase.from("categories").insert(row);
         created++;
       }
+
+      // Update progress every 20 items
+      if ((i + 1) % 20 === 0 || i === allCategories.length - 1) {
+        await supabase.from("sync_logs").update({
+          progress_current: i + 1,
+          progress_total: allCategories.length,
+          progress_message: `${i + 1}/${allCategories.length} catégories traitées (${created} créées, ${updated} mises à jour)`,
+        }).eq("id", syncLog?.id);
+      }
     }
 
     // Resolve parent_id after all categories are inserted
+    await supabase.from("sync_logs").update({
+      progress_message: "Résolution des catégories parentes...",
+    }).eq("id", syncLog?.id);
+
     for (const cat of allCategories) {
       if (cat.parentQid) {
         const { data: parent } = await supabase.from("categories").select("id").eq("qogita_qid", cat.parentQid).maybeSingle();
@@ -115,6 +150,9 @@ Deno.serve(async (req) => {
     const stats = { total: allCategories.length, created, updated };
     await supabase.from("sync_logs").update({
       status: "completed", completed_at: new Date().toISOString(), stats,
+      progress_current: allCategories.length,
+      progress_total: allCategories.length,
+      progress_message: `Terminé — ${allCategories.length} catégories (${created} créées, ${updated} mises à jour)`,
     }).eq("id", syncLog?.id);
 
     return new Response(JSON.stringify({ success: true, stats }), {
@@ -124,6 +162,7 @@ Deno.serve(async (req) => {
     console.error("Sync categories error:", error);
     await supabase.from("sync_logs").update({
       status: "error", completed_at: new Date().toISOString(), error_message: error.message,
+      progress_message: `Erreur: ${error.message}`,
     }).eq("id", syncLog?.id);
 
     return new Response(JSON.stringify({ error: error.message }), {

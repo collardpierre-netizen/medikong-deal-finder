@@ -207,15 +207,18 @@ export default function AdminSync() {
         offers_detail: "sync-qogita-offers-detail",
       };
       const fnName = fnMap[type] || `sync-qogita-${type}`;
-      const { data, error } = await supabase.functions.invoke(fnName);
+      const { data, error } = await supabase.functions.invoke(fnName, {
+        body: { country: selectedCountry },
+      });
       if (error) throw error;
       return data;
     },
     onSuccess: (data, type) => {
       setRunningSyncs(prev => { const s = new Set(prev); s.delete(type); return s; });
-      toast.success(`Sync ${type} terminée`, { description: JSON.stringify(data?.stats || data) });
+      toast.success(`Sync ${type} (${selectedCountry}) lancée`, { description: JSON.stringify(data?.stats || data) });
       qc.invalidateQueries({ queryKey: ["sync-logs"] });
       qc.invalidateQueries({ queryKey: ["qogita-config"] });
+      qc.invalidateQueries({ queryKey: ["country-product-counts"] });
     },
     onError: (err: any, type) => {
       setRunningSyncs(prev => { const s = new Set(prev); s.delete(type); return s; });

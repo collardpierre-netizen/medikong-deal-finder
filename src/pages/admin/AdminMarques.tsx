@@ -83,7 +83,12 @@ const AdminMarques = () => {
                   <TableRow key={b.id} className="cursor-pointer hover:bg-blue-50/50"
                     onClick={() => setSelectedBrand(selectedBrand === b.name ? null : b.name)}
                     style={selectedBrand === b.name ? { backgroundColor: "#EFF6FF" } : {}}>
-                    <TableCell className="text-[12px] font-semibold" style={{ color: "#1D2530" }}>{b.name}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        {b.logo_url ? <img src={b.logo_url} alt="" referrerPolicy="no-referrer" className="w-7 h-7 rounded border object-contain bg-white p-0.5" style={{ borderColor: "#E2E8F0" }} onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} /> : <Tag size={14} className="text-muted-foreground" />}
+                        <span className="text-[12px] font-semibold" style={{ color: "#1D2530" }}>{b.name}</span>
+                      </div>
+                    </TableCell>
                     <TableCell className="text-[11px] text-right" style={{ color: "#616B7C" }}>{b.product_count || 0}</TableCell>
                     <TableCell>
                       <Badge variant="outline" className="text-[10px] font-bold">
@@ -100,7 +105,12 @@ const AdminMarques = () => {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Button variant="ghost" size="sm" className="text-[11px] h-7" onClick={(e) => { e.stopPropagation(); setEditBrand(b); setBrandDialogOpen(true); }}>Éditer</Button>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="sm" className="text-[11px] h-7" onClick={(e) => { e.stopPropagation(); setEditBrand(b); setBrandDialogOpen(true); }}>Éditer</Button>
+                        <Button variant="ghost" size="sm" className="text-[11px] h-7 px-1.5" onClick={(e) => { e.stopPropagation(); window.open(`/marque/${b.slug}`, '_blank'); }} title="Page publique">
+                          <ExternalLink size={12} />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}

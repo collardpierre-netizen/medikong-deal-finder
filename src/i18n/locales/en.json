@@ -180,6 +180,9 @@
     "whatsapp": "WhatsApp",
     "whatsappSub": "Quick response",
     "viewArticles": "View all {{count}} articles",
+    "backToCenter": "Back to Help Center",
+    "categoryNotFound": "Category not found",
+    "articleCount": "{{count}} articles",
     "categories": {
       "gettingStarted": {
         "title": "Getting Started",

@@ -3,7 +3,7 @@ import { ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { HelpCategoryData } from "@/data/trust-process-data";
 
-export function HelpCategoryCard({ icon: Icon, title, description, articleCount, articles }: HelpCategoryData) {
+export function HelpCategoryCard({ icon: Icon, title, description, articleCount, articles, categoryKey }: HelpCategoryData & { categoryKey?: string }) {
   const { t } = useTranslation();
 
   return (
@@ -30,9 +30,15 @@ export function HelpCategoryCard({ icon: Icon, title, description, articleCount,
         </ul>
       )}
 
-      <p className="text-xs font-semibold text-primary flex items-center gap-1 mt-auto cursor-pointer hover:gap-2 transition-all">
-        {t("helpCenter.viewArticles", { count: articleCount })} <ChevronRight size={14} />
-      </p>
+      {categoryKey ? (
+        <Link to={`/centre-aide/categorie/${categoryKey}`} className="text-xs font-semibold text-primary flex items-center gap-1 mt-auto hover:gap-2 transition-all">
+          {t("helpCenter.viewArticles", { count: articleCount })} <ChevronRight size={14} />
+        </Link>
+      ) : (
+        <p className="text-xs font-semibold text-primary flex items-center gap-1 mt-auto cursor-pointer hover:gap-2 transition-all">
+          {t("helpCenter.viewArticles", { count: articleCount })} <ChevronRight size={14} />
+        </p>
+      )}
     </div>
   );
 }

@@ -167,6 +167,7 @@ async function syncCountryStream(sb: any, country: string, vat: number, logId: s
           url: findCol(headers, "product url"),
           image: findCol(headers, "image url"),
           offers: findCol(headers, "number", "offer"),
+          preorder: findCol(headers, "pre-order"),
         };
         console.log("CSV headers detected:", headers);
         console.log("Column mapping:", colMap);

@@ -66,7 +66,7 @@ export function useSearchProducts(query: string, sort: SortOption = "relevance")
 
       const productIds = productsData.map((p: any) => p.id);
       const { data: offersData } = productIds.length > 0
-        ? await supabase.from("offers").select("*").eq("is_active", true).in("product_id", productIds)
+        ? await supabase.from("offers").select("*").eq("is_active", true).eq("country_code", country).in("product_id", productIds)
         : { data: [] as any[] };
 
       let results = productsData.map((row: any) => mapSearchResult(row, offersData || []));

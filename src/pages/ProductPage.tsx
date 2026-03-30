@@ -467,6 +467,12 @@ export default function ProductPage() {
     }
   }, [savedUserPrice]);
 
+  // Multi-level pricing (must be before early returns)
+  const { levelCode, levelLabel, allPrices, hasCustomPrice } = useProductPrice(
+    product?.id,
+    product ? ((product as any).best_price_excl_vat ?? null) : null
+  );
+
   if (isLoading) {
     return (
       <Layout>
@@ -494,12 +500,6 @@ export default function ProductPage() {
   const userPriceNum = parseFloat(userPrice.replace(",", ".")) || 0;
   const savingsAbs = userPriceNum > 0 ? userPriceNum - clientPrice : 0;
   const savingsPct = userPriceNum > 0 ? ((savingsAbs / userPriceNum) * 100) : 0;
-
-  // Multi-level pricing
-  const { levelCode, levelLabel, allPrices, hasCustomPrice } = useProductPrice(
-    productDetails?.id || product.id,
-    productDetails?.best_price_excl_vat ?? (product as any).best_price_excl_vat
-  );
 
   // Specs table — only show rows with real data
   const specsRaw: [string, string | undefined | null][] = [

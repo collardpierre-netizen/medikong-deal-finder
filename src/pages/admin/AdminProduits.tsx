@@ -19,6 +19,7 @@ const AdminProduits = () => {
   const { data: products = [], isLoading: loadingProducts } = useAdminProducts();
   const { data: offers = [], isLoading: loadingOffers } = useOffersDirectAdmin();
   const { data: brands = [] } = useBrands();
+  const { data: manufacturers = [] } = useManufacturers();
   const [activeTab, setActiveTab] = useState<"catalog" | "offers">("catalog");
   const [search, setSearch] = useState("");
   const [productDialogOpen, setProductDialogOpen] = useState(false);

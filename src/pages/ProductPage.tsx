@@ -280,18 +280,13 @@ export default function ProductPage() {
     );
   }
 
-  // Build images from real data only
-  const images: string[] = (() => {
-    const urls: string[] = [];
-    if (product.imageUrls && product.imageUrls.length > 0) {
-      urls.push(...product.imageUrls.filter((u: string) => u && u.startsWith("http")));
-    } else if (product.imageUrl && product.imageUrl.startsWith("http")) {
-      urls.push(product.imageUrl);
-    }
-    return urls;
-  })();
+  // Build images from real data only — no fallbacks
+  const productImageUrls = product.imageUrls?.filter((u: string) => u && u.startsWith("http")) || [];
+  const images: string[] = productImageUrls.length > 0
+    ? productImageUrls
+    : (product.imageUrl && product.imageUrl.startsWith("http")) ? [product.imageUrl] : [];
   const hasImages = images.length > 0;
-  const description = productDetails?.description || productDetails?.label || product.descriptionShort;
+  const description = productDetails?.description || (productDetails as any)?.label || product.descriptionShort || "";
 
   // Specs table
   const specs: [string, string][] = [

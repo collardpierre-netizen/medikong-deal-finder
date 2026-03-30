@@ -448,7 +448,7 @@ export default function ProductPage() {
               {/* Badges */}
               <div className="flex items-center gap-2 flex-wrap mb-6">
                 <span className="inline-flex items-center gap-1.5 text-xs font-medium bg-green-50 text-green-700 px-3 py-1.5 rounded-full border border-green-200">
-                  <Truck size={13} /> Livraison rapide
+                  <Truck size={13} /> Livraison gratuite
                 </span>
                 <span className="inline-flex items-center gap-1.5 text-xs font-medium bg-blue-50 text-blue-700 px-3 py-1.5 rounded-full border border-blue-200">
                   <Shield size={13} /> Authenticite 100% garantie

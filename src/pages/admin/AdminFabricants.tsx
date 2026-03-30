@@ -178,7 +178,7 @@ export default function AdminFabricants() {
                     style={selectedId === m.id ? { backgroundColor: "#EFF6FF" } : {}}>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        {m.logo_url ? <img src={m.logo_url} alt="" referrerPolicy="no-referrer" crossOrigin="anonymous" className="w-8 h-8 rounded border object-contain bg-white p-0.5" style={{ borderColor: "#E2E8F0" }} onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} /> : <Factory size={16} className="text-[#8B95A5]" />}
+                        {m.logo_url ? <img src={m.logo_url} alt="" referrerPolicy="no-referrer" className="w-8 h-8 rounded border object-contain bg-white p-0.5" style={{ borderColor: "#E2E8F0" }} onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} /> : <Factory size={16} className="text-[#8B95A5]" />}
                         <span className="text-[12px] font-semibold" style={{ color: "#1D2530" }}>{m.name}</span>
                       </div>
                     </TableCell>
@@ -216,7 +216,7 @@ export default function AdminFabricants() {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
                 {selected.logo_url ? (
-                  <img src={selected.logo_url} alt={selected.name} referrerPolicy="no-referrer" crossOrigin="anonymous" className="w-12 h-12 rounded-lg border object-contain p-1" style={{ borderColor: "#E2E8F0" }} />
+                  <img src={selected.logo_url} alt={selected.name} referrerPolicy="no-referrer" className="w-12 h-12 rounded-lg border object-contain p-1" style={{ borderColor: "#E2E8F0" }} />
                 ) : (
                   <div className="w-12 h-12 rounded-lg border flex items-center justify-center" style={{ borderColor: "#E2E8F0", backgroundColor: "#F8FAFC" }}>
                     <Factory size={20} className="text-[#8B95A5]" />

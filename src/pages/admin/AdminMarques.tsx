@@ -11,7 +11,7 @@ import { BrandFormDialog } from "@/components/admin/BrandFormDialog";
 import { exportBrands, importBrands } from "@/lib/xlsx-utils";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Tag, Package, Plus, Download, Upload, Search } from "lucide-react";
+import { Tag, Package, Plus, Download, Upload, Search, ExternalLink } from "lucide-react";
 
 const fmt = (n: number) => n.toLocaleString("fr-BE");
 
@@ -83,7 +83,12 @@ const AdminMarques = () => {
                   <TableRow key={b.id} className="cursor-pointer hover:bg-blue-50/50"
                     onClick={() => setSelectedBrand(selectedBrand === b.name ? null : b.name)}
                     style={selectedBrand === b.name ? { backgroundColor: "#EFF6FF" } : {}}>
-                    <TableCell className="text-[12px] font-semibold" style={{ color: "#1D2530" }}>{b.name}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        {b.logo_url ? <img src={b.logo_url} alt="" referrerPolicy="no-referrer" className="w-7 h-7 rounded border object-contain bg-white p-0.5" style={{ borderColor: "#E2E8F0" }} onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} /> : <Tag size={14} className="text-muted-foreground" />}
+                        <span className="text-[12px] font-semibold" style={{ color: "#1D2530" }}>{b.name}</span>
+                      </div>
+                    </TableCell>
                     <TableCell className="text-[11px] text-right" style={{ color: "#616B7C" }}>{b.product_count || 0}</TableCell>
                     <TableCell>
                       <Badge variant="outline" className="text-[10px] font-bold">
@@ -100,7 +105,12 @@ const AdminMarques = () => {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Button variant="ghost" size="sm" className="text-[11px] h-7" onClick={(e) => { e.stopPropagation(); setEditBrand(b); setBrandDialogOpen(true); }}>Éditer</Button>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="sm" className="text-[11px] h-7" onClick={(e) => { e.stopPropagation(); setEditBrand(b); setBrandDialogOpen(true); }}>Éditer</Button>
+                        <Button variant="ghost" size="sm" className="text-[11px] h-7 px-1.5" onClick={(e) => { e.stopPropagation(); window.open(`/marque/${b.slug}`, '_blank'); }} title="Page publique">
+                          <ExternalLink size={12} />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -112,7 +122,16 @@ const AdminMarques = () => {
         {selected && (
           <div className="w-[300px] bg-white rounded-lg border p-5 shrink-0" style={{ borderColor: "#E2E8F0" }}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-[16px] font-bold" style={{ color: "#1D2530" }}>{selected.name}</h3>
+              <div className="flex items-center gap-3">
+                {selected.logo_url ? (
+                  <img src={selected.logo_url} alt={selected.name} referrerPolicy="no-referrer" className="w-12 h-12 rounded-lg border object-contain p-1" style={{ borderColor: "#E2E8F0" }} />
+                ) : (
+                  <div className="w-12 h-12 rounded-lg border flex items-center justify-center" style={{ borderColor: "#E2E8F0", backgroundColor: "#F8FAFC" }}>
+                    <Tag size={20} className="text-muted-foreground" />
+                  </div>
+                )}
+                <h3 className="text-[16px] font-bold" style={{ color: "#1D2530" }}>{selected.name}</h3>
+              </div>
               <Badge variant="outline" className="text-[10px] font-bold">
                 {selected.is_featured ? "Featured" : "Standard"}
               </Badge>
@@ -123,7 +142,12 @@ const AdminMarques = () => {
               <div className="flex justify-between"><span style={{ color: "#8B95A5" }}>Statut</span><span style={{ color: selected.is_active ? "#059669" : "#EF4444" }}>{selected.is_active ? "Actif" : "Inactif"}</span></div>
             </div>
             {selected.description && <p className="text-[11px] mb-3" style={{ color: "#616B7C" }}>{selected.description}</p>}
-            <Button variant="outline" size="sm" className="w-full mt-4 text-[12px]" onClick={() => { setEditBrand(selected); setBrandDialogOpen(true); }}>Modifier</Button>
+            <div className="flex gap-2 mt-4">
+              <Button variant="outline" size="sm" className="flex-1 text-[12px]" onClick={() => { setEditBrand(selected); setBrandDialogOpen(true); }}>Modifier</Button>
+              <Button variant="outline" size="sm" className="text-[12px]" onClick={() => window.open(`/marque/${selected.slug}`, '_blank')}>
+                <ExternalLink size={13} className="mr-1" />Page publique
+              </Button>
+            </div>
           </div>
         )}
       </div>

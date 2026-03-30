@@ -4,9 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 import AdminTopBar from "@/components/admin/AdminTopBar";
 import KpiCard from "@/components/admin/KpiCard";
 import StatusBadge from "@/components/admin/StatusBadge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   RefreshCw, Database, Tag, Package, Store, Layers, Clock, AlertTriangle,
-  Play, Settings, Eye, EyeOff, CheckCircle, XCircle, Loader2, Wifi, Search,
+  Play, Settings, Eye, EyeOff, CheckCircle, XCircle, Loader2, Wifi, Search, Edit3,
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
@@ -132,6 +133,7 @@ export default function AdminSync() {
   const [testingConnection, setTestingConnection] = useState(false);
   const [meiliSyncing, setMeiliSyncing] = useState(false);
   const [resolving, setResolving] = useState(false);
+  const [editingLogId, setEditingLogId] = useState<string | null>(null);
 
   // Polling for running sync progress
   const [runningLog, setRunningLog] = useState<any>(null);
@@ -166,7 +168,11 @@ export default function AdminSync() {
   const runSync = useMutation({
     mutationFn: async (type: SyncType) => {
       setRunningSyncs(prev => new Set(prev).add(type));
-      const fnName = type === "recalculate" ? "recalculate-all-prices" : `sync-qogita-${type}`;
+      const fnMap: Record<string, string> = {
+        recalculate: "recalculate-all-prices",
+        offers_detail: "sync-qogita-offers-detail",
+      };
+      const fnName = fnMap[type] || `sync-qogita-${type}`;
       const { data, error } = await supabase.functions.invoke(fnName);
       if (error) throw error;
       return data;
@@ -204,6 +210,23 @@ export default function AdminSync() {
       updateConfig.mutate(updates);
     }
   };
+
+  const updateLogStatus = useMutation({
+    mutationFn: async ({ logId, newStatus }: { logId: string; newStatus: string }) => {
+      const updates: any = { status: newStatus };
+      if (newStatus === "completed" || newStatus === "error") {
+        updates.completed_at = new Date().toISOString();
+      }
+      const { error } = await supabase.from("sync_logs").update(updates).eq("id", logId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Statut mis à jour");
+      setEditingLogId(null);
+      qc.invalidateQueries({ queryKey: ["sync-logs"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
 
   const testConnection = async () => {
     setTestingConnection(true);
@@ -533,12 +556,13 @@ export default function AdminSync() {
         ) : (
           <div className="divide-y" style={{ borderColor: "#F1F5F9" }}>
             {/* Header */}
-            <div className="hidden sm:grid grid-cols-6 gap-2 px-5 py-2 text-[11px] font-semibold" style={{ color: "#8B95A5", backgroundColor: "#F8FAFC" }}>
+            <div className="hidden sm:grid grid-cols-7 gap-2 px-5 py-2 text-[11px] font-semibold" style={{ color: "#8B95A5", backgroundColor: "#F8FAFC" }}>
               <span>Type</span>
               <span>Statut</span>
               <span>Début</span>
               <span>Durée</span>
               <span className="col-span-2">Détails</span>
+              <span>Actions</span>
             </div>
             {logs.map(log => {
               const duration = log.completed_at && log.started_at
@@ -552,7 +576,7 @@ export default function AdminSync() {
               const pct = progressTotal > 0 ? Math.round((progressCurrent / progressTotal) * 100) : 0;
 
               return (
-                <div key={log.id} className="grid grid-cols-1 sm:grid-cols-6 gap-2 px-5 py-3 items-center hover:bg-[#F8FAFC]">
+                <div key={log.id} className="grid grid-cols-1 sm:grid-cols-7 gap-2 px-5 py-3 items-center hover:bg-[#F8FAFC]">
                   <span className="text-[12px] font-medium capitalize flex items-center gap-1.5" style={{ color: "#1E293B" }}>
                     {isRunning && <Loader2 size={12} className="text-[#2563EB] animate-spin" />}
                     {log.sync_type.replace("_", " ")}
@@ -594,6 +618,32 @@ export default function AdminSync() {
                           </span>
                         )}
                       </div>
+                    )}
+                  </div>
+                  <div>
+                    {editingLogId === log.id ? (
+                      <Select
+                        defaultValue={log.status}
+                        onValueChange={(v) => {
+                          updateLogStatus.mutate({ logId: log.id, newStatus: v });
+                        }}
+                      >
+                        <SelectTrigger className="h-7 text-[11px] w-[110px]"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="running">Running</SelectItem>
+                          <SelectItem value="completed">Completed</SelectItem>
+                          <SelectItem value="error">Error</SelectItem>
+                          <SelectItem value="partial">Partial</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <button
+                        onClick={() => setEditingLogId(log.id)}
+                        className="text-[11px] flex items-center gap-1 px-2 py-1 rounded hover:bg-[#F1F5F9] transition-colors"
+                        style={{ color: "#8B95A5" }}
+                      >
+                        <Edit3 size={11} /> Statut
+                      </button>
                     )}
                   </div>
                 </div>

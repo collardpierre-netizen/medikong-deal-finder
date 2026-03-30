@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { useCategories } from "@/hooks/useAdminData";
+import { useCategories, useCategoryCount } from "@/hooks/useAdminData";
 import { useEntityTranslations, useBatchSaveTranslations, getTranslated } from "@/hooks/useTranslations";
 import { autoTranslate } from "@/lib/translation-mappings";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
@@ -22,6 +22,7 @@ const LOCALES = ["fr", "nl", "de"] as const;
 const AdminCategories = () => {
   const qc = useQueryClient();
   const { data: categoriesData = [], isLoading } = useCategories();
+  const { data: totalCategoryCount = 0 } = useCategoryCount();
   const { data: translations = [] } = useEntityTranslations("category");
   const batchSave = useBatchSaveTranslations();
   const [expanded, setExpanded] = useState<string[]>([]);
@@ -179,7 +180,7 @@ const AdminCategories = () => {
       <div className="grid grid-cols-4 gap-4 mb-6">
         <KpiCard icon={Layers} label="Catégories parentes" value={String(totalParents)} iconColor="#1B5BDA" iconBg="#EFF6FF" />
         <KpiCard icon={Tag} label="Sous-catégories" value={String(totalSubs)} iconColor="#7C3AED" iconBg="#F3F0FF" />
-        <KpiCard icon={Package} label="Total" value={String(categoriesData.length)} iconColor="#059669" iconBg="#ECFDF5" />
+        <KpiCard icon={Package} label="Total" value={totalCategoryCount.toLocaleString("fr-BE")} iconColor="#059669" iconBg="#ECFDF5" />
         <KpiCard icon={Languages} label="Traductions" value={String(translations.length)} iconColor="#D97706" iconBg="#FFFBEB" />
       </div>
 

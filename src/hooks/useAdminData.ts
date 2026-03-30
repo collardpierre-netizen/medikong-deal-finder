@@ -131,6 +131,18 @@ export const useCategories = () =>
     },
   });
 
+export const useCategoryCount = () =>
+  useQuery({
+    queryKey: ["admin-categories-count"],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("categories")
+        .select("*", { count: "exact", head: true });
+      if (error) throw error;
+      return count ?? 0;
+    },
+  });
+
 export const useCustomers = () =>
   useQuery({
     queryKey: ["admin-customers"],

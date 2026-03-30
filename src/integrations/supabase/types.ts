@@ -1184,6 +1184,41 @@ export type Database = {
           },
         ]
       }
+      price_history: {
+        Row: {
+          country_code: string
+          id: string
+          price_excl_vat: number
+          price_incl_vat: number | null
+          product_id: string
+          recorded_at: string
+        }
+        Insert: {
+          country_code?: string
+          id?: string
+          price_excl_vat: number
+          price_incl_vat?: number | null
+          product_id: string
+          recorded_at?: string
+        }
+        Update: {
+          country_code?: string
+          id?: string
+          price_excl_vat?: number
+          price_incl_vat?: number | null
+          product_id?: string
+          recorded_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "price_history_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_country_stats: {
         Row: {
           best_price_excl_vat: number | null

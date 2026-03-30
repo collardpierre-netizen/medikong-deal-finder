@@ -18,6 +18,7 @@ const AdminMarques = () => {
   const qc = useQueryClient();
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
   const { data: brandsData = [], isLoading: loadingBrands } = useBrands();
+  const { data: manufacturersData = [] } = useManufacturers();
 
   const [brandDialogOpen, setBrandDialogOpen] = useState(false);
   const [editBrand, setEditBrand] = useState<any>(null);

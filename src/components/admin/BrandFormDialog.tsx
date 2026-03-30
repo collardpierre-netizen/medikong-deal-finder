@@ -60,6 +60,34 @@ export function BrandFormDialog({ open, onOpenChange, brand, manufacturers }: Br
 
   const slugify = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 
+  const handleAutoTranslate = async () => {
+    const name = form.name.trim();
+    const desc = form.description.trim();
+    if (!name && !desc) { toast.error("Remplissez le nom ou la description d'abord"); return; }
+    setTranslating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("auto-translate", {
+        body: { texts: { name, description: desc }, target_locales: ["fr", "nl", "de"] },
+      });
+      if (error) throw error;
+      const t = data?.translations || {};
+      setForm(f => ({
+        ...f,
+        name_fr: t.fr?.name || f.name_fr || name,
+        name_nl: t.nl?.name || f.name_nl,
+        name_de: t.de?.name || f.name_de,
+        desc_fr: t.fr?.description || f.desc_fr || desc,
+        desc_nl: t.nl?.description || f.desc_nl,
+        desc_de: t.de?.description || f.desc_de,
+      }));
+      toast.success("Traductions générées !");
+    } catch (e: any) {
+      toast.error("Erreur traduction : " + (e.message || "inconnue"));
+    } finally {
+      setTranslating(false);
+    }
+  };
+
   const handleSave = async () => {
     if (!form.name.trim()) { toast.error("Le nom est obligatoire"); return; }
     setSaving(true);

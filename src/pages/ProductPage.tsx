@@ -280,8 +280,17 @@ export default function ProductPage() {
     );
   }
 
-  const images = getProductImages(product);
-  const description = productDetails?.description || productDetails?.label || product.descriptionShort;
+  // Build images from real data only
+  const images: string[] = (() => {
+    const urls: string[] = [];
+    if (product.imageUrls && product.imageUrls.length > 0) {
+      urls.push(...product.imageUrls.filter((u: string) => u && u.startsWith("http")));
+    } else if (product.imageUrl && product.imageUrl.startsWith("http")) {
+      urls.push(product.imageUrl);
+    }
+    return urls;
+  })();
+  const hasImages = images.length > 0;
 
   // Specs table
   const specs: [string, string][] = [

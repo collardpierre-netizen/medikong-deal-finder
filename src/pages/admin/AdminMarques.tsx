@@ -5,12 +5,13 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useBrands, useManufacturers } from "@/hooks/useAdminData";
 import { BrandFormDialog } from "@/components/admin/BrandFormDialog";
 import { exportBrands, importBrands } from "@/lib/xlsx-utils";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Tag, Package, Plus, Download, Upload } from "lucide-react";
+import { Tag, Package, Plus, Download, Upload, Search } from "lucide-react";
 
 const fmt = (n: number) => n.toLocaleString("fr-BE");
 
@@ -22,6 +23,7 @@ const AdminMarques = () => {
 
   const [brandDialogOpen, setBrandDialogOpen] = useState(false);
   const [editBrand, setEditBrand] = useState<any>(null);
+  const [search, setSearch] = useState("");
 
   const brandFileRef = useRef<HTMLInputElement>(null);
 
@@ -57,6 +59,13 @@ const AdminMarques = () => {
         <KpiCard icon={Package} label="Produits total" value={fmt(brandsData.reduce((a, b) => a + (b.product_count || 0), 0))} iconColor="#059669" iconBg="#ECFDF5" />
       </div>
 
+      <div className="flex gap-3 mb-4">
+        <div className="relative flex-1 max-w-xs">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8B95A5]" />
+          <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Rechercher une marque..." className="pl-9 h-9 text-[12px]" />
+        </div>
+      </div>
+
       <div className="flex gap-4">
         <div className={`bg-white rounded-lg border overflow-hidden ${selectedBrand ? "flex-1" : "w-full"}`} style={{ borderColor: "#E2E8F0" }}>
           {loadingBrands ? <div className="py-12 text-center text-[13px]" style={{ color: "#8B95A5" }}>Chargement...</div> : (
@@ -69,7 +78,7 @@ const AdminMarques = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {brandsData.map((b) => (
+                {brandsData.filter(b => !search || b.name.toLowerCase().includes(search.toLowerCase())).map((b) => (
                   <TableRow key={b.id} className="cursor-pointer hover:bg-blue-50/50"
                     onClick={() => setSelectedBrand(selectedBrand === b.name ? null : b.name)}
                     style={selectedBrand === b.name ? { backgroundColor: "#EFF6FF" } : {}}>

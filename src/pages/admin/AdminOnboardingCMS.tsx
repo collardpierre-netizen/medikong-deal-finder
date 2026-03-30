@@ -1,9 +1,8 @@
-import { useState } from "react";
-import { Plus, Save, X, Eye, EyeOff, Pencil, Trash2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Plus, Save, X, Eye, EyeOff, Pencil, Trash2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-
-// Stub: onboarding_testimonials table was removed in V5 migration.
-// This page now manages testimonials via local state until a CMS table is re-added.
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Testimonial {
   id: string;
@@ -12,7 +11,7 @@ interface Testimonial {
   name: string;
   title: string;
   gradient: string;
-  role_visibility: "buyer" | "seller" | "both";
+  role_visibility: string;
   sort_order: number;
   is_active: boolean;
 }
@@ -31,8 +30,22 @@ const roleBadgeColors: Record<string, string> = {
   both: "bg-purple-50 text-purple-700 border-purple-200",
 };
 
+const useTestimonials = () =>
+  useQuery({
+    queryKey: ["onboarding-testimonials"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("onboarding_testimonials")
+        .select("*")
+        .order("sort_order");
+      if (error) throw error;
+      return (data || []) as Testimonial[];
+    },
+  });
+
 export default function AdminOnboardingCMS() {
-  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
+  const { data: testimonials = [], isLoading } = useTestimonials();
+  const qc = useQueryClient();
   const [editing, setEditing] = useState<Testimonial | null>(null);
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState<Partial<Testimonial>>({});
@@ -44,23 +57,54 @@ export default function AdminOnboardingCMS() {
   };
   const closeForm = () => { setEditing(null); setCreating(false); setForm({}); };
 
-  const handleSave = () => {
-    if (!form.quote || !form.name || !form.title) return;
-    if (editing) {
-      setTestimonials(prev => prev.map(t => t.id === editing.id ? { ...t, ...form } as Testimonial : t));
-    } else {
-      setTestimonials(prev => [...prev, { ...form, id: crypto.randomUUID() } as Testimonial]);
-    }
-    toast.success("Testimonial sauvegardé (local)");
-    closeForm();
-  };
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      if (!form.quote || !form.name || !form.title) throw new Error("Champs requis");
+      const payload = {
+        quote: form.quote,
+        name: form.name,
+        title: form.title,
+        gradient: form.gradient || gradientPresets[0].value,
+        role_visibility: form.role_visibility || "both",
+        sort_order: form.sort_order ?? 0,
+        is_active: form.is_active ?? true,
+        photo_url: form.photo_url || null,
+      };
+      if (editing) {
+        const { error } = await supabase.from("onboarding_testimonials").update(payload).eq("id", editing.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("onboarding_testimonials").insert(payload);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      toast.success("Testimonial sauvegardé");
+      qc.invalidateQueries({ queryKey: ["onboarding-testimonials"] });
+      closeForm();
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
 
-  const handleDelete = (id: string) => {
-    if (confirm("Supprimer ce testimonial ?")) {
-      setTestimonials(prev => prev.filter(t => t.id !== id));
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("onboarding_testimonials").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
       toast.success("Testimonial supprimé");
-    }
-  };
+      qc.invalidateQueries({ queryKey: ["onboarding-testimonials"] });
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
+  const toggleActive = useMutation({
+    mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
+      const { error } = await supabase.from("onboarding_testimonials").update({ is_active }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["onboarding-testimonials"] }),
+  });
 
   return (
     <div className="space-y-6">
@@ -104,6 +148,10 @@ export default function AdminOnboardingCMS() {
                 <input value={form.title || ""} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} className="w-full border border-mk-line rounded-md px-3 py-2 text-sm" />
               </div>
               <div>
+                <label className="text-xs text-mk-sec mb-1 block">URL photo (optionnel)</label>
+                <input value={form.photo_url || ""} onChange={e => setForm(f => ({ ...f, photo_url: e.target.value }))} placeholder="https://..." className="w-full border border-mk-line rounded-md px-3 py-2 text-sm" />
+              </div>
+              <div>
                 <label className="text-xs text-mk-sec mb-1 block">Visibilité</label>
                 <div className="flex gap-2">
                   {(["buyer", "seller", "both"] as const).map(r => (
@@ -139,9 +187,10 @@ export default function AdminOnboardingCMS() {
           </div>
           <div className="flex justify-end gap-3 mt-4">
             <button onClick={closeForm} className="text-sm text-mk-sec px-4 py-2 border border-mk-line rounded-md">Annuler</button>
-            <button onClick={handleSave} disabled={!form.quote || !form.name || !form.title}
+            <button onClick={() => saveMutation.mutate()} disabled={!form.quote || !form.name || !form.title || saveMutation.isPending}
               className="bg-mk-navy text-white text-sm font-semibold px-4 py-2 rounded-md flex items-center gap-2 disabled:opacity-50">
-              <Save size={14} /> Sauvegarder
+              {saveMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+              Sauvegarder
             </button>
           </div>
         </div>
@@ -160,7 +209,10 @@ export default function AdminOnboardingCMS() {
             </tr>
           </thead>
           <tbody>
-            {testimonials.length === 0 && (
+            {isLoading && (
+              <tr><td colSpan={6} className="py-8 text-center"><Loader2 size={20} className="animate-spin mx-auto text-mk-sec" /></td></tr>
+            )}
+            {!isLoading && testimonials.length === 0 && (
               <tr><td colSpan={6} className="py-8 text-center text-mk-sec text-xs">Aucun testimonial. Cliquez "Ajouter" pour commencer.</td></tr>
             )}
             {testimonials.map(t => (
@@ -174,12 +226,14 @@ export default function AdminOnboardingCMS() {
                   </span>
                 </td>
                 <td className="py-3 px-4 text-center">
-                  {t.is_active ? <Eye size={14} className="text-mk-green mx-auto" /> : <EyeOff size={14} className="text-mk-ter mx-auto" />}
+                  <button onClick={() => toggleActive.mutate({ id: t.id, is_active: !t.is_active })}>
+                    {t.is_active ? <Eye size={14} className="text-mk-green mx-auto" /> : <EyeOff size={14} className="text-mk-ter mx-auto" />}
+                  </button>
                 </td>
                 <td className="py-3 px-4 text-right">
                   <div className="flex items-center justify-end gap-2">
                     <button onClick={() => openEdit(t)} className="text-mk-sec hover:text-mk-blue"><Pencil size={14} /></button>
-                    <button onClick={() => handleDelete(t.id)} className="text-mk-sec hover:text-mk-red"><Trash2 size={14} /></button>
+                    <button onClick={() => { if (confirm("Supprimer ce testimonial ?")) deleteMutation.mutate(t.id); }} className="text-mk-sec hover:text-mk-red"><Trash2 size={14} /></button>
                   </div>
                 </td>
               </tr>

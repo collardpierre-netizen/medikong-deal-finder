@@ -52,7 +52,7 @@ export function InstantSearchBar({ className = "", placeholder, variant = "navba
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    navigate(query.trim() ? `/recherche?q=${encodeURIComponent(query)}` : `/recherche`);
+    navigate(query.trim() ? `/catalogue?q=${encodeURIComponent(query)}` : `/catalogue`);
     setIsOpen(false);
   };
 

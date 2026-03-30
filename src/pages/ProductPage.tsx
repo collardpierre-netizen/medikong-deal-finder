@@ -162,6 +162,7 @@ export default function ProductPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { country } = useCountry();
+  const { isTVAC } = usePriceDisplay();
   const { data: product, isLoading } = useProduct(slug);
   const { addToCart } = useCart();
   const { data: realOffers = [] } = useProductOffers(product?.id);

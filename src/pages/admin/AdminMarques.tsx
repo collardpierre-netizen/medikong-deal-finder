@@ -56,7 +56,7 @@ const AdminMarques = () => {
       />
 
       <div className="grid grid-cols-2 gap-4 mb-6">
-        <KpiCard icon={Tag} label="Marques actives" value={String(brandsData.length)} evolution={{ value: 2, label: "ce mois" }} iconColor="#1B5BDA" iconBg="#EFF6FF" />
+        <KpiCard icon={Tag} label="Marques actives" value={totalBrandCount.toLocaleString("fr-BE")} evolution={{ value: 2, label: "ce mois" }} iconColor="#1B5BDA" iconBg="#EFF6FF" />
         <KpiCard icon={Package} label="Produits total" value={fmt(brandsData.reduce((a, b) => a + (b.product_count || 0), 0))} iconColor="#059669" iconBg="#ECFDF5" />
       </div>
 

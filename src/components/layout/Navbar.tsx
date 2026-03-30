@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useTranslation } from "react-i18next";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { CountrySelector } from "@/components/CountrySelector";
+import { InstantSearchBar } from "@/components/search/InstantSearchBar";
 import logoHorizontal from "@/assets/logo-horizontal.png";
 
 export function Navbar() {

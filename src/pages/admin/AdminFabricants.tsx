@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Factory, Package, Tag, Plus, Search, Globe, Award, Merge, X } from "lucide-react";
+import { Factory, Package, Tag, Plus, Search, Globe, Award, Merge, X, ExternalLink } from "lucide-react";
 
 const COUNTRIES = [
   { code: "BE", label: "🇧🇪 Belgique" }, { code: "FR", label: "🇫🇷 France" },

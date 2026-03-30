@@ -34,15 +34,27 @@ export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const { data: products = [] } = useProducts();
+  const { country, currentCountry } = useCountry();
   const navigate = useNavigate();
 
-  const heroStats = [
-    { value: "350+", label: t("stats.suppliers") },
-    { value: "12 500+", label: t("stats.products") },
-    { value: "500+", label: t("stats.pharmacies") },
-  ];
+  const { data: countryStats } = useQuery({
+    queryKey: ["homepage-stats", country],
+    queryFn: async () => {
+      const [productsRes, offersRes, vendorsRes] = await Promise.all([
+        supabase.from("product_country_stats").select("product_id", { count: "exact", head: true }).eq("country_code", country).gt("offer_count", 0),
+        supabase.from("offers").select("vendor_id", { count: "exact", head: true }).eq("country_code", country).eq("is_active", true),
+        supabase.from("offers").select("vendor_id").eq("country_code", country).eq("is_active", true),
+      ]);
+      const uniqueVendors = new Set((vendorsRes.data || []).map((o: any) => o.vendor_id)).size;
+      return {
+        products: productsRes.count || 0,
+        offers: offersRes.count || 0,
+        vendors: uniqueVendors || 0,
+      };
+    },
+  });
 
-  const valueProps = [
+  const countryLabel = currentCountry?.name || "Belgique";
     { icon: <TrendingDown size={22} />, title: t("valueProps.bestPrices"), desc: t("valueProps.bestPricesDesc") },
     { icon: <ShoppingCart size={22} />, title: t("valueProps.simpleOrders"), desc: t("valueProps.simpleOrdersDesc") },
     { icon: <Shield size={22} />, title: t("valueProps.guaranteed"), desc: t("valueProps.guaranteedDesc") },

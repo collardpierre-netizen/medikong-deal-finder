@@ -23,6 +23,7 @@ const AdminMarques = () => {
 
   const [brandDialogOpen, setBrandDialogOpen] = useState(false);
   const [editBrand, setEditBrand] = useState<any>(null);
+  const [search, setSearch] = useState("");
 
   const brandFileRef = useRef<HTMLInputElement>(null);
 

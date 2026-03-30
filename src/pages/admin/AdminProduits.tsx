@@ -16,10 +16,13 @@ const AdminProduits = () => {
   const { t } = useI18n();
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const { data: products = [], isLoading: loadingProducts } = useAdminProducts();
+  const { data: products = [], isLoading: loadingProducts } = useAdminProducts(100);
   const { data: offers = [], isLoading: loadingOffers } = useOffersDirectAdmin();
   const { data: brands = [] } = useBrands();
   const { data: manufacturers = [] } = useManufacturers();
+  const { data: totalProductCount = 0 } = useProductCount();
+  const { data: totalBrandCount = 0 } = useBrandCount();
+  const { data: totalActiveOfferCount = 0 } = useActiveOfferCount();
   const [activeTab, setActiveTab] = useState<"catalog" | "offers">("catalog");
   const [search, setSearch] = useState("");
   const [productDialogOpen, setProductDialogOpen] = useState(false);

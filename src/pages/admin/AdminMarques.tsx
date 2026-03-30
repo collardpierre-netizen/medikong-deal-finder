@@ -117,7 +117,7 @@ const AdminMarques = () => {
         )}
       </div>
 
-      <BrandFormDialog open={brandDialogOpen} onOpenChange={setBrandDialogOpen} brand={editBrand} manufacturers={[]} />
+      <BrandFormDialog open={brandDialogOpen} onOpenChange={setBrandDialogOpen} brand={editBrand} manufacturers={manufacturersData} />
     </div>
   );
 };

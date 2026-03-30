@@ -207,6 +207,23 @@ export default function AdminSync() {
     }
   };
 
+  const updateLogStatus = useMutation({
+    mutationFn: async ({ logId, newStatus }: { logId: string; newStatus: string }) => {
+      const updates: any = { status: newStatus };
+      if (newStatus === "completed" || newStatus === "error") {
+        updates.completed_at = new Date().toISOString();
+      }
+      const { error } = await supabase.from("sync_logs").update(updates).eq("id", logId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Statut mis à jour");
+      setEditingLogId(null);
+      qc.invalidateQueries({ queryKey: ["sync-logs"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const testConnection = async () => {
     setTestingConnection(true);
     try {

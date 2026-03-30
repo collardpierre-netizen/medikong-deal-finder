@@ -882,7 +882,32 @@ export default function ProductPage() {
                 </div>
               </div>
 
-              {/* ── Guarantee Accordion ── */}
+              {/* ── Price Level Comparison ── */}
+              {user && allPrices.length > 1 && (
+                <div className="mb-8">
+                  <h2 className="text-lg font-bold text-foreground mb-3">Comparaison des prix par profil</h2>
+                  <div className="border border-border rounded-xl overflow-hidden">
+                    {allPrices.map((p: any, i: number) => {
+                      const plCode = (p as any).price_levels?.code;
+                      const plLabel = (p as any).price_levels?.label_fr || plCode;
+                      const isUserLevel = plCode === levelCode;
+                      return (
+                        <div
+                          key={p.price_level_id}
+                          className={`flex justify-between py-3 px-4 text-sm ${isUserLevel ? "bg-primary/5 border-l-4 border-primary" : i % 2 === 0 ? "bg-muted/50" : ""}`}
+                        >
+                          <span className={isUserLevel ? "text-primary font-bold" : "text-muted-foreground"}>
+                            {plLabel} {isUserLevel && "(votre profil)"}
+                          </span>
+                          <span className={`font-bold ${isUserLevel ? "text-primary" : "text-foreground"}`}>
+                            {Number(p.price).toLocaleString("fr-FR", { minimumFractionDigits: 2 })} €
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
               <div className="mb-8">
                 <Accordion type="single" collapsible>
                   <AccordionItem value="guarantee" className="border border-border rounded-xl px-4">

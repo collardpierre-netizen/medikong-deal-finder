@@ -34,6 +34,8 @@ function OfferRow({
   const tiers = (offer.priceTiers && offer.priceTiers.length > 0) ? offer.priceTiers : [];
   const hasTiers = tiers.length > 1;
   const displayCode = offer.displayCode || offer.sellerId.slice(0, 6).toUpperCase();
+  const displayPrice = isTVAC ? offer.unitPriceInclVat : offer.unitPriceEur;
+  const priceLabel = isTVAC ? "TVAC" : "HTVA";
 
   const handleAdd = () => {
     if (!user) { navigate("/connexion"); return; }

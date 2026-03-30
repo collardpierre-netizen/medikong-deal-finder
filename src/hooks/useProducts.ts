@@ -76,12 +76,13 @@ function mapDbProduct(row: any, offersData?: any[]): Product {
 }
 
 export function useProducts() {
+  const { country } = useCountry();
   return useQuery({
-    queryKey: ["products"],
+    queryKey: ["products", country],
     queryFn: async () => {
       const [productsRes, offersRes] = await Promise.all([
         supabase.from("products").select("*").eq("is_active", true).order("created_at", { ascending: true }),
-        supabase.from("offers").select("*").eq("is_active", true),
+        supabase.from("offers").select("*").eq("is_active", true).eq("country_code", country),
       ]);
       if (productsRes.error) throw productsRes.error;
       return (productsRes.data || []).map((row: any) => mapDbProduct(row, offersRes.data || []));

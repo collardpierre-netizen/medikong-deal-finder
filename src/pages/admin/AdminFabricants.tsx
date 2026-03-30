@@ -216,7 +216,7 @@ export default function AdminFabricants() {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
                 {selected.logo_url ? (
-                  <img src={selected.logo_url} alt={selected.name} className="w-12 h-12 rounded-lg border object-contain p-1" style={{ borderColor: "#E2E8F0" }} />
+                  <img src={selected.logo_url} alt={selected.name} referrerPolicy="no-referrer" crossOrigin="anonymous" className="w-12 h-12 rounded-lg border object-contain p-1" style={{ borderColor: "#E2E8F0" }} />
                 ) : (
                   <div className="w-12 h-12 rounded-lg border flex items-center justify-center" style={{ borderColor: "#E2E8F0", backgroundColor: "#F8FAFC" }}>
                     <Factory size={20} className="text-[#8B95A5]" />

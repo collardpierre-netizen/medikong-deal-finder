@@ -34,13 +34,15 @@ Deno.serve(async (req) => {
       }
     }
 
-    const brandsData = Array.from(uniqueBrands.entries()).map(([name, qid]) => ({
+    const brandsRaw = Array.from(uniqueBrands.entries()).map(([name, qid]) => ({
       name,
       qogita_qid: qid,
       slug: name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, ""),
       is_active: true,
       synced_at: new Date().toISOString(),
     }));
+    // Deduplicate by slug to avoid "cannot affect a row a second time" error
+    const brandsData = [...new Map(brandsRaw.map(b => [b.slug, b])).values()];
 
     const total = brandsData.length;
     await supabase.from("sync_logs").update({

@@ -181,7 +181,7 @@ export function useCatalogCategories() {
       if (error) throw error;
 
       // Build tree
-      const all = data || [];
+      const all = (data || []).map((c: any) => ({ ...c, name: c.name_fr || c.name }));
       const roots = all.filter(c => !c.parent_id);
       return roots.map(r => ({
         ...r,

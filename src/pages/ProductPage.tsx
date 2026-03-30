@@ -551,6 +551,7 @@ export default function ProductPage() {
                           navigate={navigate}
                           addToCart={addToCart}
                           isBest
+                          isTVAC={isTVAC}
                         />
                       </div>
                     ) : (

@@ -168,8 +168,8 @@ const AdminCMS = () => {
   };
 
   const addImage = useMutation({
-    mutationFn: async () => { await insertHeroImage(newImageUrl, newImageAlt); },
-    onSuccess: () => { setNewImageUrl(""); setNewImageAlt(""); toast.success("Image ajoutée"); },
+    mutationFn: async () => { await insertHeroImage(newImageUrl, newImageAlt, newLinkUrl, newCtaText); },
+    onSuccess: () => { setNewImageUrl(""); setNewImageAlt(""); setNewLinkUrl(""); setNewCtaText(""); toast.success("Image ajoutée"); },
   });
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {

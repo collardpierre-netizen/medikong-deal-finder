@@ -123,6 +123,7 @@ const AdminFabricants = lazy(() => import("./pages/admin/AdminFabricants"));
 const AdminApiKeys = lazy(() => import("./pages/admin/AdminApiKeys"));
 const AdminApiDocs = lazy(() => import("./pages/admin/AdminApiDocs"));
 const AdminCountries = lazy(() => import("./pages/admin/AdminCountries"));
+const AdminMarketCodes = lazy(() => import("./pages/admin/AdminMarketCodes"));
 
 // Vendor pages
 const VendorLayout = lazy(() => import("./components/vendor/VendorLayout"));

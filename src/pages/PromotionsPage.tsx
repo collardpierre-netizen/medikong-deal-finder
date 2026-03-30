@@ -6,7 +6,7 @@ import { Tag, TrendingDown, Truck, Calendar } from "lucide-react";
 import { useState, useEffect } from "react";
 
 export default function PromotionsPage() {
-  const { data: products = [] } = useProducts();
+  const { data: products = [] } = useFeaturedProducts(24, { promotion: true });
   const [activeFilter, setActiveFilter] = useState(0);
   const filters = ["Toutes", "-20% et plus", "-40% et plus", "Flash (< 24h)"];
 

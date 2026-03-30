@@ -14,7 +14,7 @@ type ViewMode = "grid" | "list" | "trivago";
 
 export default function CategoryPage() {
   const { slug } = useParams();
-  const { data: products = [] } = useProducts();
+  const { data: products = [] } = useFeaturedProducts(50);
   const [view, setView] = useState<ViewMode>("grid");
   const [activeSub, setActiveSub] = useState(0);
   const [showFilters, setShowFilters] = useState(false);

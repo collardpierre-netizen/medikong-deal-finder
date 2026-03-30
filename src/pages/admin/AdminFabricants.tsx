@@ -326,8 +326,11 @@ function ManufacturerFormDialog({ open, onOpenChange, item, onSave, saving }: { 
   };
 
   // Reset form when dialog opens
-  if (open && !form.name && !item) reset();
-  if (open && item && form.id !== item.id) reset();
+  const needsReset = open && ((!form.name && !item) || (item && form.id !== item.id));
+  if (needsReset) {
+    // Use a microtask to avoid setState during render
+    Promise.resolve().then(reset);
+  }
 
   return (
     <Dialog open={open} onOpenChange={o => { onOpenChange(o); if (!o) setForm({}); }}>

@@ -298,10 +298,78 @@ export default function OnboardingPage() {
   };
 
   /* ─── Submit ─── */
-  const handleSubmit = () => {
-    if (!isPasswordValid) return;
-    console.log("Onboarding data:", { role, email, firstName, lastName, phone, companyName, vatNumber, country, city, buyerProfile, businessType, interests, sellerCats, fulfillment });
-    goNext();
+  const [submitting, setSubmitting] = useState(false);
+  const handleSubmit = async () => {
+    if (!isPasswordValid || submitting) return;
+    setSubmitting(true);
+    try {
+      // 1. Create auth user
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { full_name: `${firstName} ${lastName}`.trim() },
+          emailRedirectTo: window.location.origin,
+        },
+      });
+      if (authError) throw authError;
+      const userId = authData.user?.id;
+      if (!userId) throw new Error("No user ID returned");
+
+      // 2. Update profile
+      await supabase.from("profiles").update({
+        full_name: `${firstName} ${lastName}`.trim(),
+        phone: phone || null,
+        company_name: companyName || null,
+        vat_number: vatNumber || null,
+        country: country || "Belgique",
+      }).eq("user_id", userId);
+
+      // 3. If seller, create vendor record
+      if (role === "seller") {
+        const slug = (companyName || `${firstName}-${lastName}`)
+          .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+          .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+        await supabase.from("vendors").insert({
+          auth_user_id: userId,
+          name: companyName || `${firstName} ${lastName}`,
+          slug,
+          company_name: companyName || null,
+          email,
+          phone: phone || null,
+          vat_number: vatNumber || null,
+          country_code: country === "France" ? "FR" : country === "Pays-Bas" ? "NL" : country === "Luxembourg" ? "LU" : country === "Allemagne" ? "DE" : "BE",
+          city: city || null,
+          description: `${businessType ? `Type: ${businessType}. ` : ""}${sellerCats.length > 0 ? `Catégories: ${sellerCats.join(", ")}. ` : ""}${fulfillment ? `Logistique: ${fulfillment}. ` : ""}${leadTime ? `Délai: ${leadTime}.` : ""}`,
+          type: "real",
+          is_active: false, // Admin must activate
+          can_manage_offers: true,
+        });
+      }
+
+      // 4. If buyer, create customer record
+      if (role === "buyer") {
+        await supabase.from("customers").insert({
+          auth_user_id: userId,
+          company_name: companyName || `${firstName} ${lastName}`,
+          email,
+          phone: phone || null,
+          vat_number: vatNumber || null,
+          country_code: country === "France" ? "FR" : country === "Pays-Bas" ? "NL" : country === "Luxembourg" ? "LU" : country === "Allemagne" ? "DE" : "BE",
+          address_line1: city || "—",
+          city: city || "—",
+          postal_code: "0000",
+          is_verified: false,
+        });
+      }
+
+      goNext();
+    } catch (err: any) {
+      console.error("Signup error:", err);
+      alert(err.message || "Erreur lors de l'inscription");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   /* ─── OTP Screen (reusable) ─── */

@@ -552,12 +552,13 @@ export default function AdminSync() {
         ) : (
           <div className="divide-y" style={{ borderColor: "#F1F5F9" }}>
             {/* Header */}
-            <div className="hidden sm:grid grid-cols-6 gap-2 px-5 py-2 text-[11px] font-semibold" style={{ color: "#8B95A5", backgroundColor: "#F8FAFC" }}>
+            <div className="hidden sm:grid grid-cols-7 gap-2 px-5 py-2 text-[11px] font-semibold" style={{ color: "#8B95A5", backgroundColor: "#F8FAFC" }}>
               <span>Type</span>
               <span>Statut</span>
               <span>Début</span>
               <span>Durée</span>
               <span className="col-span-2">Détails</span>
+              <span>Actions</span>
             </div>
             {logs.map(log => {
               const duration = log.completed_at && log.started_at

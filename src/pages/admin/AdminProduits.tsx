@@ -176,7 +176,7 @@ const AdminProduits = () => {
         </div>
       )}
 
-      <ProductFormDialog open={productDialogOpen} onOpenChange={setProductDialogOpen} product={editProduct} brands={brands} manufacturers={[]} />
+      <ProductFormDialog open={productDialogOpen} onOpenChange={setProductDialogOpen} product={editProduct} brands={brands} manufacturers={manufacturers} />
     </div>
   );
 };

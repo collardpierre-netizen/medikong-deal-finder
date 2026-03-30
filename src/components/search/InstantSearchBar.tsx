@@ -19,14 +19,17 @@ export function InstantSearchBar({ className = "", placeholder, variant = "navba
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
+  const [configured, setConfigured] = useState(true); // optimistic
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
-  const configured = isMeilisearchConfigured();
+  useEffect(() => {
+    isMeilisearchConfigured().then(setConfigured);
+  }, []);
 
   const search = useCallback(async (q: string) => {
-    if (!q.trim() || !configured) {
+    if (!q.trim()) {
       setResults({ products: [], brands: [], categories: [] });
       setIsOpen(false);
       return;
@@ -35,13 +38,14 @@ export function InstantSearchBar({ className = "", placeholder, variant = "navba
     try {
       const res = await federatedSearch(q);
       setResults(res);
-      setIsOpen(true);
+      const hasAny = res.products.length > 0 || res.brands.length > 0 || res.categories.length > 0;
+      setIsOpen(hasAny || q.trim().length > 0);
     } catch (err) {
       console.error("Search error:", err);
     } finally {
       setIsLoading(false);
     }
-  }, [configured]);
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
@@ -85,7 +89,6 @@ export function InstantSearchBar({ className = "", placeholder, variant = "navba
     }
   };
 
-  // Close on click outside
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (
@@ -105,23 +108,6 @@ export function InstantSearchBar({ className = "", placeholder, variant = "navba
   const inputClasses = isHero
     ? "w-full pl-11 pr-10 py-3.5 rounded-xl text-sm bg-white text-foreground placeholder:text-muted-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary shadow-md"
     : "w-full pl-9 pr-8 py-2 rounded-md text-sm bg-white text-foreground placeholder:text-muted-foreground border-0 focus:outline-none focus:ring-2 focus:ring-primary";
-
-  // If Meilisearch isn't configured, fall back to basic form submit
-  if (!configured) {
-    return (
-      <form onSubmit={handleSubmit} className={className}>
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder={placeholder || t("common.searchPlaceholder")}
-            className={inputClasses}
-          />
-        </div>
-      </form>
-    );
-  }
 
   return (
     <div className={`relative ${className}`}>
@@ -178,7 +164,6 @@ export function InstantSearchBar({ className = "", placeholder, variant = "navba
               {results.products.map((p, i) => (
                 <button
                   key={p.id}
-                  id={`result-${i}`}
                   onClick={() => { navigate(`/produit/${p.slug}`); setIsOpen(false); setQuery(""); }}
                   className={`w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-accent/50 transition-colors ${selectedIndex === i ? "bg-accent/50" : ""}`}
                 >
@@ -215,7 +200,6 @@ export function InstantSearchBar({ className = "", placeholder, variant = "navba
                 return (
                   <button
                     key={b.id}
-                    id={`result-${idx}`}
                     onClick={() => { navigate(`/marques/${b.slug}`); setIsOpen(false); setQuery(""); }}
                     className={`w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-accent/50 transition-colors ${selectedIndex === idx ? "bg-accent/50" : ""}`}
                   >
@@ -249,7 +233,6 @@ export function InstantSearchBar({ className = "", placeholder, variant = "navba
                 return (
                   <button
                     key={c.id}
-                    id={`result-${idx}`}
                     onClick={() => { navigate(`/categorie/${c.slug}`); setIsOpen(false); setQuery(""); }}
                     className={`w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-accent/50 transition-colors ${selectedIndex === idx ? "bg-accent/50" : ""}`}
                   >

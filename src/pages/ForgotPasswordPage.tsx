@@ -3,6 +3,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Mail, CheckCircle2 } from "lucide-react";
+import logoDark from "@/assets/Logo_horizontal_sombre2.png";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");

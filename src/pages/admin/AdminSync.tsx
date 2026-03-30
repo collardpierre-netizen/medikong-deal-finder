@@ -497,7 +497,7 @@ export default function AdminSync() {
             onClick={async () => {
               setCreatingOffers(true);
               try {
-                const { data, error } = await supabase.rpc("create_offers_from_products", { _country_code: selectedCountry });
+                const { data, error } = await supabase.rpc("create_offers_from_products" as any, { _country_code: selectedCountry } as any);
                 if (error) throw error;
                 const upserted = (data as any)?.offers_upserted ?? 0;
                 toast.success("Offres créées ✅", { description: `${upserted.toLocaleString("fr-BE")} offres générées depuis les produits` });

@@ -18,11 +18,6 @@ export default function CataloguePage() {
   const [view, setView] = useState<"grid" | "list">("grid");
   const [mobileFilters, setMobileFilters] = useState(false);
 
-  const breadcrumbs = [
-    { label: "Accueil", href: "/" },
-    { label: filters.category ? filters.category.replace(/-/g, " ") : "Catalogue" },
-  ];
-
   const title = filters.category
     ? filters.category.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase())
     : "Tous les produits";

@@ -171,18 +171,37 @@ async function syncOffers(
   // Pre-load margin rules
   const { data: marginRules } = await sb.from("margin_rules").select("*").eq("is_active", true).order("priority", { ascending: false });
 
-  let stats = {
+  let stats: any = {
     country, products_enriched: 0, offers_upserted: 0, errors: 0, skipped: 0, last_offset: startOffset,
+    first_api_response_keys: null, first_offers_sample: null,
   };
   let offerBatch: any[] = [];
 
   async function flushOffers() {
     if (!offerBatch.length) return;
-    const { error } = await sb.from("offers").upsert(offerBatch, {
-      onConflict: "qogita_offer_qid", ignoreDuplicates: false,
-    });
-    if (error) console.error("Offer upsert error:", error.message);
-    else stats.offers_upserted += offerBatch.length;
+    let upserted = 0;
+    for (const offer of offerBatch) {
+      // Use individual upserts since partial unique index doesn't work with batch onConflict
+      const { data: existing } = await sb.from("offers")
+        .select("id").eq("qogita_offer_qid", offer.qogita_offer_qid).maybeSingle();
+      
+      let err: any;
+      if (existing) {
+        const { error } = await sb.from("offers").update(offer).eq("id", existing.id);
+        err = error;
+      } else {
+        const { error } = await sb.from("offers").insert(offer);
+        err = error;
+      }
+      if (err) {
+        console.error("Offer upsert error:", err.message, "offer_qid:", offer.qogita_offer_qid);
+        if (!stats.offer_errors) stats.offer_errors = [];
+        if (stats.offer_errors.length < 5) stats.offer_errors.push(err.message);
+      } else {
+        upserted++;
+      }
+    }
+    stats.offers_upserted += upserted;
     offerBatch = [];
   }
 
@@ -233,6 +252,23 @@ async function syncOffers(
       }
 
       const variant = await res.json();
+
+      // Diagnostic: log API response structure for the first enriched product
+      if (stats.first_api_response_keys === null) {
+        stats.first_api_response_keys = Object.keys(variant);
+        const offersArr = variant.offers || [];
+        stats.first_offers_sample = {
+          offers_count: offersArr.length,
+          offers_is_array: Array.isArray(offersArr),
+          first_offer_keys: offersArr.length > 0 ? Object.keys(offersArr[0]) : [],
+          first_offer_preview: offersArr.length > 0 ? {
+            qid: offersArr[0].qid, unitPrice: offersArr[0].unitPrice,
+            inventory: offersArr[0].inventory, seller: offersArr[0].seller,
+          } : null,
+        };
+        console.log("API response keys:", stats.first_api_response_keys);
+        console.log("Offers sample:", JSON.stringify(stats.first_offers_sample));
+      }
 
       // Update product with enriched data
       const productUpdate: any = { synced_at: new Date().toISOString() };

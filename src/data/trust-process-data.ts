@@ -206,53 +206,53 @@ export function getHelpFaqItems(t: (key: string) => string): FaqItem[] {
 // Keep backward-compatible static exports for non-i18n usage
 export const helpCategories: HelpCategoryData[] = [
   { icon: Rocket, title: "Premiers pas", description: "Créer votre compte, passer votre première commande et naviguer le catalogue.", articleCount: 5, articles: [
-    { label: "Comment créer un compte professionnel ?", href: "/onboarding" },
-    { label: "Comment passer ma première commande ?", href: "#" },
-    { label: "Comment naviguer le catalogue ?", href: "#" },
+    { label: "Comment créer un compte professionnel ?", href: "/centre-aide/creer-compte-professionnel" },
+    { label: "Comment passer ma première commande ?", href: "/centre-aide/premiere-commande" },
+    { label: "Comment naviguer le catalogue ?", href: "/centre-aide/naviguer-catalogue" },
   ]},
   { icon: ShoppingCart, title: "Commandes & Paiements", description: "Passer commande, moyens de paiement, factures et paiement différé.", articleCount: 12, articles: [
-    { label: "Comment passer une commande ?", href: "#" },
-    { label: "Quels sont les moyens de paiement acceptés ?", href: "#" },
+    { label: "Comment passer une commande ?", href: "/centre-aide/passer-commande" },
+    { label: "Quels sont les moyens de paiement acceptés ?", href: "/centre-aide/moyens-paiement" },
     { label: "Comment utiliser le paiement différé ?", href: "/paiement-differe" },
   ]},
   { icon: Package, title: "Livraison & Suivi", description: "Délais, suivi de colis, retours et remboursements.", articleCount: 8, articles: [
-    { label: "Comment suivre mon colis ?", href: "#" },
+    { label: "Comment suivre mon colis ?", href: "/centre-aide/suivre-colis" },
     { label: "Quels sont les délais de livraison ?", href: "/logistique" },
-    { label: "Comment retourner un produit ?", href: "#" },
+    { label: "Comment retourner un produit ?", href: "/centre-aide/retourner-produit" },
   ]},
   { icon: FileText, title: "TVA & Facturation", description: "Comprendre la TVA, télécharger vos factures et gérer vos données fiscales.", articleCount: 4, articles: [
-    { label: "Comment fonctionne la TVA sur MediKong ?", href: "#" },
-    { label: "Où télécharger mes factures ?", href: "#" },
-    { label: "Comment modifier mes données de facturation ?", href: "#" },
+    { label: "Comment fonctionne la TVA sur MediKong ?", href: "/centre-aide/tva-medikong" },
+    { label: "Où télécharger mes factures ?", href: "/centre-aide/telecharger-factures" },
+    { label: "Comment modifier mes données de facturation ?", href: "/centre-aide/modifier-facturation" },
   ]},
   { icon: ShieldAlert, title: "Réclamations & Remboursements", description: "Signaler un problème, suivre une réclamation et obtenir un remboursement.", articleCount: 6, articles: [
-    { label: "Comment signaler un problème avec ma commande ?", href: "#" },
-    { label: "Quel est le délai de remboursement ?", href: "#" },
-    { label: "Comment suivre ma réclamation ?", href: "#" },
+    { label: "Comment signaler un problème avec ma commande ?", href: "/centre-aide/signaler-probleme" },
+    { label: "Quel est le délai de remboursement ?", href: "/centre-aide/delai-remboursement" },
+    { label: "Comment suivre ma réclamation ?", href: "/centre-aide/suivre-reclamation" },
   ]},
   { icon: UserCircle, title: "Mon compte", description: "Inscription, paramètres, gestion des utilisateurs et sécurité.", articleCount: 6, articles: [
-    { label: "Comment ajouter un utilisateur ?", href: "#" },
-    { label: "Comment sécuriser mon compte ?", href: "#" },
+    { label: "Comment ajouter un utilisateur ?", href: "/centre-aide/ajouter-utilisateur" },
+    { label: "Comment sécuriser mon compte ?", href: "/centre-aide/securiser-compte" },
     { label: "J'ai oublié mon mot de passe", href: "/mot-de-passe-oublie" },
   ]},
   { icon: Store, title: "Vendeurs", description: "Devenir vendeur, catalogue, commissions et paiements.", articleCount: 10, articles: [
     { label: "Comment devenir vendeur sur MediKong ?", href: "/devenir-vendeur" },
-    { label: "Comment gérer mon catalogue ?", href: "#" },
+    { label: "Comment gérer mon catalogue ?", href: "/centre-aide/gerer-catalogue" },
     { label: "Quelles sont les commissions ?", href: "/entreprise/comment-ca-marche" },
   ]},
   { icon: ShieldCheck, title: "Qualité & Conformité", description: "Marquage CE, AFMPS, garantie et traçabilité.", articleCount: 5, articles: [
-    { label: "Qu'est-ce que le marquage CE ?", href: "#" },
+    { label: "Qu'est-ce que le marquage CE ?", href: "/centre-aide/marquage-ce" },
     { label: "Comment vérifier la conformité AFMPS ?", href: "/verification-fournisseurs" },
     { label: "Quelle est notre politique de garantie ?", href: "/qualite-garantie" },
   ]},
   { icon: Lightbulb, title: "Fonctionnalités", description: "Recherche, comparaison des prix, alertes et API.", articleCount: 7, articles: [
-    { label: "Comment utiliser la comparaison de prix ?", href: "#" },
-    { label: "Comment configurer des alertes ?", href: "#" },
-    { label: "Comment accéder à l'API ?", href: "#" },
+    { label: "Comment utiliser la comparaison de prix ?", href: "/centre-aide/comparaison-prix" },
+    { label: "Comment configurer des alertes ?", href: "/centre-aide/configurer-alertes" },
+    { label: "Comment accéder à l'API ?", href: "/centre-aide/acceder-api" },
   ]},
   { icon: BookOpen, title: "Ressources & Guides", description: "Tutoriels, guides d'achat et bonnes pratiques pour les professionnels de santé.", articleCount: 4, articles: [
-    { label: "Guide d'achat pour les pharmacies", href: "#" },
-    { label: "Bonnes pratiques de commande B2B", href: "#" },
+    { label: "Guide d'achat pour les pharmacies", href: "/centre-aide/guide-achat-pharmacies" },
+    { label: "Bonnes pratiques de commande B2B", href: "/centre-aide/bonnes-pratiques-b2b" },
   ]},
 ];
 

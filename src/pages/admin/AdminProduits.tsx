@@ -75,9 +75,9 @@ const AdminProduits = () => {
       />
 
       <div className="grid grid-cols-3 gap-4 mb-5">
-        <KpiCard icon={Package} label="Produits catalogue" value={String(products.length)} evolution={{ value: 4.2, label: "vs mois dernier" }} />
-        <KpiCard icon={Tag} label="Marques" value={String(brands.length)} iconColor="#7C3AED" iconBg="#F5F3FF" />
-        <KpiCard icon={ShoppingCart} label="Offres actives" value={String(activeOffers)} evolution={{ value: 8.7, label: "vs mois dernier" }} iconColor="#059669" iconBg="#F0FDF4" />
+        <KpiCard icon={Package} label="Produits catalogue" value={totalProductCount.toLocaleString("fr-BE")} evolution={{ value: 4.2, label: "vs mois dernier" }} />
+        <KpiCard icon={Tag} label="Marques" value={totalBrandCount.toLocaleString("fr-BE")} iconColor="#7C3AED" iconBg="#F5F3FF" />
+        <KpiCard icon={ShoppingCart} label="Offres actives" value={totalActiveOfferCount.toLocaleString("fr-BE")} evolution={{ value: 8.7, label: "vs mois dernier" }} iconColor="#059669" iconBg="#F0FDF4" />
       </div>
 
       <div className="flex items-center gap-1 mb-4 p-1 rounded-lg" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0", display: "inline-flex" }}>

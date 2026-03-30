@@ -665,7 +665,7 @@ export default function ProductPage() {
                 <div className="hidden sm:flex items-center gap-3 min-w-0 flex-1">
                   <div className="min-w-0">
                     <p className="text-sm font-semibold text-foreground truncate">{product.name}</p>
-                    <p className="text-xs text-muted-foreground">{product.brand} · Meilleure offre</p>
+                    <p className="text-xs text-muted-foreground">{brandData?.name || product.brand || ""} · Meilleure offre</p>
                   </div>
                 </div>
                 <div className="sm:hidden min-w-0">

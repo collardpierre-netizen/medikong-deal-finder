@@ -46,14 +46,14 @@ export function BrandFormDialog({ open, onOpenChange, brand, manufacturers }: Br
       setForm({
         name: brand.name || "", slug: brand.slug || "",
         country: brand.country_of_origin || "BE", website: brand.website_url || "",
-        description: brand.description || "",
+        description: brand.description || "", logo_url: brand.logo_url || "",
         manufacturer_id: brand.manufacturer_id || "",
         is_featured: brand.is_featured || false,
         name_fr: getTr("fr", "name"), name_nl: getTr("nl", "name"), name_de: getTr("de", "name"),
         desc_fr: getTr("fr", "description"), desc_nl: getTr("nl", "description"), desc_de: getTr("de", "description"),
       });
     } else {
-      setForm({ name: "", slug: "", country: "BE", website: "", description: "", manufacturer_id: "", is_featured: false, name_fr: "", name_nl: "", name_de: "", desc_fr: "", desc_nl: "", desc_de: "" });
+      setForm({ name: "", slug: "", country: "BE", website: "", description: "", manufacturer_id: "", is_featured: false, logo_url: "", name_fr: "", name_nl: "", name_de: "", desc_fr: "", desc_nl: "", desc_de: "" });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, brand?.id]);

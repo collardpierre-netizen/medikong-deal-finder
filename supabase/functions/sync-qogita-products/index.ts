@@ -109,6 +109,7 @@ Deno.serve(async (req) => {
 
 async function syncCountryStream(sb: any, country: string, vat: number, logId: string) {
   const { token, baseUrl } = await getToken(sb);
+  const qogitaVendorId = await ensureQogitaVendor(sb);
 
   await sb.from("sync_logs").update({
     progress_message: `${country}: téléchargement CSV (~105 MB)...`,

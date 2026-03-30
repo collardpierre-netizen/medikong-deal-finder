@@ -7,6 +7,7 @@ import { CatalogToolbar } from "@/components/catalog/CatalogToolbar";
 import { CatalogProductCard } from "@/components/catalog/CatalogProductCard";
 import { CatalogPagination } from "@/components/catalog/CatalogPagination";
 import { ActiveFilters } from "@/components/catalog/ActiveFilters";
+import { UniversePills } from "@/components/layout/UniversePills";
 import { useCatalogFilters, useCatalogProducts } from "@/hooks/useCatalog";
 import { Loader2, SlidersHorizontal, X } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -33,6 +34,7 @@ export default function CataloguePage() {
 
   return (
     <Layout>
+      <UniversePills />
       <div className="mk-container py-4">
         <Breadcrumbs />
 

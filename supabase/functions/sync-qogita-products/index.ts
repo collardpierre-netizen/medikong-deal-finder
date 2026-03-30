@@ -199,7 +199,7 @@ async function syncCountryStream(sb: any, country: string, vat: number, logId: s
     batchLines.push(buffer);
   }
   if (batchLines.length > 0) {
-    processed += await processBatch(sb, batchLines, colMap, vat, country, brandNames, catNames);
+    processed += await processBatch(sb, batchLines, colMap, vat, country, brandNames, catNames, qogitaVendorId);
   }
 
   // Upsert brands

@@ -202,6 +202,7 @@ export default function AdminSync() {
   const [testingConnection, setTestingConnection] = useState(false);
   const [meiliSyncing, setMeiliSyncing] = useState(false);
   const [resolving, setResolving] = useState(false);
+  const [creatingOffers, setCreatingOffers] = useState(false);
   const [editingLogId, setEditingLogId] = useState<string | null>(null);
 
   // Polling for running sync progress
@@ -469,27 +470,52 @@ export default function AdminSync() {
             </div>
           </div>
         </div>
-        <button
-          onClick={async () => {
-            setResolving(true);
-            try {
-              await supabase.rpc("resolve_product_brands");
-              await supabase.rpc("resolve_product_categories");
-              await supabase.rpc("update_brand_product_counts");
-              toast.success("Liens résolus ✅", { description: "brand_id, category_id et compteurs mis à jour" });
-            } catch (err: any) {
-              toast.error("Erreur résolution", { description: err.message });
-            } finally {
-              setResolving(false);
-            }
-          }}
-          disabled={resolving}
-          className="flex items-center gap-2 px-4 py-2.5 border rounded-lg text-[13px] font-semibold disabled:opacity-50 hover:bg-[#F8FAFC] transition-colors"
-          style={{ borderColor: "#E2E8F0", color: "#1E293B" }}
-        >
-          {resolving ? <Loader2 size={14} className="animate-spin" /> : <Database size={14} />}
-          {resolving ? "Résolution en cours..." : "Résoudre liens manquants"}
-        </button>
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            onClick={async () => {
+              setResolving(true);
+              try {
+                await supabase.rpc("resolve_product_brands");
+                await supabase.rpc("resolve_product_categories");
+                await supabase.rpc("update_brand_product_counts");
+                toast.success("Liens résolus ✅", { description: "brand_id, category_id et compteurs mis à jour" });
+              } catch (err: any) {
+                toast.error("Erreur résolution", { description: err.message });
+              } finally {
+                setResolving(false);
+              }
+            }}
+            disabled={resolving}
+            className="flex items-center gap-2 px-4 py-2.5 border rounded-lg text-[13px] font-semibold disabled:opacity-50 hover:bg-[#F8FAFC] transition-colors"
+            style={{ borderColor: "#E2E8F0", color: "#1E293B" }}
+          >
+            {resolving ? <Loader2 size={14} className="animate-spin" /> : <Database size={14} />}
+            {resolving ? "Résolution en cours..." : "Résoudre liens manquants"}
+          </button>
+
+          <button
+            onClick={async () => {
+              setCreatingOffers(true);
+              try {
+                const { data, error } = await supabase.rpc("create_offers_from_products" as any, { _country_code: selectedCountry } as any);
+                if (error) throw error;
+                const upserted = (data as any)?.offers_upserted ?? 0;
+                toast.success("Offres créées ✅", { description: `${upserted.toLocaleString("fr-BE")} offres générées depuis les produits` });
+                qc.invalidateQueries({ queryKey: ["sync-logs"] });
+              } catch (err: any) {
+                toast.error("Erreur création offres", { description: err.message });
+              } finally {
+                setCreatingOffers(false);
+              }
+            }}
+            disabled={creatingOffers}
+            className="flex items-center gap-2 px-4 py-2.5 border rounded-lg text-[13px] font-semibold disabled:opacity-50 hover:bg-[#F8FAFC] transition-colors"
+            style={{ borderColor: "#E2E8F0", color: "#1E293B" }}
+          >
+            {creatingOffers ? <Loader2 size={14} className="animate-spin" /> : <Store size={14} />}
+            {creatingOffers ? "Création en cours..." : "Créer offres depuis produits"}
+          </button>
+        </div>
       </div>
       </div>
 

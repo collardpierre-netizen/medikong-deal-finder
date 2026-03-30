@@ -59,6 +59,13 @@ const AdminMarques = () => {
         <KpiCard icon={Package} label="Produits total" value={fmt(brandsData.reduce((a, b) => a + (b.product_count || 0), 0))} iconColor="#059669" iconBg="#ECFDF5" />
       </div>
 
+      <div className="flex gap-3 mb-4">
+        <div className="relative flex-1 max-w-xs">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8B95A5]" />
+          <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Rechercher une marque..." className="pl-9 h-9 text-[12px]" />
+        </div>
+      </div>
+
       <div className="flex gap-4">
         <div className={`bg-white rounded-lg border overflow-hidden ${selectedBrand ? "flex-1" : "w-full"}`} style={{ borderColor: "#E2E8F0" }}>
           {loadingBrands ? <div className="py-12 text-center text-[13px]" style={{ color: "#8B95A5" }}>Chargement...</div> : (

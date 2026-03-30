@@ -209,6 +209,12 @@ async function syncCountryStream(sb: any, country: string, vat: number, logId: s
   // Link brand_id / category_id on products missing them
   await linkBrandsAndCategories(sb, country, logId);
 
+  // Update product counts on brands
+  await sb.from("sync_logs").update({
+    progress_message: `${country}: mise à jour compteurs...`,
+  }).eq("id", logId);
+  await sb.rpc("update_brand_product_counts");
+
   await sb.from("countries").update({ last_sync_at: new Date().toISOString() } as any).eq("code", country);
 
   await sb.from("sync_logs").update({

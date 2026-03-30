@@ -158,7 +158,149 @@ function OfferRow({
   );
 }
 
-/* ── Main Page ─────────────────────────────────────────── */
+/* ── Watch List Dialog ─────────────────────────────────── */
+function WatchListDialog({ product, user, bestPrice, isTVAC }: { product: any; user: any; bestPrice: number; isTVAC: boolean }) {
+  const [open, setOpen] = useState(false);
+  const [targetPrice, setTargetPrice] = useState("");
+  const [minQty, setMinQty] = useState("1");
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+
+  const { data: existingAlert } = useQuery({
+    queryKey: ["product-alert", product?.id, user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("product_alerts")
+        .select("*")
+        .eq("product_id", product.id)
+        .eq("user_id", user.id)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!product?.id && !!user?.id,
+  });
+
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      const tp = parseFloat(targetPrice.replace(",", ".")) || null;
+      const mq = parseInt(minQty) || 1;
+      const { error } = await supabase.from("product_alerts").upsert({
+        user_id: user.id,
+        product_id: product.id,
+        target_price: tp,
+        min_quantity: mq,
+        is_active: true,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "user_id,product_id" });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["product-alert", product.id] });
+      toast.success("Alerte de prix creee !");
+      setOpen(false);
+    },
+    onError: () => toast.error("Erreur lors de la creation de l'alerte"),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("product_alerts").delete().eq("product_id", product.id).eq("user_id", user.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["product-alert", product.id] });
+      toast.success("Alerte supprimee");
+      setOpen(false);
+    },
+  });
+
+  const handleOpen = () => {
+    if (!user) {
+      toast.error("Connectez-vous pour creer une alerte", {
+        action: { label: "Se connecter", onClick: () => navigate("/connexion") },
+      });
+      return;
+    }
+    if (existingAlert) {
+      setTargetPrice(existingAlert.target_price?.toString() || "");
+      setMinQty(existingAlert.min_quantity?.toString() || "1");
+    }
+    setOpen(true);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <button
+        onClick={handleOpen}
+        className={`inline-flex items-center gap-2 text-sm transition-colors ${existingAlert ? "text-primary font-medium" : "text-muted-foreground hover:text-primary"}`}
+      >
+        <Bell size={16} className={existingAlert ? "fill-current" : ""} />
+        {existingAlert ? "Alerte active" : "Creer une alerte de prix"}
+      </button>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Alerte de prix</DialogTitle>
+        </DialogHeader>
+        <div className="flex items-center gap-4 mb-4">
+          {product.imageUrls?.[0] ? (
+            <img src={product.imageUrls[0]} alt="" className="w-16 h-16 object-contain rounded border border-border" />
+          ) : (
+            <div className="w-16 h-16 bg-muted rounded flex items-center justify-center"><Package size={24} className="text-muted-foreground" /></div>
+          )}
+          <div className="min-w-0">
+            <p className="font-medium text-sm text-foreground line-clamp-2">{product.name}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Prix actuel : {formatEur(bestPrice)} € {isTVAC ? "TVAC" : "HTVA"}</p>
+          </div>
+        </div>
+        <p className="text-sm text-muted-foreground mb-4">Recevez une notification quand une offre correspond a vos criteres.</p>
+        <div className="space-y-4">
+          <div>
+            <label className="text-sm font-medium text-foreground block mb-1">Prix cible (EUR)</label>
+            <Input
+              type="text"
+              placeholder="Prix maximum"
+              value={targetPrice}
+              onChange={(e) => setTargetPrice(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground mt-1">Le prix maximum que vous etes pret a payer.</p>
+          </div>
+          <div>
+            <label className="text-sm font-medium text-foreground block mb-1">Quantite minimum</label>
+            <Input
+              type="number"
+              min="1"
+              value={minQty}
+              onChange={(e) => setMinQty(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground mt-1">La quantite minimale requise pour etre notifie.</p>
+          </div>
+        </div>
+        <p className="text-xs text-muted-foreground mt-4">
+          Vous recevrez un email quand une offre atteint votre prix cible et quantite minimum.
+        </p>
+        <div className="flex gap-2 mt-4">
+          <button
+            onClick={() => saveMutation.mutate()}
+            disabled={saveMutation.isPending}
+            className="flex-1 bg-primary text-primary-foreground py-2.5 rounded-md font-medium text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
+          >
+            {existingAlert ? "Mettre a jour" : "Confirmer l'alerte"}
+          </button>
+          {existingAlert && (
+            <button
+              onClick={() => deleteMutation.mutate()}
+              disabled={deleteMutation.isPending}
+              className="px-4 py-2.5 border border-destructive text-destructive rounded-md text-sm font-medium hover:bg-destructive/10 transition-colors"
+            >
+              Supprimer
+            </button>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function ProductPage() {
   const [selectedImageIdx, setSelectedImageIdx] = useState(0);
   const [copied, setCopied] = useState(false);

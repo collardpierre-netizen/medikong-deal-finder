@@ -32,10 +32,11 @@ export function BrandFormDialog({ open, onOpenChange, brand, manufacturers }: Br
 
   const [form, setForm] = useState({
     name: "", slug: "", country: "BE", website: "", description: "",
-    manufacturer_id: "", is_featured: false,
+    manufacturer_id: "", is_featured: false, logo_url: "",
     name_fr: "", name_nl: "", name_de: "",
     desc_fr: "", desc_nl: "", desc_de: "",
   });
+  const [translating, setTranslating] = useState(false);
 
   useEffect(() => {
     if (!open) return;

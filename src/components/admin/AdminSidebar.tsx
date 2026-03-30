@@ -33,6 +33,7 @@ const sections: NavSection[] = [
       { labelKey: "manufacturers", path: "/admin/fabricants", icon: Factory },
       { labelKey: "pimSchemas", path: "/admin/schemas-pim", icon: SlidersHorizontal },
       { labelKey: "prixReference", path: "/admin/prix-reference", icon: Eye },
+      { labelKey: "productPrices", path: "/admin/product-prices", icon: Tag },
       { labelKey: "orders", path: "/admin/commandes", icon: ShoppingCart },
       { labelKey: "disputes", path: "/admin/litiges", icon: AlertCircle },
       { labelKey: "finances", path: "/admin/finances", icon: DollarSign },

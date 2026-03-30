@@ -108,6 +108,7 @@ const AdminMarques = lazy(() => import("./pages/admin/AdminMarques"));
 const AdminCRM = lazy(() => import("./pages/admin/AdminCRM"));
 const AdminCMS = lazy(() => import("./pages/admin/AdminCMS"));
 const AdminPrixReference = lazy(() => import("./pages/admin/AdminPrixReference"));
+const AdminProductPrices = lazy(() => import("./pages/admin/AdminProductPrices"));
 const AdminInvestPipeline = lazy(() => import("./pages/admin/AdminInvestPipeline"));
 const AdminLogistique = lazy(() => import("./pages/admin/AdminLogistique"));
 const AdminEquipe = lazy(() => import("./pages/admin/AdminEquipe"));
@@ -262,6 +263,7 @@ const App = () => (
               <Route path="crm" element={<LP><AdminCRM /></LP>} />
               <Route path="cms" element={<LP><AdminCMS /></LP>} />
               <Route path="prix-reference" element={<LP><AdminPrixReference /></LP>} />
+              <Route path="product-prices" element={<LP><AdminProductPrices /></LP>} />
               <Route path="invest-pipeline" element={<LP><AdminInvestPipeline /></LP>} />
               <Route path="logistique" element={<LP><AdminLogistique /></LP>} />
               <Route path="equipe" element={<LP><AdminEquipe /></LP>} />

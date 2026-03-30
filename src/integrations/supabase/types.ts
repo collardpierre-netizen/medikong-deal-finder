@@ -1254,6 +1254,39 @@ export type Database = {
           },
         ]
       }
+      price_levels: {
+        Row: {
+          code: string
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          label_en: string | null
+          label_fr: string
+          sort_order: number | null
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          label_en?: string | null
+          label_fr: string
+          sort_order?: number | null
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          label_en?: string | null
+          label_fr?: string
+          sort_order?: number | null
+        }
+        Relationships: []
+      }
       product_alerts: {
         Row: {
           created_at: string | null
@@ -1339,6 +1372,57 @@ export type Database = {
           },
           {
             foreignKeyName: "product_country_stats_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_prices: {
+        Row: {
+          created_at: string | null
+          currency: string | null
+          id: string
+          price: number
+          price_level_id: string | null
+          product_id: string | null
+          source: string | null
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          currency?: string | null
+          id?: string
+          price: number
+          price_level_id?: string | null
+          product_id?: string | null
+          source?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          currency?: string | null
+          id?: string
+          price?: number
+          price_level_id?: string | null
+          product_id?: string | null
+          source?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_prices_price_level_id_fkey"
+            columns: ["price_level_id"]
+            isOneToOne: false
+            referencedRelation: "price_levels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_prices_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
@@ -1500,6 +1584,7 @@ export type Database = {
           full_name: string | null
           id: string
           phone: string | null
+          price_level_code: string | null
           sector: string | null
           updated_at: string
           user_id: string
@@ -1513,6 +1598,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           phone?: string | null
+          price_level_code?: string | null
           sector?: string | null
           updated_at?: string
           user_id: string
@@ -1526,6 +1612,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           phone?: string | null
+          price_level_code?: string | null
           sector?: string | null
           updated_at?: string
           user_id?: string

@@ -18,6 +18,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCountry } from "@/contexts/CountryContext";
 import { usePriceDisplay } from "@/contexts/PriceDisplayContext";
+import { useProductPrice } from "@/hooks/useProductPriceLevel";
 import { Helmet } from "react-helmet-async";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -466,6 +467,12 @@ export default function ProductPage() {
     }
   }, [savedUserPrice]);
 
+  // Multi-level pricing (must be before early returns)
+  const { levelCode, levelLabel, allPrices, hasCustomPrice } = useProductPrice(
+    product?.id,
+    product ? ((product as any).best_price_excl_vat ?? null) : null
+  );
+
   if (isLoading) {
     return (
       <Layout>
@@ -653,7 +660,14 @@ export default function ProductPage() {
               </div>
 
               {/* Tax note */}
-              <p className="text-xs text-muted-foreground mb-4">Prix soumis a TVA selon votre pays.</p>
+              <p className="text-xs text-muted-foreground mb-2">Prix soumis a TVA selon votre pays.</p>
+
+              {/* Price level badge */}
+              {user && (
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold bg-amber-50 text-amber-700 px-3 py-1.5 rounded-full border border-amber-200 mb-4">
+                  <Tag size={12} /> {levelLabel}
+                </span>
+              )}
 
               {/* Badges */}
               <div className="flex items-center gap-2 flex-wrap mb-6">
@@ -868,7 +882,32 @@ export default function ProductPage() {
                 </div>
               </div>
 
-              {/* ── Guarantee Accordion ── */}
+              {/* ── Price Level Comparison ── */}
+              {user && allPrices.length > 1 && (
+                <div className="mb-8">
+                  <h2 className="text-lg font-bold text-foreground mb-3">Comparaison des prix par profil</h2>
+                  <div className="border border-border rounded-xl overflow-hidden">
+                    {allPrices.map((p: any, i: number) => {
+                      const plCode = (p as any).price_levels?.code;
+                      const plLabel = (p as any).price_levels?.label_fr || plCode;
+                      const isUserLevel = plCode === levelCode;
+                      return (
+                        <div
+                          key={p.price_level_id}
+                          className={`flex justify-between py-3 px-4 text-sm ${isUserLevel ? "bg-primary/5 border-l-4 border-primary" : i % 2 === 0 ? "bg-muted/50" : ""}`}
+                        >
+                          <span className={isUserLevel ? "text-primary font-bold" : "text-muted-foreground"}>
+                            {plLabel} {isUserLevel && "(votre profil)"}
+                          </span>
+                          <span className={`font-bold ${isUserLevel ? "text-primary" : "text-foreground"}`}>
+                            {Number(p.price).toLocaleString("fr-FR", { minimumFractionDigits: 2 })} €
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
               <div className="mb-8">
                 <Accordion type="single" collapsible>
                   <AccordionItem value="guarantee" className="border border-border rounded-xl px-4">

@@ -366,7 +366,11 @@ function ManufacturerFormDialog({ open, onOpenChange, item, onSave, saving }: { 
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div><Label className="text-xs">Année de fondation</Label><Input type="number" value={form.year_founded || ""} onChange={e => setForm({ ...form, year_founded: e.target.value })} /></div>
-            <div><Label className="text-xs">Logo URL</Label><Input value={form.logo_url || ""} onChange={e => setForm({ ...form, logo_url: e.target.value })} placeholder="https://" /></div>
+            <div>
+              <Label className="text-xs">Logo URL</Label>
+              <Input value={form.logo_url || ""} onChange={e => setForm({ ...form, logo_url: e.target.value })} placeholder="https://" />
+              {form.logo_url && <img src={form.logo_url} alt="Preview" className="mt-1 w-10 h-10 rounded object-contain border" style={{ borderColor: "#E2E8F0" }} />}
+            </div>
           </div>
           <div><Label className="text-xs">Site web</Label><Input value={form.website_url || ""} onChange={e => setForm({ ...form, website_url: e.target.value })} placeholder="https://" /></div>
           <div><Label className="text-xs">Description</Label><Textarea rows={3} value={form.description || ""} onChange={e => setForm({ ...form, description: e.target.value })} /></div>

@@ -47,7 +47,7 @@ export function Navbar() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (query.trim()) navigate(`/recherche?q=${encodeURIComponent(query)}`);
+    if (query.trim()) navigate(`/catalogue?q=${encodeURIComponent(query)}`);
   };
 
   const handleSignOut = async () => {

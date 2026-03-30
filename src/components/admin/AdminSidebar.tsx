@@ -39,6 +39,7 @@ const sections: NavSection[] = [
       { labelKey: "finances", path: "/admin/finances", icon: DollarSign },
       { labelKey: "commissions", path: "/admin/commissions", icon: Percent },
       { labelKey: "syncQogita", path: "/admin/sync", icon: RefreshCw },
+      { labelKey: "marketCodes", path: "/admin/market-codes", icon: Hash },
     ],
   },
   {

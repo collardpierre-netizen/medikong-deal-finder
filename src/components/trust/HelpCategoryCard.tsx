@@ -3,7 +3,7 @@ import { ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { HelpCategoryData } from "@/data/trust-process-data";
 
-export function HelpCategoryCard({ icon: Icon, title, description, articleCount, articles }: HelpCategoryData) {
+export function HelpCategoryCard({ icon: Icon, title, description, articleCount, articles, categoryKey }: HelpCategoryData & { categoryKey?: string }) {
   const { t } = useTranslation();
 
   return (

@@ -5,7 +5,7 @@ import KpiCard from "@/components/admin/KpiCard";
 import StatusBadge from "@/components/admin/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/contexts/I18nContext";
-import { useProducts as useAdminProducts, useOffers as useOffersDirectAdmin, useBrands } from "@/hooks/useAdminData";
+import { useProducts as useAdminProducts, useOffers as useOffersDirectAdmin, useBrands, useManufacturers } from "@/hooks/useAdminData";
 import { ProductFormDialog } from "@/components/admin/ProductFormDialog";
 import { exportProducts, importProducts } from "@/lib/xlsx-utils";
 import { useQueryClient } from "@tanstack/react-query";
@@ -19,6 +19,7 @@ const AdminProduits = () => {
   const { data: products = [], isLoading: loadingProducts } = useAdminProducts();
   const { data: offers = [], isLoading: loadingOffers } = useOffersDirectAdmin();
   const { data: brands = [] } = useBrands();
+  const { data: manufacturers = [] } = useManufacturers();
   const [activeTab, setActiveTab] = useState<"catalog" | "offers">("catalog");
   const [search, setSearch] = useState("");
   const [productDialogOpen, setProductDialogOpen] = useState(false);
@@ -175,7 +176,7 @@ const AdminProduits = () => {
         </div>
       )}
 
-      <ProductFormDialog open={productDialogOpen} onOpenChange={setProductDialogOpen} product={editProduct} brands={brands} manufacturers={[]} />
+      <ProductFormDialog open={productDialogOpen} onOpenChange={setProductDialogOpen} product={editProduct} brands={brands} manufacturers={manufacturers} />
     </div>
   );
 };

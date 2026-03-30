@@ -25,7 +25,7 @@ export default function CataloguePage() {
   return (
     <Layout>
       <div className="mk-container py-4">
-        <Breadcrumbs items={breadcrumbs} />
+        <Breadcrumbs />
 
         <div className="flex items-center justify-between mb-4 mt-2">
           <div>

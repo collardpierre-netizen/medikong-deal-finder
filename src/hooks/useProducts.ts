@@ -125,14 +125,16 @@ export interface Offer {
 }
 
 export function useProductOffers(productId: string | undefined) {
+  const { country } = useCountry();
   return useQuery({
-    queryKey: ["offers", productId],
+    queryKey: ["offers", productId, country],
     queryFn: async () => {
       const { data: offers, error } = await supabase
         .from("offers")
         .select("*")
         .eq("product_id", productId!)
         .eq("is_active", true)
+        .eq("country_code", country)
         .order("price_excl_vat", { ascending: true });
       if (error) throw error;
 

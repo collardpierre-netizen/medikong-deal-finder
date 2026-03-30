@@ -54,6 +54,7 @@ const VendorPublicPage = lazy(() => import("./pages/VendorPublicPage"));
 const ProfessionnelsPage = lazy(() => import("./pages/ProfessionnelsPage"));
 const SourcingPage = lazy(() => import("./pages/SourcingPage"));
 const CategoriesPage = lazy(() => import("./pages/CategoriesPage"));
+const MyPricesPage = lazy(() => import("./pages/MyPricesPage"));
 
 // Entreprise pages
 const AboutPage = lazy(() => import("./pages/entreprise/AboutPage"));

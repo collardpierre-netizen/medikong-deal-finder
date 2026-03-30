@@ -41,8 +41,8 @@ export default function HomePage() {
     queryKey: ["homepage-stats", country],
     queryFn: async () => {
       const [productsRes, offersRes, vendorsRes] = await Promise.all([
-        supabase.from("product_country_stats").select("product_id", { count: "exact", head: true }).eq("country_code", country).gt("offer_count", 0),
-        supabase.from("offers").select("vendor_id", { count: "exact", head: true }).eq("country_code", country).eq("is_active", true),
+        supabase.from("products").select("id", { count: "exact", head: true }).eq("is_active", true),
+        supabase.from("offers").select("id", { count: "exact", head: true }).eq("country_code", country).eq("is_active", true),
         supabase.from("offers").select("vendor_id").eq("country_code", country).eq("is_active", true),
       ]);
       const uniqueVendors = new Set((vendorsRes.data || []).map((o: any) => o.vendor_id)).size;

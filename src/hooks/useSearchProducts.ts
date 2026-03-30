@@ -16,8 +16,8 @@ function mapSearchResult(row: any, offersData?: any[]): Product {
   return {
     id: row.id,
     slug: row.slug || slugify(row.name || ""),
-    name: row.name || row.product_name || "",
-    brand: "",
+    name: row.name || "",
+    brand: row.brand_name || "",
     gtin: row.gtin || "",
     cnk: row.cnk_code || "",
     ean: row.gtin || "",
@@ -28,14 +28,14 @@ function mapSearchResult(row: any, offersData?: any[]): Product {
     rating: 0,
     reviews: 0,
     best: productOffers.length > 0 ? "Meilleur prix" : "",
-    unit: "unité",
+    unit: row.unit_quantity > 1 ? `${row.unit_quantity} unités` : "unité",
     stock: row.is_in_stock || productOffers.some((o: any) => o.stock_quantity > 0),
     mk: productOffers.length > 0,
-    category: undefined,
+    category: row.category_name || undefined,
     color: ["blue", "teal", "green", "amber", "rose", "purple", "orange", "cyan"][(row.name || "").length % 8],
     iconName: "Package",
-    imageUrl: row.image_urls?.[0] || row.primary_image_url || undefined,
-    descriptionShort: row.short_description || row.description_short || undefined,
+    imageUrl: row.image_urls?.[0] || undefined,
+    descriptionShort: row.short_description || row.description || undefined,
   };
 }
 

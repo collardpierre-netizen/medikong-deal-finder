@@ -52,7 +52,7 @@ Deno.serve(async (req) => {
     for (let i = 0; i < brandsData.length; i += 500) {
       const chunk = brandsData.slice(i, i + 500);
       const { error } = await supabase.from("brands").upsert(chunk, {
-        onConflict: "qogita_qid",
+        onConflict: "slug",
         ignoreDuplicates: false,
       });
       if (error) throw error;

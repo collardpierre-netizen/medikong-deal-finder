@@ -180,7 +180,7 @@ const AdminCategories = () => {
       <div className="grid grid-cols-4 gap-4 mb-6">
         <KpiCard icon={Layers} label="Catégories parentes" value={String(totalParents)} iconColor="#1B5BDA" iconBg="#EFF6FF" />
         <KpiCard icon={Tag} label="Sous-catégories" value={String(totalSubs)} iconColor="#7C3AED" iconBg="#F3F0FF" />
-        <KpiCard icon={Package} label="Total" value={String(categoriesData.length)} iconColor="#059669" iconBg="#ECFDF5" />
+        <KpiCard icon={Package} label="Total" value={totalCategoryCount.toLocaleString("fr-BE")} iconColor="#059669" iconBg="#ECFDF5" />
         <KpiCard icon={Languages} label="Traductions" value={String(translations.length)} iconColor="#D97706" iconBg="#FFFBEB" />
       </div>
 

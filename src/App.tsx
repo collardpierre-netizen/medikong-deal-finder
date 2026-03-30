@@ -72,6 +72,7 @@ const ContactPage = lazy(() => import("./pages/trust/ContactPage"));
 const HelpCenterPage = lazy(() => import("./pages/trust/HelpCenterPage"));
 const HelpArticlePage = lazy(() => import("./pages/trust/HelpArticlePage"));
 const HelpCategoryPage = lazy(() => import("./pages/trust/HelpCategoryPage"));
+const UnsubscribePage = lazy(() => import("./pages/UnsubscribePage"));
 
 // Legal pages
 const LegalNoticePage = lazy(() => import("./pages/legal/LegalNoticePage"));
@@ -222,6 +223,7 @@ const App = () => (
             <Route path="/cgv" element={<LP><TermsPage /></LP>} />
             <Route path="/politique-confidentialite" element={<LP><PrivacyPage /></LP>} />
             <Route path="/cookies" element={<LP><CookiePolicyPage /></LP>} />
+            <Route path="/unsubscribe" element={<LP><UnsubscribePage /></LP>} />
 
             <Route path="/admin/login" element={<LP><AdminLoginPage /></LP>} />
 

@@ -7,6 +7,7 @@ import { PageTransition } from "@/components/shared/PageTransition";
 import { useCart } from "@/hooks/useCart";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCreateOrder } from "@/hooks/useOrders";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ShoppingCart, Loader2 } from "lucide-react";
 
@@ -76,6 +77,27 @@ export default function CheckoutPage() {
         total,
       });
       clearCart.mutate();
+
+      // Send order confirmation email
+      try {
+        await supabase.functions.invoke("send-transactional-email", {
+          body: {
+            templateName: "order-confirmation",
+            recipientEmail: user!.email,
+            idempotencyKey: `order-confirm-${order.id}`,
+            templateData: {
+              orderNumber: order.order_number,
+              total: `${formatPrice(total)} EUR`,
+              itemCount: items.length,
+              shippingAddress: addresses[selectedAddr].addr,
+              paymentMethod: paymentMethods[payment],
+            },
+          },
+        });
+      } catch (emailErr) {
+        console.warn("Email confirmation failed:", emailErr);
+      }
+
       navigate(`/confirmation?order=${order.order_number}`);
     } catch (e: any) {
       toast.error("Erreur lors de la commande: " + (e.message || "Réessayez"));

@@ -350,6 +350,12 @@ const AdminCMS = () => {
                   <div className="flex-1 min-w-0">
                     <p className="text-[12px] font-medium truncate" style={{ color: "#1D2530" }}>{img.alt_text || "Sans description"}</p>
                     <p className="text-[10px] truncate" style={{ color: "#8B95A5" }}>{img.image_url}</p>
+                    {(img.link_url || img.cta_text) && (
+                      <p className="text-[10px] mt-0.5" style={{ color: "#1B5BDA" }}>
+                        {img.cta_text && <span className="font-medium">[{img.cta_text}]</span>}
+                        {img.link_url && <span className="ml-1">→ {img.link_url}</span>}
+                      </p>
+                    )}
                   </div>
                   <span className="text-[11px] font-bold" style={{ color: "#8B95A5" }}>#{img.sort_order}</span>
                   <button onClick={() => toggleImage.mutate({ id: img.id, is_active: !img.is_active })} className="flex items-center gap-1.5">

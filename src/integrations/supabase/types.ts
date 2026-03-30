@@ -1983,6 +1983,9 @@ export type Database = {
           read_ct: number
         }[]
       }
+      resolve_product_brands: { Args: never; Returns: undefined }
+      resolve_product_categories: { Args: never; Returns: undefined }
+      update_brand_product_counts: { Args: never; Returns: undefined }
     }
     Enums: {
       admin_role:

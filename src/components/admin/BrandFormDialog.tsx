@@ -35,6 +35,7 @@ export function BrandFormDialog({ open, onOpenChange, brand, manufacturers }: Br
   });
 
   useEffect(() => {
+    if (!open) return;
     if (brand) {
       const getTr = (locale: string, field: string) =>
         brandTranslations.find(t => t.locale === locale && t.field === field)?.value || "";
@@ -50,7 +51,8 @@ export function BrandFormDialog({ open, onOpenChange, brand, manufacturers }: Br
     } else {
       setForm({ name: "", slug: "", country: "BE", website: "", description: "", manufacturer_id: "", is_featured: false, name_fr: "", name_nl: "", name_de: "", desc_fr: "", desc_nl: "", desc_de: "" });
     }
-  }, [brand, open, brandTranslations]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, brand?.id]);
 
   const slugify = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 

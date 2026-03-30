@@ -160,10 +160,11 @@ export function useProductOffers(productId: string | undefined) {
           shipFromCountry: o.shipping_from_country || 'BE',
           priceTiers: o.price_tiers || null,
           isActive: o.is_active,
-          sellerName: vendor?.name || `Vendor-${o.vendor_id.slice(0, 6)}`,
+          sellerName: vendor?.display_code || vendor?.name?.slice(0, 6)?.toUpperCase() || o.vendor_id.slice(0, 6).toUpperCase(),
           sellerSlug: vendor?.slug || undefined,
           isVerified: vendor?.is_verified || false,
           isTopRated: (vendor?.rating || 0) >= 4.5,
+          displayCode: vendor?.display_code || o.vendor_id.slice(0, 6).toUpperCase(),
         };
       });
     },

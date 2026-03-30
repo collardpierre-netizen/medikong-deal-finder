@@ -110,34 +110,33 @@ export function useCatalogProducts(filters: CatalogFilters) {
   return useQuery({
     queryKey: ["catalog-products", filters, country],
     queryFn: async () => {
+      // Resolve filter IDs in parallel to avoid sequential waits
+      const [categoryIds, brandIds, mfIds] = await Promise.all([
+        filters.category
+          ? supabase.from("categories").select("id").eq("slug", filters.category).maybeSingle().then(({ data: cat }) => {
+              if (!cat) return null;
+              return supabase.from("categories").select("id").eq("parent_id", cat.id).then(({ data: children }) =>
+                [cat.id, ...(children || []).map(c => c.id)]
+              );
+            })
+          : Promise.resolve(null),
+        filters.brands && filters.brands.length > 0
+          ? supabase.from("brands").select("id").in("slug", filters.brands).then(({ data }) => data?.map(b => b.id) || null)
+          : Promise.resolve(null),
+        filters.manufacturers && filters.manufacturers.length > 0
+          ? supabase.from("manufacturers").select("id").in("slug", filters.manufacturers).then(({ data }) => data?.map(m => m.id) || null)
+          : Promise.resolve(null),
+      ]);
+
+      // Use estimated count instead of exact count for performance on 74k+ rows
       let query = supabase
         .from("products")
-        .select("id, slug, name, brand_name, brand_id, category_id, category_name, gtin, cnk_code, image_urls, short_description, is_promotion, promotion_label, best_price_excl_vat, best_price_incl_vat, offer_count, total_stock, is_in_stock, created_at", { count: "exact" })
+        .select("id, slug, name, brand_name, brand_id, category_id, category_name, gtin, cnk_code, image_urls, short_description, is_promotion, promotion_label, best_price_excl_vat, best_price_incl_vat, offer_count, total_stock, is_in_stock, created_at", { count: "estimated" })
         .eq("is_active", true);
 
-      if (filters.category) {
-        // Get category and its children
-        const { data: cat } = await supabase.from("categories").select("id").eq("slug", filters.category).maybeSingle();
-        if (cat) {
-          const { data: children } = await supabase.from("categories").select("id").eq("parent_id", cat.id);
-          const ids = [cat.id, ...(children || []).map(c => c.id)];
-          query = query.in("category_id", ids);
-        }
-      }
-
-      if (filters.brands && filters.brands.length > 0) {
-        const { data: brandRows } = await supabase.from("brands").select("id").in("slug", filters.brands);
-        if (brandRows && brandRows.length > 0) {
-          query = query.in("brand_id", brandRows.map(b => b.id));
-        }
-      }
-
-      if (filters.manufacturers && filters.manufacturers.length > 0) {
-        const { data: mfRows } = await supabase.from("manufacturers").select("id").in("slug", filters.manufacturers);
-        if (mfRows && mfRows.length > 0) {
-          query = query.in("manufacturer_id", mfRows.map(m => m.id));
-        }
-      }
+      if (categoryIds) query = query.in("category_id", categoryIds);
+      if (brandIds) query = query.in("brand_id", brandIds);
+      if (mfIds) query = query.in("manufacturer_id", mfIds);
 
       if (filters.priceMin !== undefined) query = query.gte("best_price_excl_vat", filters.priceMin);
       if (filters.priceMax !== undefined) query = query.lte("best_price_excl_vat", filters.priceMax);
@@ -145,7 +144,7 @@ export function useCatalogProducts(filters: CatalogFilters) {
 
       if (filters.search) {
         const pattern = `%${filters.search}%`;
-        query = query.or(`name.ilike.${pattern},gtin.ilike.${pattern},cnk_code.ilike.${pattern},brand_name.ilike.${pattern},category_name.ilike.${pattern}`);
+        query = query.or(`name.ilike.${pattern},gtin.ilike.${pattern},cnk_code.ilike.${pattern},brand_name.ilike.${pattern}`);
       }
 
       // Sort
@@ -166,6 +165,7 @@ export function useCatalogProducts(filters: CatalogFilters) {
       if (error) throw error;
       return { products: (data || []) as CatalogProduct[], total: count || 0 };
     },
+    staleTime: 2 * 60 * 1000, // Cache 2 minutes to avoid re-fetching on tab switches
   });
 }
 

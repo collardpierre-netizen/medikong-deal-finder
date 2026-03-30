@@ -171,8 +171,9 @@ async function syncOffers(
   // Pre-load margin rules
   const { data: marginRules } = await sb.from("margin_rules").select("*").eq("is_active", true).order("priority", { ascending: false });
 
-  let stats = {
+  let stats: any = {
     country, products_enriched: 0, offers_upserted: 0, errors: 0, skipped: 0, last_offset: startOffset,
+    first_api_response_keys: null, first_offers_sample: null,
   };
   let offerBatch: any[] = [];
 

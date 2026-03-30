@@ -55,6 +55,8 @@ export default function HomePage() {
   });
 
   const countryLabel = currentCountry?.name || "Belgique";
+
+  const valueProps = [
     { icon: <TrendingDown size={22} />, title: t("valueProps.bestPrices"), desc: t("valueProps.bestPricesDesc") },
     { icon: <ShoppingCart size={22} />, title: t("valueProps.simpleOrders"), desc: t("valueProps.simpleOrdersDesc") },
     { icon: <Shield size={22} />, title: t("valueProps.guaranteed"), desc: t("valueProps.guaranteedDesc") },

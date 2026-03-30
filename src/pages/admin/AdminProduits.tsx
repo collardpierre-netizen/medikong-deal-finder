@@ -32,7 +32,7 @@ const AdminProduits = () => {
   const activeOffers = offers.filter(o => o.is_active).length;
 
   const tabs = [
-    { key: "catalog" as const, label: "Catalogue master", count: String(products.length) },
+    { key: "catalog" as const, label: "Catalogue master", count: totalProductCount.toLocaleString("fr-BE") },
     { key: "offers" as const, label: "Offres vendeurs", count: String(offers.length) },
   ];
 

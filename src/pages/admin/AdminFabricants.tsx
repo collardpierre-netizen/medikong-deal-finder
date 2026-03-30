@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import AdminTopBar from "@/components/admin/AdminTopBar";
@@ -325,9 +325,11 @@ function ManufacturerFormDialog({ open, onOpenChange, item, onSave, saving }: { 
     }
   };
 
-  // Reset form when dialog opens
-  if (open && !form.name && !item) reset();
-  if (open && item && form.id !== item.id) reset();
+  // Reset form when dialog opens or item changes
+  useEffect(() => {
+    if (open) reset();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, item?.id]);
 
   return (
     <Dialog open={open} onOpenChange={o => { onOpenChange(o); if (!o) setForm({}); }}>

@@ -497,12 +497,96 @@ export default function AdminSync() {
             onClick={async () => {
               setCreatingOffers(true);
               try {
-                const { data, error } = await supabase.rpc("create_offers_from_products" as any, { _country_code: selectedCountry } as any);
-                if (error) throw error;
-                const upserted = (data as any)?.offers_upserted ?? 0;
-                toast.success("Offres créées ✅", { description: `${upserted.toLocaleString("fr-BE")} offres générées depuis les produits` });
+                const BATCH_SIZE = 500;
+                let offset = 0;
+                let totalCreated = 0;
+                let hasMore = true;
+
+                // Find or create the virtual Qogita vendor
+                const { data: vendor, error: vendorErr } = await supabase
+                  .from("vendors")
+                  .select("id")
+                  .eq("slug", "qogita-best-price")
+                  .maybeSingle();
+                if (vendorErr) throw vendorErr;
+
+                let vendorId = vendor?.id;
+                if (!vendorId) {
+                  const { data: newVendor, error: createErr } = await supabase
+                    .from("vendors")
+                    .insert({
+                      name: "Qogita - Meilleur prix",
+                      slug: "qogita-best-price",
+                      type: "qogita_virtual" as any,
+                      is_active: true,
+                      is_verified: true,
+                      auto_forward_to_qogita: true,
+                      can_manage_offers: false,
+                      country_code: selectedCountry,
+                      commission_rate: 0,
+                      description: "Meilleur prix agrégé Qogita",
+                    })
+                    .select("id")
+                    .single();
+                  if (createErr) throw createErr;
+                  vendorId = newVendor.id;
+                }
+
+                const vatRate = 21;
+
+                while (hasMore) {
+                  const { data: products, error: fetchErr } = await supabase
+                    .from("products")
+                    .select("id, best_price_excl_vat, best_price_incl_vat, total_stock, min_delivery_days")
+                    .eq("is_active", true)
+                    .gt("best_price_excl_vat", 0)
+                    .range(offset, offset + BATCH_SIZE - 1);
+
+                  if (fetchErr) { console.error("Batch read error:", fetchErr); break; }
+                  if (!products || products.length === 0) { hasMore = false; break; }
+
+                  const offers = products.map(p => ({
+                    product_id: p.id,
+                    vendor_id: vendorId!,
+                    country_code: selectedCountry,
+                    qogita_base_price: p.best_price_excl_vat || 0,
+                    qogita_base_delay_days: p.min_delivery_days || 3,
+                    is_qogita_backed: true,
+                    price_excl_vat: p.best_price_excl_vat || 0,
+                    price_incl_vat: p.best_price_incl_vat || Math.round((p.best_price_excl_vat || 0) * (1 + vatRate / 100) * 100) / 100,
+                    vat_rate: vatRate,
+                    moq: 1,
+                    stock_quantity: p.total_stock || 0,
+                    stock_status: (p.total_stock || 0) > 0 ? "in_stock" as const : "out_of_stock" as const,
+                    delivery_days: p.min_delivery_days || 3,
+                    shipping_from_country: selectedCountry,
+                    is_active: true,
+                    synced_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                  }));
+
+                  const { error: upsertErr } = await supabase
+                    .from("offers")
+                    .upsert(offers as any, { onConflict: "product_id,vendor_id,country_code" });
+
+                  if (upsertErr) { console.error(`Batch offset ${offset}:`, upsertErr); }
+
+                  totalCreated += products.length;
+                  offset += BATCH_SIZE;
+
+                  // Update button text via state
+                  setCreatingOffers(true); // keep spinner
+                  toast.loading(`Offres : ${totalCreated.toLocaleString("fr-BE")} traitées...`, { id: "offer-progress" });
+
+                  if (products.length < BATCH_SIZE) hasMore = false;
+                  await new Promise(r => setTimeout(r, 50));
+                }
+
+                toast.dismiss("offer-progress");
+                toast.success("Offres créées ✅", { description: `${totalCreated.toLocaleString("fr-BE")} offres générées par batchs de ${BATCH_SIZE}` });
                 qc.invalidateQueries({ queryKey: ["sync-logs"] });
               } catch (err: any) {
+                toast.dismiss("offer-progress");
                 toast.error("Erreur création offres", { description: err.message });
               } finally {
                 setCreatingOffers(false);

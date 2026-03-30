@@ -588,9 +588,19 @@ export default function ProductPage() {
                         />
                       </div>
                     ) : (
-                      <div className="border border-border rounded-xl p-6 text-center text-muted-foreground mb-4">
-                        <Package size={32} className="mx-auto mb-2 opacity-50" />
-                        <p className="text-sm">Aucune offre disponible pour ce produit dans votre pays.</p>
+                      <div className="border border-border rounded-xl p-8 text-center">
+                        <Package size={40} className="mx-auto mb-3 text-muted-foreground/40" />
+                        <p className="text-muted-foreground font-medium">Ce produit est temporairement indisponible.</p>
+                        <p className="text-sm text-muted-foreground/70 mt-1">
+                          Ajoutez-le à votre liste de suivi pour être notifié de sa disponibilité.
+                        </p>
+                        <button
+                          className="mt-4 inline-flex items-center gap-2 px-4 py-2 border border-border rounded-lg text-sm font-medium text-foreground hover:bg-muted transition-colors"
+                          onClick={() => toast.info("Fonctionnalité bientôt disponible")}
+                        >
+                          <Heart size={16} />
+                          M'alerter quand disponible
+                        </button>
                       </div>
                     )}
 

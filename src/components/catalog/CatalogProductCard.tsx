@@ -1,8 +1,11 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
-import { Plus, Minus, Package } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Plus, Minus, Package, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { formatPrice } from "@/data/mock";
+import { useCart } from "@/contexts/CartContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useCountry } from "@/contexts/CountryContext";
 import type { CatalogProduct } from "@/hooks/useCatalog";
 
 interface Props {
@@ -45,8 +48,69 @@ function StockBadge({ product }: { product: CatalogProduct }) {
 
 export function CatalogProductCard({ product, index = 0, view = "grid" }: Props) {
   const [qty, setQty] = useState(1);
+  const [adding, setAdding] = useState(false);
+  const { addToCart } = useCart();
+  const { country } = useCountry();
+  const navigate = useNavigate();
   const price = product.best_price_excl_vat || 0;
   const priceIncl = product.best_price_incl_vat || 0;
+
+  const handleAddToCart = async () => {
+    // If multiple offers, open product page to let user choose
+    if (product.offer_count > 1) {
+      navigate(`/produit/${product.slug}`);
+      return;
+    }
+
+    // Single offer (or 0) — fetch the offer and add to cart
+    if (product.offer_count === 0) return;
+
+    setAdding(true);
+    try {
+      const { data: offer } = await supabase
+        .from("offers")
+        .select("id, vendor_id, price_excl_vat, price_incl_vat")
+        .eq("product_id", product.id)
+        .eq("is_active", true)
+        .eq("country_code", country)
+        .order("price_excl_vat", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+
+      if (!offer) return;
+
+      addToCart.mutate({
+        offerId: offer.id,
+        productId: product.id,
+        quantity: qty,
+        vendorId: offer.vendor_id,
+        priceExclVat: Number(offer.price_excl_vat),
+        priceInclVat: Number(offer.price_incl_vat),
+        productData: {
+          id: product.id,
+          name: product.name,
+          brand: product.brand_name || "",
+          slug: product.slug,
+          price: Number(offer.price_excl_vat),
+          imageUrl: product.image_urls?.[0] || undefined,
+        },
+      });
+    } finally {
+      setAdding(false);
+      setQty(1);
+    }
+  };
+
+  const addButton = (
+    <button
+      onClick={handleAddToCart}
+      disabled={adding || product.offer_count === 0}
+      className="flex-1 bg-primary text-primary-foreground text-xs font-semibold py-1.5 rounded-md hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-1"
+    >
+      {adding ? <Loader2 size={14} className="animate-spin" /> : null}
+      {product.offer_count > 1 ? "Voir offres" : "Ajouter"}
+    </button>
+  );
 
   if (view === "list") {
     return (
@@ -77,14 +141,14 @@ export function CatalogProductCard({ product, index = 0, view = "grid" }: Props)
           )}
           <p className="text-xs text-muted-foreground">{product.offer_count} offre{product.offer_count > 1 ? "s" : ""}</p>
           <div className="flex items-center gap-1 mt-2">
-            <div className="flex items-center border border-border rounded-md">
-              <button onClick={() => setQty(Math.max(1, qty - 1))} className="px-1.5 py-1 text-muted-foreground hover:text-foreground"><Minus size={12} /></button>
-              <span className="px-1.5 text-xs font-medium">{qty}</span>
-              <button onClick={() => setQty(qty + 1)} className="px-1.5 py-1 text-muted-foreground hover:text-foreground"><Plus size={12} /></button>
-            </div>
-            <button className="bg-primary text-primary-foreground text-xs font-semibold py-1.5 px-3 rounded-md hover:opacity-90 transition-opacity">
-              Ajouter
-            </button>
+            {product.offer_count <= 1 && (
+              <div className="flex items-center border border-border rounded-md">
+                <button onClick={() => setQty(Math.max(1, qty - 1))} className="px-1.5 py-1 text-muted-foreground hover:text-foreground"><Minus size={12} /></button>
+                <span className="px-1.5 text-xs font-medium">{qty}</span>
+                <button onClick={() => setQty(qty + 1)} className="px-1.5 py-1 text-muted-foreground hover:text-foreground"><Plus size={12} /></button>
+              </div>
+            )}
+            {addButton}
           </div>
         </div>
       </motion.div>
@@ -124,14 +188,14 @@ export function CatalogProductCard({ product, index = 0, view = "grid" }: Props)
       </div>
       <p className="text-[10px] text-muted-foreground mb-2 truncate">EAN: {product.gtin || "—"}</p>
       <div className="flex items-center gap-1.5">
-        <div className="flex items-center border border-border rounded-md">
-          <button onClick={() => setQty(Math.max(1, qty - 1))} className="px-1.5 py-1 text-muted-foreground hover:text-foreground"><Minus size={12} /></button>
-          <span className="px-1.5 text-xs font-medium min-w-[1.5rem] text-center">{qty}</span>
-          <button onClick={() => setQty(qty + 1)} className="px-1.5 py-1 text-muted-foreground hover:text-foreground"><Plus size={12} /></button>
-        </div>
-        <button className="flex-1 bg-primary text-primary-foreground text-xs font-semibold py-1.5 rounded-md hover:opacity-90 transition-opacity">
-          Ajouter
-        </button>
+        {product.offer_count <= 1 && (
+          <div className="flex items-center border border-border rounded-md">
+            <button onClick={() => setQty(Math.max(1, qty - 1))} className="px-1.5 py-1 text-muted-foreground hover:text-foreground"><Minus size={12} /></button>
+            <span className="px-1.5 text-xs font-medium min-w-[1.5rem] text-center">{qty}</span>
+            <button onClick={() => setQty(qty + 1)} className="px-1.5 py-1 text-muted-foreground hover:text-foreground"><Plus size={12} /></button>
+          </div>
+        )}
+        {addButton}
       </div>
     </motion.div>
   );

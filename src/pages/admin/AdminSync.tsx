@@ -202,6 +202,7 @@ export default function AdminSync() {
   const [testingConnection, setTestingConnection] = useState(false);
   const [meiliSyncing, setMeiliSyncing] = useState(false);
   const [resolving, setResolving] = useState(false);
+  const [creatingOffers, setCreatingOffers] = useState(false);
   const [editingLogId, setEditingLogId] = useState<string | null>(null);
 
   // Polling for running sync progress

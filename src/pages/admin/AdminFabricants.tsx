@@ -214,7 +214,16 @@ export default function AdminFabricants() {
         {selected && (
           <div className="w-[320px] bg-white rounded-lg border p-5 shrink-0" style={{ borderColor: "#E2E8F0" }}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-[16px] font-bold" style={{ color: "#1D2530" }}>{selected.name}</h3>
+              <div className="flex items-center gap-3">
+                {selected.logo_url ? (
+                  <img src={selected.logo_url} alt={selected.name} className="w-12 h-12 rounded-lg border object-contain p-1" style={{ borderColor: "#E2E8F0" }} />
+                ) : (
+                  <div className="w-12 h-12 rounded-lg border flex items-center justify-center" style={{ borderColor: "#E2E8F0", backgroundColor: "#F8FAFC" }}>
+                    <Factory size={20} className="text-[#8B95A5]" />
+                  </div>
+                )}
+                <h3 className="text-[16px] font-bold" style={{ color: "#1D2530" }}>{selected.name}</h3>
+              </div>
               <button onClick={() => setSelectedId(null)} className="text-[#8B95A5] hover:text-[#1D2530]"><X size={16} /></button>
             </div>
             <div className="space-y-2 text-[12px] mb-4">

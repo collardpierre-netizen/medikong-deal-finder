@@ -16,6 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCountry } from "@/contexts/CountryContext";
+import { usePriceDisplay } from "@/contexts/PriceDisplayContext";
 import { Helmet } from "react-helmet-async";
 
 function formatEur(n: number): string {
@@ -24,15 +25,17 @@ function formatEur(n: number): string {
 
 /* ── Offer Row ─────────────────────────────────────────── */
 function OfferRow({
-  offer, productId, productName, productSlug, user, navigate, addToCart, isBest, delay = 0,
+  offer, productId, productName, productSlug, user, navigate, addToCart, isBest, delay = 0, isTVAC = false,
 }: {
   offer: Offer; productId: string; productName: string; productSlug: string;
-  user: any; navigate: any; addToCart: any; isBest?: boolean; delay?: number;
+  user: any; navigate: any; addToCart: any; isBest?: boolean; delay?: number; isTVAC?: boolean;
 }) {
   const [qty, setQty] = useState(offer.bundleSize > 1 ? offer.bundleSize : 1);
   const tiers = (offer.priceTiers && offer.priceTiers.length > 0) ? offer.priceTiers : [];
   const hasTiers = tiers.length > 1;
   const displayCode = offer.displayCode || offer.sellerId.slice(0, 6).toUpperCase();
+  const displayPrice = isTVAC ? offer.unitPriceInclVat : offer.unitPriceEur;
+  const priceLabel = isTVAC ? "TVAC" : "HTVA";
 
   const handleAdd = () => {
     if (!user) { navigate("/connexion"); return; }
@@ -93,7 +96,7 @@ function OfferRow({
               ))}
             </div>
           ) : (
-            <span className="text-sm font-bold text-green-700">{formatEur(offer.unitPriceEur)} €</span>
+            <span className="text-sm font-bold text-green-700">{formatEur(displayPrice)} € <span className="text-[10px] font-normal text-muted-foreground">{priceLabel}</span></span>
           )}
         </div>
 
@@ -117,7 +120,7 @@ function OfferRow({
       <div className="md:hidden space-y-3">
         <div className="flex items-center justify-between">
           <span className="font-bold text-sm">{displayCode}</span>
-          <span className="text-base font-bold text-green-700">{formatEur(offer.unitPriceEur)} €</span>
+          <span className="text-base font-bold text-green-700">{formatEur(displayPrice)} € <span className="text-[10px] font-normal text-muted-foreground">{priceLabel}</span></span>
         </div>
         <div className="flex items-center gap-4 text-xs text-muted-foreground">
           {offer.movEur > 0 && <span>MOV {formatEur(offer.movEur)} €</span>}
@@ -159,6 +162,7 @@ export default function ProductPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { country } = useCountry();
+  const { isTVAC } = usePriceDisplay();
   const { data: product, isLoading } = useProduct(slug);
   const { addToCart } = useCart();
   const { data: realOffers = [] } = useProductOffers(product?.id);
@@ -547,6 +551,7 @@ export default function ProductPage() {
                           navigate={navigate}
                           addToCart={addToCart}
                           isBest
+                          isTVAC={isTVAC}
                         />
                       </div>
                     ) : (
@@ -590,6 +595,7 @@ export default function ProductPage() {
                             navigate={navigate}
                             addToCart={addToCart}
                             delay={i * 0.06}
+                            isTVAC={isTVAC}
                           />
                         ))}
                       </div>
@@ -712,13 +718,13 @@ export default function ProductPage() {
                   </div>
                 </div>
                 <div className="sm:hidden min-w-0">
-                  <p className="text-base font-bold text-green-700">{formatEur(bestOffer.unitPriceEur)} €</p>
-                  <p className="text-[10px] text-muted-foreground truncate">HT · {brandData?.name || product.brand || ""}</p>
+                  <p className="text-base font-bold text-green-700">{formatEur(isTVAC ? bestOffer.unitPriceInclVat : bestOffer.unitPriceEur)} €</p>
+                  <p className="text-[10px] text-muted-foreground truncate">{isTVAC ? "TVAC" : "HTVA"} · {brandData?.name || product.brand || ""}</p>
                 </div>
                 <div className="flex items-center gap-2 sm:gap-3 shrink-0">
                   <div className="text-right hidden sm:block">
-                    <p className="text-lg font-bold text-green-700">{formatEur(bestOffer.unitPriceEur)} €</p>
-                    <p className="text-[11px] text-muted-foreground">HT</p>
+                    <p className="text-lg font-bold text-green-700">{formatEur(isTVAC ? bestOffer.unitPriceInclVat : bestOffer.unitPriceEur)} €</p>
+                    <p className="text-[11px] text-muted-foreground">{isTVAC ? "TVAC" : "HTVA"}</p>
                   </div>
                   <div className="flex items-center border border-border rounded-md bg-background">
                     <button onClick={() => setStickyQty(Math.max(1, stickyQty - 1))} className="px-2 py-1.5 text-muted-foreground"><Minus size={14} /></button>

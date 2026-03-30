@@ -9,6 +9,7 @@ import { I18nProvider } from "@/contexts/I18nContext";
 import { CartProvider } from "@/contexts/CartContext";
 import { ImpersonationProvider } from "@/contexts/ImpersonationContext";
 import { CountryProvider } from "@/contexts/CountryContext";
+import { PriceDisplayProvider } from "@/contexts/PriceDisplayContext";
 import ImpersonationBanner from "@/components/admin/ImpersonationBanner";
 import { CookieConsent } from "@/components/layout/CookieConsent";
 import { HelmetProvider } from "react-helmet-async";
@@ -160,6 +161,7 @@ const App = () => (
       <I18nProvider>
       <CartProvider>
       <CountryProvider>
+      <PriceDisplayProvider>
       <ImpersonationProvider>
       <TooltipProvider>
         <Toaster />
@@ -298,6 +300,7 @@ const App = () => (
         </BrowserRouter>
       </TooltipProvider>
       </ImpersonationProvider>
+      </PriceDisplayProvider>
       </CountryProvider>
       </CartProvider>
       </I18nProvider>

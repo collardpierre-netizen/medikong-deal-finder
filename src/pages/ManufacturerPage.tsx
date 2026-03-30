@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ProductCard } from "@/components/shared/ProductCard";
 import { Shield, Check, Package, ExternalLink, Award, Globe, Factory, Tag } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
+
 
 const FLAG: Record<string, string> = { BE: "🇧🇪", FR: "🇫🇷", DE: "🇩🇪", NL: "🇳🇱", SE: "🇸🇪", DK: "🇩🇰", GB: "🇬🇧", US: "🇺🇸", CH: "🇨🇭", JP: "🇯🇵" };
 

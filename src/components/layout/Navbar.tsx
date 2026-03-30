@@ -69,7 +69,7 @@ export function Navbar() {
 
         <div className="hidden md:flex items-center gap-3 shrink-0 ml-auto">
           <motion.button
-            onClick={() => setIsTVAC(!isTVAC)}
+            onClick={toggleTVAC}
             className="text-white text-xs font-semibold px-3 py-1.5 rounded-md"
             style={{ background: "rgba(255,255,255,0.15)" }}
             whileHover={{ scale: 1.05 }}

@@ -157,6 +157,11 @@ export function BrandFormDialog({ open, onOpenChange, brand, manufacturers }: Br
               </Popover>
             </div>
           </div>
+          <div>
+            <Label className="text-xs">Logo URL</Label>
+            <Input value={form.logo_url} onChange={e => setForm({ ...form, logo_url: e.target.value })} placeholder="https://..." />
+            {form.logo_url && <img src={form.logo_url} alt="Logo" referrerPolicy="no-referrer" crossOrigin="anonymous" className="mt-1 w-10 h-10 rounded object-contain border border-border" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />}
+          </div>
           <div><Label className="text-xs">Site web</Label><Input value={form.website} onChange={e => setForm({ ...form, website: e.target.value })} placeholder="https://" /></div>
           <div><Label className="text-xs">Description (originale)</Label><Textarea rows={2} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} /></div>
 

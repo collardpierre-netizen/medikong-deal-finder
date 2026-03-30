@@ -61,14 +61,7 @@ const AdminCommandes = () => {
     items: 0,
   }));
 
-  // Fallback mock data if no orders in DB
-  const displayOrders = orders.length > 0 ? orders : [
-    { id: "MK-2025-00147", refPO: "PO-PHR-2025-089", buyer: "Pharmacie Centrale Bruxelles", buyerType: "Pharmacie", seller: "Valerco NV", amountHT: 1245.80, tva: 261.62, ttc: 1507.42, paymentTerms: "Net 30", dueDate: "15/04/2025", status: "confirmed" as const, date: "16/03/2025", items: 8 },
-    { id: "MK-2025-00146", refPO: "PO-MRS-2025-034", buyer: "Résidence Les Tilleuls", buyerType: "MRS", seller: "Pharmamed SRL", amountHT: 3890.50, tva: 233.43, ttc: 4123.93, paymentTerms: "Net 60", dueDate: "15/05/2025", status: "shipped" as const, date: "15/03/2025", items: 24 },
-    { id: "MK-2025-00145", refPO: "PO-HOP-2025-012", buyer: "CHU Saint-Pierre", buyerType: "Hôpital", seller: "MedDistri SA", amountHT: 12450.00, tva: 747.00, ttc: 13197.00, paymentTerms: "Net 60", dueDate: "14/05/2025", status: "pending" as const, date: "14/03/2025", items: 45 },
-    { id: "MK-2025-00144", refPO: "PO-CAB-2025-067", buyer: "Cabinet Dr. Janssens", buyerType: "Cabinet", seller: "Valerco NV", amountHT: 456.30, tva: 95.82, ttc: 552.12, paymentTerms: "Comptant", dueDate: "14/03/2025", status: "delivered" as const, date: "12/03/2025", items: 5 },
-    { id: "MK-2025-00143", refPO: "PO-INF-2025-021", buyer: "Soins Infirmiers Liège", buyerType: "Infirmier", seller: "Pharma-GDD SRL", amountHT: 234.60, tva: 49.27, ttc: 283.87, paymentTerms: "Net 30", dueDate: "10/04/2025", status: "confirmed" as const, date: "11/03/2025", items: 3 },
-  ];
+  const displayOrders = orders;
 
   const filtered = displayOrders.filter((o) => {
     if (statusFilter !== "all" && o.status !== statusFilter) return false;

@@ -2,8 +2,8 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { Search, X, Package, Tag, FolderOpen, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { federatedSearch, isMeilisearchConfigured } from "@/lib/meilisearch";
-import type { FederatedResults } from "@/lib/meilisearch";
+import { federatedSearch } from "@/lib/supabase-search";
+import type { FederatedResults } from "@/lib/supabase-search";
 
 interface InstantSearchBarProps {
   className?: string;

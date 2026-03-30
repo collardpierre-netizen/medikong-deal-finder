@@ -60,7 +60,15 @@ export default function ManufacturerPage() {
 
   return (
     <Layout>
-      <Breadcrumbs items={[{ label: "Accueil", href: "/" }, { label: "Fabricants", href: "/fabricants" }, { label: manufacturer.name }]} />
+      <div className="mk-container py-3">
+        <nav className="text-xs text-mk-sec flex items-center gap-1">
+          <Link to="/" className="hover:text-mk-blue">Accueil</Link>
+          <span>/</span>
+          <Link to="/fabricants" className="hover:text-mk-blue">Fabricants</Link>
+          <span>/</span>
+          <span className="text-mk-navy font-medium">{manufacturer.name}</span>
+        </nav>
+      </div>
 
       <div className="bg-mk-alt py-8 md:py-10">
         <div className="mk-container">

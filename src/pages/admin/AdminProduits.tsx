@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useI18n } from "@/contexts/I18nContext";
 import { useProducts as useAdminProducts, useOffers as useOffersDirectAdmin, useBrands, useManufacturers, useProductCount, useBrandCount, useActiveOfferCount } from "@/hooks/useAdminData";
 import { ProductFormDialog } from "@/components/admin/ProductFormDialog";
-import { exportProducts, importProducts } from "@/lib/xlsx-utils";
+import { exportProducts, importProducts, downloadProductTemplate } from "@/lib/xlsx-utils";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Package, Tag, ShoppingCart, AlertTriangle, Search, Filter, Download, Upload, Plus, ImageOff } from "lucide-react";

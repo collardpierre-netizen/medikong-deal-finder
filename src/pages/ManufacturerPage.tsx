@@ -73,7 +73,7 @@ export default function ManufacturerPage() {
         <div className="mk-container">
           <div className="flex flex-col sm:flex-row items-start gap-4 md:gap-6">
             {manufacturer.logo_url ? (
-              <img src={manufacturer.logo_url} alt={manufacturer.name} className="w-[80px] h-[80px] md:w-[100px] md:h-[100px] border border-mk-line bg-white rounded-lg object-contain p-2" />
+              <img src={manufacturer.logo_url} alt={manufacturer.name} referrerPolicy="no-referrer" crossOrigin="anonymous" className="w-[80px] h-[80px] md:w-[100px] md:h-[100px] border border-mk-line bg-white rounded-lg object-contain p-2" />
             ) : (
               <div className="w-[80px] h-[80px] md:w-[100px] md:h-[100px] border border-mk-line bg-white rounded-lg flex items-center justify-center">
                 <Factory size={32} className="text-mk-ter" />

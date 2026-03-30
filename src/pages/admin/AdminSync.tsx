@@ -245,11 +245,11 @@ export default function AdminSync() {
   };
 
   const syncButtons: { type: SyncType; label: string; icon: React.ElementType; desc: string }[] = [
-    { type: "categories", label: "Catégories", icon: Layers, desc: "Sync arborescence Qogita" },
-    { type: "brands", label: "Marques", icon: Tag, desc: "Sync marques Qogita" },
-    { type: "products", label: "Produits (CSV)", icon: Package, desc: "Bulk CSV tous produits" },
-    { type: "offers_detail", label: "Offres détail", icon: Store, desc: "Sync fine offre par offre" },
+    { type: "products", label: "Produits (CSV)", icon: Package, desc: "PRINCIPAL — Import CSV BE + auto-crée marques & catégories" },
+    { type: "offers_detail", label: "Offres détail", icon: Store, desc: "Enrichissement — sync offre par offre" },
     { type: "recalculate", label: "Recalculer prix", icon: RefreshCw, desc: "Recalcule toutes les marges" },
+    { type: "brands", label: "Marques", icon: Tag, desc: "Optionnel — re-sync marques depuis produits" },
+    { type: "categories", label: "Catégories", icon: Layers, desc: "Optionnel — re-sync catégories depuis produits" },
   ];
 
   const statusColor = (s: string) => {

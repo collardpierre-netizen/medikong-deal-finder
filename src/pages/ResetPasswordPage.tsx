@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, Lock, CheckCircle2 } from "lucide-react";
+import logoDark from "@/assets/Logo_horizontal_sombre2.png";
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState("");

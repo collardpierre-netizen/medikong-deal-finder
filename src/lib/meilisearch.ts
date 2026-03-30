@@ -1,13 +1,37 @@
 import { MeiliSearch } from "meilisearch";
+import { supabase } from "@/integrations/supabase/client";
 
-// These are public, read-only search keys — safe for client-side
-const MEILI_URL = import.meta.env.VITE_MEILISEARCH_URL || "";
-const MEILI_SEARCH_KEY = import.meta.env.VITE_MEILISEARCH_SEARCH_KEY || "";
+// Cache the config so we only fetch once
+let _meiliClient: MeiliSearch | null = null;
+let _configured: boolean | null = null;
+let _configPromise: Promise<{ url: string; key: string } | null> | null = null;
 
-export const meiliClient = new MeiliSearch({
-  host: MEILI_URL,
-  apiKey: MEILI_SEARCH_KEY,
-});
+async function fetchMeiliConfig(): Promise<{ url: string; key: string } | null> {
+  try {
+    const { data, error } = await supabase.functions.invoke("sync-meilisearch", {
+      body: { action: "get-search-key" },
+    });
+    if (error || !data?.url || !data?.searchKey) return null;
+    return { url: data.url, key: data.searchKey };
+  } catch {
+    return null;
+  }
+}
+
+async function getClient(): Promise<MeiliSearch | null> {
+  if (_meiliClient) return _meiliClient;
+  if (!_configPromise) {
+    _configPromise = fetchMeiliConfig();
+  }
+  const config = await _configPromise;
+  if (!config) {
+    _configured = false;
+    return null;
+  }
+  _configured = true;
+  _meiliClient = new MeiliSearch({ host: config.url, apiKey: config.key });
+  return _meiliClient;
+}
 
 export interface MeiliProduct {
   id: string;
@@ -47,25 +71,34 @@ export interface FederatedResults {
 }
 
 export async function federatedSearch(query: string): Promise<FederatedResults> {
-  if (!query.trim() || !MEILI_URL) {
-    return { products: [], brands: [], categories: [] };
+  const empty = { products: [], brands: [], categories: [] };
+  if (!query.trim()) return empty;
+
+  const client = await getClient();
+  if (!client) return empty;
+
+  try {
+    const response = await client.multiSearch({
+      queries: [
+        { indexUid: "products", q: query, limit: 6 },
+        { indexUid: "brands", q: query, limit: 3 },
+        { indexUid: "categories", q: query, limit: 3 },
+      ],
+    });
+
+    return {
+      products: (response.results[0]?.hits || []) as MeiliProduct[],
+      brands: (response.results[1]?.hits || []) as MeiliBrand[],
+      categories: (response.results[2]?.hits || []) as MeiliCategory[],
+    };
+  } catch (err) {
+    console.error("Meilisearch error:", err);
+    return empty;
   }
-
-  const response = await meiliClient.multiSearch({
-    queries: [
-      { indexUid: "products", q: query, limit: 6 },
-      { indexUid: "brands", q: query, limit: 3 },
-      { indexUid: "categories", q: query, limit: 3 },
-    ],
-  });
-
-  return {
-    products: (response.results[0]?.hits || []) as MeiliProduct[],
-    brands: (response.results[1]?.hits || []) as MeiliBrand[],
-    categories: (response.results[2]?.hits || []) as MeiliCategory[],
-  };
 }
 
-export function isMeilisearchConfigured(): boolean {
-  return !!(MEILI_URL && MEILI_SEARCH_KEY);
+export async function isMeilisearchConfigured(): Promise<boolean> {
+  if (_configured !== null) return _configured;
+  const client = await getClient();
+  return !!client;
 }

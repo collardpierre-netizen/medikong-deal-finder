@@ -5,9 +5,7 @@ const navItems = [
   { label: "Pourquoi MediKong", path: "/entreprise/pourquoi-medikong" },
   { label: "Comment ça marche", path: "/entreprise/comment-ca-marche" },
   { label: "Notre équipe", path: "/entreprise/equipe" },
-  { label: "Carrières", path: "/entreprise/carrieres" },
-  { label: "Presse", path: "/entreprise/presse" },
-  { label: "Investir", path: "/entreprise/investir" },
+  { label: "Investir", path: "/invest" },
 ];
 
 export function EntrepriseSubNav() {

@@ -47,9 +47,7 @@ export function Footer() {
             {[
               { label: t("footer.about"), to: "/entreprise/a-propos" },
               { label: t("footer.team"), to: "/entreprise/equipe" },
-              { label: t("footer.careers"), to: "/entreprise/carrieres" },
-              { label: t("footer.press"), to: "/entreprise/presse" },
-              { label: t("footer.invest"), to: "/entreprise/investir" },
+              { label: t("footer.invest"), to: "/invest" },
               { label: t("footer.contact"), to: "/contact" },
               { label: t("footer.helpCenter"), to: "/centre-aide" },
             ].map(l => (

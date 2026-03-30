@@ -359,9 +359,37 @@ export default function AdminSync() {
       {/* Sync Actions */}
       <div className="bg-white rounded-xl border p-5" style={{ borderColor: "#E2E8F0" }}>
         <h3 className="text-[15px] font-bold mb-4" style={{ color: "#1E293B" }}>Actions de synchronisation</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-          {syncButtons.map(({ type, label, icon: Icon, desc }) => {
-            const isRunning = runningSyncs.has(type);
+
+        {/* Country selector */}
+        <div className="flex items-center gap-3 mb-4 p-3 rounded-lg" style={{ backgroundColor: "#F8FAFC", borderColor: "#E2E8F0" }}>
+          <span className="text-[12px] font-semibold" style={{ color: "#616B7C" }}>Pays cible :</span>
+          <Select value={selectedCountry} onValueChange={setSelectedCountry}>
+            <SelectTrigger className="w-[200px] h-9 text-[13px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {(syncCountries || []).map((c: any) => (
+                <SelectItem key={c.code} value={c.code}>
+                  <span className="flex items-center gap-2">
+                    <span>{c.flag_emoji}</span>
+                    <span>{c.name}</span>
+                    {countryCounts?.[c.code] != null && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ backgroundColor: "#EFF6FF", color: "#2563EB" }}>
+                        {(countryCounts[c.code] || 0).toLocaleString("fr-BE")}
+                      </span>
+                    )}
+                  </span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {countryCounts?.[selectedCountry] != null && (
+            <span className="text-[11px] px-2 py-1 rounded-md font-medium" style={{ backgroundColor: "#EFF6FF", color: "#2563EB" }}>
+              {(countryCounts[selectedCountry] || 0).toLocaleString("fr-BE")} produits importés
+            </span>
+          )}
+        </div>
+
             return (
               <button
                 key={type}

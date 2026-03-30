@@ -309,6 +309,7 @@ export default function ProductPage() {
   const [showStickyBar, setShowStickyBar] = useState(false);
   const [stickyQty, setStickyQty] = useState(1);
   const offerSectionRef = useRef<HTMLDivElement>(null);
+  const queryClient = useQueryClient();
 
   const { slug } = useParams();
   const navigate = useNavigate();

@@ -5,354 +5,238 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const CHUNK_SIZE = 300;
+const CHUNK = 150; // small chunks to stay under memory
 
-async function getQogitaToken(supabaseClient: any): Promise<{ token: string; baseUrl: string }> {
-  const { data: config } = await supabaseClient.from("qogita_config").select("*").eq("id", 1).single();
-  if (!config) throw new Error("qogita_config not found");
-  if (!config.qogita_email || !config.qogita_password) throw new Error("Qogita credentials not configured");
-  const baseUrl = config.base_url || "https://api.qogita.com";
-  const authRes = await fetch(`${baseUrl}/auth/login/`, {
+async function getQogitaToken(sb: any) {
+  const { data: c } = await sb.from("qogita_config").select("*").eq("id", 1).single();
+  if (!c?.qogita_email || !c?.qogita_password) throw new Error("Qogita credentials missing");
+  const r = await fetch(`${c.base_url || "https://api.qogita.com"}/auth/login/`, {
     method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email: config.qogita_email, password: config.qogita_password }),
+    body: JSON.stringify({ email: c.qogita_email, password: c.qogita_password }),
   });
-  if (!authRes.ok) throw new Error(`Qogita auth failed (${authRes.status})`);
-  const { accessToken } = await authRes.json();
-  if (!accessToken) throw new Error("No accessToken in Qogita auth response");
-  await supabaseClient.from("qogita_config").update({ bearer_token: accessToken }).eq("id", 1);
-  return { token: accessToken, baseUrl };
+  if (!r.ok) throw new Error(`Auth failed (${r.status})`);
+  const { accessToken } = await r.json();
+  if (!accessToken) throw new Error("No accessToken");
+  await sb.from("qogita_config").update({ bearer_token: accessToken }).eq("id", 1);
+  return { token: accessToken, baseUrl: c.base_url || "https://api.qogita.com" };
 }
 
-function slugify(t: string): string {
+function slug(t: string) {
   return t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 }
 
-function extractQid(url: string): string | null {
-  const m = url?.match(/\/products\/([a-f0-9]+)\//);
-  return m ? m[1] : null;
+function qid(url: string) { const m = url?.match(/\/products\/([a-f0-9]+)\//); return m?.[1] || null; }
+
+/** Parse CSV headers only, return {headers, lines} where lines is array of raw strings */
+function splitCSV(text: string): { headers: string[]; lines: string[] } {
+  const nl = text.indexOf("\n");
+  if (nl === -1) return { headers: [], lines: [] };
+  const headers = text.substring(0, nl).split(",").map(h => h.trim().replace(/^"|"$/g, ""));
+  const rest = text.substring(nl + 1);
+  const lines = rest.split("\n").filter(l => l.trim());
+  return { headers, lines };
 }
 
-function parseCSVStream(text: string): any[] {
-  const nlIdx = text.indexOf("\n");
-  if (nlIdx === -1) return [];
-  const headerLine = text.substring(0, nlIdx);
-  const headers = headerLine.split(",").map(h => h.trim().replace(/^"|"$/g, ""));
-  const rows: any[] = [];
-  let pos = nlIdx + 1;
-  while (pos < text.length) {
-    const lineEnd = text.indexOf("\n", pos);
-    const line = lineEnd === -1 ? text.substring(pos) : text.substring(pos, lineEnd);
-    pos = lineEnd === -1 ? text.length : lineEnd + 1;
-    if (!line.trim()) continue;
-    const values: string[] = [];
-    let current = "", inQ = false;
-    for (let c = 0; c < line.length; c++) {
-      const ch = line[c];
-      if (ch === '"') { inQ = !inQ; continue; }
-      if (ch === "," && !inQ) { values.push(current.trim()); current = ""; continue; }
-      current += ch;
-    }
-    values.push(current.trim());
-    const obj: any = {};
-    for (let i = 0; i < headers.length; i++) obj[headers[i]] = values[i] || "";
-    rows.push(obj);
+function parseLine(line: string, headers: string[]): Record<string, string> {
+  const values: string[] = [];
+  let cur = "", inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') { inQ = !inQ; continue; }
+    if (ch === "," && !inQ) { values.push(cur.trim()); cur = ""; continue; }
+    cur += ch;
   }
-  return rows;
+  values.push(cur.trim());
+  const obj: Record<string, string> = {};
+  for (let i = 0; i < headers.length; i++) obj[headers[i]] = values[i] || "";
+  return obj;
 }
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
-  const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+  const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
-  let requestedCountries: string[] | null = null;
-  let singleCountryMode = false;
+  let reqCountries: string[] | null = null;
+  let single = false;
   try {
-    const body = await req.json();
-    if (body?.countries && Array.isArray(body.countries)) requestedCountries = body.countries;
-    if (body?.country) { requestedCountries = [body.country]; singleCountryMode = true; }
-  } catch { /* no body */ }
+    const b = await req.json();
+    if (b?.countries && Array.isArray(b.countries)) reqCountries = b.countries;
+    if (b?.country) { reqCountries = [b.country]; single = true; }
+  } catch { /* */ }
 
-  const { data: syncCountries } = await supabase.from("countries").select("code, name, default_vat_rate")
+  const { data: sc } = await sb.from("countries").select("code, name, default_vat_rate")
     .eq("is_active", true).eq("qogita_sync_enabled", true).order("display_order");
-  let countriesToSync = syncCountries || [{ code: "BE", name: "Belgique", default_vat_rate: 21 }];
-  if (requestedCountries) {
-    countriesToSync = countriesToSync.filter((c: any) => requestedCountries!.includes(c.code));
-  }
+  let countries = sc || [{ code: "BE", name: "Belgique", default_vat_rate: 21 }];
+  if (reqCountries) countries = countries.filter((c: any) => reqCountries!.includes(c.code));
 
-  // For multi-country: process only the FIRST country, return remaining
-  if (!singleCountryMode && countriesToSync.length > 1) {
-    const first = countriesToSync[0] as any;
-    const remaining = countriesToSync.slice(1).map((c: any) => c.code);
-
-    // Create master sync log
-    const { data: masterLog } = await supabase.from("sync_logs").insert({
+  // Multi-country → process only first, return remaining
+  if (!single && countries.length > 1) {
+    const first = countries[0] as any;
+    const remaining = countries.slice(1).map((c: any) => c.code);
+    const { data: log } = await sb.from("sync_logs").insert({
       sync_type: "products", status: "running",
-      stats: { countries_total: countriesToSync.length, countries_done: [], current_country: first.code },
-      progress_current: 0, progress_total: countriesToSync.length,
-      progress_message: `Pays 1/${countriesToSync.length} (${first.code})...`,
+      stats: { countries_total: countries.length }, progress_current: 0, progress_total: countries.length,
+      progress_message: `Pays 1/${countries.length} (${first.code})...`,
     }).select().single();
 
-    // Process first country inline
     try {
-      const result = await syncOneCountry(supabase, first, masterLog!.id, 1, countriesToSync.length);
-
-      // Update log
-      await supabase.from("sync_logs").update({
-        stats: { ...result.stats, countries_done: [first.code], remaining_countries: remaining },
+      const r = await syncCountry(sb, first, log!.id);
+      await sb.from("sync_logs").update({
+        stats: { ...r, countries_done: [first.code], remaining: remaining },
         progress_current: 1,
-        progress_message: remaining.length > 0
-          ? `${first.code} terminé (${result.stats.products} produits). Lancez les pays restants: ${remaining.join(", ")}`
-          : `Terminé — ${result.stats.products} produits`,
+        progress_message: `${first.code}: ${r.products} produits. Restant: ${remaining.join(", ")}`,
         ...(remaining.length === 0 ? { status: "completed", completed_at: new Date().toISOString() } : {}),
-      }).eq("id", masterLog!.id);
-
-      return new Response(JSON.stringify({
-        success: true,
-        country_done: first.code,
-        remaining_countries: remaining,
-        stats: result.stats,
-        message: remaining.length > 0
-          ? `${first.code} done. Call again with each remaining country individually.`
-          : "All done",
-      }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    } catch (err: any) {
-      await supabase.from("sync_logs").update({
-        status: "error", completed_at: new Date().toISOString(),
-        error_message: err.message, progress_message: `Erreur: ${err.message}`,
-      }).eq("id", masterLog!.id);
-      return new Response(JSON.stringify({ error: err.message }), {
-        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }).eq("id", log!.id);
+      return new Response(JSON.stringify({ success: true, country_done: first.code, remaining_countries: remaining, stats: r }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    } catch (e: any) {
+      await sb.from("sync_logs").update({ status: "error", completed_at: new Date().toISOString(), error_message: e.message }).eq("id", log!.id);
+      return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
   }
 
-  // Single country mode
-  const ctry = countriesToSync[0] as any;
-  if (!ctry) {
-    return new Response(JSON.stringify({ error: "No country to sync" }), {
-      status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
+  // Single country
+  const ctry = countries[0] as any;
+  if (!ctry) return new Response(JSON.stringify({ error: "No country" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-  // Find or create sync log
-  const { data: existingLog } = await supabase.from("sync_logs")
-    .select("id").eq("sync_type", "products").eq("status", "running")
-    .order("started_at", { ascending: false }).limit(1).maybeSingle();
-
-  let syncLogId: string;
-  if (existingLog) {
-    syncLogId = existingLog.id;
-    await supabase.from("sync_logs").update({
-      progress_message: `${ctry.code}: démarrage...`,
-    }).eq("id", syncLogId);
-  } else {
-    const { data: newLog } = await supabase.from("sync_logs").insert({
-      sync_type: "products", status: "running",
-      stats: {}, progress_current: 0, progress_total: 0,
-      progress_message: `${ctry.code}: authentification...`,
-    }).select().single();
-    syncLogId = newLog!.id;
-  }
+  const { data: ex } = await sb.from("sync_logs").select("id").eq("sync_type", "products").eq("status", "running").order("started_at", { ascending: false }).limit(1).maybeSingle();
+  let logId: string;
+  if (ex) { logId = ex.id; await sb.from("sync_logs").update({ progress_message: `${ctry.code}: démarrage...` }).eq("id", logId); }
+  else { const { data: nl } = await sb.from("sync_logs").insert({ sync_type: "products", status: "running", stats: {}, progress_current: 0, progress_total: 0, progress_message: `${ctry.code}: auth...` }).select().single(); logId = nl!.id; }
 
   try {
-    const result = await syncOneCountry(supabase, ctry, syncLogId, 1, 1);
-
-    await supabase.from("sync_logs").update({
-      status: "completed", completed_at: new Date().toISOString(),
-      stats: result.stats,
-      progress_current: result.stats.products, progress_total: result.stats.products,
-      progress_message: `${ctry.code} terminé — ${result.stats.products} produits, ${result.stats.brands} marques, ${result.stats.categories} catégories`,
-    }).eq("id", syncLogId);
-
-    await supabase.from("qogita_config").update({
-      last_full_sync_at: new Date().toISOString(), sync_status: "completed",
-    }).eq("id", 1);
-
-    return new Response(JSON.stringify({ success: true, stats: result.stats }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  } catch (err: any) {
-    console.error("Sync error:", err);
-    await supabase.from("sync_logs").update({
-      status: "error", completed_at: new Date().toISOString(),
-      error_message: err.message, progress_message: `Erreur: ${err.message}`,
-    }).eq("id", syncLogId);
-    await supabase.from("qogita_config").update({
-      sync_status: "error", sync_error_message: err.message,
-    }).eq("id", 1);
-    return new Response(JSON.stringify({ error: err.message }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    const r = await syncCountry(sb, ctry, logId);
+    await sb.from("sync_logs").update({ status: "completed", completed_at: new Date().toISOString(), stats: r, progress_current: r.products, progress_total: r.products, progress_message: `${ctry.code}: ${r.products} produits, ${r.brands} marques, ${r.categories} catégories` }).eq("id", logId);
+    await sb.from("qogita_config").update({ last_full_sync_at: new Date().toISOString(), sync_status: "completed" }).eq("id", 1);
+    return new Response(JSON.stringify({ success: true, stats: r }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+  } catch (e: any) {
+    console.error("Sync error:", e);
+    await sb.from("sync_logs").update({ status: "error", completed_at: new Date().toISOString(), error_message: e.message }).eq("id", logId);
+    await sb.from("qogita_config").update({ sync_status: "error", sync_error_message: e.message }).eq("id", 1);
+    return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 });
 
-async function syncOneCountry(
-  supabase: any, ctry: any, syncLogId: string,
-  countryIdx: number, countryTotal: number
-) {
-  const { token, baseUrl } = await getQogitaToken(supabase);
-  const vatRate = ctry.default_vat_rate || 21;
+async function syncCountry(sb: any, ctry: any, logId: string) {
+  const { token, baseUrl } = await getQogitaToken(sb);
+  const vat = ctry.default_vat_rate || 21;
 
-  await supabase.from("sync_logs").update({
-    progress_message: `${ctry.code}: téléchargement CSV...`,
-  }).eq("id", syncLogId);
+  await sb.from("sync_logs").update({ progress_message: `${ctry.code}: CSV...` }).eq("id", logId);
 
-  const csvUrl = `${baseUrl}/variants/search/download/?country=${ctry.code}`;
-  const res = await fetch(csvUrl, { headers: { Authorization: `Bearer ${token}` } });
-  if (!res.ok) {
-    const errBody = await res.text();
-    throw new Error(`CSV ${ctry.code}: ${res.status} — ${errBody.substring(0, 200)}`);
-  }
+  const res = await fetch(`${baseUrl}/variants/search/download/?country=${ctry.code}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(`CSV ${ctry.code}: ${res.status}`);
   const csvText = await res.text();
-  const rows = parseCSVStream(csvText);
+  const { headers, lines } = splitCSV(csvText);
 
-  await supabase.from("sync_logs").update({
-    progress_total: rows.length,
-    progress_message: `${ctry.code}: ${rows.length} produits trouvés, import...`,
-  }).eq("id", syncLogId);
+  const totalLines = lines.length;
+  await sb.from("sync_logs").update({ progress_total: totalLines, progress_message: `${ctry.code}: ${totalLines} lignes, import...` }).eq("id", logId);
 
   let processed = 0;
-  const countryStats: any[] = [];
-
-  for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
-    const chunk = rows.slice(i, i + CHUNK_SIZE);
+  const brandNames = new Set<string>();
+  const catNames = new Set<string>();
+  // Process in small chunks — parse lines just-in-time, don't hold parsed objects
+  for (let i = 0; i < totalLines; i += CHUNK) {
     const batch: any[] = [];
+    const statsBatch: { qid: string; cc: string; pe: number | null; pi: number | null; oc: number; ts: number; iis: boolean }[] = [];
+    const end = Math.min(i + CHUNK, totalLines);
 
-    for (const row of chunk) {
-      const gtin = row["GTIN"] || "";
-      const name = row["Name"] || "";
+    for (let j = i; j < end; j++) {
+      const row = parseLine(lines[j], headers);
+      const name = row["Name"];
       if (!name) continue;
+      const gtin = row["GTIN"] || "";
+      const pUrl = row["Product URL"] || "";
+      const id = qid(pUrl) || gtin || slug(name).slice(0, 32);
+      if (!id) continue;
 
-      const productUrl = row["Product URL"] || "";
-      const qid = extractQid(productUrl) || gtin || slugify(name).slice(0, 32);
-      if (!qid) continue;
+      const bn = row["Brand"] || null;
+      const cn = row["Category"] || null;
+      if (bn) brandNames.add(bn);
+      if (cn) catNames.add(cn);
 
-      const brandName = row["Brand"] || null;
-      const categoryName = row["Category"] || null;
-      const bestPrice = parseFloat(row["€ Lowest Price inc. shipping"] || "0");
-      const stockQty = parseInt(row["Total Inventory of All Offers"] || "0", 10);
-      const sellerCount = parseInt(row["Number of Offers"] || "0", 10);
-      const imageUrl = row["Image URL"] || "";
-      const slug = slugify(name) + (gtin ? `-${gtin.slice(-6)}` : `-${qid.slice(0, 6)}`);
-      const priceInclVat = bestPrice;
-      const priceExclVat = bestPrice > 0 ? Math.round((bestPrice / (1 + vatRate / 100)) * 100) / 100 : 0;
+      const bp = parseFloat(row["€ Lowest Price inc. shipping"] || "0");
+      const stock = parseInt(row["Total Inventory of All Offers"] || "0", 10);
+      const sellers = parseInt(row["Number of Offers"] || "0", 10);
+      const img = row["Image URL"] || "";
+      const s = slug(name) + (gtin ? `-${gtin.slice(-6)}` : `-${id.slice(0, 6)}`);
+      const pe = bp > 0 ? Math.round((bp / (1 + vat / 100)) * 100) / 100 : 0;
 
       batch.push({
-        qogita_qid: qid, gtin: gtin || null, name, slug,
-        brand_name: brandName, category_name: categoryName,
-        image_urls: imageUrl ? [imageUrl] : [], source: "qogita",
+        qogita_qid: id, gtin: gtin || null, name, slug: s,
+        brand_name: bn, category_name: cn,
+        image_urls: img ? [img] : [], source: "qogita",
         is_active: true, is_published: true, synced_at: new Date().toISOString(),
-        total_stock: stockQty, offer_count: sellerCount, is_in_stock: stockQty > 0,
-        ...(priceExclVat > 0 ? { best_price_excl_vat: priceExclVat, best_price_incl_vat: priceInclVat } : {}),
+        total_stock: stock, offer_count: sellers, is_in_stock: stock > 0,
+        ...(pe > 0 ? { best_price_excl_vat: pe, best_price_incl_vat: bp } : {}),
       });
 
-      countryStats.push({ qogita_qid: qid, country_code: ctry.code, best_price_excl_vat: priceExclVat > 0 ? priceExclVat : null, best_price_incl_vat: priceInclVat > 0 ? priceInclVat : null, offer_count: sellerCount, total_stock: stockQty, is_in_stock: stockQty > 0 });
+      statsBatch.push({ qid: id, cc: ctry.code, pe: pe > 0 ? pe : null, pi: bp > 0 ? bp : null, oc: sellers, ts: stock, iis: stock > 0 });
     }
 
     if (batch.length > 0) {
-      const { error } = await supabase.from("products").upsert(batch, { onConflict: "qogita_qid", ignoreDuplicates: false });
+      const { error } = await sb.from("products").upsert(batch, { onConflict: "qogita_qid", ignoreDuplicates: false });
       if (error) throw error;
     }
 
+    // Upsert country stats inline (avoid accumulating large array)
+    if (statsBatch.length > 0) {
+      const qids = statsBatch.map(s => s.qid);
+      const { data: prods } = await sb.from("products").select("id, qogita_qid").in("qogita_qid", qids);
+      const m = new Map((prods || []).map((p: any) => [p.qogita_qid, p.id]));
+      const toUp = statsBatch.filter(s => m.has(s.qid)).map(s => ({
+        product_id: m.get(s.qid)!, country_code: s.cc,
+        best_price_excl_vat: s.pe, best_price_incl_vat: s.pi,
+        offer_count: s.oc, total_stock: s.ts, min_delivery_days: null, is_in_stock: s.iis,
+      }));
+      if (toUp.length > 0) {
+        await sb.from("product_country_stats").upsert(toUp, { onConflict: "product_id,country_code", ignoreDuplicates: false });
+      }
+    }
+
     processed += batch.length;
-    if (i % (CHUNK_SIZE * 3) === 0) {
-      await supabase.from("sync_logs").update({
-        progress_current: processed,
-        progress_message: `${ctry.code}: ${processed}/${rows.length} produits...`,
-      }).eq("id", syncLogId);
+    if (i % (CHUNK * 5) === 0) {
+      await sb.from("sync_logs").update({ progress_current: processed, progress_message: `${ctry.code}: ${processed}/${totalLines}...` }).eq("id", logId);
     }
   }
 
-  // Country stats
-  if (countryStats.length > 0) {
-    await supabase.from("sync_logs").update({ progress_message: `${ctry.code}: stats par pays...` }).eq("id", syncLogId);
-
-    const qids = countryStats.map(s => s.qogita_qid);
-    const qidToId = new Map<string, string>();
-    for (let q = 0; q < qids.length; q += 1000) {
-      const { data: prods } = await supabase.from("products").select("id, qogita_qid").in("qogita_qid", qids.slice(q, q + 1000));
-      for (const p of (prods || [])) qidToId.set(p.qogita_qid, p.id);
-    }
-
-    const toUpsert = countryStats
-      .filter(s => qidToId.has(s.qogita_qid))
-      .map(s => ({ product_id: qidToId.get(s.qogita_qid)!, country_code: s.country_code, best_price_excl_vat: s.best_price_excl_vat, best_price_incl_vat: s.best_price_incl_vat, offer_count: s.offer_count, total_stock: s.total_stock, min_delivery_days: null, is_in_stock: s.is_in_stock }));
-
-    for (let s = 0; s < toUpsert.length; s += 300) {
-      await supabase.from("product_country_stats").upsert(toUpsert.slice(s, s + 300), { onConflict: "product_id,country_code", ignoreDuplicates: false });
-    }
-  }
-
-  // Auto-create brands (batch, no individual queries)
-  await supabase.from("sync_logs").update({ progress_message: `${ctry.code}: marques...` }).eq("id", syncLogId);
-  const brandNames = new Set<string>();
-  for (const row of rows) { if (row["Brand"]) brandNames.add(row["Brand"]); }
-  const brandsData = Array.from(brandNames).map(name => ({
-    name, slug: slugify(name), is_active: true, synced_at: new Date().toISOString(),
-  }));
-  for (let j = 0; j < brandsData.length; j += 300) {
-    await supabase.from("brands").upsert(brandsData.slice(j, j + 300), { onConflict: "slug", ignoreDuplicates: true });
+  // Auto-create brands
+  await sb.from("sync_logs").update({ progress_message: `${ctry.code}: marques...` }).eq("id", logId);
+  const bd = Array.from(brandNames).map(n => ({ name: n, slug: slug(n), is_active: true, synced_at: new Date().toISOString() }));
+  for (let j = 0; j < bd.length; j += 200) {
+    await sb.from("brands").upsert(bd.slice(j, j + 200), { onConflict: "slug", ignoreDuplicates: true });
   }
 
   // Auto-create categories
-  const catNames = new Set<string>();
-  for (const row of rows) { if (row["Category"]) catNames.add(row["Category"]); }
-  const catsData = Array.from(catNames).map(name => ({
-    name, slug: slugify(name), is_active: true, synced_at: new Date().toISOString(),
-  }));
-  for (let j = 0; j < catsData.length; j += 300) {
-    await supabase.from("categories").upsert(catsData.slice(j, j + 300), { onConflict: "slug", ignoreDuplicates: true });
+  const cd = Array.from(catNames).map(n => ({ name: n, slug: slug(n), is_active: true, synced_at: new Date().toISOString() }));
+  for (let j = 0; j < cd.length; j += 200) {
+    await sb.from("categories").upsert(cd.slice(j, j + 200), { onConflict: "slug", ignoreDuplicates: true });
   }
 
-  // Link brand_id & category_id via batch
-  await supabase.from("sync_logs").update({ progress_message: `${ctry.code}: liaison marques/catégories...` }).eq("id", syncLogId);
-  {
-    const { data: allBrands } = await supabase.from("brands").select("id, name");
-    const brandMap = new Map((allBrands || []).map((b: any) => [b.name, b.id]));
-    const { data: allCats } = await supabase.from("categories").select("id, name");
-    const catMap = new Map((allCats || []).map((c: any) => [c.name, c.id]));
+  // Link brand_id & category_id
+  await sb.from("sync_logs").update({ progress_message: `${ctry.code}: liaison...` }).eq("id", logId);
+  const { data: ab } = await sb.from("brands").select("id, name");
+  const bm = new Map((ab || []).map((b: any) => [b.name, b.id]));
+  const { data: ac } = await sb.from("categories").select("id, name");
+  const cm = new Map((ac || []).map((c: any) => [c.name, c.id]));
 
-    // Only update products that need linking (no brand_id or category_id)
-    const { data: needsBrand } = await supabase.from("products").select("id, brand_name")
-      .eq("source", "qogita").is("brand_id", null).not("brand_name", "is", null).limit(2000);
-    if (needsBrand && needsBrand.length > 0) {
-      // Group by brand_name to batch update
-      const byBrand = new Map<string, string[]>();
-      for (const p of needsBrand) {
-        const bid = brandMap.get(p.brand_name);
-        if (bid) {
-          if (!byBrand.has(bid)) byBrand.set(bid, []);
-          byBrand.get(bid)!.push(p.id);
-        }
-      }
-      for (const [bid, pids] of byBrand) {
-        for (let k = 0; k < pids.length; k += 200) {
-          await supabase.from("products").update({ brand_id: bid }).in("id", pids.slice(k, k + 200));
-        }
-      }
-    }
-
-    const { data: needsCat } = await supabase.from("products").select("id, category_name")
-      .eq("source", "qogita").is("category_id", null).not("category_name", "is", null).limit(2000);
-    if (needsCat && needsCat.length > 0) {
-      const byCat = new Map<string, string[]>();
-      for (const p of needsCat) {
-        const cid = catMap.get(p.category_name);
-        if (cid) {
-          if (!byCat.has(cid)) byCat.set(cid, []);
-          byCat.get(cid)!.push(p.id);
-        }
-      }
-      for (const [cid, pids] of byCat) {
-        for (let k = 0; k < pids.length; k += 200) {
-          await supabase.from("products").update({ category_id: cid }).in("id", pids.slice(k, k + 200));
-        }
-      }
-    }
+  const { data: nb } = await sb.from("products").select("id, brand_name").eq("source", "qogita").is("brand_id", null).not("brand_name", "is", null).limit(2000);
+  if (nb?.length) {
+    const byB = new Map<string, string[]>();
+    for (const p of nb) { const bid = bm.get(p.brand_name); if (bid) { if (!byB.has(bid)) byB.set(bid, []); byB.get(bid)!.push(p.id); } }
+    for (const [bid, pids] of byB) { for (let k = 0; k < pids.length; k += 200) await sb.from("products").update({ brand_id: bid }).in("id", pids.slice(k, k + 200)); }
   }
 
-  await supabase.from("countries").update({ last_sync_at: new Date().toISOString() } as any).eq("code", ctry.code);
+  const { data: nc } = await sb.from("products").select("id, category_name").eq("source", "qogita").is("category_id", null).not("category_name", "is", null).limit(2000);
+  if (nc?.length) {
+    const byC = new Map<string, string[]>();
+    for (const p of nc) { const cid = cm.get(p.category_name); if (cid) { if (!byC.has(cid)) byC.set(cid, []); byC.get(cid)!.push(p.id); } }
+    for (const [cid, pids] of byC) { for (let k = 0; k < pids.length; k += 200) await sb.from("products").update({ category_id: cid }).in("id", pids.slice(k, k + 200)); }
+  }
 
-  return { stats: { products: processed, brands: brandNames.size, categories: catNames.size, country: ctry.code } };
+  await sb.from("countries").update({ last_sync_at: new Date().toISOString() } as any).eq("code", ctry.code);
+  return { products: processed, brands: brandNames.size, categories: catNames.size, country: ctry.code };
 }

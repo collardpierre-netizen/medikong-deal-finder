@@ -3,6 +3,14 @@ project_id = "iokwqxhhpblcbkrxgcje"
 [functions]
   [functions.auth-email-hook]
     verify_jwt = false
+  [functions.sync-qogita-brands]
+    verify_jwt = false
+  [functions.sync-qogita-categories]
+    verify_jwt = false
+  [functions.sync-qogita-products]
+    verify_jwt = false
+  [functions.sync-qogita-offers-detail]
+    verify_jwt = false
   [functions.handle-email-suppression]
     verify_jwt = false
   [functions.handle-email-unsubscribe]

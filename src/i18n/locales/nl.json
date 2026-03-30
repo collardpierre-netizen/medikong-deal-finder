@@ -180,6 +180,9 @@
     "whatsapp": "WhatsApp",
     "whatsappSub": "Snel antwoord",
     "viewArticles": "Bekijk alle {{count}} artikelen",
+    "backToCenter": "Terug naar het Helpcentrum",
+    "categoryNotFound": "Categorie niet gevonden",
+    "articleCount": "{{count}} artikelen",
     "categories": {
       "gettingStarted": {
         "title": "Aan de slag",

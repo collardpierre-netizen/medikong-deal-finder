@@ -1,6 +1,6 @@
 import { Layout } from "@/components/layout/Layout";
 import { formatPrice } from "@/data/mock";
-import { useProducts } from "@/hooks/useProducts";
+import { useFeaturedProducts } from "@/hooks/useProducts";
 import { ProductCard } from "@/components/shared/ProductCard";
 import { Tag, TrendingDown, Truck, Calendar } from "lucide-react";
 import { useState, useEffect } from "react";

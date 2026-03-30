@@ -203,5 +203,6 @@ export function useProductOffers(productId: string | undefined) {
       });
     },
     enabled: !!productId,
+    staleTime: 3 * 60 * 1000,
   });
 }

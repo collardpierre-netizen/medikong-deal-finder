@@ -677,7 +677,7 @@ export default function ProductPage() {
                         quantity: stickyQty,
                         vendorId: bestOffer.sellerId,
                         priceExclVat: bestOffer.unitPriceEur,
-                        productData: { id: product.id, name: product.name, slug: product.slug, price: bestOffer.unitPriceEur },
+                        productData: { id: product.id, name: product.name, brand: product.brand || "", slug: product.slug, price: bestOffer.unitPriceEur },
                       });
                     }}
                   >

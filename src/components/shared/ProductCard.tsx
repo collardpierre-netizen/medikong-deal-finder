@@ -47,7 +47,7 @@ export function ProductImage({ product, className = "", selectedIndex = 0 }: { p
           src={imgSrc}
           alt={product.name}
           loading="lazy"
-          className="w-full h-full object-cover"
+          className="w-full h-full object-contain p-2"
           onError={(e) => {
             // On error, show the icon fallback
             const target = e.currentTarget;

@@ -12,6 +12,46 @@ function sleep(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+async function getQogitaToken(supabaseClient: any): Promise<{ token: string; baseUrl: string; config: any }> {
+  const { data: config } = await supabaseClient
+    .from("qogita_config")
+    .select("*")
+    .eq("id", 1)
+    .single();
+
+  if (!config) throw new Error("qogita_config not found");
+  if (!config.qogita_email || !config.qogita_password) {
+    throw new Error("Qogita email/password not configured — go to Sync Qogita settings");
+  }
+
+  const baseUrl = config.base_url || "https://api.qogita.com";
+
+  const authResponse = await fetch(`${baseUrl}/auth/login/`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      email: config.qogita_email,
+      password: config.qogita_password,
+    }),
+  });
+
+  if (!authResponse.ok) {
+    const error = await authResponse.text();
+    throw new Error(`Qogita auth failed (${authResponse.status}): ${error}`);
+  }
+
+  const authData = await authResponse.json();
+  const token = authData.accessToken;
+  if (!token) throw new Error("No accessToken in Qogita auth response");
+
+  await supabaseClient
+    .from("qogita_config")
+    .update({ bearer_token: token })
+    .eq("id", 1);
+
+  return { token, baseUrl, config };
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -25,11 +65,8 @@ Deno.serve(async (req) => {
   }).select().single();
 
   try {
-    const { data: config } = await supabase.from("qogita_config").select("*").eq("id", 1).single();
-    if (!config?.bearer_token) throw new Error("Qogita bearer token not configured");
-
-    const baseUrl = config.base_url || "https://api.qogita.com";
-    const headers = { Authorization: `Bearer ${config.bearer_token}`, "Content-Type": "application/json", Accept: "application/json" };
+    const { token, baseUrl } = await getQogitaToken(supabase);
+    const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json", Accept: "application/json" };
 
     // Get all Qogita products
     const { data: products, error: pError } = await supabase

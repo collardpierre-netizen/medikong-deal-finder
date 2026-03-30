@@ -21,7 +21,7 @@ export const EmailChangeEmail = ({ siteName, email, newEmail, confirmationUrl }:
     <Preview>Confirmez votre changement d'adresse e-mail — MediKong</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Img src={LOGO_URL} width="48" height="48" alt="MediKong" style={logo} />
+        <Img src={LOGO_URL} width="180" alt="MediKong" style={logo} />
         <Heading style={h1}>Changement d'adresse e-mail</Heading>
         <Text style={text}>
           Vous avez demandé à changer votre adresse e-mail MediKong de{' '}

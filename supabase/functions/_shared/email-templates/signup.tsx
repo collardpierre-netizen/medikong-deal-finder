@@ -21,7 +21,7 @@ export const SignupEmail = ({ siteName, siteUrl, recipient, confirmationUrl }: S
     <Preview>Confirmez votre adresse e-mail — MediKong</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Img src={LOGO_URL} width="48" height="48" alt="MediKong" style={logo} />
+        <Img src={LOGO_URL} width="180" alt="MediKong" style={logo} />
         <Heading style={h1}>Bienvenue sur MediKong !</Heading>
         <Text style={text}>
           Merci de vous être inscrit sur{' '}

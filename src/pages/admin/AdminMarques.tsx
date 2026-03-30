@@ -6,7 +6,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useBrands, useManufacturers } from "@/hooks/useAdminData";
+import { useBrands, useManufacturers, useBrandCount } from "@/hooks/useAdminData";
 import { BrandFormDialog } from "@/components/admin/BrandFormDialog";
 import { exportBrands, importBrands } from "@/lib/xlsx-utils";
 import { useQueryClient } from "@tanstack/react-query";

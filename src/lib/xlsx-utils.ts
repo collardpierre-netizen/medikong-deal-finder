@@ -10,6 +10,45 @@ export function exportToXlsx(data: any[], filename: string, sheetName = "Data") 
   toast.success(`${data.length} lignes exportées`);
 }
 
+export function downloadProductTemplate() {
+  const headers = [
+    { gtin: "5412345678901", name: "Exemple Produit Médical", slug: "", cnk_code: "1234567", sku: "", brand_name: "Marque Exemple", category_name: "Catégorie Exemple", description: "Description du produit", short_description: "Description courte", unit_quantity: 1, origin_country: "BE", image_urls: "https://example.com/img1.jpg;https://example.com/img2.jpg", source: "medikong", is_active: true },
+  ];
+  const ws = XLSX.utils.json_to_sheet(headers);
+  // Set column widths
+  ws["!cols"] = [
+    { wch: 16 }, { wch: 35 }, { wch: 25 }, { wch: 12 }, { wch: 12 },
+    { wch: 20 }, { wch: 20 }, { wch: 40 }, { wch: 30 }, { wch: 8 },
+    { wch: 8 }, { wch: 50 }, { wch: 12 }, { wch: 8 },
+  ];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Produits");
+  // Add a "Guide" sheet with instructions
+  const guide = [
+    ["Champ", "Obligatoire", "Description"],
+    ["gtin", "Recommandé", "Code EAN/GTIN du produit (13 chiffres). Sert de clé d'unicité si présent."],
+    ["name", "OUI", "Nom du produit"],
+    ["slug", "Non", "Slug URL (auto-généré à partir du nom si vide)"],
+    ["cnk_code", "Non", "Code CNK (Belgique)"],
+    ["sku", "Non", "Référence interne"],
+    ["brand_name", "Recommandé", "Nom exact de la marque (doit correspondre à une marque existante)"],
+    ["category_name", "Recommandé", "Nom exact de la catégorie (doit correspondre à une catégorie existante)"],
+    ["description", "Non", "Description longue du produit"],
+    ["short_description", "Non", "Description courte"],
+    ["unit_quantity", "Non", "Quantité par unité (défaut: 1)"],
+    ["origin_country", "Non", "Code pays d'origine (ex: BE, FR, DE)"],
+    ["image_urls", "Non", "URLs des images séparées par des points-virgules (;)"],
+    ["source", "Non", "Source du produit (défaut: medikong)"],
+    ["is_active", "Non", "true ou false (défaut: true)"],
+  ];
+  const wsGuide = XLSX.utils.aoa_to_sheet(guide);
+  wsGuide["!cols"] = [{ wch: 18 }, { wch: 14 }, { wch: 70 }];
+  XLSX.utils.book_append_sheet(wb, wsGuide, "Guide");
+  XLSX.writeFile(wb, "template-import-produits.xlsx");
+  toast.success("Template téléchargé");
+}
+
+
 export async function exportProducts() {
   const { data, error } = await supabase.from("products").select("*").order("name");
   if (error) { toast.error("Erreur export produits"); return; }

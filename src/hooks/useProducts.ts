@@ -91,13 +91,14 @@ export function useProducts() {
 }
 
 export function useProduct(slug: string | undefined) {
+  const { country } = useCountry();
   return useQuery({
-    queryKey: ["product", slug],
+    queryKey: ["product", slug, country],
     queryFn: async () => {
       const { data, error } = await supabase.from("products").select("*").eq("slug", slug!).maybeSingle();
       if (error) throw error;
       if (!data) return null;
-      const { data: offers } = await supabase.from("offers").select("*").eq("product_id", data.id).eq("is_active", true);
+      const { data: offers } = await supabase.from("offers").select("*").eq("product_id", data.id).eq("is_active", true).eq("country_code", country);
       return mapDbProduct(data, offers || []);
     },
     enabled: !!slug,

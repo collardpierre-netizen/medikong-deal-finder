@@ -269,5 +269,160 @@
       "q8": "How does VAT work on MediKong?",
       "a8": "Displayed prices are excl. VAT. Applicable VAT is calculated automatically based on the delivery country and product type (standard or reduced rate)."
     }
+  },
+  "helpArticles": {
+    "relatedArticles": "Related articles",
+    "creerCompte": {
+      "title": "How to create a professional account?",
+      "s1h": "Requirements",
+      "s1": "To create an account on MediKong, you must be a registered healthcare professional in Belgium or the European Union. You will need your BCE number (Belgium) or equivalent, your intra-community VAT number, and a professional email address.",
+      "s2h": "Registration steps",
+      "s2": "1. Go to the registration page and select \"I want to buy\".\n2. Enter your professional details (company name, BCE, VAT).\n3. Add your delivery and billing address.\n4. Confirm your email via the verification link.",
+      "s3h": "Account validation",
+      "s3": "Our team verifies your information within 24 business hours. You will receive a confirmation email once your account is activated. In the meantime, you can browse the catalog but not place orders."
+    },
+    "premiereCommande": {
+      "title": "How to place my first order?",
+      "s1h": "Search products",
+      "s1": "Use the search bar to find products by name, CNK, EAN or brand. You can also browse categories or filter by supplier.",
+      "s2h": "Add to cart",
+      "s2": "Click \"Add\" to put a product in your cart. Adjust quantities directly. Watch the MOV (Minimum Order Value) for each supplier, displayed in the cart.",
+      "s3h": "Complete the order",
+      "s3": "Check your cart, choose your payment method (card, SEPA transfer, deferred payment) and confirm your delivery address. The order is sent to suppliers upon validation."
+    },
+    "naviguerCatalogue": {
+      "title": "How to browse the catalog?",
+      "s1h": "Search and filters",
+      "s1": "The MediKong catalog offers over 12,500 references. Use text search, filters by category, brand, price, availability and supplier to refine your results.",
+      "s2h": "Offer comparison",
+      "s2": "Each product page shows all available offers, sorted by price. You can compare excl. VAT prices, delivery times and MOVs for each supplier."
+    },
+    "passerCommande": {
+      "title": "How to place an order?",
+      "s1h": "Select your products",
+      "s1": "Browse the catalog and add desired products to your cart. Prices are displayed excl. VAT and updated in real time.",
+      "s2h": "Check your cart",
+      "s2": "In the cart, products are grouped by supplier. Verify that each supplier meets their MOV (Minimum Order Value). The progress bar shows the remaining amount.",
+      "s3h": "Validate and pay",
+      "s3": "Choose your payment method, confirm the delivery address and validate. You will receive an email confirmation with the order number."
+    },
+    "moyensPaiement": {
+      "title": "What payment methods are accepted?",
+      "s1h": "Immediate payment",
+      "s1": "MediKong accepts bank cards (Visa, Mastercard, Bancontact) and SEPA transfers. Payment is secured via our PCI-DSS certified provider.",
+      "s2h": "Deferred payment",
+      "s2": "Eligible customers can benefit from 30 or 60-day deferred payment via our partner Mondu. Eligibility is automatically verified at checkout. No additional fees."
+    },
+    "suivreColis": {
+      "title": "How to track my parcel?",
+      "s1h": "Tracking number",
+      "s1": "Once your order is shipped, you receive an email with the tracking number and a direct link to the carrier. Main carriers are DPD, GLS and PostNL.",
+      "s2h": "Tracking in your account",
+      "s2": "Log in to your account and go to \"My Orders\". Each order shows its real-time status: preparing, shipped, in transit or delivered."
+    },
+    "retournerProduit": {
+      "title": "How to return a product?",
+      "s1h": "Return conditions",
+      "s1": "You have 14 days after delivery to return an unopened product in its original packaging. Temperature-sensitive or single-use products are not eligible for return.",
+      "s2h": "Return procedure",
+      "s2": "1. Go to \"My Orders\" in your account.\n2. Select the order and click \"Request a return\".\n3. Indicate the reason for return.\n4. A prepaid return label will be sent by email.",
+      "s3h": "Refund",
+      "s3": "The refund is processed within 5-10 business days after receiving the returned product. The amount is credited to the original payment method."
+    },
+    "tvaMedikong": {
+      "title": "How does VAT work on MediKong?",
+      "s1h": "Displayed prices",
+      "s1": "All prices on MediKong are displayed excluding VAT by default. You can switch between excl. and incl. VAT via the VAT button in the navigation bar.",
+      "s2h": "VAT calculation",
+      "s2": "VAT is calculated automatically at checkout based on your delivery country and product type. In Belgium, the standard rate is 21% and the reduced rate is 6% for medical devices. Intra-community purchases with a valid VAT number are exempt (reverse charge)."
+    },
+    "telechargerFactures": {
+      "title": "Where to download my invoices?",
+      "s1h": "Access invoices",
+      "s1": "Go to \"My Account\" > \"My Orders\". Each delivered order has a \"Download Invoice\" button in PDF format.",
+      "s2h": "Automatic invoices",
+      "s2": "Invoices are generated automatically upon shipment. They include all required legal information (VAT, BCE number, addresses). You can also receive invoices by email automatically by enabling the option in your settings."
+    },
+    "modifierFacturation": {
+      "title": "How to update my billing information?",
+      "s1h": "Update information",
+      "s1": "Go to \"My Account\" > \"Settings\" > \"Billing\". You can update your company name, billing address, VAT number and invoice delivery preferences. Changes apply to future orders only."
+    },
+    "signalerProbleme": {
+      "title": "How to report a problem with my order?",
+      "s1h": "Open a claim",
+      "s1": "Go to \"My Orders\" and click on the relevant order. Use the \"Report a Problem\" button to open a claim. Describe the issue and attach photos if needed.",
+      "s2h": "Problem types",
+      "s2": "You can report: damaged product, missing product, incorrect product, delivery delay, or billing issue. Each type has an adapted resolution process."
+    },
+    "delaiRemboursement": {
+      "title": "What is the refund timeframe?",
+      "s1h": "Timeframes by payment type",
+      "s1": "Bank card: 5-10 business days after return validation.\nSEPA transfer: 3-5 business days.\nDeferred payment: deduction on the next invoice.\n\nYou receive a confirmation email as soon as the refund is initiated."
+    },
+    "suivreReclamation": {
+      "title": "How to track my claim?",
+      "s1h": "Real-time tracking",
+      "s1": "Each claim has a tracking number. Go to \"My Orders\" > relevant order > \"Claims\" to see real-time status. Our team commits to responding within 24 business hours."
+    },
+    "ajouterUtilisateur": {
+      "title": "How to add a user?",
+      "s1h": "Multi-user management",
+      "s1": "If you have a business account, go to \"My Account\" > \"Team\". Click \"Invite a user\", enter their email and set their role (buyer, administrator, observer). The user will receive an invitation email."
+    },
+    "securiserCompte": {
+      "title": "How to secure my account?",
+      "s1h": "Strong password",
+      "s1": "Use a password of at least 12 characters, combining letters, numbers and special characters. Do not reuse a password from another service.",
+      "s2h": "Best practices",
+      "s2": "Change your password regularly (every 3 months). Never share your credentials. Log out from shared devices. Regularly check the login history in \"My Account\" > \"Security\"."
+    },
+    "gererCatalogue": {
+      "title": "How to manage my seller catalog?",
+      "s1h": "Add products",
+      "s1": "Log in to your Seller Area and go to \"Catalog\". You can add products one by one or in bulk via CSV/Excel import. Each product must have a valid EAN/GTIN.",
+      "s2h": "Manage offers",
+      "s2": "In the \"Offers\" tab, set your prices, stock quantities, MOQ (minimum order quantity) and delivery times. Offers are visible immediately after validation."
+    },
+    "marquageCe": {
+      "title": "What is CE marking?",
+      "s1h": "Definition",
+      "s1": "CE marking (European Conformity) is a mandatory certification for medical devices marketed in the European Economic Area. It certifies that the product meets the essential safety and performance requirements defined by European directives.",
+      "s2h": "Verification on MediKong",
+      "s2": "MediKong verifies the CE marking of each listed product via EUDAMED databases and certificates provided by manufacturers. Non-compliant products are removed from the catalog."
+    },
+    "comparaisonPrix": {
+      "title": "How to use price comparison?",
+      "s1h": "Compare on a product page",
+      "s1": "Each product page displays all available offers, sorted by excl. VAT price. You can see at a glance the price, supplier, available stock, MOQ and delivery time.",
+      "s2h": "External reference prices",
+      "s2": "In addition to direct offers, MediKong displays market reference prices. This allows you to check if the offer is competitive compared to usual rates."
+    },
+    "configurerAlertes": {
+      "title": "How to set up price alerts?",
+      "s1h": "Create an alert",
+      "s1": "On a product page, click \"Watch Price\". Set your target excl. VAT price. You will receive an email as soon as an offer reaches or goes below this threshold. Manage all your alerts in \"My Account\" > \"Price Alerts\"."
+    },
+    "accederApi": {
+      "title": "How to access the MediKong API?",
+      "s1h": "REST API",
+      "s1": "The MediKong API allows you to integrate the catalog, prices and order placement into your ERP or management system. Access is reserved for Pro or Enterprise plan customers.",
+      "s2h": "Documentation",
+      "s2": "Complete API documentation is available upon request. It covers catalog, pricing, stock, orders and webhooks endpoints. Contact your account manager to obtain your API keys."
+    },
+    "guideAchat": {
+      "title": "Buying guide for pharmacies",
+      "s1h": "Optimize your purchases",
+      "s1": "As a pharmacist, MediKong allows you to compare prices from hundreds of suppliers in one place. Start with high-turnover items (gloves, masks, disinfectants) to maximize savings.",
+      "s2h": "Ordering strategy",
+      "s2": "Group your orders by supplier to meet MOVs and benefit from free delivery. Use price alerts to buy at the best time. Deferred payment lets you manage your cash flow with ease."
+    },
+    "bonnesPratiques": {
+      "title": "B2B ordering best practices",
+      "s1h": "Purchase planning",
+      "s1": "Anticipate your needs by analyzing your consumption history. Order regularly in small quantities rather than bulk purchases to avoid stockouts and optimize cash flow.",
+      "s2h": "Multi-supplier management",
+      "s2": "Diversify your supply sources to reduce stockout risks. MediKong brings together 350+ verified suppliers. Compare offers and delivery times before each order. Use favorites lists to speed up recurring purchases."
+    }
   }
 }

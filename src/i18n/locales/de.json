@@ -269,5 +269,160 @@
       "q8": "Wie funktioniert die MwSt. auf MediKong?",
       "a8": "Angezeigte Preise sind exkl. MwSt. Die anwendbare MwSt. wird automatisch basierend auf dem Lieferland und Produkttyp (Standard- oder ermäßigter Satz) berechnet."
     }
+  },
+  "helpArticles": {
+    "relatedArticles": "Verwandte Artikel",
+    "creerCompte": {
+      "title": "Wie erstelle ich ein professionelles Konto?",
+      "s1h": "Voraussetzungen",
+      "s1": "Um ein Konto bei MediKong zu erstellen, müssen Sie ein registrierter Gesundheitsfachmann in Belgien oder der Europäischen Union sein. Sie benötigen Ihre KBO-Nummer (Belgien) oder Äquivalent, Ihre innergemeinschaftliche MwSt.-Nummer und eine professionelle E-Mail-Adresse.",
+      "s2h": "Registrierungsschritte",
+      "s2": "1. Gehen Sie zur Registrierungsseite und wählen Sie \"Ich möchte kaufen\".\n2. Geben Sie Ihre beruflichen Daten ein (Firmenname, KBO, MwSt.).\n3. Fügen Sie Ihre Liefer- und Rechnungsadresse hinzu.\n4. Bestätigen Sie Ihre E-Mail über den Verifizierungslink.",
+      "s3h": "Kontovalidierung",
+      "s3": "Unser Team überprüft Ihre Informationen innerhalb von 24 Geschäftsstunden. Sie erhalten eine Bestätigungs-E-Mail, sobald Ihr Konto aktiviert ist. In der Zwischenzeit können Sie den Katalog durchsuchen, aber keine Bestellungen aufgeben."
+    },
+    "premiereCommande": {
+      "title": "Wie gebe ich meine erste Bestellung auf?",
+      "s1h": "Produkte suchen",
+      "s1": "Verwenden Sie die Suchleiste, um Produkte nach Name, CNK, EAN oder Marke zu finden. Sie können auch Kategorien durchsuchen oder nach Lieferant filtern.",
+      "s2h": "Zum Warenkorb hinzufügen",
+      "s2": "Klicken Sie auf \"Hinzufügen\", um ein Produkt in Ihren Warenkorb zu legen. Passen Sie die Mengen direkt an. Beachten Sie den MOV (Mindestbestellwert) jedes Lieferanten im Warenkorb.",
+      "s3h": "Bestellung abschließen",
+      "s3": "Überprüfen Sie Ihren Warenkorb, wählen Sie Ihre Zahlungsmethode (Karte, SEPA-Überweisung, aufgeschobene Zahlung) und bestätigen Sie Ihre Lieferadresse. Die Bestellung wird bei Validierung an die Lieferanten gesendet."
+    },
+    "naviguerCatalogue": {
+      "title": "Wie navigiere ich im Katalog?",
+      "s1h": "Suche und Filter",
+      "s1": "Der MediKong-Katalog bietet über 12.500 Referenzen. Verwenden Sie die Textsuche, Filter nach Kategorie, Marke, Preis, Verfügbarkeit und Lieferant.",
+      "s2h": "Angebotsvergleich",
+      "s2": "Jede Produktseite zeigt alle verfügbaren Angebote, sortiert nach Preis. Sie können Netto-Preise, Lieferzeiten und MOVs jedes Lieferanten vergleichen."
+    },
+    "passerCommande": {
+      "title": "Wie gebe ich eine Bestellung auf?",
+      "s1h": "Produkte auswählen",
+      "s1": "Durchsuchen Sie den Katalog und fügen Sie gewünschte Produkte zum Warenkorb hinzu. Preise werden netto angezeigt und in Echtzeit aktualisiert.",
+      "s2h": "Warenkorb prüfen",
+      "s2": "Im Warenkorb werden Produkte nach Lieferant gruppiert. Prüfen Sie, ob jeder Lieferant seinen MOV erreicht. Der Fortschrittsbalken zeigt den verbleibenden Betrag.",
+      "s3h": "Validieren und bezahlen",
+      "s3": "Wählen Sie Ihre Zahlungsmethode, bestätigen Sie die Lieferadresse und validieren Sie. Sie erhalten eine Bestätigungs-E-Mail mit der Bestellnummer."
+    },
+    "moyensPaiement": {
+      "title": "Welche Zahlungsmethoden werden akzeptiert?",
+      "s1h": "Sofortzahlung",
+      "s1": "MediKong akzeptiert Bankkarten (Visa, Mastercard, Bancontact) und SEPA-Überweisungen. Die Zahlung ist über unseren PCI-DSS-zertifizierten Anbieter gesichert.",
+      "s2h": "Aufgeschobene Zahlung",
+      "s2": "Berechtigte Kunden können von einer aufgeschobenen Zahlung von 30 oder 60 Tagen über unseren Partner Mondu profitieren. Die Berechtigung wird beim Checkout automatisch überprüft. Keine zusätzlichen Gebühren."
+    },
+    "suivreColis": {
+      "title": "Wie verfolge ich mein Paket?",
+      "s1h": "Sendungsverfolgungsnummer",
+      "s1": "Sobald Ihre Bestellung versandt wird, erhalten Sie eine E-Mail mit der Sendungsverfolgungsnummer und einem direkten Link zum Spediteur. Die wichtigsten Spediteure sind DPD, GLS und PostNL.",
+      "s2h": "Verfolgung in Ihrem Konto",
+      "s2": "Melden Sie sich in Ihrem Konto an und gehen Sie zu \"Meine Bestellungen\". Jede Bestellung zeigt ihren Echtzeitstatus: in Vorbereitung, versandt, unterwegs oder zugestellt."
+    },
+    "retournerProduit": {
+      "title": "Wie sende ich ein Produkt zurück?",
+      "s1h": "Rückgabebedingungen",
+      "s1": "Sie haben 14 Tage nach Erhalt, um ein ungeöffnetes Produkt in der Originalverpackung zurückzusenden. Temperaturempfindliche oder Einwegprodukte sind nicht rückgabeberechtigt.",
+      "s2h": "Rückgabeverfahren",
+      "s2": "1. Gehen Sie zu \"Meine Bestellungen\" in Ihrem Konto.\n2. Wählen Sie die Bestellung und klicken Sie auf \"Rückgabe beantragen\".\n3. Geben Sie den Rückgabegrund an.\n4. Ein vorfrankiertes Rücksendeetikett wird per E-Mail zugesandt.",
+      "s3h": "Rückerstattung",
+      "s3": "Die Rückerstattung erfolgt innerhalb von 5-10 Werktagen nach Erhalt des zurückgesandten Produkts. Der Betrag wird der ursprünglichen Zahlungsmethode gutgeschrieben."
+    },
+    "tvaMedikong": {
+      "title": "Wie funktioniert die MwSt. auf MediKong?",
+      "s1h": "Angezeigte Preise",
+      "s1": "Alle Preise auf MediKong werden standardmäßig ohne MwSt. angezeigt. Sie können über die MwSt.-Schaltfläche in der Navigationsleiste zwischen netto und brutto wechseln.",
+      "s2h": "MwSt.-Berechnung",
+      "s2": "Die MwSt. wird beim Checkout automatisch berechnet, basierend auf Ihrem Lieferland und Produkttyp. In Belgien beträgt der Standardsatz 21% und der ermäßigte Satz 6% für Medizinprodukte. Innergemeinschaftliche Einkäufe mit gültiger MwSt.-Nummer sind befreit (Reverse Charge)."
+    },
+    "telechargerFactures": {
+      "title": "Wo lade ich meine Rechnungen herunter?",
+      "s1h": "Rechnungen abrufen",
+      "s1": "Gehen Sie zu \"Mein Konto\" > \"Meine Bestellungen\". Jede gelieferte Bestellung hat eine Schaltfläche \"Rechnung herunterladen\" im PDF-Format.",
+      "s2h": "Automatische Rechnungen",
+      "s2": "Rechnungen werden automatisch beim Versand generiert. Sie enthalten alle erforderlichen rechtlichen Angaben (MwSt., KBO-Nummer, Adressen). Sie können auch Rechnungen automatisch per E-Mail erhalten, indem Sie die Option in Ihren Einstellungen aktivieren."
+    },
+    "modifierFacturation": {
+      "title": "Wie ändere ich meine Rechnungsdaten?",
+      "s1h": "Informationen aktualisieren",
+      "s1": "Gehen Sie zu \"Mein Konto\" > \"Einstellungen\" > \"Rechnungsstellung\". Sie können Ihren Firmennamen, Ihre Rechnungsadresse, MwSt.-Nummer und Rechnungszustellungspräferenzen ändern. Änderungen gelten nur für zukünftige Bestellungen."
+    },
+    "signalerProbleme": {
+      "title": "Wie melde ich ein Problem mit meiner Bestellung?",
+      "s1h": "Reklamation öffnen",
+      "s1": "Gehen Sie zu \"Meine Bestellungen\" und klicken Sie auf die betreffende Bestellung. Verwenden Sie die Schaltfläche \"Problem melden\", um eine Reklamation zu öffnen. Beschreiben Sie das Problem und fügen Sie bei Bedarf Fotos bei.",
+      "s2h": "Problemtypen",
+      "s2": "Sie können melden: beschädigtes Produkt, fehlendes Produkt, falsches Produkt, Lieferverzögerung oder Rechnungsproblem. Jeder Typ hat einen angepassten Lösungsprozess."
+    },
+    "delaiRemboursement": {
+      "title": "Wie lang ist die Rückerstattungsfrist?",
+      "s1h": "Fristen nach Zahlungsart",
+      "s1": "Bankkarte: 5-10 Werktage nach Validierung der Rücksendung.\nSEPA-Überweisung: 3-5 Werktage.\nAufgeschobene Zahlung: Abzug auf der nächsten Rechnung.\n\nSie erhalten eine Bestätigungs-E-Mail, sobald die Rückerstattung eingeleitet wird."
+    },
+    "suivreReclamation": {
+      "title": "Wie verfolge ich meine Reklamation?",
+      "s1h": "Echtzeit-Verfolgung",
+      "s1": "Jede Reklamation hat eine Verfolgungsnummer. Gehen Sie zu \"Meine Bestellungen\" > betreffende Bestellung > \"Reklamationen\", um den Echtzeitstatus zu sehen. Unser Team verpflichtet sich, innerhalb von 24 Geschäftsstunden zu antworten."
+    },
+    "ajouterUtilisateur": {
+      "title": "Wie füge ich einen Benutzer hinzu?",
+      "s1h": "Multi-Benutzerverwaltung",
+      "s1": "Wenn Sie ein Geschäftskonto haben, gehen Sie zu \"Mein Konto\" > \"Team\". Klicken Sie auf \"Benutzer einladen\", geben Sie die E-Mail-Adresse ein und legen Sie die Rolle fest (Käufer, Administrator, Beobachter). Der Benutzer erhält eine Einladungs-E-Mail."
+    },
+    "securiserCompte": {
+      "title": "Wie sichere ich mein Konto?",
+      "s1h": "Starkes Passwort",
+      "s1": "Verwenden Sie ein Passwort mit mindestens 12 Zeichen, bestehend aus Buchstaben, Zahlen und Sonderzeichen. Verwenden Sie kein Passwort eines anderen Dienstes erneut.",
+      "s2h": "Best Practices",
+      "s2": "Ändern Sie Ihr Passwort regelmäßig (alle 3 Monate). Teilen Sie niemals Ihre Anmeldedaten. Melden Sie sich von gemeinsam genutzten Geräten ab. Überprüfen Sie regelmäßig den Anmeldeverlauf in \"Mein Konto\" > \"Sicherheit\"."
+    },
+    "gererCatalogue": {
+      "title": "Wie verwalte ich meinen Verkäuferkatalog?",
+      "s1h": "Produkte hinzufügen",
+      "s1": "Melden Sie sich in Ihrem Verkäuferbereich an und gehen Sie zu \"Katalog\". Sie können Produkte einzeln oder in großen Mengen über CSV/Excel-Import hinzufügen. Jedes Produkt muss eine gültige EAN/GTIN haben.",
+      "s2h": "Angebote verwalten",
+      "s2": "Im Tab \"Angebote\" legen Sie Ihre Preise, Lagerbestände, MOQ (Mindestbestellmenge) und Lieferzeiten fest. Angebote sind sofort nach Validierung sichtbar."
+    },
+    "marquageCe": {
+      "title": "Was ist die CE-Kennzeichnung?",
+      "s1h": "Definition",
+      "s1": "Die CE-Kennzeichnung (Conformité Européenne) ist eine verpflichtende Zertifizierung für Medizinprodukte, die im Europäischen Wirtschaftsraum vermarktet werden. Sie bescheinigt, dass das Produkt die wesentlichen Sicherheits- und Leistungsanforderungen der europäischen Richtlinien erfüllt.",
+      "s2h": "Überprüfung auf MediKong",
+      "s2": "MediKong überprüft die CE-Kennzeichnung jedes gelisteten Produkts über EUDAMED-Datenbanken und von Herstellern bereitgestellte Zertifikate. Nicht konforme Produkte werden aus dem Katalog entfernt."
+    },
+    "comparaisonPrix": {
+      "title": "Wie nutze ich den Preisvergleich?",
+      "s1h": "Auf der Produktseite vergleichen",
+      "s1": "Jede Produktseite zeigt alle verfügbaren Angebote, sortiert nach Nettopreis. Sie sehen auf einen Blick Preis, Lieferant, verfügbaren Bestand, MOQ und Lieferzeit.",
+      "s2h": "Externe Referenzpreise",
+      "s2": "Neben Direktangeboten zeigt MediKong Markt-Referenzpreise an. So können Sie prüfen, ob das Angebot im Vergleich zu den üblichen Tarifen wettbewerbsfähig ist."
+    },
+    "configurerAlertes": {
+      "title": "Wie richte ich Preisbenachrichtigungen ein?",
+      "s1h": "Benachrichtigung erstellen",
+      "s1": "Klicken Sie auf einer Produktseite auf \"Preis überwachen\". Legen Sie Ihren Ziel-Nettopreis fest. Sie erhalten eine E-Mail, sobald ein Angebot diesen Schwellenwert erreicht oder unterschreitet. Verwalten Sie alle Benachrichtigungen in \"Mein Konto\" > \"Preisbenachrichtigungen\"."
+    },
+    "accederApi": {
+      "title": "Wie greife ich auf die MediKong API zu?",
+      "s1h": "REST API",
+      "s1": "Die MediKong API ermöglicht die Integration des Katalogs, der Preise und der Bestellaufgabe in Ihr ERP oder Verwaltungssystem. Der Zugang ist Pro- oder Enterprise-Kunden vorbehalten.",
+      "s2h": "Dokumentation",
+      "s2": "Die vollständige API-Dokumentation ist auf Anfrage verfügbar. Sie umfasst Katalog-, Preis-, Lager-, Bestell- und Webhook-Endpunkte. Kontaktieren Sie Ihren Account Manager, um Ihre API-Schlüssel zu erhalten."
+    },
+    "guideAchat": {
+      "title": "Einkaufsführer für Apotheken",
+      "s1h": "Einkäufe optimieren",
+      "s1": "Als Apotheker ermöglicht Ihnen MediKong, Preise von Hunderten von Lieferanten an einem Ort zu vergleichen. Beginnen Sie mit Produkten mit hohem Umsatz (Handschuhe, Masken, Desinfektionsmittel), um die Einsparungen zu maximieren.",
+      "s2h": "Bestellstrategie",
+      "s2": "Gruppieren Sie Ihre Bestellungen nach Lieferant, um MOVs zu erreichen und von kostenloser Lieferung zu profitieren. Verwenden Sie Preisbenachrichtigungen, um zum besten Zeitpunkt zu kaufen. Aufgeschobene Zahlung ermöglicht Ihnen, Ihren Cashflow gelassen zu verwalten."
+    },
+    "bonnesPratiques": {
+      "title": "Best Practices für B2B-Bestellungen",
+      "s1h": "Einkaufsplanung",
+      "s1": "Antizipieren Sie Ihre Bedürfnisse, indem Sie Ihren Verbrauchsverlauf analysieren. Bestellen Sie regelmäßig in kleinen Mengen statt in großen Einzelbestellungen, um Engpässe zu vermeiden und den Cashflow zu optimieren.",
+      "s2h": "Multi-Lieferanten-Management",
+      "s2": "Diversifizieren Sie Ihre Bezugsquellen, um das Risiko von Engpässen zu reduzieren. MediKong vereint 350+ verifizierte Lieferanten. Vergleichen Sie Angebote und Lieferzeiten vor jeder Bestellung. Nutzen Sie Favoritenlisten, um wiederkehrende Einkäufe zu beschleunigen."
+    }
   }
 }

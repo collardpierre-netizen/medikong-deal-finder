@@ -123,13 +123,36 @@ export function BrandFormDialog({ open, onOpenChange, brand, manufacturers }: Br
             </div>
             <div>
               <Label className="text-xs">Fabricant</Label>
-              <Select value={form.manufacturer_id} onValueChange={v => setForm({ ...form, manufacturer_id: v })}>
-                <SelectTrigger><SelectValue placeholder="Aucun" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Aucun</SelectItem>
-                  {manufacturers.map(m => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" role="combobox" className="w-full justify-between text-[13px] font-normal h-9">
+                    {form.manufacturer_id && form.manufacturer_id !== "none"
+                      ? manufacturers.find(m => m.id === form.manufacturer_id)?.name || "Aucun"
+                      : "Aucun"}
+                    <ChevronsUpDown className="ml-2 h-3.5 w-3.5 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[260px] p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Rechercher un fabricant…" className="text-[12px]" />
+                    <CommandList>
+                      <CommandEmpty className="text-[12px] py-3 text-center text-muted-foreground">Aucun résultat</CommandEmpty>
+                      <CommandGroup>
+                        <CommandItem value="none" onSelect={() => setForm({ ...form, manufacturer_id: "none" })} className="text-[12px]">
+                          <Check className={cn("mr-2 h-3.5 w-3.5", (!form.manufacturer_id || form.manufacturer_id === "none") ? "opacity-100" : "opacity-0")} />
+                          Aucun
+                        </CommandItem>
+                        {manufacturers.map(m => (
+                          <CommandItem key={m.id} value={m.name} onSelect={() => setForm({ ...form, manufacturer_id: m.id })} className="text-[12px]">
+                            <Check className={cn("mr-2 h-3.5 w-3.5", form.manufacturer_id === m.id ? "opacity-100" : "opacity-0")} />
+                            {m.name}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
           <div><Label className="text-xs">Site web</Label><Input value={form.website} onChange={e => setForm({ ...form, website: e.target.value })} placeholder="https://" /></div>

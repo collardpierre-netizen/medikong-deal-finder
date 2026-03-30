@@ -11,7 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEntityItemTranslations, useBatchSaveTranslations } from "@/hooks/useTranslations";
 import { toast } from "sonner";
-import { Languages, ChevronsUpDown, Check } from "lucide-react";
+import { Languages, ChevronsUpDown, Check, Wand2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface BrandFormDialogProps {
@@ -32,10 +32,11 @@ export function BrandFormDialog({ open, onOpenChange, brand, manufacturers }: Br
 
   const [form, setForm] = useState({
     name: "", slug: "", country: "BE", website: "", description: "",
-    manufacturer_id: "", is_featured: false,
+    manufacturer_id: "", is_featured: false, logo_url: "",
     name_fr: "", name_nl: "", name_de: "",
     desc_fr: "", desc_nl: "", desc_de: "",
   });
+  const [translating, setTranslating] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -45,19 +46,47 @@ export function BrandFormDialog({ open, onOpenChange, brand, manufacturers }: Br
       setForm({
         name: brand.name || "", slug: brand.slug || "",
         country: brand.country_of_origin || "BE", website: brand.website_url || "",
-        description: brand.description || "",
+        description: brand.description || "", logo_url: brand.logo_url || "",
         manufacturer_id: brand.manufacturer_id || "",
         is_featured: brand.is_featured || false,
         name_fr: getTr("fr", "name"), name_nl: getTr("nl", "name"), name_de: getTr("de", "name"),
         desc_fr: getTr("fr", "description"), desc_nl: getTr("nl", "description"), desc_de: getTr("de", "description"),
       });
     } else {
-      setForm({ name: "", slug: "", country: "BE", website: "", description: "", manufacturer_id: "", is_featured: false, name_fr: "", name_nl: "", name_de: "", desc_fr: "", desc_nl: "", desc_de: "" });
+      setForm({ name: "", slug: "", country: "BE", website: "", description: "", manufacturer_id: "", is_featured: false, logo_url: "", name_fr: "", name_nl: "", name_de: "", desc_fr: "", desc_nl: "", desc_de: "" });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, brand?.id]);
 
   const slugify = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+
+  const handleAutoTranslate = async () => {
+    const name = form.name.trim();
+    const desc = form.description.trim();
+    if (!name && !desc) { toast.error("Remplissez le nom ou la description d'abord"); return; }
+    setTranslating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("auto-translate", {
+        body: { texts: { name, description: desc }, target_locales: ["fr", "nl", "de"] },
+      });
+      if (error) throw error;
+      const t = data?.translations || {};
+      setForm(f => ({
+        ...f,
+        name_fr: t.fr?.name || f.name_fr || name,
+        name_nl: t.nl?.name || f.name_nl,
+        name_de: t.de?.name || f.name_de,
+        desc_fr: t.fr?.description || f.desc_fr || desc,
+        desc_nl: t.nl?.description || f.desc_nl,
+        desc_de: t.de?.description || f.desc_de,
+      }));
+      toast.success("Traductions générées !");
+    } catch (e: any) {
+      toast.error("Erreur traduction : " + (e.message || "inconnue"));
+    } finally {
+      setTranslating(false);
+    }
+  };
 
   const handleSave = async () => {
     if (!form.name.trim()) { toast.error("Le nom est obligatoire"); return; }
@@ -68,6 +97,7 @@ export function BrandFormDialog({ open, onOpenChange, brand, manufacturers }: Br
       country_of_origin: form.country || null,
       website_url: form.website || null,
       description: form.description || null,
+      logo_url: form.logo_url || null,
       manufacturer_id: form.manufacturer_id && form.manufacturer_id !== "none" ? form.manufacturer_id : null,
       is_featured: form.is_featured,
     };
@@ -155,14 +185,24 @@ export function BrandFormDialog({ open, onOpenChange, brand, manufacturers }: Br
               </Popover>
             </div>
           </div>
+          <div>
+            <Label className="text-xs">Logo URL</Label>
+            <Input value={form.logo_url} onChange={e => setForm({ ...form, logo_url: e.target.value })} placeholder="https://..." />
+            {form.logo_url && <img src={form.logo_url} alt="Logo" referrerPolicy="no-referrer" crossOrigin="anonymous" className="mt-1 w-10 h-10 rounded object-contain border border-border" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />}
+          </div>
           <div><Label className="text-xs">Site web</Label><Input value={form.website} onChange={e => setForm({ ...form, website: e.target.value })} placeholder="https://" /></div>
           <div><Label className="text-xs">Description (originale)</Label><Textarea rows={2} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} /></div>
 
           {/* Translation fields */}
           <div className="border-t pt-3 mt-1">
-            <Label className="text-xs font-semibold flex items-center gap-1 mb-2">
-              <Languages size={14} /> Traductions du nom
-            </Label>
+            <div className="flex items-center justify-between mb-2">
+              <Label className="text-xs font-semibold flex items-center gap-1">
+                <Languages size={14} /> Traductions du nom
+              </Label>
+              <Button type="button" variant="outline" size="sm" className="h-7 text-[11px] gap-1" onClick={handleAutoTranslate} disabled={translating}>
+                <Wand2 size={12} /> {translating ? "Traduction..." : "Auto-traduire"}
+              </Button>
+            </div>
             <div className="grid grid-cols-3 gap-2">
               {LOCALES.map(l => (
                 <div key={l}>

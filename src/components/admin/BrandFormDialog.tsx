@@ -7,7 +7,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
+import { useEntityItemTranslations, useBatchSaveTranslations } from "@/hooks/useTranslations";
 import { toast } from "sonner";
+import { Languages } from "lucide-react";
 
 interface BrandFormDialogProps {
   open: boolean;
@@ -16,57 +18,76 @@ interface BrandFormDialogProps {
   manufacturers: any[];
 }
 
-const TIERS = ["Bronze", "Silver", "Gold", "Platinum", "Strategic"];
 const COUNTRIES = ["BE", "FR", "NL", "DE", "LU", "CH", "US", "CN", "JP"];
+const LOCALES = ["fr", "nl", "de"] as const;
 
 export function BrandFormDialog({ open, onOpenChange, brand, manufacturers }: BrandFormDialogProps) {
   const qc = useQueryClient();
   const [saving, setSaving] = useState(false);
+  const { data: brandTranslations = [] } = useEntityItemTranslations("brand", brand?.id || null);
+  const batchSave = useBatchSaveTranslations();
+
   const [form, setForm] = useState({
-    name: "", slug: "", country: "BE", website: "", description_fr: "",
-    manufacturer_id: "", tier: "Bronze", certifications: "",
+    name: "", slug: "", country: "BE", website: "", description: "",
+    manufacturer_id: "", is_featured: false,
+    name_fr: "", name_nl: "", name_de: "",
+    desc_fr: "", desc_nl: "", desc_de: "",
   });
 
   useEffect(() => {
     if (brand) {
+      const getTr = (locale: string, field: string) =>
+        brandTranslations.find(t => t.locale === locale && t.field === field)?.value || "";
       setForm({
         name: brand.name || "", slug: brand.slug || "",
-        country: brand.country || "BE", website: brand.website || "",
-        description_fr: brand.description_fr || "",
+        country: brand.country_of_origin || "BE", website: brand.website_url || "",
+        description: brand.description || "",
         manufacturer_id: brand.manufacturer_id || "",
-        tier: brand.tier || "Bronze",
-        certifications: (brand.certifications || []).join(", "),
+        is_featured: brand.is_featured || false,
+        name_fr: getTr("fr", "name"), name_nl: getTr("nl", "name"), name_de: getTr("de", "name"),
+        desc_fr: getTr("fr", "description"), desc_nl: getTr("nl", "description"), desc_de: getTr("de", "description"),
       });
     } else {
-      setForm({ name: "", slug: "", country: "BE", website: "", description_fr: "", manufacturer_id: "", tier: "Bronze", certifications: "" });
+      setForm({ name: "", slug: "", country: "BE", website: "", description: "", manufacturer_id: "", is_featured: false, name_fr: "", name_nl: "", name_de: "", desc_fr: "", desc_nl: "", desc_de: "" });
     }
-  }, [brand, open]);
+  }, [brand, open, brandTranslations]);
 
   const slugify = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 
   const handleSave = async () => {
     if (!form.name.trim()) { toast.error("Le nom est obligatoire"); return; }
     setSaving(true);
-    const payload = {
+    const payload: any = {
       name: form.name.trim(),
       slug: form.slug.trim() || slugify(form.name),
-      country: form.country || null,
-      website: form.website || null,
-      description_fr: form.description_fr || null,
+      country_of_origin: form.country || null,
+      website_url: form.website || null,
+      description: form.description || null,
       manufacturer_id: form.manufacturer_id && form.manufacturer_id !== "none" ? form.manufacturer_id : null,
-      tier: form.tier,
-      certifications: form.certifications ? form.certifications.split(",").map(s => s.trim()).filter(Boolean) : [],
+      is_featured: form.is_featured,
     };
     try {
+      let brandId = brand?.id;
       if (brand) {
         const { error } = await supabase.from("brands").update(payload).eq("id", brand.id);
         if (error) throw error;
-        toast.success("Marque mise à jour");
       } else {
-        const { error } = await supabase.from("brands").insert(payload);
+        const { data, error } = await supabase.from("brands").insert(payload).select("id").single();
         if (error) throw error;
-        toast.success("Marque créée");
+        brandId = data.id;
       }
+
+      // Save translations
+      const items: any[] = [];
+      for (const l of LOCALES) {
+        const nameVal = form[`name_${l}` as keyof typeof form]?.toString().trim();
+        const descVal = form[`desc_${l}` as keyof typeof form]?.toString().trim();
+        if (nameVal) items.push({ entity_type: "brand", entity_id: brandId, locale: l, field: "name", value: nameVal });
+        if (descVal) items.push({ entity_type: "brand", entity_id: brandId, locale: l, field: "description", value: descVal });
+      }
+      if (items.length > 0) await batchSave.mutateAsync(items);
+
+      toast.success(brand ? "Marque mise à jour" : "Marque créée");
       qc.invalidateQueries({ queryKey: ["admin-brands"] });
       onOpenChange(false);
     } catch (e: any) {
@@ -78,7 +99,7 @@ export function BrandFormDialog({ open, onOpenChange, brand, manufacturers }: Br
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{brand ? "Modifier la marque" : "Nouvelle marque"}</DialogTitle>
         </DialogHeader>
@@ -96,26 +117,47 @@ export function BrandFormDialog({ open, onOpenChange, brand, manufacturers }: Br
               </Select>
             </div>
             <div>
-              <Label className="text-xs">Tier</Label>
-              <Select value={form.tier} onValueChange={v => setForm({ ...form, tier: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{TIERS.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+              <Label className="text-xs">Fabricant</Label>
+              <Select value={form.manufacturer_id} onValueChange={v => setForm({ ...form, manufacturer_id: v })}>
+                <SelectTrigger><SelectValue placeholder="Aucun" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Aucun</SelectItem>
+                  {manufacturers.map(m => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}
+                </SelectContent>
               </Select>
             </div>
           </div>
-          <div>
-            <Label className="text-xs">Fabricant</Label>
-            <Select value={form.manufacturer_id} onValueChange={v => setForm({ ...form, manufacturer_id: v })}>
-              <SelectTrigger><SelectValue placeholder="Aucun" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">Aucun</SelectItem>
-                {manufacturers.map(m => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
           <div><Label className="text-xs">Site web</Label><Input value={form.website} onChange={e => setForm({ ...form, website: e.target.value })} placeholder="https://" /></div>
-          <div><Label className="text-xs">Description</Label><Textarea rows={3} value={form.description_fr} onChange={e => setForm({ ...form, description_fr: e.target.value })} /></div>
-          <div><Label className="text-xs">Certifications (séparées par des virgules)</Label><Input value={form.certifications} onChange={e => setForm({ ...form, certifications: e.target.value })} placeholder="CE, ISO 13485, MDR" /></div>
+          <div><Label className="text-xs">Description (originale)</Label><Textarea rows={2} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} /></div>
+
+          {/* Translation fields */}
+          <div className="border-t pt-3 mt-1">
+            <Label className="text-xs font-semibold flex items-center gap-1 mb-2">
+              <Languages size={14} /> Traductions du nom
+            </Label>
+            <div className="grid grid-cols-3 gap-2">
+              {LOCALES.map(l => (
+                <div key={l}>
+                  <span className="text-[9px] font-bold text-muted-foreground">{l.toUpperCase()}</span>
+                  <Input value={(form as any)[`name_${l}`] || ""} onChange={e => setForm({ ...form, [`name_${l}`]: e.target.value })} className="text-[11px] h-8 mt-0.5" />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <Label className="text-xs font-semibold flex items-center gap-1 mb-2">
+              <Languages size={14} /> Traductions de la description
+            </Label>
+            <div className="space-y-2">
+              {LOCALES.map(l => (
+                <div key={l}>
+                  <span className="text-[9px] font-bold text-muted-foreground">{l.toUpperCase()}</span>
+                  <Textarea rows={2} value={(form as any)[`desc_${l}`] || ""} onChange={e => setForm({ ...form, [`desc_${l}`]: e.target.value })} className="text-[11px] mt-0.5" />
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
         <div className="flex justify-end gap-2 pt-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Annuler</Button>

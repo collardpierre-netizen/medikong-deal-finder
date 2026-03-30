@@ -1629,6 +1629,39 @@ export type Database = {
         }
         Relationships: []
       }
+      translations: {
+        Row: {
+          created_at: string | null
+          entity_id: string
+          entity_type: string
+          field: string
+          id: string
+          locale: string
+          updated_at: string | null
+          value: string
+        }
+        Insert: {
+          created_at?: string | null
+          entity_id: string
+          entity_type: string
+          field: string
+          id?: string
+          locale: string
+          updated_at?: string | null
+          value: string
+        }
+        Update: {
+          created_at?: string | null
+          entity_id?: string
+          entity_type?: string
+          field?: string
+          id?: string
+          locale?: string
+          updated_at?: string | null
+          value?: string
+        }
+        Relationships: []
+      }
       user_price_watches: {
         Row: {
           created_at: string

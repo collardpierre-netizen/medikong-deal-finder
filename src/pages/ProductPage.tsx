@@ -465,13 +465,13 @@ export default function ProductPage() {
                 <Tabs defaultValue="marketplace" className="mb-6">
                   <TabsList className="w-full grid grid-cols-3 mb-4">
                     <TabsTrigger value="marketplace" className="text-xs sm:text-sm gap-1.5">
-                      <ShoppingCart size={14} className="hidden sm:inline" /> Marketplace MediKong
+                      <ShoppingCart size={14} className="hidden sm:inline" /> Marketplace MediKong <span className="ml-1 bg-primary/10 text-primary text-[10px] font-bold px-1.5 py-0.5 rounded-full">{filteredOffers.length}</span>
                     </TabsTrigger>
                     <TabsTrigger value="external" className="text-xs sm:text-sm gap-1.5">
-                      <Globe size={14} className="hidden sm:inline" /> Offres externes
+                      <Globe size={14} className="hidden sm:inline" /> Offres externes <span className="ml-1 bg-muted text-muted-foreground text-[10px] font-bold px-1.5 py-0.5 rounded-full">0</span>
                     </TabsTrigger>
                     <TabsTrigger value="market" className="text-xs sm:text-sm gap-1.5">
-                      <BarChart3 size={14} className="hidden sm:inline" /> Prix du marche
+                      <BarChart3 size={14} className="hidden sm:inline" /> Prix du marche <span className="ml-1 bg-muted text-muted-foreground text-[10px] font-bold px-1.5 py-0.5 rounded-full">0</span>
                     </TabsTrigger>
                   </TabsList>
 

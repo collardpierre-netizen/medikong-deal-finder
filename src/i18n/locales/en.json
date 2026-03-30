@@ -165,5 +165,109 @@
     "chooseLanguage": "Choose a language and region",
     "translation": "Translation",
     "autoTranslateDesc": "Automatically translate descriptions and seller content to {{language}}"
+  },
+  "helpCenter": {
+    "title": "MediKong Help Center",
+    "subtitle": "Quickly find answers to your questions about orders, delivery, payments and more.",
+    "searchPlaceholder": "Search help...",
+    "noResults": "No results for \"{{query}}\". Try another term or",
+    "contactUs": "contact us",
+    "faqTitle": "Most frequently asked questions",
+    "contactTitle": "Didn't find your answer?",
+    "contactSubtitle": "Our team is available Monday to Friday from 9am to 6pm.",
+    "email": "Email",
+    "phone": "Phone",
+    "whatsapp": "WhatsApp",
+    "whatsappSub": "Quick response",
+    "viewArticles": "View all {{count}} articles",
+    "categories": {
+      "gettingStarted": {
+        "title": "Getting Started",
+        "description": "Create your account, place your first order and browse the catalog.",
+        "a1": "How to create a professional account?",
+        "a2": "How to place my first order?",
+        "a3": "How to browse the catalog?"
+      },
+      "orders": {
+        "title": "Orders & Payments",
+        "description": "Place orders, payment methods, invoices and deferred payment.",
+        "a1": "How to place an order?",
+        "a2": "What payment methods are accepted?",
+        "a3": "How to use deferred payment?"
+      },
+      "delivery": {
+        "title": "Delivery & Tracking",
+        "description": "Timeframes, parcel tracking, returns and refunds.",
+        "a1": "How to track my parcel?",
+        "a2": "What are the delivery times?",
+        "a3": "How to return a product?"
+      },
+      "vat": {
+        "title": "VAT & Invoicing",
+        "description": "Understanding VAT, downloading invoices and managing tax data.",
+        "a1": "How does VAT work on MediKong?",
+        "a2": "Where to download my invoices?",
+        "a3": "How to update my billing information?"
+      },
+      "claims": {
+        "title": "Claims & Refunds",
+        "description": "Report an issue, track a claim and get a refund.",
+        "a1": "How to report a problem with my order?",
+        "a2": "What is the refund timeframe?",
+        "a3": "How to track my claim?"
+      },
+      "account": {
+        "title": "My Account",
+        "description": "Registration, settings, user management and security.",
+        "a1": "How to add a user?",
+        "a2": "How to secure my account?",
+        "a3": "I forgot my password"
+      },
+      "sellers": {
+        "title": "Sellers",
+        "description": "Become a seller, catalog, commissions and payments.",
+        "a1": "How to become a seller on MediKong?",
+        "a2": "How to manage my catalog?",
+        "a3": "What are the commissions?"
+      },
+      "quality": {
+        "title": "Quality & Compliance",
+        "description": "CE marking, FAMHP, warranty and traceability.",
+        "a1": "What is CE marking?",
+        "a2": "How to verify FAMHP compliance?",
+        "a3": "What is our warranty policy?"
+      },
+      "features": {
+        "title": "Features",
+        "description": "Search, price comparison, alerts and API.",
+        "a1": "How to use price comparison?",
+        "a2": "How to set up alerts?",
+        "a3": "How to access the API?"
+      },
+      "resources": {
+        "title": "Resources & Guides",
+        "description": "Tutorials, buying guides and best practices for healthcare professionals.",
+        "a1": "Buying guide for pharmacies",
+        "a2": "B2B ordering best practices"
+      }
+    },
+    "faq": {
+      "q1": "How to create a professional account?",
+      "a1": "Go to the registration page and choose 'I want to buy'. Enter your company and VAT number. Your account will be validated within 24h.",
+      "q2": "How to modify or cancel an order?",
+      "a2": "You can modify or cancel an order as long as it hasn't been shipped. Go to 'My Orders' in your account area.",
+      "q3": "What payment methods are accepted?",
+      "a3": "We accept Visa, Mastercard, Bancontact, SEPA transfer and deferred payment 30/60 days via Mondu (subject to conditions).",
+      "q4": "How to contact support?",
+      "a4": "Send an email to support@medikong.pro (response within 24h) or via the contact form. Live chat will be available soon.",
+      "q5": "How to track my order?",
+      "a5": "A tracking number is sent by email upon shipment. You can also track your order in real time from 'My Orders' in your account area.",
+      "q6": "What are the delivery times?",
+      "a6": "Most orders are shipped within 24-48h. Standard delivery takes 2-5 business days in Belgium and 3-7 days in the rest of the EU.",
+      "q7": "How to become a seller on MediKong?",
+      "a7": "Go to the 'Become a Seller' page and fill in the registration form. Our team will verify your documents within 48h.",
+      "q8": "How does VAT work on MediKong?",
+      "a8": "Displayed prices are excl. VAT. Applicable VAT is calculated automatically based on the delivery country and product type (standard or reduced rate)."
+    }
   }
 }

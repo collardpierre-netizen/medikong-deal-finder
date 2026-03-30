@@ -165,5 +165,109 @@
     "chooseLanguage": "Wählen Sie eine Sprache und Region",
     "translation": "Übersetzung",
     "autoTranslateDesc": "Beschreibungen und Verkäuferinhalte automatisch ins {{language}} übersetzen"
+  },
+  "helpCenter": {
+    "title": "MediKong Hilfezentrum",
+    "subtitle": "Finden Sie schnell Antworten auf Ihre Fragen zu Bestellungen, Lieferung, Zahlungen und mehr.",
+    "searchPlaceholder": "In der Hilfe suchen...",
+    "noResults": "Keine Ergebnisse für \"{{query}}\". Versuchen Sie einen anderen Begriff oder",
+    "contactUs": "kontaktieren Sie uns",
+    "faqTitle": "Häufig gestellte Fragen",
+    "contactTitle": "Keine Antwort gefunden?",
+    "contactSubtitle": "Unser Team ist Montag bis Freitag von 9 bis 18 Uhr erreichbar.",
+    "email": "E-Mail",
+    "phone": "Telefon",
+    "whatsapp": "WhatsApp",
+    "whatsappSub": "Schnelle Antwort",
+    "viewArticles": "Alle {{count}} Artikel anzeigen",
+    "categories": {
+      "gettingStarted": {
+        "title": "Erste Schritte",
+        "description": "Konto erstellen, erste Bestellung aufgeben und Katalog durchsuchen.",
+        "a1": "Wie erstelle ich ein professionelles Konto?",
+        "a2": "Wie gebe ich meine erste Bestellung auf?",
+        "a3": "Wie navigiere ich im Katalog?"
+      },
+      "orders": {
+        "title": "Bestellungen & Zahlungen",
+        "description": "Bestellen, Zahlungsmethoden, Rechnungen und aufgeschobene Zahlung.",
+        "a1": "Wie gebe ich eine Bestellung auf?",
+        "a2": "Welche Zahlungsmethoden werden akzeptiert?",
+        "a3": "Wie nutze ich die aufgeschobene Zahlung?"
+      },
+      "delivery": {
+        "title": "Lieferung & Sendungsverfolgung",
+        "description": "Lieferzeiten, Paketverfolgung, Retouren und Rückerstattungen.",
+        "a1": "Wie verfolge ich mein Paket?",
+        "a2": "Wie sind die Lieferzeiten?",
+        "a3": "Wie sende ich ein Produkt zurück?"
+      },
+      "vat": {
+        "title": "MwSt. & Rechnungsstellung",
+        "description": "MwSt. verstehen, Rechnungen herunterladen und Steuerdaten verwalten.",
+        "a1": "Wie funktioniert die MwSt. auf MediKong?",
+        "a2": "Wo lade ich meine Rechnungen herunter?",
+        "a3": "Wie ändere ich meine Rechnungsdaten?"
+      },
+      "claims": {
+        "title": "Reklamationen & Rückerstattungen",
+        "description": "Problem melden, Reklamation verfolgen und Rückerstattung erhalten.",
+        "a1": "Wie melde ich ein Problem mit meiner Bestellung?",
+        "a2": "Wie lang ist die Rückerstattungsfrist?",
+        "a3": "Wie verfolge ich meine Reklamation?"
+      },
+      "account": {
+        "title": "Mein Konto",
+        "description": "Registrierung, Einstellungen, Benutzerverwaltung und Sicherheit.",
+        "a1": "Wie füge ich einen Benutzer hinzu?",
+        "a2": "Wie sichere ich mein Konto?",
+        "a3": "Ich habe mein Passwort vergessen"
+      },
+      "sellers": {
+        "title": "Verkäufer",
+        "description": "Verkäufer werden, Katalog, Provisionen und Zahlungen.",
+        "a1": "Wie werde ich Verkäufer auf MediKong?",
+        "a2": "Wie verwalte ich meinen Katalog?",
+        "a3": "Wie hoch sind die Provisionen?"
+      },
+      "quality": {
+        "title": "Qualität & Konformität",
+        "description": "CE-Kennzeichnung, FAMHP, Garantie und Rückverfolgbarkeit.",
+        "a1": "Was ist die CE-Kennzeichnung?",
+        "a2": "Wie überprüfe ich die FAMHP-Konformität?",
+        "a3": "Was ist unsere Garantiepolitik?"
+      },
+      "features": {
+        "title": "Funktionen",
+        "description": "Suche, Preisvergleich, Benachrichtigungen und API.",
+        "a1": "Wie nutze ich den Preisvergleich?",
+        "a2": "Wie richte ich Benachrichtigungen ein?",
+        "a3": "Wie greife ich auf die API zu?"
+      },
+      "resources": {
+        "title": "Ressourcen & Leitfäden",
+        "description": "Tutorials, Einkaufsführer und Best Practices für Gesundheitsfachkräfte.",
+        "a1": "Einkaufsführer für Apotheken",
+        "a2": "Best Practices für B2B-Bestellungen"
+      }
+    },
+    "faq": {
+      "q1": "Wie erstelle ich ein professionelles Konto?",
+      "a1": "Gehen Sie zur Registrierungsseite und wählen Sie 'Ich möchte kaufen'. Geben Sie Ihre Unternehmensnummer und MwSt.-Nummer ein. Ihr Konto wird innerhalb von 24 Stunden validiert.",
+      "q2": "Wie ändere oder storniere ich eine Bestellung?",
+      "a2": "Sie können eine Bestellung ändern oder stornieren, solange sie noch nicht versandt wurde. Gehen Sie zu 'Meine Bestellungen' in Ihrem Kundenbereich.",
+      "q3": "Welche Zahlungsmethoden werden akzeptiert?",
+      "a3": "Wir akzeptieren Visa, Mastercard, Bancontact, SEPA-Überweisung und aufgeschobene Zahlung 30/60 Tage über Mondu (unter Bedingungen).",
+      "q4": "Wie kontaktiere ich den Support?",
+      "a4": "Senden Sie eine E-Mail an support@medikong.pro (Antwort innerhalb von 24h) oder über das Kontaktformular. Live-Chat wird bald verfügbar sein.",
+      "q5": "Wie verfolge ich meine Bestellung?",
+      "a5": "Eine Sendungsverfolgungsnummer wird bei Versand per E-Mail gesendet. Sie können Ihre Bestellung auch in Echtzeit über 'Meine Bestellungen' in Ihrem Kundenbereich verfolgen.",
+      "q6": "Wie sind die Lieferzeiten?",
+      "a6": "Die meisten Bestellungen werden innerhalb von 24-48h versandt. Die Standardlieferung dauert 2-5 Werktage in Belgien und 3-7 Tage im Rest der EU.",
+      "q7": "Wie werde ich Verkäufer auf MediKong?",
+      "a7": "Gehen Sie zur Seite 'Verkäufer werden' und füllen Sie das Registrierungsformular aus. Unser Team prüft Ihre Unterlagen innerhalb von 48h.",
+      "q8": "Wie funktioniert die MwSt. auf MediKong?",
+      "a8": "Angezeigte Preise sind exkl. MwSt. Die anwendbare MwSt. wird automatisch basierend auf dem Lieferland und Produkttyp (Standard- oder ermäßigter Satz) berechnet."
+    }
   }
 }

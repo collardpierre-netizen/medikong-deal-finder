@@ -1,8 +1,11 @@
 import { Link } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import type { HelpCategoryData } from "@/data/trust-process-data";
 
 export function HelpCategoryCard({ icon: Icon, title, description, articleCount, articles }: HelpCategoryData) {
+  const { t } = useTranslation();
+
   return (
     <div className="bg-white border border-border rounded-2xl p-6 md:p-7 hover:border-primary/30 hover:-translate-y-0.5 hover:shadow-md transition-all duration-300 flex flex-col">
       <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
@@ -28,7 +31,7 @@ export function HelpCategoryCard({ icon: Icon, title, description, articleCount,
       )}
 
       <p className="text-xs font-semibold text-primary flex items-center gap-1 mt-auto cursor-pointer hover:gap-2 transition-all">
-        Voir les {articleCount} articles <ChevronRight size={14} />
+        {t("helpCenter.viewArticles", { count: articleCount })} <ChevronRight size={14} />
       </p>
     </div>
   );

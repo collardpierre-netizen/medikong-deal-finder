@@ -214,6 +214,7 @@ const App = () => (
             <Route path="/temoignages" element={<LP><TestimonialsPage /></LP>} />
             <Route path="/contact" element={<LP><ContactPage /></LP>} />
             <Route path="/centre-aide" element={<LP><HelpCenterPage /></LP>} />
+            <Route path="/centre-aide/categorie/:key" element={<LP><HelpCategoryPage /></LP>} />
             <Route path="/centre-aide/:slug" element={<LP><HelpArticlePage /></LP>} />
 
             {/* Legal */}

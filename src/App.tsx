@@ -39,6 +39,7 @@ const OrderDetailPage = lazy(() => import("./pages/OrderDetailPage"));
 const LoginPage = lazy(() => import("./pages/LoginPage"));
 const RegisterPage = lazy(() => import("./pages/RegisterPage"));
 const CategoryPage = lazy(() => import("./pages/CategoryPage"));
+const CataloguePage = lazy(() => import("./pages/CataloguePage"));
 const PromotionsPage = lazy(() => import("./pages/PromotionsPage"));
 const SellerOnboardingPage = lazy(() => import("./pages/SellerOnboardingPage"));
 const BuyerOnboardingPage = lazy(() => import("./pages/BuyerOnboardingPage"));

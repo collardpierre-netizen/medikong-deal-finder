@@ -1,241 +1,232 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { VCard } from "@/components/vendor/ui/VCard";
 import { VTabBar } from "@/components/vendor/ui/VTabBar";
 import { VBadge } from "@/components/vendor/ui/VBadge";
 import { VBtn } from "@/components/vendor/ui/VBtn";
 import VendorCommissionTab from "@/components/vendor/VendorCommissionTab";
-import { Check, Eye, Edit2 } from "lucide-react";
+import { Check, Save, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
-const teamMembers = [
-  { id: 1, name: "Pierre Collard", email: "pierre@pharmamed.be", role: "Admin", lastActive: "27/03 10:14", avatar: "PC" },
-  { id: 2, name: "Sophie Dumont", email: "sophie@pharmamed.be", role: "Commercial", lastActive: "27/03 09:30", avatar: "SD" },
-  { id: 3, name: "Marc Janssens", email: "marc@pharmamed.be", role: "Logistique", lastActive: "26/03 16:45", avatar: "MJ" },
-];
-
-const roleColors: Record<string, string> = { Admin: "#EF4343", Commercial: "#1B5BDA", Logistique: "#059669", "Lecture seule": "#616B7C" };
-
-const documents = [
-  { name: "Extrait BCE/KBO", status: "valid", expiry: "Permanent" },
-  { name: "Attestation TVA", status: "valid", expiry: "Permanent" },
-  { name: "Assurance RC Pro", status: "valid", expiry: "15/09/2026" },
-  { name: "Licence distribution AFMPS", status: "valid", expiry: "30/06/2027" },
-  { name: "Certificat CE (lot produits)", status: "warning", expiry: "15/04/2026" },
-  { name: "IBAN verifie", status: "valid", expiry: "Permanent" },
-];
-
-const webhooks = [
-  { event: "order.created", url: "https://erp.pharmamed.be/hooks/mk-order", lastCall: "27/03 09:14" },
-  { event: "order.shipped", url: "https://erp.pharmamed.be/hooks/mk-ship", lastCall: "27/03 08:30" },
-  { event: "offer.buybox_lost", url: "https://erp.pharmamed.be/hooks/mk-bb", lastCall: "26/03 14:22" },
-];
-
-const notifCategories = [
-  {
-    label: "Commandes", items: [
-      { name: "Nouvelle commande", email: true, push: true, webhook: true },
-      { name: "Commande expediee", email: false, push: true, webhook: true },
-      { name: "Litige ouvert", email: true, push: true, webhook: true },
-    ]
-  },
-  {
-    label: "Offres & Prix", items: [
-      { name: "Buy Box gagnee/perdue", email: true, push: true, webhook: true },
-      { name: "Concurrent sous mon prix", email: true, push: true, webhook: false },
-      { name: "Stock critique", email: true, push: true, webhook: true },
-    ]
-  },
-  {
-    label: "Finance", items: [
-      { name: "Reversement effectue", email: true, push: false, webhook: false },
-      { name: "Facture disponible", email: true, push: false, webhook: false },
-    ]
-  },
-];
+const useCurrentVendor = () =>
+  useQuery({
+    queryKey: ["current-vendor"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+      const { data, error } = await supabase
+        .from("vendors")
+        .select("*")
+        .eq("auth_user_id", user.id)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
 
 export default function VendorSettings() {
   const [activeTab, setActiveTab] = useState("profile");
+  const [editing, setEditing] = useState(false);
+  const { data: vendor, isLoading } = useCurrentVendor();
+  const qc = useQueryClient();
+
+  // Form state
+  const [form, setForm] = useState({
+    company_name: "", name: "", email: "", phone: "",
+    vat_number: "", address_line1: "", city: "", postal_code: "",
+    country_code: "BE", description: "",
+  });
+
+  useEffect(() => {
+    if (vendor) {
+      setForm({
+        company_name: vendor.company_name || "",
+        name: vendor.name || "",
+        email: vendor.email || "",
+        phone: vendor.phone || "",
+        vat_number: vendor.vat_number || "",
+        address_line1: vendor.address_line1 || "",
+        city: vendor.city || "",
+        postal_code: vendor.postal_code || "",
+        country_code: vendor.country_code || "BE",
+        description: vendor.description || "",
+      });
+    }
+  }, [vendor]);
+
+  const updateVendor = useMutation({
+    mutationFn: async (updates: typeof form) => {
+      if (!vendor) throw new Error("No vendor");
+      const { error } = await supabase
+        .from("vendors")
+        .update(updates)
+        .eq("id", vendor.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Profil mis à jour");
+      qc.invalidateQueries({ queryKey: ["current-vendor"] });
+      setEditing(false);
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
   const tabs = [
     { id: "profile", label: "Profil entreprise" },
     { id: "commission", label: "Commission" },
-    { id: "team", label: "Equipe", badge: teamMembers.length },
-    { id: "api", label: "API & Webhooks" },
-    { id: "notifications", label: "Notifications" },
+  ];
+
+  const countryLabels: Record<string, string> = { BE: "Belgique", FR: "France", NL: "Pays-Bas", LU: "Luxembourg", DE: "Allemagne" };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="w-6 h-6 animate-spin text-[#1B5BDA]" />
+      </div>
+    );
+  }
+
+  if (!vendor) {
+    return (
+      <div className="space-y-5">
+        <h1 className="text-xl font-bold text-[#1D2530]">Paramètres</h1>
+        <VCard>
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <h3 className="text-[15px] font-bold text-[#1D2530] mb-2">Profil vendeur non trouvé</h3>
+            <p className="text-[13px] text-[#8B95A5] max-w-md">
+              Votre compte n'est pas encore lié à un profil vendeur. Contactez l'équipe MediKong pour finaliser votre inscription.
+            </p>
+          </div>
+        </VCard>
+      </div>
+    );
+  }
+
+  const infoRows = [
+    ["Raison sociale", form.company_name || "—"],
+    ["Nom commercial", form.name || "—"],
+    ["Email", form.email || "—"],
+    ["Téléphone", form.phone || "—"],
+    ["N° TVA", form.vat_number || "—"],
+    ["Adresse", form.address_line1 || "—"],
+    ["Ville", form.city || "—"],
+    ["Code postal", form.postal_code || "—"],
+    ["Pays", countryLabels[form.country_code] || form.country_code],
+    ["Commission", `${vendor.commission_rate}%`],
+    ["Statut", vendor.is_active ? "Actif" : "En attente d'activation"],
+    ["Membre depuis", new Date(vendor.created_at).toLocaleDateString("fr-BE", { month: "long", year: "numeric" })],
   ];
 
   return (
     <div className="space-y-5">
-      <h1 className="text-xl font-bold text-[#1D2530]">Parametres</h1>
+      <h1 className="text-xl font-bold text-[#1D2530]">Paramètres</h1>
       <VTabBar tabs={tabs} active={activeTab} onChange={setActiveTab} />
 
       {activeTab === "profile" && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <VCard>
-            <h3 className="text-sm font-semibold text-[#1D2530] mb-4">Informations entreprise</h3>
-            <div className="space-y-3 text-[13px]">
-              {[
-                ["Raison sociale", "Pharmamed SA"],
-                ["N° TVA", "BE0123.456.789"],
-                ["Pays", "Belgique"],
-                ["Membre depuis", "Juin 2024"],
-                ["Commission", "12%"],
-              ].map(([k, v]) => (
-                <div key={k} className="flex justify-between">
-                  <span className="text-[#8B95A5]">{k}</span>
-                  <span className="font-medium text-[#1D2530]">{v}</span>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold text-[#1D2530]">Informations entreprise</h3>
+              {!editing ? (
+                <VBtn small icon="Pencil" onClick={() => setEditing(true)}>Modifier</VBtn>
+              ) : (
+                <div className="flex gap-2">
+                  <VBtn small onClick={() => { setEditing(false); if (vendor) setForm({ company_name: vendor.company_name || "", name: vendor.name || "", email: vendor.email || "", phone: vendor.phone || "", vat_number: vendor.vat_number || "", address_line1: vendor.address_line1 || "", city: vendor.city || "", postal_code: vendor.postal_code || "", country_code: vendor.country_code || "BE", description: vendor.description || "" }); }}>Annuler</VBtn>
+                  <VBtn small primary icon="Save" onClick={() => updateVendor.mutate(form)}>
+                    {updateVendor.isPending ? "..." : "Sauvegarder"}
+                  </VBtn>
                 </div>
-              ))}
+              )}
             </div>
-            <VBtn small className="mt-4" icon="Pencil">Modifier</VBtn>
+
+            {!editing ? (
+              <div className="space-y-3 text-[13px]">
+                {infoRows.map(([k, v]) => (
+                  <div key={k} className="flex justify-between">
+                    <span className="text-[#8B95A5]">{k}</span>
+                    <span className="font-medium text-[#1D2530]">{v}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {[
+                  { label: "Raison sociale", key: "company_name" },
+                  { label: "Nom commercial", key: "name" },
+                  { label: "Email", key: "email" },
+                  { label: "Téléphone", key: "phone" },
+                  { label: "N° TVA", key: "vat_number" },
+                  { label: "Adresse", key: "address_line1" },
+                  { label: "Ville", key: "city" },
+                  { label: "Code postal", key: "postal_code" },
+                ].map(f => (
+                  <div key={f.key}>
+                    <label className="text-[11px] text-[#8B95A5] block mb-1">{f.label}</label>
+                    <input
+                      className="w-full px-3 py-2 text-[13px] border border-[#E2E8F0] rounded-lg focus:border-[#1B5BDA] focus:outline-none"
+                      value={(form as any)[f.key] || ""}
+                      onChange={e => setForm(prev => ({ ...prev, [f.key]: e.target.value }))}
+                    />
+                  </div>
+                ))}
+                <div>
+                  <label className="text-[11px] text-[#8B95A5] block mb-1">Pays</label>
+                  <select
+                    className="w-full px-3 py-2 text-[13px] border border-[#E2E8F0] rounded-lg focus:border-[#1B5BDA] focus:outline-none"
+                    value={form.country_code}
+                    onChange={e => setForm(prev => ({ ...prev, country_code: e.target.value }))}
+                  >
+                    {Object.entries(countryLabels).map(([code, label]) => (
+                      <option key={code} value={code}>{label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[11px] text-[#8B95A5] block mb-1">Description</label>
+                  <textarea
+                    className="w-full px-3 py-2 text-[13px] border border-[#E2E8F0] rounded-lg focus:border-[#1B5BDA] focus:outline-none resize-none"
+                    rows={3}
+                    value={form.description}
+                    onChange={e => setForm(prev => ({ ...prev, description: e.target.value }))}
+                  />
+                </div>
+              </div>
+            )}
           </VCard>
 
           <VCard>
-            <h3 className="text-sm font-semibold text-[#1D2530] mb-4">Documents & Certificats</h3>
-            <div className="space-y-2.5">
-              {documents.map(d => (
-                <div key={d.name} className="flex items-center justify-between text-[13px]">
-                  <span className="text-[#1D2530]">{d.name}</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[11px] text-[#8B95A5]">{d.expiry}</span>
-                    {d.status === "valid" ? (
-                      <VBadge color="#059669">Valide</VBadge>
-                    ) : (
-                      <VBadge color="#F59E0B">Expire bientot</VBadge>
-                    )}
-                  </div>
+            <h3 className="text-sm font-semibold text-[#1D2530] mb-4">Statut du compte</h3>
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 p-3 rounded-lg" style={{ background: vendor.is_active ? "#F0FDF4" : "#FEF3C7" }}>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${vendor.is_active ? "bg-[#059669]" : "bg-[#F59E0B]"}`}>
+                  <Check size={16} className="text-white" />
                 </div>
-              ))}
+                <div>
+                  <p className="text-[13px] font-semibold text-[#1D2530]">{vendor.is_active ? "Compte actif" : "En attente d'activation"}</p>
+                  <p className="text-[11px] text-[#616B7C]">{vendor.is_active ? "Vous pouvez créer des offres" : "Un administrateur doit activer votre compte"}</p>
+                </div>
+              </div>
+              <div className="space-y-2 text-[13px]">
+                <div className="flex justify-between">
+                  <span className="text-[#8B95A5]">Vérifié</span>
+                  <VBadge color={vendor.is_verified ? "#059669" : "#F59E0B"}>{vendor.is_verified ? "Oui" : "Non"}</VBadge>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[#8B95A5]">Gestion offres</span>
+                  <VBadge color={vendor.can_manage_offers ? "#059669" : "#8B95A5"}>{vendor.can_manage_offers ? "Activée" : "Désactivée"}</VBadge>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[#8B95A5]">Ventes totales</span>
+                  <span className="font-medium text-[#1D2530]">{vendor.total_sales}</span>
+                </div>
+              </div>
             </div>
           </VCard>
         </div>
       )}
 
       {activeTab === "commission" && <VendorCommissionTab />}
-
-      {activeTab === "team" && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-[#1D2530]">Membres de l'equipe</h3>
-            <VBtn primary small icon="UserPlus">Inviter un membre</VBtn>
-          </div>
-
-          <VCard className="!p-0 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-[13px]">
-                <thead>
-                  <tr className="bg-[#F8FAFC] border-b border-[#E2E8F0] text-[11px] text-[#8B95A5] uppercase tracking-wide">
-                    <th className="text-left py-2.5 px-3 font-medium">Membre</th>
-                    <th className="text-left py-2.5 px-3 font-medium">Email</th>
-                    <th className="text-left py-2.5 px-3 font-medium">Role</th>
-                    <th className="text-left py-2.5 px-3 font-medium">Dernier acces</th>
-                    <th className="text-right py-2.5 px-3 font-medium">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {teamMembers.map(m => (
-                    <tr key={m.id} className="border-b border-[#E2E8F0] last:border-0 hover:bg-[#F8FAFC]">
-                      <td className="py-2.5 px-3">
-                        <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-full bg-[#1B5BDA14] flex items-center justify-center text-[11px] font-bold text-[#1B5BDA]">{m.avatar}</div>
-                          <span className="font-medium text-[#1D2530]">{m.name}</span>
-                        </div>
-                      </td>
-                      <td className="py-2.5 px-3 text-[#616B7C]">{m.email}</td>
-                      <td className="py-2.5 px-3"><VBadge color={roleColors[m.role]}>{m.role}</VBadge></td>
-                      <td className="py-2.5 px-3 text-[#8B95A5]">{m.lastActive}</td>
-                      <td className="py-2.5 px-3 text-right">
-                        <button className="p-1.5 hover:bg-[#F1F5F9] rounded"><Edit2 size={14} className="text-[#8B95A5]" /></button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </VCard>
-        </div>
-      )}
-
-      {activeTab === "api" && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <VCard>
-            <h3 className="text-sm font-semibold text-[#1D2530] mb-4">Cles API</h3>
-            <div className="space-y-3">
-              <div className="bg-[#F8FAFC] rounded-lg p-3">
-                <p className="text-[11px] text-[#8B95A5] mb-1">API Key (Production)</p>
-                <div className="flex items-center gap-2">
-                  <code className="text-[13px] font-mono text-[#1D2530] flex-1">mk_live_••••••••••••4f2a</code>
-                  <button className="p-1.5 hover:bg-[#E2E8F0] rounded"><Eye size={14} className="text-[#8B95A5]" /></button>
-                </div>
-              </div>
-              <div className="bg-[#F8FAFC] rounded-lg p-3">
-                <p className="text-[11px] text-[#8B95A5] mb-1">API Key (Sandbox)</p>
-                <div className="flex items-center gap-2">
-                  <code className="text-[13px] font-mono text-[#1D2530] flex-1">mk_test_••••••••••••8b1c</code>
-                  <button className="p-1.5 hover:bg-[#E2E8F0] rounded"><Eye size={14} className="text-[#8B95A5]" /></button>
-                </div>
-              </div>
-            </div>
-            <VBtn small className="mt-3" icon="RefreshCw">Regenerer les cles</VBtn>
-          </VCard>
-
-          <VCard>
-            <h3 className="text-sm font-semibold text-[#1D2530] mb-4">Webhooks configures</h3>
-            <div className="space-y-3">
-              {webhooks.map(w => (
-                <div key={w.event} className="bg-[#F8FAFC] rounded-lg p-3">
-                  <div className="flex items-center gap-2 mb-1">
-                    <VBadge color="#059669">{w.event}</VBadge>
-                    <VBadge color="#059669">Active</VBadge>
-                  </div>
-                  <code className="text-[11px] font-mono text-[#616B7C] block mb-1">{w.url}</code>
-                  <p className="text-[10px] text-[#8B95A5]">Dernier appel : {w.lastCall}</p>
-                </div>
-              ))}
-            </div>
-          </VCard>
-        </div>
-      )}
-
-      {activeTab === "notifications" && (
-        <VCard className="!p-0 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-[13px]">
-              <thead>
-                <tr className="bg-[#F8FAFC] border-b border-[#E2E8F0] text-[11px] text-[#8B95A5] uppercase tracking-wide">
-                  <th className="text-left py-2.5 px-3 font-medium w-1/2">Notification</th>
-                  <th className="text-center py-2.5 px-3 font-medium">Email</th>
-                  <th className="text-center py-2.5 px-3 font-medium">Push</th>
-                  <th className="text-center py-2.5 px-3 font-medium">Webhook</th>
-                </tr>
-              </thead>
-              <tbody>
-                {notifCategories.map(cat => (
-                  <tbody key={cat.label}>
-                    <tr className="bg-[#F8FAFC]">
-                      <td colSpan={4} className="py-2 px-3 text-[11px] font-semibold text-[#1D2530] uppercase tracking-wide">{cat.label}</td>
-                    </tr>
-                    {cat.items.map(item => (
-                      <tr key={item.name} className="border-b border-[#E2E8F0]">
-                        <td className="py-2.5 px-3 text-[#616B7C]">{item.name}</td>
-                        {[item.email, item.push, item.webhook].map((checked, ci) => (
-                          <td key={ci} className="py-2.5 px-3 text-center">
-                            <label className="inline-flex items-center justify-center cursor-pointer">
-                              <div className={`w-[18px] h-[18px] rounded-[3px] border flex items-center justify-center transition-colors ${
-                                checked ? "bg-[#1B5BDA] border-[#1B5BDA]" : "bg-white border-[#CBD5E1]"
-                              }`}>
-                                {checked && <Check size={12} className="text-white" />}
-                              </div>
-                            </label>
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </VCard>
-      )}
     </div>
   );
 }

@@ -465,13 +465,13 @@ export default function ProductPage() {
                 <Tabs defaultValue="marketplace" className="mb-6">
                   <TabsList className="w-full grid grid-cols-3 mb-4">
                     <TabsTrigger value="marketplace" className="text-xs sm:text-sm gap-1.5">
-                      <ShoppingCart size={14} className="hidden sm:inline" /> Marketplace MediKong
+                      <ShoppingCart size={14} className="hidden sm:inline" /> Marketplace MediKong <span className="ml-1 bg-primary/10 text-primary text-[10px] font-bold px-1.5 py-0.5 rounded-full">{filteredOffers.length}</span>
                     </TabsTrigger>
                     <TabsTrigger value="external" className="text-xs sm:text-sm gap-1.5">
-                      <Globe size={14} className="hidden sm:inline" /> Offres externes
+                      <Globe size={14} className="hidden sm:inline" /> Offres externes <span className="ml-1 bg-muted text-muted-foreground text-[10px] font-bold px-1.5 py-0.5 rounded-full">0</span>
                     </TabsTrigger>
                     <TabsTrigger value="market" className="text-xs sm:text-sm gap-1.5">
-                      <BarChart3 size={14} className="hidden sm:inline" /> Prix du marche
+                      <BarChart3 size={14} className="hidden sm:inline" /> Prix du marche <span className="ml-1 bg-muted text-muted-foreground text-[10px] font-bold px-1.5 py-0.5 rounded-full">0</span>
                     </TabsTrigger>
                   </TabsList>
 
@@ -601,9 +601,12 @@ export default function ProductPage() {
                     <div className="border border-border rounded-xl p-8 text-center">
                       <Globe size={40} className="mx-auto mb-3 text-muted-foreground/40" />
                       <h3 className="text-base font-bold text-foreground mb-2">Offres externes</h3>
-                      <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                        Aucune offre externe disponible pour le moment. Les offres de nos partenaires grossistes seront bientot disponibles ici.
+                      <p className="text-sm text-muted-foreground max-w-md mx-auto mb-4">
+                        Aucune offre externe disponible pour le moment. Vous etes fournisseur ? Proposez votre prix.
                       </p>
+                      <Link to="/devenir-vendeur" className="inline-block bg-primary text-primary-foreground font-semibold text-sm px-5 py-2.5 rounded-lg hover:opacity-90 transition-opacity">
+                        Devenir fournisseur
+                      </Link>
                     </div>
                   </TabsContent>
 

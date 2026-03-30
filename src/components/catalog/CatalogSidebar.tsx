@@ -103,7 +103,7 @@ export function CatalogSidebar({ filters, setFilter, clearAll }: Props) {
         </p>
       </div>
 
-      {/* Categories */}
+      {/* Categories — collapsible with max-height scroll */}
       <div>
         <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Catégorie</h4>
         {filters.category && (
@@ -118,21 +118,23 @@ export function CatalogSidebar({ filters, setFilter, clearAll }: Props) {
             {parentCategory ? parentCategory.name : "Toutes les catégories"}
           </button>
         )}
-        <div className="space-y-0.5">
-          {displayCategories.map((cat: any) => (
-            <button
-              key={cat.id}
-              onClick={() => setFilter("category", cat.slug)}
-              className={`block w-full text-left text-sm py-1.5 px-2 rounded transition-colors ${
-                filters.category === cat.slug
-                  ? "bg-primary/10 text-primary font-medium"
-                  : "text-foreground hover:bg-muted"
-              }`}
-            >
-              {cat.name}
-            </button>
-          ))}
-        </div>
+        <ScrollArea className="max-h-[220px]">
+          <div className="space-y-0.5">
+            {displayCategories.map((cat: any) => (
+              <button
+                key={cat.id}
+                onClick={() => setFilter("category", cat.slug)}
+                className={`block w-full text-left text-sm py-1.5 px-2 rounded transition-colors ${
+                  filters.category === cat.slug
+                    ? "bg-primary/10 text-primary font-medium"
+                    : "text-foreground hover:bg-muted"
+                }`}
+              >
+                {cat.name}
+              </button>
+            ))}
+          </div>
+        </ScrollArea>
       </div>
 
       {/* Brands */}

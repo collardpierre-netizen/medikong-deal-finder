@@ -3,6 +3,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Mail, CheckCircle2 } from "lucide-react";
+import logoDark from "@/assets/Logo_horizontal_sombre2.png";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -29,8 +30,7 @@ export default function ForgotPasswordPage() {
       <div className="w-full max-w-[400px] p-8">
         <div className="text-center mb-8">
           <Link to="/" className="flex items-center justify-center mb-4">
-            <span className="text-mk-navy font-bold text-2xl">MediKong</span>
-            <span className="text-mk-blue font-bold text-2xl">.pro</span>
+            <img src={logoDark} alt="MediKong.pro" className="h-12" />
           </Link>
           <h1 className="text-xl font-bold text-mk-navy">Mot de passe oublié</h1>
           <p className="text-sm text-mk-sec mt-2">Entrez votre email pour recevoir un lien de réinitialisation.</p>

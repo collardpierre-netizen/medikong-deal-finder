@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, Lock, CheckCircle2 } from "lucide-react";
+import logoDark from "@/assets/Logo_horizontal_sombre2.png";
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState("");
@@ -63,10 +64,9 @@ export default function ResetPasswordPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-mk-alt">
         <div className="w-full max-w-[400px] p-8 text-center">
-          <Link to="/" className="flex items-center justify-center mb-4">
-            <span className="text-mk-navy font-bold text-2xl">MediKong</span>
-            <span className="text-mk-blue font-bold text-2xl">.pro</span>
-          </Link>
+            <Link to="/" className="flex items-center justify-center mb-4">
+              <img src={logoDark} alt="MediKong.pro" className="h-12" />
+            </Link>
           <h1 className="text-xl font-bold text-mk-navy mb-2">Lien invalide</h1>
           <p className="text-sm text-mk-sec mb-4">Ce lien de réinitialisation est invalide ou a expiré.</p>
           <Link to="/mot-de-passe-oublie" className="text-sm text-mk-blue font-medium">Demander un nouveau lien</Link>
@@ -79,10 +79,9 @@ export default function ResetPasswordPage() {
     <div className="min-h-screen flex items-center justify-center bg-mk-alt">
       <div className="w-full max-w-[400px] p-8">
         <div className="text-center mb-8">
-          <Link to="/" className="flex items-center justify-center mb-4">
-            <span className="text-mk-navy font-bold text-2xl">MediKong</span>
-            <span className="text-mk-blue font-bold text-2xl">.pro</span>
-          </Link>
+            <Link to="/" className="flex items-center justify-center mb-4">
+              <img src={logoDark} alt="MediKong.pro" className="h-12" />
+            </Link>
           <h1 className="text-xl font-bold text-mk-navy">Nouveau mot de passe</h1>
         </div>
 

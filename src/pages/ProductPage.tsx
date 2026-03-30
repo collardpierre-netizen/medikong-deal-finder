@@ -5,13 +5,14 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import {
   Copy, Sliders, ShoppingCart, Shield, Check, Truck, Minus, Plus,
-  Heart, Tag, Package, ChevronRight, Home, Star, Info, Award
+  Heart, Tag, Package, ChevronRight, Home, Star, Info, Award, Globe, BarChart3
 } from "lucide-react";
 import { useFavorites, useRecentActivity } from "@/hooks/useFavorites";
 import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { PageTransition } from "@/components/shared/PageTransition";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCountry } from "@/contexts/CountryContext";
@@ -399,7 +400,7 @@ export default function ProductPage() {
               {/* Image disclaimer */}
               <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1">
                 <Info size={12} />
-                Les photos sont a titre indicatif. Fiez-vous au GTIN, pas a l'image.
+                Les photos sont a titre indicatif. Fiez-vous au GTIN.
               </p>
 
               {/* Favorite button */}
@@ -442,12 +443,12 @@ export default function ProductPage() {
               </div>
 
               {/* Tax note */}
-              <p className="text-xs text-muted-foreground mb-4">Les prix peuvent etre soumis a TVA.</p>
+              <p className="text-xs text-muted-foreground mb-4">Prix soumis a TVA selon votre pays.</p>
 
               {/* Badges */}
               <div className="flex items-center gap-2 flex-wrap mb-6">
                 <span className="inline-flex items-center gap-1.5 text-xs font-medium bg-green-50 text-green-700 px-3 py-1.5 rounded-full border border-green-200">
-                  <Truck size={13} /> Livraison rapide
+                  <Truck size={13} /> Livraison gratuite
                 </span>
                 <span className="inline-flex items-center gap-1.5 text-xs font-medium bg-blue-50 text-blue-700 px-3 py-1.5 rounded-full border border-blue-200">
                   <Shield size={13} /> Authenticite 100% garantie
@@ -459,125 +460,164 @@ export default function ProductPage() {
 
               <div className="border-t border-border mb-6" />
 
-              {/* ── Offer Filters ── */}
+              {/* ── Offers Tabs ── */}
               <div ref={offerSectionRef}>
-                <div className="bg-muted/50 border border-border rounded-xl p-4 mb-6">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Sliders size={14} className="text-foreground" />
-                    <span className="text-sm font-bold text-foreground">Filtrer les offres</span>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-xs text-muted-foreground mb-1 block">MOV maximum</label>
-                      <select
-                        className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background"
-                        value={movFilter || ""}
-                        onChange={(e) => setMovFilter(e.target.value ? Number(e.target.value) : null)}
-                      >
-                        <option value="">Tous</option>
-                        <option value="250">250 €</option>
-                        <option value="500">500 €</option>
-                        <option value="1000">1 000 €</option>
-                        <option value="2500">2 500 €</option>
-                        <option value="5000">5 000 €</option>
-                        <option value="10000">10 000 €</option>
-                      </select>
-                      <p className="text-[11px] text-muted-foreground mt-1">Afficher uniquement les offres avec un MOV jusqu'a ce montant</p>
-                    </div>
-                    <div>
-                      <label className="text-xs text-muted-foreground mb-1 block">Delai de livraison max</label>
-                      <select
-                        className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background"
-                        value={delayFilter || ""}
-                        onChange={(e) => setDelayFilter(e.target.value ? Number(e.target.value) : null)}
-                      >
-                        <option value="">Tous</option>
-                        <option value="7">1 semaine</option>
-                        <option value="14">2 semaines</option>
-                        <option value="21">3 semaines</option>
-                        <option value="30">1 mois</option>
-                      </select>
-                      <p className="text-[11px] text-muted-foreground mt-1">Afficher uniquement les offres livrees dans ce delai</p>
-                    </div>
-                  </div>
-                </div>
+                <Tabs defaultValue="marketplace" className="mb-6">
+                  <TabsList className="w-full grid grid-cols-3 mb-4">
+                    <TabsTrigger value="marketplace" className="text-xs sm:text-sm gap-1.5">
+                      <ShoppingCart size={14} className="hidden sm:inline" /> Marketplace MediKong
+                    </TabsTrigger>
+                    <TabsTrigger value="external" className="text-xs sm:text-sm gap-1.5">
+                      <Globe size={14} className="hidden sm:inline" /> Offres externes
+                    </TabsTrigger>
+                    <TabsTrigger value="market" className="text-xs sm:text-sm gap-1.5">
+                      <BarChart3 size={14} className="hidden sm:inline" /> Prix du marche
+                    </TabsTrigger>
+                  </TabsList>
 
-                {/* ── Best Offer ── */}
-                {bestOffer ? (
-                  <div className="border-2 border-primary/20 bg-primary/[0.02] rounded-xl p-4 md:p-6 mb-4">
-                    <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-                      <div className="flex items-center gap-2">
-                        <Award size={18} className="text-primary" />
-                        <h3 className="text-base md:text-lg font-bold text-foreground">Meilleure offre</h3>
+                  {/* ── Tab: Marketplace MediKong ── */}
+                  <TabsContent value="marketplace">
+                    {/* Filters */}
+                    <div className="bg-muted/50 border border-border rounded-xl p-4 mb-6">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Sliders size={14} className="text-foreground" />
+                        <span className="text-sm font-bold text-foreground">Filtrer les offres</span>
                       </div>
-                      <span className="text-sm text-primary font-medium">{totalStock.toLocaleString("fr-FR")} disponibles</span>
-                    </div>
-
-                    {/* Table header (desktop) */}
-                    <div className="hidden md:grid grid-cols-[1.5fr_1fr_1fr_0.8fr_1.5fr] gap-3 px-1 pb-3 text-xs font-semibold text-muted-foreground border-b border-border">
-                      <span>Fournisseur</span>
-                      <span>Prix unitaire</span>
-                      <span>MOV</span>
-                      <span>Stock</span>
-                      <span className="text-right">Actions</span>
-                    </div>
-
-                    <OfferRow
-                      offer={bestOffer}
-                      productId={product.id}
-                      productName={product.name}
-                      productSlug={product.slug}
-                      user={user}
-                      navigate={navigate}
-                      addToCart={addToCart}
-                      isBest
-                    />
-                  </div>
-                ) : (
-                  <div className="border border-border rounded-xl p-6 text-center text-muted-foreground mb-4">
-                    <Package size={32} className="mx-auto mb-2 opacity-50" />
-                    <p className="text-sm">Aucune offre disponible pour ce produit dans votre pays.</p>
-                  </div>
-                )}
-
-                {/* ── Other Offers ── */}
-                {otherOffers.length > 0 && (
-                  <div className="border border-border rounded-xl p-4 md:p-6 mb-6">
-                    <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-base font-bold text-foreground">
-                          {otherOffers.length} autre{otherOffers.length > 1 ? "s" : ""} offre{otherOffers.length > 1 ? "s" : ""}
-                        </h3>
-                        <span className="text-xs text-muted-foreground">Trie par prix</span>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-xs text-muted-foreground mb-1 block">MOV maximum</label>
+                          <select
+                            className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background"
+                            value={movFilter || ""}
+                            onChange={(e) => setMovFilter(e.target.value ? Number(e.target.value) : null)}
+                          >
+                            <option value="">Tous</option>
+                            <option value="250">250 €</option>
+                            <option value="500">500 €</option>
+                            <option value="1000">1 000 €</option>
+                            <option value="2500">2 500 €</option>
+                            <option value="5000">5 000 €</option>
+                            <option value="10000">10 000 €</option>
+                          </select>
+                          <p className="text-[11px] text-muted-foreground mt-1">Afficher uniquement les offres avec un MOV jusqu'a ce montant</p>
+                        </div>
+                        <div>
+                          <label className="text-xs text-muted-foreground mb-1 block">Delai de livraison max</label>
+                          <select
+                            className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background"
+                            value={delayFilter || ""}
+                            onChange={(e) => setDelayFilter(e.target.value ? Number(e.target.value) : null)}
+                          >
+                            <option value="">Tous</option>
+                            <option value="7">1 semaine</option>
+                            <option value="14">2 semaines</option>
+                            <option value="21">3 semaines</option>
+                            <option value="30">1 mois</option>
+                          </select>
+                          <p className="text-[11px] text-muted-foreground mt-1">Afficher uniquement les offres livrees dans ce delai</p>
+                        </div>
                       </div>
-                      <span className="text-sm text-primary font-medium">
-                        {otherOffers.reduce((s, o) => s + o.stockQuantity, 0).toLocaleString("fr-FR")} disponibles
-                      </span>
                     </div>
 
-                    <div className="hidden md:grid grid-cols-[1.5fr_1fr_1fr_0.8fr_1.5fr] gap-3 px-1 pb-3 text-xs font-semibold text-muted-foreground border-b border-border">
-                      <span>Fournisseur</span>
-                      <span>Prix unitaire</span>
-                      <span>MOV</span>
-                      <span>Stock</span>
-                      <span className="text-right">Actions</span>
-                    </div>
+                    {/* Best Offer */}
+                    {bestOffer ? (
+                      <div className="border-2 border-primary/20 bg-primary/[0.02] rounded-xl p-4 md:p-6 mb-4">
+                        <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+                          <div className="flex items-center gap-2">
+                            <Award size={18} className="text-primary" />
+                            <h3 className="text-base md:text-lg font-bold text-foreground">Meilleure offre</h3>
+                          </div>
+                          <span className="text-sm text-primary font-medium">{totalStock.toLocaleString("fr-FR")} disponibles</span>
+                        </div>
 
-                    {otherOffers.map((offer, i) => (
-                      <OfferRow
-                        key={offer.id}
-                        offer={offer}
-                        productId={product.id}
-                        productName={product.name}
-                        productSlug={product.slug}
-                        user={user}
-                        navigate={navigate}
-                        addToCart={addToCart}
-                        delay={i * 0.06}
-                      />
-                    ))}
-                  </div>
-                )}
+                        <div className="hidden md:grid grid-cols-[1.5fr_1fr_1fr_0.8fr_1.5fr] gap-3 px-1 pb-3 text-xs font-semibold text-muted-foreground border-b border-border">
+                          <span>Fournisseur</span>
+                          <span>Prix unitaire</span>
+                          <span>MOV</span>
+                          <span>Stock</span>
+                          <span className="text-right">Actions</span>
+                        </div>
+
+                        <OfferRow
+                          offer={bestOffer}
+                          productId={product.id}
+                          productName={product.name}
+                          productSlug={product.slug}
+                          user={user}
+                          navigate={navigate}
+                          addToCart={addToCart}
+                          isBest
+                        />
+                      </div>
+                    ) : (
+                      <div className="border border-border rounded-xl p-6 text-center text-muted-foreground mb-4">
+                        <Package size={32} className="mx-auto mb-2 opacity-50" />
+                        <p className="text-sm">Aucune offre disponible pour ce produit dans votre pays.</p>
+                      </div>
+                    )}
+
+                    {/* Other Offers */}
+                    {otherOffers.length > 0 && (
+                      <div className="border border-border rounded-xl p-4 md:p-6">
+                        <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-base font-bold text-foreground">
+                              {otherOffers.length} autre{otherOffers.length > 1 ? "s" : ""} offre{otherOffers.length > 1 ? "s" : ""}
+                            </h3>
+                            <span className="text-xs text-muted-foreground">Trie par prix</span>
+                          </div>
+                          <span className="text-sm text-primary font-medium">
+                            {otherOffers.reduce((s, o) => s + o.stockQuantity, 0).toLocaleString("fr-FR")} disponibles
+                          </span>
+                        </div>
+
+                        <div className="hidden md:grid grid-cols-[1.5fr_1fr_1fr_0.8fr_1.5fr] gap-3 px-1 pb-3 text-xs font-semibold text-muted-foreground border-b border-border">
+                          <span>Fournisseur</span>
+                          <span>Prix unitaire</span>
+                          <span>MOV</span>
+                          <span>Stock</span>
+                          <span className="text-right">Actions</span>
+                        </div>
+
+                        {otherOffers.map((offer, i) => (
+                          <OfferRow
+                            key={offer.id}
+                            offer={offer}
+                            productId={product.id}
+                            productName={product.name}
+                            productSlug={product.slug}
+                            user={user}
+                            navigate={navigate}
+                            addToCart={addToCart}
+                            delay={i * 0.06}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </TabsContent>
+
+                  {/* ── Tab: Offres externes ── */}
+                  <TabsContent value="external">
+                    <div className="border border-border rounded-xl p-8 text-center">
+                      <Globe size={40} className="mx-auto mb-3 text-muted-foreground/40" />
+                      <h3 className="text-base font-bold text-foreground mb-2">Offres externes</h3>
+                      <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                        Aucune offre externe disponible pour le moment. Les offres de nos partenaires grossistes seront bientot disponibles ici.
+                      </p>
+                    </div>
+                  </TabsContent>
+
+                  {/* ── Tab: Prix du marché ── */}
+                  <TabsContent value="market">
+                    <div className="border border-border rounded-xl p-8 text-center">
+                      <BarChart3 size={40} className="mx-auto mb-3 text-muted-foreground/40" />
+                      <h3 className="text-base font-bold text-foreground mb-2">Prix du marche</h3>
+                      <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                        Veille de prix en cours de configuration. Les comparaisons de prix avec les principaux distributeurs seront bientot disponibles.
+                      </p>
+                    </div>
+                  </TabsContent>
+                </Tabs>
               </div>
 
               {/* ── Description ── */}

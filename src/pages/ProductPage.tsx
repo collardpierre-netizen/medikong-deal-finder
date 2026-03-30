@@ -718,13 +718,13 @@ export default function ProductPage() {
                   </div>
                 </div>
                 <div className="sm:hidden min-w-0">
-                  <p className="text-base font-bold text-green-700">{formatEur(bestOffer.unitPriceEur)} €</p>
-                  <p className="text-[10px] text-muted-foreground truncate">HT · {brandData?.name || product.brand || ""}</p>
+                  <p className="text-base font-bold text-green-700">{formatEur(isTVAC ? bestOffer.unitPriceInclVat : bestOffer.unitPriceEur)} €</p>
+                  <p className="text-[10px] text-muted-foreground truncate">{isTVAC ? "TVAC" : "HTVA"} · {brandData?.name || product.brand || ""}</p>
                 </div>
                 <div className="flex items-center gap-2 sm:gap-3 shrink-0">
                   <div className="text-right hidden sm:block">
-                    <p className="text-lg font-bold text-green-700">{formatEur(bestOffer.unitPriceEur)} €</p>
-                    <p className="text-[11px] text-muted-foreground">HT</p>
+                    <p className="text-lg font-bold text-green-700">{formatEur(isTVAC ? bestOffer.unitPriceInclVat : bestOffer.unitPriceEur)} €</p>
+                    <p className="text-[11px] text-muted-foreground">{isTVAC ? "TVAC" : "HTVA"}</p>
                   </div>
                   <div className="flex items-center border border-border rounded-md bg-background">
                     <button onClick={() => setStickyQty(Math.max(1, stickyQty - 1))} className="px-2 py-1.5 text-muted-foreground"><Minus size={14} /></button>

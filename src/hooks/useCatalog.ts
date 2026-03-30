@@ -144,7 +144,8 @@ export function useCatalogProducts(filters: CatalogFilters) {
       if (filters.inStock) query = query.eq("is_in_stock", true);
 
       if (filters.search) {
-        query = query.ilike("name", `%${filters.search}%`);
+        const pattern = `%${filters.search}%`;
+        query = query.or(`name.ilike.${pattern},gtin.ilike.${pattern},cnk_code.ilike.${pattern},brand_name.ilike.${pattern},category_name.ilike.${pattern}`);
       }
 
       // Sort

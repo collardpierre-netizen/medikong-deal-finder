@@ -455,29 +455,20 @@ export default function AdminSync() {
         <p className="text-[12px] mb-4" style={{ color: "#8B95A5" }}>
           Synchronise les produits, marques et catégories vers Meilisearch pour la recherche instantanée.
         </p>
-        <button
-          onClick={async () => {
-            setMeiliSyncing(true);
-            try {
-              const { data, error } = await supabase.functions.invoke("sync-meilisearch", {
-                body: { action: "full-sync" },
-              });
-              if (error) throw error;
-              toast.success("Sync Meilisearch terminée ✅", {
-                description: `${data?.synced?.products || 0} produits, ${data?.synced?.brands || 0} marques, ${data?.synced?.categories || 0} catégories`,
-              });
-            } catch (err: any) {
-              toast.error("Erreur sync Meilisearch", { description: err.message });
-            } finally {
-              setMeiliSyncing(false);
-            }
-          }}
-          disabled={meiliSyncing}
-          className="flex items-center gap-2 px-4 py-2.5 bg-[#1B5BDA] text-white rounded-lg text-[13px] font-semibold disabled:opacity-50 hover:bg-[#1549B5] transition-colors"
-        >
-          {meiliSyncing ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
-          {meiliSyncing ? "Synchronisation en cours..." : "Sync complète Meilisearch"}
-        </button>
+        <div className="relative group inline-block mb-3">
+          <button
+            disabled
+            className="flex items-center gap-2 px-4 py-2.5 bg-muted text-muted-foreground rounded-lg text-[13px] font-semibold opacity-50 cursor-not-allowed"
+          >
+            <RefreshCw size={14} />
+            Sync complète Meilisearch
+          </button>
+          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-50">
+            <div className="bg-foreground text-background text-[11px] px-3 py-1.5 rounded-md whitespace-nowrap shadow-lg">
+              Instance Meilisearch non configurée
+            </div>
+          </div>
+        </div>
         <button
           onClick={async () => {
             setResolving(true);

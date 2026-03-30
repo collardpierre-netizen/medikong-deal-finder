@@ -2,8 +2,8 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { Search, X, Package, Tag, FolderOpen, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { federatedSearch, isMeilisearchConfigured } from "@/lib/meilisearch";
-import type { FederatedResults } from "@/lib/meilisearch";
+import { federatedSearch } from "@/lib/supabase-search";
+import type { FederatedResults } from "@/lib/supabase-search";
 
 interface InstantSearchBarProps {
   className?: string;
@@ -19,14 +19,9 @@ export function InstantSearchBar({ className = "", placeholder, variant = "navba
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
-  const [configured, setConfigured] = useState(true); // optimistic
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
-
-  useEffect(() => {
-    isMeilisearchConfigured().then(setConfigured);
-  }, []);
 
   const search = useCallback(async (q: string) => {
     if (!q.trim()) {
@@ -165,8 +160,8 @@ export function InstantSearchBar({ className = "", placeholder, variant = "navba
                   onClick={() => { navigate(`/produit/${p.slug}`); setIsOpen(false); setQuery(""); }}
                   className={`w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-accent/50 transition-colors ${selectedIndex === i ? "bg-accent/50" : ""}`}
                 >
-                  {p.image_url ? (
-                    <img src={p.image_url} alt="" className="w-8 h-8 rounded object-contain bg-muted/20 shrink-0" />
+                  {p.image_urls && p.image_urls[0] ? (
+                    <img src={p.image_urls[0]} alt="" className="w-8 h-8 rounded object-contain bg-muted/20 shrink-0" />
                   ) : (
                     <div className="w-8 h-8 rounded bg-muted/20 flex items-center justify-center shrink-0">
                       <Package size={14} className="text-muted-foreground" />

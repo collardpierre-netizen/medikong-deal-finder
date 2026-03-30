@@ -197,12 +197,24 @@ export default function OnboardingPage() {
   const [leadTime, setLeadTime] = useState("");
 
   /* ─── Testimonials from DB ─── */
-  // Testimonials - hardcoded since table doesn't exist in V5
-  const testimonials: any[] = [];
+  const { data: dbTestimonials } = useQuery({
+    queryKey: ["onboarding-testimonials", role],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("onboarding_testimonials")
+        .select("*")
+        .eq("is_active", true)
+        .order("sort_order");
+      return data || [];
+    },
+  });
   const fallbackTestimonials = [
     { gradient: "linear-gradient(135deg, #1a365d, #2d3748, #1a202c)", quote: "MediKong a transformé nos achats médicaux.", name: "Équipe MediKong", title: "Marketplace B2B", photo_url: null },
   ];
-  const activeTestimonials = testimonials.length > 0 ? testimonials : fallbackTestimonials;
+  const filteredTestimonials = (dbTestimonials || []).filter(
+    (t: any) => t.role_visibility === "both" || t.role_visibility === role
+  );
+  const activeTestimonials = filteredTestimonials.length > 0 ? filteredTestimonials : fallbackTestimonials;
 
   const [tIdx, setTIdx] = useState(0);
   useEffect(() => {

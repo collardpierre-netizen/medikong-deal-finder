@@ -81,7 +81,7 @@ export const competitors = [
 export const universes = ["EPI", "Désinfection", "Instruments", "Pansements", "Diagnostic", "Mobilier", "Nutrition", "Marques A-Z"];
 
 export function formatPrice(price: number): string {
-  return price.toFixed(2).replace('.', ',');
+  return price.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 // Icon map for product placeholders

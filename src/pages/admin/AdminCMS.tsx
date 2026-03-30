@@ -184,8 +184,10 @@ const AdminCMS = () => {
       const { error: uploadError } = await supabase.storage.from("cms-images").upload(`hero/${fileName}`, file, { upsert: false });
       if (uploadError) throw uploadError;
       const { data: urlData } = supabase.storage.from("cms-images").getPublicUrl(`hero/${fileName}`);
-      await insertHeroImage(urlData.publicUrl, newImageAlt || file.name);
+      await insertHeroImage(urlData.publicUrl, newImageAlt || file.name, newLinkUrl, newCtaText);
       setNewImageAlt("");
+      setNewLinkUrl("");
+      setNewCtaText("");
       toast.success("Image uploadée et ajoutée");
     } catch (err: any) {
       toast.error("Erreur upload : " + (err.message || "inconnue"));

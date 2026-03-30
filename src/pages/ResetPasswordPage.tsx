@@ -79,10 +79,9 @@ export default function ResetPasswordPage() {
     <div className="min-h-screen flex items-center justify-center bg-mk-alt">
       <div className="w-full max-w-[400px] p-8">
         <div className="text-center mb-8">
-          <Link to="/" className="flex items-center justify-center mb-4">
-            <span className="text-mk-navy font-bold text-2xl">MediKong</span>
-            <span className="text-mk-blue font-bold text-2xl">.pro</span>
-          </Link>
+            <Link to="/" className="flex items-center justify-center mb-4">
+              <img src={logoDark} alt="MediKong.pro" className="h-12" />
+            </Link>
           <h1 className="text-xl font-bold text-mk-navy">Nouveau mot de passe</h1>
         </div>
 

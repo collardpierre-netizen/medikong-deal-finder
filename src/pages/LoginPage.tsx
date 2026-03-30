@@ -31,7 +31,7 @@ export default function LoginPage() {
       <div className="w-full max-w-[400px] p-8">
         <div className="text-center mb-8">
           <Link to="/" className="flex items-center justify-center mb-4">
-            <img src={logoDark} alt="MediKong.pro" className="h-10" />
+            <img src={logoDark} alt="MediKong.pro" className="h-12" />
           </Link>
           <h1 className="text-xl font-bold text-mk-navy">Connectez-vous a votre compte</h1>
         </div>

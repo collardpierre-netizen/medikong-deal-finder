@@ -388,6 +388,19 @@ export default function ProductPage() {
     enabled: !!product?.id,
   });
 
+  // Market codes
+  const { data: marketCodes = [] } = useQuery({
+    queryKey: ["product-market-codes-display", product?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("product_market_codes")
+        .select("code_value, verified, market_code_types(code, label, country_code, country_name)")
+        .eq("product_id", product!.id);
+      return data || [];
+    },
+    enabled: !!product?.id,
+  });
+
   // Track view
   useEffect(() => {
     if (product?.id && user) {

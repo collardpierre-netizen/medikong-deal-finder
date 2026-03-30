@@ -1,0 +1,1 @@
+UPDATE sync_logs SET status = 'error', completed_at = now(), error_message = 'Fonction expirée — redéployée', progress_message = 'Erreur: timeout' WHERE id = '929138ef-5c8c-4c9d-9c36-030b6197d73e' AND status = 'running';

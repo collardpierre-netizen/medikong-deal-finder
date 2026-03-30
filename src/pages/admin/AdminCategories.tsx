@@ -22,6 +22,7 @@ const LOCALES = ["fr", "nl", "de"] as const;
 const AdminCategories = () => {
   const qc = useQueryClient();
   const { data: categoriesData = [], isLoading } = useCategories();
+  const { data: totalCategoryCount = 0 } = useCategoryCount();
   const { data: translations = [] } = useEntityTranslations("category");
   const batchSave = useBatchSaveTranslations();
   const [expanded, setExpanded] = useState<string[]>([]);

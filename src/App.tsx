@@ -278,6 +278,7 @@ const App = () => (
               <Route path="api-keys" element={<LP><AdminApiKeys /></LP>} />
               <Route path="api-docs" element={<LP><AdminApiDocs /></LP>} />
               <Route path="pays" element={<LP><AdminCountries /></LP>} />
+              <Route path="market-codes" element={<LP><AdminMarketCodes /></LP>} />
             </Route>
 
             {/* Vendor Dashboard */}

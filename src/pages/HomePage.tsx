@@ -100,7 +100,7 @@ export default function HomePage() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchQuery.trim()) navigate(`/recherche?q=${encodeURIComponent(searchQuery.trim())}`);
+    navigate(searchQuery.trim() ? `/recherche?q=${encodeURIComponent(searchQuery.trim())}` : `/recherche`);
   };
 
   const orgJsonLd = {

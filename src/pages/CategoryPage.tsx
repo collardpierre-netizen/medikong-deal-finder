@@ -1,6 +1,6 @@
 import { Layout } from "@/components/layout/Layout";
 import { useParams, Link } from "react-router-dom";
-import { useProducts } from "@/hooks/useProducts";
+import { useFeaturedProducts } from "@/hooks/useProducts";
 import { ProductCard, ProductImage, ProductImageSmall } from "@/components/shared/ProductCard";
 import { formatPrice } from "@/data/mock";
 import { Grid, List, Columns, Sliders, TrendingDown, ExternalLink } from "lucide-react";

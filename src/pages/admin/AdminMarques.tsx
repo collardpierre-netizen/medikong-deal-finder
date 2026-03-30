@@ -78,7 +78,7 @@ const AdminMarques = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {brandsData.map((b) => (
+                {brandsData.filter(b => !search || b.name.toLowerCase().includes(search.toLowerCase())).map((b) => (
                   <TableRow key={b.id} className="cursor-pointer hover:bg-blue-50/50"
                     onClick={() => setSelectedBrand(selectedBrand === b.name ? null : b.name)}
                     style={selectedBrand === b.name ? { backgroundColor: "#EFF6FF" } : {}}>

@@ -290,7 +290,7 @@ export default function ProductPage() {
     }
     return urls;
   })();
-  const hasImages = images.length > 0;
+  const description = productDetails?.description || productDetails?.label || product.descriptionShort;
 
   // Specs table
   const specs: [string, string][] = [

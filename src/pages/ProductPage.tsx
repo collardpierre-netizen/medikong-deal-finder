@@ -521,7 +521,7 @@ export default function ProductPage() {
 
             {/* ═══ LEFT COLUMN — Gallery ═══ */}
             <motion.div
-              className="w-full md:w-1/2 md:sticky md:top-20 self-start"
+              className="w-full md:w-[40%] md:sticky md:top-20 self-start"
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}

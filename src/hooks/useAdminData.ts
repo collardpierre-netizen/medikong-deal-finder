@@ -166,7 +166,15 @@ export const useImportJobs = () => useQuery({ queryKey: ["stub-import-jobs"], qu
 export const useLeadsPartners = () => useQuery({ queryKey: ["stub-leads"], queryFn: async () => [] as any[] });
 export const useOffersIndirect = () => useQuery({ queryKey: ["stub-offers-indirect"], queryFn: async () => [] as any[] });
 export const useDisputes = () => useQuery({ queryKey: ["stub-disputes"], queryFn: async () => [] as any[] });
-export const useManufacturers = () => useQuery({ queryKey: ["stub-manufacturers"], queryFn: async () => [] as any[] });
+export const useManufacturers = () =>
+  useQuery({
+    queryKey: ["admin-manufacturers"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("manufacturers").select("*").order("name");
+      if (error) throw error;
+      return data;
+    },
+  });
 export const useOffersDirectAdmin = () => useOffers();
 
 // Dashboard aggregated data

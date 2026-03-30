@@ -182,42 +182,59 @@ export type Database = {
       }
       brands: {
         Row: {
+          country_of_origin: string | null
           description: string | null
           id: string
           is_active: boolean
           is_featured: boolean
           logo_url: string | null
+          manufacturer_id: string | null
           name: string
           product_count: number
           qogita_qid: string | null
           slug: string
           synced_at: string | null
+          website_url: string | null
         }
         Insert: {
+          country_of_origin?: string | null
           description?: string | null
           id?: string
           is_active?: boolean
           is_featured?: boolean
           logo_url?: string | null
+          manufacturer_id?: string | null
           name: string
           product_count?: number
           qogita_qid?: string | null
           slug: string
           synced_at?: string | null
+          website_url?: string | null
         }
         Update: {
+          country_of_origin?: string | null
           description?: string | null
           id?: string
           is_active?: boolean
           is_featured?: boolean
           logo_url?: string | null
+          manufacturer_id?: string | null
           name?: string
           product_count?: number
           qogita_qid?: string | null
           slug?: string
           synced_at?: string | null
+          website_url?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "brands_manufacturer_id_fkey"
+            columns: ["manufacturer_id"]
+            isOneToOne: false
+            referencedRelation: "manufacturers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       cart_items: {
         Row: {
@@ -612,6 +629,69 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      manufacturers: {
+        Row: {
+          brand_count: number | null
+          certifications: string[] | null
+          country_of_origin: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          legal_name: string | null
+          logo_url: string | null
+          name: string
+          product_count: number | null
+          qogita_qid: string | null
+          slug: string
+          specialties: string[] | null
+          synced_at: string | null
+          updated_at: string | null
+          website_url: string | null
+          year_founded: number | null
+        }
+        Insert: {
+          brand_count?: number | null
+          certifications?: string[] | null
+          country_of_origin?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          legal_name?: string | null
+          logo_url?: string | null
+          name: string
+          product_count?: number | null
+          qogita_qid?: string | null
+          slug: string
+          specialties?: string[] | null
+          synced_at?: string | null
+          updated_at?: string | null
+          website_url?: string | null
+          year_founded?: number | null
+        }
+        Update: {
+          brand_count?: number | null
+          certifications?: string[] | null
+          country_of_origin?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          legal_name?: string | null
+          logo_url?: string | null
+          name?: string
+          product_count?: number | null
+          qogita_qid?: string | null
+          slug?: string
+          specialties?: string[] | null
+          synced_at?: string | null
+          updated_at?: string | null
+          website_url?: string | null
+          year_founded?: number | null
+        }
+        Relationships: []
       }
       margin_rules: {
         Row: {
@@ -1019,6 +1099,7 @@ export type Database = {
           is_promotion: boolean
           is_published: boolean
           label: string | null
+          manufacturer_id: string | null
           min_delivery_days: number | null
           name: string
           offer_count: number
@@ -1054,6 +1135,7 @@ export type Database = {
           is_promotion?: boolean
           is_published?: boolean
           label?: string | null
+          manufacturer_id?: string | null
           min_delivery_days?: number | null
           name: string
           offer_count?: number
@@ -1089,6 +1171,7 @@ export type Database = {
           is_promotion?: boolean
           is_published?: boolean
           label?: string | null
+          manufacturer_id?: string | null
           min_delivery_days?: number | null
           name?: string
           offer_count?: number
@@ -1120,6 +1203,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_manufacturer_id_fkey"
+            columns: ["manufacturer_id"]
+            isOneToOne: false
+            referencedRelation: "manufacturers"
             referencedColumns: ["id"]
           },
         ]

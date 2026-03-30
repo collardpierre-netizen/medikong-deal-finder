@@ -29,6 +29,7 @@ const ProductPage = lazy(() => import("./pages/ProductPage"));
 const BrandsPage = lazy(() => import("./pages/BrandsPage"));
 const BrandDetailPage = lazy(() => import("./pages/BrandDetailPage"));
 const ManufacturerPage = lazy(() => import("./pages/ManufacturerPage"));
+const FabricantsPage = lazy(() => import("./pages/FabricantsPage"));
 const CartPage = lazy(() => import("./pages/CartPage"));
 const AccountPage = lazy(() => import("./pages/AccountPage"));
 const CheckoutPage = lazy(() => import("./pages/CheckoutPage"));
@@ -113,6 +114,7 @@ const AdminAuditLog = lazy(() => import("./pages/admin/AdminAuditLog"));
 const AdminCommissions = lazy(() => import("./pages/admin/AdminCommissions"));
 const AdminOnboardingCMS = lazy(() => import("./pages/admin/AdminOnboardingCMS"));
 const AdminSync = lazy(() => import("./pages/admin/AdminSync"));
+const AdminFabricants = lazy(() => import("./pages/admin/AdminFabricants"));
 const AdminApiKeys = lazy(() => import("./pages/admin/AdminApiKeys"));
 const AdminApiDocs = lazy(() => import("./pages/admin/AdminApiDocs"));
 
@@ -167,6 +169,7 @@ const App = () => (
             <Route path="/produit/:slug" element={<LP><ProductPage /></LP>} />
             <Route path="/marques" element={<LP><BrandsPage /></LP>} />
             <Route path="/marque/:slug" element={<LP><BrandDetailPage /></LP>} />
+            <Route path="/fabricants" element={<LP><FabricantsPage /></LP>} />
             <Route path="/fabricant/:slug" element={<LP><ManufacturerPage /></LP>} />
             <Route path="/vendeur/:slug" element={<LP><VendorPublicPage /></LP>} />
             <Route path="/panier" element={<LP><CartPage /></LP>} />
@@ -237,6 +240,7 @@ const App = () => (
               <Route path="produits/:id" element={<LP><AdminProduitDetail /></LP>} />
               <Route path="categories" element={<LP><AdminCategories /></LP>} />
               <Route path="marques" element={<LP><AdminMarques /></LP>} />
+              <Route path="fabricants" element={<LP><AdminFabricants /></LP>} />
               <Route path="schemas-pim" element={<LP><AdminSchemasPIM /></LP>} />
               <Route path="commandes" element={<LP><AdminCommandes /></LP>} />
               <Route path="litiges" element={<LP><AdminLitiges /></LP>} />

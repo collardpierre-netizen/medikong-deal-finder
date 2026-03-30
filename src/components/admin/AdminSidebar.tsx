@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Store, UserPlus, Package, Layers, Tag, SlidersHorizontal,
   ShoppingCart, AlertCircle, DollarSign, Eye, Link, BarChart3,
   Shield, Upload, MessageSquare, Layout, Truck, ShieldCheck, Settings, FileText,
-  LogOut, Users, ClipboardList, Percent, RefreshCw, Key, Book,
+  LogOut, Users, ClipboardList, Percent, RefreshCw, Key, Book, Factory,
 } from "lucide-react";
 
 interface NavItem {
@@ -30,6 +30,7 @@ const sections: NavSection[] = [
       { labelKey: "products", path: "/admin/produits", icon: Package },
       { labelKey: "categories", path: "/admin/categories", icon: Layers },
       { labelKey: "brands", path: "/admin/marques", icon: Tag },
+      { labelKey: "manufacturers", path: "/admin/fabricants", icon: Factory },
       { labelKey: "pimSchemas", path: "/admin/schemas-pim", icon: SlidersHorizontal },
       { labelKey: "prixReference", path: "/admin/prix-reference", icon: Eye },
       { labelKey: "orders", path: "/admin/commandes", icon: ShoppingCart },

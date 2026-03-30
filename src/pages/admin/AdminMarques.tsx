@@ -5,7 +5,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useBrands } from "@/hooks/useAdminData";
+import { useBrands, useManufacturers } from "@/hooks/useAdminData";
 import { BrandFormDialog } from "@/components/admin/BrandFormDialog";
 import { exportBrands, importBrands } from "@/lib/xlsx-utils";
 import { useQueryClient } from "@tanstack/react-query";
@@ -18,6 +18,7 @@ const AdminMarques = () => {
   const qc = useQueryClient();
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
   const { data: brandsData = [], isLoading: loadingBrands } = useBrands();
+  const { data: manufacturersData = [] } = useManufacturers();
 
   const [brandDialogOpen, setBrandDialogOpen] = useState(false);
   const [editBrand, setEditBrand] = useState<any>(null);
@@ -117,7 +118,7 @@ const AdminMarques = () => {
         )}
       </div>
 
-      <BrandFormDialog open={brandDialogOpen} onOpenChange={setBrandDialogOpen} brand={editBrand} manufacturers={[]} />
+      <BrandFormDialog open={brandDialogOpen} onOpenChange={setBrandDialogOpen} brand={editBrand} manufacturers={manufacturersData} />
     </div>
   );
 };

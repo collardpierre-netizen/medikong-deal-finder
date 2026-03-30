@@ -7,6 +7,7 @@ const corsHeaders = {
 
 const MAX_EXECUTION_TIME = 250000;
 const CHUNK_SIZE = 500;
+const PAGE_SIZE = 100;
 
 async function getQogitaToken(supabaseClient: any): Promise<{ token: string; baseUrl: string; config: any }> {
   const { data: config } = await supabaseClient.from("qogita_config").select("*").eq("id", 1).single();
@@ -25,25 +26,6 @@ async function getQogitaToken(supabaseClient: any): Promise<{ token: string; bas
   return { token, baseUrl, config };
 }
 
-function parseCSV(text: string): any[] {
-  const lines = text.split("\n").filter(l => l.trim());
-  if (lines.length < 2) return [];
-  const headers = lines[0].split(",").map(h => h.trim().replace(/^"|"$/g, ""));
-  return lines.slice(1).map(line => {
-    const values: string[] = [];
-    let current = "", inQuotes = false;
-    for (const ch of line) {
-      if (ch === '"') { inQuotes = !inQuotes; continue; }
-      if (ch === "," && !inQuotes) { values.push(current.trim()); current = ""; continue; }
-      current += ch;
-    }
-    values.push(current.trim());
-    const obj: any = {};
-    headers.forEach((h, i) => { obj[h] = values[i] || ""; });
-    return obj;
-  });
-}
-
 function slugify(text: string): string {
   return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 }
@@ -54,7 +36,6 @@ Deno.serve(async (req) => {
 
   const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
-  // Parse optional country filter from request body
   let requestedCountries: string[] | null = null;
   try {
     const body = await req.json();
@@ -62,9 +43,8 @@ Deno.serve(async (req) => {
     if (body?.country) requestedCountries = [body.country];
   } catch { /* no body */ }
 
-  // Get countries to sync
-  let query = supabase.from("countries").select("code, name, default_vat_rate").eq("is_active", true).eq("qogita_sync_enabled", true).order("display_order");
-  const { data: syncCountries } = await query;
+  const { data: syncCountries } = await supabase.from("countries").select("code, name, default_vat_rate")
+    .eq("is_active", true).eq("qogita_sync_enabled", true).order("display_order");
   let countriesToSync = syncCountries || [{ code: "BE", name: "Belgique", default_vat_rate: 21 }];
   if (requestedCountries) {
     countriesToSync = countriesToSync.filter((c: any) => requestedCountries!.includes(c.code));
@@ -76,14 +56,12 @@ Deno.serve(async (req) => {
     .order("started_at", { ascending: false }).limit(1).maybeSingle();
 
   let syncLogId: string;
-  let stats: any = { items_processed: 0, items_total: 0, chunks_done: 0, deactivated: 0, brands_created: 0, categories_created: 0, countries_done: [], current_country: "" };
-  let resumeOffset = 0;
+  let stats: any = { items_processed: 0, items_total: 0, chunks_done: 0, brands_created: 0, categories_created: 0, countries_done: [], current_country: "", last_page: {} };
   let skipCountries: string[] = [];
 
   if (existingSync && (existingSync.stats as any)?.items_processed > 0) {
     syncLogId = existingSync.id;
     stats = existingSync.stats as any;
-    resumeOffset = stats.items_processed || 0;
     skipCountries = stats.countries_done || [];
     await supabase.from("sync_logs").update({ progress_message: `Reprise...` }).eq("id", syncLogId);
   } else {
@@ -99,8 +77,6 @@ Deno.serve(async (req) => {
 
   try {
     const { token, baseUrl } = await getQogitaToken(supabase);
-    const processedQids = new Set<string>();
-    let totalProducts = 0;
 
     for (let ci = 0; ci < countriesToSync.length; ci++) {
       const ctry = countriesToSync[ci] as any;
@@ -109,49 +85,54 @@ Deno.serve(async (req) => {
       stats.current_country = ctry.code;
       const vatRate = ctry.default_vat_rate || 21;
 
-      // Download CSV for this country
-      await supabase.from("sync_logs").update({
-        progress_message: `Pays ${ci + 1}/${countriesToSync.length} (${ctry.code}) — Téléchargement CSV...`,
-      }).eq("id", syncLogId);
-
-      const csvUrl = `${baseUrl}/variants/search/download/?country=${ctry.code}`;
-      const res = await fetch(csvUrl, { headers: { Authorization: `Bearer ${token}`, Accept: "text/csv" } });
-      if (!res.ok) throw new Error(`CSV download failed for ${ctry.code}: ${res.status}`);
-      const csvText = await res.text();
-      const rows = parseCSV(csvText);
-      totalProducts += rows.length;
-
-      await supabase.from("sync_logs").update({
-        progress_total: totalProducts,
-        progress_message: `Pays ${ci + 1}/${countriesToSync.length} (${ctry.code}) — ${rows.length} produits trouvés`,
-      }).eq("id", syncLogId);
-
-      // Batch upsert products + country stats
+      // Resume from last page if interrupted
+      let page = (stats.last_page && stats.last_page[ctry.code]) || 1;
+      let totalPages = 1;
+      let countryProcessed = 0;
       const countryStatsBatch: any[] = [];
 
-      for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
+      await supabase.from("sync_logs").update({
+        progress_message: `Pays ${ci + 1}/${countriesToSync.length} (${ctry.code}) — Page ${page}...`,
+      }).eq("id", syncLogId);
+
+      while (page <= totalPages) {
         if (Date.now() - startTime > MAX_EXECUTION_TIME) {
-          stats.items_processed = stats.items_processed || 0;
+          stats.last_page = { ...(stats.last_page || {}), [ctry.code]: page };
           await supabase.from("sync_logs").update({
             stats, progress_current: stats.items_processed,
-            progress_message: `Pause timeout — ${ctry.code} ${i}/${rows.length}`,
+            progress_message: `Pause timeout — ${ctry.code} page ${page}/${totalPages}`,
           }).eq("id", syncLogId);
           return new Response(JSON.stringify({ status: "partial", stats }), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
 
-        const chunk = rows.slice(i, i + CHUNK_SIZE);
+        const url = `${baseUrl}/variants/search/?country=${ctry.code}&page=${page}&page_size=${PAGE_SIZE}`;
+        const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+        if (!res.ok) {
+          const errText = await res.text();
+          throw new Error(`Qogita API ${res.status} for ${ctry.code} page ${page}: ${errText.substring(0, 200)}`);
+        }
+
+        const data = await res.json();
+        const results = data.results || [];
+        const count = data.count || 0;
+        totalPages = Math.ceil(count / PAGE_SIZE);
+
+        if (page === 1) {
+          stats.items_total = (stats.items_total || 0) + count;
+          await supabase.from("sync_logs").update({ progress_total: stats.items_total }).eq("id", syncLogId);
+        }
+
+        // Build batch
         const batchData: any[] = [];
-
-        for (const row of chunk) {
-          const qid = row.qid || row.variantQid || row.variant_qid;
+        for (const row of results) {
+          const qid = row.qid;
           if (!qid) continue;
-          const name = row.name || row.title || row.productName || "";
+          const name = row.name || "";
           if (!name) continue;
-          processedQids.add(qid);
 
-          const gtin = row.gtin || row.ean || "";
+          const gtin = row.gtin || "";
           const slug = slugify(name) + (gtin ? `-${gtin.slice(-6)}` : `-${qid.slice(0, 6)}`);
           const bestPrice = parseFloat(row.bestPrice || row.best_price || "0");
           const stockQty = parseInt(row.totalStock || row.total_stock || "0", 10);
@@ -159,20 +140,20 @@ Deno.serve(async (req) => {
 
           const productRow: any = {
             qogita_qid: qid,
-            qogita_fid: row.familyQid || row.family_qid || null,
+            qogita_fid: row.familyQid || null,
             gtin: gtin || null, name, slug,
             description: row.description || null,
-            short_description: row.shortDescription || row.short_description || null,
+            short_description: row.shortDescription || null,
             label: row.label || null,
-            image_urls: row.imageUrl ? [row.imageUrl] : [],
-            origin_country: row.originCountry || row.origin_country || null,
+            image_urls: row.imageUrl ? [row.imageUrl] : (row.images ? row.images.map((img: any) => img.url || img) : []),
+            origin_country: row.originCountry || null,
             source: "qogita", is_active: true, is_published: true,
             synced_at: new Date().toISOString(),
             total_stock: stockQty, offer_count: sellerCount, is_in_stock: stockQty > 0,
-            brand_name: row.brandName || row.brand_name || row.brand || null,
-            brand_qid: row.brandQid || row.brand_qid || null,
-            category_name: row.categoryName || row.category_name || row.category || null,
-            category_qid: row.categoryQid || row.category_qid || null,
+            brand_name: row.brandName || (row.brand && typeof row.brand === "object" ? row.brand.name : row.brand) || null,
+            brand_qid: row.brandQid || (row.brand && typeof row.brand === "object" ? row.brand.qid : null) || null,
+            category_name: row.categoryName || (row.category && typeof row.category === "object" ? row.category.name : row.category) || null,
+            category_qid: row.categoryQid || (row.category && typeof row.category === "object" ? row.category.qid : null) || null,
           };
           if (bestPrice > 0) {
             productRow.best_price_excl_vat = bestPrice;
@@ -180,9 +161,8 @@ Deno.serve(async (req) => {
           }
           batchData.push(productRow);
 
-          // Prepare country stats entry
           countryStatsBatch.push({
-            qogita_qid: qid, // temporary key for linking after upsert
+            qogita_qid: qid,
             country_code: ctry.code,
             best_price_excl_vat: bestPrice > 0 ? bestPrice : null,
             best_price_incl_vat: bestPrice > 0 ? Math.round(bestPrice * (1 + vatRate / 100) * 100) / 100 : null,
@@ -200,24 +180,25 @@ Deno.serve(async (req) => {
           if (error) throw error;
         }
 
+        countryProcessed += batchData.length;
         stats.items_processed = (stats.items_processed || 0) + batchData.length;
-        stats.chunks_done++;
+        stats.last_page = { ...(stats.last_page || {}), [ctry.code]: page + 1 };
 
         await supabase.from("sync_logs").update({
-          stats, progress_current: stats.items_processed, progress_total: totalProducts,
-          progress_message: `Pays ${ci + 1}/${countriesToSync.length} (${ctry.code}) — ${i + chunk.length}/${rows.length} produits`,
+          stats, progress_current: stats.items_processed, progress_total: stats.items_total,
+          progress_message: `${ctry.code}: Page ${page}/${totalPages} — ${countryProcessed}/${count} produits`,
         }).eq("id", syncLogId);
 
-        await new Promise(r => setTimeout(r, 50));
+        page++;
+        if (page <= totalPages) await new Promise(r => setTimeout(r, 200));
       }
 
       // Populate product_country_stats for this country
       if (countryStatsBatch.length > 0) {
         await supabase.from("sync_logs").update({
-          progress_message: `${ctry.code}: Mise à jour des stats par pays (${countryStatsBatch.length} produits)...`,
+          progress_message: `${ctry.code}: Stats par pays (${countryStatsBatch.length})...`,
         }).eq("id", syncLogId);
 
-        // Resolve product IDs from qogita_qid
         const qids = countryStatsBatch.map(s => s.qogita_qid);
         const qidToId = new Map<string, string>();
         for (let q = 0; q < qids.length; q += 1000) {
@@ -248,10 +229,7 @@ Deno.serve(async (req) => {
         stats.country_stats_created = (stats.country_stats_created || 0) + statsToUpsert.length;
       }
 
-      // Mark country done
       stats.countries_done = [...(stats.countries_done || []), ctry.code];
-
-      // Update last_sync_at on country
       await supabase.from("countries").update({ last_sync_at: new Date().toISOString() } as any).eq("code", ctry.code);
     }
 
@@ -320,7 +298,6 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Completed
     await supabase.from("sync_logs").update({
       status: "completed", completed_at: new Date().toISOString(), stats,
       progress_current: stats.items_processed, progress_total: stats.items_processed,

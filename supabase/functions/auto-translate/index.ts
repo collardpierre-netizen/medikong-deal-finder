@@ -34,7 +34,7 @@ Rules:
 - For "fr", return the original text as-is
 - Return ONLY the JSON, no markdown, no explanation`;
 
-    const response = await fetch("https://api.lovable.dev/v1/chat/completions", {
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${LOVABLE_API_KEY}`,

@@ -122,6 +122,10 @@ export interface Offer {
   sellerSlug?: string;
   isVerified?: boolean;
   isTopRated?: boolean;
+  displayCode?: string;
+  sellerSlug?: string;
+  isVerified?: boolean;
+  isTopRated?: boolean;
 }
 
 export function useProductOffers(productId: string | undefined) {

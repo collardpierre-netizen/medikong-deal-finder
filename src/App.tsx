@@ -213,6 +213,7 @@ const App = () => (
             <Route path="/temoignages" element={<LP><TestimonialsPage /></LP>} />
             <Route path="/contact" element={<LP><ContactPage /></LP>} />
             <Route path="/centre-aide" element={<LP><HelpCenterPage /></LP>} />
+            <Route path="/centre-aide/:slug" element={<LP><HelpArticlePage /></LP>} />
 
             {/* Legal */}
             <Route path="/mentions-legales" element={<LP><LegalNoticePage /></LP>} />

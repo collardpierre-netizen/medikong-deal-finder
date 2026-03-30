@@ -204,7 +204,7 @@ export function useCatalogBrands(categorySlug?: string) {
         .eq("is_active", true)
         .gt("product_count", 0)
         .order("product_count", { ascending: false })
-        .limit(100);
+        .limit(500);
 
       const { data, error } = await query;
       if (error) throw error;

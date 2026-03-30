@@ -293,17 +293,42 @@ export default function ProductPage() {
   const hasImages = images.length > 0;
   const description = productDetails?.description || (productDetails as any)?.label || product.descriptionShort || "";
 
-  // Specs table
-  const specs: [string, string][] = [
-    ["Marque", brandData?.name || product.brand || "—"],
-    ...(productDetails?.manufacturers ? [["Fabricant", (productDetails.manufacturers as any)?.name || "—"] as [string, string]] : []),
-    ["Categorie", categoryData?.category?.name || productDetails?.category_name || "—"],
-    ["GTIN/EAN", product.gtin || product.ean || "—"],
-    ...(product.cnk ? [["CNK", product.cnk] as [string, string]] : []),
-    ...(productDetails?.sku ? [["SKU", productDetails.sku] as [string, string]] : []),
-    ["Unites", `${productDetails?.unit_quantity || 1}`],
-    ...(productDetails?.dimensions ? [["Dimensions", JSON.stringify(productDetails.dimensions)] as [string, string]] : []),
+  // Specs table — only show rows with real data
+  const specsRaw: [string, string | undefined | null][] = [
+    ["Marque", brandData?.name || product.brand],
+    ["Fabricant", productDetails?.manufacturers ? (productDetails.manufacturers as any)?.name : undefined],
+    ["Categorie", categoryData?.category?.name || productDetails?.category_name],
+    ["GTIN/EAN", product.gtin || product.ean],
+    ["CNK", product.cnk],
+    ["SKU", productDetails?.sku],
+    ["Conditionnement", productDetails?.unit_quantity && productDetails.unit_quantity > 1 ? `${productDetails.unit_quantity} unites` : undefined],
+    ["Dimensions", productDetails?.dimensions ? JSON.stringify(productDetails.dimensions) : undefined],
+    ["Pays d'origine", productDetails?.origin_country],
   ];
+  const specs = specsRaw.filter(([, val]) => val && val !== "—" && val !== "null") as [string, string][];
+
+  // Price history query
+  const { data: priceHistoryData = [] } = useQuery({
+    queryKey: ["price-history", product?.id, country],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("price_history")
+        .select("price_excl_vat, price_incl_vat, recorded_at")
+        .eq("product_id", product!.id)
+        .eq("country_code", country)
+        .order("recorded_at", { ascending: true })
+        .limit(180);
+      return data || [];
+    },
+    enabled: !!product?.id,
+  });
+
+  // Margin calculator state
+  const [userPrice, setUserPrice] = useState<string>("");
+  const clientPrice = bestOffer ? (isTVAC ? bestOffer.unitPriceInclVat : bestOffer.unitPriceEur) : 0;
+  const userPriceNum = parseFloat(userPrice.replace(",", ".")) || 0;
+  const savingsAbs = userPriceNum > 0 ? userPriceNum - clientPrice : 0;
+  const savingsPct = userPriceNum > 0 ? ((savingsAbs / userPriceNum) * 100) : 0;
 
   return (
     <Layout>

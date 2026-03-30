@@ -15,7 +15,7 @@ import logoHorizontal from "@/assets/logo-horizontal.png";
 export function Navbar() {
   const { t } = useTranslation();
   const [query, setQuery] = useState("");
-  const [isTVAC, setIsTVAC] = useState(true);
+  const { isTVAC, toggleTVAC } = usePriceDisplay();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();

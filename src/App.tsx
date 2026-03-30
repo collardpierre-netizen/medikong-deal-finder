@@ -29,6 +29,7 @@ const ProductPage = lazy(() => import("./pages/ProductPage"));
 const BrandsPage = lazy(() => import("./pages/BrandsPage"));
 const BrandDetailPage = lazy(() => import("./pages/BrandDetailPage"));
 const ManufacturerPage = lazy(() => import("./pages/ManufacturerPage"));
+const FabricantsPage = lazy(() => import("./pages/FabricantsPage"));
 const CartPage = lazy(() => import("./pages/CartPage"));
 const AccountPage = lazy(() => import("./pages/AccountPage"));
 const CheckoutPage = lazy(() => import("./pages/CheckoutPage"));

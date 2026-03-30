@@ -103,6 +103,7 @@ const translations: Record<Lang, Record<string, string>> = {
     pimSchemas: "PIM Schema's",
     prixReference: "Referentieprijzen",
     productPrices: "Prijsniveaus",
+    marketCodes: "Marktcodes",
     orders: "Bestellingen",
     disputes: "Geschillen",
     finances: "Financiën",

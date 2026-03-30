@@ -175,7 +175,7 @@ export function useCatalogCategories() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("categories")
-        .select("id, name, slug, parent_id")
+        .select("id, name, name_fr, slug, parent_id")
         .eq("is_active", true)
         .order("display_order", { ascending: true });
       if (error) throw error;

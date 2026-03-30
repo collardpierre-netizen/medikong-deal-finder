@@ -100,6 +100,8 @@ const translations: Record<Lang, Record<string, string>> = {
     categories: "Categorieën",
     brands: "Merken",
     pimSchemas: "PIM Schema's",
+    prixReference: "Referentieprijzen",
+    productPrices: "Prijsniveaus",
     orders: "Bestellingen",
     disputes: "Geschillen",
     finances: "Financiën",

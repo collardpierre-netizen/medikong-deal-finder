@@ -11,7 +11,7 @@ import { BrandFormDialog } from "@/components/admin/BrandFormDialog";
 import { exportBrands, importBrands } from "@/lib/xlsx-utils";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Tag, Package, Plus, Download, Upload, Search } from "lucide-react";
+import { Tag, Package, Plus, Download, Upload, Search, ExternalLink } from "lucide-react";
 
 const fmt = (n: number) => n.toLocaleString("fr-BE");
 

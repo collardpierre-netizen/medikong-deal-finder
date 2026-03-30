@@ -6,7 +6,7 @@ import KpiCard from "@/components/admin/KpiCard";
 import StatusBadge from "@/components/admin/StatusBadge";
 import {
   RefreshCw, Database, Tag, Package, Store, Layers, Clock, AlertTriangle,
-  Play, Settings, Eye, EyeOff, CheckCircle, XCircle, Loader2, Wifi,
+  Play, Settings, Eye, EyeOff, CheckCircle, XCircle, Loader2, Wifi, Search,
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";

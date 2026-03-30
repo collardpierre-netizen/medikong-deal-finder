@@ -126,7 +126,9 @@ Deno.serve(async (req) => {
         progress_message: `Pays ${ci + 1}/${countriesToSync.length} (${ctry.code}) — ${rows.length} produits trouvés`,
       }).eq("id", syncLogId);
 
-      // Batch upsert products
+      // Batch upsert products + country stats
+      const countryStatsBatch: any[] = [];
+
       for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
         if (Date.now() - startTime > MAX_EXECUTION_TIME) {
           stats.items_processed = stats.items_processed || 0;
@@ -177,6 +179,18 @@ Deno.serve(async (req) => {
             productRow.best_price_incl_vat = Math.round(bestPrice * (1 + vatRate / 100) * 100) / 100;
           }
           batchData.push(productRow);
+
+          // Prepare country stats entry
+          countryStatsBatch.push({
+            qogita_qid: qid, // temporary key for linking after upsert
+            country_code: ctry.code,
+            best_price_excl_vat: bestPrice > 0 ? bestPrice : null,
+            best_price_incl_vat: bestPrice > 0 ? Math.round(bestPrice * (1 + vatRate / 100) * 100) / 100 : null,
+            offer_count: sellerCount,
+            total_stock: stockQty,
+            min_delivery_days: null,
+            is_in_stock: stockQty > 0,
+          });
         }
 
         if (batchData.length > 0) {
@@ -195,6 +209,43 @@ Deno.serve(async (req) => {
         }).eq("id", syncLogId);
 
         await new Promise(r => setTimeout(r, 50));
+      }
+
+      // Populate product_country_stats for this country
+      if (countryStatsBatch.length > 0) {
+        await supabase.from("sync_logs").update({
+          progress_message: `${ctry.code}: Mise à jour des stats par pays (${countryStatsBatch.length} produits)...`,
+        }).eq("id", syncLogId);
+
+        // Resolve product IDs from qogita_qid
+        const qids = countryStatsBatch.map(s => s.qogita_qid);
+        const qidToId = new Map<string, string>();
+        for (let q = 0; q < qids.length; q += 1000) {
+          const batch = qids.slice(q, q + 1000);
+          const { data: prods } = await supabase.from("products").select("id, qogita_qid").in("qogita_qid", batch);
+          for (const p of (prods || [])) qidToId.set(p.qogita_qid, p.id);
+        }
+
+        const statsToUpsert = countryStatsBatch
+          .filter(s => qidToId.has(s.qogita_qid))
+          .map(s => ({
+            product_id: qidToId.get(s.qogita_qid)!,
+            country_code: s.country_code,
+            best_price_excl_vat: s.best_price_excl_vat,
+            best_price_incl_vat: s.best_price_incl_vat,
+            offer_count: s.offer_count,
+            total_stock: s.total_stock,
+            min_delivery_days: s.min_delivery_days,
+            is_in_stock: s.is_in_stock,
+          }));
+
+        for (let s = 0; s < statsToUpsert.length; s += 500) {
+          await supabase.from("product_country_stats").upsert(
+            statsToUpsert.slice(s, s + 500),
+            { onConflict: "product_id,country_code", ignoreDuplicates: false }
+          );
+        }
+        stats.country_stats_created = (stats.country_stats_created || 0) + statsToUpsert.length;
       }
 
       // Mark country done

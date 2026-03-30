@@ -22,8 +22,15 @@ export default function ResetPasswordPage() {
     }
 
     // Listen for PASSWORD_RECOVERY event
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "PASSWORD_RECOVERY") {
+        setValidToken(true);
+      }
+    });
+
+    // Also check if user is already logged in via recovery (race condition fix)
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session && hash) {
         setValidToken(true);
       }
     });

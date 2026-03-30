@@ -140,7 +140,7 @@ export function useProductOffers(productId: string | undefined) {
 
       const vendorIds = [...new Set((offers || []).map((o: any) => o.vendor_id))];
       const { data: vendors } = vendorIds.length > 0
-        ? await supabase.from("vendors").select("id, name, slug, is_verified, rating").in("id", vendorIds)
+        ? await supabase.from("vendors").select("id, name, slug, is_verified, rating, display_code, type").in("id", vendorIds)
         : { data: [] };
 
       const vendorMap = new Map((vendors || []).map((v: any) => [v.id, v]));

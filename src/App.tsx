@@ -296,6 +296,7 @@ const App = () => (
         </BrowserRouter>
       </TooltipProvider>
       </ImpersonationProvider>
+      </CountryProvider>
       </CartProvider>
       </I18nProvider>
     </AuthProvider>

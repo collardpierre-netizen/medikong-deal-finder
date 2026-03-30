@@ -165,5 +165,109 @@
     "chooseLanguage": "Choisissez une langue et une région",
     "translation": "Traduction",
     "autoTranslateDesc": "Traduire automatiquement les descriptions et le contenu des vendeurs en {{language}}"
+  },
+  "helpCenter": {
+    "title": "Centre d'aide MediKong",
+    "subtitle": "Trouvez rapidement les réponses à vos questions sur les commandes, la livraison, les paiements et plus encore.",
+    "searchPlaceholder": "Rechercher dans l'aide...",
+    "noResults": "Aucun résultat pour « {{query}} ». Essayez un autre terme ou",
+    "contactUs": "contactez-nous",
+    "faqTitle": "Questions les plus fréquentes",
+    "contactTitle": "Vous n'avez pas trouvé votre réponse ?",
+    "contactSubtitle": "Notre équipe est disponible du lundi au vendredi de 9h à 18h.",
+    "email": "Email",
+    "phone": "Téléphone",
+    "whatsapp": "WhatsApp",
+    "whatsappSub": "Réponse rapide",
+    "viewArticles": "Voir les {{count}} articles",
+    "categories": {
+      "gettingStarted": {
+        "title": "Premiers pas",
+        "description": "Créer votre compte, passer votre première commande et naviguer le catalogue.",
+        "a1": "Comment créer un compte professionnel ?",
+        "a2": "Comment passer ma première commande ?",
+        "a3": "Comment naviguer le catalogue ?"
+      },
+      "orders": {
+        "title": "Commandes & Paiements",
+        "description": "Passer commande, moyens de paiement, factures et paiement différé.",
+        "a1": "Comment passer une commande ?",
+        "a2": "Quels sont les moyens de paiement acceptés ?",
+        "a3": "Comment utiliser le paiement différé ?"
+      },
+      "delivery": {
+        "title": "Livraison & Suivi",
+        "description": "Délais, suivi de colis, retours et remboursements.",
+        "a1": "Comment suivre mon colis ?",
+        "a2": "Quels sont les délais de livraison ?",
+        "a3": "Comment retourner un produit ?"
+      },
+      "vat": {
+        "title": "TVA & Facturation",
+        "description": "Comprendre la TVA, télécharger vos factures et gérer vos données fiscales.",
+        "a1": "Comment fonctionne la TVA sur MediKong ?",
+        "a2": "Où télécharger mes factures ?",
+        "a3": "Comment modifier mes données de facturation ?"
+      },
+      "claims": {
+        "title": "Réclamations & Remboursements",
+        "description": "Signaler un problème, suivre une réclamation et obtenir un remboursement.",
+        "a1": "Comment signaler un problème avec ma commande ?",
+        "a2": "Quel est le délai de remboursement ?",
+        "a3": "Comment suivre ma réclamation ?"
+      },
+      "account": {
+        "title": "Mon compte",
+        "description": "Inscription, paramètres, gestion des utilisateurs et sécurité.",
+        "a1": "Comment ajouter un utilisateur ?",
+        "a2": "Comment sécuriser mon compte ?",
+        "a3": "J'ai oublié mon mot de passe"
+      },
+      "sellers": {
+        "title": "Vendeurs",
+        "description": "Devenir vendeur, catalogue, commissions et paiements.",
+        "a1": "Comment devenir vendeur sur MediKong ?",
+        "a2": "Comment gérer mon catalogue ?",
+        "a3": "Quelles sont les commissions ?"
+      },
+      "quality": {
+        "title": "Qualité & Conformité",
+        "description": "Marquage CE, AFMPS, garantie et traçabilité.",
+        "a1": "Qu'est-ce que le marquage CE ?",
+        "a2": "Comment vérifier la conformité AFMPS ?",
+        "a3": "Quelle est notre politique de garantie ?"
+      },
+      "features": {
+        "title": "Fonctionnalités",
+        "description": "Recherche, comparaison des prix, alertes et API.",
+        "a1": "Comment utiliser la comparaison de prix ?",
+        "a2": "Comment configurer des alertes ?",
+        "a3": "Comment accéder à l'API ?"
+      },
+      "resources": {
+        "title": "Ressources & Guides",
+        "description": "Tutoriels, guides d'achat et bonnes pratiques pour les professionnels de santé.",
+        "a1": "Guide d'achat pour les pharmacies",
+        "a2": "Bonnes pratiques de commande B2B"
+      }
+    },
+    "faq": {
+      "q1": "Comment créer un compte professionnel ?",
+      "a1": "Rendez-vous sur la page d'inscription et choisissez 'Je souhaite acheter'. Renseignez votre numéro BCE et TVA. Votre compte sera validé sous 24h.",
+      "q2": "Comment modifier ou annuler une commande ?",
+      "a2": "Vous pouvez modifier ou annuler une commande tant qu'elle n'a pas été expédiée. Rendez-vous dans 'Mes commandes' de votre espace client.",
+      "q3": "Quels sont les moyens de paiement acceptés ?",
+      "a3": "Nous acceptons Visa, Mastercard, Bancontact, virement SEPA et le paiement différé 30/60 jours via Mondu (sous conditions).",
+      "q4": "Comment contacter le support ?",
+      "a4": "Envoyez un email à support@medikong.pro (réponse sous 24h) ou via le formulaire de contact. Le chat en ligne sera bientôt disponible.",
+      "q5": "Comment suivre ma commande ?",
+      "a5": "Un numéro de suivi vous est envoyé par email dès l'expédition. Vous pouvez aussi suivre votre commande en temps réel depuis votre espace client dans 'Mes commandes'.",
+      "q6": "Quels sont les délais de livraison ?",
+      "a6": "La plupart des commandes sont expédiées sous 24-48h. La livraison standard prend 2-5 jours ouvrables en Belgique, et 3-7 jours dans le reste de l'UE.",
+      "q7": "Comment devenir vendeur sur MediKong ?",
+      "a7": "Rendez-vous sur la page 'Devenir vendeur' et remplissez le formulaire d'inscription. Notre équipe vérifiera vos documents sous 48h.",
+      "q8": "Comment fonctionne la TVA sur MediKong ?",
+      "a8": "Les prix affichés sont HT. La TVA applicable est calculée automatiquement selon le pays de livraison et le type de produit (taux standard ou réduit)."
+    }
   }
 }

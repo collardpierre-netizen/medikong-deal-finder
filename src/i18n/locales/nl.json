@@ -165,5 +165,109 @@
     "chooseLanguage": "Kies een taal en regio",
     "translation": "Vertaling",
     "autoTranslateDesc": "Beschrijvingen en verkopersinhoud automatisch vertalen naar het {{language}}"
+  },
+  "helpCenter": {
+    "title": "MediKong Helpcentrum",
+    "subtitle": "Vind snel antwoorden op uw vragen over bestellingen, levering, betalingen en meer.",
+    "searchPlaceholder": "Zoeken in help...",
+    "noResults": "Geen resultaten voor \"{{query}}\". Probeer een andere term of",
+    "contactUs": "neem contact op",
+    "faqTitle": "Meest gestelde vragen",
+    "contactTitle": "Uw antwoord niet gevonden?",
+    "contactSubtitle": "Ons team is beschikbaar van maandag tot vrijdag van 9.00 tot 18.00 uur.",
+    "email": "E-mail",
+    "phone": "Telefoon",
+    "whatsapp": "WhatsApp",
+    "whatsappSub": "Snel antwoord",
+    "viewArticles": "Bekijk alle {{count}} artikelen",
+    "categories": {
+      "gettingStarted": {
+        "title": "Aan de slag",
+        "description": "Maak uw account aan, plaats uw eerste bestelling en blader door de catalogus.",
+        "a1": "Hoe maak ik een professioneel account aan?",
+        "a2": "Hoe plaats ik mijn eerste bestelling?",
+        "a3": "Hoe navigeer ik door de catalogus?"
+      },
+      "orders": {
+        "title": "Bestellingen & Betalingen",
+        "description": "Bestellen, betaalmethoden, facturen en uitgestelde betaling.",
+        "a1": "Hoe plaats ik een bestelling?",
+        "a2": "Welke betaalmethoden worden geaccepteerd?",
+        "a3": "Hoe gebruik ik uitgestelde betaling?"
+      },
+      "delivery": {
+        "title": "Levering & Tracking",
+        "description": "Levertijden, pakkettracking, retourzendingen en terugbetalingen.",
+        "a1": "Hoe volg ik mijn pakket?",
+        "a2": "Wat zijn de levertijden?",
+        "a3": "Hoe retourneer ik een product?"
+      },
+      "vat": {
+        "title": "BTW & Facturatie",
+        "description": "BTW begrijpen, facturen downloaden en fiscale gegevens beheren.",
+        "a1": "Hoe werkt de BTW op MediKong?",
+        "a2": "Waar kan ik mijn facturen downloaden?",
+        "a3": "Hoe wijzig ik mijn facturatiegegevens?"
+      },
+      "claims": {
+        "title": "Klachten & Terugbetalingen",
+        "description": "Een probleem melden, een klacht opvolgen en een terugbetaling krijgen.",
+        "a1": "Hoe meld ik een probleem met mijn bestelling?",
+        "a2": "Wat is de terugbetalingstermijn?",
+        "a3": "Hoe volg ik mijn klacht op?"
+      },
+      "account": {
+        "title": "Mijn Account",
+        "description": "Registratie, instellingen, gebruikersbeheer en beveiliging.",
+        "a1": "Hoe voeg ik een gebruiker toe?",
+        "a2": "Hoe beveilig ik mijn account?",
+        "a3": "Ik ben mijn wachtwoord vergeten"
+      },
+      "sellers": {
+        "title": "Verkopers",
+        "description": "Verkoper worden, catalogus, commissies en betalingen.",
+        "a1": "Hoe word ik verkoper op MediKong?",
+        "a2": "Hoe beheer ik mijn catalogus?",
+        "a3": "Wat zijn de commissies?"
+      },
+      "quality": {
+        "title": "Kwaliteit & Conformiteit",
+        "description": "CE-markering, FAGG, garantie en traceerbaarheid.",
+        "a1": "Wat is CE-markering?",
+        "a2": "Hoe controleer ik FAGG-conformiteit?",
+        "a3": "Wat is ons garantiebeleid?"
+      },
+      "features": {
+        "title": "Functionaliteiten",
+        "description": "Zoeken, prijsvergelijking, meldingen en API.",
+        "a1": "Hoe gebruik ik de prijsvergelijking?",
+        "a2": "Hoe stel ik meldingen in?",
+        "a3": "Hoe krijg ik toegang tot de API?"
+      },
+      "resources": {
+        "title": "Bronnen & Gidsen",
+        "description": "Tutorials, koopgidsen en best practices voor zorgprofessionals.",
+        "a1": "Koopgids voor apotheken",
+        "a2": "Best practices voor B2B-bestellingen"
+      }
+    },
+    "faq": {
+      "q1": "Hoe maak ik een professioneel account aan?",
+      "a1": "Ga naar de registratiepagina en kies 'Ik wil kopen'. Vul uw KBO-nummer en BTW-nummer in. Uw account wordt binnen 24 uur gevalideerd.",
+      "q2": "Hoe wijzig of annuleer ik een bestelling?",
+      "a2": "U kunt een bestelling wijzigen of annuleren zolang deze nog niet is verzonden. Ga naar 'Mijn bestellingen' in uw klantenruimte.",
+      "q3": "Welke betaalmethoden worden geaccepteerd?",
+      "a3": "We accepteren Visa, Mastercard, Bancontact, SEPA-overschrijving en uitgestelde betaling 30/60 dagen via Mondu (onder voorwaarden).",
+      "q4": "Hoe neem ik contact op met de klantenservice?",
+      "a4": "Stuur een e-mail naar support@medikong.pro (antwoord binnen 24 uur) of via het contactformulier. Live chat is binnenkort beschikbaar.",
+      "q5": "Hoe volg ik mijn bestelling?",
+      "a5": "Een trackingnummer wordt per e-mail verzonden bij verzending. U kunt uw bestelling ook in realtime volgen via 'Mijn bestellingen' in uw klantenruimte.",
+      "q6": "Wat zijn de levertijden?",
+      "a6": "De meeste bestellingen worden binnen 24-48 uur verzonden. Standaardlevering duurt 2-5 werkdagen in België en 3-7 dagen in de rest van de EU.",
+      "q7": "Hoe word ik verkoper op MediKong?",
+      "a7": "Ga naar de pagina 'Verkoper worden' en vul het registratieformulier in. Ons team controleert uw documenten binnen 48 uur.",
+      "q8": "Hoe werkt de BTW op MediKong?",
+      "a8": "Weergegeven prijzen zijn excl. BTW. De toepasselijke BTW wordt automatisch berekend op basis van het land van levering en het producttype (standaard- of verlaagd tarief)."
+    }
   }
 }

@@ -72,7 +72,7 @@ const Logo = ({ white = false, size = 22 }: { white?: boolean; size?: number }) 
   <img
     src={white ? logoLight : logoDark}
     alt="MediKong.pro"
-    style={{ height: size + 20, filter: white ? "brightness(1.15)" : "none" }}
+    style={{ height: (size + 20) * 1.5, filter: white ? "brightness(1.15)" : "none" }}
   />
 );
 

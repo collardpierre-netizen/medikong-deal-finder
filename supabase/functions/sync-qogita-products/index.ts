@@ -6,6 +6,7 @@ const corsHeaders = {
 };
 
 const MAX_EXECUTION_TIME = 250000;
+const CHUNK_SIZE = 100;
 
 async function getQogitaToken(supabaseClient: any): Promise<{ token: string; baseUrl: string; config: any }> {
   const { data: config } = await supabaseClient.from("qogita_config").select("*").eq("id", 1).single();
@@ -53,14 +54,13 @@ Deno.serve(async (req) => {
 
   const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
-  // Check for interrupted sync to resume
   const { data: existingSync } = await supabase
     .from("sync_logs").select("*").eq("sync_type", "products").eq("status", "running")
     .order("started_at", { ascending: false }).limit(1).maybeSingle();
 
   let syncLogId: string;
   let resumeOffset = 0;
-  let stats = { items_processed: 0, items_total: 0, items_created: 0, items_updated: 0, items_skipped: 0, deactivated: 0 };
+  let stats = { items_processed: 0, items_total: 0, chunks_done: 0, deactivated: 0 };
 
   if (existingSync && (existingSync.stats as any)?.items_processed > 0) {
     syncLogId = existingSync.id;
@@ -82,27 +82,15 @@ Deno.serve(async (req) => {
     const { token, baseUrl, config } = await getQogitaToken(supabase);
     const country = config.default_country || "BE";
 
-    // Download CSV (only if starting fresh)
-    let rows: any[];
-    if (resumeOffset === 0) {
-      await supabase.from("sync_logs").update({ progress_message: "Téléchargement CSV..." }).eq("id", syncLogId);
-      const csvUrl = `${baseUrl}/variants/search/download/?country=${country}`;
-      const res = await fetch(csvUrl, { headers: { Authorization: `Bearer ${token}`, Accept: "text/csv" } });
-      if (!res.ok) throw new Error(`Qogita CSV download failed ${res.status}: ${await res.text()}`);
-      const csvText = await res.text();
-      rows = parseCSV(csvText);
-      stats.items_total = rows.length;
-      await supabase.from("sync_logs").update({ progress_total: rows.length, progress_message: `${rows.length} produits trouvés` }).eq("id", syncLogId);
-    } else {
-      // Re-download CSV for resume (we need the data)
-      await supabase.from("sync_logs").update({ progress_message: "Re-téléchargement CSV pour reprise..." }).eq("id", syncLogId);
-      const csvUrl = `${baseUrl}/variants/search/download/?country=${country}`;
-      const res = await fetch(csvUrl, { headers: { Authorization: `Bearer ${token}`, Accept: "text/csv" } });
-      if (!res.ok) throw new Error(`Qogita CSV download failed ${res.status}: ${await res.text()}`);
-      const csvText = await res.text();
-      rows = parseCSV(csvText);
-      stats.items_total = rows.length;
-    }
+    // Download CSV
+    await supabase.from("sync_logs").update({ progress_message: "Téléchargement CSV..." }).eq("id", syncLogId);
+    const csvUrl = `${baseUrl}/variants/search/download/?country=${country}`;
+    const res = await fetch(csvUrl, { headers: { Authorization: `Bearer ${token}`, Accept: "text/csv" } });
+    if (!res.ok) throw new Error(`Qogita CSV download failed ${res.status}: ${await res.text()}`);
+    const csvText = await res.text();
+    const rows = parseCSV(csvText);
+    stats.items_total = rows.length;
+    await supabase.from("sync_logs").update({ progress_total: rows.length, progress_message: `${rows.length} produits trouvés` }).eq("id", syncLogId);
 
     // Pre-load maps
     const { data: categories } = await supabase.from("categories").select("id, qogita_qid");
@@ -112,8 +100,8 @@ Deno.serve(async (req) => {
 
     const processedQids = new Set<string>();
 
-    for (let i = resumeOffset; i < rows.length; i++) {
-      // Timeout safety
+    // Process in chunks with batch upsert
+    for (let i = resumeOffset; i < rows.length; i += CHUNK_SIZE) {
       if (Date.now() - startTime > MAX_EXECUTION_TIME) {
         stats.items_processed = i;
         await supabase.from("sync_logs").update({
@@ -125,70 +113,77 @@ Deno.serve(async (req) => {
         });
       }
 
-      const row = rows[i];
-      const qid = row.qid || row.variantQid || row.variant_qid;
-      if (!qid) { stats.items_skipped++; continue; }
-      processedQids.add(qid);
+      const chunk = rows.slice(i, i + CHUNK_SIZE);
+      const batchData: any[] = [];
 
-      const gtin = row.gtin || row.ean || "";
-      const name = row.name || row.title || row.productName || "";
-      if (!name) { stats.items_skipped++; continue; }
+      for (const row of chunk) {
+        const qid = row.qid || row.variantQid || row.variant_qid;
+        if (!qid) continue;
+        const name = row.name || row.title || row.productName || "";
+        if (!name) continue;
+        processedQids.add(qid);
 
-      const slug = slugify(name) + (gtin ? `-${gtin.slice(-6)}` : `-${qid.slice(0, 6)}`);
-      const categoryQid = row.categoryQid || row.category_qid || "";
-      const brandQid = row.brandQid || row.brand_qid || "";
+        const gtin = row.gtin || row.ean || "";
+        const slug = slugify(name) + (gtin ? `-${gtin.slice(-6)}` : `-${qid.slice(0, 6)}`);
+        const categoryQid = row.categoryQid || row.category_qid || "";
+        const brandQid = row.brandQid || row.brand_qid || "";
+        const bestPrice = parseFloat(row.bestPrice || row.best_price || "0");
+        const stockQty = parseInt(row.totalStock || row.total_stock || "0", 10);
+        const sellerCount = parseInt(row.sellerCount || row.seller_count || row.offerCount || "0", 10);
 
-      const productRow: any = {
-        qogita_qid: qid, qogita_fid: row.familyQid || row.family_qid || null,
-        gtin: gtin || null, name, slug,
-        description: row.description || null, short_description: row.shortDescription || row.short_description || null,
-        label: row.label || null,
-        category_id: catMap.get(categoryQid) || null, brand_id: brandMap.get(brandQid) || null,
-        image_urls: row.imageUrl ? [row.imageUrl] : [],
-        origin_country: row.originCountry || row.origin_country || null,
-        source: "qogita", is_active: true, is_published: true, synced_at: new Date().toISOString(),
-      };
-
-      const bestPrice = parseFloat(row.bestPrice || row.best_price || "0");
-      const stockQty = parseInt(row.totalStock || row.total_stock || "0", 10);
-      const sellerCount = parseInt(row.sellerCount || row.seller_count || row.offerCount || "0", 10);
-      if (bestPrice > 0) {
-        productRow.best_price_excl_vat = bestPrice;
-        productRow.best_price_incl_vat = Math.round(bestPrice * 1.21 * 100) / 100;
+        const productRow: any = {
+          qogita_qid: qid, qogita_fid: row.familyQid || row.family_qid || null,
+          gtin: gtin || null, name, slug,
+          description: row.description || null, short_description: row.shortDescription || row.short_description || null,
+          label: row.label || null,
+          category_id: catMap.get(categoryQid) || null, brand_id: brandMap.get(brandQid) || null,
+          image_urls: row.imageUrl ? [row.imageUrl] : [],
+          origin_country: row.originCountry || row.origin_country || null,
+          source: "qogita", is_active: true, is_published: true, synced_at: new Date().toISOString(),
+          total_stock: stockQty, offer_count: sellerCount, is_in_stock: stockQty > 0,
+        };
+        if (bestPrice > 0) {
+          productRow.best_price_excl_vat = bestPrice;
+          productRow.best_price_incl_vat = Math.round(bestPrice * 1.21 * 100) / 100;
+        }
+        batchData.push(productRow);
       }
-      productRow.total_stock = stockQty;
-      productRow.offer_count = sellerCount;
-      productRow.is_in_stock = stockQty > 0;
 
-      const { data: existing } = await supabase.from("products").select("id").eq("qogita_qid", qid).maybeSingle();
-      if (existing) { await supabase.from("products").update(productRow).eq("id", existing.id); stats.items_updated++; }
-      else { await supabase.from("products").insert(productRow); stats.items_created++; }
-      stats.items_processed = i + 1;
-
-      if ((i + 1) % 50 === 0 || i === rows.length - 1) {
-        await supabase.from("sync_logs").update({
-          stats, progress_current: i + 1, progress_total: rows.length,
-          progress_message: `Import ${i + 1}/${rows.length} (${stats.items_created} créés, ${stats.items_updated} mis à jour, ${stats.items_skipped} ignorés)`,
-        }).eq("id", syncLogId);
+      if (batchData.length > 0) {
+        const { error } = await supabase.from("products").upsert(batchData, {
+          onConflict: "qogita_qid",
+          ignoreDuplicates: false,
+        });
+        if (error) throw error;
       }
+
+      stats.items_processed = Math.min(i + CHUNK_SIZE, rows.length);
+      stats.chunks_done++;
+
+      await supabase.from("sync_logs").update({
+        stats, progress_current: stats.items_processed, progress_total: rows.length,
+        progress_message: `Import ${stats.items_processed}/${rows.length} produits`,
+      }).eq("id", syncLogId);
+
+      await new Promise(r => setTimeout(r, 100));
     }
 
-    // Deactivate absent products
+    // Deactivate absent products — batch update
     await supabase.from("sync_logs").update({ progress_message: "Désactivation des produits absents..." }).eq("id", syncLogId);
     const { data: qProducts } = await supabase.from("products").select("id, qogita_qid").eq("source", "qogita").eq("is_active", true);
-    let deactivated = 0;
-    for (const p of (qProducts || [])) {
-      if (p.qogita_qid && !processedQids.has(p.qogita_qid)) {
-        await supabase.from("products").update({ is_in_stock: false, total_stock: 0 }).eq("id", p.id);
-        deactivated++;
+    const toDeactivate = (qProducts || []).filter(p => p.qogita_qid && !processedQids.has(p.qogita_qid)).map(p => p.id);
+    if (toDeactivate.length > 0) {
+      for (let i = 0; i < toDeactivate.length; i += 200) {
+        const ids = toDeactivate.slice(i, i + 200);
+        await supabase.from("products").update({ is_in_stock: false, total_stock: 0 }).in("id", ids);
       }
     }
-    stats.deactivated = deactivated;
+    stats.deactivated = toDeactivate.length;
 
     await supabase.from("sync_logs").update({
       status: "completed", completed_at: new Date().toISOString(), stats,
       progress_current: rows.length, progress_total: rows.length,
-      progress_message: `Terminé — ${rows.length} produits (${stats.items_created} créés, ${stats.items_updated} mis à jour, ${deactivated} désactivés)`,
+      progress_message: `Terminé — ${rows.length} produits synchronisés, ${toDeactivate.length} désactivés`,
     }).eq("id", syncLogId);
 
     await supabase.from("qogita_config").update({ last_full_sync_at: new Date().toISOString(), sync_status: "completed" }).eq("id", 1);

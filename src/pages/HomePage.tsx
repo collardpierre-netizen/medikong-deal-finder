@@ -183,19 +183,31 @@ export default function HomePage() {
             ))}
           </motion.div>
 
-          {/* Inline stats */}
+          {/* Inline stats — dynamic per country */}
           <motion.div
             className="flex items-center justify-center gap-0 divide-x divide-mk-line"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.4 }}
           >
-            {heroStats.map(s => (
-              <div key={s.label} className="px-6 md:px-8 text-center">
-                <div className="text-xl md:text-2xl font-bold text-mk-navy">{s.value}</div>
-                <div className="text-xs text-mk-sec mt-0.5">{s.label}</div>
+            <div className="px-6 md:px-8 text-center">
+              <div className="text-xl md:text-2xl font-bold text-mk-navy">
+                <AnimatedCounter target={countryStats?.vendors || 0} suffix="+" />
               </div>
-            ))}
+              <div className="text-xs text-mk-sec mt-0.5">{t("stats.suppliers")}</div>
+            </div>
+            <div className="px-6 md:px-8 text-center">
+              <div className="text-xl md:text-2xl font-bold text-mk-navy">
+                <AnimatedCounter target={countryStats?.products || 0} suffix="+" />
+              </div>
+              <div className="text-xs text-mk-sec mt-0.5">{t("stats.products")} {countryLabel}</div>
+            </div>
+            <div className="px-6 md:px-8 text-center">
+              <div className="text-xl md:text-2xl font-bold text-mk-navy">
+                <AnimatedCounter target={countryStats?.offers || 0} suffix="+" />
+              </div>
+              <div className="text-xs text-mk-sec mt-0.5">{t("stats.offers", "Offres")}</div>
+            </div>
           </motion.div>
 
           {/* CTA */}

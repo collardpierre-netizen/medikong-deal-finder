@@ -1952,6 +1952,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_offers_from_products: {
+        Args: { _country_code?: string }
+        Returns: Json
+      }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean

@@ -33,19 +33,42 @@ Deno.serve(async (req) => {
 
   const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
+  // Parse optional country filter from request body
+  let requestedCountries: string[] | null = null;
+  try {
+    const body = await req.json();
+    if (body?.countries && Array.isArray(body.countries)) requestedCountries = body.countries;
+    if (body?.country) requestedCountries = [body.country];
+  } catch { /* no body */ }
+
+  // Get active countries with sync enabled
+  const { data: syncCountries } = await supabase
+    .from("countries").select("code, name, default_vat_rate")
+    .eq("is_active", true).eq("qogita_sync_enabled", true).order("display_order");
+  let countriesToSync = syncCountries || [{ code: "BE", name: "Belgique", default_vat_rate: 21 }];
+  if (requestedCountries) {
+    countriesToSync = countriesToSync.filter((c: any) => requestedCountries!.includes(c.code));
+  }
+
   const { data: existingSync } = await supabase
     .from("sync_logs").select("*").eq("sync_type", "offers_detail").eq("status", "running")
     .order("started_at", { ascending: false }).limit(1).maybeSingle();
 
   let syncLogId: string;
+  let stats = {
+    products_processed: 0, products_total: 0, vendors_created: 0,
+    offers_upserted: 0, offers_deactivated: 0, errors: 0,
+    countries_done: [] as string[], current_country: "",
+  };
   let resumeOffset = 0;
-  let stats = { products_processed: 0, products_total: 0, vendors_created: 0, offers_upserted: 0, offers_deactivated: 0, errors: 0 };
+  let skipCountries: string[] = [];
 
   if (existingSync && (existingSync.stats as any)?.products_processed > 0) {
     syncLogId = existingSync.id;
     stats = existingSync.stats as any;
     resumeOffset = stats.products_processed;
-    await supabase.from("sync_logs").update({ progress_message: `Reprise au produit ${resumeOffset}...` }).eq("id", syncLogId);
+    skipCountries = stats.countries_done || [];
+    await supabase.from("sync_logs").update({ progress_message: `Reprise...` }).eq("id", syncLogId);
   } else {
     if (existingSync) {
       await supabase.from("sync_logs").update({ status: "error", error_message: "Superseded", completed_at: new Date().toISOString() }).eq("id", existingSync.id);
@@ -59,7 +82,6 @@ Deno.serve(async (req) => {
 
   try {
     const { token, baseUrl } = await getQogitaToken(supabase);
-    const headers = { Authorization: `Bearer ${token}`, Accept: "application/json" };
 
     // Get all Qogita products
     const { data: products, error: pError } = await supabase
@@ -75,140 +97,175 @@ Deno.serve(async (req) => {
     }
 
     stats.products_total = products.length;
-    await supabase.from("sync_logs").update({ progress_total: products.length, progress_message: `${products.length} produits à traiter` }).eq("id", syncLogId);
-
     const { data: marginRules } = await supabase.from("margin_rules").select("*").eq("is_active", true).order("priority", { ascending: false });
 
     // Pre-load existing vendors
     const { data: existingVendors } = await supabase.from("vendors").select("id, qogita_seller_alias");
     const vendorMap = new Map((existingVendors || []).map(v => [v.qogita_seller_alias, v.id]));
 
-    const processedOfferQids = new Set<string>();
-    let offerBatch: any[] = [];
+    // Process each country
+    for (let ci = 0; ci < countriesToSync.length; ci++) {
+      const ctry = countriesToSync[ci] as any;
+      if (skipCountries.includes(ctry.code)) continue;
 
-    async function flushOfferBatch() {
-      if (offerBatch.length === 0) return;
-      const { error } = await supabase.from("offers").upsert(offerBatch, {
-        onConflict: "qogita_offer_qid",
-        ignoreDuplicates: false,
-      });
-      if (error) throw error;
-      stats.offers_upserted += offerBatch.length;
-      offerBatch = [];
-    }
+      stats.current_country = ctry.code;
+      const vatRate = ctry.default_vat_rate || 21;
+      const vatMultiplier = 1 + vatRate / 100;
 
-    for (let i = resumeOffset; i < products.length; i++) {
-      if (Date.now() - startTime > MAX_EXECUTION_TIME) {
-        await flushOfferBatch();
-        stats.products_processed = i;
-        await supabase.from("sync_logs").update({
-          stats, progress_current: i, progress_total: products.length,
-          progress_message: `Pause timeout — reprendra au produit ${i}/${products.length}`,
-        }).eq("id", syncLogId);
-        return new Response(JSON.stringify({ status: "partial", resumeAt: i, stats }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+      await supabase.from("sync_logs").update({
+        progress_total: products.length * countriesToSync.length,
+        progress_message: `Pays ${ci + 1}/${countriesToSync.length} (${ctry.code}) — ${products.length} produits`,
+      }).eq("id", syncLogId);
+
+      const processedOfferQids = new Set<string>();
+      let offerBatch: any[] = [];
+
+      async function flushOfferBatch() {
+        if (offerBatch.length === 0) return;
+        const { error } = await supabase.from("offers").upsert(offerBatch, {
+          onConflict: "qogita_offer_qid",
+          ignoreDuplicates: false,
         });
+        if (error) throw error;
+        stats.offers_upserted += offerBatch.length;
+        offerBatch = [];
       }
 
-      const product = products[i];
-      try {
-        const res = await fetch(`${baseUrl}/variants/${product.qogita_qid}/`, { headers });
-        if (!res.ok) {
-          if (res.status === 404) continue;
-          stats.errors++;
-          continue;
-        }
+      // Determine resume point for this country
+      const countryResumeOffset = (skipCountries.length === 0 && ci === 0) ? resumeOffset : 0;
 
-        const variant = await res.json();
-        const offers = variant.offers || [];
-
-        for (const offer of offers) {
-          const offerQid = offer.offerQid || offer.qid;
-          if (!offerQid) continue;
-          processedOfferQids.add(offerQid);
-
-          const sellerAlias = offer.sellerAlias || offer.seller?.alias || `seller-${offerQid.slice(0, 8)}`;
-          let vendorId = vendorMap.get(sellerAlias);
-          if (!vendorId) {
-            const slug = sellerAlias.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-            const { data: newVendor } = await supabase.from("vendors").insert({
-              type: "qogita_virtual", name: sellerAlias, slug, qogita_seller_alias: sellerAlias,
-              auto_forward_to_qogita: true, is_active: true,
-            }).select("id").single();
-            if (newVendor) {
-              vendorId = newVendor.id;
-              vendorMap.set(sellerAlias, vendorId);
-              stats.vendors_created++;
-            } else continue;
-          }
-
-          const basePrice = parseFloat(offer.price || offer.unitPrice || "0");
-          const stockQty = parseInt(offer.stockQuantity || offer.stock || "0", 10);
-          const delayDays = parseInt(offer.deliveryDays || offer.delay || "3", 10);
-          const shipFrom = offer.shipsFromCountry || offer.shipFromCountry || "BE";
-          const moq = parseInt(offer.minimumOrderQuantity || offer.moq || "1", 10);
-
-          let marginPct = 15.0, extraDelay = 2, roundTo = 0.01, matchedRuleId: string | null = null;
-          for (const rule of (marginRules || [])) {
-            const match = (!rule.category_id || rule.category_id === product.category_id)
-              && (!rule.brand_id || rule.brand_id === product.brand_id)
-              && (!rule.vendor_id || rule.vendor_id === vendorId)
-              && (rule.min_base_price == null || basePrice >= rule.min_base_price)
-              && (rule.max_base_price == null || basePrice <= rule.max_base_price);
-            if (match) { marginPct = rule.margin_percentage; extraDelay = rule.extra_delay_days; roundTo = rule.round_price_to; matchedRuleId = rule.id; break; }
-          }
-
-          const priceExclVat = Math.round(basePrice * (1 + marginPct / 100) / roundTo) * roundTo;
-          const priceInclVat = Math.round(priceExclVat * 1.21 * 100) / 100;
-
-          offerBatch.push({
-            product_id: product.id, vendor_id: vendorId, qogita_offer_qid: offerQid,
-            qogita_base_price: basePrice, qogita_base_delay_days: delayDays, is_qogita_backed: true,
-            price_excl_vat: priceExclVat, price_incl_vat: priceInclVat, vat_rate: 21.0, moq,
-            stock_quantity: stockQty, stock_status: stockQty > 0 ? "in_stock" : "out_of_stock",
-            delivery_days: delayDays + extraDelay, shipping_from_country: shipFrom,
-            applied_margin_rule_id: matchedRuleId, applied_margin_percentage: marginPct,
-            margin_amount: priceExclVat - basePrice, is_active: true, synced_at: new Date().toISOString(),
+      for (let i = countryResumeOffset; i < products.length; i++) {
+        if (Date.now() - startTime > MAX_EXECUTION_TIME) {
+          await flushOfferBatch();
+          stats.products_processed = i;
+          await supabase.from("sync_logs").update({
+            stats, progress_current: stats.products_processed + (ci * products.length),
+            progress_total: products.length * countriesToSync.length,
+            progress_message: `Pause timeout — ${ctry.code} ${i}/${products.length}`,
+          }).eq("id", syncLogId);
+          return new Response(JSON.stringify({ status: "partial", resumeAt: i, stats }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
-
-          // Flush every 100 offers
-          if (offerBatch.length >= 100) await flushOfferBatch();
         }
-      } catch (e: any) {
-        console.error(`Error product ${product.qogita_qid}:`, e.message);
-        stats.errors++;
+
+        const product = products[i];
+        try {
+          // Fetch variant detail with country parameter
+          const res = await fetch(`${baseUrl}/variants/${product.qogita_qid}/?country=${ctry.code}`, {
+            headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+          });
+          if (!res.ok) {
+            if (res.status === 404) continue;
+            stats.errors++;
+            continue;
+          }
+
+          const variant = await res.json();
+          const offers = variant.offers || [];
+
+          for (const offer of offers) {
+            const offerQid = offer.offerQid || offer.qid;
+            if (!offerQid) continue;
+            // Country-specific offer QID to allow same offer in different countries
+            const countryOfferQid = `${offerQid}-${ctry.code}`;
+            processedOfferQids.add(countryOfferQid);
+
+            const sellerAlias = offer.sellerAlias || offer.seller?.alias || `seller-${offerQid.slice(0, 8)}`;
+            let vendorId = vendorMap.get(sellerAlias);
+            if (!vendorId) {
+              const slug = sellerAlias.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+              const { data: newVendor } = await supabase.from("vendors").insert({
+                type: "qogita_virtual", name: sellerAlias, slug, qogita_seller_alias: sellerAlias,
+                auto_forward_to_qogita: true, is_active: true,
+              }).select("id").single();
+              if (newVendor) {
+                vendorId = newVendor.id;
+                vendorMap.set(sellerAlias, vendorId);
+                stats.vendors_created++;
+              } else continue;
+            }
+
+            const basePrice = parseFloat(offer.price || offer.unitPrice || "0");
+            const stockQty = parseInt(offer.stockQuantity || offer.stock || "0", 10);
+            const delayDays = parseInt(offer.deliveryDays || offer.delay || "3", 10);
+            const shipFrom = offer.shipsFromCountry || offer.shipFromCountry || ctry.code;
+            const moq = parseInt(offer.minimumOrderQuantity || offer.moq || "1", 10);
+
+            let marginPct = 15.0, extraDelay = 2, roundTo = 0.01, matchedRuleId: string | null = null;
+            for (const rule of (marginRules || [])) {
+              const match = (!rule.category_id || rule.category_id === product.category_id)
+                && (!rule.brand_id || rule.brand_id === product.brand_id)
+                && (!rule.vendor_id || rule.vendor_id === vendorId)
+                && (rule.min_base_price == null || basePrice >= rule.min_base_price)
+                && (rule.max_base_price == null || basePrice <= rule.max_base_price);
+              if (match) { marginPct = rule.margin_percentage; extraDelay = rule.extra_delay_days; roundTo = rule.round_price_to; matchedRuleId = rule.id; break; }
+            }
+
+            const priceExclVat = Math.round(basePrice * (1 + marginPct / 100) / roundTo) * roundTo;
+            const priceInclVat = Math.round(priceExclVat * vatMultiplier * 100) / 100;
+
+            offerBatch.push({
+              product_id: product.id, vendor_id: vendorId,
+              qogita_offer_qid: countryOfferQid, // country-specific QID
+              country_code: ctry.code, // ← KEY: set country on offer
+              qogita_base_price: basePrice, qogita_base_delay_days: delayDays, is_qogita_backed: true,
+              price_excl_vat: priceExclVat, price_incl_vat: priceInclVat,
+              vat_rate: vatRate, // ← use country-specific VAT
+              moq,
+              stock_quantity: stockQty, stock_status: stockQty > 0 ? "in_stock" : "out_of_stock",
+              delivery_days: delayDays + extraDelay, shipping_from_country: shipFrom,
+              applied_margin_rule_id: matchedRuleId, applied_margin_percentage: marginPct,
+              margin_amount: priceExclVat - basePrice, is_active: true, synced_at: new Date().toISOString(),
+            });
+
+            if (offerBatch.length >= 100) await flushOfferBatch();
+          }
+        } catch (e: any) {
+          console.error(`Error product ${product.qogita_qid} (${ctry.code}):`, e.message);
+          stats.errors++;
+        }
+
+        stats.products_processed = i + 1;
+
+        if ((i + 1) % BATCH_SIZE === 0 || i === products.length - 1) {
+          await flushOfferBatch();
+          await supabase.from("sync_logs").update({
+            stats,
+            progress_current: (ci * products.length) + i + 1,
+            progress_total: products.length * countriesToSync.length,
+            progress_message: `${ctry.code}: ${i + 1}/${products.length} produits — ${stats.offers_upserted} offres total`,
+          }).eq("id", syncLogId);
+          if (i + 1 < products.length) await sleep(300);
+        }
       }
 
-      stats.products_processed = i + 1;
+      await flushOfferBatch();
 
-      if ((i + 1) % BATCH_SIZE === 0 || i === products.length - 1) {
-        await flushOfferBatch();
-        await supabase.from("sync_logs").update({
-          stats, progress_current: i + 1, progress_total: products.length,
-          progress_message: `${i + 1}/${products.length} produits — ${stats.offers_upserted} offres`,
-        }).eq("id", syncLogId);
-        if (i + 1 < products.length) await sleep(300);
+      // Deactivate absent offers for this country
+      await supabase.from("sync_logs").update({ progress_message: `${ctry.code}: Désactivation offres absentes...` }).eq("id", syncLogId);
+      const { data: existingQOffers } = await supabase.from("offers").select("id, qogita_offer_qid")
+        .eq("is_qogita_backed", true).eq("is_active", true).eq("country_code", ctry.code)
+        .not("qogita_offer_qid", "is", null);
+      const toDeactivate = (existingQOffers || [])
+        .filter(o => o.qogita_offer_qid && !processedOfferQids.has(o.qogita_offer_qid))
+        .map(o => o.id);
+      if (toDeactivate.length > 0) {
+        for (let i = 0; i < toDeactivate.length; i += 200) {
+          await supabase.from("offers").update({ is_active: false }).in("id", toDeactivate.slice(i, i + 200));
+        }
       }
+      stats.offers_deactivated += toDeactivate.length;
+
+      // Mark country done
+      stats.countries_done = [...(stats.countries_done || []), ctry.code];
+      stats.products_processed = 0; // Reset for next country
     }
-
-    await flushOfferBatch();
-
-    // Deactivate absent offers — batch
-    await supabase.from("sync_logs").update({ progress_message: "Désactivation des offres absentes..." }).eq("id", syncLogId);
-    const { data: existingQOffers } = await supabase.from("offers").select("id, qogita_offer_qid")
-      .eq("is_qogita_backed", true).eq("is_active", true).not("qogita_offer_qid", "is", null);
-    const toDeactivate = (existingQOffers || []).filter(o => o.qogita_offer_qid && !processedOfferQids.has(o.qogita_offer_qid)).map(o => o.id);
-    if (toDeactivate.length > 0) {
-      for (let i = 0; i < toDeactivate.length; i += 200) {
-        await supabase.from("offers").update({ is_active: false }).in("id", toDeactivate.slice(i, i + 200));
-      }
-    }
-    stats.offers_deactivated = toDeactivate.length;
 
     await supabase.from("sync_logs").update({
       status: stats.errors > 0 ? "partial" : "completed", completed_at: new Date().toISOString(), stats,
-      progress_current: products.length, progress_total: products.length,
-      progress_message: `Terminé — ${stats.offers_upserted} offres, ${stats.offers_deactivated} désactivées`,
+      progress_current: products.length * countriesToSync.length,
+      progress_total: products.length * countriesToSync.length,
+      progress_message: `Terminé — ${stats.offers_upserted} offres (${countriesToSync.map((c: any) => c.code).join(", ")}), ${stats.offers_deactivated} désactivées`,
     }).eq("id", syncLogId);
 
     await supabase.from("qogita_config").update({ last_offers_sync_at: new Date().toISOString(), sync_status: "completed" }).eq("id", 1);

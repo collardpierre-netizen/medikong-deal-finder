@@ -2,7 +2,7 @@ import { Layout } from "@/components/layout/Layout";
 import { Link, useNavigate } from "react-router-dom";
 import { Search, Shield, Truck, Award, Package, Heart, Activity, Droplet, Droplets, Wrench, ChevronRight, Check, Armchair, TrendingDown, ArrowRight, Globe, Zap, ShoppingCart, FileSearch, BarChart3, ChevronDown } from "lucide-react";
 import { categories, formatPrice } from "@/data/mock";
-import { useProducts } from "@/hooks/useProducts";
+import { useFeaturedProducts } from "@/hooks/useProducts";
 import { ProductCard } from "@/components/shared/ProductCard";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -33,7 +33,7 @@ export default function HomePage() {
   const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [openFaq, setOpenFaq] = useState<number | null>(null);
-  const { data: products = [] } = useProducts();
+  const { data: products = [] } = useFeaturedProducts(5);
   const { country, currentCountry } = useCountry();
   const navigate = useNavigate();
 

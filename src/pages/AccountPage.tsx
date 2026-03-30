@@ -4,7 +4,7 @@ import { Users, MapPin, Package, AlertCircle, Heart, Zap, Download, Layers, Mail
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { formatPrice } from "@/data/mock";
-import { useProducts } from "@/hooks/useProducts";
+import { useFeaturedProducts } from "@/hooks/useProducts";
 import { useFavorites, useFavoriteLists, useRecentActivity } from "@/hooks/useFavorites";
 import { usePriceWatches } from "@/hooks/usePriceWatches";
 import { useAuth } from "@/contexts/AuthContext";
@@ -40,7 +40,7 @@ const contentVariants = {
 };
 
 export default function AccountPage() {
-  const { data: products = [] } = useProducts();
+  const { data: products = [] } = useFeaturedProducts(20);
   const { user } = useAuth();
   const { favorites, isFavorite, toggleFavorite } = useFavorites();
   const { lists, createList, deleteList } = useFavoriteLists();

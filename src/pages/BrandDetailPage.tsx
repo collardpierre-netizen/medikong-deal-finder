@@ -1,7 +1,7 @@
 import { Layout } from "@/components/layout/Layout";
 import { useParams, Link } from "react-router-dom";
 import { brands, sellers, sellerPortfolios } from "@/data/mock";
-import { useProducts } from "@/hooks/useProducts";
+import { useFeaturedProducts } from "@/hooks/useProducts";
 import { ProductCard } from "@/components/shared/ProductCard";
 import { Star, ExternalLink, Heart, Download, Upload, Users, Grid, List, Columns, Factory, Store, MapPin, ShoppingCart, Award } from "lucide-react";
 import { useState } from "react";
@@ -15,7 +15,7 @@ const catChips = [
 
 export default function BrandDetailPage() {
   const { slug } = useParams();
-  const { data: products = [] } = useProducts();
+  const { data: products = [] } = useFeaturedProducts(30, { brandSlug: slug });
   const brand = brands.find(b => b.slug === slug) || { name: slug || "TENA", count: 234, slug: slug || "tena", manufacturer: "Essity AB", manufacturerSlug: "essity" };
   const [view, setView] = useState<"grid" | "list" | "trivago">("grid");
   const [showFilters, setShowFilters] = useState(false);

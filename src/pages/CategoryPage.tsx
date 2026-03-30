@@ -1,6 +1,6 @@
 import { Layout } from "@/components/layout/Layout";
 import { useParams, Link } from "react-router-dom";
-import { useProducts } from "@/hooks/useProducts";
+import { useFeaturedProducts } from "@/hooks/useProducts";
 import { ProductCard, ProductImage, ProductImageSmall } from "@/components/shared/ProductCard";
 import { formatPrice } from "@/data/mock";
 import { Grid, List, Columns, Sliders, TrendingDown, ExternalLink } from "lucide-react";
@@ -14,7 +14,7 @@ type ViewMode = "grid" | "list" | "trivago";
 
 export default function CategoryPage() {
   const { slug } = useParams();
-  const { data: products = [] } = useProducts();
+  const { data: products = [] } = useFeaturedProducts(50);
   const [view, setView] = useState<ViewMode>("grid");
   const [activeSub, setActiveSub] = useState(0);
   const [showFilters, setShowFilters] = useState(false);

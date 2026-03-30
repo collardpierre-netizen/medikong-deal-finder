@@ -85,18 +85,39 @@ function mapDbProduct(row: any, offersData?: any[]): Product {
   };
 }
 
+/** @deprecated Use useFeaturedProducts(limit) or useCatalogProducts instead */
 export function useProducts() {
+  return useFeaturedProducts(24);
+}
+
+/**
+ * Lightweight hook: fetches only `limit` products with offers, no full table scan.
+ */
+export function useFeaturedProducts(limit = 10, options?: { promotion?: boolean; brandSlug?: string }) {
   const { country } = useCountry();
   return useQuery({
-    queryKey: ["products", country],
+    queryKey: ["featured-products", limit, country, options?.promotion, options?.brandSlug],
     queryFn: async () => {
-      const [productsRes, offersRes] = await Promise.all([
-        supabase.from("products").select("*").eq("is_active", true).order("created_at", { ascending: true }),
-        supabase.from("offers").select("*").eq("is_active", true).eq("country_code", country),
-      ]);
-      if (productsRes.error) throw productsRes.error;
-      return (productsRes.data || []).map((row: any) => mapDbProduct(row, offersRes.data || []));
+      let query = supabase
+        .from("products")
+        .select("id, slug, name, brand_name, brand_id, gtin, cnk_code, image_urls, short_description, is_promotion, promotion_label, best_price_excl_vat, best_price_incl_vat, offer_count, total_stock, is_in_stock, category_name")
+        .eq("is_active", true)
+        .gt("offer_count", 0)
+        .gt("best_price_excl_vat", 0);
+
+      if (options?.promotion) query = query.eq("is_promotion", true);
+      if (options?.brandSlug) {
+        const { data: brand } = await supabase.from("brands").select("id").eq("slug", options.brandSlug).maybeSingle();
+        if (brand) query = query.eq("brand_id", brand.id);
+      }
+
+      const { data, error } = await query
+        .order("offer_count", { ascending: false })
+        .limit(limit);
+      if (error) throw error;
+      return (data || []).map((row: any) => mapDbProduct(row));
     },
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -105,13 +126,15 @@ export function useProduct(slug: string | undefined) {
   return useQuery({
     queryKey: ["product", slug, country],
     queryFn: async () => {
+      // First get the product (needed for ID)
       const { data, error } = await supabase.from("products").select("*").eq("slug", slug!).maybeSingle();
       if (error) throw error;
       if (!data) return null;
-      const { data: offers } = await supabase.from("offers").select("*").eq("product_id", data.id).eq("is_active", true).eq("country_code", country);
-      return mapDbProduct(data, offers || []);
+      // Offers fetched separately by useProductOffers — no need to duplicate here
+      return mapDbProduct(data);
     },
     enabled: !!slug,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -180,5 +203,6 @@ export function useProductOffers(productId: string | undefined) {
       });
     },
     enabled: !!productId,
+    staleTime: 3 * 60 * 1000,
   });
 }

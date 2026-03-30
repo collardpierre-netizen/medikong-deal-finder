@@ -2030,6 +2030,8 @@ export type Database = {
       }
       resolve_product_brands: { Args: never; Returns: undefined }
       resolve_product_categories: { Args: never; Returns: undefined }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
       update_brand_product_counts: { Args: never; Returns: undefined }
     }
     Enums: {

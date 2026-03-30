@@ -572,7 +572,7 @@ export default function AdminSync() {
               const pct = progressTotal > 0 ? Math.round((progressCurrent / progressTotal) * 100) : 0;
 
               return (
-                <div key={log.id} className="grid grid-cols-1 sm:grid-cols-6 gap-2 px-5 py-3 items-center hover:bg-[#F8FAFC]">
+                <div key={log.id} className="grid grid-cols-1 sm:grid-cols-7 gap-2 px-5 py-3 items-center hover:bg-[#F8FAFC]">
                   <span className="text-[12px] font-medium capitalize flex items-center gap-1.5" style={{ color: "#1E293B" }}>
                     {isRunning && <Loader2 size={12} className="text-[#2563EB] animate-spin" />}
                     {log.sync_type.replace("_", " ")}
@@ -614,6 +614,32 @@ export default function AdminSync() {
                           </span>
                         )}
                       </div>
+                    )}
+                  </div>
+                  <div>
+                    {editingLogId === log.id ? (
+                      <Select
+                        defaultValue={log.status}
+                        onValueChange={(v) => {
+                          updateLogStatus.mutate({ logId: log.id, newStatus: v });
+                        }}
+                      >
+                        <SelectTrigger className="h-7 text-[11px] w-[110px]"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="running">Running</SelectItem>
+                          <SelectItem value="completed">Completed</SelectItem>
+                          <SelectItem value="error">Error</SelectItem>
+                          <SelectItem value="partial">Partial</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <button
+                        onClick={() => setEditingLogId(log.id)}
+                        className="text-[11px] flex items-center gap-1 px-2 py-1 rounded hover:bg-[#F1F5F9] transition-colors"
+                        style={{ color: "#8B95A5" }}
+                      >
+                        <Edit3 size={11} /> Statut
+                      </button>
                     )}
                   </div>
                 </div>

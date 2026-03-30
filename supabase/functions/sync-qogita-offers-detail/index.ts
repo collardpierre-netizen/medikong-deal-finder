@@ -179,11 +179,29 @@ async function syncOffers(
 
   async function flushOffers() {
     if (!offerBatch.length) return;
-    const { error } = await sb.from("offers").upsert(offerBatch, {
-      onConflict: "qogita_offer_qid", ignoreDuplicates: false,
-    });
-    if (error) console.error("Offer upsert error:", error.message);
-    else stats.offers_upserted += offerBatch.length;
+    let upserted = 0;
+    for (const offer of offerBatch) {
+      // Use individual upserts since partial unique index doesn't work with batch onConflict
+      const { data: existing } = await sb.from("offers")
+        .select("id").eq("qogita_offer_qid", offer.qogita_offer_qid).maybeSingle();
+      
+      let err: any;
+      if (existing) {
+        const { error } = await sb.from("offers").update(offer).eq("id", existing.id);
+        err = error;
+      } else {
+        const { error } = await sb.from("offers").insert(offer);
+        err = error;
+      }
+      if (err) {
+        console.error("Offer upsert error:", err.message, "offer_qid:", offer.qogita_offer_qid);
+        if (!stats.offer_errors) stats.offer_errors = [];
+        if (stats.offer_errors.length < 5) stats.offer_errors.push(err.message);
+      } else {
+        upserted++;
+      }
+    }
+    stats.offers_upserted += upserted;
     offerBatch = [];
   }
 

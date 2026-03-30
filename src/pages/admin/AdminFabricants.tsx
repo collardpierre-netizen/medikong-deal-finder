@@ -273,7 +273,12 @@ export default function AdminFabricants() {
               </TabsContent>
             </Tabs>
 
-            <Button variant="outline" size="sm" className="w-full mt-4 text-[12px]" onClick={() => { setEditItem(selected); setDialogOpen(true); }}>Modifier</Button>
+            <div className="flex gap-2 mt-4">
+              <Button variant="outline" size="sm" className="flex-1 text-[12px]" onClick={() => { setEditItem(selected); setDialogOpen(true); }}>Modifier</Button>
+              <Button variant="outline" size="sm" className="text-[12px]" onClick={() => window.open(`/fabricant/${selected.slug}`, '_blank')}>
+                <ExternalLink size={13} className="mr-1" />Page publique
+              </Button>
+            </div>
           </div>
         )}
       </div>

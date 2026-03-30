@@ -1875,6 +1875,7 @@ export type Database = {
           country_code: string
           created_at: string
           description: string | null
+          display_code: string | null
           email: string | null
           id: string
           is_active: boolean
@@ -1902,6 +1903,7 @@ export type Database = {
           country_code?: string
           created_at?: string
           description?: string | null
+          display_code?: string | null
           email?: string | null
           id?: string
           is_active?: boolean
@@ -1929,6 +1931,7 @@ export type Database = {
           country_code?: string
           created_at?: string
           description?: string | null
+          display_code?: string | null
           email?: string | null
           id?: string
           is_active?: boolean

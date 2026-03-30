@@ -121,6 +121,7 @@ async function syncCountryStream(sb: any, country: string, vat: number, logId: s
   let colMap: Record<string, number> = {};
 
   let processed = 0;
+  let totalLines = 0;
   let batchLines: string[] = [];
   const brandNames = new Set<string>();
   const catNames = new Set<string>();
@@ -160,6 +161,7 @@ async function syncCountryStream(sb: any, country: string, vat: number, logId: s
         continue;
       }
 
+      totalLines++;
       batchLines.push(line);
 
       // Flush batch
@@ -167,11 +169,12 @@ async function syncCountryStream(sb: any, country: string, vat: number, logId: s
         processed += await processBatch(sb, batchLines, colMap, vat, country, brandNames, catNames);
         batchLines = [];
 
-        // Update progress every few chunks
+        // Update progress every few chunks — use totalLines as running estimate of total
         if (processed % (CHUNK * 5) < CHUNK) {
           await sb.from("sync_logs").update({
             progress_current: processed,
-            progress_message: `${country}: ${processed} produits importés...`,
+            progress_total: totalLines,
+            progress_message: `${country}: ${processed.toLocaleString()} / ~${totalLines.toLocaleString()} produits importés...`,
           }).eq("id", logId);
         }
       }

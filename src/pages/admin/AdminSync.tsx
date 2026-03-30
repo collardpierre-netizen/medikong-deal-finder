@@ -119,10 +119,44 @@ function formatDurationStr(seconds: number): string {
   return `${m}m ${s < 10 ? "0" : ""}${s}s`;
 }
 
+const useSyncCountries = () =>
+  useQuery({
+    queryKey: ["sync-countries"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("countries")
+        .select("code, name, flag_emoji, qogita_sync_enabled")
+        .eq("is_active", true)
+        .eq("qogita_sync_enabled", true)
+        .order("display_order");
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+const useCountryProductCounts = () =>
+  useQuery({
+    queryKey: ["country-product-counts"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("product_country_stats")
+        .select("country_code");
+      if (error) throw error;
+      const counts: Record<string, number> = {};
+      for (const row of (data || [])) {
+        counts[row.country_code] = (counts[row.country_code] || 0) + 1;
+      }
+      return counts;
+    },
+  });
+
 export default function AdminSync() {
   const qc = useQueryClient();
   const { data: logs, isLoading: logsLoading } = useSyncLogs();
   const { data: config } = useQogitaConfig();
+  const { data: syncCountries } = useSyncCountries();
+  const { data: countryCounts } = useCountryProductCounts();
+  const [selectedCountry, setSelectedCountry] = useState("BE");
   const [showToken, setShowToken] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [runningSyncs, setRunningSyncs] = useState<Set<string>>(new Set());

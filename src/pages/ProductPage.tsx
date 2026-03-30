@@ -120,7 +120,7 @@ function OfferRow({
       <div className="md:hidden space-y-3">
         <div className="flex items-center justify-between">
           <span className="font-bold text-sm">{displayCode}</span>
-          <span className="text-base font-bold text-green-700">{formatEur(offer.unitPriceEur)} €</span>
+          <span className="text-base font-bold text-green-700">{formatEur(displayPrice)} € <span className="text-[10px] font-normal text-muted-foreground">{priceLabel}</span></span>
         </div>
         <div className="flex items-center gap-4 text-xs text-muted-foreground">
           {offer.movEur > 0 && <span>MOV {formatEur(offer.movEur)} €</span>}

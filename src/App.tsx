@@ -8,6 +8,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { I18nProvider } from "@/contexts/I18nContext";
 import { CartProvider } from "@/contexts/CartContext";
 import { ImpersonationProvider } from "@/contexts/ImpersonationContext";
+import { CountryProvider } from "@/contexts/CountryContext";
 import ImpersonationBanner from "@/components/admin/ImpersonationBanner";
 import { CookieConsent } from "@/components/layout/CookieConsent";
 import { HelmetProvider } from "react-helmet-async";
@@ -117,6 +118,7 @@ const AdminSync = lazy(() => import("./pages/admin/AdminSync"));
 const AdminFabricants = lazy(() => import("./pages/admin/AdminFabricants"));
 const AdminApiKeys = lazy(() => import("./pages/admin/AdminApiKeys"));
 const AdminApiDocs = lazy(() => import("./pages/admin/AdminApiDocs"));
+const AdminCountries = lazy(() => import("./pages/admin/AdminCountries"));
 
 // Vendor pages
 const VendorLayout = lazy(() => import("./components/vendor/VendorLayout"));
@@ -156,6 +158,7 @@ const App = () => (
     <AuthProvider>
       <I18nProvider>
       <CartProvider>
+      <CountryProvider>
       <ImpersonationProvider>
       <TooltipProvider>
         <Toaster />
@@ -265,6 +268,7 @@ const App = () => (
               <Route path="sync" element={<LP><AdminSync /></LP>} />
               <Route path="api-keys" element={<LP><AdminApiKeys /></LP>} />
               <Route path="api-docs" element={<LP><AdminApiDocs /></LP>} />
+              <Route path="pays" element={<LP><AdminCountries /></LP>} />
             </Route>
 
             {/* Vendor Dashboard */}
@@ -292,6 +296,7 @@ const App = () => (
         </BrowserRouter>
       </TooltipProvider>
       </ImpersonationProvider>
+      </CountryProvider>
       </CartProvider>
       </I18nProvider>
     </AuthProvider>

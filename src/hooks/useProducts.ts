@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useCountry } from "@/contexts/CountryContext";
 
 export interface Product {
   id: string;
@@ -75,12 +76,13 @@ function mapDbProduct(row: any, offersData?: any[]): Product {
 }
 
 export function useProducts() {
+  const { country } = useCountry();
   return useQuery({
-    queryKey: ["products"],
+    queryKey: ["products", country],
     queryFn: async () => {
       const [productsRes, offersRes] = await Promise.all([
         supabase.from("products").select("*").eq("is_active", true).order("created_at", { ascending: true }),
-        supabase.from("offers").select("*").eq("is_active", true),
+        supabase.from("offers").select("*").eq("is_active", true).eq("country_code", country),
       ]);
       if (productsRes.error) throw productsRes.error;
       return (productsRes.data || []).map((row: any) => mapDbProduct(row, offersRes.data || []));
@@ -89,13 +91,14 @@ export function useProducts() {
 }
 
 export function useProduct(slug: string | undefined) {
+  const { country } = useCountry();
   return useQuery({
-    queryKey: ["product", slug],
+    queryKey: ["product", slug, country],
     queryFn: async () => {
       const { data, error } = await supabase.from("products").select("*").eq("slug", slug!).maybeSingle();
       if (error) throw error;
       if (!data) return null;
-      const { data: offers } = await supabase.from("offers").select("*").eq("product_id", data.id).eq("is_active", true);
+      const { data: offers } = await supabase.from("offers").select("*").eq("product_id", data.id).eq("is_active", true).eq("country_code", country);
       return mapDbProduct(data, offers || []);
     },
     enabled: !!slug,
@@ -122,14 +125,16 @@ export interface Offer {
 }
 
 export function useProductOffers(productId: string | undefined) {
+  const { country } = useCountry();
   return useQuery({
-    queryKey: ["offers", productId],
+    queryKey: ["offers", productId, country],
     queryFn: async () => {
       const { data: offers, error } = await supabase
         .from("offers")
         .select("*")
         .eq("product_id", productId!)
         .eq("is_active", true)
+        .eq("country_code", country)
         .order("price_excl_vat", { ascending: true });
       if (error) throw error;
 

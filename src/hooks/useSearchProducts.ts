@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useCountry } from "@/contexts/CountryContext";
 import type { Product } from "./useProducts";
 
 function slugify(text: string): string {
@@ -41,8 +42,9 @@ function mapSearchResult(row: any, offersData?: any[]): Product {
 export type SortOption = "relevance" | "price_asc" | "price_desc" | "offers";
 
 export function useSearchProducts(query: string, sort: SortOption = "relevance") {
+  const { country } = useCountry();
   return useQuery({
-    queryKey: ["search-products", query, sort],
+    queryKey: ["search-products", query, sort, country],
     queryFn: async () => {
       let productsData: any[];
 
@@ -64,7 +66,7 @@ export function useSearchProducts(query: string, sort: SortOption = "relevance")
 
       const productIds = productsData.map((p: any) => p.id);
       const { data: offersData } = productIds.length > 0
-        ? await supabase.from("offers").select("*").eq("is_active", true).in("product_id", productIds)
+        ? await supabase.from("offers").select("*").eq("is_active", true).eq("country_code", country).in("product_id", productIds)
         : { data: [] as any[] };
 
       let results = productsData.map((row: any) => mapSearchResult(row, offersData || []));

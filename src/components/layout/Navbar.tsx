@@ -7,6 +7,7 @@ import { useCart } from "@/hooks/useCart";
 import { supabase } from "@/integrations/supabase/client";
 import { useTranslation } from "react-i18next";
 import { LanguageSelector } from "@/components/LanguageSelector";
+import { CountrySelector } from "@/components/CountrySelector";
 import logoHorizontal from "@/assets/logo-horizontal.png";
 
 export function Navbar() {
@@ -84,6 +85,7 @@ export function Navbar() {
           >
             {isTVAC ? t("common.priceVat") : t("common.priceExVat")}
           </motion.button>
+          <CountrySelector />
           <LanguageSelector />
           <motion.div whileHover={{ scale: 1.15 }} className="cursor-pointer"><Bell className="text-white" size={18} aria-label="Notifications" /></motion.div>
           <Link to="/panier" className="relative">

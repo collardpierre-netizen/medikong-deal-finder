@@ -443,16 +443,19 @@ export default function ProductPage() {
                 Les photos sont a titre indicatif. Fiez-vous au GTIN.
               </p>
 
-              {/* Favorite button */}
-              {user && (
-                <button
-                  onClick={() => toggleFavorite.mutate(product.id)}
-                  className="mt-3 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
-                >
-                  <Heart size={16} className={isFavorite(product.id) ? "text-red-500 fill-current" : ""} />
-                  {isFavorite(product.id) ? "Dans mes favoris" : "Ajouter a ma liste de suivi"}
-                </button>
-              )}
+              {/* Favorite + Watch list */}
+              <div className="mt-3 flex items-center gap-4 flex-wrap">
+                {user && (
+                  <button
+                    onClick={() => toggleFavorite.mutate(product.id)}
+                    className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+                  >
+                    <Heart size={16} className={isFavorite(product.id) ? "text-red-500 fill-current" : ""} />
+                    {isFavorite(product.id) ? "Dans mes favoris" : "Ajouter aux favoris"}
+                  </button>
+                )}
+                <WatchListDialog product={product} user={user} bestPrice={bestOffer ? (isTVAC ? bestOffer.unitPriceInclVat : bestOffer.unitPriceEur) : 0} isTVAC={isTVAC} />
+              </div>
             </motion.div>
 
             {/* ═══ RIGHT COLUMN — Product info + Offers ═══ */}

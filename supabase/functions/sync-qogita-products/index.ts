@@ -179,7 +179,7 @@ async function syncCountryStream(sb: any, country: string, vat: number, logId: s
 
       // Flush batch
       if (batchLines.length >= CHUNK) {
-        processed += await processBatch(sb, batchLines, colMap, vat, country, brandNames, catNames);
+        processed += await processBatch(sb, batchLines, colMap, vat, country, brandNames, catNames, qogitaVendorId);
         batchLines = [];
 
         // Update progress every few chunks — use totalLines as running estimate of total

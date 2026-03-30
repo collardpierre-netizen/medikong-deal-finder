@@ -440,6 +440,30 @@ export default function ProductPage() {
 
   // Margin calculator state (must be before early returns)
   const [userPrice, setUserPrice] = useState<string>("");
+  const [supplierName, setSupplierName] = useState<string>("");
+  const [savingPrice, setSavingPrice] = useState(false);
+
+  // Load saved user price
+  const { data: savedUserPrice } = useQuery({
+    queryKey: ["user-price", product?.id, user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("user_prices")
+        .select("my_purchase_price, supplier_name")
+        .eq("user_id", user!.id)
+        .eq("product_id", product!.id)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!product?.id && !!user?.id,
+  });
+
+  useEffect(() => {
+    if (savedUserPrice) {
+      setUserPrice(savedUserPrice.my_purchase_price?.toString() || "");
+      setSupplierName(savedUserPrice.supplier_name || "");
+    }
+  }, [savedUserPrice]);
 
   if (isLoading) {
     return (

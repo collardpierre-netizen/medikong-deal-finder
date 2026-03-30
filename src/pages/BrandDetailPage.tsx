@@ -190,9 +190,58 @@ export default function BrandDetailPage() {
                 </div>
               </div>
             </div>
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-              {products.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
-            </div>
+            {view === "trivago" ? (
+              <div className="space-y-3">
+                {products.map((p, i) => (
+                  <div key={p.id} className="flex items-center gap-4 border border-mk-line rounded-lg p-3 hover:shadow-sm transition-shadow bg-white">
+                    <div className="w-16 h-16 shrink-0 rounded bg-muted flex items-center justify-center overflow-hidden">
+                      {p.imageUrl ? (
+                        <img src={p.imageUrl} alt={p.name} className="w-full h-full object-contain p-1" onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.svg'; }} />
+                      ) : (
+                        <span className="text-xs text-muted-foreground">N/A</span>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <Link to={`/produit/${p.slug}`} className="text-sm font-semibold text-mk-navy hover:text-mk-blue line-clamp-1">{p.name}</Link>
+                      <p className="text-xs text-muted-foreground">{p.brand} · {p.gtin}</p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="text-sm font-bold text-green-700">{p.price.toLocaleString("fr-BE", { minimumFractionDigits: 2 })} €</p>
+                      {p.sellers > 0 && <p className="text-[11px] text-muted-foreground">{p.sellers} offre{p.sellers > 1 ? "s" : ""}</p>}
+                    </div>
+                    {p.pct > 0 && <span className="text-xs font-semibold bg-red-500 text-white px-2 py-0.5 rounded shrink-0">{p.pct}%</span>}
+                  </div>
+                ))}
+              </div>
+            ) : view === "list" ? (
+              <div className="space-y-3">
+                {products.map((p, i) => (
+                  <div key={p.id} className="flex items-center gap-4 border border-mk-line rounded-lg p-4 hover:shadow-sm transition-shadow bg-white">
+                    <div className="w-20 h-20 shrink-0 rounded bg-muted flex items-center justify-center overflow-hidden">
+                      {p.imageUrl ? (
+                        <img src={p.imageUrl} alt={p.name} className="w-full h-full object-contain p-1" onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.svg'; }} />
+                      ) : (
+                        <span className="text-xs text-muted-foreground">N/A</span>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <Link to={`/produit/${p.slug}`} className="text-sm font-semibold text-mk-navy hover:text-mk-blue line-clamp-2">{p.name}</Link>
+                      <p className="text-xs text-muted-foreground mt-1">{p.brand} · EAN {p.gtin}</p>
+                      {p.descriptionShort && <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{p.descriptionShort}</p>}
+                    </div>
+                    <div className="text-right shrink-0 space-y-1">
+                      <p className="text-base font-bold text-green-700">{p.price.toLocaleString("fr-BE", { minimumFractionDigits: 2 })} €</p>
+                      {p.pub > 0 && p.pct > 0 && <p className="text-xs text-muted-foreground line-through">{p.pub.toLocaleString("fr-BE", { minimumFractionDigits: 2 })} €</p>}
+                      {p.sellers > 0 && <p className="text-xs text-muted-foreground">{p.sellers} offre{p.sellers > 1 ? "s" : ""}</p>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+                {products.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
+              </div>
+            )}
           </div>
         </div>
       </div>

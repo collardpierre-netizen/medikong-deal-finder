@@ -366,16 +366,22 @@ export default function ProductPage() {
                 {/* Main image */}
                 <div className="flex-1">
                   <div className="aspect-square rounded-xl overflow-hidden border border-border bg-muted">
-                    <img
-                      src={images[selectedImageIdx] || images[0]}
-                      alt={product.name}
-                      className="w-full h-full object-contain p-4"
-                      onError={(e) => { e.currentTarget.src = images[0]; }}
-                    />
+                    {hasImages ? (
+                      <img
+                        src={images[selectedImageIdx] || images[0]}
+                        alt={product.name}
+                        className="w-full h-full object-contain p-4"
+                        onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; e.currentTarget.parentElement!.innerHTML = '<div class="w-full h-full flex items-center justify-center"><svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-muted-foreground/30"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg></div>'; }}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Package size={48} className="text-muted-foreground/30" />
+                      </div>
+                    )}
                   </div>
 
                   {/* Mobile thumbnails */}
-                  {images.length > 1 && (
+                  {hasImages && images.length > 1 && (
                     <div className="flex md:hidden gap-2 mt-3 overflow-x-auto">
                       {images.slice(0, 6).map((img, i) => (
                         <button

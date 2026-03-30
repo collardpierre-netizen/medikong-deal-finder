@@ -39,6 +39,7 @@ const OrderDetailPage = lazy(() => import("./pages/OrderDetailPage"));
 const LoginPage = lazy(() => import("./pages/LoginPage"));
 const RegisterPage = lazy(() => import("./pages/RegisterPage"));
 const CategoryPage = lazy(() => import("./pages/CategoryPage"));
+const CataloguePage = lazy(() => import("./pages/CataloguePage"));
 const PromotionsPage = lazy(() => import("./pages/PromotionsPage"));
 const SellerOnboardingPage = lazy(() => import("./pages/SellerOnboardingPage"));
 const BuyerOnboardingPage = lazy(() => import("./pages/BuyerOnboardingPage"));
@@ -182,7 +183,8 @@ const App = () => (
             <Route path="/commande/:id" element={<LP><OrderDetailPage /></LP>} />
             <Route path="/connexion" element={<LP><LoginPage /></LP>} />
             <Route path="/inscription" element={<Navigate to="/onboarding" replace />} />
-            <Route path="/categorie/:slug" element={<LP><CategoryPage /></LP>} />
+            <Route path="/categorie/:slug" element={<LP><CataloguePage /></LP>} />
+            <Route path="/catalogue" element={<LP><CataloguePage /></LP>} />
             <Route path="/promotions" element={<LP><PromotionsPage /></LP>} />
             <Route path="/seller-onboarding" element={<LP><SellerOnboardingPage /></LP>} />
             <Route path="/buyer-onboarding" element={<LP><BuyerOnboardingPage /></LP>} />

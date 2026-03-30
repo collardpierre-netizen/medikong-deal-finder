@@ -670,7 +670,7 @@ export default function ProductPage() {
                 </div>
                 <div className="sm:hidden min-w-0">
                   <p className="text-base font-bold text-green-700">{formatEur(bestOffer.unitPriceEur)} €</p>
-                  <p className="text-[10px] text-muted-foreground truncate">HT · {product.brand}</p>
+                  <p className="text-[10px] text-muted-foreground truncate">HT · {brandData?.name || product.brand || ""}</p>
                 </div>
                 <div className="flex items-center gap-2 sm:gap-3 shrink-0">
                   <div className="text-right hidden sm:block">

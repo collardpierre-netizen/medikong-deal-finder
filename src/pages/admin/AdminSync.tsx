@@ -367,15 +367,15 @@ export default function AdminSync() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <KpiCard
           label="Dernière sync produits"
-          value={config?.last_full_sync_at
-            ? formatDistanceToNow(new Date(config.last_full_sync_at), { addSuffix: true, locale: fr })
+          value={lastSyncDates?.lastProductsSync
+            ? formatDistanceToNow(new Date(lastSyncDates.lastProductsSync), { addSuffix: true, locale: fr })
             : "Jamais"}
           icon={Package}
         />
         <KpiCard
           label="Dernière sync offres"
-          value={config?.last_offers_sync_at
-            ? formatDistanceToNow(new Date(config.last_offers_sync_at), { addSuffix: true, locale: fr })
+          value={lastSyncDates?.lastOffersSync
+            ? formatDistanceToNow(new Date(lastSyncDates.lastOffersSync), { addSuffix: true, locale: fr })
             : "Jamais"}
           icon={Store}
         />

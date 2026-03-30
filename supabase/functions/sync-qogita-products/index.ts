@@ -110,9 +110,12 @@ async function syncCountry(sb: any, ctry: any, logId: string, remaining: string[
   await sb.from("sync_logs").update({ progress_message: `${ctry.code}: téléchargement CSV...` }).eq("id", logId);
 
   const res = await fetch(`${baseUrl}/variants/search/download/?country=${ctry.code}`, {
-    headers: { Authorization: `Bearer ${token}` },
+    headers: { Authorization: `Bearer ${token}`, Accept: "*/*" },
   });
-  if (!res.ok) throw new Error(`CSV ${ctry.code}: ${res.status}`);
+  if (!res.ok) {
+    const errBody = await res.text().catch(() => "");
+    throw new Error(`CSV download failed for ${ctry.code}: ${res.status} ${errBody.slice(0, 200)}`);
+  }
 
   // Stream the response to reduce memory: read as text but process line-by-line
   const csvText = await res.text();

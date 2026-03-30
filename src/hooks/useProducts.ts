@@ -51,7 +51,7 @@ function mapDbProduct(row: any, offersData?: any[]): Product {
     id: row.id,
     slug: row.slug || slugify(row.name),
     name: row.name,
-    brand: "",
+    brand: row.brand_name || "",
     gtin: row.gtin || "",
     cnk: row.cnk_code || "",
     ean: row.gtin || "",

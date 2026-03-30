@@ -160,8 +160,8 @@ export function InstantSearchBar({ className = "", placeholder, variant = "navba
                   onClick={() => { navigate(`/produit/${p.slug}`); setIsOpen(false); setQuery(""); }}
                   className={`w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-accent/50 transition-colors ${selectedIndex === i ? "bg-accent/50" : ""}`}
                 >
-                  {p.image_url ? (
-                    <img src={p.image_url} alt="" className="w-8 h-8 rounded object-contain bg-muted/20 shrink-0" />
+                  {p.image_urls && p.image_urls[0] ? (
+                    <img src={p.image_urls[0]} alt="" className="w-8 h-8 rounded object-contain bg-muted/20 shrink-0" />
                   ) : (
                     <div className="w-8 h-8 rounded bg-muted/20 flex items-center justify-center shrink-0">
                       <Package size={14} className="text-muted-foreground" />

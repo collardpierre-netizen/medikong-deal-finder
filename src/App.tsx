@@ -70,6 +70,7 @@ const BecomeSellerPage = lazy(() => import("./pages/trust/BecomeSellerPage"));
 const TestimonialsPage = lazy(() => import("./pages/trust/TestimonialsPage"));
 const ContactPage = lazy(() => import("./pages/trust/ContactPage"));
 const HelpCenterPage = lazy(() => import("./pages/trust/HelpCenterPage"));
+const HelpArticlePage = lazy(() => import("./pages/trust/HelpArticlePage"));
 
 // Legal pages
 const LegalNoticePage = lazy(() => import("./pages/legal/LegalNoticePage"));

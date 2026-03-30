@@ -7,6 +7,7 @@ import { PageTransition } from "@/components/shared/PageTransition";
 import { useCart } from "@/hooks/useCart";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCreateOrder } from "@/hooks/useOrders";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ShoppingCart, Loader2 } from "lucide-react";
 

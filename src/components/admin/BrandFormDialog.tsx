@@ -11,7 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEntityItemTranslations, useBatchSaveTranslations } from "@/hooks/useTranslations";
 import { toast } from "sonner";
-import { Languages, ChevronsUpDown, Check } from "lucide-react";
+import { Languages, ChevronsUpDown, Check, Wand2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface BrandFormDialogProps {

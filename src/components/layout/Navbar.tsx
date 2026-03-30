@@ -142,12 +142,7 @@ export function Navbar() {
             transition={{ duration: 0.25, ease: "easeOut" }}
           >
             {!isHomePage && (
-              <form onSubmit={handleSearch} className="sm:hidden">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-mk-sec" size={16} />
-                  <input value={query} onChange={e => setQuery(e.target.value)} placeholder={t("common.search") + "..."} className="w-full pl-9 pr-3 py-2 rounded-md text-sm bg-white text-mk-text" />
-                </div>
-              </form>
+              <InstantSearchBar className="sm:hidden" />
             )}
             {user ? (
               <>

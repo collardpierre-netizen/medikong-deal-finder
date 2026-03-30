@@ -864,7 +864,7 @@ export default function ProductPage() {
                       <p className="text-xs text-foreground truncate font-medium">{p.name}</p>
                       {p.brand_name && <p className="text-[11px] text-muted-foreground truncate">{p.brand_name}</p>}
                       {p.best_price_excl_vat > 0 && (
-                        <p className="text-sm font-bold text-green-700 mt-1">{formatEur(Number(p.best_price_excl_vat))} €</p>
+                        <p className="text-sm font-bold text-green-700 mt-1">{formatEur(applyMargin(Number(p.best_price_excl_vat)))} €</p>
                       )}
                     </Link>
                   </motion.div>

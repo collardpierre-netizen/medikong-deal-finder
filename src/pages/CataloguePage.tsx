@@ -34,6 +34,7 @@ export default function CataloguePage() {
 
   return (
     <Layout>
+      <UniversePills />
       <div className="mk-container py-4">
         <Breadcrumbs />
 

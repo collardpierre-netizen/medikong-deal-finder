@@ -65,6 +65,14 @@ export function CatalogProductCard({ product, index = 0, view = "grid" }: Props)
       return;
     }
 
+    // Auth check
+    if (!user) {
+      toast.error("Connectez-vous pour ajouter des produits au panier", {
+        action: { label: "Se connecter", onClick: () => navigate("/connexion") },
+      });
+      return;
+    }
+
     // Single offer (or 0) — fetch the offer and add to cart
     if (product.offer_count === 0) return;
 

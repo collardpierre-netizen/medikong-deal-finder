@@ -47,6 +47,8 @@ interface HeroImage {
   alt_text: string;
   sort_order: number;
   is_active: boolean;
+  link_url: string | null;
+  cta_text: string | null;
 }
 
 const AdminCMS = () => {

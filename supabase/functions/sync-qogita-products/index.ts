@@ -48,6 +48,17 @@ function findCol(headers: string[], ...keywords: string[]): number {
   });
 }
 
+async function ensureQogitaVendor(sb: any): Promise<string> {
+  const { data: existing } = await sb.from("vendors").select("id")
+    .eq("type", "qogita_virtual").eq("slug", "qogita").maybeSingle();
+  if (existing) return existing.id;
+  const { data: nv } = await sb.from("vendors").insert({
+    type: "qogita_virtual", name: "Qogita", slug: "qogita",
+    qogita_seller_alias: "qogita", auto_forward_to_qogita: true, is_active: true,
+  }).select("id").single();
+  return nv!.id;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 

@@ -269,5 +269,160 @@
       "q8": "Comment fonctionne la TVA sur MediKong ?",
       "a8": "Les prix affichés sont HT. La TVA applicable est calculée automatiquement selon le pays de livraison et le type de produit (taux standard ou réduit)."
     }
+  },
+  "helpArticles": {
+    "relatedArticles": "Articles connexes",
+    "creerCompte": {
+      "title": "Comment créer un compte professionnel ?",
+      "s1h": "Conditions requises",
+      "s1": "Pour créer un compte sur MediKong, vous devez être un professionnel de santé enregistré en Belgique ou dans l'Union Européenne. Vous aurez besoin de votre numéro BCE (Belgique) ou équivalent, votre numéro de TVA intracommunautaire et une adresse email professionnelle.",
+      "s2h": "Étapes d'inscription",
+      "s2": "1. Rendez-vous sur la page d'inscription et sélectionnez \"Je souhaite acheter\".\n2. Renseignez vos informations professionnelles (raison sociale, BCE, TVA).\n3. Ajoutez votre adresse de livraison et de facturation.\n4. Validez votre email via le lien de confirmation.",
+      "s3h": "Validation du compte",
+      "s3": "Notre équipe vérifie vos informations sous 24h ouvrées. Vous recevrez un email de confirmation dès que votre compte sera activé. En attendant, vous pouvez parcourir le catalogue mais pas passer de commande."
+    },
+    "premiereCommande": {
+      "title": "Comment passer ma première commande ?",
+      "s1h": "Rechercher des produits",
+      "s1": "Utilisez la barre de recherche pour trouver vos produits par nom, CNK, EAN ou marque. Vous pouvez aussi parcourir les catégories ou filtrer par fournisseur.",
+      "s2h": "Ajouter au panier",
+      "s2": "Cliquez sur \"Ajouter\" pour mettre un produit dans votre panier. Ajustez les quantités directement. Attention au MOV (Minimum Order Value) de chaque fournisseur, affiché dans le panier.",
+      "s3h": "Finaliser la commande",
+      "s3": "Vérifiez votre panier, choisissez votre mode de paiement (carte, virement SEPA, paiement différé) et confirmez votre adresse de livraison. La commande est envoyée aux fournisseurs dès validation."
+    },
+    "naviguerCatalogue": {
+      "title": "Comment naviguer le catalogue ?",
+      "s1h": "Recherche et filtres",
+      "s1": "Le catalogue MediKong propose plus de 12 500 références. Utilisez la recherche textuelle, les filtres par catégorie, marque, prix, disponibilité et fournisseur pour affiner vos résultats.",
+      "s2h": "Comparaison des offres",
+      "s2": "Chaque fiche produit affiche toutes les offres disponibles, classées par prix. Vous pouvez comparer les prix HT, les délais de livraison et les MOV de chaque fournisseur."
+    },
+    "passerCommande": {
+      "title": "Comment passer une commande ?",
+      "s1h": "Sélectionnez vos produits",
+      "s1": "Parcourez le catalogue et ajoutez les produits souhaités à votre panier. Les prix sont affichés HT et mis à jour en temps réel.",
+      "s2h": "Vérifiez votre panier",
+      "s2": "Dans le panier, les produits sont groupés par fournisseur. Vérifiez que chaque fournisseur atteint son MOV (Minimum Order Value). La barre de progression vous indique le montant restant.",
+      "s3h": "Validez et payez",
+      "s3": "Choisissez votre mode de paiement, confirmez l'adresse de livraison et validez. Vous recevrez une confirmation par email avec le numéro de commande."
+    },
+    "moyensPaiement": {
+      "title": "Quels sont les moyens de paiement acceptés ?",
+      "s1h": "Paiement immédiat",
+      "s1": "MediKong accepte les cartes bancaires (Visa, Mastercard, Bancontact) et les virements SEPA. Le paiement est sécurisé via notre prestataire certifié PCI-DSS.",
+      "s2h": "Paiement différé",
+      "s2": "Les clients éligibles peuvent bénéficier du paiement différé à 30 ou 60 jours via notre partenaire Mondu. L'éligibilité est vérifiée automatiquement lors du checkout. Aucun frais supplémentaire."
+    },
+    "suivreColis": {
+      "title": "Comment suivre mon colis ?",
+      "s1h": "Numéro de suivi",
+      "s1": "Dès que votre commande est expédiée, vous recevez un email avec le numéro de suivi et un lien direct vers le transporteur. Les principaux transporteurs sont DPD, GLS et PostNL.",
+      "s2h": "Suivi dans votre espace",
+      "s2": "Connectez-vous à votre espace client et rendez-vous dans \"Mes commandes\". Chaque commande affiche son statut en temps réel : en préparation, expédiée, en transit ou livrée."
+    },
+    "retournerProduit": {
+      "title": "Comment retourner un produit ?",
+      "s1h": "Conditions de retour",
+      "s1": "Vous disposez de 14 jours après réception pour retourner un produit non ouvert et dans son emballage d'origine. Les produits thermosensibles ou à usage unique ne sont pas éligibles au retour.",
+      "s2h": "Procédure de retour",
+      "s2": "1. Rendez-vous dans \"Mes commandes\" de votre espace client.\n2. Sélectionnez la commande et cliquez sur \"Demander un retour\".\n3. Indiquez le motif du retour.\n4. Un bon de retour prépayé vous sera envoyé par email.",
+      "s3h": "Remboursement",
+      "s3": "Le remboursement est effectué sous 5-10 jours ouvrables dès réception du produit retourné. Le montant est crédité sur le moyen de paiement original."
+    },
+    "tvaMedikong": {
+      "title": "Comment fonctionne la TVA sur MediKong ?",
+      "s1h": "Prix affichés",
+      "s1": "Tous les prix sur MediKong sont affichés Hors Taxes (HT) par défaut. Vous pouvez basculer entre HT et TTC via le bouton TVAC dans la barre de navigation.",
+      "s2h": "Calcul de la TVA",
+      "s2": "La TVA est calculée automatiquement lors du checkout en fonction de votre pays de livraison et du type de produit. En Belgique, le taux standard est de 21% et le taux réduit de 6% pour les dispositifs médicaux. Les achats intracommunautaires avec un numéro de TVA valide sont exonérés (autoliquidation)."
+    },
+    "telechargerFactures": {
+      "title": "Où télécharger mes factures ?",
+      "s1h": "Accéder aux factures",
+      "s1": "Rendez-vous dans \"Mon compte\" > \"Mes commandes\". Chaque commande livrée dispose d'un bouton \"Télécharger la facture\" au format PDF.",
+      "s2h": "Factures automatiques",
+      "s2": "Les factures sont générées automatiquement à l'expédition. Elles incluent toutes les mentions légales obligatoires (TVA, numéro BCE, adresses). Vous pouvez aussi recevoir vos factures par email automatiquement en activant l'option dans vos paramètres."
+    },
+    "modifierFacturation": {
+      "title": "Comment modifier mes données de facturation ?",
+      "s1h": "Modifier les informations",
+      "s1": "Rendez-vous dans \"Mon compte\" > \"Paramètres\" > \"Facturation\". Vous pouvez modifier votre raison sociale, adresse de facturation, numéro de TVA et les préférences d'envoi des factures. Les modifications s'appliquent aux futures commandes uniquement."
+    },
+    "signalerProbleme": {
+      "title": "Comment signaler un problème avec ma commande ?",
+      "s1h": "Ouvrir une réclamation",
+      "s1": "Rendez-vous dans \"Mes commandes\" et cliquez sur la commande concernée. Utilisez le bouton \"Signaler un problème\" pour ouvrir une réclamation. Décrivez le problème et joignez des photos si nécessaire.",
+      "s2h": "Types de problèmes",
+      "s2": "Vous pouvez signaler : un produit endommagé, un produit manquant, un produit incorrect, un retard de livraison ou un problème de facturation. Chaque type a un processus de résolution adapté."
+    },
+    "delaiRemboursement": {
+      "title": "Quel est le délai de remboursement ?",
+      "s1h": "Délais par type de paiement",
+      "s1": "Carte bancaire : 5-10 jours ouvrables après validation du retour.\nVirement SEPA : 3-5 jours ouvrables.\nPaiement différé : déduction sur la prochaine facture.\n\nVous recevez un email de confirmation dès que le remboursement est initié."
+    },
+    "suivreReclamation": {
+      "title": "Comment suivre ma réclamation ?",
+      "s1h": "Suivi en temps réel",
+      "s1": "Chaque réclamation dispose d'un numéro de suivi. Rendez-vous dans \"Mes commandes\" > commande concernée > \"Réclamations\" pour voir le statut en temps réel. Notre équipe s'engage à répondre sous 24h ouvrées."
+    },
+    "ajouterUtilisateur": {
+      "title": "Comment ajouter un utilisateur ?",
+      "s1h": "Gestion multi-utilisateurs",
+      "s1": "Si vous disposez d'un compte entreprise, rendez-vous dans \"Mon compte\" > \"Équipe\". Cliquez sur \"Inviter un utilisateur\", renseignez son email et définissez son rôle (acheteur, administrateur, observateur). L'utilisateur recevra un email d'invitation."
+    },
+    "securiserCompte": {
+      "title": "Comment sécuriser mon compte ?",
+      "s1h": "Mot de passe fort",
+      "s1": "Utilisez un mot de passe d'au moins 12 caractères, combinant lettres, chiffres et caractères spéciaux. Ne réutilisez pas un mot de passe d'un autre service.",
+      "s2h": "Bonnes pratiques",
+      "s2": "Changez votre mot de passe régulièrement (tous les 3 mois). Ne partagez jamais vos identifiants. Déconnectez-vous des appareils partagés. Vérifiez régulièrement l'historique de connexion dans \"Mon compte\" > \"Sécurité\"."
+    },
+    "gererCatalogue": {
+      "title": "Comment gérer mon catalogue vendeur ?",
+      "s1h": "Ajouter des produits",
+      "s1": "Connectez-vous à votre Espace Vendeur et rendez-vous dans \"Catalogue\". Vous pouvez ajouter des produits un par un ou en masse via import CSV/Excel. Chaque produit doit avoir un EAN/GTIN valide.",
+      "s2h": "Gérer les offres",
+      "s2": "Dans l'onglet \"Offres\", définissez vos prix, quantités en stock, MOQ (quantité minimum) et délais de livraison. Les offres sont visibles immédiatement après validation."
+    },
+    "marquageCe": {
+      "title": "Qu'est-ce que le marquage CE ?",
+      "s1h": "Définition",
+      "s1": "Le marquage CE (Conformité Européenne) est une certification obligatoire pour les dispositifs médicaux commercialisés dans l'Espace Économique Européen. Il atteste que le produit respecte les exigences essentielles de sécurité et de performance définies par les directives européennes.",
+      "s2h": "Vérification sur MediKong",
+      "s2": "MediKong vérifie le marquage CE de chaque produit référencé via les bases de données EUDAMED et les certificats fournis par les fabricants. Les produits non conformes sont retirés du catalogue."
+    },
+    "comparaisonPrix": {
+      "title": "Comment utiliser la comparaison de prix ?",
+      "s1h": "Comparer sur une fiche produit",
+      "s1": "Chaque fiche produit affiche toutes les offres disponibles, triées par prix HT. Vous voyez en un coup d'œil le prix, le fournisseur, le stock disponible, le MOQ et le délai de livraison.",
+      "s2h": "Prix informatifs externes",
+      "s2": "En plus des offres directes, MediKong affiche les prix de référence du marché (prix informatifs). Cela vous permet de vérifier si l'offre est compétitive par rapport aux tarifs habituels."
+    },
+    "configurerAlertes": {
+      "title": "Comment configurer des alertes de prix ?",
+      "s1h": "Créer une alerte",
+      "s1": "Sur la fiche d'un produit, cliquez sur \"Surveiller le prix\". Définissez votre prix cible HT. Vous recevrez un email dès qu'une offre atteint ou passe sous ce seuil. Gérez toutes vos alertes dans \"Mon compte\" > \"Alertes prix\"."
+    },
+    "accederApi": {
+      "title": "Comment accéder à l'API MediKong ?",
+      "s1h": "API REST",
+      "s1": "L'API MediKong permet d'intégrer le catalogue, les prix et la passation de commandes dans votre ERP ou système de gestion. L'accès est réservé aux clients du plan Pro ou Enterprise.",
+      "s2h": "Documentation",
+      "s2": "La documentation complète de l'API est disponible sur demande. Elle couvre les endpoints catalogue, prix, stock, commandes et webhooks. Contactez votre account manager pour obtenir vos clés API."
+    },
+    "guideAchat": {
+      "title": "Guide d'achat pour les pharmacies",
+      "s1h": "Optimiser vos achats",
+      "s1": "En tant que pharmacien, MediKong vous permet de comparer les prix de centaines de fournisseurs en un seul endroit. Commencez par les références à forte rotation (gants, masques, désinfectants) pour maximiser les économies.",
+      "s2h": "Stratégie de commande",
+      "s2": "Regroupez vos commandes par fournisseur pour atteindre les MOV et bénéficier des frais de livraison offerts. Utilisez les alertes prix pour acheter au meilleur moment. Le paiement différé vous permet de gérer votre trésorerie sereinement."
+    },
+    "bonnesPratiques": {
+      "title": "Bonnes pratiques de commande B2B",
+      "s1h": "Planification des achats",
+      "s1": "Anticipez vos besoins en analysant votre historique de consommation. Commandez régulièrement en petites quantités plutôt qu'en gros stocks ponctuels pour éviter les ruptures et optimiser votre trésorerie.",
+      "s2h": "Gestion multi-fournisseurs",
+      "s2": "Diversifiez vos sources d'approvisionnement pour réduire les risques de rupture. MediKong regroupe plus de 350 fournisseurs vérifiés. Comparez les offres et les délais avant chaque commande. Utilisez les listes de favoris pour accélérer vos achats récurrents."
+    }
   }
 }

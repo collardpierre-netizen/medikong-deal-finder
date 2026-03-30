@@ -139,53 +139,53 @@ export const contactSubjects = [
 export function getHelpCategories(t: (key: string) => string): HelpCategoryData[] {
   return [
     { icon: Rocket, title: t("helpCenter.categories.gettingStarted.title"), description: t("helpCenter.categories.gettingStarted.description"), articleCount: 5, articles: [
-      { label: t("helpCenter.categories.gettingStarted.a1"), href: "/onboarding" },
-      { label: t("helpCenter.categories.gettingStarted.a2"), href: "#" },
-      { label: t("helpCenter.categories.gettingStarted.a3"), href: "#" },
+      { label: t("helpCenter.categories.gettingStarted.a1"), href: "/centre-aide/creer-compte-professionnel" },
+      { label: t("helpCenter.categories.gettingStarted.a2"), href: "/centre-aide/premiere-commande" },
+      { label: t("helpCenter.categories.gettingStarted.a3"), href: "/centre-aide/naviguer-catalogue" },
     ]},
     { icon: ShoppingCart, title: t("helpCenter.categories.orders.title"), description: t("helpCenter.categories.orders.description"), articleCount: 12, articles: [
-      { label: t("helpCenter.categories.orders.a1"), href: "#" },
-      { label: t("helpCenter.categories.orders.a2"), href: "#" },
+      { label: t("helpCenter.categories.orders.a1"), href: "/centre-aide/passer-commande" },
+      { label: t("helpCenter.categories.orders.a2"), href: "/centre-aide/moyens-paiement" },
       { label: t("helpCenter.categories.orders.a3"), href: "/paiement-differe" },
     ]},
     { icon: Package, title: t("helpCenter.categories.delivery.title"), description: t("helpCenter.categories.delivery.description"), articleCount: 8, articles: [
-      { label: t("helpCenter.categories.delivery.a1"), href: "#" },
+      { label: t("helpCenter.categories.delivery.a1"), href: "/centre-aide/suivre-colis" },
       { label: t("helpCenter.categories.delivery.a2"), href: "/logistique" },
-      { label: t("helpCenter.categories.delivery.a3"), href: "#" },
+      { label: t("helpCenter.categories.delivery.a3"), href: "/centre-aide/retourner-produit" },
     ]},
     { icon: FileText, title: t("helpCenter.categories.vat.title"), description: t("helpCenter.categories.vat.description"), articleCount: 4, articles: [
-      { label: t("helpCenter.categories.vat.a1"), href: "#" },
-      { label: t("helpCenter.categories.vat.a2"), href: "#" },
-      { label: t("helpCenter.categories.vat.a3"), href: "#" },
+      { label: t("helpCenter.categories.vat.a1"), href: "/centre-aide/tva-medikong" },
+      { label: t("helpCenter.categories.vat.a2"), href: "/centre-aide/telecharger-factures" },
+      { label: t("helpCenter.categories.vat.a3"), href: "/centre-aide/modifier-facturation" },
     ]},
     { icon: ShieldAlert, title: t("helpCenter.categories.claims.title"), description: t("helpCenter.categories.claims.description"), articleCount: 6, articles: [
-      { label: t("helpCenter.categories.claims.a1"), href: "#" },
-      { label: t("helpCenter.categories.claims.a2"), href: "#" },
-      { label: t("helpCenter.categories.claims.a3"), href: "#" },
+      { label: t("helpCenter.categories.claims.a1"), href: "/centre-aide/signaler-probleme" },
+      { label: t("helpCenter.categories.claims.a2"), href: "/centre-aide/delai-remboursement" },
+      { label: t("helpCenter.categories.claims.a3"), href: "/centre-aide/suivre-reclamation" },
     ]},
     { icon: UserCircle, title: t("helpCenter.categories.account.title"), description: t("helpCenter.categories.account.description"), articleCount: 6, articles: [
-      { label: t("helpCenter.categories.account.a1"), href: "#" },
-      { label: t("helpCenter.categories.account.a2"), href: "#" },
+      { label: t("helpCenter.categories.account.a1"), href: "/centre-aide/ajouter-utilisateur" },
+      { label: t("helpCenter.categories.account.a2"), href: "/centre-aide/securiser-compte" },
       { label: t("helpCenter.categories.account.a3"), href: "/mot-de-passe-oublie" },
     ]},
     { icon: Store, title: t("helpCenter.categories.sellers.title"), description: t("helpCenter.categories.sellers.description"), articleCount: 10, articles: [
       { label: t("helpCenter.categories.sellers.a1"), href: "/devenir-vendeur" },
-      { label: t("helpCenter.categories.sellers.a2"), href: "#" },
+      { label: t("helpCenter.categories.sellers.a2"), href: "/centre-aide/gerer-catalogue" },
       { label: t("helpCenter.categories.sellers.a3"), href: "/entreprise/comment-ca-marche" },
     ]},
     { icon: ShieldCheck, title: t("helpCenter.categories.quality.title"), description: t("helpCenter.categories.quality.description"), articleCount: 5, articles: [
-      { label: t("helpCenter.categories.quality.a1"), href: "#" },
+      { label: t("helpCenter.categories.quality.a1"), href: "/centre-aide/marquage-ce" },
       { label: t("helpCenter.categories.quality.a2"), href: "/verification-fournisseurs" },
       { label: t("helpCenter.categories.quality.a3"), href: "/qualite-garantie" },
     ]},
     { icon: Lightbulb, title: t("helpCenter.categories.features.title"), description: t("helpCenter.categories.features.description"), articleCount: 7, articles: [
-      { label: t("helpCenter.categories.features.a1"), href: "#" },
-      { label: t("helpCenter.categories.features.a2"), href: "#" },
-      { label: t("helpCenter.categories.features.a3"), href: "#" },
+      { label: t("helpCenter.categories.features.a1"), href: "/centre-aide/comparaison-prix" },
+      { label: t("helpCenter.categories.features.a2"), href: "/centre-aide/configurer-alertes" },
+      { label: t("helpCenter.categories.features.a3"), href: "/centre-aide/acceder-api" },
     ]},
     { icon: BookOpen, title: t("helpCenter.categories.resources.title"), description: t("helpCenter.categories.resources.description"), articleCount: 4, articles: [
-      { label: t("helpCenter.categories.resources.a1"), href: "#" },
-      { label: t("helpCenter.categories.resources.a2"), href: "#" },
+      { label: t("helpCenter.categories.resources.a1"), href: "/centre-aide/guide-achat-pharmacies" },
+      { label: t("helpCenter.categories.resources.a2"), href: "/centre-aide/bonnes-pratiques-b2b" },
     ]},
   ];
 }
@@ -206,53 +206,53 @@ export function getHelpFaqItems(t: (key: string) => string): FaqItem[] {
 // Keep backward-compatible static exports for non-i18n usage
 export const helpCategories: HelpCategoryData[] = [
   { icon: Rocket, title: "Premiers pas", description: "Créer votre compte, passer votre première commande et naviguer le catalogue.", articleCount: 5, articles: [
-    { label: "Comment créer un compte professionnel ?", href: "/onboarding" },
-    { label: "Comment passer ma première commande ?", href: "#" },
-    { label: "Comment naviguer le catalogue ?", href: "#" },
+    { label: "Comment créer un compte professionnel ?", href: "/centre-aide/creer-compte-professionnel" },
+    { label: "Comment passer ma première commande ?", href: "/centre-aide/premiere-commande" },
+    { label: "Comment naviguer le catalogue ?", href: "/centre-aide/naviguer-catalogue" },
   ]},
   { icon: ShoppingCart, title: "Commandes & Paiements", description: "Passer commande, moyens de paiement, factures et paiement différé.", articleCount: 12, articles: [
-    { label: "Comment passer une commande ?", href: "#" },
-    { label: "Quels sont les moyens de paiement acceptés ?", href: "#" },
+    { label: "Comment passer une commande ?", href: "/centre-aide/passer-commande" },
+    { label: "Quels sont les moyens de paiement acceptés ?", href: "/centre-aide/moyens-paiement" },
     { label: "Comment utiliser le paiement différé ?", href: "/paiement-differe" },
   ]},
   { icon: Package, title: "Livraison & Suivi", description: "Délais, suivi de colis, retours et remboursements.", articleCount: 8, articles: [
-    { label: "Comment suivre mon colis ?", href: "#" },
+    { label: "Comment suivre mon colis ?", href: "/centre-aide/suivre-colis" },
     { label: "Quels sont les délais de livraison ?", href: "/logistique" },
-    { label: "Comment retourner un produit ?", href: "#" },
+    { label: "Comment retourner un produit ?", href: "/centre-aide/retourner-produit" },
   ]},
   { icon: FileText, title: "TVA & Facturation", description: "Comprendre la TVA, télécharger vos factures et gérer vos données fiscales.", articleCount: 4, articles: [
-    { label: "Comment fonctionne la TVA sur MediKong ?", href: "#" },
-    { label: "Où télécharger mes factures ?", href: "#" },
-    { label: "Comment modifier mes données de facturation ?", href: "#" },
+    { label: "Comment fonctionne la TVA sur MediKong ?", href: "/centre-aide/tva-medikong" },
+    { label: "Où télécharger mes factures ?", href: "/centre-aide/telecharger-factures" },
+    { label: "Comment modifier mes données de facturation ?", href: "/centre-aide/modifier-facturation" },
   ]},
   { icon: ShieldAlert, title: "Réclamations & Remboursements", description: "Signaler un problème, suivre une réclamation et obtenir un remboursement.", articleCount: 6, articles: [
-    { label: "Comment signaler un problème avec ma commande ?", href: "#" },
-    { label: "Quel est le délai de remboursement ?", href: "#" },
-    { label: "Comment suivre ma réclamation ?", href: "#" },
+    { label: "Comment signaler un problème avec ma commande ?", href: "/centre-aide/signaler-probleme" },
+    { label: "Quel est le délai de remboursement ?", href: "/centre-aide/delai-remboursement" },
+    { label: "Comment suivre ma réclamation ?", href: "/centre-aide/suivre-reclamation" },
   ]},
   { icon: UserCircle, title: "Mon compte", description: "Inscription, paramètres, gestion des utilisateurs et sécurité.", articleCount: 6, articles: [
-    { label: "Comment ajouter un utilisateur ?", href: "#" },
-    { label: "Comment sécuriser mon compte ?", href: "#" },
+    { label: "Comment ajouter un utilisateur ?", href: "/centre-aide/ajouter-utilisateur" },
+    { label: "Comment sécuriser mon compte ?", href: "/centre-aide/securiser-compte" },
     { label: "J'ai oublié mon mot de passe", href: "/mot-de-passe-oublie" },
   ]},
   { icon: Store, title: "Vendeurs", description: "Devenir vendeur, catalogue, commissions et paiements.", articleCount: 10, articles: [
     { label: "Comment devenir vendeur sur MediKong ?", href: "/devenir-vendeur" },
-    { label: "Comment gérer mon catalogue ?", href: "#" },
+    { label: "Comment gérer mon catalogue ?", href: "/centre-aide/gerer-catalogue" },
     { label: "Quelles sont les commissions ?", href: "/entreprise/comment-ca-marche" },
   ]},
   { icon: ShieldCheck, title: "Qualité & Conformité", description: "Marquage CE, AFMPS, garantie et traçabilité.", articleCount: 5, articles: [
-    { label: "Qu'est-ce que le marquage CE ?", href: "#" },
+    { label: "Qu'est-ce que le marquage CE ?", href: "/centre-aide/marquage-ce" },
     { label: "Comment vérifier la conformité AFMPS ?", href: "/verification-fournisseurs" },
     { label: "Quelle est notre politique de garantie ?", href: "/qualite-garantie" },
   ]},
   { icon: Lightbulb, title: "Fonctionnalités", description: "Recherche, comparaison des prix, alertes et API.", articleCount: 7, articles: [
-    { label: "Comment utiliser la comparaison de prix ?", href: "#" },
-    { label: "Comment configurer des alertes ?", href: "#" },
-    { label: "Comment accéder à l'API ?", href: "#" },
+    { label: "Comment utiliser la comparaison de prix ?", href: "/centre-aide/comparaison-prix" },
+    { label: "Comment configurer des alertes ?", href: "/centre-aide/configurer-alertes" },
+    { label: "Comment accéder à l'API ?", href: "/centre-aide/acceder-api" },
   ]},
   { icon: BookOpen, title: "Ressources & Guides", description: "Tutoriels, guides d'achat et bonnes pratiques pour les professionnels de santé.", articleCount: 4, articles: [
-    { label: "Guide d'achat pour les pharmacies", href: "#" },
-    { label: "Bonnes pratiques de commande B2B", href: "#" },
+    { label: "Guide d'achat pour les pharmacies", href: "/centre-aide/guide-achat-pharmacies" },
+    { label: "Bonnes pratiques de commande B2B", href: "/centre-aide/bonnes-pratiques-b2b" },
   ]},
 ];
 

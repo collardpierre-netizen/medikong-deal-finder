@@ -70,6 +70,7 @@ const BecomeSellerPage = lazy(() => import("./pages/trust/BecomeSellerPage"));
 const TestimonialsPage = lazy(() => import("./pages/trust/TestimonialsPage"));
 const ContactPage = lazy(() => import("./pages/trust/ContactPage"));
 const HelpCenterPage = lazy(() => import("./pages/trust/HelpCenterPage"));
+const HelpArticlePage = lazy(() => import("./pages/trust/HelpArticlePage"));
 
 // Legal pages
 const LegalNoticePage = lazy(() => import("./pages/legal/LegalNoticePage"));
@@ -212,6 +213,7 @@ const App = () => (
             <Route path="/temoignages" element={<LP><TestimonialsPage /></LP>} />
             <Route path="/contact" element={<LP><ContactPage /></LP>} />
             <Route path="/centre-aide" element={<LP><HelpCenterPage /></LP>} />
+            <Route path="/centre-aide/:slug" element={<LP><HelpArticlePage /></LP>} />
 
             {/* Legal */}
             <Route path="/mentions-legales" element={<LP><LegalNoticePage /></LP>} />

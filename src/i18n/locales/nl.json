@@ -269,5 +269,160 @@
       "q8": "Hoe werkt de BTW op MediKong?",
       "a8": "Weergegeven prijzen zijn excl. BTW. De toepasselijke BTW wordt automatisch berekend op basis van het land van levering en het producttype (standaard- of verlaagd tarief)."
     }
+  },
+  "helpArticles": {
+    "relatedArticles": "Gerelateerde artikelen",
+    "creerCompte": {
+      "title": "Hoe maak ik een professioneel account aan?",
+      "s1h": "Vereisten",
+      "s1": "Om een account aan te maken op MediKong, moet u een geregistreerde zorgprofessional zijn in België of de Europese Unie. U heeft uw KBO-nummer (België) of equivalent, uw intracommunautair BTW-nummer en een professioneel e-mailadres nodig.",
+      "s2h": "Registratiestappen",
+      "s2": "1. Ga naar de registratiepagina en selecteer \"Ik wil kopen\".\n2. Vul uw professionele gegevens in (bedrijfsnaam, KBO, BTW).\n3. Voeg uw lever- en facturatieadres toe.\n4. Bevestig uw e-mail via de verificatielink.",
+      "s3h": "Accountvalidatie",
+      "s3": "Ons team verifieert uw gegevens binnen 24 werkuren. U ontvangt een bevestigingsmail zodra uw account is geactiveerd. In de tussentijd kunt u de catalogus doorbladeren maar geen bestellingen plaatsen."
+    },
+    "premiereCommande": {
+      "title": "Hoe plaats ik mijn eerste bestelling?",
+      "s1h": "Producten zoeken",
+      "s1": "Gebruik de zoekbalk om producten te vinden op naam, CNK, EAN of merk. U kunt ook door categorieën bladeren of filteren op leverancier.",
+      "s2h": "Toevoegen aan winkelwagen",
+      "s2": "Klik op \"Toevoegen\" om een product in uw winkelwagen te plaatsen. Pas de hoeveelheden direct aan. Let op de MOV (Minimum Order Value) van elke leverancier, weergegeven in de winkelwagen.",
+      "s3h": "Bestelling afronden",
+      "s3": "Controleer uw winkelwagen, kies uw betaalmethode (kaart, SEPA-overschrijving, uitgestelde betaling) en bevestig uw leveradres. De bestelling wordt naar leveranciers gestuurd bij validatie."
+    },
+    "naviguerCatalogue": {
+      "title": "Hoe navigeer ik door de catalogus?",
+      "s1h": "Zoeken en filteren",
+      "s1": "De MediKong-catalogus biedt meer dan 12.500 referenties. Gebruik tekstueel zoeken, filters op categorie, merk, prijs, beschikbaarheid en leverancier om uw resultaten te verfijnen.",
+      "s2h": "Aanbiedingen vergelijken",
+      "s2": "Elke productpagina toont alle beschikbare aanbiedingen, gesorteerd op prijs. U kunt excl. BTW-prijzen, levertijden en MOV's per leverancier vergelijken."
+    },
+    "passerCommande": {
+      "title": "Hoe plaats ik een bestelling?",
+      "s1h": "Selecteer uw producten",
+      "s1": "Blader door de catalogus en voeg gewenste producten toe aan uw winkelwagen. Prijzen worden excl. BTW weergegeven en in realtime bijgewerkt.",
+      "s2h": "Controleer uw winkelwagen",
+      "s2": "In de winkelwagen worden producten per leverancier gegroepeerd. Controleer of elke leverancier zijn MOV bereikt. De voortgangsbalk toont het resterende bedrag.",
+      "s3h": "Valideer en betaal",
+      "s3": "Kies uw betaalmethode, bevestig het leveradres en valideer. U ontvangt een bevestigingsmail met het bestelnummer."
+    },
+    "moyensPaiement": {
+      "title": "Welke betaalmethoden worden geaccepteerd?",
+      "s1h": "Directe betaling",
+      "s1": "MediKong accepteert bankkaarten (Visa, Mastercard, Bancontact) en SEPA-overschrijvingen. De betaling is beveiligd via onze PCI-DSS-gecertificeerde provider.",
+      "s2h": "Uitgestelde betaling",
+      "s2": "In aanmerking komende klanten kunnen profiteren van uitgestelde betaling van 30 of 60 dagen via onze partner Mondu. De geschiktheid wordt automatisch gecontroleerd bij het afrekenen. Geen extra kosten."
+    },
+    "suivreColis": {
+      "title": "Hoe volg ik mijn pakket?",
+      "s1h": "Trackingnummer",
+      "s1": "Zodra uw bestelling is verzonden, ontvangt u een e-mail met het trackingnummer en een directe link naar de vervoerder. De belangrijkste vervoerders zijn DPD, GLS en PostNL.",
+      "s2h": "Tracking in uw account",
+      "s2": "Log in op uw account en ga naar \"Mijn bestellingen\". Elke bestelling toont de realtime status: in voorbereiding, verzonden, onderweg of afgeleverd."
+    },
+    "retournerProduit": {
+      "title": "Hoe retourneer ik een product?",
+      "s1h": "Retourvoorwaarden",
+      "s1": "U heeft 14 dagen na ontvangst om een ongeopend product in de originele verpakking te retourneren. Temperatuurgevoelige of wegwerpproducten komen niet in aanmerking voor retour.",
+      "s2h": "Retourprocedure",
+      "s2": "1. Ga naar \"Mijn bestellingen\" in uw account.\n2. Selecteer de bestelling en klik op \"Retour aanvragen\".\n3. Geef de reden van retour aan.\n4. Een vooraf betaald retourlabel wordt per e-mail verzonden.",
+      "s3h": "Terugbetaling",
+      "s3": "De terugbetaling wordt verwerkt binnen 5-10 werkdagen na ontvangst van het geretourneerde product. Het bedrag wordt gecrediteerd op de originele betaalmethode."
+    },
+    "tvaMedikong": {
+      "title": "Hoe werkt de BTW op MediKong?",
+      "s1h": "Weergegeven prijzen",
+      "s1": "Alle prijzen op MediKong worden standaard exclusief BTW weergegeven. U kunt schakelen tussen excl. en incl. BTW via de BTW-knop in de navigatiebalk.",
+      "s2h": "BTW-berekening",
+      "s2": "De BTW wordt automatisch berekend bij het afrekenen op basis van uw leveringsland en producttype. In België is het standaardtarief 21% en het verlaagde tarief 6% voor medische hulpmiddelen. Intracommunautaire aankopen met een geldig BTW-nummer zijn vrijgesteld (verlegging)."
+    },
+    "telechargerFactures": {
+      "title": "Waar kan ik mijn facturen downloaden?",
+      "s1h": "Facturen openen",
+      "s1": "Ga naar \"Mijn account\" > \"Mijn bestellingen\". Elke afgeleverde bestelling heeft een knop \"Factuur downloaden\" in PDF-formaat.",
+      "s2h": "Automatische facturen",
+      "s2": "Facturen worden automatisch gegenereerd bij verzending. Ze bevatten alle verplichte juridische vermeldingen (BTW, KBO-nummer, adressen). U kunt ook facturen automatisch per e-mail ontvangen door de optie in te schakelen in uw instellingen."
+    },
+    "modifierFacturation": {
+      "title": "Hoe wijzig ik mijn facturatiegegevens?",
+      "s1h": "Gegevens wijzigen",
+      "s1": "Ga naar \"Mijn account\" > \"Instellingen\" > \"Facturatie\". U kunt uw bedrijfsnaam, facturatieadres, BTW-nummer en factuurvoorkeuren wijzigen. Wijzigingen gelden alleen voor toekomstige bestellingen."
+    },
+    "signalerProbleme": {
+      "title": "Hoe meld ik een probleem met mijn bestelling?",
+      "s1h": "Een klacht openen",
+      "s1": "Ga naar \"Mijn bestellingen\" en klik op de betreffende bestelling. Gebruik de knop \"Probleem melden\" om een klacht te openen. Beschrijf het probleem en voeg indien nodig foto's toe.",
+      "s2h": "Soorten problemen",
+      "s2": "U kunt melden: beschadigd product, ontbrekend product, verkeerd product, leveringsvertraging of factureringsprobleem. Elk type heeft een aangepast oplossingsproces."
+    },
+    "delaiRemboursement": {
+      "title": "Wat is de terugbetalingstermijn?",
+      "s1h": "Termijnen per betaaltype",
+      "s1": "Bankkaart: 5-10 werkdagen na validatie van de retour.\nSEPA-overschrijving: 3-5 werkdagen.\nUitgestelde betaling: aftrek op de volgende factuur.\n\nU ontvangt een bevestigingsmail zodra de terugbetaling is geïnitieerd."
+    },
+    "suivreReclamation": {
+      "title": "Hoe volg ik mijn klacht op?",
+      "s1h": "Realtime opvolging",
+      "s1": "Elke klacht heeft een trackingnummer. Ga naar \"Mijn bestellingen\" > betreffende bestelling > \"Klachten\" om de realtime status te bekijken. Ons team verbindt zich ertoe binnen 24 werkuren te reageren."
+    },
+    "ajouterUtilisateur": {
+      "title": "Hoe voeg ik een gebruiker toe?",
+      "s1h": "Multi-gebruikersbeheer",
+      "s1": "Als u een bedrijfsaccount heeft, ga naar \"Mijn account\" > \"Team\". Klik op \"Gebruiker uitnodigen\", voer het e-mailadres in en stel de rol in (koper, beheerder, waarnemer). De gebruiker ontvangt een uitnodigingsmail."
+    },
+    "securiserCompte": {
+      "title": "Hoe beveilig ik mijn account?",
+      "s1h": "Sterk wachtwoord",
+      "s1": "Gebruik een wachtwoord van minimaal 12 tekens, met een combinatie van letters, cijfers en speciale tekens. Hergebruik geen wachtwoord van een andere dienst.",
+      "s2h": "Best practices",
+      "s2": "Wijzig uw wachtwoord regelmatig (elke 3 maanden). Deel nooit uw inloggegevens. Log uit op gedeelde apparaten. Controleer regelmatig de inloggeschiedenis in \"Mijn account\" > \"Beveiliging\"."
+    },
+    "gererCatalogue": {
+      "title": "Hoe beheer ik mijn verkoperscatalogus?",
+      "s1h": "Producten toevoegen",
+      "s1": "Log in op uw Verkopersruimte en ga naar \"Catalogus\". U kunt producten een voor een of in bulk toevoegen via CSV/Excel-import. Elk product moet een geldig EAN/GTIN hebben.",
+      "s2h": "Aanbiedingen beheren",
+      "s2": "In het tabblad \"Aanbiedingen\" stelt u uw prijzen, voorraadhoeveelheden, MOQ (minimale bestelhoeveelheid) en levertijden in. Aanbiedingen zijn direct zichtbaar na validatie."
+    },
+    "marquageCe": {
+      "title": "Wat is CE-markering?",
+      "s1h": "Definitie",
+      "s1": "CE-markering (Conformité Européenne) is een verplichte certificering voor medische hulpmiddelen die in de Europese Economische Ruimte worden verhandeld. Het bevestigt dat het product voldoet aan de essentiële veiligheids- en prestatie-eisen die zijn vastgelegd in de Europese richtlijnen.",
+      "s2h": "Verificatie op MediKong",
+      "s2": "MediKong verifieert de CE-markering van elk vermeld product via EUDAMED-databases en certificaten verstrekt door fabrikanten. Niet-conforme producten worden uit de catalogus verwijderd."
+    },
+    "comparaisonPrix": {
+      "title": "Hoe gebruik ik de prijsvergelijking?",
+      "s1h": "Vergelijken op productpagina",
+      "s1": "Elke productpagina toont alle beschikbare aanbiedingen, gesorteerd op prijs excl. BTW. U ziet in één oogopslag de prijs, leverancier, beschikbare voorraad, MOQ en levertijd.",
+      "s2h": "Externe referentieprijzen",
+      "s2": "Naast directe aanbiedingen toont MediKong markreferentieprijzen. Hiermee kunt u controleren of het aanbod concurrerend is vergeleken met de gebruikelijke tarieven."
+    },
+    "configurerAlertes": {
+      "title": "Hoe stel ik prijsmeldingen in?",
+      "s1h": "Een melding aanmaken",
+      "s1": "Klik op een productpagina op \"Prijs bewaken\". Stel uw doelprijs excl. BTW in. U ontvangt een e-mail zodra een aanbieding deze drempel bereikt of onderschrijdt. Beheer al uw meldingen in \"Mijn account\" > \"Prijsmeldingen\"."
+    },
+    "accederApi": {
+      "title": "Hoe krijg ik toegang tot de MediKong API?",
+      "s1h": "REST API",
+      "s1": "De MediKong API stelt u in staat de catalogus, prijzen en bestellingen te integreren in uw ERP of beheersysteem. Toegang is voorbehouden aan klanten met een Pro- of Enterprise-abonnement.",
+      "s2h": "Documentatie",
+      "s2": "Volledige API-documentatie is beschikbaar op aanvraag. Het omvat catalogus-, prijs-, voorraad-, bestel- en webhook-endpoints. Neem contact op met uw accountmanager om uw API-sleutels te verkrijgen."
+    },
+    "guideAchat": {
+      "title": "Koopgids voor apotheken",
+      "s1h": "Optimaliseer uw aankopen",
+      "s1": "Als apotheker stelt MediKong u in staat prijzen van honderden leveranciers op één plek te vergelijken. Begin met producten met een hoge omloopsnelheid (handschoenen, maskers, ontsmettingsmiddelen) om de besparingen te maximaliseren.",
+      "s2h": "Bestelstrategie",
+      "s2": "Groepeer uw bestellingen per leverancier om MOV's te bereiken en te profiteren van gratis levering. Gebruik prijsmeldingen om op het beste moment te kopen. Uitgestelde betaling stelt u in staat uw cashflow sereen te beheren."
+    },
+    "bonnesPratiques": {
+      "title": "Best practices voor B2B-bestellingen",
+      "s1h": "Inkoopplanning",
+      "s1": "Anticipeer op uw behoeften door uw verbruikshistorie te analyseren. Bestel regelmatig in kleine hoeveelheden in plaats van grote bulkaankopen om voorraadtekorten te voorkomen en de cashflow te optimaliseren.",
+      "s2h": "Multi-leveranciersbeheer",
+      "s2": "Diversifieer uw bevoorradingsbronnen om het risico op tekorten te verminderen. MediKong brengt 350+ geverifieerde leveranciers samen. Vergelijk aanbiedingen en levertijden voor elke bestelling. Gebruik favorietenlijsten om terugkerende aankopen te versnellen."
+    }
   }
 }

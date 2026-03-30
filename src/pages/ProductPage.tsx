@@ -96,7 +96,7 @@ function OfferRow({
               ))}
             </div>
           ) : (
-            <span className="text-sm font-bold text-green-700">{formatEur(offer.unitPriceEur)} €</span>
+            <span className="text-sm font-bold text-green-700">{formatEur(displayPrice)} € <span className="text-[10px] font-normal text-muted-foreground">{priceLabel}</span></span>
           )}
         </div>
 

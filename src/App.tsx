@@ -118,6 +118,7 @@ const AdminSync = lazy(() => import("./pages/admin/AdminSync"));
 const AdminFabricants = lazy(() => import("./pages/admin/AdminFabricants"));
 const AdminApiKeys = lazy(() => import("./pages/admin/AdminApiKeys"));
 const AdminApiDocs = lazy(() => import("./pages/admin/AdminApiDocs"));
+const AdminCountries = lazy(() => import("./pages/admin/AdminCountries"));
 
 // Vendor pages
 const VendorLayout = lazy(() => import("./components/vendor/VendorLayout"));

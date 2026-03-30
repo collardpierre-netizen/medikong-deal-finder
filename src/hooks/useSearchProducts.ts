@@ -49,15 +49,32 @@ export function useSearchProducts(query: string, sort: SortOption = "relevance")
       let productsData: any[];
 
       if (query.trim()) {
-        // Use simple ILIKE search since search_products RPC was dropped
+        const trimmed = query.trim();
+        // Main search
         const { data, error } = await supabase
           .from("products")
           .select("*")
           .eq("is_active", true)
-          .or(`name.ilike.%${query.trim()}%,gtin.ilike.%${query.trim()}%,cnk_code.ilike.%${query.trim()}%`)
+          .or(`name.ilike.%${trimmed}%,gtin.ilike.%${trimmed}%,cnk_code.ilike.%${trimmed}%,brand_name.ilike.%${trimmed}%`)
           .limit(100);
         if (error) throw error;
         productsData = data || [];
+
+        // Also search market codes if few results
+        if (productsData.length < 10) {
+          const { data: mcResults } = await supabase
+            .from("product_market_codes")
+            .select("product_id")
+            .ilike("code_value", `%${trimmed}%`)
+            .limit(20);
+          if (mcResults?.length) {
+            const extraIds = mcResults.map((r: any) => r.product_id).filter((id: string) => !productsData.some((p: any) => p.id === id));
+            if (extraIds.length > 0) {
+              const { data: extraProducts } = await supabase.from("products").select("*").eq("is_active", true).in("id", extraIds);
+              if (extraProducts) productsData = [...productsData, ...extraProducts];
+            }
+          }
+        }
       } else {
         const { data, error } = await supabase.from("products").select("*").eq("is_active", true).order("created_at", { ascending: true }).limit(100);
         if (error) throw error;

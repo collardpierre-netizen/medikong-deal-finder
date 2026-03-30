@@ -820,6 +820,45 @@ export type Database = {
           },
         ]
       }
+      market_code_types: {
+        Row: {
+          code: string
+          country_code: string
+          country_name: string
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          label: string
+          sort_order: number | null
+          validation_regex: string | null
+        }
+        Insert: {
+          code: string
+          country_code: string
+          country_name: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          label: string
+          sort_order?: number | null
+          validation_regex?: string | null
+        }
+        Update: {
+          code?: string
+          country_code?: string
+          country_name?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          label?: string
+          sort_order?: number | null
+          validation_regex?: string | null
+        }
+        Relationships: []
+      }
       offer_price_tiers: {
         Row: {
           created_at: string | null
@@ -1379,6 +1418,57 @@ export type Database = {
           },
         ]
       }
+      product_market_codes: {
+        Row: {
+          code_value: string
+          created_at: string | null
+          id: string
+          market_code_type_id: string | null
+          product_id: string | null
+          source: string | null
+          updated_at: string | null
+          updated_by: string | null
+          verified: boolean | null
+        }
+        Insert: {
+          code_value: string
+          created_at?: string | null
+          id?: string
+          market_code_type_id?: string | null
+          product_id?: string | null
+          source?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+          verified?: boolean | null
+        }
+        Update: {
+          code_value?: string
+          created_at?: string | null
+          id?: string
+          market_code_type_id?: string | null
+          product_id?: string | null
+          source?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+          verified?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_market_codes_market_code_type_id_fkey"
+            columns: ["market_code_type_id"]
+            isOneToOne: false
+            referencedRelation: "market_code_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_market_codes_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_prices: {
         Row: {
           created_at: string | null
@@ -1442,9 +1532,12 @@ export type Database = {
           category_qid: string | null
           cnk_code: string | null
           created_at: string
+          depth: number | null
           description: string | null
+          dimension_unit: string | null
           dimensions: Json | null
           gtin: string | null
+          height: number | null
           id: string
           image_urls: string[] | null
           is_active: boolean
@@ -1470,6 +1563,9 @@ export type Database = {
           total_stock: number
           unit_quantity: number
           updated_at: string
+          weight: number | null
+          weight_unit: string | null
+          width: number | null
         }
         Insert: {
           best_price_excl_vat?: number | null
@@ -1482,9 +1578,12 @@ export type Database = {
           category_qid?: string | null
           cnk_code?: string | null
           created_at?: string
+          depth?: number | null
           description?: string | null
+          dimension_unit?: string | null
           dimensions?: Json | null
           gtin?: string | null
+          height?: number | null
           id?: string
           image_urls?: string[] | null
           is_active?: boolean
@@ -1510,6 +1609,9 @@ export type Database = {
           total_stock?: number
           unit_quantity?: number
           updated_at?: string
+          weight?: number | null
+          weight_unit?: string | null
+          width?: number | null
         }
         Update: {
           best_price_excl_vat?: number | null
@@ -1522,9 +1624,12 @@ export type Database = {
           category_qid?: string | null
           cnk_code?: string | null
           created_at?: string
+          depth?: number | null
           description?: string | null
+          dimension_unit?: string | null
           dimensions?: Json | null
           gtin?: string | null
+          height?: number | null
           id?: string
           image_urls?: string[] | null
           is_active?: boolean
@@ -1550,6 +1655,9 @@ export type Database = {
           total_stock?: number
           unit_quantity?: number
           updated_at?: string
+          weight?: number | null
+          weight_unit?: string | null
+          width?: number | null
         }
         Relationships: [
           {

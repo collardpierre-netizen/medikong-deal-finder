@@ -388,6 +388,19 @@ export default function ProductPage() {
     enabled: !!product?.id,
   });
 
+  // Market codes
+  const { data: marketCodes = [] } = useQuery({
+    queryKey: ["product-market-codes-display", product?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("product_market_codes")
+        .select("code_value, verified, market_code_types(code, label, country_code, country_name)")
+        .eq("product_id", product!.id);
+      return data || [];
+    },
+    enabled: !!product?.id,
+  });
+
   // Track view
   useEffect(() => {
     if (product?.id && user) {
@@ -502,6 +515,7 @@ export default function ProductPage() {
   const savingsPct = userPriceNum > 0 ? ((savingsAbs / userPriceNum) * 100) : 0;
 
   // Specs table — only show rows with real data
+  const FLAG_MAP: Record<string, string> = { BE: "🇧🇪", DE: "🇩🇪", FR: "🇫🇷", NL: "🇳🇱", IT: "🇮🇹", ES: "🇪🇸" };
   const specsRaw: [string, string | undefined | null][] = [
     ["Marque", brandData?.name || product.brand],
     ["Fabricant", productDetails?.manufacturers ? (productDetails.manufacturers as any)?.name : undefined],
@@ -510,8 +524,18 @@ export default function ProductPage() {
     ["CNK", product.cnk],
     ["SKU", productDetails?.sku],
     ["Conditionnement", productDetails?.unit_quantity && productDetails.unit_quantity > 1 ? `${productDetails.unit_quantity} unites` : undefined],
-    ["Dimensions", productDetails?.dimensions ? JSON.stringify(productDetails.dimensions) : undefined],
+    ["Poids", (productDetails as any)?.weight ? `${(productDetails as any).weight} ${(productDetails as any)?.weight_unit || "kg"}` : undefined],
+    ["Dimensions", (productDetails as any)?.height && (productDetails as any)?.width && (productDetails as any)?.depth
+      ? `${(productDetails as any).height} x ${(productDetails as any).width} x ${(productDetails as any).depth} ${(productDetails as any)?.dimension_unit || "cm"} (H x L x P)` : undefined],
     ["Pays d'origine", productDetails?.origin_country],
+    // Market codes
+    ...marketCodes.map((mc: any) => {
+      const ct = mc.market_code_types;
+      const flag = FLAG_MAP[ct?.country_code] || "";
+      const label = `${ct?.label || ct?.code} (${flag}${ct?.country_code})`;
+      const value = mc.code_value + (mc.verified ? " ✓" : "");
+      return [label, value] as [string, string];
+    }),
   ];
   const specs = specsRaw.filter(([, val]) => val && val !== "—" && val !== "null") as [string, string][];
 

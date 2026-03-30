@@ -400,7 +400,7 @@ export default function ProductPage() {
               {/* Image disclaimer */}
               <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1">
                 <Info size={12} />
-                Les photos sont a titre indicatif. Fiez-vous au GTIN, pas a l'image.
+                Les photos sont a titre indicatif. Fiez-vous au GTIN.
               </p>
 
               {/* Favorite button */}

@@ -1505,6 +1505,9 @@ export type Database = {
           completed_at: string | null
           error_message: string | null
           id: string
+          progress_current: number
+          progress_message: string | null
+          progress_total: number
           started_at: string
           stats: Json | null
           status: Database["public"]["Enums"]["sync_log_status"]
@@ -1514,6 +1517,9 @@ export type Database = {
           completed_at?: string | null
           error_message?: string | null
           id?: string
+          progress_current?: number
+          progress_message?: string | null
+          progress_total?: number
           started_at?: string
           stats?: Json | null
           status?: Database["public"]["Enums"]["sync_log_status"]
@@ -1523,6 +1529,9 @@ export type Database = {
           completed_at?: string | null
           error_message?: string | null
           id?: string
+          progress_current?: number
+          progress_message?: string | null
+          progress_total?: number
           started_at?: string
           stats?: Json | null
           status?: Database["public"]["Enums"]["sync_log_status"]

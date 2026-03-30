@@ -62,6 +62,9 @@ Deno.serve(async (req) => {
 
   const { data: syncLog } = await supabase.from("sync_logs").insert({
     sync_type: "offers_detail", status: "running", stats: {},
+    progress_current: 0,
+    progress_total: 0,
+    progress_message: "Authentification Qogita...",
   }).select().single();
 
   try {
@@ -69,6 +72,10 @@ Deno.serve(async (req) => {
     const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json", Accept: "application/json" };
 
     // Get all Qogita products
+    await supabase.from("sync_logs").update({
+      progress_message: "Chargement de la liste des produits Qogita...",
+    }).eq("id", syncLog?.id);
+
     const { data: products, error: pError } = await supabase
       .from("products")
       .select("id, qogita_qid, gtin, category_id, brand_id")
@@ -81,11 +88,17 @@ Deno.serve(async (req) => {
       const stats = { message: "No Qogita products to sync" };
       await supabase.from("sync_logs").update({
         status: "completed", completed_at: new Date().toISOString(), stats,
+        progress_message: "Aucun produit Qogita à synchroniser",
       }).eq("id", syncLog?.id);
       return new Response(JSON.stringify({ success: true, stats }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    await supabase.from("sync_logs").update({
+      progress_total: products.length,
+      progress_message: `${products.length} produits à traiter`,
+    }).eq("id", syncLog?.id);
 
     // Pre-load margin rules (sorted by priority desc)
     const { data: marginRules } = await supabase
@@ -96,10 +109,12 @@ Deno.serve(async (req) => {
 
     let vendorsCreated = 0, offersCreated = 0, offersUpdated = 0, offersDeactivated = 0, errors = 0;
     const processedOfferQids = new Set<string>();
+    const totalBatches = Math.ceil(products.length / BATCH_SIZE);
 
     // Process in batches
     for (let i = 0; i < products.length; i += BATCH_SIZE) {
       const batch = products.slice(i, i + BATCH_SIZE);
+      const batchNum = Math.floor(i / BATCH_SIZE) + 1;
 
       for (const product of batch) {
         try {
@@ -237,6 +252,14 @@ Deno.serve(async (req) => {
         }
       }
 
+      // Update progress after each batch
+      const processed = Math.min(i + BATCH_SIZE, products.length);
+      await supabase.from("sync_logs").update({
+        progress_current: processed,
+        progress_total: products.length,
+        progress_message: `Batch ${batchNum}/${totalBatches} — ${processed}/${products.length} produits — ${offersCreated + offersUpdated} offres traitées`,
+      }).eq("id", syncLog?.id);
+
       // Pause between batches
       if (i + BATCH_SIZE < products.length) {
         await sleep(BATCH_DELAY_MS);
@@ -244,6 +267,10 @@ Deno.serve(async (req) => {
     }
 
     // Deactivate absent Qogita offers
+    await supabase.from("sync_logs").update({
+      progress_message: "Désactivation des offres absentes...",
+    }).eq("id", syncLog?.id);
+
     const { data: existingQOffers } = await supabase
       .from("offers")
       .select("id, qogita_offer_qid")
@@ -271,6 +298,9 @@ Deno.serve(async (req) => {
       status: errors > 0 ? "partial" : "completed",
       completed_at: new Date().toISOString(),
       stats,
+      progress_current: products.length,
+      progress_total: products.length,
+      progress_message: `Terminé — ${offersCreated} créées, ${offersUpdated} mises à jour, ${offersDeactivated} désactivées`,
     }).eq("id", syncLog?.id);
 
     await supabase.from("qogita_config").update({
@@ -285,6 +315,7 @@ Deno.serve(async (req) => {
     console.error("Sync offers detail error:", error);
     await supabase.from("sync_logs").update({
       status: "error", completed_at: new Date().toISOString(), error_message: error.message,
+      progress_message: `Erreur: ${error.message}`,
     }).eq("id", syncLog?.id);
     await supabase.from("qogita_config").update({
       sync_status: "error", sync_error_message: error.message,

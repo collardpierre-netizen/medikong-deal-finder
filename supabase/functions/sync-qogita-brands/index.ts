@@ -55,6 +55,9 @@ Deno.serve(async (req) => {
 
   const { data: syncLog } = await supabase.from("sync_logs").insert({
     sync_type: "brands", status: "running", stats: {},
+    progress_current: 0,
+    progress_total: 0,
+    progress_message: "Authentification Qogita...",
   }).select().single();
 
   try {
@@ -63,18 +66,32 @@ Deno.serve(async (req) => {
 
     let allBrands: any[] = [];
     let nextUrl: string | null = `${baseUrl}/brands/?page_size=100`;
+    let currentPage = 0;
+    let totalCount = 0;
 
     while (nextUrl) {
+      currentPage++;
       const res = await fetch(nextUrl, { headers });
       if (!res.ok) throw new Error(`Qogita API ${res.status}: ${await res.text()}`);
       const data = await res.json();
+      
+      if (currentPage === 1 && data.count) totalCount = data.count;
+      
       allBrands = allBrands.concat(data.results || []);
       nextUrl = data.next || null;
+      
+      const totalPages = totalCount > 0 ? Math.ceil(totalCount / 100) : currentPage;
+      await supabase.from("sync_logs").update({
+        progress_current: allBrands.length,
+        progress_total: totalCount || allBrands.length,
+        progress_message: `Page ${currentPage}/${totalPages} — ${allBrands.length} marques récupérées`,
+      }).eq("id", syncLog?.id);
     }
 
     let created = 0, updated = 0;
 
-    for (const brand of allBrands) {
+    for (let i = 0; i < allBrands.length; i++) {
+      const brand = allBrands[i];
       const slug = brand.slug || brand.name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
       const { data: existing } = await supabase
         .from("brands")
@@ -99,11 +116,22 @@ Deno.serve(async (req) => {
         await supabase.from("brands").insert(row);
         created++;
       }
+
+      if ((i + 1) % 20 === 0 || i === allBrands.length - 1) {
+        await supabase.from("sync_logs").update({
+          progress_current: i + 1,
+          progress_total: allBrands.length,
+          progress_message: `${i + 1}/${allBrands.length} marques traitées (${created} créées, ${updated} mises à jour)`,
+        }).eq("id", syncLog?.id);
+      }
     }
 
     const stats = { total: allBrands.length, created, updated };
     await supabase.from("sync_logs").update({
       status: "completed", completed_at: new Date().toISOString(), stats,
+      progress_current: allBrands.length,
+      progress_total: allBrands.length,
+      progress_message: `Terminé — ${allBrands.length} marques (${created} créées, ${updated} mises à jour)`,
     }).eq("id", syncLog?.id);
 
     return new Response(JSON.stringify({ success: true, stats }), {
@@ -113,6 +141,7 @@ Deno.serve(async (req) => {
     console.error("Sync brands error:", error);
     await supabase.from("sync_logs").update({
       status: "error", completed_at: new Date().toISOString(), error_message: error.message,
+      progress_message: `Erreur: ${error.message}`,
     }).eq("id", syncLog?.id);
 
     return new Response(JSON.stringify({ error: error.message }), {

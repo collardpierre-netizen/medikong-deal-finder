@@ -133,31 +133,10 @@ async function syncCountry(sb: any, ctry: any, logId: string, remaining: string[
   let processed = 0;
   const brandNames = new Set<string>();
   const catNames = new Set<string>();
-  let lineIdx = 0;
 
-  for (const rawLine of rawLines) {
-    if (!rawLine.trim()) continue;
-    lineIdx++;
-
-    // Accumulate a mini-batch
-    const batch: any[] = [];
-    const statsBatch: any[] = [];
-    let count = 0;
-
-    // Process CHUNK lines at a time
-    const startIdx = lineIdx - 1;
-    // We already have rawLine for the first one
-    let currentLines = [rawLine];
-    // Grab more lines for the chunk
-    let nextIdx = rawLines.indexOf(rawLine, startIdx) + 1;
-    // Actually let's use a simpler approach — collect CHUNK lines
-    break; // break out and use index-based loop instead
-  }
-
-  // Index-based loop for clean chunking
+  // Filter non-empty lines, then free rawLines
   const filteredLines: string[] = [];
   for (const l of rawLines) { if (l.trim()) filteredLines.push(l); }
-  // Clear rawLines
   rawLines.length = 0;
 
   for (let i = 0; i < filteredLines.length; i += CHUNK) {

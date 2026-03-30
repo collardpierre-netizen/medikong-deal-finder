@@ -158,6 +158,7 @@ const App = () => (
     <AuthProvider>
       <I18nProvider>
       <CartProvider>
+      <CountryProvider>
       <ImpersonationProvider>
       <TooltipProvider>
         <Toaster />

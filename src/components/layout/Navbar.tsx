@@ -161,6 +161,9 @@ export function Navbar() {
                     <Store size={16} /> {t("common.vendorSpace")}
                   </Link>
                 )}
+                <Link to="/mes-prix" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 text-emerald-400 text-sm font-semibold">
+                  <Tag size={16} /> Mes Prix
+                </Link>
                 <Link to="/compte" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 text-white text-sm">
                   <Users size={16} /> {t("common.account")}
                 </Link>

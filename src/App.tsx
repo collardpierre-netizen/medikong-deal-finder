@@ -215,6 +215,7 @@ const App = () => (
             <Route path="/professionnels" element={<LP><ProfessionnelsPage /></LP>} />
             <Route path="/sourcing" element={<LP><SourcingPage /></LP>} />
             <Route path="/categories" element={<LP><CategoriesPage /></LP>} />
+            <Route path="/mes-prix" element={<LP><MyPricesPage /></LP>} />
 
             {/* Trust & Process */}
             <Route path="/verification-fournisseurs" element={<LP><SupplierVerificationPage /></LP>} />

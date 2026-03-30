@@ -2,45 +2,42 @@ import { useState } from "react";
 import AdminTopBar from "@/components/admin/AdminTopBar";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Package, Upload, Download, Search, Trash2, Plus, Info } from "lucide-react";
-import { mockPrixPublicByProduct, mockPrixParProfilByProduct } from "@/lib/mock/prix-ref-mock";
+import { Package, Upload, Download, Search, Trash2, Plus, Info, Database } from "lucide-react";
 import type { PrixProfilPays, PrixSource, ProfilAcheteur, PaysCode } from "@/lib/types/prix-informatifs";
-import { formatPrixRef, sourceLabels, profilLabels, paysLabels, getPrixRef, calcSavings } from "@/lib/utils/prix-ref";
+import { formatPrixRef, sourceLabels, profilLabels, paysLabels, calcSavings } from "@/lib/utils/prix-ref";
+import { useProducts } from "@/hooks/useAdminData";
 
-const allProducts = Object.keys(mockPrixPublicByProduct);
 const sources: PrixSource[] = ["INAMI", "CBIP", "Farmacompendium", "Marches_publics", "Prix_moyen", "Manuel"];
 const profils: ProfilAcheteur[] = ["Pharmacie", "Hopital", "MRS", "Infirmier", "Cabinet", "Parapharmacie"];
 const pays: PaysCode[] = ["BE", "LU", "FR", "NL"];
 
-const stats = [
-  { label: "Produits avec prix ref.", value: "847 / 1 250", sub: "67,8% couverture" },
-  { label: "Combinaisons actives", value: "3 428", sub: "profil x pays", color: "#059669" },
-  { label: "A mettre a jour", value: "42", sub: "prix > 90 jours", color: "#F59E0B" },
-  { label: "Sources distinctes", value: "6", sub: "INAMI, CBIP, Farma..." },
-];
-
 export default function AdminPrixReference() {
+  const { data: products = [] } = useProducts();
   const [search, setSearch] = useState("");
   const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
   const [prixTTC, setPrixTTC] = useState(0);
   const [prixSource, setPrixSource] = useState<PrixSource>("CBIP");
-  const [prixDate, setPrixDate] = useState("2026-03-15");
+  const [prixDate, setPrixDate] = useState(new Date().toISOString().slice(0, 10));
   const [grille, setGrille] = useState<PrixProfilPays[]>([]);
   const [showImport, setShowImport] = useState(false);
 
-  const filtered = search ? allProducts.filter(p => p.toLowerCase().includes(search.toLowerCase())) : [];
+  const productNames = products.map(p => p.name);
+  const filtered = search ? productNames.filter(p => p.toLowerCase().includes(search.toLowerCase())).slice(0, 20) : [];
 
   const selectProduct = (name: string) => {
     setSelectedProduct(name);
     setSearch(name);
-    const pub = mockPrixPublicByProduct[name];
-    if (pub) { setPrixTTC(pub.ttc); setPrixSource(pub.source); setPrixDate(pub.dateConstatation); }
-    setGrille(mockPrixParProfilByProduct[name] || []);
+    // Reset - no mock data, start fresh
+    setPrixTTC(0);
+    setPrixSource("CBIP");
+    setPrixDate(new Date().toISOString().slice(0, 10));
+    setGrille([]);
   };
 
   const tvaRate = 6;
   const htva = prixTTC / (1 + tvaRate / 100);
-  const bestPrice = selectedProduct ? 6.99 : 0; // mock best MediKong price
+  const product = selectedProduct ? products.find(p => p.name === selectedProduct) : null;
+  const bestPrice = product?.best_price_excl_vat ? Number(product.best_price_excl_vat) : 0;
 
   const addRow = () => {
     setGrille(prev => [...prev, {
@@ -56,7 +53,7 @@ export default function AdminPrixReference() {
 
   return (
     <div>
-      <AdminTopBar title="Prix de Reference — Gestion" subtitle="Gestion des prix informatifs par profil et pays" />
+      <AdminTopBar title="Prix de Référence — Gestion" subtitle="Gestion des prix informatifs par profil et pays" />
 
       {/* Action buttons */}
       <div className="flex justify-end gap-2 mb-4">
@@ -70,7 +67,12 @@ export default function AdminPrixReference() {
 
       {/* Stats */}
       <div className="grid grid-cols-4 gap-4 mb-6">
-        {stats.map(s => (
+        {[
+          { label: "Produits en base", value: String(products.length), sub: "catalogue actuel" },
+          { label: "Combinaisons actives", value: "0", sub: "profil × pays" },
+          { label: "À mettre à jour", value: "0", sub: "prix > 90 jours", color: "#F59E0B" },
+          { label: "Sources distinctes", value: "6", sub: "INAMI, CBIP, Farma..." },
+        ].map(s => (
           <div key={s.label} className="bg-white rounded-lg border p-4" style={{ borderColor: "#E2E8F0" }}>
             <p className="text-[11px] text-[#8B95A5] uppercase tracking-wide font-medium">{s.label}</p>
             <p className="text-xl font-bold mt-1" style={{ color: s.color || "#1D2530" }}>{s.value}</p>
@@ -85,7 +87,7 @@ export default function AdminPrixReference() {
         <input
           value={search}
           onChange={e => { setSearch(e.target.value); setSelectedProduct(null); }}
-          placeholder="Rechercher par nom, EAN, CNK, SKU..."
+          placeholder="Rechercher un produit par nom..."
           className="w-full pl-10 pr-4 py-2.5 text-[13px] rounded-lg border bg-white"
           style={{ borderColor: "#E2E8F0" }}
         />
@@ -98,20 +100,37 @@ export default function AdminPrixReference() {
         )}
       </div>
 
+      {/* Empty state */}
+      {!selectedProduct && products.length === 0 && (
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <Database size={48} className="text-[#CBD5E1] mb-4" />
+          <h3 className="text-[15px] font-bold text-[#1D2530] mb-2">Aucun produit en base</h3>
+          <p className="text-[13px] text-[#8B95A5] max-w-md">Lancez une synchronisation Qogita depuis la page Sync pour importer des produits, puis configurez les prix de référence ici.</p>
+        </div>
+      )}
+
+      {!selectedProduct && products.length > 0 && (
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <Package size={48} className="text-[#CBD5E1] mb-4" />
+          <h3 className="text-[15px] font-bold text-[#1D2530] mb-2">Sélectionnez un produit</h3>
+          <p className="text-[13px] text-[#8B95A5] max-w-md">Utilisez la barre de recherche ci-dessus pour trouver un produit et configurer ses prix de référence par profil acheteur et pays.</p>
+        </div>
+      )}
+
       {/* Product editor */}
       {selectedProduct && (
         <div className="space-y-4">
           <div className="bg-white rounded-lg border p-5" style={{ borderColor: "#E2E8F0" }}>
-            {/* Header */}
             <div className="flex items-center gap-2 mb-4">
               <Package size={18} className="text-[#1B5BDA]" />
               <span className="text-[15px] font-bold text-[#1D2530]">{selectedProduct}</span>
-              <span className="text-[11px] text-[#8B95A5] ml-2">EAN: 4049500123456 · CNK: 1234-567</span>
+              {product?.gtin && <span className="text-[11px] text-[#8B95A5] ml-2">EAN: {product.gtin}</span>}
+              {product?.cnk_code && <span className="text-[11px] text-[#8B95A5]">· CNK: {product.cnk_code}</span>}
             </div>
 
             {/* Prix public */}
             <div className="rounded-lg p-4 mb-4" style={{ backgroundColor: "#F8FAFC" }}>
-              <p className="text-[12px] font-semibold text-[#1D2530] mb-3">Prix public constate</p>
+              <p className="text-[12px] font-semibold text-[#1D2530] mb-3">Prix public constaté</p>
               <div className="flex items-end gap-4 flex-wrap">
                 <div>
                   <label className="text-[11px] text-[#616B7C] block mb-1">Prix public TTC</label>
@@ -135,7 +154,7 @@ export default function AdminPrixReference() {
             </div>
 
             {/* Grille profil x pays */}
-            <p className="text-[12px] font-semibold text-[#1D2530] mb-3">Grille profil x pays</p>
+            <p className="text-[12px] font-semibold text-[#1D2530] mb-3">Grille profil × pays</p>
             <div className="overflow-x-auto">
               <table className="w-full text-[13px]">
                 <thead>
@@ -150,6 +169,9 @@ export default function AdminPrixReference() {
                   </tr>
                 </thead>
                 <tbody>
+                  {grille.length === 0 && (
+                    <tr><td colSpan={7} className="py-8 text-center text-[13px] text-[#8B95A5]">Aucun prix de référence configuré. Cliquez sur "Ajouter profil/pays" ci-dessous.</td></tr>
+                  )}
                   {grille.map((r, i) => {
                     const isOld = new Date().getTime() - new Date(r.dateMAJ).getTime() > 90 * 24 * 3600 * 1000;
                     return (
@@ -194,36 +216,28 @@ export default function AdminPrixReference() {
               <Plus size={14} /> Ajouter profil/pays
             </button>
 
-            {/* Apercu impact */}
-            <div className="mt-5 pt-5" style={{ borderTop: "1px solid #E2E8F0" }}>
-              <p className="text-[12px] font-semibold text-[#616B7C] mb-3">
-                Apercu impact — Meilleur prix MediKong: {formatPrixRef(bestPrice)} HTVA
-              </p>
-              <div className="grid grid-cols-3 gap-3">
-                {grille.map(r => {
-                  const savings = calcSavings(r.prixHT, bestPrice, r.source, r.dateMAJ);
-                  return (
-                    <div
-                      key={r.id}
-                      className="rounded-lg p-3"
-                      style={{
-                        border: r.actif ? "1px solid #E2E8F0" : "1px dashed #CBD5E1",
-                        opacity: r.actif ? 1 : 0.6,
-                        backgroundColor: r.actif ? "white" : "#F8FAFC",
-                      }}
-                    >
-                      <p className="text-[10px] text-[#8B95A5]">{r.profil} {r.pays}</p>
-                      <p className="text-[12px] text-[#8B95A5]">Ref: {formatPrixRef(r.prixHT)}</p>
-                      <p className="text-[13px] font-bold text-[#059669]">{formatPrixRef(bestPrice)}</p>
-                      {savings.show && (
-                        <p className="text-[11px] font-bold text-[#059669]">-{savings.pct}% · -{formatPrixRef(savings.abs)}</p>
-                      )}
-                      {!r.actif && <p className="text-[10px] text-[#8B95A5] italic">Inactif</p>}
-                    </div>
-                  );
-                })}
+            {/* Aperçu impact */}
+            {grille.length > 0 && bestPrice > 0 && (
+              <div className="mt-5 pt-5" style={{ borderTop: "1px solid #E2E8F0" }}>
+                <p className="text-[12px] font-semibold text-[#616B7C] mb-3">
+                  Aperçu impact — Meilleur prix MediKong: {formatPrixRef(bestPrice)} HTVA
+                </p>
+                <div className="grid grid-cols-3 gap-3">
+                  {grille.map(r => {
+                    const savings = calcSavings(r.prixHT, bestPrice, r.source, r.dateMAJ);
+                    return (
+                      <div key={r.id} className="rounded-lg p-3" style={{ border: r.actif ? "1px solid #E2E8F0" : "1px dashed #CBD5E1", opacity: r.actif ? 1 : 0.6, backgroundColor: r.actif ? "white" : "#F8FAFC" }}>
+                        <p className="text-[10px] text-[#8B95A5]">{r.profil} {r.pays}</p>
+                        <p className="text-[12px] text-[#8B95A5]">Ref: {formatPrixRef(r.prixHT)}</p>
+                        <p className="text-[13px] font-bold text-[#059669]">{formatPrixRef(bestPrice)}</p>
+                        {savings.show && <p className="text-[11px] font-bold text-[#059669]">-{savings.pct}% · -{formatPrixRef(savings.abs)}</p>}
+                        {!r.actif && <p className="text-[10px] text-[#8B95A5] italic">Inactif</p>}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* CSV Import */}

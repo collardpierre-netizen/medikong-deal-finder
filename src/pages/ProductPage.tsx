@@ -443,7 +443,7 @@ export default function ProductPage() {
               </div>
 
               {/* Tax note */}
-              <p className="text-xs text-muted-foreground mb-4">Les prix peuvent etre soumis a TVA.</p>
+              <p className="text-xs text-muted-foreground mb-4">Prix soumis a TVA selon votre pays.</p>
 
               {/* Badges */}
               <div className="flex items-center gap-2 flex-wrap mb-6">

@@ -11,6 +11,10 @@ import { HeroImageGallery } from "@/components/home/HeroImageGallery";
 import { Helmet } from "react-helmet-async";
 import { HomeTestimonials } from "@/components/home/HomeTestimonials";
 import { useTranslation } from "react-i18next";
+import { useCountry } from "@/contexts/CountryContext";
+import { AnimatedCounter } from "@/components/entreprise/AnimatedCounter";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 const iconMap: Record<string, React.ReactNode> = {
   Shield: <Shield size={20} className="text-mk-navy" />,

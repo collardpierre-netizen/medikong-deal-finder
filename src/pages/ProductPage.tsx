@@ -39,7 +39,12 @@ function OfferRow({
   const priceLabel = isTVAC ? "TVAC" : "HTVA";
 
   const handleAdd = () => {
-    if (!user) { navigate("/connexion"); return; }
+    if (!user) {
+      toast.error("Connectez-vous pour ajouter des produits au panier", {
+        action: { label: "Se connecter", onClick: () => navigate("/connexion") },
+      });
+      return;
+    }
     addToCart.mutate({
       offerId: offer.id,
       productId,
@@ -48,6 +53,7 @@ function OfferRow({
       priceExclVat: offer.unitPriceEur,
       productData: { id: productId, name: productName, brand: "", slug: productSlug, price: offer.unitPriceEur },
     });
+    toast.success("Produit ajouté au panier ✓");
   };
 
   return (

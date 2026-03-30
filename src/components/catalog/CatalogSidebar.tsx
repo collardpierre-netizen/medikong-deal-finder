@@ -118,23 +118,28 @@ export function CatalogSidebar({ filters, setFilter, clearAll }: Props) {
             {parentCategory ? parentCategory.name : "Toutes les catégories"}
           </button>
         )}
-        <ScrollArea className="max-h-[220px]">
-          <div className="space-y-0.5">
-            {displayCategories.map((cat: any) => (
-              <button
-                key={cat.id}
-                onClick={() => setFilter("category", cat.slug)}
-                className={`block w-full text-left text-sm py-1.5 px-2 rounded transition-colors ${
-                  filters.category === cat.slug
-                    ? "bg-primary/10 text-primary font-medium"
-                    : "text-foreground hover:bg-muted"
-                }`}
-              >
-                {cat.name}
-              </button>
-            ))}
-          </div>
-        </ScrollArea>
+        <div className="relative">
+          <ScrollArea className="max-h-[220px] pr-2">
+            <div className="space-y-0.5">
+              {displayCategories.map((cat: any) => (
+                <button
+                  key={cat.id}
+                  onClick={() => setFilter("category", cat.slug)}
+                  className={`block w-full text-left text-sm py-1.5 px-2 rounded transition-colors ${
+                    filters.category === cat.slug
+                      ? "bg-primary/10 text-primary font-medium"
+                      : "text-foreground hover:bg-muted"
+                  }`}
+                >
+                  {cat.name}
+                </button>
+              ))}
+            </div>
+          </ScrollArea>
+          {displayCategories.length > 8 && (
+            <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-background to-transparent" />
+          )}
+        </div>
       </div>
 
       {/* Brands */}

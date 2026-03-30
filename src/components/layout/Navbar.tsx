@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useTranslation } from "react-i18next";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { CountrySelector } from "@/components/CountrySelector";
+import { InstantSearchBar } from "@/components/search/InstantSearchBar";
 import logoHorizontal from "@/assets/logo-horizontal.png";
 
 export function Navbar() {
@@ -62,17 +63,7 @@ export function Navbar() {
         </Link>
 
         {!isHomePage && (
-          <form onSubmit={handleSearch} className="flex-1 max-w-[440px] mx-auto hidden sm:block">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-mk-sec" size={16} />
-              <input
-                value={query}
-                onChange={e => setQuery(e.target.value)}
-                placeholder={t("common.searchPlaceholder")}
-                className="w-full pl-9 pr-3 py-2 rounded-md text-sm bg-white text-mk-text placeholder:text-mk-ter border-0 focus:outline-none focus:ring-2 focus:ring-mk-blue"
-              />
-            </div>
-          </form>
+          <InstantSearchBar className="flex-1 max-w-[440px] mx-auto hidden sm:block" />
         )}
 
         <div className="hidden md:flex items-center gap-3 shrink-0 ml-auto">
@@ -151,12 +142,7 @@ export function Navbar() {
             transition={{ duration: 0.25, ease: "easeOut" }}
           >
             {!isHomePage && (
-              <form onSubmit={handleSearch} className="sm:hidden">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-mk-sec" size={16} />
-                  <input value={query} onChange={e => setQuery(e.target.value)} placeholder={t("common.search") + "..."} className="w-full pl-9 pr-3 py-2 rounded-md text-sm bg-white text-mk-text" />
-                </div>
-              </form>
+              <InstantSearchBar className="sm:hidden" />
             )}
             {user ? (
               <>

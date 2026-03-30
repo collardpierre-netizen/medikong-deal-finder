@@ -21,3 +21,5 @@ project_id = "iokwqxhhpblcbkrxgcje"
     verify_jwt = true
   [functions.send-transactional-email]
     verify_jwt = true
+  [functions.sync-meilisearch]
+    verify_jwt = false

@@ -126,13 +126,15 @@ export function useProduct(slug: string | undefined) {
   return useQuery({
     queryKey: ["product", slug, country],
     queryFn: async () => {
+      // First get the product (needed for ID)
       const { data, error } = await supabase.from("products").select("*").eq("slug", slug!).maybeSingle();
       if (error) throw error;
       if (!data) return null;
-      const { data: offers } = await supabase.from("offers").select("*").eq("product_id", data.id).eq("is_active", true).eq("country_code", country);
-      return mapDbProduct(data, offers || []);
+      // Offers fetched separately by useProductOffers — no need to duplicate here
+      return mapDbProduct(data);
     },
     enabled: !!slug,
+    staleTime: 5 * 60 * 1000,
   });
 }
 

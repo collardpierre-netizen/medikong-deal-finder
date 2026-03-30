@@ -138,16 +138,50 @@ const useCountryProductCounts = () =>
   useQuery({
     queryKey: ["country-product-counts"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("product_country_stats")
-        .select("country_code");
-      if (error) throw error;
+      // Get all active sync countries first
+      const { data: countries } = await supabase
+        .from("countries")
+        .select("code")
+        .eq("is_active", true)
+        .eq("qogita_sync_enabled", true);
       const counts: Record<string, number> = {};
-      for (const row of (data || [])) {
-        counts[row.country_code] = (counts[row.country_code] || 0) + 1;
+      for (const c of (countries || [])) {
+        const { count, error } = await supabase
+          .from("product_country_stats")
+          .select("*", { count: "exact", head: true })
+          .eq("country_code", c.code);
+        if (!error) counts[c.code] = count ?? 0;
       }
       return counts;
     },
+  });
+
+const useLastSyncDates = () =>
+  useQuery({
+    queryKey: ["last-sync-dates"],
+    queryFn: async () => {
+      const { data: lastProducts } = await supabase
+        .from("sync_logs")
+        .select("completed_at")
+        .eq("status", "completed")
+        .eq("sync_type", "products")
+        .order("completed_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      const { data: lastOffers } = await supabase
+        .from("sync_logs")
+        .select("completed_at")
+        .eq("status", "completed")
+        .eq("sync_type", "offers_detail")
+        .order("completed_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      return {
+        lastProductsSync: lastProducts?.completed_at || null,
+        lastOffersSync: lastOffers?.completed_at || null,
+      };
+    },
+    refetchInterval: 10000,
   });
 
 export default function AdminSync() {

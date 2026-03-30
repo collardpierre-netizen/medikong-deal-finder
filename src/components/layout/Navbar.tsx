@@ -1,4 +1,4 @@
-import { Search, Bell, ShoppingCart, Users, Menu, X, LogOut, Shield, Store } from "lucide-react";
+import { Search, Bell, ShoppingCart, Users, Menu, X, LogOut, Shield, Store, Tag } from "lucide-react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { usePriceDisplay } from "@/contexts/PriceDisplayContext";

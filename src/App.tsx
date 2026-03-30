@@ -223,6 +223,7 @@ const App = () => (
             <Route path="/cgv" element={<LP><TermsPage /></LP>} />
             <Route path="/politique-confidentialite" element={<LP><PrivacyPage /></LP>} />
             <Route path="/cookies" element={<LP><CookiePolicyPage /></LP>} />
+            <Route path="/unsubscribe" element={<LP><UnsubscribePage /></LP>} />
 
             <Route path="/admin/login" element={<LP><AdminLoginPage /></LP>} />
 

@@ -369,7 +369,7 @@ function ManufacturerFormDialog({ open, onOpenChange, item, onSave, saving }: { 
             <div>
               <Label className="text-xs">Logo URL</Label>
               <Input value={form.logo_url || ""} onChange={e => setForm({ ...form, logo_url: e.target.value })} placeholder="https://" />
-              {form.logo_url && <img src={form.logo_url} alt="Preview" className="mt-1 w-10 h-10 rounded object-contain border" style={{ borderColor: "#E2E8F0" }} />}
+              {form.logo_url && <img src={form.logo_url} alt="Preview" referrerPolicy="no-referrer" crossOrigin="anonymous" className="mt-1 w-10 h-10 rounded object-contain border" style={{ borderColor: "#E2E8F0" }} onError={e => { (e.target as HTMLImageElement).src = ''; }} />}
             </div>
           </div>
           <div><Label className="text-xs">Site web</Label><Input value={form.website_url || ""} onChange={e => setForm({ ...form, website_url: e.target.value })} placeholder="https://" /></div>

@@ -249,9 +249,10 @@ async function processBatch(
   sb: any, lines: string[], colMap: Record<string, number>,
   vat: number, country: string,
   brandNames: Set<string>, catNames: Set<string>,
+  qogitaVendorId: string,
 ): Promise<number> {
   const products: any[] = [];
-  const stats: any[] = [];
+  const csvData: any[] = [];
 
   for (const line of lines) {
     const cols = parseCSVLine(line);
@@ -266,12 +267,10 @@ async function processBatch(
     const deliveryStr = cols[colMap.delivery] || "";
     const productUrl = cols[colMap.url] || "";
     const imageUrl = cols[colMap.image] || "";
+    const preorderStr = colMap.preorder >= 0 ? (cols[colMap.preorder] || "") : "";
 
-    // Extract qogita_qid from product URL
     const qidMatch = productUrl.match(/\/products\/([a-f0-9]+)\//);
     const qid = qidMatch?.[1] || null;
-
-    // We need either gtin or qid for a stable key
     const stableId = qid || gtin || sl(name).slice(0, 32);
     if (!stableId) continue;
 
@@ -283,29 +282,20 @@ async function processBatch(
     const delivery = parseInt(deliveryStr, 10) || 0;
     const pe = bp > 0 ? Math.round((bp / (1 + vat / 100)) * 100) / 100 : 0;
     const slug = sl(name) + (gtin ? `-${gtin.slice(-6)}` : `-${stableId.slice(0, 6)}`);
+    const isPreorder = preorderStr.toLowerCase() === "true" || preorderStr === "1";
 
     products.push({
-      qogita_qid: stableId,
-      gtin: gtin || null,
-      name,
-      slug,
-      brand_name: brand || null,
-      category_name: category || null,
-      image_urls: imageUrl ? [imageUrl] : [],
-      source: "qogita",
-      is_active: true,
-      is_published: true,
+      qogita_qid: stableId, gtin: gtin || null, name, slug,
+      brand_name: brand || null, category_name: category || null,
+      image_urls: imageUrl ? [imageUrl] : [], source: "qogita",
+      is_active: true, is_published: true,
       synced_at: new Date().toISOString(),
-      total_stock: stock,
-      is_in_stock: stock > 0,
+      total_stock: stock, is_in_stock: stock > 0,
       min_delivery_days: delivery > 0 ? delivery : null,
       ...(pe > 0 ? { best_price_excl_vat: pe, best_price_incl_vat: bp } : {}),
     });
 
-    stats.push({
-      qid: stableId, pe: pe > 0 ? pe : null, pi: bp > 0 ? bp : null,
-      ts: stock, iis: stock > 0,
-    });
+    csvData.push({ qid: stableId, pe, pi: bp, stock, delivery, isPreorder });
   }
 
   if (products.length === 0) return 0;
@@ -316,28 +306,54 @@ async function processBatch(
   });
   if (error) console.error("Upsert error:", error.message);
 
-  // Upsert country stats
-  const qids = stats.map((s: any) => s.qid);
+  // Get product IDs for offers + stats
+  const qids = csvData.map((s: any) => s.qid);
   const { data: prods } = await sb.from("products").select("id, qogita_qid").in("qogita_qid", qids);
   const m = new Map((prods || []).map((p: any) => [p.qogita_qid, p.id]));
 
-  const countryStats = stats
+  // Upsert country stats
+  const countryStats = csvData
     .filter((s: any) => m.has(s.qid))
     .map((s: any) => ({
-      product_id: m.get(s.qid)!,
-      country_code: country,
-      best_price_excl_vat: s.pe,
-      best_price_incl_vat: s.pi,
-      total_stock: s.ts,
-      is_in_stock: s.iis,
-      offer_count: null,
-      min_delivery_days: null,
+      product_id: m.get(s.qid)!, country_code: country,
+      best_price_excl_vat: s.pe > 0 ? s.pe : null,
+      best_price_incl_vat: s.pi > 0 ? s.pi : null,
+      total_stock: s.stock, is_in_stock: s.stock > 0,
+      offer_count: 1, min_delivery_days: s.delivery > 0 ? s.delivery : null,
     }));
 
   if (countryStats.length > 0) {
     await sb.from("product_country_stats").upsert(countryStats, {
       onConflict: "product_id,country_code", ignoreDuplicates: false,
     });
+  }
+
+  // Create/update offers for each product
+  const offers = csvData
+    .filter((s: any) => m.has(s.qid) && s.pe > 0)
+    .map((s: any) => ({
+      product_id: m.get(s.qid)!,
+      vendor_id: qogitaVendorId,
+      country_code: country,
+      qogita_base_price: s.pe,
+      price_excl_vat: s.pe,
+      price_incl_vat: s.pi > 0 ? s.pi : Math.round(s.pe * (1 + vat / 100) * 100) / 100,
+      vat_rate: vat,
+      stock_quantity: s.stock,
+      stock_status: s.stock > 0 ? "in_stock" : (s.isPreorder ? "pre_order" : "out_of_stock"),
+      delivery_days: s.delivery > 0 ? s.delivery : 3,
+      shipping_from_country: country,
+      is_qogita_backed: true,
+      is_active: true,
+      moq: 1,
+      synced_at: new Date().toISOString(),
+    }));
+
+  if (offers.length > 0) {
+    const { error: offerErr } = await sb.from("offers").upsert(offers, {
+      onConflict: "product_id,vendor_id,country_code", ignoreDuplicates: false,
+    });
+    if (offerErr) console.error("Offer upsert error:", offerErr.message);
   }
 
   return products.length;

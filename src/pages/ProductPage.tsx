@@ -43,7 +43,6 @@ function OfferRow({
   const displayCode = offer.displayCode || offer.sellerId.slice(0, 6).toUpperCase();
   const displayPrice = isTVAC ? offer.unitPriceInclVat : offer.unitPriceEur;
   const priceLabel = isTVAC ? "TVAC" : "HTVA";
-  const priceLabel = isTVAC ? "TVAC" : "HTVA";
 
   const handleAdd = () => {
     if (!user) {

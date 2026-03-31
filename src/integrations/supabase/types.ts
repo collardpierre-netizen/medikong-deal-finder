@@ -2101,6 +2101,48 @@ export type Database = {
         }
         Relationships: []
       }
+      sync_pipeline_runs: {
+        Row: {
+          completed_at: string | null
+          country_code: string
+          created_at: string | null
+          current_step: number | null
+          error_message: string | null
+          id: string
+          started_at: string | null
+          status: string
+          steps_status: Json | null
+          total_steps: number | null
+          triggered_by: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          country_code?: string
+          created_at?: string | null
+          current_step?: number | null
+          error_message?: string | null
+          id?: string
+          started_at?: string | null
+          status?: string
+          steps_status?: Json | null
+          total_steps?: number | null
+          triggered_by?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          country_code?: string
+          created_at?: string | null
+          current_step?: number | null
+          error_message?: string | null
+          id?: string
+          started_at?: string | null
+          status?: string
+          steps_status?: Json | null
+          total_steps?: number | null
+          triggered_by?: string | null
+        }
+        Relationships: []
+      }
       translations: {
         Row: {
           created_at: string | null

@@ -1,261 +1,382 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import AdminTopBar from "@/components/admin/AdminTopBar";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
-import { Package, Upload, Download, Search, Trash2, Plus, Info, Database } from "lucide-react";
-import type { PrixProfilPays, PrixSource, ProfilAcheteur, PaysCode } from "@/lib/types/prix-informatifs";
-import { formatPrixRef, sourceLabels, profilLabels, paysLabels, calcSavings } from "@/lib/utils/prix-ref";
-import { useProducts } from "@/hooks/useAdminData";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Progress } from "@/components/ui/progress";
+import { toast } from "sonner";
+import { Upload, Database, FileSpreadsheet, CheckCircle2, XCircle, Download, RefreshCw } from "lucide-react";
+import * as XLSX from "xlsx";
 
-const sources: PrixSource[] = ["INAMI", "CBIP", "Farmacompendium", "Marches_publics", "Prix_moyen", "Manuel"];
-const profils: ProfilAcheteur[] = ["Pharmacie", "Hopital", "MRS", "Infirmier", "Cabinet", "Parapharmacie"];
-const pays: PaysCode[] = ["BE", "LU", "FR", "NL"];
+interface ImportResult {
+  total_imported: number;
+  matched: number;
+  unmatched: number;
+  unmatched_samples: { cnk: string; name: string }[];
+}
 
 export default function AdminPrixReference() {
-  const { data: products = [] } = useProducts();
-  const [search, setSearch] = useState("");
-  const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
-  const [prixTTC, setPrixTTC] = useState(0);
-  const [prixSource, setPrixSource] = useState<PrixSource>("CBIP");
-  const [prixDate, setPrixDate] = useState(new Date().toISOString().slice(0, 10));
-  const [grille, setGrille] = useState<PrixProfilPays[]>([]);
-  const [showImport, setShowImport] = useState(false);
+  const qc = useQueryClient();
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [selectedSourceId, setSelectedSourceId] = useState<string>("");
+  const [fileData, setFileData] = useState<any[] | null>(null);
+  const [fileName, setFileName] = useState("");
+  const [importing, setImporting] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [importResult, setImportResult] = useState<ImportResult | null>(null);
 
-  const productNames = products.map(p => p.name);
-  const filtered = search ? productNames.filter(p => p.toLowerCase().includes(search.toLowerCase())).slice(0, 20) : [];
+  const { data: sources = [], isLoading } = useQuery({
+    queryKey: ["admin-market-sources"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("market_price_sources")
+        .select("*")
+        .order("name");
+      if (error) throw error;
+      return data;
+    },
+  });
 
-  const selectProduct = (name: string) => {
-    setSelectedProduct(name);
-    setSearch(name);
-    // Reset - no mock data, start fresh
-    setPrixTTC(0);
-    setPrixSource("CBIP");
-    setPrixDate(new Date().toISOString().slice(0, 10));
-    setGrille([]);
+  const { data: priceCounts = {} } = useQuery({
+    queryKey: ["admin-market-price-counts"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("market_prices")
+        .select("source_id, is_matched");
+      if (error) throw error;
+      const counts: Record<string, { total: number; matched: number }> = {};
+      (data || []).forEach((row: any) => {
+        if (!counts[row.source_id]) counts[row.source_id] = { total: 0, matched: 0 };
+        counts[row.source_id].total++;
+        if (row.is_matched) counts[row.source_id].matched++;
+      });
+      return counts;
+    },
+  });
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setFileName(file.name);
+    setImportResult(null);
+
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const wb = XLSX.read(ev.target?.result, { type: "array" });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(ws, { defval: "" });
+        setFileData(rows);
+        toast.success(`${rows.length} lignes détectées dans le fichier`);
+      } catch {
+        toast.error("Erreur de lecture du fichier");
+      }
+    };
+    reader.readAsArrayBuffer(file);
   };
 
-  const tvaRate = 6;
-  const htva = prixTTC / (1 + tvaRate / 100);
-  const product = selectedProduct ? products.find(p => p.name === selectedProduct) : null;
-  const bestPrice = product?.best_price_excl_vat ? Number(product.best_price_excl_vat) : 0;
+  const handleImport = async () => {
+    if (!fileData || !selectedSourceId) {
+      toast.error("Sélectionnez une source et un fichier");
+      return;
+    }
 
-  const addRow = () => {
-    setGrille(prev => [...prev, {
-      id: `new-${Date.now()}`, profil: "Pharmacie", pays: "BE", prixHT: 0, source: "Manuel", dateMAJ: new Date().toISOString().slice(0, 10), actif: true,
-    }]);
+    const source = sources.find((s: any) => s.id === selectedSourceId);
+    if (!source) return;
+
+    setImporting(true);
+    setProgress(0);
+    setImportResult(null);
+
+    const BATCH = 500;
+    let totalImported = 0;
+    let matched = 0;
+    let unmatched = 0;
+    const unmatchedSamples: { cnk: string; name: string }[] = [];
+
+    try {
+      for (let i = 0; i < fileData.length; i += BATCH) {
+        const batch = fileData.slice(i, i + BATCH);
+        const rows: any[] = [];
+
+        for (const row of batch) {
+          let cnk = "", ean = "", productName = "", prixGrossiste: number | null = null;
+          let prixPharmacien: number | null = null, prixPublic: number | null = null;
+          let tvaRate: number | null = null, supplierName = "", supplierCode = "", productUrl = "";
+
+          const format = source.file_format;
+
+          if (format === "febelco_xlsx") {
+            // Febelco: Col A (index 0) = CNK, named columns for rest
+            const keys = Object.keys(row);
+            cnk = String(keys[0] ? row[keys[0]] : "").trim();
+            ean = String(row["EANCode"] || row["eancode"] || row["EanCode"] || "").trim();
+            productName = String(row["Product Name"] || row["product name"] || row["ProductName"] || "").trim();
+            prixGrossiste = parseFloat(row["Prix de gros"] || row["prix de gros"]) || null;
+            prixPublic = parseFloat(row["Prix public"] || row["prix public"]) || null;
+            prixPharmacien = parseFloat(row["Prix pharmacie"] || row["prix pharmacie"]) || null;
+            supplierCode = String(row["SupplierNbr"] || row["suppliernbr"] || "").trim();
+            const status = String(row["ProductStatus"] || row["productstatus"] || "").trim();
+            if (status === "CT") continue; // skip discontinued
+          } else if (format === "cerp_xlsx") {
+            cnk = String(row["CNK"] || row["cnk"] || "").trim();
+            productName = String(row["Libelle"] || row["libelle"] || row["Libellé"] || "").trim();
+            supplierName = String(row["Fournisseur"] || row["fournisseur"] || "").trim();
+            prixPharmacien = parseFloat(row["Px pharmacien"] || row["px pharmacien"] || row["Prix pharmacien"]) || null;
+            tvaRate = parseFloat(row["TVA"] || row["tva"]) || null;
+          } else {
+            // Generic: try to detect columns
+            cnk = String(row["CNK"] || row["cnk"] || row["Code CNK"] || "").trim();
+            ean = String(row["EAN"] || row["ean"] || row["GTIN"] || row["gtin"] || row["EANCode"] || "").trim();
+            productName = String(row["Nom"] || row["nom"] || row["Product Name"] || row["Libelle"] || row["Libellé"] || "").trim();
+            prixGrossiste = parseFloat(row["Prix grossiste"] || row["prix_grossiste"] || row["Prix de gros"]) || null;
+            prixPharmacien = parseFloat(row["Prix pharmacien"] || row["prix_pharmacien"] || row["Px pharmacien"]) || null;
+            prixPublic = parseFloat(row["Prix public"] || row["prix_public"]) || null;
+            tvaRate = parseFloat(row["TVA"] || row["tva"]) || null;
+            supplierName = String(row["Fournisseur"] || row["fournisseur"] || "").trim();
+            productUrl = String(row["URL"] || row["url"] || row["Lien"] || "").trim();
+          }
+
+          if (!cnk && !ean) continue;
+
+          // Match product
+          let productId: string | null = null;
+          if (ean && ean.length >= 8) {
+            const { data: byGtin } = await supabase
+              .from("products")
+              .select("id")
+              .eq("gtin", ean)
+              .maybeSingle();
+            productId = byGtin?.id || null;
+          }
+          if (!productId && cnk) {
+            const { data: byCnk } = await supabase
+              .from("product_market_codes")
+              .select("product_id")
+              .eq("code_value", cnk)
+              .maybeSingle();
+            productId = byCnk?.product_id || null;
+          }
+          // Cross-match via other source's market_prices
+          if (!productId && cnk) {
+            const { data: crossMatch } = await supabase
+              .from("market_prices")
+              .select("product_id")
+              .eq("cnk", cnk)
+              .not("product_id", "is", null)
+              .limit(1)
+              .maybeSingle();
+            productId = crossMatch?.product_id || null;
+          }
+
+          if (productId) matched++;
+          else {
+            unmatched++;
+            if (unmatchedSamples.length < 20) {
+              unmatchedSamples.push({ cnk, name: productName });
+            }
+          }
+
+          rows.push({
+            source_id: selectedSourceId,
+            cnk: cnk || null,
+            ean: ean || null,
+            product_id: productId,
+            product_name_source: productName || null,
+            prix_grossiste: prixGrossiste,
+            prix_pharmacien: prixPharmacien,
+            prix_public: prixPublic,
+            tva_rate: tvaRate,
+            supplier_name: supplierName || null,
+            supplier_code: supplierCode || null,
+            product_url: productUrl || null,
+            is_matched: !!productId,
+            imported_at: new Date().toISOString(),
+          });
+        }
+
+        if (rows.length > 0) {
+          // Deduplicate by cnk within batch
+          const deduped = new Map<string, any>();
+          for (const r of rows) {
+            const key = r.cnk || r.ean || `${Math.random()}`;
+            deduped.set(key, r);
+          }
+
+          const { error } = await supabase
+            .from("market_prices")
+            .upsert(Array.from(deduped.values()), { onConflict: "source_id,cnk" });
+          if (error) {
+            console.error("Upsert error:", error);
+            // Try individual inserts as fallback
+            for (const r of Array.from(deduped.values())) {
+              await supabase.from("market_prices").upsert(r, { onConflict: "source_id,cnk" });
+            }
+          }
+          totalImported += deduped.size;
+        }
+
+        setProgress(Math.round(((i + BATCH) / fileData.length) * 100));
+        await new Promise(r => setTimeout(r, 100));
+      }
+
+      // Update source stats
+      await supabase
+        .from("market_price_sources")
+        .update({ last_import_at: new Date().toISOString(), total_products: totalImported })
+        .eq("id", selectedSourceId);
+
+      setImportResult({ total_imported: totalImported, matched, unmatched, unmatched_samples: unmatchedSamples });
+      toast.success(`Import terminé : ${totalImported} lignes, ${matched} matchées`);
+      qc.invalidateQueries({ queryKey: ["admin-market-price-counts"] });
+      qc.invalidateQueries({ queryKey: ["admin-market-sources"] });
+    } catch (e: any) {
+      toast.error("Erreur d'import : " + e.message);
+    } finally {
+      setImporting(false);
+      setProgress(100);
+    }
   };
 
-  const updateRow = (idx: number, field: string, value: any) => {
-    setGrille(prev => prev.map((r, i) => i === idx ? { ...r, [field]: value } : r));
+  const downloadUnmatched = () => {
+    if (!importResult?.unmatched_samples.length) return;
+    const ws = XLSX.utils.json_to_sheet(importResult.unmatched_samples);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Non matchés");
+    XLSX.writeFile(wb, "non-matches.xlsx");
   };
-
-  const removeRow = (idx: number) => setGrille(prev => prev.filter((_, i) => i !== idx));
 
   return (
     <div>
-      <AdminTopBar title="Prix de Référence — Gestion" subtitle="Gestion des prix informatifs par profil et pays" />
+      <AdminTopBar title="Prix du Marché" subtitle="Import et gestion des prix de référence (Febelco, CERP, etc.)" />
 
-      {/* Action buttons */}
-      <div className="flex justify-end gap-2 mb-4">
-        <button className="flex items-center gap-1.5 px-3 py-2 text-[13px] font-medium rounded-md border" style={{ borderColor: "#059669", color: "#059669" }}>
-          <Download size={14} /> Exporter CSV
-        </button>
-        <button onClick={() => setShowImport(!showImport)} className="flex items-center gap-1.5 px-3 py-2 text-[13px] font-medium rounded-md text-white" style={{ backgroundColor: "#1D2530" }}>
-          <Upload size={14} /> Importer CSV
-        </button>
+      {/* Sources overview */}
+      <div className="bg-white rounded-lg border border-border overflow-hidden mb-6">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="text-[11px] font-semibold text-muted-foreground">Source</TableHead>
+              <TableHead className="text-[11px] font-semibold text-muted-foreground">Type</TableHead>
+              <TableHead className="text-[11px] font-semibold text-muted-foreground">Format</TableHead>
+              <TableHead className="text-[11px] font-semibold text-muted-foreground text-center">Produits</TableHead>
+              <TableHead className="text-[11px] font-semibold text-muted-foreground text-center">Matchés</TableHead>
+              <TableHead className="text-[11px] font-semibold text-muted-foreground">Dernier import</TableHead>
+              <TableHead className="text-[11px] font-semibold text-muted-foreground text-center">Statut</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              <TableRow><TableCell colSpan={7} className="text-center py-8 text-sm text-muted-foreground">Chargement…</TableCell></TableRow>
+            ) : sources.map((src: any) => {
+              const counts = (priceCounts as any)[src.id];
+              return (
+                <TableRow key={src.id}>
+                  <TableCell className="text-[13px] font-semibold">{src.name}</TableCell>
+                  <TableCell><Badge variant="outline" className="text-[10px] capitalize">{src.source_type}</Badge></TableCell>
+                  <TableCell className="text-[12px] text-muted-foreground font-mono">{src.file_format || "—"}</TableCell>
+                  <TableCell className="text-center text-[13px] font-medium">{counts?.total || 0}</TableCell>
+                  <TableCell className="text-center">
+                    {counts?.total > 0 ? (
+                      <span className="text-[13px] font-medium text-green-700">{counts?.matched || 0} <span className="text-[10px] text-muted-foreground">({Math.round(((counts?.matched || 0) / counts.total) * 100)}%)</span></span>
+                    ) : <span className="text-[12px] text-muted-foreground">—</span>}
+                  </TableCell>
+                  <TableCell className="text-[12px] text-muted-foreground">
+                    {src.last_import_at ? new Date(src.last_import_at).toLocaleDateString("fr-FR") : "Jamais"}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <Badge variant={src.is_active ? "default" : "secondary"} className="text-[10px]">
+                      {src.is_active ? "Actif" : "Inactif"}
+                    </Badge>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-4 gap-4 mb-6">
-        {[
-          { label: "Produits en base", value: String(products.length), sub: "catalogue actuel" },
-          { label: "Combinaisons actives", value: "0", sub: "profil × pays" },
-          { label: "À mettre à jour", value: "0", sub: "prix > 90 jours", color: "#F59E0B" },
-          { label: "Sources distinctes", value: "6", sub: "INAMI, CBIP, Farma..." },
-        ].map(s => (
-          <div key={s.label} className="bg-white rounded-lg border p-4" style={{ borderColor: "#E2E8F0" }}>
-            <p className="text-[11px] text-[#8B95A5] uppercase tracking-wide font-medium">{s.label}</p>
-            <p className="text-xl font-bold mt-1" style={{ color: s.color || "#1D2530" }}>{s.value}</p>
-            <p className="text-[11px] text-[#8B95A5]">{s.sub}</p>
+      {/* Import section */}
+      <div className="bg-white rounded-lg border border-border p-6 mb-6">
+        <div className="flex items-center gap-2 mb-4">
+          <FileSpreadsheet size={18} className="text-primary" />
+          <h3 className="text-[15px] font-bold">Importer un fichier de prix</h3>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          <div>
+            <label className="text-[12px] text-muted-foreground block mb-1.5">Source</label>
+            <Select value={selectedSourceId} onValueChange={setSelectedSourceId}>
+              <SelectTrigger className="text-sm h-9">
+                <SelectValue placeholder="Sélectionner la source" />
+              </SelectTrigger>
+              <SelectContent>
+                {sources.map((s: any) => (
+                  <SelectItem key={s.id} value={s.id}>{s.name} {s.file_format ? `(${s.file_format})` : ""}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-        ))}
-      </div>
+          <div>
+            <label className="text-[12px] text-muted-foreground block mb-1.5">Fichier (.xlsx, .csv)</label>
+            <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" onChange={handleFileSelect} className="text-sm" />
+          </div>
+          <div className="flex items-end gap-2">
+            <Button onClick={handleImport} disabled={!fileData || !selectedSourceId || importing} className="gap-1.5">
+              {importing ? <RefreshCw size={14} className="animate-spin" /> : <Upload size={14} />}
+              {importing ? "Import en cours…" : "Lancer l'import"}
+            </Button>
+          </div>
+        </div>
 
-      {/* Search */}
-      <div className="relative mb-6">
-        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8B95A5]" />
-        <input
-          value={search}
-          onChange={e => { setSearch(e.target.value); setSelectedProduct(null); }}
-          placeholder="Rechercher un produit par nom..."
-          className="w-full pl-10 pr-4 py-2.5 text-[13px] rounded-lg border bg-white"
-          style={{ borderColor: "#E2E8F0" }}
-        />
-        {search && !selectedProduct && filtered.length > 0 && (
-          <div className="absolute top-full left-0 right-0 mt-1 bg-white border rounded-lg shadow-lg z-10 max-h-60 overflow-auto" style={{ borderColor: "#E2E8F0" }}>
-            {filtered.map(p => (
-              <button key={p} onClick={() => selectProduct(p)} className="w-full text-left px-4 py-2.5 text-[13px] hover:bg-[#F8FAFC] transition-colors text-[#1D2530]">{p}</button>
-            ))}
+        {/* Preview */}
+        {fileData && (
+          <div className="text-[12px] text-muted-foreground mb-3">
+            <Database size={12} className="inline mr-1" />
+            <strong>{fileData.length}</strong> lignes détectées dans <strong>{fileName}</strong>
+            {fileData.length > 0 && (
+              <span className="ml-2">— Colonnes : {Object.keys(fileData[0]).slice(0, 8).join(", ")}{Object.keys(fileData[0]).length > 8 ? "…" : ""}</span>
+            )}
+          </div>
+        )}
+
+        {/* Progress */}
+        {importing && (
+          <div className="mb-3">
+            <Progress value={progress} className="h-2" />
+            <p className="text-[11px] text-muted-foreground mt-1">{progress}% — Traitement en cours…</p>
+          </div>
+        )}
+
+        {/* Results */}
+        {importResult && (
+          <div className="border border-border rounded-lg p-4 space-y-3">
+            <div className="flex items-center gap-6 text-sm">
+              <span className="flex items-center gap-1.5"><Database size={14} className="text-primary" /> <strong>{importResult.total_imported}</strong> lignes importées</span>
+              <span className="flex items-center gap-1.5"><CheckCircle2 size={14} className="text-green-600" /> <strong>{importResult.matched}</strong> matchés</span>
+              <span className="flex items-center gap-1.5"><XCircle size={14} className="text-amber-500" /> <strong>{importResult.unmatched}</strong> non matchés</span>
+            </div>
+            {importResult.unmatched_samples.length > 0 && (
+              <>
+                <p className="text-[12px] text-muted-foreground font-medium">Exemples de produits non matchés :</p>
+                <div className="max-h-40 overflow-auto text-[12px] space-y-1">
+                  {importResult.unmatched_samples.map((s, i) => (
+                    <div key={i} className="flex gap-3 text-muted-foreground">
+                      <span className="font-mono">{s.cnk}</span>
+                      <span>{s.name}</span>
+                    </div>
+                  ))}
+                </div>
+                <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={downloadUnmatched}>
+                  <Download size={12} /> Télécharger non-matchés
+                </Button>
+              </>
+            )}
           </div>
         )}
       </div>
-
-      {/* Empty state */}
-      {!selectedProduct && products.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <Database size={48} className="text-[#CBD5E1] mb-4" />
-          <h3 className="text-[15px] font-bold text-[#1D2530] mb-2">Aucun produit en base</h3>
-          <p className="text-[13px] text-[#8B95A5] max-w-md">Lancez une synchronisation Qogita depuis la page Sync pour importer des produits, puis configurez les prix de référence ici.</p>
-        </div>
-      )}
-
-      {!selectedProduct && products.length > 0 && (
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <Package size={48} className="text-[#CBD5E1] mb-4" />
-          <h3 className="text-[15px] font-bold text-[#1D2530] mb-2">Sélectionnez un produit</h3>
-          <p className="text-[13px] text-[#8B95A5] max-w-md">Utilisez la barre de recherche ci-dessus pour trouver un produit et configurer ses prix de référence par profil acheteur et pays.</p>
-        </div>
-      )}
-
-      {/* Product editor */}
-      {selectedProduct && (
-        <div className="space-y-4">
-          <div className="bg-white rounded-lg border p-5" style={{ borderColor: "#E2E8F0" }}>
-            <div className="flex items-center gap-2 mb-4">
-              <Package size={18} className="text-[#1B5BDA]" />
-              <span className="text-[15px] font-bold text-[#1D2530]">{selectedProduct}</span>
-              {product?.gtin && <span className="text-[11px] text-[#8B95A5] ml-2">EAN: {product.gtin}</span>}
-              {product?.cnk_code && <span className="text-[11px] text-[#8B95A5]">· CNK: {product.cnk_code}</span>}
-            </div>
-
-            {/* Prix public */}
-            <div className="rounded-lg p-4 mb-4" style={{ backgroundColor: "#F8FAFC" }}>
-              <p className="text-[12px] font-semibold text-[#1D2530] mb-3">Prix public constaté</p>
-              <div className="flex items-end gap-4 flex-wrap">
-                <div>
-                  <label className="text-[11px] text-[#616B7C] block mb-1">Prix public TTC</label>
-                  <input type="number" value={prixTTC} onChange={e => setPrixTTC(+e.target.value)} step="0.01" className="w-[100px] px-3 py-2 text-[13px] rounded-md border" style={{ borderColor: "#E2E8F0" }} />
-                </div>
-                <div>
-                  <label className="text-[11px] text-[#616B7C] block mb-1">HTVA (auto {tvaRate}%)</label>
-                  <input disabled value={htva.toFixed(2)} className="w-[100px] px-3 py-2 text-[13px] rounded-md border bg-[#F1F5F9]" style={{ borderColor: "#E2E8F0" }} />
-                </div>
-                <div>
-                  <label className="text-[11px] text-[#616B7C] block mb-1">Source</label>
-                  <select value={prixSource} onChange={e => setPrixSource(e.target.value as PrixSource)} className="px-3 py-2 text-[13px] rounded-md border bg-white" style={{ borderColor: "#E2E8F0" }}>
-                    {sources.map(s => <option key={s} value={s}>{sourceLabels[s]}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="text-[11px] text-[#616B7C] block mb-1">Date</label>
-                  <input type="date" value={prixDate} onChange={e => setPrixDate(e.target.value)} className="px-3 py-2 text-[13px] rounded-md border" style={{ borderColor: "#E2E8F0" }} />
-                </div>
-              </div>
-            </div>
-
-            {/* Grille profil x pays */}
-            <p className="text-[12px] font-semibold text-[#1D2530] mb-3">Grille profil × pays</p>
-            <div className="overflow-x-auto">
-              <table className="w-full text-[13px]">
-                <thead>
-                  <tr className="border-b text-[11px] text-[#8B95A5] uppercase tracking-wide" style={{ borderColor: "#E2E8F0" }}>
-                    <th className="text-left py-2 px-2 font-medium">Profil</th>
-                    <th className="text-left py-2 px-2 font-medium">Pays</th>
-                    <th className="text-left py-2 px-2 font-medium">Prix HT</th>
-                    <th className="text-left py-2 px-2 font-medium">Source</th>
-                    <th className="text-left py-2 px-2 font-medium">Date MAJ</th>
-                    <th className="text-center py-2 px-2 font-medium">Actif</th>
-                    <th className="text-right py-2 px-2 font-medium">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {grille.length === 0 && (
-                    <tr><td colSpan={7} className="py-8 text-center text-[13px] text-[#8B95A5]">Aucun prix de référence configuré. Cliquez sur "Ajouter profil/pays" ci-dessous.</td></tr>
-                  )}
-                  {grille.map((r, i) => {
-                    const isOld = new Date().getTime() - new Date(r.dateMAJ).getTime() > 90 * 24 * 3600 * 1000;
-                    return (
-                      <tr key={r.id} className="border-b last:border-0" style={{ borderColor: "#E2E8F0" }}>
-                        <td className="py-2 px-2">
-                          <select value={r.profil} onChange={e => updateRow(i, "profil", e.target.value)} className="px-2 py-1.5 text-[12px] rounded border bg-white" style={{ borderColor: "#E2E8F0" }}>
-                            {profils.map(p => <option key={p} value={p}>{p}</option>)}
-                          </select>
-                        </td>
-                        <td className="py-2 px-2">
-                          <select value={r.pays} onChange={e => updateRow(i, "pays", e.target.value)} className="px-2 py-1.5 text-[12px] rounded border bg-white" style={{ borderColor: "#E2E8F0" }}>
-                            {pays.map(p => <option key={p} value={p}>{p}</option>)}
-                          </select>
-                        </td>
-                        <td className="py-2 px-2">
-                          <input type="number" value={r.prixHT} onChange={e => updateRow(i, "prixHT", +e.target.value)} step="0.01" className="w-[80px] px-2 py-1.5 text-[12px] rounded border" style={{ borderColor: "#E2E8F0" }} />
-                        </td>
-                        <td className="py-2 px-2">
-                          <select value={r.source} onChange={e => updateRow(i, "source", e.target.value)} className="px-2 py-1.5 text-[12px] rounded border bg-white" style={{ borderColor: "#E2E8F0" }}>
-                            {sources.map(s => <option key={s} value={s}>{sourceLabels[s]}</option>)}
-                          </select>
-                        </td>
-                        <td className="py-2 px-2 text-[12px] text-[#616B7C]">
-                          {r.dateMAJ}
-                          {isOld && <Badge variant="outline" className="ml-1.5 text-[9px]" style={{ color: "#F59E0B", backgroundColor: "#FFFBEB", borderColor: "transparent" }}>&gt; 90j</Badge>}
-                        </td>
-                        <td className="py-2 px-2 text-center">
-                          <Switch checked={r.actif} onCheckedChange={v => updateRow(i, "actif", v)} />
-                        </td>
-                        <td className="py-2 px-2 text-right">
-                          <button onClick={() => removeRow(i)} className="p-1 hover:bg-red-50 rounded transition-colors">
-                            <Trash2 size={14} className="text-[#EF4343]" />
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-            <button onClick={addRow} className="mt-3 flex items-center gap-1.5 px-3 py-2 text-[12px] font-medium rounded-md border" style={{ borderColor: "#059669", color: "#059669" }}>
-              <Plus size={14} /> Ajouter profil/pays
-            </button>
-
-            {/* Aperçu impact */}
-            {grille.length > 0 && bestPrice > 0 && (
-              <div className="mt-5 pt-5" style={{ borderTop: "1px solid #E2E8F0" }}>
-                <p className="text-[12px] font-semibold text-[#616B7C] mb-3">
-                  Aperçu impact — Meilleur prix MediKong: {formatPrixRef(bestPrice)} HTVA
-                </p>
-                <div className="grid grid-cols-3 gap-3">
-                  {grille.map(r => {
-                    const savings = calcSavings(r.prixHT, bestPrice, r.source, r.dateMAJ);
-                    return (
-                      <div key={r.id} className="rounded-lg p-3" style={{ border: r.actif ? "1px solid #E2E8F0" : "1px dashed #CBD5E1", opacity: r.actif ? 1 : 0.6, backgroundColor: r.actif ? "white" : "#F8FAFC" }}>
-                        <p className="text-[10px] text-[#8B95A5]">{r.profil} {r.pays}</p>
-                        <p className="text-[12px] text-[#8B95A5]">Ref: {formatPrixRef(r.prixHT)}</p>
-                        <p className="text-[13px] font-bold text-[#059669]">{formatPrixRef(bestPrice)}</p>
-                        {savings.show && <p className="text-[11px] font-bold text-[#059669]">-{savings.pct}% · -{formatPrixRef(savings.abs)}</p>}
-                        {!r.actif && <p className="text-[10px] text-[#8B95A5] italic">Inactif</p>}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* CSV Import */}
-          {showImport && (
-            <div className="bg-white rounded-lg border p-5" style={{ borderColor: "#E2E8F0" }}>
-              <div className="border-2 border-dashed rounded-xl p-6 text-center" style={{ borderColor: "#CBD5E1" }}>
-                <Upload size={32} className="mx-auto mb-3 text-[#8B95A5]" />
-                <p className="text-[13px] text-[#1D2530] font-medium">Glissez un fichier CSV ou cliquez pour parcourir</p>
-                <p className="text-[11px] font-mono text-[#8B95A5] mt-2">ean;cnk;profil;pays;prix_ht;source;date</p>
-                <p className="text-[11px] text-[#8B95A5] mt-1">
-                  <Info size={10} className="inline mr-1" />
-                  Matching: EAN (1er) → CNK (2e) → Ref fabricant (3e) → SKU (4e)
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 }

@@ -297,6 +297,9 @@ const App = () => (
 
             {/* Vendor Dashboard */}
             <Route path="/vendor/login" element={<LP><VendorLoginPage /></LP>} />
+            <Route path="/vendor/stripe-onboarding" element={<LP><VendorStripeOnboardingPage /></LP>} />
+            <Route path="/vendor/stripe-onboarding/success" element={<LP><VendorStripeSuccessPage /></LP>} />
+            <Route path="/vendor/stripe-onboarding/refresh" element={<LP><VendorStripeRefreshPage /></LP>} />
             <Route path="/vendor" element={<LP><VendorLayout /></LP>}>
               <Route index element={<LP><VendorDashboard /></LP>} />
               <Route path="catalog" element={<LP><VendorCatalog /></LP>} />

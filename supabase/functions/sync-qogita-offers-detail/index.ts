@@ -390,7 +390,7 @@ async function syncOffers(
           progress_message: `${country}: pause timeout — ${i}/${total} (reprendra au prochain clic)`,
         })
         .eq("id", logId);
-      return;
+      return stats;
     }
 
     const product = products[i];

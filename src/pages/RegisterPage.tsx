@@ -37,7 +37,7 @@ export default function RegisterPage() {
 
   const handleSubmit = async () => {
     setLoading(true);
-    const { error, data: authData } = await signUp(email, password, {
+    const { error } = await signUp(email, password, {
       full_name: fullName,
       phone,
       company_name: companyName,
@@ -45,11 +45,15 @@ export default function RegisterPage() {
       country,
       sector,
     });
-    if (!error && authData?.user && profileId) {
-      await (supabase as any).from("user_profile_assignments").upsert({
-        user_id: authData.user.id,
-        profile_id: profileId,
-      });
+    if (!error && profileId) {
+      // Get the user after signup to assign profile
+      const { data: { user: newUser } } = await supabase.auth.getUser();
+      if (newUser) {
+        await (supabase as any).from("user_profile_assignments").upsert({
+          user_id: newUser.id,
+          profile_id: profileId,
+        });
+      }
     }
     setLoading(false);
     if (error) {

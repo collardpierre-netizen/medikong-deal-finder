@@ -1,8 +1,9 @@
 import { Layout } from "@/components/layout/Layout";
 import { ProductImage } from "@/components/shared/ProductCard";
 import { Users, MapPin, Package, AlertCircle, Heart, Zap, Download, Layers, Mail, Phone, Clock, List, Plus, Trash2, Eye, ShoppingCart, Search, TrendingDown, BarChart3 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { formatPrice } from "@/data/mock";
 import { useFeaturedProducts } from "@/hooks/useProducts";
 import { useFavorites, useFavoriteLists, useRecentActivity } from "@/hooks/useFavorites";

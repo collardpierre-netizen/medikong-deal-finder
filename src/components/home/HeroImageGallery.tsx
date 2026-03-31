@@ -4,10 +4,10 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 
-const fallbackImages = [
-  { id: "1", image_url: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=900&q=80", alt_text: "Fournitures médicales", link_url: null, cta_text: null },
-  { id: "2", image_url: "https://images.unsplash.com/photo-1631815588090-d4bfec5b1ccb?w=900&q=80", alt_text: "Équipement médical", link_url: null, cta_text: null },
-  { id: "3", image_url: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=900&q=80", alt_text: "Pharmacie professionnelle", link_url: null, cta_text: null },
+const fallbackImages: HeroImg[] = [
+  { id: "1", image_url: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=900&q=80", alt_text: "Fournitures médicales", link_url: null, cta_text: null, title: null, subtitle: null },
+  { id: "2", image_url: "https://images.unsplash.com/photo-1631815588090-d4bfec5b1ccb?w=900&q=80", alt_text: "Équipement médical", link_url: null, cta_text: null, title: null, subtitle: null },
+  { id: "3", image_url: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=900&q=80", alt_text: "Pharmacie professionnelle", link_url: null, cta_text: null, title: null, subtitle: null },
 ];
 
 interface HeroImg {

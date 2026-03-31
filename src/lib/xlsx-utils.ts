@@ -82,8 +82,12 @@ export async function importProducts(file: File): Promise<{ created: number; err
   for (const row of rows) {
     const r = row as any;
     if (!r.name) { errors.push("Ligne ignorée: nom manquant"); continue; }
-    const imageUrls = r.image_urls ? String(r.image_urls).split(";").map((u: string) => u.trim()).filter(Boolean) : [];
-    const { error } = await supabase.from("products").upsert({
+    const rawImageUrls = r.image_urls ?? r.image_url ?? r["Image URL"] ?? r["Image URL "] ?? r["image url"] ?? "";
+    const imageUrls = String(rawImageUrls)
+      .split(/[;\n,]+/)
+      .map((u: string) => u.trim())
+      .filter((u: string) => /^https?:\/\//i.test(u));
+    const payload: any = {
       name: r.name,
       slug: r.slug || slugify(r.name),
       gtin: r.gtin ? String(r.gtin) : null,
@@ -95,10 +99,11 @@ export async function importProducts(file: File): Promise<{ created: number; err
       short_description: r.short_description || null,
       unit_quantity: r.unit_quantity ? Number(r.unit_quantity) : 1,
       origin_country: r.origin_country || null,
-      image_urls: imageUrls.length > 0 ? imageUrls : [],
       source: r.source || "medikong",
       is_active: r.is_active === false || r.is_active === "false" ? false : true,
-    }, { onConflict: "slug" });
+    };
+    if (imageUrls.length > 0) payload.image_urls = imageUrls;
+    const { error } = await supabase.from("products").upsert(payload, { onConflict: "slug" });
     if (error) errors.push(`${r.name}: ${error.message}`);
     else created++;
   }

@@ -126,6 +126,9 @@ const AdminApiDocs = lazy(() => import("./pages/admin/AdminApiDocs"));
 const AdminCountries = lazy(() => import("./pages/admin/AdminCountries"));
 const AdminMarketCodes = lazy(() => import("./pages/admin/AdminMarketCodes"));
 const AdminExternalVendors = lazy(() => import("./pages/admin/AdminExternalVendors"));
+const AdminStripeCommissions = lazy(() => import("./pages/admin/AdminStripeCommissions"));
+const AdminStripeRevenue = lazy(() => import("./pages/admin/AdminStripeRevenue"));
+const AdminOrderRefund = lazy(() => import("./pages/admin/AdminOrderRefund"));
 
 // Vendor pages
 const VendorLoginPage = lazy(() => import("./pages/vendor/VendorLoginPage"));
@@ -143,6 +146,9 @@ const VendorLogistics = lazy(() => import("./pages/vendor/VendorLogistics"));
 const VendorHealth = lazy(() => import("./pages/vendor/VendorHealth"));
 const VendorAcademy = lazy(() => import("./pages/vendor/VendorAcademy"));
 const VendorSettings = lazy(() => import("./pages/vendor/VendorSettings"));
+const VendorStripeOnboardingPage = lazy(() => import("./pages/vendor/VendorStripeOnboardingPage"));
+const VendorStripeSuccessPage = lazy(() => import("./pages/vendor/VendorStripeSuccessPage"));
+const VendorStripeRefreshPage = lazy(() => import("./pages/vendor/VendorStripeRefreshPage"));
 const VendorMessages = lazy(() => import("./pages/vendor/VendorMessages"));
 
 const queryClient = new QueryClient({
@@ -284,10 +290,16 @@ const App = () => (
               <Route path="pays" element={<LP><AdminCountries /></LP>} />
               <Route path="market-codes" element={<LP><AdminMarketCodes /></LP>} />
               <Route path="vendeurs-externes" element={<LP><AdminExternalVendors /></LP>} />
+              <Route path="stripe-commissions" element={<LP><AdminStripeCommissions /></LP>} />
+              <Route path="stripe-revenue" element={<LP><AdminStripeRevenue /></LP>} />
+              <Route path="commandes/:orderId/refund" element={<LP><AdminOrderRefund /></LP>} />
             </Route>
 
             {/* Vendor Dashboard */}
             <Route path="/vendor/login" element={<LP><VendorLoginPage /></LP>} />
+            <Route path="/vendor/stripe-onboarding" element={<LP><VendorStripeOnboardingPage /></LP>} />
+            <Route path="/vendor/stripe-onboarding/success" element={<LP><VendorStripeSuccessPage /></LP>} />
+            <Route path="/vendor/stripe-onboarding/refresh" element={<LP><VendorStripeRefreshPage /></LP>} />
             <Route path="/vendor" element={<LP><VendorLayout /></LP>}>
               <Route index element={<LP><VendorDashboard /></LP>} />
               <Route path="catalog" element={<LP><VendorCatalog /></LP>} />

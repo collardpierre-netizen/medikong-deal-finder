@@ -1519,6 +1519,57 @@ export type Database = {
           },
         ]
       }
+      order_transfers: {
+        Row: {
+          amount: number
+          commission_amount: number
+          commission_rate: number
+          created_at: string
+          id: string
+          order_id: string
+          status: string
+          stripe_transfer_id: string | null
+          vendor_id: string
+        }
+        Insert: {
+          amount?: number
+          commission_amount?: number
+          commission_rate?: number
+          created_at?: string
+          id?: string
+          order_id: string
+          status?: string
+          stripe_transfer_id?: string | null
+          vendor_id: string
+        }
+        Update: {
+          amount?: number
+          commission_amount?: number
+          commission_rate?: number
+          created_at?: string
+          id?: string
+          order_id?: string
+          status?: string
+          stripe_transfer_id?: string | null
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_transfers_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_transfers_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orders: {
         Row: {
           admin_notes: string | null
@@ -1536,6 +1587,7 @@ export type Database = {
           shipping_address: Json
           source: Database["public"]["Enums"]["order_source"]
           status: Database["public"]["Enums"]["order_status"]
+          stripe_payment_intent_id: string | null
           subtotal_excl_vat: number
           total_cost: number | null
           total_incl_vat: number
@@ -1559,6 +1611,7 @@ export type Database = {
           shipping_address?: Json
           source?: Database["public"]["Enums"]["order_source"]
           status?: Database["public"]["Enums"]["order_status"]
+          stripe_payment_intent_id?: string | null
           subtotal_excl_vat?: number
           total_cost?: number | null
           total_incl_vat?: number
@@ -1582,6 +1635,7 @@ export type Database = {
           shipping_address?: Json
           source?: Database["public"]["Enums"]["order_source"]
           status?: Database["public"]["Enums"]["order_status"]
+          stripe_payment_intent_id?: string | null
           subtotal_excl_vat?: number
           total_cost?: number | null
           total_incl_vat?: number
@@ -2782,6 +2836,10 @@ export type Database = {
           qogita_seller_alias: string | null
           rating: number | null
           slug: string
+          stripe_account_id: string | null
+          stripe_charges_enabled: boolean
+          stripe_onboarding_complete: boolean
+          stripe_payouts_enabled: boolean
           total_sales: number
           type: Database["public"]["Enums"]["vendor_type"]
           updated_at: string
@@ -2812,6 +2870,10 @@ export type Database = {
           qogita_seller_alias?: string | null
           rating?: number | null
           slug: string
+          stripe_account_id?: string | null
+          stripe_charges_enabled?: boolean
+          stripe_onboarding_complete?: boolean
+          stripe_payouts_enabled?: boolean
           total_sales?: number
           type?: Database["public"]["Enums"]["vendor_type"]
           updated_at?: string
@@ -2842,6 +2904,10 @@ export type Database = {
           qogita_seller_alias?: string | null
           rating?: number | null
           slug?: string
+          stripe_account_id?: string | null
+          stripe_charges_enabled?: boolean
+          stripe_onboarding_complete?: boolean
+          stripe_payouts_enabled?: boolean
           total_sales?: number
           type?: Database["public"]["Enums"]["vendor_type"]
           updated_at?: string

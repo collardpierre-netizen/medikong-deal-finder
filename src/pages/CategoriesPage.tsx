@@ -43,13 +43,16 @@ export default function CategoriesPage() {
         .order("name");
       if (error) throw error;
 
-      // Get accurate product counts per category using RPC-style: query category_id with count
-      const { data: countRows } = await supabase
-        .rpc("count_products_per_category");
+      // Get accurate product counts per category using SQL function
+      const { data: rpcData } = await supabase.rpc(
+        "count_products_per_category" as any
+      );
 
       const countMap = new Map<string, number>();
-      for (const row of countRows || []) {
-        countMap.set(row.category_id, row.product_count);
+      if (rpcData && Array.isArray(rpcData)) {
+        for (const row of rpcData) {
+          countMap.set(row.category_id, Number(row.product_count));
+        }
       }
 
       return (cats || [])

@@ -556,67 +556,49 @@ export default function OnboardingPage() {
     }
   };
 
-  /* ─── OTP Screen (reusable) ─── */
+  /* ─── Email Confirmation Screen (reusable) ─── */
   const renderOtpScreen = () => (
     <div style={{ textAlign: "center" }}>
       <BackLink onClick={goBack} />
       <div style={{ width: 56, height: 56, borderRadius: "50%", background: S.blueBg, border: `2px solid ${S.blue}`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
         <Lock size={24} color={S.blue} />
       </div>
-      <h1 style={{ fontSize: 20, fontWeight: 700, color: S.text, marginBottom: 6 }}>Vérifiez votre email</h1>
-      <p style={{ fontSize: 13, color: S.sec, marginBottom: 8 }}>Un code à 6 chiffres a été envoyé à <strong>{email}</strong></p>
-      <p style={{ fontSize: 12, color: S.ter, marginBottom: 20 }}>Si l'email contient un bouton de confirmation, cliquez-le puis revenez ici pour continuer.</p>
-      <div className={otpShake ? "tf-shake" : ""} style={{ display: "flex", gap: 10, justifyContent: "center", marginBottom: 16 }} onPaste={handleOtpPaste}>
-        {otpDigits.map((d, i) => (
-          <input key={i} ref={el => { otpRefs.current[i] = el; }} type="text" inputMode="numeric" maxLength={1} value={d}
-                onChange={e => handleOtpChange(i, e.target.value)} onKeyDown={e => handleOtpKeyDown(i, e)} autoFocus={i === 0}
-                disabled={verifyingOtp || otpVerified}
-            style={{
-              width: 48, height: 56, border: `${d ? "2px" : "1px"} solid ${otpError ? S.red : d ? S.green : S.line}`,
-              borderRadius: S.radius, fontSize: 24, fontWeight: 700, textAlign: "center",
-              background: otpError ? S.redBg : d ? S.greenBg : "#fff", outline: "none", fontFamily: "'DM Sans', sans-serif",
-            }}
-            onFocus={e => { if (!otpError && !d) e.target.style.borderColor = S.blue; e.target.style.borderWidth = "2px"; e.target.style.background = S.blueBg; }}
-            onBlur={e => { if (!d) { e.target.style.borderColor = S.line; e.target.style.borderWidth = "1px"; e.target.style.background = "#fff"; } }}
-          />
-        ))}
-      </div>
-      {otpError && <p style={{ fontSize: 12, color: S.red, marginBottom: 12 }}>Code invalide. Veuillez réessayer.</p>}
-      {verifyingOtp && <p style={{ fontSize: 12, color: S.sec, marginBottom: 12 }}>Vérification du code...</p>}
-      <div style={{ fontSize: 12, color: S.ter, marginBottom: 8 }}>
-        {otpTimer > 0 ? `Renvoyer le code dans 0:${otpTimer.toString().padStart(2, "0")}` : (
-          <span>
-            <button style={{ color: S.blue, background: "none", border: "none", cursor: "pointer", fontWeight: 500, fontSize: 12 }} onClick={async () => {
-              try {
-                const { error } = await supabase.auth.resend({ type: 'signup', email });
-                if (error) throw error;
-                setOtpDigits(["", "", "", "", "", ""]);
-                setOtpError(false);
-              } catch(e) { console.error(e); }
-              setOtpTimer(59);
-            }}>Renvoyer par email</button>
-          </span>
-        )}
+      <h1 style={{ fontSize: 20, fontWeight: 700, color: S.text, marginBottom: 6 }}>Confirmez votre email</h1>
+      <p style={{ fontSize: 13, color: S.sec, marginBottom: 8 }}>Un email de confirmation a été envoyé à <strong>{email}</strong></p>
+      <div style={{ background: S.blueBg, border: `1px solid ${S.blue}20`, borderRadius: S.radius, padding: "16px 20px", marginBottom: 20, textAlign: "left" }}>
+        <p style={{ fontSize: 13, color: S.text, margin: 0, fontWeight: 600, marginBottom: 8 }}>📩 Comment continuer ?</p>
+        <ol style={{ fontSize: 12, color: S.sec, margin: 0, paddingLeft: 18, lineHeight: 1.8 }}>
+          <li>Ouvrez votre boîte mail (<strong>{email}</strong>)</li>
+          <li>Cliquez sur le bouton <strong>"Verify Email"</strong> dans l'email reçu</li>
+          <li>Revenez ici et cliquez sur le bouton ci-dessous</li>
+        </ol>
       </div>
       <button
         onClick={handleContinueAfterEmailConfirmation}
-        disabled={checkingConfirmedEmail || verifyingOtp}
+        disabled={checkingConfirmedEmail}
         style={{
-          background: "transparent",
-          border: `1px solid ${S.line}`,
-          borderRadius: S.radiusSm,
-          padding: "8px 16px",
-          fontSize: 12,
-          fontWeight: 600,
-          color: S.blue,
+          background: S.navy, border: "none", borderRadius: S.radiusSm,
+          padding: "12px 24px", fontSize: 14, fontWeight: 700, color: "#fff",
           cursor: checkingConfirmedEmail ? "default" : "pointer",
-          opacity: checkingConfirmedEmail ? 0.6 : 1,
-          marginBottom: 12,
+          opacity: checkingConfirmedEmail ? 0.6 : 1, marginBottom: 16,
+          width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
         }}
       >
-        {checkingConfirmedEmail ? "Vérification..." : "J’ai confirmé via le bouton email"}
+        {checkingConfirmedEmail ? <><Loader2 size={16} className="tf-spin" /> Vérification...</> : <><Check size={16} /> J'ai confirmé mon email</>}
       </button>
-      <p style={{ fontSize: 11, color: S.ter }}>Vérifiez aussi vos spams. Contact : <a href="mailto:support@medikong.pro" style={{ color: S.blue }}>support@medikong.pro</a></p>
+      <div style={{ fontSize: 12, color: S.ter, marginBottom: 12 }}>
+        Pas d'email reçu ?{" "}
+        {otpTimer > 0 ? `Renvoyer dans 0:${otpTimer.toString().padStart(2, "0")}` : (
+          <button style={{ color: S.blue, background: "none", border: "none", cursor: "pointer", fontWeight: 600, fontSize: 12 }} onClick={async () => {
+            try {
+              const { error } = await supabase.auth.resend({ type: 'signup', email });
+              if (error) throw error;
+            } catch(e) { console.error(e); }
+            setOtpTimer(59);
+          }}>Renvoyer l'email</button>
+        )}
+      </div>
+      <p style={{ fontSize: 11, color: S.ter }}>Pensez à vérifier vos spams. Contact : <a href="mailto:support@medikong.pro" style={{ color: S.blue }}>support@medikong.pro</a></p>
     </div>
   );
 

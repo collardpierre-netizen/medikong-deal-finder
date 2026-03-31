@@ -23,6 +23,7 @@ import { Helmet } from "react-helmet-async";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { applyMargin, formatPriceEur } from "@/lib/pricing";
+import { useMarketPrices } from "@/hooks/useMarketPrices";
 
 function formatEur(n: number): string {
   return n.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });

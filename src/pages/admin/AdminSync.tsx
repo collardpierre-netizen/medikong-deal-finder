@@ -302,7 +302,7 @@ export default function AdminSync() {
   const displayPassword = passwordDirty ? qogitaPassword : (config as any)?.qogita_password || "";
 
   // ─ Launch pipeline
-  const launchPipeline = useMutation({
+  const launchPipeline = useMutation<any, Error, { stepOnly?: string } | undefined>({
     mutationFn: async (opts?: { stepOnly?: string }) => {
       const { data, error } = await supabase.functions.invoke("run-sync-pipeline", {
         body: { country: selectedCountry, triggeredBy: "manual", ...opts },

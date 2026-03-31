@@ -290,6 +290,9 @@ const App = () => (
               <Route path="pays" element={<LP><AdminCountries /></LP>} />
               <Route path="market-codes" element={<LP><AdminMarketCodes /></LP>} />
               <Route path="vendeurs-externes" element={<LP><AdminExternalVendors /></LP>} />
+              <Route path="stripe-commissions" element={<LP><AdminStripeCommissions /></LP>} />
+              <Route path="stripe-revenue" element={<LP><AdminStripeRevenue /></LP>} />
+              <Route path="commandes/:orderId/refund" element={<LP><AdminOrderRefund /></LP>} />
             </Route>
 
             {/* Vendor Dashboard */}

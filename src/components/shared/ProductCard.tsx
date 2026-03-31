@@ -53,7 +53,6 @@ export function ProductImage({ product, className = "", selectedIndex = 0 }: { p
           onError={(e) => {
             e.currentTarget.src = "/placeholder.svg";
           }}
-          }}
         />
       </div>
     );

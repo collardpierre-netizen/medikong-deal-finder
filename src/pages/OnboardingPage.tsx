@@ -365,7 +365,7 @@ export default function OnboardingPage() {
 
     try {
       const temporaryPassword = `${crypto.randomUUID()}Aa1!`;
-      const { error: signUpError } = await supabase.auth.signUp({
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email,
         password: temporaryPassword,
         options: {
@@ -380,17 +380,24 @@ export default function OnboardingPage() {
         },
       });
 
-      if (signUpError) {
-        const msg = signUpError.message.toLowerCase();
-        const alreadyRegistered =
-          msg.includes("already registered") ||
-          msg.includes("already been registered") ||
-          msg.includes("user already exists");
+      const msg = signUpError?.message?.toLowerCase() || "";
+      const alreadyRegistered =
+        msg.includes("already registered") ||
+        msg.includes("already been registered") ||
+        msg.includes("user already exists");
 
-        if (!alreadyRegistered) {
-          throw signUpError;
-        }
+      // Supabase can obfuscate repeated signups by returning success with an empty identities array.
+      // In this case, signUp did NOT create a fresh user flow and we must explicitly resend.
+      const isRepeatedSignupObfuscated =
+        !signUpError &&
+        Array.isArray(signUpData?.user?.identities) &&
+        signUpData.user.identities.length === 0;
 
+      if (signUpError && !alreadyRegistered) {
+        throw signUpError;
+      }
+
+      if (alreadyRegistered || isRepeatedSignupObfuscated) {
         const { error: resendError } = await supabase.auth.resend({ type: "signup", email });
         if (resendError) throw resendError;
       }
@@ -440,9 +447,7 @@ export default function OnboardingPage() {
       if (error) throw error;
 
       if (!data.user) {
-        // Fallback to unblock onboarding tests when email confirmation is delayed.
-        // User will still need to confirm before final account creation.
-        goNext();
+        alert("Email non encore confirmé. Ouvrez l'email reçu puis cliquez sur \"J'ai confirmé mon email\".");
         return;
       }
 
@@ -628,23 +633,6 @@ export default function OnboardingPage() {
         }}
       >
         {checkingConfirmedEmail ? <><Loader2 size={16} className="tf-spin" /> Vérification...</> : <><Check size={16} /> J'ai confirmé mon email</>}
-      </button>
-      <button
-        onClick={goNext}
-        style={{
-          background: "transparent",
-          border: `1px solid ${S.line}`,
-          borderRadius: S.radiusSm,
-          padding: "10px 20px",
-          fontSize: 12,
-          fontWeight: 600,
-          color: S.sec,
-          cursor: "pointer",
-          marginBottom: 12,
-          width: "100%",
-        }}
-      >
-        Continuer l'onboarding (test)
       </button>
       <div style={{ fontSize: 12, color: S.ter, marginBottom: 12 }}>
         Pas d'email reçu ?{" "}

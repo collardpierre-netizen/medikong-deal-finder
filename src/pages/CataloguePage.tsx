@@ -123,6 +123,7 @@ export default function CataloguePage() {
                 imageUrl: p.image_urls?.[0] || undefined,
                 category: p.category_name || undefined,
               }))} />
+            ) : (
               <div className={view === "grid"
                 ? "grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3"
                 : "space-y-3"

@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 interface Testimonial {
   id: string;
   photo_url: string | null;
+  background_url: string | null;
   quote: string;
   name: string;
   title: string;

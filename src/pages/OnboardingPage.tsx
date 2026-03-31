@@ -215,7 +215,7 @@ export default function OnboardingPage() {
     },
   });
   const fallbackTestimonials = [
-    { gradient: "linear-gradient(135deg, #1a365d, #2d3748, #1a202c)", quote: "MediKong a transformé nos achats médicaux.", name: "Équipe MediKong", title: "Marketplace B2B", photo_url: null },
+    { gradient: "linear-gradient(135deg, #1a365d, #2d3748, #1a202c)", quote: "MediKong a transformé nos achats médicaux.", name: "Équipe MediKong", title: "Marketplace B2B", photo_url: null, background_url: null },
   ];
   const filteredTestimonials = (dbTestimonials || []).filter(
     (t: any) => t.role_visibility === "both" || t.role_visibility === role

@@ -107,6 +107,26 @@ function OfferRow({
           {hasTiers ? (
             <div className="relative pl-4">
               <div className="absolute left-[3px] top-[7px] w-px border-l border-dashed border-muted-foreground/40" style={{ height: `calc(100% - 14px)` }} />
+              {discountTiers
+                .sort((a, b) => a.mov_amount - b.mov_amount)
+                .map((tier, i) => {
+                  const basePrice = discountTiers[0].unit_price;
+                  const saving = i > 0 ? ((basePrice - tier.unit_price) / basePrice * 100).toFixed(1) : null;
+                  return (
+                    <div key={tier.id} className="flex items-center gap-2 relative" style={{ marginTop: i > 0 ? 6 : 0 }}>
+                      <div className="absolute left-[-14px] w-[7px] h-[7px] rounded-full bg-primary" />
+                      <span className={`text-sm ${i === 0 ? "font-bold text-green-700" : "text-muted-foreground"}`}>
+                        {formatEur(tier.unit_price)} €
+                      </span>
+                      <span className="text-xs text-muted-foreground">MOV {formatEur(tier.mov_amount)} €</span>
+                      {saving && <span className="text-xs text-green-600 font-medium">-{saving}%</span>}
+                    </div>
+                  );
+                })}
+            </div>
+          ) : hasLegacyTiers ? (
+            <div className="relative pl-4">
+              <div className="absolute left-[3px] top-[7px] w-px border-l border-dashed border-muted-foreground/40" style={{ height: `calc(100% - 14px)` }} />
               {tiers.map((tier: any, i: number) => (
                 <div key={i} className="flex items-center gap-2 relative" style={{ marginTop: i > 0 ? 6 : 0 }}>
                   <div className="absolute left-[-14px] w-[7px] h-[7px] rounded-full bg-primary" />

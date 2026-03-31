@@ -114,8 +114,15 @@ export default function CataloguePage() {
                 </button>
               </div>
             ) : view === "trivago" ? (
-              <SearchTrivagoView products={products} />
-            ) : (
+              <SearchTrivagoView products={products.map(p => ({
+                id: p.id, slug: p.slug, name: p.name, brand: p.brand_name || "",
+                gtin: p.gtin || "", cnk: p.cnk_code || "", ean: p.gtin || "",
+                price: p.best_price_excl_vat || 0, pub: p.best_price_incl_vat || 0,
+                pct: 0, sellers: p.offer_count || 0, rating: 0, reviews: 0,
+                best: "", unit: "", stock: p.is_in_stock, mk: p.offer_count > 0,
+                imageUrl: p.image_urls?.[0] || undefined,
+                category: p.category_name || undefined,
+              }))} />
               <div className={view === "grid"
                 ? "grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3"
                 : "space-y-3"

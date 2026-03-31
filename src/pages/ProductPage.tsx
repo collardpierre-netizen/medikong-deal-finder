@@ -894,27 +894,79 @@ export default function ProductPage() {
 
                   {/* ── Tab: Offres externes ── */}
                   <TabsContent value="external">
-                    <div className="border border-border rounded-xl p-8 text-center">
-                      <Globe size={40} className="mx-auto mb-3 text-muted-foreground/40" />
-                      <h3 className="text-base font-bold text-foreground mb-2">Offres externes</h3>
-                      <p className="text-sm text-muted-foreground max-w-md mx-auto mb-4">
-                        Aucune offre externe disponible pour le moment. Vous etes fournisseur ? Proposez votre prix.
-                      </p>
-                      <Link to="/devenir-vendeur" className="inline-block bg-primary text-primary-foreground font-semibold text-sm px-5 py-2.5 rounded-lg hover:opacity-90 transition-opacity">
-                        Devenir fournisseur
-                      </Link>
-                    </div>
+                    {externalOfferItems.length > 0 ? (
+                      <div className="space-y-3">
+                        {externalOfferItems.map((mp: any) => (
+                          <div key={mp.id} className="border border-border rounded-xl p-4 flex items-center justify-between">
+                            <div>
+                              <p className="font-medium text-sm text-foreground">{mp.market_price_sources?.name}</p>
+                              {mp.supplier_name && <p className="text-xs text-muted-foreground">{mp.supplier_name}</p>}
+                            </div>
+                            <div className="flex items-center gap-4">
+                              <span className="text-lg font-bold text-green-700">
+                                {formatEur(mp.prix_public || mp.prix_pharmacien || mp.prix_grossiste || 0)} €
+                              </span>
+                              {mp.product_url && (
+                                <a href={mp.product_url} target="_blank" rel="noopener noreferrer" className="bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity">
+                                  Voir l'offre →
+                                </a>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="border border-border rounded-xl p-8 text-center">
+                        <Globe size={40} className="mx-auto mb-3 text-muted-foreground/40" />
+                        <h3 className="text-base font-bold text-foreground mb-2">Offres externes</h3>
+                        <p className="text-sm text-muted-foreground max-w-md mx-auto mb-4">
+                          Aucune offre externe disponible pour le moment.
+                        </p>
+                        <Link to="/devenir-vendeur" className="inline-block bg-primary text-primary-foreground font-semibold text-sm px-5 py-2.5 rounded-lg hover:opacity-90 transition-opacity">
+                          Devenir fournisseur
+                        </Link>
+                      </div>
+                    )}
                   </TabsContent>
 
                   {/* ── Tab: Prix du marché ── */}
                   <TabsContent value="market">
-                    <div className="border border-border rounded-xl p-8 text-center">
-                      <BarChart3 size={40} className="mx-auto mb-3 text-muted-foreground/40" />
-                      <h3 className="text-base font-bold text-foreground mb-2">Prix du marche</h3>
-                      <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                        Veille de prix en cours de configuration. Les comparaisons de prix avec les principaux distributeurs seront bientot disponibles.
-                      </p>
-                    </div>
+                    {marketPriceItems.length > 0 ? (
+                      <div className="border border-border rounded-xl overflow-hidden">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="bg-muted/50 border-b border-border">
+                              <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground">Source</th>
+                              {mpVisMap.show_wholesale_price && <th className="text-right py-3 px-4 text-xs font-semibold text-muted-foreground">Prix grossiste</th>}
+                              {mpVisMap.show_pharmacist_price && <th className="text-right py-3 px-4 text-xs font-semibold text-muted-foreground">Prix pharmacien</th>}
+                              {mpVisMap.show_public_price && <th className="text-right py-3 px-4 text-xs font-semibold text-muted-foreground">Prix public</th>}
+                              {mpVisMap.show_tva && <th className="text-right py-3 px-4 text-xs font-semibold text-muted-foreground">TVA</th>}
+                              {mpVisMap.show_supplier_name && <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground">Fournisseur</th>}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {marketPriceItems.map((mp: any, i: number) => (
+                              <tr key={mp.id} className={`border-b border-border last:border-0 ${i % 2 === 0 ? "bg-muted/20" : ""}`}>
+                                <td className="py-3 px-4 font-medium text-foreground">{mp.market_price_sources?.name}</td>
+                                {mpVisMap.show_wholesale_price && <td className="text-right py-3 px-4 text-foreground">{mp.prix_grossiste ? `${formatEur(mp.prix_grossiste)} €` : "—"}</td>}
+                                {mpVisMap.show_pharmacist_price && <td className="text-right py-3 px-4 text-foreground">{mp.prix_pharmacien ? `${formatEur(mp.prix_pharmacien)} €` : "—"}</td>}
+                                {mpVisMap.show_public_price && <td className="text-right py-3 px-4 text-foreground">{mp.prix_public ? `${formatEur(mp.prix_public)} €` : "—"}</td>}
+                                {mpVisMap.show_tva && <td className="text-right py-3 px-4 text-muted-foreground">{mp.tva_rate ? `${(Number(mp.tva_rate) * 100).toFixed(0)}%` : "—"}</td>}
+                                {mpVisMap.show_supplier_name && <td className="py-3 px-4 text-muted-foreground">{mp.supplier_name || "—"}</td>}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <div className="border border-border rounded-xl p-8 text-center">
+                        <BarChart3 size={40} className="mx-auto mb-3 text-muted-foreground/40" />
+                        <h3 className="text-base font-bold text-foreground mb-2">Prix du marche</h3>
+                        <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                          Aucun prix de référence disponible pour ce produit.
+                        </p>
+                      </div>
+                    )}
                   </TabsContent>
                 </Tabs>
               </div>

@@ -5,7 +5,7 @@ import StatusBadge from "@/components/admin/StatusBadge";
 import VendorFormDialog from "@/components/admin/VendorFormDialog";
 import { useI18n } from "@/contexts/I18nContext";
 import { useVendors } from "@/hooks/useAdminData";
-import { Search, Filter, Download, Plus } from "lucide-react";
+import { Search, Filter, Download, Plus, ExternalLink } from "lucide-react";
 
 const AdminVendeurs = () => {
   const { t } = useI18n();
@@ -65,7 +65,7 @@ const AdminVendeurs = () => {
           <table className="w-full text-left">
             <thead>
               <tr style={{ borderBottom: "1px solid #E2E8F0", backgroundColor: "#F8FAFC" }}>
-                {["Vendeur", "Type", "Ville", "Commission", "Statut", "Inscrit"].map((h) => (
+                {["Vendeur", "Type", "Ville", "Commission", "Statut", "Inscrit", ""].map((h) => (
                   <th key={h} className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider" style={{ color: "#8B95A5" }}>{h}</th>
                 ))}
               </tr>
@@ -87,6 +87,20 @@ const AdminVendeurs = () => {
                   <td className="px-4 py-3 text-[13px]" style={{ color: "#616B7C" }}>{s.commission_rate}%</td>
                   <td className="px-4 py-3"><StatusBadge status={s.is_active ? "active" : "inactive"} /></td>
                   <td className="px-4 py-3 text-[11px]" style={{ color: "#8B95A5" }}>{new Date(s.created_at).toLocaleDateString("fr-BE")}</td>
+                  <td className="px-4 py-3">
+                    {s.slug && (
+                      <a
+                        href={`/vendeur/${s.slug}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded text-[10px] font-semibold hover:opacity-80 transition-opacity"
+                        style={{ color: "#1B5BDA", backgroundColor: "#EEF2FF" }}
+                      >
+                        <ExternalLink size={11} /> Page publique
+                      </a>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>

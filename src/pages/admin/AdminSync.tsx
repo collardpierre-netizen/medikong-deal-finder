@@ -5,13 +5,17 @@ import AdminTopBar from "@/components/admin/AdminTopBar";
 import KpiCard from "@/components/admin/KpiCard";
 import StatusBadge from "@/components/admin/StatusBadge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Progress } from "@/components/ui/progress";
 import {
   RefreshCw, Database, Tag, Package, Store, Layers, Clock, AlertTriangle,
   Play, Settings, Eye, EyeOff, CheckCircle, XCircle, Loader2, Wifi, Search, Edit3,
+  ChevronDown, ChevronUp, Zap, RotateCcw,
 } from "lucide-react";
 import { toast } from "sonner";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow, format } from "date-fns";
 import { fr } from "date-fns/locale";
+
+/* ─── Hooks ───────────────────────────────────── */
 
 const useSyncLogs = () =>
   useQuery({
@@ -38,86 +42,20 @@ const useQogitaConfig = () =>
     },
   });
 
-type SyncType = "categories" | "brands" | "products" | "offers_detail" | "offers_multi_vendor" | "recalculate";
-
-// ─── SyncProgressBar ─────────────────────────────
-function SyncProgressBar({ log }: { log: any }) {
-  const [elapsed, setElapsed] = useState(0);
-
-  useEffect(() => {
-    const start = new Date(log.started_at).getTime();
-    const tick = () => setElapsed(Math.floor((Date.now() - start) / 1000));
-    tick();
-    const interval = setInterval(tick, 1000);
-    return () => clearInterval(interval);
-  }, [log.started_at]);
-
-  const current = (log as any).progress_current || 0;
-  const total = (log as any).progress_total || 0;
-  const message = (log as any).progress_message || "Synchronisation en cours...";
-  const pct = total > 0 ? Math.min(Math.round((current / total) * 100), 100) : 0;
-
-  // Estimate remaining time
-  const speed = elapsed > 0 && current > 0 ? current / elapsed : 0;
-  const remaining = speed > 0 && total > current ? Math.round((total - current) / speed) : 0;
-
-  const formatDuration = (s: number) => {
-    if (s < 60) return `${s}s`;
-    const m = Math.floor(s / 60);
-    const sec = s % 60;
-    return `${m}m ${sec < 10 ? "0" : ""}${sec}s`;
-  };
-
-  return (
-    <div className="bg-white rounded-xl border p-5 mb-5" style={{ borderColor: "#BFDBFE" }}>
-      <div className="flex items-center gap-3 mb-3">
-        <Loader2 size={18} className="text-[#2563EB] animate-spin" />
-        <span className="text-[14px] font-bold capitalize" style={{ color: "#1E293B" }}>
-          {log.sync_type.replace("_", " ")} en cours
-        </span>
-        <span className="ml-auto text-[20px] font-bold" style={{ color: "#2563EB" }}>{pct}%</span>
-      </div>
-
-      {/* Progress bar */}
-      <div className="w-full h-3 rounded-full overflow-hidden mb-3" style={{ backgroundColor: "#EFF6FF" }}>
-        <div
-          className="h-full rounded-full transition-all duration-500 ease-out"
-          style={{
-            width: `${total > 0 ? pct : 100}%`,
-            backgroundColor: "#2563EB",
-            ...(total === 0 ? { animation: "pulse 2s ease-in-out infinite" } : {}),
-          }}
-        />
-      </div>
-
-      <div className="flex items-center justify-between text-[12px]" style={{ color: "#616B7C" }}>
-        <span>{message}</span>
-        <div className="flex gap-4">
-          <span className="flex items-center gap-1">
-            <Clock size={12} /> Durée : {formatDuration(elapsed)}
-          </span>
-          {remaining > 0 && (
-            <span>~{formatDuration(remaining)} restant</span>
-          )}
-        </div>
-      </div>
-
-      {total > 0 && (
-        <div className="mt-2 text-[11px]" style={{ color: "#8B95A5" }}>
-          {current.toLocaleString()} / {total.toLocaleString()} éléments
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── Format duration for history ─────────────────
-function formatDurationStr(seconds: number): string {
-  if (seconds < 60) return `${seconds}s`;
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return `${m}m ${s < 10 ? "0" : ""}${s}s`;
-}
+const usePipelineRuns = () =>
+  useQuery({
+    queryKey: ["pipeline-runs"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("sync_pipeline_runs" as any)
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(10);
+      if (error) throw error;
+      return data as any[];
+    },
+    refetchInterval: 5000,
+  });
 
 const useSyncCountries = () =>
   useQuery({
@@ -131,28 +69,6 @@ const useSyncCountries = () =>
         .order("display_order");
       if (error) throw error;
       return data || [];
-    },
-  });
-
-const useCountryProductCounts = () =>
-  useQuery({
-    queryKey: ["country-product-counts"],
-    queryFn: async () => {
-      // Get all active sync countries first
-      const { data: countries } = await supabase
-        .from("countries")
-        .select("code")
-        .eq("is_active", true)
-        .eq("qogita_sync_enabled", true);
-      const counts: Record<string, number> = {};
-      for (const c of (countries || [])) {
-        const { count, error } = await supabase
-          .from("product_country_stats")
-          .select("*", { count: "exact", head: true })
-          .eq("country_code", c.code);
-        if (!error) counts[c.code] = count ?? 0;
-      }
-      return counts;
     },
   });
 
@@ -184,14 +100,176 @@ const useLastSyncDates = () =>
     refetchInterval: 10000,
   });
 
+/* ─── Helpers ─────────────────────────────────── */
+
+function formatDurationStr(seconds: number): string {
+  if (seconds < 60) return `${seconds}s`;
+  if (seconds < 3600) {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}m ${s < 10 ? "0" : ""}${s}s`;
+  }
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  return `${h}h${m < 10 ? "0" : ""}${m}m`;
+}
+
+const stepIcon = (status: string) => {
+  if (status === "completed") return <CheckCircle size={16} className="text-green-600" />;
+  if (status === "running") return <Loader2 size={16} className="text-blue-600 animate-spin" />;
+  if (status === "failed") return <XCircle size={16} className="text-red-500" />;
+  if (status === "skipped") return <span className="text-[12px] text-muted-foreground">—</span>;
+  return <Clock size={16} className="text-muted-foreground" />;
+};
+
+type SyncType = "categories" | "brands" | "products" | "offers_detail" | "offers_multi_vendor" | "recalculate";
+
+/* ─── Pipeline Card ───────────────────────────── */
+
+function PipelineRunCard({ run }: { run: any }) {
+  const [expanded, setExpanded] = useState(run.status === "running");
+  const steps = (run.steps_status as any[]) || [];
+  const completedSteps = steps.filter((s: any) => s.status === "completed").length;
+  const pct = run.total_steps > 0 ? Math.round((completedSteps / run.total_steps) * 100) : 0;
+  const duration =
+    run.completed_at && run.started_at
+      ? Math.round((new Date(run.completed_at).getTime() - new Date(run.started_at).getTime()) / 1000)
+      : run.started_at
+        ? Math.round((Date.now() - new Date(run.started_at).getTime()) / 1000)
+        : 0;
+
+  const statusColor =
+    run.status === "completed" ? "text-green-700 bg-green-50" :
+    run.status === "failed" ? "text-red-700 bg-red-50" :
+    run.status === "running" ? "text-blue-700 bg-blue-50" :
+    "text-muted-foreground bg-muted";
+
+  return (
+    <div className="bg-card rounded-xl border p-4" style={{ borderColor: run.status === "running" ? "#93C5FD" : undefined }}>
+      <div className="flex items-center justify-between cursor-pointer" onClick={() => setExpanded(!expanded)}>
+        <div className="flex items-center gap-3">
+          {run.status === "running" ? (
+            <Loader2 size={18} className="text-blue-600 animate-spin" />
+          ) : run.status === "completed" ? (
+            <CheckCircle size={18} className="text-green-600" />
+          ) : run.status === "failed" ? (
+            <XCircle size={18} className="text-red-500" />
+          ) : (
+            <Clock size={18} className="text-muted-foreground" />
+          )}
+          <div>
+            <span className="text-[13px] font-bold" style={{ color: "#1E293B" }}>
+              Pipeline {run.country_code}
+            </span>
+            <span className={`ml-2 px-2 py-0.5 rounded-full text-[10px] font-semibold ${statusColor}`}>
+              {run.status}
+            </span>
+          </div>
+        </div>
+        <div className="flex items-center gap-4 text-[11px]" style={{ color: "#616B7C" }}>
+          <span>{run.triggered_by === "cron" ? "⏰ Cron" : "👤 Manuel"}</span>
+          <span>{formatDurationStr(duration)}</span>
+          <span>{format(new Date(run.created_at), "dd/MM HH:mm", { locale: fr })}</span>
+          {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+        </div>
+      </div>
+
+      {run.status === "running" && (
+        <div className="mt-3">
+          <Progress value={pct} className="h-2" />
+          <span className="text-[11px] mt-1 block" style={{ color: "#616B7C" }}>
+            Étape {completedSteps + 1}/{run.total_steps} — {pct}%
+          </span>
+        </div>
+      )}
+
+      {expanded && (
+        <div className="mt-4 space-y-2">
+          {steps.map((s: any, i: number) => (
+            <div
+              key={i}
+              className="flex items-center gap-3 px-3 py-2 rounded-lg text-[12px]"
+              style={{
+                backgroundColor: s.status === "running" ? "#EFF6FF" : s.status === "failed" ? "#FEF2F2" : "#F8FAFC",
+              }}
+            >
+              {stepIcon(s.status)}
+              <span className="font-medium flex-1" style={{ color: "#1E293B" }}>
+                {i + 1}. {s.label || s.step}
+              </span>
+              {s.stats && (
+                <span className="text-[10px] px-2 py-0.5 rounded bg-white border" style={{ color: "#616B7C" }}>
+                  {typeof s.stats === "object"
+                    ? Object.entries(s.stats)
+                        .filter(([k]) => k !== "error")
+                        .map(([k, v]) => `${k}: ${v}`)
+                        .join(" | ")
+                    : String(s.stats)}
+                </span>
+              )}
+              {s.completed_at && s.started_at && (
+                <span className="text-[10px]" style={{ color: "#8B95A5" }}>
+                  {formatDurationStr(Math.round((new Date(s.completed_at).getTime() - new Date(s.started_at).getTime()) / 1000))}
+                </span>
+              )}
+            </div>
+          ))}
+          {run.error_message && (
+            <div className="text-[11px] text-red-600 mt-2 px-3">{run.error_message}</div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── Running Sync Progress (individual) ──────── */
+
+function SyncProgressBar({ log }: { log: any }) {
+  const [elapsed, setElapsed] = useState(0);
+  useEffect(() => {
+    const start = new Date(log.started_at).getTime();
+    const tick = () => setElapsed(Math.floor((Date.now() - start) / 1000));
+    tick();
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, [log.started_at]);
+
+  const current = log.progress_current || 0;
+  const total = log.progress_total || 0;
+  const message = log.progress_message || "Synchronisation en cours...";
+  const pct = total > 0 ? Math.min(Math.round((current / total) * 100), 100) : 0;
+
+  return (
+    <div className="bg-card rounded-xl border p-4 mb-4" style={{ borderColor: "#BFDBFE" }}>
+      <div className="flex items-center gap-2 mb-2">
+        <Loader2 size={16} className="text-blue-600 animate-spin" />
+        <span className="text-[13px] font-bold capitalize" style={{ color: "#1E293B" }}>
+          {log.sync_type?.replace("_", " ")} en cours
+        </span>
+        <span className="ml-auto text-[16px] font-bold text-blue-600">{pct}%</span>
+      </div>
+      <Progress value={total > 0 ? pct : undefined} className="h-2 mb-2" />
+      <div className="flex justify-between text-[11px]" style={{ color: "#616B7C" }}>
+        <span>{message}</span>
+        <span>{formatDurationStr(elapsed)}</span>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Main Page ───────────────────────────────── */
+
 export default function AdminSync() {
   const qc = useQueryClient();
-  const { data: logs, isLoading: logsLoading } = useSyncLogs();
+  const { data: logs } = useSyncLogs();
   const { data: config } = useQogitaConfig();
+  const { data: pipelineRuns } = usePipelineRuns();
   const { data: syncCountries } = useSyncCountries();
-  const { data: countryCounts } = useCountryProductCounts();
   const { data: lastSyncDates } = useLastSyncDates();
   const [selectedCountry, setSelectedCountry] = useState("BE");
+  const [showManual, setShowManual] = useState(false);
+  const [showConfig, setShowConfig] = useState(false);
   const [showToken, setShowToken] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [runningSyncs, setRunningSyncs] = useState<Set<string>>(new Set());
@@ -200,44 +278,49 @@ export default function AdminSync() {
   const [emailDirty, setEmailDirty] = useState(false);
   const [passwordDirty, setPasswordDirty] = useState(false);
   const [testingConnection, setTestingConnection] = useState(false);
-  const [meiliSyncing, setMeiliSyncing] = useState(false);
   const [resolving, setResolving] = useState(false);
   const [creatingOffers, setCreatingOffers] = useState(false);
   const [editingLogId, setEditingLogId] = useState<string | null>(null);
 
-  // Polling for running sync progress
+  // Check for running individual sync
   const [runningLog, setRunningLog] = useState<any>(null);
-
   useEffect(() => {
-    const hasRunning = logs?.some(l => l.status === "running");
-    if (!hasRunning) {
-      setRunningLog(null);
-      return;
-    }
-
+    const hasRunning = logs?.some((l) => l.status === "running");
+    if (!hasRunning) { setRunningLog(null); return; }
     const poll = async () => {
       const { data } = await supabase
-        .from("sync_logs")
-        .select("*")
-        .eq("status", "running")
-        .order("started_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      if (data) setRunningLog(data);
-      else setRunningLog(null);
+        .from("sync_logs").select("*").eq("status", "running")
+        .order("started_at", { ascending: false }).limit(1).maybeSingle();
+      setRunningLog(data);
     };
     poll();
     const interval = setInterval(poll, 3000);
     return () => clearInterval(interval);
   }, [logs]);
 
-  // Initialize local state from config
-  const displayEmail = emailDirty ? qogitaEmail : ((config as any)?.qogita_email || "");
-  const displayPassword = passwordDirty ? qogitaPassword : ((config as any)?.qogita_password || "");
+  const displayEmail = emailDirty ? qogitaEmail : (config as any)?.qogita_email || "";
+  const displayPassword = passwordDirty ? qogitaPassword : (config as any)?.qogita_password || "";
 
+  // ─ Launch pipeline
+  const launchPipeline = useMutation<any, Error, { stepOnly?: string } | undefined>({
+    mutationFn: async (opts?: { stepOnly?: string }) => {
+      const { data, error } = await supabase.functions.invoke("run-sync-pipeline", {
+        body: { country: selectedCountry, triggeredBy: "manual", ...opts },
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      toast.success("Pipeline lancé ✅", { description: `Run ID: ${data?.runId?.slice(0, 8)}` });
+      qc.invalidateQueries({ queryKey: ["pipeline-runs"] });
+    },
+    onError: (err: any) => toast.error("Erreur pipeline", { description: err.message }),
+  });
+
+  // ─ Individual sync
   const runSync = useMutation({
     mutationFn: async (type: SyncType) => {
-      setRunningSyncs(prev => new Set(prev).add(type));
+      setRunningSyncs((prev) => new Set(prev).add(type));
       const fnMap: Record<string, string> = {
         recalculate: "recalculate-all-prices",
         offers_detail: "sync-qogita-offers-detail",
@@ -251,14 +334,12 @@ export default function AdminSync() {
       return data;
     },
     onSuccess: (data, type) => {
-      setRunningSyncs(prev => { const s = new Set(prev); s.delete(type); return s; });
-      toast.success(`Sync ${type} (${selectedCountry}) lancée`, { description: JSON.stringify(data?.stats || data) });
+      setRunningSyncs((prev) => { const s = new Set(prev); s.delete(type); return s; });
+      toast.success(`Sync ${type} lancée`);
       qc.invalidateQueries({ queryKey: ["sync-logs"] });
-      qc.invalidateQueries({ queryKey: ["qogita-config"] });
-      qc.invalidateQueries({ queryKey: ["country-product-counts"] });
     },
     onError: (err: any, type) => {
-      setRunningSyncs(prev => { const s = new Set(prev); s.delete(type); return s; });
+      setRunningSyncs((prev) => { const s = new Set(prev); s.delete(type); return s; });
       toast.error(`Erreur sync ${type}`, { description: err.message });
     },
   });
@@ -276,21 +357,10 @@ export default function AdminSync() {
     },
   });
 
-  const saveCredentials = () => {
-    const updates: any = {};
-    if (emailDirty) updates.qogita_email = qogitaEmail;
-    if (passwordDirty) updates.qogita_password = qogitaPassword;
-    if (Object.keys(updates).length > 0) {
-      updateConfig.mutate(updates);
-    }
-  };
-
   const updateLogStatus = useMutation({
     mutationFn: async ({ logId, newStatus }: { logId: string; newStatus: string }) => {
       const updates: any = { status: newStatus };
-      if (newStatus === "completed" || newStatus === "error") {
-        updates.completed_at = new Date().toISOString();
-      }
+      if (newStatus === "completed" || newStatus === "error") updates.completed_at = new Date().toISOString();
       const { error } = await supabase.from("sync_logs").update(updates).eq("id", logId);
       if (error) throw error;
     },
@@ -307,34 +377,21 @@ export default function AdminSync() {
     try {
       const email = emailDirty ? qogitaEmail : (config as any)?.qogita_email;
       const password = passwordDirty ? qogitaPassword : (config as any)?.qogita_password;
-      
-      if (!email || !password) {
-        toast.error("Email et mot de passe Qogita requis");
-        return;
-      }
-
+      if (!email || !password) { toast.error("Email et mot de passe requis"); return; }
       const baseUrl = config?.base_url || "https://api.qogita.com";
       const res = await fetch(`${baseUrl}/auth/login/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
-
-      if (!res.ok) {
-        const errText = await res.text();
-        toast.error(`Connexion échouée (${res.status})`, { description: errText.slice(0, 100) });
-        return;
-      }
-
+      if (!res.ok) { toast.error(`Connexion échouée (${res.status})`); return; }
       const data = await res.json();
       if (data.accessToken) {
-        toast.success("Connexion Qogita réussie ✅", { description: "Token obtenu avec succès" });
+        toast.success("Connexion Qogita réussie ✅");
         const updates: any = { bearer_token: data.accessToken };
         if (emailDirty) updates.qogita_email = qogitaEmail;
         if (passwordDirty) updates.qogita_password = qogitaPassword;
         updateConfig.mutate(updates);
-      } else {
-        toast.error("Réponse inattendue", { description: "Pas de accessToken dans la réponse" });
       }
     } catch (err: any) {
       toast.error("Erreur de connexion", { description: err.message });
@@ -343,13 +400,16 @@ export default function AdminSync() {
     }
   };
 
+  const activePipeline = pipelineRuns?.find((r: any) => r.status === "running");
+  const lastCompletedPipeline = pipelineRuns?.find((r: any) => r.status === "completed");
+
   const syncButtons: { type: SyncType; label: string; icon: React.ElementType; desc: string }[] = [
-    { type: "products", label: "Produits (CSV)", icon: Package, desc: "PRINCIPAL — Import CSV BE + auto-crée marques & catégories" },
-    { type: "offers_detail", label: "Offres détail", icon: Store, desc: "Enrichissement — sync offre par offre (meilleur prix)" },
-    { type: "offers_multi_vendor", label: "Offres multi-vendeurs", icon: Layers, desc: "Récupère toutes les offres vendeurs via /offers/" },
-    { type: "recalculate", label: "Recalculer prix", icon: RefreshCw, desc: "Recalcule toutes les marges" },
-    { type: "brands", label: "Marques", icon: Tag, desc: "Optionnel — re-sync marques depuis produits" },
-    { type: "categories", label: "Catégories", icon: Layers, desc: "Optionnel — re-sync catégories depuis produits" },
+    { type: "products", label: "Produits (CSV)", icon: Package, desc: "Import CSV + auto-crée marques & catégories" },
+    { type: "offers_detail", label: "Offres détail", icon: Store, desc: "Enrichissement (meilleur prix)" },
+    { type: "offers_multi_vendor", label: "Offres multi-vendeurs", icon: Layers, desc: "Toutes les offres vendeurs" },
+    { type: "recalculate", label: "Recalculer prix", icon: RefreshCw, desc: "Recalcule les marges" },
+    { type: "brands", label: "Marques", icon: Tag, desc: "Re-sync marques" },
+    { type: "categories", label: "Catégories", icon: Layers, desc: "Re-sync catégories" },
   ];
 
   const statusColor = (s: string) => {
@@ -361,9 +421,9 @@ export default function AdminSync() {
 
   return (
     <div className="space-y-6">
-      <AdminTopBar title="Synchronisation Qogita" subtitle="Gestion du catalogue et des offres Qogita" />
+      <AdminTopBar title="Synchronisation Qogita" subtitle="Pipeline automatisé & gestion du catalogue" />
 
-      {/* Running sync progress bar */}
+      {/* Running individual sync */}
       {runningLog && <SyncProgressBar log={runningLog} />}
 
       {/* KPIs */}
@@ -383,413 +443,321 @@ export default function AdminSync() {
           icon={Store}
         />
         <KpiCard
-          label="Statut sync"
-          value={config?.sync_status || "idle"}
-          icon={config?.sync_status === "error" ? AlertTriangle : CheckCircle}
+          label="Dernier pipeline"
+          value={lastCompletedPipeline
+            ? formatDistanceToNow(new Date(lastCompletedPipeline.completed_at), { addSuffix: true, locale: fr })
+            : "Jamais"}
+          icon={Zap}
         />
         <KpiCard
-          label="Mode livraison"
-          value={config?.shipping_mode === "via_warehouse" ? "Via entrepôt" : "Direct client"}
-          icon={Database}
+          label="Statut"
+          value={activePipeline ? "Pipeline en cours" : config?.sync_status || "idle"}
+          icon={activePipeline ? Loader2 : CheckCircle}
         />
       </div>
 
-      {/* Sync Actions */}
-      <div className="bg-white rounded-xl border p-5" style={{ borderColor: "#E2E8F0" }}>
-        <h3 className="text-[15px] font-bold mb-4" style={{ color: "#1E293B" }}>Actions de synchronisation</h3>
-
-        {/* Country selector */}
-        <div className="flex items-center gap-3 mb-4 p-3 rounded-lg" style={{ backgroundColor: "#F8FAFC", borderColor: "#E2E8F0" }}>
-          <span className="text-[12px] font-semibold" style={{ color: "#616B7C" }}>Pays cible :</span>
-          <Select value={selectedCountry} onValueChange={setSelectedCountry}>
-            <SelectTrigger className="w-[200px] h-9 text-[13px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {(syncCountries || []).map((c: any) => (
-                <SelectItem key={c.code} value={c.code}>
-                  <span className="flex items-center gap-2">
-                    <span>{c.flag_emoji}</span>
-                    <span>{c.name}</span>
-                    {countryCounts?.[c.code] != null && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ backgroundColor: "#EFF6FF", color: "#2563EB" }}>
-                        {(countryCounts[c.code] || 0).toLocaleString("fr-BE")}
-                      </span>
-                    )}
-                  </span>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {countryCounts?.[selectedCountry] != null && (
-            <span className="text-[11px] px-2 py-1 rounded-md font-medium" style={{ backgroundColor: "#EFF6FF", color: "#2563EB" }}>
-              {(countryCounts[selectedCountry] || 0).toLocaleString("fr-BE")} produits importés
-            </span>
-          )}
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-          {syncButtons.map(({ type, label, icon: Icon, desc }) => {
-            const isRunning = runningSyncs.has(type);
-            return (
-              <button
-                key={type}
-                onClick={() => runSync.mutate(type)}
-                disabled={isRunning}
-                className="flex flex-col items-start gap-2 p-4 border rounded-lg text-left transition-all hover:border-[#1B5BDA] hover:bg-[#EFF6FF] disabled:opacity-50"
-                style={{ borderColor: "#E2E8F0" }}
-              >
-                <div className="flex items-center gap-2">
-                  {isRunning ? <Loader2 size={16} className="text-[#1B5BDA] animate-spin" /> : <Icon size={16} className="text-[#1B5BDA]" />}
-                  <span className="text-[13px] font-semibold" style={{ color: "#1E293B" }}>{label}</span>
-                </div>
-                <span className="text-[11px]" style={{ color: "#8B95A5" }}>{desc}</span>
-                {isRunning && <span className="text-[11px] text-[#1B5BDA] font-medium">En cours...</span>}
-              </button>
-            );
-          })}
-      </div>
-
-      {/* Meilisearch Sync */}
-      <div className="bg-white rounded-xl border p-5" style={{ borderColor: "#E2E8F0" }}>
-        <h3 className="text-[15px] font-bold mb-3" style={{ color: "#1E293B" }}>
-          <Search size={16} className="inline mr-2" />Meilisearch — Moteur de recherche
-        </h3>
-        <p className="text-[12px] mb-4" style={{ color: "#8B95A5" }}>
-          Synchronise les produits, marques et catégories vers Meilisearch pour la recherche instantanée.
-        </p>
-        <div className="relative group inline-block mb-3">
-          <button
-            disabled
-            className="flex items-center gap-2 px-4 py-2.5 bg-muted text-muted-foreground rounded-lg text-[13px] font-semibold opacity-50 cursor-not-allowed"
-          >
-            <RefreshCw size={14} />
-            Sync complète Meilisearch
-          </button>
-          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-50">
-            <div className="bg-foreground text-background text-[11px] px-3 py-1.5 rounded-md whitespace-nowrap shadow-lg">
-              Instance Meilisearch non configurée
-            </div>
+      {/* ═══════ PIPELINE SECTION ═══════ */}
+      <div className="bg-card rounded-xl border p-6" style={{ borderColor: "#E2E8F0" }}>
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <h3 className="text-[16px] font-bold flex items-center gap-2" style={{ color: "#1E293B" }}>
+              <Zap size={18} className="text-blue-600" />
+              Pipeline de synchronisation
+            </h3>
+            <p className="text-[12px] mt-1" style={{ color: "#616B7C" }}>
+              Exécute les 6 étapes dans l'ordre : CSV → Marques → Enrichissement → Offres → Prix → Recherche
+            </p>
           </div>
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <button
-            onClick={async () => {
-              setResolving(true);
-              try {
-                await supabase.rpc("resolve_product_brands");
-                await supabase.rpc("resolve_product_categories");
-                await supabase.rpc("update_brand_product_counts");
-                toast.success("Liens résolus ✅", { description: "brand_id, category_id et compteurs mis à jour" });
-              } catch (err: any) {
-                toast.error("Erreur résolution", { description: err.message });
-              } finally {
-                setResolving(false);
-              }
-            }}
-            disabled={resolving}
-            className="flex items-center gap-2 px-4 py-2.5 border rounded-lg text-[13px] font-semibold disabled:opacity-50 hover:bg-[#F8FAFC] transition-colors"
-            style={{ borderColor: "#E2E8F0", color: "#1E293B" }}
-          >
-            {resolving ? <Loader2 size={14} className="animate-spin" /> : <Database size={14} />}
-            {resolving ? "Résolution en cours..." : "Résoudre liens manquants"}
-          </button>
-
-          <button
-            onClick={async () => {
-              setCreatingOffers(true);
-              try {
-                const BATCH_SIZE = 500;
-                let offset = 0;
-                let totalCreated = 0;
-                let hasMore = true;
-
-                // Find or create the virtual Qogita vendor
-                const { data: vendor, error: vendorErr } = await supabase
-                  .from("vendors")
-                  .select("id")
-                  .eq("slug", "qogita-best-price")
-                  .maybeSingle();
-                if (vendorErr) throw vendorErr;
-
-                let vendorId = vendor?.id;
-                if (!vendorId) {
-                  const { data: newVendor, error: createErr } = await supabase
-                    .from("vendors")
-                    .insert({
-                      name: "Qogita - Meilleur prix",
-                      slug: "qogita-best-price",
-                      type: "qogita_virtual" as any,
-                      is_active: true,
-                      is_verified: true,
-                      auto_forward_to_qogita: true,
-                      can_manage_offers: false,
-                      country_code: selectedCountry,
-                      commission_rate: 0,
-                      description: "Meilleur prix agrégé Qogita",
-                    })
-                    .select("id")
-                    .single();
-                  if (createErr) throw createErr;
-                  vendorId = newVendor.id;
-                }
-
-                const vatRate = 21;
-
-                while (hasMore) {
-                  const { data: products, error: fetchErr } = await supabase
-                    .from("products")
-                    .select("id, best_price_excl_vat, best_price_incl_vat, total_stock, min_delivery_days")
-                    .eq("is_active", true)
-                    .gt("best_price_excl_vat", 0)
-                    .range(offset, offset + BATCH_SIZE - 1);
-
-                  if (fetchErr) { console.error("Batch read error:", fetchErr); break; }
-                  if (!products || products.length === 0) { hasMore = false; break; }
-
-                  const offers = products.map(p => ({
-                    product_id: p.id,
-                    vendor_id: vendorId!,
-                    country_code: selectedCountry,
-                    qogita_base_price: p.best_price_excl_vat || 0,
-                    qogita_base_delay_days: p.min_delivery_days || 3,
-                    is_qogita_backed: true,
-                    price_excl_vat: p.best_price_excl_vat || 0,
-                    price_incl_vat: p.best_price_incl_vat || Math.round((p.best_price_excl_vat || 0) * (1 + vatRate / 100) * 100) / 100,
-                    vat_rate: vatRate,
-                    moq: 1,
-                    stock_quantity: p.total_stock || 0,
-                    stock_status: (p.total_stock || 0) > 0 ? "in_stock" as const : "out_of_stock" as const,
-                    delivery_days: p.min_delivery_days || 3,
-                    shipping_from_country: selectedCountry,
-                    is_active: true,
-                    synced_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString(),
-                  }));
-
-                  const { error: upsertErr } = await supabase
-                    .from("offers")
-                    .upsert(offers as any, { onConflict: "product_id,vendor_id,country_code" });
-
-                  if (upsertErr) { console.error(`Batch offset ${offset}:`, upsertErr); }
-
-                  totalCreated += products.length;
-                  offset += BATCH_SIZE;
-
-                  // Update button text via state
-                  setCreatingOffers(true); // keep spinner
-                  toast.loading(`Offres : ${totalCreated.toLocaleString("fr-BE")} traitées...`, { id: "offer-progress" });
-
-                  if (products.length < BATCH_SIZE) hasMore = false;
-                  await new Promise(r => setTimeout(r, 50));
-                }
-
-                toast.dismiss("offer-progress");
-                toast.success("Offres créées ✅", { description: `${totalCreated.toLocaleString("fr-BE")} offres générées par batchs de ${BATCH_SIZE}` });
-                qc.invalidateQueries({ queryKey: ["sync-logs"] });
-              } catch (err: any) {
-                toast.dismiss("offer-progress");
-                toast.error("Erreur création offres", { description: err.message });
-              } finally {
-                setCreatingOffers(false);
-              }
-            }}
-            disabled={creatingOffers}
-            className="flex items-center gap-2 px-4 py-2.5 border rounded-lg text-[13px] font-semibold disabled:opacity-50 hover:bg-[#F8FAFC] transition-colors"
-            style={{ borderColor: "#E2E8F0", color: "#1E293B" }}
-          >
-            {creatingOffers ? <Loader2 size={14} className="animate-spin" /> : <Store size={14} />}
-            {creatingOffers ? "Création en cours..." : "Créer offres depuis produits"}
-          </button>
-        </div>
-      </div>
-      </div>
-
-      {/* Configuration */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        {/* Qogita Config */}
-        <div className="bg-white rounded-xl border p-5" style={{ borderColor: "#E2E8F0" }}>
-          <h3 className="text-[15px] font-bold mb-4" style={{ color: "#1E293B" }}>
-            <Settings size={16} className="inline mr-2" />Configuration Qogita
-          </h3>
-          <div className="space-y-3">
-            <div>
-              <label className="text-[11px] font-medium block mb-1" style={{ color: "#616B7C" }}>Email Qogita</label>
-              <input
-                type="email"
-                value={displayEmail}
-                onChange={(e) => { setQogitaEmail(e.target.value); setEmailDirty(true); }}
-                placeholder="votre-email@example.com"
-                className="w-full text-[12px] border rounded-md px-3 py-2 focus:border-[#1B5BDA] focus:outline-none focus:ring-1 focus:ring-[#1B5BDA]"
-                style={{ borderColor: "#E2E8F0" }}
-              />
-            </div>
-
-            <div>
-              <label className="text-[11px] font-medium block mb-1" style={{ color: "#616B7C" }}>Mot de passe Qogita</label>
-              <div className="flex gap-2">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  value={displayPassword}
-                  onChange={(e) => { setQogitaPassword(e.target.value); setPasswordDirty(true); }}
-                  placeholder="••••••••"
-                  className="flex-1 text-[12px] border rounded-md px-3 py-2 focus:border-[#1B5BDA] focus:outline-none focus:ring-1 focus:ring-[#1B5BDA]"
-                  style={{ borderColor: "#E2E8F0" }}
-                />
-                <button onClick={() => setShowPassword(!showPassword)} className="p-2 border rounded-md hover:bg-[#F8FAFC]" style={{ borderColor: "#E2E8F0" }}>
-                  {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
-                </button>
-              </div>
-            </div>
-
-            <div className="flex gap-2 pt-1">
-              <button
-                onClick={saveCredentials}
-                disabled={!emailDirty && !passwordDirty}
-                className="flex-1 px-3 py-2 bg-[#1B5BDA] text-white rounded-md text-[12px] font-semibold disabled:opacity-40 hover:bg-[#1549B5] transition-colors"
-              >
-                Sauvegarder
-              </button>
-              <button
-                onClick={testConnection}
-                disabled={testingConnection}
-                className="flex items-center gap-1.5 px-3 py-2 border rounded-md text-[12px] font-semibold hover:bg-[#EFF6FF] hover:border-[#1B5BDA] transition-colors disabled:opacity-50"
-                style={{ borderColor: "#E2E8F0", color: "#1B5BDA" }}
-              >
-                {testingConnection ? <Loader2 size={13} className="animate-spin" /> : <Wifi size={13} />}
-                Tester la connexion
-              </button>
-            </div>
-
-            <div className="pt-2 border-t" style={{ borderColor: "#F1F5F9" }}>
-              <label className="text-[11px] font-medium block mb-1" style={{ color: "#8B95A5" }}>
-                Bearer Token (auto-généré)
-              </label>
-              <div className="flex gap-2">
-                <input
-                  type={showToken ? "text" : "password"}
-                  value={config?.bearer_token || "Aucun token — testez la connexion"}
-                  readOnly
-                  className="flex-1 text-[11px] border rounded-md px-3 py-2 bg-[#F8FAFC]"
-                  style={{ borderColor: "#E2E8F0", color: "#8B95A5" }}
-                />
-                <button onClick={() => setShowToken(!showToken)} className="p-2 border rounded-md hover:bg-[#F8FAFC]" style={{ borderColor: "#E2E8F0" }}>
-                  {showToken ? <EyeOff size={14} /> : <Eye size={14} />}
-                </button>
-              </div>
-            </div>
-
-            <div>
-              <label className="text-[11px] font-medium block mb-1" style={{ color: "#616B7C" }}>URL de base</label>
-              <input
-                type="text"
-                value={config?.base_url || ""}
-                readOnly
-                className="w-full text-[12px] border rounded-md px-3 py-2 bg-[#F8FAFC]"
-                style={{ borderColor: "#E2E8F0" }}
-              />
-            </div>
-            <div>
-              <label className="text-[11px] font-medium block mb-1" style={{ color: "#616B7C" }}>Pays par défaut</label>
-              <input
-                type="text"
-                value={config?.default_country || "BE"}
-                readOnly
-                className="w-full text-[12px] border rounded-md px-3 py-2 bg-[#F8FAFC]"
-                style={{ borderColor: "#E2E8F0" }}
-              />
-            </div>
-            <div className="flex items-center justify-between pt-2">
-              <span className="text-[12px] font-medium" style={{ color: "#616B7C" }}>Sync automatique</span>
-              <button
-                onClick={() => updateConfig.mutate({ sync_enabled: !config?.sync_enabled })}
-                className={`px-3 py-1.5 rounded-md text-[11px] font-semibold ${
-                  config?.sync_enabled ? "bg-green-50 text-green-700" : "bg-red-50 text-red-600"
-                }`}
-              >
-                {config?.sync_enabled ? "Activé" : "Désactivé"}
-              </button>
-            </div>
+          <div className="flex items-center gap-3">
+            <Select value={selectedCountry} onValueChange={setSelectedCountry}>
+              <SelectTrigger className="w-[140px] h-9 text-[13px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {(syncCountries || []).map((c: any) => (
+                  <SelectItem key={c.code} value={c.code}>
+                    {c.flag_emoji} {c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <button
+              onClick={() => launchPipeline.mutate(undefined)}
+              disabled={launchPipeline.isPending || !!activePipeline}
+              className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg text-[13px] font-semibold hover:bg-blue-700 disabled:opacity-50 transition-colors"
+            >
+              {launchPipeline.isPending || activePipeline ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : (
+                <Play size={16} />
+              )}
+              {activePipeline ? "Pipeline en cours..." : "Lancer pipeline complet"}
+            </button>
           </div>
         </div>
 
-        {/* Shipping Mode */}
-        <div className="bg-white rounded-xl border p-5" style={{ borderColor: "#E2E8F0" }}>
-          <h3 className="text-[15px] font-bold mb-4" style={{ color: "#1E293B" }}>Mode de livraison Qogita</h3>
-          <div className="space-y-3">
-            <div className="flex gap-3">
-              {(["direct_to_customer", "via_warehouse"] as const).map(mode => (
-                <button
-                  key={mode}
-                  onClick={() => updateConfig.mutate({ shipping_mode: mode })}
-                  className={`flex-1 p-3 border rounded-lg text-[12px] font-medium transition-all ${
-                    config?.shipping_mode === mode ? "border-[#1B5BDA] bg-[#EFF6FF] text-[#1B5BDA]" : ""
-                  }`}
-                  style={config?.shipping_mode !== mode ? { borderColor: "#E2E8F0", color: "#616B7C" } : {}}
-                >
-                  {mode === "direct_to_customer" ? "Direct client" : "Via entrepôt MediKong"}
-                </button>
+        {/* Active pipeline */}
+        {activePipeline && <PipelineRunCard run={activePipeline} />}
+
+        {/* Pipeline history */}
+        <div className="mt-4">
+          <h4 className="text-[13px] font-semibold mb-3" style={{ color: "#1E293B" }}>
+            Historique des exécutions
+          </h4>
+          <div className="space-y-2">
+            {(pipelineRuns || [])
+              .filter((r: any) => r.id !== activePipeline?.id)
+              .slice(0, 5)
+              .map((run: any) => (
+                <PipelineRunCard key={run.id} run={run} />
               ))}
-            </div>
-            {config?.shipping_mode === "via_warehouse" && (
-              <div className="space-y-2 pt-2 border-t" style={{ borderColor: "#F1F5F9" }}>
-                <p className="text-[11px] font-semibold" style={{ color: "#616B7C" }}>Adresse entrepôt</p>
-                <div className="text-[12px]" style={{ color: "#1E293B" }}>
-                  {config?.warehouse_address_line1 || "Non configurée"}<br />
-                  {config?.warehouse_postal_code} {config?.warehouse_city}<br />
-                  {config?.warehouse_country_code}
-                </div>
-                <p className="text-[11px]" style={{ color: "#616B7C" }}>
-                  Contact : {config?.warehouse_contact_name || "—"} / {config?.warehouse_contact_phone || "—"}
-                </p>
-              </div>
+            {(!pipelineRuns || pipelineRuns.length === 0) && (
+              <p className="text-[12px] text-center py-4" style={{ color: "#8B95A5" }}>
+                Aucune exécution de pipeline
+              </p>
             )}
           </div>
         </div>
       </div>
 
-      {/* Sync History */}
-      <div className="bg-white rounded-xl border" style={{ borderColor: "#E2E8F0" }}>
+      {/* ═══════ MANUAL ACTIONS (collapsible) ═══════ */}
+      <div className="bg-card rounded-xl border" style={{ borderColor: "#E2E8F0" }}>
+        <button
+          onClick={() => setShowManual(!showManual)}
+          className="w-full px-5 py-4 flex items-center justify-between hover:bg-muted/50 transition-colors rounded-xl"
+        >
+          <h3 className="text-[14px] font-bold flex items-center gap-2" style={{ color: "#1E293B" }}>
+            <Settings size={16} />
+            Actions manuelles (avancé)
+          </h3>
+          {showManual ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+        </button>
+
+        {showManual && (
+          <div className="px-5 pb-5 space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {syncButtons.map(({ type, label, icon: Icon, desc }) => {
+                const isRunning = runningSyncs.has(type);
+                return (
+                  <button
+                    key={type}
+                    onClick={() => runSync.mutate(type)}
+                    disabled={isRunning}
+                    className="flex flex-col items-start gap-2 p-4 border rounded-lg text-left transition-all hover:border-blue-500 hover:bg-blue-50 disabled:opacity-50"
+                    style={{ borderColor: "#E2E8F0" }}
+                  >
+                    <div className="flex items-center gap-2">
+                      {isRunning ? <Loader2 size={14} className="text-blue-600 animate-spin" /> : <Icon size={14} className="text-blue-600" />}
+                      <span className="text-[13px] font-semibold" style={{ color: "#1E293B" }}>{label}</span>
+                    </div>
+                    <span className="text-[11px]" style={{ color: "#8B95A5" }}>{desc}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Utility buttons */}
+            <div className="flex flex-wrap gap-3 pt-2 border-t" style={{ borderColor: "#F1F5F9" }}>
+              <button
+                onClick={async () => {
+                  setResolving(true);
+                  try {
+                    await supabase.rpc("resolve_product_brands");
+                    await supabase.rpc("resolve_product_categories");
+                    await supabase.rpc("update_brand_product_counts");
+                    toast.success("Liens résolus ✅");
+                  } catch (err: any) {
+                    toast.error("Erreur résolution", { description: err.message });
+                  } finally {
+                    setResolving(false);
+                  }
+                }}
+                disabled={resolving}
+                className="flex items-center gap-2 px-4 py-2.5 border rounded-lg text-[13px] font-semibold disabled:opacity-50 hover:bg-muted/50 transition-colors"
+                style={{ borderColor: "#E2E8F0", color: "#1E293B" }}
+              >
+                {resolving ? <Loader2 size={14} className="animate-spin" /> : <Database size={14} />}
+                Résoudre liens manquants
+              </button>
+
+              <button
+                onClick={async () => {
+                  setCreatingOffers(true);
+                  try {
+                    const { data, error } = await supabase.rpc("create_offers_from_products", { _country_code: selectedCountry });
+                    if (error) throw error;
+                    toast.success("Offres créées ✅", { description: `${(data as any)?.offers_upserted || 0} offres` });
+                    qc.invalidateQueries({ queryKey: ["sync-logs"] });
+                  } catch (err: any) {
+                    toast.error("Erreur", { description: err.message });
+                  } finally {
+                    setCreatingOffers(false);
+                  }
+                }}
+                disabled={creatingOffers}
+                className="flex items-center gap-2 px-4 py-2.5 border rounded-lg text-[13px] font-semibold disabled:opacity-50 hover:bg-muted/50 transition-colors"
+                style={{ borderColor: "#E2E8F0", color: "#1E293B" }}
+              >
+                {creatingOffers ? <Loader2 size={14} className="animate-spin" /> : <Store size={14} />}
+                Créer offres depuis produits
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ═══════ CONFIGURATION (collapsible) ═══════ */}
+      <div className="bg-card rounded-xl border" style={{ borderColor: "#E2E8F0" }}>
+        <button
+          onClick={() => setShowConfig(!showConfig)}
+          className="w-full px-5 py-4 flex items-center justify-between hover:bg-muted/50 transition-colors rounded-xl"
+        >
+          <h3 className="text-[14px] font-bold flex items-center gap-2" style={{ color: "#1E293B" }}>
+            <Wifi size={16} />
+            Configuration Qogita
+          </h3>
+          {showConfig ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+        </button>
+
+        {showConfig && (
+          <div className="px-5 pb-5">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              {/* Credentials */}
+              <div className="space-y-3">
+                <div>
+                  <label className="text-[11px] font-medium block mb-1" style={{ color: "#616B7C" }}>Email Qogita</label>
+                  <input
+                    type="email"
+                    value={displayEmail}
+                    onChange={(e) => { setQogitaEmail(e.target.value); setEmailDirty(true); }}
+                    placeholder="votre-email@example.com"
+                    className="w-full text-[12px] border rounded-md px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    style={{ borderColor: "#E2E8F0" }}
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] font-medium block mb-1" style={{ color: "#616B7C" }}>Mot de passe Qogita</label>
+                  <div className="flex gap-2">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      value={displayPassword}
+                      onChange={(e) => { setQogitaPassword(e.target.value); setPasswordDirty(true); }}
+                      className="flex-1 text-[12px] border rounded-md px-3 py-2 focus:border-blue-500 focus:outline-none"
+                      style={{ borderColor: "#E2E8F0" }}
+                    />
+                    <button onClick={() => setShowPassword(!showPassword)} className="p-2 border rounded-md hover:bg-muted/50" style={{ borderColor: "#E2E8F0" }}>
+                      {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                    </button>
+                  </div>
+                </div>
+                <div className="flex gap-2 pt-1">
+                  <button
+                    onClick={() => {
+                      const updates: any = {};
+                      if (emailDirty) updates.qogita_email = qogitaEmail;
+                      if (passwordDirty) updates.qogita_password = qogitaPassword;
+                      if (Object.keys(updates).length > 0) updateConfig.mutate(updates);
+                    }}
+                    disabled={!emailDirty && !passwordDirty}
+                    className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-md text-[12px] font-semibold disabled:opacity-40 hover:bg-blue-700"
+                  >
+                    Sauvegarder
+                  </button>
+                  <button
+                    onClick={testConnection}
+                    disabled={testingConnection}
+                    className="flex items-center gap-1.5 px-3 py-2 border rounded-md text-[12px] font-semibold hover:bg-blue-50 hover:border-blue-500 transition-colors disabled:opacity-50"
+                    style={{ borderColor: "#E2E8F0", color: "#1B5BDA" }}
+                  >
+                    {testingConnection ? <Loader2 size={13} className="animate-spin" /> : <Wifi size={13} />}
+                    Tester
+                  </button>
+                </div>
+                <div className="pt-2 border-t" style={{ borderColor: "#F1F5F9" }}>
+                  <label className="text-[11px] font-medium block mb-1" style={{ color: "#8B95A5" }}>Bearer Token</label>
+                  <div className="flex gap-2">
+                    <input
+                      type={showToken ? "text" : "password"}
+                      value={config?.bearer_token || "Aucun token"}
+                      readOnly
+                      className="flex-1 text-[11px] border rounded-md px-3 py-2 bg-muted"
+                      style={{ borderColor: "#E2E8F0", color: "#8B95A5" }}
+                    />
+                    <button onClick={() => setShowToken(!showToken)} className="p-2 border rounded-md hover:bg-muted/50" style={{ borderColor: "#E2E8F0" }}>
+                      {showToken ? <EyeOff size={14} /> : <Eye size={14} />}
+                    </button>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between pt-2">
+                  <span className="text-[12px] font-medium" style={{ color: "#616B7C" }}>Sync automatique</span>
+                  <button
+                    onClick={() => updateConfig.mutate({ sync_enabled: !config?.sync_enabled })}
+                    className={`px-3 py-1.5 rounded-md text-[11px] font-semibold ${
+                      config?.sync_enabled ? "bg-green-50 text-green-700" : "bg-red-50 text-red-600"
+                    }`}
+                  >
+                    {config?.sync_enabled ? "Activé" : "Désactivé"}
+                  </button>
+                </div>
+              </div>
+
+              {/* Shipping mode */}
+              <div className="space-y-3">
+                <h4 className="text-[13px] font-semibold" style={{ color: "#1E293B" }}>Mode de livraison</h4>
+                <div className="flex gap-3">
+                  {(["direct_to_customer", "via_warehouse"] as const).map((mode) => (
+                    <button
+                      key={mode}
+                      onClick={() => updateConfig.mutate({ shipping_mode: mode })}
+                      className={`flex-1 p-3 border rounded-lg text-[12px] font-medium transition-all ${
+                        config?.shipping_mode === mode ? "border-blue-500 bg-blue-50 text-blue-600" : ""
+                      }`}
+                      style={config?.shipping_mode !== mode ? { borderColor: "#E2E8F0", color: "#616B7C" } : {}}
+                    >
+                      {mode === "direct_to_customer" ? "Direct client" : "Via entrepôt"}
+                    </button>
+                  ))}
+                </div>
+                {config?.shipping_mode === "via_warehouse" && (
+                  <div className="text-[12px] space-y-1 pt-2 border-t" style={{ borderColor: "#F1F5F9", color: "#616B7C" }}>
+                    <p>{config?.warehouse_address_line1 || "Non configurée"}</p>
+                    <p>{config?.warehouse_postal_code} {config?.warehouse_city}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ═══════ SYNC HISTORY ═══════ */}
+      <div className="bg-card rounded-xl border" style={{ borderColor: "#E2E8F0" }}>
         <div className="px-5 py-3 border-b flex items-center justify-between" style={{ borderColor: "#F1F5F9" }}>
-          <h3 className="text-[14px] font-bold" style={{ color: "#1E293B" }}>Historique des synchronisations</h3>
+          <h3 className="text-[14px] font-bold" style={{ color: "#1E293B" }}>Historique des synchronisations individuelles</h3>
           <span className="text-[11px]" style={{ color: "#8B95A5" }}>{logs?.length || 0} entrées</span>
         </div>
-
-        {logsLoading ? (
-          <div className="p-8 text-center text-[13px]" style={{ color: "#8B95A5" }}>Chargement...</div>
-        ) : !logs?.length ? (
+        {!logs?.length ? (
           <div className="p-8 text-center text-[13px]" style={{ color: "#8B95A5" }}>Aucune synchronisation</div>
         ) : (
           <div className="divide-y" style={{ borderColor: "#F1F5F9" }}>
-            {/* Header */}
             <div className="hidden sm:grid grid-cols-7 gap-2 px-5 py-2 text-[11px] font-semibold" style={{ color: "#8B95A5", backgroundColor: "#F8FAFC" }}>
-              <span>Type</span>
-              <span>Statut</span>
-              <span>Début</span>
-              <span>Durée</span>
-              <span className="col-span-2">Détails</span>
-              <span>Actions</span>
+              <span>Type</span><span>Statut</span><span>Début</span><span>Durée</span><span className="col-span-2">Détails</span><span>Actions</span>
             </div>
-            {logs.map(log => {
+            {logs.map((log) => {
               const duration = log.completed_at && log.started_at
                 ? Math.round((new Date(log.completed_at).getTime() - new Date(log.started_at).getTime()) / 1000)
                 : null;
               const stats = (log.stats as any) || {};
               const isRunning = log.status === "running";
-              const progressMsg = (log as any).progress_message;
-              const progressCurrent = (log as any).progress_current || 0;
-              const progressTotal = (log as any).progress_total || 0;
-              const pct = progressTotal > 0 ? Math.round((progressCurrent / progressTotal) * 100) : 0;
-
               return (
-                <div key={log.id} className="grid grid-cols-1 sm:grid-cols-7 gap-2 px-5 py-3 items-center hover:bg-[#F8FAFC]">
+                <div key={log.id} className="grid grid-cols-1 sm:grid-cols-7 gap-2 px-5 py-3 items-center hover:bg-muted/30">
                   <span className="text-[12px] font-medium capitalize flex items-center gap-1.5" style={{ color: "#1E293B" }}>
-                    {isRunning && <Loader2 size={12} className="text-[#2563EB] animate-spin" />}
-                    {log.sync_type.replace("_", " ")}
+                    {isRunning && <Loader2 size={12} className="text-blue-600 animate-spin" />}
+                    {log.sync_type?.replace("_", " ")}
                   </span>
                   <StatusBadge
                     status={statusColor(log.status)}
-                    label={log.status === "completed" ? "OK" : log.status === "error" ? "Erreur" : log.status === "partial" ? "Partiel" : log.status}
+                    label={log.status === "completed" ? "OK" : log.status === "error" ? "Erreur" : log.status}
                   />
                   <span className="text-[11px]" style={{ color: "#616B7C" }}>
                     {formatDistanceToNow(new Date(log.started_at), { addSuffix: true, locale: fr })}
@@ -798,41 +766,20 @@ export default function AdminSync() {
                     {duration !== null ? formatDurationStr(duration) : isRunning ? "En cours..." : "—"}
                   </span>
                   <div className="col-span-2 text-[11px]" style={{ color: "#616B7C" }}>
-                    {isRunning && progressTotal > 0 ? (
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: "#EFF6FF" }}>
-                            <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: "#2563EB" }} />
-                          </div>
-                          <span className="text-[10px] font-semibold" style={{ color: "#2563EB" }}>{pct}%</span>
-                        </div>
-                        {progressMsg && <span className="text-[10px]">{progressMsg}</span>}
-                      </div>
-                    ) : (
-                      <div className="flex flex-wrap gap-1.5">
-                        {Object.entries(stats).map(([k, v]) => (
-                          <span key={k} className="bg-[#F1F5F9] px-2 py-0.5 rounded text-[10px]">
-                            {k}: <strong>{String(v)}</strong>
-                          </span>
-                        ))}
-                        {log.error_message && (
-                          <span className="text-red-500 text-[10px]">{log.error_message.slice(0, 80)}</span>
-                        )}
-                        {duration !== null && Object.keys(stats).length > 0 && (
-                          <span className="bg-[#EFF6FF] text-[#2563EB] px-2 py-0.5 rounded text-[10px] font-medium">
-                            durée: {formatDurationStr(duration)}
-                          </span>
-                        )}
-                      </div>
-                    )}
+                    <div className="flex flex-wrap gap-1.5">
+                      {Object.entries(stats).map(([k, v]) => (
+                        <span key={k} className="bg-muted px-2 py-0.5 rounded text-[10px]">
+                          {k}: <strong>{String(v)}</strong>
+                        </span>
+                      ))}
+                      {log.error_message && <span className="text-red-500 text-[10px]">{log.error_message.slice(0, 80)}</span>}
+                    </div>
                   </div>
                   <div>
                     {editingLogId === log.id ? (
                       <Select
                         defaultValue={log.status}
-                        onValueChange={(v) => {
-                          updateLogStatus.mutate({ logId: log.id, newStatus: v });
-                        }}
+                        onValueChange={(v) => updateLogStatus.mutate({ logId: log.id, newStatus: v })}
                       >
                         <SelectTrigger className="h-7 text-[11px] w-[110px]"><SelectValue /></SelectTrigger>
                         <SelectContent>
@@ -845,7 +792,7 @@ export default function AdminSync() {
                     ) : (
                       <button
                         onClick={() => setEditingLogId(log.id)}
-                        className="text-[11px] flex items-center gap-1 px-2 py-1 rounded hover:bg-[#F1F5F9] transition-colors"
+                        className="text-[11px] flex items-center gap-1 px-2 py-1 rounded hover:bg-muted transition-colors"
                         style={{ color: "#8B95A5" }}
                       >
                         <Edit3 size={11} /> Statut
@@ -859,12 +806,12 @@ export default function AdminSync() {
         )}
       </div>
 
-      {/* Error */}
+      {/* Error banner */}
       {config?.sync_error_message && (
         <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
           <XCircle size={18} className="text-red-500 mt-0.5" />
           <div>
-            <p className="text-[13px] font-semibold text-red-700">Dernière erreur de synchronisation</p>
+            <p className="text-[13px] font-semibold text-red-700">Dernière erreur</p>
             <p className="text-[12px] text-red-600 mt-1">{config.sync_error_message}</p>
           </div>
         </div>

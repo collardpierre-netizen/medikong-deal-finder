@@ -121,6 +121,7 @@ export default function AccountPage() {
                           <select className="w-full border border-mk-line rounded-md px-3 py-2 text-sm"><option>Belgique</option><option>France</option><option>Suisse</option></select>
                         </div>
                         <div><label className="text-xs text-mk-sec mb-1 block">Numero TVA</label><input defaultValue="BE 0123.456.789" className="w-full border border-mk-line rounded-md px-3 py-2 text-sm" /></div>
+                        <ProfileSelector />
                       </div>
                       <motion.button className="bg-mk-blue text-white font-semibold text-sm px-5 py-2.5 rounded-md" whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}>Enregistrer les modifications</motion.button>
                     </div>

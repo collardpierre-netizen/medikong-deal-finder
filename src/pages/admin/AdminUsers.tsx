@@ -213,9 +213,22 @@ export default function AdminUsers() {
                       className="p-1.5 rounded hover:bg-[#F1F5F9] text-[#8B95A5] hover:text-[#1B5BDA] transition-colors" title="Voir comme ce user">
                       <Eye size={16} />
                     </button>
-                    <button className="p-1.5 rounded hover:bg-[#F1F5F9] text-[#8B95A5] hover:text-[#616B7C] transition-colors" title="Détails">
-                      <MoreHorizontal size={16} />
-                    </button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button className="p-1.5 rounded hover:bg-[#F1F5F9] text-[#8B95A5] hover:text-[#616B7C] transition-colors" title="Plus d'actions">
+                          <MoreHorizontal size={16} />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-48">
+                        <DropdownMenuItem onClick={() => handleToggleStatus(u)} className="gap-2">
+                          {u.status === "active" ? <><Ban size={14} className="text-amber-500" /> Suspendre</> : <><CheckCircle size={14} className="text-emerald-500" /> Réactiver</>}
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => handleDelete(u)} className="gap-2 text-destructive focus:text-destructive">
+                          <Trash2 size={14} /> Supprimer
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </td>
               </tr>

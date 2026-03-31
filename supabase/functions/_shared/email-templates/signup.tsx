@@ -19,6 +19,7 @@ interface SignupEmailProps {
   siteUrl: string
   recipient: string
   confirmationUrl: string
+  token?: string
 }
 
 export const SignupEmail = ({
@@ -26,6 +27,7 @@ export const SignupEmail = ({
   siteUrl,
   recipient,
   confirmationUrl,
+  token,
 }: SignupEmailProps) => (
   <Html lang="en" dir="ltr">
     <Head />
@@ -47,6 +49,15 @@ export const SignupEmail = ({
           </Link>
           ) by clicking the button below:
         </Text>
+        {token ? (
+          <>
+            <Text style={text}>Your 6-digit verification code:</Text>
+            <Text style={otpCode}>{token}</Text>
+            <Text style={textSmall}>
+              Enter this code in the app to continue your registration.
+            </Text>
+          </>
+        ) : null}
         <Button style={button} href={confirmationUrl}>
           Verify Email
         </Button>
@@ -82,5 +93,19 @@ const button = {
   borderRadius: '8px',
   padding: '12px 20px',
   textDecoration: 'none',
+}
+const otpCode = {
+  fontSize: '28px',
+  fontWeight: 'bold' as const,
+  letterSpacing: '8px',
+  color: '#000000',
+  textAlign: 'center' as const,
+  margin: '0 0 12px',
+}
+const textSmall = {
+  fontSize: '12px',
+  color: '#777777',
+  lineHeight: '1.5',
+  margin: '0 0 20px',
 }
 const footer = { fontSize: '12px', color: '#999999', margin: '30px 0 0' }

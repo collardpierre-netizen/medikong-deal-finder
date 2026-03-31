@@ -2902,6 +2902,7 @@ export type Database = {
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
       update_brand_product_counts: { Args: never; Returns: undefined }
+      update_manufacturer_product_counts: { Args: never; Returns: undefined }
     }
     Enums: {
       admin_role:

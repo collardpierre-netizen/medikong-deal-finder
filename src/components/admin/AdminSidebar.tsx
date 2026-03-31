@@ -8,6 +8,7 @@ import {
   ShoppingCart, AlertCircle, DollarSign, Eye, Link, BarChart3,
   Shield, Upload, MessageSquare, Layout, Truck, ShieldCheck, Settings, FileText,
   LogOut, Users, ClipboardList, Percent, RefreshCw, Key, Book, Factory, Globe, Hash, ExternalLink,
+  CreditCard, TrendingUp,
 } from "lucide-react";
 
 interface NavItem {

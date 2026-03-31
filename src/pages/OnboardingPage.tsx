@@ -1107,21 +1107,6 @@ export default function OnboardingPage() {
           </div>
           {activeTestimonials.map((t, i) => (
             <div key={i} style={{ position: tIdx % activeTestimonials.length === i ? "relative" : "absolute", opacity: tIdx % activeTestimonials.length === i ? 1 : 0, transition: "opacity 0.8s ease", bottom: tIdx % activeTestimonials.length === i ? undefined : 0, left: tIdx % activeTestimonials.length === i ? undefined : 0, right: tIdx % activeTestimonials.length === i ? undefined : 0 }}>
-              {t.photo_url && !brokenPhotoUrls[`${(t as any).id ?? i}-card`] ? (
-                <div style={{ width: 48, height: 48, borderRadius: 8, overflow: "hidden", marginBottom: 16, border: "1px solid rgba(255,255,255,.2)" }}>
-                  <img
-                    src={t.photo_url}
-                    alt={t.name}
-                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                    referrerPolicy="no-referrer"
-                    onError={() => setBrokenPhotoUrls(prev => ({ ...prev, [`${(t as any).id ?? i}-card`]: true }))}
-                  />
-                </div>
-              ) : (
-                <div style={{ width: 48, height: 48, borderRadius: 8, background: "rgba(255,255,255,.15)", border: "1px solid rgba(255,255,255,.2)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, color: "#fff", marginBottom: 16 }}>
-                  {t.name.split(" ").map((n: string) => n[0]).join("").slice(0, 2)}
-                </div>
-              )}
               <p style={{ fontSize: 16, fontWeight: 500, color: "#fff", lineHeight: 1.65, fontStyle: "italic", marginBottom: 16 }}>« {t.quote} »</p>
               <p style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>{t.name}</p>
               <p style={{ fontSize: 12, fontWeight: 500, color: "rgba(255,255,255,.6)" }}>{t.title}</p>

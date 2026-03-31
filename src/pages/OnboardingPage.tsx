@@ -262,10 +262,14 @@ export default function OnboardingPage() {
     const metadata = (user.user_metadata ?? {}) as Record<string, unknown>;
     const onboardingPending = metadata.onboarding_pending === true;
     const onboardingCompleted = metadata.onboarding_completed === true;
-    const roleFromMetadata = metadata.onboarding_role;
+    const roleFromMetadata =
+      metadata.onboarding_role === "buyer" || metadata.onboarding_role === "seller"
+        ? metadata.onboarding_role
+        : typeof metadata.onboarding_business_type === "string"
+          ? "seller"
+          : "buyer";
 
     if (!onboardingPending || onboardingCompleted) return;
-    if (roleFromMetadata !== "buyer" && roleFromMetadata !== "seller") return;
 
     setRole(roleFromMetadata);
     setEmail(user.email ?? "");

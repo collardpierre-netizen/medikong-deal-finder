@@ -93,22 +93,23 @@ export default function UserCreateDialog({ open, onOpenChange, onCreated }: Prop
     }
     setSaving(true);
     try {
-      const { error } = await supabase.from("vendors").insert({
-        name: vendor.company_name.trim(),
-        slug: slugify(vendor.company_name),
-        company_name: vendor.company_name.trim(),
-        email: vendor.email.trim(),
-        phone: vendor.phone || null,
-        vat_number: vendor.vat_number || null,
-        address: vendor.address || null,
-        type: "real",
-        is_active: true,
-        can_manage_offers: true,
-        commission_rate: parseFloat(vendor.commission_rate) || 15,
-        description: vendor.description || null,
+      const { data, error } = await supabase.functions.invoke("create-vendor-account", {
+        body: {
+          company_name: vendor.company_name.trim(),
+          email: vendor.email.trim(),
+          phone: vendor.phone || null,
+          vat_number: vendor.vat_number || null,
+          address: vendor.address || null,
+          commission_rate: vendor.commission_rate,
+          description: vendor.description || null,
+        },
       });
       if (error) throw error;
-      toast.success(`Vendeur "${vendor.company_name}" créé`);
+      if (data?.error) throw new Error(data.error);
+      toast.success(`Vendeur "${vendor.company_name}" créé avec compte auth`, {
+        description: `Mot de passe temporaire: ${data.temp_password}`,
+        duration: 15000,
+      });
       setVendor(initialVendor);
       onCreated();
       onOpenChange(false);

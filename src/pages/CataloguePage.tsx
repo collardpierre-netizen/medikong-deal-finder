@@ -5,6 +5,8 @@ import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import { CatalogSidebar } from "@/components/catalog/CatalogSidebar";
 import { CatalogToolbar } from "@/components/catalog/CatalogToolbar";
 import { CatalogProductCard } from "@/components/catalog/CatalogProductCard";
+import SearchTrivagoView from "@/components/search/SearchTrivagoView";
+import type { CatalogViewMode } from "@/components/catalog/CatalogToolbar";
 import { CatalogPagination } from "@/components/catalog/CatalogPagination";
 import { ActiveFilters } from "@/components/catalog/ActiveFilters";
 import { UniversePills } from "@/components/layout/UniversePills";

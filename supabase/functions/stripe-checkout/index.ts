@@ -37,11 +37,10 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { action } = await req.json();
+    const body = await req.json();
+    const { action, order_id } = body;
 
     if (action === "create-payment-intent") {
-      const body = await req.clone().then(r => r.json());
-      const { order_id } = body;
 
       if (!order_id) {
         return new Response(JSON.stringify({ error: "order_id requis" }), {

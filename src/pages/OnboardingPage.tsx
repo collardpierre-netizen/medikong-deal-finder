@@ -772,8 +772,17 @@ export default function OnboardingPage() {
     <div style={{ display: "flex", minHeight: "100vh", fontFamily: "'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" }}>
       {/* ─── LEFT PANEL — Testimonial ─── */}
       <div className="hidden md:flex" style={{ width: "45%", position: "fixed", left: 0, top: 0, bottom: 0, flexDirection: "column", justifyContent: "flex-end", overflow: "hidden" }}>
+        {/* Background photo with low opacity */}
+        <div style={{ position: "absolute", inset: 0, zIndex: 0 }}>
+          <img
+            src={cmsOnboardingBg || onboardingBgDefault}
+            alt=""
+            style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.15 }}
+            referrerPolicy="no-referrer"
+          />
+        </div>
         {activeTestimonials.map((t, i) => (
-          <div key={i} style={{ position: "absolute", inset: 0, background: t.gradient, opacity: tIdx % activeTestimonials.length === i ? 1 : 0, transition: "opacity 0.8s ease" }}>
+          <div key={i} style={{ position: "absolute", inset: 0, background: t.gradient, opacity: tIdx % activeTestimonials.length === i ? 1 : 0, transition: "opacity 0.8s ease", zIndex: 0 }}>
             <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(30,41,59,.3), rgba(30,41,59,.85))" }} />
           </div>
         ))}

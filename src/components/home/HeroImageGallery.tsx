@@ -17,6 +17,8 @@ interface HeroImg {
   sort_order?: number;
   link_url: string | null;
   cta_text: string | null;
+  title: string | null;
+  subtitle: string | null;
 }
 
 export function HeroImageGallery() {

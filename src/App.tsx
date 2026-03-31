@@ -112,6 +112,7 @@ const AdminProductPrices = lazy(() => import("./pages/admin/AdminProductPrices")
 const AdminInvestPipeline = lazy(() => import("./pages/admin/AdminInvestPipeline"));
 const AdminLogistique = lazy(() => import("./pages/admin/AdminLogistique"));
 const AdminEquipe = lazy(() => import("./pages/admin/AdminEquipe"));
+const AdminProfils = lazy(() => import("./pages/admin/AdminProfils"));
 const AdminParametres = lazy(() => import("./pages/admin/AdminParametres"));
 const AdminLogs = lazy(() => import("./pages/admin/AdminLogs"));
 const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));

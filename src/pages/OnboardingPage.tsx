@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { usePageImages } from "@/hooks/usePageImages";
 import {
   ShoppingBag, Briefcase, User, Stethoscope, Pill, Building2, Layers, Store,
   ChevronLeft, ChevronUp, ChevronDown, Lock, Eye, EyeOff, Check, ArrowRight,
@@ -67,6 +68,7 @@ const leadTimeOptions = ["24h", "48h", "3-5 jours", "1-2 semaines"];
 
 /* ─── Logo ─── */
 import logoLight from "@/assets/logo-horizontal.png";
+import onboardingBgDefault from "@/assets/onboarding-bg.jpg";
 import logoDark from "@/assets/Logo_horizontal_sombre2.png";
 const Logo = ({ white = false, size = 22 }: { white?: boolean; size?: number }) => (
   <img
@@ -195,6 +197,10 @@ export default function OnboardingPage() {
   const [brands, setBrands] = useState("");
   const [fulfillment, setFulfillment] = useState("");
   const [leadTime, setLeadTime] = useState("");
+
+  /* ─── CMS background image ─── */
+  const { getImage } = usePageImages("onboarding");
+  const cmsOnboardingBg = getImage("background")?.image_url;
 
   /* ─── Testimonials from DB ─── */
   const { data: dbTestimonials } = useQuery({
@@ -771,8 +777,16 @@ export default function OnboardingPage() {
     <div style={{ display: "flex", minHeight: "100vh", fontFamily: "'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" }}>
       {/* ─── LEFT PANEL — Testimonial ─── */}
       <div className="hidden md:flex" style={{ width: "45%", position: "fixed", left: 0, top: 0, bottom: 0, flexDirection: "column", justifyContent: "flex-end", overflow: "hidden" }}>
+        {/* Background photo */}
+        <img
+          src={cmsOnboardingBg || onboardingBgDefault}
+          alt=""
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", zIndex: 0 }}
+          referrerPolicy="no-referrer"
+        />
+        {/* Dark overlay on top of photo */}
         {activeTestimonials.map((t, i) => (
-          <div key={i} style={{ position: "absolute", inset: 0, background: t.gradient, opacity: tIdx % activeTestimonials.length === i ? 1 : 0, transition: "opacity 0.8s ease" }}>
+          <div key={i} style={{ position: "absolute", inset: 0, background: t.gradient, opacity: tIdx % activeTestimonials.length === i ? 0.88 : 0, transition: "opacity 0.8s ease", zIndex: 1 }}>
             <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(30,41,59,.3), rgba(30,41,59,.85))" }} />
           </div>
         ))}

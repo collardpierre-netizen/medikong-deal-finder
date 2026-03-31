@@ -13,6 +13,7 @@ const AdminVendeurs = () => {
   const { data: vendors = [], isLoading } = useVendors();
   const [activeTab, setActiveTab] = useState<"all" | "medikong" | "qogita_virtual" | "real">("all");
   const [search, setSearch] = useState("");
+  const [showForm, setShowForm] = useState(false);
 
   const tabs = [
     { key: "all" as const, label: "Tous", count: vendors.length },

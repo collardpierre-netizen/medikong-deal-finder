@@ -113,19 +113,17 @@ export default function CataloguePage() {
                   Effacer les filtres
                 </button>
               </div>
+            ) : view === "trivago" ? (
+              <SearchTrivagoView products={products} />
             ) : (
-              {view === "trivago" ? (
-                <SearchTrivagoView products={products} />
-              ) : (
-                <div className={view === "grid"
-                  ? "grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3"
-                  : "space-y-3"
-                }>
-                  {products.map((p, i) => (
-                    <CatalogProductCard key={p.id} product={p} index={i} view={view} />
-                  ))}
-                </div>
-              )}
+              <div className={view === "grid"
+                ? "grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3"
+                : "space-y-3"
+              }>
+                {products.map((p, i) => (
+                  <CatalogProductCard key={p.id} product={p} index={i} view={view} />
+                ))}
+              </div>
             )}
 
             <CatalogPagination page={filters.page} perPage={filters.perPage} total={total} onPageChange={p => setFilter("page", p)} />

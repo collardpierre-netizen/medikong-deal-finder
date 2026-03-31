@@ -475,22 +475,15 @@ export default function AdminSync() {
         await runSyncOnce(type);
         toast.success(`Sync ${type} lancée`);
       } else {
-        let hasMore = true;
-        let totalProcessed = 0;
-        let totalErrors = 0;
-        let iteration = 0;
+        // Step 1: Kick off the first call (creates or resumes sync_log)
+        await runSyncOnce(type);
+        const syncType = type === "offers_multi_vendor" ? "offers_multi_vendor" : "offers_detail";
 
-        while (hasMore) {
-          iteration++;
-          const data = await runSyncOnce(type);
-          const stats = (data as any)?.stats || data || {};
-          const enriched = stats.products_enriched || stats.processed || 0;
-          const errors = stats.errors || 0;
-          totalProcessed += enriched;
-          totalErrors += errors;
+        // Step 2: Poll sync_logs until completed/error; re-invoke on "partial"
+        let done = false;
+        while (!done) {
+          await new Promise((r) => setTimeout(r, 3000));
 
-          // Check sync_log status to determine if more work remains
-          const syncType = type === "offers_multi_vendor" ? "offers_multi_vendor" : "offers_detail";
           const { data: latestLog } = await supabase
             .from("sync_logs")
             .select("status, stats, progress_current, progress_total")
@@ -501,37 +494,26 @@ export default function AdminSync() {
 
           const logStatus = latestLog?.status;
           const logStats = (latestLog?.stats as any) || {};
-          const remaining = (latestLog?.progress_total || 0) - (latestLog?.progress_current || 0);
+          const current = latestLog?.progress_current || 0;
+          const total = latestLog?.progress_total || 0;
+          const remaining = total - current;
 
           setLoopProgress((prev) => ({
             ...prev,
-            [type]: { processed: latestLog?.progress_current || totalProcessed, remaining, errors: totalErrors },
+            [type]: { processed: current, remaining, errors: logStats.errors || 0 },
           }));
 
-          // Stop if completed or error, continue only if partial
           if (logStatus === "completed" || logStatus === "error") {
-            hasMore = false;
+            done = true;
           } else if (logStatus === "partial") {
-            hasMore = true;
-          } else {
-            // Running or unknown — wait and re-check
-            await new Promise((r) => setTimeout(r, 3000));
-            const { data: recheck } = await supabase
-              .from("sync_logs")
-              .select("status")
-              .eq("sync_type", syncType)
-              .order("started_at", { ascending: false })
-              .limit(1)
-              .maybeSingle();
-            hasMore = recheck?.status === "partial";
+            // Edge function timed out — re-invoke to resume from last_offset
+            await runSyncOnce(type);
+            // Continue polling
           }
-
-          if (hasMore) {
-            await new Promise((r) => setTimeout(r, 2000));
-          }
+          // If "running", just keep polling
         }
 
-        toast.success(`Sync ${type} terminée : ${totalProcessed} produits traités, ${totalErrors} erreurs`);
+        toast.success(`Sync ${type} terminée`);
       }
     } catch (err: any) {
       toast.error(`Erreur sync ${type}`, { description: err.message });

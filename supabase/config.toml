@@ -25,3 +25,5 @@ project_id = "iokwqxhhpblcbkrxgcje"
     verify_jwt = false
   [functions.run-sync-pipeline]
     verify_jwt = false
+  [functions.test-qogita-offers]
+    verify_jwt = false

@@ -9,8 +9,10 @@ import { Progress } from "@/components/ui/progress";
 import {
   RefreshCw, Database, Tag, Package, Store, Layers, Clock, AlertTriangle,
   Play, Settings, Eye, EyeOff, CheckCircle, XCircle, Loader2, Wifi, Search, Edit3,
-  ChevronDown, ChevronUp, Zap, RotateCcw,
+  ChevronDown, ChevronUp, Zap, RotateCcw, FlaskConical,
 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { formatDistanceToNow, format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -255,6 +257,135 @@ function SyncProgressBar({ log }: { log: any }) {
         <span>{formatDurationStr(elapsed)}</span>
       </div>
     </div>
+  );
+}
+
+/* ─── Test API Offers Component ────────────────── */
+
+function TestApiOffers() {
+  const [gtin, setGtin] = useState("0008080153555");
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<any>(null);
+  const [open, setOpen] = useState(false);
+
+  const testApi = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("test-qogita-offers", {
+        body: { gtin },
+      });
+      setResult(error ? { error: error.message } : data);
+      setOpen(true);
+    } catch (e: any) {
+      setResult({ error: e.message });
+      setOpen(true);
+    }
+    setLoading(false);
+  };
+
+  return (
+    <>
+      <div className="border border-dashed border-amber-300 rounded-xl p-5 bg-amber-50/50">
+        <div className="flex items-center gap-2 mb-2">
+          <FlaskConical size={18} className="text-amber-600" />
+          <span className="text-sm font-semibold text-foreground">Test API Qogita (Debug)</span>
+        </div>
+        <p className="text-xs text-muted-foreground mb-3">
+          Teste l'endpoint /offers/ pour un produit et affiche la réponse JSON brute.
+        </p>
+        <div className="flex items-center gap-2">
+          <Input
+            value={gtin}
+            onChange={(e) => setGtin(e.target.value)}
+            placeholder="GTIN ou EAN du produit"
+            className="max-w-xs"
+          />
+          <button
+            onClick={testApi}
+            disabled={loading}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-50"
+          >
+            {loading ? <Loader2 size={14} className="animate-spin" /> : <FlaskConical size={14} />}
+            {loading ? "Appel en cours..." : "Tester API Offers"}
+          </button>
+        </div>
+      </div>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Réponse API Qogita — Test Offers</DialogTitle>
+          </DialogHeader>
+          {result && (
+            <div className="space-y-4">
+              {result.analysis && (
+                <div className="bg-muted/50 rounded-lg p-4">
+                  <h4 className="font-semibold text-sm mb-2">Résumé</h4>
+                  <div className="grid grid-cols-2 gap-1 text-xs">
+                    <p>Produit : {result.variant?.name}</p>
+                    <p>GTIN : {result.variant?.gtin}</p>
+                    <p>Nombre d'offres : <strong>{result.analysis.offersCount}</strong></p>
+                    <p>Vendeurs uniques : <strong>{result.analysis.uniqueSellers}</strong></p>
+                    <p>Prix min : {result.analysis.priceRange?.min}€</p>
+                    <p>Prix max : {result.analysis.priceRange?.max}€</p>
+                    <p>sellerCount (variant) : {result.variant?.sellerCount}</p>
+                    <p>Paliers par vendeur : {result.analysis.hasMultiplePricesPerSeller ? "OUI" : "NON"}</p>
+                  </div>
+                </div>
+              )}
+
+              {result.analysis?.sellers?.length > 0 && (
+                <div>
+                  <h4 className="font-semibold text-sm mb-2">Offres reçues de l'API</h4>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs border-collapse">
+                      <thead>
+                        <tr className="border-b">
+                          <th className="text-left p-2">Vendeur</th>
+                          <th className="text-left p-2">Prix</th>
+                          <th className="text-left p-2">MOV</th>
+                          <th className="text-left p-2">Stock</th>
+                          <th className="text-left p-2">QID</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {result.analysis.sellers.map((s: any, i: number) => (
+                          <tr key={i} className="border-b">
+                            <td className="p-2">{s.seller}</td>
+                            <td className="p-2">{s.price}€</td>
+                            <td className="p-2">{s.mov}€</td>
+                            <td className="p-2">{s.inventory}</td>
+                            <td className="p-2 font-mono text-[10px]">{s.qid}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {result.variant?.images?.length > 0 && (
+                <div>
+                  <h4 className="font-semibold text-sm mb-2">Images ({result.variant.images.length})</h4>
+                  <div className="flex gap-2 flex-wrap">
+                    {result.variant.images.map((img: any, i: number) => (
+                      <img key={i} src={typeof img === "string" ? img : img.url} alt="" className="h-16 w-16 object-contain rounded border" />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <details>
+                <summary className="text-xs font-medium cursor-pointer text-muted-foreground">Réponse JSON brute complète (cliquer pour voir)</summary>
+                <pre className="mt-2 text-[10px] bg-muted p-3 rounded-lg overflow-x-auto max-h-[400px] overflow-y-auto">
+                  {JSON.stringify(result, null, 2)}
+                </pre>
+              </details>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
@@ -805,6 +936,9 @@ export default function AdminSync() {
           </div>
         )}
       </div>
+
+      {/* Test API Offers */}
+      <TestApiOffers />
 
       {/* Error banner */}
       {config?.sync_error_message && (

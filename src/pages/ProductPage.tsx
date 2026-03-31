@@ -36,8 +36,10 @@ function OfferRow({
   user: any; navigate: any; addToCart: any; isBest?: boolean; delay?: number; isTVAC?: boolean;
 }) {
   const [qty, setQty] = useState(offer.bundleSize > 1 ? offer.bundleSize : 1);
+  const discountTiers = offer.discountTiers || [];
+  const hasTiers = discountTiers.length > 1;
   const tiers = (offer.priceTiers && offer.priceTiers.length > 0) ? offer.priceTiers : [];
-  const hasTiers = tiers.length > 1;
+  const hasLegacyTiers = tiers.length > 1;
   const displayCode = offer.displayCode || offer.sellerId.slice(0, 6).toUpperCase();
   const displayPrice = isTVAC ? offer.unitPriceInclVat : offer.unitPriceEur;
   const priceLabel = isTVAC ? "TVAC" : "HTVA";
@@ -83,6 +85,16 @@ function OfferRow({
             <Check size={12} /> Fournisseur verifie
           </span>
         )}
+        {offer.isTopSeller && (
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full">
+            <Star size={12} /> Top Seller
+          </span>
+        )}
+        {offer.isTraceable && (
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-full">
+            Traçable
+          </span>
+        )}
       </div>
 
       {/* Desktop grid */}
@@ -92,6 +104,26 @@ function OfferRow({
         {/* Price tiers */}
         <div>
           {hasTiers ? (
+            <div className="relative pl-4">
+              <div className="absolute left-[3px] top-[7px] w-px border-l border-dashed border-muted-foreground/40" style={{ height: `calc(100% - 14px)` }} />
+              {discountTiers
+                .sort((a, b) => a.mov_amount - b.mov_amount)
+                .map((tier, i) => {
+                  const basePrice = discountTiers[0].unit_price;
+                  const saving = i > 0 ? ((basePrice - tier.unit_price) / basePrice * 100).toFixed(1) : null;
+                  return (
+                    <div key={tier.id} className="flex items-center gap-2 relative" style={{ marginTop: i > 0 ? 6 : 0 }}>
+                      <div className="absolute left-[-14px] w-[7px] h-[7px] rounded-full bg-primary" />
+                      <span className={`text-sm ${i === 0 ? "font-bold text-green-700" : "text-muted-foreground"}`}>
+                        {formatEur(tier.unit_price)} €
+                      </span>
+                      <span className="text-xs text-muted-foreground">MOV {formatEur(tier.mov_amount)} €</span>
+                      {saving && <span className="text-xs text-green-600 font-medium">-{saving}%</span>}
+                    </div>
+                  );
+                })}
+            </div>
+          ) : hasLegacyTiers ? (
             <div className="relative pl-4">
               <div className="absolute left-[3px] top-[7px] w-px border-l border-dashed border-muted-foreground/40" style={{ height: `calc(100% - 14px)` }} />
               {tiers.map((tier: any, i: number) => (

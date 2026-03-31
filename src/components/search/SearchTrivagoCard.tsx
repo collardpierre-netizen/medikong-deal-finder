@@ -37,8 +37,8 @@ export default function SearchTrivagoCard({ product: p }: Props) {
               -{pct}%
             </span>
           )}
-          {p.imageUrl ? (
-            <img src={p.imageUrl} alt={p.name} className="w-full h-full object-contain p-4"
+          {p.imageUrls?.[0] || p.imageUrl ? (
+            <img src={p.imageUrls?.[0] || p.imageUrl} alt={p.name} className="w-full h-full object-contain p-4"
                  loading="lazy" referrerPolicy="no-referrer" crossOrigin="anonymous"
                  onError={e => { e.currentTarget.src = "/placeholder.svg"; }} />
           ) : (

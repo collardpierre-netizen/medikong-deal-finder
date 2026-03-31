@@ -7,9 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Eye, EyeOff } from "lucide-react";
 import logoDark from "@/assets/Logo_horizontal_sombre2.png";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Store, Eye, EyeOff } from "lucide-react";
 
 export default function VendorLoginPage() {
   const navigate = useNavigate();

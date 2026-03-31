@@ -513,7 +513,7 @@ export default function AdminSync() {
           // If "running", just keep polling
         }
 
-        toast.success(`Sync ${type} terminée : ${totalProcessed} produits traités, ${totalErrors} erreurs`);
+        toast.success(`Sync ${type} terminée`);
       }
     } catch (err: any) {
       toast.error(`Erreur sync ${type}`, { description: err.message });

@@ -26,7 +26,7 @@ function PageLoader() {
 
 // Lazy load ALL pages
 const HomePage = lazy(() => import("./pages/HomePage"));
-const ResultsPage = lazy(() => import("./pages/ResultsPage"));
+const SearchResultsPage = lazy(() => import("./pages/SearchResultsPage"));
 const ProductPage = lazy(() => import("./pages/ProductPage"));
 const BrandsPage = lazy(() => import("./pages/BrandsPage"));
 const BrandDetailPage = lazy(() => import("./pages/BrandDetailPage"));
@@ -174,7 +174,7 @@ const App = () => (
           <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="/" element={<LP><HomePage /></LP>} />
-            <Route path="/recherche" element={<LP><ResultsPage /></LP>} />
+            <Route path="/recherche" element={<LP><SearchResultsPage /></LP>} />
             <Route path="/produit/:slug" element={<LP><ProductPage /></LP>} />
             <Route path="/marques" element={<LP><BrandsPage /></LP>} />
             <Route path="/marque/:slug" element={<LP><BrandDetailPage /></LP>} />

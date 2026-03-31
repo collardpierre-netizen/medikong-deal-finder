@@ -2305,6 +2305,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      count_products_per_category: {
+        Args: never
+        Returns: {
+          category_id: string
+          product_count: number
+        }[]
+      }
       create_offers_from_products: {
         Args: { _country_code?: string }
         Returns: Json

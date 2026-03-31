@@ -643,7 +643,6 @@ export default function ProductPage() {
                         alt={product.name}
                         className="w-full h-full object-contain p-4"
                         referrerPolicy="no-referrer"
-                        crossOrigin="anonymous"
                         onError={(e) => {
                           e.currentTarget.src = "/product-placeholder.svg";
                         }}

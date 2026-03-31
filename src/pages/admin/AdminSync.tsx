@@ -475,45 +475,41 @@ export default function AdminSync() {
         await runSyncOnce(type);
         toast.success(`Sync ${type} lancée`);
       } else {
-        // Step 1: Kick off the first call (creates or resumes sync_log)
-        await runSyncOnce(type);
-        const syncType = type === "offers_multi_vendor" ? "offers_multi_vendor" : "offers_detail";
+        let hasMore = true;
+        let totalProcessed = 0;
 
-        // Step 2: Poll sync_logs until completed/error; re-invoke on "partial"
-        let done = false;
-        while (!done) {
-          await new Promise((r) => setTimeout(r, 3000));
+        while (hasMore) {
+          const fnMap: Record<string, string> = {
+            offers_detail: "sync-qogita-offers-detail",
+            offers_multi_vendor: "sync-qogita-offers-detail",
+          };
+          const fnName = fnMap[type]!;
+          const body: any = { country: selectedCountry };
+          if (type === "offers_multi_vendor") body.multi_vendor = true;
 
-          const { data: latestLog } = await supabase
-            .from("sync_logs")
-            .select("status, stats, progress_current, progress_total")
-            .eq("sync_type", syncType)
-            .order("started_at", { ascending: false })
-            .limit(1)
-            .maybeSingle();
+          const { data, error } = await supabase.functions.invoke(fnName, { body });
 
-          const logStatus = latestLog?.status;
-          const logStats = (latestLog?.stats as any) || {};
-          const current = latestLog?.progress_current || 0;
-          const total = latestLog?.progress_total || 0;
-          const remaining = total - current;
+          if (error) {
+            console.error("Sync loop error:", error);
+            break;
+          }
+
+          const batchProcessed = data?.products_enriched || data?.processed || data?.offers_upserted || 0;
+          totalProcessed += batchProcessed;
+          const remaining = data?.remaining ?? 0;
+          hasMore = remaining > 0;
 
           setLoopProgress((prev) => ({
             ...prev,
-            [type]: { processed: current, remaining, errors: logStats.errors || 0 },
+            [type]: { processed: totalProcessed, remaining, errors: 0 },
           }));
 
-          if (logStatus === "completed" || logStatus === "error") {
-            done = true;
-          } else if (logStatus === "partial") {
-            // Edge function timed out — re-invoke to resume from last_offset
-            await runSyncOnce(type);
-            // Continue polling
+          if (hasMore) {
+            await new Promise((r) => setTimeout(r, 1000));
           }
-          // If "running", just keep polling
         }
 
-        toast.success(`Sync ${type} terminée`);
+        toast.success(`Sync ${type} terminée: ${totalProcessed} produits traités`);
       }
     } catch (err: any) {
       toast.error(`Erreur sync ${type}`, { description: err.message });

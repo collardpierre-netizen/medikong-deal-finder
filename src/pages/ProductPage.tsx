@@ -86,6 +86,16 @@ function OfferRow({
             <Check size={12} /> Fournisseur verifie
           </span>
         )}
+        {offer.isTopSeller && (
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full">
+            <Star size={12} /> Top Seller
+          </span>
+        )}
+        {offer.isTraceable && (
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-full">
+            Traçable
+          </span>
+        )}
       </div>
 
       {/* Desktop grid */}

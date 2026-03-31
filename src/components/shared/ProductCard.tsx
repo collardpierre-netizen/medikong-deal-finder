@@ -47,19 +47,11 @@ export function ProductImage({ product, className = "", selectedIndex = 0 }: { p
           src={imgSrc}
           alt={product.name}
           loading="lazy"
+          referrerPolicy="no-referrer"
+          crossOrigin="anonymous"
           className="w-full h-full object-contain p-2"
           onError={(e) => {
-            // On error, show the icon fallback
-            const target = e.currentTarget;
-            target.style.display = "none";
-            const parent = target.parentElement;
-            if (parent) {
-              parent.style.backgroundColor = colors.bg;
-              const fallback = document.createElement("div");
-              fallback.className = "absolute inset-0 flex flex-col items-center justify-center gap-2";
-              fallback.innerHTML = `<span class="text-[10px] font-bold tracking-wider uppercase opacity-60">${product.brand}</span>`;
-              parent.appendChild(fallback);
-            }
+            e.currentTarget.src = "/placeholder.svg";
           }}
         />
       </div>

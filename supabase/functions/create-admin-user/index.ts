@@ -15,8 +15,21 @@ Deno.serve(async (req) => {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    const adminEmail = "admin@medikong.pro";
-    const adminPassword = "Admin123!";
+    // Accept optional body params
+    let adminEmail = "admin@medikong.pro";
+    let adminPassword = "Admin123!";
+    let adminName = "Super Admin";
+    let adminRole = "super_admin";
+
+    try {
+      const body = await req.json();
+      if (body.email) adminEmail = body.email;
+      if (body.password) adminPassword = body.password;
+      if (body.name) adminName = body.name;
+      if (body.role) adminRole = body.role;
+    } catch {
+      // No body, use defaults
+    }
 
     // Create auth user
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({
@@ -52,9 +65,9 @@ Deno.serve(async (req) => {
     if (!existing) {
       const { error: insertError } = await supabase.from("admin_users").insert({
         user_id: userId,
-        name: "Super Admin",
+        name: adminName,
         email: adminEmail,
-        role: "super_admin",
+        role: adminRole,
         is_active: true,
       });
       if (insertError) throw insertError;
@@ -63,7 +76,7 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        message: `Admin created: ${adminEmail} / ${adminPassword}`,
+        message: `Admin created: ${adminEmail}`,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

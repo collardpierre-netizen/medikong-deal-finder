@@ -419,8 +419,8 @@ export default function HomePage() {
         </div>
       </AnimatedSection>
 
-      {/* ═══ TESTIMONIALS ═══ */}
-      <HomeTestimonials />
+      {/* ═══ TESTIMONIALS — masqué, à réactiver via CMS ═══ */}
+      {/* <HomeTestimonials /> */}
 
       {/* ═══ FINAL CTA BANNER ═══ */}
       <section className="py-16 md:py-24">

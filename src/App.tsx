@@ -174,7 +174,7 @@ const App = () => (
           <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="/" element={<LP><HomePage /></LP>} />
-            <Route path="/recherche" element={<LP><ResultsPage /></LP>} />
+            <Route path="/recherche" element={<LP><SearchResultsPage /></LP>} />
             <Route path="/produit/:slug" element={<LP><ProductPage /></LP>} />
             <Route path="/marques" element={<LP><BrandsPage /></LP>} />
             <Route path="/marque/:slug" element={<LP><BrandDetailPage /></LP>} />

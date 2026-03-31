@@ -125,6 +125,7 @@ const AdminApiKeys = lazy(() => import("./pages/admin/AdminApiKeys"));
 const AdminApiDocs = lazy(() => import("./pages/admin/AdminApiDocs"));
 const AdminCountries = lazy(() => import("./pages/admin/AdminCountries"));
 const AdminMarketCodes = lazy(() => import("./pages/admin/AdminMarketCodes"));
+const AdminExternalVendors = lazy(() => import("./pages/admin/AdminExternalVendors"));
 
 // Vendor pages
 const VendorLayout = lazy(() => import("./components/vendor/VendorLayout"));
@@ -281,6 +282,7 @@ const App = () => (
               <Route path="api-docs" element={<LP><AdminApiDocs /></LP>} />
               <Route path="pays" element={<LP><AdminCountries /></LP>} />
               <Route path="market-codes" element={<LP><AdminMarketCodes /></LP>} />
+              <Route path="vendeurs-externes" element={<LP><AdminExternalVendors /></LP>} />
             </Route>
 
             {/* Vendor Dashboard */}

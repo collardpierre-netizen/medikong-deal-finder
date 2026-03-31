@@ -642,6 +642,169 @@ export type Database = {
         }
         Relationships: []
       }
+      external_leads: {
+        Row: {
+          clicked_at: string | null
+          external_offer_id: string
+          external_vendor_id: string
+          id: string
+          ip_address: string | null
+          product_id: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          clicked_at?: string | null
+          external_offer_id: string
+          external_vendor_id: string
+          id?: string
+          ip_address?: string | null
+          product_id: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          clicked_at?: string | null
+          external_offer_id?: string
+          external_vendor_id?: string
+          id?: string
+          ip_address?: string | null
+          product_id?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "external_leads_external_offer_id_fkey"
+            columns: ["external_offer_id"]
+            isOneToOne: false
+            referencedRelation: "external_offers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "external_leads_external_vendor_id_fkey"
+            columns: ["external_vendor_id"]
+            isOneToOne: false
+            referencedRelation: "external_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "external_leads_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      external_offers: {
+        Row: {
+          created_at: string | null
+          currency: string | null
+          delivery_days: number | null
+          external_vendor_id: string
+          id: string
+          is_active: boolean | null
+          mov_amount: number | null
+          notes: string | null
+          product_id: string
+          product_url: string
+          stock_status: string | null
+          unit_price: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          currency?: string | null
+          delivery_days?: number | null
+          external_vendor_id: string
+          id?: string
+          is_active?: boolean | null
+          mov_amount?: number | null
+          notes?: string | null
+          product_id: string
+          product_url: string
+          stock_status?: string | null
+          unit_price: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          currency?: string | null
+          delivery_days?: number | null
+          external_vendor_id?: string
+          id?: string
+          is_active?: boolean | null
+          mov_amount?: number | null
+          notes?: string | null
+          product_id?: string
+          product_url?: string
+          stock_status?: string | null
+          unit_price?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "external_offers_external_vendor_id_fkey"
+            columns: ["external_vendor_id"]
+            isOneToOne: false
+            referencedRelation: "external_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "external_offers_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      external_vendors: {
+        Row: {
+          contact_email: string | null
+          contact_phone: string | null
+          country_code: string | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          logo_url: string | null
+          name: string
+          notes: string | null
+          slug: string | null
+          updated_at: string | null
+          website_url: string | null
+        }
+        Insert: {
+          contact_email?: string | null
+          contact_phone?: string | null
+          country_code?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          logo_url?: string | null
+          name: string
+          notes?: string | null
+          slug?: string | null
+          updated_at?: string | null
+          website_url?: string | null
+        }
+        Update: {
+          contact_email?: string | null
+          contact_phone?: string | null
+          country_code?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          logo_url?: string | null
+          name?: string
+          notes?: string | null
+          slug?: string | null
+          updated_at?: string | null
+          website_url?: string | null
+        }
+        Relationships: []
+      }
       favorite_list_items: {
         Row: {
           added_at: string

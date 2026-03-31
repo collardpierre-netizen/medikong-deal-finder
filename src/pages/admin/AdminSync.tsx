@@ -9,8 +9,10 @@ import { Progress } from "@/components/ui/progress";
 import {
   RefreshCw, Database, Tag, Package, Store, Layers, Clock, AlertTriangle,
   Play, Settings, Eye, EyeOff, CheckCircle, XCircle, Loader2, Wifi, Search, Edit3,
-  ChevronDown, ChevronUp, Zap, RotateCcw,
+  ChevronDown, ChevronUp, Zap, RotateCcw, FlaskConical,
 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { formatDistanceToNow, format } from "date-fns";
 import { fr } from "date-fns/locale";

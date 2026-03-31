@@ -505,6 +505,50 @@ export type Database = {
         }
         Relationships: []
       }
+      discount_tiers: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          mov_amount: number
+          mov_currency: string | null
+          mov_progress: number | null
+          offer_id: string
+          price_currency: string | null
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          mov_amount: number
+          mov_currency?: string | null
+          mov_progress?: number | null
+          offer_id: string
+          price_currency?: string | null
+          unit_price: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          mov_amount?: number
+          mov_currency?: string | null
+          mov_progress?: number | null
+          offer_id?: string
+          price_currency?: string | null
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "discount_tiers_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_send_log: {
         Row: {
           created_at: string
@@ -898,12 +942,20 @@ export type Database = {
           country_code: string | null
           created_at: string
           delivery_days: number
+          down_payment_pct: number | null
+          estimated_delivery_days: number | null
+          has_extended_delivery: boolean | null
           id: string
           is_active: boolean
           is_qogita_backed: boolean
+          is_traceable: boolean | null
           margin_amount: number | null
+          max_delivery_days: number | null
+          min_delivery_days: number | null
           moq: number
           mov: number | null
+          mov_amount: number | null
+          mov_currency: string | null
           price_excl_vat: number
           price_incl_vat: number
           price_tiers: Json | null
@@ -925,12 +977,20 @@ export type Database = {
           country_code?: string | null
           created_at?: string
           delivery_days?: number
+          down_payment_pct?: number | null
+          estimated_delivery_days?: number | null
+          has_extended_delivery?: boolean | null
           id?: string
           is_active?: boolean
           is_qogita_backed?: boolean
+          is_traceable?: boolean | null
           margin_amount?: number | null
+          max_delivery_days?: number | null
+          min_delivery_days?: number | null
           moq?: number
           mov?: number | null
+          mov_amount?: number | null
+          mov_currency?: string | null
           price_excl_vat: number
           price_incl_vat: number
           price_tiers?: Json | null
@@ -952,12 +1012,20 @@ export type Database = {
           country_code?: string | null
           created_at?: string
           delivery_days?: number
+          down_payment_pct?: number | null
+          estimated_delivery_days?: number | null
+          has_extended_delivery?: boolean | null
           id?: string
           is_active?: boolean
           is_qogita_backed?: boolean
+          is_traceable?: boolean | null
           margin_amount?: number | null
+          max_delivery_days?: number | null
+          min_delivery_days?: number | null
           moq?: number
           mov?: number | null
+          mov_amount?: number | null
+          mov_currency?: string | null
           price_excl_vat?: number
           price_incl_vat?: number
           price_tiers?: Json | null
@@ -1532,6 +1600,7 @@ export type Database = {
           category_qid: string | null
           cnk_code: string | null
           created_at: string
+          delay_days: number | null
           depth: number | null
           description: string | null
           dimension_unit: string | null
@@ -1545,16 +1614,22 @@ export type Database = {
           is_promotion: boolean
           is_published: boolean
           label: string | null
+          last_detail_sync: string | null
+          last_offers_sync: string | null
           manufacturer_id: string | null
           min_delivery_days: number | null
           name: string
           offer_count: number
           origin_country: string | null
+          popularity: number | null
           promotion_end_date: string | null
           promotion_label: string | null
           promotion_start_date: string | null
           qogita_fid: string | null
           qogita_qid: string | null
+          qogita_slug: string | null
+          seller_count: number | null
+          shipping_from: string[] | null
           short_description: string | null
           sku: string | null
           slug: string
@@ -1578,6 +1653,7 @@ export type Database = {
           category_qid?: string | null
           cnk_code?: string | null
           created_at?: string
+          delay_days?: number | null
           depth?: number | null
           description?: string | null
           dimension_unit?: string | null
@@ -1591,16 +1667,22 @@ export type Database = {
           is_promotion?: boolean
           is_published?: boolean
           label?: string | null
+          last_detail_sync?: string | null
+          last_offers_sync?: string | null
           manufacturer_id?: string | null
           min_delivery_days?: number | null
           name: string
           offer_count?: number
           origin_country?: string | null
+          popularity?: number | null
           promotion_end_date?: string | null
           promotion_label?: string | null
           promotion_start_date?: string | null
           qogita_fid?: string | null
           qogita_qid?: string | null
+          qogita_slug?: string | null
+          seller_count?: number | null
+          shipping_from?: string[] | null
           short_description?: string | null
           sku?: string | null
           slug: string
@@ -1624,6 +1706,7 @@ export type Database = {
           category_qid?: string | null
           cnk_code?: string | null
           created_at?: string
+          delay_days?: number | null
           depth?: number | null
           description?: string | null
           dimension_unit?: string | null
@@ -1637,16 +1720,22 @@ export type Database = {
           is_promotion?: boolean
           is_published?: boolean
           label?: string | null
+          last_detail_sync?: string | null
+          last_offers_sync?: string | null
           manufacturer_id?: string | null
           min_delivery_days?: number | null
           name?: string
           offer_count?: number
           origin_country?: string | null
+          popularity?: number | null
           promotion_end_date?: string | null
           promotion_label?: string | null
           promotion_start_date?: string | null
           qogita_fid?: string | null
           qogita_qid?: string | null
+          qogita_slug?: string | null
+          seller_count?: number | null
+          shipping_from?: string[] | null
           short_description?: string | null
           sku?: string | null
           slug?: string
@@ -2271,6 +2360,7 @@ export type Database = {
           email: string | null
           id: string
           is_active: boolean
+          is_top_seller: boolean | null
           is_verified: boolean
           logo_url: string | null
           name: string
@@ -2283,6 +2373,7 @@ export type Database = {
           type: Database["public"]["Enums"]["vendor_type"]
           updated_at: string
           vat_number: string | null
+          vendor_code: string | null
         }
         Insert: {
           address_line1?: string | null
@@ -2299,6 +2390,7 @@ export type Database = {
           email?: string | null
           id?: string
           is_active?: boolean
+          is_top_seller?: boolean | null
           is_verified?: boolean
           logo_url?: string | null
           name: string
@@ -2311,6 +2403,7 @@ export type Database = {
           type?: Database["public"]["Enums"]["vendor_type"]
           updated_at?: string
           vat_number?: string | null
+          vendor_code?: string | null
         }
         Update: {
           address_line1?: string | null
@@ -2327,6 +2420,7 @@ export type Database = {
           email?: string | null
           id?: string
           is_active?: boolean
+          is_top_seller?: boolean | null
           is_verified?: boolean
           logo_url?: string | null
           name?: string
@@ -2339,6 +2433,7 @@ export type Database = {
           type?: Database["public"]["Enums"]["vendor_type"]
           updated_at?: string
           vat_number?: string | null
+          vendor_code?: string | null
         }
         Relationships: []
       }

@@ -128,6 +128,7 @@ const AdminMarketCodes = lazy(() => import("./pages/admin/AdminMarketCodes"));
 const AdminExternalVendors = lazy(() => import("./pages/admin/AdminExternalVendors"));
 
 // Vendor pages
+const VendorLoginPage = lazy(() => import("./pages/vendor/VendorLoginPage"));
 const VendorLayout = lazy(() => import("./components/vendor/VendorLayout"));
 const VendorDashboard = lazy(() => import("./pages/vendor/VendorDashboard"));
 const VendorCatalog = lazy(() => import("./pages/vendor/VendorCatalog"));

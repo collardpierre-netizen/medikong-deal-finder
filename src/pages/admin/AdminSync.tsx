@@ -482,7 +482,7 @@ export default function AdminSync() {
               </SelectContent>
             </Select>
             <button
-              onClick={() => launchPipeline.mutate()}
+              onClick={() => launchPipeline.mutate(undefined)}
               disabled={launchPipeline.isPending || !!activePipeline}
               className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg text-[13px] font-semibold hover:bg-blue-700 disabled:opacity-50 transition-colors"
             >

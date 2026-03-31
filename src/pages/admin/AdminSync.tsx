@@ -345,7 +345,8 @@ export default function AdminSync() {
 
   const syncButtons: { type: SyncType; label: string; icon: React.ElementType; desc: string }[] = [
     { type: "products", label: "Produits (CSV)", icon: Package, desc: "PRINCIPAL — Import CSV BE + auto-crée marques & catégories" },
-    { type: "offers_detail", label: "Offres détail", icon: Store, desc: "Enrichissement — sync offre par offre" },
+    { type: "offers_detail", label: "Offres détail", icon: Store, desc: "Enrichissement — sync offre par offre (meilleur prix)" },
+    { type: "offers_multi_vendor", label: "Offres multi-vendeurs", icon: Layers, desc: "Récupère toutes les offres vendeurs via /offers/" },
     { type: "recalculate", label: "Recalculer prix", icon: RefreshCw, desc: "Recalcule toutes les marges" },
     { type: "brands", label: "Marques", icon: Tag, desc: "Optionnel — re-sync marques depuis produits" },
     { type: "categories", label: "Catégories", icon: Layers, desc: "Optionnel — re-sync catégories depuis produits" },

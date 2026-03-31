@@ -606,11 +606,10 @@ export default function ProductPage() {
                         src={images[selectedImageIdx] || images[0]}
                         alt={product.name}
                         className="w-full h-full object-contain p-4"
+                        referrerPolicy="no-referrer"
+                        crossOrigin="anonymous"
                         onError={(e) => {
-                          const target = e.currentTarget;
-                          target.onerror = null;
-                          target.style.display = 'none';
-                          target.parentElement?.classList.add('no-image-fallback');
+                          e.currentTarget.src = "/placeholder.svg";
                         }}
                       />
                     ) : (

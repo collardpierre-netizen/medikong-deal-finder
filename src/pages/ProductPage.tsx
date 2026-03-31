@@ -1043,6 +1043,7 @@ export default function ProductPage() {
                   </TabsContent>
                 </Tabs>
               </div>
+              )}
 
               {/* ── Description ── */}
               <div className="mb-8">

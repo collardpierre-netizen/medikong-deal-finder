@@ -373,6 +373,7 @@ export default function OnboardingPage() {
       const temporaryPassword = `${crypto.randomUUID()}Aa1!`;
       setTempPassword(temporaryPassword);
       window.sessionStorage.setItem(getTempPasswordStorageKey(email), temporaryPassword);
+
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email,
         password: temporaryPassword,
@@ -394,8 +395,6 @@ export default function OnboardingPage() {
         msg.includes("already been registered") ||
         msg.includes("user already exists");
 
-      // Supabase can obfuscate repeated signups by returning success with an empty identities array.
-      // In this case, signUp did NOT create a fresh user flow and we must explicitly resend.
       const isRepeatedSignupObfuscated =
         !signUpError &&
         Array.isArray(signUpData?.user?.identities) &&
@@ -406,6 +405,21 @@ export default function OnboardingPage() {
       }
 
       if (alreadyRegistered || isRepeatedSignupObfuscated) {
+        // Existing confirmed account: send a login email so user can continue onboarding.
+        const { error: loginLinkError } = await supabase.auth.signInWithOtp({
+          email,
+          options: {
+            shouldCreateUser: false,
+            emailRedirectTo: `${window.location.origin}/onboarding`,
+          },
+        });
+
+        if (!loginLinkError) {
+          goNext();
+          return;
+        }
+
+        // Existing but not confirmed account: resend signup confirmation email.
         const { error: resendError } = await supabase.auth.resend({ type: "signup", email });
         if (resendError) throw resendError;
       }
@@ -413,7 +427,7 @@ export default function OnboardingPage() {
       goNext();
     } catch (error) {
       console.error("OTP send error:", error);
-      alert("Impossible d'envoyer le code pour le moment. Réessayez dans quelques secondes.");
+      alert("Impossible d'envoyer l'email de confirmation pour le moment. Réessayez dans quelques secondes.");
     } finally {
       setSendingOtp(false);
     }

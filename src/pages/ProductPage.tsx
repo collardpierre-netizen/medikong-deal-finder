@@ -519,6 +519,10 @@ export default function ProductPage() {
     product ? ((product as any).best_price_excl_vat ?? null) : null
   );
 
+  // Market prices hook (must be before early returns)
+  const { marketPriceItems, externalOfferItems, visMap: mpVisMap } = useMarketPrices(product?.id);
+
+
   if (isLoading) {
     return (
       <Layout>

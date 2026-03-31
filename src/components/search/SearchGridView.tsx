@@ -39,8 +39,10 @@ export default function SearchGridView({ products }: Props) {
                   src={p.imageUrl}
                   alt={p.name}
                   loading="lazy"
+                  referrerPolicy="no-referrer"
+                  crossOrigin="anonymous"
                   className="w-full h-full object-contain"
-                  onError={e => { e.currentTarget.style.display = "none"; }}
+                  onError={e => { e.currentTarget.src = "/placeholder.svg"; }}
                 />
               ) : (
                 <Package size={40} className="text-muted-foreground" />

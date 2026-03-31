@@ -39,7 +39,8 @@ export default function SearchTrivagoCard({ product: p }: Props) {
           )}
           {p.imageUrl ? (
             <img src={p.imageUrl} alt={p.name} className="w-full h-full object-contain p-4"
-                 loading="lazy" onError={e => { e.currentTarget.style.display = "none"; }} />
+                 loading="lazy" referrerPolicy="no-referrer" crossOrigin="anonymous"
+                 onError={e => { e.currentTarget.src = "/placeholder.svg"; }} />
           ) : (
             <Package size={48} className="text-muted-foreground" />
           )}

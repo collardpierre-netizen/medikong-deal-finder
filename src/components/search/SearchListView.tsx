@@ -40,7 +40,8 @@ export default function SearchListView({ products }: Props) {
             <div className="w-12 h-12 bg-muted rounded flex items-center justify-center shrink-0">
               {p.imageUrl ? (
                 <img src={p.imageUrl} alt={p.name} className="w-full h-full object-contain p-1" loading="lazy"
-                     onError={e => { e.currentTarget.style.display = "none"; }} />
+                     referrerPolicy="no-referrer" crossOrigin="anonymous"
+                     onError={e => { e.currentTarget.src = "/placeholder.svg"; }} />
               ) : (
                 <Package size={18} className="text-muted-foreground" />
               )}

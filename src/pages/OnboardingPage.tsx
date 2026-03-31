@@ -185,6 +185,11 @@ export default function OnboardingPage() {
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [tempPassword, setTempPassword] = useState("");
 
+  const getTempPasswordStorageKey = useCallback(
+    (targetEmail: string) => `onboarding-temp-password:${targetEmail.trim().toLowerCase()}`,
+    []
+  );
+
   /* ─── Buyer-specific ─── */
   const [buyerProfile, setBuyerProfile] = useState("");
   const [professionalId, setProfessionalId] = useState("");
@@ -367,6 +372,7 @@ export default function OnboardingPage() {
     try {
       const temporaryPassword = `${crypto.randomUUID()}Aa1!`;
       setTempPassword(temporaryPassword);
+      window.sessionStorage.setItem(getTempPasswordStorageKey(email), temporaryPassword);
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email,
         password: temporaryPassword,
@@ -445,16 +451,17 @@ export default function OnboardingPage() {
 
     setCheckingConfirmedEmail(true);
     try {
-      const { data, error } = await supabase.auth.getUser();
-      if (error) throw error;
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) throw sessionError;
 
-      if (!data.user) {
+      const confirmedUser = sessionData.session?.user;
+      if (!confirmedUser) {
         alert("Email non encore confirmé. Ouvrez l'email reçu puis cliquez sur \"J'ai confirmé mon email\".");
         return;
       }
 
       setOtpVerified(true);
-      restoreOnboardingSession(data.user);
+      restoreOnboardingSession(confirmedUser);
     } catch (error) {
       console.error("Email confirmation check error:", error);
       alert("Impossible de vérifier la confirmation pour le moment. Réessayez dans quelques secondes.");
@@ -491,15 +498,17 @@ export default function OnboardingPage() {
     if (!isPasswordValid || submitting) return;
     setSubmitting(true);
     try {
-      // 1. Try to get existing session
-      let { data: userData } = await supabase.auth.getUser();
-      let userId = userData?.user?.id;
+      // 1. Try to restore authenticated session first
+      const { data: sessionData } = await supabase.auth.getSession();
+      let userId = sessionData.session?.user?.id;
+
+      const fallbackTempPassword = tempPassword || window.sessionStorage.getItem(getTempPasswordStorageKey(email)) || "";
 
       // If no active session, sign in with the temp password (email confirmed via link)
-      if (!userId && tempPassword) {
+      if (!userId && fallbackTempPassword) {
         const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
           email,
-          password: tempPassword,
+          password: fallbackTempPassword,
         });
         if (signInError) {
           alert("Votre email n'est pas encore confirmé. Ouvrez l'email reçu et cliquez sur le lien, puis réessayez.");
@@ -571,6 +580,9 @@ export default function OnboardingPage() {
           is_verified: false,
         });
       }
+
+      window.sessionStorage.removeItem(getTempPasswordStorageKey(email));
+      setTempPassword("");
 
       goNext();
     } catch (err: any) {

@@ -167,6 +167,8 @@ export default function OnboardingPage() {
   const [otpVerified, setOtpVerified] = useState(false);
   const [otpTimer, setOtpTimer] = useState(59);
   const [sendingOtp, setSendingOtp] = useState(false);
+  const [verifyingOtp, setVerifyingOtp] = useState(false);
+  const [brokenPhotoUrls, setBrokenPhotoUrls] = useState<Record<string, boolean>>({});
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [phone, setPhone] = useState("");
@@ -295,23 +297,94 @@ export default function OnboardingPage() {
   );
 
   /* ─── OTP handlers ─── */
-  const handleSendOtp = () => { if (!isEmailValid) return; setSendingOtp(true); setTimeout(() => { setSendingOtp(false); goNext(); }, 1000); };
+  const handleSendOtp = async () => {
+    if (!isEmailValid || sendingOtp) return;
+
+    setSendingOtp(true);
+    setOtpError(false);
+    setOtpDigits(["", "", "", "", "", ""]);
+
+    try {
+      const temporaryPassword = `${crypto.randomUUID()}Aa1!`;
+      const { error: signUpError } = await supabase.auth.signUp({
+        email,
+        password: temporaryPassword,
+        options: {
+          data: { onboarding_pending: true },
+          emailRedirectTo: window.location.origin,
+        },
+      });
+
+      if (signUpError) {
+        const msg = signUpError.message.toLowerCase();
+        const alreadyRegistered =
+          msg.includes("already registered") ||
+          msg.includes("already been registered") ||
+          msg.includes("user already exists");
+
+        if (!alreadyRegistered) {
+          throw signUpError;
+        }
+
+        const { error: resendError } = await supabase.auth.resend({ type: "signup", email });
+        if (resendError) throw resendError;
+      }
+
+      goNext();
+    } catch (error) {
+      console.error("OTP send error:", error);
+      alert("Impossible d'envoyer le code pour le moment. Réessayez dans quelques secondes.");
+    } finally {
+      setSendingOtp(false);
+    }
+  };
+
+  const verifyOtpCode = async (code: string) => {
+    if (verifyingOtp) return;
+
+    setVerifyingOtp(true);
+    setOtpError(false);
+
+    try {
+      const { error } = await supabase.auth.verifyOtp({
+        email,
+        token: code,
+        type: "signup",
+      });
+
+      if (error) throw error;
+
+      setOtpVerified(true);
+      setTimeout(() => goNext(), 400);
+    } catch (error) {
+      console.error("OTP verify error:", error);
+      setOtpError(true);
+      setOtpShake(true);
+      setTimeout(() => setOtpShake(false), 400);
+    } finally {
+      setVerifyingOtp(false);
+    }
+  };
+
   const handleOtpChange = (idx: number, val: string) => {
+    if (verifyingOtp) return;
     if (!/^\d?$/.test(val)) return;
     const nd = [...otpDigits]; nd[idx] = val; setOtpDigits(nd); setOtpError(false);
     if (val && idx < 5) otpRefs.current[idx + 1]?.focus();
     if (nd.every(d => d)) {
-      if (nd.join("") === "123456") { setOtpVerified(true); setTimeout(() => goNext(), 400); }
-      else { setOtpError(true); setOtpShake(true); setTimeout(() => setOtpShake(false), 400); }
+      verifyOtpCode(nd.join(""));
     }
   };
-  const handleOtpKeyDown = (idx: number, e: React.KeyboardEvent) => { if (e.key === "Backspace" && !otpDigits[idx] && idx > 0) otpRefs.current[idx - 1]?.focus(); };
+  const handleOtpKeyDown = (idx: number, e: React.KeyboardEvent) => {
+    if (verifyingOtp) return;
+    if (e.key === "Backspace" && !otpDigits[idx] && idx > 0) otpRefs.current[idx - 1]?.focus();
+  };
   const handleOtpPaste = (e: React.ClipboardEvent) => {
+    if (verifyingOtp) return;
     const text = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
     if (text.length === 6) {
       e.preventDefault(); setOtpDigits(text.split("")); otpRefs.current[5]?.focus();
-      if (text === "123456") { setOtpVerified(true); setTimeout(() => goNext(), 400); }
-      else { setOtpError(true); setOtpShake(true); setTimeout(() => setOtpShake(false), 400); }
+      verifyOtpCode(text);
     }
   };
 
@@ -321,20 +394,21 @@ export default function OnboardingPage() {
     if (!isPasswordValid || submitting) return;
     setSubmitting(true);
     try {
-      // 1. Create auth user
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: { full_name: `${firstName} ${lastName}`.trim() },
-          emailRedirectTo: window.location.origin,
-        },
-      });
-      if (authError) throw authError;
-      const userId = authData.user?.id;
-      if (!userId) throw new Error("No user ID returned");
+      // 1. Use verified auth user created during OTP step
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
 
-      // 2. Update profile
+      const userId = userData.user?.id;
+      if (!userId) throw new Error("Session expirée. Veuillez redemander un code email.");
+
+      // 2. Set final password + metadata
+      const { error: updateAuthError } = await supabase.auth.updateUser({
+        password,
+        data: { full_name: `${firstName} ${lastName}`.trim() },
+      });
+      if (updateAuthError) throw updateAuthError;
+
+      // 3. Update profile
       await supabase.from("profiles").update({
         full_name: `${firstName} ${lastName}`.trim(),
         phone: phone || null,
@@ -343,7 +417,7 @@ export default function OnboardingPage() {
         country: country || "Belgique",
       }).eq("user_id", userId);
 
-      // 3. If seller, create vendor record
+      // 4. If seller, create vendor record
       if (role === "seller") {
         const slug = (companyName || `${firstName}-${lastName}`)
           .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
@@ -365,7 +439,7 @@ export default function OnboardingPage() {
         });
       }
 
-      // 4. If buyer, create customer record
+      // 5. If buyer, create customer record
       if (role === "buyer") {
         await supabase.from("customers").insert({
           auth_user_id: userId,
@@ -402,7 +476,8 @@ export default function OnboardingPage() {
       <div className={otpShake ? "tf-shake" : ""} style={{ display: "flex", gap: 10, justifyContent: "center", marginBottom: 16 }} onPaste={handleOtpPaste}>
         {otpDigits.map((d, i) => (
           <input key={i} ref={el => { otpRefs.current[i] = el; }} type="text" inputMode="numeric" maxLength={1} value={d}
-            onChange={e => handleOtpChange(i, e.target.value)} onKeyDown={e => handleOtpKeyDown(i, e)} autoFocus={i === 0}
+                onChange={e => handleOtpChange(i, e.target.value)} onKeyDown={e => handleOtpKeyDown(i, e)} autoFocus={i === 0}
+                disabled={verifyingOtp || otpVerified}
             style={{
               width: 48, height: 56, border: `${d ? "2px" : "1px"} solid ${otpError ? S.red : d ? S.green : S.line}`,
               borderRadius: S.radius, fontSize: 24, fontWeight: 700, textAlign: "center",
@@ -414,11 +489,17 @@ export default function OnboardingPage() {
         ))}
       </div>
       {otpError && <p style={{ fontSize: 12, color: S.red, marginBottom: 12 }}>Code invalide. Veuillez réessayer.</p>}
+      {verifyingOtp && <p style={{ fontSize: 12, color: S.sec, marginBottom: 12 }}>Vérification du code...</p>}
       <div style={{ fontSize: 12, color: S.ter, marginBottom: 8 }}>
         {otpTimer > 0 ? `Renvoyer le code dans 0:${otpTimer.toString().padStart(2, "0")}` : (
           <span>
             <button style={{ color: S.blue, background: "none", border: "none", cursor: "pointer", fontWeight: 500, fontSize: 12 }} onClick={async () => {
-              try { await supabase.auth.resend({ type: 'signup', email }); } catch(e) { console.error(e); }
+              try {
+                const { error } = await supabase.auth.resend({ type: 'signup', email });
+                if (error) throw error;
+                setOtpDigits(["", "", "", "", "", ""]);
+                setOtpError(false);
+              } catch(e) { console.error(e); }
               setOtpTimer(59);
             }}>Renvoyer par email</button>
           </span>
@@ -837,14 +918,25 @@ export default function OnboardingPage() {
           <div style={{ display: "flex", alignItems: "center", gap: 0, marginBottom: 20 }}>
             {activeTestimonials.slice(0, 3).map((t, i) => {
               const initials = t.name.split(" ").map((n: string) => n[0]).join("").slice(0, 2);
+              const photoKey = `${(t as any).id ?? i}-chip`;
+              const showPhoto = Boolean(t.photo_url) && !brokenPhotoUrls[photoKey];
+
               return (
                 <div key={i} style={{
                   width: 28, height: 28, borderRadius: "50%",
-                  background: t.photo_url ? `url(${t.photo_url}) center/cover` : ["#475569", "#1B5BDA", "#059669"][i % 3],
+                  background: showPhoto ? "rgba(255,255,255,.15)" : ["#475569", "#1B5BDA", "#059669"][i % 3],
                   border: "2px solid rgba(255,255,255,.3)", display: "flex", alignItems: "center", justifyContent: "center",
                   fontSize: 10, fontWeight: 700, color: "#fff", marginLeft: i ? -8 : 0, zIndex: 3 - i, overflow: "hidden",
                 }}>
-                  {!t.photo_url && initials}
+                  {showPhoto ? (
+                    <img
+                      src={t.photo_url || ""}
+                      alt={t.name}
+                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                      referrerPolicy="no-referrer"
+                      onError={() => setBrokenPhotoUrls(prev => ({ ...prev, [photoKey]: true }))}
+                    />
+                  ) : initials}
                 </div>
               );
             })}
@@ -854,9 +946,15 @@ export default function OnboardingPage() {
           </div>
           {activeTestimonials.map((t, i) => (
             <div key={i} style={{ position: tIdx % activeTestimonials.length === i ? "relative" : "absolute", opacity: tIdx % activeTestimonials.length === i ? 1 : 0, transition: "opacity 0.8s ease", bottom: tIdx % activeTestimonials.length === i ? undefined : 0, left: tIdx % activeTestimonials.length === i ? undefined : 0, right: tIdx % activeTestimonials.length === i ? undefined : 0 }}>
-              {t.photo_url ? (
+              {t.photo_url && !brokenPhotoUrls[`${(t as any).id ?? i}-card`] ? (
                 <div style={{ width: 48, height: 48, borderRadius: 8, overflow: "hidden", marginBottom: 16, border: "1px solid rgba(255,255,255,.2)" }}>
-                  <img src={t.photo_url} alt={t.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  <img
+                    src={t.photo_url}
+                    alt={t.name}
+                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                    referrerPolicy="no-referrer"
+                    onError={() => setBrokenPhotoUrls(prev => ({ ...prev, [`${(t as any).id ?? i}-card`]: true }))}
+                  />
                 </div>
               ) : (
                 <div style={{ width: 48, height: 48, borderRadius: 8, background: "rgba(255,255,255,.15)", border: "1px solid rgba(255,255,255,.2)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, color: "#fff", marginBottom: 16 }}>

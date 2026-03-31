@@ -38,7 +38,7 @@ const useQogitaConfig = () =>
     },
   });
 
-type SyncType = "categories" | "brands" | "products" | "offers_detail" | "recalculate";
+type SyncType = "categories" | "brands" | "products" | "offers_detail" | "offers_multi_vendor" | "recalculate";
 
 // ─── SyncProgressBar ─────────────────────────────
 function SyncProgressBar({ log }: { log: any }) {

@@ -466,12 +466,44 @@ export default function OnboardingPage() {
   );
 
   /* ─── Done Screen (reusable) ─── */
+  const [resending, setResending] = useState(false);
+  const [resent, setResent] = useState(false);
   const renderDoneScreen = () => (
     <div style={{ textAlign: "center" }}>
       <div className="tf-check-pop" style={{ width: 64, height: 64, borderRadius: "50%", background: S.blueBg, border: `2px solid ${S.blue}`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
         <Clock size={28} color={S.blue} />
       </div>
       <h1 style={{ fontSize: 20, fontWeight: 700, color: S.text, marginBottom: 8 }}>Inscription enregistrée !</h1>
+      
+      {/* Email confirmation message */}
+      <div style={{ background: S.greenBg, border: `1px solid ${S.green}`, borderRadius: S.radius, padding: 16, marginBottom: 16 }}>
+        <p style={{ fontSize: 13, fontWeight: 600, color: S.green, marginBottom: 4 }}>📧 Un email de confirmation a été envoyé à</p>
+        <p style={{ fontSize: 14, fontWeight: 700, color: S.text }}>{email}</p>
+        <p style={{ fontSize: 12, color: S.sec, marginTop: 6 }}>Vérifiez votre boîte de réception et vos spams.</p>
+      </div>
+
+      {/* Resend button */}
+      <button
+        onClick={async () => {
+          setResending(true);
+          try {
+            await supabase.auth.resend({ type: 'signup', email });
+            setResent(true);
+            setTimeout(() => setResent(false), 5000);
+          } catch (e) { console.error(e); }
+          setResending(false);
+        }}
+        disabled={resending || resent}
+        style={{
+          background: resent ? S.greenBg : "transparent", border: `1px solid ${resent ? S.green : S.line}`,
+          borderRadius: S.radiusSm, padding: "8px 20px", fontSize: 12, fontWeight: 600,
+          color: resent ? S.green : S.blue, cursor: resending || resent ? "default" : "pointer",
+          opacity: resending ? 0.6 : 1, marginBottom: 16,
+        }}
+      >
+        {resent ? "✓ Email renvoyé !" : resending ? "Envoi en cours..." : "Renvoyer l'email de confirmation"}
+      </button>
+
       <p style={{ fontSize: 13, color: S.sec, marginBottom: 20 }}>
         {role === "seller"
           ? "Notre équipe examine votre dossier vendeur. Vous recevrez un email d'activation sous 24 à 48h ouvrées."
@@ -489,7 +521,9 @@ export default function OnboardingPage() {
         ))}
       </div>
       <Cta onClick={() => navigate("/")}>Retour à MediKong.pro</Cta>
-      <p style={{ fontSize: 11, color: S.ter, marginTop: 16 }}>Un email de confirmation a été envoyé à {email}.</p>
+      <p style={{ fontSize: 11, color: S.ter, marginTop: 16 }}>
+        Problème ? Contactez-nous à <a href="mailto:support@medikong.pro" style={{ color: S.blue, fontWeight: 500 }}>support@medikong.pro</a>
+      </p>
     </div>
   );
 

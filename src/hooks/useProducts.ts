@@ -179,12 +179,26 @@ export function useProductOffers(productId: string | undefined) {
         .order("price_excl_vat", { ascending: true });
       if (error) throw error;
 
+      const offerIds = (offers || []).map((o: any) => o.id);
       const vendorIds = [...new Set((offers || []).map((o: any) => o.vendor_id))];
-      const { data: vendors } = vendorIds.length > 0
-        ? await supabase.from("vendors").select("id, name, slug, is_verified, rating, display_code, type").in("id", vendorIds)
-        : { data: [] };
 
-      const vendorMap = new Map((vendors || []).map((v: any) => [v.id, v]));
+      // Fetch vendors and discount tiers in parallel
+      const [vendorsResult, tiersResult] = await Promise.all([
+        vendorIds.length > 0
+          ? supabase.from("vendors").select("id, name, slug, is_verified, rating, display_code, is_top_seller, type").in("id", vendorIds)
+          : Promise.resolve({ data: [] }),
+        offerIds.length > 0
+          ? supabase.from("discount_tiers").select("*").in("offer_id", offerIds).order("mov_amount", { ascending: true })
+          : Promise.resolve({ data: [] }),
+      ]);
+
+      const vendorMap = new Map((vendorsResult.data || []).map((v: any) => [v.id, v]));
+      const tiersMap = new Map<string, any[]>();
+      for (const t of (tiersResult.data || [])) {
+        const arr = tiersMap.get(t.offer_id) || [];
+        arr.push(t);
+        tiersMap.set(t.offer_id, arr);
+      }
 
       return (offers || []).map((o: any): Offer => {
         const vendor = vendorMap.get(o.vendor_id);
@@ -195,17 +209,24 @@ export function useProductOffers(productId: string | undefined) {
           unitPriceEur: Number(o.price_excl_vat),
           unitPriceInclVat: Number(o.price_incl_vat),
           stockQuantity: o.stock_quantity,
-          movEur: Number(o.mov || 0),
+          movEur: Number(o.mov || o.mov_amount || 0),
           bundleSize: o.moq || 1,
           deliveryDays: o.delivery_days,
           shipFromCountry: o.shipping_from_country || 'BE',
           priceTiers: o.price_tiers || null,
+          discountTiers: tiersMap.get(o.id) || [],
           isActive: o.is_active,
           sellerName: vendor?.display_code || vendor?.name?.slice(0, 6)?.toUpperCase() || o.vendor_id.slice(0, 6).toUpperCase(),
           sellerSlug: vendor?.slug || undefined,
           isVerified: vendor?.is_verified || false,
           isTopRated: (vendor?.rating || 0) >= 4.5,
+          isTopSeller: vendor?.is_top_seller || false,
           displayCode: vendor?.display_code || o.vendor_id.slice(0, 6).toUpperCase(),
+          isTraceable: o.is_traceable || false,
+          hasExtendedDelivery: o.has_extended_delivery || false,
+          minDeliveryDays: o.min_delivery_days || undefined,
+          maxDeliveryDays: o.max_delivery_days || undefined,
+          estimatedDeliveryDays: o.estimated_delivery_days || undefined,
         };
       });
     },

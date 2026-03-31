@@ -34,9 +34,9 @@ export default function SearchGridView({ products }: Props) {
 
             {/* Image */}
             <div className="aspect-square bg-muted flex items-center justify-center p-4">
-              {p.imageUrl ? (
+              {(p.imageUrls?.[0] || p.imageUrl) ? (
                 <img
-                  src={p.imageUrl}
+                  src={p.imageUrls?.[0] || p.imageUrl}
                   alt={p.name}
                   loading="lazy"
                   referrerPolicy="no-referrer"

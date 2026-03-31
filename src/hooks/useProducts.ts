@@ -68,18 +68,8 @@ function mapDbProduct(row: any, offersData?: any[]): Product {
     category: undefined,
     color: ["blue", "teal", "green", "amber", "rose", "purple", "orange", "cyan"][row.name.length % 8],
     iconName: "Package",
-    imageUrl: (() => {
-      const urls = row.image_urls;
-      if (Array.isArray(urls) && urls.length > 0) return urls[0] || undefined;
-      if (typeof urls === 'string') { try { const p = JSON.parse(urls); return Array.isArray(p) ? p[0] : undefined; } catch { return undefined; } }
-      return undefined;
-    })(),
-    imageUrls: (() => {
-      const urls = row.image_urls;
-      if (Array.isArray(urls)) return urls.filter(Boolean);
-      if (typeof urls === 'string') { try { const p = JSON.parse(urls); return Array.isArray(p) ? p.filter(Boolean) : []; } catch { return []; } }
-      return [];
-    })(),
+    imageUrl: Array.isArray(row.image_urls) ? row.image_urls[0] || undefined : undefined,
+    imageUrls: Array.isArray(row.image_urls) ? row.image_urls.filter(Boolean) : [],
     descriptionShort: row.short_description || undefined,
     brandId: row.brand_id || undefined,
   };

@@ -777,19 +777,23 @@ export default function OnboardingPage() {
     <div style={{ display: "flex", minHeight: "100vh", fontFamily: "'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" }}>
       {/* ─── LEFT PANEL — Testimonial ─── */}
       <div className="hidden md:flex" style={{ width: "45%", position: "fixed", left: 0, top: 0, bottom: 0, flexDirection: "column", justifyContent: "flex-end", overflow: "hidden" }}>
-        {/* Background photo */}
-        <img
-          src={cmsOnboardingBg || onboardingBgDefault}
-          alt=""
-          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", zIndex: 0 }}
-          referrerPolicy="no-referrer"
-        />
-        {/* Dark overlay on top of photo */}
-        {activeTestimonials.map((t, i) => (
-          <div key={i} style={{ position: "absolute", inset: 0, background: t.gradient, opacity: tIdx % activeTestimonials.length === i ? 0.88 : 0, transition: "opacity 0.8s ease", zIndex: 1 }}>
-            <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(30,41,59,.3), rgba(30,41,59,.85))" }} />
-          </div>
-        ))}
+        {/* Per-testimonial background photos + gradient overlays */}
+        {activeTestimonials.map((t, i) => {
+          const isActive = tIdx % activeTestimonials.length === i;
+          const bgSrc = t.photo_url || cmsOnboardingBg || onboardingBgDefault;
+          return (
+            <div key={i} style={{ position: "absolute", inset: 0, opacity: isActive ? 1 : 0, transition: "opacity 0.8s ease", zIndex: isActive ? 1 : 0 }}>
+              <img
+                src={bgSrc}
+                alt=""
+                style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+                referrerPolicy="no-referrer"
+              />
+              <div style={{ position: "absolute", inset: 0, background: t.gradient, opacity: 0.82 }} />
+              <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(30,41,59,.3), rgba(30,41,59,.85))" }} />
+            </div>
+          );
+        })}
         <div style={{ position: "absolute", top: 32, left: 32, zIndex: 2 }}><Logo white size={22} /></div>
         <div style={{ position: "relative", zIndex: 2, padding: "0 32px 40px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 0, marginBottom: 20 }}>

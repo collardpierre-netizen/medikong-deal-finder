@@ -502,7 +502,7 @@ export default function OnboardingPage() {
           password: tempPassword,
         });
         if (signInError) {
-          alert('Votre email n'est pas encore confirmé. Ouvrez l'email reçu et cliquez sur le lien de vérification, puis réessayez.');
+          alert("Votre email n'est pas encore confirmé. Ouvrez l'email reçu et cliquez sur le lien, puis réessayez.");
           return;
         }
         userId = signInData.user?.id;

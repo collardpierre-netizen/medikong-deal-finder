@@ -519,7 +519,24 @@ export default function ProductPage() {
   );
 
   // Market prices hook (must be before early returns)
-  const { marketPriceItems, externalOfferItems, visMap: mpVisMap } = useMarketPrices(product?.id);
+  const { marketPriceItems, externalOfferItems: marketExternalItems, visMap: mpVisMap } = useMarketPrices(product?.id);
+
+  // External offers from external_offers table (must be before early returns)
+  const { data: externalOffers = [] } = useQuery({
+    queryKey: ["external-offers-product", product?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("external_offers")
+        .select("*, external_vendors(name, slug, website_url, logo_url, country_code)")
+        .eq("product_id", product!.id)
+        .eq("is_active", true);
+      return data || [];
+    },
+    enabled: !!product?.id,
+  });
+
+  // Combined external offer items (from external_offers table)
+  const externalOfferItems = externalOffers;
 
 
   if (isLoading) {

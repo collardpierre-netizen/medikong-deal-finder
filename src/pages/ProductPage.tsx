@@ -36,10 +36,13 @@ function OfferRow({
   user: any; navigate: any; addToCart: any; isBest?: boolean; delay?: number; isTVAC?: boolean;
 }) {
   const [qty, setQty] = useState(offer.bundleSize > 1 ? offer.bundleSize : 1);
+  const discountTiers = offer.discountTiers || [];
+  const hasTiers = discountTiers.length > 1;
   const tiers = (offer.priceTiers && offer.priceTiers.length > 0) ? offer.priceTiers : [];
-  const hasTiers = tiers.length > 1;
+  const hasLegacyTiers = tiers.length > 1;
   const displayCode = offer.displayCode || offer.sellerId.slice(0, 6).toUpperCase();
   const displayPrice = isTVAC ? offer.unitPriceInclVat : offer.unitPriceEur;
+  const priceLabel = isTVAC ? "TVAC" : "HTVA";
   const priceLabel = isTVAC ? "TVAC" : "HTVA";
 
   const handleAdd = () => {

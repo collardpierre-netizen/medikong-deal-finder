@@ -610,4 +610,6 @@ async function syncOffers(
       sync_status: "completed",
     })
     .eq("id", 1);
+
+  return stats;
 }

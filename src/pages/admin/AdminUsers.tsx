@@ -113,7 +113,12 @@ export default function AdminUsers() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-bold text-[#1D2530]">Gestion des Utilisateurs</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-bold text-[#1D2530]">Gestion des Utilisateurs</h1>
+        <Button onClick={() => setShowCreate(true)} className="gap-1.5">
+          <Plus size={16} /> Créer un utilisateur
+        </Button>
+      </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <KpiCard label="Total utilisateurs" value={String(users.length)} icon={Users} iconColor="#1B5BDA" />

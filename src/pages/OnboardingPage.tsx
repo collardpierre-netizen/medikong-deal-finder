@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import type { User } from "@supabase/supabase-js";
+import type { User as AuthUser } from "@supabase/supabase-js";
 import { usePageImages } from "@/hooks/usePageImages";
 import {
   ShoppingBag, Briefcase, User, Stethoscope, Pill, Building2, Layers, Store,
@@ -255,7 +255,7 @@ export default function OnboardingPage() {
   const stepsList = getSteps();
   const currentIdx = stepsList.indexOf(step);
 
-  const restoreOnboardingSession = useCallback((user: User | null) => {
+  const restoreOnboardingSession = useCallback((user: AuthUser | null) => {
     if (!user) return;
 
     const metadata = (user.user_metadata ?? {}) as Record<string, unknown>;

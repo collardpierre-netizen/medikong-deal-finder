@@ -34,7 +34,7 @@ export default function CategoriesPage() {
   const { data: categories = [], isLoading } = useQuery({
     queryKey: ["categories-page"],
     queryFn: async () => {
-      // Get categories with product counts
+      // Get categories
       const { data: cats, error } = await supabase
         .from("categories")
         .select("id, name, name_fr, slug, icon, image_url")
@@ -43,19 +43,13 @@ export default function CategoriesPage() {
         .order("name");
       if (error) throw error;
 
-      // Get product counts per category
-      const { data: counts } = await supabase
-        .from("products")
-        .select("category_id")
-        .eq("is_active", true)
-        .gt("offer_count", 0)
-        .limit(5000);
+      // Get accurate product counts per category using RPC-style: query category_id with count
+      const { data: countRows } = await supabase
+        .rpc("count_products_per_category");
 
       const countMap = new Map<string, number>();
-      for (const row of counts || []) {
-        if (row.category_id) {
-          countMap.set(row.category_id, (countMap.get(row.category_id) || 0) + 1);
-        }
+      for (const row of countRows || []) {
+        countMap.set(row.category_id, row.product_count);
       }
 
       return (cats || [])

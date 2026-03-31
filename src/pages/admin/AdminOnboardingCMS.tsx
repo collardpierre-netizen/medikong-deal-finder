@@ -70,6 +70,7 @@ export default function AdminOnboardingCMS() {
         sort_order: form.sort_order ?? 0,
         is_active: form.is_active ?? true,
         photo_url: form.photo_url || null,
+        background_url: form.background_url || null,
       };
       if (editing) {
         const { error } = await supabase.from("onboarding_testimonials").update(payload).eq("id", editing.id);

@@ -1091,17 +1091,17 @@ export default function OnboardingPage() {
         <a href="/" style={{ position: "absolute", top: 32, left: 32, zIndex: 2, cursor: "pointer" }}><Logo white size={32} /></a>
         <div style={{ position: "relative", zIndex: 2, padding: "0 32px 40px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 0, marginBottom: 20 }}>
-            {activeTestimonials.slice(0, 3).map((t, i) => {
+            {(() => {
+              const t = activeTestimonials[tIdx % activeTestimonials.length];
               const initials = t.name.split(" ").map((n: string) => n[0]).join("").slice(0, 2);
-              const photoKey = `${(t as any).id ?? i}-chip`;
+              const photoKey = `${(t as any).id ?? tIdx}-chip`;
               const showPhoto = Boolean(t.photo_url) && !brokenPhotoUrls[photoKey];
-
               return (
-                <div key={i} style={{
-                  width: 28, height: 28, borderRadius: "50%",
-                  background: showPhoto ? "rgba(255,255,255,.15)" : ["#475569", "#1B5BDA", "#059669"][i % 3],
+                <div style={{
+                  width: 32, height: 32, borderRadius: "50%",
+                  background: showPhoto ? "rgba(255,255,255,.15)" : "#1B5BDA",
                   border: "2px solid rgba(255,255,255,.3)", display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 10, fontWeight: 700, color: "#fff", marginLeft: i ? -8 : 0, zIndex: 3 - i, overflow: "hidden",
+                  fontSize: 11, fontWeight: 700, color: "#fff", overflow: "hidden",
                 }}>
                   {showPhoto ? (
                     <img
@@ -1114,10 +1114,7 @@ export default function OnboardingPage() {
                   ) : initials}
                 </div>
               );
-            })}
-            <span style={{ fontSize: 12, color: "rgba(255,255,255,.55)", marginLeft: 10 }}>
-              {role === "seller" ? "+150 vendeurs partenaires nous font confiance" : "+200 professionnels de santé nous font confiance"}
-            </span>
+            })()}
           </div>
           {activeTestimonials.map((t, i) => (
             <div key={i} style={{ position: tIdx % activeTestimonials.length === i ? "relative" : "absolute", opacity: tIdx % activeTestimonials.length === i ? 1 : 0, transition: "opacity 0.8s ease", bottom: tIdx % activeTestimonials.length === i ? undefined : 0, left: tIdx % activeTestimonials.length === i ? undefined : 0, right: tIdx % activeTestimonials.length === i ? undefined : 0 }}>

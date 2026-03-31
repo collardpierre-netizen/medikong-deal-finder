@@ -759,7 +759,25 @@ export default function ProductPage() {
 
               <div className="border-t border-border mb-6" />
 
-              {/* ── Offers Tabs ── */}
+              {/* ── Price gate for non-logged users ── */}
+              {!user && (
+                <div className="bg-primary/5 border-2 border-primary/20 rounded-xl p-6 mb-6 text-center">
+                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
+                    <Lock size={22} className="text-primary" />
+                  </div>
+                  <h3 className="text-base font-bold text-foreground mb-2">Prix réservés aux professionnels</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Créez votre compte gratuit en 2 minutes pour accéder aux prix B2B exclusifs, {filteredOffers.length} offre{filteredOffers.length > 1 ? "s" : ""} disponible{filteredOffers.length > 1 ? "s" : ""} sur ce produit.
+                  </p>
+                  <Link to="/onboarding" className="inline-flex items-center gap-2 bg-primary text-primary-foreground font-semibold px-6 py-3 rounded-lg hover:opacity-90 transition-opacity text-sm">
+                    Créer mon compte <ArrowRight size={16} />
+                  </Link>
+                  <p className="text-xs text-muted-foreground mt-3">Déjà un compte ? <Link to="/connexion" className="text-primary font-medium hover:underline">Connectez-vous</Link></p>
+                </div>
+              )}
+
+              {/* ── Offers Tabs (only for logged users) ── */}
+              {user && (
               <div ref={offerSectionRef}>
                 <Tabs defaultValue="marketplace" className="mb-6">
                   <TabsList className="w-full grid grid-cols-3 mb-4">

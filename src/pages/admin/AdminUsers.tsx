@@ -24,6 +24,7 @@ export default function AdminUsers() {
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [showCreate, setShowCreate] = useState(false);
   const [typeFilter, setTypeFilter] = useState<"all" | "vendor" | "buyer">("all");
   const [confirmModal, setConfirmModal] = useState<UserRow | null>(null);
   const [confirmed, setConfirmed] = useState(false);

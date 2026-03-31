@@ -227,24 +227,36 @@ export const useManufacturers = () =>
   });
 export const useOffersDirectAdmin = () => useOffers();
 
-// Dashboard aggregated data
+// Dashboard aggregated data — use exact counts instead of fetching all rows
 export const useDashboardStats = () => {
-  const vendors = useVendors();
-  const products = useProducts();
   const orders = useOrders();
 
-  const activeVendors = vendors.data?.filter(v => v.is_active).length ?? 0;
-  const totalProducts = products.data?.length ?? 0;
+  const countsQuery = useQuery({
+    queryKey: ["admin-dashboard-counts"],
+    queryFn: async () => {
+      const [productsRes, vendorsRes, offersRes] = await Promise.all([
+        supabase.from("products").select("id", { count: "exact", head: true }).eq("is_active", true),
+        supabase.from("vendors").select("id", { count: "exact", head: true }).eq("is_active", true),
+        supabase.from("offers").select("id", { count: "exact", head: true }).eq("is_active", true),
+      ]);
+      return {
+        totalProducts: productsRes.count ?? 0,
+        activeVendors: vendorsRes.count ?? 0,
+        activeOffers: offersRes.count ?? 0,
+      };
+    },
+    staleTime: 60_000,
+  });
+
   const totalOrders = orders.data?.length ?? 0;
-  
   const gmv = orders.data?.reduce((sum, o) => sum + (Number(o.total_incl_vat) || 0), 0) ?? 0;
 
   return {
-    activeVendors,
-    totalProducts,
+    activeVendors: countsQuery.data?.activeVendors ?? 0,
+    totalProducts: countsQuery.data?.totalProducts ?? 0,
     totalOrders,
     gmv,
     disputeRate: 0,
-    isLoading: vendors.isLoading || products.isLoading || orders.isLoading,
+    isLoading: countsQuery.isLoading || orders.isLoading,
   };
 };

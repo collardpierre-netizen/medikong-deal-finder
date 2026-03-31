@@ -128,6 +128,16 @@ export function useProduct(slug: string | undefined) {
   });
 }
 
+export interface DiscountTier {
+  id: string;
+  mov_amount: number;
+  mov_currency: string;
+  unit_price: number;
+  price_currency: string;
+  is_active: boolean;
+  mov_progress: number;
+}
+
 export interface Offer {
   id: string;
   productId: string;
@@ -140,12 +150,19 @@ export interface Offer {
   deliveryDays: number;
   shipFromCountry: string;
   priceTiers: any[] | null;
+  discountTiers: DiscountTier[];
   isActive: boolean;
   sellerName?: string;
   sellerSlug?: string;
   isVerified?: boolean;
   isTopRated?: boolean;
+  isTopSeller?: boolean;
   displayCode?: string;
+  isTraceable?: boolean;
+  hasExtendedDelivery?: boolean;
+  minDeliveryDays?: number;
+  maxDeliveryDays?: number;
+  estimatedDeliveryDays?: number;
 }
 
 export function useProductOffers(productId: string | undefined) {

@@ -216,6 +216,7 @@ export default function AdminUsers() {
           </div>
         </div>
       )}
+      <UserCreateDialog open={showCreate} onOpenChange={setShowCreate} onCreated={loadUsers} />
     </div>
   );
 }

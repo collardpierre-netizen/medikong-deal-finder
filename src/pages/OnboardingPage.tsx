@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import type { User as AuthUser } from "@supabase/supabase-js";
 import { usePageImages } from "@/hooks/usePageImages";
 import {
   ShoppingBag, Briefcase, User, Stethoscope, Pill, Building2, Layers, Store,
@@ -168,6 +169,7 @@ export default function OnboardingPage() {
   const [otpTimer, setOtpTimer] = useState(59);
   const [sendingOtp, setSendingOtp] = useState(false);
   const [verifyingOtp, setVerifyingOtp] = useState(false);
+  const [checkingConfirmedEmail, setCheckingConfirmedEmail] = useState(false);
   const [brokenPhotoUrls, setBrokenPhotoUrls] = useState<Record<string, boolean>>({});
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -254,6 +256,63 @@ export default function OnboardingPage() {
   const stepsList = getSteps();
   const currentIdx = stepsList.indexOf(step);
 
+  const restoreOnboardingSession = useCallback((user: AuthUser | null) => {
+    if (!user) return;
+
+    const metadata = (user.user_metadata ?? {}) as Record<string, unknown>;
+    const onboardingPending = metadata.onboarding_pending === true;
+    const onboardingCompleted = metadata.onboarding_completed === true;
+    const roleFromMetadata =
+      metadata.onboarding_role === "buyer" || metadata.onboarding_role === "seller"
+        ? metadata.onboarding_role
+        : typeof metadata.onboarding_business_type === "string"
+          ? "seller"
+          : "buyer";
+
+    if (!onboardingPending || onboardingCompleted) return;
+
+    setRole(roleFromMetadata);
+    setEmail(user.email ?? "");
+    setOtpVerified(true);
+
+    if (roleFromMetadata === "buyer") {
+      if (typeof metadata.onboarding_buyer_profile === "string") {
+        setBuyerProfile(metadata.onboarding_buyer_profile);
+      }
+      setStep(3);
+      return;
+    }
+
+    if (typeof metadata.onboarding_business_type === "string") {
+      setBusinessType(metadata.onboarding_business_type);
+    }
+    setStep(13);
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const rehydrate = async () => {
+      const { data, error } = await supabase.auth.getUser();
+      if (!mounted || error) return;
+      restoreOnboardingSession(data.user ?? null);
+    };
+
+    void rehydrate();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!mounted) return;
+      restoreOnboardingSession(session?.user ?? null);
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, [restoreOnboardingSession]);
+
   /* ─── Navigation ─── */
   const goTo = useCallback((target: number, direction: "up" | "down") => {
     if (transitioning) return;
@@ -310,8 +369,14 @@ export default function OnboardingPage() {
         email,
         password: temporaryPassword,
         options: {
-          data: { onboarding_pending: true },
-          emailRedirectTo: window.location.origin,
+          data: {
+            onboarding_pending: true,
+            onboarding_completed: false,
+            onboarding_role: role || "buyer",
+            ...(role === "buyer" && buyerProfile ? { onboarding_buyer_profile: buyerProfile } : {}),
+            ...(role === "seller" && businessType ? { onboarding_business_type: businessType } : {}),
+          },
+          emailRedirectTo: `${window.location.origin}/onboarding`,
         },
       });
 
@@ -366,6 +431,28 @@ export default function OnboardingPage() {
     }
   };
 
+  const handleContinueAfterEmailConfirmation = async () => {
+    if (checkingConfirmedEmail || verifyingOtp) return;
+
+    setCheckingConfirmedEmail(true);
+    try {
+      const { data, error } = await supabase.auth.getUser();
+      if (error) throw error;
+
+      if (!data.user) {
+        alert("Aucune session confirmée détectée. Cliquez d'abord sur le bouton de confirmation reçu par email.");
+        return;
+      }
+
+      restoreOnboardingSession(data.user);
+    } catch (error) {
+      console.error("Email confirmation check error:", error);
+      alert("Impossible de vérifier la confirmation pour le moment. Réessayez dans quelques secondes.");
+    } finally {
+      setCheckingConfirmedEmail(false);
+    }
+  };
+
   const handleOtpChange = (idx: number, val: string) => {
     if (verifyingOtp) return;
     if (!/^\d?$/.test(val)) return;
@@ -404,7 +491,12 @@ export default function OnboardingPage() {
       // 2. Set final password + metadata
       const { error: updateAuthError } = await supabase.auth.updateUser({
         password,
-        data: { full_name: `${firstName} ${lastName}`.trim() },
+        data: {
+          full_name: `${firstName} ${lastName}`.trim(),
+          onboarding_pending: false,
+          onboarding_completed: true,
+          onboarding_role: role,
+        },
       });
       if (updateAuthError) throw updateAuthError;
 
@@ -472,7 +564,8 @@ export default function OnboardingPage() {
         <Lock size={24} color={S.blue} />
       </div>
       <h1 style={{ fontSize: 20, fontWeight: 700, color: S.text, marginBottom: 6 }}>Vérifiez votre email</h1>
-      <p style={{ fontSize: 13, color: S.sec, marginBottom: 24 }}>Un code à 6 chiffres a été envoyé à <strong>{email}</strong></p>
+      <p style={{ fontSize: 13, color: S.sec, marginBottom: 8 }}>Un code à 6 chiffres a été envoyé à <strong>{email}</strong></p>
+      <p style={{ fontSize: 12, color: S.ter, marginBottom: 20 }}>Si l'email contient un bouton de confirmation, cliquez-le puis revenez ici pour continuer.</p>
       <div className={otpShake ? "tf-shake" : ""} style={{ display: "flex", gap: 10, justifyContent: "center", marginBottom: 16 }} onPaste={handleOtpPaste}>
         {otpDigits.map((d, i) => (
           <input key={i} ref={el => { otpRefs.current[i] = el; }} type="text" inputMode="numeric" maxLength={1} value={d}
@@ -505,6 +598,24 @@ export default function OnboardingPage() {
           </span>
         )}
       </div>
+      <button
+        onClick={handleContinueAfterEmailConfirmation}
+        disabled={checkingConfirmedEmail || verifyingOtp}
+        style={{
+          background: "transparent",
+          border: `1px solid ${S.line}`,
+          borderRadius: S.radiusSm,
+          padding: "8px 16px",
+          fontSize: 12,
+          fontWeight: 600,
+          color: S.blue,
+          cursor: checkingConfirmedEmail ? "default" : "pointer",
+          opacity: checkingConfirmedEmail ? 0.6 : 1,
+          marginBottom: 12,
+        }}
+      >
+        {checkingConfirmedEmail ? "Vérification..." : "J’ai confirmé via le bouton email"}
+      </button>
       <p style={{ fontSize: 11, color: S.ter }}>Vérifiez aussi vos spams. Contact : <a href="mailto:support@medikong.pro" style={{ color: S.blue }}>support@medikong.pro</a></p>
     </div>
   );

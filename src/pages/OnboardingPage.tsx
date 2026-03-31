@@ -197,6 +197,10 @@ export default function OnboardingPage() {
   const [fulfillment, setFulfillment] = useState("");
   const [leadTime, setLeadTime] = useState("");
 
+  /* ─── CMS background image ─── */
+  const { getImage } = usePageImages("onboarding");
+  const cmsOnboardingBg = getImage("background")?.image_url;
+
   /* ─── Testimonials from DB ─── */
   const { data: dbTestimonials } = useQuery({
     queryKey: ["onboarding-testimonials", role],

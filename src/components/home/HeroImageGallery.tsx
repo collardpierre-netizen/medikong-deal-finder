@@ -27,7 +27,7 @@ export function HeroImageGallery() {
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("cms_hero_images" as any)
-        .select("id, image_url, alt_text, sort_order, link_url, cta_text")
+        .select("id, image_url, alt_text, sort_order, link_url, cta_text, title, subtitle")
         .eq("is_active", true)
         .order("sort_order");
       if (error || !data?.length) return null;

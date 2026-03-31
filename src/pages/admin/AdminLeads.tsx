@@ -12,14 +12,7 @@ import {
 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
-const revenueData = [
-  { month: "Oct", cpa: 2800, cpc: 420 },
-  { month: "Nov", cpa: 3100, cpc: 480 },
-  { month: "Déc", cpa: 3400, cpc: 510 },
-  { month: "Jan", cpa: 2900, cpc: 390 },
-  { month: "Fév", cpa: 3200, cpc: 450 },
-  { month: "Mar", cpa: 3597, cpc: 540 },
-];
+const revenueData: { month: string; cpa: number; cpc: number }[] = [];
 
 const AdminLeads = () => {
   const [tab, setTab] = useState("overview");
@@ -52,16 +45,24 @@ const AdminLeads = () => {
         <TabsContent value="overview">
           <div className="bg-white rounded-lg border p-5" style={{ borderColor: "#E2E8F0" }}>
             <h3 className="text-[14px] font-semibold mb-4" style={{ color: "#1D2530" }}>Revenus affiliation (6 mois)</h3>
-            <ResponsiveContainer width="100%" height={260}>
-              <BarChart data={revenueData} barGap={4}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#8B95A5" }} />
-                <YAxis tick={{ fontSize: 11, fill: "#8B95A5" }} />
-                <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
-                <Bar dataKey="cpa" name="CPA" fill="#7C3AED" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="cpc" name="CPC" fill="#1B5BDA" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            {revenueData.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center" style={{ color: "#8B95A5" }}>
+                <TrendingUp size={40} className="mb-3 opacity-30" />
+                <p className="text-[14px] font-medium">Aucune donnée de revenus</p>
+                <p className="text-[12px] mt-1">Les données apparaîtront ici une fois les premiers partenaires actifs.</p>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={260}>
+                <BarChart data={revenueData} barGap={4}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                  <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#8B95A5" }} />
+                  <YAxis tick={{ fontSize: 11, fill: "#8B95A5" }} />
+                  <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
+                  <Bar dataKey="cpa" name="CPA" fill="#7C3AED" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="cpc" name="CPC" fill="#1B5BDA" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </TabsContent>
 

@@ -1,34 +1,54 @@
-import { useState } from "react";
-import { Outlet } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Outlet, useNavigate } from "react-router-dom";
 import { VendorSidebar } from "./VendorSidebar";
 import { VendorTopBar } from "./VendorTopBar";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { supabase } from "@/integrations/supabase/client";
+import { Loader2 } from "lucide-react";
 
 export default function VendorLayout() {
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [checking, setChecking] = useState(true);
+
+  useEffect(() => {
+    const check = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        navigate("/vendor/login", { replace: true });
+        return;
+      }
+      const { data: vendor } = await supabase
+        .from("vendors")
+        .select("id")
+        .eq("auth_user_id", user.id)
+        .maybeSingle();
+      if (!vendor) {
+        navigate("/vendor/login", { replace: true });
+        return;
+      }
+      setChecking(false);
+    };
+    check();
+  }, [navigate]);
+
+  if (checking) {
+    return (
+      <div className="flex items-center justify-center min-h-screen" style={{ backgroundColor: "#F1F5F9" }}>
+        <Loader2 className="w-8 h-8 animate-spin" style={{ color: "#1B5BDA" }} />
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen w-full overflow-hidden" style={{ backgroundColor: "#F1F5F9" }}>
-      {/* Mobile overlay */}
       {isMobile && sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/40 z-40"
-          onClick={() => setSidebarOpen(false)}
-        />
+        <div className="fixed inset-0 bg-black/40 z-40" onClick={() => setSidebarOpen(false)} />
       )}
-
-      {/* Sidebar */}
-      <div
-        className={
-          isMobile
-            ? `fixed inset-y-0 left-0 z-50 transition-transform duration-200 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`
-            : ""
-        }
-      >
+      <div className={isMobile ? `fixed inset-y-0 left-0 z-50 transition-transform duration-200 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}` : ""}>
         <VendorSidebar onNavigate={isMobile ? () => setSidebarOpen(false) : undefined} />
       </div>
-
       <div className="flex-1 flex flex-col min-w-0">
         <VendorTopBar onMenuClick={isMobile ? () => setSidebarOpen((v) => !v) : undefined} />
         <main className="flex-1 overflow-auto p-4 md:p-6">

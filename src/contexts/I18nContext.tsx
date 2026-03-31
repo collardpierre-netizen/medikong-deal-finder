@@ -12,6 +12,7 @@ const translations: Record<Lang, Record<string, string>> = {
   fr: {
     dashboard: "Tableau de bord",
     sellers: "Vendeurs",
+    externalVendors: "Vendeurs externes",
     onboarding: "Onboarding",
     products: "Produits",
     categories: "Catégories",

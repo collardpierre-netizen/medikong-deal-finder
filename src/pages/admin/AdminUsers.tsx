@@ -113,6 +113,42 @@ export default function AdminUsers() {
     }
   }
 
+  async function handleToggleStatus(user: UserRow) {
+    const newStatus = user.status === "active" ? false : true;
+    const table = user.type === "vendor" ? "vendors" : "customers";
+    
+    if (user.type === "vendor") {
+      const { error } = await supabase
+        .from("vendors")
+        .update({ is_active: newStatus } as any)
+        .eq("auth_user_id", user.userId);
+      if (error) { toast.error("Erreur: " + error.message); return; }
+    } else {
+      const { error } = await supabase
+        .from("customers")
+        .update({ is_verified: newStatus } as any)
+        .eq("auth_user_id", user.userId);
+      if (error) { toast.error("Erreur: " + error.message); return; }
+    }
+    toast.success(newStatus ? "Compte activé" : "Compte suspendu");
+    loadUsers();
+  }
+
+  async function handleDelete(user: UserRow) {
+    if (!window.confirm(`Supprimer définitivement ${user.company} (${user.email}) ? Cette action est irréversible.`)) return;
+    
+    const table = user.type === "vendor" ? "vendors" : "customers";
+    if (user.type === "vendor") {
+      const { error } = await supabase.from("vendors").delete().eq("auth_user_id", user.userId);
+      if (error) { toast.error("Erreur: " + error.message); return; }
+    } else {
+      const { error } = await supabase.from("customers").delete().eq("auth_user_id", user.userId);
+      if (error) { toast.error("Erreur: " + error.message); return; }
+    }
+    toast.success("Utilisateur supprimé");
+    loadUsers();
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">

@@ -4,113 +4,193 @@ import KpiCard from "@/components/admin/KpiCard";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { useLeadsPartners, useOffersIndirect } from "@/hooks/useAdminData";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import {
-  Link, MousePointerClick, DollarSign, Users, TrendingUp,
-  CheckCircle2, Clock, AlertCircle,
+  Link, MousePointerClick, TrendingUp, Users, Download
 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
-const revenueData: { month: string; cpa: number; cpc: number }[] = [];
+function startOfMonth() {
+  const d = new Date(); d.setDate(1); d.setHours(0,0,0,0); return d.toISOString();
+}
+function startOfWeek() {
+  const d = new Date(); d.setDate(d.getDate() - d.getDay() + 1); d.setHours(0,0,0,0); return d.toISOString();
+}
+function daysAgo(n: number) {
+  const d = new Date(); d.setDate(d.getDate() - n); d.setHours(0,0,0,0); return d.toISOString();
+}
 
-const AdminLeads = () => {
+export default function AdminLeads() {
   const [tab, setTab] = useState("overview");
-  const { data: partners = [], isLoading } = useLeadsPartners();
 
-  const activePartners = partners.filter(p => p.status === "active");
-  const totalRevenue = activePartners.reduce((a, p) => a + Number(p.revenue_30d || 0), 0);
-  const totalClicks = activePartners.reduce((a, p) => a + (p.clicks_30d || 0), 0);
-  const totalConversions = activePartners.reduce((a, p) => a + (p.conversions_30d || 0), 0);
+  // All leads with joins
+  const { data: leads = [], isLoading } = useQuery({
+    queryKey: ["admin-leads-all"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("external_leads")
+        .select("*, external_vendors(name), products(name, gtin), external_offers(product_url)")
+        .order("clicked_at", { ascending: false })
+        .limit(500);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // External vendors for summary
+  const { data: vendors = [] } = useQuery({
+    queryKey: ["admin-ext-vendors-leads"],
+    queryFn: async () => {
+      const { data } = await supabase.from("external_vendors").select("id, name").eq("is_active", true);
+      return data || [];
+    },
+  });
+
+  const leadsThisMonth = leads.filter(l => l.clicked_at && l.clicked_at >= startOfMonth());
+  const leadsThisWeek = leads.filter(l => l.clicked_at && l.clicked_at >= startOfWeek());
+
+  // Most clicked vendor
+  const vendorCounts: Record<string, number> = {};
+  leadsThisMonth.forEach(l => { vendorCounts[l.external_vendor_id] = (vendorCounts[l.external_vendor_id] || 0) + 1; });
+  const topVendorId = Object.entries(vendorCounts).sort((a, b) => b[1] - a[1])[0]?.[0];
+  const topVendorName = vendors.find(v => v.id === topVendorId)?.name || "—";
+
+  // Most requested product
+  const productCounts: Record<string, { count: number; name: string }> = {};
+  leadsThisMonth.forEach(l => {
+    const name = (l as any).products?.name || "?";
+    if (!productCounts[l.product_id]) productCounts[l.product_id] = { count: 0, name };
+    productCounts[l.product_id].count++;
+  });
+  const topProduct = Object.values(productCounts).sort((a, b) => b.count - a.count)[0]?.name || "—";
+
+  // Chart: leads per day last 30 days
+  const chartData: { day: string; count: number }[] = [];
+  const since30 = daysAgo(30);
+  const recentLeads = leads.filter(l => l.clicked_at && l.clicked_at >= since30);
+  const dayMap: Record<string, number> = {};
+  recentLeads.forEach(l => {
+    const day = l.clicked_at!.slice(0, 10);
+    dayMap[day] = (dayMap[day] || 0) + 1;
+  });
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const key = d.toISOString().slice(0, 10);
+    chartData.push({ day: key.slice(5), count: dayMap[key] || 0 });
+  }
+
+  // Vendor summary
+  const vendorSummary = vendors.map(v => {
+    const vLeads = leads.filter(l => l.external_vendor_id === v.id);
+    const lastAt = vLeads[0]?.clicked_at;
+    return { ...v, leadCount: vLeads.length, lastAt };
+  }).sort((a, b) => b.leadCount - a.leadCount);
+
+  // Export CSV
+  const exportCsv = () => {
+    const header = "Date,Produit,GTIN,Vendeur,User ID\n";
+    const rows = leads.map(l =>
+      `${l.clicked_at?.slice(0,16)},${((l as any).products?.name || "").replace(/,/g," ")},${(l as any).products?.gtin || ""},${(l as any).external_vendors?.name || ""},${l.user_id || "Anonyme"}`
+    ).join("\n");
+    const blob = new Blob([header + rows], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = "leads-export.csv"; a.click();
+  };
 
   return (
     <div>
-      <AdminTopBar title="Leads & Affiliation" subtitle="Monétisation offres indirectes" />
+      <AdminTopBar title="Leads & Affiliation" subtitle="Suivi des clics vers les vendeurs externes" />
 
-      <div className="grid grid-cols-5 gap-4 mb-6">
-        <KpiCard icon={DollarSign} label="Revenu leads 30j" value={`${totalRevenue.toLocaleString("fr-BE")} €`} evolution={{ value: 18, label: "vs mois dernier" }} iconColor="#059669" iconBg="#ECFDF5" />
-        <KpiCard icon={MousePointerClick} label="Clicks sortants" value={totalClicks.toLocaleString("fr-BE")} evolution={{ value: 12, label: "vs mois dernier" }} iconColor="#1B5BDA" iconBg="#EFF6FF" />
-        <KpiCard icon={TrendingUp} label="Conversions" value={String(totalConversions)} evolution={{ value: 8, label: "vs mois dernier" }} iconColor="#7C3AED" iconBg="#F3F0FF" />
-        <KpiCard icon={Users} label="Partenaires actifs" value={`${activePartners.length} / ${partners.length}`} iconColor="#F59E0B" iconBg="#FFFBEB" />
-        <KpiCard icon={Link} label="Rev. moy / click" value={totalClicks > 0 ? `${(totalRevenue / totalClicks).toFixed(2)} €` : "0 €"} iconColor="#E70866" iconBg="#FFF1F3" />
+      <div className="grid grid-cols-4 gap-4 mb-6">
+        <KpiCard icon={MousePointerClick} label="Leads ce mois" value={String(leadsThisMonth.length)} iconColor="#1B5BDA" iconBg="#EFF6FF" />
+        <KpiCard icon={TrendingUp} label="Leads cette semaine" value={String(leadsThisWeek.length)} iconColor="#7C3AED" iconBg="#F3F0FF" />
+        <KpiCard icon={Users} label="Vendeur le + cliqué" value={topVendorName} iconColor="#F59E0B" iconBg="#FFFBEB" />
+        <KpiCard icon={Link} label="Produit le + demandé" value={topProduct.length > 30 ? topProduct.slice(0, 28) + "…" : topProduct} iconColor="#E70866" iconBg="#FFF1F3" />
       </div>
 
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList className="mb-4" style={{ backgroundColor: "#E2E8F0" }}>
-          <TabsTrigger value="overview" className="text-[13px]">Overview</TabsTrigger>
-          <TabsTrigger value="partenaires" className="text-[13px]">Partenaires</TabsTrigger>
-          <TabsTrigger value="revenus" className="text-[13px]">Revenus</TabsTrigger>
-        </TabsList>
+        <div className="flex items-center justify-between mb-4">
+          <TabsList style={{ backgroundColor: "#E2E8F0" }}>
+            <TabsTrigger value="overview" className="text-[13px]">Graphique</TabsTrigger>
+            <TabsTrigger value="leads" className="text-[13px]">Leads récents</TabsTrigger>
+            <TabsTrigger value="vendors" className="text-[13px]">Par vendeur</TabsTrigger>
+          </TabsList>
+          <Button size="sm" variant="outline" onClick={exportCsv}><Download size={14} className="mr-1" /> Export CSV</Button>
+        </div>
 
         <TabsContent value="overview">
           <div className="bg-white rounded-lg border p-5" style={{ borderColor: "#E2E8F0" }}>
-            <h3 className="text-[14px] font-semibold mb-4" style={{ color: "#1D2530" }}>Revenus affiliation (6 mois)</h3>
-            {revenueData.length === 0 ? (
+            <h3 className="text-[14px] font-semibold mb-4" style={{ color: "#1D2530" }}>Leads par jour (30 derniers jours)</h3>
+            {recentLeads.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-center" style={{ color: "#8B95A5" }}>
                 <TrendingUp size={40} className="mb-3 opacity-30" />
-                <p className="text-[14px] font-medium">Aucune donnée de revenus</p>
-                <p className="text-[12px] mt-1">Les données apparaîtront ici une fois les premiers partenaires actifs.</p>
+                <p className="text-[14px] font-medium">Aucun lead enregistré</p>
+                <p className="text-[12px] mt-1">Les données apparaîtront ici après les premiers clics.</p>
               </div>
             ) : (
               <ResponsiveContainer width="100%" height={260}>
-                <BarChart data={revenueData} barGap={4}>
+                <BarChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                  <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#8B95A5" }} />
-                  <YAxis tick={{ fontSize: 11, fill: "#8B95A5" }} />
+                  <XAxis dataKey="day" tick={{ fontSize: 11, fill: "#8B95A5" }} />
+                  <YAxis tick={{ fontSize: 11, fill: "#8B95A5" }} allowDecimals={false} />
                   <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
-                  <Bar dataKey="cpa" name="CPA" fill="#7C3AED" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="cpc" name="CPC" fill="#1B5BDA" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="count" name="Leads" fill="#1B5BDA" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             )}
           </div>
         </TabsContent>
 
-        <TabsContent value="partenaires">
-          {isLoading ? <div className="py-12 text-center text-[13px]" style={{ color: "#8B95A5" }}>Chargement...</div> : (
-            <div className="grid grid-cols-2 gap-4">
-              {partners.map((p) => (
-                <div key={p.id} className="bg-white rounded-lg border p-5" style={{ borderColor: "#E2E8F0" }}>
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-[15px] font-semibold" style={{ color: "#1D2530" }}>{p.name}</span>
-                    <Badge variant="outline" className="text-[10px]" style={{
-                      color: p.status === "active" ? "#059669" : "#F59E0B",
-                      borderColor: p.status === "active" ? "#BBF7D0" : "#FDE68A",
-                      backgroundColor: p.status === "active" ? "#ECFDF5" : "#FFFBEB",
-                    }}>
-                      {p.status === "active" ? "Actif" : "En attente"}
-                    </Badge>
-                  </div>
-                  <div className="grid grid-cols-2 gap-y-2 text-[12px]">
-                    <div><span style={{ color: "#8B95A5" }}>Type : </span><span style={{ color: "#1D2530" }}>{p.type || "indirect"}</span></div>
-                    <div><span style={{ color: "#8B95A5" }}>Modèle : </span><span style={{ color: "#7C3AED" }}>{p.model} {Number(p.cpa_cpc_amount || 0).toFixed(2)} €</span></div>
-                    <div><span style={{ color: "#8B95A5" }}>Produits : </span><span style={{ color: "#1D2530" }}>{(p.products_count || 0).toLocaleString("fr-BE")}</span></div>
-                    <div><span style={{ color: "#8B95A5" }}>Rev. 30j : </span><span className="font-semibold" style={{ color: "#059669" }}>{Number(p.revenue_30d || 0).toLocaleString("fr-BE")} €</span></div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </TabsContent>
-
-        <TabsContent value="revenus">
+        <TabsContent value="leads">
           <div className="bg-white rounded-lg border overflow-hidden" style={{ borderColor: "#E2E8F0" }}>
             <Table>
               <TableHeader>
                 <TableRow style={{ backgroundColor: "#F8FAFC" }}>
-                  {["Partenaire", "Modèle", "Clicks", "Conversions", "Revenu 30j"].map(h => (
+                  {["Date/Heure", "Produit", "GTIN", "Vendeur externe", "Utilisateur"].map(h => (
                     <TableHead key={h} className="text-[11px] font-semibold" style={{ color: "#8B95A5" }}>{h}</TableHead>
                   ))}
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {activePartners.map((p) => (
-                  <TableRow key={p.id}>
-                    <TableCell className="text-[12px] font-medium" style={{ color: "#1D2530" }}>{p.name}</TableCell>
-                    <TableCell><Badge variant="outline" className="text-[10px]" style={{ color: "#7C3AED", borderColor: "#DDD6FE" }}>{p.model}</Badge></TableCell>
-                    <TableCell className="text-[12px] text-right" style={{ color: "#616B7C" }}>{(p.clicks_30d || 0).toLocaleString("fr-BE")}</TableCell>
-                    <TableCell className="text-[12px] text-right" style={{ color: "#616B7C" }}>{p.conversions_30d || 0}</TableCell>
-                    <TableCell className="text-[12px] text-right font-semibold" style={{ color: "#059669" }}>{Number(p.revenue_30d || 0).toLocaleString("fr-BE")} €</TableCell>
+                {isLoading ? (
+                  <TableRow><TableCell colSpan={5} className="text-center py-8 text-[13px]" style={{ color: "#8B95A5" }}>Chargement...</TableCell></TableRow>
+                ) : leads.length === 0 ? (
+                  <TableRow><TableCell colSpan={5} className="text-center py-8 text-[13px]" style={{ color: "#8B95A5" }}>Aucun lead</TableCell></TableRow>
+                ) : leads.slice(0, 100).map((l: any) => (
+                  <TableRow key={l.id}>
+                    <TableCell className="text-[12px]" style={{ color: "#616B7C" }}>{l.clicked_at ? new Date(l.clicked_at).toLocaleString("fr-BE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "—"}</TableCell>
+                    <TableCell className="text-[12px] font-medium max-w-[200px] truncate" style={{ color: "#1D2530" }}>{l.products?.name || "—"}</TableCell>
+                    <TableCell className="text-[11px] font-mono" style={{ color: "#616B7C" }}>{l.products?.gtin || "—"}</TableCell>
+                    <TableCell className="text-[12px]" style={{ color: "#1B5BDA" }}>{l.external_vendors?.name || "—"}</TableCell>
+                    <TableCell className="text-[12px]" style={{ color: "#616B7C" }}>{l.user_id ? l.user_id.slice(0, 8) + "…" : "Anonyme"}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="vendors">
+          <div className="bg-white rounded-lg border overflow-hidden" style={{ borderColor: "#E2E8F0" }}>
+            <Table>
+              <TableHeader>
+                <TableRow style={{ backgroundColor: "#F8FAFC" }}>
+                  {["Vendeur", "Nombre de leads", "Dernière activité"].map(h => (
+                    <TableHead key={h} className="text-[11px] font-semibold" style={{ color: "#8B95A5" }}>{h}</TableHead>
+                  ))}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {vendorSummary.map(v => (
+                  <TableRow key={v.id}>
+                    <TableCell className="text-[13px] font-medium" style={{ color: "#1D2530" }}>{v.name}</TableCell>
+                    <TableCell className="text-[13px] font-semibold" style={{ color: "#1B5BDA" }}>{v.leadCount}</TableCell>
+                    <TableCell className="text-[12px]" style={{ color: "#616B7C" }}>
+                      {v.lastAt ? new Date(v.lastAt).toLocaleDateString("fr-BE") : "—"}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -120,6 +200,4 @@ const AdminLeads = () => {
       </Tabs>
     </div>
   );
-};
-
-export default AdminLeads;
+}

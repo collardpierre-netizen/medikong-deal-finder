@@ -82,7 +82,11 @@ export async function importProducts(file: File): Promise<{ created: number; err
   for (const row of rows) {
     const r = row as any;
     if (!r.name) { errors.push("Ligne ignorée: nom manquant"); continue; }
-    const imageUrls = r.image_urls ? String(r.image_urls).split(";").map((u: string) => u.trim()).filter(Boolean) : [];
+    const rawImageUrls = r.image_urls ?? r.image_url ?? r["Image URL"] ?? r["Image URL "] ?? r["image url"] ?? "";
+    const imageUrls = String(rawImageUrls)
+      .split(/[;\n,]+/)
+      .map((u: string) => u.trim())
+      .filter((u: string) => /^https?:\/\//i.test(u));
     const { error } = await supabase.from("products").upsert({
       name: r.name,
       slug: r.slug || slugify(r.name),

@@ -126,6 +126,9 @@ const AdminApiDocs = lazy(() => import("./pages/admin/AdminApiDocs"));
 const AdminCountries = lazy(() => import("./pages/admin/AdminCountries"));
 const AdminMarketCodes = lazy(() => import("./pages/admin/AdminMarketCodes"));
 const AdminExternalVendors = lazy(() => import("./pages/admin/AdminExternalVendors"));
+const AdminStripeCommissions = lazy(() => import("./pages/admin/AdminStripeCommissions"));
+const AdminStripeRevenue = lazy(() => import("./pages/admin/AdminStripeRevenue"));
+const AdminOrderRefund = lazy(() => import("./pages/admin/AdminOrderRefund"));
 
 // Vendor pages
 const VendorLoginPage = lazy(() => import("./pages/vendor/VendorLoginPage"));

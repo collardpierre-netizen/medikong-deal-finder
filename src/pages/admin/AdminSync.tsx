@@ -739,7 +739,7 @@ export default function AdminSync() {
                 return (
                   <button
                     key={type}
-                    onClick={() => runSync.mutate(type)}
+                    onClick={() => runSyncLooping(type)}
                     disabled={isRunning}
                     className="flex flex-col items-start gap-2 p-4 border rounded-lg text-left transition-all hover:border-blue-500 hover:bg-blue-50 disabled:opacity-50"
                     style={{ borderColor: "#E2E8F0" }}
@@ -749,6 +749,16 @@ export default function AdminSync() {
                       <span className="text-[13px] font-semibold" style={{ color: "#1E293B" }}>{label}</span>
                     </div>
                     <span className="text-[11px]" style={{ color: "#8B95A5" }}>{desc}</span>
+                    {loopProgress[type] && (
+                      <div className="w-full mt-1">
+                        <Progress value={loopProgress[type].processed + loopProgress[type].remaining > 0
+                          ? Math.round((loopProgress[type].processed / (loopProgress[type].processed + loopProgress[type].remaining)) * 100)
+                          : 0} className="h-1.5" />
+                        <span className="text-[10px] mt-0.5 block" style={{ color: "#616B7C" }}>
+                          {loopProgress[type].processed} traités • {loopProgress[type].remaining} restants • {loopProgress[type].errors} erreurs
+                        </span>
+                      </div>
+                    )}
                   </button>
                 );
               })}

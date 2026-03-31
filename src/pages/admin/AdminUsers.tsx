@@ -4,8 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useImpersonation } from "@/contexts/ImpersonationContext";
 import KpiCard from "@/components/admin/KpiCard";
 import StatusBadge from "@/components/admin/StatusBadge";
-import { Eye, MoreHorizontal, Users, Store, ShoppingBag, AlertTriangle, Search } from "lucide-react";
+import { Eye, MoreHorizontal, Users, Store, ShoppingBag, AlertTriangle, Search, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import UserCreateDialog from "@/components/admin/UserCreateDialog";
 
 interface UserRow {
   id: string;

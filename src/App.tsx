@@ -146,6 +146,9 @@ const VendorLogistics = lazy(() => import("./pages/vendor/VendorLogistics"));
 const VendorHealth = lazy(() => import("./pages/vendor/VendorHealth"));
 const VendorAcademy = lazy(() => import("./pages/vendor/VendorAcademy"));
 const VendorSettings = lazy(() => import("./pages/vendor/VendorSettings"));
+const VendorStripeOnboardingPage = lazy(() => import("./pages/vendor/VendorStripeOnboardingPage"));
+const VendorStripeSuccessPage = lazy(() => import("./pages/vendor/VendorStripeSuccessPage"));
+const VendorStripeRefreshPage = lazy(() => import("./pages/vendor/VendorStripeRefreshPage"));
 const VendorMessages = lazy(() => import("./pages/vendor/VendorMessages"));
 
 const queryClient = new QueryClient({

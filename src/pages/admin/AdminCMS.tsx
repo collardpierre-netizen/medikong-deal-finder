@@ -351,7 +351,42 @@ const AdminCMS = () => {
                   <img src={img.image_url} alt={img.alt_text} className="w-20 h-14 object-cover rounded-lg border border-border" />
                   <div className="flex-1 min-w-0">
                     <p className="text-[12px] font-medium truncate" style={{ color: "#1D2530" }}>{img.alt_text || "Sans description"}</p>
-                    <p className="text-[10px] truncate" style={{ color: "#8B95A5" }}>{img.image_url}</p>
+                    {(img.title || img.subtitle) && (
+                      <p className="text-[10px] mt-0.5" style={{ color: "#1D2530" }}>
+                        {img.title && <span className="font-semibold">{img.title}</span>}
+                        {img.subtitle && <span className="ml-1 text-[#8B95A5]">— {img.subtitle}</span>}
+                      </p>
+                    )}
+                    <div className="flex items-center gap-2 mt-1">
+                      <input
+                        placeholder="Titre banner..."
+                        defaultValue={img.title || ""}
+                        onBlur={(e) => {
+                          const val = e.target.value.trim();
+                          if (val !== (img.title || "")) {
+                            sb.from("cms_hero_images").update({ title: val || null }).eq("id", img.id).then(() => {
+                              queryClient.invalidateQueries({ queryKey: ["admin-hero-images"] });
+                              queryClient.invalidateQueries({ queryKey: ["cms-hero-images"] });
+                            });
+                          }
+                        }}
+                        className="text-[11px] border border-transparent hover:border-gray-300 focus:border-blue-400 rounded px-1.5 py-0.5 w-[180px] bg-transparent focus:bg-white"
+                      />
+                      <input
+                        placeholder="Sous-titre..."
+                        defaultValue={img.subtitle || ""}
+                        onBlur={(e) => {
+                          const val = e.target.value.trim();
+                          if (val !== (img.subtitle || "")) {
+                            sb.from("cms_hero_images").update({ subtitle: val || null }).eq("id", img.id).then(() => {
+                              queryClient.invalidateQueries({ queryKey: ["admin-hero-images"] });
+                              queryClient.invalidateQueries({ queryKey: ["cms-hero-images"] });
+                            });
+                          }
+                        }}
+                        className="text-[11px] border border-transparent hover:border-gray-300 focus:border-blue-400 rounded px-1.5 py-0.5 w-[140px] bg-transparent focus:bg-white"
+                      />
+                    </div>
                     {(img.link_url || img.cta_text) && (
                       <p className="text-[10px] mt-0.5" style={{ color: "#1B5BDA" }}>
                         {img.cta_text && <span className="font-medium">[{img.cta_text}]</span>}

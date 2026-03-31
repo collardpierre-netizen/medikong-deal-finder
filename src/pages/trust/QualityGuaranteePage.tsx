@@ -65,7 +65,7 @@ export default function QualityGuaranteePage() {
       <Section title="Questions fréquentes">
         <FaqAccordion items={qualityFaqItems} />
       </Section>
-      <TrustTestimonials title="Qualité confirmée par nos clients" />
+      {/* <TrustTestimonials title="Qualité confirmée par nos clients" /> */}
       <CtaBanner
         variant="dark"
         title="Commandez en toute confiance"

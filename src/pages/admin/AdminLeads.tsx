@@ -12,14 +12,7 @@ import {
 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
-const revenueData = [
-  { month: "Oct", cpa: 2800, cpc: 420 },
-  { month: "Nov", cpa: 3100, cpc: 480 },
-  { month: "Déc", cpa: 3400, cpc: 510 },
-  { month: "Jan", cpa: 2900, cpc: 390 },
-  { month: "Fév", cpa: 3200, cpc: 450 },
-  { month: "Mar", cpa: 3597, cpc: 540 },
-];
+const revenueData: { month: string; cpa: number; cpc: number }[] = [];
 
 const AdminLeads = () => {
   const [tab, setTab] = useState("overview");

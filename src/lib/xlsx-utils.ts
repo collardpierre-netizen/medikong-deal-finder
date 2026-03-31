@@ -87,7 +87,7 @@ export async function importProducts(file: File): Promise<{ created: number; err
       .split(/[;\n,]+/)
       .map((u: string) => u.trim())
       .filter((u: string) => /^https?:\/\//i.test(u));
-    const payload: Record<string, any> = {
+    const payload: any = {
       name: r.name,
       slug: r.slug || slugify(r.name),
       gtin: r.gtin ? String(r.gtin) : null,

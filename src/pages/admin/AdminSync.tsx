@@ -937,6 +937,9 @@ export default function AdminSync() {
         )}
       </div>
 
+      {/* Test API Offers */}
+      <TestApiOffers />
+
       {/* Error banner */}
       {config?.sync_error_message && (
         <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">

@@ -911,24 +911,64 @@ export default function ProductPage() {
                   <TabsContent value="external">
                     {externalOfferItems.length > 0 ? (
                       <div className="space-y-3">
-                        {externalOfferItems.map((mp: any) => (
-                          <div key={mp.id} className="border border-border rounded-xl p-4 flex items-center justify-between">
-                            <div>
-                              <p className="font-medium text-sm text-foreground">{mp.market_price_sources?.name}</p>
-                              {mp.supplier_name && <p className="text-xs text-muted-foreground">{mp.supplier_name}</p>}
+                        {externalOfferItems.map((eo: any) => {
+                          const vendor = eo.external_vendors;
+                          const stockIcon = eo.stock_status === "in_stock" ? "🟢" : eo.stock_status === "limited" ? "🟡" : eo.stock_status === "out_of_stock" ? "🔴" : "⚪";
+                          const stockLabel = eo.stock_status === "in_stock" ? "En stock" : eo.stock_status === "limited" ? "Stock limité" : eo.stock_status === "out_of_stock" ? "Rupture" : "Stock inconnu";
+
+                          const handleClick = async () => {
+                            // Track the lead
+                            try {
+                              await supabase.from("external_leads").insert({
+                                external_offer_id: eo.id,
+                                external_vendor_id: eo.external_vendor_id,
+                                product_id: eo.product_id,
+                                user_id: user?.id || null,
+                                user_agent: navigator.userAgent,
+                              });
+                            } catch {}
+                            // Open in new tab
+                            window.open(eo.product_url, "_blank", "noopener,noreferrer");
+                          };
+
+                          return (
+                            <div key={eo.id} className="border border-border rounded-xl p-4 flex items-center justify-between gap-4">
+                              <div className="flex items-center gap-3 min-w-0">
+                                {vendor?.logo_url ? (
+                                  <img src={vendor.logo_url} alt={vendor.name} className="w-10 h-10 rounded-lg object-contain border border-border" />
+                                ) : (
+                                  <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center text-sm font-bold text-muted-foreground">
+                                    {vendor?.name?.charAt(0)?.toUpperCase() || "?"}
+                                  </div>
+                                )}
+                                <div className="min-w-0">
+                                  <p className="font-medium text-sm text-foreground">{vendor?.name || "Vendeur externe"}</p>
+                                  <div className="flex items-center gap-2 mt-0.5">
+                                    <span className="text-xs text-muted-foreground">{stockIcon} {stockLabel}</span>
+                                    {eo.delivery_days && <span className="text-xs text-muted-foreground">• {eo.delivery_days}j livraison</span>}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-4 shrink-0">
+                                <div className="text-right">
+                                  <span className="text-lg font-bold text-green-700">{Number(eo.unit_price).toFixed(2)} €</span>
+                                  {Number(eo.mov_amount || 0) > 0 && (
+                                    <p className="text-[11px] text-muted-foreground">MOV {Number(eo.mov_amount).toFixed(0)} €</p>
+                                  )}
+                                </div>
+                                {eo.product_url && (
+                                  <button
+                                    onClick={handleClick}
+                                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-opacity hover:opacity-90"
+                                    style={{ backgroundColor: "#F97316", color: "white" }}
+                                  >
+                                    Voir l'offre <ExternalLink size={14} />
+                                  </button>
+                                )}
+                              </div>
                             </div>
-                            <div className="flex items-center gap-4">
-                              <span className="text-lg font-bold text-green-700">
-                                {formatEur(mp.prix_public || mp.prix_pharmacien || mp.prix_grossiste || 0)} €
-                              </span>
-                              {mp.product_url && (
-                                <a href={mp.product_url} target="_blank" rel="noopener noreferrer" className="bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity">
-                                  Voir l'offre →
-                                </a>
-                              )}
-                            </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     ) : (
                       <div className="border border-border rounded-xl p-8 text-center">

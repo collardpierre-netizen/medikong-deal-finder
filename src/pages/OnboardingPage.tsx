@@ -780,7 +780,7 @@ export default function OnboardingPage() {
         {/* Per-testimonial background photos + gradient overlays */}
         {activeTestimonials.map((t, i) => {
           const isActive = tIdx % activeTestimonials.length === i;
-          const bgSrc = t.background_url || cmsOnboardingBg || onboardingBgDefault;
+          const bgSrc = (t as any).background_url || cmsOnboardingBg || onboardingBgDefault;
           return (
             <div key={i} style={{ position: "absolute", inset: 0, opacity: isActive ? 1 : 0, transition: "opacity 0.8s ease", zIndex: isActive ? 1 : 0 }}>
               <img

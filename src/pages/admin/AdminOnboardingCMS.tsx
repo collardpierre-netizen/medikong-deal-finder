@@ -53,7 +53,7 @@ export default function AdminOnboardingCMS() {
 
   const openEdit = (t: Testimonial) => { setForm({ ...t }); setEditing(t); setCreating(false); };
   const openCreate = () => {
-    setForm({ quote: "", name: "", title: "", gradient: gradientPresets[0].value, role_visibility: "both", sort_order: testimonials.length, is_active: true, photo_url: null });
+    setForm({ quote: "", name: "", title: "", gradient: gradientPresets[0].value, role_visibility: "both", sort_order: testimonials.length, is_active: true, photo_url: null, background_url: null });
     setCreating(true); setEditing(null);
   };
   const closeForm = () => { setEditing(null); setCreating(false); setForm({}); };

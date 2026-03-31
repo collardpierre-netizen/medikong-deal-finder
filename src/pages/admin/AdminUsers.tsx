@@ -4,7 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useImpersonation } from "@/contexts/ImpersonationContext";
 import KpiCard from "@/components/admin/KpiCard";
 import StatusBadge from "@/components/admin/StatusBadge";
-import { Eye, MoreHorizontal, Users, Store, ShoppingBag, AlertTriangle, Search, Plus } from "lucide-react";
+import { Eye, MoreHorizontal, Users, Store, ShoppingBag, AlertTriangle, Search, Plus, Ban, CheckCircle, Trash2 } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import UserCreateDialog from "@/components/admin/UserCreateDialog";
@@ -111,6 +113,42 @@ export default function AdminUsers() {
     }
   }
 
+  async function handleToggleStatus(user: UserRow) {
+    const newStatus = user.status === "active" ? false : true;
+    const table = user.type === "vendor" ? "vendors" : "customers";
+    
+    if (user.type === "vendor") {
+      const { error } = await supabase
+        .from("vendors")
+        .update({ is_active: newStatus } as any)
+        .eq("auth_user_id", user.userId);
+      if (error) { toast.error("Erreur: " + error.message); return; }
+    } else {
+      const { error } = await supabase
+        .from("customers")
+        .update({ is_verified: newStatus } as any)
+        .eq("auth_user_id", user.userId);
+      if (error) { toast.error("Erreur: " + error.message); return; }
+    }
+    toast.success(newStatus ? "Compte activé" : "Compte suspendu");
+    loadUsers();
+  }
+
+  async function handleDelete(user: UserRow) {
+    if (!window.confirm(`Supprimer définitivement ${user.company} (${user.email}) ? Cette action est irréversible.`)) return;
+    
+    const table = user.type === "vendor" ? "vendors" : "customers";
+    if (user.type === "vendor") {
+      const { error } = await supabase.from("vendors").delete().eq("auth_user_id", user.userId);
+      if (error) { toast.error("Erreur: " + error.message); return; }
+    } else {
+      const { error } = await supabase.from("customers").delete().eq("auth_user_id", user.userId);
+      if (error) { toast.error("Erreur: " + error.message); return; }
+    }
+    toast.success("Utilisateur supprimé");
+    loadUsers();
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -175,9 +213,22 @@ export default function AdminUsers() {
                       className="p-1.5 rounded hover:bg-[#F1F5F9] text-[#8B95A5] hover:text-[#1B5BDA] transition-colors" title="Voir comme ce user">
                       <Eye size={16} />
                     </button>
-                    <button className="p-1.5 rounded hover:bg-[#F1F5F9] text-[#8B95A5] hover:text-[#616B7C] transition-colors" title="Détails">
-                      <MoreHorizontal size={16} />
-                    </button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button className="p-1.5 rounded hover:bg-[#F1F5F9] text-[#8B95A5] hover:text-[#616B7C] transition-colors" title="Plus d'actions">
+                          <MoreHorizontal size={16} />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-48">
+                        <DropdownMenuItem onClick={() => handleToggleStatus(u)} className="gap-2">
+                          {u.status === "active" ? <><Ban size={14} className="text-amber-500" /> Suspendre</> : <><CheckCircle size={14} className="text-emerald-500" /> Réactiver</>}
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => handleDelete(u)} className="gap-2 text-destructive focus:text-destructive">
+                          <Trash2 size={14} /> Supprimer
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </td>
               </tr>

@@ -5,6 +5,8 @@ import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import { CatalogSidebar } from "@/components/catalog/CatalogSidebar";
 import { CatalogToolbar } from "@/components/catalog/CatalogToolbar";
 import { CatalogProductCard } from "@/components/catalog/CatalogProductCard";
+import SearchTrivagoView from "@/components/search/SearchTrivagoView";
+import type { CatalogViewMode } from "@/components/catalog/CatalogToolbar";
 import { CatalogPagination } from "@/components/catalog/CatalogPagination";
 import { ActiveFilters } from "@/components/catalog/ActiveFilters";
 import { UniversePills } from "@/components/layout/UniversePills";
@@ -25,7 +27,7 @@ export default function CataloguePage() {
   const { data, isLoading } = useCatalogProducts(filters);
   const products = data?.products || [];
   const total = data?.total || 0;
-  const [view, setView] = useState<"grid" | "list">("grid");
+  const [view, setView] = useState<CatalogViewMode>("grid");
   const [mobileFilters, setMobileFilters] = useState(false);
 
   const title = filters.category
@@ -111,6 +113,16 @@ export default function CataloguePage() {
                   Effacer les filtres
                 </button>
               </div>
+            ) : view === "trivago" ? (
+              <SearchTrivagoView products={products.map(p => ({
+                id: p.id, slug: p.slug, name: p.name, brand: p.brand_name || "",
+                gtin: p.gtin || "", cnk: p.cnk_code || "", ean: p.gtin || "",
+                price: p.best_price_excl_vat || 0, pub: p.best_price_incl_vat || 0,
+                pct: 0, sellers: p.offer_count || 0, rating: 0, reviews: 0,
+                best: "", unit: "", stock: p.is_in_stock, mk: p.offer_count > 0,
+                imageUrl: p.image_urls?.[0] || undefined,
+                category: p.category_name || undefined,
+              }))} />
             ) : (
               <div className={view === "grid"
                 ? "grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3"

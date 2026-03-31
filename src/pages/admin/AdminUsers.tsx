@@ -4,8 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useImpersonation } from "@/contexts/ImpersonationContext";
 import KpiCard from "@/components/admin/KpiCard";
 import StatusBadge from "@/components/admin/StatusBadge";
-import { Eye, MoreHorizontal, Users, Store, ShoppingBag, AlertTriangle, Search } from "lucide-react";
+import { Eye, MoreHorizontal, Users, Store, ShoppingBag, AlertTriangle, Search, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import UserCreateDialog from "@/components/admin/UserCreateDialog";
 
 interface UserRow {
   id: string;
@@ -22,6 +24,7 @@ export default function AdminUsers() {
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [showCreate, setShowCreate] = useState(false);
   const [typeFilter, setTypeFilter] = useState<"all" | "vendor" | "buyer">("all");
   const [confirmModal, setConfirmModal] = useState<UserRow | null>(null);
   const [confirmed, setConfirmed] = useState(false);
@@ -110,7 +113,12 @@ export default function AdminUsers() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-bold text-[#1D2530]">Gestion des Utilisateurs</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-bold text-[#1D2530]">Gestion des Utilisateurs</h1>
+        <Button onClick={() => setShowCreate(true)} className="gap-1.5">
+          <Plus size={16} /> Créer un utilisateur
+        </Button>
+      </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <KpiCard label="Total utilisateurs" value={String(users.length)} icon={Users} iconColor="#1B5BDA" />
@@ -208,6 +216,7 @@ export default function AdminUsers() {
           </div>
         </div>
       )}
+      <UserCreateDialog open={showCreate} onOpenChange={setShowCreate} onCreated={loadUsers} />
     </div>
   );
 }

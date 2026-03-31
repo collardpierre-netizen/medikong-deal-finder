@@ -58,6 +58,7 @@ export function CatalogProductCard({ product, index = 0, view = "grid" }: Props)
   const navigate = useNavigate();
   const price = product.best_price_excl_vat || 0;
   const priceIncl = product.best_price_incl_vat || 0;
+  const isLoggedIn = !!user;
 
   const handleAddToCart = async () => {
     // If multiple offers, open product page to let user choose

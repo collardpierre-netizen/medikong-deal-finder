@@ -96,6 +96,8 @@ const AdminVendeurs = () => {
           <div className="py-12 text-center text-[13px]" style={{ color: "#8B95A5" }}>Aucun vendeur trouvé</div>
         )}
       </div>
+
+      <VendorFormDialog open={showForm} onOpenChange={setShowForm} />
     </div>
   );
 };

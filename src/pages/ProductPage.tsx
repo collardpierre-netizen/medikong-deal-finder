@@ -60,7 +60,6 @@ function OfferRow({
       priceExclVat: offer.unitPriceEur,
       productData: { id: productId, name: productName, brand: "", slug: productSlug, price: offer.unitPriceEur },
     });
-    toast.success("Produit ajouté au panier ✓");
   };
 
   return (

@@ -1,0 +1,1 @@
+UPDATE brands SET logo_url = '/brands/hydratis.png' WHERE id = '26d6d8fd-f8af-40d7-b96a-27a10408431e';

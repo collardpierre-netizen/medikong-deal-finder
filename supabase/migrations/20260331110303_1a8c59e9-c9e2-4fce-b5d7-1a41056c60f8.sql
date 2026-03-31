@@ -1,0 +1,3 @@
+ALTER TABLE public.cms_hero_images 
+ADD COLUMN IF NOT EXISTS title TEXT,
+ADD COLUMN IF NOT EXISTS subtitle TEXT;

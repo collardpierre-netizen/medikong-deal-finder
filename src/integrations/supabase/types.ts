@@ -1351,6 +1351,7 @@ export type Database = {
       }
       onboarding_testimonials: {
         Row: {
+          background_url: string | null
           created_at: string
           gradient: string
           id: string
@@ -1364,6 +1365,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          background_url?: string | null
           created_at?: string
           gradient?: string
           id?: string
@@ -1377,6 +1379,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          background_url?: string | null
           created_at?: string
           gradient?: string
           id?: string

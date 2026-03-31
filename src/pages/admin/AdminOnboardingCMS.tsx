@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 interface Testimonial {
   id: string;
   photo_url: string | null;
+  background_url: string | null;
   quote: string;
   name: string;
   title: string;
@@ -52,7 +53,7 @@ export default function AdminOnboardingCMS() {
 
   const openEdit = (t: Testimonial) => { setForm({ ...t }); setEditing(t); setCreating(false); };
   const openCreate = () => {
-    setForm({ quote: "", name: "", title: "", gradient: gradientPresets[0].value, role_visibility: "both", sort_order: testimonials.length, is_active: true, photo_url: null });
+    setForm({ quote: "", name: "", title: "", gradient: gradientPresets[0].value, role_visibility: "both", sort_order: testimonials.length, is_active: true, photo_url: null, background_url: null });
     setCreating(true); setEditing(null);
   };
   const closeForm = () => { setEditing(null); setCreating(false); setForm({}); };
@@ -69,6 +70,7 @@ export default function AdminOnboardingCMS() {
         sort_order: form.sort_order ?? 0,
         is_active: form.is_active ?? true,
         photo_url: form.photo_url || null,
+        background_url: form.background_url || null,
       };
       if (editing) {
         const { error } = await supabase.from("onboarding_testimonials").update(payload).eq("id", editing.id);
@@ -148,8 +150,12 @@ export default function AdminOnboardingCMS() {
                 <input value={form.title || ""} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} className="w-full border border-mk-line rounded-md px-3 py-2 text-sm" />
               </div>
               <div>
-                <label className="text-xs text-mk-sec mb-1 block">URL photo (optionnel)</label>
-                <input value={form.photo_url || ""} onChange={e => setForm(f => ({ ...f, photo_url: e.target.value }))} placeholder="https://..." className="w-full border border-mk-line rounded-md px-3 py-2 text-sm" />
+                <label className="text-xs text-mk-sec mb-1 block">Photo macaron (optionnel)</label>
+                <input value={form.photo_url || ""} onChange={e => setForm(f => ({ ...f, photo_url: e.target.value }))} placeholder="https://... (avatar rond)" className="w-full border border-mk-line rounded-md px-3 py-2 text-sm" />
+              </div>
+              <div>
+                <label className="text-xs text-mk-sec mb-1 block">Image de fond (optionnel)</label>
+                <input value={form.background_url || ""} onChange={e => setForm(f => ({ ...f, background_url: e.target.value }))} placeholder="https://... (arrière-plan)" className="w-full border border-mk-line rounded-md px-3 py-2 text-sm" />
               </div>
               <div>
                 <label className="text-xs text-mk-sec mb-1 block">Visibilité</label>

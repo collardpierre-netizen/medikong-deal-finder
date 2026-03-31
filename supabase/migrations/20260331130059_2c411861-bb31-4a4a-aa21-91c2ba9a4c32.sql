@@ -1,0 +1,1 @@
+ALTER TABLE public.onboarding_testimonials ADD COLUMN IF NOT EXISTS background_url TEXT DEFAULT NULL;

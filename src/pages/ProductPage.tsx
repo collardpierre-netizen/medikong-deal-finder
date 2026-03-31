@@ -645,7 +645,7 @@ export default function ProductPage() {
                         referrerPolicy="no-referrer"
                         crossOrigin="anonymous"
                         onError={(e) => {
-                          e.currentTarget.src = "/placeholder.svg";
+                          e.currentTarget.src = "/product-placeholder.svg";
                         }}
                       />
                     ) : (

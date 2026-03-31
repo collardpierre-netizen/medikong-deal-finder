@@ -42,7 +42,7 @@ export default function SearchGridView({ products }: Props) {
                   referrerPolicy="no-referrer"
                   crossOrigin="anonymous"
                   className="w-full h-full object-contain"
-                  onError={e => { e.currentTarget.src = "/placeholder.svg"; }}
+                  onError={e => { e.currentTarget.src = "/product-placeholder.svg"; }}
                 />
               ) : (
                 <Package size={40} className="text-muted-foreground" />

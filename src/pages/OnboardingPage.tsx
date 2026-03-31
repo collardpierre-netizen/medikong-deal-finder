@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import type { User } from "@supabase/supabase-js";
 import { usePageImages } from "@/hooks/usePageImages";
 import {
   ShoppingBag, Briefcase, User, Stethoscope, Pill, Building2, Layers, Store,
@@ -254,6 +255,59 @@ export default function OnboardingPage() {
   const stepsList = getSteps();
   const currentIdx = stepsList.indexOf(step);
 
+  const restoreOnboardingSession = useCallback((user: User | null) => {
+    if (!user) return;
+
+    const metadata = (user.user_metadata ?? {}) as Record<string, unknown>;
+    const onboardingPending = metadata.onboarding_pending === true;
+    const onboardingCompleted = metadata.onboarding_completed === true;
+    const roleFromMetadata = metadata.onboarding_role;
+
+    if (!onboardingPending || onboardingCompleted) return;
+    if (roleFromMetadata !== "buyer" && roleFromMetadata !== "seller") return;
+
+    setRole(roleFromMetadata);
+    setEmail(user.email ?? "");
+    setOtpVerified(true);
+
+    if (roleFromMetadata === "buyer") {
+      if (typeof metadata.onboarding_buyer_profile === "string") {
+        setBuyerProfile(metadata.onboarding_buyer_profile);
+      }
+      setStep(3);
+      return;
+    }
+
+    if (typeof metadata.onboarding_business_type === "string") {
+      setBusinessType(metadata.onboarding_business_type);
+    }
+    setStep(13);
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const rehydrate = async () => {
+      const { data, error } = await supabase.auth.getUser();
+      if (!mounted || error) return;
+      restoreOnboardingSession(data.user ?? null);
+    };
+
+    void rehydrate();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!mounted) return;
+      restoreOnboardingSession(session?.user ?? null);
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, [restoreOnboardingSession]);
+
   /* ─── Navigation ─── */
   const goTo = useCallback((target: number, direction: "up" | "down") => {
     if (transitioning) return;
@@ -310,8 +364,14 @@ export default function OnboardingPage() {
         email,
         password: temporaryPassword,
         options: {
-          data: { onboarding_pending: true },
-          emailRedirectTo: window.location.origin,
+          data: {
+            onboarding_pending: true,
+            onboarding_completed: false,
+            onboarding_role: role || "buyer",
+            ...(role === "buyer" && buyerProfile ? { onboarding_buyer_profile: buyerProfile } : {}),
+            ...(role === "seller" && businessType ? { onboarding_business_type: businessType } : {}),
+          },
+          emailRedirectTo: `${window.location.origin}/onboarding`,
         },
       });
 
@@ -404,7 +464,12 @@ export default function OnboardingPage() {
       // 2. Set final password + metadata
       const { error: updateAuthError } = await supabase.auth.updateUser({
         password,
-        data: { full_name: `${firstName} ${lastName}`.trim() },
+        data: {
+          full_name: `${firstName} ${lastName}`.trim(),
+          onboarding_pending: false,
+          onboarding_completed: true,
+          onboarding_role: role,
+        },
       });
       if (updateAuthError) throw updateAuthError;
 

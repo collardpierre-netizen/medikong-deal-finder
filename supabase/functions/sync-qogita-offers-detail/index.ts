@@ -6,9 +6,11 @@ const corsHeaders = {
 };
 
 const MAX_EXECUTION_TIME = 250000;
-const BATCH_SIZE = 20;
-const API_DELAY_MS = 500;
+const BATCH_SIZE = 50;
+const PARALLEL_GROUPS = 5;
+const API_DELAY_MS = 200;
 const MAX_RETRIES_429 = 3;
+const API_TIMEOUT_MS = 8000;
 
 function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
@@ -85,9 +87,20 @@ async function fetchWithRetry(
   token: string,
 ): Promise<Response> {
   for (let attempt = 0; attempt <= MAX_RETRIES_429; attempt++) {
-    const res = await fetch(url, {
-      headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
-    });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
+    let res: Response;
+    try {
+      res = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+        signal: controller.signal,
+      });
+    } catch (e: any) {
+      clearTimeout(timeout);
+      if (e.name === "AbortError") return new Response(null, { status: 408 });
+      throw e;
+    }
+    clearTimeout(timeout);
 
     if (res.status === 429 && attempt < MAX_RETRIES_429) {
       const retryAfter = parseInt(res.headers.get("Retry-After") || "5");
@@ -115,9 +128,23 @@ async function fetchVariantWithRetry(
 
   for (const url of urls) {
     for (let attempt = 0; attempt <= MAX_RETRIES_429; attempt++) {
-      const res = await fetch(url, {
-        headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
-      });
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
+      let res: Response;
+      try {
+        res = await fetch(url, {
+          headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+          signal: controller.signal,
+        });
+      } catch (e: any) {
+        clearTimeout(timeout);
+        if (e.name === "AbortError") {
+          lastResponse = new Response(null, { status: 408 });
+          break;
+        }
+        throw e;
+      }
+      clearTimeout(timeout);
       lastResponse = res;
 
       if (res.status === 429 && attempt < MAX_RETRIES_429) {
@@ -377,59 +404,134 @@ async function syncOffers(
     first_flat_sample: null,
   };
 
-  for (let i = startOffset; i < total; i++) {
+  // Process in parallel batches of BATCH_SIZE, subdivided into PARALLEL_GROUPS
+  for (let batchStart = startOffset; batchStart < total; batchStart += BATCH_SIZE) {
     if (Date.now() - startTime > MAX_EXECUTION_TIME) {
-      stats.last_offset = i;
+      stats.last_offset = batchStart;
       await sb
         .from("sync_logs")
         .update({
           status: "partial",
           stats,
-          progress_current: i,
+          progress_current: batchStart,
           progress_total: total,
-          progress_message: `${country}: pause timeout — ${i}/${total} (reprendra au prochain clic)`,
+          progress_message: `${country}: pause timeout — ${batchStart}/${total} (reprendra au prochain clic)`,
         })
         .eq("id", logId);
       return stats;
     }
 
-    const product = products[i];
+    const batchEnd = Math.min(batchStart + BATCH_SIZE, total);
+    const batchProducts = products.slice(batchStart, batchEnd);
 
+    // Split batch into PARALLEL_GROUPS sub-groups
+    const groupSize = Math.ceil(batchProducts.length / PARALLEL_GROUPS);
+    const groups: typeof batchProducts[] = [];
+    for (let g = 0; g < PARALLEL_GROUPS; g++) {
+      const slice = batchProducts.slice(g * groupSize, (g + 1) * groupSize);
+      if (slice.length > 0) groups.push(slice);
+    }
+
+    // Process all groups in parallel
+    const groupResults = await Promise.allSettled(
+      groups.map((group) =>
+        processGroup(sb, group, baseUrl, token, country, vatRate, vatMultiplier, bestPriceVendorId, fetchMultiVendor, stats)
+      )
+    );
+
+    // Merge stats from fulfilled groups
+    for (const result of groupResults) {
+      if (result.status === "fulfilled" && result.value) {
+        stats.products_enriched += result.value.products_enriched;
+        stats.offers_upserted += result.value.offers_upserted;
+        stats.multi_vendor_offers += result.value.multi_vendor_offers;
+        stats.errors += result.value.errors;
+        stats.skipped += result.value.skipped;
+        stats.rate_limited += result.value.rate_limited;
+      } else if (result.status === "rejected") {
+        stats.errors += 1;
+        console.error("Group processing failed:", result.reason);
+      }
+    }
+
+    stats.last_offset = batchEnd;
+    await sb
+      .from("sync_logs")
+      .update({
+        stats,
+        progress_current: batchEnd,
+        progress_total: total,
+        progress_message: `${country}: ${batchEnd}/${total} — ${stats.offers_upserted} offres, ${stats.multi_vendor_offers} multi-vendeur, ${stats.products_enriched} enrichis`,
+      })
+      .eq("id", logId);
+
+    // Small pause between batches to avoid rate limiting
+    await sleep(API_DELAY_MS);
+  }
+
+  await sb
+    .from("sync_logs")
+    .update({
+      status: "completed",
+      completed_at: new Date().toISOString(),
+      stats,
+      progress_current: total,
+      progress_total: total,
+      progress_message: `${country}: terminé — ${stats.products_enriched} enrichis, ${stats.offers_upserted} offres, ${stats.multi_vendor_offers} multi-vendeur ✓`,
+    })
+    .eq("id", logId);
+
+  await sb
+    .from("qogita_config")
+    .update({
+      last_offers_sync_at: new Date().toISOString(),
+      sync_status: "completed",
+    })
+    .eq("id", 1);
+
+  return stats;
+}
+
+/** Process a sub-group of products sequentially (called in parallel across groups) */
+async function processGroup(
+  sb: any,
+  products: any[],
+  baseUrl: string,
+  token: string,
+  country: string,
+  vatRate: number,
+  vatMultiplier: number,
+  bestPriceVendorId: string,
+  fetchMultiVendor: boolean,
+  parentStats: any,
+) {
+  const localStats = {
+    products_enriched: 0,
+    offers_upserted: 0,
+    multi_vendor_offers: 0,
+    errors: 0,
+    skipped: 0,
+    rate_limited: 0,
+  };
+
+  for (const product of products) {
     try {
       const res = await fetchVariantWithRetry(baseUrl, token, product.gtin, product.qogita_qid, country);
 
       if (!res.ok) {
-        if (res.status === 404) {
-          stats.skipped++;
-        } else if (res.status === 429) {
-          stats.rate_limited++;
-          stats.errors++;
-        } else {
-          stats.errors++;
-        }
-
-        if ((i + 1) % BATCH_SIZE === 0) {
-          stats.last_offset = i + 1;
-          await sb
-            .from("sync_logs")
-            .update({
-              stats,
-              progress_current: i + 1,
-              progress_total: total,
-              progress_message: `${country}: ${i + 1}/${total} — ${stats.offers_upserted} offres, ${stats.products_enriched} enrichis`,
-            })
-            .eq("id", logId);
-        }
-
+        if (res.status === 404) localStats.skipped++;
+        else if (res.status === 429) { localStats.rate_limited++; localStats.errors++; }
+        else localStats.errors++;
         await sleep(API_DELAY_MS);
         continue;
       }
 
       const variant = await res.json();
 
-      if (stats.first_api_response_keys === null) {
-        stats.first_api_response_keys = Object.keys(variant || {});
-        stats.first_flat_sample = {
+      // Capture first API response sample (thread-safe enough for diagnostics)
+      if (parentStats.first_api_response_keys === null) {
+        parentStats.first_api_response_keys = Object.keys(variant || {});
+        parentStats.first_flat_sample = {
           price: variant?.price ?? null,
           inventory: variant?.inventory ?? null,
           delay: variant?.delay ?? null,
@@ -441,15 +543,12 @@ async function syncOffers(
       }
 
       const images = extractImages(variant?.images);
-      const productUpdate: any = {
-        synced_at: new Date().toISOString(),
-      };
+      const productUpdate: any = { synced_at: new Date().toISOString() };
       if (variant?.qid) productUpdate.qogita_qid = variant.qid;
       if (variant?.fid) productUpdate.qogita_fid = variant.fid;
       if (variant?.label) productUpdate.description = variant.label;
       if (images.length > 0) productUpdate.image_urls = images;
 
-      // Extract technical details (dimensions/weight)
       if (variant?.dimensions) {
         const dims = variant.dimensions;
         if (dims.mass != null) productUpdate.weight = parseFloat(String(dims.mass)) || null;
@@ -460,7 +559,7 @@ async function syncOffers(
 
       await sb.from("products").update(productUpdate).eq("id", product.id);
 
-      // --- Best price offer (from variant endpoint) ---
+      // --- Best price offer ---
       const priceInclVat = parseFloat(String(variant?.price ?? "0")) || 0;
       const priceExclVat = priceInclVat > 0 ? Math.round((priceInclVat / vatMultiplier) * 100) / 100 : 0;
       const stockQty = parseInt(String(variant?.inventory ?? "0"), 10) || 0;
@@ -468,41 +567,39 @@ async function syncOffers(
       const offerQid = variant?.qid ? `${variant.qid}-${country}` : `${product.gtin}-${country}`;
 
       if (priceExclVat > 0) {
-        const offerPayload = {
-          product_id: product.id,
-          vendor_id: bestPriceVendorId,
-          qogita_offer_qid: offerQid,
-          country_code: country,
-          qogita_base_price: priceExclVat,
-          qogita_base_delay_days: delayDays,
-          is_qogita_backed: true,
-          price_excl_vat: priceExclVat,
-          price_incl_vat: priceInclVat > 0 ? priceInclVat : Math.round(priceExclVat * vatMultiplier * 100) / 100,
-          vat_rate: vatRate,
-          moq: 1,
-          mov: null,
-          stock_quantity: stockQty,
-          stock_status: stockQty > 0 ? "in_stock" : "out_of_stock",
-          delivery_days: delayDays,
-          shipping_from_country: country,
-          is_active: true,
-          synced_at: new Date().toISOString(),
-        };
-
-        const { error: offerErr } = await sb.from("offers").upsert(offerPayload, {
-          onConflict: "product_id,vendor_id,country_code",
-          ignoreDuplicates: false,
-        });
+        const { error: offerErr } = await sb.from("offers").upsert(
+          {
+            product_id: product.id,
+            vendor_id: bestPriceVendorId,
+            qogita_offer_qid: offerQid,
+            country_code: country,
+            qogita_base_price: priceExclVat,
+            qogita_base_delay_days: delayDays,
+            is_qogita_backed: true,
+            price_excl_vat: priceExclVat,
+            price_incl_vat: priceInclVat > 0 ? priceInclVat : Math.round(priceExclVat * vatMultiplier * 100) / 100,
+            vat_rate: vatRate,
+            moq: 1,
+            mov: null,
+            stock_quantity: stockQty,
+            stock_status: stockQty > 0 ? "in_stock" : "out_of_stock",
+            delivery_days: delayDays,
+            shipping_from_country: country,
+            is_active: true,
+            synced_at: new Date().toISOString(),
+          },
+          { onConflict: "product_id,vendor_id,country_code", ignoreDuplicates: false },
+        );
 
         if (offerErr) {
-          stats.errors++;
+          localStats.errors++;
           console.error(`Offer upsert error for GTIN ${product.gtin}:`, offerErr.message);
         } else {
-          stats.offers_upserted++;
+          localStats.offers_upserted++;
         }
       }
 
-      // --- Multi-vendor offers (from /variants/{fid}/{slug}/offers/) ---
+      // --- Multi-vendor offers ---
       if (fetchMultiVendor && variant?.fid && variant?.slug) {
         try {
           const offersUrl = `${baseUrl}/variants/${variant.fid}/${variant.slug}/offers/`;
@@ -522,7 +619,6 @@ async function syncOffers(
               const offerPrice = parseFloat(String(offer.price ?? "0")) || 0;
               if (offerPrice <= 0) continue;
 
-              // Offer price from the multi-vendor endpoint is typically excl. VAT
               const oExclVat = offerPrice;
               const oInclVat = Math.round(oExclVat * vatMultiplier * 100) / 100;
               const oMov = parseFloat(String(offer.mov ?? "0")) || 0;
@@ -556,60 +652,25 @@ async function syncOffers(
               if (mvErr) {
                 console.error(`Multi-vendor offer error ${sellerCode}/${product.gtin}:`, mvErr.message);
               } else {
-                stats.multi_vendor_offers++;
+                localStats.multi_vendor_offers++;
               }
             }
           } else if (offersRes.status === 429) {
-            stats.rate_limited++;
+            localStats.rate_limited++;
           }
-
-          await sleep(API_DELAY_MS);
         } catch (mvError: any) {
           console.error(`Multi-vendor fetch error for ${product.gtin}:`, mvError.message);
         }
       }
 
-      stats.products_enriched++;
+      localStats.products_enriched++;
     } catch (e: any) {
-      stats.errors++;
+      localStats.errors++;
       console.error(`Error GTIN ${product.gtin}:`, e.message);
-    }
-
-    if ((i + 1) % BATCH_SIZE === 0 || i === total - 1) {
-      stats.last_offset = i + 1;
-      await sb
-        .from("sync_logs")
-        .update({
-          stats,
-          progress_current: i + 1,
-          progress_total: total,
-          progress_message: `${country}: ${i + 1}/${total} — ${stats.offers_upserted} offres, ${stats.multi_vendor_offers} multi-vendeur, ${stats.products_enriched} enrichis`,
-        })
-        .eq("id", logId);
     }
 
     await sleep(API_DELAY_MS);
   }
 
-  await sb
-    .from("sync_logs")
-    .update({
-      status: "completed",
-      completed_at: new Date().toISOString(),
-      stats,
-      progress_current: total,
-      progress_total: total,
-      progress_message: `${country}: terminé — ${stats.products_enriched} enrichis, ${stats.offers_upserted} offres, ${stats.multi_vendor_offers} multi-vendeur ✓`,
-    })
-    .eq("id", logId);
-
-  await sb
-    .from("qogita_config")
-    .update({
-      last_offers_sync_at: new Date().toISOString(),
-      sync_status: "completed",
-    })
-    .eq("id", 1);
-
-  return stats;
+  return localStats;
 }

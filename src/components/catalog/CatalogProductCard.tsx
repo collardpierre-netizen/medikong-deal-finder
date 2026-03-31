@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Plus, Minus, Package, Loader2 } from "lucide-react";
+import { Plus, Minus, Package, Loader2, Lock } from "lucide-react";
 import { motion } from "framer-motion";
 import { formatPrice } from "@/data/mock";
 import { useCart } from "@/contexts/CartContext";
@@ -58,6 +58,7 @@ export function CatalogProductCard({ product, index = 0, view = "grid" }: Props)
   const navigate = useNavigate();
   const price = product.best_price_excl_vat || 0;
   const priceIncl = product.best_price_incl_vat || 0;
+  const isLoggedIn = !!user;
 
   const handleAddToCart = async () => {
     // If multiple offers, open product page to let user choose
@@ -148,21 +149,29 @@ export function CatalogProductCard({ product, index = 0, view = "grid" }: Props)
           <StockBadge product={product} />
         </div>
         <div className="text-right shrink-0 space-y-1">
-          <p className="text-lg font-bold text-primary">{formatPrice(price)} €</p>
-          {priceIncl > price && (
-            <p className="text-xs text-muted-foreground">{formatPrice(priceIncl)} € TTC</p>
-          )}
-          <p className="text-xs text-muted-foreground">{product.offer_count} offre{product.offer_count > 1 ? "s" : ""}</p>
-          <div className="flex items-center gap-1 mt-2">
-            {product.offer_count <= 1 && (
-              <div className="flex items-center border border-border rounded-md">
-                <button onClick={() => setQty(Math.max(1, qty - 1))} className="px-1.5 py-1 text-muted-foreground hover:text-foreground"><Minus size={12} /></button>
-                <span className="px-1.5 text-xs font-medium">{qty}</span>
-                <button onClick={() => setQty(qty + 1)} className="px-1.5 py-1 text-muted-foreground hover:text-foreground"><Plus size={12} /></button>
+          {isLoggedIn ? (
+            <>
+              <p className="text-lg font-bold text-primary">{formatPrice(price)} €</p>
+              {priceIncl > price && (
+                <p className="text-xs text-muted-foreground">{formatPrice(priceIncl)} € TTC</p>
+              )}
+              <p className="text-xs text-muted-foreground">{product.offer_count} offre{product.offer_count > 1 ? "s" : ""}</p>
+              <div className="flex items-center gap-1 mt-2">
+                {product.offer_count <= 1 && (
+                  <div className="flex items-center border border-border rounded-md">
+                    <button onClick={() => setQty(Math.max(1, qty - 1))} className="px-1.5 py-1 text-muted-foreground hover:text-foreground"><Minus size={12} /></button>
+                    <span className="px-1.5 text-xs font-medium">{qty}</span>
+                    <button onClick={() => setQty(qty + 1)} className="px-1.5 py-1 text-muted-foreground hover:text-foreground"><Plus size={12} /></button>
+                  </div>
+                )}
+                {addButton}
               </div>
-            )}
-            {addButton}
-          </div>
+            </>
+          ) : (
+            <Link to="/onboarding" className="inline-flex items-center gap-1.5 bg-primary text-primary-foreground text-xs font-semibold px-3 py-2 rounded-md hover:opacity-90 transition-opacity">
+              <Lock size={12} /> Voir les prix
+            </Link>
+          )}
         </div>
       </motion.div>
     );
@@ -189,27 +198,42 @@ export function CatalogProductCard({ product, index = 0, view = "grid" }: Props)
         <p className="text-xs text-muted-foreground mb-0.5 truncate">{product.brand_name || "—"}</p>
         <h3 className="text-sm font-medium text-foreground leading-snug mb-1.5 line-clamp-2 min-h-[2.5rem]">{product.name}</h3>
       </Link>
-      <div className="flex items-baseline gap-1.5 mb-1">
-        <span className="text-base font-bold text-primary">{formatPrice(price)} €</span>
-        {priceIncl > price && (
-          <span className="text-[11px] text-muted-foreground">{formatPrice(priceIncl)} € TTC</span>
-        )}
-      </div>
-      <div className="flex items-center justify-between mb-2">
-        <StockBadge product={product} />
-        <span className="text-xs text-muted-foreground">{product.offer_count} offre{product.offer_count > 1 ? "s" : ""}</span>
-      </div>
-      <p className="text-[10px] text-muted-foreground mb-2 truncate">EAN: {product.gtin || "—"}</p>
-      <div className="flex items-center gap-1.5">
-        {product.offer_count <= 1 && (
-          <div className="flex items-center border border-border rounded-md">
-            <button onClick={() => setQty(Math.max(1, qty - 1))} className="px-1.5 py-1 text-muted-foreground hover:text-foreground"><Minus size={12} /></button>
-            <span className="px-1.5 text-xs font-medium min-w-[1.5rem] text-center">{qty}</span>
-            <button onClick={() => setQty(qty + 1)} className="px-1.5 py-1 text-muted-foreground hover:text-foreground"><Plus size={12} /></button>
+      {isLoggedIn ? (
+        <>
+          <div className="flex items-baseline gap-1.5 mb-1">
+            <span className="text-base font-bold text-primary">{formatPrice(price)} €</span>
+            {priceIncl > price && (
+              <span className="text-[11px] text-muted-foreground">{formatPrice(priceIncl)} € TTC</span>
+            )}
           </div>
-        )}
-        {addButton}
-      </div>
+          <div className="flex items-center justify-between mb-2">
+            <StockBadge product={product} />
+            <span className="text-xs text-muted-foreground">{product.offer_count} offre{product.offer_count > 1 ? "s" : ""}</span>
+          </div>
+          <p className="text-[10px] text-muted-foreground mb-2 truncate">EAN: {product.gtin || "—"}</p>
+          <div className="flex items-center gap-1.5">
+            {product.offer_count <= 1 && (
+              <div className="flex items-center border border-border rounded-md">
+                <button onClick={() => setQty(Math.max(1, qty - 1))} className="px-1.5 py-1 text-muted-foreground hover:text-foreground"><Minus size={12} /></button>
+                <span className="px-1.5 text-xs font-medium min-w-[1.5rem] text-center">{qty}</span>
+                <button onClick={() => setQty(qty + 1)} className="px-1.5 py-1 text-muted-foreground hover:text-foreground"><Plus size={12} /></button>
+              </div>
+            )}
+            {addButton}
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="flex items-center justify-between mb-2">
+            <StockBadge product={product} />
+            <span className="text-xs text-muted-foreground">{product.offer_count} offre{product.offer_count > 1 ? "s" : ""}</span>
+          </div>
+          <p className="text-[10px] text-muted-foreground mb-2 truncate">EAN: {product.gtin || "—"}</p>
+          <Link to="/onboarding" className="w-full bg-primary text-primary-foreground text-xs font-semibold py-2 rounded-md hover:opacity-90 transition-opacity flex items-center justify-center gap-1.5">
+            <Lock size={12} /> Voir les prix
+          </Link>
+        </>
+      )}
     </motion.div>
   );
 }

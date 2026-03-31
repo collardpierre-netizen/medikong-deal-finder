@@ -108,7 +108,7 @@ export function CatalogProductCard({ product, index = 0, view = "grid" }: Props)
           imageUrl: product.image_urls?.[0] || undefined,
         },
       });
-      toast.success("Produit ajouté au panier ✓");
+      
     } finally {
       setAdding(false);
       setQty(1);

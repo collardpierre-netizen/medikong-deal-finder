@@ -60,7 +60,6 @@ function OfferRow({
       priceExclVat: offer.unitPriceEur,
       productData: { id: productId, name: productName, brand: "", slug: productSlug, price: offer.unitPriceEur },
     });
-    toast.success("Produit ajouté au panier ✓");
   };
 
   return (
@@ -1291,7 +1290,7 @@ export default function ProductPage() {
                         priceExclVat: bestOffer.unitPriceEur,
                         productData: { id: product.id, name: product.name, brand: product.brand || "", slug: product.slug, price: bestOffer.unitPriceEur },
                       });
-                      toast.success("Produit ajouté au panier ✓");
+                      
                     }}
                   >
                     <ShoppingCart size={14} />

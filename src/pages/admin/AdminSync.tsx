@@ -449,32 +449,98 @@ export default function AdminSync() {
     onError: (err: any) => toast.error("Erreur pipeline", { description: err.message }),
   });
 
-  // ─ Individual sync
-  const runSync = useMutation({
-    mutationFn: async (type: SyncType) => {
-      setRunningSyncs((prev) => new Set(prev).add(type));
-      const fnMap: Record<string, string> = {
-        recalculate: "recalculate-all-prices",
-        offers_detail: "sync-qogita-offers-detail",
-        offers_multi_vendor: "sync-qogita-offers-detail",
-      };
-      const fnName = fnMap[type] || `sync-qogita-${type}`;
-      const body: any = { country: selectedCountry };
-      if (type === "offers_multi_vendor") body.multi_vendor = true;
-      const { data, error } = await supabase.functions.invoke(fnName, { body });
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: (data, type) => {
-      setRunningSyncs((prev) => { const s = new Set(prev); s.delete(type); return s; });
-      toast.success(`Sync ${type} lancée`);
-      qc.invalidateQueries({ queryKey: ["sync-logs"] });
-    },
-    onError: (err: any, type) => {
-      setRunningSyncs((prev) => { const s = new Set(prev); s.delete(type); return s; });
+  // ─ Individual sync (with auto-loop for offers)
+  const runSyncOnce = async (type: SyncType) => {
+    const fnMap: Record<string, string> = {
+      recalculate: "recalculate-all-prices",
+      offers_detail: "sync-qogita-offers-detail",
+      offers_multi_vendor: "sync-qogita-offers-detail",
+    };
+    const fnName = fnMap[type] || `sync-qogita-${type}`;
+    const body: any = { country: selectedCountry };
+    if (type === "offers_multi_vendor") body.multi_vendor = true;
+    const { data, error } = await supabase.functions.invoke(fnName, { body });
+    if (error) throw error;
+    return data;
+  };
+
+  const runSyncLooping = async (type: SyncType) => {
+    setRunningSyncs((prev) => new Set(prev).add(type));
+    setLoopProgress((prev) => ({ ...prev, [type]: { processed: 0, remaining: 0, errors: 0 } }));
+
+    const isLoopType = type === "offers_detail" || type === "offers_multi_vendor";
+
+    try {
+      if (!isLoopType) {
+        await runSyncOnce(type);
+        toast.success(`Sync ${type} lancée`);
+      } else {
+        let hasMore = true;
+        let totalProcessed = 0;
+        let totalErrors = 0;
+        let iteration = 0;
+
+        while (hasMore) {
+          iteration++;
+          const data = await runSyncOnce(type);
+          const stats = (data as any)?.stats || data || {};
+          const enriched = stats.products_enriched || stats.processed || 0;
+          const errors = stats.errors || 0;
+          totalProcessed += enriched;
+          totalErrors += errors;
+
+          // Check sync_log status to determine if more work remains
+          const syncType = type === "offers_multi_vendor" ? "offers_multi_vendor" : "offers_detail";
+          const { data: latestLog } = await supabase
+            .from("sync_logs")
+            .select("status, stats, progress_current, progress_total")
+            .eq("sync_type", syncType)
+            .order("started_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          const logStatus = latestLog?.status;
+          const logStats = (latestLog?.stats as any) || {};
+          const remaining = (latestLog?.progress_total || 0) - (latestLog?.progress_current || 0);
+
+          setLoopProgress((prev) => ({
+            ...prev,
+            [type]: { processed: latestLog?.progress_current || totalProcessed, remaining, errors: totalErrors },
+          }));
+
+          // Stop if completed or error, continue only if partial
+          if (logStatus === "completed" || logStatus === "error") {
+            hasMore = false;
+          } else if (logStatus === "partial") {
+            hasMore = true;
+          } else {
+            // Running or unknown — wait and re-check
+            await new Promise((r) => setTimeout(r, 3000));
+            const { data: recheck } = await supabase
+              .from("sync_logs")
+              .select("status")
+              .eq("sync_type", syncType)
+              .order("started_at", { ascending: false })
+              .limit(1)
+              .maybeSingle();
+            hasMore = recheck?.status === "partial";
+          }
+
+          if (hasMore) {
+            await new Promise((r) => setTimeout(r, 2000));
+          }
+        }
+
+        toast.success(`Sync ${type} terminée : ${totalProcessed} produits traités, ${totalErrors} erreurs`);
+      }
+    } catch (err: any) {
       toast.error(`Erreur sync ${type}`, { description: err.message });
-    },
-  });
+    } finally {
+      setRunningSyncs((prev) => { const s = new Set(prev); s.delete(type); return s; });
+      setLoopProgress((prev) => { const n = { ...prev }; delete n[type]; return n; });
+      qc.invalidateQueries({ queryKey: ["sync-logs"] });
+    }
+  };
 
   const updateConfig = useMutation({
     mutationFn: async (updates: any) => {

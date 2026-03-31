@@ -241,11 +241,12 @@ export default function AdminSync() {
       const fnMap: Record<string, string> = {
         recalculate: "recalculate-all-prices",
         offers_detail: "sync-qogita-offers-detail",
+        offers_multi_vendor: "sync-qogita-offers-detail",
       };
       const fnName = fnMap[type] || `sync-qogita-${type}`;
-      const { data, error } = await supabase.functions.invoke(fnName, {
-        body: { country: selectedCountry },
-      });
+      const body: any = { country: selectedCountry };
+      if (type === "offers_multi_vendor") body.multi_vendor = true;
+      const { data, error } = await supabase.functions.invoke(fnName, { body });
       if (error) throw error;
       return data;
     },

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AdminTopBar from "@/components/admin/AdminTopBar";
 import StatusBadge from "@/components/admin/StatusBadge";
+import VendorFormDialog from "@/components/admin/VendorFormDialog";
 import { useI18n } from "@/contexts/I18nContext";
 import { useVendors } from "@/hooks/useAdminData";
 import { Search, Filter, Download, Plus } from "lucide-react";
@@ -12,6 +13,7 @@ const AdminVendeurs = () => {
   const { data: vendors = [], isLoading } = useVendors();
   const [activeTab, setActiveTab] = useState<"all" | "medikong" | "qogita_virtual" | "real">("all");
   const [search, setSearch] = useState("");
+  const [showForm, setShowForm] = useState(false);
 
   const tabs = [
     { key: "all" as const, label: "Tous", count: vendors.length },
@@ -28,7 +30,7 @@ const AdminVendeurs = () => {
     <div>
       <AdminTopBar title={t("sellers")} subtitle={`${vendors.length} vendeurs enregistrés`}
         actions={
-          <button className="flex items-center gap-2 px-4 py-2 rounded-md text-[13px] font-bold text-white" style={{ backgroundColor: "#1E293B" }}>
+          <button onClick={() => setShowForm(true)} className="flex items-center gap-2 px-4 py-2 rounded-md text-[13px] font-bold text-white" style={{ backgroundColor: "#1E293B" }}>
             <Plus size={15} /> Ajouter un vendeur
           </button>
         }
@@ -94,6 +96,8 @@ const AdminVendeurs = () => {
           <div className="py-12 text-center text-[13px]" style={{ color: "#8B95A5" }}>Aucun vendeur trouvé</div>
         )}
       </div>
+
+      <VendorFormDialog open={showForm} onOpenChange={setShowForm} />
     </div>
   );
 };

@@ -67,6 +67,7 @@ const leadTimeOptions = ["24h", "48h", "3-5 jours", "1-2 semaines"];
 
 /* ─── Logo ─── */
 import logoLight from "@/assets/logo-horizontal.png";
+import onboardingBgDefault from "@/assets/onboarding-bg.jpg";
 import logoDark from "@/assets/Logo_horizontal_sombre2.png";
 const Logo = ({ white = false, size = 22 }: { white?: boolean; size?: number }) => (
   <img

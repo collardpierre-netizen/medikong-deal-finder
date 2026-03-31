@@ -1,8 +1,9 @@
 import { Layout } from "@/components/layout/Layout";
 import { ProductImage } from "@/components/shared/ProductCard";
 import { Users, MapPin, Package, AlertCircle, Heart, Zap, Download, Layers, Mail, Phone, Clock, List, Plus, Trash2, Eye, ShoppingCart, Search, TrendingDown, BarChart3 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { formatPrice } from "@/data/mock";
 import { useFeaturedProducts } from "@/hooks/useProducts";
 import { useFavorites, useFavoriteLists, useRecentActivity } from "@/hooks/useFavorites";
@@ -38,6 +39,42 @@ const contentVariants = {
   animate: { opacity: 1, y: 0 },
   exit: { opacity: 0, y: -8 },
 };
+
+function ProfileSelector() {
+  const { user } = useAuth();
+  const [profiles, setProfiles] = useState<{ id: string; name: string }[]>([]);
+  const [currentProfileId, setCurrentProfileId] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    (supabase as any).from("user_profiles").select("id, name").eq("is_active", true).order("display_order").then(({ data }: any) => {
+      if (data) setProfiles(data);
+    });
+    if (user) {
+      (supabase as any).from("user_profile_assignments").select("profile_id").eq("user_id", user.id).maybeSingle().then(({ data }: any) => {
+        if (data) setCurrentProfileId(data.profile_id);
+      });
+    }
+  }, [user]);
+
+  const handleChange = async (newId: string) => {
+    if (!user || !newId) return;
+    setSaving(true);
+    setCurrentProfileId(newId);
+    await (supabase as any).from("user_profile_assignments").upsert({ user_id: user.id, profile_id: newId });
+    setSaving(false);
+  };
+
+  return (
+    <div>
+      <label className="text-xs text-mk-sec mb-1 block">Profil professionnel</label>
+      <select value={currentProfileId} onChange={e => handleChange(e.target.value)} disabled={saving} className="w-full border border-mk-line rounded-md px-3 py-2 text-sm">
+        <option value="">Sélectionnez...</option>
+        {profiles.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+      </select>
+    </div>
+  );
+}
 
 export default function AccountPage() {
   const { data: products = [] } = useFeaturedProducts(20);
@@ -121,6 +158,7 @@ export default function AccountPage() {
                           <select className="w-full border border-mk-line rounded-md px-3 py-2 text-sm"><option>Belgique</option><option>France</option><option>Suisse</option></select>
                         </div>
                         <div><label className="text-xs text-mk-sec mb-1 block">Numero TVA</label><input defaultValue="BE 0123.456.789" className="w-full border border-mk-line rounded-md px-3 py-2 text-sm" /></div>
+                        <ProfileSelector />
                       </div>
                       <motion.button className="bg-mk-blue text-white font-semibold text-sm px-5 py-2.5 rounded-md" whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}>Enregistrer les modifications</motion.button>
                     </div>

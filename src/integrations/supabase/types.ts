@@ -347,6 +347,8 @@ export type Database = {
           is_active: boolean
           link_url: string | null
           sort_order: number
+          subtitle: string | null
+          title: string | null
         }
         Insert: {
           alt_text?: string | null
@@ -357,6 +359,8 @@ export type Database = {
           is_active?: boolean
           link_url?: string | null
           sort_order?: number
+          subtitle?: string | null
+          title?: string | null
         }
         Update: {
           alt_text?: string | null
@@ -367,6 +371,8 @@ export type Database = {
           is_active?: boolean
           link_url?: string | null
           sort_order?: number
+          subtitle?: string | null
+          title?: string | null
         }
         Relationships: []
       }

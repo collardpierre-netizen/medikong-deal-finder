@@ -1,8 +1,9 @@
 import { Link, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import logoDark from "@/assets/Logo_horizontal_sombre2.png";
 
 export default function RegisterPage() {
@@ -16,10 +17,23 @@ export default function RegisterPage() {
   const [vatNumber, setVatNumber] = useState("");
   const [country, setCountry] = useState("Belgique");
   const [sector, setSector] = useState("Pharmacie");
+  const [profileId, setProfileId] = useState("");
+  const [profiles, setProfiles] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(false);
   const { signUp } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  useEffect(() => {
+    (supabase as any).from("user_profiles").select("id, name").eq("is_active", true).order("display_order").then(({ data }: any) => {
+      if (data) {
+        setProfiles(data);
+        const pharmacien = data.find((p: any) => p.name.toLowerCase().includes("pharmacien"));
+        if (pharmacien) setProfileId(pharmacien.id);
+        else if (data.length) setProfileId(data[0].id);
+      }
+    });
+  }, []);
 
   const handleSubmit = async () => {
     setLoading(true);
@@ -31,6 +45,16 @@ export default function RegisterPage() {
       country,
       sector,
     });
+    if (!error && profileId) {
+      // Get the user after signup to assign profile
+      const { data: { user: newUser } } = await supabase.auth.getUser();
+      if (newUser) {
+        await (supabase as any).from("user_profile_assignments").upsert({
+          user_id: newUser.id,
+          profile_id: profileId,
+        });
+      }
+    }
     setLoading(false);
     if (error) {
       toast({ title: "Erreur d'inscription", description: error.message, variant: "destructive" });
@@ -76,6 +100,11 @@ export default function RegisterPage() {
             <div><label className="text-xs text-mk-sec mb-1 block">Numero TVA</label><input value={vatNumber} onChange={e => setVatNumber(e.target.value)} className="w-full border border-mk-line rounded-md px-3 py-2.5 text-sm" placeholder="BE 0XXX.XXX.XXX" /></div>
             <div><label className="text-xs text-mk-sec mb-1 block">Pays</label>
               <select value={country} onChange={e => setCountry(e.target.value)} className="w-full border border-mk-line rounded-md px-3 py-2.5 text-sm"><option>Belgique</option><option>France</option><option>Suisse</option></select>
+            </div>
+            <div><label className="text-xs text-mk-sec mb-1 block">Profil professionnel</label>
+              <select value={profileId} onChange={e => setProfileId(e.target.value)} className="w-full border border-mk-line rounded-md px-3 py-2.5 text-sm">
+                {profiles.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
             </div>
             <div><label className="text-xs text-mk-sec mb-1 block">Secteur d'activite</label>
               <select value={sector} onChange={e => setSector(e.target.value)} className="w-full border border-mk-line rounded-md px-3 py-2.5 text-sm"><option>Pharmacie</option><option>Hopital</option><option>Maison de repos</option><option>Distributeur</option><option>Autre</option></select>

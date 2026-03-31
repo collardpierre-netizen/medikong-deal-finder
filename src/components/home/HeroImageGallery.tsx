@@ -4,10 +4,10 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 
-const fallbackImages = [
-  { id: "1", image_url: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=900&q=80", alt_text: "Fournitures médicales", link_url: null, cta_text: null },
-  { id: "2", image_url: "https://images.unsplash.com/photo-1631815588090-d4bfec5b1ccb?w=900&q=80", alt_text: "Équipement médical", link_url: null, cta_text: null },
-  { id: "3", image_url: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=900&q=80", alt_text: "Pharmacie professionnelle", link_url: null, cta_text: null },
+const fallbackImages: HeroImg[] = [
+  { id: "1", image_url: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=900&q=80", alt_text: "Fournitures médicales", link_url: null, cta_text: null, title: null, subtitle: null },
+  { id: "2", image_url: "https://images.unsplash.com/photo-1631815588090-d4bfec5b1ccb?w=900&q=80", alt_text: "Équipement médical", link_url: null, cta_text: null, title: null, subtitle: null },
+  { id: "3", image_url: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=900&q=80", alt_text: "Pharmacie professionnelle", link_url: null, cta_text: null, title: null, subtitle: null },
 ];
 
 interface HeroImg {
@@ -17,6 +17,8 @@ interface HeroImg {
   sort_order?: number;
   link_url: string | null;
   cta_text: string | null;
+  title: string | null;
+  subtitle: string | null;
 }
 
 export function HeroImageGallery() {
@@ -24,8 +26,8 @@ export function HeroImageGallery() {
     queryKey: ["cms-hero-images"],
     queryFn: async () => {
       const { data, error } = await (supabase as any)
-        .from("cms_hero_images")
-        .select("id, image_url, alt_text, sort_order, link_url, cta_text")
+        .from("cms_hero_images" as any)
+        .select("id, image_url, alt_text, sort_order, link_url, cta_text, title, subtitle")
         .eq("is_active", true)
         .order("sort_order");
       if (error || !data?.length) return null;
@@ -63,8 +65,8 @@ export function HeroImageGallery() {
       ))}
       <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-black/10 to-transparent" />
       <div className="absolute bottom-6 left-6 md:bottom-8 md:left-8 z-10 text-white">
-        <p className="text-xs font-medium uppercase tracking-wider opacity-80 mb-1">MediKong.pro</p>
-        <h3 className="text-lg md:text-2xl font-bold leading-tight max-w-sm">Le marketplace médical de référence en Belgique</h3>
+        <p className="text-xs font-medium uppercase tracking-wider opacity-80 mb-1">{currentImage?.subtitle || "MediKong.pro"}</p>
+        <h3 className="text-lg md:text-2xl font-bold leading-tight max-w-sm">{currentImage?.title || "Le marketplace médical de référence en Belgique"}</h3>
         {currentImage?.cta_text && (
           <span className="inline-block mt-3 px-5 py-2 rounded-lg text-sm font-semibold bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-colors">
             {currentImage.cta_text}

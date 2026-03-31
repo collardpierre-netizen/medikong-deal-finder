@@ -1,13 +1,15 @@
-import { Grid, List, Download } from "lucide-react";
+import { Grid, List, Columns3, Download } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { CatalogFilters } from "@/hooks/useCatalog";
+
+export type CatalogViewMode = "grid" | "list" | "trivago";
 
 interface Props {
   filters: CatalogFilters;
   setFilter: (key: string, value: any) => void;
   total: number;
-  view: "grid" | "list";
-  setView: (v: "grid" | "list") => void;
+  view: CatalogViewMode;
+  setView: (v: CatalogViewMode) => void;
 }
 
 export function CatalogToolbar({ filters, setFilter, total, view, setView }: Props) {

@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
-import Layout from "@/components/layout/Layout";
+import { Layout } from "@/components/layout/Layout";
 import { useSearchProducts, type SortOption } from "@/hooks/useSearchProducts";
 import SearchResultsBar from "@/components/search/SearchResultsBar";
 import SearchGridView from "@/components/search/SearchGridView";

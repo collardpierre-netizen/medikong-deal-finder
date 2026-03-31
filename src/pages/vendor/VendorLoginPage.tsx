@@ -54,9 +54,9 @@ export default function VendorLoginPage() {
         <div className="bg-white rounded-2xl shadow-lg p-8">
           {/* Header */}
           <div className="flex flex-col items-center mb-8">
-            <div className="w-14 h-14 rounded-xl flex items-center justify-center mb-4" style={{ backgroundColor: "#1B5BDA" }}>
-              <Store size={28} className="text-white" />
-            </div>
+            <Link to="/" className="mb-4">
+              <img src={logoDark} alt="MediKong.pro" className="h-12" />
+            </Link>
             <h1 className="text-xl font-bold" style={{ color: "#1D2530" }}>Espace Vendeur</h1>
             <p className="text-sm mt-1" style={{ color: "#8B95A5" }}>Connectez-vous à votre tableau de bord</p>
           </div>

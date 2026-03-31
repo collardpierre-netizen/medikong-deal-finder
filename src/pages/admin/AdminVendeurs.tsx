@@ -30,7 +30,7 @@ const AdminVendeurs = () => {
     <div>
       <AdminTopBar title={t("sellers")} subtitle={`${vendors.length} vendeurs enregistrés`}
         actions={
-          <button className="flex items-center gap-2 px-4 py-2 rounded-md text-[13px] font-bold text-white" style={{ backgroundColor: "#1E293B" }}>
+          <button onClick={() => setShowForm(true)} className="flex items-center gap-2 px-4 py-2 rounded-md text-[13px] font-bold text-white" style={{ backgroundColor: "#1E293B" }}>
             <Plus size={15} /> Ajouter un vendeur
           </button>
         }

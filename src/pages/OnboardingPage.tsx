@@ -183,6 +183,7 @@ export default function OnboardingPage() {
   const [showPw, setShowPw] = useState(false);
   const [showPwConfirm, setShowPwConfirm] = useState(false);
   const [acceptTerms, setAcceptTerms] = useState(false);
+  const [tempPassword, setTempPassword] = useState("");
 
   /* ─── Buyer-specific ─── */
   const [buyerProfile, setBuyerProfile] = useState("");
@@ -365,6 +366,7 @@ export default function OnboardingPage() {
 
     try {
       const temporaryPassword = `${crypto.randomUUID()}Aa1!`;
+      setTempPassword(temporaryPassword);
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email,
         password: temporaryPassword,

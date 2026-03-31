@@ -70,6 +70,7 @@ const sections: NavSection[] = [
     labelKey: "operations",
     items: [
       { labelKey: "users", path: "/admin/users", icon: Users },
+      { labelKey: "profils", path: "/admin/profils", icon: Shield },
       { labelKey: "logistics", path: "/admin/logistique", icon: Truck },
       { labelKey: "team", path: "/admin/equipe", icon: ShieldCheck },
       { labelKey: "apiKeys", path: "/admin/api-keys", icon: Key },

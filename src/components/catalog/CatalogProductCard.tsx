@@ -26,9 +26,8 @@ function ProductImg({ product, className = "" }: { product: CatalogProduct; clas
           alt={product.name}
           loading="lazy"
           referrerPolicy="no-referrer"
-          crossOrigin="anonymous"
           className="w-full h-full object-contain p-2"
-          onError={e => { e.currentTarget.src = "/placeholder.svg"; }}
+          onError={e => { e.currentTarget.src = "/product-placeholder.svg"; }}
         />
       </div>
     );

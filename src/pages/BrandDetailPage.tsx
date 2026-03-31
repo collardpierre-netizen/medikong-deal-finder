@@ -318,7 +318,7 @@ export default function BrandDetailPage() {
                   <div key={p.id} className="flex items-center gap-4 border border-mk-line rounded-lg p-3 hover:shadow-sm transition-shadow bg-white">
                     <div className="w-16 h-16 shrink-0 rounded bg-muted flex items-center justify-center overflow-hidden">
                       {p.imageUrl ? (
-                        <img src={p.imageUrl} alt={p.name} className="w-full h-full object-contain p-1" onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.svg'; }} />
+                        <img src={p.imageUrl} alt={p.name} className="w-full h-full object-contain p-1" onError={(e) => { (e.target as HTMLImageElement).src = '/product-placeholder.svg'; }} />
                       ) : (
                         <span className="text-xs text-muted-foreground">N/A</span>
                       )}
@@ -341,7 +341,7 @@ export default function BrandDetailPage() {
                   <div key={p.id} className="flex items-center gap-4 border border-mk-line rounded-lg p-4 hover:shadow-sm transition-shadow bg-white">
                     <div className="w-20 h-20 shrink-0 rounded bg-muted flex items-center justify-center overflow-hidden">
                       {p.imageUrl ? (
-                        <img src={p.imageUrl} alt={p.name} className="w-full h-full object-contain p-1" onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.svg'; }} />
+                        <img src={p.imageUrl} alt={p.name} className="w-full h-full object-contain p-1" onError={(e) => { (e.target as HTMLImageElement).src = '/product-placeholder.svg'; }} />
                       ) : (
                         <span className="text-xs text-muted-foreground">N/A</span>
                       )}

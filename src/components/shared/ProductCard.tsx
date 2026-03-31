@@ -48,10 +48,9 @@ export function ProductImage({ product, className = "", selectedIndex = 0 }: { p
           alt={product.name}
           loading="lazy"
           referrerPolicy="no-referrer"
-          crossOrigin="anonymous"
           className="w-full h-full object-contain p-2"
           onError={(e) => {
-            e.currentTarget.src = "/placeholder.svg";
+            e.currentTarget.src = "/product-placeholder.svg";
           }}
         />
       </div>

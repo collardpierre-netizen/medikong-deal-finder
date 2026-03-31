@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AdminTopBar from "@/components/admin/AdminTopBar";
 import StatusBadge from "@/components/admin/StatusBadge";
+import VendorFormDialog from "@/components/admin/VendorFormDialog";
 import { useI18n } from "@/contexts/I18nContext";
 import { useVendors } from "@/hooks/useAdminData";
 import { Search, Filter, Download, Plus } from "lucide-react";

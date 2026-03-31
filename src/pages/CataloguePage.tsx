@@ -27,7 +27,7 @@ export default function CataloguePage() {
   const { data, isLoading } = useCatalogProducts(filters);
   const products = data?.products || [];
   const total = data?.total || 0;
-  const [view, setView] = useState<"grid" | "list">("grid");
+  const [view, setView] = useState<CatalogViewMode>("grid");
   const [mobileFilters, setMobileFilters] = useState(false);
 
   const title = filters.category

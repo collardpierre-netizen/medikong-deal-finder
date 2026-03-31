@@ -132,8 +132,12 @@ export function useCatalogProducts(filters: CatalogFilters) {
       let query = supabase
         .from("products")
         .select("id, slug, name, brand_name, brand_id, category_id, category_name, gtin, cnk_code, image_urls, short_description, is_promotion, promotion_label, best_price_excl_vat, best_price_incl_vat, offer_count, total_stock, is_in_stock, created_at", { count: "estimated" })
-        .eq("is_active", true)
-        .gt("offer_count", 0);
+        .eq("is_active", true);
+
+      // Only filter by offer_count when not searching — allow search to find all products
+      if (!filters.search) {
+        query = query.gt("offer_count", 0);
+      }
 
       if (categoryIds) query = query.in("category_id", categoryIds);
       if (brandIds) query = query.in("brand_id", brandIds);

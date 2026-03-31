@@ -903,6 +903,114 @@ export type Database = {
         }
         Relationships: []
       }
+      market_price_sources: {
+        Row: {
+          country_code: string | null
+          created_at: string | null
+          file_format: string | null
+          id: string
+          is_active: boolean | null
+          last_import_at: string | null
+          name: string
+          slug: string
+          source_type: string
+          total_products: number | null
+        }
+        Insert: {
+          country_code?: string | null
+          created_at?: string | null
+          file_format?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_import_at?: string | null
+          name: string
+          slug: string
+          source_type?: string
+          total_products?: number | null
+        }
+        Update: {
+          country_code?: string | null
+          created_at?: string | null
+          file_format?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_import_at?: string | null
+          name?: string
+          slug?: string
+          source_type?: string
+          total_products?: number | null
+        }
+        Relationships: []
+      }
+      market_prices: {
+        Row: {
+          cnk: string | null
+          ean: string | null
+          id: string
+          imported_at: string | null
+          is_matched: boolean | null
+          prix_grossiste: number | null
+          prix_pharmacien: number | null
+          prix_public: number | null
+          product_id: string | null
+          product_name_source: string | null
+          product_url: string | null
+          source_id: string
+          supplier_code: string | null
+          supplier_name: string | null
+          tva_rate: number | null
+        }
+        Insert: {
+          cnk?: string | null
+          ean?: string | null
+          id?: string
+          imported_at?: string | null
+          is_matched?: boolean | null
+          prix_grossiste?: number | null
+          prix_pharmacien?: number | null
+          prix_public?: number | null
+          product_id?: string | null
+          product_name_source?: string | null
+          product_url?: string | null
+          source_id: string
+          supplier_code?: string | null
+          supplier_name?: string | null
+          tva_rate?: number | null
+        }
+        Update: {
+          cnk?: string | null
+          ean?: string | null
+          id?: string
+          imported_at?: string | null
+          is_matched?: boolean | null
+          prix_grossiste?: number | null
+          prix_pharmacien?: number | null
+          prix_public?: number | null
+          product_id?: string | null
+          product_name_source?: string | null
+          product_url?: string | null
+          source_id?: string
+          supplier_code?: string | null
+          supplier_name?: string | null
+          tva_rate?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "market_prices_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "market_prices_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "market_price_sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       offer_price_tiers: {
         Row: {
           created_at: string | null
@@ -1772,6 +1880,41 @@ export type Database = {
           },
         ]
       }
+      profile_visibility: {
+        Row: {
+          created_at: string | null
+          feature_key: string
+          id: string
+          is_visible: boolean | null
+          label: string | null
+          profile_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          feature_key: string
+          id?: string
+          is_visible?: boolean | null
+          label?: string | null
+          profile_id: string
+        }
+        Update: {
+          created_at?: string | null
+          feature_key?: string
+          id?: string
+          is_visible?: boolean | null
+          label?: string | null
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_visibility_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -1956,6 +2099,48 @@ export type Database = {
           tagline?: string
         }
         Relationships: []
+      }
+      source_profile_config: {
+        Row: {
+          created_at: string | null
+          display_label: string | null
+          display_mode: string
+          id: string
+          profile_id: string
+          source_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          display_label?: string | null
+          display_mode?: string
+          id?: string
+          profile_id: string
+          source_id: string
+        }
+        Update: {
+          created_at?: string | null
+          display_label?: string | null
+          display_mode?: string
+          id?: string
+          profile_id?: string
+          source_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "source_profile_config_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_profile_config_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "market_price_sources"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sourcing_requests: {
         Row: {
@@ -2343,6 +2528,62 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_profile_assignments: {
+        Row: {
+          assigned_at: string | null
+          profile_id: string
+          user_id: string
+        }
+        Insert: {
+          assigned_at?: string | null
+          profile_id: string
+          user_id: string
+        }
+        Update: {
+          assigned_at?: string | null
+          profile_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_profile_assignments_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_profiles: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          display_order: number | null
+          id: string
+          is_active: boolean | null
+          name: string
+          slug: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          slug: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          slug?: string
+        }
+        Relationships: []
       }
       vendors: {
         Row: {

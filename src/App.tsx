@@ -112,6 +112,7 @@ const AdminProductPrices = lazy(() => import("./pages/admin/AdminProductPrices")
 const AdminInvestPipeline = lazy(() => import("./pages/admin/AdminInvestPipeline"));
 const AdminLogistique = lazy(() => import("./pages/admin/AdminLogistique"));
 const AdminEquipe = lazy(() => import("./pages/admin/AdminEquipe"));
+const AdminProfils = lazy(() => import("./pages/admin/AdminProfils"));
 const AdminParametres = lazy(() => import("./pages/admin/AdminParametres"));
 const AdminLogs = lazy(() => import("./pages/admin/AdminLogs"));
 const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
@@ -268,6 +269,7 @@ const App = () => (
               <Route path="invest-pipeline" element={<LP><AdminInvestPipeline /></LP>} />
               <Route path="logistique" element={<LP><AdminLogistique /></LP>} />
               <Route path="equipe" element={<LP><AdminEquipe /></LP>} />
+              <Route path="profils" element={<LP><AdminProfils /></LP>} />
               <Route path="parametres" element={<LP><AdminParametres /></LP>} />
               <Route path="logs" element={<LP><AdminLogs /></LP>} />
               <Route path="users" element={<LP><AdminUsers /></LP>} />

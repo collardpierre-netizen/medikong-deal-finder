@@ -404,6 +404,7 @@ export default function AdminSync() {
   const [showToken, setShowToken] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [runningSyncs, setRunningSyncs] = useState<Set<string>>(new Set());
+  const [loopProgress, setLoopProgress] = useState<Record<string, { processed: number; remaining: number; errors: number }>>({});
   const [qogitaEmail, setQogitaEmail] = useState("");
   const [qogitaPassword, setQogitaPassword] = useState("");
   const [emailDirty, setEmailDirty] = useState(false);

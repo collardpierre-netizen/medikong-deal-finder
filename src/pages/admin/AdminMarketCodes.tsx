@@ -264,9 +264,9 @@ export default function AdminMarketCodes() {
         <TabsContent value="import" className="space-y-6">
           {/* Import result banner */}
           {importResult && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-sm">
-              <p className="font-medium text-green-800">✅ Import terminé</p>
-              <p className="text-green-700 mt-1">
+            <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4 text-sm">
+              <p className="font-medium text-emerald-800">✅ Import terminé</p>
+              <p className="text-emerald-700 mt-1">
                 {importResult.imported} lignes importées · {importResult.matched} matchées · {importResult.unmatched} non matchées
               </p>
             </div>

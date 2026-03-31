@@ -414,13 +414,17 @@ export default function OnboardingPage() {
         ))}
       </div>
       {otpError && <p style={{ fontSize: 12, color: S.red, marginBottom: 12 }}>Code invalide. Veuillez réessayer.</p>}
-      <div style={{ fontSize: 12, color: S.ter, marginBottom: 16 }}>
+      <div style={{ fontSize: 12, color: S.ter, marginBottom: 8 }}>
         {otpTimer > 0 ? `Renvoyer le code dans 0:${otpTimer.toString().padStart(2, "0")}` : (
           <span>
-            <button style={{ color: S.blue, background: "none", border: "none", cursor: "pointer", fontWeight: 500, fontSize: 12 }} onClick={() => setOtpTimer(59)}>Renvoyer par email</button>
+            <button style={{ color: S.blue, background: "none", border: "none", cursor: "pointer", fontWeight: 500, fontSize: 12 }} onClick={async () => {
+              try { await supabase.auth.resend({ type: 'signup', email }); } catch(e) { console.error(e); }
+              setOtpTimer(59);
+            }}>Renvoyer par email</button>
           </span>
         )}
       </div>
+      <p style={{ fontSize: 11, color: S.ter }}>Vérifiez aussi vos spams. Contact : <a href="mailto:support@medikong.pro" style={{ color: S.blue }}>support@medikong.pro</a></p>
     </div>
   );
 

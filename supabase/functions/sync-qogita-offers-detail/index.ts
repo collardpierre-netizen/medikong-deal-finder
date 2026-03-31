@@ -266,20 +266,39 @@ Deno.serve(async (req) => {
     syncLogId = newLog!.id;
   }
 
-  (globalThis as any).EdgeRuntime.waitUntil(
-    syncOffers(sb, targetCountry, vatRate, vatMultiplier, syncLogId, lastOffset, startTime, fetchMultiVendor).catch(async (e: any) => {
-      console.error("Sync offers error:", e);
-      await sb
-        .from("sync_logs")
-        .update({
-          status: "error",
-          completed_at: new Date().toISOString(),
-          error_message: e.message,
-          progress_message: `Erreur: ${e.message}`,
-        })
-        .eq("id", syncLogId);
-    }),
-  );
+  // Count total products to process and calculate remaining
+  const { count: totalProducts } = await sb
+    .from("products")
+    .select("id", { count: "exact", head: true })
+    .eq("source", "qogita")
+    .eq("is_active", true)
+    .not("gtin", "is", null);
+
+  const remaining = Math.max((totalProducts || 0) - lastOffset, 0);
+
+  // Run sync synchronously (not in background) so we can return accurate remaining
+  let productsEnriched = 0;
+  let offersUpserted = 0;
+  try {
+    const result = await syncOffers(sb, targetCountry, vatRate, vatMultiplier, syncLogId, lastOffset, startTime, fetchMultiVendor);
+    productsEnriched = result?.products_enriched || 0;
+    offersUpserted = result?.offers_upserted || 0;
+  } catch (e: any) {
+    console.error("Sync offers error:", e);
+    await sb
+      .from("sync_logs")
+      .update({
+        status: "error",
+        completed_at: new Date().toISOString(),
+        error_message: e.message,
+        progress_message: `Erreur: ${e.message}`,
+      })
+      .eq("id", syncLogId);
+  }
+
+  // Re-check remaining after this batch
+  const { data: updatedLog } = await sb.from("sync_logs").select("status, stats").eq("id", syncLogId).single();
+  const finalRemaining = updatedLog?.status === "partial" ? ((updatedLog.stats as any)?.last_offset ? (totalProducts || 0) - (updatedLog.stats as any).last_offset : 0) : 0;
 
   return new Response(
     JSON.stringify({
@@ -287,7 +306,11 @@ Deno.serve(async (req) => {
       sync_log_id: syncLogId,
       country: targetCountry,
       multi_vendor: fetchMultiVendor,
-      message: `Sync offres ${targetCountry} ${fetchMultiVendor ? "(multi-vendeur)" : ""} lancée en arrière-plan`,
+      products_enriched: productsEnriched,
+      offers_upserted: offersUpserted,
+      remaining: finalRemaining,
+      status: updatedLog?.status || "unknown",
+      message: `Sync offres ${targetCountry} — ${productsEnriched} enrichis, ${finalRemaining} restants`,
     }),
     { headers: { ...corsHeaders, "Content-Type": "application/json" } },
   );

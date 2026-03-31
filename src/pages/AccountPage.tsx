@@ -39,6 +39,42 @@ const contentVariants = {
   exit: { opacity: 0, y: -8 },
 };
 
+function ProfileSelector() {
+  const { user } = useAuth();
+  const [profiles, setProfiles] = useState<{ id: string; name: string }[]>([]);
+  const [currentProfileId, setCurrentProfileId] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    (supabase as any).from("user_profiles").select("id, name").eq("is_active", true).order("display_order").then(({ data }: any) => {
+      if (data) setProfiles(data);
+    });
+    if (user) {
+      (supabase as any).from("user_profile_assignments").select("profile_id").eq("user_id", user.id).maybeSingle().then(({ data }: any) => {
+        if (data) setCurrentProfileId(data.profile_id);
+      });
+    }
+  }, [user]);
+
+  const handleChange = async (newId: string) => {
+    if (!user || !newId) return;
+    setSaving(true);
+    setCurrentProfileId(newId);
+    await (supabase as any).from("user_profile_assignments").upsert({ user_id: user.id, profile_id: newId });
+    setSaving(false);
+  };
+
+  return (
+    <div>
+      <label className="text-xs text-mk-sec mb-1 block">Profil professionnel</label>
+      <select value={currentProfileId} onChange={e => handleChange(e.target.value)} disabled={saving} className="w-full border border-mk-line rounded-md px-3 py-2 text-sm">
+        <option value="">Sélectionnez...</option>
+        {profiles.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+      </select>
+    </div>
+  );
+}
+
 export default function AccountPage() {
   const { data: products = [] } = useFeaturedProducts(20);
   const { user } = useAuth();

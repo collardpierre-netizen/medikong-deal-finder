@@ -26,6 +26,7 @@ const sections: NavSection[] = [
     labelKey: "management",
     items: [
       { labelKey: "sellers", path: "/admin/vendeurs", icon: Store },
+      { labelKey: "externalVendors", path: "/admin/vendeurs-externes", icon: ExternalLink },
       { labelKey: "onboarding", path: "/admin/onboarding", icon: UserPlus },
       { labelKey: "products", path: "/admin/produits", icon: Package },
       { labelKey: "categories", path: "/admin/categories", icon: Layers },

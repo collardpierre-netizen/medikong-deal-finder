@@ -282,6 +282,7 @@ const App = () => (
               <Route path="api-docs" element={<LP><AdminApiDocs /></LP>} />
               <Route path="pays" element={<LP><AdminCountries /></LP>} />
               <Route path="market-codes" element={<LP><AdminMarketCodes /></LP>} />
+              <Route path="vendeurs-externes" element={<LP><AdminExternalVendors /></LP>} />
             </Route>
 
             {/* Vendor Dashboard */}

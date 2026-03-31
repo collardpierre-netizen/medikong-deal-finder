@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Store, Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
+import logoDark from "@/assets/Logo_horizontal_sombre2.png";
 
 export default function VendorLoginPage() {
   const navigate = useNavigate();
@@ -53,9 +54,9 @@ export default function VendorLoginPage() {
         <div className="bg-white rounded-2xl shadow-lg p-8">
           {/* Header */}
           <div className="flex flex-col items-center mb-8">
-            <div className="w-14 h-14 rounded-xl flex items-center justify-center mb-4" style={{ backgroundColor: "#1B5BDA" }}>
-              <Store size={28} className="text-white" />
-            </div>
+            <Link to="/" className="mb-4">
+              <img src={logoDark} alt="MediKong.pro" className="h-12" />
+            </Link>
             <h1 className="text-xl font-bold" style={{ color: "#1D2530" }}>Espace Vendeur</h1>
             <p className="text-sm mt-1" style={{ color: "#8B95A5" }}>Connectez-vous à votre tableau de bord</p>
           </div>

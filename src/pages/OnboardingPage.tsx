@@ -489,19 +489,25 @@ export default function OnboardingPage() {
     if (!isPasswordValid || submitting) return;
     setSubmitting(true);
     try {
-      // 1. Use verified auth user created during OTP step
-      const { data: userData, error: userError } = await supabase.auth.getUser();
-      if (userError) throw userError;
+      // 1. Try to get existing session
+      let { data: userData } = await supabase.auth.getUser();
+      let userId = userData?.user?.id;
 
-      const userId = userData.user?.id;
-      if (!userId) {
-        const { error: resendError } = await supabase.auth.resend({ type: "signup", email });
-        if (resendError) {
-          throw new Error("Veuillez confirmer votre email avant de finaliser le compte.");
+      // If no active session, sign in with the temp password (email confirmed via link)
+      if (!userId && tempPassword) {
+        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password: tempPassword,
+        });
+        if (signInError) {
+          alert('Votre email n'est pas encore confirmé. Ouvrez l'email reçu et cliquez sur le lien de vérification, puis réessayez.');
+          return;
         }
+        userId = signInData.user?.id;
+      }
 
-        alert("Nous avons renvoyé un email de confirmation. Merci de confirmer votre email puis de cliquer sur “J'ai confirmé mon email” pour finaliser votre compte.");
-        goTo(role === "seller" ? 12.5 : 2.5, "down");
+      if (!userId) {
+        alert('Session introuvable. Confirmez votre email puis réessayez.');
         return;
       }
 

@@ -1,0 +1,1 @@
+ALTER TYPE sync_type_enum ADD VALUE IF NOT EXISTS 'offers_multi_vendor';

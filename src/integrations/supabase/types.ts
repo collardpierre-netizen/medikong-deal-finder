@@ -2401,6 +2401,7 @@ export type Database = {
         | "products"
         | "offers_detail"
         | "manual"
+        | "offers_multi_vendor"
       urgency_enum: "low" | "medium" | "high"
       vendor_type: "medikong" | "qogita_virtual" | "real"
     }
@@ -2589,6 +2590,7 @@ export const Constants = {
         "products",
         "offers_detail",
         "manual",
+        "offers_multi_vendor",
       ],
       urgency_enum: ["low", "medium", "high"],
       vendor_type: ["medikong", "qogita_virtual", "real"],

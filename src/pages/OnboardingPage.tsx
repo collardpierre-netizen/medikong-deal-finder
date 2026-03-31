@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { usePageImages } from "@/hooks/usePageImages";
 import {
   ShoppingBag, Briefcase, User, Stethoscope, Pill, Building2, Layers, Store,
   ChevronLeft, ChevronUp, ChevronDown, Lock, Eye, EyeOff, Check, ArrowRight,

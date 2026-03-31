@@ -794,7 +794,7 @@ export default function OnboardingPage() {
             </div>
           );
         })}
-        <div style={{ position: "absolute", top: 32, left: 32, zIndex: 2 }}><Logo white size={22} /></div>
+        <a href="/" style={{ position: "absolute", top: 32, left: 32, zIndex: 2, cursor: "pointer" }}><Logo white size={32} /></a>
         <div style={{ position: "relative", zIndex: 2, padding: "0 32px 40px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 0, marginBottom: 20 }}>
             {activeTestimonials.slice(0, 3).map((t, i) => {
@@ -845,7 +845,7 @@ export default function OnboardingPage() {
 
       {/* ─── RIGHT PANEL — Form ─── */}
       <div className="md:ml-[45%]" style={{ flex: 1, minHeight: "100vh", background: S.bg, display: "flex", flexDirection: "column", alignItems: "center", position: "relative" }}>
-        <div className="md:hidden" style={{ padding: "20px 20px 0" }}><Logo size={20} /></div>
+        <a href="/" className="md:hidden" style={{ padding: "20px 20px 0", cursor: "pointer" }}><Logo size={28} /></a>
         <div style={{ width: "100%", maxWidth: 480, flex: 1, display: "flex", flexDirection: "column", padding: "32px 24px" }} className="md:!px-12">
           {showDots && (
             <div style={{ display: "flex", justifyContent: "center", gap: 8, marginBottom: 32, flexShrink: 0 }}>

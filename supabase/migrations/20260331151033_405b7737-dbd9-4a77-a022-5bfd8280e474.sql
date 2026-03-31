@@ -1,0 +1,2 @@
+UPDATE onboarding_testimonials SET photo_url = '/testimonials/meuleman-gaetan.jpg' WHERE id = '4c76cd38-b575-4242-ac52-2a37a2db0ec9';
+UPDATE onboarding_testimonials SET photo_url = '/testimonials/staquet-laurent.jpg' WHERE id = '34a82a10-125e-45b3-88f4-f0f564ea95b2';

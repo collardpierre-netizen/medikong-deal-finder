@@ -169,6 +169,7 @@ export default function OnboardingPage() {
   const [otpTimer, setOtpTimer] = useState(59);
   const [sendingOtp, setSendingOtp] = useState(false);
   const [verifyingOtp, setVerifyingOtp] = useState(false);
+  const [checkingConfirmedEmail, setCheckingConfirmedEmail] = useState(false);
   const [brokenPhotoUrls, setBrokenPhotoUrls] = useState<Record<string, boolean>>({});
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -426,6 +427,28 @@ export default function OnboardingPage() {
     }
   };
 
+  const handleContinueAfterEmailConfirmation = async () => {
+    if (checkingConfirmedEmail || verifyingOtp) return;
+
+    setCheckingConfirmedEmail(true);
+    try {
+      const { data, error } = await supabase.auth.getUser();
+      if (error) throw error;
+
+      if (!data.user) {
+        alert("Aucune session confirmée détectée. Cliquez d'abord sur le bouton de confirmation reçu par email.");
+        return;
+      }
+
+      restoreOnboardingSession(data.user);
+    } catch (error) {
+      console.error("Email confirmation check error:", error);
+      alert("Impossible de vérifier la confirmation pour le moment. Réessayez dans quelques secondes.");
+    } finally {
+      setCheckingConfirmedEmail(false);
+    }
+  };
+
   const handleOtpChange = (idx: number, val: string) => {
     if (verifyingOtp) return;
     if (!/^\d?$/.test(val)) return;
@@ -537,7 +560,8 @@ export default function OnboardingPage() {
         <Lock size={24} color={S.blue} />
       </div>
       <h1 style={{ fontSize: 20, fontWeight: 700, color: S.text, marginBottom: 6 }}>Vérifiez votre email</h1>
-      <p style={{ fontSize: 13, color: S.sec, marginBottom: 24 }}>Un code à 6 chiffres a été envoyé à <strong>{email}</strong></p>
+      <p style={{ fontSize: 13, color: S.sec, marginBottom: 8 }}>Un code à 6 chiffres a été envoyé à <strong>{email}</strong></p>
+      <p style={{ fontSize: 12, color: S.ter, marginBottom: 20 }}>Si l'email contient un bouton de confirmation, cliquez-le puis revenez ici pour continuer.</p>
       <div className={otpShake ? "tf-shake" : ""} style={{ display: "flex", gap: 10, justifyContent: "center", marginBottom: 16 }} onPaste={handleOtpPaste}>
         {otpDigits.map((d, i) => (
           <input key={i} ref={el => { otpRefs.current[i] = el; }} type="text" inputMode="numeric" maxLength={1} value={d}
@@ -570,6 +594,24 @@ export default function OnboardingPage() {
           </span>
         )}
       </div>
+      <button
+        onClick={handleContinueAfterEmailConfirmation}
+        disabled={checkingConfirmedEmail || verifyingOtp}
+        style={{
+          background: "transparent",
+          border: `1px solid ${S.line}`,
+          borderRadius: S.radiusSm,
+          padding: "8px 16px",
+          fontSize: 12,
+          fontWeight: 600,
+          color: S.blue,
+          cursor: checkingConfirmedEmail ? "default" : "pointer",
+          opacity: checkingConfirmedEmail ? 0.6 : 1,
+          marginBottom: 12,
+        }}
+      >
+        {checkingConfirmedEmail ? "Vérification..." : "J’ai confirmé via le bouton email"}
+      </button>
       <p style={{ fontSize: 11, color: S.ter }}>Vérifiez aussi vos spams. Contact : <a href="mailto:support@medikong.pro" style={{ color: S.blue }}>support@medikong.pro</a></p>
     </div>
   );

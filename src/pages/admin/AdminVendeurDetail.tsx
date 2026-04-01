@@ -3,15 +3,17 @@ import { useParams, useNavigate } from "react-router-dom";
 import AdminTopBar from "@/components/admin/AdminTopBar";
 import KpiCard from "@/components/admin/KpiCard";
 import StatusBadge from "@/components/admin/StatusBadge";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
   ArrowLeft, Building2, Mail, MapPin,
-  DollarSign, Package, Tag, Factory, Activity,
+  DollarSign, Package, Tag, Factory, Activity, Eye, Plus, Trash2,
 } from "lucide-react";
+import { toast } from "sonner";
 
 const tabList = [
   { key: "resume", label: "Résumé", icon: Building2 },
+  { key: "visibility", label: "Visibilité", icon: Eye },
   { key: "portfolio", label: "Portefeuille", icon: Tag },
   { key: "products", label: "Produits", icon: Package },
   { key: "activity", label: "Activité", icon: Activity },

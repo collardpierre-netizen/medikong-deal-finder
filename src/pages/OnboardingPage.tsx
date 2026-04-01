@@ -478,32 +478,47 @@ export default function OnboardingPage() {
       return;
     }
 
+    // Check localStorage draft
     const rawDraft = readOnboardingStorage(onboardingDraftStorageKey);
-    if (!rawDraft) return;
+    if (rawDraft) {
+      try {
+        const draft = JSON.parse(rawDraft) as OnboardingDraft;
+        const userEmail = (user.email ?? "").trim().toLowerCase();
 
-    try {
-      const draft = JSON.parse(rawDraft) as OnboardingDraft;
-      const userEmail = (user.email ?? "").trim().toLowerCase();
+        if (draft?.role && draft.email && (!userEmail || draft.email === userEmail)) {
+          setRole(draft.role);
+          setEmail(user.email ?? draft.email);
+          setOtpVerified(true);
+          setEmailDeliveryMode(draft.deliveryMode ?? "link_only");
 
-      if (!draft?.role || !draft.email || (userEmail && draft.email !== userEmail)) {
-        return;
+          if (draft.role === "buyer") {
+            if (draft.buyerProfile) setBuyerProfile(draft.buyerProfile);
+            setStep(3);
+            return;
+          }
+
+          if (draft.businessType) setBusinessType(draft.businessType);
+          setStep(13);
+          return;
+        }
+      } catch {
+        removeOnboardingStorage(onboardingDraftStorageKey);
       }
+    }
 
-      setRole(draft.role);
-      setEmail(user.email ?? draft.email);
+    // Fallback: use URL context (e.g., user came via magic link on different device, no draft)
+    const params = new URLSearchParams(window.location.search);
+    const urlRole = params.get("role");
+    if (urlRole === "buyer" || urlRole === "seller") {
+      setRole(urlRole);
+      setEmail(user.email ?? "");
       setOtpVerified(true);
-      setEmailDeliveryMode(draft.deliveryMode ?? "link_only");
-
-      if (draft.role === "buyer") {
-        if (draft.buyerProfile) setBuyerProfile(draft.buyerProfile);
-        setStep(3);
-        return;
-      }
-
-      if (draft.businessType) setBusinessType(draft.businessType);
-      setStep(13);
-    } catch {
-      removeOnboardingStorage(onboardingDraftStorageKey);
+      setEmailDeliveryMode("link_only");
+      const bp = params.get("buyerProfile");
+      if (bp) setBuyerProfile(bp);
+      const bt = params.get("businessType");
+      if (bt) setBusinessType(bt);
+      setStep(urlRole === "buyer" ? 3 : 13);
     }
   }, [onboardingDraftStorageKey, readOnboardingStorage, removeOnboardingStorage]);
 

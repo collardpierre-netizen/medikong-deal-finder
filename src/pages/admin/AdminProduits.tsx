@@ -1,47 +1,101 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import AdminTopBar from "@/components/admin/AdminTopBar";
 import KpiCard from "@/components/admin/KpiCard";
 import StatusBadge from "@/components/admin/StatusBadge";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useI18n } from "@/contexts/I18nContext";
-import { useProducts as useAdminProducts, useOffers as useOffersDirectAdmin, useBrands, useManufacturers, useProductCount, useBrandCount, useActiveOfferCount } from "@/hooks/useAdminData";
+import { useOffers as useOffersDirectAdmin, useBrands, useManufacturers, useProductCount, useBrandCount, useActiveOfferCount } from "@/hooks/useAdminData";
 import { ProductFormDialog } from "@/components/admin/ProductFormDialog";
 import { exportProducts, importProducts, downloadProductTemplate } from "@/lib/xlsx-utils";
-import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Package, Tag, ShoppingCart, AlertTriangle, Search, Filter, Download, Upload, Plus, ImageOff, FileSpreadsheet } from "lucide-react";
+import { Package, Tag, ShoppingCart, Search, Download, Upload, Plus, FileSpreadsheet, ChevronLeft, ChevronRight } from "lucide-react";
+
+const PER_PAGE = 50;
+
+function useAdminPaginatedProducts(page: number, search: string, brandFilter: string, manufacturerFilter: string) {
+  return useQuery({
+    queryKey: ["admin-products-paginated", page, search, brandFilter, manufacturerFilter],
+    queryFn: async () => {
+      let query = supabase
+        .from("products")
+        .select("id, name, slug, gtin, cnk_code, brand_name, brand_id, manufacturer_id, image_urls, offer_count, total_stock, best_price_excl_vat, is_active, source, created_at", { count: "exact" })
+        .order("created_at", { ascending: false });
+
+      if (search.trim()) {
+        const pattern = `%${search.trim()}%`;
+        query = query.or(`name.ilike.${pattern},gtin.ilike.${pattern},cnk_code.ilike.${pattern},brand_name.ilike.${pattern}`);
+      }
+
+      if (brandFilter && brandFilter !== "all") {
+        query = query.eq("brand_id", brandFilter);
+      }
+
+      if (manufacturerFilter && manufacturerFilter !== "all") {
+        query = query.eq("manufacturer_id", manufacturerFilter);
+      }
+
+      const offset = (page - 1) * PER_PAGE;
+      query = query.range(offset, offset + PER_PAGE - 1);
+
+      const { data, error, count } = await query;
+      if (error) throw error;
+      return { products: data || [], total: count || 0 };
+    },
+    staleTime: 30_000,
+  });
+}
 
 const AdminProduits = () => {
   const { t } = useI18n();
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const { data: products = [], isLoading: loadingProducts } = useAdminProducts(100);
-  const { data: offers = [], isLoading: loadingOffers } = useOffersDirectAdmin();
+
+  const [activeTab, setActiveTab] = useState<"catalog" | "offers">("catalog");
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [brandFilter, setBrandFilter] = useState("all");
+  const [manufacturerFilter, setManufacturerFilter] = useState("all");
+  const [productDialogOpen, setProductDialogOpen] = useState(false);
+  const [editProduct, setEditProduct] = useState<any>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+
   const { data: brands = [] } = useBrands();
   const { data: manufacturers = [] } = useManufacturers();
   const { data: totalProductCount = 0 } = useProductCount();
   const { data: totalBrandCount = 0 } = useBrandCount();
   const { data: totalActiveOfferCount = 0 } = useActiveOfferCount();
-  const [activeTab, setActiveTab] = useState<"catalog" | "offers">("catalog");
-  const [search, setSearch] = useState("");
-  const [productDialogOpen, setProductDialogOpen] = useState(false);
-  const [editProduct, setEditProduct] = useState<any>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
+  const { data: offers = [], isLoading: loadingOffers } = useOffersDirectAdmin();
 
-  const activeOffers = offers.filter(o => o.is_active).length;
+  const { data: pageData, isLoading: loadingProducts } = useAdminPaginatedProducts(page, debouncedSearch, brandFilter, manufacturerFilter);
+  const products = pageData?.products || [];
+  const totalFiltered = pageData?.total || 0;
+  const totalPages = Math.max(1, Math.ceil(totalFiltered / PER_PAGE));
+
+  const handleSearchChange = useCallback((value: string) => {
+    setSearch(value);
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      setDebouncedSearch(value);
+      setPage(1);
+    }, 400);
+  }, []);
+
+  const handleFilterChange = useCallback((type: "brand" | "manufacturer", value: string) => {
+    if (type === "brand") setBrandFilter(value);
+    else setManufacturerFilter(value);
+    setPage(1);
+  }, []);
 
   const tabs = [
     { key: "catalog" as const, label: "Catalogue master", count: totalProductCount.toLocaleString("fr-BE") },
     { key: "offers" as const, label: "Offres vendeurs", count: String(offers.length) },
   ];
-
-  const filteredProducts = products.filter(
-    (p) =>
-      p.name.toLowerCase().includes(search.toLowerCase()) ||
-      (p.cnk_code || "").includes(search) ||
-      (p.gtin || "").includes(search)
-  );
 
   const filteredOffers = offers.filter(
     (o) =>
@@ -55,11 +109,16 @@ const AdminProduits = () => {
       const result = await importProducts(file);
       toast.success(`${result.created} produits importés`);
       if (result.errors.length > 0) toast.warning(`${result.errors.length} erreur(s): ${result.errors[0]}`);
-      qc.invalidateQueries({ queryKey: ["admin-products"] });
+      qc.invalidateQueries({ queryKey: ["admin-products-paginated"] });
+      qc.invalidateQueries({ queryKey: ["admin-products-count"] });
     } catch (e: any) {
       toast.error(e.message || "Erreur import");
     }
   };
+
+  // Sort brands/manufacturers alphabetically for selects
+  const sortedBrands = [...brands].sort((a, b) => a.name.localeCompare(b.name));
+  const sortedManufacturers = [...manufacturers].sort((a, b) => a.name.localeCompare(b.name));
 
   return (
     <div>
@@ -95,60 +154,142 @@ const AdminProduits = () => {
         ))}
       </div>
 
-      <div className="flex items-center gap-3 mb-4">
+      {/* Search + Filters */}
+      <div className="flex items-center gap-3 mb-4 flex-wrap">
         <div className="flex items-center gap-2 px-3 py-2 rounded-md flex-1 max-w-md" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
           <Search size={14} style={{ color: "#8B95A5" }} />
-          <input type="text" placeholder="Rechercher par nom, CNK, EAN..." value={search} onChange={(e) => setSearch(e.target.value)}
+          <input type="text" placeholder="Rechercher par nom, CNK, EAN, marque..." value={search} onChange={(e) => handleSearchChange(e.target.value)}
             className="flex-1 text-[13px] outline-none bg-transparent" style={{ color: "#1D2530" }} />
         </div>
+
+        <Select value={brandFilter} onValueChange={(v) => handleFilterChange("brand", v)}>
+          <SelectTrigger className="w-[200px] h-9 text-[13px]">
+            <SelectValue placeholder="Toutes les marques" />
+          </SelectTrigger>
+          <SelectContent className="max-h-60">
+            <SelectItem value="all">Toutes les marques</SelectItem>
+            {sortedBrands.map((b) => (
+              <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select value={manufacturerFilter} onValueChange={(v) => handleFilterChange("manufacturer", v)}>
+          <SelectTrigger className="w-[200px] h-9 text-[13px]">
+            <SelectValue placeholder="Tous les fabricants" />
+          </SelectTrigger>
+          <SelectContent className="max-h-60">
+            <SelectItem value="all">Tous les fabricants</SelectItem>
+            {sortedManufacturers.map((m) => (
+              <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {(brandFilter !== "all" || manufacturerFilter !== "all" || debouncedSearch) && (
+          <Button variant="ghost" size="sm" className="text-[12px] h-9" onClick={() => {
+            setBrandFilter("all");
+            setManufacturerFilter("all");
+            setSearch("");
+            setDebouncedSearch("");
+            setPage(1);
+          }}>
+            Réinitialiser
+          </Button>
+        )}
       </div>
 
       {activeTab === "catalog" && (
-        <div className="rounded-[10px] overflow-hidden" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
-          {loadingProducts ? <div className="py-12 text-center text-[13px]" style={{ color: "#8B95A5" }}>Chargement...</div> : (
-            <table className="w-full text-left">
-              <thead>
-                <tr style={{ borderBottom: "1px solid #E2E8F0", backgroundColor: "#F8FAFC" }}>
-                  {["", "Produit", "CNK", "EAN", "Offres", "Stock", "Meilleur prix", "Statut", ""].map((h) => (
-                    <th key={h} className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider" style={{ color: "#8B95A5" }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {filteredProducts.map((p) => {
-                  const imgUrl = (p.image_urls as string[] | null)?.[0];
-                  return (
-                  <tr key={p.id} className="cursor-pointer transition-colors" style={{ borderBottom: "1px solid #F1F5F9" }}
-                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#F8FAFC")}
-                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}>
-                    <td className="px-4 py-3 w-12">
-                      {imgUrl ? (
-                        <img src={imgUrl} alt={p.name} className="w-9 h-9 rounded object-contain bg-gray-50 border" style={{ borderColor: "#E2E8F0" }} referrerPolicy="no-referrer" onError={(e) => { const el = e.target as HTMLImageElement; el.classList.add("hidden"); el.nextElementSibling && (el.nextElementSibling as HTMLElement).classList.remove("hidden"); }} />
-                      ) : null}
-                      <div className={`w-9 h-9 rounded bg-gray-50 border flex items-center justify-center ${imgUrl ? "hidden" : ""}`} style={{ borderColor: "#E2E8F0" }}>
-                        <Package size={14} className="text-gray-300" />
-                      </div>
-                    </td>
-                    <td className="px-4 py-3" onClick={() => navigate(`/admin/produits/${p.id}`)}>
-                      <span className="text-[13px] font-semibold block" style={{ color: "#1D2530" }}>{p.name}</span>
-                      <span className="text-[11px]" style={{ color: "#8B95A5" }}>{(p as any).brand_name || p.source}</span>
-                    </td>
-                    <td className="px-4 py-3 text-[12px] font-mono" style={{ color: "#1B5BDA" }}>{p.cnk_code || "—"}</td>
-                    <td className="px-4 py-3 text-[11px] font-mono" style={{ color: "#616B7C" }}>{p.gtin || "—"}</td>
-                    <td className="px-4 py-3 text-[12px]" style={{ color: "#616B7C" }}>{p.offer_count}</td>
-                    <td className="px-4 py-3 text-[12px]" style={{ color: "#616B7C" }}>{p.total_stock}</td>
-                    <td className="px-4 py-3 text-[13px] font-bold" style={{ color: "#059669" }}>{p.best_price_excl_vat ? `€${Number(p.best_price_excl_vat).toFixed(2)}` : "—"}</td>
-                    <td className="px-4 py-3"><StatusBadge status={p.is_active ? "active" : "inactive"} /></td>
-                    <td className="px-4 py-3">
-                      <Button variant="ghost" size="sm" className="text-[11px] h-7" onClick={() => { setEditProduct(p); setProductDialogOpen(true); }}>Éditer</Button>
-                    </td>
+        <>
+          {/* Results count + pagination top */}
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[12px]" style={{ color: "#8B95A5" }}>
+              {totalFiltered.toLocaleString("fr-BE")} produit{totalFiltered > 1 ? "s" : ""} trouvé{totalFiltered > 1 ? "s" : ""}
+              {debouncedSearch || brandFilter !== "all" || manufacturerFilter !== "all" ? " (filtré)" : ""}
+            </span>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" className="h-7 w-7 p-0" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>
+                <ChevronLeft size={14} />
+              </Button>
+              <span className="text-[12px] font-medium" style={{ color: "#616B7C" }}>
+                {page} / {totalPages.toLocaleString("fr-BE")}
+              </span>
+              <Button variant="outline" size="sm" className="h-7 w-7 p-0" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>
+                <ChevronRight size={14} />
+              </Button>
+            </div>
+          </div>
+
+          <div className="rounded-[10px] overflow-hidden" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
+            {loadingProducts ? <div className="py-12 text-center text-[13px]" style={{ color: "#8B95A5" }}>Chargement...</div> : (
+              <table className="w-full text-left">
+                <thead>
+                  <tr style={{ borderBottom: "1px solid #E2E8F0", backgroundColor: "#F8FAFC" }}>
+                    {["", "Produit", "CNK", "EAN", "Offres", "Stock", "Meilleur prix", "Statut", ""].map((h) => (
+                      <th key={h} className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider" style={{ color: "#8B95A5" }}>{h}</th>
+                    ))}
                   </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {products.map((p) => {
+                    const imgUrl = (p.image_urls as string[] | null)?.[0];
+                    return (
+                    <tr key={p.id} className="cursor-pointer transition-colors" style={{ borderBottom: "1px solid #F1F5F9" }}
+                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#F8FAFC")}
+                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}>
+                      <td className="px-4 py-3 w-12">
+                        {imgUrl ? (
+                          <img src={imgUrl} alt={p.name} className="w-9 h-9 rounded object-contain bg-gray-50 border" style={{ borderColor: "#E2E8F0" }} referrerPolicy="no-referrer" onError={(e) => { const el = e.target as HTMLImageElement; el.classList.add("hidden"); el.nextElementSibling && (el.nextElementSibling as HTMLElement).classList.remove("hidden"); }} />
+                        ) : null}
+                        <div className={`w-9 h-9 rounded bg-gray-50 border flex items-center justify-center ${imgUrl ? "hidden" : ""}`} style={{ borderColor: "#E2E8F0" }}>
+                          <Package size={14} className="text-gray-300" />
+                        </div>
+                      </td>
+                      <td className="px-4 py-3" onClick={() => navigate(`/admin/produits/${p.id}`)}>
+                        <span className="text-[13px] font-semibold block" style={{ color: "#1D2530" }}>{p.name}</span>
+                        <span className="text-[11px]" style={{ color: "#8B95A5" }}>{p.brand_name || p.source}</span>
+                      </td>
+                      <td className="px-4 py-3 text-[12px] font-mono" style={{ color: "#1B5BDA" }}>{p.cnk_code || "—"}</td>
+                      <td className="px-4 py-3 text-[11px] font-mono" style={{ color: "#616B7C" }}>{p.gtin || "—"}</td>
+                      <td className="px-4 py-3 text-[12px]" style={{ color: "#616B7C" }}>{p.offer_count}</td>
+                      <td className="px-4 py-3 text-[12px]" style={{ color: "#616B7C" }}>{p.total_stock}</td>
+                      <td className="px-4 py-3 text-[13px] font-bold" style={{ color: "#059669" }}>{p.best_price_excl_vat ? `€${Number(p.best_price_excl_vat).toFixed(2)}` : "—"}</td>
+                      <td className="px-4 py-3"><StatusBadge status={p.is_active ? "active" : "inactive"} /></td>
+                      <td className="px-4 py-3">
+                        <Button variant="ghost" size="sm" className="text-[11px] h-7" onClick={() => { setEditProduct(p); setProductDialogOpen(true); }}>Éditer</Button>
+                      </td>
+                    </tr>
+                    );
+                  })}
+                  {products.length === 0 && (
+                    <tr><td colSpan={9} className="px-4 py-12 text-center text-[13px]" style={{ color: "#8B95A5" }}>Aucun produit trouvé</td></tr>
+                  )}
+                </tbody>
+              </table>
+            )}
+          </div>
+
+          {/* Pagination bottom */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 mt-4">
+              <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(1)} className="text-[12px] h-8">
+                Début
+              </Button>
+              <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="h-8 w-8 p-0">
+                <ChevronLeft size={14} />
+              </Button>
+              <span className="text-[13px] font-medium px-3" style={{ color: "#1D2530" }}>
+                Page {page} sur {totalPages.toLocaleString("fr-BE")}
+              </span>
+              <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="h-8 w-8 p-0">
+                <ChevronRight size={14} />
+              </Button>
+              <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage(totalPages)} className="text-[12px] h-8">
+                Fin
+              </Button>
+            </div>
           )}
-        </div>
+        </>
       )}
 
       {activeTab === "offers" && (

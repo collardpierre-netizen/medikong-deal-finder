@@ -86,6 +86,118 @@ export default function AccountPage() {
   const [activeTab, setActiveTab] = useState("profil");
   const [newListName, setNewListName] = useState("");
 
+  // ---- Profile state ----
+  const [profileForm, setProfileForm] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    companyName: "",
+    country: "Belgique",
+    vatNumber: "",
+    sector: "",
+  });
+  const [profileSaving, setProfileSaving] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      const meta = user.user_metadata || {};
+      const fullName = meta.full_name || "";
+      const parts = fullName.split(" ");
+      setProfileForm({
+        firstName: parts[0] || "",
+        lastName: parts.slice(1).join(" ") || "",
+        email: user.email || "",
+        phone: meta.phone || "",
+        companyName: meta.company_name || "",
+        country: meta.country || "Belgique",
+        vatNumber: meta.vat_number || "",
+        sector: meta.sector || "",
+      });
+    }
+  }, [user]);
+
+  const saveProfile = async () => {
+    setProfileSaving(true);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        data: {
+          full_name: `${profileForm.firstName} ${profileForm.lastName}`.trim(),
+          phone: profileForm.phone,
+          company_name: profileForm.companyName,
+          country: profileForm.country,
+          vat_number: profileForm.vatNumber,
+          sector: profileForm.sector,
+        },
+      });
+      if (error) throw error;
+      toast.success("Profil mis à jour avec succès");
+    } catch (e: any) {
+      toast.error(e.message || "Erreur lors de la sauvegarde");
+    } finally {
+      setProfileSaving(false);
+    }
+  };
+
+  // ---- Addresses state ----
+  interface Address {
+    id: string;
+    label: string;
+    type: "Livraison" | "Facturation";
+    line1: string;
+    line2: string;
+    postalCode: string;
+    city: string;
+    country: string;
+  }
+
+  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [editingAddress, setEditingAddress] = useState<Address | null>(null);
+  const [showAddressForm, setShowAddressForm] = useState(false);
+  const emptyAddress: Address = { id: "", label: "", type: "Livraison", line1: "", line2: "", postalCode: "", city: "", country: "Belgique" };
+
+  // Load addresses from customer record
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("customers")
+      .select("id, address_line1, address_line2, postal_code, city, country_code, company_name")
+      .eq("auth_user_id", user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) {
+          setAddresses([
+            {
+              id: data.id,
+              label: "Adresse principale",
+              type: "Livraison",
+              line1: data.address_line1 || "",
+              line2: data.address_line2 || "",
+              postalCode: data.postal_code || "",
+              city: data.city || "",
+              country: data.country_code === "FR" ? "France" : data.country_code === "CH" ? "Suisse" : "Belgique",
+            },
+          ]);
+        }
+      });
+  }, [user]);
+
+  const saveAddress = (addr: Address) => {
+    if (addr.id) {
+      setAddresses((prev) => prev.map((a) => (a.id === addr.id ? addr : a)));
+    } else {
+      setAddresses((prev) => [...prev, { ...addr, id: crypto.randomUUID() }]);
+    }
+    setEditingAddress(null);
+    setShowAddressForm(false);
+    toast.success("Adresse enregistrée");
+  };
+
+  const deleteAddress = (id: string) => {
+    setAddresses((prev) => prev.filter((a) => a.id !== id));
+    toast.success("Adresse supprimée");
+  };
+
   return (
     <Layout>
       <PageTransition>

@@ -33,7 +33,7 @@ const AdminVendeurs = () => {
 
   const filtered = vendors
     .filter(v => activeTab === "all" || v.type === activeTab)
-    .filter(v => (v.company_name || v.name).toLowerCase().includes(search.toLowerCase()) || (v.city || "").toLowerCase().includes(search.toLowerCase()));
+    .filter(v => (v.company_name || v.name).toLowerCase().includes(search.toLowerCase()) || (v.city || "").toLowerCase().includes(search.toLowerCase()) || (v.display_code || "").toLowerCase().includes(search.toLowerCase()));
 
   return (
     <div>

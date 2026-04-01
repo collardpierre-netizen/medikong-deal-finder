@@ -36,7 +36,7 @@ const EMAIL_TEMPLATES: Record<string, React.ComponentType<any>> = {
 }
 
 // Configuration
-const SITE_NAME = "medikong-deal-finder"
+const SITE_NAME = "Medikong"
 const SENDER_DOMAIN = "notify.medikong.pro"
 const ROOT_DOMAIN = "medikong.pro"
 const FROM_DOMAIN = "notify.medikong.pro" // Domain shown in From address (may be root or sender subdomain)

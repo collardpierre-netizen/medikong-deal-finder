@@ -1,5 +1,5 @@
 import { useI18n, Lang } from "@/contexts/I18nContext";
-import { Bell, Search, Home, ChevronRight } from "lucide-react";
+import { Search, Home, ChevronRight } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 
 interface AdminTopBarProps {

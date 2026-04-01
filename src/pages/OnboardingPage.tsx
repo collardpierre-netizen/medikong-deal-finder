@@ -1031,46 +1031,19 @@ export default function OnboardingPage() {
   const [resent, setResent] = useState(false);
   const renderDoneScreen = () => (
     <div style={{ textAlign: "center" }}>
-      <div className="tf-check-pop" style={{ width: 64, height: 64, borderRadius: "50%", background: S.blueBg, border: `2px solid ${S.blue}`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
-        <Clock size={28} color={S.blue} />
+      <div className="tf-check-pop" style={{ width: 64, height: 64, borderRadius: "50%", background: S.greenBg, border: `2px solid ${S.green}`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+        <Check size={28} color={S.green} />
       </div>
-      <h1 style={{ fontSize: 20, fontWeight: 700, color: S.text, marginBottom: 8 }}>Inscription enregistrée !</h1>
-      
-      {/* Email confirmation message */}
-      <div style={{ background: S.greenBg, border: `1px solid ${S.green}`, borderRadius: S.radius, padding: 16, marginBottom: 16 }}>
-        <p style={{ fontSize: 13, fontWeight: 600, color: S.green, marginBottom: 4 }}>📧 Un email de confirmation a été envoyé à</p>
-        <p style={{ fontSize: 14, fontWeight: 700, color: S.text }}>{email}</p>
-        <p style={{ fontSize: 12, color: S.sec, marginTop: 6 }}>Vérifiez votre boîte de réception et vos spams.</p>
-      </div>
-
-      {/* Resend button */}
-      <button
-        onClick={async () => {
-          setResending(true);
-          try {
-            await supabase.auth.resend({ type: 'signup', email });
-            setResent(true);
-            setTimeout(() => setResent(false), 5000);
-          } catch (e) { console.error(e); }
-          setResending(false);
-        }}
-        disabled={resending || resent}
-        style={{
-          background: resent ? S.greenBg : "transparent", border: `1px solid ${resent ? S.green : S.line}`,
-          borderRadius: S.radiusSm, padding: "8px 20px", fontSize: 12, fontWeight: 600,
-          color: resent ? S.green : S.blue, cursor: resending || resent ? "default" : "pointer",
-          opacity: resending ? 0.6 : 1, marginBottom: 16,
-        }}
-      >
-        {resent ? "✓ Email renvoyé !" : resending ? "Envoi en cours..." : "Renvoyer l'email de confirmation"}
-      </button>
+      <h1 style={{ fontSize: 20, fontWeight: 700, color: S.text, marginBottom: 8 }}>Inscription réussie ! 🎉</h1>
 
       <p style={{ fontSize: 13, color: S.sec, marginBottom: 20 }}>
         {role === "seller"
-          ? "Notre équipe examine votre dossier vendeur. Vous recevrez un email d'activation sous 24 à 48h ouvrées."
-          : "Notre équipe vérifie votre profil professionnel. Vous recevrez un email d'activation sous 24 à 48h ouvrées."}
+          ? "Votre dossier vendeur a bien été enregistré. Notre équipe l'examine et vous recevrez un email d'activation sous 24 à 48h ouvrées."
+          : "Votre profil professionnel a bien été créé. Notre équipe le vérifie et vous recevrez un email d'activation sous 24 à 48h ouvrées."}
       </p>
+
       <div style={{ background: S.blueBg, borderRadius: S.radius, padding: 20, textAlign: "left", marginBottom: 20 }}>
+        <p style={{ fontSize: 13, fontWeight: 700, color: S.text, marginBottom: 12 }}>Prochaines étapes</p>
         {(role === "seller"
           ? ["Vérification de votre dossier vendeur (24-48h)", "Activation de votre espace vendeur", "Mise en ligne de vos premiers produits"]
           : ["Vérification de votre profil professionnel (24-48h)", "Activation de votre accès aux tarifs professionnels", "Première commande et accès complet"]

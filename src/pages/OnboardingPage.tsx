@@ -202,6 +202,22 @@ export default function OnboardingPage() {
     []
   );
 
+  const readOnboardingStorage = useCallback((key: string) => {
+    const localValue = window.localStorage.getItem(key);
+    if (localValue !== null) return localValue;
+    return window.sessionStorage.getItem(key);
+  }, []);
+
+  const writeOnboardingStorage = useCallback((key: string, value: string) => {
+    window.localStorage.setItem(key, value);
+    window.sessionStorage.setItem(key, value);
+  }, []);
+
+  const removeOnboardingStorage = useCallback((key: string) => {
+    window.localStorage.removeItem(key);
+    window.sessionStorage.removeItem(key);
+  }, []);
+
   /* ─── Buyer-specific ─── */
   const [buyerProfile, setBuyerProfile] = useState("");
   const [professionalId, setProfessionalId] = useState("");
@@ -214,6 +230,19 @@ export default function OnboardingPage() {
   const [jobTitle, setJobTitle] = useState("");
   const [website, setWebsite] = useState("");
   const [annualRevenue, setAnnualRevenue] = useState("");
+
+  const buildOnboardingRedirectUrl = useCallback(
+    (mode: "code_or_link" | "link_only") => {
+      const params = new URLSearchParams();
+      params.set("flow", "onboarding");
+      params.set("mode", mode);
+      if (role) params.set("role", role);
+      if (role === "buyer" && buyerProfile) params.set("buyerProfile", buyerProfile);
+      if (role === "seller" && businessType) params.set("businessType", businessType);
+      return `${window.location.origin}/onboarding?${params.toString()}`;
+    },
+    [role, buyerProfile, businessType]
+  );
 
   const persistOnboardingDraft = useCallback(
     (targetEmail: string, mode: "code_or_link" | "link_only" = "code_or_link") => {
@@ -229,9 +258,9 @@ export default function OnboardingPage() {
         timestamp: Date.now(),
       };
 
-      window.sessionStorage.setItem(onboardingDraftStorageKey, JSON.stringify(draft));
+      writeOnboardingStorage(onboardingDraftStorageKey, JSON.stringify(draft));
     },
-    [role, buyerProfile, businessType]
+    [role, buyerProfile, businessType, writeOnboardingStorage]
   );
 
   /* (buyer/seller state already declared above) */
@@ -303,7 +332,7 @@ export default function OnboardingPage() {
     const onboardingCompleted = metadata.onboarding_completed === true;
 
     if (onboardingCompleted) {
-      window.sessionStorage.removeItem(onboardingDraftStorageKey);
+      removeOnboardingStorage(onboardingDraftStorageKey);
       return;
     }
 
@@ -318,7 +347,7 @@ export default function OnboardingPage() {
       setRole(roleFromMetadata);
       setEmail(user.email ?? "");
       setOtpVerified(true);
-      setEmailDeliveryMode("code_or_link");
+      setEmailDeliveryMode("link_only");
 
       if (roleFromMetadata === "buyer") {
         if (typeof metadata.onboarding_buyer_profile === "string") {
@@ -335,7 +364,7 @@ export default function OnboardingPage() {
       return;
     }
 
-    const rawDraft = window.sessionStorage.getItem(onboardingDraftStorageKey);
+    const rawDraft = readOnboardingStorage(onboardingDraftStorageKey);
     if (!rawDraft) return;
 
     try {
@@ -349,7 +378,7 @@ export default function OnboardingPage() {
       setRole(draft.role);
       setEmail(user.email ?? draft.email);
       setOtpVerified(true);
-      setEmailDeliveryMode(draft.deliveryMode ?? "code_or_link");
+      setEmailDeliveryMode(draft.deliveryMode ?? "link_only");
 
       if (draft.role === "buyer") {
         if (draft.buyerProfile) setBuyerProfile(draft.buyerProfile);
@@ -360,9 +389,9 @@ export default function OnboardingPage() {
       if (draft.businessType) setBusinessType(draft.businessType);
       setStep(13);
     } catch {
-      window.sessionStorage.removeItem(onboardingDraftStorageKey);
+      removeOnboardingStorage(onboardingDraftStorageKey);
     }
-  }, [onboardingDraftStorageKey]);
+  }, [onboardingDraftStorageKey, readOnboardingStorage, removeOnboardingStorage]);
 
   useEffect(() => {
     let mounted = true;
@@ -437,13 +466,13 @@ export default function OnboardingPage() {
     setSendingOtp(true);
     setOtpError(false);
     setOtpDigits(["", "", "", "", "", ""]);
-    setEmailDeliveryMode("code_or_link");
-    persistOnboardingDraft(email, "code_or_link");
+    setEmailDeliveryMode("link_only");
+    persistOnboardingDraft(email, "link_only");
 
     try {
       const temporaryPassword = `${crypto.randomUUID()}Aa1!`;
       setTempPassword(temporaryPassword);
-      window.sessionStorage.setItem(getTempPasswordStorageKey(email), temporaryPassword);
+      writeOnboardingStorage(getTempPasswordStorageKey(email), temporaryPassword);
 
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email,
@@ -456,7 +485,7 @@ export default function OnboardingPage() {
             ...(role === "buyer" && buyerProfile ? { onboarding_buyer_profile: buyerProfile } : {}),
             ...(role === "seller" && businessType ? { onboarding_business_type: businessType } : {}),
           },
-          emailRedirectTo: `${window.location.origin}/onboarding`,
+          emailRedirectTo: buildOnboardingRedirectUrl("link_only"),
         },
       });
 
@@ -476,25 +505,20 @@ export default function OnboardingPage() {
       }
 
       if (alreadyRegistered || isRepeatedSignupObfuscated) {
-        // Existing confirmed account: send a login link so user can continue onboarding.
         const { error: loginLinkError } = await supabase.auth.signInWithOtp({
           email,
           options: {
             shouldCreateUser: false,
-            emailRedirectTo: `${window.location.origin}/onboarding`,
+            emailRedirectTo: buildOnboardingRedirectUrl("link_only"),
           },
         });
 
-        if (!loginLinkError) {
-          setEmailDeliveryMode("link_only");
-          persistOnboardingDraft(email, "link_only");
-          goNext();
-          return;
+        if (loginLinkError) {
+          throw loginLinkError;
         }
 
-        // Existing but not confirmed account: resend signup confirmation email (code + CTA).
-        const { error: resendError } = await supabase.auth.resend({ type: "signup", email });
-        if (resendError) throw resendError;
+        goNext();
+        return;
       }
 
       goNext();
@@ -589,7 +613,7 @@ export default function OnboardingPage() {
       const { data: sessionData } = await supabase.auth.getSession();
       let userId = sessionData.session?.user?.id;
 
-      const fallbackTempPassword = tempPassword || window.sessionStorage.getItem(getTempPasswordStorageKey(email)) || "";
+      const fallbackTempPassword = tempPassword || readOnboardingStorage(getTempPasswordStorageKey(email)) || "";
 
       // If no active session, sign in with the temp password (email confirmed via link)
       if (!userId && fallbackTempPassword) {
@@ -668,8 +692,8 @@ export default function OnboardingPage() {
         });
       }
 
-      window.sessionStorage.removeItem(getTempPasswordStorageKey(email));
-      window.sessionStorage.removeItem(onboardingDraftStorageKey);
+      removeOnboardingStorage(getTempPasswordStorageKey(email));
+      removeOnboardingStorage(onboardingDraftStorageKey);
       setTempPassword("");
 
       goNext();
@@ -762,13 +786,19 @@ export default function OnboardingPage() {
           {otpTimer > 0 ? `Renvoyer dans 0:${otpTimer.toString().padStart(2, "0")}` : (
             <button style={{ color: S.blue, background: "none", border: "none", cursor: "pointer", fontWeight: 600, fontSize: 12 }} onClick={async () => {
               try {
-                const { error } = await supabase.auth.resend({ type: 'signup', email });
+                const { error } = await supabase.auth.signInWithOtp({
+                  email,
+                  options: {
+                    shouldCreateUser: false,
+                    emailRedirectTo: buildOnboardingRedirectUrl("link_only"),
+                  },
+                });
                 if (error) throw error;
-                setEmailDeliveryMode("code_or_link");
-                persistOnboardingDraft(email, "code_or_link");
+                setEmailDeliveryMode("link_only");
+                persistOnboardingDraft(email, "link_only");
               } catch(e) { console.error(e); }
               setOtpTimer(59);
-            }}>{expectsCode ? "Renvoyer l'email" : "Renvoyer un email avec code"}</button>
+            }}>Renvoyer le lien de connexion</button>
           )}
         </div>
         <p style={{ fontSize: 11, color: S.ter }}>Pensez à vérifier vos spams. Contact : <a href="mailto:support@medikong.pro" style={{ color: S.blue }}>support@medikong.pro</a></p>

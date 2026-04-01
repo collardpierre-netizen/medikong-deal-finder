@@ -1,5 +1,5 @@
 import { useI18n, Lang } from "@/contexts/I18nContext";
-import { Bell, Search, Home, ChevronRight } from "lucide-react";
+import { Search, Home, ChevronRight } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 
 interface AdminTopBarProps {
@@ -104,18 +104,6 @@ const AdminTopBar = ({ title, subtitle, actions }: AdminTopBarProps) => {
             <Search size={14} style={{ color: "#8B95A5" }} />
             <span style={{ color: "#8B95A5" }}>Rechercher...</span>
           </div>
-          <button
-            className="relative w-9 h-9 flex items-center justify-center rounded-md"
-            style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}
-          >
-            <Bell size={16} style={{ color: "#616B7C" }} />
-            <span
-              className="absolute -top-1 -right-1 w-4 h-4 rounded-full text-[10px] text-white flex items-center justify-center font-bold"
-              style={{ backgroundColor: "#EF4343" }}
-            >
-              6
-            </span>
-          </button>
           <div
             className="flex rounded-md overflow-hidden"
             style={{ border: "1px solid #E2E8F0" }}

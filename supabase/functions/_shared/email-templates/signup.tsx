@@ -8,11 +8,16 @@ import {
   Container,
   Head,
   Heading,
+  Hr,
   Html,
+  Img,
   Link,
   Preview,
+  Section,
   Text,
 } from 'npm:@react-email/components@0.0.22'
+
+const LOGO_URL = 'https://iokwqxhhpblcbkrxgcje.supabase.co/storage/v1/object/public/email-assets/logo-horizontal.png'
 
 interface SignupEmailProps {
   siteName: string
@@ -29,41 +34,49 @@ export const SignupEmail = ({
   confirmationUrl,
   token,
 }: SignupEmailProps) => (
-  <Html lang="en" dir="ltr">
+  <Html lang="fr" dir="ltr">
     <Head />
-    <Preview>Confirm your email for {siteName}</Preview>
+    <Preview>Confirmez votre adresse e-mail pour Medikong</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Heading style={h1}>Confirm your email</Heading>
+        <Section style={logoSection}>
+          <Img src={LOGO_URL} alt="Medikong" width="160" height="40" style={logo} />
+        </Section>
+        <Hr style={divider} />
+        <Heading style={h1}>Confirmez votre adresse e-mail</Heading>
         <Text style={text}>
-          Thanks for signing up for{' '}
+          Merci de vous être inscrit sur{' '}
           <Link href={siteUrl} style={link}>
-            <strong>{siteName}</strong>
+            <strong>Medikong</strong>
           </Link>
-          !
+          , votre marketplace B2B pharmaceutique.
         </Text>
         <Text style={text}>
-          Please confirm your email address (
+          Veuillez confirmer votre adresse e-mail (
           <Link href={`mailto:${recipient}`} style={link}>
             {recipient}
           </Link>
-          ) by clicking the button below:
+          ) en cliquant sur le bouton ci-dessous :
         </Text>
         {token ? (
           <>
-            <Text style={text}>Your 6-digit verification code:</Text>
+            <Text style={text}>Votre code de vérification à 6 chiffres :</Text>
             <Text style={otpCode}>{token}</Text>
             <Text style={textSmall}>
-              Enter this code in the app to continue your registration.
+              Saisissez ce code dans l'application pour continuer votre inscription.
             </Text>
           </>
         ) : null}
-        <Button style={button} href={confirmationUrl}>
-          Verify Email
-        </Button>
+        <Section style={buttonSection}>
+          <Button style={button} href={confirmationUrl}>
+            Vérifier mon e-mail
+          </Button>
+        </Section>
+        <Hr style={divider} />
         <Text style={footer}>
-          If you didn't create an account, you can safely ignore this email.
+          Si vous n'avez pas créé de compte, vous pouvez ignorer cet e-mail.
         </Text>
+        <Text style={footerBrand}>© Medikong — Balooh SRL</Text>
       </Container>
     </Body>
   </Html>
@@ -71,41 +84,48 @@ export const SignupEmail = ({
 
 export default SignupEmail
 
-const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif' }
-const container = { padding: '20px 25px' }
+const main = { backgroundColor: '#ffffff', fontFamily: "'DM Sans', Arial, sans-serif" }
+const container = { padding: '30px 25px', maxWidth: '520px', margin: '0 auto' }
+const logoSection = { textAlign: 'center' as const, marginBottom: '16px' }
+const logo = { margin: '0 auto' }
+const divider = { borderColor: '#d1d5db', margin: '20px 0' }
 const h1 = {
   fontSize: '22px',
   fontWeight: 'bold' as const,
-  color: '#000000',
+  color: '#1e3a5f',
   margin: '0 0 20px',
+  fontFamily: "'Plus Jakarta Sans', 'DM Sans', Arial, sans-serif",
 }
 const text = {
   fontSize: '14px',
-  color: '#55575d',
-  lineHeight: '1.5',
-  margin: '0 0 25px',
+  color: '#3b4a5a',
+  lineHeight: '1.6',
+  margin: '0 0 20px',
 }
-const link = { color: 'inherit', textDecoration: 'underline' }
+const link = { color: '#2563eb', textDecoration: 'underline' }
+const buttonSection = { textAlign: 'center' as const, margin: '24px 0' }
 const button = {
-  backgroundColor: '#000000',
+  backgroundColor: '#2563eb',
   color: '#ffffff',
   fontSize: '14px',
+  fontWeight: '600' as const,
   borderRadius: '8px',
-  padding: '12px 20px',
+  padding: '12px 28px',
   textDecoration: 'none',
 }
 const otpCode = {
   fontSize: '28px',
   fontWeight: 'bold' as const,
   letterSpacing: '8px',
-  color: '#000000',
+  color: '#1e3a5f',
   textAlign: 'center' as const,
   margin: '0 0 12px',
 }
 const textSmall = {
   fontSize: '12px',
-  color: '#777777',
+  color: '#6b7280',
   lineHeight: '1.5',
   margin: '0 0 20px',
 }
-const footer = { fontSize: '12px', color: '#999999', margin: '30px 0 0' }
+const footer = { fontSize: '12px', color: '#9ca3af', margin: '20px 0 4px' }
+const footerBrand = { fontSize: '11px', color: '#9ca3af', margin: '0' }

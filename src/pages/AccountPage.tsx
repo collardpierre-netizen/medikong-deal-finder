@@ -15,17 +15,17 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
 const tabs = [
-  { key: "profil", label: "Profil", icon: Users },
-  { key: "adresses", label: "Adresses", icon: MapPin },
-  { key: "commandes", label: "Commandes", icon: Package },
-  { key: "reclamations", label: "Réclamations", icon: AlertCircle },
-  { key: "favoris", label: "Favoris", icon: Heart },
-  { key: "listes", label: "Mes listes", icon: List },
-  { key: "activite", label: "Activité récente", icon: Clock },
-  { key: "mesprix", label: "Mes prix", icon: BarChart3 },
-  { key: "portefeuille", label: "Portefeuille", icon: Zap },
-  { key: "catalogue", label: "Catalogue", icon: Download },
-  { key: "bnpl", label: "Payer plus tard", icon: Layers },
+  { key: "profil", label: "Profil", icon: Users, disabled: false },
+  { key: "adresses", label: "Adresses", icon: MapPin, disabled: false },
+  { key: "commandes", label: "Commandes", icon: Package, disabled: false },
+  { key: "reclamations", label: "Réclamations", icon: AlertCircle, disabled: false },
+  { key: "favoris", label: "Favoris", icon: Heart, disabled: false },
+  { key: "listes", label: "Mes listes", icon: List, disabled: false },
+  { key: "activite", label: "Activité récente", icon: Clock, disabled: false },
+  { key: "mesprix", label: "Mes prix", icon: BarChart3, disabled: false },
+  { key: "portefeuille", label: "Portefeuille", icon: Zap, disabled: true },
+  { key: "catalogue", label: "Catalogue", icon: Download, disabled: false },
+  { key: "bnpl", label: "Payer plus tard", icon: Layers, disabled: true },
 ];
 
 const orders = [

@@ -27,7 +27,7 @@ const iconMap: Record<string, React.ReactNode> = {
   Package: <Package size={20} className="text-mk-navy" />,
 };
 
-const popularBrands = ["3M", "TENA", "Hartmann", "B.Braun", "Essity", "Molnlycke", "Ecolab", "Kolmi"];
+// Brands loaded from DB now
 
 export default function HomePage() {
   const { t } = useTranslation();
@@ -51,6 +51,20 @@ export default function HomePage() {
         offers: offersRes.count || 0,
         vendors: uniqueVendors || 0,
       };
+    },
+  });
+
+  const { data: featuredBrands = [] } = useQuery({
+    queryKey: ["featured-brands-homepage"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("brands")
+        .select("id, name, slug, logo_url, product_count")
+        .eq("is_active", true)
+        .gt("product_count", 0)
+        .order("product_count", { ascending: false })
+        .limit(20);
+      return data || [];
     },
   });
 
@@ -84,11 +98,6 @@ export default function HomePage() {
     { q: t("faq.q2"), a: t("faq.a2") },
     { q: t("faq.q3"), a: t("faq.a3") },
     { q: t("faq.q4"), a: t("faq.a4") },
-  ];
-
-  const brandFilters = [
-    t("brands.filters.bestSellers"), t("brands.filters.care"), t("brands.filters.diagnostic"),
-    t("brands.filters.hygiene"), t("brands.filters.equipment"),
   ];
 
   const searchExamples = [
@@ -252,29 +261,45 @@ export default function HomePage() {
         </StaggerContainer>
       </AnimatedSection>
 
-      {/* ═══ POPULAR BRANDS ═══ */}
-      <AnimatedSection className="py-14 md:py-20">
+       <AnimatedSection className="py-14 md:py-20">
         <div className="mk-container">
           <h2 className="text-2xl md:text-3xl font-bold text-mk-navy mb-8 text-center">{t("brands.title")}</h2>
-          <div className="flex items-center justify-center gap-2 flex-wrap mb-8">
-            {brandFilters.map((pill, i) => (
-              <span key={pill} className={`px-4 py-2 rounded-full text-xs font-semibold border cursor-pointer transition-all ${i === 0 ? 'bg-mk-navy text-white border-mk-navy' : 'bg-white text-mk-navy border-mk-line hover:border-mk-navy'}`}>
-                {pill}
-              </span>
-            ))}
-          </div>
-          <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
-            {popularBrands.map(b => (
-              <motion.div key={b} whileHover={{ scale: 1.03 }} className="shrink-0">
-                <Link to={`/marque/${b.toLowerCase().replace('.', '-')}`} className="block w-[160px]">
-                  <div className="aspect-square rounded-xl bg-gradient-to-br from-mk-alt to-white border border-mk-line flex items-center justify-center mb-2 overflow-hidden hover:shadow-md transition-shadow">
-                    <span className="text-lg font-bold text-mk-navy/70">{b}</span>
+          
+          {/* Infinite scrolling marquee */}
+          <div className="relative overflow-hidden mb-8">
+            {/* Fade edges */}
+            <div className="absolute left-0 top-0 bottom-0 w-16 z-10 bg-gradient-to-r from-background to-transparent pointer-events-none" />
+            <div className="absolute right-0 top-0 bottom-0 w-16 z-10 bg-gradient-to-l from-background to-transparent pointer-events-none" />
+            
+            <motion.div
+              className="flex gap-6"
+              animate={{ x: featuredBrands.length > 0 ? [0, -(featuredBrands.length * 180)] : 0 }}
+              transition={{ x: { repeat: Infinity, repeatType: "loop", duration: featuredBrands.length * 3, ease: "linear" } }}
+            >
+              {/* Duplicate brands for seamless loop */}
+              {[...featuredBrands, ...featuredBrands].map((b: any, i: number) => (
+                <Link key={`${b.id}-${i}`} to={`/marque/${b.slug}`} className="shrink-0 w-[160px] group">
+                  <div className="aspect-square rounded-xl bg-gradient-to-br from-mk-alt to-white border border-mk-line flex items-center justify-center mb-2 overflow-hidden group-hover:shadow-md group-hover:border-mk-navy/20 transition-all">
+                    {b.logo_url ? (
+                      <img
+                        src={b.logo_url}
+                        alt={b.name}
+                        className="w-24 h-24 object-contain"
+                        referrerPolicy="no-referrer"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = "none";
+                          (e.target as HTMLImageElement).nextElementSibling?.classList.remove("hidden");
+                        }}
+                      />
+                    ) : null}
+                    <span className={`text-lg font-bold text-mk-navy/70 ${b.logo_url ? "hidden" : ""}`}>{b.name}</span>
                   </div>
-                  <p className="text-xs font-semibold text-mk-navy text-center uppercase tracking-wide">{b}</p>
+                  <p className="text-xs font-semibold text-mk-navy text-center uppercase tracking-wide group-hover:text-mk-blue transition-colors">{b.name}</p>
                 </Link>
-              </motion.div>
-            ))}
+              ))}
+            </motion.div>
           </div>
+          
           <div className="text-center mt-8">
             <Link to="/marques" className="inline-flex items-center gap-2 px-8 py-3 border border-mk-line rounded-lg text-sm font-semibold text-mk-navy hover:border-mk-navy hover:shadow-sm transition-all">
               {t("common.allBrands")}

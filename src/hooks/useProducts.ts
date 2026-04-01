@@ -221,7 +221,14 @@ export function useProductOffers(productId: string | undefined) {
           priceTiers: o.price_tiers || null,
           discountTiers: tiersMap.get(o.id) || [],
           isActive: o.is_active,
-          sellerName: vendor?.display_code || vendor?.name?.slice(0, 6)?.toUpperCase() || o.vendor_id.slice(0, 6).toUpperCase(),
+          sellerName: (() => {
+            const showReal = resolveVendorVisibility(
+              { ...vendor, id: o.vendor_id },
+              visRules,
+              { country }
+            );
+            return getVendorPublicName({ ...vendor, display_code: vendor?.display_code }, showReal);
+          })(),
           sellerSlug: vendor?.slug || undefined,
           isVerified: vendor?.is_verified || false,
           isTopRated: (vendor?.rating || 0) >= 4.5,

@@ -20,7 +20,7 @@ export const useProducts = (limit = 100) =>
     queryFn: async () => {
       const { data, error } = await supabase
         .from("products")
-        .select("*, image_urls")
+        .select("*")
         .order("created_at", { ascending: false })
         .limit(limit);
       if (error) throw error;
@@ -71,8 +71,9 @@ export const useOffers = () =>
     queryFn: async () => {
       const { data, error } = await supabase
         .from("offers")
-        .select("*, vendors(name), products(name)")
-        .order("updated_at", { ascending: false });
+        .select("*, vendors(name, company_name), products(name)")
+        .order("updated_at", { ascending: false })
+        .limit(200);
       if (error) throw error;
       return data;
     },

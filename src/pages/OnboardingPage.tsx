@@ -345,6 +345,38 @@ export default function OnboardingPage() {
     [role, buyerProfile, businessType, writeOnboardingStorage]
   );
 
+  const getExpectedOnboardingEmail = useCallback(() => {
+    const params = new URLSearchParams(window.location.search);
+    const urlEmail = params.get("email")?.trim().toLowerCase();
+    if (urlEmail) return urlEmail;
+
+    const rawDraft = readOnboardingStorage(onboardingDraftStorageKey);
+    if (!rawDraft) return null;
+
+    try {
+      const draft = JSON.parse(rawDraft) as OnboardingDraft;
+      return draft.email?.trim().toLowerCase() || null;
+    } catch {
+      return null;
+    }
+  }, [onboardingDraftStorageKey, readOnboardingStorage]);
+
+  const ensureMatchingOnboardingSession = useCallback(
+    async (candidate: AuthUser | null) => {
+      if (!candidate) return null;
+
+      const expectedEmail = getExpectedOnboardingEmail();
+      if (!expectedEmail) return candidate;
+
+      const candidateEmail = (candidate.email ?? "").trim().toLowerCase();
+      if (!candidateEmail || candidateEmail === expectedEmail) return candidate;
+
+      await supabase.auth.signOut();
+      return null;
+    },
+    [getExpectedOnboardingEmail]
+  );
+
   /* (buyer/seller state already declared above) */
   const [sellerCats, setSellerCats] = useState<string[]>([]);
   const [skuCount, setSkuCount] = useState("");
@@ -488,30 +520,38 @@ export default function OnboardingPage() {
 
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       if (!mounted || sessionError) return;
-      if (sessionData.session?.user) {
-        restoreOnboardingSession(sessionData.session.user);
+
+      const matchedSessionUser = await ensureMatchingOnboardingSession(sessionData.session?.user ?? null);
+      if (!mounted) return;
+      if (matchedSessionUser) {
+        restoreOnboardingSession(matchedSessionUser);
         return;
       }
 
       const { data: userData, error: userError } = await supabase.auth.getUser();
       if (!mounted || userError) return;
-      restoreOnboardingSession(userData.user ?? null);
+
+      const matchedUser = await ensureMatchingOnboardingSession(userData.user ?? null);
+      if (!mounted) return;
+      restoreOnboardingSession(matchedUser);
     };
 
     void rehydrate();
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (!mounted) return;
-      restoreOnboardingSession(session?.user ?? null);
+      const matchedUser = await ensureMatchingOnboardingSession(session?.user ?? null);
+      if (!mounted) return;
+      restoreOnboardingSession(matchedUser);
     });
 
     return () => {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [consumeAuthCallbackTokens, restoreFromUrlContext, restoreOnboardingSession]);
+  }, [consumeAuthCallbackTokens, ensureMatchingOnboardingSession, restoreFromUrlContext, restoreOnboardingSession]);
 
   /* ─── Navigation ─── */
   const goTo = useCallback((target: number, direction: "up" | "down") => {

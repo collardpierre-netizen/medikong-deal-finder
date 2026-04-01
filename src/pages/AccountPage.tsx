@@ -9,6 +9,7 @@ import { useFeaturedProducts } from "@/hooks/useProducts";
 import { useFavorites, useFavoriteLists, useRecentActivity } from "@/hooks/useFavorites";
 import { usePriceWatches } from "@/hooks/usePriceWatches";
 import { useAuth } from "@/contexts/AuthContext";
+import { useOrders } from "@/hooks/useOrders";
 import { motion, AnimatePresence } from "framer-motion";
 import { PageTransition } from "@/components/shared/PageTransition";
 import { Button } from "@/components/ui/button";
@@ -26,12 +27,6 @@ const tabs = [
   { key: "portefeuille", label: "Portefeuille", icon: Zap, disabled: true },
   { key: "catalogue", label: "Catalogue", icon: Download, disabled: false },
   { key: "bnpl", label: "Payer plus tard", icon: Layers, disabled: true },
-];
-
-const orders = [
-  { id: "MK-2026-00847", date: "25/03/2026", status: "Livree", articles: 5, montant: 234.50 },
-  { id: "MK-2026-00812", date: "18/03/2026", status: "Confirmee", articles: 3, montant: 89.90 },
-  { id: "MK-2026-00798", date: "10/03/2026", status: "Expediee", articles: 8, montant: 456.00 },
 ];
 
 const contentVariants = {

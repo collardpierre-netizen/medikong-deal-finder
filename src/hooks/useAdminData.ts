@@ -71,8 +71,9 @@ export const useOffers = () =>
     queryFn: async () => {
       const { data, error } = await supabase
         .from("offers")
-        .select("*, vendors(name), products(name)")
-        .order("updated_at", { ascending: false });
+        .select("*, vendors(name, company_name), products(name)")
+        .order("updated_at", { ascending: false })
+        .limit(200);
       if (error) throw error;
       return data;
     },

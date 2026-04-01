@@ -56,6 +56,27 @@ const AdminVendeurDetail = () => {
     enabled: !!id,
   });
 
+  const { data: visibilityRules = [] } = useQuery({
+    queryKey: ["vendor-visibility-rules", id],
+    queryFn: async () => {
+      const { data } = await supabase.from("vendor_visibility_rules" as any).select("*").eq("vendor_id", id!).order("priority", { ascending: false });
+      return (data || []) as any[];
+    },
+    enabled: !!id,
+  });
+
+  const addVisibilityRule = async (rule: { country_code: string | null; customer_type: string | null; show_real_name: boolean; priority: number }) => {
+    await supabase.from("vendor_visibility_rules" as any).insert({ vendor_id: id, ...rule } as any);
+    queryClient.invalidateQueries({ queryKey: ["vendor-visibility-rules", id] });
+    toast.success("Règle ajoutée");
+  };
+
+  const deleteVisibilityRule = async (ruleId: string) => {
+    await supabase.from("vendor_visibility_rules" as any).delete().eq("id", ruleId);
+    queryClient.invalidateQueries({ queryKey: ["vendor-visibility-rules", id] });
+    toast.success("Règle supprimée");
+  };
+
   if (isLoading) return <div className="py-12 text-center text-[13px]" style={{ color: "#8B95A5" }}>Chargement...</div>;
   if (!vendor) return <div className="py-12 text-center text-[13px]" style={{ color: "#EF4343" }}>Vendeur non trouvé</div>;
 

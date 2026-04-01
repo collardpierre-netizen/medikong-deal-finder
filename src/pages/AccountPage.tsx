@@ -144,7 +144,12 @@ export default function AccountPage() {
                     <div>
                       <h2 className="text-xl font-bold text-mk-navy mb-5">Informations personnelles</h2>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-                        {[["Prenom", "Jean"], ["Nom", "Dupont"], ["Email", "jean@pharmacie.be"], ["Telephone", "+32 478 12 34 56"]].map(([l, v], i) => (
+                        {[
+                          ["Prénom", user?.user_metadata?.full_name?.split(" ")[0] || ""],
+                          ["Nom", user?.user_metadata?.full_name?.split(" ").slice(1).join(" ") || ""],
+                          ["Email", user?.email || ""],
+                          ["Téléphone", user?.user_metadata?.phone || ""],
+                        ].map(([l, v], i) => (
                           <motion.div key={l} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}>
                             <label className="text-xs text-mk-sec mb-1 block">{l}</label>
                             <input defaultValue={v} className="w-full border border-mk-line rounded-md px-3 py-2 text-sm" />
@@ -153,11 +158,11 @@ export default function AccountPage() {
                       </div>
                       <h2 className="text-xl font-bold text-mk-navy mb-5">Informations entreprise</h2>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-                        <div><label className="text-xs text-mk-sec mb-1 block">Nom entreprise</label><input defaultValue="Pharmacie Centrale" className="w-full border border-mk-line rounded-md px-3 py-2 text-sm" /></div>
+                        <div><label className="text-xs text-mk-sec mb-1 block">Nom entreprise</label><input defaultValue={user?.user_metadata?.company_name || ""} className="w-full border border-mk-line rounded-md px-3 py-2 text-sm" /></div>
                         <div><label className="text-xs text-mk-sec mb-1 block">Pays</label>
-                          <select className="w-full border border-mk-line rounded-md px-3 py-2 text-sm"><option>Belgique</option><option>France</option><option>Suisse</option></select>
+                          <select defaultValue={user?.user_metadata?.country || "Belgique"} className="w-full border border-mk-line rounded-md px-3 py-2 text-sm"><option>Belgique</option><option>France</option><option>Suisse</option></select>
                         </div>
-                        <div><label className="text-xs text-mk-sec mb-1 block">Numero TVA</label><input defaultValue="BE 0123.456.789" className="w-full border border-mk-line rounded-md px-3 py-2 text-sm" /></div>
+                        <div><label className="text-xs text-mk-sec mb-1 block">Numéro TVA</label><input defaultValue={user?.user_metadata?.vat_number || ""} className="w-full border border-mk-line rounded-md px-3 py-2 text-sm" /></div>
                         <ProfileSelector />
                       </div>
                       <motion.button className="bg-mk-blue text-white font-semibold text-sm px-5 py-2.5 rounded-md" whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}>Enregistrer les modifications</motion.button>

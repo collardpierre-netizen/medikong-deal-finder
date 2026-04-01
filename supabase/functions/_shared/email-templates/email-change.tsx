@@ -38,7 +38,7 @@ export const EmailChangeEmail = ({
     <Body style={main}>
       <Container style={container}>
         <Section style={logoSection}>
-          <Img src={LOGO_URL} alt="Medikong" width="180" height="auto" style={logo} />
+          <Img src={LOGO_URL} alt="Medikong" width="180" style={logo} />
         </Section>
         <Hr style={divider} />
         <Heading style={h1}>Changement d'adresse e-mail</Heading>
@@ -76,7 +76,7 @@ export default EmailChangeEmail
 const main = { backgroundColor: '#ffffff', fontFamily: "'DM Sans', Arial, sans-serif" }
 const container = { padding: '30px 25px', maxWidth: '520px', margin: '0 auto' }
 const logoSection = { textAlign: 'center' as const, marginBottom: '16px' }
-const logo = { margin: '0 auto' }
+const logo = { margin: '0 auto', width: '180px', height: 'auto', maxWidth: '100%', display: 'block' as const }
 const divider = { borderColor: '#d1d5db', margin: '20px 0' }
 const h1 = {
   fontSize: '22px',

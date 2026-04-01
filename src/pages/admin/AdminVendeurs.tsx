@@ -95,9 +95,17 @@ const AdminVendeurs = () => {
                   <td className="px-4 py-3">
                     <span className="px-2 py-1 rounded-full text-[10px] font-bold" style={{ backgroundColor: "#F1F5F9", color: "#616B7C" }}>{s.type}</span>
                   </td>
-                  </td>
                   <td className="px-4 py-3 text-[12px]" style={{ color: "#616B7C" }}>{s.city || "—"}, {s.country_code}</td>
                   <td className="px-4 py-3 text-[13px]" style={{ color: "#616B7C" }}>{s.commission_rate}%</td>
+                  <td className="px-4 py-3">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); toggleShowRealName(s.id, !!(s as any).show_real_name); }}
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded text-[10px] font-semibold transition-opacity hover:opacity-80"
+                      style={{ color: (s as any).show_real_name ? "#059669" : "#8B95A5", backgroundColor: (s as any).show_real_name ? "#ECFDF5" : "#F1F5F9" }}
+                    >
+                      {(s as any).show_real_name ? <><Eye size={11} /> Visible</> : <><EyeOff size={11} /> Anonyme</>}
+                    </button>
+                  </td>
                   <td className="px-4 py-3"><StatusBadge status={s.is_active ? "active" : "inactive"} /></td>
                   <td className="px-4 py-3 text-[11px]" style={{ color: "#8B95A5" }}>{new Date(s.created_at).toLocaleDateString("fr-BE")}</td>
                   <td className="px-4 py-3">

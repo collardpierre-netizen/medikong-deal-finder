@@ -10,6 +10,7 @@ import {
   CheckCircle2, Building2,
 } from "lucide-react";
 import { useState } from "react";
+import { getVendorPublicName } from "@/lib/vendor-display";
 
 export default function VendorPublicPage() {
   const { slug } = useParams<{ slug: string }>();

@@ -7,7 +7,7 @@ import { usePageImages } from "@/hooks/usePageImages";
 import {
   ShoppingBag, Briefcase, User, Stethoscope, Pill, Building2, Layers, Store,
   ChevronLeft, ChevronUp, ChevronDown, Lock, Eye, EyeOff, Check, ArrowRight,
-  Clock, Loader2, Package, Truck, Shield, FileText
+  Loader2, Package, Truck, Shield, FileText
 } from "lucide-react";
 
 /* ─── Design tokens ─── */
@@ -478,32 +478,47 @@ export default function OnboardingPage() {
       return;
     }
 
+    // Check localStorage draft
     const rawDraft = readOnboardingStorage(onboardingDraftStorageKey);
-    if (!rawDraft) return;
+    if (rawDraft) {
+      try {
+        const draft = JSON.parse(rawDraft) as OnboardingDraft;
+        const userEmail = (user.email ?? "").trim().toLowerCase();
 
-    try {
-      const draft = JSON.parse(rawDraft) as OnboardingDraft;
-      const userEmail = (user.email ?? "").trim().toLowerCase();
+        if (draft?.role && draft.email && (!userEmail || draft.email === userEmail)) {
+          setRole(draft.role);
+          setEmail(user.email ?? draft.email);
+          setOtpVerified(true);
+          setEmailDeliveryMode(draft.deliveryMode ?? "link_only");
 
-      if (!draft?.role || !draft.email || (userEmail && draft.email !== userEmail)) {
-        return;
+          if (draft.role === "buyer") {
+            if (draft.buyerProfile) setBuyerProfile(draft.buyerProfile);
+            setStep(3);
+            return;
+          }
+
+          if (draft.businessType) setBusinessType(draft.businessType);
+          setStep(13);
+          return;
+        }
+      } catch {
+        removeOnboardingStorage(onboardingDraftStorageKey);
       }
+    }
 
-      setRole(draft.role);
-      setEmail(user.email ?? draft.email);
+    // Fallback: use URL context (e.g., user came via magic link on different device, no draft)
+    const params = new URLSearchParams(window.location.search);
+    const urlRole = params.get("role");
+    if (urlRole === "buyer" || urlRole === "seller") {
+      setRole(urlRole);
+      setEmail(user.email ?? "");
       setOtpVerified(true);
-      setEmailDeliveryMode(draft.deliveryMode ?? "link_only");
-
-      if (draft.role === "buyer") {
-        if (draft.buyerProfile) setBuyerProfile(draft.buyerProfile);
-        setStep(3);
-        return;
-      }
-
-      if (draft.businessType) setBusinessType(draft.businessType);
-      setStep(13);
-    } catch {
-      removeOnboardingStorage(onboardingDraftStorageKey);
+      setEmailDeliveryMode("link_only");
+      const bp = params.get("buyerProfile");
+      if (bp) setBuyerProfile(bp);
+      const bt = params.get("businessType");
+      if (bt) setBusinessType(bt);
+      setStep(urlRole === "buyer" ? 3 : 13);
     }
   }, [onboardingDraftStorageKey, readOnboardingStorage, removeOnboardingStorage]);
 
@@ -748,6 +763,10 @@ export default function OnboardingPage() {
     }
   };
 
+  /* ─── Country code helper ─── */
+  const countryToCode = (c: string) =>
+    c === "France" ? "FR" : c === "Pays-Bas" ? "NL" : c === "Luxembourg" ? "LU" : c === "Allemagne" ? "DE" : "BE";
+
   /* ─── Submit ─── */
   const [submitting, setSubmitting] = useState(false);
   const handleSubmit = async () => {
@@ -767,10 +786,23 @@ export default function OnboardingPage() {
           password: fallbackTempPassword,
         });
         if (signInError) {
-          alert("Votre email n'est pas encore confirmé. Ouvrez l'email reçu et cliquez sur le lien, puis réessayez.");
-          return;
+          // Fallback: try magic-link sign-in if temp password doesn't work
+          const { data: otpData } = await supabase.auth.getUser();
+          if (otpData.user) {
+            userId = otpData.user.id;
+          } else {
+            alert("Votre email n'est pas encore confirmé. Ouvrez l'email reçu et cliquez sur le lien, puis réessayez.");
+            return;
+          }
+        } else {
+          userId = signInData.user?.id;
         }
-        userId = signInData.user?.id;
+      }
+
+      // Last resort: try getUser (session may exist from magic link)
+      if (!userId) {
+        const { data: userData } = await supabase.auth.getUser();
+        userId = userData.user?.id;
       }
 
       if (!userId) {
@@ -790,51 +822,68 @@ export default function OnboardingPage() {
       });
       if (updateAuthError) throw updateAuthError;
 
-      // 3. Update profile
-      await supabase.from("profiles").update({
+      // 3. Update profile (ignore errors — profile might not exist yet if trigger is delayed)
+      const { error: profileError } = await supabase.from("profiles").update({
         full_name: `${firstName} ${lastName}`.trim(),
         phone: phone || null,
         company_name: companyName || null,
         vat_number: vatNumber || null,
         country: country || "Belgique",
       }).eq("user_id", userId);
+      if (profileError) console.warn("Profile update warning:", profileError.message);
 
-      // 4. If seller, create vendor record
+      const cc = countryToCode(country);
+
+      // 4. If seller, create vendor record (upsert to prevent duplicates)
       if (role === "seller") {
         const slug = (companyName || `${firstName}-${lastName}`)
           .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
           .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-        await supabase.from("vendors").insert({
-          auth_user_id: userId,
-          name: companyName || `${firstName} ${lastName}`,
-          slug,
-          company_name: companyName || null,
-          email,
-          phone: phone || null,
-          vat_number: vatNumber || null,
-          country_code: country === "France" ? "FR" : country === "Pays-Bas" ? "NL" : country === "Luxembourg" ? "LU" : country === "Allemagne" ? "DE" : "BE",
-          city: city || null,
-          description: `${businessType ? `Type: ${businessType}. ` : ""}${sellerCats.length > 0 ? `Catégories: ${sellerCats.join(", ")}. ` : ""}${fulfillment ? `Logistique: ${fulfillment}. ` : ""}${leadTime ? `Délai: ${leadTime}.` : ""}`,
-          type: "real",
-          is_active: false, // Admin must activate
-          can_manage_offers: true,
-        });
+
+        // Check if vendor already exists for this user
+        const { data: existingVendor } = await supabase
+          .from("vendors").select("id").eq("auth_user_id", userId).maybeSingle();
+
+        if (!existingVendor) {
+          const { error: vendorError } = await supabase.from("vendors").insert({
+            auth_user_id: userId,
+            name: companyName || `${firstName} ${lastName}`,
+            slug,
+            company_name: companyName || null,
+            email,
+            phone: phone || null,
+            vat_number: vatNumber || null,
+            country_code: cc,
+            city: city || null,
+            description: `${businessType ? `Type: ${businessType}. ` : ""}${sellerCats.length > 0 ? `Catégories: ${sellerCats.join(", ")}. ` : ""}${fulfillment ? `Logistique: ${fulfillment}. ` : ""}${leadTime ? `Délai: ${leadTime}.` : ""}`,
+            type: "real",
+            is_active: false,
+            can_manage_offers: true,
+          });
+          if (vendorError) console.warn("Vendor insert warning:", vendorError.message);
+        }
       }
 
-      // 5. If buyer, create customer record
+      // 5. If buyer, create customer record (prevent duplicates)
       if (role === "buyer") {
-        await supabase.from("customers").insert({
-          auth_user_id: userId,
-          company_name: companyName || `${firstName} ${lastName}`,
-          email,
-          phone: phone || null,
-          vat_number: vatNumber || null,
-          country_code: country === "France" ? "FR" : country === "Pays-Bas" ? "NL" : country === "Luxembourg" ? "LU" : country === "Allemagne" ? "DE" : "BE",
-          address_line1: city || "—",
-          city: city || "—",
-          postal_code: "0000",
-          is_verified: false,
-        });
+        const { data: existingCustomer } = await supabase
+          .from("customers").select("id").eq("auth_user_id", userId).maybeSingle();
+
+        if (!existingCustomer) {
+          const { error: customerError } = await supabase.from("customers").insert({
+            auth_user_id: userId,
+            company_name: companyName || `${firstName} ${lastName}`,
+            email,
+            phone: phone || null,
+            vat_number: vatNumber || null,
+            country_code: cc,
+            address_line1: city || "—",
+            city: city || "—",
+            postal_code: "0000",
+            is_verified: false,
+          });
+          if (customerError) console.warn("Customer insert warning:", customerError.message);
+        }
       }
 
       removeOnboardingStorage(getTempPasswordStorageKey(email));
@@ -993,50 +1042,21 @@ export default function OnboardingPage() {
   );
 
   /* ─── Done Screen (reusable) ─── */
-  const [resending, setResending] = useState(false);
-  const [resent, setResent] = useState(false);
   const renderDoneScreen = () => (
     <div style={{ textAlign: "center" }}>
-      <div className="tf-check-pop" style={{ width: 64, height: 64, borderRadius: "50%", background: S.blueBg, border: `2px solid ${S.blue}`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
-        <Clock size={28} color={S.blue} />
+      <div className="tf-check-pop" style={{ width: 64, height: 64, borderRadius: "50%", background: S.greenBg, border: `2px solid ${S.green}`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+        <Check size={28} color={S.green} />
       </div>
-      <h1 style={{ fontSize: 20, fontWeight: 700, color: S.text, marginBottom: 8 }}>Inscription enregistrée !</h1>
-      
-      {/* Email confirmation message */}
-      <div style={{ background: S.greenBg, border: `1px solid ${S.green}`, borderRadius: S.radius, padding: 16, marginBottom: 16 }}>
-        <p style={{ fontSize: 13, fontWeight: 600, color: S.green, marginBottom: 4 }}>📧 Un email de confirmation a été envoyé à</p>
-        <p style={{ fontSize: 14, fontWeight: 700, color: S.text }}>{email}</p>
-        <p style={{ fontSize: 12, color: S.sec, marginTop: 6 }}>Vérifiez votre boîte de réception et vos spams.</p>
-      </div>
-
-      {/* Resend button */}
-      <button
-        onClick={async () => {
-          setResending(true);
-          try {
-            await supabase.auth.resend({ type: 'signup', email });
-            setResent(true);
-            setTimeout(() => setResent(false), 5000);
-          } catch (e) { console.error(e); }
-          setResending(false);
-        }}
-        disabled={resending || resent}
-        style={{
-          background: resent ? S.greenBg : "transparent", border: `1px solid ${resent ? S.green : S.line}`,
-          borderRadius: S.radiusSm, padding: "8px 20px", fontSize: 12, fontWeight: 600,
-          color: resent ? S.green : S.blue, cursor: resending || resent ? "default" : "pointer",
-          opacity: resending ? 0.6 : 1, marginBottom: 16,
-        }}
-      >
-        {resent ? "✓ Email renvoyé !" : resending ? "Envoi en cours..." : "Renvoyer l'email de confirmation"}
-      </button>
+      <h1 style={{ fontSize: 20, fontWeight: 700, color: S.text, marginBottom: 8 }}>Inscription réussie ! 🎉</h1>
 
       <p style={{ fontSize: 13, color: S.sec, marginBottom: 20 }}>
         {role === "seller"
-          ? "Notre équipe examine votre dossier vendeur. Vous recevrez un email d'activation sous 24 à 48h ouvrées."
-          : "Notre équipe vérifie votre profil professionnel. Vous recevrez un email d'activation sous 24 à 48h ouvrées."}
+          ? "Votre dossier vendeur a bien été enregistré. Notre équipe l'examine et vous recevrez un email d'activation sous 24 à 48h ouvrées."
+          : "Votre profil professionnel a bien été créé. Notre équipe le vérifie et vous recevrez un email d'activation sous 24 à 48h ouvrées."}
       </p>
+
       <div style={{ background: S.blueBg, borderRadius: S.radius, padding: 20, textAlign: "left", marginBottom: 20 }}>
+        <p style={{ fontSize: 13, fontWeight: 700, color: S.text, marginBottom: 12 }}>Prochaines étapes</p>
         {(role === "seller"
           ? ["Vérification de votre dossier vendeur (24-48h)", "Activation de votre espace vendeur", "Mise en ligne de vos premiers produits"]
           : ["Vérification de votre profil professionnel (24-48h)", "Activation de votre accès aux tarifs professionnels", "Première commande et accès complet"]

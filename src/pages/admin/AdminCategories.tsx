@@ -212,14 +212,14 @@ const AdminCategories = () => {
       <AdminTopBar title="Catégories" subtitle="Arborescence du catalogue produits"
         actions={
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => handleAutoTranslate("fr")} disabled={batchSave.isPending}>
-              <Wand2 size={14} className="mr-1" />Auto FR
+            <Button variant="outline" size="sm" onClick={() => handleAutoTranslate("fr")} disabled={!!translating}>
+              <Wand2 size={14} className={`mr-1 ${translating === "fr" ? "animate-spin" : ""}`} />{translating === "fr" ? "Traduction..." : "Auto FR"}
             </Button>
-            <Button variant="outline" size="sm" onClick={() => handleAutoTranslate("nl")} disabled={batchSave.isPending}>
-              <Wand2 size={14} className="mr-1" />Auto NL
+            <Button variant="outline" size="sm" onClick={() => handleAutoTranslate("nl")} disabled={!!translating}>
+              <Wand2 size={14} className={`mr-1 ${translating === "nl" ? "animate-spin" : ""}`} />{translating === "nl" ? "Traduction..." : "Auto NL"}
             </Button>
-            <Button variant="outline" size="sm" onClick={() => handleAutoTranslate("de")} disabled={batchSave.isPending}>
-              <Wand2 size={14} className="mr-1" />Auto DE
+            <Button variant="outline" size="sm" onClick={() => handleAutoTranslate("de")} disabled={!!translating}>
+              <Wand2 size={14} className={`mr-1 ${translating === "de" ? "animate-spin" : ""}`} />{translating === "de" ? "Traduction..." : "Auto DE"}
             </Button>
             <Button variant="outline" size="sm" onClick={() => exportCategories()}><Download size={14} className="mr-1" />Export</Button>
             <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()}><Upload size={14} className="mr-1" />Import</Button>

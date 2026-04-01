@@ -345,6 +345,38 @@ export default function OnboardingPage() {
     [role, buyerProfile, businessType, writeOnboardingStorage]
   );
 
+  const getExpectedOnboardingEmail = useCallback(() => {
+    const params = new URLSearchParams(window.location.search);
+    const urlEmail = params.get("email")?.trim().toLowerCase();
+    if (urlEmail) return urlEmail;
+
+    const rawDraft = readOnboardingStorage(onboardingDraftStorageKey);
+    if (!rawDraft) return null;
+
+    try {
+      const draft = JSON.parse(rawDraft) as OnboardingDraft;
+      return draft.email?.trim().toLowerCase() || null;
+    } catch {
+      return null;
+    }
+  }, [onboardingDraftStorageKey, readOnboardingStorage]);
+
+  const ensureMatchingOnboardingSession = useCallback(
+    async (candidate: AuthUser | null) => {
+      if (!candidate) return null;
+
+      const expectedEmail = getExpectedOnboardingEmail();
+      if (!expectedEmail) return candidate;
+
+      const candidateEmail = (candidate.email ?? "").trim().toLowerCase();
+      if (!candidateEmail || candidateEmail === expectedEmail) return candidate;
+
+      await supabase.auth.signOut();
+      return null;
+    },
+    [getExpectedOnboardingEmail]
+  );
+
   /* (buyer/seller state already declared above) */
   const [sellerCats, setSellerCats] = useState<string[]>([]);
   const [skuCount, setSkuCount] = useState("");

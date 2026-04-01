@@ -128,10 +128,11 @@ export function useCatalogProducts(filters: CatalogFilters) {
           : Promise.resolve(null),
       ]);
 
-      // Use estimated count instead of exact count for performance on 74k+ rows
+      // Use exact count when filters are applied for accurate results display
+      const hasFilters = !!(filters.search || filters.brands?.length || filters.categories?.length || filters.manufacturers?.length || filters.inStock || filters.priceMin !== undefined || filters.priceMax !== undefined);
       let query = supabase
         .from("products")
-        .select("id, slug, name, brand_name, brand_id, category_id, category_name, gtin, cnk_code, image_urls, short_description, is_promotion, promotion_label, best_price_excl_vat, best_price_incl_vat, offer_count, total_stock, is_in_stock, created_at", { count: "estimated" })
+        .select("id, slug, name, brand_name, brand_id, category_id, category_name, gtin, cnk_code, image_urls, short_description, is_promotion, promotion_label, best_price_excl_vat, best_price_incl_vat, offer_count, total_stock, is_in_stock, created_at", { count: hasFilters ? "exact" : "estimated" })
         .eq("is_active", true);
 
       // Only filter by offer_count when not searching — allow search to find all products

@@ -86,11 +86,15 @@ const AdminVendeurs = () => {
                   onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#F8FAFC")}
                   onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}>
                   <td className="px-4 py-3">
-                    <span className="text-[13px] font-semibold" style={{ color: "#1D2530" }}>{s.company_name || s.name}</span>
+                    <span className="text-[13px] font-semibold" style={{ color: "#1D2530" }}>{getVendorAdminName(s)}</span>
                     <p className="text-[11px]" style={{ color: "#8B95A5" }}>{s.email || "—"}</p>
                   </td>
                   <td className="px-4 py-3">
+                    <span className="px-2 py-1 rounded text-[11px] font-mono" style={{ backgroundColor: "#F1F5F9", color: "#616B7C" }}>{s.display_code || "—"}</span>
+                  </td>
+                  <td className="px-4 py-3">
                     <span className="px-2 py-1 rounded-full text-[10px] font-bold" style={{ backgroundColor: "#F1F5F9", color: "#616B7C" }}>{s.type}</span>
+                  </td>
                   </td>
                   <td className="px-4 py-3 text-[12px]" style={{ color: "#616B7C" }}>{s.city || "—"}, {s.country_code}</td>
                   <td className="px-4 py-3 text-[13px]" style={{ color: "#616B7C" }}>{s.commission_rate}%</td>

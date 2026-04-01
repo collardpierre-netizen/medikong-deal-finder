@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { PageTransition } from "@/components/shared/PageTransition";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { getVendorPublicName } from "@/lib/vendor-display";
 
 // MOV tiers per supplier
 const MOV_TIERS = [500, 1500, 5000, 10000];

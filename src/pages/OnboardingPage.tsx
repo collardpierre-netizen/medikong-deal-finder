@@ -1027,8 +1027,6 @@ export default function OnboardingPage() {
   );
 
   /* ─── Done Screen (reusable) ─── */
-  const [resending, setResending] = useState(false);
-  const [resent, setResent] = useState(false);
   const renderDoneScreen = () => (
     <div style={{ textAlign: "center" }}>
       <div className="tf-check-pop" style={{ width: 64, height: 64, borderRadius: "50%", background: S.greenBg, border: `2px solid ${S.green}`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>

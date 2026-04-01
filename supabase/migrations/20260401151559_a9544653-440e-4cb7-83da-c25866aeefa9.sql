@@ -1,0 +1,1 @@
+ALTER TABLE public.vendors ADD COLUMN IF NOT EXISTS show_real_name boolean NOT NULL DEFAULT false;

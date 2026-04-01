@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { PageTransition } from "@/components/shared/PageTransition";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { getVendorPublicName } from "@/lib/vendor-display";
 
 // MOV tiers per supplier
 const MOV_TIERS = [500, 1500, 5000, 10000];
@@ -67,7 +68,7 @@ export default function CartPage() {
       const progress = Math.min((total / currentMov) * 100, 100);
       return {
         vendorId,
-        vendorName: vendor?.company_name || vendor?.name || `Fournisseur #${vendorId.slice(0, 6).toUpperCase()}`,
+        vendorName: vendor ? getVendorPublicName(vendor) : `Fournisseur #${vendorId.slice(0, 6).toUpperCase()}`,
         isVerified: vendor?.is_verified || false,
         items: groupItems,
         total,

@@ -5,7 +5,10 @@ import StatusBadge from "@/components/admin/StatusBadge";
 import VendorFormDialog from "@/components/admin/VendorFormDialog";
 import { useI18n } from "@/contexts/I18nContext";
 import { useVendors } from "@/hooks/useAdminData";
-import { Search, Filter, Download, Plus, ExternalLink } from "lucide-react";
+import { getVendorAdminName } from "@/lib/vendor-display";
+import { Search, Filter, Download, Plus, ExternalLink, Eye, EyeOff } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 
 const AdminVendeurs = () => {
   const { t } = useI18n();
@@ -14,6 +17,12 @@ const AdminVendeurs = () => {
   const [activeTab, setActiveTab] = useState<"all" | "medikong" | "qogita_virtual" | "real">("all");
   const [search, setSearch] = useState("");
   const [showForm, setShowForm] = useState(false);
+  const queryClient = useQueryClient();
+
+  const toggleShowRealName = async (vendorId: string, current: boolean) => {
+    await supabase.from("vendors").update({ show_real_name: !current } as any).eq("id", vendorId);
+    queryClient.invalidateQueries({ queryKey: ["admin-vendors"] });
+  };
 
   const tabs = [
     { key: "all" as const, label: "Tous", count: vendors.length },
@@ -24,7 +33,7 @@ const AdminVendeurs = () => {
 
   const filtered = vendors
     .filter(v => activeTab === "all" || v.type === activeTab)
-    .filter(v => (v.company_name || v.name).toLowerCase().includes(search.toLowerCase()) || (v.city || "").toLowerCase().includes(search.toLowerCase()));
+    .filter(v => (v.company_name || v.name).toLowerCase().includes(search.toLowerCase()) || (v.city || "").toLowerCase().includes(search.toLowerCase()) || (v.display_code || "").toLowerCase().includes(search.toLowerCase()));
 
   return (
     <div>
@@ -65,7 +74,7 @@ const AdminVendeurs = () => {
           <table className="w-full text-left">
             <thead>
               <tr style={{ borderBottom: "1px solid #E2E8F0", backgroundColor: "#F8FAFC" }}>
-                {["Vendeur", "Type", "Ville", "Commission", "Statut", "Inscrit", ""].map((h) => (
+                {["Vendeur", "Code public", "Type", "Ville", "Commission", "Visible", "Statut", "Inscrit", ""].map((h) => (
                   <th key={h} className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider" style={{ color: "#8B95A5" }}>{h}</th>
                 ))}
               </tr>
@@ -77,14 +86,26 @@ const AdminVendeurs = () => {
                   onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#F8FAFC")}
                   onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}>
                   <td className="px-4 py-3">
-                    <span className="text-[13px] font-semibold" style={{ color: "#1D2530" }}>{s.company_name || s.name}</span>
+                    <span className="text-[13px] font-semibold" style={{ color: "#1D2530" }}>{getVendorAdminName(s)}</span>
                     <p className="text-[11px]" style={{ color: "#8B95A5" }}>{s.email || "—"}</p>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className="px-2 py-1 rounded text-[11px] font-mono" style={{ backgroundColor: "#F1F5F9", color: "#616B7C" }}>{s.display_code || "—"}</span>
                   </td>
                   <td className="px-4 py-3">
                     <span className="px-2 py-1 rounded-full text-[10px] font-bold" style={{ backgroundColor: "#F1F5F9", color: "#616B7C" }}>{s.type}</span>
                   </td>
                   <td className="px-4 py-3 text-[12px]" style={{ color: "#616B7C" }}>{s.city || "—"}, {s.country_code}</td>
                   <td className="px-4 py-3 text-[13px]" style={{ color: "#616B7C" }}>{s.commission_rate}%</td>
+                  <td className="px-4 py-3">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); toggleShowRealName(s.id, !!(s as any).show_real_name); }}
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded text-[10px] font-semibold transition-opacity hover:opacity-80"
+                      style={{ color: (s as any).show_real_name ? "#059669" : "#8B95A5", backgroundColor: (s as any).show_real_name ? "#ECFDF5" : "#F1F5F9" }}
+                    >
+                      {(s as any).show_real_name ? <><Eye size={11} /> Visible</> : <><EyeOff size={11} /> Anonyme</>}
+                    </button>
+                  </td>
                   <td className="px-4 py-3"><StatusBadge status={s.is_active ? "active" : "inactive"} /></td>
                   <td className="px-4 py-3 text-[11px]" style={{ color: "#8B95A5" }}>{new Date(s.created_at).toLocaleDateString("fr-BE")}</td>
                   <td className="px-4 py-3">

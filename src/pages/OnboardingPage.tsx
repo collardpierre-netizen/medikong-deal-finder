@@ -202,6 +202,19 @@ export default function OnboardingPage() {
     []
   );
 
+  /* ─── Buyer-specific ─── */
+  const [buyerProfile, setBuyerProfile] = useState("");
+  const [professionalId, setProfessionalId] = useState("");
+  const [groupMemberCount, setGroupMemberCount] = useState("");
+  const [resellerWebsite, setResellerWebsite] = useState("");
+  const [interests, setInterests] = useState<string[]>([]);
+
+  /* ─── Seller-specific ─── */
+  const [businessType, setBusinessType] = useState("");
+  const [jobTitle, setJobTitle] = useState("");
+  const [website, setWebsite] = useState("");
+  const [annualRevenue, setAnnualRevenue] = useState("");
+
   const persistOnboardingDraft = useCallback(
     (targetEmail: string, mode: "code_or_link" | "link_only" = "code_or_link") => {
       const normalizedEmail = targetEmail.trim().toLowerCase();
@@ -221,18 +234,7 @@ export default function OnboardingPage() {
     [role, buyerProfile, businessType]
   );
 
-  /* ─── Buyer-specific ─── */
-  const [buyerProfile, setBuyerProfile] = useState("");
-  const [professionalId, setProfessionalId] = useState("");
-  const [groupMemberCount, setGroupMemberCount] = useState("");
-  const [resellerWebsite, setResellerWebsite] = useState("");
-  const [interests, setInterests] = useState<string[]>([]);
-
-  /* ─── Seller-specific ─── */
-  const [businessType, setBusinessType] = useState("");
-  const [jobTitle, setJobTitle] = useState("");
-  const [website, setWebsite] = useState("");
-  const [annualRevenue, setAnnualRevenue] = useState("");
+  /* (buyer/seller state already declared above) */
   const [sellerCats, setSellerCats] = useState<string[]>([]);
   const [skuCount, setSkuCount] = useState("");
   const [brands, setBrands] = useState("");

@@ -10,6 +10,7 @@ import {
   CheckCircle2, Building2,
 } from "lucide-react";
 import { useState } from "react";
+import { getVendorPublicName } from "@/lib/vendor-display";
 
 export default function VendorPublicPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -99,15 +100,15 @@ export default function VendorPublicPage() {
         <div className="mk-container relative -mt-12 md:-mt-14 pb-6">
           <div className="flex flex-col sm:flex-row items-start gap-4 md:gap-6">
             <div className="w-20 h-20 md:w-24 md:h-24 rounded-xl border-4 border-background bg-background shadow-lg flex items-center justify-center shrink-0 overflow-hidden">
-              {vendor.logo_url ? (
-                <img src={vendor.logo_url} alt={vendor.company_name || vendor.name} className="w-full h-full object-contain p-1" />
+              {vendor.logo_url && vendor.show_real_name ? (
+                <img src={vendor.logo_url} alt={getVendorPublicName(vendor)} className="w-full h-full object-contain p-1" />
               ) : (
-                <span className="text-2xl font-bold text-primary">{(vendor.company_name || vendor.name)[0]}</span>
+                <span className="text-2xl font-bold text-primary">{getVendorPublicName(vendor)[0]}</span>
               )}
             </div>
             <div className="flex-1 pt-2 sm:pt-6">
               <div className="flex flex-wrap items-center gap-2 mb-1">
-                <h1 className="text-xl md:text-2xl font-bold text-foreground">{vendor.company_name || vendor.name}</h1>
+                <h1 className="text-xl md:text-2xl font-bold text-foreground">{getVendorPublicName(vendor)}</h1>
                 {vendor.is_verified && (
                   <span className="inline-flex items-center gap-1 text-[10px] font-semibold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">
                     <CheckCircle2 size={10} /> Vérifié

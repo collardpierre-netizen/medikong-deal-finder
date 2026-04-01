@@ -234,7 +234,7 @@ export default function OnboardingPage() {
 
   const [tIdx, setTIdx] = useState(0);
   useEffect(() => {
-    const iv = setInterval(() => setTIdx(p => (p + 1) % activeTestimonials.length), 8000);
+    const iv = setInterval(() => setTIdx(p => (p + 1) % activeTestimonials.length), 5000);
     return () => clearInterval(iv);
   }, [activeTestimonials.length]);
   useEffect(() => { setTIdx(0); }, [role]);

@@ -202,6 +202,22 @@ export default function OnboardingPage() {
     []
   );
 
+  const readOnboardingStorage = useCallback((key: string) => {
+    const localValue = window.localStorage.getItem(key);
+    if (localValue !== null) return localValue;
+    return window.sessionStorage.getItem(key);
+  }, []);
+
+  const writeOnboardingStorage = useCallback((key: string, value: string) => {
+    window.localStorage.setItem(key, value);
+    window.sessionStorage.setItem(key, value);
+  }, []);
+
+  const removeOnboardingStorage = useCallback((key: string) => {
+    window.localStorage.removeItem(key);
+    window.sessionStorage.removeItem(key);
+  }, []);
+
   /* ─── Buyer-specific ─── */
   const [buyerProfile, setBuyerProfile] = useState("");
   const [professionalId, setProfessionalId] = useState("");
@@ -214,6 +230,19 @@ export default function OnboardingPage() {
   const [jobTitle, setJobTitle] = useState("");
   const [website, setWebsite] = useState("");
   const [annualRevenue, setAnnualRevenue] = useState("");
+
+  const buildOnboardingRedirectUrl = useCallback(
+    (mode: "code_or_link" | "link_only") => {
+      const params = new URLSearchParams();
+      params.set("flow", "onboarding");
+      params.set("mode", mode);
+      if (role) params.set("role", role);
+      if (role === "buyer" && buyerProfile) params.set("buyerProfile", buyerProfile);
+      if (role === "seller" && businessType) params.set("businessType", businessType);
+      return `${window.location.origin}/onboarding?${params.toString()}`;
+    },
+    [role, buyerProfile, businessType]
+  );
 
   const persistOnboardingDraft = useCallback(
     (targetEmail: string, mode: "code_or_link" | "link_only" = "code_or_link") => {
@@ -229,9 +258,9 @@ export default function OnboardingPage() {
         timestamp: Date.now(),
       };
 
-      window.sessionStorage.setItem(onboardingDraftStorageKey, JSON.stringify(draft));
+      writeOnboardingStorage(onboardingDraftStorageKey, JSON.stringify(draft));
     },
-    [role, buyerProfile, businessType]
+    [role, buyerProfile, businessType, writeOnboardingStorage]
   );
 
   /* (buyer/seller state already declared above) */

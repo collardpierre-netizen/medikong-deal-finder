@@ -524,9 +524,15 @@ export default function AdminSync() {
   };
 
   const updateConfig = useMutation({
-    mutationFn: async (updates: any) => {
-      const { error } = await supabase.from("qogita_config").update(updates).eq("id", 1);
-      if (error) throw error;
+    mutationFn: async (updates: Record<string, any>) => {
+      // qogita_config is a key-value table; upsert each key
+      for (const [key, value] of Object.entries(updates)) {
+        const { error } = await supabase.from("qogita_config").upsert(
+          { key, value: String(value), updated_at: new Date().toISOString() },
+          { onConflict: "key" }
+        );
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       toast.success("Configuration mise à jour");

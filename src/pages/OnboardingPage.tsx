@@ -786,13 +786,19 @@ export default function OnboardingPage() {
           {otpTimer > 0 ? `Renvoyer dans 0:${otpTimer.toString().padStart(2, "0")}` : (
             <button style={{ color: S.blue, background: "none", border: "none", cursor: "pointer", fontWeight: 600, fontSize: 12 }} onClick={async () => {
               try {
-                const { error } = await supabase.auth.resend({ type: 'signup', email });
+                const { error } = await supabase.auth.signInWithOtp({
+                  email,
+                  options: {
+                    shouldCreateUser: false,
+                    emailRedirectTo: buildOnboardingRedirectUrl("link_only"),
+                  },
+                });
                 if (error) throw error;
-                setEmailDeliveryMode("code_or_link");
-                persistOnboardingDraft(email, "code_or_link");
+                setEmailDeliveryMode("link_only");
+                persistOnboardingDraft(email, "link_only");
               } catch(e) { console.error(e); }
               setOtpTimer(59);
-            }}>{expectsCode ? "Renvoyer l'email" : "Renvoyer un email avec code"}</button>
+            }}>Renvoyer le lien de connexion</button>
           )}
         </div>
         <p style={{ fontSize: 11, color: S.ter }}>Pensez à vérifier vos spams. Contact : <a href="mailto:support@medikong.pro" style={{ color: S.blue }}>support@medikong.pro</a></p>

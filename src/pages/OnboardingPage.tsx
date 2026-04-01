@@ -7,7 +7,7 @@ import { usePageImages } from "@/hooks/usePageImages";
 import {
   ShoppingBag, Briefcase, User, Stethoscope, Pill, Building2, Layers, Store,
   ChevronLeft, ChevronUp, ChevronDown, Lock, Eye, EyeOff, Check, ArrowRight,
-  Clock, Loader2, Package, Truck, Shield, FileText
+  Loader2, Package, Truck, Shield, FileText
 } from "lucide-react";
 
 /* ─── Design tokens ─── */

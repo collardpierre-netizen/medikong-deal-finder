@@ -208,4 +208,134 @@ const AdminVendeurDetail = () => {
   );
 };
 
+const CUSTOMER_TYPES = [
+  { value: "", label: "Tous les profils" },
+  { value: "pharmacy", label: "Pharmacie" },
+  { value: "hospital", label: "Hôpital" },
+  { value: "nursing_home", label: "Maison de repos" },
+  { value: "dentist", label: "Dentiste" },
+  { value: "nurse", label: "Infirmier" },
+  { value: "veterinary", label: "Vétérinaire" },
+  { value: "wholesaler", label: "Grossiste" },
+];
+
+const COUNTRIES = [
+  { value: "", label: "Tous les pays" },
+  { value: "BE", label: "🇧🇪 Belgique" },
+  { value: "FR", label: "🇫🇷 France" },
+  { value: "LU", label: "🇱🇺 Luxembourg" },
+  { value: "NL", label: "🇳🇱 Pays-Bas" },
+  { value: "DE", label: "🇩🇪 Allemagne" },
+];
+
+function VendorVisibilityTab({ vendorId, vendorName, showRealName, rules, onAddRule, onDeleteRule }: {
+  vendorId: string;
+  vendorName: string;
+  showRealName: boolean;
+  rules: any[];
+  onAddRule: (r: { country_code: string | null; customer_type: string | null; show_real_name: boolean; priority: number }) => void;
+  onDeleteRule: (id: string) => void;
+}) {
+  const [newCountry, setNewCountry] = useState("");
+  const [newType, setNewType] = useState("");
+  const [newShow, setNewShow] = useState(true);
+  const [newPriority, setNewPriority] = useState(10);
+
+  return (
+    <div className="space-y-4">
+      <div className="p-5 rounded-[10px]" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
+        <h3 className="text-[14px] font-bold mb-1" style={{ color: "#1D2530" }}>
+          Visibilité publique — {vendorName}
+        </h3>
+        <p className="text-[12px] mb-4" style={{ color: "#8B95A5" }}>
+          Par défaut : <strong>{showRealName ? "Nom réel visible" : "Anonymisé"}</strong>. Les règles ci-dessous permettent de surcharger ce comportement selon le pays et/ou le profil client. La règle avec la priorité la plus élevée l'emporte.
+        </p>
+
+        {/* Existing rules */}
+        <div className="rounded-lg overflow-hidden mb-4" style={{ border: "1px solid #E2E8F0" }}>
+          <table className="w-full text-left">
+            <thead>
+              <tr style={{ backgroundColor: "#F8FAFC", borderBottom: "1px solid #E2E8F0" }}>
+                {["Pays", "Profil client", "Affichage", "Priorité", ""].map(h => (
+                  <th key={h} className="px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider" style={{ color: "#8B95A5" }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rules.map((r: any) => (
+                <tr key={r.id} style={{ borderBottom: "1px solid #F1F5F9" }}>
+                  <td className="px-4 py-2.5 text-[12px]" style={{ color: "#1D2530" }}>
+                    {COUNTRIES.find(c => c.value === r.country_code)?.label || "Tous"}
+                  </td>
+                  <td className="px-4 py-2.5 text-[12px]" style={{ color: "#1D2530" }}>
+                    {CUSTOMER_TYPES.find(t => t.value === r.customer_type)?.label || "Tous"}
+                  </td>
+                  <td className="px-4 py-2.5">
+                    <span className="px-2 py-1 rounded text-[10px] font-bold" style={{
+                      backgroundColor: r.show_real_name ? "#ECFDF5" : "#FEF2F2",
+                      color: r.show_real_name ? "#059669" : "#DC2626"
+                    }}>
+                      {r.show_real_name ? "Nom réel" : "Anonyme"}
+                    </span>
+                  </td>
+                  <td className="px-4 py-2.5 text-[12px] font-mono" style={{ color: "#616B7C" }}>{r.priority}</td>
+                  <td className="px-4 py-2.5">
+                    <button onClick={() => onDeleteRule(r.id)} className="p-1 rounded hover:bg-red-50 transition-colors">
+                      <Trash2 size={14} style={{ color: "#DC2626" }} />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {rules.length === 0 && (
+                <tr><td colSpan={5} className="px-4 py-6 text-center text-[12px]" style={{ color: "#8B95A5" }}>Aucune règle — le paramètre global du vendeur s'applique</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Add new rule */}
+        <div className="flex items-end gap-3 p-4 rounded-lg" style={{ backgroundColor: "#F8FAFC", border: "1px solid #E2E8F0" }}>
+          <div className="flex-1">
+            <label className="block text-[11px] font-semibold mb-1" style={{ color: "#8B95A5" }}>Pays</label>
+            <select value={newCountry} onChange={e => setNewCountry(e.target.value)}
+              className="w-full px-3 py-2 rounded-md text-[12px]" style={{ border: "1px solid #E2E8F0" }}>
+              {COUNTRIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+            </select>
+          </div>
+          <div className="flex-1">
+            <label className="block text-[11px] font-semibold mb-1" style={{ color: "#8B95A5" }}>Profil</label>
+            <select value={newType} onChange={e => setNewType(e.target.value)}
+              className="w-full px-3 py-2 rounded-md text-[12px]" style={{ border: "1px solid #E2E8F0" }}>
+              {CUSTOMER_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+            </select>
+          </div>
+          <div className="w-[120px]">
+            <label className="block text-[11px] font-semibold mb-1" style={{ color: "#8B95A5" }}>Affichage</label>
+            <select value={newShow ? "true" : "false"} onChange={e => setNewShow(e.target.value === "true")}
+              className="w-full px-3 py-2 rounded-md text-[12px]" style={{ border: "1px solid #E2E8F0" }}>
+              <option value="true">Nom réel</option>
+              <option value="false">Anonyme</option>
+            </select>
+          </div>
+          <div className="w-[80px]">
+            <label className="block text-[11px] font-semibold mb-1" style={{ color: "#8B95A5" }}>Priorité</label>
+            <input type="number" value={newPriority} onChange={e => setNewPriority(Number(e.target.value))}
+              className="w-full px-3 py-2 rounded-md text-[12px]" style={{ border: "1px solid #E2E8F0" }} />
+          </div>
+          <button onClick={() => {
+            onAddRule({
+              country_code: newCountry || null,
+              customer_type: newType || null,
+              show_real_name: newShow,
+              priority: newPriority,
+            });
+          }} className="flex items-center gap-1 px-4 py-2 rounded-md text-[12px] font-bold text-white" style={{ backgroundColor: "#1B5BDA" }}>
+            <Plus size={14} /> Ajouter
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default AdminVendeurDetail;

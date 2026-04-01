@@ -144,6 +144,17 @@ const AdminVendeurDetail = () => {
         </div>
       )}
 
+      {activeTab === "visibility" && (
+        <VendorVisibilityTab
+          vendorId={id!}
+          vendorName={vendor.company_name || vendor.name}
+          showRealName={!!(vendor as any).show_real_name}
+          rules={visibilityRules}
+          onAddRule={addVisibilityRule}
+          onDeleteRule={deleteVisibilityRule}
+        />
+      )}
+
       {activeTab === "portfolio" && (
         <div className="space-y-4">
           <div className="p-5 rounded-[10px]" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>

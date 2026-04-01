@@ -218,7 +218,7 @@ export function ProductFormDialog({ open, onOpenChange, product, brands, manufac
             <div className="flex gap-2 items-end">
               <Input value={form.image_url} onChange={e => setForm({ ...form, image_url: e.target.value })} placeholder="https://..." className="flex-1" />
               {form.image_url && (
-                <img src={form.image_url} alt="Preview" referrerPolicy="no-referrer" crossOrigin="anonymous" className="w-10 h-10 rounded object-contain border border-border"
+                <img src={form.image_url} alt="Preview" referrerPolicy="no-referrer" className="w-10 h-10 rounded object-contain border border-border"
                   onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
               )}
             </div>

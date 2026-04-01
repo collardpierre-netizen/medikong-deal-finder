@@ -123,7 +123,7 @@ const AdminProduits = () => {
                     onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}>
                     <td className="px-4 py-3 w-12">
                       {imgUrl ? (
-                        <img src={imgUrl} alt={p.name} className="w-9 h-9 rounded object-contain bg-gray-50 border" style={{ borderColor: "#E2E8F0" }} referrerPolicy="no-referrer" onError={(e) => { const el = e.target as HTMLImageElement; el.style.display = "none"; el.nextElementSibling && (el.nextElementSibling as HTMLElement).classList.remove("hidden"); }} />
+                        <img src={imgUrl} alt={p.name} className="w-9 h-9 rounded object-contain bg-gray-50 border" style={{ borderColor: "#E2E8F0" }} referrerPolicy="no-referrer" onError={(e) => { const el = e.target as HTMLImageElement; el.classList.add("hidden"); el.nextElementSibling && (el.nextElementSibling as HTMLElement).classList.remove("hidden"); }} />
                       ) : null}
                       <div className={`w-9 h-9 rounded bg-gray-50 border flex items-center justify-center ${imgUrl ? "hidden" : ""}`} style={{ borderColor: "#E2E8F0" }}>
                         <Package size={14} className="text-gray-300" />

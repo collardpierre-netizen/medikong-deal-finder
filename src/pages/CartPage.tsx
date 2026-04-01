@@ -67,7 +67,7 @@ export default function CartPage() {
       const progress = Math.min((total / currentMov) * 100, 100);
       return {
         vendorId,
-        vendorName: vendor?.company_name || vendor?.name || `Fournisseur #${vendorId.slice(0, 6).toUpperCase()}`,
+        vendorName: vendor ? getVendorPublicName(vendor) : `Fournisseur #${vendorId.slice(0, 6).toUpperCase()}`,
         isVerified: vendor?.is_verified || false,
         items: groupItems,
         total,

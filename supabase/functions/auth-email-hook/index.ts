@@ -17,12 +17,12 @@ const corsHeaders = {
 }
 
 const EMAIL_SUBJECTS: Record<string, string> = {
-  signup: 'Confirm your email',
-  invite: "You've been invited",
-  magiclink: 'Your login link',
-  recovery: 'Reset your password',
-  email_change: 'Confirm your new email',
-  reauthentication: 'Your verification code',
+  signup: 'Confirmez votre adresse e-mail — Medikong',
+  invite: 'Vous êtes invité(e) sur Medikong',
+  magiclink: 'Votre lien de connexion Medikong',
+  recovery: 'Réinitialisez votre mot de passe — Medikong',
+  email_change: 'Confirmez votre changement d\'adresse e-mail',
+  reauthentication: 'Votre code de vérification Medikong',
 }
 
 // Template mapping
@@ -36,7 +36,7 @@ const EMAIL_TEMPLATES: Record<string, React.ComponentType<any>> = {
 }
 
 // Configuration
-const SITE_NAME = "medikong-deal-finder"
+const SITE_NAME = "Medikong"
 const SENDER_DOMAIN = "notify.medikong.pro"
 const ROOT_DOMAIN = "medikong.pro"
 const FROM_DOMAIN = "notify.medikong.pro" // Domain shown in From address (may be root or sender subdomain)

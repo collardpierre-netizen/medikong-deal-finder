@@ -617,15 +617,12 @@ export default function OnboardingPage() {
       <h1 style={{ fontSize: 20, fontWeight: 700, color: S.text, marginBottom: 6 }}>Confirmez votre email</h1>
       <p style={{ fontSize: 13, color: S.sec, marginBottom: 8 }}>Un email de confirmation a été envoyé à <strong>{email}</strong></p>
       <div style={{ background: S.blueBg, border: `1px solid ${S.blue}20`, borderRadius: S.radius, padding: "16px 20px", marginBottom: 20, textAlign: "left" }}>
-        <p style={{ fontSize: 13, color: S.text, margin: 0, fontWeight: 600, marginBottom: 8 }}>📩 Comment continuer ?</p>
-        <ol style={{ fontSize: 12, color: S.sec, margin: 0, paddingLeft: 18, lineHeight: 1.8 }}>
-          <li>Ouvrez votre boîte mail (<strong>{email}</strong>)</li>
-          <li>Cliquez sur le bouton <strong>"Verify Email"</strong> dans l'email reçu</li>
-          <li>Revenez ici et cliquez sur le bouton ci-dessous</li>
-        </ol>
+        <p style={{ fontSize: 13, color: S.text, margin: 0, fontWeight: 600, marginBottom: 8 }}>📩 Entrez le code à 6 chiffres reçu par email</p>
+        <p style={{ fontSize: 12, color: S.sec, margin: 0, lineHeight: 1.6 }}>
+          Ouvrez votre boîte mail (<strong>{email}</strong>) et retrouvez le code de vérification dans l'email de Medikong.
+        </p>
       </div>
       <div style={{ marginBottom: 14 }}>
-        <p style={{ fontSize: 12, color: S.sec, marginBottom: 10 }}>Vous avez reçu un code ? Entrez-le ci-dessous.</p>
         <div
           style={{ display: "flex", justifyContent: "center", gap: 8, marginBottom: 8 }}
           onPaste={handleOtpPaste}
@@ -639,36 +636,26 @@ export default function OnboardingPage() {
               onKeyDown={(e) => handleOtpKeyDown(idx, e)}
               inputMode="numeric"
               maxLength={1}
+              autoFocus={idx === 0}
               style={{
-                width: 40,
-                height: 44,
+                width: 44,
+                height: 48,
                 borderRadius: S.radiusSm,
-                border: `1px solid ${otpError ? S.red : S.line}`,
+                border: `2px solid ${otpError ? S.red : otpDigits[idx] ? S.blue : S.line}`,
                 textAlign: "center",
-                fontSize: 18,
+                fontSize: 20,
                 fontWeight: 700,
                 color: S.text,
                 background: otpError ? S.redBg : "#fff",
+                transition: "border-color .2s",
               }}
             />
           ))}
         </div>
         {otpError && <p style={{ fontSize: 11, color: S.red }}>Code invalide. Réessayez.</p>}
+        {verifyingOtp && <p style={{ fontSize: 11, color: S.blue }}><Loader2 size={12} className="tf-spin inline-block mr-1" />Vérification...</p>}
       </div>
-      <button
-        onClick={handleContinueAfterEmailConfirmation}
-        disabled={checkingConfirmedEmail}
-        style={{
-          background: S.navy, border: "none", borderRadius: S.radiusSm,
-          padding: "12px 24px", fontSize: 14, fontWeight: 700, color: "#fff",
-          cursor: checkingConfirmedEmail ? "default" : "pointer",
-          opacity: checkingConfirmedEmail ? 0.6 : 1, marginBottom: 16,
-          width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-        }}
-      >
-        {checkingConfirmedEmail ? <><Loader2 size={16} className="tf-spin" /> Vérification...</> : <><Check size={16} /> J'ai confirmé mon email</>}
-      </button>
-      <div style={{ fontSize: 12, color: S.ter, marginBottom: 12 }}>
+      <div style={{ fontSize: 12, color: S.ter, marginBottom: 16 }}>
         Pas d'email reçu ?{" "}
         {otpTimer > 0 ? `Renvoyer dans 0:${otpTimer.toString().padStart(2, "0")}` : (
           <button style={{ color: S.blue, background: "none", border: "none", cursor: "pointer", fontWeight: 600, fontSize: 12 }} onClick={async () => {

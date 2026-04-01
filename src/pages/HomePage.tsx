@@ -100,11 +100,6 @@ export default function HomePage() {
     { q: t("faq.q4"), a: t("faq.a4") },
   ];
 
-  const brandFilters = [
-    t("brands.filters.bestSellers"), t("brands.filters.care"), t("brands.filters.diagnostic"),
-    t("brands.filters.hygiene"), t("brands.filters.equipment"),
-  ];
-
   const searchExamples = [
     { label: t("hero.exampleGloves"), q: "Gants nitrile" },
     { label: t("hero.exampleBetadine"), q: "Betadine" },

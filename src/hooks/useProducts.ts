@@ -184,7 +184,7 @@ export function useProductOffers(productId: string | undefined) {
       const vendorIds = [...new Set((offers || []).map((o: any) => o.vendor_id))];
 
       // Fetch vendors and discount tiers in parallel
-      const [vendorsResult, tiersResult] = await Promise.all([
+      const [vendorsResult, tiersResult, visRulesResult] = await Promise.all([
         vendorIds.length > 0
           ? supabase.from("vendors").select("id, name, company_name, slug, is_verified, rating, display_code, is_top_seller, type, show_real_name").in("id", vendorIds)
           : Promise.resolve({ data: [] }),
@@ -195,6 +195,7 @@ export function useProductOffers(productId: string | undefined) {
           ? supabase.from("vendor_visibility_rules" as any).select("*").in("vendor_id", vendorIds)
           : Promise.resolve({ data: [] }),
       ]);
+      const visRules: any[] = (visRulesResult as any).data || [];
 
       const vendorMap = new Map((vendorsResult.data || []).map((v: any) => [v.id, v]));
       const tiersMap = new Map<string, any[]>();

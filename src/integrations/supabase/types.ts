@@ -2817,6 +2817,7 @@ export type Database = {
           postal_code: string | null
           qogita_seller_alias: string | null
           rating: number | null
+          show_real_name: boolean
           slug: string
           stripe_account_id: string | null
           stripe_charges_enabled: boolean
@@ -2851,6 +2852,7 @@ export type Database = {
           postal_code?: string | null
           qogita_seller_alias?: string | null
           rating?: number | null
+          show_real_name?: boolean
           slug: string
           stripe_account_id?: string | null
           stripe_charges_enabled?: boolean
@@ -2885,6 +2887,7 @@ export type Database = {
           postal_code?: string | null
           qogita_seller_alias?: string | null
           rating?: number | null
+          show_real_name?: boolean
           slug?: string
           stripe_account_id?: string | null
           stripe_charges_enabled?: boolean

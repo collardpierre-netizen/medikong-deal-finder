@@ -20,7 +20,7 @@ export const useProducts = (limit = 100) =>
     queryFn: async () => {
       const { data, error } = await supabase
         .from("products")
-        .select("*, image_urls")
+        .select("*")
         .order("created_at", { ascending: false })
         .limit(limit);
       if (error) throw error;

@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import type { User as AuthUser } from "@supabase/supabase-js";
+import type { EmailOtpType, User as AuthUser } from "@supabase/supabase-js";
 import { usePageImages } from "@/hooks/usePageImages";
 import {
   ShoppingBag, Briefcase, User, Stethoscope, Pill, Building2, Layers, Store,
@@ -150,6 +150,7 @@ const TfSelect = ({ value, onChange, options, placeholder }: {
 /* ═══════════════════════ MAIN COMPONENT ═══════════════════════ */
 export default function OnboardingPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [step, setStep] = useState(0);
   const [dir, setDir] = useState<"up" | "down">("up");
   const [animClass, setAnimClass] = useState("");
@@ -239,10 +240,91 @@ export default function OnboardingPage() {
       if (role) params.set("role", role);
       if (role === "buyer" && buyerProfile) params.set("buyerProfile", buyerProfile);
       if (role === "seller" && businessType) params.set("businessType", businessType);
+      if (email.trim()) params.set("email", email.trim().toLowerCase());
       return `${window.location.origin}/onboarding?${params.toString()}`;
     },
-    [role, buyerProfile, businessType]
+    [role, buyerProfile, businessType, email]
   );
+
+  const restoreFromUrlContext = useCallback(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("flow") !== "onboarding") return;
+
+    const roleParam = params.get("role");
+    const inferredRole = roleParam === "buyer" || roleParam === "seller" ? roleParam : "";
+
+    if (inferredRole) {
+      setRole(inferredRole);
+    }
+
+    const buyerProfileParam = params.get("buyerProfile");
+    if (buyerProfileParam) {
+      setBuyerProfile(buyerProfileParam);
+    }
+
+    const businessTypeParam = params.get("businessType");
+    if (businessTypeParam) {
+      setBusinessType(businessTypeParam);
+    }
+
+    const modeParam = params.get("mode");
+    if (modeParam === "link_only" || modeParam === "code_or_link") {
+      setEmailDeliveryMode(modeParam);
+    }
+
+    const emailParam = params.get("email");
+    if (emailParam) {
+      setEmail(emailParam.trim().toLowerCase());
+    }
+
+    if (inferredRole && step === 0) {
+      setStep(inferredRole === "buyer" ? 2.5 : 12.5);
+    }
+  }, [step]);
+
+  const consumeAuthCallbackTokens = useCallback(async () => {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("code");
+    const tokenHash = params.get("token_hash");
+    const callbackType = params.get("type") as EmailOtpType | null;
+
+    const cleanupAuthParams = () => {
+      const cleaned = new URL(window.location.href);
+      cleaned.searchParams.delete("code");
+      cleaned.searchParams.delete("token_hash");
+      cleaned.searchParams.delete("type");
+      window.history.replaceState({}, "", `${cleaned.pathname}${cleaned.search}`);
+    };
+
+    if (code) {
+      const { error } = await supabase.auth.exchangeCodeForSession(code);
+      if (!error) cleanupAuthParams();
+      return;
+    }
+
+    if (tokenHash && callbackType) {
+      const { error } = await supabase.auth.verifyOtp({
+        token_hash: tokenHash,
+        type: callbackType,
+      });
+      if (!error) cleanupAuthParams();
+      return;
+    }
+
+    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    const accessToken = hashParams.get("access_token");
+    const refreshToken = hashParams.get("refresh_token");
+
+    if (accessToken && refreshToken) {
+      const { error } = await supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      });
+      if (!error) {
+        window.history.replaceState({}, "", `${window.location.pathname}${window.location.search}`);
+      }
+    }
+  }, []);
 
   const persistOnboardingDraft = useCallback(
     (targetEmail: string, mode: "code_or_link" | "link_only" = "code_or_link") => {
@@ -394,12 +476,26 @@ export default function OnboardingPage() {
   }, [onboardingDraftStorageKey, readOnboardingStorage, removeOnboardingStorage]);
 
   useEffect(() => {
+    restoreFromUrlContext();
+  }, [location.search, restoreFromUrlContext]);
+
+  useEffect(() => {
     let mounted = true;
 
     const rehydrate = async () => {
-      const { data, error } = await supabase.auth.getUser();
-      if (!mounted || error) return;
-      restoreOnboardingSession(data.user ?? null);
+      restoreFromUrlContext();
+      await consumeAuthCallbackTokens();
+
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (!mounted || sessionError) return;
+      if (sessionData.session?.user) {
+        restoreOnboardingSession(sessionData.session.user);
+        return;
+      }
+
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (!mounted || userError) return;
+      restoreOnboardingSession(userData.user ?? null);
     };
 
     void rehydrate();
@@ -415,7 +511,7 @@ export default function OnboardingPage() {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [restoreOnboardingSession]);
+  }, [consumeAuthCallbackTokens, restoreFromUrlContext, restoreOnboardingSession]);
 
   /* ─── Navigation ─── */
   const goTo = useCallback((target: number, direction: "up" | "down") => {
@@ -562,12 +658,21 @@ export default function OnboardingPage() {
 
     setCheckingConfirmedEmail(true);
     try {
+      await consumeAuthCallbackTokens();
+
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       if (sessionError) throw sessionError;
 
-      const confirmedUser = sessionData.session?.user;
+      let confirmedUser = sessionData.session?.user ?? null;
+
       if (!confirmedUser) {
-        alert("Email non encore confirmé. Ouvrez l'email reçu puis cliquez sur \"J'ai confirmé mon email\".");
+        const { data: userData, error: userError } = await supabase.auth.getUser();
+        if (userError) throw userError;
+        confirmedUser = userData.user;
+      }
+
+      if (!confirmedUser) {
+        alert("Email non encore confirmé. Ouvrez l'email reçu, cliquez sur le lien, puis revenez ici.");
         return;
       }
 
@@ -958,10 +1063,10 @@ export default function OnboardingPage() {
         <div>
           <BackLink onClick={goBack} />
           <h1 style={{ fontSize: 20, fontWeight: 700, color: S.text, marginBottom: 6 }}>Quelle est votre adresse email ?</h1>
-          <p style={{ fontSize: 13, color: S.sec, marginBottom: 20 }}>Nous vous enverrons un code de vérification.</p>
+          <p style={{ fontSize: 13, color: S.sec, marginBottom: 20 }}>Nous vous enverrons un lien de connexion sécurisé.</p>
           <TfInput value={email} onChange={v => { setEmail(v); setEmailTouched(true); }} placeholder="votre@email.com" type="email" error={emailError} autoFocus />
           <div style={{ marginTop: 16 }}>
-            <Cta onClick={handleSendOtp} disabled={!isEmailValid} loading={sendingOtp}>{sendingOtp ? "Envoi en cours..." : "Recevoir mon code"}</Cta>
+            <Cta onClick={handleSendOtp} disabled={!isEmailValid} loading={sendingOtp}>{sendingOtp ? "Envoi en cours..." : "Recevoir le lien"}</Cta>
             <KbdHint />
           </div>
         </div>
@@ -1072,10 +1177,10 @@ export default function OnboardingPage() {
         <div>
           <BackLink onClick={goBack} />
           <h1 style={{ fontSize: 20, fontWeight: 700, color: S.text, marginBottom: 6 }}>Votre adresse email professionnelle</h1>
-          <p style={{ fontSize: 13, color: S.sec, marginBottom: 20 }}>Pour créer votre espace vendeur.</p>
+          <p style={{ fontSize: 13, color: S.sec, marginBottom: 20 }}>Pour créer votre espace vendeur via un lien sécurisé.</p>
           <TfInput value={email} onChange={v => { setEmail(v); setEmailTouched(true); }} placeholder="pro@entreprise.com" type="email" error={emailError} autoFocus />
           <div style={{ marginTop: 16 }}>
-            <Cta onClick={handleSendOtp} disabled={!isEmailValid} loading={sendingOtp}>{sendingOtp ? "Envoi en cours..." : "Recevoir mon code"}</Cta>
+            <Cta onClick={handleSendOtp} disabled={!isEmailValid} loading={sendingOtp}>{sendingOtp ? "Envoi en cours..." : "Recevoir le lien"}</Cta>
             <KbdHint />
           </div>
         </div>

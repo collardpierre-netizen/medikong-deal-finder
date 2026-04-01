@@ -520,30 +520,38 @@ export default function OnboardingPage() {
 
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       if (!mounted || sessionError) return;
-      if (sessionData.session?.user) {
-        restoreOnboardingSession(sessionData.session.user);
+
+      const matchedSessionUser = await ensureMatchingOnboardingSession(sessionData.session?.user ?? null);
+      if (!mounted) return;
+      if (matchedSessionUser) {
+        restoreOnboardingSession(matchedSessionUser);
         return;
       }
 
       const { data: userData, error: userError } = await supabase.auth.getUser();
       if (!mounted || userError) return;
-      restoreOnboardingSession(userData.user ?? null);
+
+      const matchedUser = await ensureMatchingOnboardingSession(userData.user ?? null);
+      if (!mounted) return;
+      restoreOnboardingSession(matchedUser);
     };
 
     void rehydrate();
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (!mounted) return;
-      restoreOnboardingSession(session?.user ?? null);
+      const matchedUser = await ensureMatchingOnboardingSession(session?.user ?? null);
+      if (!mounted) return;
+      restoreOnboardingSession(matchedUser);
     });
 
     return () => {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [consumeAuthCallbackTokens, restoreFromUrlContext, restoreOnboardingSession]);
+  }, [consumeAuthCallbackTokens, ensureMatchingOnboardingSession, restoreFromUrlContext, restoreOnboardingSession]);
 
   /* ─── Navigation ─── */
   const goTo = useCallback((target: number, direction: "up" | "down") => {

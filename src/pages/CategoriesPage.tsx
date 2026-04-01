@@ -2,8 +2,9 @@ import { Layout } from "@/components/layout/Layout";
 import { Link } from "react-router-dom";
 import {
   Package, Scissors, Droplets, Sun, Smile, Eye, Wind, Shield, Pill,
-  Home, User, PawPrint, Apple, Paintbrush, Bath, Palette, Baby
+  Home, User, PawPrint, Apple, Paintbrush, Bath, Palette, Baby, Search, X
 } from "lucide-react";
+import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { StaggerContainer, StaggerItem, HoverCard } from "@/components/shared/PageTransition";
 import { useQuery } from "@tanstack/react-query";
@@ -31,10 +32,11 @@ const iconMap: Record<string, React.ReactNode> = {
 };
 
 export default function CategoriesPage() {
+  const [search, setSearch] = useState("");
+
   const { data: categories = [], isLoading } = useQuery({
     queryKey: ["categories-page"],
     queryFn: async () => {
-      // Get categories
       const { data: cats, error } = await supabase
         .from("categories")
         .select("id, name, name_fr, slug, icon, image_url")
@@ -43,7 +45,6 @@ export default function CategoriesPage() {
         .order("name");
       if (error) throw error;
 
-      // Get accurate product counts per category using SQL function
       const { data: rpcData } = await supabase.rpc(
         "count_products_per_category" as any
       );
@@ -62,8 +63,15 @@ export default function CategoriesPage() {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Show only categories with products
   const activeCategories = categories.filter(c => c.productCount > 0);
+
+  const filtered = useMemo(() => {
+    if (!search.trim()) return activeCategories;
+    const q = search.trim().toLowerCase();
+    return activeCategories.filter(c =>
+      (c.name_fr || c.name).toLowerCase().includes(q) || c.name.toLowerCase().includes(q)
+    );
+  }, [activeCategories, search]);
 
   return (
     <Layout
@@ -80,7 +88,7 @@ export default function CategoriesPage() {
             Toutes les catégories
           </motion.h1>
           <motion.p
-            className="text-base text-muted-foreground mb-10 max-w-xl"
+            className="text-base text-muted-foreground mb-6 max-w-xl"
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
@@ -88,20 +96,45 @@ export default function CategoriesPage() {
             {activeCategories.length} catégories avec des produits disponibles.
           </motion.p>
 
+          {/* Search bar */}
+          <motion.div
+            className="relative mb-8"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.12 }}
+          >
+            <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="text"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Rechercher une catégorie…"
+              className="w-full md:w-96 h-10 pl-10 pr-10 rounded-lg border border-mk-line bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-mk-blue/30 focus:border-mk-blue transition"
+            />
+            {search && (
+              <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                <X size={16} />
+              </button>
+            )}
+            {search && (
+              <p className="text-xs text-muted-foreground mt-1.5">{filtered.length} résultat{filtered.length !== 1 ? "s" : ""}</p>
+            )}
+          </motion.div>
+
           {isLoading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
               {Array.from({ length: 8 }).map((_, i) => (
                 <Skeleton key={i} className="h-40 rounded-xl" />
               ))}
             </div>
-          ) : activeCategories.length === 0 ? (
+          ) : filtered.length === 0 ? (
             <div className="text-center py-16 text-muted-foreground">
-              <Package className="w-12 h-12 mx-auto mb-3 opacity-40" />
-              <p>Aucune catégorie disponible pour le moment.</p>
+              <Search className="w-12 h-12 mx-auto mb-3 opacity-40" />
+              <p>{search ? `Aucune catégorie trouvée pour « ${search} »` : "Aucune catégorie disponible pour le moment."}</p>
             </div>
           ) : (
             <StaggerContainer className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-              {activeCategories.map(cat => (
+              {filtered.map(cat => (
                 <StaggerItem key={cat.slug}>
                   <HoverCard className="border border-mk-line rounded-xl bg-white">
                     <Link to={`/categorie/${cat.slug}`} className="flex flex-col items-center text-center p-8 gap-4">

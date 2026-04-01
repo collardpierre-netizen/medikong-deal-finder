@@ -33,7 +33,7 @@ export const MagicLinkEmail = ({
     <Body style={main}>
       <Container style={container}>
         <Section style={logoSection}>
-          <Img src={LOGO_URL} alt="Medikong" width="160" height="40" style={logo} />
+          <Img src={LOGO_URL} alt="Medikong" width="180" height="auto" style={logo} />
         </Section>
         <Hr style={divider} />
         <Heading style={h1}>Votre lien de connexion</Heading>

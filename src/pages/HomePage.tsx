@@ -54,6 +54,20 @@ export default function HomePage() {
     },
   });
 
+  const { data: featuredBrands = [] } = useQuery({
+    queryKey: ["featured-brands-homepage"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("brands")
+        .select("id, name, slug, logo_url, product_count")
+        .eq("is_active", true)
+        .gt("product_count", 0)
+        .order("product_count", { ascending: false })
+        .limit(20);
+      return data || [];
+    },
+  });
+
   const countryLabel = currentCountry?.name || "Belgique";
 
   const valueProps = [

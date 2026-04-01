@@ -23,7 +23,7 @@ const AdminVendeurDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("resume");
-
+  const queryClient = useQueryClient();
   const { data: vendor, isLoading } = useQuery({
     queryKey: ["vendor-detail", id],
     queryFn: async () => {

@@ -404,54 +404,50 @@ export default function AccountPage() {
                     <div>
                       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-5 gap-3">
                         <h2 className="text-xl font-bold text-mk-navy">Commandes</h2>
-                        <select className="border border-mk-line rounded-md px-3 py-1.5 text-sm">
-                          <option>Toutes</option><option>Confirmee</option><option>Expediee</option><option>Livree</option><option>Annulee</option>
-                        </select>
                       </div>
-                      {/* Mobile cards */}
-                      <div className="sm:hidden space-y-3">
-                        {orders.map((o, i) => (
-                          <motion.div key={o.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}>
-                            <Link to={`/commande/${o.id}`} className="block border border-mk-line rounded-lg p-4">
-                              <div className="flex justify-between mb-2">
-                                <span className="font-medium text-mk-navy text-sm">{o.id}</span>
-                                <span className={`text-xs font-medium px-2 py-0.5 rounded ${o.status === "Livree" ? "bg-mk-deal text-mk-green" : o.status === "Confirmee" ? "bg-blue-50 text-mk-blue" : "bg-mk-mov-bg text-mk-amber"}`}>{o.status}</span>
-                              </div>
-                              <div className="flex justify-between text-sm">
-                                <span className="text-mk-sec">{o.date} · {o.articles} articles</span>
-                                <span className="font-bold text-mk-navy">{formatPrice(o.montant)} EUR</span>
-                              </div>
-                            </Link>
+                      {ordersLoading ? (
+                        <p className="text-sm text-mk-sec py-8 text-center">Chargement...</p>
+                      ) : dbOrders.length === 0 ? (
+                        <motion.div className="text-center py-16" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
+                          <Package size={40} className="mx-auto text-mk-ter mb-3" />
+                          <h3 className="text-lg font-bold text-mk-navy mb-1">Aucune commande</h3>
+                          <p className="text-sm text-mk-sec">Vos commandes apparaîtront ici après votre premier achat.</p>
+                        </motion.div>
+                      ) : (
+                        <>
+                          <div className="sm:hidden space-y-3">
+                            {dbOrders.map((o: any, i: number) => (
+                              <motion.div key={o.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}>
+                                <Link to={`/commande/${o.id}`} className="block border border-mk-line rounded-lg p-4">
+                                  <div className="flex justify-between mb-2">
+                                    <span className="font-medium text-mk-navy text-sm">{o.order_number}</span>
+                                    <span className="text-xs font-medium px-2 py-0.5 rounded bg-mk-alt text-mk-sec">{o.status}</span>
+                                  </div>
+                                  <div className="flex justify-between text-sm">
+                                    <span className="text-mk-sec">{new Date(o.created_at).toLocaleDateString("fr-BE")}</span>
+                                    <span className="font-bold text-mk-navy">{formatPrice(Number(o.total_incl_vat))} EUR</span>
+                                  </div>
+                                </Link>
+                              </motion.div>
+                            ))}
+                          </div>
+                          <motion.div className="hidden sm:block border border-mk-line rounded-lg overflow-hidden" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                            <div className="grid grid-cols-4 gap-3 px-4 py-2 bg-mk-alt text-xs font-semibold text-mk-sec">
+                              <span>ID Commande</span><span>Date</span><span>Statut</span><span>Montant</span>
+                            </div>
+                            {dbOrders.map((o: any, i: number) => (
+                              <motion.div key={o.id} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.15 + i * 0.06 }}>
+                                <Link to={`/commande/${o.id}`} className="grid grid-cols-4 gap-3 px-4 py-3 border-t border-mk-line text-sm items-center hover:bg-mk-alt">
+                                  <span className="font-medium text-mk-navy">{o.order_number}</span>
+                                  <span className="text-mk-sec">{new Date(o.created_at).toLocaleDateString("fr-BE")}</span>
+                                  <span className="text-xs font-medium px-2 py-0.5 rounded w-fit bg-mk-alt text-mk-sec">{o.status}</span>
+                                  <span className="font-bold text-mk-navy">{formatPrice(Number(o.total_incl_vat))} EUR</span>
+                                </Link>
+                              </motion.div>
+                            ))}
                           </motion.div>
-                        ))}
-                      </div>
-                      {/* Desktop table */}
-                      <motion.div
-                        className="hidden sm:block border border-mk-line rounded-lg overflow-hidden"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.1 }}
-                      >
-                        <div className="grid grid-cols-5 gap-3 px-4 py-2 bg-mk-alt text-xs font-semibold text-mk-sec">
-                          <span>ID Commande</span><span>Date</span><span>Statut</span><span>Articles</span><span>Montant</span>
-                        </div>
-                        {orders.map((o, i) => (
-                          <motion.div
-                            key={o.id}
-                            initial={{ opacity: 0, x: -8 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: 0.15 + i * 0.06 }}
-                          >
-                            <Link to={`/commande/${o.id}`} className="grid grid-cols-5 gap-3 px-4 py-3 border-t border-mk-line text-sm items-center hover:bg-mk-alt">
-                              <span className="font-medium text-mk-navy">{o.id}</span>
-                              <span className="text-mk-sec">{o.date}</span>
-                              <span className={`text-xs font-medium px-2 py-0.5 rounded w-fit ${o.status === "Livree" ? "bg-mk-deal text-mk-green" : o.status === "Confirmee" ? "bg-blue-50 text-mk-blue" : "bg-mk-mov-bg text-mk-amber"}`}>{o.status}</span>
-                              <span className="text-mk-sec">{o.articles}</span>
-                              <span className="font-bold text-mk-navy">{formatPrice(o.montant)} EUR</span>
-                            </Link>
-                          </motion.div>
-                        ))}
-                      </motion.div>
+                        </>
+                      )}
                     </div>
                   )}
 

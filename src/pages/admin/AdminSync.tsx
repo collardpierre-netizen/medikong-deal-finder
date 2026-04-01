@@ -38,9 +38,12 @@ const useQogitaConfig = () =>
   useQuery({
     queryKey: ["qogita-config"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("qogita_config").select("*").eq("id", 1).single();
+      const { data, error } = await supabase.from("qogita_config").select("*");
       if (error) throw error;
-      return data;
+      // Convert key-value rows into a single config object
+      const config: Record<string, any> = {};
+      (data || []).forEach((row: any) => { config[row.key] = row.value; });
+      return config as any;
     },
   });
 

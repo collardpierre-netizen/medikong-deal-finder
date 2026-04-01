@@ -17,6 +17,12 @@ const AdminVendeurs = () => {
   const [activeTab, setActiveTab] = useState<"all" | "medikong" | "qogita_virtual" | "real">("all");
   const [search, setSearch] = useState("");
   const [showForm, setShowForm] = useState(false);
+  const queryClient = useQueryClient();
+
+  const toggleShowRealName = async (vendorId: string, current: boolean) => {
+    await supabase.from("vendors").update({ show_real_name: !current } as any).eq("id", vendorId);
+    queryClient.invalidateQueries({ queryKey: ["admin-vendors"] });
+  };
 
   const tabs = [
     { key: "all" as const, label: "Tous", count: vendors.length },

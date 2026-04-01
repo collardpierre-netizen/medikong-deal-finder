@@ -466,13 +466,13 @@ export default function OnboardingPage() {
     setSendingOtp(true);
     setOtpError(false);
     setOtpDigits(["", "", "", "", "", ""]);
-    setEmailDeliveryMode("code_or_link");
-    persistOnboardingDraft(email, "code_or_link");
+    setEmailDeliveryMode("link_only");
+    persistOnboardingDraft(email, "link_only");
 
     try {
       const temporaryPassword = `${crypto.randomUUID()}Aa1!`;
       setTempPassword(temporaryPassword);
-      window.sessionStorage.setItem(getTempPasswordStorageKey(email), temporaryPassword);
+      writeOnboardingStorage(getTempPasswordStorageKey(email), temporaryPassword);
 
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email,
@@ -485,7 +485,7 @@ export default function OnboardingPage() {
             ...(role === "buyer" && buyerProfile ? { onboarding_buyer_profile: buyerProfile } : {}),
             ...(role === "seller" && businessType ? { onboarding_business_type: businessType } : {}),
           },
-          emailRedirectTo: `${window.location.origin}/onboarding`,
+          emailRedirectTo: buildOnboardingRedirectUrl("link_only"),
         },
       });
 
@@ -505,25 +505,20 @@ export default function OnboardingPage() {
       }
 
       if (alreadyRegistered || isRepeatedSignupObfuscated) {
-        // Existing confirmed account: send a login link so user can continue onboarding.
         const { error: loginLinkError } = await supabase.auth.signInWithOtp({
           email,
           options: {
             shouldCreateUser: false,
-            emailRedirectTo: `${window.location.origin}/onboarding`,
+            emailRedirectTo: buildOnboardingRedirectUrl("link_only"),
           },
         });
 
-        if (!loginLinkError) {
-          setEmailDeliveryMode("link_only");
-          persistOnboardingDraft(email, "link_only");
-          goNext();
-          return;
+        if (loginLinkError) {
+          throw loginLinkError;
         }
 
-        // Existing but not confirmed account: resend signup confirmation email (code + CTA).
-        const { error: resendError } = await supabase.auth.resend({ type: "signup", email });
-        if (resendError) throw resendError;
+        goNext();
+        return;
       }
 
       goNext();

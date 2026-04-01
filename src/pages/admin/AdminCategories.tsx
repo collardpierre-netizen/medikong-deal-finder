@@ -109,27 +109,78 @@ const AdminCategories = () => {
     onError: (e: any) => toast.error(e.message),
   });
 
-  // Auto-translate all categories for a locale
+  // Auto-translate all categories for a locale using AI edge function
+  const [translating, setTranslating] = useState<string | null>(null);
   const handleAutoTranslate = async (locale: "fr" | "nl" | "de") => {
-    const items: any[] = [];
+    // Collect categories without translation
+    const missing: typeof categoriesData = [];
     for (const cat of categoriesData) {
       const existing = getTranslated(translations, cat.id, "name", locale, "");
-      if (!existing) {
-        const translated = autoTranslate(cat.name, locale);
-        if (translated) {
-          items.push({ entity_type: "category" as const, entity_id: cat.id, locale, field: "name", value: translated });
-        }
-      }
+      if (!existing) missing.push(cat);
     }
-    if (items.length === 0) {
+    if (missing.length === 0) {
       toast.info(`Toutes les catégories ont déjà une traduction ${locale.toUpperCase()}`);
       return;
     }
+
+    setTranslating(locale);
+    const allItems: any[] = [];
+    const BATCH = 20;
+    let done = 0;
+
     try {
-      await batchSave.mutateAsync(items);
-      toast.success(`${items.length} traduction(s) ${locale.toUpperCase()} ajoutée(s)`);
+      for (let i = 0; i < missing.length; i += BATCH) {
+        const batch = missing.slice(i, i + BATCH);
+        // First try static dictionary
+        const needsAi: typeof batch = [];
+        for (const cat of batch) {
+          const staticResult = autoTranslate(cat.name, locale);
+          if (staticResult) {
+            allItems.push({ entity_type: "category" as const, entity_id: cat.id, locale, field: "name", value: staticResult });
+          } else {
+            needsAi.push(cat);
+          }
+        }
+
+        // Batch AI translate remaining
+        if (needsAi.length > 0) {
+          const textsObj: Record<string, string> = {};
+          needsAi.forEach((cat, idx) => { textsObj[`cat_${idx}`] = cat.name; });
+
+          const { data, error } = await supabase.functions.invoke("auto-translate", {
+            body: { texts: textsObj, target_locales: [locale] },
+          });
+
+          if (!error && data?.translations?.[locale]) {
+            const translated = data.translations[locale];
+            needsAi.forEach((cat, idx) => {
+              const val = translated[`cat_${idx}`];
+              if (val && val.trim()) {
+                allItems.push({ entity_type: "category" as const, entity_id: cat.id, locale, field: "name", value: val });
+              }
+            });
+          }
+        }
+
+        done += batch.length;
+        if (i + BATCH < missing.length) {
+          toast.info(`Traduction ${locale.toUpperCase()} : ${done}/${missing.length}...`);
+        }
+      }
+
+      if (allItems.length > 0) {
+        // Save in chunks of 100
+        for (let i = 0; i < allItems.length; i += 100) {
+          await batchSave.mutateAsync(allItems.slice(i, i + 100));
+        }
+        toast.success(`${allItems.length} traduction(s) ${locale.toUpperCase()} ajoutée(s) sur ${missing.length} manquantes`);
+      } else {
+        toast.warning("Aucune traduction n'a pu être générée.");
+      }
     } catch (e: any) {
-      toast.error(e.message);
+      toast.error(e.message || "Erreur de traduction");
+    } finally {
+      setTranslating(null);
     }
   };
 

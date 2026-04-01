@@ -15,17 +15,17 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
 const tabs = [
-  { key: "profil", label: "Profil", icon: Users },
-  { key: "adresses", label: "Adresses", icon: MapPin },
-  { key: "commandes", label: "Commandes", icon: Package },
-  { key: "reclamations", label: "Réclamations", icon: AlertCircle },
-  { key: "favoris", label: "Favoris", icon: Heart },
-  { key: "listes", label: "Mes listes", icon: List },
-  { key: "activite", label: "Activité récente", icon: Clock },
-  { key: "mesprix", label: "Mes prix", icon: BarChart3 },
-  { key: "portefeuille", label: "Portefeuille", icon: Zap },
-  { key: "catalogue", label: "Catalogue", icon: Download },
-  { key: "bnpl", label: "Payer plus tard", icon: Layers },
+  { key: "profil", label: "Profil", icon: Users, disabled: false },
+  { key: "adresses", label: "Adresses", icon: MapPin, disabled: false },
+  { key: "commandes", label: "Commandes", icon: Package, disabled: false },
+  { key: "reclamations", label: "Réclamations", icon: AlertCircle, disabled: false },
+  { key: "favoris", label: "Favoris", icon: Heart, disabled: false },
+  { key: "listes", label: "Mes listes", icon: List, disabled: false },
+  { key: "activite", label: "Activité récente", icon: Clock, disabled: false },
+  { key: "mesprix", label: "Mes prix", icon: BarChart3, disabled: false },
+  { key: "portefeuille", label: "Portefeuille", icon: Zap, disabled: true },
+  { key: "catalogue", label: "Catalogue", icon: Download, disabled: false },
+  { key: "bnpl", label: "Payer plus tard", icon: Layers, disabled: true },
 ];
 
 const orders = [
@@ -113,17 +113,24 @@ export default function AccountPage() {
                 {tabs.map((t, i) => (
                   <motion.button
                     key={t.key}
-                    onClick={() => setActiveTab(t.key)}
+                    onClick={() => !t.disabled && setActiveTab(t.key)}
+                    disabled={t.disabled}
                     className={`flex items-center gap-2 px-3 py-2.5 rounded-md text-sm whitespace-nowrap transition-colors ${
-                      activeTab === t.key ? "bg-mk-blue text-white font-medium" : "text-mk-sec hover:bg-mk-alt"
+                      t.disabled
+                        ? "text-muted-foreground/50 cursor-not-allowed"
+                        : activeTab === t.key
+                          ? "bg-mk-blue text-white font-medium"
+                          : "text-mk-sec hover:bg-mk-alt"
                     }`}
-                    whileHover={{ x: 4 }}
-                    whileTap={{ scale: 0.97 }}
+                    whileHover={t.disabled ? {} : { x: 4 }}
+                    whileTap={t.disabled ? {} : { scale: 0.97 }}
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.1 + i * 0.04 }}
                   >
-                    <t.icon size={16} /> {t.label}
+                    <t.icon size={16} />
+                    {t.label}
+                    {t.disabled && <span className="text-[10px] ml-auto bg-muted text-muted-foreground rounded px-1.5 py-0.5">Prochainement</span>}
                   </motion.button>
                 ))}
               </div>

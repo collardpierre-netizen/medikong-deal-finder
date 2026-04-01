@@ -78,6 +78,7 @@ export default function AccountPage() {
   const { lists, createList, deleteList } = useFavoriteLists();
   const { activities } = useRecentActivity();
   const { watches, removeWatch } = usePriceWatches();
+  const { data: dbOrders = [], isLoading: ordersLoading } = useOrders();
   const [activeTab, setActiveTab] = useState("profil");
   const [newListName, setNewListName] = useState("");
 

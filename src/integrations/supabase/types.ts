@@ -2793,6 +2793,47 @@ export type Database = {
         }
         Relationships: []
       }
+      vendor_visibility_rules: {
+        Row: {
+          country_code: string | null
+          created_at: string
+          customer_type: string | null
+          id: string
+          priority: number
+          show_real_name: boolean
+          updated_at: string
+          vendor_id: string
+        }
+        Insert: {
+          country_code?: string | null
+          created_at?: string
+          customer_type?: string | null
+          id?: string
+          priority?: number
+          show_real_name?: boolean
+          updated_at?: string
+          vendor_id: string
+        }
+        Update: {
+          country_code?: string | null
+          created_at?: string
+          customer_type?: string | null
+          id?: string
+          priority?: number
+          show_real_name?: boolean
+          updated_at?: string
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_visibility_rules_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vendors: {
         Row: {
           address_line1: string | null

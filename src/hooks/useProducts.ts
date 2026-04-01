@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCountry } from "@/contexts/CountryContext";
+import { resolveVendorVisibility, getVendorPublicName } from "@/lib/vendor-display";
 
 export interface Product {
   id: string;
@@ -183,14 +184,18 @@ export function useProductOffers(productId: string | undefined) {
       const vendorIds = [...new Set((offers || []).map((o: any) => o.vendor_id))];
 
       // Fetch vendors and discount tiers in parallel
-      const [vendorsResult, tiersResult] = await Promise.all([
+      const [vendorsResult, tiersResult, visRulesResult] = await Promise.all([
         vendorIds.length > 0
-          ? supabase.from("vendors").select("id, name, slug, is_verified, rating, display_code, is_top_seller, type").in("id", vendorIds)
+          ? supabase.from("vendors").select("id, name, company_name, slug, is_verified, rating, display_code, is_top_seller, type, show_real_name").in("id", vendorIds)
           : Promise.resolve({ data: [] }),
         offerIds.length > 0
           ? supabase.from("discount_tiers").select("*").in("offer_id", offerIds).order("mov_amount", { ascending: true })
           : Promise.resolve({ data: [] }),
+        vendorIds.length > 0
+          ? supabase.from("vendor_visibility_rules" as any).select("*").in("vendor_id", vendorIds)
+          : Promise.resolve({ data: [] }),
       ]);
+      const visRules: any[] = (visRulesResult as any).data || [];
 
       const vendorMap = new Map((vendorsResult.data || []).map((v: any) => [v.id, v]));
       const tiersMap = new Map<string, any[]>();
@@ -216,7 +221,14 @@ export function useProductOffers(productId: string | undefined) {
           priceTiers: o.price_tiers || null,
           discountTiers: tiersMap.get(o.id) || [],
           isActive: o.is_active,
-          sellerName: vendor?.display_code || vendor?.name?.slice(0, 6)?.toUpperCase() || o.vendor_id.slice(0, 6).toUpperCase(),
+          sellerName: (() => {
+            const showReal = resolveVendorVisibility(
+              { ...vendor, id: o.vendor_id },
+              visRules,
+              { country }
+            );
+            return getVendorPublicName({ ...vendor, display_code: vendor?.display_code }, showReal);
+          })(),
           sellerSlug: vendor?.slug || undefined,
           isVerified: vendor?.is_verified || false,
           isTopRated: (vendor?.rating || 0) >= 4.5,

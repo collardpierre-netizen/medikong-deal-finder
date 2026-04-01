@@ -184,10 +184,41 @@ export default function OnboardingPage() {
   const [showPwConfirm, setShowPwConfirm] = useState(false);
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [tempPassword, setTempPassword] = useState("");
+  const [emailDeliveryMode, setEmailDeliveryMode] = useState<"code_or_link" | "link_only">("code_or_link");
+
+  const onboardingDraftStorageKey = "onboarding-draft";
+
+  type OnboardingDraft = {
+    role: "buyer" | "seller";
+    email: string;
+    buyerProfile?: string;
+    businessType?: string;
+    deliveryMode?: "code_or_link" | "link_only";
+    timestamp: number;
+  };
 
   const getTempPasswordStorageKey = useCallback(
     (targetEmail: string) => `onboarding-temp-password:${targetEmail.trim().toLowerCase()}`,
     []
+  );
+
+  const persistOnboardingDraft = useCallback(
+    (targetEmail: string, mode: "code_or_link" | "link_only" = "code_or_link") => {
+      const normalizedEmail = targetEmail.trim().toLowerCase();
+      if (!role || !normalizedEmail) return;
+
+      const draft: OnboardingDraft = {
+        role,
+        email: normalizedEmail,
+        buyerProfile: role === "buyer" && buyerProfile ? buyerProfile : undefined,
+        businessType: role === "seller" && businessType ? businessType : undefined,
+        deliveryMode: mode,
+        timestamp: Date.now(),
+      };
+
+      window.sessionStorage.setItem(onboardingDraftStorageKey, JSON.stringify(draft));
+    },
+    [role, buyerProfile, businessType]
   );
 
   /* ─── Buyer-specific ─── */
@@ -268,32 +299,68 @@ export default function OnboardingPage() {
     const metadata = (user.user_metadata ?? {}) as Record<string, unknown>;
     const onboardingPending = metadata.onboarding_pending === true;
     const onboardingCompleted = metadata.onboarding_completed === true;
-    const roleFromMetadata =
-      metadata.onboarding_role === "buyer" || metadata.onboarding_role === "seller"
-        ? metadata.onboarding_role
-        : typeof metadata.onboarding_business_type === "string"
-          ? "seller"
-          : "buyer";
 
-    if (!onboardingPending || onboardingCompleted) return;
-
-    setRole(roleFromMetadata);
-    setEmail(user.email ?? "");
-    setOtpVerified(true);
-
-    if (roleFromMetadata === "buyer") {
-      if (typeof metadata.onboarding_buyer_profile === "string") {
-        setBuyerProfile(metadata.onboarding_buyer_profile);
-      }
-      setStep(3);
+    if (onboardingCompleted) {
+      window.sessionStorage.removeItem(onboardingDraftStorageKey);
       return;
     }
 
-    if (typeof metadata.onboarding_business_type === "string") {
-      setBusinessType(metadata.onboarding_business_type);
+    if (onboardingPending) {
+      const roleFromMetadata =
+        metadata.onboarding_role === "buyer" || metadata.onboarding_role === "seller"
+          ? metadata.onboarding_role
+          : typeof metadata.onboarding_business_type === "string"
+            ? "seller"
+            : "buyer";
+
+      setRole(roleFromMetadata);
+      setEmail(user.email ?? "");
+      setOtpVerified(true);
+      setEmailDeliveryMode("code_or_link");
+
+      if (roleFromMetadata === "buyer") {
+        if (typeof metadata.onboarding_buyer_profile === "string") {
+          setBuyerProfile(metadata.onboarding_buyer_profile);
+        }
+        setStep(3);
+        return;
+      }
+
+      if (typeof metadata.onboarding_business_type === "string") {
+        setBusinessType(metadata.onboarding_business_type);
+      }
+      setStep(13);
+      return;
     }
-    setStep(13);
-  }, []);
+
+    const rawDraft = window.sessionStorage.getItem(onboardingDraftStorageKey);
+    if (!rawDraft) return;
+
+    try {
+      const draft = JSON.parse(rawDraft) as OnboardingDraft;
+      const userEmail = (user.email ?? "").trim().toLowerCase();
+
+      if (!draft?.role || !draft.email || (userEmail && draft.email !== userEmail)) {
+        return;
+      }
+
+      setRole(draft.role);
+      setEmail(user.email ?? draft.email);
+      setOtpVerified(true);
+      setEmailDeliveryMode(draft.deliveryMode ?? "code_or_link");
+
+      if (draft.role === "buyer") {
+        if (draft.buyerProfile) setBuyerProfile(draft.buyerProfile);
+        setStep(3);
+        return;
+      }
+
+      if (draft.businessType) setBusinessType(draft.businessType);
+      setStep(13);
+    } catch {
+      window.sessionStorage.removeItem(onboardingDraftStorageKey);
+    }
+  }, [onboardingDraftStorageKey]);
 
   useEffect(() => {
     let mounted = true;
@@ -368,6 +435,8 @@ export default function OnboardingPage() {
     setSendingOtp(true);
     setOtpError(false);
     setOtpDigits(["", "", "", "", "", ""]);
+    setEmailDeliveryMode("code_or_link");
+    persistOnboardingDraft(email, "code_or_link");
 
     try {
       const temporaryPassword = `${crypto.randomUUID()}Aa1!`;
@@ -405,7 +474,7 @@ export default function OnboardingPage() {
       }
 
       if (alreadyRegistered || isRepeatedSignupObfuscated) {
-        // Existing confirmed account: send a login email so user can continue onboarding.
+        // Existing confirmed account: send a login link so user can continue onboarding.
         const { error: loginLinkError } = await supabase.auth.signInWithOtp({
           email,
           options: {
@@ -415,11 +484,13 @@ export default function OnboardingPage() {
         });
 
         if (!loginLinkError) {
+          setEmailDeliveryMode("link_only");
+          persistOnboardingDraft(email, "link_only");
           goNext();
           return;
         }
 
-        // Existing but not confirmed account: resend signup confirmation email.
+        // Existing but not confirmed account: resend signup confirmation email (code + CTA).
         const { error: resendError } = await supabase.auth.resend({ type: "signup", email });
         if (resendError) throw resendError;
       }
@@ -596,6 +667,7 @@ export default function OnboardingPage() {
       }
 
       window.sessionStorage.removeItem(getTempPasswordStorageKey(email));
+      window.sessionStorage.removeItem(onboardingDraftStorageKey);
       setTempPassword("");
 
       goNext();
@@ -608,68 +680,99 @@ export default function OnboardingPage() {
   };
 
   /* ─── Email Confirmation Screen (reusable) ─── */
-  const renderOtpScreen = () => (
-    <div style={{ textAlign: "center" }}>
-      <BackLink onClick={goBack} />
-      <div style={{ width: 56, height: 56, borderRadius: "50%", background: S.blueBg, border: `2px solid ${S.blue}`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
-        <Lock size={24} color={S.blue} />
-      </div>
-      <h1 style={{ fontSize: 20, fontWeight: 700, color: S.text, marginBottom: 6 }}>Confirmez votre email</h1>
-      <p style={{ fontSize: 13, color: S.sec, marginBottom: 8 }}>Un email de confirmation a été envoyé à <strong>{email}</strong></p>
-      <div style={{ background: S.blueBg, border: `1px solid ${S.blue}20`, borderRadius: S.radius, padding: "16px 20px", marginBottom: 20, textAlign: "left" }}>
-        <p style={{ fontSize: 13, color: S.text, margin: 0, fontWeight: 600, marginBottom: 8 }}>📩 Entrez le code à 6 chiffres reçu par email</p>
-        <p style={{ fontSize: 12, color: S.sec, margin: 0, lineHeight: 1.6 }}>
-          Ouvrez votre boîte mail (<strong>{email}</strong>) et retrouvez le code de vérification dans l'email de Medikong.
-        </p>
-      </div>
-      <div style={{ marginBottom: 14 }}>
-        <div
-          style={{ display: "flex", justifyContent: "center", gap: 8, marginBottom: 8 }}
-          onPaste={handleOtpPaste}
-        >
-          {otpDigits.map((digit, idx) => (
-            <input
-              key={idx}
-              ref={(el) => (otpRefs.current[idx] = el)}
-              value={digit}
-              onChange={(e) => handleOtpChange(idx, e.target.value)}
-              onKeyDown={(e) => handleOtpKeyDown(idx, e)}
-              inputMode="numeric"
-              maxLength={1}
-              autoFocus={idx === 0}
-              style={{
-                width: 44,
-                height: 48,
-                borderRadius: S.radiusSm,
-                border: `2px solid ${otpError ? S.red : otpDigits[idx] ? S.blue : S.line}`,
-                textAlign: "center",
-                fontSize: 20,
-                fontWeight: 700,
-                color: S.text,
-                background: otpError ? S.redBg : "#fff",
-                transition: "border-color .2s",
-              }}
-            />
-          ))}
+  const renderOtpScreen = () => {
+    const expectsCode = emailDeliveryMode !== "link_only";
+
+    return (
+      <div style={{ textAlign: "center" }}>
+        <BackLink onClick={goBack} />
+        <div style={{ width: 56, height: 56, borderRadius: "50%", background: S.blueBg, border: `2px solid ${S.blue}`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+          <Lock size={24} color={S.blue} />
         </div>
-        {otpError && <p style={{ fontSize: 11, color: S.red }}>Code invalide. Réessayez.</p>}
-        {verifyingOtp && <p style={{ fontSize: 11, color: S.blue }}><Loader2 size={12} className="tf-spin inline-block mr-1" />Vérification...</p>}
-      </div>
-      <div style={{ fontSize: 12, color: S.ter, marginBottom: 16 }}>
-        Pas d'email reçu ?{" "}
-        {otpTimer > 0 ? `Renvoyer dans 0:${otpTimer.toString().padStart(2, "0")}` : (
-          <button style={{ color: S.blue, background: "none", border: "none", cursor: "pointer", fontWeight: 600, fontSize: 12 }} onClick={async () => {
-            try {
-              const { error } = await supabase.auth.resend({ type: 'signup', email });
-              if (error) throw error;
-            } catch(e) { console.error(e); }
-            setOtpTimer(59);
-          }}>Renvoyer l'email</button>
+        <h1 style={{ fontSize: 20, fontWeight: 700, color: S.text, marginBottom: 6 }}>Vérifiez votre email</h1>
+        <p style={{ fontSize: 13, color: S.sec, marginBottom: 8 }}>
+          Un email a été envoyé à <strong>{email}</strong>
+        </p>
+        <div style={{ background: S.blueBg, border: `1px solid ${S.blue}20`, borderRadius: S.radius, padding: "16px 20px", marginBottom: 20, textAlign: "left" }}>
+          <p style={{ fontSize: 13, color: S.text, margin: 0, fontWeight: 600, marginBottom: 8 }}>
+            {expectsCode ? "📩 Entrez le code à 6 chiffres reçu par email" : "🔗 Cliquez sur le lien de connexion reçu par email"}
+          </p>
+          <p style={{ fontSize: 12, color: S.sec, margin: 0, lineHeight: 1.6 }}>
+            {expectsCode
+              ? <>Vous pouvez saisir le code ou cliquer sur le bouton de l'email, puis revenir ici.</>
+              : <>Ouvrez votre boîte mail (<strong>{email}</strong>), cliquez sur le bouton de l'email, puis revenez ici.</>}
+          </p>
+        </div>
+
+        {expectsCode && (
+          <div style={{ marginBottom: 14 }}>
+            <div
+              style={{ display: "flex", justifyContent: "center", gap: 8, marginBottom: 8 }}
+              onPaste={handleOtpPaste}
+            >
+              {otpDigits.map((digit, idx) => (
+                <input
+                  key={idx}
+                  ref={(el) => (otpRefs.current[idx] = el)}
+                  value={digit}
+                  onChange={(e) => handleOtpChange(idx, e.target.value)}
+                  onKeyDown={(e) => handleOtpKeyDown(idx, e)}
+                  inputMode="numeric"
+                  maxLength={1}
+                  autoFocus={idx === 0}
+                  style={{
+                    width: 44,
+                    height: 48,
+                    borderRadius: S.radiusSm,
+                    border: `2px solid ${otpError ? S.red : otpDigits[idx] ? S.blue : S.line}`,
+                    textAlign: "center",
+                    fontSize: 20,
+                    fontWeight: 700,
+                    color: S.text,
+                    background: otpError ? S.redBg : "#fff",
+                    transition: "border-color .2s",
+                  }}
+                />
+              ))}
+            </div>
+            {otpError && <p style={{ fontSize: 11, color: S.red }}>Code invalide. Réessayez.</p>}
+            {verifyingOtp && <p style={{ fontSize: 11, color: S.blue }}><Loader2 size={12} className="tf-spin inline-block mr-1" />Vérification...</p>}
+          </div>
         )}
+
+        <div style={{ marginBottom: 14 }}>
+          <Cta
+            onClick={handleContinueAfterEmailConfirmation}
+            disabled={checkingConfirmedEmail || verifyingOtp}
+            loading={checkingConfirmedEmail}
+            variant="secondary"
+          >
+            {checkingConfirmedEmail
+              ? "Vérification en cours..."
+              : expectsCode
+                ? "J'ai cliqué le lien dans l'email"
+                : "J'ai cliqué le lien de connexion"}
+          </Cta>
+        </div>
+
+        <div style={{ fontSize: 12, color: S.ter, marginBottom: 16 }}>
+          Pas d'email reçu ?{" "}
+          {otpTimer > 0 ? `Renvoyer dans 0:${otpTimer.toString().padStart(2, "0")}` : (
+            <button style={{ color: S.blue, background: "none", border: "none", cursor: "pointer", fontWeight: 600, fontSize: 12 }} onClick={async () => {
+              try {
+                const { error } = await supabase.auth.resend({ type: 'signup', email });
+                if (error) throw error;
+                setEmailDeliveryMode("code_or_link");
+                persistOnboardingDraft(email, "code_or_link");
+              } catch(e) { console.error(e); }
+              setOtpTimer(59);
+            }}>{expectsCode ? "Renvoyer l'email" : "Renvoyer un email avec code"}</button>
+          )}
+        </div>
+        <p style={{ fontSize: 11, color: S.ter }}>Pensez à vérifier vos spams. Contact : <a href="mailto:support@medikong.pro" style={{ color: S.blue }}>support@medikong.pro</a></p>
       </div>
-      <p style={{ fontSize: 11, color: S.ter }}>Pensez à vérifier vos spams. Contact : <a href="mailto:support@medikong.pro" style={{ color: S.blue }}>support@medikong.pro</a></p>
-    </div>
-  );
+    );
+  };
 
   /* ─── Password Screen (reusable) ─── */
   const renderPasswordScreen = () => (

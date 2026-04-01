@@ -613,7 +613,7 @@ export default function OnboardingPage() {
       const { data: sessionData } = await supabase.auth.getSession();
       let userId = sessionData.session?.user?.id;
 
-      const fallbackTempPassword = tempPassword || window.sessionStorage.getItem(getTempPasswordStorageKey(email)) || "";
+      const fallbackTempPassword = tempPassword || readOnboardingStorage(getTempPasswordStorageKey(email)) || "";
 
       // If no active session, sign in with the temp password (email confirmed via link)
       if (!userId && fallbackTempPassword) {
@@ -692,8 +692,8 @@ export default function OnboardingPage() {
         });
       }
 
-      window.sessionStorage.removeItem(getTempPasswordStorageKey(email));
-      window.sessionStorage.removeItem(onboardingDraftStorageKey);
+      removeOnboardingStorage(getTempPasswordStorageKey(email));
+      removeOnboardingStorage(onboardingDraftStorageKey);
       setTempPassword("");
 
       goNext();

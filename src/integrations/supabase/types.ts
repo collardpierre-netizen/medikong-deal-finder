@@ -1184,23 +1184,44 @@ export type Database = {
         Row: {
           created_at: string | null
           id: string
-          min_order_value: number
-          offer_id: string
-          unit_price: number
+          is_active: boolean | null
+          margin_amount: number | null
+          mov_currency: string | null
+          mov_progress: number | null
+          mov_threshold: number
+          offer_id: string | null
+          price_excl_vat: number
+          price_incl_vat: number
+          qogita_unit_price: number
+          tier_index: number
         }
         Insert: {
           created_at?: string | null
           id?: string
-          min_order_value: number
-          offer_id: string
-          unit_price: number
+          is_active?: boolean | null
+          margin_amount?: number | null
+          mov_currency?: string | null
+          mov_progress?: number | null
+          mov_threshold: number
+          offer_id?: string | null
+          price_excl_vat: number
+          price_incl_vat: number
+          qogita_unit_price: number
+          tier_index: number
         }
         Update: {
           created_at?: string | null
           id?: string
-          min_order_value?: number
-          offer_id?: string
-          unit_price?: number
+          is_active?: boolean | null
+          margin_amount?: number | null
+          mov_currency?: string | null
+          mov_progress?: number | null
+          mov_threshold?: number
+          offer_id?: string | null
+          price_excl_vat?: number
+          price_incl_vat?: number
+          qogita_unit_price?: number
+          tier_index?: number
         }
         Relationships: [
           {
@@ -1218,13 +1239,14 @@ export type Database = {
           applied_margin_rule_id: string | null
           country_code: string | null
           created_at: string
-          delivery_days: number
+          delivery_days: number | null
           down_payment_pct: number | null
           estimated_delivery_days: number | null
           has_extended_delivery: boolean | null
           id: string
           is_active: boolean
           is_qogita_backed: boolean
+          is_top_seller: boolean | null
           is_traceable: boolean | null
           margin_amount: number | null
           max_delivery_days: number | null
@@ -1240,7 +1262,8 @@ export type Database = {
           qogita_base_delay_days: number | null
           qogita_base_price: number | null
           qogita_offer_qid: string | null
-          shipping_from_country: string
+          qogita_seller_fid: string | null
+          shipping_from_country: string | null
           stock_quantity: number
           stock_status: Database["public"]["Enums"]["stock_status_enum"]
           synced_at: string | null
@@ -1253,13 +1276,14 @@ export type Database = {
           applied_margin_rule_id?: string | null
           country_code?: string | null
           created_at?: string
-          delivery_days?: number
+          delivery_days?: number | null
           down_payment_pct?: number | null
           estimated_delivery_days?: number | null
           has_extended_delivery?: boolean | null
           id?: string
           is_active?: boolean
           is_qogita_backed?: boolean
+          is_top_seller?: boolean | null
           is_traceable?: boolean | null
           margin_amount?: number | null
           max_delivery_days?: number | null
@@ -1275,7 +1299,8 @@ export type Database = {
           qogita_base_delay_days?: number | null
           qogita_base_price?: number | null
           qogita_offer_qid?: string | null
-          shipping_from_country?: string
+          qogita_seller_fid?: string | null
+          shipping_from_country?: string | null
           stock_quantity?: number
           stock_status?: Database["public"]["Enums"]["stock_status_enum"]
           synced_at?: string | null
@@ -1288,13 +1313,14 @@ export type Database = {
           applied_margin_rule_id?: string | null
           country_code?: string | null
           created_at?: string
-          delivery_days?: number
+          delivery_days?: number | null
           down_payment_pct?: number | null
           estimated_delivery_days?: number | null
           has_extended_delivery?: boolean | null
           id?: string
           is_active?: boolean
           is_qogita_backed?: boolean
+          is_top_seller?: boolean | null
           is_traceable?: boolean | null
           margin_amount?: number | null
           max_delivery_days?: number | null
@@ -1310,7 +1336,8 @@ export type Database = {
           qogita_base_delay_days?: number | null
           qogita_base_price?: number | null
           qogita_offer_qid?: string | null
-          shipping_from_country?: string
+          qogita_seller_fid?: string | null
+          shipping_from_country?: string | null
           stock_quantity?: number
           stock_status?: Database["public"]["Enums"]["stock_status_enum"]
           synced_at?: string | null
@@ -2188,67 +2215,22 @@ export type Database = {
       }
       qogita_config: {
         Row: {
-          base_url: string
-          bearer_token: string | null
-          default_country: string
-          id: number
-          last_full_sync_at: string | null
-          last_offers_sync_at: string | null
-          qogita_email: string | null
-          qogita_password: string | null
-          shipping_mode: Database["public"]["Enums"]["shipping_mode_enum"]
-          sync_enabled: boolean
-          sync_error_message: string | null
-          sync_status: Database["public"]["Enums"]["sync_status_enum"]
-          warehouse_address_line1: string | null
-          warehouse_address_line2: string | null
-          warehouse_city: string | null
-          warehouse_contact_name: string | null
-          warehouse_contact_phone: string | null
-          warehouse_country_code: string
-          warehouse_postal_code: string | null
+          description: string | null
+          key: string
+          updated_at: string | null
+          value: string
         }
         Insert: {
-          base_url?: string
-          bearer_token?: string | null
-          default_country?: string
-          id?: number
-          last_full_sync_at?: string | null
-          last_offers_sync_at?: string | null
-          qogita_email?: string | null
-          qogita_password?: string | null
-          shipping_mode?: Database["public"]["Enums"]["shipping_mode_enum"]
-          sync_enabled?: boolean
-          sync_error_message?: string | null
-          sync_status?: Database["public"]["Enums"]["sync_status_enum"]
-          warehouse_address_line1?: string | null
-          warehouse_address_line2?: string | null
-          warehouse_city?: string | null
-          warehouse_contact_name?: string | null
-          warehouse_contact_phone?: string | null
-          warehouse_country_code?: string
-          warehouse_postal_code?: string | null
+          description?: string | null
+          key: string
+          updated_at?: string | null
+          value: string
         }
         Update: {
-          base_url?: string
-          bearer_token?: string | null
-          default_country?: string
-          id?: number
-          last_full_sync_at?: string | null
-          last_offers_sync_at?: string | null
-          qogita_email?: string | null
-          qogita_password?: string | null
-          shipping_mode?: Database["public"]["Enums"]["shipping_mode_enum"]
-          sync_enabled?: boolean
-          sync_error_message?: string | null
-          sync_status?: Database["public"]["Enums"]["sync_status_enum"]
-          warehouse_address_line1?: string | null
-          warehouse_address_line2?: string | null
-          warehouse_city?: string | null
-          warehouse_contact_name?: string | null
-          warehouse_contact_phone?: string | null
-          warehouse_country_code?: string
-          warehouse_postal_code?: string | null
+          description?: string | null
+          key?: string
+          updated_at?: string | null
+          value?: string
         }
         Relationships: []
       }
@@ -3027,7 +3009,7 @@ export type Database = {
         | "manual"
         | "offers_multi_vendor"
       urgency_enum: "low" | "medium" | "high"
-      vendor_type: "medikong" | "qogita_virtual" | "real"
+      vendor_type: "medikong" | "qogita_virtual" | "real" | "qogita"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3217,7 +3199,7 @@ export const Constants = {
         "offers_multi_vendor",
       ],
       urgency_enum: ["low", "medium", "high"],
-      vendor_type: ["medikong", "qogita_virtual", "real"],
+      vendor_type: ["medikong", "qogita_virtual", "real", "qogita"],
     },
   },
 } as const

@@ -5,7 +5,10 @@ import StatusBadge from "@/components/admin/StatusBadge";
 import VendorFormDialog from "@/components/admin/VendorFormDialog";
 import { useI18n } from "@/contexts/I18nContext";
 import { useVendors } from "@/hooks/useAdminData";
-import { Search, Filter, Download, Plus, ExternalLink } from "lucide-react";
+import { getVendorAdminName } from "@/lib/vendor-display";
+import { Search, Filter, Download, Plus, ExternalLink, Eye, EyeOff } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 
 const AdminVendeurs = () => {
   const { t } = useI18n();

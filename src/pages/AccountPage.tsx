@@ -263,28 +263,50 @@ export default function AccountPage() {
                     <div>
                       <h2 className="text-xl font-bold text-mk-navy mb-5">Informations personnelles</h2>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-                        {[
-                          ["Prénom", user?.user_metadata?.full_name?.split(" ")[0] || ""],
-                          ["Nom", user?.user_metadata?.full_name?.split(" ").slice(1).join(" ") || ""],
-                          ["Email", user?.email || ""],
-                          ["Téléphone", user?.user_metadata?.phone || ""],
-                        ].map(([l, v], i) => (
-                          <motion.div key={l} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}>
-                            <label className="text-xs text-mk-sec mb-1 block">{l}</label>
-                            <input defaultValue={v} className="w-full border border-mk-line rounded-md px-3 py-2 text-sm" />
+                        {([
+                          ["Prénom", "firstName"],
+                          ["Nom", "lastName"],
+                          ["Email", "email"],
+                          ["Téléphone", "phone"],
+                        ] as const).map(([label, key], i) => (
+                          <motion.div key={key} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}>
+                            <label className="text-xs text-mk-sec mb-1 block">{label}</label>
+                            <input
+                              value={(profileForm as any)[key]}
+                              onChange={(e) => setProfileForm((f) => ({ ...f, [key]: e.target.value }))}
+                              disabled={key === "email"}
+                              className={`w-full border border-mk-line rounded-md px-3 py-2 text-sm ${key === "email" ? "bg-muted cursor-not-allowed" : ""}`}
+                            />
                           </motion.div>
                         ))}
                       </div>
                       <h2 className="text-xl font-bold text-mk-navy mb-5">Informations entreprise</h2>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-                        <div><label className="text-xs text-mk-sec mb-1 block">Nom entreprise</label><input defaultValue={user?.user_metadata?.company_name || ""} className="w-full border border-mk-line rounded-md px-3 py-2 text-sm" /></div>
-                        <div><label className="text-xs text-mk-sec mb-1 block">Pays</label>
-                          <select defaultValue={user?.user_metadata?.country || "Belgique"} className="w-full border border-mk-line rounded-md px-3 py-2 text-sm"><option>Belgique</option><option>France</option><option>Suisse</option></select>
+                        <div>
+                          <label className="text-xs text-mk-sec mb-1 block">Nom entreprise</label>
+                          <input value={profileForm.companyName} onChange={(e) => setProfileForm((f) => ({ ...f, companyName: e.target.value }))} className="w-full border border-mk-line rounded-md px-3 py-2 text-sm" />
                         </div>
-                        <div><label className="text-xs text-mk-sec mb-1 block">Numéro TVA</label><input defaultValue={user?.user_metadata?.vat_number || ""} className="w-full border border-mk-line rounded-md px-3 py-2 text-sm" /></div>
+                        <div>
+                          <label className="text-xs text-mk-sec mb-1 block">Pays</label>
+                          <select value={profileForm.country} onChange={(e) => setProfileForm((f) => ({ ...f, country: e.target.value }))} className="w-full border border-mk-line rounded-md px-3 py-2 text-sm">
+                            <option>Belgique</option><option>France</option><option>Suisse</option><option>Luxembourg</option><option>Pays-Bas</option><option>Allemagne</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-xs text-mk-sec mb-1 block">Numéro TVA</label>
+                          <input value={profileForm.vatNumber} onChange={(e) => setProfileForm((f) => ({ ...f, vatNumber: e.target.value }))} className="w-full border border-mk-line rounded-md px-3 py-2 text-sm" />
+                        </div>
                         <ProfileSelector />
                       </div>
-                      <motion.button className="bg-mk-blue text-white font-semibold text-sm px-5 py-2.5 rounded-md" whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}>Enregistrer les modifications</motion.button>
+                      <motion.button
+                        onClick={saveProfile}
+                        disabled={profileSaving}
+                        className="bg-mk-blue text-white font-semibold text-sm px-5 py-2.5 rounded-md disabled:opacity-50"
+                        whileHover={{ scale: 1.04 }}
+                        whileTap={{ scale: 0.96 }}
+                      >
+                        {profileSaving ? "Enregistrement..." : "Enregistrer les modifications"}
+                      </motion.button>
                     </div>
                   )}
 
@@ -292,15 +314,73 @@ export default function AccountPage() {
                     <div>
                       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-5 gap-3">
                         <h2 className="text-xl font-bold text-mk-navy">Adresses</h2>
-                        <motion.button className="bg-mk-blue text-white text-sm px-4 py-2 rounded-md" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>Ajouter une adresse</motion.button>
+                        <motion.button
+                          onClick={() => { setEditingAddress({ ...emptyAddress }); setShowAddressForm(true); }}
+                          className="bg-mk-blue text-white text-sm px-4 py-2 rounded-md"
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          Ajouter une adresse
+                        </motion.button>
                       </div>
+
+                      {/* Address form */}
+                      {showAddressForm && editingAddress && (
+                        <motion.div
+                          className="border border-mk-line rounded-lg p-5 mb-5 bg-mk-alt"
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                        >
+                          <h3 className="text-sm font-bold text-mk-navy mb-3">{editingAddress.id ? "Modifier l'adresse" : "Nouvelle adresse"}</h3>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                            <div>
+                              <label className="text-xs text-mk-sec mb-1 block">Libellé</label>
+                              <input value={editingAddress.label} onChange={(e) => setEditingAddress({ ...editingAddress, label: e.target.value })} placeholder="Ex: Bureau, Entrepôt..." className="w-full border border-mk-line rounded-md px-3 py-2 text-sm" />
+                            </div>
+                            <div>
+                              <label className="text-xs text-mk-sec mb-1 block">Type</label>
+                              <select value={editingAddress.type} onChange={(e) => setEditingAddress({ ...editingAddress, type: e.target.value as any })} className="w-full border border-mk-line rounded-md px-3 py-2 text-sm">
+                                <option>Livraison</option><option>Facturation</option>
+                              </select>
+                            </div>
+                            <div className="sm:col-span-2">
+                              <label className="text-xs text-mk-sec mb-1 block">Adresse ligne 1</label>
+                              <input value={editingAddress.line1} onChange={(e) => setEditingAddress({ ...editingAddress, line1: e.target.value })} className="w-full border border-mk-line rounded-md px-3 py-2 text-sm" />
+                            </div>
+                            <div className="sm:col-span-2">
+                              <label className="text-xs text-mk-sec mb-1 block">Adresse ligne 2</label>
+                              <input value={editingAddress.line2} onChange={(e) => setEditingAddress({ ...editingAddress, line2: e.target.value })} className="w-full border border-mk-line rounded-md px-3 py-2 text-sm" />
+                            </div>
+                            <div>
+                              <label className="text-xs text-mk-sec mb-1 block">Code postal</label>
+                              <input value={editingAddress.postalCode} onChange={(e) => setEditingAddress({ ...editingAddress, postalCode: e.target.value })} className="w-full border border-mk-line rounded-md px-3 py-2 text-sm" />
+                            </div>
+                            <div>
+                              <label className="text-xs text-mk-sec mb-1 block">Ville</label>
+                              <input value={editingAddress.city} onChange={(e) => setEditingAddress({ ...editingAddress, city: e.target.value })} className="w-full border border-mk-line rounded-md px-3 py-2 text-sm" />
+                            </div>
+                            <div>
+                              <label className="text-xs text-mk-sec mb-1 block">Pays</label>
+                              <select value={editingAddress.country} onChange={(e) => setEditingAddress({ ...editingAddress, country: e.target.value })} className="w-full border border-mk-line rounded-md px-3 py-2 text-sm">
+                                <option>Belgique</option><option>France</option><option>Suisse</option><option>Luxembourg</option>
+                              </select>
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button size="sm" onClick={() => saveAddress(editingAddress)}>Enregistrer</Button>
+                            <Button size="sm" variant="outline" onClick={() => { setShowAddressForm(false); setEditingAddress(null); }}>Annuler</Button>
+                          </div>
+                        </motion.div>
+                      )}
+
+                      {addresses.length === 0 && !showAddressForm && (
+                        <p className="text-sm text-mk-sec py-8 text-center">Aucune adresse enregistrée. Cliquez sur "Ajouter une adresse" pour commencer.</p>
+                      )}
+
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {[
-                          { label: "Adresse principale", type: "Livraison", addr: "23 rue de la Procession\nB-7822 Ath, Belgique" },
-                          { label: "Siege social", type: "Facturation", addr: "15 avenue Louise\nB-1050 Bruxelles, Belgique" },
-                        ].map((a, i) => (
+                        {addresses.map((a, i) => (
                           <motion.div
-                            key={a.label}
+                            key={a.id}
                             className="border border-mk-line rounded-lg p-5"
                             initial={{ opacity: 0, y: 12 }}
                             animate={{ opacity: 1, y: 0 }}
@@ -308,13 +388,15 @@ export default function AccountPage() {
                             whileHover={{ y: -2, boxShadow: "0 4px 12px rgba(0,0,0,0.06)" }}
                           >
                             <div className="flex items-center justify-between mb-2">
-                              <span className="text-sm font-bold text-mk-navy">{a.label}</span>
+                              <span className="text-sm font-bold text-mk-navy">{a.label || "Adresse"}</span>
                               <span className="text-xs bg-mk-deal text-mk-green px-2 py-0.5 rounded">{a.type}</span>
                             </div>
-                            <p className="text-sm text-mk-sec whitespace-pre-line mb-3">{a.addr}</p>
-                            <div className="flex gap-2">
-                              <button className="text-xs text-mk-blue">Modifier</button>
-                              <button className="text-xs text-mk-red">Supprimer</button>
+                            <p className="text-sm text-mk-sec mb-1">{a.line1}</p>
+                            {a.line2 && <p className="text-sm text-mk-sec mb-1">{a.line2}</p>}
+                            <p className="text-sm text-mk-sec mb-3">{a.postalCode} {a.city}, {a.country}</p>
+                            <div className="flex gap-3">
+                              <button onClick={() => { setEditingAddress({ ...a }); setShowAddressForm(true); }} className="text-xs text-mk-blue font-medium">Modifier</button>
+                              <button onClick={() => deleteAddress(a.id)} className="text-xs text-destructive font-medium">Supprimer</button>
                             </div>
                           </motion.div>
                         ))}

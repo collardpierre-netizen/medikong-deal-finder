@@ -332,7 +332,7 @@ export default function OnboardingPage() {
     const onboardingCompleted = metadata.onboarding_completed === true;
 
     if (onboardingCompleted) {
-      window.sessionStorage.removeItem(onboardingDraftStorageKey);
+      removeOnboardingStorage(onboardingDraftStorageKey);
       return;
     }
 
@@ -347,7 +347,7 @@ export default function OnboardingPage() {
       setRole(roleFromMetadata);
       setEmail(user.email ?? "");
       setOtpVerified(true);
-      setEmailDeliveryMode("code_or_link");
+      setEmailDeliveryMode("link_only");
 
       if (roleFromMetadata === "buyer") {
         if (typeof metadata.onboarding_buyer_profile === "string") {
@@ -364,7 +364,7 @@ export default function OnboardingPage() {
       return;
     }
 
-    const rawDraft = window.sessionStorage.getItem(onboardingDraftStorageKey);
+    const rawDraft = readOnboardingStorage(onboardingDraftStorageKey);
     if (!rawDraft) return;
 
     try {
@@ -378,7 +378,7 @@ export default function OnboardingPage() {
       setRole(draft.role);
       setEmail(user.email ?? draft.email);
       setOtpVerified(true);
-      setEmailDeliveryMode(draft.deliveryMode ?? "code_or_link");
+      setEmailDeliveryMode(draft.deliveryMode ?? "link_only");
 
       if (draft.role === "buyer") {
         if (draft.buyerProfile) setBuyerProfile(draft.buyerProfile);
@@ -389,9 +389,9 @@ export default function OnboardingPage() {
       if (draft.businessType) setBusinessType(draft.businessType);
       setStep(13);
     } catch {
-      window.sessionStorage.removeItem(onboardingDraftStorageKey);
+      removeOnboardingStorage(onboardingDraftStorageKey);
     }
-  }, [onboardingDraftStorageKey]);
+  }, [onboardingDraftStorageKey, readOnboardingStorage, removeOnboardingStorage]);
 
   useEffect(() => {
     let mounted = true;

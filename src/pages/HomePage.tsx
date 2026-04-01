@@ -27,7 +27,7 @@ const iconMap: Record<string, React.ReactNode> = {
   Package: <Package size={20} className="text-mk-navy" />,
 };
 
-const popularBrands = ["3M", "TENA", "Hartmann", "B.Braun", "Essity", "Molnlycke", "Ecolab", "Kolmi"];
+// Brands loaded from DB now
 
 export default function HomePage() {
   const { t } = useTranslation();

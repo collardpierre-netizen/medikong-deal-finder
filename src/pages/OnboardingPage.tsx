@@ -461,7 +461,7 @@ export default function OnboardingPage() {
       setRole(roleFromMetadata);
       setEmail(user.email ?? "");
       setOtpVerified(true);
-      setEmailDeliveryMode("link_only");
+      setEmailDeliveryMode("code_or_link");
 
       if (roleFromMetadata === "buyer") {
         if (typeof metadata.onboarding_buyer_profile === "string") {
@@ -489,7 +489,7 @@ export default function OnboardingPage() {
           setRole(draft.role);
           setEmail(user.email ?? draft.email);
           setOtpVerified(true);
-          setEmailDeliveryMode(draft.deliveryMode ?? "link_only");
+          setEmailDeliveryMode(draft.deliveryMode ?? "code_or_link");
 
           if (draft.role === "buyer") {
             if (draft.buyerProfile) setBuyerProfile(draft.buyerProfile);
@@ -513,7 +513,7 @@ export default function OnboardingPage() {
       setRole(urlRole);
       setEmail(user.email ?? "");
       setOtpVerified(true);
-      setEmailDeliveryMode("link_only");
+      setEmailDeliveryMode("code_or_link");
       const bp = params.get("buyerProfile");
       if (bp) setBuyerProfile(bp);
       const bt = params.get("businessType");
@@ -626,6 +626,7 @@ export default function OnboardingPage() {
         email,
         options: {
           shouldCreateUser: true,
+          emailRedirectTo: buildOnboardingRedirectUrl("code_or_link"),
           data: {
             onboarding_pending: true,
             onboarding_completed: false,
@@ -637,6 +638,8 @@ export default function OnboardingPage() {
       });
 
       if (error) throw error;
+
+      setOtpTimer(59);
       goNext();
     } catch (error) {
       console.error("OTP send error:", error);
@@ -924,7 +927,17 @@ export default function OnboardingPage() {
               try {
                 const { error } = await supabase.auth.signInWithOtp({
                   email,
-                  options: { shouldCreateUser: true },
+                  options: {
+                    shouldCreateUser: true,
+                    emailRedirectTo: buildOnboardingRedirectUrl("code_or_link"),
+                    data: {
+                      onboarding_pending: true,
+                      onboarding_completed: false,
+                      onboarding_role: role || "buyer",
+                      ...(role === "buyer" && buyerProfile ? { onboarding_buyer_profile: buyerProfile } : {}),
+                      ...(role === "seller" && businessType ? { onboarding_business_type: businessType } : {}),
+                    },
+                  },
                 });
                 if (error) throw error;
               } catch(e) { console.error(e); }

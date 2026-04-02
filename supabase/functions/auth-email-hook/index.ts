@@ -229,8 +229,11 @@ async function handleWebhook(req: Request): Promise<Response> {
   }
 
   // Render React Email to HTML and plain text
-  const html = await renderAsync(React.createElement(EmailTemplate, templateProps))
-  const text = await renderAsync(React.createElement(EmailTemplate, templateProps), {
+  const normalizedEmailType = emailType === 'magiclink' && payload.data.token ? 'reauthentication' : emailType
+  const SelectedTemplate = EMAIL_TEMPLATES[normalizedEmailType] ?? EmailTemplate
+
+  const html = await renderAsync(React.createElement(SelectedTemplate, templateProps))
+  const text = await renderAsync(React.createElement(SelectedTemplate, templateProps), {
     plainText: true,
   })
 
@@ -245,7 +248,7 @@ async function handleWebhook(req: Request): Promise<Response> {
   // Log pending BEFORE enqueue so we have a record even if enqueue crashes
   await supabase.from('email_send_log').insert({
     message_id: messageId,
-    template_name: emailType,
+    template_name: normalizedEmailType,
     recipient_email: payload.data.email,
     status: 'pending',
   })
@@ -258,20 +261,20 @@ async function handleWebhook(req: Request): Promise<Response> {
       to: payload.data.email,
       from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
       sender_domain: SENDER_DOMAIN,
-      subject: EMAIL_SUBJECTS[emailType] || 'Notification',
+      subject: EMAIL_SUBJECTS[normalizedEmailType] || EMAIL_SUBJECTS[emailType] || 'Notification',
       html,
       text,
       purpose: 'transactional',
-      label: emailType,
+      label: normalizedEmailType,
       queued_at: new Date().toISOString(),
     },
   })
 
   if (enqueueError) {
-    console.error('Failed to enqueue auth email', { error: enqueueError, run_id, emailType })
+    console.error('Failed to enqueue auth email', { error: enqueueError, run_id, emailType: normalizedEmailType })
     await supabase.from('email_send_log').insert({
       message_id: messageId,
-      template_name: emailType,
+      template_name: normalizedEmailType,
       recipient_email: payload.data.email,
       status: 'failed',
       error_message: 'Failed to enqueue email',
@@ -282,7 +285,7 @@ async function handleWebhook(req: Request): Promise<Response> {
     })
   }
 
-  console.log('Auth email enqueued', { emailType, email: payload.data.email, run_id })
+  console.log('Auth email enqueued', { emailType: normalizedEmailType, email: payload.data.email, run_id })
 
   return new Response(
     JSON.stringify({ success: true, queued: true }),

@@ -1200,10 +1200,10 @@ export default function OnboardingPage() {
         <div>
           <BackLink onClick={goBack} />
           <h1 style={{ fontSize: 20, fontWeight: 700, color: S.text, marginBottom: 6 }}>Votre adresse email professionnelle</h1>
-          <p style={{ fontSize: 13, color: S.sec, marginBottom: 20 }}>Pour créer votre espace vendeur via un lien sécurisé.</p>
+          <p style={{ fontSize: 13, color: S.sec, marginBottom: 20 }}>Nous vous enverrons un code de vérification à 6 chiffres.</p>
           <TfInput value={email} onChange={v => { setEmail(v); setEmailTouched(true); }} placeholder="pro@entreprise.com" type="email" error={emailError} autoFocus />
           <div style={{ marginTop: 16 }}>
-            <Cta onClick={handleSendOtp} disabled={!isEmailValid} loading={sendingOtp}>{sendingOtp ? "Envoi en cours..." : "Recevoir le lien"}</Cta>
+            <Cta onClick={handleSendOtp} disabled={!isEmailValid} loading={sendingOtp}>{sendingOtp ? "Envoi en cours..." : "Recevoir le code"}</Cta>
             <KbdHint />
           </div>
         </div>

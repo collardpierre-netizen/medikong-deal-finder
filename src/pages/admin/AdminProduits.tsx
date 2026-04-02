@@ -22,7 +22,7 @@ function useAdminPaginatedProducts(page: number, search: string, brandFilter: st
     queryFn: async () => {
       let query = supabase
         .from("products")
-        .select("id, name, slug, gtin, cnk_code, brand_name, brand_id, manufacturer_id, image_urls, offer_count, total_stock, best_price_excl_vat, is_active, source, created_at", { count: "exact" })
+        .select("id, name, slug, gtin, cnk_code, brand_name, brand_id, manufacturer_id, image_url, image_urls, offer_count, total_stock, best_price_excl_vat, is_active, source, created_at", { count: "exact" })
         .order("created_at", { ascending: false });
 
       if (search.trim()) {

@@ -320,7 +320,7 @@ export function downloadManufacturerTemplate() {
 export async function exportManufacturers() {
   const data = await fetchAllRows("manufacturers", "name").catch(() => null);
   if (!data) { toast.error("Erreur export fabricants"); return; }
-  const rows = (data || []).map(m => ({
+  const rows = (data || []).map((m: any) => ({
     name: m.name, slug: m.slug, legal_name: m.legal_name || "",
     country_of_origin: m.country_of_origin || "", year_founded: m.year_founded || "",
     logo_url: m.logo_url || "", website_url: m.website_url || "",

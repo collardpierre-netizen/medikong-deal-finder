@@ -53,7 +53,7 @@ async function fetchAllRows(table: string, orderBy: string, selectCols = "*") {
   let all: any[] = [];
   let from = 0;
   while (true) {
-    const { data, error } = await supabase.from(table).select(selectCols).order(orderBy).range(from, from + PAGE - 1);
+    const { data, error } = await (supabase as any).from(table).select(selectCols).order(orderBy).range(from, from + PAGE - 1);
     if (error) throw error;
     if (!data || data.length === 0) break;
     all = all.concat(data);

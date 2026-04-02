@@ -128,6 +128,7 @@ export function ProductFormDialog({ open, onOpenChange, product, brands, manufac
       short_description: form.short_description.trim() || null,
       unit_quantity: parseInt(form.unit_quantity) || 1,
       image_urls: mediaUrls.map(normalizeUrl).filter(Boolean),
+      image_url: mediaUrls.length > 0 ? normalizeUrl(mediaUrls[0]) : null,
       is_active: form.is_active,
     };
 

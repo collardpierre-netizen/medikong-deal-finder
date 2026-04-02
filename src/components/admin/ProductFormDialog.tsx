@@ -58,7 +58,12 @@ export function ProductFormDialog({ open, onOpenChange, product, brands, manufac
         unit_quantity: String(product.unit_quantity || 1),
         is_active: product.is_active !== false,
       });
-      setMediaUrls(((product.image_urls as string[] | null) || []).filter(Boolean));
+      const urls = ((product.image_urls as string[] | null) || []).filter(Boolean);
+      // Fallback: if image_urls is empty but image_url exists, use it
+      if (urls.length === 0 && product.image_url) {
+        urls.push(product.image_url);
+      }
+      setMediaUrls(urls);
     } else {
       setForm({
         name: "", slug: "", gtin: "", cnk_code: "", sku: "",

@@ -232,7 +232,7 @@ const AdminProduits = () => {
                 </thead>
                 <tbody>
                   {products.map((p) => {
-                    const imgUrl = (p.image_urls as string[] | null)?.[0];
+                    const imgUrl = (p.image_urls as string[] | null)?.[0] || (p as any).image_url || null;
                     return (
                     <tr key={p.id} className="cursor-pointer transition-colors" style={{ borderBottom: "1px solid #F1F5F9" }}
                       onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#F8FAFC")}

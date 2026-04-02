@@ -31,6 +31,8 @@ export function Breadcrumbs() {
   if (segments.length === 0) return null;
   // Don't show on admin pages (they have their own navigation)
   if (segments[0] === "admin") return null;
+  // Don't show on product pages (they have their own breadcrumb)
+  if (segments[0] === "produit") return null;
 
   const crumbs = segments.map((seg, i) => {
     const path = "/" + segments.slice(0, i + 1).join("/");

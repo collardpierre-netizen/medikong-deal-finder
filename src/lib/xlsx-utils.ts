@@ -135,7 +135,7 @@ export async function exportCategories() {
   const { data, error } = await supabase.from("categories").select("*").order("display_order").limit(2000);
   if (error) { toast.error("Erreur export catégories"); return; }
   // Fetch translations
-  const { data: trData } = await supabase.from("entity_translations").select("*").eq("entity_type", "category");
+  const { data: trData } = await (supabase as any).from("translations").select("*").eq("entity_type", "category");
   const trMap = new Map<string, Record<string, string>>();
   (trData || []).forEach((t: any) => {
     const key = `${t.entity_id}_${t.field}_${t.locale}`;
@@ -209,7 +209,7 @@ export async function importCategories(file: File): Promise<{ created: number; e
   if (translationItems.length > 0) {
     for (let i = 0; i < translationItems.length; i += 50) {
       const batch = translationItems.slice(i, i + 50);
-      await supabase.from("entity_translations").upsert(batch, { onConflict: "entity_type,entity_id,locale,field" });
+      await (supabase as any).from("translations").upsert(batch, { onConflict: "entity_type,entity_id,locale,field" });
     }
   }
   return { created, errors };

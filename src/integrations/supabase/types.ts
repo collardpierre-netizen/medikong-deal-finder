@@ -448,6 +448,81 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_campaigns: {
+        Row: {
+          clicked_count: number
+          created_at: string
+          id: string
+          name: string
+          opened_count: number
+          scheduled_at: string | null
+          segment: string | null
+          sent_at: string | null
+          sent_count: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          clicked_count?: number
+          created_at?: string
+          id?: string
+          name: string
+          opened_count?: number
+          scheduled_at?: string | null
+          segment?: string | null
+          sent_at?: string | null
+          sent_count?: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          clicked_count?: number
+          created_at?: string
+          id?: string
+          name?: string
+          opened_count?: number
+          scheduled_at?: string | null
+          segment?: string | null
+          sent_at?: string | null
+          sent_count?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      crm_messages: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          is_read: boolean
+          received_at: string
+          sender_email: string | null
+          sender_name: string
+          subject: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          received_at?: string
+          sender_email?: string | null
+          sender_name: string
+          subject: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          received_at?: string
+          sender_email?: string | null
+          sender_name?: string
+          subject?: string
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           address_line1: string

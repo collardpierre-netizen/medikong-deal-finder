@@ -1354,13 +1354,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "offers_country_code_fkey"
-            columns: ["country_code"]
-            isOneToOne: false
-            referencedRelation: "countries"
-            referencedColumns: ["code"]
-          },
-          {
             foreignKeyName: "offers_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false

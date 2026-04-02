@@ -33,7 +33,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Check admin role
     const { data: adminUser } = await supabaseAdmin
       .from("admin_users")
       .select("role")
@@ -49,7 +48,7 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    const { company_name, email, phone, vat_number, address, commission_rate, description } = body;
+    const { company_name, email, phone, vat_number, address, commission_rate, description, type } = body;
 
     if (!company_name || !email) {
       return new Response(JSON.stringify({ error: "Nom et email requis" }), {
@@ -57,6 +56,8 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    const vendorType = type || "real";
 
     // Generate a temporary password
     const tempPassword = crypto.randomUUID().slice(0, 12) + "Aa1!";
@@ -78,7 +79,6 @@ Deno.serve(async (req) => {
 
     const userId = authData.user.id;
 
-    // Create vendor record
     const slug = company_name
       .toLowerCase()
       .normalize("NFD")
@@ -95,7 +95,7 @@ Deno.serve(async (req) => {
       phone: phone || null,
       vat_number: vat_number || null,
       address: address || null,
-      type: "real",
+      type: vendorType,
       is_active: true,
       can_manage_offers: true,
       commission_rate: parseFloat(commission_rate) || 15,
@@ -103,7 +103,6 @@ Deno.serve(async (req) => {
     }).select("id").single();
 
     if (vendorError) {
-      // Rollback: delete auth user
       await supabaseAdmin.auth.admin.deleteUser(userId);
       return new Response(JSON.stringify({ error: `Erreur vendeur: ${vendorError.message}` }), {
         status: 400,
@@ -111,17 +110,11 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Send password reset email so vendor can set their own password
-    await supabaseAdmin.auth.admin.generateLink({
-      type: "recovery",
-      email,
-    });
-
     return new Response(JSON.stringify({
       success: true,
       vendor_id: vendor.id,
       temp_password: tempPassword,
-      message: `Vendeur créé. Mot de passe temporaire: ${tempPassword}`,
+      message: `Vendeur créé avec succès`,
     }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

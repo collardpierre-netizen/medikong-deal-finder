@@ -6,7 +6,7 @@ import VendorFormDialog from "@/components/admin/VendorFormDialog";
 import { useI18n } from "@/contexts/I18nContext";
 import { useVendors } from "@/hooks/useAdminData";
 import { getVendorAdminName } from "@/lib/vendor-display";
-import { Search, Filter, Download, Plus, ExternalLink, Eye, EyeOff } from "lucide-react";
+import { Search, Filter, Download, Plus, ExternalLink, Eye, EyeOff, LogIn } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -108,7 +108,7 @@ const AdminVendeurs = () => {
                   </td>
                   <td className="px-4 py-3"><StatusBadge status={s.is_active ? "active" : "inactive"} /></td>
                   <td className="px-4 py-3 text-[11px]" style={{ color: "#8B95A5" }}>{new Date(s.created_at).toLocaleDateString("fr-BE")}</td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 flex items-center gap-1">
                     {s.slug && (
                       <a
                         href={`/vendeur/${s.slug}`}
@@ -118,7 +118,19 @@ const AdminVendeurs = () => {
                         className="inline-flex items-center gap-1 px-2 py-1 rounded text-[10px] font-semibold hover:opacity-80 transition-opacity"
                         style={{ color: "#1B5BDA", backgroundColor: "#EEF2FF" }}
                       >
-                        <ExternalLink size={11} /> Page publique
+                        <ExternalLink size={11} /> Public
+                      </a>
+                    )}
+                    {(s as any).auth_user_id && (
+                      <a
+                        href="/vendor"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded text-[10px] font-semibold hover:opacity-80 transition-opacity"
+                        style={{ color: "#059669", backgroundColor: "#ECFDF5" }}
+                      >
+                        <LogIn size={11} /> Portail
                       </a>
                     )}
                   </td>

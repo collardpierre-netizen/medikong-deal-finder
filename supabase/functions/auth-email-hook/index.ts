@@ -248,7 +248,7 @@ async function handleWebhook(req: Request): Promise<Response> {
   // Log pending BEFORE enqueue so we have a record even if enqueue crashes
   await supabase.from('email_send_log').insert({
     message_id: messageId,
-        template_name: normalizedEmailType,
+    template_name: normalizedEmailType,
     recipient_email: payload.data.email,
     status: 'pending',
   })

@@ -139,7 +139,7 @@ export default function HomePage() {
       <section className="pt-10 md:pt-20 pb-6 md:pb-10">
         <div className="mk-container text-center max-w-2xl mx-auto">
           <motion.h1
-            className="text-3xl md:text-[44px] leading-[1.15] font-bold text-mk-navy mb-4"
+            className="text-3xl md:text-[44px] leading-[1.15] font-bold text-mk-navy mb-4 whitespace-pre-line"
             style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

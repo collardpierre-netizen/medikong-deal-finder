@@ -6,7 +6,7 @@ import VendorFormDialog from "@/components/admin/VendorFormDialog";
 import { useI18n } from "@/contexts/I18nContext";
 import { useVendors } from "@/hooks/useAdminData";
 import { getVendorAdminName } from "@/lib/vendor-display";
-import { Search, Filter, Download, Plus, ExternalLink, Eye, EyeOff } from "lucide-react";
+import { Search, Filter, Download, Plus, ExternalLink, Eye, EyeOff, LogIn } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 

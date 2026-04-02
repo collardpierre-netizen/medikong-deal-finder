@@ -48,10 +48,25 @@ export function downloadProductTemplate() {
   toast.success("Template téléchargé");
 }
 
+async function fetchAllRows(table: string, orderBy: string, selectCols = "*") {
+  const PAGE = 1000;
+  let all: any[] = [];
+  let from = 0;
+  while (true) {
+    const { data, error } = await (supabase as any).from(table).select(selectCols).order(orderBy).range(from, from + PAGE - 1);
+    if (error) throw error;
+    if (!data || data.length === 0) break;
+    all = all.concat(data);
+    if (data.length < PAGE) break;
+    from += PAGE;
+  }
+  return all;
+}
+
 
 export async function exportProducts() {
-  const { data, error } = await supabase.from("products").select("*").order("name");
-  if (error) { toast.error("Erreur export produits"); return; }
+  const data = await fetchAllRows("products", "name").catch(() => null);
+  if (!data) { toast.error("Erreur export produits"); return; }
   const rows = (data || []).map(p => ({
     gtin: p.gtin, name: p.name, slug: p.slug,
     cnk_code: p.cnk_code, sku: p.sku,
@@ -62,8 +77,8 @@ export async function exportProducts() {
 }
 
 export async function exportBrands() {
-  const { data, error } = await supabase.from("brands").select("*").order("name").limit(2000);
-  if (error) { toast.error("Erreur export marques"); return; }
+  const data = await fetchAllRows("brands", "name").catch(() => null);
+  if (!data) { toast.error("Erreur export marques"); return; }
   // Fetch translations
   const { data: trData } = await (supabase as any).from("translations").select("*").eq("entity_type", "brand");
   const getTr = (id: string, field: string, locale: string) => {
@@ -71,9 +86,9 @@ export async function exportBrands() {
     return t?.value || "";
   };
   // Fetch manufacturers for name resolution
-  const { data: mfrs } = await supabase.from("manufacturers").select("id,name").limit(2000);
-  const mfrMap = new Map((mfrs || []).map(m => [m.id, m.name]));
-  const rows = (data || []).map(b => ({
+  const mfrs = await fetchAllRows("manufacturers", "name", "id,name").catch(() => []);
+  const mfrMap = new Map((mfrs).map((m: any) => [m.id, m.name]));
+  const rows = data.map((b: any) => ({
     name: b.name, slug: b.slug, description: b.description || "",
     country_of_origin: b.country_of_origin || "", website_url: b.website_url || "",
     logo_url: b.logo_url || "", manufacturer_name: b.manufacturer_id ? mfrMap.get(b.manufacturer_id) || "" : "",
@@ -174,8 +189,8 @@ export async function importBrands(file: File): Promise<{ created: number; error
 }
 
 export async function exportCategories() {
-  const { data, error } = await supabase.from("categories").select("*").order("display_order").limit(2000);
-  if (error) { toast.error("Erreur export catégories"); return; }
+  const data = await fetchAllRows("categories", "display_order").catch(() => null);
+  if (!data) { toast.error("Erreur export catégories"); return; }
   // Fetch translations
   const { data: trData } = await (supabase as any).from("translations").select("*").eq("entity_type", "category");
   const trMap = new Map<string, Record<string, string>>();
@@ -188,9 +203,9 @@ export async function exportCategories() {
     return (entry as any)?.value || "";
   };
   // Build parent name lookup
-  const catMap = new Map((data || []).map(c => [c.id, c]));
-  const rows = (data || []).map(c => {
-    const parent = c.parent_id ? catMap.get(c.parent_id) : null;
+  const catMap = new Map((data || []).map((c: any) => [c.id, c]));
+  const rows = (data || []).map((c: any) => {
+    const parent: any = c.parent_id ? catMap.get(c.parent_id) : null;
     return {
       name: c.name, slug: c.slug,
       parent_name: parent ? parent.name : "",
@@ -303,9 +318,9 @@ export function downloadManufacturerTemplate() {
 }
 
 export async function exportManufacturers() {
-  const { data, error } = await supabase.from("manufacturers").select("*").order("name").limit(2000);
-  if (error) { toast.error("Erreur export fabricants"); return; }
-  const rows = (data || []).map(m => ({
+  const data = await fetchAllRows("manufacturers", "name").catch(() => null);
+  if (!data) { toast.error("Erreur export fabricants"); return; }
+  const rows = (data || []).map((m: any) => ({
     name: m.name, slug: m.slug, legal_name: m.legal_name || "",
     country_of_origin: m.country_of_origin || "", year_founded: m.year_founded || "",
     logo_url: m.logo_url || "", website_url: m.website_url || "",

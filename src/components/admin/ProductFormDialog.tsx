@@ -58,7 +58,12 @@ export function ProductFormDialog({ open, onOpenChange, product, brands, manufac
         unit_quantity: String(product.unit_quantity || 1),
         is_active: product.is_active !== false,
       });
-      setMediaUrls(((product.image_urls as string[] | null) || []).filter(Boolean));
+      const urls = ((product.image_urls as string[] | null) || []).filter(Boolean);
+      // Fallback: if image_urls is empty but image_url exists, use it
+      if (urls.length === 0 && product.image_url) {
+        urls.push(product.image_url);
+      }
+      setMediaUrls(urls);
     } else {
       setForm({
         name: "", slug: "", gtin: "", cnk_code: "", sku: "",
@@ -123,6 +128,7 @@ export function ProductFormDialog({ open, onOpenChange, product, brands, manufac
       short_description: form.short_description.trim() || null,
       unit_quantity: parseInt(form.unit_quantity) || 1,
       image_urls: mediaUrls.map(normalizeUrl).filter(Boolean),
+      image_url: mediaUrls.length > 0 ? normalizeUrl(mediaUrls[0]) : null,
       is_active: form.is_active,
     };
 

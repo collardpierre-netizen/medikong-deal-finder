@@ -22,7 +22,7 @@ function useAdminPaginatedProducts(page: number, search: string, brandFilter: st
     queryFn: async () => {
       let query = supabase
         .from("products")
-        .select("id, name, slug, gtin, cnk_code, brand_name, brand_id, manufacturer_id, image_urls, offer_count, total_stock, best_price_excl_vat, is_active, source, created_at", { count: "exact" })
+        .select("id, name, slug, gtin, cnk_code, brand_name, brand_id, manufacturer_id, image_url, image_urls, offer_count, total_stock, best_price_excl_vat, is_active, source, created_at", { count: "exact" })
         .order("created_at", { ascending: false });
 
       if (search.trim()) {
@@ -232,7 +232,7 @@ const AdminProduits = () => {
                 </thead>
                 <tbody>
                   {products.map((p) => {
-                    const imgUrl = (p.image_urls as string[] | null)?.[0];
+                    const imgUrl = (p.image_urls as string[] | null)?.[0] || (p as any).image_url || null;
                     return (
                     <tr key={p.id} className="cursor-pointer transition-colors" style={{ borderBottom: "1px solid #F1F5F9" }}
                       onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#F8FAFC")}

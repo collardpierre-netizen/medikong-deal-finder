@@ -61,6 +61,19 @@ export default function AdminFabricants() {
   const [mergeDialogOpen, setMergeDialogOpen] = useState(false);
   const [mergeSource, setMergeSource] = useState("");
   const [mergeTarget, setMergeTarget] = useState("");
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const handleImport = async (file: File) => {
+    toast.info("Import en cours...");
+    try {
+      const result = await importManufacturers(file);
+      toast.success(`${result.created} fabricant(s) importé(s)`);
+      if (result.errors.length > 0) toast.warning(`${result.errors.length} erreur(s): ${result.errors[0]}`);
+      qc.invalidateQueries({ queryKey: ["admin-manufacturers"] });
+    } catch (e: any) {
+      toast.error(e.message || "Erreur import");
+    }
+  };
 
   const { data: linkedBrands = [] } = useBrandsForManufacturer(selectedId);
 

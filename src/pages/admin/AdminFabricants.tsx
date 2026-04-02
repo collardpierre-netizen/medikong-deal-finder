@@ -142,6 +142,16 @@ export default function AdminFabricants() {
       <AdminTopBar title="Fabricants" subtitle="Gestion des fabricants (manufacturers)"
         actions={
           <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => downloadManufacturerTemplate()}>
+              <FileDown size={14} className="mr-1" />Template
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => exportManufacturers()}>
+              <Download size={14} className="mr-1" />Export
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()}>
+              <Upload size={14} className="mr-1" />Import
+            </Button>
+            <input ref={fileRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={e => { if (e.target.files?.[0]) handleImport(e.target.files[0]); e.target.value = ""; }} />
             <Button variant="outline" size="sm" onClick={() => setMergeDialogOpen(true)}>
               <Merge size={14} className="mr-1" />Fusionner
             </Button>

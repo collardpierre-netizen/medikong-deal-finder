@@ -271,3 +271,75 @@ function readXlsx(file: File): Promise<any[]> {
     reader.readAsArrayBuffer(file);
   });
 }
+
+// ─── Manufacturers ────────────────────────────────────
+export function downloadManufacturerTemplate() {
+  const example = [
+    { name: "Exemple Fabricant", slug: "", legal_name: "Exemple SA", country_of_origin: "BE", year_founded: 2000, logo_url: "https://example.com/logo.png", website_url: "https://example.com", description: "Description du fabricant", certifications: "ISO 13485, CE", specialties: "Wound care, Incontinence", is_active: true },
+  ];
+  const ws = XLSX.utils.json_to_sheet(example);
+  ws["!cols"] = [{ wch: 25 }, { wch: 20 }, { wch: 25 }, { wch: 8 }, { wch: 8 }, { wch: 35 }, { wch: 30 }, { wch: 40 }, { wch: 30 }, { wch: 30 }, { wch: 8 }];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Fabricants");
+  const guide = [
+    ["Champ", "Obligatoire", "Description"],
+    ["name", "OUI", "Nom du fabricant"],
+    ["slug", "Non", "Slug URL (auto-généré si vide)"],
+    ["legal_name", "Non", "Raison sociale"],
+    ["country_of_origin", "Non", "Code pays (BE, FR, DE, etc.)"],
+    ["year_founded", "Non", "Année de fondation"],
+    ["logo_url", "Non", "URL du logo"],
+    ["website_url", "Non", "URL du site web"],
+    ["description", "Non", "Description du fabricant"],
+    ["certifications", "Non", "Certifications séparées par des virgules"],
+    ["specialties", "Non", "Spécialités séparées par des virgules"],
+    ["is_active", "Non", "true ou false (défaut: true)"],
+  ];
+  const wsGuide = XLSX.utils.aoa_to_sheet(guide);
+  wsGuide["!cols"] = [{ wch: 18 }, { wch: 14 }, { wch: 50 }];
+  XLSX.utils.book_append_sheet(wb, wsGuide, "Guide");
+  XLSX.writeFile(wb, "template-import-fabricants.xlsx");
+  toast.success("Template téléchargé");
+}
+
+export async function exportManufacturers() {
+  const { data, error } = await supabase.from("manufacturers").select("*").order("name").limit(2000);
+  if (error) { toast.error("Erreur export fabricants"); return; }
+  const rows = (data || []).map(m => ({
+    name: m.name, slug: m.slug, legal_name: m.legal_name || "",
+    country_of_origin: m.country_of_origin || "", year_founded: m.year_founded || "",
+    logo_url: m.logo_url || "", website_url: m.website_url || "",
+    description: m.description || "",
+    certifications: (m.certifications || []).join(", "),
+    specialties: (m.specialties || []).join(", "),
+    brand_count: m.brand_count || 0, product_count: m.product_count || 0,
+    is_active: m.is_active,
+  }));
+  exportToXlsx(rows, "medikong-fabricants", "Fabricants");
+}
+
+export async function importManufacturers(file: File): Promise<{ created: number; errors: string[] }> {
+  const rows = await readXlsx(file);
+  let created = 0;
+  const errors: string[] = [];
+  for (const row of rows) {
+    const r = row as any;
+    if (!r.name) { errors.push("Ligne ignorée: nom manquant"); continue; }
+    const { error } = await supabase.from("manufacturers").upsert({
+      name: r.name,
+      slug: r.slug || slugify(r.name),
+      legal_name: r.legal_name || null,
+      country_of_origin: r.country_of_origin || null,
+      year_founded: r.year_founded ? Number(r.year_founded) : null,
+      logo_url: r.logo_url || null,
+      website_url: r.website_url || null,
+      description: r.description || null,
+      certifications: r.certifications ? String(r.certifications).split(",").map(s => s.trim()).filter(Boolean) : [],
+      specialties: r.specialties ? String(r.specialties).split(",").map(s => s.trim()).filter(Boolean) : [],
+      is_active: r.is_active === false || r.is_active === "false" ? false : true,
+    }, { onConflict: "slug" });
+    if (error) errors.push(`${r.name}: ${error.message}`);
+    else created++;
+  }
+  return { created, errors };
+}

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import AdminTopBar from "@/components/admin/AdminTopBar";
@@ -13,7 +13,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Factory, Package, Tag, Plus, Search, Globe, Award, Merge, X, ExternalLink } from "lucide-react";
+import { Factory, Package, Tag, Plus, Search, Globe, Award, Merge, X, ExternalLink, Download, Upload, FileDown } from "lucide-react";
+import { exportManufacturers, importManufacturers, downloadManufacturerTemplate } from "@/lib/xlsx-utils";
 
 const COUNTRIES = [
   { code: "BE", label: "🇧🇪 Belgique" }, { code: "FR", label: "🇫🇷 France" },
@@ -60,6 +61,19 @@ export default function AdminFabricants() {
   const [mergeDialogOpen, setMergeDialogOpen] = useState(false);
   const [mergeSource, setMergeSource] = useState("");
   const [mergeTarget, setMergeTarget] = useState("");
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const handleImport = async (file: File) => {
+    toast.info("Import en cours...");
+    try {
+      const result = await importManufacturers(file);
+      toast.success(`${result.created} fabricant(s) importé(s)`);
+      if (result.errors.length > 0) toast.warning(`${result.errors.length} erreur(s): ${result.errors[0]}`);
+      qc.invalidateQueries({ queryKey: ["admin-manufacturers"] });
+    } catch (e: any) {
+      toast.error(e.message || "Erreur import");
+    }
+  };
 
   const { data: linkedBrands = [] } = useBrandsForManufacturer(selectedId);
 
@@ -128,6 +142,16 @@ export default function AdminFabricants() {
       <AdminTopBar title="Fabricants" subtitle="Gestion des fabricants (manufacturers)"
         actions={
           <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => downloadManufacturerTemplate()}>
+              <FileDown size={14} className="mr-1" />Template
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => exportManufacturers()}>
+              <Download size={14} className="mr-1" />Export
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()}>
+              <Upload size={14} className="mr-1" />Import
+            </Button>
+            <input ref={fileRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={e => { if (e.target.files?.[0]) handleImport(e.target.files[0]); e.target.value = ""; }} />
             <Button variant="outline" size="sm" onClick={() => setMergeDialogOpen(true)}>
               <Merge size={14} className="mr-1" />Fusionner
             </Button>
@@ -202,7 +226,12 @@ export default function AdminFabricants() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Button variant="ghost" size="sm" className="text-[11px] h-7" onClick={e => { e.stopPropagation(); setEditItem(m); setDialogOpen(true); }}>Éditer</Button>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="sm" className="text-[11px] h-7" onClick={e => { e.stopPropagation(); setEditItem(m); setDialogOpen(true); }}>Éditer</Button>
+                        <Button variant="ghost" size="sm" className="text-[11px] h-7 px-1.5" onClick={e => { e.stopPropagation(); window.open(`/fabricant/${m.slug}`, '_blank'); }} title="Page publique">
+                          <ExternalLink size={12} />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -265,7 +294,10 @@ export default function AdminFabricants() {
                     {linkedBrands.map(b => (
                       <div key={b.id} className="flex items-center justify-between py-1.5 px-2 rounded hover:bg-[#F8FAFC]">
                         <span className="text-[12px] font-medium">{b.name}</span>
-                        <span className="text-[10px]" style={{ color: "#8B95A5" }}>{b.product_count || 0} prod.</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px]" style={{ color: "#8B95A5" }}>{b.product_count || 0} prod.</span>
+                          <button onClick={() => window.open(`/marque/${b.slug}`, '_blank')} className="text-[#1B5BDA] hover:text-[#1B5BDA]/80" title="Page publique"><ExternalLink size={11} /></button>
+                        </div>
                       </div>
                     ))}
                   </div>

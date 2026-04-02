@@ -205,7 +205,7 @@ export async function exportCategories() {
   // Build parent name lookup
   const catMap = new Map((data || []).map((c: any) => [c.id, c]));
   const rows = (data || []).map((c: any) => {
-    const parent = c.parent_id ? catMap.get(c.parent_id) : null;
+    const parent: any = c.parent_id ? catMap.get(c.parent_id) : null;
     return {
       name: c.name, slug: c.slug,
       parent_name: parent ? parent.name : "",

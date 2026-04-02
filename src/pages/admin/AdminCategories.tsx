@@ -1,3 +1,4 @@
+import React from "react";
 import { useState, useRef, useMemo } from "react";
 import AdminTopBar from "@/components/admin/AdminTopBar";
 import KpiCard from "@/components/admin/KpiCard";
@@ -16,6 +17,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { exportCategories, importCategories } from "@/lib/xlsx-utils";
 import { toast } from "sonner";
 import { Layers, Tag, Package, ChevronDown, ChevronRight, Download, Upload, Languages, X, Save, Wand2, Merge } from "lucide-react";
+import { Search, FolderTree, ArrowRight, Plus, Trash2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const LOCALES = ["fr", "nl", "de"] as const;
 
@@ -111,6 +115,57 @@ const AdminCategories = () => {
 
   // Auto-translate all categories for a locale using AI edge function
   const [translating, setTranslating] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [showReassign, setShowReassign] = useState(false);
+  const [reassignParent, setReassignParent] = useState("none");
+  const [showNewCat, setShowNewCat] = useState(false);
+  const [newCatName, setNewCatName] = useState("");
+  const [newCatParent, setNewCatParent] = useState("none");
+
+  const searchLower = search.toLowerCase().trim();
+  const matchesSearch = (cat: any) => {
+    if (!searchLower) return true;
+    const frName = getTranslated(translations, cat.id, "name", "fr", "").toLowerCase();
+    return cat.name.toLowerCase().includes(searchLower) || frName.includes(searchLower);
+  };
+  const childrenOf = (pid: string) => categoriesData.filter(c => c.parent_id === pid);
+  const filteredParents = searchLower
+    ? parents.filter(c => matchesSearch(c) || childrenOf(c.id).some(matchesSearch))
+    : parents;
+
+  const toggleSelect = (id: string) => setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+
+  const reassignMutation = useMutation({
+    mutationFn: async () => {
+      const np = reassignParent === "none" ? null : reassignParent;
+      for (const id of selectedIds) await supabase.from("categories").update({ parent_id: np }).eq("id", id);
+    },
+    onSuccess: () => { toast.success(`${selectedIds.length} catégorie(s) réassignée(s)`); setSelectedIds([]); setShowReassign(false); qc.invalidateQueries({ queryKey: ["admin-categories"] }); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async () => {
+      if (!newCatName.trim()) throw new Error("Nom requis");
+      const slug = newCatName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+      const { error } = await supabase.from("categories").insert({ name: newCatName.trim(), slug, parent_id: newCatParent === "none" ? null : newCatParent, is_active: true });
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Catégorie créée"); setShowNewCat(false); setNewCatName(""); setNewCatParent("none"); qc.invalidateQueries({ queryKey: ["admin-categories"] }); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await supabase.from("categories").update({ parent_id: null }).eq("parent_id", id);
+      const { error } = await supabase.from("categories").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Catégorie supprimée"); setSelectedId(null); setEditForm(null); qc.invalidateQueries({ queryKey: ["admin-categories"] }); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const handleAutoTranslate = async (locale: "fr" | "nl" | "de") => {
     // Collect categories without translation
     const missing: typeof categoriesData = [];
@@ -212,6 +267,7 @@ const AdminCategories = () => {
       <AdminTopBar title="Catégories" subtitle="Arborescence du catalogue produits"
         actions={
           <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => setShowNewCat(true)}><Plus size={14} className="mr-1" />Nouvelle</Button>
             <Button variant="outline" size="sm" onClick={() => handleAutoTranslate("fr")} disabled={!!translating}>
               <Wand2 size={14} className={`mr-1 ${translating === "fr" ? "animate-spin" : ""}`} />{translating === "fr" ? "Traduction..." : "Auto FR"}
             </Button>
@@ -239,10 +295,21 @@ const AdminCategories = () => {
         <div className="flex gap-4">
           {/* Tree View */}
           <div className={`bg-white rounded-lg border p-5 ${selectedId ? "flex-1" : "w-full"}`} style={{ borderColor: "#E2E8F0" }}>
-            <h3 className="text-[14px] font-semibold mb-4" style={{ color: "#1D2530" }}>Arborescence</h3>
+            <div className="flex items-center justify-between mb-3 gap-2">
+              <h3 className="text-[14px] font-semibold" style={{ color: "#1D2530" }}><FolderTree size={16} className="inline mr-1" />Arborescence</h3>
+              {selectedIds.length > 0 && (
+                <Button variant="outline" size="sm" onClick={() => setShowReassign(true)} className="text-[11px] h-7">
+                  <ArrowRight size={12} className="mr-1" />Réassigner ({selectedIds.length})
+                </Button>
+              )}
+            </div>
+            <div className="relative mb-3">
+              <Search size={14} className="absolute left-2.5 top-2 text-muted-foreground" />
+              <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Rechercher une catégorie..." className="pl-8 h-8 text-[12px]" />
+            </div>
             <div className="space-y-0.5">
-              {parents.map((cat) => {
-                const subs = children(cat.id);
+              {filteredParents.map((cat) => {
+                const subs = childrenOf(cat.id).filter(c => !searchLower || matchesSearch(c) || matchesSearch(cat));
                 const isActive = selectedId === cat.id;
                 return (
                   <div key={cat.id}>
@@ -250,6 +317,7 @@ const AdminCategories = () => {
                       onClick={() => selectCategory(cat)}
                       className={`flex items-center gap-2 w-full text-left px-3 py-2 rounded-md transition-colors ${isActive ? "bg-blue-50" : "hover:bg-gray-50"}`}
                     >
+                      <Checkbox checked={selectedIds.includes(cat.id)} onCheckedChange={() => toggleSelect(cat.id)} onClick={(e: any) => e.stopPropagation()} className="mr-0.5 h-3.5 w-3.5" />
                       <span onClick={(e) => { e.stopPropagation(); if (subs.length > 0) toggle(cat.id); }} className="cursor-pointer">
                         {subs.length > 0 ? (
                           expanded.includes(cat.id) ? <ChevronDown size={14} style={{ color: "#8B95A5" }} /> : <ChevronRight size={14} style={{ color: "#8B95A5" }} />
@@ -269,17 +337,33 @@ const AdminCategories = () => {
                         {subs.map((sub) => {
                           const isSubActive = selectedId === sub.id;
                           return (
-                            <button key={sub.id}
+                            <React.Fragment key={sub.id}>
+                            <button
                               onClick={() => selectCategory(sub)}
                               className={`flex items-center gap-2 px-3 py-1.5 rounded-md w-full text-left transition-colors ${isSubActive ? "bg-blue-50" : "hover:bg-gray-50"}`}
                             >
+                              <Checkbox checked={selectedIds.includes(sub.id)} onCheckedChange={() => toggleSelect(sub.id)} onClick={(e: any) => e.stopPropagation()} className="mr-0.5 h-3.5 w-3.5" />
                               <Tag size={12} style={{ color: "#7C3AED" }} />
                               <span className="text-[12px] flex-1" style={{ color: "#616B7C" }}>
                                 {getTranslated(translations, sub.id, "name", "fr", sub.name)}
                               </span>
                               <TranslationBadges catId={sub.id} />
                             </button>
-                          );
+                            {/* Grandchildren */}
+                            {childrenOf(sub.id).length > 0 && (
+                              <div className="ml-6 space-y-0.5">
+                                {childrenOf(sub.id).map(gc => (
+                                  <button key={gc.id} onClick={() => selectCategory(gc)}
+                                    className={`flex items-center gap-1.5 px-2 py-1 rounded-md w-full text-left text-[11px] ${selectedId === gc.id ? "bg-blue-50" : "hover:bg-gray-50"}`}>
+                                    <Checkbox checked={selectedIds.includes(gc.id)} onCheckedChange={() => toggleSelect(gc.id)} onClick={(e: any) => e.stopPropagation()} className="h-3 w-3" />
+                                    <span className="w-2 h-px bg-gray-300 shrink-0" />
+                                    <span className="flex-1" style={{ color: "#8B95A5" }}>{getTranslated(translations, gc.id, "name", "fr", gc.name)}</span>
+                                    <TranslationBadges catId={gc.id} />
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                           </React.Fragment>);
                         })}
                       </div>
                     )}
@@ -293,8 +377,11 @@ const AdminCategories = () => {
           {selected && editForm && (
             <div className="w-[380px] bg-white rounded-lg border p-5 shrink-0 overflow-y-auto max-h-[calc(100vh-220px)]" style={{ borderColor: "#E2E8F0" }}>
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-[15px] font-bold" style={{ color: "#1D2530" }}>Éditer la catégorie</h3>
-                <button onClick={() => { setSelectedId(null); setEditForm(null); }} className="text-[#8B95A5] hover:text-[#1D2530]"><X size={16} /></button>
+                <h3 className="text-[15px] font-bold" style={{ color: "#1D2530" }}>Éditer</h3>
+                <div className="flex gap-1.5">
+                  <button onClick={() => { if (confirm("Supprimer cette catégorie ?")) deleteMutation.mutate(selected.id); }} className="text-red-400 hover:text-red-600"><Trash2 size={14} /></button>
+                  <button onClick={() => { setSelectedId(null); setEditForm(null); }} className="text-[#8B95A5] hover:text-[#1D2530]"><X size={16} /></button>
+                </div>
               </div>
 
               {/* Original name (read-only) */}
@@ -386,13 +473,63 @@ const AdminCategories = () => {
                 </div>
               </div>
 
-              <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending} className="w-full bg-[#1E293B] hover:bg-[#1E293B]/90">
+              <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending} className="w-full bg-primary hover:bg-primary/90">
                 <Save size={14} className="mr-1" />{saveMutation.isPending ? "..." : "Sauvegarder"}
               </Button>
             </div>
           )}
         </div>
       )}
+
+      {/* Reassign Dialog */}
+      <Dialog open={showReassign} onOpenChange={setShowReassign}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Réassigner {selectedIds.length} catégorie(s)</DialogTitle></DialogHeader>
+          <p className="text-[13px] text-muted-foreground mb-3">Choisissez le nouveau parent :</p>
+          <Select value={reassignParent} onValueChange={setReassignParent}>
+            <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">— Racine (pas de parent) —</SelectItem>
+              {parents.filter(p => !selectedIds.includes(p.id)).map(p => (
+                <SelectItem key={p.id} value={p.id}>{getTranslated(translations, p.id, "name", "fr", p.name)}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowReassign(false)}>Annuler</Button>
+            <Button onClick={() => reassignMutation.mutate()} disabled={reassignMutation.isPending}>{reassignMutation.isPending ? "..." : "Réassigner"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* New Category Dialog */}
+      <Dialog open={showNewCat} onOpenChange={setShowNewCat}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Nouvelle catégorie</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label className="text-[11px] font-semibold text-muted-foreground">NOM</Label>
+              <Input value={newCatName} onChange={e => setNewCatName(e.target.value)} className="mt-1" placeholder="Nom de la catégorie" />
+            </div>
+            <div>
+              <Label className="text-[11px] font-semibold text-muted-foreground">CATÉGORIE PARENTE</Label>
+              <Select value={newCatParent} onValueChange={setNewCatParent}>
+                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">— Racine —</SelectItem>
+                  {parents.map(p => (
+                    <SelectItem key={p.id} value={p.id}>{getTranslated(translations, p.id, "name", "fr", p.name)}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowNewCat(false)}>Annuler</Button>
+            <Button onClick={() => createMutation.mutate()} disabled={createMutation.isPending}>{createMutation.isPending ? "..." : "Créer"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

@@ -713,17 +713,29 @@ export default function OnboardingPage() {
 
     setCheckingConfirmedEmail(true);
     try {
+      // 1. Try consuming any auth tokens in URL
       await consumeAuthCallbackTokens();
 
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError) throw sessionError;
-
+      // 2. Check existing session
+      const { data: sessionData } = await supabase.auth.getSession();
       let confirmedUser = sessionData.session?.user ?? null;
 
+      // 3. If no session in memory, try signing in with the temp password (works across tabs)
       if (!confirmedUser) {
-        const { data: userData, error: userError } = await supabase.auth.getUser();
-        if (userError) throw userError;
-        confirmedUser = userData.user;
+        const storedTempPw = readOnboardingStorage(getTempPasswordStorageKey(email));
+        if (storedTempPw && email) {
+          const { data: signInData } = await supabase.auth.signInWithPassword({
+            email,
+            password: storedTempPw,
+          });
+          confirmedUser = signInData?.user ?? null;
+        }
+      }
+
+      // 4. Last resort: getUser (needs active session)
+      if (!confirmedUser) {
+        const { data: userData } = await supabase.auth.getUser();
+        confirmedUser = userData?.user ?? null;
       }
 
       if (!confirmedUser) {

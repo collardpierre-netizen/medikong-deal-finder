@@ -1953,9 +1953,11 @@ export type Database = {
         Row: {
           best_price_excl_vat: number | null
           best_price_incl_vat: number | null
+          brand: string | null
           brand_id: string | null
           brand_name: string | null
           brand_qid: string | null
+          category: string | null
           category_id: string | null
           category_name: string | null
           category_qid: string | null
@@ -1966,12 +1968,15 @@ export type Database = {
           description: string | null
           dimension_unit: string | null
           dimensions: Json | null
+          estimated_delivery_weeks: number | null
           gtin: string | null
           height: number | null
           id: string
+          image_url: string | null
           image_urls: string[] | null
           is_active: boolean
           is_in_stock: boolean
+          is_preorder: boolean | null
           is_promotion: boolean
           is_published: boolean
           label: string | null
@@ -1997,6 +2002,7 @@ export type Database = {
           source: Database["public"]["Enums"]["product_source"]
           synced_at: string | null
           total_stock: number
+          unit: string | null
           unit_quantity: number
           updated_at: string
           weight: number | null
@@ -2006,9 +2012,11 @@ export type Database = {
         Insert: {
           best_price_excl_vat?: number | null
           best_price_incl_vat?: number | null
+          brand?: string | null
           brand_id?: string | null
           brand_name?: string | null
           brand_qid?: string | null
+          category?: string | null
           category_id?: string | null
           category_name?: string | null
           category_qid?: string | null
@@ -2019,12 +2027,15 @@ export type Database = {
           description?: string | null
           dimension_unit?: string | null
           dimensions?: Json | null
+          estimated_delivery_weeks?: number | null
           gtin?: string | null
           height?: number | null
           id?: string
+          image_url?: string | null
           image_urls?: string[] | null
           is_active?: boolean
           is_in_stock?: boolean
+          is_preorder?: boolean | null
           is_promotion?: boolean
           is_published?: boolean
           label?: string | null
@@ -2050,6 +2061,7 @@ export type Database = {
           source?: Database["public"]["Enums"]["product_source"]
           synced_at?: string | null
           total_stock?: number
+          unit?: string | null
           unit_quantity?: number
           updated_at?: string
           weight?: number | null
@@ -2059,9 +2071,11 @@ export type Database = {
         Update: {
           best_price_excl_vat?: number | null
           best_price_incl_vat?: number | null
+          brand?: string | null
           brand_id?: string | null
           brand_name?: string | null
           brand_qid?: string | null
+          category?: string | null
           category_id?: string | null
           category_name?: string | null
           category_qid?: string | null
@@ -2072,12 +2086,15 @@ export type Database = {
           description?: string | null
           dimension_unit?: string | null
           dimensions?: Json | null
+          estimated_delivery_weeks?: number | null
           gtin?: string | null
           height?: number | null
           id?: string
+          image_url?: string | null
           image_urls?: string[] | null
           is_active?: boolean
           is_in_stock?: boolean
+          is_preorder?: boolean | null
           is_promotion?: boolean
           is_published?: boolean
           label?: string | null
@@ -2103,6 +2120,7 @@ export type Database = {
           source?: Database["public"]["Enums"]["product_source"]
           synced_at?: string | null
           total_stock?: number
+          unit?: string | null
           unit_quantity?: number
           updated_at?: string
           weight?: number | null

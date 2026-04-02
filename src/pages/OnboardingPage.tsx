@@ -617,18 +617,15 @@ export default function OnboardingPage() {
     setSendingOtp(true);
     setOtpError(false);
     setOtpDigits(["", "", "", "", "", ""]);
-    setEmailDeliveryMode("link_only");
-    persistOnboardingDraft(email, "link_only");
+    setEmailDeliveryMode("code_or_link");
+    persistOnboardingDraft(email, "code_or_link");
 
     try {
-      const temporaryPassword = `${crypto.randomUUID()}Aa1!`;
-      setTempPassword(temporaryPassword);
-      writeOnboardingStorage(getTempPasswordStorageKey(email), temporaryPassword);
-
-      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+      // Use signInWithOtp which sends a 6-digit code by email
+      const { error } = await supabase.auth.signInWithOtp({
         email,
-        password: temporaryPassword,
         options: {
+          shouldCreateUser: true,
           data: {
             onboarding_pending: true,
             onboarding_completed: false,
@@ -636,46 +633,14 @@ export default function OnboardingPage() {
             ...(role === "buyer" && buyerProfile ? { onboarding_buyer_profile: buyerProfile } : {}),
             ...(role === "seller" && businessType ? { onboarding_business_type: businessType } : {}),
           },
-          emailRedirectTo: buildOnboardingRedirectUrl("link_only"),
         },
       });
 
-      const msg = signUpError?.message?.toLowerCase() || "";
-      const alreadyRegistered =
-        msg.includes("already registered") ||
-        msg.includes("already been registered") ||
-        msg.includes("user already exists");
-
-      const isRepeatedSignupObfuscated =
-        !signUpError &&
-        Array.isArray(signUpData?.user?.identities) &&
-        signUpData.user.identities.length === 0;
-
-      if (signUpError && !alreadyRegistered) {
-        throw signUpError;
-      }
-
-      if (alreadyRegistered || isRepeatedSignupObfuscated) {
-        const { error: loginLinkError } = await supabase.auth.signInWithOtp({
-          email,
-          options: {
-            shouldCreateUser: false,
-            emailRedirectTo: buildOnboardingRedirectUrl("link_only"),
-          },
-        });
-
-        if (loginLinkError) {
-          throw loginLinkError;
-        }
-
-        goNext();
-        return;
-      }
-
+      if (error) throw error;
       goNext();
     } catch (error) {
       console.error("OTP send error:", error);
-      alert("Impossible d'envoyer l'email de confirmation pour le moment. Réessayez dans quelques secondes.");
+      alert("Impossible d'envoyer le code de vérification. Réessayez dans quelques secondes.");
     } finally {
       setSendingOtp(false);
     }

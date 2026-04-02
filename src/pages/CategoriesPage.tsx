@@ -137,16 +137,16 @@ export default function CategoriesPage() {
               {filtered.map(cat => (
                 <StaggerItem key={cat.slug}>
                   <HoverCard className="border border-mk-line rounded-xl bg-white">
-                    <Link to={`/categorie/${cat.slug}`} className="flex flex-col items-center text-center p-8 gap-4">
-                      <div className="w-16 h-16 rounded-2xl bg-mk-alt flex items-center justify-center">
+                    <Link to={`/categorie/${cat.slug}`} className="flex flex-col items-center text-center p-8 gap-4 h-full min-h-[180px] justify-center">
+                      <div className="w-16 h-16 rounded-2xl bg-mk-alt flex items-center justify-center shrink-0">
                         {cat.image_url ? (
                           <img src={cat.image_url} alt="" className="w-8 h-8 object-contain" />
                         ) : (
                           iconMap[cat.icon || "Package"] || <Package size={28} className="text-mk-blue" />
                         )}
                       </div>
-                      <div>
-                        <h2 className="text-lg font-bold text-mk-navy mb-1">{cat.name_fr || cat.name}</h2>
+                      <div className="min-h-[48px] flex flex-col justify-center">
+                        <h2 className="text-lg font-bold text-mk-navy mb-1 line-clamp-2">{cat.name_fr || cat.name}</h2>
                         <p className="text-sm text-muted-foreground">{cat.productCount.toLocaleString("fr-FR")} produits</p>
                       </div>
                     </Link>

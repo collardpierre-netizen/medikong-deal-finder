@@ -1,3 +1,4 @@
+import React from "react";
 import { useState, useRef, useMemo } from "react";
 import AdminTopBar from "@/components/admin/AdminTopBar";
 import KpiCard from "@/components/admin/KpiCard";
@@ -336,7 +337,8 @@ const AdminCategories = () => {
                         {subs.map((sub) => {
                           const isSubActive = selectedId === sub.id;
                           return (
-                            <button key={sub.id}
+                            <React.Fragment key={sub.id}>
+                            <button
                               onClick={() => selectCategory(sub)}
                               className={`flex items-center gap-2 px-3 py-1.5 rounded-md w-full text-left transition-colors ${isSubActive ? "bg-blue-50" : "hover:bg-gray-50"}`}
                             >
@@ -361,8 +363,7 @@ const AdminCategories = () => {
                                 ))}
                               </div>
                             )}
-                          </React.Fragment>
-                          );
+                           </React.Fragment>);
                         })}
                       </div>
                     )}

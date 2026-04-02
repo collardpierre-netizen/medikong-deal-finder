@@ -653,13 +653,22 @@ export default function OnboardingPage() {
     setOtpError(false);
 
     try {
+      // Try "email" type first (signInWithOtp flow)
       const { error } = await supabase.auth.verifyOtp({
         email,
         token: code,
-        type: "signup",
+        type: "email",
       });
 
-      if (error) throw error;
+      if (error) {
+        // Fallback: try "signup" type (in case user was created via signUp)
+        const { error: signupError } = await supabase.auth.verifyOtp({
+          email,
+          token: code,
+          type: "signup",
+        });
+        if (signupError) throw signupError;
+      }
 
       setOtpVerified(true);
       setTimeout(() => goNext(), 400);

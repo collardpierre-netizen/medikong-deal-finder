@@ -759,40 +759,17 @@ export default function OnboardingPage() {
     if (!isPasswordValid || submitting) return;
     setSubmitting(true);
     try {
-      // 1. Try to restore authenticated session first
+      // User is already authenticated via OTP verification
       const { data: sessionData } = await supabase.auth.getSession();
       let userId = sessionData.session?.user?.id;
 
-      const fallbackTempPassword = tempPassword || readOnboardingStorage(getTempPasswordStorageKey(email)) || "";
-
-      // If no active session, sign in with the temp password (email confirmed via link)
-      if (!userId && fallbackTempPassword) {
-        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-          email,
-          password: fallbackTempPassword,
-        });
-        if (signInError) {
-          // Fallback: try magic-link sign-in if temp password doesn't work
-          const { data: otpData } = await supabase.auth.getUser();
-          if (otpData.user) {
-            userId = otpData.user.id;
-          } else {
-            alert("Votre email n'est pas encore confirmé. Ouvrez l'email reçu et cliquez sur le lien, puis réessayez.");
-            return;
-          }
-        } else {
-          userId = signInData.user?.id;
-        }
-      }
-
-      // Last resort: try getUser (session may exist from magic link)
       if (!userId) {
         const { data: userData } = await supabase.auth.getUser();
         userId = userData.user?.id;
       }
 
       if (!userId) {
-        alert('Session introuvable. Confirmez votre email puis réessayez.');
+        alert('Session introuvable. Veuillez revenir à l\'étape email et refaire la vérification.');
         return;
       }
 

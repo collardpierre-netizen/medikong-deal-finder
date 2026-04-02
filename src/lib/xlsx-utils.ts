@@ -132,13 +132,32 @@ export async function importBrands(file: File): Promise<{ created: number; error
 }
 
 export async function exportCategories() {
-  const { data, error } = await supabase.from("categories").select("*").order("display_order");
+  const { data, error } = await supabase.from("categories").select("*").order("display_order").limit(2000);
   if (error) { toast.error("Erreur export catégories"); return; }
-  const rows = (data || []).map(c => ({
-    name: c.name, slug: c.slug, description: c.description,
-    parent_id: c.parent_id || "", display_order: c.display_order,
-    vat_rate: c.vat_rate, hs_code: c.hs_code, is_active: c.is_active,
-  }));
+  // Fetch translations
+  const { data: trData } = await supabase.from("entity_translations").select("*").eq("entity_type", "category");
+  const trMap = new Map<string, Record<string, string>>();
+  (trData || []).forEach((t: any) => {
+    const key = `${t.entity_id}_${t.field}_${t.locale}`;
+    trMap.set(key, t);
+  });
+  const getTr = (id: string, field: string, locale: string) => {
+    const entry = trMap.get(`${id}_${field}_${locale}`);
+    return (entry as any)?.value || "";
+  };
+  // Build parent name lookup
+  const catMap = new Map((data || []).map(c => [c.id, c]));
+  const rows = (data || []).map(c => {
+    const parent = c.parent_id ? catMap.get(c.parent_id) : null;
+    return {
+      name: c.name, slug: c.slug,
+      parent_name: parent ? parent.name : "",
+      name_fr: getTr(c.id, "name", "fr"), name_nl: getTr(c.id, "name", "nl"), name_de: getTr(c.id, "name", "de"),
+      description: c.description || "",
+      desc_fr: getTr(c.id, "description", "fr"), desc_nl: getTr(c.id, "description", "nl"), desc_de: getTr(c.id, "description", "de"),
+      display_order: c.display_order, vat_rate: c.vat_rate, hs_code: c.hs_code, icon: c.icon || "", is_active: c.is_active,
+    };
+  });
   exportToXlsx(rows, "medikong-categories", "Catégories");
 }
 
@@ -146,19 +165,52 @@ export async function importCategories(file: File): Promise<{ created: number; e
   const rows = await readXlsx(file);
   let created = 0;
   const errors: string[] = [];
+  // Pre-fetch all categories to resolve parent_name
+  const { data: existingCats } = await supabase.from("categories").select("id,name,slug").limit(2000);
+  const catByName = new Map((existingCats || []).map(c => [c.name.toLowerCase().trim(), c]));
+  const catBySlug = new Map((existingCats || []).map(c => [c.slug, c]));
+  const translationItems: { entity_type: "category"; entity_id: string; locale: string; field: string; value: string }[] = [];
+
   for (const row of rows) {
     const r = row as any;
     if (!r.name) { errors.push("Ligne ignorée: nom manquant"); continue; }
-    const { error } = await supabase.from("categories").upsert({
+    // Resolve parent
+    let parentId: string | null = null;
+    if (r.parent_name) {
+      const parentCat = catByName.get(String(r.parent_name).toLowerCase().trim());
+      if (parentCat) parentId = parentCat.id;
+    }
+    const slug = r.slug || slugify(r.name);
+    const { data: upserted, error } = await supabase.from("categories").upsert({
       name: r.name,
-      slug: r.slug || slugify(r.name),
+      slug,
+      parent_id: parentId,
       description: r.description || null,
       display_order: r.display_order ? Number(r.display_order) : 0,
       vat_rate: r.vat_rate ? Number(r.vat_rate) : null,
       hs_code: r.hs_code || null,
-    }, { onConflict: "slug" });
-    if (error) errors.push(`${r.name}: ${error.message}`);
-    else created++;
+      icon: r.icon || null,
+    }, { onConflict: "slug" }).select("id").single();
+    if (error) { errors.push(`${r.name}: ${error.message}`); continue; }
+    created++;
+    const catId = upserted?.id;
+    if (!catId) continue;
+    // Update local lookup for subsequent parent resolution
+    catByName.set(r.name.toLowerCase().trim(), { id: catId, name: r.name, slug });
+    // Collect translations
+    for (const locale of ["fr", "nl", "de"] as const) {
+      const nameVal = r[`name_${locale}`]?.toString().trim();
+      const descVal = r[`desc_${locale}`]?.toString().trim();
+      if (nameVal) translationItems.push({ entity_type: "category", entity_id: catId, locale, field: "name", value: nameVal });
+      if (descVal) translationItems.push({ entity_type: "category", entity_id: catId, locale, field: "description", value: descVal });
+    }
+  }
+  // Batch save translations
+  if (translationItems.length > 0) {
+    for (let i = 0; i < translationItems.length; i += 50) {
+      const batch = translationItems.slice(i, i + 50);
+      await supabase.from("entity_translations").upsert(batch, { onConflict: "entity_type,entity_id,locale,field" });
+    }
   }
   return { created, errors };
 }

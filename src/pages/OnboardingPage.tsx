@@ -887,8 +887,6 @@ export default function OnboardingPage() {
 
   /* ─── Email Confirmation Screen (reusable) ─── */
   const renderOtpScreen = () => {
-    const expectsCode = emailDeliveryMode !== "link_only";
-
     return (
       <div style={{ textAlign: "center" }}>
         <BackLink onClick={goBack} />
@@ -897,68 +895,49 @@ export default function OnboardingPage() {
         </div>
         <h1 style={{ fontSize: 20, fontWeight: 700, color: S.text, marginBottom: 6 }}>Vérifiez votre email</h1>
         <p style={{ fontSize: 13, color: S.sec, marginBottom: 8 }}>
-          Un email a été envoyé à <strong>{email}</strong>
+          Un code à 6 chiffres a été envoyé à <strong>{email}</strong>
         </p>
         <div style={{ background: S.blueBg, border: `1px solid ${S.blue}20`, borderRadius: S.radius, padding: "16px 20px", marginBottom: 20, textAlign: "left" }}>
-          <p style={{ fontSize: 13, color: S.text, margin: 0, fontWeight: 600, marginBottom: 8 }}>
-            {expectsCode ? "📩 Entrez le code à 6 chiffres reçu par email" : "🔗 Cliquez sur le lien de connexion reçu par email"}
+          <p style={{ fontSize: 13, color: S.text, margin: 0, fontWeight: 600, marginBottom: 4 }}>
+            📩 Entrez le code reçu par email
           </p>
           <p style={{ fontSize: 12, color: S.sec, margin: 0, lineHeight: 1.6 }}>
-            {expectsCode
-              ? <>Vous pouvez saisir le code ou cliquer sur le bouton de l'email, puis revenir ici.</>
-              : <>Ouvrez votre boîte mail (<strong>{email}</strong>), cliquez sur le bouton de l'email, puis revenez ici.</>}
+            Ouvrez votre boîte mail et saisissez le code à 6 chiffres ci-dessous.
           </p>
         </div>
 
-        {expectsCode && (
-          <div style={{ marginBottom: 14 }}>
-            <div
-              style={{ display: "flex", justifyContent: "center", gap: 8, marginBottom: 8 }}
-              onPaste={handleOtpPaste}
-            >
-              {otpDigits.map((digit, idx) => (
-                <input
-                  key={idx}
-                  ref={(el) => (otpRefs.current[idx] = el)}
-                  value={digit}
-                  onChange={(e) => handleOtpChange(idx, e.target.value)}
-                  onKeyDown={(e) => handleOtpKeyDown(idx, e)}
-                  inputMode="numeric"
-                  maxLength={1}
-                  autoFocus={idx === 0}
-                  style={{
-                    width: 44,
-                    height: 48,
-                    borderRadius: S.radiusSm,
-                    border: `2px solid ${otpError ? S.red : otpDigits[idx] ? S.blue : S.line}`,
-                    textAlign: "center",
-                    fontSize: 20,
-                    fontWeight: 700,
-                    color: S.text,
-                    background: otpError ? S.redBg : "#fff",
-                    transition: "border-color .2s",
-                  }}
-                />
-              ))}
-            </div>
-            {otpError && <p style={{ fontSize: 11, color: S.red }}>Code invalide. Réessayez.</p>}
-            {verifyingOtp && <p style={{ fontSize: 11, color: S.blue }}><Loader2 size={12} className="tf-spin inline-block mr-1" />Vérification...</p>}
-          </div>
-        )}
-
         <div style={{ marginBottom: 14 }}>
-          <Cta
-            onClick={handleContinueAfterEmailConfirmation}
-            disabled={checkingConfirmedEmail || verifyingOtp}
-            loading={checkingConfirmedEmail}
-            variant="secondary"
+          <div
+            style={{ display: "flex", justifyContent: "center", gap: 8, marginBottom: 8 }}
+            onPaste={handleOtpPaste}
           >
-            {checkingConfirmedEmail
-              ? "Vérification en cours..."
-              : expectsCode
-                ? "J'ai cliqué le lien dans l'email"
-                : "J'ai cliqué le lien de connexion"}
-          </Cta>
+            {otpDigits.map((digit, idx) => (
+              <input
+                key={idx}
+                ref={(el) => (otpRefs.current[idx] = el)}
+                value={digit}
+                onChange={(e) => handleOtpChange(idx, e.target.value)}
+                onKeyDown={(e) => handleOtpKeyDown(idx, e)}
+                inputMode="numeric"
+                maxLength={1}
+                autoFocus={idx === 0}
+                style={{
+                  width: 44,
+                  height: 48,
+                  borderRadius: S.radiusSm,
+                  border: `2px solid ${otpError ? S.red : otpDigits[idx] ? S.blue : S.line}`,
+                  textAlign: "center",
+                  fontSize: 20,
+                  fontWeight: 700,
+                  color: S.text,
+                  background: otpError ? S.redBg : "#fff",
+                  transition: "border-color .2s",
+                }}
+              />
+            ))}
+          </div>
+          {otpError && <p style={{ fontSize: 11, color: S.red }}>Code invalide. Réessayez.</p>}
+          {verifyingOtp && <p style={{ fontSize: 11, color: S.blue }}><Loader2 size={12} className="tf-spin inline-block mr-1" />Vérification...</p>}
         </div>
 
         <div style={{ fontSize: 12, color: S.ter, marginBottom: 16 }}>
@@ -968,17 +947,15 @@ export default function OnboardingPage() {
               try {
                 const { error } = await supabase.auth.signInWithOtp({
                   email,
-                  options: {
-                    shouldCreateUser: false,
-                    emailRedirectTo: buildOnboardingRedirectUrl("link_only"),
-                  },
+                  options: { shouldCreateUser: true },
                 });
                 if (error) throw error;
-                setEmailDeliveryMode("link_only");
-                persistOnboardingDraft(email, "link_only");
               } catch(e) { console.error(e); }
               setOtpTimer(59);
-            }}>Renvoyer le lien de connexion</button>
+              setOtpDigits(["", "", "", "", "", ""]);
+              setOtpError(false);
+              otpRefs.current[0]?.focus();
+            }}>Renvoyer le code</button>
           )}
         </div>
         <p style={{ fontSize: 11, color: S.ter }}>Pensez à vérifier vos spams. Contact : <a href="mailto:support@medikong.pro" style={{ color: S.blue }}>support@medikong.pro</a></p>

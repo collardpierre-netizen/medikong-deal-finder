@@ -294,7 +294,10 @@ export default function AdminFabricants() {
                     {linkedBrands.map(b => (
                       <div key={b.id} className="flex items-center justify-between py-1.5 px-2 rounded hover:bg-[#F8FAFC]">
                         <span className="text-[12px] font-medium">{b.name}</span>
-                        <span className="text-[10px]" style={{ color: "#8B95A5" }}>{b.product_count || 0} prod.</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px]" style={{ color: "#8B95A5" }}>{b.product_count || 0} prod.</span>
+                          <button onClick={() => window.open(`/marque/${b.slug}`, '_blank')} className="text-[#1B5BDA] hover:text-[#1B5BDA]/80" title="Page publique"><ExternalLink size={11} /></button>
+                        </div>
                       </div>
                     ))}
                   </div>

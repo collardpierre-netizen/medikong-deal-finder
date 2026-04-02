@@ -361,7 +361,8 @@ const AdminCategories = () => {
                                 ))}
                               </div>
                             )}
-                          </div>);
+                          </React.Fragment>
+                          );
                         })}
                       </div>
                     )}

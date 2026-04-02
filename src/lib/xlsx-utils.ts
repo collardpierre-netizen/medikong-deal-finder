@@ -62,11 +62,24 @@ export async function exportProducts() {
 }
 
 export async function exportBrands() {
-  const { data, error } = await supabase.from("brands").select("*").order("name");
+  const { data, error } = await supabase.from("brands").select("*").order("name").limit(2000);
   if (error) { toast.error("Erreur export marques"); return; }
+  // Fetch translations
+  const { data: trData } = await (supabase as any).from("translations").select("*").eq("entity_type", "brand");
+  const getTr = (id: string, field: string, locale: string) => {
+    const t = (trData || []).find((t: any) => t.entity_id === id && t.field === field && t.locale === locale);
+    return t?.value || "";
+  };
+  // Fetch manufacturers for name resolution
+  const { data: mfrs } = await supabase.from("manufacturers").select("id,name").limit(2000);
+  const mfrMap = new Map((mfrs || []).map(m => [m.id, m.name]));
   const rows = (data || []).map(b => ({
-    name: b.name, slug: b.slug, description: b.description,
-    product_count: b.product_count, is_featured: b.is_featured,
+    name: b.name, slug: b.slug, description: b.description || "",
+    country_of_origin: b.country_of_origin || "", website_url: b.website_url || "",
+    logo_url: b.logo_url || "", manufacturer_name: b.manufacturer_id ? mfrMap.get(b.manufacturer_id) || "" : "",
+    is_featured: b.is_featured, is_active: b.is_active, product_count: b.product_count,
+    name_fr: getTr(b.id, "name", "fr"), name_nl: getTr(b.id, "name", "nl"), name_de: getTr(b.id, "name", "de"),
+    desc_fr: getTr(b.id, "description", "fr"), desc_nl: getTr(b.id, "description", "nl"), desc_de: getTr(b.id, "description", "de"),
   }));
   exportToXlsx(rows, "medikong-marques", "Marques");
 }
@@ -117,16 +130,45 @@ export async function importBrands(file: File): Promise<{ created: number; error
   const rows = await readXlsx(file);
   let created = 0;
   const errors: string[] = [];
+  // Fetch manufacturers for name resolution
+  const { data: mfrs } = await supabase.from("manufacturers").select("id,name").limit(2000);
+  const mfrByName = new Map((mfrs || []).map(m => [m.name.toLowerCase().trim(), m.id]));
+  const translationItems: { entity_type: "brand"; entity_id: string; locale: string; field: string; value: string }[] = [];
   for (const row of rows) {
     const r = row as any;
     if (!r.name) { errors.push("Ligne ignorée: nom manquant"); continue; }
-    const { error } = await supabase.from("brands").upsert({
+    // Resolve manufacturer
+    let manufacturerId: string | null = null;
+    if (r.manufacturer_name) {
+      manufacturerId = mfrByName.get(String(r.manufacturer_name).toLowerCase().trim()) || null;
+    }
+    const { data: upserted, error } = await supabase.from("brands").upsert({
       name: r.name,
       slug: r.slug || slugify(r.name),
       description: r.description || null,
-    }, { onConflict: "slug" });
-    if (error) errors.push(`${r.name}: ${error.message}`);
-    else created++;
+      country_of_origin: r.country_of_origin || null,
+      website_url: r.website_url || null,
+      logo_url: r.logo_url || null,
+      manufacturer_id: manufacturerId,
+      is_featured: r.is_featured === true || r.is_featured === "true",
+      is_active: r.is_active === false || r.is_active === "false" ? false : true,
+    }, { onConflict: "slug" }).select("id").single();
+    if (error) { errors.push(`${r.name}: ${error.message}`); continue; }
+    created++;
+    const brandId = upserted?.id;
+    if (!brandId) continue;
+    for (const locale of ["fr", "nl", "de"] as const) {
+      const nameVal = r[`name_${locale}`]?.toString().trim();
+      const descVal = r[`desc_${locale}`]?.toString().trim();
+      if (nameVal) translationItems.push({ entity_type: "brand", entity_id: brandId, locale, field: "name", value: nameVal });
+      if (descVal) translationItems.push({ entity_type: "brand", entity_id: brandId, locale, field: "description", value: descVal });
+    }
+  }
+  // Batch save translations
+  if (translationItems.length > 0) {
+    for (let i = 0; i < translationItems.length; i += 50) {
+      await (supabase as any).from("translations").upsert(translationItems.slice(i, i + 50), { onConflict: "entity_type,entity_id,locale,field" });
+    }
   }
   return { created, errors };
 }

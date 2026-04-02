@@ -105,11 +105,7 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
       whileHover={{ y: -4, boxShadow: "0 8px 24px -8px rgba(0,0,0,0.12)" }}
     >
       <div className="relative mb-3">
-        {product.pct > 0 && (
-          <span className="absolute top-2 left-2 bg-mk-red text-white text-[11px] font-bold px-2 py-0.5 rounded z-10">
-            {product.pct}%
-          </span>
-        )}
+        {/* Discount badge masqué — à réactiver quand basé sur un vrai prix de référence */}
         <button className="absolute top-2 right-2 w-7 h-7 rounded-full border border-mk-line bg-white flex items-center justify-center hover:border-mk-blue z-10 transition-colors" aria-label="Alerte prix">
           <Bell size={13} className="text-mk-sec" />
         </button>

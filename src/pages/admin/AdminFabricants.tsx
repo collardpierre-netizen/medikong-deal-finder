@@ -226,7 +226,12 @@ export default function AdminFabricants() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Button variant="ghost" size="sm" className="text-[11px] h-7" onClick={e => { e.stopPropagation(); setEditItem(m); setDialogOpen(true); }}>Éditer</Button>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="sm" className="text-[11px] h-7" onClick={e => { e.stopPropagation(); setEditItem(m); setDialogOpen(true); }}>Éditer</Button>
+                        <Button variant="ghost" size="sm" className="text-[11px] h-7 px-1.5" onClick={e => { e.stopPropagation(); window.open(`/fabricant/${m.slug}`, '_blank'); }} title="Page publique">
+                          <ExternalLink size={12} />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}

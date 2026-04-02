@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import AdminTopBar from "@/components/admin/AdminTopBar";
@@ -13,7 +13,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Factory, Package, Tag, Plus, Search, Globe, Award, Merge, X, ExternalLink } from "lucide-react";
+import { Factory, Package, Tag, Plus, Search, Globe, Award, Merge, X, ExternalLink, Download, Upload, FileDown } from "lucide-react";
+import { exportManufacturers, importManufacturers, downloadManufacturerTemplate } from "@/lib/xlsx-utils";
 
 const COUNTRIES = [
   { code: "BE", label: "🇧🇪 Belgique" }, { code: "FR", label: "🇫🇷 France" },

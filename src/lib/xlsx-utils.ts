@@ -203,8 +203,8 @@ export async function exportCategories() {
     return (entry as any)?.value || "";
   };
   // Build parent name lookup
-  const catMap = new Map((data || []).map(c => [c.id, c]));
-  const rows = (data || []).map(c => {
+  const catMap = new Map((data || []).map((c: any) => [c.id, c]));
+  const rows = (data || []).map((c: any) => {
     const parent = c.parent_id ? catMap.get(c.parent_id) : null;
     return {
       name: c.name, slug: c.slug,

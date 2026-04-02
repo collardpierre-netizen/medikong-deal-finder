@@ -617,18 +617,15 @@ export default function OnboardingPage() {
     setSendingOtp(true);
     setOtpError(false);
     setOtpDigits(["", "", "", "", "", ""]);
-    setEmailDeliveryMode("link_only");
-    persistOnboardingDraft(email, "link_only");
+    setEmailDeliveryMode("code_or_link");
+    persistOnboardingDraft(email, "code_or_link");
 
     try {
-      const temporaryPassword = `${crypto.randomUUID()}Aa1!`;
-      setTempPassword(temporaryPassword);
-      writeOnboardingStorage(getTempPasswordStorageKey(email), temporaryPassword);
-
-      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+      // Use signInWithOtp which sends a 6-digit code by email
+      const { error } = await supabase.auth.signInWithOtp({
         email,
-        password: temporaryPassword,
         options: {
+          shouldCreateUser: true,
           data: {
             onboarding_pending: true,
             onboarding_completed: false,
@@ -636,46 +633,14 @@ export default function OnboardingPage() {
             ...(role === "buyer" && buyerProfile ? { onboarding_buyer_profile: buyerProfile } : {}),
             ...(role === "seller" && businessType ? { onboarding_business_type: businessType } : {}),
           },
-          emailRedirectTo: buildOnboardingRedirectUrl("link_only"),
         },
       });
 
-      const msg = signUpError?.message?.toLowerCase() || "";
-      const alreadyRegistered =
-        msg.includes("already registered") ||
-        msg.includes("already been registered") ||
-        msg.includes("user already exists");
-
-      const isRepeatedSignupObfuscated =
-        !signUpError &&
-        Array.isArray(signUpData?.user?.identities) &&
-        signUpData.user.identities.length === 0;
-
-      if (signUpError && !alreadyRegistered) {
-        throw signUpError;
-      }
-
-      if (alreadyRegistered || isRepeatedSignupObfuscated) {
-        const { error: loginLinkError } = await supabase.auth.signInWithOtp({
-          email,
-          options: {
-            shouldCreateUser: false,
-            emailRedirectTo: buildOnboardingRedirectUrl("link_only"),
-          },
-        });
-
-        if (loginLinkError) {
-          throw loginLinkError;
-        }
-
-        goNext();
-        return;
-      }
-
+      if (error) throw error;
       goNext();
     } catch (error) {
       console.error("OTP send error:", error);
-      alert("Impossible d'envoyer l'email de confirmation pour le moment. Réessayez dans quelques secondes.");
+      alert("Impossible d'envoyer le code de vérification. Réessayez dans quelques secondes.");
     } finally {
       setSendingOtp(false);
     }
@@ -688,13 +653,22 @@ export default function OnboardingPage() {
     setOtpError(false);
 
     try {
+      // Try "email" type first (signInWithOtp flow)
       const { error } = await supabase.auth.verifyOtp({
         email,
         token: code,
-        type: "signup",
+        type: "email",
       });
 
-      if (error) throw error;
+      if (error) {
+        // Fallback: try "signup" type (in case user was created via signUp)
+        const { error: signupError } = await supabase.auth.verifyOtp({
+          email,
+          token: code,
+          type: "signup",
+        });
+        if (signupError) throw signupError;
+      }
 
       setOtpVerified(true);
       setTimeout(() => goNext(), 400);
@@ -785,40 +759,17 @@ export default function OnboardingPage() {
     if (!isPasswordValid || submitting) return;
     setSubmitting(true);
     try {
-      // 1. Try to restore authenticated session first
+      // User is already authenticated via OTP verification
       const { data: sessionData } = await supabase.auth.getSession();
       let userId = sessionData.session?.user?.id;
 
-      const fallbackTempPassword = tempPassword || readOnboardingStorage(getTempPasswordStorageKey(email)) || "";
-
-      // If no active session, sign in with the temp password (email confirmed via link)
-      if (!userId && fallbackTempPassword) {
-        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-          email,
-          password: fallbackTempPassword,
-        });
-        if (signInError) {
-          // Fallback: try magic-link sign-in if temp password doesn't work
-          const { data: otpData } = await supabase.auth.getUser();
-          if (otpData.user) {
-            userId = otpData.user.id;
-          } else {
-            alert("Votre email n'est pas encore confirmé. Ouvrez l'email reçu et cliquez sur le lien, puis réessayez.");
-            return;
-          }
-        } else {
-          userId = signInData.user?.id;
-        }
-      }
-
-      // Last resort: try getUser (session may exist from magic link)
       if (!userId) {
         const { data: userData } = await supabase.auth.getUser();
         userId = userData.user?.id;
       }
 
       if (!userId) {
-        alert('Session introuvable. Confirmez votre email puis réessayez.');
+        alert('Session introuvable. Veuillez revenir à l\'étape email et refaire la vérification.');
         return;
       }
 
@@ -913,8 +864,6 @@ export default function OnboardingPage() {
 
   /* ─── Email Confirmation Screen (reusable) ─── */
   const renderOtpScreen = () => {
-    const expectsCode = emailDeliveryMode !== "link_only";
-
     return (
       <div style={{ textAlign: "center" }}>
         <BackLink onClick={goBack} />
@@ -923,68 +872,49 @@ export default function OnboardingPage() {
         </div>
         <h1 style={{ fontSize: 20, fontWeight: 700, color: S.text, marginBottom: 6 }}>Vérifiez votre email</h1>
         <p style={{ fontSize: 13, color: S.sec, marginBottom: 8 }}>
-          Un email a été envoyé à <strong>{email}</strong>
+          Un code à 6 chiffres a été envoyé à <strong>{email}</strong>
         </p>
         <div style={{ background: S.blueBg, border: `1px solid ${S.blue}20`, borderRadius: S.radius, padding: "16px 20px", marginBottom: 20, textAlign: "left" }}>
-          <p style={{ fontSize: 13, color: S.text, margin: 0, fontWeight: 600, marginBottom: 8 }}>
-            {expectsCode ? "📩 Entrez le code à 6 chiffres reçu par email" : "🔗 Cliquez sur le lien de connexion reçu par email"}
+          <p style={{ fontSize: 13, color: S.text, margin: 0, fontWeight: 600, marginBottom: 4 }}>
+            📩 Entrez le code reçu par email
           </p>
           <p style={{ fontSize: 12, color: S.sec, margin: 0, lineHeight: 1.6 }}>
-            {expectsCode
-              ? <>Vous pouvez saisir le code ou cliquer sur le bouton de l'email, puis revenir ici.</>
-              : <>Ouvrez votre boîte mail (<strong>{email}</strong>), cliquez sur le bouton de l'email, puis revenez ici.</>}
+            Ouvrez votre boîte mail et saisissez le code à 6 chiffres ci-dessous.
           </p>
         </div>
 
-        {expectsCode && (
-          <div style={{ marginBottom: 14 }}>
-            <div
-              style={{ display: "flex", justifyContent: "center", gap: 8, marginBottom: 8 }}
-              onPaste={handleOtpPaste}
-            >
-              {otpDigits.map((digit, idx) => (
-                <input
-                  key={idx}
-                  ref={(el) => (otpRefs.current[idx] = el)}
-                  value={digit}
-                  onChange={(e) => handleOtpChange(idx, e.target.value)}
-                  onKeyDown={(e) => handleOtpKeyDown(idx, e)}
-                  inputMode="numeric"
-                  maxLength={1}
-                  autoFocus={idx === 0}
-                  style={{
-                    width: 44,
-                    height: 48,
-                    borderRadius: S.radiusSm,
-                    border: `2px solid ${otpError ? S.red : otpDigits[idx] ? S.blue : S.line}`,
-                    textAlign: "center",
-                    fontSize: 20,
-                    fontWeight: 700,
-                    color: S.text,
-                    background: otpError ? S.redBg : "#fff",
-                    transition: "border-color .2s",
-                  }}
-                />
-              ))}
-            </div>
-            {otpError && <p style={{ fontSize: 11, color: S.red }}>Code invalide. Réessayez.</p>}
-            {verifyingOtp && <p style={{ fontSize: 11, color: S.blue }}><Loader2 size={12} className="tf-spin inline-block mr-1" />Vérification...</p>}
-          </div>
-        )}
-
         <div style={{ marginBottom: 14 }}>
-          <Cta
-            onClick={handleContinueAfterEmailConfirmation}
-            disabled={checkingConfirmedEmail || verifyingOtp}
-            loading={checkingConfirmedEmail}
-            variant="secondary"
+          <div
+            style={{ display: "flex", justifyContent: "center", gap: 8, marginBottom: 8 }}
+            onPaste={handleOtpPaste}
           >
-            {checkingConfirmedEmail
-              ? "Vérification en cours..."
-              : expectsCode
-                ? "J'ai cliqué le lien dans l'email"
-                : "J'ai cliqué le lien de connexion"}
-          </Cta>
+            {otpDigits.map((digit, idx) => (
+              <input
+                key={idx}
+                ref={(el) => (otpRefs.current[idx] = el)}
+                value={digit}
+                onChange={(e) => handleOtpChange(idx, e.target.value)}
+                onKeyDown={(e) => handleOtpKeyDown(idx, e)}
+                inputMode="numeric"
+                maxLength={1}
+                autoFocus={idx === 0}
+                style={{
+                  width: 44,
+                  height: 48,
+                  borderRadius: S.radiusSm,
+                  border: `2px solid ${otpError ? S.red : otpDigits[idx] ? S.blue : S.line}`,
+                  textAlign: "center",
+                  fontSize: 20,
+                  fontWeight: 700,
+                  color: S.text,
+                  background: otpError ? S.redBg : "#fff",
+                  transition: "border-color .2s",
+                }}
+              />
+            ))}
+          </div>
+          {otpError && <p style={{ fontSize: 11, color: S.red }}>Code invalide. Réessayez.</p>}
+          {verifyingOtp && <p style={{ fontSize: 11, color: S.blue }}><Loader2 size={12} className="tf-spin inline-block mr-1" />Vérification...</p>}
         </div>
 
         <div style={{ fontSize: 12, color: S.ter, marginBottom: 16 }}>
@@ -994,17 +924,15 @@ export default function OnboardingPage() {
               try {
                 const { error } = await supabase.auth.signInWithOtp({
                   email,
-                  options: {
-                    shouldCreateUser: false,
-                    emailRedirectTo: buildOnboardingRedirectUrl("link_only"),
-                  },
+                  options: { shouldCreateUser: true },
                 });
                 if (error) throw error;
-                setEmailDeliveryMode("link_only");
-                persistOnboardingDraft(email, "link_only");
               } catch(e) { console.error(e); }
               setOtpTimer(59);
-            }}>Renvoyer le lien de connexion</button>
+              setOtpDigits(["", "", "", "", "", ""]);
+              setOtpError(false);
+              otpRefs.current[0]?.focus();
+            }}>Renvoyer le code</button>
           )}
         </div>
         <p style={{ fontSize: 11, color: S.ter }}>Pensez à vérifier vos spams. Contact : <a href="mailto:support@medikong.pro" style={{ color: S.blue }}>support@medikong.pro</a></p>
@@ -1135,10 +1063,10 @@ export default function OnboardingPage() {
         <div>
           <BackLink onClick={goBack} />
           <h1 style={{ fontSize: 20, fontWeight: 700, color: S.text, marginBottom: 6 }}>Quelle est votre adresse email ?</h1>
-          <p style={{ fontSize: 13, color: S.sec, marginBottom: 20 }}>Nous vous enverrons un lien de connexion sécurisé.</p>
+          <p style={{ fontSize: 13, color: S.sec, marginBottom: 20 }}>Nous vous enverrons un code de vérification à 6 chiffres.</p>
           <TfInput value={email} onChange={v => { setEmail(v); setEmailTouched(true); }} placeholder="votre@email.com" type="email" error={emailError} autoFocus />
           <div style={{ marginTop: 16 }}>
-            <Cta onClick={handleSendOtp} disabled={!isEmailValid} loading={sendingOtp}>{sendingOtp ? "Envoi en cours..." : "Recevoir le lien"}</Cta>
+            <Cta onClick={handleSendOtp} disabled={!isEmailValid} loading={sendingOtp}>{sendingOtp ? "Envoi en cours..." : "Recevoir le code"}</Cta>
             <KbdHint />
           </div>
         </div>
@@ -1249,10 +1177,10 @@ export default function OnboardingPage() {
         <div>
           <BackLink onClick={goBack} />
           <h1 style={{ fontSize: 20, fontWeight: 700, color: S.text, marginBottom: 6 }}>Votre adresse email professionnelle</h1>
-          <p style={{ fontSize: 13, color: S.sec, marginBottom: 20 }}>Pour créer votre espace vendeur via un lien sécurisé.</p>
+          <p style={{ fontSize: 13, color: S.sec, marginBottom: 20 }}>Nous vous enverrons un code de vérification à 6 chiffres.</p>
           <TfInput value={email} onChange={v => { setEmail(v); setEmailTouched(true); }} placeholder="pro@entreprise.com" type="email" error={emailError} autoFocus />
           <div style={{ marginTop: 16 }}>
-            <Cta onClick={handleSendOtp} disabled={!isEmailValid} loading={sendingOtp}>{sendingOtp ? "Envoi en cours..." : "Recevoir le lien"}</Cta>
+            <Cta onClick={handleSendOtp} disabled={!isEmailValid} loading={sendingOtp}>{sendingOtp ? "Envoi en cours..." : "Recevoir le code"}</Cta>
             <KbdHint />
           </div>
         </div>

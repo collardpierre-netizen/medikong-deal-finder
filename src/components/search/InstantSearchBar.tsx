@@ -73,7 +73,7 @@ export function InstantSearchBar({ className = "", placeholder, variant = "navba
       e.preventDefault();
       const sel = allItems[selectedIndex];
       if (sel.type === "product") navigate(`/produit/${(sel.item as any).slug}`);
-      else if (sel.type === "brand") navigate(`/marques/${(sel.item as any).slug}`);
+      else if (sel.type === "brand") navigate(`/marque/${(sel.item as any).slug}`);
       else navigate(`/categorie/${(sel.item as any).slug}`);
       setIsOpen(false);
       setQuery("");

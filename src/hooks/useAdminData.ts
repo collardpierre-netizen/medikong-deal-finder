@@ -85,7 +85,7 @@ export const useOrders = () =>
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
-        .select("*, customers(company_name, customer_type)")
+        .select("*, customers(company_name, customer_type), order_lines(id, product_id, offer_id, vendor_id, quantity, unit_price_excl_vat, unit_price_incl_vat, vat_rate, line_total_excl_vat, line_total_incl_vat, qogita_offer_qid, qogita_seller_fid, qogita_order_status, fulfillment_status, products(name, gtin, image_url), vendors(company_name, slug), offers(delivery_days))")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;

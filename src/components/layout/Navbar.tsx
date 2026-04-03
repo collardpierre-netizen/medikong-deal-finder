@@ -14,6 +14,7 @@ export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const isHomePage = location.pathname === "/" || location.pathname === "";
   const { user, signOut } = useAuth();
   const { cartCount } = useCart();
   const [isAdmin, setIsAdmin] = useState(false);
@@ -55,10 +56,12 @@ export function Navbar() {
           <img src={logoHorizontal} alt="MediKong" className="h-10" />
         </Link>
 
-        {/* Search bar — center, always visible on desktop */}
-        <div className="flex-1 max-w-[520px] mx-auto hidden sm:block">
-          <InstantSearchBar />
-        </div>
+        {/* Search bar — hidden on homepage */}
+        {!isHomePage && (
+          <div className="flex-1 max-w-[520px] mx-auto hidden sm:block">
+            <InstantSearchBar />
+          </div>
+        )}
 
         {/* Right icons — desktop */}
         <div className="hidden md:flex items-center gap-3 shrink-0 ml-auto">

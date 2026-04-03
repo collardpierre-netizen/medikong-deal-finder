@@ -10,6 +10,7 @@ interface Props {
   filters: CatalogFilters;
   setFilter: (key: string, value: any) => void;
   clearAll: () => void;
+  resultCategoryIds?: string[];
 }
 
 export function CatalogSidebar({ filters, setFilter, clearAll }: Props) {

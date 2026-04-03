@@ -7,7 +7,7 @@ import { useCart } from "@/hooks/useCart";
 import { supabase } from "@/integrations/supabase/client";
 import { useTranslation } from "react-i18next";
 import { InstantSearchBar } from "@/components/search/InstantSearchBar";
-import logoHorizontal from "@/assets/logo-horizontal.png";
+import logoHorizontal from "@/assets/logo-medikong.png";
 
 export function Navbar() {
   const { t } = useTranslation();

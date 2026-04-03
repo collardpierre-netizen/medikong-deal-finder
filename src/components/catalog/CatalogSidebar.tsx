@@ -13,7 +13,7 @@ interface Props {
   resultCategoryIds?: string[];
 }
 
-export function CatalogSidebar({ filters, setFilter, clearAll }: Props) {
+export function CatalogSidebar({ filters, setFilter, clearAll, resultCategoryIds }: Props) {
   const { currentCountry } = useCountry();
   const { data: categories = [] } = useCatalogCategories();
   const { data: brands = [] } = useCatalogBrands(filters.category);

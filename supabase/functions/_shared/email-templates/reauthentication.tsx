@@ -4,6 +4,7 @@ import * as React from 'npm:react@18.3.1'
 
 import {
   Body,
+  Button,
   Container,
   Head,
   Heading,
@@ -19,30 +20,54 @@ const LOGO_URL = 'https://iokwqxhhpblcbkrxgcje.supabase.co/storage/v1/object/pub
 
 interface ReauthenticationEmailProps {
   token: string
+  confirmationUrl?: string
 }
 
-export const ReauthenticationEmail = ({ token }: ReauthenticationEmailProps) => (
-  <Html lang="fr" dir="ltr">
-    <Head />
-    <Preview>Votre code de vérification Medikong</Preview>
-    <Body style={main}>
-      <Container style={container}>
-        <Section style={logoSection}>
-          <Img src={LOGO_URL} alt="Medikong" width="180" style={logo} />
-        </Section>
-        <Hr style={divider} />
-        <Heading style={h1}>Confirmation d'identité</Heading>
-        <Text style={text}>Utilisez le code ci-dessous pour confirmer votre identité :</Text>
-        <Text style={codeStyle}>{token}</Text>
-        <Hr style={divider} />
-        <Text style={footer}>
-          Ce code expirera sous peu. Si vous n'avez pas fait cette demande, vous pouvez ignorer cet e-mail.
-        </Text>
-        <Text style={footerBrand}>© Medikong — Balooh SRL</Text>
-      </Container>
-    </Body>
-  </Html>
-)
+export const ReauthenticationEmail = ({ token, confirmationUrl }: ReauthenticationEmailProps) => {
+  // If token is 6 digits or less, show as OTP code. Otherwise show a verification button.
+  const isShortOtp = /^\d{1,6}$/.test(token)
+
+  return (
+    <Html lang="fr" dir="ltr">
+      <Head />
+      <Preview>Votre code de vérification Medikong</Preview>
+      <Body style={main}>
+        <Container style={container}>
+          <Section style={logoSection}>
+            <Img src={LOGO_URL} alt="Medikong" width="180" style={logo} />
+          </Section>
+          <Hr style={divider} />
+          <Heading style={h1}>Confirmation d'identité</Heading>
+          {isShortOtp ? (
+            <>
+              <Text style={text}>Utilisez le code ci-dessous pour confirmer votre identité :</Text>
+              <Text style={codeStyle}>{token}</Text>
+            </>
+          ) : (
+            <>
+              <Text style={text}>Cliquez sur le bouton ci-dessous pour confirmer votre identité :</Text>
+              {confirmationUrl && (
+                <Section style={{ textAlign: 'center' as const, margin: '24px 0' }}>
+                  <Button href={confirmationUrl} style={btnStyle}>
+                    Se connecter
+                  </Button>
+                </Section>
+              )}
+              {!confirmationUrl && (
+                <Text style={text}>Veuillez retourner sur le site et réessayer.</Text>
+              )}
+            </>
+          )}
+          <Hr style={divider} />
+          <Text style={footer}>
+            Ce code expirera sous peu. Si vous n'avez pas fait cette demande, vous pouvez ignorer cet e-mail.
+          </Text>
+          <Text style={footerBrand}>© Medikong — Balooh SRL</Text>
+        </Container>
+      </Body>
+    </Html>
+  )
+}
 
 export default ReauthenticationEmail
 
@@ -72,6 +97,15 @@ const codeStyle = {
   textAlign: 'center' as const,
   margin: '0 0 24px',
   letterSpacing: '6px',
+}
+const btnStyle = {
+  backgroundColor: '#2563eb',
+  color: '#ffffff',
+  padding: '12px 32px',
+  borderRadius: '6px',
+  fontSize: '14px',
+  fontWeight: 'bold' as const,
+  textDecoration: 'none',
 }
 const footer = { fontSize: '12px', color: '#9ca3af', margin: '20px 0 4px' }
 const footerBrand = { fontSize: '11px', color: '#9ca3af', margin: '0' }

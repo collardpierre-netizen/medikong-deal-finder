@@ -218,23 +218,22 @@ async function handleWebhook(req: Request): Promise<Response> {
   }
 
   // Build template props from payload.data (HookData structure)
-  // Supabase OTP tokens should be 6 digits - truncate if longer to match UI input
+  // Do NOT truncate tokens - pass them as-is. The email template handles display.
   const rawToken = payload.data.token || ''
-  const otpToken = rawToken.length > 6 ? rawToken.slice(0, 6) : rawToken
   
   const templateProps = {
     siteName: SITE_NAME,
     siteUrl: `https://${ROOT_DOMAIN}`,
     recipient: payload.data.email,
     confirmationUrl: payload.data.url,
-    token: otpToken,
+    token: rawToken,
     email: payload.data.email,
     newEmail: payload.data.new_email,
   }
 
   // Render React Email to HTML and plain text
   // For magiclink with token (signInWithOtp), use reauthentication template to show OTP code
-  const normalizedEmailType = emailType === 'magiclink' && payload.data.token ? 'reauthentication' : emailType
+  const normalizedEmailType = emailType === 'magiclink' && rawToken ? 'reauthentication' : emailType
   const SelectedTemplate = EMAIL_TEMPLATES[normalizedEmailType] ?? EmailTemplate
 
   const html = await renderAsync(React.createElement(SelectedTemplate, templateProps))

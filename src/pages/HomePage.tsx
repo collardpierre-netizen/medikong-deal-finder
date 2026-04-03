@@ -40,16 +40,18 @@ export default function HomePage() {
   const { data: countryStats } = useQuery({
     queryKey: ["homepage-stats", country],
     queryFn: async () => {
-      const [productsRes, offersRes, vendorsRes] = await Promise.all([
+      const [productsRes, offersRes, vendorsRes, brandsRes] = await Promise.all([
         supabase.from("products").select("id", { count: "exact", head: true }).eq("is_active", true).gt("offer_count", 0),
         supabase.from("offers").select("id", { count: "exact", head: true }).eq("country_code", country).eq("is_active", true),
         supabase.from("offers").select("vendor_id").eq("country_code", country).eq("is_active", true),
+        supabase.from("brands").select("id", { count: "exact", head: true }).eq("is_active", true).gt("product_count", 0),
       ]);
       const uniqueVendors = new Set((vendorsRes.data || []).map((o: any) => o.vendor_id)).size;
       return {
         products: productsRes.count || 0,
         offers: offersRes.count || 0,
         vendors: uniqueVendors || 0,
+        brands: brandsRes.count || 0,
       };
     },
   });

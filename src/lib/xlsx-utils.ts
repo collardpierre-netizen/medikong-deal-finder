@@ -177,9 +177,12 @@ export async function importProducts(file: File, onProgress?: (p: ImportProgress
   allProducts.forEach((p: any) => existingSlugs.add(p.slug));
 
   // --- Import products ---
+  currentPhase = "products"; notify();
   for (let i = 0; i < rows.length; i++) {
     const r = rows[i] as any;
     const lineNum = i + 2; // +2 for header row + 0-index
+    currentIdx = i + 1;
+    if (i % 10 === 0) notify(); // throttle progress updates
     if (!r.name) { errors.push({ line: lineNum, name: "—", code: "MISSING_NAME", message: "Nom du produit manquant" }); skipped++; continue; }
     const slug = r.slug || slugify(r.name);
     const isUpdate = existingSlugs.has(slug);
@@ -214,8 +217,10 @@ export async function importProducts(file: File, onProgress?: (p: ImportProgress
       else { created++; existingSlugs.add(slug); }
     }
   }
+  currentPhase = "resolving"; currentIdx = rows.length; notify();
   await supabase.rpc("resolve_product_brands");
   await supabase.rpc("resolve_product_categories");
+  currentPhase = "done"; notify();
   return { created, updated, skipped, errors, brandsCreated, manufacturersCreated, totalRows: rows.length };
 }
 

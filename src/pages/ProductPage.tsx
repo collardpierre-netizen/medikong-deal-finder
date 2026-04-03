@@ -32,10 +32,10 @@ function formatEur(n: number): string {
 
 /* ── Offer Row ─────────────────────────────────────────── */
 function OfferRow({
-  offer, productId, productName, productSlug, user, navigate, addToCart, isBest, delay = 0, isTVAC = false,
+  offer, productId, productName, productSlug, user, navigate, addToCart, isBest, delay = 0, isTVAC = false, categoryId,
 }: {
   offer: Offer; productId: string; productName: string; productSlug: string;
-  user: any; navigate: any; addToCart: any; isBest?: boolean; delay?: number; isTVAC?: boolean;
+  user: any; navigate: any; addToCart: any; isBest?: boolean; delay?: number; isTVAC?: boolean; categoryId?: string;
 }) {
   const [qty, setQty] = useState(offer.bundleSize > 1 ? offer.bundleSize : 1);
   const discountTiers = offer.discountTiers || [];

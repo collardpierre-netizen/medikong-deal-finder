@@ -875,7 +875,7 @@ export default function ProductPage() {
                         <div className="hidden md:grid grid-cols-[1.5fr_1fr_1fr_0.8fr_1.5fr] gap-3 px-1 pb-3 text-xs font-semibold text-muted-foreground border-b border-border">
                           <span>Fournisseur</span>
                           <span>Prix unitaire</span>
-                          <span>MOV</span>
+                          <TooltipProvider><Tooltip><TooltipTrigger asChild><span className="flex items-center gap-1 cursor-help">MOV <HelpCircle size={12} /></span></TooltipTrigger><TooltipContent><p className="text-xs max-w-[200px]">Minimum Order Value : montant minimum de commande requis auprès de ce fournisseur.</p></TooltipContent></Tooltip></TooltipProvider>
                           <span>Stock</span>
                           <span className="text-right">Commander</span>
                         </div>

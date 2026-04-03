@@ -118,7 +118,7 @@ const AdminProduits = () => {
       qc.invalidateQueries({ queryKey: ["admin-brands"] });
       qc.invalidateQueries({ queryKey: ["admin-manufacturers"] });
     } catch (e: any) {
-      setImportResult({ created: 0, errors: [e.message || "Erreur inconnue"] });
+      setImportResult({ created: 0, updated: 0, skipped: 0, errors: [{ line: 0, name: "—", code: "EXCEPTION", message: e.message || "Erreur inconnue" }], totalRows: 0 });
     } finally {
       setImporting(false);
     }

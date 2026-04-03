@@ -104,7 +104,7 @@ const AdminProduits = () => {
       ((o.vendors as any)?.company_name || "").toLowerCase().includes(search.toLowerCase())
   );
 
-  const [importResult, setImportResult] = useState<{ created: number; errors: string[]; brandsCreated?: number; manufacturersCreated?: number } | null>(null);
+  const [importResult, setImportResult] = useState<{ created: number; updated: number; skipped: number; errors: { line: number; name: string; code: string; message: string }[]; brandsCreated?: number; manufacturersCreated?: number; totalRows: number } | null>(null);
   const [importing, setImporting] = useState(false);
 
   const handleImport = async (file: File) => {
@@ -118,7 +118,7 @@ const AdminProduits = () => {
       qc.invalidateQueries({ queryKey: ["admin-brands"] });
       qc.invalidateQueries({ queryKey: ["admin-manufacturers"] });
     } catch (e: any) {
-      setImportResult({ created: 0, errors: [e.message || "Erreur inconnue"] });
+      setImportResult({ created: 0, updated: 0, skipped: 0, errors: [{ line: 0, name: "—", code: "EXCEPTION", message: e.message || "Erreur inconnue" }], totalRows: 0 });
     } finally {
       setImporting(false);
     }
@@ -333,25 +333,85 @@ const AdminProduits = () => {
 
       {/* Import result dialog */}
       <Dialog open={importResult !== null} onOpenChange={(open) => { if (!open) setImportResult(null); }}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>{importResult?.errors.length === 0 && importResult?.created > 0 ? "✅ Import réussi" : importResult?.created === 0 ? "❌ Échec de l'import" : "⚠️ Import terminé avec erreurs"}</DialogTitle>
+            <DialogTitle className="flex items-center gap-2 text-lg">
+              {importResult?.errors.length === 0
+                ? <><span className="text-green-600">✅</span> Import réussi</>
+                : importResult?.created === 0 && importResult?.updated === 0
+                  ? <><span className="text-red-600">❌</span> Échec de l'import</>
+                  : <><span className="text-amber-500">⚠️</span> Import terminé avec alertes</>
+              }
+            </DialogTitle>
           </DialogHeader>
-          <div className="space-y-3">
-            <p className="text-sm"><strong>{importResult?.created || 0}</strong> produit(s) importé(s) / mis à jour</p>
-            {(importResult?.brandsCreated || 0) > 0 && <p className="text-sm text-primary"><strong>{importResult!.brandsCreated}</strong> marque(s) auto-créée(s)</p>}
-            {(importResult?.manufacturersCreated || 0) > 0 && <p className="text-sm text-primary"><strong>{importResult!.manufacturersCreated}</strong> fabricant(s) auto-créé(s)</p>}
+          <div className="space-y-4">
+            {/* Summary grid */}
+            <div className="grid grid-cols-4 gap-2">
+              <div className="bg-muted rounded-lg p-3 text-center">
+                <p className="text-2xl font-bold text-foreground">{importResult?.totalRows || 0}</p>
+                <p className="text-[11px] text-muted-foreground">Lignes lues</p>
+              </div>
+              <div className="bg-green-50 rounded-lg p-3 text-center">
+                <p className="text-2xl font-bold text-green-700">{importResult?.created || 0}</p>
+                <p className="text-[11px] text-green-600">Créés</p>
+              </div>
+              <div className="bg-blue-50 rounded-lg p-3 text-center">
+                <p className="text-2xl font-bold text-blue-700">{importResult?.updated || 0}</p>
+                <p className="text-[11px] text-blue-600">Mis à jour</p>
+              </div>
+              <div className="bg-red-50 rounded-lg p-3 text-center">
+                <p className="text-2xl font-bold text-red-700">{importResult?.skipped || 0}</p>
+                <p className="text-[11px] text-red-600">Ignorés</p>
+              </div>
+            </div>
+
+            {/* Auto-created entities */}
+            {((importResult?.brandsCreated || 0) > 0 || (importResult?.manufacturersCreated || 0) > 0) && (
+              <div className="bg-primary/5 rounded-lg p-3 space-y-1">
+                <p className="text-sm font-medium text-primary">Entités auto-créées</p>
+                {(importResult?.brandsCreated || 0) > 0 && <p className="text-sm">🏷️ <strong>{importResult!.brandsCreated}</strong> marque(s)</p>}
+                {(importResult?.manufacturersCreated || 0) > 0 && <p className="text-sm">🏭 <strong>{importResult!.manufacturersCreated}</strong> fabricant(s)</p>}
+              </div>
+            )}
+
+            {/* Errors table */}
             {(importResult?.errors?.length || 0) > 0 && (
               <div>
-                <p className="text-sm font-medium text-destructive mb-1">{importResult!.errors.length} erreur(s) :</p>
-                <div className="max-h-[200px] overflow-y-auto bg-muted rounded p-2 text-xs space-y-1">
-                  {importResult!.errors.slice(0, 50).map((err, i) => (
-                    <p key={i} className="text-destructive">{err}</p>
-                  ))}
-                  {importResult!.errors.length > 50 && <p className="text-muted-foreground">... et {importResult!.errors.length - 50} autres</p>}
+                <p className="text-sm font-semibold text-destructive mb-2">{importResult!.errors.length} erreur(s) détectée(s)</p>
+                <div className="max-h-[220px] overflow-y-auto rounded-lg border">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-muted sticky top-0">
+                      <tr>
+                        <th className="px-3 py-2 font-semibold text-muted-foreground">Ligne</th>
+                        <th className="px-3 py-2 font-semibold text-muted-foreground">Produit</th>
+                        <th className="px-3 py-2 font-semibold text-muted-foreground">Code</th>
+                        <th className="px-3 py-2 font-semibold text-muted-foreground">Message</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {importResult!.errors.slice(0, 100).map((err, i) => (
+                        <tr key={i} className="border-t">
+                          <td className="px-3 py-1.5 font-mono text-muted-foreground">{err.line}</td>
+                          <td className="px-3 py-1.5 font-medium truncate max-w-[120px]">{err.name}</td>
+                          <td className="px-3 py-1.5">
+                            <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                              err.code === "DUPLICATE" ? "bg-amber-100 text-amber-700"
+                              : err.code === "MISSING_NAME" ? "bg-orange-100 text-orange-700"
+                              : "bg-red-100 text-red-700"
+                            }`}>{err.code}</span>
+                          </td>
+                          <td className="px-3 py-1.5 text-muted-foreground truncate max-w-[180px]">{err.message}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {importResult!.errors.length > 100 && (
+                    <p className="text-center text-xs text-muted-foreground py-2">... et {importResult!.errors.length - 100} autres</p>
+                  )}
                 </div>
               </div>
             )}
+
             <Button className="w-full" onClick={() => setImportResult(null)}>Fermer</Button>
           </div>
         </DialogContent>

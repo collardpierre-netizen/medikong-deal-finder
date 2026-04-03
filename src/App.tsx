@@ -232,6 +232,13 @@ const App = () => (
             <Route path="/investir" element={<Navigate to="/entreprise/investir" replace />} />
 
             <Route path="/professionnels" element={<LP><ProfessionnelsPage /></LP>} />
+            <Route path="/pharmacies" element={<LP><PharmaciesPage /></LP>} />
+            <Route path="/ehpad" element={<LP><EhpadPage /></LP>} />
+            <Route path="/grossistes" element={<LP><GrossistesPage /></LP>} />
+            <Route path="/hopitaux" element={<LP><HopitauxPage /></LP>} />
+            <Route path="/cabinets-medicaux" element={<LP><CabinetsMedicauxPage /></LP>} />
+            <Route path="/dentistes" element={<LP><DentistesPage /></LP>} />
+            <Route path="/veterinaires" element={<LP><VeterinairesPage /></LP>} />
             <Route path="/sourcing" element={<LP><SourcingPage /></LP>} />
             <Route path="/categories" element={<LP><CategoriesPage /></LP>} />
             <Route path="/mes-prix" element={<LP><MyPricesPage /></LP>} />

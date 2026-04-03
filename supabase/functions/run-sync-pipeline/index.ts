@@ -137,9 +137,10 @@ serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const country = body.country || "BE";
     const triggeredBy = body.triggeredBy || "manual";
-    const stepOnly = body.stepOnly; // optional: run a single step by name
+    const mode = body.mode || "incremental"; // "incremental" (default) or "full"
+    const stepOnly = body.stepOnly;
 
-    const STEPS = getPipelineSteps(country);
+    const STEPS = getPipelineSteps(country, mode);
 
     // Create pipeline run record
     const initialSteps = STEPS.map((s) => ({

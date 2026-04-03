@@ -83,7 +83,7 @@ export function CatalogProductCard({ product, index = 0, view = "grid" }: Props)
     try {
       const { data: offer } = await supabase
         .from("offers")
-        .select("id, vendor_id, price_excl_vat, price_incl_vat")
+        .select("id, vendor_id, price_excl_vat, price_incl_vat, stock_quantity")
         .eq("product_id", product.id)
         .eq("is_active", true)
         .eq("country_code", country)
@@ -96,7 +96,8 @@ export function CatalogProductCard({ product, index = 0, view = "grid" }: Props)
       addToCart.mutate({
         offerId: offer.id,
         productId: product.id,
-        quantity: qty,
+        quantity: Math.min(qty, Number(offer.stock_quantity) || qty),
+        maxQuantity: Number(offer.stock_quantity) || undefined,
         vendorId: offer.vendor_id,
         priceExclVat: Number(offer.price_excl_vat),
         priceInclVat: Number(offer.price_incl_vat),

@@ -9,7 +9,7 @@ import { MEDIKONG_PLACEHOLDER, isValidProductImage, getProductImageSrc } from "@
 
 function getProductImages(product: Product): string[] {
   if (product.imageUrls && product.imageUrls.length > 0) {
-    const valid = product.imageUrls.filter(isValidImageUrl);
+    const valid = product.imageUrls.filter(isValidProductImage);
     if (valid.length > 0) return valid;
   }
   if (isValidImageUrl(product.imageUrl)) return [product.imageUrl!];

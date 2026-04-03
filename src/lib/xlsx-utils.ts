@@ -138,6 +138,7 @@ export async function importProducts(file: File, onProgress?: (p: ImportProgress
     if (r.manufacturer_name) mfrNames.add(String(r.manufacturer_name).trim());
   }
 
+  currentPhase = "manufacturers"; notify();
   if (mfrNames.size > 0) {
     const { data: existingMfrs } = await supabase.from("manufacturers").select("name").limit(5000);
     const existingSet = new Set((existingMfrs || []).map(m => m.name.toLowerCase()));

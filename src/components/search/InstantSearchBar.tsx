@@ -193,7 +193,7 @@ export function InstantSearchBar({ className = "", placeholder, variant = "navba
                 return (
                   <button
                     key={b.id}
-                    onClick={() => { navigate(`/marques/${b.slug}`); setIsOpen(false); setQuery(""); }}
+                    onClick={() => { navigate(`/marque/${b.slug}`); setIsOpen(false); setQuery(""); }}
                     className={`w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-accent/50 transition-colors ${selectedIndex === idx ? "bg-accent/50" : ""}`}
                   >
                     {b.logo_url ? (

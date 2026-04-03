@@ -200,7 +200,7 @@ export default function BrandDetailPage() {
             <h2 className="text-lg font-bold text-mk-navy mb-3 flex items-center gap-2"><Store size={18} /> Vendeurs proposant {brand.name}</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {brandSellers.slice(0, showAllSellers ? undefined : 6).map(s => (
-                <Link key={s.id} to={`/vendeur/${s.slug}`} className="border border-mk-line rounded-lg p-4 flex items-center gap-3 hover:shadow-sm hover:border-mk-blue transition-all">
+                <Link key={s.id} to={`/vendeur/${s.slug}?brand=${brand.slug}`} className="border border-mk-line rounded-lg p-4 flex items-center gap-3 hover:shadow-sm hover:border-mk-blue transition-all">
                   <div className="w-10 h-10 rounded-full bg-mk-alt flex items-center justify-center text-sm font-bold text-mk-navy shrink-0">
                     {s.name[0]}
                   </div>

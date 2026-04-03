@@ -35,8 +35,13 @@ const EMPTY_FILTERS: VendorFilters = { brands: [], categories: [], search: "" };
 /* ───── component ───── */
 export default function VendorPublicPage() {
   const { slug } = useParams<{ slug: string }>();
+  const [searchParams] = useSearchParams();
   const [view, setView] = useState<"grid" | "list">("grid");
-  const [filters, setFilters] = useState<VendorFilters>(EMPTY_FILTERS);
+  const initialBrand = searchParams.get("brand");
+  const [filters, setFilters] = useState<VendorFilters>({
+    ...EMPTY_FILTERS,
+    brands: initialBrand ? [initialBrand] : [],
+  });
   const { currentCountry } = useCountry();
 
   const { data: vendor, isLoading } = useQuery({

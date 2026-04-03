@@ -35,21 +35,28 @@ function extractImages(images: unknown): string[] {
 }
 
 async function getQogitaToken(sb: any): Promise<{ token: string; baseUrl: string }> {
-  const { data: config } = await sb.from("qogita_config").select("*").eq("id", 1).single();
-  if (!config?.qogita_email || !config?.qogita_password) throw new Error("Qogita credentials missing");
+  // qogita_config is a key-value table
+  const { data: rows } = await sb.from("qogita_config").select("key, value");
+  const cfg: Record<string, string> = {};
+  (rows || []).forEach((r: any) => { cfg[r.key] = r.value; });
 
-  const baseUrl = config.base_url || "https://api.qogita.com";
+  const email = cfg.qogita_email;
+  const password = cfg.qogita_password;
+  if (!email || !password) throw new Error("Qogita credentials missing (set qogita_email & qogita_password in config)");
+
+  const baseUrl = cfg.base_url || "https://api.qogita.com";
   const res = await fetch(`${baseUrl}/auth/login/`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email: config.qogita_email, password: config.qogita_password }),
+    body: JSON.stringify({ email, password }),
   });
 
   if (!res.ok) throw new Error(`Auth failed (${res.status})`);
   const { accessToken } = await res.json();
-  if (!accessToken) throw new Error("No accessToken");
+  if (!accessToken) throw new Error("No accessToken in response");
 
-  await sb.from("qogita_config").update({ bearer_token: accessToken }).eq("id", 1);
+  // Save token for reference
+  await sb.from("qogita_config").upsert({ key: "bearer_token", value: accessToken, updated_at: new Date().toISOString() }, { onConflict: "key" });
   return { token: accessToken, baseUrl };
 }
 

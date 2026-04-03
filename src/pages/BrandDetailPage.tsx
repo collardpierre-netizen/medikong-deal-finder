@@ -200,9 +200,9 @@ export default function BrandDetailPage() {
                 >
                   <ExternalLink size={13} /> Site officiel
                 </a>
-                <Link to={`/catalogue?brand=${brand.slug}`} className="bg-mk-blue text-white text-sm px-3 md:px-4 py-2 rounded-md flex items-center gap-1.5">
+                <button onClick={() => document.getElementById("brand-products")?.scrollIntoView({ behavior: "smooth" })} className="bg-mk-blue text-white text-sm px-3 md:px-4 py-2 rounded-md flex items-center gap-1.5">
                   <Download size={13} /> Catalogue
-                </Link>
+                </button>
                 <button className="border border-mk-line text-sm px-3 md:px-4 py-2 rounded-md flex items-center gap-1.5 text-mk-sec"><Heart size={13} /> Suivre</button>
               </div>
             </div>
@@ -228,7 +228,7 @@ export default function BrandDetailPage() {
         </div>
       </div>
 
-      <div className="mk-container py-6 md:py-8">
+      <div id="brand-products" className="mk-container py-6 md:py-8">
         {/* Sellers for this brand */}
         {brandSellers.length > 0 && (
           <div className="mb-6">

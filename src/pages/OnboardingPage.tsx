@@ -618,7 +618,7 @@ export default function OnboardingPage() {
 
     setSendingOtp(true);
     setOtpError(false);
-    setOtpDigits(["", "", "", "", "", ""]);
+    setOtpDigits([...EMPTY_OTP]);
     setEmailDeliveryMode("code_or_link");
     persistOnboardingDraft(email, "code_or_link");
 

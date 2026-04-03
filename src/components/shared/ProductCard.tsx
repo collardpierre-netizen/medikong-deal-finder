@@ -12,7 +12,7 @@ function getProductImages(product: Product): string[] {
     const valid = product.imageUrls.filter(isValidProductImage);
     if (valid.length > 0) return valid;
   }
-  if (isValidImageUrl(product.imageUrl)) return [product.imageUrl!];
+  if (isValidProductImage(product.imageUrl)) return [product.imageUrl!];
   return [MEDIKONG_PLACEHOLDER];
 }
 

@@ -664,13 +664,21 @@ export default function OnboardingPage() {
       });
 
       if (error) {
-        // Fallback: try "signup" type (in case user was created via signUp)
-        const { error: signupError } = await supabase.auth.verifyOtp({
+        // Fallback: try "recovery" type (existing user with password)
+        const { error: recoveryError } = await supabase.auth.verifyOtp({
           email,
           token: code,
-          type: "signup",
+          type: "recovery",
         });
-        if (signupError) throw signupError;
+        if (recoveryError) {
+          // Last fallback: try "signup" type
+          const { error: signupError } = await supabase.auth.verifyOtp({
+            email,
+            token: code,
+            type: "signup",
+          });
+          if (signupError) throw signupError;
+        }
       }
 
       setOtpVerified(true);

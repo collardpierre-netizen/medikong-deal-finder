@@ -128,6 +128,11 @@ export default function SearchTrivagoCard({ product: p }: Props) {
                 )}
               </div>
               <div className="flex items-center gap-3">
+                {price > 0 && offer.unitPriceEur > price && (
+                  <span className="text-[10px] font-medium text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded whitespace-nowrap">
+                    +{(offer.unitPriceEur - price).toFixed(2)}&nbsp;€ (+{((offer.unitPriceEur - price) / price * 100).toFixed(1)}%)
+                  </span>
+                )}
                 <span className="text-sm font-bold text-foreground">{offer.unitPriceEur.toFixed(2)} €</span>
                 <button
                   onClick={() => navigate(`/produit/${p.slug}`)}

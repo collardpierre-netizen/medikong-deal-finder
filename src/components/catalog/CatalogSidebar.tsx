@@ -109,8 +109,20 @@ export function CatalogSidebar({ filters, setFilter, clearAll, resultCategoryIds
         return ancestorIds.has(cat.id) || childIds.some((id: string) => ancestorIds.has(id));
       });
     }
+    // Apply profession-type filter at root level
+    if (!showAllCats && professionFiltered && visibleCategoryIds && !filters.category) {
+      const visSet = new Set(visibleCategoryIds);
+      // Keep L1 categories that are in the set or have children in the set
+      const allFlat = categories.flatMap(c => [c, ...(c.children || [])]);
+      const parentIdsOfVisible = new Set<string>();
+      for (const id of visibleCategoryIds) {
+        const cat = allFlat.find((c: any) => c.id === id);
+        if (cat?.parent_id) parentIdsOfVisible.add(cat.parent_id);
+      }
+      cats = cats.filter((cat: any) => visSet.has(cat.id) || parentIdsOfVisible.has(cat.id));
+    }
     return cats;
-  }, [filters.category, filters.search, filters.brands, selectedCategory, parentCategory, categories, resultCategoryIds]);
+  }, [filters.category, filters.search, filters.brands, selectedCategory, parentCategory, categories, resultCategoryIds, showAllCats, professionFiltered, visibleCategoryIds]);
 
   const toggleBrand = (slug: string) => {
     const current = filters.brands || [];

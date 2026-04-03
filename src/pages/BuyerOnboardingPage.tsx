@@ -1,10 +1,18 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import {
   ShoppingBag, Briefcase, User, Stethoscope, Pill, Building2, Layers, Store,
   ChevronLeft, ChevronUp, ChevronDown, Lock, Eye, EyeOff, Check, ArrowRight,
-  Clock, Loader2
+  Clock, Loader2, Activity, Smile, Home, Sparkles, Footprints, Heart,
 } from "lucide-react";
+
+/* ─── Lucide icon resolver ─── */
+const iconMap: Record<string, React.ElementType> = {
+  Pill, Smile, Home, Building2, Activity, Stethoscope, Sparkles, Footprints, Heart, Briefcase,
+};
+const resolveIcon = (name: string) => iconMap[name] || Briefcase;
 
 /* ─── Design tokens ─── */
 const S = {
@@ -150,6 +158,21 @@ export default function BuyerOnboardingPage() {
   const [sendingOtp, setSendingOtp] = useState(false);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [professionTypeId, setProfessionTypeId] = useState<string>("");
+
+  /* Fetch profession types from DB */
+  const { data: professionTypes = [] } = useQuery({
+    queryKey: ["profession-types"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profession_types")
+        .select("*")
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+  });
   const [phone, setPhone] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [vatNumber, setVatNumber] = useState("");
@@ -185,8 +208,8 @@ export default function BuyerOnboardingPage() {
 
   /* Step mapping — maps logical steps to display index for dots */
   const getSteps = useCallback(() => {
-    if (accountType === "pro") return [0, 1, 2, 2.5, 3, 4, 5, 6, 7];
-    return [0, 2, 2.5, 3, 5, 6, 7];
+    if (accountType === "pro") return [0, 1, 1.5, 2, 2.5, 3, 4, 5, 6, 7];
+    return [0, 1.5, 2, 2.5, 3, 5, 6, 7];
   }, [accountType]);
 
   const stepsList = getSteps();
@@ -316,7 +339,7 @@ export default function BuyerOnboardingPage() {
   /* Submit */
   const handleSubmit = () => {
     if (!isPasswordValid) return;
-    const data = { accountType, buyerProfile, email, firstName, lastName, phone, companyName, vatNumber, country, city, professionalId, groupMemberCount, resellerWebsite, interests, acceptTerms };
+    const data = { accountType, buyerProfile, professionTypeId, email, firstName, lastName, phone, companyName, vatNumber, country, city, professionalId, groupMemberCount, resellerWebsite, interests, acceptTerms };
     console.log("Buyer onboarding data:", data);
     goNext();
   };
@@ -363,6 +386,37 @@ export default function BuyerOnboardingPage() {
               );
             })}
           </div>
+        </div>
+      );
+
+      case 1.5: return (
+        <div>
+          <BackLink onClick={goBack} />
+          <h1 style={{ fontSize: 20, fontWeight: 700, color: S.text, marginBottom: 6 }}>Quel est votre type d'établissement ?</h1>
+          <p style={{ fontSize: 13, color: S.sec, marginBottom: 20 }}>Nous personnalisons votre catalogue en fonction de votre activité.</p>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }} className="max-[640px]:!grid-cols-1">
+            {professionTypes.map((pt: any) => {
+              const sel = professionTypeId === pt.id;
+              const PtIcon = resolveIcon(pt.icon);
+              return (
+                <button key={pt.id} onClick={() => { setProfessionTypeId(pt.id); setTimeout(goNext, 350); }}
+                  style={{ position: "relative", background: sel ? S.blueBg : "#fff", border: sel ? `2px solid ${S.blue}` : `1px solid ${S.line}`, borderRadius: S.radius, padding: "14px 16px", textAlign: "left", cursor: "pointer", transition: "all .2s" }}
+                  onMouseEnter={e => { if (!sel) { (e.currentTarget as HTMLElement).style.borderColor = S.blue; (e.currentTarget as HTMLElement).style.boxShadow = "0 2px 12px rgba(0,0,0,.08)"; } }}
+                  onMouseLeave={e => { if (!sel) { (e.currentTarget as HTMLElement).style.borderColor = S.line; (e.currentTarget as HTMLElement).style.boxShadow = "none"; } }}
+                >
+                  {sel && <div className="tf-check-pop" style={{ position: "absolute", top: 8, right: 8, width: 20, height: 20, borderRadius: "50%", background: S.blue, display: "flex", alignItems: "center", justifyContent: "center" }}><Check size={12} color="#fff" /></div>}
+                  <div style={{ width: 32, height: 32, borderRadius: S.radiusSm, background: S.blueBg, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 8 }}>
+                    <PtIcon size={16} color={S.blue} />
+                  </div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: S.text }}>{pt.name}</div>
+                  <div style={{ fontSize: 11, color: S.ter }}>{pt.description}</div>
+                </button>
+              );
+            })}
+          </div>
+          <button onClick={goNext} style={{ display: "block", margin: "16px auto 0", fontSize: 12, color: S.sec, background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>
+            Passer cette étape
+          </button>
         </div>
       );
 

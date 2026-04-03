@@ -67,6 +67,8 @@ export default function VendorPublicPage() {
       };
     });
 
+  const vendorName = vendor ? getVendorPublicName(vendor) : "Fournisseur";
+
   if (isLoading) {
     return (
       <Layout>

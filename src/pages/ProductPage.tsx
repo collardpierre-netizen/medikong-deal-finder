@@ -130,10 +130,10 @@ function OfferRow({
       })()}
 
       {/* Desktop grid */}
-      <div className="hidden md:grid grid-cols-[1.5fr_1fr_1fr_0.8fr_1.5fr] gap-3 items-start">
+      <div className="hidden md:grid grid-cols-[1.5fr_2fr_0.8fr_1.5fr] gap-3 items-start">
         <span className="font-bold text-sm text-foreground">{displayCode}</span>
 
-        {/* Price tiers */}
+        {/* Price + MOV merged column */}
         <div>
           {hasTiers ? (
             <div className="relative pl-4">
@@ -193,11 +193,12 @@ function OfferRow({
               ))}
             </div>
           ) : (
-            <span className="text-sm font-bold text-green-700 whitespace-nowrap">{formatEur(displayPrice)}&nbsp;€ <span className="text-[10px] font-normal text-muted-foreground">{priceLabel}</span></span>
+            <div className="flex items-baseline gap-6">
+              <span className="text-sm font-bold text-green-700 whitespace-nowrap">{formatEur(displayPrice)}&nbsp;€ <span className="text-[10px] font-normal text-muted-foreground">{priceLabel}</span></span>
+              <span className="text-sm text-foreground whitespace-nowrap">{offer.movEur > 0 ? <>{formatEur(offer.movEur)}&nbsp;€</> : "—"}</span>
+            </div>
           )}
         </div>
-
-        <span className="text-sm text-foreground whitespace-nowrap">{(hasTiers || hasOfferPriceTiers || hasLegacyTiers) ? "" : offer.movEur > 0 ? <>{formatEur(offer.movEur)}&nbsp;€</> : "—"}</span>
         <span className="text-sm text-foreground whitespace-nowrap">{offer.stockQuantity.toLocaleString("fr-FR")}</span>
 
         {/* Actions */}
@@ -1012,10 +1013,9 @@ export default function ProductPage() {
                           <span className="text-sm text-emerald-700 font-medium">{formatCount(totalStock)} disponibles{filteredOffers.length > 1 ? ` auprès de ${filteredOffers.length} fournisseurs` : ""}</span>
                         </div>
 
-                        <div className="hidden md:grid grid-cols-[1.5fr_1fr_1fr_0.8fr_1.5fr] gap-3 px-1 pb-3 text-xs font-semibold text-muted-foreground border-b border-border">
+                        <div className="hidden md:grid grid-cols-[1.5fr_2fr_0.8fr_1.5fr] gap-3 px-1 pb-3 text-xs font-semibold text-muted-foreground border-b border-border">
                           <span>Fournisseur</span>
-                          <span>Prix unitaire</span>
-                          <TooltipProvider><Tooltip><TooltipTrigger asChild><span className="flex items-center gap-1 cursor-help">MOV <HelpCircle size={12} /></span></TooltipTrigger><TooltipContent><p className="text-xs max-w-[200px]">Minimum Order Value : montant minimum de commande requis auprès de ce fournisseur.</p></TooltipContent></Tooltip></TooltipProvider>
+                          <span>Prix unitaire / MOV</span>
                           <span>Stock</span>
                           <span className="text-right">Commander</span>
                         </div>
@@ -1065,10 +1065,9 @@ export default function ProductPage() {
                           </span>
                         </div>
 
-                        <div className="hidden md:grid grid-cols-[1.5fr_1fr_1fr_0.8fr_1.5fr] gap-3 px-1 pb-3 text-xs font-semibold text-muted-foreground border-b border-border">
+                        <div className="hidden md:grid grid-cols-[1.5fr_2fr_0.8fr_1.5fr] gap-3 px-1 pb-3 text-xs font-semibold text-muted-foreground border-b border-border">
                           <span>Fournisseur</span>
-                          <span>Prix unitaire</span>
-                          <TooltipProvider><Tooltip><TooltipTrigger asChild><span className="flex items-center gap-1 cursor-help">MOV <HelpCircle size={12} /></span></TooltipTrigger><TooltipContent><p className="text-xs max-w-[200px]">Minimum Order Value : montant minimum de commande requis auprès de ce fournisseur.</p></TooltipContent></Tooltip></TooltipProvider>
+                          <span>Prix unitaire / MOV</span>
                           <span>Stock</span>
                           <span className="text-right">Commander</span>
                         </div>

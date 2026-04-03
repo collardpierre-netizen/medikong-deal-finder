@@ -23,6 +23,14 @@ const routeLabels: Record<string, string> = {
   categories: "Catégories",
 };
 
+// Singular segments that should link to their plural list page
+const parentRoutes: Record<string, string> = {
+  marque: "/marques",
+  fabricant: "/fabricants",
+  categorie: "/categories",
+  produit: "/catalogue",
+};
+
 export function Breadcrumbs() {
   const location = useLocation();
   const segments = location.pathname.split("/").filter(Boolean);

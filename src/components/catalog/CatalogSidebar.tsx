@@ -87,15 +87,27 @@ export function CatalogSidebar({ filters, setFilter, clearAll, resultCategoryIds
     } else {
       cats = categories;
     }
-    // Filter categories to only those present in results when searching/filtering
-    if (resultCategoryIds && resultCategoryIds.length > 0 && !filters.category) {
+    // Only filter categories by results when a search/brand filter is active (not on default view)
+    if (resultCategoryIds && resultCategoryIds.length > 0 && !filters.category && (filters.search || (filters.brands && filters.brands.length > 0))) {
+      // Build a set of all ancestor IDs for result categories
+      const allCats = categories.flatMap(c => [c, ...(c.children || [])]);
+      const ancestorIds = new Set<string>();
+      for (const id of resultCategoryIds) {
+        ancestorIds.add(id);
+        const cat = allCats.find((c: any) => c.id === id);
+        if (cat?.parent_id) {
+          ancestorIds.add(cat.parent_id);
+          const parent = allCats.find((c: any) => c.id === cat.parent_id);
+          if (parent?.parent_id) ancestorIds.add(parent.parent_id);
+        }
+      }
       cats = cats.filter((cat: any) => {
         const childIds = (cat.children || []).map((c: any) => c.id);
-        return resultCategoryIds.includes(cat.id) || childIds.some((id: string) => resultCategoryIds.includes(id));
+        return ancestorIds.has(cat.id) || childIds.some((id: string) => ancestorIds.has(id));
       });
     }
     return cats;
-  }, [filters.category, selectedCategory, parentCategory, categories, resultCategoryIds]);
+  }, [filters.category, filters.search, filters.brands, selectedCategory, parentCategory, categories, resultCategoryIds]);
 
   const toggleBrand = (slug: string) => {
     const current = filters.brands || [];

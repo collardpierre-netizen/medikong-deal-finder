@@ -103,16 +103,21 @@ const AdminProduits = () => {
       ((o.vendors as any)?.company_name || "").toLowerCase().includes(search.toLowerCase())
   );
 
+  const [importResult, setImportResult] = useState<{ created: number; errors: string[] } | null>(null);
+  const [importing, setImporting] = useState(false);
+
   const handleImport = async (file: File) => {
-    toast.info("Import en cours...");
+    setImporting(true);
+    toast.info("Import en cours, veuillez patienter...");
     try {
       const result = await importProducts(file);
-      toast.success(`${result.created} produits importés`);
-      if (result.errors.length > 0) toast.warning(`${result.errors.length} erreur(s): ${result.errors[0]}`);
+      setImportResult(result);
       qc.invalidateQueries({ queryKey: ["admin-products-paginated"] });
       qc.invalidateQueries({ queryKey: ["admin-products-count"] });
     } catch (e: any) {
-      toast.error(e.message || "Erreur import");
+      setImportResult({ created: 0, errors: [e.message || "Erreur inconnue"] });
+    } finally {
+      setImporting(false);
     }
   };
 

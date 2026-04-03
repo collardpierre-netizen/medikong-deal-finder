@@ -208,8 +208,8 @@ export default function BuyerOnboardingPage() {
 
   /* Step mapping — maps logical steps to display index for dots */
   const getSteps = useCallback(() => {
-    if (accountType === "pro") return [0, 1, 2, 2.5, 3, 4, 5, 6, 7];
-    return [0, 2, 2.5, 3, 5, 6, 7];
+    if (accountType === "pro") return [0, 1, 1.5, 2, 2.5, 3, 4, 5, 6, 7];
+    return [0, 1.5, 2, 2.5, 3, 5, 6, 7];
   }, [accountType]);
 
   const stepsList = getSteps();

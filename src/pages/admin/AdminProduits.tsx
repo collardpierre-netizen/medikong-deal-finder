@@ -104,7 +104,7 @@ const AdminProduits = () => {
       ((o.vendors as any)?.company_name || "").toLowerCase().includes(search.toLowerCase())
   );
 
-  const [importResult, setImportResult] = useState<{ created: number; errors: string[] } | null>(null);
+  const [importResult, setImportResult] = useState<{ created: number; errors: string[]; brandsCreated?: number; manufacturersCreated?: number } | null>(null);
   const [importing, setImporting] = useState(false);
 
   const handleImport = async (file: File) => {
@@ -115,6 +115,8 @@ const AdminProduits = () => {
       setImportResult(result);
       qc.invalidateQueries({ queryKey: ["admin-products-paginated"] });
       qc.invalidateQueries({ queryKey: ["admin-products-count"] });
+      qc.invalidateQueries({ queryKey: ["admin-brands"] });
+      qc.invalidateQueries({ queryKey: ["admin-manufacturers"] });
     } catch (e: any) {
       setImportResult({ created: 0, errors: [e.message || "Erreur inconnue"] });
     } finally {
@@ -337,6 +339,8 @@ const AdminProduits = () => {
           </DialogHeader>
           <div className="space-y-3">
             <p className="text-sm"><strong>{importResult?.created || 0}</strong> produit(s) importé(s) / mis à jour</p>
+            {(importResult?.brandsCreated || 0) > 0 && <p className="text-sm text-primary"><strong>{importResult!.brandsCreated}</strong> marque(s) auto-créée(s)</p>}
+            {(importResult?.manufacturersCreated || 0) > 0 && <p className="text-sm text-primary"><strong>{importResult!.manufacturersCreated}</strong> fabricant(s) auto-créé(s)</p>}
             {(importResult?.errors?.length || 0) > 0 && (
               <div>
                 <p className="text-sm font-medium text-destructive mb-1">{importResult!.errors.length} erreur(s) :</p>

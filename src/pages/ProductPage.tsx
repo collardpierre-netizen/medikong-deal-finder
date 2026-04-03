@@ -70,6 +70,7 @@ function OfferRow({
       vendorId: offer.sellerId,
       priceExclVat: offer.unitPriceEur,
       productData: { id: productId, name: productName, brand: "", slug: productSlug, price: offer.unitPriceEur },
+      deliveryDays: offer.deliveryDays || null,
     });
   };
 
@@ -1536,6 +1537,7 @@ export default function ProductPage() {
                         vendorId: bestOffer.sellerId,
                         priceExclVat: bestOffer.unitPriceEur,
                         productData: { id: product.id, name: product.name, brand: product.brand || "", slug: product.slug, price: bestOffer.unitPriceEur },
+                        deliveryDays: bestOffer.deliveryDays || null,
                       });
                       
                     }}

@@ -145,15 +145,49 @@ export function CatalogSidebar({ filters, setFilter, clearAll }: Props) {
       {/* Brands */}
       <div>
         <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Marque</h4>
-        <div className="relative mb-2">
+        <div className="relative mb-2" ref={brandDropdownRef}>
           <Search size={14} className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Rechercher une marque..."
             value={brandSearch}
-            onChange={e => setBrandSearch(e.target.value)}
+            onChange={e => { setBrandSearch(e.target.value); setBrandDropdownOpen(true); }}
+            onFocus={() => { if (brandSearch.length > 0) setBrandDropdownOpen(true); }}
             className="pl-7 h-8 text-sm"
           />
+          {brandDropdownOpen && brandSearch.length >= 1 && brandSuggestions.length > 0 && (
+            <div className="absolute z-20 left-0 right-0 top-full mt-1 bg-background border border-border rounded-md shadow-lg max-h-[200px] overflow-y-auto">
+              {brandSuggestions.map(b => {
+                const isSelected = filters.brands?.includes(b.slug) || false;
+                return (
+                  <button
+                    key={b.id}
+                    onClick={() => { toggleBrand(b.slug); setBrandSearch(""); setBrandDropdownOpen(false); }}
+                    className={`w-full text-left px-3 py-1.5 text-sm hover:bg-muted flex items-center justify-between ${isSelected ? "bg-primary/5 font-medium" : ""}`}
+                  >
+                    <span className="truncate">{b.name}</span>
+                    <span className="text-xs text-muted-foreground shrink-0 ml-2">({b.product_count})</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
+
+        {/* Selected brand chips */}
+        {(filters.brands || []).length > 0 && (
+          <div className="flex flex-wrap gap-1 mb-2">
+            {(filters.brands || []).map(slug => {
+              const brand = brands.find(b => b.slug === slug);
+              return brand ? (
+                <span key={slug} className="inline-flex items-center gap-1 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                  {brand.name}
+                  <button onClick={() => toggleBrand(slug)} className="hover:text-destructive"><X size={12} /></button>
+                </span>
+              ) : null;
+            })}
+          </div>
+        )}
+
         <ScrollArea className="max-h-[280px]">
           <div className="space-y-1">
             {filteredBrands.map(b => (

@@ -219,29 +219,46 @@ export default function AccountPage() {
               transition={{ duration: 0.4, delay: 0.1 }}
             >
               <div className="flex md:flex-col gap-1 overflow-x-auto pb-2 md:pb-0">
-                {tabs.map((t, i) => (
-                  <motion.button
-                    key={t.key}
-                    onClick={() => !t.disabled && setActiveTab(t.key)}
-                    disabled={t.disabled}
-                    className={`flex items-center gap-2 px-3 py-2.5 rounded-md text-sm whitespace-nowrap transition-colors ${
-                      t.disabled
-                        ? "text-muted-foreground/50 cursor-not-allowed"
-                        : activeTab === t.key
-                          ? "bg-mk-blue text-white font-medium"
-                          : "text-mk-sec hover:bg-mk-alt"
-                    }`}
-                    whileHover={t.disabled ? {} : { x: 4 }}
-                    whileTap={t.disabled ? {} : { scale: 0.97 }}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.1 + i * 0.04 }}
-                  >
-                    <t.icon size={16} />
-                    {t.label}
-                    {t.disabled && <span className="text-[10px] ml-auto bg-muted text-muted-foreground rounded px-1.5 py-0.5">Prochainement</span>}
-                  </motion.button>
-                ))}
+                {tabs.map((t, i) => {
+                  const isLink = 'href' in t && (t as any).href;
+                  const inner = (
+                    <>
+                      <t.icon size={16} />
+                      {t.label}
+                      {t.disabled && <span className="text-[10px] ml-auto bg-muted text-muted-foreground rounded px-1.5 py-0.5">Prochainement</span>}
+                    </>
+                  );
+                  if (isLink) {
+                    return (
+                      <motion.div key={t.key} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 + i * 0.04 }}>
+                        <Link to={(t as any).href} className="flex items-center gap-2 px-3 py-2.5 rounded-md text-sm whitespace-nowrap transition-colors text-mk-sec hover:bg-mk-alt">
+                          {inner}
+                        </Link>
+                      </motion.div>
+                    );
+                  }
+                  return (
+                    <motion.button
+                      key={t.key}
+                      onClick={() => !t.disabled && setActiveTab(t.key)}
+                      disabled={t.disabled}
+                      className={`flex items-center gap-2 px-3 py-2.5 rounded-md text-sm whitespace-nowrap transition-colors ${
+                        t.disabled
+                          ? "text-muted-foreground/50 cursor-not-allowed"
+                          : activeTab === t.key
+                            ? "bg-mk-blue text-white font-medium"
+                            : "text-mk-sec hover:bg-mk-alt"
+                      }`}
+                      whileHover={t.disabled ? {} : { x: 4 }}
+                      whileTap={t.disabled ? {} : { scale: 0.97 }}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.1 + i * 0.04 }}
+                    >
+                      {inner}
+                    </motion.button>
+                  );
+                })}
               </div>
             </motion.aside>
 

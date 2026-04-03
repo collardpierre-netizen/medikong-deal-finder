@@ -112,6 +112,20 @@ function OfferRow({
         )}
       </div>
 
+      {/* Delta vs best */}
+      {(() => {
+        if (isBest || !bestPrice || bestPrice <= 0) return null;
+        const delta = displayPrice - bestPrice;
+        const deltaPct = ((displayPrice - bestPrice) / bestPrice * 100);
+        if (delta <= 0) return null;
+        return (
+          <div className="mb-2 inline-flex items-center gap-2 text-xs text-orange-600 bg-orange-50 px-2.5 py-1 rounded-full font-medium">
+            <TrendingDown size={12} className="rotate-180" />
+            +{formatEur(delta)}&nbsp;€ ({deltaPct.toFixed(1)}%) vs meilleure offre
+          </div>
+        );
+      })()}
+
       {/* Desktop grid */}
       <div className="hidden md:grid grid-cols-[1.5fr_1fr_1fr_0.8fr_1.5fr] gap-3 items-start">
         <span className="font-bold text-sm text-foreground">{displayCode}</span>

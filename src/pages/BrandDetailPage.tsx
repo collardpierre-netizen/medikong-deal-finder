@@ -6,6 +6,7 @@ import { Star, ExternalLink, Heart, Download, Upload, Users, Grid, List, Columns
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { getVendorPublicName } from "@/lib/vendor-display";
 
 export default function BrandDetailPage() {
   const { slug } = useParams();

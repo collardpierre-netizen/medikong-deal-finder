@@ -158,11 +158,12 @@ export default function ManufacturerPage() {
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
               {products.map(p => (
                 <Link key={p.id} to={`/produit/${p.slug}`} className="border border-mk-line rounded-lg p-4 hover:shadow-sm hover:border-mk-blue transition-all group">
-                  {p.image_urls && p.image_urls.length > 0 ? (
-                    <img src={p.image_urls[0]} alt={p.name} className="w-full h-32 object-contain mb-2 rounded" />
-                  ) : (
-                    <div className="w-full h-32 bg-mk-alt rounded flex items-center justify-center mb-2"><Package size={24} className="text-mk-ter" /></div>
-                  )}
+                  <img
+                    src={p.image_urls?.[0] || "/medikong-placeholder.png"}
+                    alt={p.name}
+                    className="w-full h-32 object-contain mb-2 rounded"
+                    onError={e => { e.currentTarget.src = "/medikong-placeholder.png"; }}
+                  />
                   <h3 className="text-xs font-semibold text-mk-navy line-clamp-2 mb-1 group-hover:text-mk-blue">{p.name}</h3>
                   {p.best_price_excl_vat && <span className="text-sm font-bold text-mk-navy">€{Number(p.best_price_excl_vat).toFixed(2)}</span>}
                 </Link>

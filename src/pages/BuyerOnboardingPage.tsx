@@ -1,10 +1,18 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import {
   ShoppingBag, Briefcase, User, Stethoscope, Pill, Building2, Layers, Store,
   ChevronLeft, ChevronUp, ChevronDown, Lock, Eye, EyeOff, Check, ArrowRight,
-  Clock, Loader2
+  Clock, Loader2, Activity, Smile, Home, Sparkles, Footprints, Heart,
 } from "lucide-react";
+
+/* ─── Lucide icon resolver ─── */
+const iconMap: Record<string, React.ElementType> = {
+  Pill, Smile, Home, Building2, Activity, Stethoscope, Sparkles, Footprints, Heart, Briefcase,
+};
+const resolveIcon = (name: string) => iconMap[name] || Briefcase;
 
 /* ─── Design tokens ─── */
 const S = {

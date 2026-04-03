@@ -489,13 +489,8 @@ async function syncOffers(
     })
     .eq("id", logId);
 
-  await sb
-    .from("qogita_config")
-    .update({
-      last_offers_sync_at: new Date().toISOString(),
-      sync_status: "completed",
-    })
-    .eq("id", 1);
+  await sb.from("qogita_config").upsert({ key: "last_offers_sync_at", value: new Date().toISOString(), updated_at: new Date().toISOString() }, { onConflict: "key" });
+  await sb.from("qogita_config").upsert({ key: "sync_status", value: "completed", updated_at: new Date().toISOString() }, { onConflict: "key" });
 
   return stats;
 }

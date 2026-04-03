@@ -892,7 +892,7 @@ export default function OnboardingPage() {
             📩 Entrez le code reçu par email
           </p>
           <p style={{ fontSize: 12, color: S.sec, margin: 0, lineHeight: 1.6 }}>
-            Ouvrez votre boîte mail et saisissez le code à 8 chiffres ci-dessous.
+            Ouvrez votre boîte mail et saisissez le code à 6 chiffres ci-dessous.
           </p>
         </div>
 

@@ -445,7 +445,7 @@ export default function BuyerOnboardingPage() {
             <Lock size={24} color={S.blue} />
           </div>
           <h1 style={{ fontSize: 20, fontWeight: 700, color: S.text, marginBottom: 6 }}>Vérifiez votre email</h1>
-          <p style={{ fontSize: 13, color: S.sec, marginBottom: 24 }}>Un code à 8 chiffres a été envoyé à <strong>{email}</strong></p>
+          <p style={{ fontSize: 13, color: S.sec, marginBottom: 24 }}>Un code à 6 chiffres a été envoyé à <strong>{email}</strong></p>
           <div className={otpShake ? "tf-shake" : ""} style={{ display: "flex", gap: 10, justifyContent: "center", marginBottom: 16, flexWrap: "wrap" }} onPaste={handleOtpPaste}>
             {otpDigits.map((d, i) => (
               <input key={i} ref={el => { otpRefs.current[i] = el; }} type="text" inputMode="numeric" maxLength={1} value={d}

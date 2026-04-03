@@ -15,7 +15,6 @@ export function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
   const isHomePage = location.pathname === "/" || location.pathname === "";
-  const location = useLocation();
   const { user, signOut } = useAuth();
   const { cartCount } = useCart();
   const [isAdmin, setIsAdmin] = useState(false);

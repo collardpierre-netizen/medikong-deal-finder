@@ -231,8 +231,8 @@ Deno.serve(async (req) => {
   }
 
   if (!targetCountry) {
-    const { data: cfg } = await sb.from("qogita_config").select("default_country").eq("id", 1).single();
-    targetCountry = cfg?.default_country || "BE";
+    const { data: rows } = await sb.from("qogita_config").select("key, value").eq("key", "default_country");
+    targetCountry = rows?.[0]?.value || "BE";
   }
 
   const { data: ctryRow } = await sb

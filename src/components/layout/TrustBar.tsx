@@ -1,6 +1,7 @@
 import { Truck, ShieldCheck, BadgeCheck } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
+
 export function TrustBar() {
   const { t } = useTranslation();
   const items = [

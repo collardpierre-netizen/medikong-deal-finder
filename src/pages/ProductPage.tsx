@@ -30,6 +30,10 @@ function formatEur(n: number): string {
   return n.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+function formatCount(n: number): string {
+  return n.toLocaleString("de-DE");
+}
+
 /* ── Offer Row ─────────────────────────────────────────── */
 function OfferRow({
   offer, productId, productName, productSlug, user, navigate, addToCart, isBest, delay = 0, isTVAC = false, categoryId,
@@ -985,7 +989,7 @@ export default function ProductPage() {
                             <Award size={18} className="text-primary" />
                             <h3 className="text-base md:text-lg font-bold text-foreground">Meilleure offre</h3>
                           </div>
-                          <span className="text-sm text-primary font-medium">{totalStock.toLocaleString("fr-FR")} disponibles</span>
+                          <span className="text-sm text-primary font-medium">{formatCount(totalStock)} disponibles</span>
                         </div>
 
                         <div className="hidden md:grid grid-cols-[1.5fr_1fr_1fr_0.8fr_1.5fr] gap-3 px-1 pb-3 text-xs font-semibold text-muted-foreground border-b border-border">
@@ -1037,7 +1041,7 @@ export default function ProductPage() {
                             <span className="text-xs text-muted-foreground">Trie par prix</span>
                           </div>
                           <span className="text-sm text-primary font-medium">
-                            {otherOffers.reduce((s, o) => s + o.stockQuantity, 0).toLocaleString("fr-FR")} disponibles
+                            {formatCount(otherOffers.reduce((s, o) => s + o.stockQuantity, 0))} disponibles
                           </span>
                         </div>
 

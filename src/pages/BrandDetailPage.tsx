@@ -293,8 +293,12 @@ export default function BrandDetailPage() {
         {/* Category chips */}
         {catChips.length > 0 && (
           <div className="flex gap-2 mb-6 overflow-x-auto pb-1">
-            {catChips.map((c, i) => (
-              <button key={c.name} className={`px-3 py-1.5 rounded-full text-sm whitespace-nowrap ${i === 0 ? "bg-mk-navy text-white" : "border border-mk-line text-mk-sec"}`}>
+            {catChips.map((c) => (
+              <button
+                key={c.name}
+                onClick={() => setActiveCat(activeCat === c.name ? null : c.name)}
+                className={`px-3 py-1.5 rounded-full text-sm whitespace-nowrap transition-colors ${activeCat === c.name ? "bg-mk-navy text-white" : "border border-mk-line text-mk-sec hover:border-mk-blue"}`}
+              >
                 {c.name} ({c.count})
               </button>
             ))}

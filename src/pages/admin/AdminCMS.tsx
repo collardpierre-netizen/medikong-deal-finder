@@ -463,6 +463,10 @@ const AdminCMS = () => {
             </div>
           </div>
         </TabsContent>
+        {/* Featured Categories tab */}
+        <TabsContent value="featured-cats">
+          <FeaturedCategoriesTab />
+        </TabsContent>
       </Tabs>
     </div>
   );

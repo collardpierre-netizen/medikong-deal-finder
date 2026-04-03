@@ -35,21 +35,28 @@ function extractImages(images: unknown): string[] {
 }
 
 async function getQogitaToken(sb: any): Promise<{ token: string; baseUrl: string }> {
-  const { data: config } = await sb.from("qogita_config").select("*").eq("id", 1).single();
-  if (!config?.qogita_email || !config?.qogita_password) throw new Error("Qogita credentials missing");
+  // qogita_config is a key-value table
+  const { data: rows } = await sb.from("qogita_config").select("key, value");
+  const cfg: Record<string, string> = {};
+  (rows || []).forEach((r: any) => { cfg[r.key] = r.value; });
 
-  const baseUrl = config.base_url || "https://api.qogita.com";
+  const email = cfg.qogita_email;
+  const password = cfg.qogita_password;
+  if (!email || !password) throw new Error("Qogita credentials missing (set qogita_email & qogita_password in config)");
+
+  const baseUrl = cfg.base_url || "https://api.qogita.com";
   const res = await fetch(`${baseUrl}/auth/login/`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email: config.qogita_email, password: config.qogita_password }),
+    body: JSON.stringify({ email, password }),
   });
 
   if (!res.ok) throw new Error(`Auth failed (${res.status})`);
   const { accessToken } = await res.json();
-  if (!accessToken) throw new Error("No accessToken");
+  if (!accessToken) throw new Error("No accessToken in response");
 
-  await sb.from("qogita_config").update({ bearer_token: accessToken }).eq("id", 1);
+  // Save token for reference
+  await sb.from("qogita_config").upsert({ key: "bearer_token", value: accessToken, updated_at: new Date().toISOString() }, { onConflict: "key" });
   return { token: accessToken, baseUrl };
 }
 
@@ -224,8 +231,8 @@ Deno.serve(async (req) => {
   }
 
   if (!targetCountry) {
-    const { data: cfg } = await sb.from("qogita_config").select("default_country").eq("id", 1).single();
-    targetCountry = cfg?.default_country || "BE";
+    const { data: rows } = await sb.from("qogita_config").select("key, value").eq("key", "default_country");
+    targetCountry = rows?.[0]?.value || "BE";
   }
 
   const { data: ctryRow } = await sb
@@ -293,13 +300,13 @@ Deno.serve(async (req) => {
     syncLogId = newLog!.id;
   }
 
-  // Count total products to process and calculate remaining
+  // Count products with active offers (incremental: only those with offer_count > 0)
   const { count: totalProducts } = await sb
     .from("products")
     .select("id", { count: "exact", head: true })
-    .eq("source", "qogita")
     .eq("is_active", true)
-    .not("gtin", "is", null);
+    .not("gtin", "is", null)
+    .gt("offer_count", 0);
 
   const remaining = Math.max((totalProducts || 0) - lastOffset, 0);
 
@@ -356,14 +363,15 @@ async function syncOffers(
   const { token, baseUrl } = await getQogitaToken(sb);
   const bestPriceVendorId = await ensureBestPriceVendor(sb, country);
 
+  // INCREMENTAL: only products with active offers
   const { data: products, error: pErr } = await sb
     .from("products")
     .select("id, gtin, qogita_qid, qogita_fid, slug")
-    .eq("source", "qogita")
     .eq("is_active", true)
     .not("gtin", "is", null)
+    .gt("offer_count", 0)
     .order("created_at", { ascending: true })
-    .range(0, 49999);
+    .range(0, 59999);
 
   if (pErr) throw pErr;
 
@@ -481,13 +489,8 @@ async function syncOffers(
     })
     .eq("id", logId);
 
-  await sb
-    .from("qogita_config")
-    .update({
-      last_offers_sync_at: new Date().toISOString(),
-      sync_status: "completed",
-    })
-    .eq("id", 1);
+  await sb.from("qogita_config").upsert({ key: "last_offers_sync_at", value: new Date().toISOString(), updated_at: new Date().toISOString() }, { onConflict: "key" });
+  await sb.from("qogita_config").upsert({ key: "sync_status", value: "completed", updated_at: new Date().toISOString() }, { onConflict: "key" });
 
   return stats;
 }

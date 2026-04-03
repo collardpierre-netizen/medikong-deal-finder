@@ -19,7 +19,46 @@ interface StepConfig {
   batchSize?: number;
 }
 
-function getPipelineSteps(country: string): StepConfig[] {
+function getPipelineSteps(country: string, mode: string): StepConfig[] {
+  if (mode === "incremental") {
+    // Daily incremental: only update offers for products that already have offers
+    return [
+      {
+        name: "offers_detail",
+        label: "Mise à jour offres (incrémental)",
+        functionName: "sync-qogita-offers-detail",
+        params: { country },
+        required: true,
+        loopBatch: true,
+        batchSize: 100,
+      },
+      {
+        name: "offers_multi_vendor",
+        label: "Offres multi-vendeurs (incrémental)",
+        functionName: "sync-qogita-offers-detail",
+        params: { country, multi_vendor: true },
+        required: false,
+        loopBatch: true,
+        batchSize: 100,
+      },
+      {
+        name: "recalculate_prices",
+        label: "Recalculer Prix (marge)",
+        functionName: "recalculate-all-prices",
+        params: {},
+        required: true,
+      },
+      {
+        name: "meilisearch_sync",
+        label: "Sync Meilisearch",
+        functionName: "sync-meilisearch",
+        params: { action: "full-sync" },
+        required: false,
+      },
+    ];
+  }
+
+  // Full pipeline: CSV import + everything
   return [
     {
       name: "csv_import",
@@ -55,7 +94,7 @@ function getPipelineSteps(country: string): StepConfig[] {
     },
     {
       name: "recalculate_prices",
-      label: "Recalculer Prix (marge 15%)",
+      label: "Recalculer Prix (marge)",
       functionName: "recalculate-all-prices",
       params: {},
       required: true,
@@ -98,9 +137,10 @@ serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const country = body.country || "BE";
     const triggeredBy = body.triggeredBy || "manual";
-    const stepOnly = body.stepOnly; // optional: run a single step by name
+    const mode = body.mode || "incremental"; // "incremental" (default) or "full"
+    const stepOnly = body.stepOnly;
 
-    const STEPS = getPipelineSteps(country);
+    const STEPS = getPipelineSteps(country, mode);
 
     // Create pipeline run record
     const initialSteps = STEPS.map((s) => ({

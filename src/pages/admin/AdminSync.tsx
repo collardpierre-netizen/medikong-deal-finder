@@ -437,10 +437,10 @@ export default function AdminSync() {
   const displayPassword = passwordDirty ? qogitaPassword : (config as any)?.qogita_password || "";
 
   // ─ Launch pipeline
-  const launchPipeline = useMutation<any, Error, { stepOnly?: string } | undefined>({
-    mutationFn: async (opts?: { stepOnly?: string }) => {
+  const launchPipeline = useMutation<any, Error, { stepOnly?: string; mode?: string } | undefined>({
+    mutationFn: async (opts?: { stepOnly?: string; mode?: string }) => {
       const { data, error } = await supabase.functions.invoke("run-sync-pipeline", {
-        body: { country: selectedCountry, triggeredBy: "manual", ...opts },
+        body: { country: selectedCountry, triggeredBy: "manual", mode: opts?.mode || "incremental", ...opts },
       });
       if (error) throw error;
       return data;
@@ -650,7 +650,8 @@ export default function AdminSync() {
               Pipeline de synchronisation
             </h3>
             <p className="text-[12px] mt-1" style={{ color: "#616B7C" }}>
-              Exécute les 6 étapes dans l'ordre : CSV → Marques → Enrichissement → Offres → Prix → Recherche
+              ⚡ Incrémental (quotidien 3h) : met à jour les ~56K produits avec offres actives &nbsp;|&nbsp;
+              🔄 Full (dimanche 4h) : import CSV complet + détection nouveaux produits
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -667,16 +668,24 @@ export default function AdminSync() {
               </SelectContent>
             </Select>
             <button
-              onClick={() => launchPipeline.mutate(undefined)}
+              onClick={() => launchPipeline.mutate({ mode: "incremental" })}
               disabled={launchPipeline.isPending || !!activePipeline}
               className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg text-[13px] font-semibold hover:bg-blue-700 disabled:opacity-50 transition-colors"
             >
               {launchPipeline.isPending || activePipeline ? (
                 <Loader2 size={16} className="animate-spin" />
               ) : (
-                <Play size={16} />
+                <Zap size={16} />
               )}
-              {activePipeline ? "Pipeline en cours..." : "Lancer pipeline complet"}
+              {activePipeline ? "Pipeline en cours..." : "Sync incrémentale (~56K)"}
+            </button>
+            <button
+              onClick={() => launchPipeline.mutate({ mode: "full" })}
+              disabled={launchPipeline.isPending || !!activePipeline}
+              className="flex items-center gap-2 px-4 py-2.5 border border-blue-300 text-blue-700 rounded-lg text-[13px] font-medium hover:bg-blue-50 disabled:opacity-50 transition-colors"
+            >
+              <RotateCcw size={14} />
+              Full sync (CSV)
             </button>
           </div>
         </div>

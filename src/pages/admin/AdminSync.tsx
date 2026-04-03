@@ -563,21 +563,15 @@ export default function AdminSync() {
       const email = emailDirty ? qogitaEmail : (config as any)?.qogita_email;
       const password = passwordDirty ? qogitaPassword : (config as any)?.qogita_password;
       if (!email || !password) { toast.error("Email et mot de passe requis"); return; }
-      const baseUrl = config?.base_url || "https://api.qogita.com";
-      const res = await fetch(`${baseUrl}/auth/login/`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+      const { data, error } = await supabase.functions.invoke("test-qogita-connection", {
+        body: { email, password },
       });
-      if (!res.ok) { toast.error(`Connexion échouée (${res.status})`); return; }
-      const data = await res.json();
-      if (data.accessToken) {
-        toast.success("Connexion Qogita réussie ✅");
-        const updates: any = { bearer_token: data.accessToken };
-        if (emailDirty) updates.qogita_email = qogitaEmail;
-        if (passwordDirty) updates.qogita_password = qogitaPassword;
-        updateConfig.mutate(updates);
+      if (error || !data?.success) {
+        toast.error("Connexion échouée", { description: data?.error || error?.message });
+        return;
       }
+      toast.success("Connexion Qogita réussie ✅");
+      queryClient.invalidateQueries({ queryKey: ["qogita-config"] });
     } catch (err: any) {
       toast.error("Erreur de connexion", { description: err.message });
     } finally {

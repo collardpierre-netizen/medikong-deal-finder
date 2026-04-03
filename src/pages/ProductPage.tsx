@@ -5,8 +5,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import {
   Copy, Sliders, ShoppingCart, Shield, Check, Truck, Minus, Plus,
-  Heart, Tag, Package, ChevronRight, Home, Star, Info, Award, Globe, BarChart3, Calculator, TrendingDown, Bell, ExternalLink, Lock, ArrowRight
+  Heart, Tag, Package, ChevronRight, Home, Star, Info, Award, Globe, BarChart3, Calculator, TrendingDown, Bell, ExternalLink, Lock, ArrowRight, HelpCircle
 } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useFavorites, useRecentActivity } from "@/hooks/useFavorites";
 import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";

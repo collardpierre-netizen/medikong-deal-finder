@@ -75,6 +75,13 @@ export default function CheckoutPage() {
         paymentMethod: paymentMethods[payment],
         subtotal,
         total,
+        items: items.map(item => ({
+          offer_id: item.offer_id,
+          product_id: item.product_id,
+          quantity: item.quantity,
+          unit_price_excl_vat: item.price_excl_vat || 0,
+          unit_price_incl_vat: item.price_incl_vat || item.price_excl_vat || 0,
+        })),
       });
       clearCart.mutate();
 

@@ -102,7 +102,8 @@ export function useOrderDetail(orderId: string) {
     queryFn: async () => {
       const { data, error } = await supabase.from("orders").select("*").eq("id", orderId).single();
       if (error) throw error;
-      return { ...data, items: [] };
+      const { data: orderItems } = await supabase.from("order_items" as any).select("*").eq("order_id", orderId);
+      return { ...data, items: orderItems || [] };
     },
   });
 }

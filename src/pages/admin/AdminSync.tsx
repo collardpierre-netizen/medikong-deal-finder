@@ -667,16 +667,24 @@ export default function AdminSync() {
               </SelectContent>
             </Select>
             <button
-              onClick={() => launchPipeline.mutate(undefined)}
+              onClick={() => launchPipeline.mutate({ mode: "incremental" })}
               disabled={launchPipeline.isPending || !!activePipeline}
               className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg text-[13px] font-semibold hover:bg-blue-700 disabled:opacity-50 transition-colors"
             >
               {launchPipeline.isPending || activePipeline ? (
                 <Loader2 size={16} className="animate-spin" />
               ) : (
-                <Play size={16} />
+                <Zap size={16} />
               )}
-              {activePipeline ? "Pipeline en cours..." : "Lancer pipeline complet"}
+              {activePipeline ? "Pipeline en cours..." : "Sync incrémentale (~56K)"}
+            </button>
+            <button
+              onClick={() => launchPipeline.mutate({ mode: "full" })}
+              disabled={launchPipeline.isPending || !!activePipeline}
+              className="flex items-center gap-2 px-4 py-2.5 border border-blue-300 text-blue-700 rounded-lg text-[13px] font-medium hover:bg-blue-50 disabled:opacity-50 transition-colors"
+            >
+              <RotateCcw size={14} />
+              Full sync (CSV)
             </button>
           </div>
         </div>

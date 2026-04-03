@@ -5,7 +5,9 @@ const KNOWN_PLACEHOLDER_HASHES = [
 ];
 
 const BLOCKED_URL_PATTERNS = [
-  /qogita/i,
+  /image[._-]?non/i,
+  /default[_-]?image/i,
+  /no[._-]?image/i,
 ];
 
 export function isValidProductImage(url: string | undefined | null): boolean {

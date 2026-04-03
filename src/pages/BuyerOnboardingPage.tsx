@@ -300,10 +300,10 @@ export default function BuyerOnboardingPage() {
     newDigits[idx] = val;
     setOtpDigits(newDigits);
     setOtpError(false);
-    if (val && idx < 5) otpRefs.current[idx + 1]?.focus();
+    if (val && idx < OTP_LENGTH - 1) otpRefs.current[idx + 1]?.focus();
     if (newDigits.every(d => d) ) {
       const code = newDigits.join("");
-      if (code === "123456") {
+      if (code === "12345678") {
         setOtpVerified(true);
         setTimeout(() => goNext(), 400);
       } else {
@@ -321,13 +321,13 @@ export default function BuyerOnboardingPage() {
   };
 
   const handleOtpPaste = (e: React.ClipboardEvent) => {
-    const text = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
-    if (text.length === 6) {
+    const text = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, OTP_LENGTH);
+    if (text.length === OTP_LENGTH) {
       e.preventDefault();
       const newDigits = text.split("");
       setOtpDigits(newDigits);
-      otpRefs.current[5]?.focus();
-      if (text === "123456") {
+      otpRefs.current[OTP_LENGTH - 1]?.focus();
+      if (text === "12345678") {
         setOtpVerified(true);
         setTimeout(() => goNext(), 400);
       } else {

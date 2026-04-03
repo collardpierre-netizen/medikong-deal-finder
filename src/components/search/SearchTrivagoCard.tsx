@@ -40,7 +40,7 @@ export default function SearchTrivagoCard({ product: p }: Props) {
           {p.imageUrls?.[0] || p.imageUrl ? (
             <img src={p.imageUrls?.[0] || p.imageUrl} alt={p.name} className="w-full h-full object-contain p-4"
                  loading="lazy" referrerPolicy="no-referrer"
-                 onError={e => { e.currentTarget.src = "/product-placeholder.svg"; }} />
+                 onError={e => { e.currentTarget.src = "/medikong-placeholder.png"; }} />
           ) : (
             <Package size={48} className="text-muted-foreground" />
           )}

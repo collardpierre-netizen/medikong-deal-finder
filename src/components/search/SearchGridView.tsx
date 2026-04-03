@@ -41,7 +41,7 @@ export default function SearchGridView({ products }: Props) {
                   loading="lazy"
                   referrerPolicy="no-referrer"
                   className="w-full h-full object-contain"
-                  onError={e => { e.currentTarget.src = "/product-placeholder.svg"; }}
+                  onError={e => { e.currentTarget.src = "/medikong-placeholder.png"; }}
                 />
               ) : (
                 <Package size={40} className="text-muted-foreground" />

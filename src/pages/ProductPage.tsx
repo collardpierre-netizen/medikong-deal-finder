@@ -1059,7 +1059,7 @@ export default function ProductPage() {
                             <span className="text-xs text-muted-foreground">Trie par prix</span>
                           </div>
                           <span className="text-sm text-primary font-medium">
-                            {formatCount(otherOffers.reduce((s, o) => s + o.stockQuantity, 0))} disponibles
+                            {formatCount(otherOffers.reduce((s, o) => s + o.stockQuantity, 0))} disponibles{otherOffers.length > 1 ? ` auprès de ${otherOffers.length} fournisseurs` : ""}
                           </span>
                         </div>
 

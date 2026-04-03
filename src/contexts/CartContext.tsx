@@ -9,6 +9,7 @@ export interface CartItem {
   price_excl_vat?: number;
   price_incl_vat?: number;
   quantity: number;
+  max_quantity?: number;
   product?: {
     id: string;
     name: string;
@@ -39,7 +40,7 @@ interface CartContextType {
   openDrawer: () => void;
   closeDrawer: () => void;
   addToCart: {
-    mutate: (args: { offerId: string; productId: string; quantity?: number; productData?: CartItem["product"]; vendorId?: string; priceExclVat?: number; priceInclVat?: number }) => void;
+    mutate: (args: { offerId: string; productId: string; quantity?: number; maxQuantity?: number; productData?: CartItem["product"]; vendorId?: string; priceExclVat?: number; priceInclVat?: number }) => void;
     isPending: boolean;
   };
   updateQuantity: {

@@ -114,7 +114,9 @@ export default function CategoriesPage() {
     );
   }, [currentLevelCategories, search]);
 
-  const displayName = (c: CategoryItem) => c.name_fr || c.name;
+  function displayName(c: CategoryItem) {
+    return c.name_fr || c.name;
+  }
 
   const handleCategoryClick = (cat: CategoryItem) => {
     // If has children, navigate to show children

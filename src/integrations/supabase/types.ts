@@ -1521,6 +1521,79 @@ export type Database = {
         }
         Relationships: []
       }
+      order_items: {
+        Row: {
+          created_at: string
+          id: string
+          line_total_excl_vat: number
+          line_total_incl_vat: number
+          offer_id: string | null
+          order_id: string
+          product_id: string | null
+          qogita_base_price: number | null
+          qogita_offer_qid: string | null
+          qogita_seller_fid: string | null
+          quantity: number
+          unit_price_excl_vat: number
+          unit_price_incl_vat: number
+          vat_rate: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          line_total_excl_vat?: number
+          line_total_incl_vat?: number
+          offer_id?: string | null
+          order_id: string
+          product_id?: string | null
+          qogita_base_price?: number | null
+          qogita_offer_qid?: string | null
+          qogita_seller_fid?: string | null
+          quantity?: number
+          unit_price_excl_vat?: number
+          unit_price_incl_vat?: number
+          vat_rate?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          line_total_excl_vat?: number
+          line_total_incl_vat?: number
+          offer_id?: string | null
+          order_id?: string
+          product_id?: string | null
+          qogita_base_price?: number | null
+          qogita_offer_qid?: string | null
+          qogita_seller_fid?: string | null
+          quantity?: number
+          unit_price_excl_vat?: number
+          unit_price_incl_vat?: number
+          vat_rate?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_line_sub_orders: {
         Row: {
           order_line_id: string

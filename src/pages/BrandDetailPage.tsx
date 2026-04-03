@@ -35,7 +35,7 @@ export default function BrandDetailPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("offers")
-        .select("vendor_id, vendors(id, name, slug, is_verified, rating, total_sales, country_code), products!inner(brand_id)")
+        .select("vendor_id, vendors(id, name, company_name, slug, is_verified, rating, total_sales, country_code, display_code, show_real_name), products!inner(brand_id)")
         .eq("is_active", true)
         .eq("products.brand_id", brandData!.id)
         .limit(300);
@@ -57,7 +57,7 @@ export default function BrandDetailPage() {
         if (!v?.id || dedup.has(v.id)) continue;
         dedup.set(v.id, {
           id: v.id,
-          name: v.name?.replace(/Qogita\s*Seller\s*/gi, "Fournisseur ") || "Vendeur",
+          name: getVendorPublicName({ name: v.name, company_name: v.company_name, display_code: v.display_code, show_real_name: v.show_real_name }),
           slug: v.slug || "",
           verified: !!v.is_verified,
           topRated: (Number(v.rating) || 0) >= 4.5,

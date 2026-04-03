@@ -15,6 +15,7 @@ export function isValidProductImage(url: string | undefined | null): boolean {
   if (!url || url.trim() === "") return false;
   if (/no.?image/i.test(url)) return false;
   if (KNOWN_PLACEHOLDER_HASHES.some(h => url.includes(h))) return false;
+  if (BLOCKED_URL_PATTERNS.some(p => p.test(url))) return false;
   return true;
 }
 

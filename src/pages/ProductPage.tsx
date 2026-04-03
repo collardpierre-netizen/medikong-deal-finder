@@ -1452,7 +1452,7 @@ export default function ProductPage() {
                         {p.image_urls?.[0] ? (
                           <img src={p.image_urls[0]} alt={p.name} className="w-full h-full object-contain p-2" loading="lazy" />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center"><Package size={24} className="text-muted-foreground/40" /></div>
+                          <img src="/medikong-placeholder.png" alt="" className="w-full h-full object-contain p-4" />
                         )}
                       </div>
                       <p className="text-xs text-foreground truncate font-medium">{p.name}</p>

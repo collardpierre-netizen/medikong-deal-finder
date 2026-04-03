@@ -31,6 +31,7 @@ export default function BrandsPage() {
           .from("brands")
           .select("id, name, slug, product_count")
           .eq("is_active", true)
+          .gt("product_count", 0)
           .order("name")
           .range(from, to);
         if (error) throw error;

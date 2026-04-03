@@ -756,9 +756,13 @@ export default function OnboardingPage() {
   const handleOtpPaste = (e: React.ClipboardEvent) => {
     if (verifyingOtp) return;
     const text = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, OTP_LENGTH);
-    if (text.length === OTP_LENGTH) {
-      e.preventDefault(); setOtpDigits(text.split("")); otpRefs.current[OTP_LENGTH - 1]?.focus();
-      verifyOtpCode(text);
+    if (text.length >= 6) {
+      e.preventDefault();
+      const digits = text.slice(0, OTP_LENGTH).split("");
+      while (digits.length < OTP_LENGTH) digits.push("");
+      setOtpDigits(digits);
+      otpRefs.current[Math.min(text.length, OTP_LENGTH) - 1]?.focus();
+      if (digits.every(d => d)) verifyOtpCode(digits.join(""));
     }
   };
 

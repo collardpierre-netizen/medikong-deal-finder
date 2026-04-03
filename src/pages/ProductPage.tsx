@@ -985,13 +985,13 @@ export default function ProductPage() {
 
                     {/* Best Offer */}
                     {bestOffer ? (
-                      <div className="border-2 border-primary/20 bg-primary/[0.02] rounded-xl p-4 md:p-6 mb-4">
+                      <div className="border-2 border-emerald-300 bg-emerald-50/60 rounded-xl p-4 md:p-6 mb-4">
                         <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
                           <div className="flex items-center gap-2">
-                            <Award size={18} className="text-primary" />
-                            <h3 className="text-base md:text-lg font-bold text-foreground">Meilleure offre</h3>
+                            <Award size={18} className="text-emerald-700" />
+                            <h3 className="text-base md:text-lg font-bold text-emerald-800">Meilleure offre</h3>
                           </div>
-                          <span className="text-sm text-primary font-medium">{formatCount(totalStock)} disponibles</span>
+                          <span className="text-sm text-emerald-700 font-medium">{formatCount(totalStock)} disponibles</span>
                         </div>
 
                         <div className="hidden md:grid grid-cols-[1.5fr_1fr_1fr_0.8fr_1.5fr] gap-3 px-1 pb-3 text-xs font-semibold text-muted-foreground border-b border-border">

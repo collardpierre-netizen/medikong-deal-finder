@@ -35,14 +35,25 @@ const AdminCategories = () => {
   const fileRef = useRef<HTMLInputElement>(null);
 
   const handleImport = async (file: File) => {
-    toast.info("Import en cours...");
+    const loadingId = toast.loading("Import en cours…");
     try {
       const result = await importCategories(file);
-      toast.success(`${result.created} catégories importée(s)`);
-      if (result.errors.length > 0) toast.warning(`${result.errors.length} erreur(s): ${result.errors[0]}`);
+      toast.dismiss(loadingId);
+      if (result.created > 0) {
+        toast.success(`✅ ${result.created} catégorie(s) importée(s) avec succès`);
+      } else {
+        toast.warning("Aucune catégorie importée. Vérifiez le format du fichier.");
+      }
+      if (result.errors.length > 0) {
+        toast.warning(`⚠️ ${result.errors.length} erreur(s)`, {
+          description: result.errors.slice(0, 3).join(" | "),
+          duration: 8000,
+        });
+      }
       qc.invalidateQueries({ queryKey: ["admin-categories"] });
     } catch (e: any) {
-      toast.error(e.message || "Erreur import");
+      toast.dismiss(loadingId);
+      toast.error(`Erreur import: ${e.message || "Erreur inconnue"}`);
     }
   };
 

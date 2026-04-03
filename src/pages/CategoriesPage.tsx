@@ -1,8 +1,7 @@
 import { Layout } from "@/components/layout/Layout";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import {
-  Package, Scissors, Droplets, Sun, Smile, Eye, Wind, Shield, Pill,
-  Home, User, PawPrint, Apple, Paintbrush, Bath, Palette, Baby, Search, X
+  Package, ChevronRight, Search, X, Home
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
@@ -10,36 +9,31 @@ import { StaggerContainer, StaggerItem, HoverCard } from "@/components/shared/Pa
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 
-const iconMap: Record<string, React.ReactNode> = {
-  Baby: <Baby size={28} className="text-mk-blue" />,
-  Scissors: <Scissors size={28} className="text-mk-blue" />,
-  Droplets: <Droplets size={28} className="text-mk-blue" />,
-  Sun: <Sun size={28} className="text-mk-blue" />,
-  Smile: <Smile size={28} className="text-mk-blue" />,
-  Paintbrush: <Paintbrush size={28} className="text-mk-blue" />,
-  Eye: <Eye size={28} className="text-mk-blue" />,
-  Bath: <Bath size={28} className="text-mk-blue" />,
-  Wind: <Wind size={28} className="text-mk-blue" />,
-  Palette: <Palette size={28} className="text-mk-blue" />,
-  Pill: <Pill size={28} className="text-mk-blue" />,
-  Shield: <Shield size={28} className="text-mk-blue" />,
-  Apple: <Apple size={28} className="text-mk-blue" />,
-  User: <User size={28} className="text-mk-blue" />,
-  PawPrint: <PawPrint size={28} className="text-mk-blue" />,
-  Home: <Home size={28} className="text-mk-blue" />,
-  Package: <Package size={28} className="text-mk-blue" />,
-};
+interface CategoryItem {
+  id: string;
+  name: string;
+  name_fr: string | null;
+  slug: string;
+  icon: string | null;
+  image_url: string | null;
+  parent_id: string | null;
+  productCount: number;
+  childCount: number;
+}
 
 export default function CategoriesPage() {
   const [search, setSearch] = useState("");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const parentSlug = searchParams.get("parent") || null;
 
-  const { data: categories = [], isLoading } = useQuery({
-    queryKey: ["categories-page"],
+  const { data: allCategories = [], isLoading } = useQuery({
+    queryKey: ["categories-page-hierarchy"],
     queryFn: async () => {
       const { data: cats, error } = await supabase
         .from("categories")
-        .select("id, name, name_fr, slug, icon, image_url")
+        .select("id, name, name_fr, slug, icon, image_url, parent_id")
         .eq("is_active", true)
         .order("display_order")
         .order("name");
@@ -56,36 +50,131 @@ export default function CategoriesPage() {
         }
       }
 
-      return (cats || [])
-        .map(c => ({ ...c, productCount: countMap.get(c.id) || 0 }))
-        .sort((a, b) => b.productCount - a.productCount);
+      // Count children per category
+      const childCountMap = new Map<string, number>();
+      for (const c of cats || []) {
+        if (c.parent_id) {
+          childCountMap.set(c.parent_id, (childCountMap.get(c.parent_id) || 0) + 1);
+        }
+      }
+
+      return (cats || []).map(c => ({
+        ...c,
+        productCount: countMap.get(c.id) || 0,
+        childCount: childCountMap.get(c.id) || 0,
+      })) as CategoryItem[];
     },
     staleTime: 5 * 60 * 1000,
   });
 
-  const activeCategories = categories.filter(c => c.productCount > 0);
+  // Find current parent category
+  const currentParent = parentSlug
+    ? allCategories.find(c => c.slug === parentSlug)
+    : null;
+
+  // Build breadcrumb chain
+  const breadcrumbChain = useMemo(() => {
+    if (!currentParent) return [];
+    const chain: CategoryItem[] = [];
+    let current: CategoryItem | undefined = currentParent;
+    while (current) {
+      chain.unshift(current);
+      current = current.parent_id
+        ? allCategories.find(c => c.id === current!.parent_id)
+        : undefined;
+    }
+    return chain;
+  }, [currentParent, allCategories]);
+
+  // Get categories to display at current level
+  const currentLevelCategories = useMemo(() => {
+    let cats: CategoryItem[];
+    if (currentParent) {
+      cats = allCategories.filter(c => c.parent_id === currentParent.id);
+    } else {
+      cats = allCategories.filter(c => !c.parent_id);
+    }
+    // Only show categories with products (direct or via children)
+    return cats
+      .filter(c => c.productCount > 0 || c.childCount > 0)
+      .sort((a, b) => b.productCount - a.productCount);
+  }, [allCategories, currentParent]);
 
   const filtered = useMemo(() => {
-    if (!search.trim()) return activeCategories;
+    if (!search.trim()) return currentLevelCategories;
     const q = search.trim().toLowerCase();
-    return activeCategories.filter(c =>
+    return currentLevelCategories.filter(c =>
       (c.name_fr || c.name).toLowerCase().includes(q) || c.name.toLowerCase().includes(q)
     );
-  }, [activeCategories, search]);
+  }, [currentLevelCategories, search]);
+
+  const displayName = (c: CategoryItem) => c.name_fr || c.name;
+
+  const handleCategoryClick = (cat: CategoryItem) => {
+    // If has children, navigate to show children
+    if (cat.childCount > 0) {
+      setSearch("");
+      setSearchParams({ parent: cat.slug }, { replace: true });
+      return;
+    }
+    // Otherwise, link to catalogue
+    return `/categorie/${cat.slug}`;
+  };
+
+  const pageTitle = currentParent
+    ? displayName(currentParent)
+    : "Toutes les catégories";
 
   return (
     <Layout
-      title="Catégories de produits | MediKong"
+      title={`${pageTitle} | MediKong`}
       description="Parcourez toutes les catégories de produits disponibles sur MediKong."
     >
       <section className="py-12 md:py-20">
         <div className="mk-container">
+          {/* Breadcrumb */}
+          <nav className="flex items-center gap-1.5 text-sm text-muted-foreground mb-6 flex-wrap">
+            <Link to="/" className="hover:text-foreground transition-colors flex items-center gap-1">
+              <Home size={14} />
+              Accueil
+            </Link>
+            <ChevronRight size={14} className="shrink-0" />
+            {breadcrumbChain.length === 0 ? (
+              <span className="text-foreground font-medium">Catégories</span>
+            ) : (
+              <>
+                <button
+                  onClick={() => setSearchParams({}, { replace: true })}
+                  className="hover:text-foreground transition-colors"
+                >
+                  Catégories
+                </button>
+                {breadcrumbChain.map((bc, i) => (
+                  <span key={bc.id} className="flex items-center gap-1.5">
+                    <ChevronRight size={14} className="shrink-0" />
+                    {i === breadcrumbChain.length - 1 ? (
+                      <span className="text-foreground font-medium">{displayName(bc)}</span>
+                    ) : (
+                      <button
+                        onClick={() => setSearchParams({ parent: bc.slug }, { replace: true })}
+                        className="hover:text-foreground transition-colors"
+                      >
+                        {displayName(bc)}
+                      </button>
+                    )}
+                  </span>
+                ))}
+              </>
+            )}
+          </nav>
+
           <motion.h1
             className="text-3xl md:text-4xl font-bold text-mk-navy mb-3"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
+            key={pageTitle}
           >
-            Toutes les catégories
+            {pageTitle}
           </motion.h1>
           <motion.p
             className="text-base text-muted-foreground mb-6 max-w-xl"
@@ -93,7 +182,7 @@ export default function CategoriesPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
           >
-            {activeCategories.length} catégories avec des produits disponibles.
+            {filtered.length} {currentParent ? "sous-catégories" : "catégories"} disponibles.
           </motion.p>
 
           {/* Search bar */}
@@ -134,25 +223,52 @@ export default function CategoriesPage() {
             </div>
           ) : (
             <StaggerContainer className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-              {filtered.map(cat => (
-                <StaggerItem key={cat.slug}>
-                  <HoverCard className="border border-mk-line rounded-xl bg-white">
-                    <Link to={`/categorie/${cat.slug}`} className="flex flex-col items-center text-center p-8 gap-4 h-full min-h-[180px] justify-center">
-                      <div className="w-16 h-16 rounded-2xl bg-mk-alt flex items-center justify-center shrink-0">
-                        {cat.image_url ? (
-                          <img src={cat.image_url} alt="" className="w-8 h-8 object-contain" />
-                        ) : (
-                          iconMap[cat.icon || "Package"] || <Package size={28} className="text-mk-blue" />
-                        )}
-                      </div>
-                      <div className="min-h-[48px] flex flex-col justify-center">
-                        <h2 className="text-lg font-bold text-mk-navy mb-1 line-clamp-2">{cat.name_fr || cat.name}</h2>
-                        <p className="text-sm text-muted-foreground">{cat.productCount.toLocaleString("fr-FR")} produits</p>
-                      </div>
-                    </Link>
-                  </HoverCard>
-                </StaggerItem>
-              ))}
+              {filtered.map(cat => {
+                const hasChildren = cat.childCount > 0;
+                const content = (
+                  <div className="flex flex-col items-center text-center p-8 gap-4 h-full min-h-[180px] justify-center relative">
+                    <div className="w-16 h-16 rounded-2xl bg-mk-alt flex items-center justify-center shrink-0">
+                      {cat.image_url ? (
+                        <img src={cat.image_url} alt="" className="w-8 h-8 object-contain" />
+                      ) : (
+                        <Package size={28} className="text-mk-blue" />
+                      )}
+                    </div>
+                    <div className="min-h-[48px] flex flex-col justify-center">
+                      <h2 className="text-lg font-bold text-mk-navy mb-1 line-clamp-2">{displayName(cat)}</h2>
+                      <p className="text-sm text-muted-foreground">
+                        {cat.productCount.toLocaleString("fr-FR")} produits
+                        {hasChildren && ` · ${cat.childCount} sous-cat.`}
+                      </p>
+                    </div>
+                    {hasChildren && (
+                      <ChevronRight size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    )}
+                  </div>
+                );
+
+                return (
+                  <StaggerItem key={cat.slug}>
+                    <HoverCard className="border border-mk-line rounded-xl bg-white">
+                      {hasChildren ? (
+                        <button
+                          onClick={() => {
+                            setSearch("");
+                            setSearchParams({ parent: cat.slug }, { replace: true });
+                          }}
+                          className="w-full text-left"
+                        >
+                          {content}
+                        </button>
+                      ) : (
+                        <Link to={`/categorie/${cat.slug}`} className="block">
+                          {content}
+                        </Link>
+                      )}
+                    </HoverCard>
+                  </StaggerItem>
+                );
+              })}
             </StaggerContainer>
           )}
         </div>

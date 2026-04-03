@@ -2,16 +2,18 @@ import { Layout } from "@/components/layout/Layout";
 import { useParams, Link } from "react-router-dom";
 import { useFeaturedProducts } from "@/hooks/useProducts";
 import { ProductCard } from "@/components/shared/ProductCard";
-import { Star, ExternalLink, Heart, Download, Upload, Users, Grid, List, Columns, Factory, Store, MapPin, ShoppingCart, Award } from "lucide-react";
+import { Star, ExternalLink, Heart, Download, Upload, Users, Grid, List, Columns, Factory, Store, MapPin, ShoppingCart, Award, ChevronRight } from "lucide-react";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { getVendorPublicName } from "@/lib/vendor-display";
 
 export default function BrandDetailPage() {
   const { slug } = useParams();
   const { data: products = [] } = useFeaturedProducts(30, { brandSlug: slug });
   const [view, setView] = useState<"grid" | "list" | "trivago">("grid");
   const [showFilters, setShowFilters] = useState(false);
+  const [showAllSellers, setShowAllSellers] = useState(false);
 
   const { data: brandData } = useQuery({
     queryKey: ["brand-detail", slug],
@@ -33,7 +35,7 @@ export default function BrandDetailPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("offers")
-        .select("vendor_id, vendors(id, name, slug, is_verified, rating, total_sales, country_code), products!inner(brand_id)")
+        .select("vendor_id, vendors(id, name, company_name, slug, is_verified, rating, total_sales, country_code, display_code, show_real_name), products!inner(brand_id)")
         .eq("is_active", true)
         .eq("products.brand_id", brandData!.id)
         .limit(300);
@@ -55,7 +57,7 @@ export default function BrandDetailPage() {
         if (!v?.id || dedup.has(v.id)) continue;
         dedup.set(v.id, {
           id: v.id,
-          name: v.name || "Vendeur",
+          name: getVendorPublicName({ name: v.name, company_name: v.company_name, display_code: v.display_code, show_real_name: v.show_real_name }),
           slug: v.slug || "",
           verified: !!v.is_verified,
           topRated: (Number(v.rating) || 0) >= 4.5,
@@ -197,7 +199,7 @@ export default function BrandDetailPage() {
           <div className="mb-6">
             <h2 className="text-lg font-bold text-mk-navy mb-3 flex items-center gap-2"><Store size={18} /> Vendeurs proposant {brand.name}</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {brandSellers.map(s => (
+              {brandSellers.slice(0, showAllSellers ? undefined : 6).map(s => (
                 <Link key={s.id} to={`/vendeur/${s.slug}`} className="border border-mk-line rounded-lg p-4 flex items-center gap-3 hover:shadow-sm hover:border-mk-blue transition-all">
                   <div className="w-10 h-10 rounded-full bg-mk-alt flex items-center justify-center text-sm font-bold text-mk-navy shrink-0">
                     {s.name[0]}
@@ -217,6 +219,14 @@ export default function BrandDetailPage() {
                 </Link>
               ))}
             </div>
+            {brandSellers.length > 6 && !showAllSellers && (
+              <button
+                onClick={() => setShowAllSellers(true)}
+                className="mt-3 flex items-center gap-1 text-sm font-medium text-primary hover:underline mx-auto"
+              >
+                Voir tous les vendeurs ({brandSellers.length}) <ChevronRight size={14} />
+              </button>
+            )}
           </div>
         )}
 

@@ -510,21 +510,22 @@ export default function ProductPage() {
   const { isFavorite, toggleFavorite } = useFavorites();
   const { trackActivity } = useRecentActivity();
 
-  // Fetch brand (by id or fallback by name)
+  // Fetch brand (by id or fallback by name / brand_name)
+  const brandLookupName = product?.brand;
   const { data: brandData } = useQuery({
-    queryKey: ["brand-detail", product?.brandId, product?.brand],
+    queryKey: ["brand-detail", product?.brandId, brandLookupName],
     queryFn: async () => {
       if (product?.brandId) {
         const { data } = await supabase.from("brands").select("id, name, slug").eq("id", product.brandId).single();
         if (data) return data;
       }
-      if (product?.brand) {
-        const { data } = await supabase.from("brands").select("id, name, slug").eq("name", product.brand).maybeSingle();
+      if (brandLookupName) {
+        const { data } = await supabase.from("brands").select("id, name, slug").eq("name", brandLookupName).maybeSingle();
         return data;
       }
       return null;
     },
-    enabled: !!(product?.brandId || product?.brand),
+    enabled: !!(product?.brandId || brandLookupName),
   });
 
   // Fetch category tree for breadcrumb
@@ -732,7 +733,7 @@ export default function ProductPage() {
   const FLAG_MAP: Record<string, string> = { BE: "🇧🇪", DE: "🇩🇪", FR: "🇫🇷", NL: "🇳🇱", IT: "🇮🇹", ES: "🇪🇸" };
   const manufacturerInfo = productDetails?.manufacturers as any;
   const specsRaw: [string, string | undefined | null, string?][] = [
-    ["Marque", brandData?.name || product.brand, brandData?.slug ? `/marque/${brandData.slug}` : undefined],
+    ["Marque", brandData?.name || product.brand, brandData?.slug ? `/marque/${brandData.slug}` : (product.brandSlug ? `/marque/${product.brandSlug}` : (product.brand ? `/marque/${product.brand.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}` : undefined))],
     ["Fabricant", manufacturerInfo?.name, manufacturerInfo?.slug ? `/fabricant/${manufacturerInfo.slug}` : undefined],
     ["Categorie", categoryData?.category?.name || productDetails?.category_name],
     ["GTIN/EAN", product.gtin || product.ean],
@@ -887,7 +888,14 @@ export default function ProductPage() {
                   </Link>
                 </div>
               ) : product.brand ? (
-                <p className="text-sm font-semibold text-muted-foreground mb-1">{product.brand}</p>
+                <div className="flex items-center gap-3 mb-1">
+                  <Link to={`/marque/${product.brandSlug || product.brand.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}`} className="text-sm font-semibold text-primary hover:underline inline-flex items-center gap-1">
+                    <Tag size={13} /> {product.brand}
+                  </Link>
+                  <Link to={`/marque/${product.brandSlug || product.brand.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}`} className="text-[11px] text-primary/70 hover:text-primary hover:underline inline-flex items-center gap-0.5">
+                    Voir tous les produits <ChevronRight size={11} />
+                  </Link>
+                </div>
               ) : null}
 
               {/* Name */}

@@ -37,10 +37,10 @@ function formatCount(n: number): string {
 
 /* ── Offer Row ─────────────────────────────────────────── */
 function OfferRow({
-  offer, productId, productName, productSlug, user, navigate, addToCart, isBest, delay = 0, isTVAC = false, categoryId,
+  offer, productId, productName, productSlug, user, navigate, addToCart, isBest, delay = 0, isTVAC = false, categoryId, bestPrice,
 }: {
   offer: Offer; productId: string; productName: string; productSlug: string;
-  user: any; navigate: any; addToCart: any; isBest?: boolean; delay?: number; isTVAC?: boolean; categoryId?: string;
+  user: any; navigate: any; addToCart: any; isBest?: boolean; delay?: number; isTVAC?: boolean; categoryId?: string; bestPrice?: number;
 }) {
   const [qty, setQty] = useState(offer.bundleSize > 1 ? offer.bundleSize : 1);
   const discountTiers = offer.discountTiers || [];
@@ -111,6 +111,20 @@ function OfferRow({
           </Tooltip>
         )}
       </div>
+
+      {/* Delta vs best */}
+      {(() => {
+        if (isBest || !bestPrice || bestPrice <= 0) return null;
+        const delta = displayPrice - bestPrice;
+        const deltaPct = ((displayPrice - bestPrice) / bestPrice * 100);
+        if (delta <= 0) return null;
+        return (
+          <div className="mb-2 inline-flex items-center gap-2 text-xs text-orange-600 bg-orange-50 px-2.5 py-1 rounded-full font-medium">
+            <TrendingDown size={12} className="rotate-180" />
+            +{formatEur(delta)}&nbsp;€ ({deltaPct.toFixed(1)}%) vs meilleure offre
+          </div>
+        );
+      })()}
 
       {/* Desktop grid */}
       <div className="hidden md:grid grid-cols-[1.5fr_1fr_1fr_0.8fr_1.5fr] gap-3 items-start">
@@ -985,13 +999,13 @@ export default function ProductPage() {
 
                     {/* Best Offer */}
                     {bestOffer ? (
-                      <div className="border-2 border-primary/20 bg-primary/[0.02] rounded-xl p-4 md:p-6 mb-4">
+                      <div className="border-2 border-emerald-300 bg-emerald-50/60 rounded-xl p-4 md:p-6 mb-4">
                         <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
                           <div className="flex items-center gap-2">
-                            <Award size={18} className="text-primary" />
-                            <h3 className="text-base md:text-lg font-bold text-foreground">Meilleure offre</h3>
+                            <Award size={18} className="text-emerald-700" />
+                            <h3 className="text-base md:text-lg font-bold text-emerald-800">Meilleure offre</h3>
                           </div>
-                          <span className="text-sm text-primary font-medium">{formatCount(totalStock)} disponibles</span>
+                          <span className="text-sm text-emerald-700 font-medium">{formatCount(totalStock)} disponibles</span>
                         </div>
 
                         <div className="hidden md:grid grid-cols-[1.5fr_1fr_1fr_0.8fr_1.5fr] gap-3 px-1 pb-3 text-xs font-semibold text-muted-foreground border-b border-border">
@@ -1068,6 +1082,7 @@ export default function ProductPage() {
                             delay={i * 0.06}
                             isTVAC={isTVAC}
                             categoryId={categoryData?.category?.id}
+                            bestPrice={bestOffer ? (isTVAC ? bestOffer.unitPriceInclVat : bestOffer.unitPriceEur) : undefined}
                           />
                         ))}
                       </div>

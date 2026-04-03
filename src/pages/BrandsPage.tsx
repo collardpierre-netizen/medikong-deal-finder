@@ -18,13 +18,26 @@ export default function BrandsPage() {
   const { data: brands = [], isLoading } = useQuery({
     queryKey: ["brands-page"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("brands")
-        .select("id, name, slug, product_count")
-        .eq("is_active", true)
-        .order("name");
-      if (error) throw error;
-      return (data || []).map(b => ({
+      // Fetch all brands using pagination to bypass the 1000-row limit
+      const PAGE_SIZE = 1000;
+      let allBrands: any[] = [];
+      let page = 0;
+      let hasMore = true;
+      while (hasMore) {
+        const from = page * PAGE_SIZE;
+        const to = from + PAGE_SIZE - 1;
+        const { data, error } = await supabase
+          .from("brands")
+          .select("id, name, slug, product_count")
+          .eq("is_active", true)
+          .order("name")
+          .range(from, to);
+        if (error) throw error;
+        allBrands = allBrands.concat(data || []);
+        hasMore = (data || []).length === PAGE_SIZE;
+        page++;
+      }
+      return allBrands.map(b => ({
         ...b,
         letter: (b.name?.[0] || "?").toUpperCase(),
       }));

@@ -43,7 +43,7 @@ export default function CartPage() {
       if (vendorIds.length === 0) return [];
       const { data } = await supabase
         .from("vendors")
-        .select("id, name, company_name, is_verified")
+        .select("id, name, company_name, slug, is_verified, display_code, show_real_name")
         .in("id", vendorIds as string[]);
       return data || [];
     },

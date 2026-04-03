@@ -19,11 +19,22 @@ export function CatalogSidebar({ filters, setFilter, clearAll }: Props) {
   const { data: manufacturers = [] } = useCatalogManufacturers();
 
   const [brandSearch, setBrandSearch] = useState("");
+  const [brandDropdownOpen, setBrandDropdownOpen] = useState(false);
+  const brandDropdownRef = useRef<HTMLDivElement>(null);
   const [mfSearch, setMfSearch] = useState("");
   const [showAllBrands, setShowAllBrands] = useState(false);
   const [showAllMf, setShowAllMf] = useState(false);
   const [priceMin, setPriceMin] = useState(filters.priceMin?.toString() || "");
   const [priceMax, setPriceMax] = useState(filters.priceMax?.toString() || "");
+
+  // Auto-suggest: top 8 matching brands for dropdown
+  const brandSuggestions = useMemo(() => {
+    if (!brandSearch) return [];
+    return brands.filter(b => b.name.toLowerCase().includes(brandSearch.toLowerCase())).slice(0, 8);
+  }, [brands, brandSearch]);
+
+  // Close dropdown on outside click
+  import { useEffect } from "react";
 
   const filteredBrands = useMemo(() => {
     let list = brands;

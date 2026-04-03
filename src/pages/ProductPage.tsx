@@ -1017,7 +1017,7 @@ export default function ProductPage() {
                       </div>
                     ) : (
                       <div className="border border-border rounded-xl p-8 text-center">
-                        <Package size={40} className="mx-auto mb-3 text-muted-foreground/40" />
+                        <img src="/medikong-placeholder.png" alt="" className="w-10 h-10 mx-auto mb-3 opacity-40" />
                         <p className="text-muted-foreground font-medium">Ce produit est temporairement indisponible.</p>
                         <p className="text-sm text-muted-foreground/70 mt-1">
                           Ajoutez-le à votre liste de suivi pour être notifié de sa disponibilité.

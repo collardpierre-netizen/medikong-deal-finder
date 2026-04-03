@@ -68,7 +68,7 @@ function mapDbProduct(row: any, offersData?: any[]): Product {
     unit: "unité",
     stock: row.is_in_stock || productOffers.some((o: any) => o.stock_quantity > 0),
     mk: productOffers.length > 0,
-    category: undefined,
+    category: row.category_name || undefined,
     color: ["blue", "teal", "green", "amber", "rose", "purple", "orange", "cyan"][row.name.length % 8],
     iconName: "Package",
     imageUrl: Array.isArray(row.image_urls) ? row.image_urls.filter(isValidProductImage)[0] || undefined : undefined,

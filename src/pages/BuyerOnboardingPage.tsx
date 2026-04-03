@@ -288,9 +288,6 @@ export default function BuyerOnboardingPage() {
   );
 
   /* OTP handler */
-  const [sendingOtp, setSendingOtp] = useState(false);
-  const [verifyingOtp, setVerifyingOtp] = useState(false);
-
   const handleSendOtp = async () => {
     if (!isEmailValid) return;
     setSendingOtp(true);

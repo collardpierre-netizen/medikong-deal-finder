@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { getProductImageSrc, MEDIKONG_PLACEHOLDER } from "@/lib/image-utils";
 import { Heart, Check, ChevronDown, ChevronUp, Package, Truck, RotateCcw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useProductOffers } from "@/hooks/useProducts";
@@ -37,9 +38,9 @@ export default function SearchTrivagoCard({ product: p }: Props) {
               -{pct}%
             </span>
           )}
-          <img src={p.imageUrls?.[0] || p.imageUrl || "/medikong-placeholder.png"} alt={p.name} className="w-full h-full object-contain p-4"
+          <img src={getProductImageSrc(p.imageUrls?.[0] || p.imageUrl)} alt={p.name} className="w-full h-full object-contain p-4"
                loading="lazy" referrerPolicy="no-referrer"
-               onError={e => { e.currentTarget.src = "/medikong-placeholder.png"; }} />
+               onError={e => { e.currentTarget.src = MEDIKONG_PLACEHOLDER; }} />
         </div>
 
         {/* ZONE 2 — Product info */}

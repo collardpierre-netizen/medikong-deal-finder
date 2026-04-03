@@ -1,4 +1,5 @@
 import { Heart, ShoppingCart, Package } from "lucide-react";
+import { getProductImageSrc, MEDIKONG_PLACEHOLDER } from "@/lib/image-utils";
 import { useNavigate } from "react-router-dom";
 import { formatPrice } from "@/data/mock";
 import type { Product } from "@/hooks/useProducts";
@@ -35,12 +36,12 @@ export default function SearchGridView({ products }: Props) {
             {/* Image */}
             <div className="aspect-square bg-muted flex items-center justify-center p-4">
               <img
-                  src={p.imageUrls?.[0] || p.imageUrl || "/medikong-placeholder.png"}
+                  src={getProductImageSrc(p.imageUrls?.[0] || p.imageUrl)}
                   alt={p.name}
                   loading="lazy"
                   referrerPolicy="no-referrer"
                   className="w-full h-full object-contain"
-                  onError={e => { e.currentTarget.src = "/medikong-placeholder.png"; }}
+                  onError={e => { e.currentTarget.src = MEDIKONG_PLACEHOLDER; }}
                 />
             </div>
 

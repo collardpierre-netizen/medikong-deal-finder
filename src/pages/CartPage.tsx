@@ -339,8 +339,9 @@ export default function CartPage() {
                                       </button>
                                       <span className="px-2.5 text-sm font-medium min-w-[32px] text-center">{item.quantity}</span>
                                       <button
-                                        className="px-2 py-1.5 text-mk-sec hover:text-mk-navy"
+                                        className="px-2 py-1.5 text-mk-sec hover:text-mk-navy disabled:opacity-40 disabled:cursor-not-allowed"
                                         onClick={() => updateQuantity.mutate({ itemId: item.id, quantity: item.quantity + 1 })}
+                                        disabled={!!item.max_quantity && item.quantity >= item.max_quantity}
                                       >
                                         <Plus size={13} />
                                       </button>

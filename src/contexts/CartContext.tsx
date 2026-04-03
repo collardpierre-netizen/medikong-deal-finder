@@ -9,6 +9,7 @@ export interface CartItem {
   price_excl_vat?: number;
   price_incl_vat?: number;
   quantity: number;
+  max_quantity?: number;
   product?: {
     id: string;
     name: string;
@@ -39,7 +40,7 @@ interface CartContextType {
   openDrawer: () => void;
   closeDrawer: () => void;
   addToCart: {
-    mutate: (args: { offerId: string; productId: string; quantity?: number; productData?: CartItem["product"]; vendorId?: string; priceExclVat?: number; priceInclVat?: number }) => void;
+    mutate: (args: { offerId: string; productId: string; quantity?: number; maxQuantity?: number; productData?: CartItem["product"]; vendorId?: string; priceExclVat?: number; priceInclVat?: number }) => void;
     isPending: boolean;
   };
   updateQuantity: {
@@ -72,17 +73,26 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const addToCart = useMemo(() => ({
-    mutate: ({ offerId, productId, quantity = 1, productData, vendorId, priceExclVat, priceInclVat }: {
-      offerId: string; productId: string; quantity?: number; productData?: CartItem["product"]; vendorId?: string; priceExclVat?: number; priceInclVat?: number;
+    mutate: ({ offerId, productId, quantity = 1, maxQuantity, productData, vendorId, priceExclVat, priceInclVat }: {
+      offerId: string; productId: string; quantity?: number; maxQuantity?: number; productData?: CartItem["product"]; vendorId?: string; priceExclVat?: number; priceInclVat?: number;
     }) => {
       setItems(prev => {
         const existing = prev.find(i => i.offer_id === offerId);
+        const safeMax = typeof maxQuantity === "number" && maxQuantity > 0 ? maxQuantity : undefined;
         let next: CartItem[];
+
         if (existing) {
-          next = prev.map(i => i.offer_id === offerId ? { ...i, quantity: i.quantity + quantity } : i);
+          next = prev.map(i => {
+            if (i.offer_id !== offerId) return i;
+            const resolvedMax = safeMax ?? i.max_quantity;
+            const nextQuantity = resolvedMax ? Math.min(i.quantity + quantity, resolvedMax) : i.quantity + quantity;
+            return { ...i, quantity: nextQuantity, max_quantity: resolvedMax };
+          });
         } else {
-          next = [...prev, { id: crypto.randomUUID(), offer_id: offerId, product_id: productId, vendor_id: vendorId, price_excl_vat: priceExclVat, price_incl_vat: priceInclVat, quantity, product: productData }];
+          const initialQuantity = safeMax ? Math.min(quantity, safeMax) : quantity;
+          next = [...prev, { id: crypto.randomUUID(), offer_id: offerId, product_id: productId, vendor_id: vendorId, price_excl_vat: priceExclVat, price_incl_vat: priceInclVat, quantity: initialQuantity, max_quantity: safeMax, product: productData }];
         }
+
         saveCart(next);
         return next;
       });
@@ -94,7 +104,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const updateQuantity = useMemo(() => ({
     mutate: ({ itemId, quantity }: { itemId: string; quantity: number }) => {
       setItems(prev => {
-        const next = quantity <= 0 ? prev.filter(i => i.id !== itemId) : prev.map(i => i.id === itemId ? { ...i, quantity } : i);
+        const next = quantity <= 0
+          ? prev.filter(i => i.id !== itemId)
+          : prev.map(i => {
+              if (i.id !== itemId) return i;
+              const nextQuantity = i.max_quantity ? Math.min(quantity, i.max_quantity) : quantity;
+              return { ...i, quantity: nextQuantity };
+            });
         saveCart(next);
         return next;
       });

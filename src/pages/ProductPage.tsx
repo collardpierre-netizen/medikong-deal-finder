@@ -43,7 +43,8 @@ function OfferRow({
   user: any; navigate: any; addToCart: any; isBest?: boolean; delay?: number; isTVAC?: boolean; categoryId?: string; bestPrice?: number;
 }) {
   const maxQty = offer.stockQuantity > 0 ? offer.stockQuantity : 999;
-  const [qty, setQty] = useState(offer.bundleSize > 1 ? offer.bundleSize : 1);
+  const step = offer.bundleSize > 1 ? offer.bundleSize : 1;
+  const [qty, setQty] = useState(Math.min(maxQty, step));
   const discountTiers = offer.discountTiers || [];
   const hasTiers = discountTiers.length > 1;
   const tiers = (offer.priceTiers && offer.priceTiers.length > 0) ? offer.priceTiers : [];
@@ -64,7 +65,8 @@ function OfferRow({
     addToCart.mutate({
       offerId: offer.id,
       productId,
-      quantity: qty,
+      quantity: Math.min(qty, maxQty),
+      maxQuantity: maxQty,
       vendorId: offer.sellerId,
       priceExclVat: offer.unitPriceEur,
       productData: { id: productId, name: productName, brand: "", slug: productSlug, price: offer.unitPriceEur },
@@ -201,9 +203,9 @@ function OfferRow({
         {/* Actions */}
         <div className="flex items-center justify-end gap-2">
           <div className="flex items-center border border-border rounded-md">
-            <button onClick={() => setQty(Math.max(1, qty - (offer.bundleSize > 1 ? offer.bundleSize : 1)))} className="px-2.5 py-2 text-muted-foreground hover:text-foreground"><Minus size={14} /></button>
+            <button onClick={() => setQty(Math.max(1, qty - step))} className="px-2.5 py-2 text-muted-foreground hover:text-foreground"><Minus size={14} /></button>
             <span className="px-3 py-2 text-sm font-medium min-w-[40px] text-center">{qty}</span>
-            <button onClick={() => setQty(Math.min(maxQty, qty + (offer.bundleSize > 1 ? offer.bundleSize : 1)))} className="px-2.5 py-2 text-muted-foreground hover:text-foreground" disabled={qty >= maxQty}><Plus size={14} /></button>
+            <button onClick={() => setQty(Math.min(maxQty, qty + step))} className="px-2.5 py-2 text-muted-foreground hover:text-foreground" disabled={qty >= maxQty}><Plus size={14} /></button>
           </div>
           <motion.button className="bg-primary text-primary-foreground p-2.5 rounded-md" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={handleAdd}>
             <ShoppingCart size={16} />
@@ -1516,7 +1518,7 @@ export default function ProductPage() {
                   <div className="flex items-center border border-border rounded-md bg-background">
                     <button onClick={() => setStickyQty(Math.max(1, stickyQty - 1))} className="px-2 py-1.5 text-muted-foreground"><Minus size={14} /></button>
                     <span className="px-2 text-sm font-medium">{stickyQty}</span>
-                    <button onClick={() => setStickyQty(stickyQty + 1)} className="px-2 py-1.5 text-muted-foreground"><Plus size={14} /></button>
+                    <button onClick={() => setStickyQty(Math.min(bestOffer.stockQuantity > 0 ? bestOffer.stockQuantity : 999, stickyQty + 1))} className="px-2 py-1.5 text-muted-foreground" disabled={stickyQty >= (bestOffer.stockQuantity > 0 ? bestOffer.stockQuantity : 999)}><Plus size={14} /></button>
                   </div>
                   <button
                     className="bg-primary text-primary-foreground text-sm font-semibold px-4 py-2.5 rounded-lg flex items-center gap-2 shadow-lg hover:opacity-90 transition-opacity"
@@ -1530,7 +1532,8 @@ export default function ProductPage() {
                       addToCart.mutate({
                         offerId: bestOffer.id,
                         productId: product.id,
-                        quantity: stickyQty,
+                        quantity: Math.min(stickyQty, bestOffer.stockQuantity > 0 ? bestOffer.stockQuantity : 999),
+                        maxQuantity: bestOffer.stockQuantity > 0 ? bestOffer.stockQuantity : undefined,
                         vendorId: bestOffer.sellerId,
                         priceExclVat: bestOffer.unitPriceEur,
                         productData: { id: product.id, name: product.name, brand: product.brand || "", slug: product.slug, price: bestOffer.unitPriceEur },

@@ -103,10 +103,59 @@ function slugify(s: string) {
   return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 }
 
-export async function importProducts(file: File): Promise<{ created: number; errors: string[] }> {
+export async function importProducts(file: File): Promise<{ created: number; errors: string[]; brandsCreated: number; manufacturersCreated: number }> {
   const rows = await readXlsx(file);
   let created = 0;
+  let brandsCreated = 0;
+  let manufacturersCreated = 0;
   const errors: string[] = [];
+
+  // --- Auto-create brands & manufacturers ---
+  // Collect unique brand/manufacturer names from import
+  const brandNames = new Set<string>();
+  const mfrNames = new Set<string>();
+  for (const row of rows) {
+    const r = row as any;
+    if (r.brand_name) brandNames.add(String(r.brand_name).trim());
+    if (r.manufacturer_name) mfrNames.add(String(r.manufacturer_name).trim());
+  }
+
+  // Auto-create missing manufacturers
+  if (mfrNames.size > 0) {
+    const { data: existingMfrs } = await supabase.from("manufacturers").select("name").limit(5000);
+    const existingSet = new Set((existingMfrs || []).map(m => m.name.toLowerCase()));
+    for (const name of mfrNames) {
+      if (!existingSet.has(name.toLowerCase())) {
+        const { error } = await supabase.from("manufacturers").upsert(
+          { name, slug: slugify(name), is_active: true },
+          { onConflict: "slug" }
+        );
+        if (!error) { manufacturersCreated++; existingSet.add(name.toLowerCase()); }
+      }
+    }
+  }
+
+  // Auto-create missing brands (with manufacturer resolution)
+  if (brandNames.size > 0) {
+    const { data: existingBrands } = await supabase.from("brands").select("name").limit(5000);
+    const existingSet = new Set((existingBrands || []).map(b => b.name.toLowerCase()));
+    // Fetch manufacturers for linking
+    const { data: allMfrs } = await supabase.from("manufacturers").select("id,name").limit(5000);
+    const mfrByName = new Map((allMfrs || []).map(m => [m.name.toLowerCase(), m.id]));
+
+    for (const name of brandNames) {
+      if (!existingSet.has(name.toLowerCase())) {
+        const payload: any = { name, slug: slugify(name), is_active: true };
+        // Try to find a matching manufacturer row for this brand
+        const mfrId = mfrByName.get(name.toLowerCase()) || null;
+        if (mfrId) payload.manufacturer_id = mfrId;
+        const { error } = await supabase.from("brands").upsert(payload, { onConflict: "slug" });
+        if (!error) { brandsCreated++; existingSet.add(name.toLowerCase()); }
+      }
+    }
+  }
+
+  // --- Import products ---
   for (const row of rows) {
     const r = row as any;
     if (!r.name) { errors.push("Ligne ignorée: nom manquant"); continue; }
@@ -138,7 +187,7 @@ export async function importProducts(file: File): Promise<{ created: number; err
   // Resolve brand_id and category_id
   await supabase.rpc("resolve_product_brands");
   await supabase.rpc("resolve_product_categories");
-  return { created, errors };
+  return { created, errors, brandsCreated, manufacturersCreated };
 }
 
 export async function importBrands(file: File): Promise<{ created: number; errors: string[] }> {

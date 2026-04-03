@@ -43,7 +43,8 @@ export function Breadcrumbs() {
   if (segments[0] === "produit") return null;
 
   const crumbs = segments.map((seg, i) => {
-    const path = "/" + segments.slice(0, i + 1).join("/");
+    const rawPath = "/" + segments.slice(0, i + 1).join("/");
+    const path = parentRoutes[seg] && i < segments.length - 1 ? parentRoutes[seg] : rawPath;
     const isLast = i === segments.length - 1;
     const label = routeLabels[seg] || decodeURIComponent(seg).replace(/-/g, " ").replace(/^\w/, (c) => c.toUpperCase());
 

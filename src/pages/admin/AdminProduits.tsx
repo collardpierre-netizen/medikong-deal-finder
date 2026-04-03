@@ -337,91 +337,132 @@ const AdminProduits = () => {
 
       <ProductFormDialog open={productDialogOpen} onOpenChange={setProductDialogOpen} product={editProduct} brands={brands} manufacturers={manufacturers} />
 
-      {/* Import result dialog */}
-      <Dialog open={importResult !== null} onOpenChange={(open) => { if (!open) setImportResult(null); }}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-lg">
-              {importResult?.errors.length === 0
-                ? <><span className="text-green-600">✅</span> Import réussi</>
-                : importResult?.created === 0 && importResult?.updated === 0
-                  ? <><span className="text-red-600">❌</span> Échec de l'import</>
-                  : <><span className="text-amber-500">⚠️</span> Import terminé avec alertes</>
-              }
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            {/* Summary grid */}
-            <div className="grid grid-cols-4 gap-2">
-              <div className="bg-muted rounded-lg p-3 text-center">
-                <p className="text-2xl font-bold text-foreground">{importResult?.totalRows || 0}</p>
-                <p className="text-[11px] text-muted-foreground">Lignes lues</p>
-              </div>
-              <div className="bg-green-50 rounded-lg p-3 text-center">
-                <p className="text-2xl font-bold text-green-700">{importResult?.created || 0}</p>
-                <p className="text-[11px] text-green-600">Créés</p>
-              </div>
-              <div className="bg-blue-50 rounded-lg p-3 text-center">
-                <p className="text-2xl font-bold text-blue-700">{importResult?.updated || 0}</p>
-                <p className="text-[11px] text-blue-600">Mis à jour</p>
-              </div>
-              <div className="bg-red-50 rounded-lg p-3 text-center">
-                <p className="text-2xl font-bold text-red-700">{importResult?.skipped || 0}</p>
-                <p className="text-[11px] text-red-600">Ignorés</p>
-              </div>
+      {/* Import panel — persistent, stays visible */}
+      {importPanelOpen && (
+        <div className="fixed bottom-4 right-4 w-[420px] max-h-[80vh] bg-card border border-border rounded-xl shadow-2xl z-50 flex flex-col overflow-hidden">
+          {/* Header */}
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/50">
+            <div className="flex items-center gap-2">
+              {importing ? <Loader2 size={16} className="animate-spin text-primary" /> : null}
+              <span className="text-sm font-semibold text-foreground">
+                {importing ? "Import en cours…" : importResult
+                  ? importResult.errors.length === 0 ? "✅ Import réussi" : importResult.created === 0 && importResult.updated === 0 ? "❌ Échec de l'import" : "⚠️ Import terminé avec alertes"
+                  : "Import"}
+              </span>
             </div>
-
-            {/* Auto-created entities */}
-            {((importResult?.brandsCreated || 0) > 0 || (importResult?.manufacturersCreated || 0) > 0) && (
-              <div className="bg-primary/5 rounded-lg p-3 space-y-1">
-                <p className="text-sm font-medium text-primary">Entités auto-créées</p>
-                {(importResult?.brandsCreated || 0) > 0 && <p className="text-sm">🏷️ <strong>{importResult!.brandsCreated}</strong> marque(s)</p>}
-                {(importResult?.manufacturersCreated || 0) > 0 && <p className="text-sm">🏭 <strong>{importResult!.manufacturersCreated}</strong> fabricant(s)</p>}
-              </div>
+            {!importing && (
+              <button onClick={() => { setImportPanelOpen(false); setImportResult(null); }} className="text-muted-foreground hover:text-foreground">
+                <X size={16} />
+              </button>
             )}
+          </div>
 
-            {/* Errors table */}
-            {(importResult?.errors?.length || 0) > 0 && (
-              <div>
-                <p className="text-sm font-semibold text-destructive mb-2">{importResult!.errors.length} erreur(s) détectée(s)</p>
-                <div className="max-h-[220px] overflow-y-auto rounded-lg border">
-                  <table className="w-full text-left text-xs">
-                    <thead className="bg-muted sticky top-0">
-                      <tr>
-                        <th className="px-3 py-2 font-semibold text-muted-foreground">Ligne</th>
-                        <th className="px-3 py-2 font-semibold text-muted-foreground">Produit</th>
-                        <th className="px-3 py-2 font-semibold text-muted-foreground">Code</th>
-                        <th className="px-3 py-2 font-semibold text-muted-foreground">Message</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {importResult!.errors.slice(0, 100).map((err, i) => (
-                        <tr key={i} className="border-t">
-                          <td className="px-3 py-1.5 font-mono text-muted-foreground">{err.line}</td>
-                          <td className="px-3 py-1.5 font-medium truncate max-w-[120px]">{err.name}</td>
-                          <td className="px-3 py-1.5">
-                            <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                              err.code === "DUPLICATE" ? "bg-amber-100 text-amber-700"
-                              : err.code === "MISSING_NAME" ? "bg-orange-100 text-orange-700"
-                              : "bg-red-100 text-red-700"
-                            }`}>{err.code}</span>
-                          </td>
-                          <td className="px-3 py-1.5 text-muted-foreground truncate max-w-[180px]">{err.message}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  {importResult!.errors.length > 100 && (
-                    <p className="text-center text-xs text-muted-foreground py-2">... et {importResult!.errors.length - 100} autres</p>
+          <div className="overflow-y-auto flex-1 p-4 space-y-3">
+            {/* Progress bar during import */}
+            {importing && importProgress && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>
+                    {importProgress.phase === "reading" && "Lecture du fichier…"}
+                    {importProgress.phase === "manufacturers" && "Création fabricants…"}
+                    {importProgress.phase === "brands" && "Création marques…"}
+                    {importProgress.phase === "products" && `Produit ${importProgress.current.toLocaleString("fr-BE")} / ${importProgress.total.toLocaleString("fr-BE")}`}
+                    {importProgress.phase === "resolving" && "Résolution des liens…"}
+                  </span>
+                  {importProgress.total > 0 && (
+                    <span className="font-mono">{Math.round((importProgress.current / importProgress.total) * 100)}%</span>
                   )}
+                </div>
+                <Progress value={importProgress.total > 0 ? (importProgress.current / importProgress.total) * 100 : 0} className="h-2" />
+                {/* Live counters */}
+                <div className="grid grid-cols-3 gap-2 mt-2">
+                  <div className="bg-green-50 rounded-lg p-2 text-center">
+                    <p className="text-lg font-bold text-green-700">{importProgress.created}</p>
+                    <p className="text-[10px] text-green-600">Créés</p>
+                  </div>
+                  <div className="bg-blue-50 rounded-lg p-2 text-center">
+                    <p className="text-lg font-bold text-blue-700">{importProgress.updated}</p>
+                    <p className="text-[10px] text-blue-600">Mis à jour</p>
+                  </div>
+                  <div className="bg-red-50 rounded-lg p-2 text-center">
+                    <p className="text-lg font-bold text-red-700">{importProgress.skipped}</p>
+                    <p className="text-[10px] text-red-600">Ignorés</p>
+                  </div>
                 </div>
               </div>
             )}
 
-            <Button className="w-full" onClick={() => setImportResult(null)}>Fermer</Button>
+            {/* Final results */}
+            {!importing && importResult && (
+              <>
+                <div className="grid grid-cols-4 gap-2">
+                  <div className="bg-muted rounded-lg p-2.5 text-center">
+                    <p className="text-xl font-bold text-foreground">{importResult.totalRows}</p>
+                    <p className="text-[10px] text-muted-foreground">Lignes lues</p>
+                  </div>
+                  <div className="bg-green-50 rounded-lg p-2.5 text-center">
+                    <p className="text-xl font-bold text-green-700">{importResult.created}</p>
+                    <p className="text-[10px] text-green-600">Créés</p>
+                  </div>
+                  <div className="bg-blue-50 rounded-lg p-2.5 text-center">
+                    <p className="text-xl font-bold text-blue-700">{importResult.updated}</p>
+                    <p className="text-[10px] text-blue-600">Mis à jour</p>
+                  </div>
+                  <div className="bg-red-50 rounded-lg p-2.5 text-center">
+                    <p className="text-xl font-bold text-red-700">{importResult.skipped}</p>
+                    <p className="text-[10px] text-red-600">Ignorés</p>
+                  </div>
+                </div>
+
+                {((importResult.brandsCreated || 0) > 0 || (importResult.manufacturersCreated || 0) > 0) && (
+                  <div className="bg-primary/5 rounded-lg p-3 space-y-1">
+                    <p className="text-xs font-medium text-primary">Entités auto-créées</p>
+                    {(importResult.brandsCreated || 0) > 0 && <p className="text-xs">🏷️ <strong>{importResult.brandsCreated}</strong> marque(s)</p>}
+                    {(importResult.manufacturersCreated || 0) > 0 && <p className="text-xs">🏭 <strong>{importResult.manufacturersCreated}</strong> fabricant(s)</p>}
+                  </div>
+                )}
+
+                {(importResult.errors?.length || 0) > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold text-destructive mb-1.5">{importResult.errors.length} erreur(s)</p>
+                    <div className="max-h-[200px] overflow-y-auto rounded-lg border text-xs">
+                      <table className="w-full text-left">
+                        <thead className="bg-muted sticky top-0">
+                          <tr>
+                            <th className="px-2 py-1.5 font-semibold text-muted-foreground">Ligne</th>
+                            <th className="px-2 py-1.5 font-semibold text-muted-foreground">Produit</th>
+                            <th className="px-2 py-1.5 font-semibold text-muted-foreground">Code</th>
+                            <th className="px-2 py-1.5 font-semibold text-muted-foreground">Message</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {importResult.errors.slice(0, 100).map((err, i) => (
+                            <tr key={i} className="border-t">
+                              <td className="px-2 py-1 font-mono text-muted-foreground">{err.line}</td>
+                              <td className="px-2 py-1 font-medium truncate max-w-[100px]">{err.name}</td>
+                              <td className="px-2 py-1">
+                                <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                                  err.code === "DUPLICATE" ? "bg-amber-100 text-amber-700"
+                                  : err.code === "MISSING_NAME" ? "bg-orange-100 text-orange-700"
+                                  : "bg-red-100 text-red-700"
+                                }`}>{err.code}</span>
+                              </td>
+                              <td className="px-2 py-1 text-muted-foreground truncate max-w-[140px]">{err.message}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      {importResult.errors.length > 100 && (
+                        <p className="text-center text-[10px] text-muted-foreground py-1">… et {importResult.errors.length - 100} autres</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
           </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+      )}
     </div>
   );
 };

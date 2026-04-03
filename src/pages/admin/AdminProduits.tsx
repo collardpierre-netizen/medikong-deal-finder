@@ -328,6 +328,30 @@ const AdminProduits = () => {
       )}
 
       <ProductFormDialog open={productDialogOpen} onOpenChange={setProductDialogOpen} product={editProduct} brands={brands} manufacturers={manufacturers} />
+
+      {/* Import result dialog */}
+      <Dialog open={importResult !== null} onOpenChange={(open) => { if (!open) setImportResult(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{importResult?.errors.length === 0 && importResult?.created > 0 ? "✅ Import réussi" : importResult?.created === 0 ? "❌ Échec de l'import" : "⚠️ Import terminé avec erreurs"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm"><strong>{importResult?.created || 0}</strong> produit(s) importé(s) / mis à jour</p>
+            {(importResult?.errors?.length || 0) > 0 && (
+              <div>
+                <p className="text-sm font-medium text-destructive mb-1">{importResult!.errors.length} erreur(s) :</p>
+                <div className="max-h-[200px] overflow-y-auto bg-muted rounded p-2 text-xs space-y-1">
+                  {importResult!.errors.slice(0, 50).map((err, i) => (
+                    <p key={i} className="text-destructive">{err}</p>
+                  ))}
+                  {importResult!.errors.length > 50 && <p className="text-muted-foreground">... et {importResult!.errors.length - 50} autres</p>}
+                </div>
+              </div>
+            )}
+            <Button className="w-full" onClick={() => setImportResult(null)}>Fermer</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

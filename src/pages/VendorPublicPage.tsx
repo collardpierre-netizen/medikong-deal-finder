@@ -5,47 +5,78 @@ import { supabase } from "@/integrations/supabase/client";
 import { ProductCard } from "@/components/shared/ProductCard";
 import { motion } from "framer-motion";
 import {
-  Store, MapPin, Globe, Phone, Mail, Shield, Award, Clock,
-  Star, Package, Truck, ShoppingCart, Grid, List,
-  CheckCircle2, Building2,
+  Store, MapPin, Phone, Mail, Shield, Clock,
+  Star, Package, Truck, Grid, List,
+  CheckCircle2, Building2, Search, X,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { getVendorPublicName } from "@/lib/vendor-display";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { useCountry } from "@/contexts/CountryContext";
 
+/* ───── helpers ───── */
+function slugify(t: string) {
+  return t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+}
+
+interface VendorFilters {
+  brands: string[];
+  categories: string[];
+  priceMin?: number;
+  priceMax?: number;
+  inStock?: boolean;
+  search: string;
+}
+
+const EMPTY_FILTERS: VendorFilters = { brands: [], categories: [], search: "" };
+
+/* ───── component ───── */
 export default function VendorPublicPage() {
   const { slug } = useParams<{ slug: string }>();
   const [view, setView] = useState<"grid" | "list">("grid");
+  const [filters, setFilters] = useState<VendorFilters>(EMPTY_FILTERS);
+  const { currentCountry } = useCountry();
 
   const { data: vendor, isLoading } = useQuery({
     queryKey: ["vendor-public", slug],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("vendors")
-        .select("*")
-        .eq("slug", slug!)
-        .single();
+      const { data, error } = await supabase.from("vendors").select("*").eq("slug", slug!).single();
       if (error) throw error;
       return data;
     },
     enabled: !!slug,
   });
 
-  // Fetch vendor's offers with product info
+  // Fetch ALL vendor offers (paginated past 1000 limit)
   const { data: offers = [] } = useQuery({
     queryKey: ["vendor-offers-public", vendor?.id],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("offers")
-        .select("*, products(*)")
-        .eq("vendor_id", vendor!.id)
-        .eq("is_active", true)
-        .limit(50);
-      return data || [];
+      const PAGE = 1000;
+      let all: any[] = [];
+      let page = 0;
+      let hasMore = true;
+      while (hasMore) {
+        const from = page * PAGE;
+        const { data } = await supabase
+          .from("offers")
+          .select("*, products(id, slug, name, brand_name, brand_id, image_urls, category_name, category_id, brands(slug))")
+          .eq("vendor_id", vendor!.id)
+          .eq("is_active", true)
+          .range(from, from + PAGE - 1);
+        all = all.concat(data || []);
+        hasMore = (data?.length || 0) === PAGE;
+        page++;
+      }
+      return all;
     },
     enabled: !!vendor?.id,
+    staleTime: 5 * 60 * 1000,
   });
 
-  const vendorProducts = offers
+  // Map to display products
+  const vendorProducts = useMemo(() => offers
     .filter((o: any) => o.products)
     .map((o: any) => {
       const p = o.products;
@@ -55,8 +86,8 @@ export default function VendorPublicPage() {
         slug: p.slug,
         name: p.name,
         brand: p.brand_name || "",
-        brandSlug: p.brands?.slug || undefined,
-        price: price,
+        brandSlug: p.brands?.slug || slugify(p.brand_name || ""),
+        price,
         pub: price,
         image: p.image_urls?.[0],
         imageUrl: p.image_urls?.[0],
@@ -64,8 +95,49 @@ export default function VendorPublicPage() {
         stock: o.stock_quantity > 0,
         sellers: 1,
         mk: false,
+        categoryName: p.category_name || "",
+        categorySlug: p.category_name ? slugify(p.category_name) : "",
       };
-    });
+    }), [offers]);
+
+  // Extract unique brands & categories with counts
+  const { brands, categories } = useMemo(() => {
+    const bMap = new Map<string, { name: string; slug: string; count: number }>();
+    const cMap = new Map<string, { name: string; slug: string; count: number }>();
+    for (const p of vendorProducts) {
+      if (p.brand) {
+        const s = p.brandSlug;
+        const existing = bMap.get(s);
+        bMap.set(s, { name: p.brand, slug: s, count: (existing?.count || 0) + 1 });
+      }
+      if (p.categoryName) {
+        const s = p.categorySlug;
+        const existing = cMap.get(s);
+        cMap.set(s, { name: p.categoryName, slug: s, count: (existing?.count || 0) + 1 });
+      }
+    }
+    return {
+      brands: Array.from(bMap.values()).sort((a, b) => b.count - a.count),
+      categories: Array.from(cMap.values()).sort((a, b) => b.count - a.count),
+    };
+  }, [vendorProducts]);
+
+  // Apply filters
+  const filteredProducts = useMemo(() => {
+    let list = vendorProducts;
+    if (filters.search) {
+      const q = filters.search.toLowerCase();
+      list = list.filter(p => p.name.toLowerCase().includes(q) || p.brand.toLowerCase().includes(q));
+    }
+    if (filters.brands.length > 0) list = list.filter(p => filters.brands.includes(p.brandSlug));
+    if (filters.categories.length > 0) list = list.filter(p => filters.categories.includes(p.categorySlug));
+    if (filters.priceMin != null) list = list.filter(p => p.price >= filters.priceMin!);
+    if (filters.priceMax != null) list = list.filter(p => p.price <= filters.priceMax!);
+    if (filters.inStock) list = list.filter(p => p.stock);
+    return list;
+  }, [vendorProducts, filters]);
+
+  const hasFilters = filters.brands.length > 0 || filters.categories.length > 0 || filters.priceMin != null || filters.priceMax != null || filters.inStock || filters.search.length > 0;
 
   const vendorName = vendor ? getVendorPublicName(vendor) : "Fournisseur";
 
@@ -105,7 +177,6 @@ export default function VendorPublicPage() {
   return (
     <Layout>
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-        {/* Clean hero — subtle gradient background instead of full blue */}
         <div className="border-b border-border" style={{ background: "linear-gradient(180deg, hsl(var(--accent)), hsl(var(--background)))" }}>
           <div className="mk-container py-8 md:py-10">
             <div className="flex flex-col sm:flex-row items-start gap-4 md:gap-6">
@@ -152,21 +223,63 @@ export default function VendorPublicPage() {
 
       <div className="mk-container py-6 md:py-8">
         <div className="flex gap-7">
+          {/* ───── Sidebar with filters ───── */}
           <aside className="hidden lg:block w-[240px] shrink-0 space-y-5">
-            {vendor.description && vendor.show_real_name && (
-              <div className="border border-border rounded-xl p-4">
-                <h3 className="text-sm font-bold text-foreground mb-2 flex items-center gap-2"><Building2 size={14} /> À propos</h3>
-                <p className="text-xs text-muted-foreground leading-relaxed">{vendor.description}</p>
-              </div>
+            {/* Delivery */}
+            <div>
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Livraison</h4>
+              <p className="text-sm text-foreground">{currentCountry?.flag_emoji} {currentCountry?.name || "Belgique"}</p>
+            </div>
+
+            {/* Clear all */}
+            {hasFilters && (
+              <button onClick={() => setFilters(EMPTY_FILTERS)} className="text-sm text-primary hover:underline flex items-center gap-1">
+                <X size={14} /> Effacer les filtres
+              </button>
             )}
-            {vendor.show_real_name && (vendor.email || vendor.phone || vendor.address_line1) && (
-              <div className="border border-border rounded-xl p-4 space-y-2.5">
-                <h3 className="text-sm font-bold text-foreground mb-2 flex items-center gap-2"><Mail size={14} /> Contact</h3>
-                {vendor.email && <a href={`mailto:${vendor.email}`} className="flex items-center gap-2 text-xs text-muted-foreground hover:text-primary transition-colors"><Mail size={12} /> {vendor.email}</a>}
-                {vendor.phone && <div className="flex items-center gap-2 text-xs text-muted-foreground"><Phone size={12} /> {vendor.phone}</div>}
-                {vendor.address_line1 && <div className="flex items-start gap-2 text-xs text-muted-foreground"><MapPin size={12} className="mt-0.5 shrink-0" /><span>{vendor.address_line1}{vendor.postal_code && `, ${vendor.postal_code}`}{vendor.city && ` ${vendor.city}`}</span></div>}
-              </div>
+
+            {/* Categories */}
+            {categories.length > 0 && (
+              <VendorFilterSection title="Catégorie" items={categories} selected={filters.categories}
+                toggle={(slug) => setFilters(f => ({
+                  ...f,
+                  categories: f.categories.includes(slug) ? f.categories.filter(c => c !== slug) : [...f.categories, slug],
+                }))} />
             )}
+
+            {/* Brands */}
+            {brands.length > 0 && (
+              <VendorFilterSection title="Marque" items={brands} selected={filters.brands}
+                toggle={(slug) => setFilters(f => ({
+                  ...f,
+                  brands: f.brands.includes(slug) ? f.brands.filter(b => b !== slug) : [...f.brands, slug],
+                }))} />
+            )}
+
+            {/* Price */}
+            <VendorPriceFilter
+              priceMin={filters.priceMin}
+              priceMax={filters.priceMax}
+              onChange={(min, max) => setFilters(f => ({ ...f, priceMin: min, priceMax: max }))}
+            />
+
+            {/* Availability */}
+            <div>
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Disponibilité</h4>
+              <div className="space-y-1.5">
+                {[
+                  { label: "Tous", value: undefined as boolean | undefined },
+                  { label: "En stock uniquement", value: true as boolean | undefined },
+                ].map(opt => (
+                  <label key={String(opt.value)} className="flex items-center gap-2 text-sm cursor-pointer">
+                    <input type="radio" name="vendor-stock" checked={filters.inStock === opt.value} onChange={() => setFilters(f => ({ ...f, inStock: opt.value }))} className="border-border" />
+                    <span className="text-foreground">{opt.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Guarantees */}
             {vendor.is_verified && (
               <div className="border border-border rounded-xl p-4 space-y-2">
                 <h3 className="text-sm font-bold text-foreground mb-2 flex items-center gap-2"><Shield size={14} /> Garanties</h3>
@@ -176,32 +289,155 @@ export default function VendorPublicPage() {
             )}
           </aside>
 
+          {/* ───── Product grid ───── */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between mb-5 gap-3">
-              <h2 className="text-lg font-bold text-foreground flex items-center gap-2"><Package size={18} /> Catalogue ({vendorProducts.length})</h2>
-              <div className="flex border border-border rounded-lg overflow-hidden">
-                {([["grid", Grid], ["list", List]] as const).map(([v, Icon]) => (
-                  <button key={v} onClick={() => setView(v)} className={`p-2 transition-colors ${view === v ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}>
-                    <Icon size={16} />
-                  </button>
-                ))}
+            {/* Toolbar */}
+            <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
+              <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+                <Package size={18} /> Catalogue
+                <span className="text-sm font-normal text-muted-foreground">
+                  ({filteredProducts.length}{filteredProducts.length !== vendorProducts.length ? ` / ${vendorProducts.length}` : ""})
+                </span>
+              </h2>
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    placeholder="Rechercher..."
+                    value={filters.search}
+                    onChange={e => setFilters(f => ({ ...f, search: e.target.value }))}
+                    className="pl-8 h-8 text-sm w-[180px]"
+                  />
+                </div>
+                <div className="flex border border-border rounded-lg overflow-hidden">
+                  {([["grid", Grid], ["list", List]] as const).map(([v, Icon]) => (
+                    <button key={v} onClick={() => setView(v)} className={`p-2 transition-colors ${view === v ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}>
+                      <Icon size={16} />
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
-            {vendorProducts.length > 0 ? (
+
+            {/* Active filter chips */}
+            {hasFilters && (
+              <div className="flex flex-wrap gap-1.5 mb-4">
+                {filters.brands.map(s => {
+                  const b = brands.find(x => x.slug === s);
+                  return b ? (
+                    <span key={s} className="inline-flex items-center gap-1 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                      {b.name} <button onClick={() => setFilters(f => ({ ...f, brands: f.brands.filter(x => x !== s) }))}><X size={12} /></button>
+                    </span>
+                  ) : null;
+                })}
+                {filters.categories.map(s => {
+                  const c = categories.find(x => x.slug === s);
+                  return c ? (
+                    <span key={s} className="inline-flex items-center gap-1 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                      {c.name} <button onClick={() => setFilters(f => ({ ...f, categories: f.categories.filter(x => x !== s) }))}><X size={12} /></button>
+                    </span>
+                  ) : null;
+                })}
+                {filters.inStock && (
+                  <span className="inline-flex items-center gap-1 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                    En stock <button onClick={() => setFilters(f => ({ ...f, inStock: undefined }))}><X size={12} /></button>
+                  </span>
+                )}
+              </div>
+            )}
+
+            {filteredProducts.length > 0 ? (
               <div className={view === "grid" ? "grid grid-cols-2 lg:grid-cols-3 gap-3" : "space-y-3"}>
-                {vendorProducts.map((p: any, i: number) => (
+                {filteredProducts.map((p: any, i: number) => (
                   <ProductCard key={p.id} product={p} index={i} />
                 ))}
               </div>
             ) : (
               <div className="text-center py-16 border border-dashed border-border rounded-xl">
                 <Package size={40} className="mx-auto text-muted-foreground mb-3" />
-                <p className="text-sm text-muted-foreground">Aucun produit disponible pour le moment</p>
+                <p className="text-sm text-muted-foreground">
+                  {hasFilters ? "Aucun produit ne correspond à vos filtres" : "Aucun produit disponible pour le moment"}
+                </p>
+                {hasFilters && (
+                  <button onClick={() => setFilters(EMPTY_FILTERS)} className="text-sm text-primary hover:underline mt-2">
+                    Effacer les filtres
+                  </button>
+                )}
               </div>
             )}
           </div>
         </div>
       </div>
     </Layout>
+  );
+}
+
+/* ───── Filter sub-components ───── */
+
+function VendorFilterSection({ title, items, selected, toggle }: {
+  title: string;
+  items: { name: string; slug: string; count: number }[];
+  selected: string[];
+  toggle: (slug: string) => void;
+}) {
+  const [search, setSearch] = useState("");
+  const [showAll, setShowAll] = useState(false);
+
+  const filtered = useMemo(() => {
+    let list = items;
+    if (search) list = list.filter(i => i.name.toLowerCase().includes(search.toLowerCase()));
+    return showAll ? list : list.slice(0, 10);
+  }, [items, search, showAll]);
+
+  return (
+    <div>
+      <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">{title}</h4>
+      {items.length > 5 && (
+        <div className="relative mb-2">
+          <Search size={14} className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <Input placeholder={`Rechercher...`} value={search} onChange={e => setSearch(e.target.value)} className="pl-7 h-8 text-sm" />
+        </div>
+      )}
+      <ScrollArea className="max-h-[220px]">
+        <div className="space-y-1">
+          {filtered.map(item => (
+            <label key={item.slug} className="flex items-center gap-2 text-sm cursor-pointer py-0.5 hover:bg-muted px-1 rounded">
+              <input type="checkbox" checked={selected.includes(item.slug)} onChange={() => toggle(item.slug)} className="rounded border-border" />
+              <span className="flex-1 truncate text-foreground">{item.name}</span>
+              <span className="text-xs text-muted-foreground">({item.count})</span>
+            </label>
+          ))}
+        </div>
+      </ScrollArea>
+      {items.length > 10 && !showAll && (
+        <button onClick={() => setShowAll(true)} className="text-xs text-primary hover:underline mt-1">
+          Voir plus ({items.length - 10})
+        </button>
+      )}
+    </div>
+  );
+}
+
+function VendorPriceFilter({ priceMin, priceMax, onChange }: {
+  priceMin?: number;
+  priceMax?: number;
+  onChange: (min?: number, max?: number) => void;
+}) {
+  const [min, setMin] = useState(priceMin?.toString() || "");
+  const [max, setMax] = useState(priceMax?.toString() || "");
+
+  const apply = () => {
+    onChange(min ? Number(min) : undefined, max ? Number(max) : undefined);
+  };
+
+  return (
+    <div>
+      <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Prix</h4>
+      <div className="flex gap-2 items-center">
+        <Input placeholder="Min €" value={min} onChange={e => setMin(e.target.value)} className="h-8 text-sm" type="number" />
+        <Input placeholder="Max €" value={max} onChange={e => setMax(e.target.value)} className="h-8 text-sm" type="number" />
+        <Button size="sm" variant="outline" onClick={apply} className="h-8 text-xs shrink-0">OK</Button>
+      </div>
+    </div>
   );
 }

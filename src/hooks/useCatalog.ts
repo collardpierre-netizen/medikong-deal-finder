@@ -203,15 +203,17 @@ export function useCatalogCategories() {
         name: c.name_fr || c.name,
         product_count: countMap.get(c.id) || 0,
       }));
+
+      // Build full tree: L1 > L2 > L3
       const roots = all.filter(c => !c.parent_id);
       return roots.map(r => {
-        const children = all.filter(c => c.parent_id === r.id).map(c => ({ ...c, children: [] }));
-        const totalCount = r.product_count + children.reduce((sum, c) => sum + c.product_count, 0);
-        return {
-          ...r,
-          product_count: totalCount,
-          children,
-        };
+        const l2Children = all.filter(c => c.parent_id === r.id).map(l2 => {
+          const l3Children = all.filter(c => c.parent_id === l2.id);
+          const l2Total = l2.product_count + l3Children.reduce((s, c) => s + c.product_count, 0);
+          return { ...l2, product_count: l2Total, children: l3Children };
+        });
+        const totalCount = r.product_count + l2Children.reduce((s, c) => s + c.product_count, 0);
+        return { ...r, product_count: totalCount, children: l2Children };
       }).filter(r => r.product_count > 0) as CategoryNode[];
     },
     staleTime: 10 * 60 * 1000,

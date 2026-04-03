@@ -17,6 +17,7 @@ const MOV_TIERS = [500, 1500, 5000, 10000];
 interface SupplierGroup {
   vendorId: string;
   vendorName: string;
+  vendorSlug?: string;
   isVerified: boolean;
   items: ReturnType<typeof useCart>["items"];
   total: number;

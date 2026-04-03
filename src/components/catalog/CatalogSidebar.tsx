@@ -1,7 +1,8 @@
 import { useState, useMemo, useRef, useEffect } from "react";
-import { ChevronLeft, X, Search } from "lucide-react";
+import { ChevronLeft, X, Search, Filter, Eye } from "lucide-react";
 import { useCountry } from "@/contexts/CountryContext";
 import { useCatalogCategories, useCatalogBrands, useCatalogManufacturers, type CatalogFilters } from "@/hooks/useCatalog";
+import { useVisibleCategories } from "@/hooks/useVisibleCategories";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";

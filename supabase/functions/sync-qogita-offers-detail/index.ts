@@ -5,10 +5,10 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const MAX_EXECUTION_TIME = 250000;
-const BATCH_SIZE = 50;
-const PARALLEL_GROUPS = 5;
-const API_DELAY_MS = 200;
+const MAX_EXECUTION_TIME = 290000; // 290s — leave 10s margin for 300s timeout
+const BATCH_SIZE = 100;
+const PARALLEL_CONCURRENCY = 25;
+const BATCH_DELAY_MS = 500;
 const MAX_RETRIES_429 = 3;
 const API_TIMEOUT_MS = 8000;
 
@@ -432,33 +432,31 @@ async function syncOffers(
     const batchEnd = Math.min(batchStart + BATCH_SIZE, total);
     const batchProducts = products.slice(batchStart, batchEnd);
 
-    // Split batch into PARALLEL_GROUPS sub-groups
-    const groupSize = Math.ceil(batchProducts.length / PARALLEL_GROUPS);
-    const groups: typeof batchProducts[] = [];
-    for (let g = 0; g < PARALLEL_GROUPS; g++) {
-      const slice = batchProducts.slice(g * groupSize, (g + 1) * groupSize);
-      if (slice.length > 0) groups.push(slice);
+    // Process PARALLEL_CONCURRENCY products at the same time
+    const chunks: typeof batchProducts[] = [];
+    for (let i = 0; i < batchProducts.length; i += PARALLEL_CONCURRENCY) {
+      chunks.push(batchProducts.slice(i, i + PARALLEL_CONCURRENCY));
     }
 
-    // Process all groups in parallel
-    const groupResults = await Promise.allSettled(
-      groups.map((group) =>
-        processGroup(sb, group, baseUrl, token, country, vatRate, vatMultiplier, bestPriceVendorId, fetchMultiVendor, stats)
-      )
-    );
+    for (const chunk of chunks) {
+      const results = await Promise.allSettled(
+        chunk.map((p) =>
+          processSingleProduct(sb, p, baseUrl, token, country, vatRate, vatMultiplier, bestPriceVendorId, fetchMultiVendor, stats)
+        )
+      );
 
-    // Merge stats from fulfilled groups
-    for (const result of groupResults) {
-      if (result.status === "fulfilled" && result.value) {
-        stats.products_enriched += result.value.products_enriched;
-        stats.offers_upserted += result.value.offers_upserted;
-        stats.multi_vendor_offers += result.value.multi_vendor_offers;
-        stats.errors += result.value.errors;
-        stats.skipped += result.value.skipped;
-        stats.rate_limited += result.value.rate_limited;
-      } else if (result.status === "rejected") {
-        stats.errors += 1;
-        console.error("Group processing failed:", result.reason);
+      for (const result of results) {
+        if (result.status === "fulfilled" && result.value) {
+          stats.products_enriched += result.value.products_enriched;
+          stats.offers_upserted += result.value.offers_upserted;
+          stats.multi_vendor_offers += result.value.multi_vendor_offers;
+          stats.errors += result.value.errors;
+          stats.skipped += result.value.skipped;
+          stats.rate_limited += result.value.rate_limited;
+        } else if (result.status === "rejected") {
+          stats.errors += 1;
+          console.error("Product processing failed:", result.reason);
+        }
       }
     }
 
@@ -474,7 +472,7 @@ async function syncOffers(
       .eq("id", logId);
 
     // Small pause between batches to avoid rate limiting
-    await sleep(API_DELAY_MS);
+    await sleep(BATCH_DELAY_MS);
   }
 
   await sb
@@ -495,10 +493,10 @@ async function syncOffers(
   return stats;
 }
 
-/** Process a sub-group of products sequentially (called in parallel across groups) */
-async function processGroup(
+/** Process a single product (called in parallel across PARALLEL_CONCURRENCY) */
+async function processSingleProduct(
   sb: any,
-  products: any[],
+  product: any,
   baseUrl: string,
   token: string,
   country: string,
@@ -517,7 +515,6 @@ async function processGroup(
     rate_limited: 0,
   };
 
-  for (const product of products) {
     try {
       const res = await fetchVariantWithRetry(baseUrl, token, product.gtin, product.qogita_qid, country);
 
@@ -671,9 +668,6 @@ async function processGroup(
       localStats.errors++;
       console.error(`Error GTIN ${product.gtin}:`, e.message);
     }
-
-    await sleep(API_DELAY_MS);
-  }
 
   return localStats;
 }

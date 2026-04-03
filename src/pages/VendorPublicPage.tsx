@@ -148,18 +148,20 @@ export default function VendorPublicPage() {
       <div className="mk-container py-6 md:py-8">
         <div className="flex gap-7">
           <aside className="hidden lg:block w-[240px] shrink-0 space-y-5">
-            {vendor.description && (
+            {vendor.description && vendor.show_real_name && (
               <div className="border border-border rounded-xl p-4">
                 <h3 className="text-sm font-bold text-foreground mb-2 flex items-center gap-2"><Building2 size={14} /> À propos</h3>
                 <p className="text-xs text-muted-foreground leading-relaxed">{vendor.description}</p>
               </div>
             )}
-            <div className="border border-border rounded-xl p-4 space-y-2.5">
-              <h3 className="text-sm font-bold text-foreground mb-2 flex items-center gap-2"><Mail size={14} /> Contact</h3>
-              {vendor.email && <a href={`mailto:${vendor.email}`} className="flex items-center gap-2 text-xs text-muted-foreground hover:text-primary transition-colors"><Mail size={12} /> {vendor.email}</a>}
-              {vendor.phone && <div className="flex items-center gap-2 text-xs text-muted-foreground"><Phone size={12} /> {vendor.phone}</div>}
-              {vendor.address_line1 && <div className="flex items-start gap-2 text-xs text-muted-foreground"><MapPin size={12} className="mt-0.5 shrink-0" /><span>{vendor.address_line1}{vendor.postal_code && `, ${vendor.postal_code}`}{vendor.city && ` ${vendor.city}`}</span></div>}
-            </div>
+            {vendor.show_real_name && (vendor.email || vendor.phone || vendor.address_line1) && (
+              <div className="border border-border rounded-xl p-4 space-y-2.5">
+                <h3 className="text-sm font-bold text-foreground mb-2 flex items-center gap-2"><Mail size={14} /> Contact</h3>
+                {vendor.email && <a href={`mailto:${vendor.email}`} className="flex items-center gap-2 text-xs text-muted-foreground hover:text-primary transition-colors"><Mail size={12} /> {vendor.email}</a>}
+                {vendor.phone && <div className="flex items-center gap-2 text-xs text-muted-foreground"><Phone size={12} /> {vendor.phone}</div>}
+                {vendor.address_line1 && <div className="flex items-start gap-2 text-xs text-muted-foreground"><MapPin size={12} className="mt-0.5 shrink-0" /><span>{vendor.address_line1}{vendor.postal_code && `, ${vendor.postal_code}`}{vendor.city && ` ${vendor.city}`}</span></div>}
+              </div>
+            )}
             {vendor.is_verified && (
               <div className="border border-border rounded-xl p-4 space-y-2">
                 <h3 className="text-sm font-bold text-foreground mb-2 flex items-center gap-2"><Shield size={14} /> Garanties</h3>

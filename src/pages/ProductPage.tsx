@@ -1082,6 +1082,7 @@ export default function ProductPage() {
                             delay={i * 0.06}
                             isTVAC={isTVAC}
                             categoryId={categoryData?.category?.id}
+                            bestPrice={bestOffer ? (isTVAC ? bestOffer.unitPriceInclVat : bestOffer.unitPriceEur) : undefined}
                           />
                         ))}
                       </div>

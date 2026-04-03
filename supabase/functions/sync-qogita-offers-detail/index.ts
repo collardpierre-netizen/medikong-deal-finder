@@ -363,14 +363,15 @@ async function syncOffers(
   const { token, baseUrl } = await getQogitaToken(sb);
   const bestPriceVendorId = await ensureBestPriceVendor(sb, country);
 
+  // INCREMENTAL: only products with active offers
   const { data: products, error: pErr } = await sb
     .from("products")
     .select("id, gtin, qogita_qid, qogita_fid, slug")
-    .eq("source", "qogita")
     .eq("is_active", true)
     .not("gtin", "is", null)
+    .gt("offer_count", 0)
     .order("created_at", { ascending: true })
-    .range(0, 49999);
+    .range(0, 59999);
 
   if (pErr) throw pErr;
 

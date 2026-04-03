@@ -5,12 +5,12 @@ import { motion } from "framer-motion";
 import { AnimatedSection, StaggerContainer, StaggerItem } from "@/components/shared/PageTransition";
 
 const segments = [
-  { icon: <Building2 size={28} />, title: "Pharmacies", desc: "Accédez aux prix de gros sur des milliers de références. MOQ bas adaptés aux officines." },
-  { icon: <Heart size={28} />, title: "Hôpitaux", desc: "Approvisionnement centralisé pour les établissements hospitaliers. Volumes importants, tarifs négociés." },
-  { icon: <Home size={28} />, title: "Maisons de repos", desc: "Fournitures d'hygiène, incontinence et soins pour les résidents. Livraison régulière programmée." },
-  { icon: <Stethoscope size={28} />, title: "Cabinets médicaux", desc: "Consommables, instruments et diagnostic pour les praticiens indépendants." },
-  { icon: <Smile size={28} />, title: "Dentistes", desc: "Matériel dentaire, consommables et produits d'hygiène spécialisés." },
-  { icon: <PawPrint size={28} />, title: "Vétérinaires", desc: "Fournitures médicales adaptées aux cliniques et cabinets vétérinaires." },
+  { icon: <Building2 size={28} />, title: "Pharmacies", desc: "Accédez aux prix de gros sur des milliers de références. MOQ bas adaptés aux officines.", link: "/pharmacies" },
+  { icon: <Heart size={28} />, title: "Hôpitaux", desc: "Approvisionnement centralisé pour les établissements hospitaliers. Volumes importants, tarifs négociés.", link: "/hopitaux" },
+  { icon: <Home size={28} />, title: "Maisons de repos", desc: "Fournitures d'hygiène, incontinence et soins pour les résidents. Livraison régulière programmée.", link: "/ehpad" },
+  { icon: <Stethoscope size={28} />, title: "Cabinets médicaux", desc: "Consommables, instruments et diagnostic pour les praticiens indépendants.", link: "/cabinets-medicaux" },
+  { icon: <Smile size={28} />, title: "Dentistes", desc: "Matériel dentaire, consommables et produits d'hygiène spécialisés.", link: "/dentistes" },
+  { icon: <PawPrint size={28} />, title: "Vétérinaires", desc: "Fournitures médicales adaptées aux cliniques et cabinets vétérinaires.", link: "/veterinaires" },
 ];
 
 const advantages = [

@@ -897,6 +897,31 @@ export default function AdminSync() {
                     {config?.sync_enabled ? "Activé" : "Désactivé"}
                   </button>
                 </div>
+                {/* Marge commerciale */}
+                <div className="pt-3 border-t" style={{ borderColor: "#F1F5F9" }}>
+                  <label className="text-[11px] font-medium block mb-1" style={{ color: "#616B7C" }}>Marge commerciale (%)</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      min={0}
+                      max={100}
+                      step={0.5}
+                      defaultValue={config?.margin_percentage || "18"}
+                      key={config?.margin_percentage}
+                      onBlur={(e) => {
+                        const v = parseFloat(e.target.value);
+                        if (!isNaN(v) && String(v) !== config?.margin_percentage) {
+                          updateConfig.mutate({ margin_percentage: String(v) });
+                        }
+                      }}
+                      className="w-24 text-[12px] border rounded-md px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      style={{ borderColor: "#E2E8F0" }}
+                    />
+                    <span className="text-[11px] self-center" style={{ color: "#8B95A5" }}>
+                      Appliquée au recalcul des prix (fallback si aucune règle de marge spécifique)
+                    </span>
+                  </div>
+                </div>
               </div>
 
               {/* Shipping mode */}

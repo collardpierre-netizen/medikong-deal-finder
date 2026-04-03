@@ -14,6 +14,14 @@ Deno.serve(async (req) => {
   );
 
   try {
+    // Load default margin from qogita_config
+    const { data: configRow } = await supabase
+      .from("qogita_config")
+      .select("value")
+      .eq("key", "margin_percentage")
+      .maybeSingle();
+    const defaultMarginPct = configRow?.value ? parseFloat(configRow.value) : 15.0;
+
     // Load margin rules sorted by priority desc
     const { data: marginRules } = await supabase
       .from("margin_rules")
@@ -38,8 +46,8 @@ Deno.serve(async (req) => {
       const basePrice = Number(offer.qogita_base_price);
       const product = offer.products as any;
 
-      // Find matching rule
-      let marginPct = 15.0, extraDelay = 2, roundTo = 0.01;
+      // Find matching rule — fallback to config default margin
+      let marginPct = defaultMarginPct, extraDelay = 2, roundTo = 0.01;
       let matchedRuleId: string | null = null;
 
       for (const rule of (marginRules || [])) {
@@ -87,7 +95,7 @@ Deno.serve(async (req) => {
       updated++;
     }
 
-    return new Response(JSON.stringify({ success: true, updated }), {
+    return new Response(JSON.stringify({ success: true, updated, default_margin: defaultMarginPct }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error: any) {

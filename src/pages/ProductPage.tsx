@@ -162,7 +162,7 @@ function OfferRow({
             <div className="relative pl-4">
               <div className="absolute left-[3px] top-[7px] w-px border-l border-dashed border-muted-foreground/40" style={{ height: `calc(100% - 14px)` }} />
               {tiers.map((tier: any, i: number) => (
-                <div key={i} className="grid grid-cols-[auto_1fr_auto] items-center gap-x-3 relative" style={{ marginTop: i > 0 ? 6 : 0 }}>
+                <div key={i} className="grid grid-cols-[5.5rem_9rem_3rem] items-center gap-x-2 relative" style={{ marginTop: i > 0 ? 6 : 0 }}>
                   <div className="absolute left-[-14px] w-[7px] h-[7px] rounded-full bg-primary" />
                   <span className={`text-sm tabular-nums ${i === 0 ? "font-bold text-green-700" : "text-muted-foreground"}`}>
                     {formatEur(tier.price || tier.minAmount)}&nbsp;€
@@ -170,7 +170,7 @@ function OfferRow({
                   {tier.minAmount ? (
                     <span className="text-xs text-muted-foreground tabular-nums">MOV&nbsp;{formatEur(tier.minAmount)}&nbsp;€</span>
                   ) : <span />}
-                  <span className="w-12" />
+                  <span />
                 </div>
               ))}
             </div>

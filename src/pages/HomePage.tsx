@@ -145,9 +145,9 @@ export default function HomePage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
           >
-            <span className="relative inline-block">
+            <span className="relative inline-block pb-1">
               Tout le médical
-              <span className="absolute left-0 right-0 bottom-0 h-[6px] bg-mk-blue/30 rounded-full -mb-0.5" />
+              <span className="absolute left-0 right-0 bottom-0 h-[8px] bg-mk-blue/25 rounded-full" />
             </span>
             , tous les prix,
             <br />

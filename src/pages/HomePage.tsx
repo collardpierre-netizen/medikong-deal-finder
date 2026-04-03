@@ -207,19 +207,25 @@ export default function HomePage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.4 }}
           >
-            <div className="px-6 md:px-8 text-center">
+            <div className="px-4 md:px-6 text-center">
               <div className="text-xl md:text-2xl font-bold text-mk-navy">
                 <AnimatedCounter target={countryStats?.vendors || 0} suffix="+" />
               </div>
               <div className="text-xs text-mk-sec mt-0.5">{t("stats.suppliers")}</div>
             </div>
-            <div className="px-6 md:px-8 text-center">
+            <div className="px-4 md:px-6 text-center">
+              <div className="text-xl md:text-2xl font-bold text-mk-navy">
+                <AnimatedCounter target={countryStats?.brands || 0} suffix="+" />
+              </div>
+              <div className="text-xs text-mk-sec mt-0.5">Marques</div>
+            </div>
+            <div className="px-4 md:px-6 text-center">
               <div className="text-xl md:text-2xl font-bold text-mk-navy">
                 <AnimatedCounter target={countryStats?.products || 0} suffix="+" />
               </div>
               <div className="text-xs text-mk-sec mt-0.5">{t("stats.products")} {countryLabel}</div>
             </div>
-            <div className="px-6 md:px-8 text-center">
+            <div className="px-4 md:px-6 text-center">
               <div className="text-xl md:text-2xl font-bold text-mk-navy">
                 <AnimatedCounter target={countryStats?.offers || 0} suffix="+" />
               </div>

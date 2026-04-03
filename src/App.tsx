@@ -56,6 +56,15 @@ const SourcingPage = lazy(() => import("./pages/SourcingPage"));
 const CategoriesPage = lazy(() => import("./pages/CategoriesPage"));
 const MyPricesPage = lazy(() => import("./pages/MyPricesPage"));
 
+// Segment landing pages
+const PharmaciesPage = lazy(() => import("./pages/segment/PharmaciesPage"));
+const EhpadPage = lazy(() => import("./pages/segment/EhpadPage"));
+const GrossistesPage = lazy(() => import("./pages/segment/GrossistesPage"));
+const HopitauxPage = lazy(() => import("./pages/segment/HopitauxPage"));
+const CabinetsMedicauxPage = lazy(() => import("./pages/segment/CabinetsMedicauxPage"));
+const DentistesPage = lazy(() => import("./pages/segment/DentistesPage"));
+const VeterinairesPage = lazy(() => import("./pages/segment/VeterinairesPage"));
+
 // Entreprise pages
 const AboutPage = lazy(() => import("./pages/entreprise/AboutPage"));
 const WhyMedikongPage = lazy(() => import("./pages/entreprise/WhyMedikongPage"));
@@ -223,6 +232,13 @@ const App = () => (
             <Route path="/investir" element={<Navigate to="/entreprise/investir" replace />} />
 
             <Route path="/professionnels" element={<LP><ProfessionnelsPage /></LP>} />
+            <Route path="/pharmacies" element={<LP><PharmaciesPage /></LP>} />
+            <Route path="/ehpad" element={<LP><EhpadPage /></LP>} />
+            <Route path="/grossistes" element={<LP><GrossistesPage /></LP>} />
+            <Route path="/hopitaux" element={<LP><HopitauxPage /></LP>} />
+            <Route path="/cabinets-medicaux" element={<LP><CabinetsMedicauxPage /></LP>} />
+            <Route path="/dentistes" element={<LP><DentistesPage /></LP>} />
+            <Route path="/veterinaires" element={<LP><VeterinairesPage /></LP>} />
             <Route path="/sourcing" element={<LP><SourcingPage /></LP>} />
             <Route path="/categories" element={<LP><CategoriesPage /></LP>} />
             <Route path="/mes-prix" element={<LP><MyPricesPage /></LP>} />

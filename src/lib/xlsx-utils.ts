@@ -103,15 +103,16 @@ function slugify(s: string) {
   return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 }
 
-export async function importProducts(file: File): Promise<{ created: number; errors: string[]; brandsCreated: number; manufacturersCreated: number }> {
+export async function importProducts(file: File): Promise<{ created: number; updated: number; skipped: number; errors: { line: number; name: string; code: string; message: string }[]; brandsCreated: number; manufacturersCreated: number; totalRows: number }> {
   const rows = await readXlsx(file);
   let created = 0;
+  let updated = 0;
+  let skipped = 0;
   let brandsCreated = 0;
   let manufacturersCreated = 0;
-  const errors: string[] = [];
+  const errors: { line: number; name: string; code: string; message: string }[] = [];
 
   // --- Auto-create brands & manufacturers ---
-  // Collect unique brand/manufacturer names from import
   const brandNames = new Set<string>();
   const mfrNames = new Set<string>();
   for (const row of rows) {
@@ -120,7 +121,6 @@ export async function importProducts(file: File): Promise<{ created: number; err
     if (r.manufacturer_name) mfrNames.add(String(r.manufacturer_name).trim());
   }
 
-  // Auto-create missing manufacturers
   if (mfrNames.size > 0) {
     const { data: existingMfrs } = await supabase.from("manufacturers").select("name").limit(5000);
     const existingSet = new Set((existingMfrs || []).map(m => m.name.toLowerCase()));
@@ -135,18 +135,15 @@ export async function importProducts(file: File): Promise<{ created: number; err
     }
   }
 
-  // Auto-create missing brands (with manufacturer resolution)
   if (brandNames.size > 0) {
     const { data: existingBrands } = await supabase.from("brands").select("name").limit(5000);
     const existingSet = new Set((existingBrands || []).map(b => b.name.toLowerCase()));
-    // Fetch manufacturers for linking
     const { data: allMfrs } = await supabase.from("manufacturers").select("id,name").limit(5000);
     const mfrByName = new Map((allMfrs || []).map(m => [m.name.toLowerCase(), m.id]));
 
     for (const name of brandNames) {
       if (!existingSet.has(name.toLowerCase())) {
         const payload: any = { name, slug: slugify(name), is_active: true };
-        // Try to find a matching manufacturer row for this brand
         const mfrId = mfrByName.get(name.toLowerCase()) || null;
         if (mfrId) payload.manufacturer_id = mfrId;
         const { error } = await supabase.from("brands").upsert(payload, { onConflict: "slug" });
@@ -155,10 +152,18 @@ export async function importProducts(file: File): Promise<{ created: number; err
     }
   }
 
+  // Pre-fetch existing slugs to detect duplicates vs new
+  const existingSlugs = new Set<string>();
+  const allProducts = await fetchAllRows("products", "slug", "slug");
+  allProducts.forEach((p: any) => existingSlugs.add(p.slug));
+
   // --- Import products ---
-  for (const row of rows) {
-    const r = row as any;
-    if (!r.name) { errors.push("Ligne ignorée: nom manquant"); continue; }
+  for (let i = 0; i < rows.length; i++) {
+    const r = rows[i] as any;
+    const lineNum = i + 2; // +2 for header row + 0-index
+    if (!r.name) { errors.push({ line: lineNum, name: "—", code: "MISSING_NAME", message: "Nom du produit manquant" }); skipped++; continue; }
+    const slug = r.slug || slugify(r.name);
+    const isUpdate = existingSlugs.has(slug);
     const rawImageUrls = r.image_urls ?? r.image_url ?? r["Image URL"] ?? r["Image URL "] ?? r["image url"] ?? "";
     const imageUrls = String(rawImageUrls)
       .split(/[;\n,]+/)
@@ -166,7 +171,7 @@ export async function importProducts(file: File): Promise<{ created: number; err
       .filter((u: string) => /^https?:\/\//i.test(u));
     const payload: any = {
       name: r.name,
-      slug: r.slug || slugify(r.name),
+      slug,
       gtin: r.gtin ? String(r.gtin) : null,
       cnk_code: r.cnk_code ? String(r.cnk_code) : null,
       sku: r.sku ? String(r.sku) : null,
@@ -181,13 +186,18 @@ export async function importProducts(file: File): Promise<{ created: number; err
     };
     if (imageUrls.length > 0) payload.image_urls = imageUrls;
     const { error } = await supabase.from("products").upsert(payload, { onConflict: "slug" });
-    if (error) errors.push(`${r.name}: ${error.message}`);
-    else created++;
+    if (error) {
+      const code = error.code === "23505" ? "DUPLICATE" : error.code || "DB_ERROR";
+      errors.push({ line: lineNum, name: r.name, code, message: error.message });
+      skipped++;
+    } else {
+      if (isUpdate) updated++;
+      else { created++; existingSlugs.add(slug); }
+    }
   }
-  // Resolve brand_id and category_id
   await supabase.rpc("resolve_product_brands");
   await supabase.rpc("resolve_product_categories");
-  return { created, errors, brandsCreated, manufacturersCreated };
+  return { created, updated, skipped, errors, brandsCreated, manufacturersCreated, totalRows: rows.length };
 }
 
 export async function importBrands(file: File): Promise<{ created: number; errors: string[] }> {

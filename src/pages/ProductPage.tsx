@@ -94,9 +94,16 @@ function OfferRow({
           </span>
         )}
         {offer.isTraceable && (
-          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-full">
-            Traçable
-          </span>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-full cursor-help">
+                <Shield size={12} /> Traçable
+              </span>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-[240px] text-xs">
+              Produit traçable : numéro de lot, date d'expiration et certificats disponibles pour garantir l'authenticité et la conformité.
+            </TooltipContent>
+          </Tooltip>
         )}
       </div>
 

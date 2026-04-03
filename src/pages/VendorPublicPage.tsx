@@ -102,29 +102,32 @@ export default function VendorPublicPage() {
 
   return (
     <Layout>
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="relative overflow-hidden">
-        <div className="h-32 md:h-44" style={{ background: "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary) / 0.7))" }} />
-        <div className="mk-container relative -mt-12 md:-mt-14 pb-6">
-          <div className="flex flex-col sm:flex-row items-start gap-4 md:gap-6">
-            <div className="w-20 h-20 md:w-24 md:h-24 rounded-xl border-4 border-background bg-background shadow-lg flex items-center justify-center shrink-0 overflow-hidden">
-              {vendor.logo_url && vendor.show_real_name ? (
-                <img src={vendor.logo_url} alt={getVendorPublicName(vendor)} className="w-full h-full object-contain p-1" />
-              ) : (
-                <span className="text-2xl font-bold text-primary">{getVendorPublicName(vendor)[0]}</span>
-              )}
-            </div>
-            <div className="flex-1 pt-2 sm:pt-6">
-              <div className="flex flex-wrap items-center gap-2 mb-1">
-                <h1 className="text-xl md:text-2xl font-bold text-foreground">{getVendorPublicName(vendor)}</h1>
-                {vendor.is_verified && (
-                  <span className="inline-flex items-center gap-1 text-[10px] font-semibold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">
-                    <CheckCircle2 size={10} /> Vérifié
-                  </span>
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+        {/* Clean hero — subtle gradient background instead of full blue */}
+        <div className="border-b border-border" style={{ background: "linear-gradient(180deg, hsl(var(--accent)), hsl(var(--background)))" }}>
+          <div className="mk-container py-8 md:py-10">
+            <div className="flex flex-col sm:flex-row items-start gap-4 md:gap-6">
+              <div className="w-16 h-16 md:w-20 md:h-20 rounded-xl border border-border bg-background shadow-sm flex items-center justify-center shrink-0 overflow-hidden">
+                {vendor.logo_url && vendor.show_real_name ? (
+                  <img src={vendor.logo_url} alt={vendorName} className="w-full h-full object-contain p-1" />
+                ) : (
+                  <span className="text-xl font-bold text-primary">{vendorName[0]}</span>
                 )}
               </div>
-              {vendor.description && <p className="text-sm text-muted-foreground mb-2">{vendor.description}</p>}
-              <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                {vendor.city && <span className="flex items-center gap-1"><MapPin size={12} /> {vendor.city}, {vendor.country_code}</span>}
+              <div className="flex-1">
+                <div className="flex flex-wrap items-center gap-2 mb-1">
+                  <h1 className="text-xl md:text-2xl font-bold text-foreground">{vendorName}</h1>
+                  {vendor.is_verified && (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">
+                      <CheckCircle2 size={10} /> Vérifié
+                    </span>
+                  )}
+                </div>
+                {vendor.show_real_name && vendor.description && <p className="text-sm text-muted-foreground mb-2 max-w-[600px]">{vendor.description}</p>}
+                <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                  {vendor.city && vendor.show_real_name && <span className="flex items-center gap-1"><MapPin size={12} /> {vendor.city}, {vendor.country_code}</span>}
+                  <span className="flex items-center gap-1"><Package size={12} /> {vendorProducts.length} produits</span>
+                </div>
               </div>
             </div>
           </div>

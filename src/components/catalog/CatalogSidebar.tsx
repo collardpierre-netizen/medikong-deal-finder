@@ -35,6 +35,14 @@ export function CatalogSidebar({ filters, setFilter, clearAll }: Props) {
 
   // Close dropdown on outside click
   useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (brandDropdownRef.current && !brandDropdownRef.current.contains(e.target as Node)) {
+        setBrandDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
   const filteredBrands = useMemo(() => {
     let list = brands;

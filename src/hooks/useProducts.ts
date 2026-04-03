@@ -32,6 +32,7 @@ export interface Product {
   descriptionShort?: string;
   weightG?: number;
   brandId?: string;
+  brandSlug?: string;
 }
 
 function slugify(text: string): string {

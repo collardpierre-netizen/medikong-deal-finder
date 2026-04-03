@@ -146,11 +146,13 @@ export default function BuyerOnboardingPage() {
   const screenRef = useRef<HTMLDivElement>(null);
 
   /* State */
+  const OTP_LENGTH = 8;
+  const EMPTY_OTP = Array.from({ length: OTP_LENGTH }, () => "");
   const [accountType, setAccountType] = useState("");
   const [buyerProfile, setBuyerProfile] = useState("");
   const [email, setEmail] = useState("");
   const [emailTouched, setEmailTouched] = useState(false);
-  const [otpDigits, setOtpDigits] = useState(["", "", "", "", "", ""]);
+  const [otpDigits, setOtpDigits] = useState(EMPTY_OTP);
   const [otpError, setOtpError] = useState(false);
   const [otpShake, setOtpShake] = useState(false);
   const [otpVerified, setOtpVerified] = useState(false);
@@ -298,10 +300,10 @@ export default function BuyerOnboardingPage() {
     newDigits[idx] = val;
     setOtpDigits(newDigits);
     setOtpError(false);
-    if (val && idx < 5) otpRefs.current[idx + 1]?.focus();
+    if (val && idx < OTP_LENGTH - 1) otpRefs.current[idx + 1]?.focus();
     if (newDigits.every(d => d) ) {
       const code = newDigits.join("");
-      if (code === "123456") {
+      if (code === "12345678") {
         setOtpVerified(true);
         setTimeout(() => goNext(), 400);
       } else {
@@ -319,13 +321,13 @@ export default function BuyerOnboardingPage() {
   };
 
   const handleOtpPaste = (e: React.ClipboardEvent) => {
-    const text = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
-    if (text.length === 6) {
+    const text = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, OTP_LENGTH);
+    if (text.length === OTP_LENGTH) {
       e.preventDefault();
       const newDigits = text.split("");
       setOtpDigits(newDigits);
-      otpRefs.current[5]?.focus();
-      if (text === "123456") {
+      otpRefs.current[OTP_LENGTH - 1]?.focus();
+      if (text === "12345678") {
         setOtpVerified(true);
         setTimeout(() => goNext(), 400);
       } else {
@@ -443,8 +445,8 @@ export default function BuyerOnboardingPage() {
             <Lock size={24} color={S.blue} />
           </div>
           <h1 style={{ fontSize: 20, fontWeight: 700, color: S.text, marginBottom: 6 }}>Vérifiez votre email</h1>
-          <p style={{ fontSize: 13, color: S.sec, marginBottom: 24 }}>Un code à 6 chiffres a été envoyé à <strong>{email}</strong></p>
-          <div className={otpShake ? "tf-shake" : ""} style={{ display: "flex", gap: 10, justifyContent: "center", marginBottom: 16 }} onPaste={handleOtpPaste}>
+          <p style={{ fontSize: 13, color: S.sec, marginBottom: 24 }}>Un code à 8 chiffres a été envoyé à <strong>{email}</strong></p>
+          <div className={otpShake ? "tf-shake" : ""} style={{ display: "flex", gap: 10, justifyContent: "center", marginBottom: 16, flexWrap: "wrap" }} onPaste={handleOtpPaste}>
             {otpDigits.map((d, i) => (
               <input key={i} ref={el => { otpRefs.current[i] = el; }} type="text" inputMode="numeric" maxLength={1} value={d}
                 onChange={e => handleOtpChange(i, e.target.value)}

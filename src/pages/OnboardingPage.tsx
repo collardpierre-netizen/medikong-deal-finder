@@ -161,9 +161,11 @@ export default function OnboardingPage() {
   const [role, setRole] = useState<"buyer" | "seller" | "">("");
 
   /* ─── Shared state ─── */
+  const OTP_LENGTH = 8;
+  const EMPTY_OTP = Array.from({ length: OTP_LENGTH }, () => "");
   const [email, setEmail] = useState("");
   const [emailTouched, setEmailTouched] = useState(false);
-  const [otpDigits, setOtpDigits] = useState(["", "", "", "", "", ""]);
+  const [otpDigits, setOtpDigits] = useState(EMPTY_OTP);
   const [otpError, setOtpError] = useState(false);
   const [otpShake, setOtpShake] = useState(false);
   const [otpVerified, setOtpVerified] = useState(false);
@@ -616,7 +618,7 @@ export default function OnboardingPage() {
 
     setSendingOtp(true);
     setOtpError(false);
-    setOtpDigits(["", "", "", "", "", ""]);
+    setOtpDigits([...EMPTY_OTP]);
     setEmailDeliveryMode("code_or_link");
     persistOnboardingDraft(email, "code_or_link");
 
@@ -742,7 +744,7 @@ export default function OnboardingPage() {
     if (verifyingOtp) return;
     if (!/^\d?$/.test(val)) return;
     const nd = [...otpDigits]; nd[idx] = val; setOtpDigits(nd); setOtpError(false);
-    if (val && idx < 5) otpRefs.current[idx + 1]?.focus();
+    if (val && idx < OTP_LENGTH - 1) otpRefs.current[idx + 1]?.focus();
     if (nd.every(d => d)) {
       verifyOtpCode(nd.join(""));
     }
@@ -753,9 +755,9 @@ export default function OnboardingPage() {
   };
   const handleOtpPaste = (e: React.ClipboardEvent) => {
     if (verifyingOtp) return;
-    const text = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
-    if (text.length === 6) {
-      e.preventDefault(); setOtpDigits(text.split("")); otpRefs.current[5]?.focus();
+    const text = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, OTP_LENGTH);
+    if (text.length === OTP_LENGTH) {
+      e.preventDefault(); setOtpDigits(text.split("")); otpRefs.current[OTP_LENGTH - 1]?.focus();
       verifyOtpCode(text);
     }
   };
@@ -883,14 +885,14 @@ export default function OnboardingPage() {
         </div>
         <h1 style={{ fontSize: 20, fontWeight: 700, color: S.text, marginBottom: 6 }}>Vérifiez votre email</h1>
         <p style={{ fontSize: 13, color: S.sec, marginBottom: 8 }}>
-          Un code à 6 chiffres a été envoyé à <strong>{email}</strong>
+          Un code à 8 chiffres a été envoyé à <strong>{email}</strong>
         </p>
         <div style={{ background: S.blueBg, border: `1px solid ${S.blue}20`, borderRadius: S.radius, padding: "16px 20px", marginBottom: 20, textAlign: "left" }}>
           <p style={{ fontSize: 13, color: S.text, margin: 0, fontWeight: 600, marginBottom: 4 }}>
             📩 Entrez le code reçu par email
           </p>
           <p style={{ fontSize: 12, color: S.sec, margin: 0, lineHeight: 1.6 }}>
-            Ouvrez votre boîte mail et saisissez le code à 6 chiffres ci-dessous.
+            Ouvrez votre boîte mail et saisissez le code à 8 chiffres ci-dessous.
           </p>
         </div>
 
@@ -950,7 +952,7 @@ export default function OnboardingPage() {
                 if (error) throw error;
               } catch(e) { console.error(e); }
               setOtpTimer(59);
-              setOtpDigits(["", "", "", "", "", ""]);
+              setOtpDigits([...EMPTY_OTP]);
               setOtpError(false);
               otpRefs.current[0]?.focus();
             }}>Renvoyer le code</button>
@@ -1084,7 +1086,7 @@ export default function OnboardingPage() {
         <div>
           <BackLink onClick={goBack} />
           <h1 style={{ fontSize: 20, fontWeight: 700, color: S.text, marginBottom: 6 }}>Quelle est votre adresse email ?</h1>
-          <p style={{ fontSize: 13, color: S.sec, marginBottom: 20 }}>Nous vous enverrons un code de vérification à 6 chiffres.</p>
+          <p style={{ fontSize: 13, color: S.sec, marginBottom: 20 }}>Nous vous enverrons un code de vérification à 8 chiffres.</p>
           <TfInput value={email} onChange={v => { setEmail(v); setEmailTouched(true); }} placeholder="votre@email.com" type="email" error={emailError} autoFocus />
           <div style={{ marginTop: 16 }}>
             <Cta onClick={handleSendOtp} disabled={!isEmailValid} loading={sendingOtp}>{sendingOtp ? "Envoi en cours..." : "Recevoir le code"}</Cta>
@@ -1198,7 +1200,7 @@ export default function OnboardingPage() {
         <div>
           <BackLink onClick={goBack} />
           <h1 style={{ fontSize: 20, fontWeight: 700, color: S.text, marginBottom: 6 }}>Votre adresse email professionnelle</h1>
-          <p style={{ fontSize: 13, color: S.sec, marginBottom: 20 }}>Nous vous enverrons un code de vérification à 6 chiffres.</p>
+          <p style={{ fontSize: 13, color: S.sec, marginBottom: 20 }}>Nous vous enverrons un code de vérification à 8 chiffres.</p>
           <TfInput value={email} onChange={v => { setEmail(v); setEmailTouched(true); }} placeholder="pro@entreprise.com" type="email" error={emailError} autoFocus />
           <div style={{ marginTop: 16 }}>
             <Cta onClick={handleSendOtp} disabled={!isEmailValid} loading={sendingOtp}>{sendingOtp ? "Envoi en cours..." : "Recevoir le code"}</Cta>

@@ -53,7 +53,7 @@ export function Navbar() {
       <div className="mk-container flex items-center h-16 gap-4">
         {/* Logo */}
         <Link to="/" className="flex items-center shrink-0">
-          <img src={logoHorizontal} alt="MediKong" className="h-14" />
+          <img src={logoHorizontal} alt="MediKong" className="h-[67px]" />
         </Link>
 
         {/* Search bar — hidden on homepage */}

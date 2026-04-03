@@ -165,6 +165,34 @@ export function useCatalogProducts(filters: CatalogFilters) {
         default: query = query.order("offer_count", { ascending: false }); break;
       }
 
+      // Boost featured categories: if default sort + no category filter, fetch featured category IDs and reorder
+      if (filters.sort === "relevance" && !filters.category) {
+        try {
+          const { data: featured } = await supabase
+            .from("cms_featured_categories")
+            .select("category_id")
+            .eq("is_active", true)
+            .order("sort_order", { ascending: true });
+          if (featured && featured.length > 0) {
+            const featuredIds = new Set(featured.map(f => f.category_id));
+            const { data: rawData, error: rawError, count: rawCount } = await query;
+            if (rawError) throw rawError;
+            const products = rawData || [];
+            // Sort: featured categories first, then rest
+            const boosted = products.sort((a: any, b: any) => {
+              const aFeatured = featuredIds.has(a.category_id);
+              const bFeatured = featuredIds.has(b.category_id);
+              if (aFeatured && !bFeatured) return -1;
+              if (!aFeatured && bFeatured) return 1;
+              return 0; // Keep existing order within groups
+            });
+            return { products: boosted as CatalogProduct[], total: rawCount || 0 };
+          }
+        } catch {
+          // Fall through to normal query if featured categories fail
+        }
+      }
+
       const offset = (filters.page - 1) * filters.perPage;
       query = query.range(offset, offset + filters.perPage - 1);
 

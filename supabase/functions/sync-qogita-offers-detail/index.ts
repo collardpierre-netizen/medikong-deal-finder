@@ -300,13 +300,13 @@ Deno.serve(async (req) => {
     syncLogId = newLog!.id;
   }
 
-  // Count total products to process and calculate remaining
+  // Count products with active offers (incremental: only those with offer_count > 0)
   const { count: totalProducts } = await sb
     .from("products")
     .select("id", { count: "exact", head: true })
-    .eq("source", "qogita")
     .eq("is_active", true)
-    .not("gtin", "is", null);
+    .not("gtin", "is", null)
+    .gt("offer_count", 0);
 
   const remaining = Math.max((totalProducts || 0) - lastOffset, 0);
 

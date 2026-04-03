@@ -161,7 +161,7 @@ export default function OnboardingPage() {
   const [role, setRole] = useState<"buyer" | "seller" | "">("");
 
   /* ─── Shared state ─── */
-  const OTP_LENGTH = 8;
+  const OTP_LENGTH = 6;
   const EMPTY_OTP = Array.from({ length: OTP_LENGTH }, () => "");
   const [email, setEmail] = useState("");
   const [emailTouched, setEmailTouched] = useState(false);

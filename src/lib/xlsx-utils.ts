@@ -103,13 +103,30 @@ function slugify(s: string) {
   return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 }
 
-export async function importProducts(file: File): Promise<{ created: number; updated: number; skipped: number; errors: { line: number; name: string; code: string; message: string }[]; brandsCreated: number; manufacturersCreated: number; totalRows: number }> {
+export interface ImportProgress {
+  phase: "reading" | "brands" | "manufacturers" | "products" | "resolving" | "done";
+  current: number;
+  total: number;
+  created: number;
+  updated: number;
+  skipped: number;
+  errors: { line: number; name: string; code: string; message: string }[];
+  brandsCreated: number;
+  manufacturersCreated: number;
+}
+
+export async function importProducts(file: File, onProgress?: (p: ImportProgress) => void): Promise<{ created: number; updated: number; skipped: number; errors: { line: number; name: string; code: string; message: string }[]; brandsCreated: number; manufacturersCreated: number; totalRows: number }> {
   const rows = await readXlsx(file);
   let created = 0;
   let updated = 0;
   let skipped = 0;
   let brandsCreated = 0;
   let manufacturersCreated = 0;
+  const notify = () => onProgress?.({ phase: currentPhase, current: currentIdx, total: rows.length, created, updated, skipped, errors, brandsCreated, manufacturersCreated });
+  let currentPhase: ImportProgress["phase"] = "reading";
+  let currentIdx = 0;
+  notify();
+
   const errors: { line: number; name: string; code: string; message: string }[] = [];
 
   // --- Auto-create brands & manufacturers ---
@@ -121,6 +138,7 @@ export async function importProducts(file: File): Promise<{ created: number; upd
     if (r.manufacturer_name) mfrNames.add(String(r.manufacturer_name).trim());
   }
 
+  currentPhase = "manufacturers"; notify();
   if (mfrNames.size > 0) {
     const { data: existingMfrs } = await supabase.from("manufacturers").select("name").limit(5000);
     const existingSet = new Set((existingMfrs || []).map(m => m.name.toLowerCase()));
@@ -135,6 +153,7 @@ export async function importProducts(file: File): Promise<{ created: number; upd
     }
   }
 
+  currentPhase = "brands"; notify();
   if (brandNames.size > 0) {
     const { data: existingBrands } = await supabase.from("brands").select("name").limit(5000);
     const existingSet = new Set((existingBrands || []).map(b => b.name.toLowerCase()));
@@ -158,9 +177,12 @@ export async function importProducts(file: File): Promise<{ created: number; upd
   allProducts.forEach((p: any) => existingSlugs.add(p.slug));
 
   // --- Import products ---
+  currentPhase = "products"; notify();
   for (let i = 0; i < rows.length; i++) {
     const r = rows[i] as any;
     const lineNum = i + 2; // +2 for header row + 0-index
+    currentIdx = i + 1;
+    if (i % 10 === 0) notify(); // throttle progress updates
     if (!r.name) { errors.push({ line: lineNum, name: "—", code: "MISSING_NAME", message: "Nom du produit manquant" }); skipped++; continue; }
     const slug = r.slug || slugify(r.name);
     const isUpdate = existingSlugs.has(slug);
@@ -195,8 +217,10 @@ export async function importProducts(file: File): Promise<{ created: number; upd
       else { created++; existingSlugs.add(slug); }
     }
   }
+  currentPhase = "resolving"; currentIdx = rows.length; notify();
   await supabase.rpc("resolve_product_brands");
   await supabase.rpc("resolve_product_categories");
+  currentPhase = "done"; notify();
   return { created, updated, skipped, errors, brandsCreated, manufacturersCreated, totalRows: rows.length };
 }
 

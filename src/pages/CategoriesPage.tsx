@@ -267,7 +267,7 @@ export default function CategoriesPage() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3 }}
                   >
-                    <HoverCard className="border border-mk-line rounded-xl bg-white">
+                    <HoverCard className="border border-mk-line rounded-xl bg-white h-full">
                       {hasChildren ? (
                         <button
                           onClick={() => {

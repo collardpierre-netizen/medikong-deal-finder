@@ -435,7 +435,7 @@ export default function ProductPage() {
     queryFn: async () => {
       const { data } = await supabase
         .from("products")
-        .select("*, brands(name, slug), categories(name, slug), manufacturers:manufacturer_id(name)")
+        .select("*, brands(name, slug), categories(name, slug), manufacturers:manufacturer_id(name, slug)")
         .eq("id", product!.id)
         .single();
       return data;
@@ -592,9 +592,10 @@ export default function ProductPage() {
 
   // Specs table — only show rows with real data
   const FLAG_MAP: Record<string, string> = { BE: "🇧🇪", DE: "🇩🇪", FR: "🇫🇷", NL: "🇳🇱", IT: "🇮🇹", ES: "🇪🇸" };
-  const specsRaw: [string, string | undefined | null][] = [
-    ["Marque", brandData?.name || product.brand],
-    ["Fabricant", productDetails?.manufacturers ? (productDetails.manufacturers as any)?.name : undefined],
+  const manufacturerInfo = productDetails?.manufacturers as any;
+  const specsRaw: [string, string | undefined | null, string?][] = [
+    ["Marque", brandData?.name || product.brand, brandData?.slug ? `/marque/${brandData.slug}` : undefined],
+    ["Fabricant", manufacturerInfo?.name, manufacturerInfo?.slug ? `/fabricant/${manufacturerInfo.slug}` : undefined],
     ["Categorie", categoryData?.category?.name || productDetails?.category_name],
     ["GTIN/EAN", product.gtin || product.ean],
     ["CNK", product.cnk],
@@ -613,7 +614,7 @@ export default function ProductPage() {
       return [label, value] as [string, string];
     }),
   ];
-  const specs = specsRaw.filter(([, val]) => val && val !== "—" && val !== "null") as [string, string][];
+  const specs = specsRaw.filter(([, val]) => val && val !== "—" && val !== "null") as [string, string, string?][];
 
   return (
     <Layout>
@@ -1082,10 +1083,14 @@ export default function ProductPage() {
               <div className="mb-8">
                 <h2 className="text-lg font-bold text-foreground mb-3">Details du produit</h2>
                 <div className="border border-border rounded-xl overflow-hidden">
-                  {specs.map(([key, val], i) => (
+                  {specs.map(([key, val, link], i) => (
                     <div key={key} className={`flex justify-between py-3 px-4 text-sm ${i % 2 === 0 ? "bg-muted/50" : ""}`}>
                       <span className="text-muted-foreground">{key}</span>
-                      <span className="text-foreground font-medium text-right">{val}</span>
+                      {link ? (
+                        <Link to={link} className="text-primary font-medium text-right hover:underline">{val}</Link>
+                      ) : (
+                        <span className="text-foreground font-medium text-right">{val}</span>
+                      )}
                     </div>
                   ))}
                 </div>

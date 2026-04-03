@@ -146,11 +146,13 @@ export default function BuyerOnboardingPage() {
   const screenRef = useRef<HTMLDivElement>(null);
 
   /* State */
+  const OTP_LENGTH = 8;
+  const EMPTY_OTP = Array.from({ length: OTP_LENGTH }, () => "");
   const [accountType, setAccountType] = useState("");
   const [buyerProfile, setBuyerProfile] = useState("");
   const [email, setEmail] = useState("");
   const [emailTouched, setEmailTouched] = useState(false);
-  const [otpDigits, setOtpDigits] = useState(["", "", "", "", "", ""]);
+  const [otpDigits, setOtpDigits] = useState(EMPTY_OTP);
   const [otpError, setOtpError] = useState(false);
   const [otpShake, setOtpShake] = useState(false);
   const [otpVerified, setOtpVerified] = useState(false);

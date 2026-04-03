@@ -389,6 +389,37 @@ export default function BuyerOnboardingPage() {
         </div>
       );
 
+      case 1.5: return (
+        <div>
+          <BackLink onClick={goBack} />
+          <h1 style={{ fontSize: 20, fontWeight: 700, color: S.text, marginBottom: 6 }}>Quel est votre type d'établissement ?</h1>
+          <p style={{ fontSize: 13, color: S.sec, marginBottom: 20 }}>Nous personnalisons votre catalogue en fonction de votre activité.</p>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }} className="max-[640px]:!grid-cols-1">
+            {professionTypes.map((pt: any) => {
+              const sel = professionTypeId === pt.id;
+              const PtIcon = resolveIcon(pt.icon);
+              return (
+                <button key={pt.id} onClick={() => { setProfessionTypeId(pt.id); setTimeout(goNext, 350); }}
+                  style={{ position: "relative", background: sel ? S.blueBg : "#fff", border: sel ? `2px solid ${S.blue}` : `1px solid ${S.line}`, borderRadius: S.radius, padding: "14px 16px", textAlign: "left", cursor: "pointer", transition: "all .2s" }}
+                  onMouseEnter={e => { if (!sel) { (e.currentTarget as HTMLElement).style.borderColor = S.blue; (e.currentTarget as HTMLElement).style.boxShadow = "0 2px 12px rgba(0,0,0,.08)"; } }}
+                  onMouseLeave={e => { if (!sel) { (e.currentTarget as HTMLElement).style.borderColor = S.line; (e.currentTarget as HTMLElement).style.boxShadow = "none"; } }}
+                >
+                  {sel && <div className="tf-check-pop" style={{ position: "absolute", top: 8, right: 8, width: 20, height: 20, borderRadius: "50%", background: S.blue, display: "flex", alignItems: "center", justifyContent: "center" }}><Check size={12} color="#fff" /></div>}
+                  <div style={{ width: 32, height: 32, borderRadius: S.radiusSm, background: S.blueBg, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 8 }}>
+                    <PtIcon size={16} color={S.blue} />
+                  </div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: S.text }}>{pt.name}</div>
+                  <div style={{ fontSize: 11, color: S.ter }}>{pt.description}</div>
+                </button>
+              );
+            })}
+          </div>
+          <button onClick={goNext} style={{ display: "block", margin: "16px auto 0", fontSize: 12, color: S.sec, background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>
+            Passer cette étape
+          </button>
+        </div>
+      );
+
       case 2: return (
         <div>
           <BackLink onClick={goBack} />

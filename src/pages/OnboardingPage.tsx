@@ -744,7 +744,7 @@ export default function OnboardingPage() {
     if (verifyingOtp) return;
     if (!/^\d?$/.test(val)) return;
     const nd = [...otpDigits]; nd[idx] = val; setOtpDigits(nd); setOtpError(false);
-    if (val && idx < 5) otpRefs.current[idx + 1]?.focus();
+    if (val && idx < OTP_LENGTH - 1) otpRefs.current[idx + 1]?.focus();
     if (nd.every(d => d)) {
       verifyOtpCode(nd.join(""));
     }
@@ -755,9 +755,9 @@ export default function OnboardingPage() {
   };
   const handleOtpPaste = (e: React.ClipboardEvent) => {
     if (verifyingOtp) return;
-    const text = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
-    if (text.length === 6) {
-      e.preventDefault(); setOtpDigits(text.split("")); otpRefs.current[5]?.focus();
+    const text = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, OTP_LENGTH);
+    if (text.length === OTP_LENGTH) {
+      e.preventDefault(); setOtpDigits(text.split("")); otpRefs.current[OTP_LENGTH - 1]?.focus();
       verifyOtpCode(text);
     }
   };

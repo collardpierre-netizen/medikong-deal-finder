@@ -104,7 +104,7 @@ export default function CataloguePage() {
                       <X size={20} />
                     </button>
                   </div>
-                  <CatalogSidebar filters={filters} setFilter={setFilter} clearAll={clearAll} />
+                  <CatalogSidebar filters={filters} setFilter={setFilter} clearAll={clearAll} resultCategoryIds={resultCategoryIds} />
                   <button
                     onClick={() => setMobileFilters(false)}
                     className="mt-6 w-full bg-primary text-primary-foreground py-2.5 rounded-md font-medium"

@@ -34,7 +34,7 @@ export function CatalogSidebar({ filters, setFilter, clearAll }: Props) {
   }, [brands, brandSearch]);
 
   // Close dropdown on outside click
-  import { useEffect } from "react";
+  useEffect(() => {
 
   const filteredBrands = useMemo(() => {
     let list = brands;

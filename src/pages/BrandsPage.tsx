@@ -26,14 +26,26 @@ export default function BrandsPage() {
   const { data: brands = [], isLoading } = useQuery<BrandItem[]>({
     queryKey: ["brands-page-active"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("brands")
-        .select("id, name, slug, product_count")
-        .eq("is_active", true)
-        .gt("product_count", 0)
-        .order("name");
-      if (error) throw error;
-      return data || [];
+      // Supabase caps at 1000 rows per request — paginate to fetch all
+      const PAGE_SIZE = 1000;
+      let all: BrandItem[] = [];
+      let page = 0;
+      let hasMore = true;
+      while (hasMore) {
+        const from = page * PAGE_SIZE;
+        const { data, error } = await supabase
+          .from("brands")
+          .select("id, name, slug, product_count")
+          .eq("is_active", true)
+          .gt("product_count", 0)
+          .order("name")
+          .range(from, from + PAGE_SIZE - 1);
+        if (error) throw error;
+        all = all.concat(data || []);
+        hasMore = (data?.length || 0) === PAGE_SIZE;
+        page++;
+      }
+      return all;
     },
     staleTime: 5 * 60 * 1000,
   });

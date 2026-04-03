@@ -74,6 +74,7 @@ function mapDbProduct(row: any, offersData?: any[]): Product {
     imageUrls: Array.isArray(row.image_urls) ? row.image_urls.filter(Boolean) : [],
     descriptionShort: row.short_description || undefined,
     brandId: row.brand_id || undefined,
+    brandSlug: row.brands?.slug || (row.brand_name ? slugify(row.brand_name) : undefined),
   };
 }
 

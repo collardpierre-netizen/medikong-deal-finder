@@ -95,8 +95,12 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
           <ProductImage product={product} />
         </Link>
       </div>
-      <Link to={`/produit/${product.slug}`}>
+      {product.brand && product.brandSlug ? (
+        <Link to={`/marque/${product.brandSlug}`} className="text-xs text-mk-sec hover:text-primary hover:underline mb-0.5 block">{product.brand}</Link>
+      ) : (
         <p className="text-xs text-mk-sec mb-0.5">{product.brand}</p>
+      )}
+      <Link to={`/produit/${product.slug}`}>
         <h3 className="text-sm font-medium text-mk-text leading-snug mb-2 line-clamp-2">{product.name}</h3>
       </Link>
       <div className="flex items-baseline gap-2 mb-1">

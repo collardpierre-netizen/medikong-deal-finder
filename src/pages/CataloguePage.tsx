@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
@@ -10,7 +10,7 @@ import type { CatalogViewMode } from "@/components/catalog/CatalogToolbar";
 import { CatalogPagination } from "@/components/catalog/CatalogPagination";
 import { ActiveFilters } from "@/components/catalog/ActiveFilters";
 import { UniversePills } from "@/components/layout/UniversePills";
-import { useCatalogFilters, useCatalogProducts } from "@/hooks/useCatalog";
+import { useCatalogFilters, useCatalogProducts, useCatalogBrands } from "@/hooks/useCatalog";
 import { Loader2, SlidersHorizontal, X } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 
@@ -24,11 +24,32 @@ export default function CataloguePage() {
       setFilter("category", slug);
     }
   }, [slug]);
+
+  // Auto-detect brand from search query and apply as brand filter
+  const { data: allBrands = [] } = useCatalogBrands();
+  const brandAutoApplied = useRef<string | null>(null);
+  useEffect(() => {
+    if (filters.search && allBrands.length > 0 && brandAutoApplied.current !== filters.search) {
+      const searchLower = filters.search.toLowerCase().trim();
+      const matchedBrand = allBrands.find(b => b.name.toLowerCase() === searchLower);
+      if (matchedBrand && !(filters.brands || []).includes(matchedBrand.slug)) {
+        brandAutoApplied.current = filters.search;
+        setFilter("brand", [matchedBrand.slug]);
+        setFilter("q", undefined);
+      }
+    }
+  }, [filters.search, allBrands]);
+
   const { data, isLoading } = useCatalogProducts(filters);
   const products = data?.products || [];
   const total = data?.total || 0;
   const [view, setView] = useState<CatalogViewMode>("grid");
   const [mobileFilters, setMobileFilters] = useState(false);
+
+  // Collect category IDs from results for contextual sidebar filtering
+  const resultCategoryIds = products.length > 0
+    ? [...new Set(products.map(p => p.category_id).filter(Boolean) as string[])]
+    : undefined;
 
   const title = filters.category
     ? filters.category.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase())
@@ -56,7 +77,7 @@ export default function CataloguePage() {
         <div className="flex gap-6">
           {/* Desktop sidebar */}
           <aside className="hidden lg:block w-[280px] shrink-0 sticky top-20 self-start max-h-[calc(100vh-6rem)] overflow-y-auto pr-4 border-r border-border">
-            <CatalogSidebar filters={filters} setFilter={setFilter} clearAll={clearAll} />
+            <CatalogSidebar filters={filters} setFilter={setFilter} clearAll={clearAll} resultCategoryIds={resultCategoryIds} />
           </aside>
 
           {/* Mobile filter drawer */}
@@ -83,7 +104,7 @@ export default function CataloguePage() {
                       <X size={20} />
                     </button>
                   </div>
-                  <CatalogSidebar filters={filters} setFilter={setFilter} clearAll={clearAll} />
+                  <CatalogSidebar filters={filters} setFilter={setFilter} clearAll={clearAll} resultCategoryIds={resultCategoryIds} />
                   <button
                     onClick={() => setMobileFilters(false)}
                     className="mt-6 w-full bg-primary text-primary-foreground py-2.5 rounded-md font-medium"

@@ -135,12 +135,12 @@ function OfferRow({
                   const tierPrice = isTVAC ? tier.price_incl_vat : tier.price_excl_vat;
                   const saving = i > 0 ? ((basePrice - tier.price_excl_vat) / basePrice * 100).toFixed(1) : null;
                   return (
-                    <div key={tier.id} className="flex items-center gap-2 relative" style={{ marginTop: i > 0 ? 6 : 0 }}>
+                    <div key={tier.id} className="flex items-center gap-3 relative whitespace-nowrap" style={{ marginTop: i > 0 ? 4 : 0 }}>
                       <div className="absolute left-[-14px] w-[7px] h-[7px] rounded-full bg-primary" />
-                      <span className={`text-sm ${i === 0 ? "font-bold text-green-700" : "text-muted-foreground"}`}>
-                        {formatEur(tierPrice)} €
+                      <span className={`text-sm tabular-nums ${i === 0 ? "font-bold text-green-700" : "text-muted-foreground"}`}>
+                        {formatEur(tierPrice)}&nbsp;€
                       </span>
-                      <span className="text-xs text-muted-foreground">MOV {formatEur(tier.mov_threshold)} €</span>
+                      <span className="text-xs text-muted-foreground tabular-nums">MOV&nbsp;{formatEur(tier.mov_threshold)}&nbsp;€</span>
                       {saving && <span className="text-xs text-green-600 font-medium">-{saving}%</span>}
                     </div>
                   );

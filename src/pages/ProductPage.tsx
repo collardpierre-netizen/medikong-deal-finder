@@ -42,6 +42,7 @@ function OfferRow({
   offer: Offer; productId: string; productName: string; productSlug: string;
   user: any; navigate: any; addToCart: any; isBest?: boolean; delay?: number; isTVAC?: boolean; categoryId?: string; bestPrice?: number;
 }) {
+  const maxQty = offer.stockQuantity > 0 ? offer.stockQuantity : 999;
   const [qty, setQty] = useState(offer.bundleSize > 1 ? offer.bundleSize : 1);
   const discountTiers = offer.discountTiers || [];
   const hasTiers = discountTiers.length > 1;
@@ -202,7 +203,7 @@ function OfferRow({
           <div className="flex items-center border border-border rounded-md">
             <button onClick={() => setQty(Math.max(1, qty - (offer.bundleSize > 1 ? offer.bundleSize : 1)))} className="px-2.5 py-2 text-muted-foreground hover:text-foreground"><Minus size={14} /></button>
             <span className="px-3 py-2 text-sm font-medium min-w-[40px] text-center">{qty}</span>
-            <button onClick={() => setQty(qty + (offer.bundleSize > 1 ? offer.bundleSize : 1))} className="px-2.5 py-2 text-muted-foreground hover:text-foreground"><Plus size={14} /></button>
+            <button onClick={() => setQty(Math.min(maxQty, qty + (offer.bundleSize > 1 ? offer.bundleSize : 1)))} className="px-2.5 py-2 text-muted-foreground hover:text-foreground" disabled={qty >= maxQty}><Plus size={14} /></button>
           </div>
           <motion.button className="bg-primary text-primary-foreground p-2.5 rounded-md" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={handleAdd}>
             <ShoppingCart size={16} />
@@ -225,7 +226,7 @@ function OfferRow({
           <div className="flex items-center border border-border rounded-md flex-1">
             <button onClick={() => setQty(Math.max(1, qty - 1))} className="px-2.5 py-2 text-muted-foreground"><Minus size={14} /></button>
             <span className="px-3 py-2 text-sm font-medium text-center flex-1">{qty}</span>
-            <button onClick={() => setQty(qty + 1)} className="px-2.5 py-2 text-muted-foreground"><Plus size={14} /></button>
+            <button onClick={() => setQty(Math.min(maxQty, qty + 1))} className="px-2.5 py-2 text-muted-foreground" disabled={qty >= maxQty}><Plus size={14} /></button>
           </div>
           <motion.button className="bg-primary text-primary-foreground px-4 py-2.5 rounded-md text-sm font-medium flex items-center gap-2" whileTap={{ scale: 0.95 }} onClick={handleAdd}>
             <ShoppingCart size={14} /> Ajouter
@@ -236,7 +237,7 @@ function OfferRow({
       {/* Delivery estimate */}
       <div className="flex items-center gap-1.5 mt-3 text-xs text-muted-foreground">
         <Truck size={13} />
-        <span>Livraison estimee : {offer.deliveryDays <= 7 ? `${offer.deliveryDays} jours` : `${Math.ceil(offer.deliveryDays / 7)} semaines`}</span>
+        <span>Livraison estimee : {offer.deliveryDays ? (offer.deliveryDays <= 7 ? `${offer.deliveryDays} jours` : `${Math.ceil(offer.deliveryDays / 7)} semaines`) : "Non communiquée"}</span>
       </div>
 
       <VendorSuggestions

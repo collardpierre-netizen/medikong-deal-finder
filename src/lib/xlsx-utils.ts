@@ -238,15 +238,18 @@ export async function importCategories(file: File): Promise<{ created: number; e
       if (parentCat) parentId = parentCat.id;
     }
     const slug = r.slug || slugify(r.name);
+    const isActive = r.is_active !== undefined ? (r.is_active === true || r.is_active === 1 || r.is_active === "1" || r.is_active === "true") : true;
     const { data: upserted, error } = await supabase.from("categories").upsert({
       name: r.name,
       slug,
       parent_id: parentId,
+      name_fr: r.name_fr || null,
       description: r.description || null,
       display_order: r.display_order ? Number(r.display_order) : 0,
       vat_rate: r.vat_rate ? Number(r.vat_rate) : null,
       hs_code: r.hs_code || null,
       icon: r.icon || null,
+      is_active: isActive,
     }, { onConflict: "slug" }).select("id").single();
     if (error) { errors.push(`${r.name}: ${error.message}`); continue; }
     created++;

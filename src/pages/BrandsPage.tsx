@@ -87,7 +87,7 @@ export default function BrandsPage() {
         <div className="mk-container py-6 md:py-8">
           <h1 className="text-2xl md:text-[28px] font-bold text-foreground mb-1">Toutes nos marques</h1>
           <p className="text-sm text-muted-foreground mb-4">
-            {brands.length} marques avec offres actives · {totalProducts.toLocaleString("fr-FR")}+ produits
+            {brands.length} marques avec offres actives · {totalProducts.toLocaleString("de-DE")}+ produits
           </p>
 
           {/* Search */}

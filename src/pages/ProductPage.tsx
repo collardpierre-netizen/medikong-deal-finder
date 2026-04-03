@@ -30,6 +30,10 @@ function formatEur(n: number): string {
   return n.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+function formatCount(n: number): string {
+  return n.toLocaleString("de-DE");
+}
+
 /* ── Offer Row ─────────────────────────────────────────── */
 function OfferRow({
   offer, productId, productName, productSlug, user, navigate, addToCart, isBest, delay = 0, isTVAC = false, categoryId,

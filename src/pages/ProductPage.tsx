@@ -1,5 +1,5 @@
 import { Layout } from "@/components/layout/Layout";
-import { isValidProductImage } from "@/lib/image-utils";
+import { isValidProductImage, getProductImageSrc } from "@/lib/image-utils";
 import { useProduct, useProductOffers, type Offer } from "@/hooks/useProducts";
 import { useCart } from "@/hooks/useCart";
 import { useAuth } from "@/contexts/AuthContext";
@@ -315,7 +315,8 @@ function VendorSuggestions({ vendorId, vendorSlug, vendorName, currentProductId,
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3">
                 {unique.map((s: any) => {
                   const p = s.products;
-                  const img = Array.isArray(p.image_urls) && p.image_urls[0] ? p.image_urls[0] : "/medikong-placeholder.png";
+                  const validImg = Array.isArray(p.image_urls) ? p.image_urls.find((u: string) => isValidProductImage(u)) : null;
+                  const img = validImg || getProductImageSrc(p.image_url);
                   return (
                     <Link key={p.id} to={`/produit/${p.slug}`} className="border border-border rounded-lg p-2 hover:shadow-sm transition-shadow group">
                       <img src={img} alt={p.name} className="w-full h-20 object-contain mb-1.5 rounded" onError={(e) => { (e.target as HTMLImageElement).src = "/medikong-placeholder.png"; }} />

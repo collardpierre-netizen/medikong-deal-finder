@@ -38,13 +38,9 @@ export default function SearchListView({ products }: Props) {
           >
             {/* Thumb */}
             <div className="w-12 h-12 bg-muted rounded flex items-center justify-center shrink-0">
-              {(p.imageUrls?.[0] || p.imageUrl) ? (
-                <img src={p.imageUrls?.[0] || p.imageUrl} alt={p.name} className="w-full h-full object-contain p-1" loading="lazy"
-                     referrerPolicy="no-referrer"
-                     onError={e => { e.currentTarget.src = "/product-placeholder.svg"; }} />
-              ) : (
-                <Package size={18} className="text-muted-foreground" />
-              )}
+              <img src={p.imageUrls?.[0] || p.imageUrl || "/medikong-placeholder.png"} alt={p.name} className="w-full h-full object-contain p-1" loading="lazy"
+                   referrerPolicy="no-referrer"
+                   onError={e => { e.currentTarget.src = "/medikong-placeholder.png"; }} />
             </div>
 
             {/* Name */}

@@ -297,7 +297,7 @@ export function ProductFormDialog({ open, onOpenChange, product, brands, manufac
                       referrerPolicy="no-referrer"
                       className="w-10 h-10 rounded object-contain border border-border bg-background"
                       onError={(e) => {
-                        (e.target as HTMLImageElement).src = "/product-placeholder.svg";
+                        (e.target as HTMLImageElement).src = "/medikong-placeholder.png";
                       }}
                     />
                     <div className="flex items-center gap-1">

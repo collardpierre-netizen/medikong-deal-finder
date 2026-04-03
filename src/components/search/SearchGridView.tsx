@@ -34,18 +34,14 @@ export default function SearchGridView({ products }: Props) {
 
             {/* Image */}
             <div className="aspect-square bg-muted flex items-center justify-center p-4">
-              {(p.imageUrls?.[0] || p.imageUrl) ? (
-                <img
-                  src={p.imageUrls?.[0] || p.imageUrl}
+              <img
+                  src={p.imageUrls?.[0] || p.imageUrl || "/medikong-placeholder.png"}
                   alt={p.name}
                   loading="lazy"
                   referrerPolicy="no-referrer"
                   className="w-full h-full object-contain"
-                  onError={e => { e.currentTarget.src = "/product-placeholder.svg"; }}
+                  onError={e => { e.currentTarget.src = "/medikong-placeholder.png"; }}
                 />
-              ) : (
-                <Package size={40} className="text-muted-foreground" />
-              )}
             </div>
 
             {/* Info */}

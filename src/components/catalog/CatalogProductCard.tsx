@@ -27,7 +27,7 @@ function ProductImg({ product, className = "" }: { product: CatalogProduct; clas
           loading="lazy"
           referrerPolicy="no-referrer"
           className="w-full h-full object-contain p-2"
-          onError={e => { e.currentTarget.src = "/product-placeholder.svg"; }}
+          onError={e => { e.currentTarget.src = "/medikong-placeholder.png"; }}
         />
       </div>
     );

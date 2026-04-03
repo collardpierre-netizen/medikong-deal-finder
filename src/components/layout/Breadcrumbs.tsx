@@ -43,27 +43,41 @@ export function Breadcrumbs() {
 
   // Don't show on homepage
   if (segments.length === 0) return null;
-  // Don't show on admin pages (they have their own navigation)
   if (segments[0] === "admin") return null;
-  // Don't show on product pages (they have their own breadcrumb)
   if (segments[0] === "produit") return null;
+
+  // Fetch vendor display name when on /vendeur/:slug
+  const vendorSlug = segments[0] === "vendeur" && segments[1] ? segments[1] : null;
+  const { data: vendorLabel } = useQuery({
+    queryKey: ["breadcrumb-vendor", vendorSlug],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("vendors")
+        .select("name, company_name, display_code, show_real_name")
+        .eq("slug", vendorSlug!)
+        .single();
+      if (!data) return null;
+      return getVendorPublicName(data);
+    },
+    enabled: !!vendorSlug,
+    staleTime: 5 * 60 * 1000,
+  });
 
   const crumbs = segments.map((seg, i) => {
     const rawPath = "/" + segments.slice(0, i + 1).join("/");
     const path = parentRoutes[seg] && i < segments.length - 1 ? parentRoutes[seg] : rawPath;
     const isLast = i === segments.length - 1;
-    // For vendor slug segments, show generic "Fournisseur [CODE]" instead of raw slug
     const prevSeg = i > 0 ? segments[i - 1] : "";
+
     let label = routeLabels[seg];
     if (!label) {
-      const decoded = decodeURIComponent(seg).replace(/-/g, " ");
-      // Sanitize any "qogita" reference from breadcrumb labels
-      label = decoded.replace(/qogita\s*/gi, "").trim();
-      if (!label) label = prevSeg === "vendeur" ? "Fournisseur" : "–";
-      // If it's a vendor slug child, prefix with "Fournisseur"
-      if (prevSeg === "vendeur" && !label.toLowerCase().startsWith("fournisseur")) {
-        label = `Fournisseur ${label.replace(/^\w/, (c) => c.toUpperCase())}`;
+      // For vendor slug, use the fetched public name
+      if (prevSeg === "vendeur" && vendorLabel) {
+        label = vendorLabel;
       } else {
+        const decoded = decodeURIComponent(seg).replace(/-/g, " ");
+        label = decoded.replace(/qogita\s*/gi, "").trim();
+        if (!label) label = prevSeg === "vendeur" ? "Fournisseur" : "–";
         label = label.replace(/^\w/, (c) => c.toUpperCase());
       }
     }

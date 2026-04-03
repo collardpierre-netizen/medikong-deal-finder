@@ -1083,10 +1083,14 @@ export default function ProductPage() {
               <div className="mb-8">
                 <h2 className="text-lg font-bold text-foreground mb-3">Details du produit</h2>
                 <div className="border border-border rounded-xl overflow-hidden">
-                  {specs.map(([key, val], i) => (
+                  {specs.map(([key, val, link], i) => (
                     <div key={key} className={`flex justify-between py-3 px-4 text-sm ${i % 2 === 0 ? "bg-muted/50" : ""}`}>
                       <span className="text-muted-foreground">{key}</span>
-                      <span className="text-foreground font-medium text-right">{val}</span>
+                      {link ? (
+                        <Link to={link} className="text-primary font-medium text-right hover:underline">{val}</Link>
+                      ) : (
+                        <span className="text-foreground font-medium text-right">{val}</span>
+                      )}
                     </div>
                   ))}
                 </div>

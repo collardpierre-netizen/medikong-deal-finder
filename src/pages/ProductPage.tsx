@@ -510,21 +510,22 @@ export default function ProductPage() {
   const { isFavorite, toggleFavorite } = useFavorites();
   const { trackActivity } = useRecentActivity();
 
-  // Fetch brand (by id or fallback by name)
+  // Fetch brand (by id or fallback by name / brand_name)
+  const brandLookupName = product?.brand || product?.brandName;
   const { data: brandData } = useQuery({
-    queryKey: ["brand-detail", product?.brandId, product?.brand],
+    queryKey: ["brand-detail", product?.brandId, brandLookupName],
     queryFn: async () => {
       if (product?.brandId) {
         const { data } = await supabase.from("brands").select("id, name, slug").eq("id", product.brandId).single();
         if (data) return data;
       }
-      if (product?.brand) {
-        const { data } = await supabase.from("brands").select("id, name, slug").eq("name", product.brand).maybeSingle();
+      if (brandLookupName) {
+        const { data } = await supabase.from("brands").select("id, name, slug").eq("name", brandLookupName).maybeSingle();
         return data;
       }
       return null;
     },
-    enabled: !!(product?.brandId || product?.brand),
+    enabled: !!(product?.brandId || brandLookupName),
   });
 
   // Fetch category tree for breadcrumb

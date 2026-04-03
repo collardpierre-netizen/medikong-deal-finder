@@ -511,7 +511,7 @@ export default function ProductPage() {
   const { trackActivity } = useRecentActivity();
 
   // Fetch brand (by id or fallback by name / brand_name)
-  const brandLookupName = product?.brand || product?.brandName;
+  const brandLookupName = product?.brand;
   const { data: brandData } = useQuery({
     queryKey: ["brand-detail", product?.brandId, brandLookupName],
     queryFn: async () => {

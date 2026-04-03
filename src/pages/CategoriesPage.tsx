@@ -99,16 +99,28 @@ export default function CategoriesPage() {
       cats = allCategories.filter(c => !c.parent_id);
     }
 
-    const visibleCats = currentParent
+    let visibleCats = currentParent
       ? cats
       : cats.filter(c => c.productCount > 0 || c.childCount > 0);
+
+    // Apply profession filter (only at root level, not when browsing children)
+    if (!showAll && isFiltered && visibleCategoryIds && !currentParent) {
+      const visibleSet = new Set(visibleCategoryIds);
+      // Also keep parent categories that have visible children
+      const parentIdsOfVisible = new Set<string>();
+      for (const id of visibleCategoryIds) {
+        const cat = allCategories.find(c => c.id === id);
+        if (cat?.parent_id) parentIdsOfVisible.add(cat.parent_id);
+      }
+      visibleCats = visibleCats.filter(c => visibleSet.has(c.id) || parentIdsOfVisible.has(c.id));
+    }
 
     return visibleCats.sort((a, b) => {
       if (b.childCount !== a.childCount) return b.childCount - a.childCount;
       if (b.productCount !== a.productCount) return b.productCount - a.productCount;
       return displayName(a).localeCompare(displayName(b), "fr", { sensitivity: "base" });
     });
-  }, [allCategories, currentParent]);
+  }, [allCategories, currentParent, showAll, isFiltered, visibleCategoryIds]);
 
   const filtered = useMemo(() => {
     if (!search.trim()) return currentLevelCategories;

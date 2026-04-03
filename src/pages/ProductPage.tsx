@@ -852,9 +852,14 @@ export default function ProductPage() {
             >
               {/* Brand */}
               {brandData ? (
-                <Link to={`/marque/${brandData.slug}`} className="text-sm font-semibold text-primary hover:underline mb-1 inline-flex items-center gap-1">
-                  <Tag size={13} /> {brandData.name}
-                </Link>
+                <div className="flex items-center gap-3 mb-1">
+                  <Link to={`/marque/${brandData.slug}`} className="text-sm font-semibold text-primary hover:underline inline-flex items-center gap-1">
+                    <Tag size={13} /> {brandData.name}
+                  </Link>
+                  <Link to={`/marque/${brandData.slug}`} className="text-[11px] text-primary/70 hover:text-primary hover:underline inline-flex items-center gap-0.5">
+                    Voir tous les produits <ChevronRight size={11} />
+                  </Link>
+                </div>
               ) : product.brand ? (
                 <p className="text-sm font-semibold text-muted-foreground mb-1">{product.brand}</p>
               ) : null}

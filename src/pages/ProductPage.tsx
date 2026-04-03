@@ -43,7 +43,8 @@ function OfferRow({
   user: any; navigate: any; addToCart: any; isBest?: boolean; delay?: number; isTVAC?: boolean; categoryId?: string; bestPrice?: number;
 }) {
   const maxQty = offer.stockQuantity > 0 ? offer.stockQuantity : 999;
-  const [qty, setQty] = useState(offer.bundleSize > 1 ? offer.bundleSize : 1);
+  const step = offer.bundleSize > 1 ? offer.bundleSize : 1;
+  const [qty, setQty] = useState(Math.min(maxQty, step));
   const discountTiers = offer.discountTiers || [];
   const hasTiers = discountTiers.length > 1;
   const tiers = (offer.priceTiers && offer.priceTiers.length > 0) ? offer.priceTiers : [];
@@ -64,7 +65,8 @@ function OfferRow({
     addToCart.mutate({
       offerId: offer.id,
       productId,
-      quantity: qty,
+      quantity: Math.min(qty, maxQty),
+      maxQuantity: maxQty,
       vendorId: offer.sellerId,
       priceExclVat: offer.unitPriceEur,
       productData: { id: productId, name: productName, brand: "", slug: productSlug, price: offer.unitPriceEur },

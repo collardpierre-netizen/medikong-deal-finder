@@ -1041,7 +1041,7 @@ export default function ProductPage() {
                             <span className="text-xs text-muted-foreground">Trie par prix</span>
                           </div>
                           <span className="text-sm text-primary font-medium">
-                            {otherOffers.reduce((s, o) => s + o.stockQuantity, 0).toLocaleString("fr-FR")} disponibles
+                            {formatCount(otherOffers.reduce((s, o) => s + o.stockQuantity, 0))} disponibles
                           </span>
                         </div>
 

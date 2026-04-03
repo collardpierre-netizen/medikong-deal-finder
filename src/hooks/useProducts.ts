@@ -95,9 +95,12 @@ export function useFeaturedProducts(limit = 10, options?: { promotion?: boolean;
       let query = supabase
         .from("products")
         .select("id, slug, name, brand_name, brand_id, gtin, cnk_code, image_urls, short_description, is_promotion, promotion_label, best_price_excl_vat, best_price_incl_vat, offer_count, total_stock, is_in_stock, category_name, brands(slug)")
-        .eq("is_active", true)
-        .gt("offer_count", 0)
-        .gt("best_price_excl_vat", 0);
+        .eq("is_active", true);
+
+      // Only filter on offers/price when NOT browsing a specific brand
+      if (!options?.brandSlug) {
+        query = query.gt("offer_count", 0).gt("best_price_excl_vat", 0);
+      }
 
       if (options?.promotion) query = query.eq("is_promotion", true);
       if (options?.brandSlug) {
@@ -105,7 +108,6 @@ export function useFeaturedProducts(limit = 10, options?: { promotion?: boolean;
         if (brand) {
           query = query.eq("brand_id", brand.id);
         } else {
-          // Brand not found — return empty instead of unfiltered results
           return [];
         }
       }

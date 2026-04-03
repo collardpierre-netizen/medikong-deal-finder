@@ -36,7 +36,7 @@ const useManufacturerProducts = (id: string | null) =>
     queryKey: ["manufacturer-products", id],
     queryFn: async () => {
       if (!id) return [];
-      const { data, error } = await supabase.from("products").select("*").eq("manufacturer_id", id).eq("is_active", true).order("best_price_excl_vat", { ascending: true }).limit(12);
+      const { data, error } = await supabase.from("products").select("*").eq("manufacturer_id", id).eq("is_active", true).order("offer_count", { ascending: false }).limit(12);
       if (error) throw error;
       return data;
     },

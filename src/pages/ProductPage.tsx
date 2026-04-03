@@ -211,6 +211,14 @@ function OfferRow({
         <Truck size={13} />
         <span>Livraison estimee : {offer.deliveryDays <= 7 ? `${offer.deliveryDays} jours` : `${Math.ceil(offer.deliveryDays / 7)} semaines`}</span>
       </div>
+
+      <VendorSuggestions
+        vendorId={offer.sellerId}
+        vendorSlug={offer.sellerSlug}
+        vendorName={offer.sellerName}
+        currentProductId={productId}
+        categoryId={categoryId}
+      />
     </motion.div>
   );
 }

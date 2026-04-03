@@ -989,7 +989,7 @@ export default function ProductPage() {
                             <Award size={18} className="text-primary" />
                             <h3 className="text-base md:text-lg font-bold text-foreground">Meilleure offre</h3>
                           </div>
-                          <span className="text-sm text-primary font-medium">{totalStock.toLocaleString("fr-FR")} disponibles</span>
+                          <span className="text-sm text-primary font-medium">{formatCount(totalStock)} disponibles</span>
                         </div>
 
                         <div className="hidden md:grid grid-cols-[1.5fr_1fr_1fr_0.8fr_1.5fr] gap-3 px-1 pb-3 text-xs font-semibold text-muted-foreground border-b border-border">

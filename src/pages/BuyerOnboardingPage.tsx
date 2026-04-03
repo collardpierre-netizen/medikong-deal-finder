@@ -172,7 +172,7 @@ export default function BuyerOnboardingPage() {
       if (error) throw error;
       return data || [];
     },
-  });
+  const [phone, setPhone] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [vatNumber, setVatNumber] = useState("");
   const [country, setCountry] = useState("Belgique");

@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import {
   Copy, Sliders, ShoppingCart, Shield, Check, Truck, Minus, Plus,
-  Heart, Tag, Package, ChevronRight, Home, Star, Info, Award, Globe, BarChart3, Calculator, TrendingDown, Bell, ExternalLink, Lock, ArrowRight, HelpCircle
+  Heart, Tag, Package, ChevronRight, Home, Star, Info, Award, Globe, BarChart3, Calculator, TrendingDown, Bell, ExternalLink, Lock, ArrowRight, HelpCircle, ChevronDown
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useFavorites, useRecentActivity } from "@/hooks/useFavorites";
@@ -32,10 +32,10 @@ function formatEur(n: number): string {
 
 /* ── Offer Row ─────────────────────────────────────────── */
 function OfferRow({
-  offer, productId, productName, productSlug, user, navigate, addToCart, isBest, delay = 0, isTVAC = false,
+  offer, productId, productName, productSlug, user, navigate, addToCart, isBest, delay = 0, isTVAC = false, categoryId,
 }: {
   offer: Offer; productId: string; productName: string; productSlug: string;
-  user: any; navigate: any; addToCart: any; isBest?: boolean; delay?: number; isTVAC?: boolean;
+  user: any; navigate: any; addToCart: any; isBest?: boolean; delay?: number; isTVAC?: boolean; categoryId?: string;
 }) {
   const [qty, setQty] = useState(offer.bundleSize > 1 ? offer.bundleSize : 1);
   const discountTiers = offer.discountTiers || [];
@@ -211,7 +211,105 @@ function OfferRow({
         <Truck size={13} />
         <span>Livraison estimee : {offer.deliveryDays <= 7 ? `${offer.deliveryDays} jours` : `${Math.ceil(offer.deliveryDays / 7)} semaines`}</span>
       </div>
+
+      <VendorSuggestions
+        vendorId={offer.sellerId}
+        vendorSlug={offer.sellerSlug}
+        vendorName={offer.sellerName}
+        currentProductId={productId}
+        categoryId={categoryId}
+      />
     </motion.div>
+  );
+}
+
+/* ── Vendor Suggestions (collapsible) ──────────────────── */
+function VendorSuggestions({ vendorId, vendorSlug, vendorName, currentProductId, categoryId }: {
+  vendorId: string; vendorSlug?: string; vendorName: string; currentProductId: string; categoryId?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const { data: suggestions = [], isLoading } = useQuery({
+    queryKey: ["vendor-suggestions", vendorId, currentProductId, categoryId],
+    enabled: open,
+    queryFn: async () => {
+      // Try same category first, fallback to any
+      let query = supabase
+        .from("offers")
+        .select("product_id, products!inner(id, slug, name, brand_name, image_urls, best_price_excl_vat, offer_count)")
+        .eq("vendor_id", vendorId)
+        .eq("is_active", true)
+        .neq("product_id", currentProductId)
+        .order("products(offer_count)", { ascending: false })
+        .limit(4);
+      if (categoryId) query = query.eq("products.category_id", categoryId);
+      const { data } = await query;
+      if (data && data.length >= 2) return data;
+      // Fallback without category filter
+      const { data: fallback } = await supabase
+        .from("offers")
+        .select("product_id, products!inner(id, slug, name, brand_name, image_urls, best_price_excl_vat, offer_count)")
+        .eq("vendor_id", vendorId)
+        .eq("is_active", true)
+        .neq("product_id", currentProductId)
+        .order("products(offer_count)", { ascending: false })
+        .limit(4);
+      return fallback || [];
+    },
+    staleTime: 10 * 60 * 1000,
+  });
+
+  // Deduplicate by product_id
+  const unique = Array.from(new Map(suggestions.map((s: any) => [s.product_id, s])).values()).slice(0, 4) as any[];
+
+  return (
+    <div className="mt-2 border-t border-dashed border-border pt-2">
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors"
+      >
+        <ChevronDown size={14} className={`transition-transform ${open ? "rotate-180" : ""}`} />
+        Autres produits populaires de ce fournisseur
+      </button>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            {isLoading ? (
+              <div className="py-4 text-center text-xs text-muted-foreground">Chargement…</div>
+            ) : unique.length === 0 ? (
+              <div className="py-3 text-center text-xs text-muted-foreground">Aucun autre produit disponible</div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3">
+                {unique.map((s: any) => {
+                  const p = s.products;
+                  const img = Array.isArray(p.image_urls) && p.image_urls[0] ? p.image_urls[0] : "/medikong-placeholder.png";
+                  return (
+                    <Link key={p.id} to={`/produit/${p.slug}`} className="border border-border rounded-lg p-2 hover:shadow-sm transition-shadow group">
+                      <img src={img} alt={p.name} className="w-full h-20 object-contain mb-1.5 rounded" onError={(e) => { (e.target as HTMLImageElement).src = "/medikong-placeholder.png"; }} />
+                      <p className="text-[10px] text-muted-foreground">{p.brand_name}</p>
+                      <p className="text-xs font-medium text-foreground line-clamp-2 leading-tight group-hover:text-primary transition-colors">{p.name}</p>
+                      {p.best_price_excl_vat > 0 && (
+                        <p className="text-xs font-bold text-green-700 mt-1">{formatEur(Number(p.best_price_excl_vat))} €</p>
+                      )}
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+            {vendorSlug && (
+              <Link to={`/vendeur/${vendorSlug}`} className="flex items-center justify-center gap-1 text-xs font-medium text-primary hover:underline mt-3 mb-1">
+                Voir tout le catalogue <ChevronRight size={14} />
+              </Link>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
 
@@ -890,6 +988,7 @@ export default function ProductPage() {
                           addToCart={addToCart}
                           isBest
                           isTVAC={isTVAC}
+                          categoryId={categoryData?.category?.id}
                         />
                       </div>
                     ) : (
@@ -944,6 +1043,7 @@ export default function ProductPage() {
                             addToCart={addToCart}
                             delay={i * 0.06}
                             isTVAC={isTVAC}
+                            categoryId={categoryData?.category?.id}
                           />
                         ))}
                       </div>

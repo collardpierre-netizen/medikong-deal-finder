@@ -614,7 +614,7 @@ export default function ProductPage() {
       return [label, value] as [string, string];
     }),
   ];
-  const specs = specsRaw.filter(([, val]) => val && val !== "—" && val !== "null") as [string, string][];
+  const specs = specsRaw.filter(([, val]) => val && val !== "—" && val !== "null") as [string, string, string?][];
 
   return (
     <Layout>

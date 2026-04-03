@@ -77,7 +77,7 @@ export default function CataloguePage() {
         <div className="flex gap-6">
           {/* Desktop sidebar */}
           <aside className="hidden lg:block w-[280px] shrink-0 sticky top-20 self-start max-h-[calc(100vh-6rem)] overflow-y-auto pr-4 border-r border-border">
-            <CatalogSidebar filters={filters} setFilter={setFilter} clearAll={clearAll} />
+            <CatalogSidebar filters={filters} setFilter={setFilter} clearAll={clearAll} resultCategoryIds={resultCategoryIds} />
           </aside>
 
           {/* Mobile filter drawer */}

@@ -244,6 +244,7 @@ export function useProductOffers(productId: string | undefined) {
           shipFromCountry: o.shipping_from_country || 'BE',
           priceTiers: o.price_tiers || null,
           discountTiers: tiersMap.get(o.id) || [],
+          offerPriceTiers: priceTiersMap.get(o.id) || [],
           isActive: o.is_active,
           sellerName: (() => {
             const showReal = resolveVendorVisibility(

@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { ChevronLeft, X, Search } from "lucide-react";
 import { useCountry } from "@/contexts/CountryContext";
 import { useCatalogCategories, useCatalogBrands, useCatalogManufacturers, type CatalogFilters } from "@/hooks/useCatalog";

@@ -126,13 +126,13 @@ function OfferRow({
                   const basePrice = discountTiers[0].unit_price;
                   const saving = i > 0 ? ((basePrice - tier.unit_price) / basePrice * 100).toFixed(1) : null;
                   return (
-                    <div key={tier.id} className="grid grid-cols-[auto_1fr_auto] items-center gap-x-3 relative" style={{ marginTop: i > 0 ? 6 : 0 }}>
+                    <div key={tier.id} className="grid grid-cols-[5.5rem_9rem_3rem] items-center gap-x-2 relative" style={{ marginTop: i > 0 ? 6 : 0 }}>
                       <div className="absolute left-[-14px] w-[7px] h-[7px] rounded-full bg-primary" />
                       <span className={`text-sm tabular-nums ${i === 0 ? "font-bold text-green-700" : "text-muted-foreground"}`}>
                         {formatEur(tier.unit_price)}&nbsp;€
                       </span>
                       <span className="text-xs text-muted-foreground tabular-nums whitespace-nowrap">MOV&nbsp;{formatEur(tier.mov_amount)}&nbsp;€</span>
-                      <span className="text-xs text-green-600 font-medium tabular-nums w-12 text-right">{saving ? `-${saving}%` : ""}</span>
+                      <span className="text-xs text-green-600 font-medium tabular-nums text-right">{saving ? `-${saving}%` : ""}</span>
                     </div>
                   );
                 })}

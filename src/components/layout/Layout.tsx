@@ -20,6 +20,7 @@ export function Layout({ children, title, description }: { children: React.React
   const location = useLocation();
   const { i18n } = useTranslation();
   const canonicalUrl = `https://medikong-deal-finder.lovable.app${location.pathname}`;
+  const showTranslationPopup = !location.pathname.startsWith("/categories");
 
   useEffect(() => {
     window.dataLayer = window.dataLayer || [];
@@ -48,7 +49,7 @@ export function Layout({ children, title, description }: { children: React.React
       </main>
       <Footer />
       <CartDrawer />
-      <TranslationActivatedPopup />
+      {showTranslationPopup && <TranslationActivatedPopup />}
     </div>
   );
 }

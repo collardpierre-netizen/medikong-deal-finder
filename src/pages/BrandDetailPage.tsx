@@ -2,6 +2,7 @@ import { Layout } from "@/components/layout/Layout";
 import { useParams, Link } from "react-router-dom";
 import { useFeaturedProducts } from "@/hooks/useProducts";
 import { ProductCard } from "@/components/shared/ProductCard";
+import SearchTrivagoCard from "@/components/search/SearchTrivagoCard";
 import { Star, ExternalLink, Heart, Download, Upload, Users, Grid, List, Columns, Factory, Store, MapPin, ShoppingCart, Award, ChevronRight } from "lucide-react";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -14,6 +15,7 @@ export default function BrandDetailPage() {
   const [view, setView] = useState<"grid" | "list" | "trivago">("grid");
   const [showFilters, setShowFilters] = useState(false);
   const [showAllSellers, setShowAllSellers] = useState(false);
+  const [activeCat, setActiveCat] = useState<string | null>(null);
 
   const { data: brandData } = useQuery({
     queryKey: ["brand-detail", slug],
@@ -92,24 +94,57 @@ export default function BrandDetailPage() {
     queryKey: ["brand-category-chips", brandData?.id],
     enabled: !!brandData?.id,
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Get product category IDs for this brand
+      const { data: prodCats, error: pcErr } = await supabase
         .from("products")
         .select("category_name")
         .eq("brand_id", brandData!.id)
-        .eq("is_active", true)
-        .gt("offer_count", 0)
-        .limit(2000);
-      if (error) throw error;
+        .eq("is_active", true);
+      if (pcErr) throw pcErr;
 
+      // Count occurrences per category_name
       const counts = new Map<string, number>();
-      for (const row of data || []) {
+      for (const row of prodCats || []) {
         const name = row.category_name || "Autres";
         counts.set(name, (counts.get(name) || 0) + 1);
       }
 
+      // Get all categories to filter out parents (keep only leaf-level names)
+      const { data: allCats } = await supabase
+        .from("categories")
+        .select("name, parent_id")
+        .eq("is_active", true);
+
+      // Build a set of category names that are parents
+      const parentNames = new Set<string>();
+      const catByName = new Map<string, any>();
+      for (const c of allCats || []) {
+        catByName.set(c.name, c);
+      }
+      // A category is a parent if another category has parent_id pointing to it
+      const parentIds = new Set((allCats || []).filter(c => c.parent_id).map(c => c.parent_id));
+      for (const c of allCats || []) {
+        if (parentIds.has(c.name)) continue; // name != id, need different approach
+      }
+      // Simpler: just check if any category name in our counts also has children in allCats
+      const catIdByName = new Map<string, string>();
+      // We need IDs - fetch with id
+      const { data: catsWithId } = await supabase
+        .from("categories")
+        .select("id, name, parent_id")
+        .eq("is_active", true);
+      const parentIdSet = new Set((catsWithId || []).filter(c => c.parent_id).map(c => c.parent_id));
+      for (const c of catsWithId || []) {
+        if (parentIdSet.has(c.id)) {
+          parentNames.add(c.name);
+        }
+      }
+
+      // Filter out parent categories from chips
       return [...counts.entries()]
+        .filter(([name]) => !parentNames.has(name))
         .sort((a, b) => b[1] - a[1])
-        .slice(0, 6)
+        .slice(0, 8)
         .map(([name, count]) => ({ name, count }));
     },
   });
@@ -258,8 +293,12 @@ export default function BrandDetailPage() {
         {/* Category chips */}
         {catChips.length > 0 && (
           <div className="flex gap-2 mb-6 overflow-x-auto pb-1">
-            {catChips.map((c, i) => (
-              <button key={c.name} className={`px-3 py-1.5 rounded-full text-sm whitespace-nowrap ${i === 0 ? "bg-mk-navy text-white" : "border border-mk-line text-mk-sec"}`}>
+            {catChips.map((c) => (
+              <button
+                key={c.name}
+                onClick={() => setActiveCat(activeCat === c.name ? null : c.name)}
+                className={`px-3 py-1.5 rounded-full text-sm whitespace-nowrap transition-colors ${activeCat === c.name ? "bg-mk-navy text-white" : "border border-mk-line text-mk-sec hover:border-mk-blue"}`}
+              >
                 {c.name} ({c.count})
               </button>
             ))}
@@ -311,61 +350,57 @@ export default function BrandDetailPage() {
 
           {/* Content */}
           <div className="flex-1 min-w-0 overflow-hidden">
-            <div className="flex items-center justify-between mb-5 gap-3">
-              <span className="text-sm text-mk-sec">{brand.count.toLocaleString("fr-BE")} produits</span>
-              <div className="flex items-center gap-3">
-                <button onClick={() => setShowFilters(!showFilters)} className="lg:hidden border border-mk-line text-sm px-3 py-1.5 rounded-md text-mk-sec">Filtres</button>
-                <div className="flex border border-mk-line rounded-md overflow-hidden">
-                  {([ ["grid", Grid], ["list", List], ["trivago", Columns] ] as const).map(([v, Icon]) => (
-                    <button key={v} onClick={() => setView(v)} className={`p-2 ${view === v ? "bg-mk-navy text-white" : "text-mk-sec"}`}><Icon size={16} /></button>
-                  ))}
-                </div>
-              </div>
-            </div>
-            {view === "trivago" ? (
-              <div className="space-y-3">
-                {products.map((p) => (
-                  <div key={p.id} className="flex items-center gap-4 border border-mk-line rounded-lg p-3 hover:shadow-sm transition-shadow bg-white">
-                    <div className="w-16 h-16 shrink-0 rounded bg-muted flex items-center justify-center overflow-hidden">
-                      <img src={p.imageUrl || "/medikong-placeholder.png"} alt={p.name} className="w-full h-full object-contain p-1" onError={(e) => { (e.target as HTMLImageElement).src = '/medikong-placeholder.png'; }} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <Link to={`/produit/${p.slug}`} className="text-sm font-semibold text-mk-navy hover:text-mk-blue line-clamp-1">{p.name}</Link>
-                      <p className="text-xs text-muted-foreground">{p.brand} · {p.gtin}</p>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <p className="text-sm font-bold text-mk-green">{p.price.toLocaleString("fr-BE", { minimumFractionDigits: 2 })} €</p>
-                      {p.sellers > 0 && <p className="text-[11px] text-muted-foreground">{p.sellers} offre{p.sellers > 1 ? "s" : ""}</p>}
-                    </div>
-                    {p.pct > 0 && <span className="text-xs font-semibold bg-mk-red text-white px-2 py-0.5 rounded shrink-0">{p.pct}%</span>}
-                  </div>
-                ))}
-              </div>
-            ) : view === "list" ? (
-              <div className="space-y-3">
-                {products.map((p) => (
-                  <div key={p.id} className="flex items-center gap-4 border border-mk-line rounded-lg p-4 hover:shadow-sm transition-shadow bg-white">
-                    <div className="w-20 h-20 shrink-0 rounded bg-muted flex items-center justify-center overflow-hidden">
-                      <img src={p.imageUrl || "/medikong-placeholder.png"} alt={p.name} className="w-full h-full object-contain p-1" onError={(e) => { (e.target as HTMLImageElement).src = '/medikong-placeholder.png'; }} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <Link to={`/produit/${p.slug}`} className="text-sm font-semibold text-mk-navy hover:text-mk-blue line-clamp-2">{p.name}</Link>
-                      <p className="text-xs text-muted-foreground mt-1">{p.brand} · EAN {p.gtin}</p>
-                      {p.descriptionShort && <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{p.descriptionShort}</p>}
-                    </div>
-                    <div className="text-right shrink-0 space-y-1">
-                      <p className="text-base font-bold text-mk-green">{p.price.toLocaleString("fr-BE", { minimumFractionDigits: 2 })} €</p>
-                      {p.pub > 0 && p.pct > 0 && <p className="text-xs text-muted-foreground line-through">{p.pub.toLocaleString("fr-BE", { minimumFractionDigits: 2 })} €</p>}
-                      {p.sellers > 0 && <p className="text-xs text-muted-foreground">{p.sellers} offre{p.sellers > 1 ? "s" : ""}</p>}
+            {(() => {
+              const filtered = activeCat
+                ? products.filter(p => p.category === activeCat || p.categoryL1 === activeCat || p.categoryL2 === activeCat || p.categoryL3 === activeCat)
+                : products;
+              return (
+                <>
+                  <div className="flex items-center justify-between mb-5 gap-3">
+                    <span className="text-sm text-mk-sec">{filtered.length.toLocaleString("fr-BE")} produits</span>
+                    <div className="flex items-center gap-3">
+                      <button onClick={() => setShowFilters(!showFilters)} className="lg:hidden border border-mk-line text-sm px-3 py-1.5 rounded-md text-mk-sec">Filtres</button>
+                      <div className="flex border border-mk-line rounded-md overflow-hidden">
+                        {([ ["grid", Grid], ["list", List], ["trivago", Columns] ] as const).map(([v, Icon]) => (
+                          <button key={v} onClick={() => setView(v)} className={`p-2 ${view === v ? "bg-mk-navy text-white" : "text-mk-sec"}`}><Icon size={16} /></button>
+                        ))}
+                      </div>
                     </div>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-                {products.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
-              </div>
-            )}
+                  {view === "trivago" ? (
+                    <div className="space-y-3">
+                      {filtered.map((p) => (
+                        <SearchTrivagoCard key={p.id} product={p} />
+                      ))}
+                    </div>
+                  ) : view === "list" ? (
+                    <div className="space-y-3">
+                      {filtered.map((p) => (
+                        <div key={p.id} className="flex items-center gap-4 border border-mk-line rounded-lg p-4 hover:shadow-sm transition-shadow bg-white">
+                          <div className="w-20 h-20 shrink-0 rounded bg-muted flex items-center justify-center overflow-hidden">
+                            <img src={p.imageUrl || "/medikong-placeholder.png"} alt={p.name} className="w-full h-full object-contain p-1" onError={(e) => { (e.target as HTMLImageElement).src = '/medikong-placeholder.png'; }} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <Link to={`/produit/${p.slug}`} className="text-sm font-semibold text-mk-navy hover:text-mk-blue line-clamp-2">{p.name}</Link>
+                            <p className="text-xs text-muted-foreground mt-1">{p.brand} · EAN {p.gtin}</p>
+                            {p.descriptionShort && <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{p.descriptionShort}</p>}
+                          </div>
+                          <div className="text-right shrink-0 space-y-1">
+                            <p className="text-base font-bold text-mk-green">{p.price.toLocaleString("fr-BE", { minimumFractionDigits: 2 })} €</p>
+                            {p.pub > 0 && p.pct > 0 && <p className="text-xs text-muted-foreground line-through">{p.pub.toLocaleString("fr-BE", { minimumFractionDigits: 2 })} €</p>}
+                            {p.sellers > 0 && <p className="text-xs text-muted-foreground">{p.sellers} offre{p.sellers > 1 ? "s" : ""}</p>}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+                      {filtered.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </div>
         </div>
       </div>

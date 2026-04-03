@@ -952,7 +952,7 @@ export default function OnboardingPage() {
                 if (error) throw error;
               } catch(e) { console.error(e); }
               setOtpTimer(59);
-              setOtpDigits(["", "", "", "", "", ""]);
+              setOtpDigits([...EMPTY_OTP]);
               setOtpError(false);
               otpRefs.current[0]?.focus();
             }}>Renvoyer le code</button>

@@ -17,6 +17,7 @@ const MOV_TIERS = [500, 1500, 5000, 10000];
 interface SupplierGroup {
   vendorId: string;
   vendorName: string;
+  vendorSlug?: string;
   isVerified: boolean;
   items: ReturnType<typeof useCart>["items"];
   total: number;
@@ -43,7 +44,7 @@ export default function CartPage() {
       if (vendorIds.length === 0) return [];
       const { data } = await supabase
         .from("vendors")
-        .select("id, name, company_name, is_verified")
+        .select("id, name, company_name, slug, is_verified, display_code, show_real_name")
         .in("id", vendorIds as string[]);
       return data || [];
     },
@@ -69,6 +70,7 @@ export default function CartPage() {
       return {
         vendorId,
         vendorName: vendor ? getVendorPublicName(vendor) : `Fournisseur #${vendorId.slice(0, 6).toUpperCase()}`,
+        vendorSlug: vendor?.slug || undefined,
         isVerified: vendor?.is_verified || false,
         items: groupItems,
         total,
@@ -290,7 +292,7 @@ export default function CartPage() {
                           </button>
                         </div>
                         <Link
-                          to="/recherche"
+                          to={group.vendorSlug ? `/vendeur/${group.vendorSlug}` : `/recherche`}
                           className="border border-mk-line text-mk-navy text-sm font-medium px-4 py-2 rounded-md hover:bg-mk-alt transition-colors"
                         >
                           Voir inventaire fournisseur

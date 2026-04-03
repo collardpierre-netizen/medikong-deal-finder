@@ -160,6 +160,22 @@ export function CatalogSidebar({ filters, setFilter, clearAll, resultCategoryIds
         </p>
       </div>
 
+      {/* Profession filter indicator */}
+      {professionFiltered && professionType && !filters.category && (
+        <div className="p-2.5 rounded-lg border border-primary/20 bg-primary/5">
+          <div className="flex items-center gap-1.5 mb-1">
+            <Filter size={12} className="text-primary" />
+            <span className="text-xs font-semibold text-primary">{professionType.name}</span>
+          </div>
+          <button
+            onClick={() => setShowAllCats(!showAllCats)}
+            className="text-xs text-primary hover:underline flex items-center gap-1"
+          >
+            {showAllCats ? <><Filter size={10} /> Filtrer par profil</> : <><Eye size={10} /> Voir tout</>}
+          </button>
+        </div>
+      )}
+
       {/* Categories — collapsible with max-height scroll */}
       <div>
         <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Catégorie</h4>

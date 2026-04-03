@@ -2244,6 +2244,39 @@ export type Database = {
           },
         ]
       }
+      profession_types: {
+        Row: {
+          created_at: string
+          default_category_ids: string[] | null
+          description: string | null
+          icon: string
+          id: string
+          is_active: boolean
+          name: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          default_category_ids?: string[] | null
+          description?: string | null
+          icon?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          default_category_ids?: string[] | null
+          description?: string | null
+          icon?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
       profile_visibility: {
         Row: {
           created_at: string | null
@@ -2282,13 +2315,16 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          category_preferences: Json | null
           company_name: string | null
           country: string | null
           created_at: string
+          filter_mode: string
           full_name: string | null
           id: string
           phone: string | null
           price_level_code: string | null
+          profession_type_id: string | null
           sector: string | null
           updated_at: string
           user_id: string
@@ -2296,13 +2332,16 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          category_preferences?: Json | null
           company_name?: string | null
           country?: string | null
           created_at?: string
+          filter_mode?: string
           full_name?: string | null
           id?: string
           phone?: string | null
           price_level_code?: string | null
+          profession_type_id?: string | null
           sector?: string | null
           updated_at?: string
           user_id: string
@@ -2310,19 +2349,30 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          category_preferences?: Json | null
           company_name?: string | null
           country?: string | null
           created_at?: string
+          filter_mode?: string
           full_name?: string | null
           id?: string
           phone?: string | null
           price_level_code?: string | null
+          profession_type_id?: string | null
           sector?: string | null
           updated_at?: string
           user_id?: string
           vat_number?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_profession_type_id_fkey"
+            columns: ["profession_type_id"]
+            isOneToOne: false
+            referencedRelation: "profession_types"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       qogita_config: {
         Row: {

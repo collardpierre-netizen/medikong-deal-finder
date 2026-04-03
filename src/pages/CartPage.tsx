@@ -2,7 +2,7 @@ import { Layout } from "@/components/layout/Layout";
 import { formatPrice } from "@/data/mock";
 import { useCart } from "@/hooks/useCart";
 import { useAuth } from "@/contexts/AuthContext";
-import { Download, Upload, Trash2, Minus, Plus, ShoppingCart, ChevronDown, ChevronUp, Package, AlertTriangle, HelpCircle, CheckCircle2, Store } from "lucide-react";
+import { Download, Upload, Trash2, Minus, Plus, ShoppingCart, ChevronDown, ChevronUp, Package, AlertTriangle, HelpCircle, CheckCircle2, Store, Truck } from "lucide-react";
 import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -325,6 +325,10 @@ export default function CartPage() {
                                     <p className="text-xs text-mk-ter">
                                       Réf: {item.product_id?.slice(0, 8) || "N/A"}
                                     </p>
+                                    <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                                      <Truck size={11} />
+                                      Livraison estimée : {item.delivery_days ? `${item.delivery_days} jours ouvrables` : "5-10 jours ouvrables"}
+                                    </p>
                                     <p className="text-sm text-mk-navy mt-0.5">
                                       {formatPrice(item.price_excl_vat || item.product?.price || 0)}€ × {item.quantity} = <span className="font-bold">{formatPrice((item.price_excl_vat || item.product?.price || 0) * item.quantity)}€</span>
                                     </p>
@@ -420,6 +424,17 @@ export default function CartPage() {
                       <div className="flex justify-between">
                         <span className="text-mk-sec">Livraison</span>
                         <span className="text-mk-navy font-medium">Incluse</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-mk-sec">Délai estimé</span>
+                        <span className="text-mk-navy font-medium">
+                          {(() => {
+                            const allDays = items.map(i => i.delivery_days).filter((d): d is number => typeof d === "number" && d > 0);
+                            if (allDays.length === 0) return "5-10 jours ouvrables";
+                            const maxDays = Math.max(...allDays);
+                            return `${maxDays} jours ouvrables`;
+                          })()}
+                        </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-mk-sec">TVA</span>

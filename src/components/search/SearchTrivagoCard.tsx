@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { getProductImageSrc, MEDIKONG_PLACEHOLDER } from "@/lib/image-utils";
 import { Heart, Check, ChevronDown, ChevronUp, Package, Truck, RotateCcw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useProductOffers } from "@/hooks/useProducts";

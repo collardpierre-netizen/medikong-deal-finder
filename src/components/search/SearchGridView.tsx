@@ -1,4 +1,5 @@
 import { Heart, ShoppingCart, Package } from "lucide-react";
+import { getProductImageSrc, MEDIKONG_PLACEHOLDER } from "@/lib/image-utils";
 import { useNavigate } from "react-router-dom";
 import { formatPrice } from "@/data/mock";
 import type { Product } from "@/hooks/useProducts";

@@ -105,14 +105,18 @@ const AdminProduits = () => {
       ((o.vendors as any)?.company_name || "").toLowerCase().includes(search.toLowerCase())
   );
 
+  const [importProgress, setImportProgress] = useState<ImportProgress | null>(null);
   const [importResult, setImportResult] = useState<{ created: number; updated: number; skipped: number; errors: { line: number; name: string; code: string; message: string }[]; brandsCreated?: number; manufacturersCreated?: number; totalRows: number } | null>(null);
   const [importing, setImporting] = useState(false);
+  const [importPanelOpen, setImportPanelOpen] = useState(false);
 
   const handleImport = async (file: File) => {
     setImporting(true);
-    toast.info("Import en cours, veuillez patienter...");
+    setImportResult(null);
+    setImportPanelOpen(true);
+    setImportProgress({ phase: "reading", current: 0, total: 0, created: 0, updated: 0, skipped: 0, errors: [], brandsCreated: 0, manufacturersCreated: 0 });
     try {
-      const result = await importProducts(file);
+      const result = await importProducts(file, (p) => setImportProgress({ ...p }));
       setImportResult(result);
       qc.invalidateQueries({ queryKey: ["admin-products-paginated"] });
       qc.invalidateQueries({ queryKey: ["admin-products-count"] });
@@ -122,6 +126,7 @@ const AdminProduits = () => {
       setImportResult({ created: 0, updated: 0, skipped: 0, errors: [{ line: 0, name: "—", code: "EXCEPTION", message: e.message || "Erreur inconnue" }], totalRows: 0 });
     } finally {
       setImporting(false);
+      setImportProgress(null);
     }
   };
 

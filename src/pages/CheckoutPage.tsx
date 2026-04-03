@@ -9,7 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCreateOrder } from "@/hooks/useOrders";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ShoppingCart, Loader2 } from "lucide-react";
+import { ShoppingCart, Loader2, Truck } from "lucide-react";
 
 export default function CheckoutPage() {
   const { user } = useAuth();
@@ -236,6 +236,16 @@ export default function CheckoutPage() {
                 <div className="space-y-2 text-sm mb-4">
                   <div className="flex justify-between"><span className="text-mk-sec">Sous-total ({items.length} article{items.length > 1 ? "s" : ""})</span><span className="text-mk-navy">{formatPrice(subtotal)} EUR</span></div>
                   <div className="flex justify-between"><span className="text-mk-sec">Livraison</span><span className="text-mk-navy">{shippingCost === 0 ? "Incluse" : `${formatPrice(shippingCost)} EUR`}</span></div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-mk-sec flex items-center gap-1"><Truck size={13} /> Délai estimé</span>
+                    <span className="text-mk-navy">
+                      {(() => {
+                        const allDays = items.map(i => i.delivery_days).filter((d): d is number => typeof d === "number" && d > 0);
+                        if (allDays.length === 0) return "5-10 jours ouvrables";
+                        return `${Math.max(...allDays)} jours ouvrables`;
+                      })()}
+                    </span>
+                  </div>
                 </div>
                 <div className="border-t border-mk-line pt-3">
                   <motion.div className="flex justify-between font-bold text-base text-mk-navy"

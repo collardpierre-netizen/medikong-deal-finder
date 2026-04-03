@@ -650,7 +650,8 @@ export default function AdminSync() {
               Pipeline de synchronisation
             </h3>
             <p className="text-[12px] mt-1" style={{ color: "#616B7C" }}>
-              Exécute les 6 étapes dans l'ordre : CSV → Marques → Enrichissement → Offres → Prix → Recherche
+              ⚡ Incrémental (quotidien 3h) : met à jour les ~56K produits avec offres actives &nbsp;|&nbsp;
+              🔄 Full (dimanche 4h) : import CSV complet + détection nouveaux produits
             </p>
           </div>
           <div className="flex items-center gap-3">

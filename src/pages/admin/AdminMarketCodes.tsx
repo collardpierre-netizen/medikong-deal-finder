@@ -277,12 +277,27 @@ export default function AdminMarketCodes() {
         }
 
         if (rows.length > 0) {
+          // Deduplicate on the unique constraint key: source_id + cnk
           const deduped = new Map<string, any>();
-          for (const r of rows) { deduped.set(r.cnk || r.ean || `${Math.random()}`, r); }
-          const { error } = await supabase.from("market_prices").upsert(Array.from(deduped.values()), { onConflict: "source_id,cnk" });
-          if (error) {
-            for (const r of Array.from(deduped.values())) {
-              await supabase.from("market_prices").upsert(r, { onConflict: "source_id,cnk" });
+          for (const r of rows) {
+            const key = `${r.source_id}__${r.cnk || ''}`;
+            // If cnk is empty, use ean or random to avoid collapsing unrelated rows
+            const dedupKey = r.cnk ? key : `${r.source_id}__ean_${r.ean || Math.random()}`;
+            deduped.set(dedupKey, r);
+          }
+          const dedupedRows = Array.from(deduped.values());
+          // Split into smaller sub-batches to avoid conflicts
+          const SUB_BATCH = 200;
+          for (let sb = 0; sb < dedupedRows.length; sb += SUB_BATCH) {
+            const subBatch = dedupedRows.slice(sb, sb + SUB_BATCH);
+            const { error } = await supabase.from("market_prices").upsert(subBatch, { onConflict: "source_id,cnk" });
+            if (error) {
+              // Fallback: insert one by one, skip duplicates
+              for (const r of subBatch) {
+                try {
+                  await supabase.from("market_prices").upsert(r, { onConflict: "source_id,cnk" });
+                } catch { /* skip */ }
+              }
             }
           }
           totalImported += deduped.size;

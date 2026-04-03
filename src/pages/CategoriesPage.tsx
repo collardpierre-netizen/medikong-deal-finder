@@ -234,6 +234,36 @@ export default function CategoriesPage() {
             )}
           </motion.div>
 
+          {/* Profession filter banner */}
+          {isFiltered && professionType && !currentParent && (
+            <motion.div
+              className="flex items-center gap-3 mb-6 px-4 py-3 rounded-lg border border-primary/20 bg-primary/5"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.14 }}
+            >
+              <Filter size={16} className="text-primary shrink-0" />
+              <p className="text-sm text-foreground flex-1">
+                Catalogue personnalisé selon votre profil <strong className="text-primary">{professionType.name}</strong>
+              </p>
+              {!showAll ? (
+                <button
+                  onClick={() => setShowAll(true)}
+                  className="text-sm font-medium text-primary hover:underline flex items-center gap-1 shrink-0"
+                >
+                  <Eye size={14} /> Voir tout le catalogue
+                </button>
+              ) : (
+                <button
+                  onClick={() => setShowAll(false)}
+                  className="text-sm font-medium text-primary hover:underline flex items-center gap-1 shrink-0"
+                >
+                  <Filter size={14} /> Filtrer par mon profil
+                </button>
+              )}
+            </motion.div>
+          )}
+
           {isLoading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
               {Array.from({ length: 8 }).map((_, i) => (

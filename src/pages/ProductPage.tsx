@@ -1043,6 +1043,7 @@ export default function ProductPage() {
                             addToCart={addToCart}
                             delay={i * 0.06}
                             isTVAC={isTVAC}
+                            categoryId={categoryData?.category?.id}
                           />
                         ))}
                       </div>

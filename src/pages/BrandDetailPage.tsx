@@ -94,24 +94,57 @@ export default function BrandDetailPage() {
     queryKey: ["brand-category-chips", brandData?.id],
     enabled: !!brandData?.id,
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Get product category IDs for this brand
+      const { data: prodCats, error: pcErr } = await supabase
         .from("products")
         .select("category_name")
         .eq("brand_id", brandData!.id)
-        .eq("is_active", true)
-        .gt("offer_count", 0)
-        .limit(2000);
-      if (error) throw error;
+        .eq("is_active", true);
+      if (pcErr) throw pcErr;
 
+      // Count occurrences per category_name
       const counts = new Map<string, number>();
-      for (const row of data || []) {
+      for (const row of prodCats || []) {
         const name = row.category_name || "Autres";
         counts.set(name, (counts.get(name) || 0) + 1);
       }
 
+      // Get all categories to filter out parents (keep only leaf-level names)
+      const { data: allCats } = await supabase
+        .from("categories")
+        .select("name, parent_id")
+        .eq("is_active", true);
+
+      // Build a set of category names that are parents
+      const parentNames = new Set<string>();
+      const catByName = new Map<string, any>();
+      for (const c of allCats || []) {
+        catByName.set(c.name, c);
+      }
+      // A category is a parent if another category has parent_id pointing to it
+      const parentIds = new Set((allCats || []).filter(c => c.parent_id).map(c => c.parent_id));
+      for (const c of allCats || []) {
+        if (parentIds.has(c.name)) continue; // name != id, need different approach
+      }
+      // Simpler: just check if any category name in our counts also has children in allCats
+      const catIdByName = new Map<string, string>();
+      // We need IDs - fetch with id
+      const { data: catsWithId } = await supabase
+        .from("categories")
+        .select("id, name, parent_id")
+        .eq("is_active", true);
+      const parentIdSet = new Set((catsWithId || []).filter(c => c.parent_id).map(c => c.parent_id));
+      for (const c of catsWithId || []) {
+        if (parentIdSet.has(c.id)) {
+          parentNames.add(c.name);
+        }
+      }
+
+      // Filter out parent categories from chips
       return [...counts.entries()]
+        .filter(([name]) => !parentNames.has(name))
         .sort((a, b) => b[1] - a[1])
-        .slice(0, 6)
+        .slice(0, 8)
         .map(([name, count]) => ({ name, count }));
     },
   });

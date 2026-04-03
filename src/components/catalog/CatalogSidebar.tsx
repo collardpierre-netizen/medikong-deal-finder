@@ -74,18 +74,28 @@ export function CatalogSidebar({ filters, setFilter, clearAll, resultCategoryIds
   }, [selectedCategory, categories]);
 
   const displayCategories = useMemo(() => {
-    if (!filters.category) return categories;
-    if (selectedCategory) {
-      // Show children of selected if it has children, else show siblings
+    let cats: any[];
+    if (!filters.category) {
+      cats = categories;
+    } else if (selectedCategory) {
       const children = categories.flatMap(c => c.children || []).length > 0
         ? (selectedCategory as any).children || []
         : [];
-      if (children.length > 0) return children;
-      // Show siblings
-      if (parentCategory) return parentCategory.children || [];
+      if (children.length > 0) cats = children;
+      else if (parentCategory) cats = parentCategory.children || [];
+      else cats = categories;
+    } else {
+      cats = categories;
     }
-    return categories;
-  }, [filters.category, selectedCategory, parentCategory, categories]);
+    // Filter categories to only those present in results when searching/filtering
+    if (resultCategoryIds && resultCategoryIds.length > 0 && !filters.category) {
+      cats = cats.filter((cat: any) => {
+        const childIds = (cat.children || []).map((c: any) => c.id);
+        return resultCategoryIds.includes(cat.id) || childIds.some((id: string) => resultCategoryIds.includes(id));
+      });
+    }
+    return cats;
+  }, [filters.category, selectedCategory, parentCategory, categories, resultCategoryIds]);
 
   const toggleBrand = (slug: string) => {
     const current = filters.brands || [];

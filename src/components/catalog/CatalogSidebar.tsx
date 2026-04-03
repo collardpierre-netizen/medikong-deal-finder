@@ -167,13 +167,16 @@ export function CatalogSidebar({ filters, setFilter, clearAll, resultCategoryIds
                 <button
                   key={cat.id}
                   onClick={() => setFilter("category", cat.slug)}
-                  className={`block w-full text-left text-sm py-1.5 px-2 rounded transition-colors ${
+                  className={`flex w-full items-center justify-between text-sm py-1.5 px-2 rounded transition-colors ${
                     filters.category === cat.slug
                       ? "bg-primary/10 text-primary font-medium"
                       : "text-foreground hover:bg-muted"
                   }`}
                 >
-                  {cat.name}
+                  <span>{cat.name}</span>
+                  {cat.product_count > 0 && (
+                    <span className="text-xs text-muted-foreground">({cat.product_count.toLocaleString("fr-FR")})</span>
+                  )}
                 </button>
               ))}
             </div>

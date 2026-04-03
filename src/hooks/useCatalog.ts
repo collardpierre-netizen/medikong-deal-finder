@@ -180,21 +180,39 @@ export function useCatalogCategories() {
   return useQuery({
     queryKey: ["catalog-categories"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("categories")
-        .select("id, name, name_fr, slug, parent_id")
-        .eq("is_active", true)
-        .order("display_order", { ascending: true });
-      if (error) throw error;
+      // Fetch categories and product counts in parallel
+      const [catResult, countResult] = await Promise.all([
+        supabase
+          .from("categories")
+          .select("id, name, name_fr, slug, parent_id")
+          .eq("is_active", true)
+          .order("display_order", { ascending: true }),
+        supabase.rpc("count_products_per_category"),
+      ]);
+      if (catResult.error) throw catResult.error;
 
-      // Build tree
-      const all = (data || []).map((c: any) => ({ ...c, name: c.name_fr || c.name }));
+      const countMap = new Map<string, number>();
+      if (countResult.data) {
+        for (const row of countResult.data as any[]) {
+          countMap.set(row.category_id, Number(row.product_count));
+        }
+      }
+
+      const all = (catResult.data || []).map((c: any) => ({
+        ...c,
+        name: c.name_fr || c.name,
+        product_count: countMap.get(c.id) || 0,
+      }));
       const roots = all.filter(c => !c.parent_id);
-      return roots.map(r => ({
-        ...r,
-        product_count: 0,
-        children: all.filter(c => c.parent_id === r.id).map(c => ({ ...c, product_count: 0 })),
-      })) as CategoryNode[];
+      return roots.map(r => {
+        const children = all.filter(c => c.parent_id === r.id).map(c => ({ ...c, children: [] }));
+        const totalCount = r.product_count + children.reduce((sum, c) => sum + c.product_count, 0);
+        return {
+          ...r,
+          product_count: totalCount,
+          children,
+        };
+      }).filter(r => r.product_count > 0) as CategoryNode[];
     },
     staleTime: 10 * 60 * 1000,
   });

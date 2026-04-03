@@ -28,6 +28,9 @@ export default function CategoriesPage() {
   const [search, setSearch] = useState("");
   const [searchParams, setSearchParams] = useSearchParams();
   const parentSlug = searchParams.get("parent") || null;
+  const [showAll, setShowAll] = useState(false);
+
+  const { visibleCategoryIds, isFiltered, professionType } = useVisibleCategories();
 
   const { data: allCategories = [], isLoading } = useQuery({
     queryKey: ["categories-page-hierarchy"],

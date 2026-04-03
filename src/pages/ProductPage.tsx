@@ -42,6 +42,7 @@ function OfferRow({
   offer: Offer; productId: string; productName: string; productSlug: string;
   user: any; navigate: any; addToCart: any; isBest?: boolean; delay?: number; isTVAC?: boolean; categoryId?: string; bestPrice?: number;
 }) {
+  const maxQty = offer.stockQuantity > 0 ? offer.stockQuantity : 999;
   const [qty, setQty] = useState(offer.bundleSize > 1 ? offer.bundleSize : 1);
   const discountTiers = offer.discountTiers || [];
   const hasTiers = discountTiers.length > 1;

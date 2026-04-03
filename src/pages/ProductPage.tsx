@@ -226,7 +226,7 @@ function OfferRow({
           <div className="flex items-center border border-border rounded-md flex-1">
             <button onClick={() => setQty(Math.max(1, qty - 1))} className="px-2.5 py-2 text-muted-foreground"><Minus size={14} /></button>
             <span className="px-3 py-2 text-sm font-medium text-center flex-1">{qty}</span>
-            <button onClick={() => setQty(qty + 1)} className="px-2.5 py-2 text-muted-foreground"><Plus size={14} /></button>
+            <button onClick={() => setQty(Math.min(maxQty, qty + 1))} className="px-2.5 py-2 text-muted-foreground" disabled={qty >= maxQty}><Plus size={14} /></button>
           </div>
           <motion.button className="bg-primary text-primary-foreground px-4 py-2.5 rounded-md text-sm font-medium flex items-center gap-2" whileTap={{ scale: 0.95 }} onClick={handleAdd}>
             <ShoppingCart size={14} /> Ajouter

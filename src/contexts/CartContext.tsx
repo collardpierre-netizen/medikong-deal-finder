@@ -10,6 +10,7 @@ export interface CartItem {
   price_incl_vat?: number;
   quantity: number;
   max_quantity?: number;
+  delivery_days?: number | null;
   product?: {
     id: string;
     name: string;
@@ -40,7 +41,7 @@ interface CartContextType {
   openDrawer: () => void;
   closeDrawer: () => void;
   addToCart: {
-    mutate: (args: { offerId: string; productId: string; quantity?: number; maxQuantity?: number; productData?: CartItem["product"]; vendorId?: string; priceExclVat?: number; priceInclVat?: number }) => void;
+    mutate: (args: { offerId: string; productId: string; quantity?: number; maxQuantity?: number; productData?: CartItem["product"]; vendorId?: string; priceExclVat?: number; priceInclVat?: number; deliveryDays?: number | null }) => void;
     isPending: boolean;
   };
   updateQuantity: {
@@ -73,8 +74,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const addToCart = useMemo(() => ({
-    mutate: ({ offerId, productId, quantity = 1, maxQuantity, productData, vendorId, priceExclVat, priceInclVat }: {
-      offerId: string; productId: string; quantity?: number; maxQuantity?: number; productData?: CartItem["product"]; vendorId?: string; priceExclVat?: number; priceInclVat?: number;
+    mutate: ({ offerId, productId, quantity = 1, maxQuantity, productData, vendorId, priceExclVat, priceInclVat, deliveryDays }: {
+      offerId: string; productId: string; quantity?: number; maxQuantity?: number; productData?: CartItem["product"]; vendorId?: string; priceExclVat?: number; priceInclVat?: number; deliveryDays?: number | null;
     }) => {
       setItems(prev => {
         const existing = prev.find(i => i.offer_id === offerId);
@@ -90,7 +91,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
           });
         } else {
           const initialQuantity = safeMax ? Math.min(quantity, safeMax) : quantity;
-          next = [...prev, { id: crypto.randomUUID(), offer_id: offerId, product_id: productId, vendor_id: vendorId, price_excl_vat: priceExclVat, price_incl_vat: priceInclVat, quantity: initialQuantity, max_quantity: safeMax, product: productData }];
+          next = [...prev, { id: crypto.randomUUID(), offer_id: offerId, product_id: productId, vendor_id: vendorId, price_excl_vat: priceExclVat, price_incl_vat: priceInclVat, quantity: initialQuantity, max_quantity: safeMax, delivery_days: deliveryDays, product: productData }];
         }
 
         saveCart(next);

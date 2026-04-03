@@ -3,16 +3,32 @@ import { useTranslation } from "react-i18next";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Languages } from "lucide-react";
 
+const COOKIE_KEY = "mk_cookie_consent";
+const TRANSLATION_POPUP_KEY = "medikong_translation_popup_seen";
+
 export function TranslationActivatedPopup() {
   const { t, i18n } = useTranslation();
   const [show, setShow] = useState(false);
 
   useEffect(() => {
-    const hasSeenPopup = localStorage.getItem("medikong_translation_popup_seen");
-    if (i18n.language !== "fr" && !hasSeenPopup) {
+    const maybeShowPopup = () => {
+      const hasCookieConsent = localStorage.getItem(COOKIE_KEY);
+      const hasSeenPopup = localStorage.getItem(TRANSLATION_POPUP_KEY);
+
+      if (!hasCookieConsent || i18n.language === "fr" || hasSeenPopup) {
+        return;
+      }
+
       setShow(true);
-      localStorage.setItem("medikong_translation_popup_seen", "true");
-    }
+      localStorage.setItem(TRANSLATION_POPUP_KEY, "true");
+    };
+
+    maybeShowPopup();
+    window.addEventListener("mk:cookie-consent-saved", maybeShowPopup);
+
+    return () => {
+      window.removeEventListener("mk:cookie-consent-saved", maybeShowPopup);
+    };
   }, [i18n.language]);
 
   if (!show) return null;

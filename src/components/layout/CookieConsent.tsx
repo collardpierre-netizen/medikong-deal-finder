@@ -35,6 +35,7 @@ export function CookieConsent() {
 
   const save = (p: CookiePrefs) => {
     localStorage.setItem(COOKIE_KEY, JSON.stringify(p));
+    window.dispatchEvent(new Event("mk:cookie-consent-saved"));
     setVisible(false);
   };
 

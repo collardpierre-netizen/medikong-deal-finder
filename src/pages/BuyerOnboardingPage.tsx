@@ -339,7 +339,7 @@ export default function BuyerOnboardingPage() {
   /* Submit */
   const handleSubmit = () => {
     if (!isPasswordValid) return;
-    const data = { accountType, buyerProfile, email, firstName, lastName, phone, companyName, vatNumber, country, city, professionalId, groupMemberCount, resellerWebsite, interests, acceptTerms };
+    const data = { accountType, buyerProfile, professionTypeId, email, firstName, lastName, phone, companyName, vatNumber, country, city, professionalId, groupMemberCount, resellerWebsite, interests, acceptTerms };
     console.log("Buyer onboarding data:", data);
     goNext();
   };

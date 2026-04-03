@@ -12,6 +12,7 @@ export default function BrandDetailPage() {
   const { data: products = [] } = useFeaturedProducts(30, { brandSlug: slug });
   const [view, setView] = useState<"grid" | "list" | "trivago">("grid");
   const [showFilters, setShowFilters] = useState(false);
+  const [showAllSellers, setShowAllSellers] = useState(false);
 
   const { data: brandData } = useQuery({
     queryKey: ["brand-detail", slug],

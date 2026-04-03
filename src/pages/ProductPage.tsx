@@ -888,7 +888,14 @@ export default function ProductPage() {
                   </Link>
                 </div>
               ) : product.brand ? (
-                <p className="text-sm font-semibold text-muted-foreground mb-1">{product.brand}</p>
+                <div className="flex items-center gap-3 mb-1">
+                  <Link to={`/marque/${product.brandSlug || product.brand.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}`} className="text-sm font-semibold text-primary hover:underline inline-flex items-center gap-1">
+                    <Tag size={13} /> {product.brand}
+                  </Link>
+                  <Link to={`/marque/${product.brandSlug || product.brand.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}`} className="text-[11px] text-primary/70 hover:text-primary hover:underline inline-flex items-center gap-0.5">
+                    Voir tous les produits <ChevronRight size={11} />
+                  </Link>
+                </div>
               ) : null}
 
               {/* Name */}

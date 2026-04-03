@@ -58,7 +58,7 @@ export default function ProfessionnelsPage() {
                 </div>
                 <h3 className="text-lg font-bold text-mk-navy mb-2">{seg.title}</h3>
                 <p className="text-sm text-gray-600 leading-relaxed mb-4">{seg.desc}</p>
-                <Link to="/recherche" className="text-sm text-mk-blue hover:underline flex items-center gap-1">
+                <Link to={seg.link} className="text-sm text-mk-blue hover:underline flex items-center gap-1">
                   Découvrir les offres <ArrowRight size={14} />
                 </Link>
               </div>

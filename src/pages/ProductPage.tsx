@@ -733,7 +733,7 @@ export default function ProductPage() {
   const FLAG_MAP: Record<string, string> = { BE: "🇧🇪", DE: "🇩🇪", FR: "🇫🇷", NL: "🇳🇱", IT: "🇮🇹", ES: "🇪🇸" };
   const manufacturerInfo = productDetails?.manufacturers as any;
   const specsRaw: [string, string | undefined | null, string?][] = [
-    ["Marque", brandData?.name || product.brand, brandData?.slug ? `/marque/${brandData.slug}` : undefined],
+    ["Marque", brandData?.name || product.brand, brandData?.slug ? `/marque/${brandData.slug}` : (product.brandSlug ? `/marque/${product.brandSlug}` : (product.brand ? `/marque/${product.brand.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}` : undefined))],
     ["Fabricant", manufacturerInfo?.name, manufacturerInfo?.slug ? `/fabricant/${manufacturerInfo.slug}` : undefined],
     ["Categorie", categoryData?.category?.name || productDetails?.category_name],
     ["GTIN/EAN", product.gtin || product.ean],

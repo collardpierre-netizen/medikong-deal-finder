@@ -19,6 +19,8 @@ export function CatalogSidebar({ filters, setFilter, clearAll, resultCategoryIds
   const { data: categories = [] } = useCatalogCategories();
   const { data: brands = [] } = useCatalogBrands(filters.category);
   const { data: manufacturers = [] } = useCatalogManufacturers();
+  const { visibleCategoryIds, isFiltered: professionFiltered, professionType } = useVisibleCategories();
+  const [showAllCats, setShowAllCats] = useState(false);
 
   const [brandSearch, setBrandSearch] = useState("");
   const [brandDropdownOpen, setBrandDropdownOpen] = useState(false);

@@ -158,7 +158,21 @@ export default function BuyerOnboardingPage() {
   const [sendingOtp, setSendingOtp] = useState(false);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [phone, setPhone] = useState("");
+  const [professionTypeId, setProfessionTypeId] = useState<string>("");
+
+  /* Fetch profession types from DB */
+  const { data: professionTypes = [] } = useQuery({
+    queryKey: ["profession-types"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profession_types")
+        .select("*")
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+  });
   const [companyName, setCompanyName] = useState("");
   const [vatNumber, setVatNumber] = useState("");
   const [country, setCountry] = useState("Belgique");

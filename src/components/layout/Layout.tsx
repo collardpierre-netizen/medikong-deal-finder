@@ -40,8 +40,8 @@ export function Layout({ children, title, description }: { children: React.React
         {description && <meta name="description" content={description} />}
       </Helmet>
       <AnnouncementBar />
-      <Navbar />
       <TrustBar />
+      <Navbar />
       <SubNav />
       <Breadcrumbs />
       <main id="main-content" className="flex-1" role="main">

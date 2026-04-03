@@ -988,6 +988,7 @@ export default function ProductPage() {
                           addToCart={addToCart}
                           isBest
                           isTVAC={isTVAC}
+                          categoryId={categoryData?.category?.id}
                         />
                       </div>
                     ) : (

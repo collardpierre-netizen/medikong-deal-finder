@@ -437,10 +437,10 @@ export default function AdminSync() {
   const displayPassword = passwordDirty ? qogitaPassword : (config as any)?.qogita_password || "";
 
   // ─ Launch pipeline
-  const launchPipeline = useMutation<any, Error, { stepOnly?: string } | undefined>({
-    mutationFn: async (opts?: { stepOnly?: string }) => {
+  const launchPipeline = useMutation<any, Error, { stepOnly?: string; mode?: string } | undefined>({
+    mutationFn: async (opts?: { stepOnly?: string; mode?: string }) => {
       const { data, error } = await supabase.functions.invoke("run-sync-pipeline", {
-        body: { country: selectedCountry, triggeredBy: "manual", ...opts },
+        body: { country: selectedCountry, triggeredBy: "manual", mode: opts?.mode || "incremental", ...opts },
       });
       if (error) throw error;
       return data;

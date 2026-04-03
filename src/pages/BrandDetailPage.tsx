@@ -336,11 +336,7 @@ export default function BrandDetailPage() {
                 {products.map((p) => (
                   <div key={p.id} className="flex items-center gap-4 border border-mk-line rounded-lg p-4 hover:shadow-sm transition-shadow bg-white">
                     <div className="w-20 h-20 shrink-0 rounded bg-muted flex items-center justify-center overflow-hidden">
-                      {p.imageUrl ? (
-                        <img src={p.imageUrl} alt={p.name} className="w-full h-full object-contain p-1" onError={(e) => { (e.target as HTMLImageElement).src = '/medikong-placeholder.png'; }} />
-                      ) : (
-                        <span className="text-xs text-muted-foreground">N/A</span>
-                      )}
+                      <img src={p.imageUrl || "/medikong-placeholder.png"} alt={p.name} className="w-full h-full object-contain p-1" onError={(e) => { (e.target as HTMLImageElement).src = '/medikong-placeholder.png'; }} />
                     </div>
                     <div className="flex-1 min-w-0">
                       <Link to={`/produit/${p.slug}`} className="text-sm font-semibold text-mk-navy hover:text-mk-blue line-clamp-2">{p.name}</Link>

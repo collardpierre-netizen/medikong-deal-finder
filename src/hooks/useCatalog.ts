@@ -27,8 +27,8 @@ export interface CatalogProduct {
   category_name: string | null;
   gtin: string | null;
   cnk_code: string | null;
+  image_url: string | null;
   image_urls: string[] | null;
-  short_description: string | null;
   is_promotion: boolean;
   promotion_label: string | null;
   best_price_excl_vat: number | null;

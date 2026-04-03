@@ -70,6 +70,7 @@ export default function CartPage() {
       return {
         vendorId,
         vendorName: vendor ? getVendorPublicName(vendor) : `Fournisseur #${vendorId.slice(0, 6).toUpperCase()}`,
+        vendorSlug: vendor?.slug || undefined,
         isVerified: vendor?.is_verified || false,
         items: groupItems,
         total,

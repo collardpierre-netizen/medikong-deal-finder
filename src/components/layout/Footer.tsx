@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { Globe } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { LANGUAGE_CONFIG, type SupportedLanguage } from "@/i18n";
-import logoDark from "@/assets/Logo_horizontal_sombre2.png";
+import logoDark from "@/assets/logo-medikong.png";
 
 export function Footer() {
   const { t, i18n } = useTranslation();

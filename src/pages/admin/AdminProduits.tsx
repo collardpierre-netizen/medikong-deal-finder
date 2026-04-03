@@ -104,7 +104,7 @@ const AdminProduits = () => {
       ((o.vendors as any)?.company_name || "").toLowerCase().includes(search.toLowerCase())
   );
 
-  const [importResult, setImportResult] = useState<{ created: number; errors: string[]; brandsCreated?: number; manufacturersCreated?: number } | null>(null);
+  const [importResult, setImportResult] = useState<{ created: number; updated: number; skipped: number; errors: { line: number; name: string; code: string; message: string }[]; brandsCreated?: number; manufacturersCreated?: number; totalRows: number } | null>(null);
   const [importing, setImporting] = useState(false);
 
   const handleImport = async (file: File) => {

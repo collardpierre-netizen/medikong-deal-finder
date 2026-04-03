@@ -136,16 +136,22 @@ export default function HomePage() {
         <script type="application/ld+json">{JSON.stringify(faqJsonLd)}</script>
       </Helmet>
       {/* ═══ HERO — centered, clean ═══ */}
-      <section className="pt-10 md:pt-20 pb-6 md:pb-10">
+      <section className="pt-10 md:pt-20 pb-6 md:pb-10 bg-white">
         <div className="mk-container text-center max-w-2xl mx-auto">
           <motion.h1
-            className="text-3xl md:text-[44px] leading-[1.15] font-bold text-mk-navy mb-4 whitespace-pre-line"
+            className="text-3xl md:text-[44px] leading-[1.15] font-bold text-mk-navy mb-4"
             style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
           >
-            {t("hero.title")}
+            <span className="relative inline-block pb-1">
+              Tout le médical
+              <span className="absolute left-0 right-0 bottom-0 h-[8px] bg-mk-blue/25 rounded-full" />
+            </span>
+            , tous les prix,
+            <br />
+            un seul endroit
           </motion.h1>
           <motion.p
             className="text-base md:text-lg text-mk-sec mb-8 max-w-xl mx-auto"

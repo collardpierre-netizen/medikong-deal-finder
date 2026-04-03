@@ -6,6 +6,7 @@ import AdminTopBar from "@/components/admin/AdminTopBar";
 import KpiCard from "@/components/admin/KpiCard";
 import StatusBadge from "@/components/admin/StatusBadge";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useI18n } from "@/contexts/I18nContext";
 import { useOffers as useOffersDirectAdmin, useBrands, useManufacturers, useProductCount, useBrandCount, useActiveOfferCount } from "@/hooks/useAdminData";
@@ -103,16 +104,21 @@ const AdminProduits = () => {
       ((o.vendors as any)?.company_name || "").toLowerCase().includes(search.toLowerCase())
   );
 
+  const [importResult, setImportResult] = useState<{ created: number; errors: string[] } | null>(null);
+  const [importing, setImporting] = useState(false);
+
   const handleImport = async (file: File) => {
-    toast.info("Import en cours...");
+    setImporting(true);
+    toast.info("Import en cours, veuillez patienter...");
     try {
       const result = await importProducts(file);
-      toast.success(`${result.created} produits importés`);
-      if (result.errors.length > 0) toast.warning(`${result.errors.length} erreur(s): ${result.errors[0]}`);
+      setImportResult(result);
       qc.invalidateQueries({ queryKey: ["admin-products-paginated"] });
       qc.invalidateQueries({ queryKey: ["admin-products-count"] });
     } catch (e: any) {
-      toast.error(e.message || "Erreur import");
+      setImportResult({ created: 0, errors: [e.message || "Erreur inconnue"] });
+    } finally {
+      setImporting(false);
     }
   };
 
@@ -322,6 +328,30 @@ const AdminProduits = () => {
       )}
 
       <ProductFormDialog open={productDialogOpen} onOpenChange={setProductDialogOpen} product={editProduct} brands={brands} manufacturers={manufacturers} />
+
+      {/* Import result dialog */}
+      <Dialog open={importResult !== null} onOpenChange={(open) => { if (!open) setImportResult(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{importResult?.errors.length === 0 && importResult?.created > 0 ? "✅ Import réussi" : importResult?.created === 0 ? "❌ Échec de l'import" : "⚠️ Import terminé avec erreurs"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm"><strong>{importResult?.created || 0}</strong> produit(s) importé(s) / mis à jour</p>
+            {(importResult?.errors?.length || 0) > 0 && (
+              <div>
+                <p className="text-sm font-medium text-destructive mb-1">{importResult!.errors.length} erreur(s) :</p>
+                <div className="max-h-[200px] overflow-y-auto bg-muted rounded p-2 text-xs space-y-1">
+                  {importResult!.errors.slice(0, 50).map((err, i) => (
+                    <p key={i} className="text-destructive">{err}</p>
+                  ))}
+                  {importResult!.errors.length > 50 && <p className="text-muted-foreground">... et {importResult!.errors.length - 50} autres</p>}
+                </div>
+              </div>
+            )}
+            <Button className="w-full" onClick={() => setImportResult(null)}>Fermer</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

@@ -122,12 +122,11 @@ export async function importProducts(file: File, onProgress?: (p: ImportProgress
   let skipped = 0;
   let brandsCreated = 0;
   let manufacturersCreated = 0;
-  const notify = () => onProgress?.({ phase: currentPhase, current: currentIdx, total: rows.length, created, updated, skipped, errors, brandsCreated, manufacturersCreated });
+  const errors: { line: number; name: string; code: string; message: string }[] = [];
   let currentPhase: ImportProgress["phase"] = "reading";
   let currentIdx = 0;
+  const notify = () => onProgress?.({ phase: currentPhase, current: currentIdx, total: rows.length, created, updated, skipped, errors, brandsCreated, manufacturersCreated });
   notify();
-
-  const errors: { line: number; name: string; code: string; message: string }[] = [];
 
   // --- Auto-create brands & manufacturers ---
   const brandNames = new Set<string>();

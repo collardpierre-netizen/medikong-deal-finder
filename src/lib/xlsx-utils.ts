@@ -103,7 +103,19 @@ function slugify(s: string) {
   return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 }
 
-export async function importProducts(file: File): Promise<{ created: number; updated: number; skipped: number; errors: { line: number; name: string; code: string; message: string }[]; brandsCreated: number; manufacturersCreated: number; totalRows: number }> {
+export interface ImportProgress {
+  phase: "reading" | "brands" | "manufacturers" | "products" | "resolving" | "done";
+  current: number;
+  total: number;
+  created: number;
+  updated: number;
+  skipped: number;
+  errors: { line: number; name: string; code: string; message: string }[];
+  brandsCreated: number;
+  manufacturersCreated: number;
+}
+
+export async function importProducts(file: File, onProgress?: (p: ImportProgress) => void): Promise<{ created: number; updated: number; skipped: number; errors: { line: number; name: string; code: string; message: string }[]; brandsCreated: number; manufacturersCreated: number; totalRows: number }> {
   const rows = await readXlsx(file);
   let created = 0;
   let updated = 0;

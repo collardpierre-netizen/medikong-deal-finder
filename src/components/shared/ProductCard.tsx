@@ -5,18 +5,7 @@ import { useState } from "react";
 import { Package } from "lucide-react";
 import { motion } from "framer-motion";
 
-const MEDIKONG_PLACEHOLDER = "/medikong-placeholder.png";
-
-const KNOWN_PLACEHOLDER_HASHES = [
-  "6f37ced36498c7df3a3897a9dbbb3384",
-];
-
-function isValidImageUrl(url: string | undefined | null): boolean {
-  if (!url || url.trim() === "") return false;
-  if (/no.?image/i.test(url)) return false;
-  if (KNOWN_PLACEHOLDER_HASHES.some(h => url.includes(h))) return false;
-  return true;
-}
+import { MEDIKONG_PLACEHOLDER, isValidProductImage, getProductImageSrc } from "@/lib/image-utils";
 
 function getProductImages(product: Product): string[] {
   if (product.imageUrls && product.imageUrls.length > 0) {

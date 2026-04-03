@@ -1,7 +1,7 @@
 import { Layout } from "@/components/layout/Layout";
 import { Link, useSearchParams } from "react-router-dom";
 import {
-  Package, ChevronRight, Search, X, Home
+  Package, ChevronRight, Search, X, Home, Filter, Eye
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
@@ -10,6 +10,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
+import { useVisibleCategories } from "@/hooks/useVisibleCategories";
 
 interface CategoryItem {
   id: string;
@@ -27,6 +28,9 @@ export default function CategoriesPage() {
   const [search, setSearch] = useState("");
   const [searchParams, setSearchParams] = useSearchParams();
   const parentSlug = searchParams.get("parent") || null;
+  const [showAll, setShowAll] = useState(false);
+
+  const { visibleCategoryIds, isFiltered, professionType } = useVisibleCategories();
 
   const { data: allCategories = [], isLoading } = useQuery({
     queryKey: ["categories-page-hierarchy"],
@@ -95,16 +99,28 @@ export default function CategoriesPage() {
       cats = allCategories.filter(c => !c.parent_id);
     }
 
-    const visibleCats = currentParent
+    let visibleCats = currentParent
       ? cats
       : cats.filter(c => c.productCount > 0 || c.childCount > 0);
+
+    // Apply profession filter (only at root level, not when browsing children)
+    if (!showAll && isFiltered && visibleCategoryIds && !currentParent) {
+      const visibleSet = new Set(visibleCategoryIds);
+      // Also keep parent categories that have visible children
+      const parentIdsOfVisible = new Set<string>();
+      for (const id of visibleCategoryIds) {
+        const cat = allCategories.find(c => c.id === id);
+        if (cat?.parent_id) parentIdsOfVisible.add(cat.parent_id);
+      }
+      visibleCats = visibleCats.filter(c => visibleSet.has(c.id) || parentIdsOfVisible.has(c.id));
+    }
 
     return visibleCats.sort((a, b) => {
       if (b.childCount !== a.childCount) return b.childCount - a.childCount;
       if (b.productCount !== a.productCount) return b.productCount - a.productCount;
       return displayName(a).localeCompare(displayName(b), "fr", { sensitivity: "base" });
     });
-  }, [allCategories, currentParent]);
+  }, [allCategories, currentParent, showAll, isFiltered, visibleCategoryIds]);
 
   const filtered = useMemo(() => {
     if (!search.trim()) return currentLevelCategories;
@@ -217,6 +233,36 @@ export default function CategoriesPage() {
               <p className="text-xs text-muted-foreground mt-1.5">{filtered.length} résultat{filtered.length !== 1 ? "s" : ""}</p>
             )}
           </motion.div>
+
+          {/* Profession filter banner */}
+          {isFiltered && professionType && !currentParent && (
+            <motion.div
+              className="flex items-center gap-3 mb-6 px-4 py-3 rounded-lg border border-primary/20 bg-primary/5"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.14 }}
+            >
+              <Filter size={16} className="text-primary shrink-0" />
+              <p className="text-sm text-foreground flex-1">
+                Catalogue personnalisé selon votre profil <strong className="text-primary">{professionType.name}</strong>
+              </p>
+              {!showAll ? (
+                <button
+                  onClick={() => setShowAll(true)}
+                  className="text-sm font-medium text-primary hover:underline flex items-center gap-1 shrink-0"
+                >
+                  <Eye size={14} /> Voir tout le catalogue
+                </button>
+              ) : (
+                <button
+                  onClick={() => setShowAll(false)}
+                  className="text-sm font-medium text-primary hover:underline flex items-center gap-1 shrink-0"
+                >
+                  <Filter size={14} /> Filtrer par mon profil
+                </button>
+              )}
+            </motion.div>
+          )}
 
           {isLoading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">

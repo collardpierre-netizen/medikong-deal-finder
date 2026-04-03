@@ -1,7 +1,8 @@
 import { useState, useMemo, useRef, useEffect } from "react";
-import { ChevronLeft, X, Search } from "lucide-react";
+import { ChevronLeft, X, Search, Filter, Eye } from "lucide-react";
 import { useCountry } from "@/contexts/CountryContext";
 import { useCatalogCategories, useCatalogBrands, useCatalogManufacturers, type CatalogFilters } from "@/hooks/useCatalog";
+import { useVisibleCategories } from "@/hooks/useVisibleCategories";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -18,6 +19,8 @@ export function CatalogSidebar({ filters, setFilter, clearAll, resultCategoryIds
   const { data: categories = [] } = useCatalogCategories();
   const { data: brands = [] } = useCatalogBrands(filters.category);
   const { data: manufacturers = [] } = useCatalogManufacturers();
+  const { visibleCategoryIds, isFiltered: professionFiltered, professionType } = useVisibleCategories();
+  const [showAllCats, setShowAllCats] = useState(false);
 
   const [brandSearch, setBrandSearch] = useState("");
   const [brandDropdownOpen, setBrandDropdownOpen] = useState(false);
@@ -106,8 +109,20 @@ export function CatalogSidebar({ filters, setFilter, clearAll, resultCategoryIds
         return ancestorIds.has(cat.id) || childIds.some((id: string) => ancestorIds.has(id));
       });
     }
+    // Apply profession-type filter at root level
+    if (!showAllCats && professionFiltered && visibleCategoryIds && !filters.category) {
+      const visSet = new Set(visibleCategoryIds);
+      // Keep L1 categories that are in the set or have children in the set
+      const allFlat = categories.flatMap(c => [c, ...(c.children || [])]);
+      const parentIdsOfVisible = new Set<string>();
+      for (const id of visibleCategoryIds) {
+        const cat = allFlat.find((c: any) => c.id === id);
+        if (cat?.parent_id) parentIdsOfVisible.add(cat.parent_id);
+      }
+      cats = cats.filter((cat: any) => visSet.has(cat.id) || parentIdsOfVisible.has(cat.id));
+    }
     return cats;
-  }, [filters.category, filters.search, filters.brands, selectedCategory, parentCategory, categories, resultCategoryIds]);
+  }, [filters.category, filters.search, filters.brands, selectedCategory, parentCategory, categories, resultCategoryIds, showAllCats, professionFiltered, visibleCategoryIds]);
 
   const toggleBrand = (slug: string) => {
     const current = filters.brands || [];
@@ -144,6 +159,22 @@ export function CatalogSidebar({ filters, setFilter, clearAll, resultCategoryIds
           {currentCountry?.flag_emoji} {currentCountry?.name || "Belgique"}
         </p>
       </div>
+
+      {/* Profession filter indicator */}
+      {professionFiltered && professionType && !filters.category && (
+        <div className="p-2.5 rounded-lg border border-primary/20 bg-primary/5">
+          <div className="flex items-center gap-1.5 mb-1">
+            <Filter size={12} className="text-primary" />
+            <span className="text-xs font-semibold text-primary">{professionType.name}</span>
+          </div>
+          <button
+            onClick={() => setShowAllCats(!showAllCats)}
+            className="text-xs text-primary hover:underline flex items-center gap-1"
+          >
+            {showAllCats ? <><Filter size={10} /> Filtrer par profil</> : <><Eye size={10} /> Voir tout</>}
+          </button>
+        </div>
+      )}
 
       {/* Categories — collapsible with max-height scroll */}
       <div>

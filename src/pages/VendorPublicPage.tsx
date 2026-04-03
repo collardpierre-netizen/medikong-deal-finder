@@ -49,14 +49,21 @@ export default function VendorPublicPage() {
     .filter((o: any) => o.products)
     .map((o: any) => {
       const p = o.products;
+      const price = Number(o.price_excl_vat) || 0;
       return {
         id: p.id,
         slug: p.slug,
         name: p.name,
-        brand: "",
-        price: o.price_excl_vat,
+        brand: p.brand_name || "",
+        brandSlug: p.brands?.slug || undefined,
+        price: price,
+        pub: price,
         image: p.image_urls?.[0],
+        imageUrl: p.image_urls?.[0],
+        imageUrls: p.image_urls || [],
         stock: o.stock_quantity > 0,
+        sellers: 1,
+        mk: false,
       };
     });
 

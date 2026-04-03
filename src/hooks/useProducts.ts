@@ -139,6 +139,20 @@ export interface DiscountTier {
   mov_progress: number;
 }
 
+export interface OfferPriceTier {
+  id: string;
+  offer_id: string;
+  tier_index: number;
+  mov_threshold: number;
+  mov_currency: string;
+  qogita_unit_price: number;
+  price_excl_vat: number;
+  price_incl_vat: number;
+  margin_amount: number;
+  is_active: boolean;
+  mov_progress: number;
+}
+
 export interface Offer {
   id: string;
   productId: string;
@@ -152,6 +166,7 @@ export interface Offer {
   shipFromCountry: string;
   priceTiers: any[] | null;
   discountTiers: DiscountTier[];
+  offerPriceTiers: OfferPriceTier[];
   isActive: boolean;
   sellerName?: string;
   sellerSlug?: string;
@@ -184,7 +199,7 @@ export function useProductOffers(productId: string | undefined) {
       const vendorIds = [...new Set((offers || []).map((o: any) => o.vendor_id))];
 
       // Fetch vendors and discount tiers in parallel
-      const [vendorsResult, tiersResult, visRulesResult] = await Promise.all([
+      const [vendorsResult, tiersResult, visRulesResult, priceTiersResult] = await Promise.all([
         vendorIds.length > 0
           ? supabase.from("vendors").select("id, name, company_name, slug, is_verified, rating, display_code, is_top_seller, type, show_real_name").in("id", vendorIds)
           : Promise.resolve({ data: [] }),
@@ -193,6 +208,9 @@ export function useProductOffers(productId: string | undefined) {
           : Promise.resolve({ data: [] }),
         vendorIds.length > 0
           ? supabase.from("vendor_visibility_rules" as any).select("*").in("vendor_id", vendorIds)
+          : Promise.resolve({ data: [] }),
+        offerIds.length > 0
+          ? supabase.from("offer_price_tiers").select("*").in("offer_id", offerIds).order("tier_index", { ascending: true })
           : Promise.resolve({ data: [] }),
       ]);
       const visRules: any[] = (visRulesResult as any).data || [];
@@ -203,6 +221,12 @@ export function useProductOffers(productId: string | undefined) {
         const arr = tiersMap.get(t.offer_id) || [];
         arr.push(t);
         tiersMap.set(t.offer_id, arr);
+      }
+      const priceTiersMap = new Map<string, any[]>();
+      for (const t of (priceTiersResult.data || [])) {
+        const arr = priceTiersMap.get(t.offer_id) || [];
+        arr.push(t);
+        priceTiersMap.set(t.offer_id, arr);
       }
 
       return (offers || []).map((o: any): Offer => {
@@ -220,6 +244,7 @@ export function useProductOffers(productId: string | undefined) {
           shipFromCountry: o.shipping_from_country || 'BE',
           priceTiers: o.price_tiers || null,
           discountTiers: tiersMap.get(o.id) || [],
+          offerPriceTiers: priceTiersMap.get(o.id) || [],
           isActive: o.is_active,
           sellerName: (() => {
             const showReal = resolveVendorVisibility(

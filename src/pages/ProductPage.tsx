@@ -41,6 +41,8 @@ function OfferRow({
   const hasTiers = discountTiers.length > 1;
   const tiers = (offer.priceTiers && offer.priceTiers.length > 0) ? offer.priceTiers : [];
   const hasLegacyTiers = tiers.length > 1;
+  const offerPriceTiers = offer.offerPriceTiers || [];
+  const hasOfferPriceTiers = offerPriceTiers.length > 1;
   const displayCode = offer.displayCode || offer.sellerId.slice(0, 6).toUpperCase();
   const displayPrice = isTVAC ? offer.unitPriceInclVat : offer.unitPriceEur;
   const priceLabel = isTVAC ? "TVAC" : "HTVA";
@@ -118,6 +120,27 @@ function OfferRow({
                         {formatEur(tier.unit_price)} €
                       </span>
                       <span className="text-xs text-muted-foreground">MOV {formatEur(tier.mov_amount)} €</span>
+                      {saving && <span className="text-xs text-green-600 font-medium">-{saving}%</span>}
+                    </div>
+                  );
+                })}
+            </div>
+          ) : hasOfferPriceTiers ? (
+            <div className="relative pl-4">
+              <div className="absolute left-[3px] top-[7px] w-px border-l border-dashed border-muted-foreground/40" style={{ height: `calc(100% - 14px)` }} />
+              {offerPriceTiers
+                .sort((a, b) => a.tier_index - b.tier_index)
+                .map((tier, i) => {
+                  const basePrice = offerPriceTiers[0].price_excl_vat;
+                  const tierPrice = isTVAC ? tier.price_incl_vat : tier.price_excl_vat;
+                  const saving = i > 0 ? ((basePrice - tier.price_excl_vat) / basePrice * 100).toFixed(1) : null;
+                  return (
+                    <div key={tier.id} className="flex items-center gap-2 relative" style={{ marginTop: i > 0 ? 6 : 0 }}>
+                      <div className="absolute left-[-14px] w-[7px] h-[7px] rounded-full bg-primary" />
+                      <span className={`text-sm ${i === 0 ? "font-bold text-green-700" : "text-muted-foreground"}`}>
+                        {formatEur(tierPrice)} €
+                      </span>
+                      <span className="text-xs text-muted-foreground">MOV {formatEur(tier.mov_threshold)} €</span>
                       {saving && <span className="text-xs text-green-600 font-medium">-{saving}%</span>}
                     </div>
                   );

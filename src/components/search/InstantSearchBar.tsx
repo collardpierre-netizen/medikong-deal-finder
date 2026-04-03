@@ -73,7 +73,7 @@ export function InstantSearchBar({ className = "", placeholder, variant = "navba
       e.preventDefault();
       const sel = allItems[selectedIndex];
       if (sel.type === "product") navigate(`/produit/${(sel.item as any).slug}`);
-      else if (sel.type === "brand") navigate(`/marques/${(sel.item as any).slug}`);
+      else if (sel.type === "brand") navigate(`/marque/${(sel.item as any).slug}`);
       else navigate(`/categorie/${(sel.item as any).slug}`);
       setIsOpen(false);
       setQuery("");
@@ -193,7 +193,7 @@ export function InstantSearchBar({ className = "", placeholder, variant = "navba
                 return (
                   <button
                     key={b.id}
-                    onClick={() => { navigate(`/marques/${b.slug}`); setIsOpen(false); setQuery(""); }}
+                    onClick={() => { navigate(`/marque/${b.slug}`); setIsOpen(false); setQuery(""); }}
                     className={`w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-accent/50 transition-colors ${selectedIndex === idx ? "bg-accent/50" : ""}`}
                   >
                     {b.logo_url ? (

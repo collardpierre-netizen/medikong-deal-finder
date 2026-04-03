@@ -18,7 +18,7 @@ interface Props {
 }
 
 function ProductImg({ product, className = "" }: { product: CatalogProduct; className?: string }) {
-  const src = getProductImageSrc(product.image_urls?.[0]);
+  const src = getProductImageSrc(product.image_urls?.[0] || product.image_url);
   if (src !== MEDIKONG_PLACEHOLDER) {
     return (
       <div className={`bg-muted rounded-lg overflow-hidden ${className}`}>

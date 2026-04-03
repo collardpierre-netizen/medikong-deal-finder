@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { PAGE_IMAGE_REGISTRY } from "@/data/page-image-registry";
+import FeaturedCategoriesTab from "@/components/admin/FeaturedCategoriesTab";
 
 // --- Static mock data for non-DB tabs ---
 const pages = [
@@ -210,6 +211,7 @@ const AdminCMS = () => {
           <TabsTrigger value="homepage" className="text-[13px]">Sections Homepage</TabsTrigger>
           <TabsTrigger value="hero-images" className="text-[13px]">Images Hero</TabsTrigger>
           <TabsTrigger value="page-images" className="text-[13px]">Images Pages</TabsTrigger>
+          <TabsTrigger value="featured-cats" className="text-[13px]">Catégories vedettes</TabsTrigger>
         </TabsList>
 
         {/* Pages tab */}
@@ -461,6 +463,10 @@ const AdminCMS = () => {
               })}
             </div>
           </div>
+        </TabsContent>
+        {/* Featured Categories tab */}
+        <TabsContent value="featured-cats">
+          <FeaturedCategoriesTab />
         </TabsContent>
       </Tabs>
     </div>

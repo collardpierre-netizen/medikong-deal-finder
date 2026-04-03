@@ -55,7 +55,7 @@ export default function BrandDetailPage() {
         if (!v?.id || dedup.has(v.id)) continue;
         dedup.set(v.id, {
           id: v.id,
-          name: v.name || "Vendeur",
+          name: v.name?.replace(/Qogita\s*Seller\s*/gi, "Fournisseur ") || "Vendeur",
           slug: v.slug || "",
           verified: !!v.is_verified,
           topRated: (Number(v.rating) || 0) >= 4.5,

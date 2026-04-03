@@ -34,8 +34,8 @@ function ProductImg({ product, className = "" }: { product: CatalogProduct; clas
     );
   }
   return (
-    <div className={`bg-muted rounded-lg flex items-center justify-center ${className}`}>
-      <Package size={32} className="text-muted-foreground" />
+    <div className={`bg-muted rounded-lg overflow-hidden ${className}`}>
+      <img src={MEDIKONG_PLACEHOLDER} alt="Produit" className="w-full h-full object-contain p-4" />
     </div>
   );
 }

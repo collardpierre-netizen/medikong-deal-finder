@@ -176,12 +176,12 @@ function OfferRow({
               ))}
             </div>
           ) : (
-            <span className="text-sm font-bold text-green-700">{formatEur(displayPrice)} € <span className="text-[10px] font-normal text-muted-foreground">{priceLabel}</span></span>
+            <span className="text-sm font-bold text-green-700 whitespace-nowrap">{formatEur(displayPrice)}&nbsp;€ <span className="text-[10px] font-normal text-muted-foreground">{priceLabel}</span></span>
           )}
         </div>
 
-        <span className="text-sm text-foreground">{offer.movEur > 0 ? `${formatEur(offer.movEur)} €` : "—"}</span>
-        <span className="text-sm text-foreground">{offer.stockQuantity.toLocaleString("fr-FR")}</span>
+        <span className="text-sm text-foreground whitespace-nowrap">{offer.movEur > 0 ? <>{formatEur(offer.movEur)}&nbsp;€</> : "—"}</span>
+        <span className="text-sm text-foreground whitespace-nowrap">{offer.stockQuantity.toLocaleString("fr-FR")}</span>
 
         {/* Actions */}
         <div className="flex items-center justify-end gap-2">

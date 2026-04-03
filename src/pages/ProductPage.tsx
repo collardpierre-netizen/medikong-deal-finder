@@ -1,4 +1,5 @@
 import { Layout } from "@/components/layout/Layout";
+import { isValidProductImage } from "@/lib/image-utils";
 import { useProduct, useProductOffers, type Offer } from "@/hooks/useProducts";
 import { useCart } from "@/hooks/useCart";
 import { useAuth } from "@/contexts/AuthContext";
@@ -694,11 +695,11 @@ export default function ProductPage() {
     );
   }
 
-  // Build images from real data only — no fallbacks
-  const productImageUrls = product.imageUrls?.filter((u: string) => u && u.startsWith("http")) || [];
+  // Build images from real data only — no fallbacks, no Qogita placeholders
+  const productImageUrls = product.imageUrls?.filter((u: string) => isValidProductImage(u)) || [];
   const images: string[] = productImageUrls.length > 0
     ? productImageUrls
-    : (product.imageUrl && product.imageUrl.startsWith("http")) ? [product.imageUrl] : [];
+    : isValidProductImage(product.imageUrl) ? [product.imageUrl!] : [];
   const hasImages = images.length > 0;
   const description = productDetails?.description || (productDetails as any)?.label || product.descriptionShort || "";
 

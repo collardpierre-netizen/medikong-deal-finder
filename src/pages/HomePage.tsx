@@ -136,7 +136,7 @@ export default function HomePage() {
         <script type="application/ld+json">{JSON.stringify(faqJsonLd)}</script>
       </Helmet>
       {/* ═══ HERO — centered, clean ═══ */}
-      <section className="pt-10 md:pt-20 pb-6 md:pb-10">
+      <section className="pt-10 md:pt-20 pb-6 md:pb-10 bg-white">
         <div className="mk-container text-center max-w-2xl mx-auto">
           <motion.h1
             className="text-3xl md:text-[44px] leading-[1.15] font-bold text-mk-navy mb-4"

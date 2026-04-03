@@ -130,10 +130,10 @@ function OfferRow({
       })()}
 
       {/* Desktop grid */}
-      <div className="hidden md:grid grid-cols-[1.5fr_1fr_1fr_0.8fr_1.5fr] gap-3 items-start">
+      <div className="hidden md:grid grid-cols-[1.5fr_2fr_0.8fr_1.5fr] gap-3 items-start">
         <span className="font-bold text-sm text-foreground">{displayCode}</span>
 
-        {/* Price tiers */}
+        {/* Price + MOV merged column */}
         <div>
           {hasTiers ? (
             <div className="relative pl-4">
@@ -193,11 +193,12 @@ function OfferRow({
               ))}
             </div>
           ) : (
-            <span className="text-sm font-bold text-green-700 whitespace-nowrap">{formatEur(displayPrice)}&nbsp;€ <span className="text-[10px] font-normal text-muted-foreground">{priceLabel}</span></span>
+            <div className="flex items-baseline gap-6">
+              <span className="text-sm font-bold text-green-700 whitespace-nowrap">{formatEur(displayPrice)}&nbsp;€ <span className="text-[10px] font-normal text-muted-foreground">{priceLabel}</span></span>
+              <span className="text-sm text-foreground whitespace-nowrap">{offer.movEur > 0 ? <>{formatEur(offer.movEur)}&nbsp;€</> : "—"}</span>
+            </div>
           )}
         </div>
-
-        <span className="text-sm text-foreground whitespace-nowrap">{(hasTiers || hasOfferPriceTiers || hasLegacyTiers) ? "" : offer.movEur > 0 ? <>{formatEur(offer.movEur)}&nbsp;€</> : "—"}</span>
         <span className="text-sm text-foreground whitespace-nowrap">{offer.stockQuantity.toLocaleString("fr-FR")}</span>
 
         {/* Actions */}

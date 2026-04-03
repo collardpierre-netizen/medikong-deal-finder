@@ -94,10 +94,16 @@ export default function CategoriesPage() {
     } else {
       cats = allCategories.filter(c => !c.parent_id);
     }
-    // Only show categories with products (direct or via children)
-    return cats
-      .filter(c => c.productCount > 0 || c.childCount > 0)
-      .sort((a, b) => b.productCount - a.productCount);
+
+    const visibleCats = currentParent
+      ? cats
+      : cats.filter(c => c.productCount > 0 || c.childCount > 0);
+
+    return visibleCats.sort((a, b) => {
+      if (b.childCount !== a.childCount) return b.childCount - a.childCount;
+      if (b.productCount !== a.productCount) return b.productCount - a.productCount;
+      return displayName(a).localeCompare(displayName(b), "fr", { sensitivity: "base" });
+    });
   }, [allCategories, currentParent]);
 
   const filtered = useMemo(() => {

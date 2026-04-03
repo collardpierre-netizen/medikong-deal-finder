@@ -102,7 +102,12 @@ export function useFeaturedProducts(limit = 10, options?: { promotion?: boolean;
       if (options?.promotion) query = query.eq("is_promotion", true);
       if (options?.brandSlug) {
         const { data: brand } = await supabase.from("brands").select("id").eq("slug", options.brandSlug).maybeSingle();
-        if (brand) query = query.eq("brand_id", brand.id);
+        if (brand) {
+          query = query.eq("brand_id", brand.id);
+        } else {
+          // Brand not found — return empty instead of unfiltered results
+          return [];
+        }
       }
 
       const { data, error } = await query

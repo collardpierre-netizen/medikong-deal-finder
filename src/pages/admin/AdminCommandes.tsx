@@ -6,10 +6,8 @@ import { useI18n } from "@/contexts/I18nContext";
 import { useOrders } from "@/hooks/useAdminData";
 import {
   ShoppingCart, TrendingUp, Clock, CreditCard, Truck,
-  Search, Filter, Download, Eye,
+  Search, Filter, Download, ChevronDown, ChevronRight, Package,
 } from "lucide-react";
-
-type BuyerType = "Pharmacie" | "MRS" | "Hôpital" | "Cabinet" | "Infirmier" | "Parapharmacie";
 
 const buyerColors: Record<string, { bg: string; text: string }> = {
   Pharmacie: { bg: "#EFF6FF", text: "#1B5BDA" },
@@ -44,9 +42,11 @@ const AdminCommandes = () => {
   const [activeTab, setActiveTab] = useState<"list" | "timeline" | "aging" | "buyers">("list");
   const [statusFilter, setStatusFilter] = useState("all");
   const [search, setSearch] = useState("");
+  const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
 
   const orders = ordersData.map(o => ({
     id: o.order_number,
+    rawId: o.id,
     refPO: "—",
     buyer: (o.customers as any)?.company_name || "—",
     buyerType: (o.customers as any)?.customer_type || "pharmacy",
@@ -58,14 +58,14 @@ const AdminCommandes = () => {
     dueDate: o.payment_due_date ? new Date(o.payment_due_date).toLocaleDateString("fr-BE") : "—",
     status: o.status as "pending" | "confirmed" | "shipped" | "delivered" | "cancelled",
     date: new Date(o.created_at).toLocaleDateString("fr-BE"),
-    items: 0,
+    lines: ((o as any).order_lines || []) as any[],
   }));
 
   const displayOrders = orders;
 
   const filtered = displayOrders.filter((o) => {
     if (statusFilter !== "all" && o.status !== statusFilter) return false;
-    if (search && !o.id.toLowerCase().includes(search.toLowerCase()) && !o.buyer.toLowerCase().includes(search.toLowerCase()) && !o.seller.toLowerCase().includes(search.toLowerCase())) return false;
+    if (search && !o.id.toLowerCase().includes(search.toLowerCase()) && !o.buyer.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });
 
@@ -81,7 +81,6 @@ const AdminCommandes = () => {
     { key: "buyers" as const, label: "Par type acheteur" },
   ];
 
-  // Timeline from actual orders
   const timeline = displayOrders.slice(0, 6).map(o => ({
     time: new Date().toLocaleTimeString("fr-BE", { hour: "2-digit", minute: "2-digit" }),
     event: `${o.status === "pending" ? "Nouvelle commande" : o.status === "confirmed" ? "Commande confirmée" : o.status === "shipped" ? "Expédition" : o.status === "delivered" ? "Livraison confirmée" : "Annulation"} ${o.id}`,
@@ -93,14 +92,12 @@ const AdminCommandes = () => {
     confirmed: "#1B5BDA", shipped: "#7C3AED", pending: "#F59E0B", delivered: "#059669", cancelled: "#EF4343",
   };
 
-  // Buyer profile aggregation
   const buyerTypeMap = new Map<string, { orders: number; gmv: number }>();
   displayOrders.forEach(o => {
-    const t = o.buyerType;
-    const existing = buyerTypeMap.get(t) || { orders: 0, gmv: 0 };
+    const existing = buyerTypeMap.get(o.buyerType) || { orders: 0, gmv: 0 };
     existing.orders++;
     existing.gmv += o.amountHT;
-    buyerTypeMap.set(t, existing);
+    buyerTypeMap.set(o.buyerType, existing);
   });
 
   const buyerProfiles = Array.from(buyerTypeMap.entries()).map(([type, data]) => ({
@@ -109,6 +106,10 @@ const AdminCommandes = () => {
     gmv: data.gmv,
     avgBasket: data.orders > 0 ? Math.round(data.gmv / data.orders) : 0,
   }));
+
+  const toggleExpand = (orderId: string) => {
+    setExpandedOrder(prev => prev === orderId ? null : orderId);
+  };
 
   return (
     <div>
@@ -154,7 +155,7 @@ const AdminCommandes = () => {
           <div className="flex items-center gap-3 mb-4">
             <div className="flex items-center gap-2 px-3 py-2 rounded-md flex-1 max-w-md" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
               <Search size={14} style={{ color: "#8B95A5" }} />
-              <input type="text" placeholder="Rechercher par ID, acheteur, vendeur..." value={search} onChange={(e) => setSearch(e.target.value)}
+              <input type="text" placeholder="Rechercher par ID, acheteur..." value={search} onChange={(e) => setSearch(e.target.value)}
                 className="flex-1 text-[13px] outline-none bg-transparent" style={{ color: "#1D2530" }} />
             </div>
             <button className="flex items-center gap-2 px-3 py-2 rounded-md text-[13px] font-medium" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0", color: "#616B7C" }}><Filter size={14} /> Filtres</button>
@@ -166,7 +167,8 @@ const AdminCommandes = () => {
                 <table className="w-full text-left">
                   <thead>
                     <tr style={{ borderBottom: "1px solid #E2E8F0", backgroundColor: "#F8FAFC" }}>
-                      {["ID / Réf PO", "Acheteur", "Type", "Vendeur", "HT", "TVA", "TTC", "Paiement", "Échéance", "Statut"].map((h) => (
+                      <th className="px-2 py-3 w-8"></th>
+                      {["ID / Réf PO", "Acheteur", "Type", "Lignes", "HT", "TVA", "TTC", "Paiement", "Statut"].map((h) => (
                         <th key={h} className="px-3 py-3 text-[10px] font-semibold uppercase tracking-wider" style={{ color: "#8B95A5" }}>{h}</th>
                       ))}
                     </tr>
@@ -174,28 +176,111 @@ const AdminCommandes = () => {
                   <tbody>
                     {filtered.map((o) => {
                       const bc = buyerColors[o.buyerType] || { bg: "#F1F5F9", text: "#475569" };
+                      const isExpanded = expandedOrder === o.rawId;
                       return (
-                        <tr key={o.id} className="cursor-pointer transition-colors" style={{ borderBottom: "1px solid #F1F5F9" }}
-                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#F8FAFC")}
-                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}>
-                          <td className="px-3 py-3">
-                            <span className="text-[12px] font-bold font-mono block" style={{ color: "#1B5BDA" }}>{o.id}</span>
-                            <span className="text-[10px]" style={{ color: "#8B95A5" }}>{o.refPO}</span>
-                          </td>
-                          <td className="px-3 py-3 text-[12px] font-medium" style={{ color: "#1D2530" }}>{o.buyer}</td>
-                          <td className="px-3 py-3">
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ backgroundColor: bc.bg, color: bc.text }}>
-                              {o.buyerType}
-                            </span>
-                          </td>
-                          <td className="px-3 py-3 text-[12px]" style={{ color: "#616B7C" }}>{o.seller}</td>
-                          <td className="px-3 py-3 text-[12px] font-bold font-mono" style={{ color: "#1D2530" }}>{fmt(o.amountHT)}</td>
-                          <td className="px-3 py-3 text-[11px] font-mono" style={{ color: "#8B95A5" }}>{fmt(o.tva)}</td>
-                          <td className="px-3 py-3 text-[12px] font-bold font-mono" style={{ color: "#059669" }}>{fmt(o.ttc)}</td>
-                          <td className="px-3 py-3 text-[11px]" style={{ color: "#616B7C" }}>{o.paymentTerms}</td>
-                          <td className="px-3 py-3 text-[11px]" style={{ color: "#8B95A5" }}>{o.dueDate}</td>
-                          <td className="px-3 py-3"><StatusBadge status={o.status} /></td>
-                        </tr>
+                        <>
+                          <tr key={o.rawId} className="cursor-pointer transition-colors" style={{ borderBottom: "1px solid #F1F5F9" }}
+                            onClick={() => toggleExpand(o.rawId)}
+                            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#F8FAFC")}
+                            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}>
+                            <td className="px-2 py-3 text-center">
+                              {isExpanded ? <ChevronDown size={14} style={{ color: "#8B95A5" }} /> : <ChevronRight size={14} style={{ color: "#8B95A5" }} />}
+                            </td>
+                            <td className="px-3 py-3">
+                              <span className="text-[12px] font-bold font-mono block" style={{ color: "#1B5BDA" }}>{o.id}</span>
+                              <span className="text-[10px]" style={{ color: "#8B95A5" }}>{o.date}</span>
+                            </td>
+                            <td className="px-3 py-3 text-[12px] font-medium" style={{ color: "#1D2530" }}>{o.buyer}</td>
+                            <td className="px-3 py-3">
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ backgroundColor: bc.bg, color: bc.text }}>
+                                {o.buyerType}
+                              </span>
+                            </td>
+                            <td className="px-3 py-3">
+                              <span className="text-[12px] font-medium" style={{ color: "#616B7C" }}>
+                                {o.lines.length} article{o.lines.length > 1 ? "s" : ""}
+                              </span>
+                            </td>
+                            <td className="px-3 py-3 text-[12px] font-bold font-mono" style={{ color: "#1D2530" }}>{fmt(o.amountHT)}</td>
+                            <td className="px-3 py-3 text-[11px] font-mono" style={{ color: "#8B95A5" }}>{fmt(o.tva)}</td>
+                            <td className="px-3 py-3 text-[12px] font-bold font-mono" style={{ color: "#059669" }}>{fmt(o.ttc)}</td>
+                            <td className="px-3 py-3 text-[11px]" style={{ color: "#616B7C" }}>{o.paymentTerms}</td>
+                            <td className="px-3 py-3"><StatusBadge status={o.status} /></td>
+                          </tr>
+                          {isExpanded && o.lines.length > 0 && (
+                            <tr key={`${o.rawId}-lines`}>
+                              <td colSpan={10} className="px-0 py-0">
+                                <div className="mx-4 mb-3 rounded-lg overflow-hidden" style={{ border: "1px solid #E2E8F0", backgroundColor: "#F8FAFC" }}>
+                                  <table className="w-full text-left">
+                                    <thead>
+                                      <tr style={{ borderBottom: "1px solid #E2E8F0" }}>
+                                        {["Produit", "Vendeur Qogita", "Qté", "Prix HT", "Total HT", "Offre Qogita", "Délai", "Statut Qogita"].map(h => (
+                                          <th key={h} className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wider" style={{ color: "#8B95A5" }}>{h}</th>
+                                        ))}
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {o.lines.map((line: any) => {
+                                        const productName = line.products?.name || "—";
+                                        const vendorName = line.vendors?.company_name || line.qogita_seller_fid || "—";
+                                        const deliveryDays = line.offers?.delivery_days;
+                                        const deliveryLabel = deliveryDays ? `${deliveryDays}j` : "5-10j ouvrables";
+                                        const qogitaStatus = line.qogita_order_status || "pending";
+                                        const statusColor = qogitaStatus === "confirmed" ? "#059669" : qogitaStatus === "shipped" ? "#7C3AED" : "#F59E0B";
+                                        return (
+                                          <tr key={line.id} style={{ borderBottom: "1px solid #F1F5F9" }}>
+                                            <td className="px-3 py-2">
+                                              <div className="flex items-center gap-2">
+                                                {line.products?.image_url ? (
+                                                  <img src={line.products.image_url} alt="" className="w-7 h-7 rounded object-contain bg-white" style={{ border: "1px solid #E2E8F0" }} />
+                                                ) : (
+                                                  <div className="w-7 h-7 rounded flex items-center justify-center" style={{ backgroundColor: "#F1F5F9" }}><Package size={12} style={{ color: "#8B95A5" }} /></div>
+                                                )}
+                                                <div>
+                                                  <span className="text-[11px] font-medium block" style={{ color: "#1D2530" }}>{productName}</span>
+                                                  {line.products?.gtin && <span className="text-[9px] font-mono" style={{ color: "#8B95A5" }}>{line.products.gtin}</span>}
+                                                </div>
+                                              </div>
+                                            </td>
+                                            <td className="px-3 py-2 text-[11px] font-mono" style={{ color: "#616B7C" }}>
+                                              {vendorName}
+                                            </td>
+                                            <td className="px-3 py-2 text-[11px] font-bold" style={{ color: "#1D2530" }}>{line.quantity}</td>
+                                            <td className="px-3 py-2 text-[11px] font-mono" style={{ color: "#1D2530" }}>{fmt(Number(line.unit_price_excl_vat))}&nbsp;€</td>
+                                            <td className="px-3 py-2 text-[11px] font-bold font-mono" style={{ color: "#1D2530" }}>{fmt(Number(line.line_total_excl_vat))}&nbsp;€</td>
+                                            <td className="px-3 py-2">
+                                              {line.qogita_offer_qid ? (
+                                                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded" style={{ backgroundColor: "#EFF6FF", color: "#1B5BDA" }}>{line.qogita_offer_qid}</span>
+                                              ) : <span className="text-[10px]" style={{ color: "#8B95A5" }}>—</span>}
+                                            </td>
+                                            <td className="px-3 py-2 text-[11px]" style={{ color: "#616B7C" }}>
+                                              <div className="flex items-center gap-1">
+                                                <Truck size={11} />
+                                                {deliveryLabel}
+                                              </div>
+                                            </td>
+                                            <td className="px-3 py-2">
+                                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ backgroundColor: `${statusColor}15`, color: statusColor }}>
+                                                {qogitaStatus}
+                                              </span>
+                                            </td>
+                                          </tr>
+                                        );
+                                      })}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                          {isExpanded && o.lines.length === 0 && (
+                            <tr key={`${o.rawId}-empty`}>
+                              <td colSpan={10} className="px-6 py-4 text-center text-[12px]" style={{ color: "#8B95A5" }}>
+                                Aucune ligne de commande enregistrée.
+                              </td>
+                            </tr>
+                          )}
+                        </>
                       );
                     })}
                   </tbody>
@@ -209,13 +294,13 @@ const AdminCommandes = () => {
       {activeTab === "timeline" && (
         <div className="p-5 rounded-[10px]" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
           <h3 className="text-[14px] font-bold mb-4" style={{ color: "#1D2530" }}>Activité récente</h3>
-          {timeline.map((t, i) => (
+          {timeline.map((tl, i) => (
             <div key={i} className="flex items-start gap-4 py-3" style={{ borderBottom: i < timeline.length - 1 ? "1px solid #F1F5F9" : "none" }}>
-              <span className="text-[12px] font-mono shrink-0 w-12 pt-0.5" style={{ color: "#8B95A5" }}>{t.time}</span>
-              <div className="w-3 h-3 rounded-full mt-1 shrink-0" style={{ backgroundColor: timelineColors[t.type] || "#8B95A5" }} />
+              <span className="text-[12px] font-mono shrink-0 w-12 pt-0.5" style={{ color: "#8B95A5" }}>{tl.time}</span>
+              <div className="w-3 h-3 rounded-full mt-1 shrink-0" style={{ backgroundColor: timelineColors[tl.type] || "#8B95A5" }} />
               <div>
-                <span className="text-[13px] font-semibold" style={{ color: "#1D2530" }}>{t.event}</span>
-                <p className="text-[11px] mt-0.5" style={{ color: "#8B95A5" }}>{t.detail}</p>
+                <span className="text-[13px] font-semibold" style={{ color: "#1D2530" }}>{tl.event}</span>
+                <p className="text-[11px] mt-0.5" style={{ color: "#8B95A5" }}>{tl.detail}</p>
               </div>
             </div>
           ))}

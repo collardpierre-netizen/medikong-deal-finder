@@ -885,7 +885,7 @@ export default function OnboardingPage() {
         </div>
         <h1 style={{ fontSize: 20, fontWeight: 700, color: S.text, marginBottom: 6 }}>Vérifiez votre email</h1>
         <p style={{ fontSize: 13, color: S.sec, marginBottom: 8 }}>
-          Un code à 8 chiffres a été envoyé à <strong>{email}</strong>
+          Un code à 6 chiffres a été envoyé à <strong>{email}</strong>
         </p>
         <div style={{ background: S.blueBg, border: `1px solid ${S.blue}20`, borderRadius: S.radius, padding: "16px 20px", marginBottom: 20, textAlign: "left" }}>
           <p style={{ fontSize: 13, color: S.text, margin: 0, fontWeight: 600, marginBottom: 4 }}>

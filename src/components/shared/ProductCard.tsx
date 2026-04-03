@@ -5,88 +5,65 @@ import { useState } from "react";
 import { Package } from "lucide-react";
 import { motion } from "framer-motion";
 
-// Unsplash fallback images by keyword in product name / category
-const FALLBACK_IMAGES = [
-  "https://images.unsplash.com/photo-1583947215259-38e31be8751f?w=400&h=400&fit=crop", // medical gloves
-  "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=400&h=400&fit=crop", // medical supplies
-  "https://images.unsplash.com/photo-1603398938378-e54eab446dde?w=400&h=400&fit=crop", // bandages
-  "https://images.unsplash.com/photo-1631549916768-4119b2e5f926?w=400&h=400&fit=crop", // sanitizer
-  "https://images.unsplash.com/photo-1585435557343-3b092031a831?w=400&h=400&fit=crop", // mask
-  "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=400&h=400&fit=crop", // medical equipment
-];
+const MEDIKONG_PLACEHOLDER = "/medikong-placeholder.png";
 
-function getFallbackImage(product: Product): string {
-  // Deterministic fallback based on product name hash
-  const hash = product.name.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
-  return FALLBACK_IMAGES[hash % FALLBACK_IMAGES.length];
-}
-
-function hasRealImages(product: Product): boolean {
-  return !!(product.imageUrls && product.imageUrls.length > 0) || !!product.imageUrl;
+function isValidImageUrl(url: string | undefined | null): boolean {
+  if (!url || url.trim() === "") return false;
+  if (/no.?image/i.test(url)) return false;
+  return true;
 }
 
 function getProductImages(product: Product): string[] {
-  if (product.imageUrls && product.imageUrls.length > 0) return product.imageUrls;
-  if (product.imageUrl) return [product.imageUrl];
-  return [getFallbackImage(product)];
+  if (product.imageUrls && product.imageUrls.length > 0) {
+    const valid = product.imageUrls.filter(isValidImageUrl);
+    if (valid.length > 0) return valid;
+  }
+  if (isValidImageUrl(product.imageUrl)) return [product.imageUrl!];
+  return [MEDIKONG_PLACEHOLDER];
+}
+
+function getFallbackImage(): string {
+  return MEDIKONG_PLACEHOLDER;
 }
 
 export function ProductImage({ product, className = "", selectedIndex = 0 }: { product: Product; className?: string; selectedIndex?: number }) {
   const images = getProductImages(product);
   const imgSrc = images[selectedIndex] || images[0];
-  const colorKey = product.color || "blue";
-  const colors = productColors[colorKey] || productColors.blue;
-  const IconComponent = product.iconName ? productIconMap[product.iconName] : Package;
-  const FinalIcon = IconComponent || Package;
 
-  // Show real image
-  if (imgSrc) {
-    return (
-      <div className={`aspect-square rounded-lg relative overflow-hidden bg-muted ${className}`}>
-        <img
-          src={imgSrc}
-          alt={product.name}
-          loading="lazy"
-          referrerPolicy="no-referrer"
-          className="w-full h-full object-contain p-2"
-          onError={(e) => {
-            e.currentTarget.src = "/product-placeholder.svg";
-          }}
-        />
-      </div>
-    );
-  }
-
-  // Icon fallback (should rarely happen now)
   return (
-    <div
-      className={`aspect-square rounded-lg flex flex-col items-center justify-center gap-2 relative overflow-hidden ${className}`}
-      style={{ backgroundColor: colors.bg }}
-    >
-      <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full opacity-20" style={{ backgroundColor: colors.fg }} />
-      <div className="absolute -bottom-4 -left-4 w-16 h-16 rounded-full opacity-10" style={{ backgroundColor: colors.fg }} />
-      <FinalIcon size={36} style={{ color: colors.fg }} />
-      <span className="text-[10px] font-bold tracking-wider uppercase opacity-60" style={{ color: colors.fg }}>{product.brand}</span>
+    <div className={`aspect-square rounded-lg relative overflow-hidden bg-muted ${className}`}>
+      <img
+        src={imgSrc}
+        alt={product.name}
+        loading="lazy"
+        referrerPolicy="no-referrer"
+        className="w-full h-full object-contain p-2"
+        onError={(e) => {
+          if (e.currentTarget.src !== window.location.origin + MEDIKONG_PLACEHOLDER) {
+            e.currentTarget.src = MEDIKONG_PLACEHOLDER;
+          }
+        }}
+      />
     </div>
   );
 }
 
 export function ProductImageSmall({ product }: { product: Product }) {
   const images = getProductImages(product);
-  if (images[0]) {
-    return (
-      <div className="w-12 h-12 rounded overflow-hidden bg-muted">
-        <img src={images[0]} alt={product.name} loading="lazy" className="w-full h-full object-cover" />
-      </div>
-    );
-  }
-  const colorKey = product.color || "blue";
-  const colors = productColors[colorKey] || productColors.blue;
-  const IconComponent = product.iconName ? productIconMap[product.iconName] : Package;
-  const FinalIcon = IconComponent || Package;
   return (
-    <div className="w-12 h-12 rounded flex items-center justify-center" style={{ backgroundColor: colors.bg }}>
-      <FinalIcon size={18} style={{ color: colors.fg }} />
+    <div className="w-12 h-12 rounded overflow-hidden bg-muted">
+      <img
+        src={images[0]}
+        alt={product.name}
+        loading="lazy"
+        referrerPolicy="no-referrer"
+        className="w-full h-full object-contain"
+        onError={(e) => {
+          if (e.currentTarget.src !== window.location.origin + MEDIKONG_PLACEHOLDER) {
+            e.currentTarget.src = MEDIKONG_PLACEHOLDER;
+          }
+        }}
+      />
     </div>
   );
 }

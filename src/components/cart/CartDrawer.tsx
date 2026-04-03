@@ -1,6 +1,6 @@
 import { useCart } from "@/hooks/useCart";
 import { formatPrice } from "@/data/mock";
-import { ShoppingCart, X, Minus, Plus, Trash2, ArrowRight, Package } from "lucide-react";
+import { ShoppingCart, X, Minus, Plus, Trash2, ArrowRight, Package, Truck } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -45,6 +45,10 @@ export default function CartDrawer() {
                                 <span className="font-medium">{formatPrice(unitPrice)}€</span>
                                 <span className="text-mk-ter"> × {item.quantity} = </span>
                                 <span className="font-bold">{formatPrice(unitPrice * item.quantity)}€</span>
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
+                                <Truck size={11} />
+                                {item.delivery_days ? `${item.delivery_days} jours ouvrables` : "5-10 jours ouvrables"}
                               </p>
                             </div>
                             <div className="flex items-center gap-2 shrink-0">

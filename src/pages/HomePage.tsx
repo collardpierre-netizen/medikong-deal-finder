@@ -40,16 +40,18 @@ export default function HomePage() {
   const { data: countryStats } = useQuery({
     queryKey: ["homepage-stats", country],
     queryFn: async () => {
-      const [productsRes, offersRes, vendorsRes] = await Promise.all([
+      const [productsRes, offersRes, vendorsRes, brandsRes] = await Promise.all([
         supabase.from("products").select("id", { count: "exact", head: true }).eq("is_active", true).gt("offer_count", 0),
         supabase.from("offers").select("id", { count: "exact", head: true }).eq("country_code", country).eq("is_active", true),
         supabase.from("offers").select("vendor_id").eq("country_code", country).eq("is_active", true),
+        supabase.from("brands").select("id", { count: "exact", head: true }).eq("is_active", true).gt("product_count", 0),
       ]);
       const uniqueVendors = new Set((vendorsRes.data || []).map((o: any) => o.vendor_id)).size;
       return {
         products: productsRes.count || 0,
         offers: offersRes.count || 0,
         vendors: uniqueVendors || 0,
+        brands: brandsRes.count || 0,
       };
     },
   });
@@ -205,19 +207,25 @@ export default function HomePage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.4 }}
           >
-            <div className="px-6 md:px-8 text-center">
+            <div className="px-4 md:px-6 text-center">
               <div className="text-xl md:text-2xl font-bold text-mk-navy">
                 <AnimatedCounter target={countryStats?.vendors || 0} suffix="+" />
               </div>
               <div className="text-xs text-mk-sec mt-0.5">{t("stats.suppliers")}</div>
             </div>
-            <div className="px-6 md:px-8 text-center">
+            <div className="px-4 md:px-6 text-center">
+              <div className="text-xl md:text-2xl font-bold text-mk-navy">
+                <AnimatedCounter target={countryStats?.brands || 0} suffix="+" />
+              </div>
+              <div className="text-xs text-mk-sec mt-0.5">Marques</div>
+            </div>
+            <div className="px-4 md:px-6 text-center">
               <div className="text-xl md:text-2xl font-bold text-mk-navy">
                 <AnimatedCounter target={countryStats?.products || 0} suffix="+" />
               </div>
               <div className="text-xs text-mk-sec mt-0.5">{t("stats.products")} {countryLabel}</div>
             </div>
-            <div className="px-6 md:px-8 text-center">
+            <div className="px-4 md:px-6 text-center">
               <div className="text-xl md:text-2xl font-bold text-mk-navy">
                 <AnimatedCounter target={countryStats?.offers || 0} suffix="+" />
               </div>

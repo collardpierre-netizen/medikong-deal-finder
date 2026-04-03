@@ -807,7 +807,7 @@ export default function ProductPage() {
                         }}
                       />
                     ) : (
-                      <Package size={48} className="text-muted-foreground/30" />
+                      <img src="/medikong-placeholder.png" alt="Image non disponible" className="w-full h-full object-contain p-8" />
                     )}
                   </div>
 

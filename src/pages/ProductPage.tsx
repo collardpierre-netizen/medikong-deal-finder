@@ -195,7 +195,7 @@ function OfferRow({
           )}
         </div>
 
-        <span className="text-sm text-foreground whitespace-nowrap">{offer.movEur > 0 ? <>{formatEur(offer.movEur)}&nbsp;€</> : "—"}</span>
+        <span className="text-sm text-foreground whitespace-nowrap">{(hasTiers || hasOfferPriceTiers || hasLegacyTiers) ? "" : offer.movEur > 0 ? <>{formatEur(offer.movEur)}&nbsp;€</> : "—"}</span>
         <span className="text-sm text-foreground whitespace-nowrap">{offer.stockQuantity.toLocaleString("fr-FR")}</span>
 
         {/* Actions */}

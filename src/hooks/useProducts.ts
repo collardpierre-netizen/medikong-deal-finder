@@ -32,6 +32,7 @@ export interface Product {
   descriptionShort?: string;
   weightG?: number;
   brandId?: string;
+  brandSlug?: string;
 }
 
 function slugify(text: string): string {
@@ -73,6 +74,7 @@ function mapDbProduct(row: any, offersData?: any[]): Product {
     imageUrls: Array.isArray(row.image_urls) ? row.image_urls.filter(Boolean) : [],
     descriptionShort: row.short_description || undefined,
     brandId: row.brand_id || undefined,
+    brandSlug: row.brands?.slug || (row.brand_name ? slugify(row.brand_name) : undefined),
   };
 }
 
@@ -91,7 +93,7 @@ export function useFeaturedProducts(limit = 10, options?: { promotion?: boolean;
     queryFn: async () => {
       let query = supabase
         .from("products")
-        .select("id, slug, name, brand_name, brand_id, gtin, cnk_code, image_urls, short_description, is_promotion, promotion_label, best_price_excl_vat, best_price_incl_vat, offer_count, total_stock, is_in_stock, category_name")
+        .select("id, slug, name, brand_name, brand_id, gtin, cnk_code, image_urls, short_description, is_promotion, promotion_label, best_price_excl_vat, best_price_incl_vat, offer_count, total_stock, is_in_stock, category_name, brands(slug)")
         .eq("is_active", true)
         .gt("offer_count", 0)
         .gt("best_price_excl_vat", 0);

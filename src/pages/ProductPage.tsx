@@ -240,7 +240,7 @@ function OfferRow({
       {/* Delivery estimate */}
       <div className="flex items-center gap-1.5 mt-3 text-xs text-muted-foreground">
         <Truck size={13} />
-        <span>Livraison estimee : {offer.deliveryDays ? (offer.deliveryDays <= 7 ? `${offer.deliveryDays} jours` : `${Math.ceil(offer.deliveryDays / 7)} semaines`) : "Non communiquée"}</span>
+        <span>Livraison estimée : {offer.deliveryDays ? (offer.deliveryDays <= 7 ? `${offer.deliveryDays} jours` : `${Math.ceil(offer.deliveryDays / 7)} semaines`) : "5-10 jours ouvrables"}</span>
       </div>
 
       <VendorSuggestions

@@ -1565,6 +1565,8 @@ export type Database = {
           order_id: string
           product_id: string
           qogita_offer_qid: string | null
+          qogita_order_status: string
+          qogita_seller_fid: string | null
           quantity: number
           tracking_number: string | null
           tracking_url: string | null
@@ -1586,6 +1588,8 @@ export type Database = {
           order_id: string
           product_id: string
           qogita_offer_qid?: string | null
+          qogita_order_status?: string
+          qogita_seller_fid?: string | null
           quantity: number
           tracking_number?: string | null
           tracking_url?: string | null
@@ -1607,6 +1611,8 @@ export type Database = {
           order_id?: string
           product_id?: string
           qogita_offer_qid?: string | null
+          qogita_order_status?: string
+          qogita_seller_fid?: string | null
           quantity?: number
           tracking_number?: string | null
           tracking_url?: string | null

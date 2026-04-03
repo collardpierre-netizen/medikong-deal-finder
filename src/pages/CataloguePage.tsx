@@ -62,10 +62,7 @@ export default function CataloguePage() {
         <Breadcrumbs />
 
         <div className="flex items-center justify-between mb-4 mt-2">
-          <div>
-            <h1 className="text-2xl md:text-[28px] font-bold text-foreground">{title}</h1>
-            <p className="text-sm text-muted-foreground">{total.toLocaleString("fr-FR")} produits trouvés</p>
-          </div>
+          <h1 className="text-2xl md:text-[28px] font-bold text-foreground">{title}</h1>
           <button
             onClick={() => setMobileFilters(true)}
             className="lg:hidden flex items-center gap-1.5 border border-border text-sm px-3 py-1.5 rounded-md text-muted-foreground"

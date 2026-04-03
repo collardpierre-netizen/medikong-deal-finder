@@ -33,7 +33,7 @@ export function CatalogToolbar({ filters, setFilter, total, view, setView }: Pro
       </div>
 
       <div className="flex items-center gap-2">
-        <span className="text-sm text-muted-foreground hidden sm:inline">{total.toLocaleString("fr-FR")} produits</span>
+        <span className="text-sm text-muted-foreground hidden sm:inline"><span className="text-sm text-muted-foreground hidden sm:inline">{total.toLocaleString("de-DE")} produits</span></span>
 
         <Select value={String(filters.perPage)} onValueChange={v => setFilter("per_page", v)}>
           <SelectTrigger className="h-8 text-sm w-[120px]">

@@ -8,6 +8,8 @@ const routeLabels: Record<string, string> = {
   marques: "Marques",
   marque: "Marque",
   fabricant: "Fabricant",
+  fabricants: "Fabricants",
+  vendeur: "Vendeur",
   panier: "Panier",
   compte: "Mon compte",
   checkout: "Commande",
@@ -21,6 +23,7 @@ const routeLabels: Record<string, string> = {
   professionnels: "Professionnels",
   sourcing: "Sourcing",
   categories: "Catégories",
+  catalogue: "Catalogue",
 };
 
 // Singular segments that should link to their plural list page

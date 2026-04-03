@@ -571,7 +571,7 @@ export default function AdminSync() {
         return;
       }
       toast.success("Connexion Qogita réussie ✅");
-      queryClient.invalidateQueries({ queryKey: ["qogita-config"] });
+      qc.invalidateQueries({ queryKey: ["qogita-config"] });
     } catch (err: any) {
       toast.error("Erreur de connexion", { description: err.message });
     } finally {

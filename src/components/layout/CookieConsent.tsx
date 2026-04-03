@@ -35,6 +35,7 @@ export function CookieConsent() {
 
   const save = (p: CookiePrefs) => {
     localStorage.setItem(COOKIE_KEY, JSON.stringify(p));
+    window.dispatchEvent(new Event("mk:cookie-consent-saved"));
     setVisible(false);
   };
 
@@ -52,13 +53,8 @@ export function CookieConsent() {
   ];
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-end justify-center pointer-events-none">
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/20 backdrop-blur-[2px] pointer-events-auto" onClick={rejectAll} />
-
-      {/* Panel */}
-      <div className="relative w-full max-w-[560px] mx-4 mb-4 bg-white rounded-2xl shadow-2xl border border-border pointer-events-auto animate-in slide-in-from-bottom-4 duration-500">
-        {/* Header */}
+    <div className="fixed inset-x-0 bottom-0 z-[9999] flex justify-center pointer-events-none p-4">
+      <div className="relative w-full max-w-[560px] bg-white rounded-2xl shadow-2xl border border-border pointer-events-auto animate-in slide-in-from-bottom-4 duration-500">
         <div className="flex items-start gap-3 p-5 pb-0">
           <div className="w-10 h-10 rounded-xl bg-[#EFF6FF] flex items-center justify-center shrink-0">
             <Cookie size={20} className="text-[#1B5BDA]" />
@@ -75,7 +71,6 @@ export function CookieConsent() {
           </button>
         </div>
 
-        {/* Details toggle */}
         <div className="px-5 pt-3">
           <button
             onClick={() => setShowDetails(!showDetails)}
@@ -86,7 +81,6 @@ export function CookieConsent() {
           </button>
         </div>
 
-        {/* Detailed preferences */}
         {showDetails && (
           <div className="px-5 pt-3 space-y-3">
             {categories.map((cat) => (
@@ -106,7 +100,6 @@ export function CookieConsent() {
           </div>
         )}
 
-        {/* Actions */}
         <div className="flex gap-2 p-5">
           <Button
             onClick={rejectAll}

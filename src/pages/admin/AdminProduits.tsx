@@ -339,6 +339,8 @@ const AdminProduits = () => {
           </DialogHeader>
           <div className="space-y-3">
             <p className="text-sm"><strong>{importResult?.created || 0}</strong> produit(s) importé(s) / mis à jour</p>
+            {(importResult?.brandsCreated || 0) > 0 && <p className="text-sm text-primary"><strong>{importResult!.brandsCreated}</strong> marque(s) auto-créée(s)</p>}
+            {(importResult?.manufacturersCreated || 0) > 0 && <p className="text-sm text-primary"><strong>{importResult!.manufacturersCreated}</strong> fabricant(s) auto-créé(s)</p>}
             {(importResult?.errors?.length || 0) > 0 && (
               <div>
                 <p className="text-sm font-medium text-destructive mb-1">{importResult!.errors.length} erreur(s) :</p>

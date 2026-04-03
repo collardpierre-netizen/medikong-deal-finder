@@ -413,7 +413,7 @@ function WatchListDialog({ product, user, bestPrice, isTVAC }: { product: any; u
           {product.imageUrls?.[0] ? (
             <img src={product.imageUrls[0]} alt="" className="w-16 h-16 object-contain rounded border border-border" />
           ) : (
-            <div className="w-16 h-16 bg-muted rounded flex items-center justify-center"><Package size={24} className="text-muted-foreground" /></div>
+            <img src="/medikong-placeholder.png" alt="" className="w-16 h-16 object-contain rounded border border-border bg-muted p-1" />
           )}
           <div className="min-w-0">
             <p className="font-medium text-sm text-foreground line-clamp-2">{product.name}</p>

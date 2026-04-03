@@ -15,10 +15,11 @@ export default function BrandsPage() {
   const [activeLetter, setActiveLetter] = useState("A");
   const [search, setSearch] = useState("");
 
-  const { data: brands = [], isLoading } = useQuery({
+  interface BrandItem { id: string; name: string; slug: string; product_count: number; letter: string; }
+
+  const { data: brands = [], isLoading } = useQuery<BrandItem[]>({
     queryKey: ["brands-page"],
     queryFn: async () => {
-      // Fetch all brands using pagination to bypass the 1000-row limit
       const PAGE_SIZE = 1000;
       let allBrands: any[] = [];
       let page = 0;

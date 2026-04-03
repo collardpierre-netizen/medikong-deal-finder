@@ -146,7 +146,7 @@ export default function BuyerOnboardingPage() {
   const screenRef = useRef<HTMLDivElement>(null);
 
   /* State */
-  const OTP_LENGTH = 8;
+  const OTP_LENGTH = 6;
   const EMPTY_OTP = Array.from({ length: OTP_LENGTH }, () => "");
   const [accountType, setAccountType] = useState("");
   const [buyerProfile, setBuyerProfile] = useState("");

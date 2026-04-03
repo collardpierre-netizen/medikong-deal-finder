@@ -593,7 +593,7 @@ export default function ProductPage() {
   // Specs table — only show rows with real data
   const FLAG_MAP: Record<string, string> = { BE: "🇧🇪", DE: "🇩🇪", FR: "🇫🇷", NL: "🇳🇱", IT: "🇮🇹", ES: "🇪🇸" };
   const manufacturerInfo = productDetails?.manufacturers as any;
-  const specsRaw: [string, string | undefined | null, string | undefined][] = [
+  const specsRaw: [string, string | undefined | null, string?][] = [
     ["Marque", brandData?.name || product.brand, brandData?.slug ? `/marque/${brandData.slug}` : undefined],
     ["Fabricant", manufacturerInfo?.name, manufacturerInfo?.slug ? `/fabricant/${manufacturerInfo.slug}` : undefined],
     ["Categorie", categoryData?.category?.name || productDetails?.category_name],

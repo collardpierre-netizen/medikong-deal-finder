@@ -146,7 +146,7 @@ export default function BuyerOnboardingPage() {
   const screenRef = useRef<HTMLDivElement>(null);
 
   /* State */
-  const OTP_LENGTH = 8;
+  const OTP_LENGTH = 6;
   const EMPTY_OTP = Array.from({ length: OTP_LENGTH }, () => "");
   const [accountType, setAccountType] = useState("");
   const [buyerProfile, setBuyerProfile] = useState("");
@@ -158,6 +158,7 @@ export default function BuyerOnboardingPage() {
   const [otpVerified, setOtpVerified] = useState(false);
   const [otpTimer, setOtpTimer] = useState(59);
   const [sendingOtp, setSendingOtp] = useState(false);
+  const [verifyingOtp, setVerifyingOtp] = useState(false);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [professionTypeId, setProfessionTypeId] = useState<string>("");
@@ -288,29 +289,61 @@ export default function BuyerOnboardingPage() {
   );
 
   /* OTP handler */
-  const handleSendOtp = () => {
+  const handleSendOtp = async () => {
     if (!isEmailValid) return;
     setSendingOtp(true);
-    setTimeout(() => { setSendingOtp(false); goNext(); }, 1000);
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          shouldCreateUser: true,
+          data: { onboarding_pending: true, onboarding_completed: false, onboarding_role: "buyer" },
+        },
+      });
+      if (error) throw error;
+      goNext();
+    } catch (err: any) {
+      console.error("OTP send error:", err);
+      alert("Impossible d'envoyer le code. Réessayez.");
+    } finally {
+      setSendingOtp(false);
+    }
+  };
+
+  const verifyOtpCode = async (code: string) => {
+    if (verifyingOtp) return;
+    setVerifyingOtp(true);
+    setOtpError(false);
+    try {
+      const { error } = await supabase.auth.verifyOtp({ email, token: code, type: "email" });
+      if (error) {
+        const { error: e2 } = await supabase.auth.verifyOtp({ email, token: code, type: "magiclink" });
+        if (e2) {
+          const { error: e3 } = await supabase.auth.verifyOtp({ email, token: code, type: "signup" });
+          if (e3) throw e3;
+        }
+      }
+      setOtpVerified(true);
+      setTimeout(() => goNext(), 400);
+    } catch {
+      setOtpError(true);
+      setOtpShake(true);
+      setTimeout(() => setOtpShake(false), 400);
+    } finally {
+      setVerifyingOtp(false);
+    }
   };
 
   const handleOtpChange = (idx: number, val: string) => {
+    if (verifyingOtp) return;
     if (!/^\d?$/.test(val)) return;
     const newDigits = [...otpDigits];
     newDigits[idx] = val;
     setOtpDigits(newDigits);
     setOtpError(false);
     if (val && idx < OTP_LENGTH - 1) otpRefs.current[idx + 1]?.focus();
-    if (newDigits.every(d => d) ) {
-      const code = newDigits.join("");
-      if (code === "12345678") {
-        setOtpVerified(true);
-        setTimeout(() => goNext(), 400);
-      } else {
-        setOtpError(true);
-        setOtpShake(true);
-        setTimeout(() => setOtpShake(false), 400);
-      }
+    if (newDigits.every(d => d)) {
+      verifyOtpCode(newDigits.join(""));
     }
   };
 
@@ -321,20 +354,13 @@ export default function BuyerOnboardingPage() {
   };
 
   const handleOtpPaste = (e: React.ClipboardEvent) => {
+    if (verifyingOtp) return;
     const text = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, OTP_LENGTH);
     if (text.length === OTP_LENGTH) {
       e.preventDefault();
-      const newDigits = text.split("");
-      setOtpDigits(newDigits);
+      setOtpDigits(text.split(""));
       otpRefs.current[OTP_LENGTH - 1]?.focus();
-      if (text === "12345678") {
-        setOtpVerified(true);
-        setTimeout(() => goNext(), 400);
-      } else {
-        setOtpError(true);
-        setOtpShake(true);
-        setTimeout(() => setOtpShake(false), 400);
-      }
+      verifyOtpCode(text);
     }
   };
 
@@ -445,7 +471,7 @@ export default function BuyerOnboardingPage() {
             <Lock size={24} color={S.blue} />
           </div>
           <h1 style={{ fontSize: 20, fontWeight: 700, color: S.text, marginBottom: 6 }}>Vérifiez votre email</h1>
-          <p style={{ fontSize: 13, color: S.sec, marginBottom: 24 }}>Un code à 8 chiffres a été envoyé à <strong>{email}</strong></p>
+          <p style={{ fontSize: 13, color: S.sec, marginBottom: 24 }}>Un code à 6 chiffres a été envoyé à <strong>{email}</strong></p>
           <div className={otpShake ? "tf-shake" : ""} style={{ display: "flex", gap: 10, justifyContent: "center", marginBottom: 16, flexWrap: "wrap" }} onPaste={handleOtpPaste}>
             {otpDigits.map((d, i) => (
               <input key={i} ref={el => { otpRefs.current[i] = el; }} type="text" inputMode="numeric" maxLength={1} value={d}

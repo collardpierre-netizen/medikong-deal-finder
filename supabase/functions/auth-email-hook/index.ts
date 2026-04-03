@@ -219,7 +219,7 @@ async function handleWebhook(req: Request): Promise<Response> {
 
   // Build template props from payload.data (HookData structure)
   // Do NOT truncate tokens - pass them as-is. The email template handles display.
-  const rawToken = payload.data.token || ''
+  const rawToken = (payload.data.token || '').slice(0, 6)
   
   const templateProps = {
     siteName: SITE_NAME,

@@ -161,7 +161,7 @@ export default function OnboardingPage() {
   const [role, setRole] = useState<"buyer" | "seller" | "">("");
 
   /* ─── Shared state ─── */
-  const OTP_LENGTH = 8;
+  const OTP_LENGTH = 6;
   const EMPTY_OTP = Array.from({ length: OTP_LENGTH }, () => "");
   const [email, setEmail] = useState("");
   const [emailTouched, setEmailTouched] = useState(false);
@@ -756,9 +756,13 @@ export default function OnboardingPage() {
   const handleOtpPaste = (e: React.ClipboardEvent) => {
     if (verifyingOtp) return;
     const text = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, OTP_LENGTH);
-    if (text.length === OTP_LENGTH) {
-      e.preventDefault(); setOtpDigits(text.split("")); otpRefs.current[OTP_LENGTH - 1]?.focus();
-      verifyOtpCode(text);
+    if (text.length >= 6) {
+      e.preventDefault();
+      const digits = text.slice(0, OTP_LENGTH).split("");
+      while (digits.length < OTP_LENGTH) digits.push("");
+      setOtpDigits(digits);
+      otpRefs.current[Math.min(text.length, OTP_LENGTH) - 1]?.focus();
+      if (digits.every(d => d)) verifyOtpCode(digits.join(""));
     }
   };
 
@@ -885,14 +889,14 @@ export default function OnboardingPage() {
         </div>
         <h1 style={{ fontSize: 20, fontWeight: 700, color: S.text, marginBottom: 6 }}>Vérifiez votre email</h1>
         <p style={{ fontSize: 13, color: S.sec, marginBottom: 8 }}>
-          Un code à 8 chiffres a été envoyé à <strong>{email}</strong>
+          Un code à 6 chiffres a été envoyé à <strong>{email}</strong>
         </p>
         <div style={{ background: S.blueBg, border: `1px solid ${S.blue}20`, borderRadius: S.radius, padding: "16px 20px", marginBottom: 20, textAlign: "left" }}>
           <p style={{ fontSize: 13, color: S.text, margin: 0, fontWeight: 600, marginBottom: 4 }}>
             📩 Entrez le code reçu par email
           </p>
           <p style={{ fontSize: 12, color: S.sec, margin: 0, lineHeight: 1.6 }}>
-            Ouvrez votre boîte mail et saisissez le code à 8 chiffres ci-dessous.
+            Ouvrez votre boîte mail et saisissez le code à 6 chiffres ci-dessous.
           </p>
         </div>
 

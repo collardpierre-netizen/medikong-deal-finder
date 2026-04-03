@@ -104,7 +104,7 @@ const AdminProduits = () => {
       ((o.vendors as any)?.company_name || "").toLowerCase().includes(search.toLowerCase())
   );
 
-  const [importResult, setImportResult] = useState<{ created: number; errors: string[] } | null>(null);
+  const [importResult, setImportResult] = useState<{ created: number; errors: string[]; brandsCreated?: number; manufacturersCreated?: number } | null>(null);
   const [importing, setImporting] = useState(false);
 
   const handleImport = async (file: File) => {
@@ -115,6 +115,8 @@ const AdminProduits = () => {
       setImportResult(result);
       qc.invalidateQueries({ queryKey: ["admin-products-paginated"] });
       qc.invalidateQueries({ queryKey: ["admin-products-count"] });
+      qc.invalidateQueries({ queryKey: ["admin-brands"] });
+      qc.invalidateQueries({ queryKey: ["admin-manufacturers"] });
     } catch (e: any) {
       setImportResult({ created: 0, errors: [e.message || "Erreur inconnue"] });
     } finally {

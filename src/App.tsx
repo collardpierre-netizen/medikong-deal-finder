@@ -55,6 +55,7 @@ const ProfessionnelsPage = lazy(() => import("./pages/ProfessionnelsPage"));
 const SourcingPage = lazy(() => import("./pages/SourcingPage"));
 const CategoriesPage = lazy(() => import("./pages/CategoriesPage"));
 const MyPricesPage = lazy(() => import("./pages/MyPricesPage"));
+const MesCategoriesPage = lazy(() => import("./pages/MesCategoriesPage"));
 
 // Segment landing pages
 const PharmaciesPage = lazy(() => import("./pages/segment/PharmaciesPage"));
@@ -200,6 +201,7 @@ const App = () => (
             <Route path="/vendeur/:slug" element={<LP><VendorPublicPage /></LP>} />
             <Route path="/panier" element={<LP><CartPage /></LP>} />
             <Route path="/compte" element={<LP><AccountPage /></LP>} />
+            <Route path="/compte/mes-categories" element={<LP><MesCategoriesPage /></LP>} />
             <Route path="/checkout" element={<LP><CheckoutPage /></LP>} />
             <Route path="/confirmation" element={<LP><ConfirmationPage /></LP>} />
             <Route path="/commande/:id" element={<LP><OrderDetailPage /></LP>} />

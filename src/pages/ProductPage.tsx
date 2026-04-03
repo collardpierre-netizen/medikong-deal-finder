@@ -27,7 +27,7 @@ import { applyMargin, formatPriceEur } from "@/lib/pricing";
 import { useMarketPrices } from "@/hooks/useMarketPrices";
 
 function formatEur(n: number): string {
-  return n.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return n.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 /* ── Offer Row ─────────────────────────────────────────── */

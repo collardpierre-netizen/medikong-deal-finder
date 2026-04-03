@@ -374,14 +374,14 @@ export async function importCategories(file: File): Promise<{ created: number; e
 function readXlsx(file: File): Promise<any[]> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = (evt) => {
       try {
-        const wb = XLSX.read(e.target?.result, { type: "array" });
+        const wb = XLSX.read(evt.target?.result, { type: "array" });
         const ws = wb.Sheets[wb.SheetNames[0]];
         resolve(XLSX.utils.sheet_to_json(ws));
-      } catch (err) { reject(err); }
+      } catch (readErr) { reject(readErr); }
     };
-    reader.onerror = reject;
+    reader.onerror = (readErr) => reject(readErr);
     reader.readAsArrayBuffer(file);
   });
 }

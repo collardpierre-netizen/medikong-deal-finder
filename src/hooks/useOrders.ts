@@ -2,6 +2,15 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
+export interface OrderItemInput {
+  offer_id: string;
+  product_id: string;
+  quantity: number;
+  unit_price_excl_vat: number;
+  unit_price_incl_vat: number;
+  vat_rate?: number;
+}
+
 export interface OrderInput {
   shippingAddress: string;
   shippingMethod?: string;
@@ -9,14 +18,7 @@ export interface OrderInput {
   paymentMethod: string;
   subtotal: number;
   total: number;
-  items?: {
-    product_id: string;
-    product_name: string;
-    product_brand: string;
-    quantity: number;
-    unit_price: number;
-    total_price: number;
-  }[];
+  items?: OrderItemInput[];
 }
 
 export function useCreateOrder() {
@@ -41,6 +43,39 @@ export function useCreateOrder() {
         total_incl_vat: input.total,
       }).select().single();
       if (error) throw error;
+
+      // Insert order_items with Qogita references from offers
+      if (input.items && input.items.length > 0) {
+        // Fetch Qogita refs from offers
+        const offerIds = input.items.map(i => i.offer_id).filter(Boolean);
+        const { data: offers } = offerIds.length > 0
+          ? await supabase.from("offers").select("id, qogita_offer_qid, qogita_seller_fid, qogita_base_price").in("id", offerIds)
+          : { data: [] };
+
+        const offerMap = new Map((offers || []).map(o => [o.id, o]));
+
+        const orderItems = input.items.map(item => {
+          const offerRef = offerMap.get(item.offer_id);
+          return {
+            order_id: order.id,
+            offer_id: item.offer_id || null,
+            product_id: item.product_id || null,
+            quantity: item.quantity,
+            unit_price_excl_vat: item.unit_price_excl_vat,
+            unit_price_incl_vat: item.unit_price_incl_vat,
+            vat_rate: item.vat_rate ?? 0.21,
+            line_total_excl_vat: item.unit_price_excl_vat * item.quantity,
+            line_total_incl_vat: item.unit_price_incl_vat * item.quantity,
+            qogita_offer_qid: offerRef?.qogita_offer_qid || null,
+            qogita_seller_fid: offerRef?.qogita_seller_fid || null,
+            qogita_base_price: offerRef?.qogita_base_price || null,
+          };
+        });
+
+        const { error: itemsError } = await supabase.from("order_items" as any).insert(orderItems as any);
+        if (itemsError) console.error("Error inserting order_items:", itemsError);
+      }
+
       return order;
     },
   });

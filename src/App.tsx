@@ -56,6 +56,15 @@ const SourcingPage = lazy(() => import("./pages/SourcingPage"));
 const CategoriesPage = lazy(() => import("./pages/CategoriesPage"));
 const MyPricesPage = lazy(() => import("./pages/MyPricesPage"));
 
+// Segment landing pages
+const PharmaciesPage = lazy(() => import("./pages/segment/PharmaciesPage"));
+const EhpadPage = lazy(() => import("./pages/segment/EhpadPage"));
+const GrossistesPage = lazy(() => import("./pages/segment/GrossistesPage"));
+const HopitauxPage = lazy(() => import("./pages/segment/HopitauxPage"));
+const CabinetsMedicauxPage = lazy(() => import("./pages/segment/CabinetsMedicauxPage"));
+const DentistesPage = lazy(() => import("./pages/segment/DentistesPage"));
+const VeterinairesPage = lazy(() => import("./pages/segment/VeterinairesPage"));
+
 // Entreprise pages
 const AboutPage = lazy(() => import("./pages/entreprise/AboutPage"));
 const WhyMedikongPage = lazy(() => import("./pages/entreprise/WhyMedikongPage"));

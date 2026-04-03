@@ -5,7 +5,7 @@ import {
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { StaggerContainer, StaggerItem, HoverCard } from "@/components/shared/PageTransition";
+import { HoverCard } from "@/components/shared/PageTransition";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -230,7 +230,12 @@ export default function CategoriesPage() {
               <p>{search ? `Aucune catégorie trouvée pour « ${search} »` : "Aucune catégorie disponible pour le moment."}</p>
             </div>
           ) : (
-            <StaggerContainer className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            <motion.div
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.16, duration: 0.3 }}
+            >
               {filtered.map(cat => {
                 const hasChildren = cat.childCount > 0;
                 const content = (
@@ -256,7 +261,12 @@ export default function CategoriesPage() {
                 );
 
                 return (
-                  <StaggerItem key={cat.slug}>
+                  <motion.div
+                    key={cat.slug}
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
                     <HoverCard className="border border-mk-line rounded-xl bg-white">
                       {hasChildren ? (
                         <button
@@ -274,10 +284,10 @@ export default function CategoriesPage() {
                         </Link>
                       )}
                     </HoverCard>
-                  </StaggerItem>
+                  </motion.div>
                 );
               })}
-            </StaggerContainer>
+            </motion.div>
           )}
         </div>
       </section>

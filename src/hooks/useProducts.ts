@@ -139,6 +139,20 @@ export interface DiscountTier {
   mov_progress: number;
 }
 
+export interface OfferPriceTier {
+  id: string;
+  offer_id: string;
+  tier_index: number;
+  mov_threshold: number;
+  mov_currency: string;
+  qogita_unit_price: number;
+  price_excl_vat: number;
+  price_incl_vat: number;
+  margin_amount: number;
+  is_active: boolean;
+  mov_progress: number;
+}
+
 export interface Offer {
   id: string;
   productId: string;
@@ -152,6 +166,7 @@ export interface Offer {
   shipFromCountry: string;
   priceTiers: any[] | null;
   discountTiers: DiscountTier[];
+  offerPriceTiers: OfferPriceTier[];
   isActive: boolean;
   sellerName?: string;
   sellerSlug?: string;

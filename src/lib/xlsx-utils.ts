@@ -222,20 +222,33 @@ export async function importCategories(file: File): Promise<{ created: number; e
   const rows = await readXlsx(file);
   let created = 0;
   const errors: string[] = [];
+
+  // Sort rows: L1 first, then L2, then L3 (parents before children)
+  const levelOrder = (r: any) => {
+    const lvl = String(r.level || "").toUpperCase();
+    if (lvl === "L1" || !r.parent_name) return 0;
+    if (lvl === "L2") return 1;
+    return 2;
+  };
+  const sortedRows = [...rows].sort((a: any, b: any) => levelOrder(a) - levelOrder(b));
+
   // Pre-fetch all categories to resolve parent_name
-  const { data: existingCats } = await supabase.from("categories").select("id,name,slug").limit(2000);
-  const catByName = new Map((existingCats || []).map(c => [c.name.toLowerCase().trim(), c]));
-  const catBySlug = new Map((existingCats || []).map(c => [c.slug, c]));
+  const allCats = await fetchAllRows("categories", "name", "id,name,slug");
+  const catByName = new Map(allCats.map((c: any) => [c.name.toLowerCase().trim(), c]));
   const translationItems: { entity_type: "category"; entity_id: string; locale: string; field: string; value: string }[] = [];
 
-  for (const row of rows) {
+  for (const row of sortedRows) {
     const r = row as any;
     if (!r.name) { errors.push("Ligne ignorée: nom manquant"); continue; }
     // Resolve parent
     let parentId: string | null = null;
     if (r.parent_name) {
       const parentCat = catByName.get(String(r.parent_name).toLowerCase().trim());
-      if (parentCat) parentId = parentCat.id;
+      if (parentCat) {
+        parentId = parentCat.id;
+      } else {
+        errors.push(`${r.name}: parent "${r.parent_name}" non trouvé`);
+      }
     }
     const slug = r.slug || slugify(r.name);
     const isActive = r.is_active !== undefined ? (r.is_active === true || r.is_active === 1 || r.is_active === "1" || r.is_active === "true") : true;
@@ -257,7 +270,7 @@ export async function importCategories(file: File): Promise<{ created: number; e
     if (!catId) continue;
     // Update local lookup for subsequent parent resolution
     catByName.set(r.name.toLowerCase().trim(), { id: catId, name: r.name, slug });
-    // Collect translations
+    // Collect translations for all 3 locales
     for (const locale of ["fr", "nl", "de"] as const) {
       const nameVal = r[`name_${locale}`]?.toString().trim();
       const descVal = r[`desc_${locale}`]?.toString().trim();

@@ -1324,28 +1324,76 @@ export default function ProductPage() {
                     <Calculator size={18} className="text-primary" />
                     <h2 className="text-lg font-bold text-foreground">Calculateur de marge</h2>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-xs text-muted-foreground mb-1 block">Votre prix d'achat actuel ({isTVAC ? "TVAC" : "HTVA"})</label>
-                      <div className="flex items-center border border-border rounded-lg overflow-hidden">
-                        <span className="px-3 py-2.5 bg-muted text-sm text-muted-foreground">€</span>
-                        <input
-                          type="text"
-                          value={userPrice}
-                          onChange={(e) => setUserPrice(e.target.value)}
-                          placeholder={clientPrice > 0 ? formatEur(clientPrice * 1.3) : "0,00"}
-                          className="flex-1 px-3 py-2.5 text-sm bg-background outline-none"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="text-xs text-muted-foreground mb-1 block">Prix MediKong ({isTVAC ? "TVAC" : "HTVA"})</label>
-                      <div className="flex items-center border border-border rounded-lg overflow-hidden bg-muted">
-                        <span className="px-3 py-2.5 bg-muted text-sm text-muted-foreground">€</span>
-                        <span className="flex-1 px-3 py-2.5 text-sm font-bold text-green-700">{formatEur(clientPrice)}</span>
-                      </div>
-                    </div>
-                  </div>
+
+                  {/* Mode selector: manual vs % */}
+                  {(() => {
+                    const mpForProduct = marketPriceItems.filter(mp => mp.product_id === product?.id);
+                    const refPrixPublic = mpForProduct.reduce((best, mp) => mp.prix_public && mp.prix_public > 0 ? (best === 0 ? mp.prix_public : Math.min(best, mp.prix_public)) : best, 0);
+                    const refPrixPharmacien = mpForProduct.reduce((best, mp) => mp.prix_pharmacien && mp.prix_pharmacien > 0 ? (best === 0 ? mp.prix_pharmacien : Math.min(best, mp.prix_pharmacien)) : best, 0);
+                    const refPrixGrossiste = mpForProduct.reduce((best, mp) => mp.prix_grossiste && mp.prix_grossiste > 0 ? (best === 0 ? mp.prix_grossiste : Math.min(best, mp.prix_grossiste)) : best, 0);
+                    const hasAnyRef = refPrixPublic > 0 || refPrixPharmacien > 0 || refPrixGrossiste > 0;
+
+                    return (
+                      <>
+                        {hasAnyRef && (
+                          <div className="mb-4">
+                            <label className="text-xs text-muted-foreground mb-1.5 block">Mode de saisie</label>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => { (window as any).__calcMode = 'manual'; setUserPrice(userPrice); }}
+                                className={`px-3 py-1.5 rounded-md text-xs font-medium border transition-colors ${!(window as any).__calcMode || (window as any).__calcMode === 'manual' ? 'bg-primary text-primary-foreground border-primary' : 'bg-background text-muted-foreground border-border hover:border-primary/50'}`}
+                              >
+                                Prix manuel
+                              </button>
+                              <button
+                                onClick={() => { (window as any).__calcMode = 'pct'; setUserPrice(""); }}
+                                className={`px-3 py-1.5 rounded-md text-xs font-medium border transition-colors ${(window as any).__calcMode === 'pct' ? 'bg-primary text-primary-foreground border-primary' : 'bg-background text-muted-foreground border-border hover:border-primary/50'}`}
+                              >
+                                % remise vs prix marché
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {(!(window as any).__calcMode || (window as any).__calcMode === 'manual' || !hasAnyRef) ? (
+                          /* Manual mode */
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                              <label className="text-xs text-muted-foreground mb-1 block">Votre prix d'achat actuel ({isTVAC ? "TVAC" : "HTVA"})</label>
+                              <div className="flex items-center border border-border rounded-lg overflow-hidden">
+                                <span className="px-3 py-2.5 bg-muted text-sm text-muted-foreground">€</span>
+                                <input
+                                  type="text"
+                                  value={userPrice}
+                                  onChange={(e) => setUserPrice(e.target.value)}
+                                  placeholder={clientPrice > 0 ? formatEur(clientPrice * 1.3) : "0,00"}
+                                  className="flex-1 px-3 py-2.5 text-sm bg-background outline-none"
+                                />
+                              </div>
+                            </div>
+                            <div>
+                              <label className="text-xs text-muted-foreground mb-1 block">Prix MediKong ({isTVAC ? "TVAC" : "HTVA"})</label>
+                              <div className="flex items-center border border-border rounded-lg overflow-hidden bg-muted">
+                                <span className="px-3 py-2.5 bg-muted text-sm text-muted-foreground">€</span>
+                                <span className="flex-1 px-3 py-2.5 text-sm font-bold text-green-700">{formatEur(clientPrice)}</span>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          /* Percentage mode */
+                          <MarginCalcPctMode
+                            refPrixPublic={refPrixPublic}
+                            refPrixPharmacien={refPrixPharmacien}
+                            refPrixGrossiste={refPrixGrossiste}
+                            clientPrice={clientPrice}
+                            isTVAC={isTVAC}
+                            onPriceChange={(p) => setUserPrice(p.toFixed(2).replace(".", ","))}
+                          />
+                        )}
+                      </>
+                    );
+                  })()}
+
                   {/* Supplier + Save */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                     <div>

@@ -170,10 +170,14 @@ export async function importProducts(file: File, onProgress?: (p: ImportProgress
     }
   }
 
-  // Pre-fetch existing slugs to detect duplicates vs new
+  // Pre-fetch existing slugs and gtins to detect duplicates vs new
   const existingSlugs = new Set<string>();
-  const allProducts = await fetchAllRows("products", "slug", "slug");
-  allProducts.forEach((p: any) => existingSlugs.add(p.slug));
+  const existingGtins = new Set<string>();
+  const allProducts = await fetchAllRows("products", "slug,gtin", "slug");
+  allProducts.forEach((p: any) => {
+    existingSlugs.add(p.slug);
+    if (p.gtin) existingGtins.add(String(p.gtin).trim());
+  });
 
   // --- Import products ---
   currentPhase = "products"; notify();
@@ -190,10 +194,13 @@ export async function importProducts(file: File, onProgress?: (p: ImportProgress
       .split(/[;\n,]+/)
       .map((u: string) => u.trim())
       .filter((u: string) => /^https?:\/\//i.test(u));
+    const gtinVal = r.gtin ? String(r.gtin).trim() : null;
+    // Skip gtin if it already belongs to a different product (avoid unique constraint violation)
+    const gtinToUse = gtinVal && existingGtins.has(gtinVal) && !existingSlugs.has(slug) ? null : gtinVal;
     const payload: any = {
       name: r.name,
       slug,
-      gtin: r.gtin ? String(r.gtin) : null,
+      gtin: gtinToUse,
       cnk_code: r.cnk_code ? String(r.cnk_code) : null,
       sku: r.sku ? String(r.sku) : null,
       brand_name: r.brand_name || null,

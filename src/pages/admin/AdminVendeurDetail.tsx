@@ -9,7 +9,11 @@ import {
   ArrowLeft, Building2, Mail, MapPin,
   DollarSign, Package, Tag, Factory, Activity, Eye, Plus, Trash2,
   CheckCircle2, XCircle, Clock, Globe, Phone, FileText, Loader2,
+  Pencil, Power, AlertTriangle, Save,
 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
 const tabList = [
@@ -25,6 +29,9 @@ const AdminVendeurDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("resume");
+  const [showEdit, setShowEdit] = useState(false);
+  const [showDelete, setShowDelete] = useState(false);
+  const [togglingStatus, setTogglingStatus] = useState(false);
   const queryClient = useQueryClient();
   const { data: vendor, isLoading } = useQuery({
     queryKey: ["vendor-detail", id],
@@ -79,6 +86,34 @@ const AdminVendeurDetail = () => {
     toast.success("Règle supprimée");
   };
 
+  const toggleActive = async () => {
+    setTogglingStatus(true);
+    try {
+      const { error } = await supabase.from("vendors").update({ is_active: !vendor.is_active } as any).eq("id", id!);
+      if (error) throw error;
+      toast.success(vendor.is_active ? "Vendeur désactivé" : "Vendeur activé");
+      queryClient.invalidateQueries({ queryKey: ["vendor-detail", id] });
+      queryClient.invalidateQueries({ queryKey: ["admin-vendors"] });
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setTogglingStatus(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      const { error } = await supabase.from("vendors").delete().eq("id", id!);
+      if (error) throw error;
+      toast.success("Vendeur supprimé");
+      queryClient.invalidateQueries({ queryKey: ["admin-vendors"] });
+      navigate("/admin/vendeurs");
+    } catch (e: any) {
+      toast.error(e.message || "Impossible de supprimer ce vendeur");
+    }
+    setShowDelete(false);
+  };
+
   if (isLoading) return <div className="py-12 text-center text-[13px]" style={{ color: "#8B95A5" }}>Chargement...</div>;
   if (!vendor) return <div className="py-12 text-center text-[13px]" style={{ color: "#EF4343" }}>Vendeur non trouvé</div>;
 
@@ -104,7 +139,25 @@ const AdminVendeurDetail = () => {
           <p className="text-[13px] mt-0.5" style={{ color: "#616B7C" }}>{vendor.email || "—"}</p>
         </div>
         <div className="flex items-center gap-2">
-          <button className="px-4 py-2 rounded-md text-[12px] font-bold text-white" style={{ backgroundColor: "#1E293B" }}>Modifier</button>
+          <button
+            onClick={toggleActive}
+            disabled={togglingStatus}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-md text-[12px] font-bold transition-opacity hover:opacity-90"
+            style={{
+              backgroundColor: vendor.is_active ? "#FEF2F2" : "#F0FDF4",
+              color: vendor.is_active ? "#DC2626" : "#059669",
+              border: `1px solid ${vendor.is_active ? "#FECACA" : "#BBF7D0"}`,
+            }}
+          >
+            <Power size={14} />
+            {togglingStatus ? "..." : vendor.is_active ? "Désactiver" : "Activer"}
+          </button>
+          <button onClick={() => setShowEdit(true)} className="flex items-center gap-1.5 px-3 py-2 rounded-md text-[12px] font-bold text-white" style={{ backgroundColor: "#1B5BDA" }}>
+            <Pencil size={14} /> Modifier
+          </button>
+          <button onClick={() => setShowDelete(true)} className="flex items-center gap-1.5 px-3 py-2 rounded-md text-[12px] font-bold transition-opacity hover:opacity-90" style={{ backgroundColor: "#FEF2F2", color: "#DC2626", border: "1px solid #FECACA" }}>
+            <Trash2 size={14} /> Supprimer
+          </button>
         </div>
       </div>
 
@@ -213,7 +266,31 @@ const AdminVendeurDetail = () => {
           <h3 className="text-[14px] font-bold mb-4" style={{ color: "#1D2530" }}>Activité récente</h3>
           <p className="text-[12px]" style={{ color: "#8B95A5" }}>Inscrit le {new Date(vendor.created_at).toLocaleDateString("fr-BE")}</p>
         </div>
-      )}
+       )}
+
+      {/* Delete confirmation */}
+      <Dialog open={showDelete} onOpenChange={setShowDelete}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle size={20} /> Supprimer le vendeur
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Êtes-vous sûr de vouloir supprimer <strong>{vendor.company_name || vendor.name}</strong> ? Cette action est irréversible et supprimera toutes les offres associées.
+          </p>
+          <div className="flex justify-end gap-3 mt-4">
+            <button onClick={() => setShowDelete(false)} className="px-4 py-2 rounded-md text-[12px] font-semibold" style={{ border: "1px solid #E2E8F0" }}>Annuler</button>
+            <button onClick={handleDelete} className="px-4 py-2 rounded-md text-[12px] font-bold text-white" style={{ backgroundColor: "#DC2626" }}>Confirmer la suppression</button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit dialog */}
+      <VendorEditDialog open={showEdit} onOpenChange={setShowEdit} vendor={vendor} onSaved={() => {
+        queryClient.invalidateQueries({ queryKey: ["vendor-detail", id] });
+        queryClient.invalidateQueries({ queryKey: ["admin-vendors"] });
+      }} />
     </div>
   );
 };
@@ -536,6 +613,86 @@ function VendorValidationTab({ vendor, onUpdate }: { vendor: any; onUpdate: () =
         </div>
       </div>
     </div>
+  );
+}
+
+function VendorEditDialog({ open, onOpenChange, vendor, onSaved }: { open: boolean; onOpenChange: (o: boolean) => void; vendor: any; onSaved: () => void }) {
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({
+    company_name: vendor.company_name || "",
+    email: vendor.email || "",
+    phone: vendor.phone || "",
+    vat_number: vendor.vat_number || "",
+    address_line1: vendor.address_line1 || "",
+    city: vendor.city || "",
+    postal_code: vendor.postal_code || "",
+    country_code: vendor.country_code || "BE",
+    commission_rate: String(vendor.commission_rate ?? 0),
+    description: vendor.description || "",
+  });
+
+  const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const { error } = await supabase.from("vendors").update({
+        company_name: form.company_name.trim(),
+        name: form.company_name.trim(),
+        email: form.email.trim() || null,
+        phone: form.phone.trim() || null,
+        vat_number: form.vat_number.trim() || null,
+        address_line1: form.address_line1.trim() || null,
+        city: form.city.trim() || null,
+        postal_code: form.postal_code.trim() || null,
+        country_code: form.country_code || "BE",
+        commission_rate: parseFloat(form.commission_rate) || 0,
+        description: form.description.trim() || null,
+      } as any).eq("id", vendor.id);
+      if (error) throw error;
+      toast.success("Vendeur mis à jour");
+      onSaved();
+      onOpenChange(false);
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Modifier le vendeur</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3 mt-2">
+          <div>
+            <Label>Nom de l'entreprise</Label>
+            <Input value={form.company_name} onChange={e => set("company_name", e.target.value)} />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div><Label>Email</Label><Input value={form.email} onChange={e => set("email", e.target.value)} /></div>
+            <div><Label>Téléphone</Label><Input value={form.phone} onChange={e => set("phone", e.target.value)} /></div>
+          </div>
+          <div><Label>N° TVA</Label><Input value={form.vat_number} onChange={e => set("vat_number", e.target.value)} /></div>
+          <div><Label>Adresse</Label><Input value={form.address_line1} onChange={e => set("address_line1", e.target.value)} /></div>
+          <div className="grid grid-cols-3 gap-3">
+            <div><Label>Ville</Label><Input value={form.city} onChange={e => set("city", e.target.value)} /></div>
+            <div><Label>Code postal</Label><Input value={form.postal_code} onChange={e => set("postal_code", e.target.value)} /></div>
+            <div><Label>Pays</Label><Input value={form.country_code} onChange={e => set("country_code", e.target.value)} /></div>
+          </div>
+          <div><Label>Commission (%)</Label><Input type="number" value={form.commission_rate} onChange={e => set("commission_rate", e.target.value)} /></div>
+          <div>
+            <Label>Description</Label>
+            <textarea className="w-full border border-border rounded-md px-3 py-2 text-sm bg-background min-h-[60px] resize-y" value={form.description} onChange={e => set("description", e.target.value)} />
+          </div>
+          <button onClick={handleSave} disabled={saving} className="w-full flex items-center justify-center gap-2 py-2.5 rounded-md text-sm font-semibold text-white disabled:opacity-50" style={{ backgroundColor: "#1B5BDA" }}>
+            <Save size={14} /> {saving ? "Enregistrement..." : "Enregistrer"}
+          </button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 

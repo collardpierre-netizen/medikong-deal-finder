@@ -117,17 +117,32 @@ const AdminProduits = () => {
   const fileRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
+  // Offers tab state
+  const [offersPage, setOffersPage] = useState(1);
+  const [offersSearch, setOffersSearch] = useState("");
+  const [debouncedOffersSearch, setDebouncedOffersSearch] = useState("");
+  const [offersVendorFilter, setOffersVendorFilter] = useState("all");
+  const [offersBrandFilter, setOffersBrandFilter] = useState("all");
+  const [offersCountryFilter, setOffersCountryFilter] = useState("all");
+  const [offersStatusFilter, setOffersStatusFilter] = useState("active");
+  const offersDebounceRef = useRef<ReturnType<typeof setTimeout>>();
+
   const { data: brands = [] } = useBrands();
   const { data: manufacturers = [] } = useManufacturers();
+  const { data: vendors = [] } = useVendors();
   const { data: totalProductCount = 0 } = useProductCount();
   const { data: totalBrandCount = 0 } = useBrandCount();
   const { data: totalActiveOfferCount = 0 } = useActiveOfferCount();
-  const { data: offers = [], isLoading: loadingOffers } = useOffersDirectAdmin();
 
   const { data: pageData, isLoading: loadingProducts } = useAdminPaginatedProducts(page, debouncedSearch, brandFilter, manufacturerFilter);
   const products = pageData?.products || [];
   const totalFiltered = pageData?.total || 0;
   const totalPages = Math.max(1, Math.ceil(totalFiltered / PER_PAGE));
+
+  const { data: offersData, isLoading: loadingOffers } = useAdminPaginatedOffers(offersPage, debouncedOffersSearch, offersVendorFilter, offersBrandFilter, offersCountryFilter, offersStatusFilter);
+  const offersItems = offersData?.offers || [];
+  const totalOffersFiltered = offersData?.total || 0;
+  const totalOffersPages = Math.max(1, Math.ceil(totalOffersFiltered / OFFERS_PER_PAGE));
 
   const handleSearchChange = useCallback((value: string) => {
     setSearch(value);

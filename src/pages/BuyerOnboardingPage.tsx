@@ -314,24 +314,29 @@ export default function BuyerOnboardingPage() {
     if (verifyingOtp) return;
     setVerifyingOtp(true);
     setOtpError(false);
-    try {
-      const { error } = await supabase.auth.verifyOtp({ email, token: code, type: "email" });
-      if (error) {
-        const { error: e2 } = await supabase.auth.verifyOtp({ email, token: code, type: "magiclink" });
-        if (e2) {
-          const { error: e3 } = await supabase.auth.verifyOtp({ email, token: code, type: "signup" });
-          if (e3) throw e3;
-        }
+
+    const types: Array<"recovery" | "email" | "magiclink" | "signup"> = ["recovery", "email", "magiclink", "signup"];
+    let verified = false;
+
+    for (const otpType of types) {
+      if (verified) break;
+      try {
+        const { error } = await supabase.auth.verifyOtp({ email, token: code, type: otpType });
+        if (!error) verified = true;
+      } catch {
+        // continue
       }
+    }
+
+    if (verified) {
       setOtpVerified(true);
       setTimeout(() => goNext(), 400);
-    } catch {
+    } else {
       setOtpError(true);
       setOtpShake(true);
       setTimeout(() => setOtpShake(false), 400);
-    } finally {
-      setVerifyingOtp(false);
     }
+    setVerifyingOtp(false);
   };
 
   const handleOtpChange = (idx: number, val: string) => {

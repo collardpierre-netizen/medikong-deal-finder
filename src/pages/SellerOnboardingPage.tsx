@@ -142,6 +142,7 @@ export default function SellerOnboardingPage() {
   const [data, setData] = useState<FormData>(initialData);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const set = (key: keyof FormData, val: FormData[keyof FormData]) =>

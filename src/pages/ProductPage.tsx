@@ -35,6 +35,78 @@ function formatCount(n: number): string {
   return n.toLocaleString("de-DE");
 }
 
+/* ── % Discount Calculator Sub-component ── */
+function MarginCalcPctMode({
+  refPrixPublic, refPrixPharmacien, refPrixGrossiste, clientPrice, isTVAC, onPriceChange,
+}: {
+  refPrixPublic: number; refPrixPharmacien: number; refPrixGrossiste: number;
+  clientPrice: number; isTVAC: boolean; onPriceChange: (price: number) => void;
+}) {
+  const [refType, setRefType] = useState<'public' | 'pharmacien' | 'grossiste'>('pharmacien');
+  const [pct, setPct] = useState<string>("");
+
+  const refMap = { public: refPrixPublic, pharmacien: refPrixPharmacien, grossiste: refPrixGrossiste };
+  const refLabels = { public: "Prix public", pharmacien: "Prix pharmacien", grossiste: "Prix grossiste" };
+  const refPrice = refMap[refType];
+  const pctNum = parseFloat(pct.replace(",", ".")) || 0;
+  const computedPrice = refPrice > 0 && pctNum > 0 ? refPrice * (1 - pctNum / 100) : 0;
+
+  useEffect(() => {
+    if (computedPrice > 0) onPriceChange(computedPrice);
+  }, [computedPrice]);
+
+  return (
+    <div className="space-y-3">
+      <div>
+        <label className="text-xs text-muted-foreground mb-1.5 block">Prix de référence marché</label>
+        <div className="flex gap-2 flex-wrap">
+          {(Object.keys(refMap) as Array<keyof typeof refMap>).map((key) => (
+            <button
+              key={key}
+              onClick={() => setRefType(key)}
+              disabled={refMap[key] <= 0}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium border transition-colors ${refType === key ? 'bg-primary text-primary-foreground border-primary' : refMap[key] > 0 ? 'bg-background text-muted-foreground border-border hover:border-primary/50' : 'bg-muted text-muted-foreground/50 border-border cursor-not-allowed'}`}
+            >
+              {refLabels[key]} {refMap[key] > 0 ? `(${formatEur(refMap[key])} €)` : '(N/A)'}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div>
+          <label className="text-xs text-muted-foreground mb-1 block">Votre % de remise</label>
+          <div className="flex items-center border border-border rounded-lg overflow-hidden">
+            <span className="px-3 py-2.5 bg-muted text-sm text-muted-foreground">%</span>
+            <input
+              type="text"
+              value={pct}
+              onChange={(e) => setPct(e.target.value)}
+              placeholder="Ex: 12"
+              className="flex-1 px-3 py-2.5 text-sm bg-background outline-none"
+            />
+          </div>
+        </div>
+        <div>
+          <label className="text-xs text-muted-foreground mb-1 block">Votre prix estimé ({isTVAC ? "TVAC" : "HTVA"})</label>
+          <div className="flex items-center border border-border rounded-lg overflow-hidden bg-muted">
+            <span className="px-3 py-2.5 bg-muted text-sm text-muted-foreground">€</span>
+            <span className="flex-1 px-3 py-2.5 text-sm font-semibold text-foreground">
+              {computedPrice > 0 ? formatEur(computedPrice) : "—"}
+            </span>
+          </div>
+        </div>
+        <div>
+          <label className="text-xs text-muted-foreground mb-1 block">Prix MediKong ({isTVAC ? "TVAC" : "HTVA"})</label>
+          <div className="flex items-center border border-border rounded-lg overflow-hidden bg-muted">
+            <span className="px-3 py-2.5 bg-muted text-sm text-muted-foreground">€</span>
+            <span className="flex-1 px-3 py-2.5 text-sm font-bold text-green-700">{formatEur(clientPrice)}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ── Offer Row ─────────────────────────────────────────── */
 function OfferRow({
   offer, productId, productName, productSlug, user, navigate, addToCart, isBest, delay = 0, isTVAC = false, categoryId, bestPrice,
@@ -651,6 +723,7 @@ export default function ProductPage() {
   const [userPrice, setUserPrice] = useState<string>("");
   const [supplierName, setSupplierName] = useState<string>("");
   const [savingPrice, setSavingPrice] = useState(false);
+  const [calcMode, setCalcMode] = useState<'manual' | 'pct'>('manual');
 
   // Load saved user price
   const { data: savedUserPrice } = useQuery({
@@ -1324,28 +1397,76 @@ export default function ProductPage() {
                     <Calculator size={18} className="text-primary" />
                     <h2 className="text-lg font-bold text-foreground">Calculateur de marge</h2>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-xs text-muted-foreground mb-1 block">Votre prix d'achat actuel ({isTVAC ? "TVAC" : "HTVA"})</label>
-                      <div className="flex items-center border border-border rounded-lg overflow-hidden">
-                        <span className="px-3 py-2.5 bg-muted text-sm text-muted-foreground">€</span>
-                        <input
-                          type="text"
-                          value={userPrice}
-                          onChange={(e) => setUserPrice(e.target.value)}
-                          placeholder={clientPrice > 0 ? formatEur(clientPrice * 1.3) : "0,00"}
-                          className="flex-1 px-3 py-2.5 text-sm bg-background outline-none"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="text-xs text-muted-foreground mb-1 block">Prix MediKong ({isTVAC ? "TVAC" : "HTVA"})</label>
-                      <div className="flex items-center border border-border rounded-lg overflow-hidden bg-muted">
-                        <span className="px-3 py-2.5 bg-muted text-sm text-muted-foreground">€</span>
-                        <span className="flex-1 px-3 py-2.5 text-sm font-bold text-green-700">{formatEur(clientPrice)}</span>
-                      </div>
-                    </div>
-                  </div>
+
+                  {/* Mode selector: manual vs % */}
+                  {(() => {
+                    const mpForProduct = marketPriceItems.filter(mp => mp.product_id === product?.id);
+                    const refPrixPublic = mpForProduct.reduce((best, mp) => mp.prix_public && mp.prix_public > 0 ? (best === 0 ? mp.prix_public : Math.min(best, mp.prix_public)) : best, 0);
+                    const refPrixPharmacien = mpForProduct.reduce((best, mp) => mp.prix_pharmacien && mp.prix_pharmacien > 0 ? (best === 0 ? mp.prix_pharmacien : Math.min(best, mp.prix_pharmacien)) : best, 0);
+                    const refPrixGrossiste = mpForProduct.reduce((best, mp) => mp.prix_grossiste && mp.prix_grossiste > 0 ? (best === 0 ? mp.prix_grossiste : Math.min(best, mp.prix_grossiste)) : best, 0);
+                    const hasAnyRef = refPrixPublic > 0 || refPrixPharmacien > 0 || refPrixGrossiste > 0;
+
+                    return (
+                      <>
+                        {hasAnyRef && (
+                          <div className="mb-4">
+                            <label className="text-xs text-muted-foreground mb-1.5 block">Mode de saisie</label>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => setCalcMode('manual')}
+                                className={`px-3 py-1.5 rounded-md text-xs font-medium border transition-colors ${calcMode === 'manual' ? 'bg-primary text-primary-foreground border-primary' : 'bg-background text-muted-foreground border-border hover:border-primary/50'}`}
+                              >
+                                Prix manuel
+                              </button>
+                              <button
+                                onClick={() => { setCalcMode('pct'); setUserPrice(""); }}
+                                className={`px-3 py-1.5 rounded-md text-xs font-medium border transition-colors ${calcMode === 'pct' ? 'bg-primary text-primary-foreground border-primary' : 'bg-background text-muted-foreground border-border hover:border-primary/50'}`}
+                              >
+                                % remise vs prix marché
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {(calcMode === 'manual' || !hasAnyRef) ? (
+                          /* Manual mode */
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                              <label className="text-xs text-muted-foreground mb-1 block">Votre prix d'achat actuel ({isTVAC ? "TVAC" : "HTVA"})</label>
+                              <div className="flex items-center border border-border rounded-lg overflow-hidden">
+                                <span className="px-3 py-2.5 bg-muted text-sm text-muted-foreground">€</span>
+                                <input
+                                  type="text"
+                                  value={userPrice}
+                                  onChange={(e) => setUserPrice(e.target.value)}
+                                  placeholder={clientPrice > 0 ? formatEur(clientPrice * 1.3) : "0,00"}
+                                  className="flex-1 px-3 py-2.5 text-sm bg-background outline-none"
+                                />
+                              </div>
+                            </div>
+                            <div>
+                              <label className="text-xs text-muted-foreground mb-1 block">Prix MediKong ({isTVAC ? "TVAC" : "HTVA"})</label>
+                              <div className="flex items-center border border-border rounded-lg overflow-hidden bg-muted">
+                                <span className="px-3 py-2.5 bg-muted text-sm text-muted-foreground">€</span>
+                                <span className="flex-1 px-3 py-2.5 text-sm font-bold text-green-700">{formatEur(clientPrice)}</span>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          /* Percentage mode */
+                          <MarginCalcPctMode
+                            refPrixPublic={refPrixPublic}
+                            refPrixPharmacien={refPrixPharmacien}
+                            refPrixGrossiste={refPrixGrossiste}
+                            clientPrice={clientPrice}
+                            isTVAC={isTVAC}
+                            onPriceChange={(p) => setUserPrice(p.toFixed(2).replace(".", ","))}
+                          />
+                        )}
+                      </>
+                    );
+                  })()}
+
                   {/* Supplier + Save */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                     <div>

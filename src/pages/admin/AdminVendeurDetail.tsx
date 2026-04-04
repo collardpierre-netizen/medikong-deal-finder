@@ -346,4 +346,173 @@ function VendorVisibilityTab({ vendorId, vendorName, showRealName, rules, onAddR
   );
 }
 
+function VendorValidationTab({ vendor, onUpdate }: { vendor: any; onUpdate: () => void }) {
+  const [notes, setNotes] = useState((vendor as any).validation_notes || "");
+  const [acting, setActing] = useState(false);
+
+  const validationStatus = (vendor as any).validation_status || "pending_review";
+  const statusLabels: Record<string, { label: string; color: string; bg: string }> = {
+    pending_review: { label: "En attente de review", color: "#D97706", bg: "#FFFBEB" },
+    under_review: { label: "En cours d'analyse", color: "#2563EB", bg: "#EFF6FF" },
+    approved: { label: "Approuvé", color: "#059669", bg: "#F0FDF4" },
+    rejected: { label: "Refusé", color: "#DC2626", bg: "#FEF2F2" },
+  };
+  const st = statusLabels[validationStatus] || statusLabels.pending_review;
+
+  const handleAction = async (action: "under_review" | "approved" | "rejected") => {
+    setActing(true);
+    try {
+      const update: any = {
+        validation_status: action,
+        validation_notes: notes,
+        validated_at: new Date().toISOString(),
+      };
+      if (action === "approved") {
+        update.is_active = true;
+        update.is_verified = true;
+      }
+      if (action === "rejected") {
+        update.is_active = false;
+      }
+      const { error } = await supabase.from("vendors").update(update).eq("id", vendor.id);
+      if (error) throw error;
+      toast.success(action === "approved" ? "Vendeur approuvé !" : action === "rejected" ? "Vendeur refusé" : "Statut mis à jour");
+      onUpdate();
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setActing(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Status banner */}
+      <div className="p-5 rounded-[10px] flex items-center gap-4" style={{ backgroundColor: st.bg, border: `1px solid ${st.color}20` }}>
+        {validationStatus === "pending_review" && <Clock size={24} style={{ color: st.color }} />}
+        {validationStatus === "under_review" && <FileText size={24} style={{ color: st.color }} />}
+        {validationStatus === "approved" && <CheckCircle2 size={24} style={{ color: st.color }} />}
+        {validationStatus === "rejected" && <XCircle size={24} style={{ color: st.color }} />}
+        <div>
+          <p className="text-[14px] font-bold" style={{ color: st.color }}>{st.label}</p>
+          {(vendor as any).validated_at && (
+            <p className="text-[11px]" style={{ color: "#8B95A5" }}>
+              Le {new Date((vendor as any).validated_at).toLocaleDateString("fr-BE")} à {new Date((vendor as any).validated_at).toLocaleTimeString("fr-BE", { hour: "2-digit", minute: "2-digit" })}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Vendor info summary */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="p-5 rounded-[10px]" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
+          <h3 className="text-[14px] font-bold mb-3 flex items-center gap-2" style={{ color: "#1D2530" }}>
+            <Building2 size={16} /> Candidature
+          </h3>
+          <div className="space-y-2 text-[12px]">
+            <div className="flex justify-between py-1.5" style={{ borderBottom: "1px solid #F1F5F9" }}>
+              <span style={{ color: "#8B95A5" }}>Société</span>
+              <span className="font-medium" style={{ color: "#1D2530" }}>{vendor.company_name}</span>
+            </div>
+            <div className="flex justify-between py-1.5" style={{ borderBottom: "1px solid #F1F5F9" }}>
+              <span style={{ color: "#8B95A5" }}>Type activité</span>
+              <span className="font-medium" style={{ color: "#1D2530" }}>{(vendor as any).business_type || "—"}</span>
+            </div>
+            <div className="flex justify-between py-1.5" style={{ borderBottom: "1px solid #F1F5F9" }}>
+              <span style={{ color: "#8B95A5" }}>TVA</span>
+              <span className="font-medium" style={{ color: "#1D2530" }}>{vendor.vat_number || "—"}</span>
+            </div>
+            <div className="flex justify-between py-1.5" style={{ borderBottom: "1px solid #F1F5F9" }}>
+              <span style={{ color: "#8B95A5" }}>Pays</span>
+              <span className="font-medium" style={{ color: "#1D2530" }}>{vendor.country_code}</span>
+            </div>
+            <div className="flex justify-between py-1.5">
+              <span style={{ color: "#8B95A5" }}>Inscrit le</span>
+              <span className="font-medium" style={{ color: "#1D2530" }}>{new Date(vendor.created_at).toLocaleDateString("fr-BE")}</span>
+            </div>
+          </div>
+        </div>
+        <div className="p-5 rounded-[10px]" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
+          <h3 className="text-[14px] font-bold mb-3 flex items-center gap-2" style={{ color: "#1D2530" }}>
+            <Phone size={16} /> Contact
+          </h3>
+          <div className="space-y-2 text-[12px]">
+            <div className="flex justify-between py-1.5" style={{ borderBottom: "1px solid #F1F5F9" }}>
+              <span style={{ color: "#8B95A5" }}>Email</span>
+              <a href={`mailto:${vendor.email}`} className="font-medium" style={{ color: "#1B5BDA" }}>{vendor.email}</a>
+            </div>
+            <div className="flex justify-between py-1.5" style={{ borderBottom: "1px solid #F1F5F9" }}>
+              <span style={{ color: "#8B95A5" }}>Téléphone</span>
+              <a href={`tel:${vendor.phone}`} className="font-medium" style={{ color: "#1B5BDA" }}>{vendor.phone || "—"}</a>
+            </div>
+            <div className="flex justify-between py-1.5" style={{ borderBottom: "1px solid #F1F5F9" }}>
+              <span style={{ color: "#8B95A5" }}>Langue</span>
+              <span className="font-medium" style={{ color: "#1D2530" }}>{((vendor as any).preferred_language || "fr").toUpperCase()}</span>
+            </div>
+            <div className="flex justify-between py-1.5">
+              <span style={{ color: "#8B95A5" }}>Ville</span>
+              <span className="font-medium" style={{ color: "#1D2530" }}>{vendor.city || "—"}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Description */}
+      {vendor.description && (
+        <div className="p-5 rounded-[10px]" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
+          <h3 className="text-[14px] font-bold mb-2" style={{ color: "#1D2530" }}>Description / Détails</h3>
+          <p className="text-[12px] whitespace-pre-wrap" style={{ color: "#616B7C" }}>{vendor.description}</p>
+        </div>
+      )}
+
+      {/* Notes & Actions */}
+      <div className="p-5 rounded-[10px]" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
+        <h3 className="text-[14px] font-bold mb-3" style={{ color: "#1D2530" }}>Notes de validation</h3>
+        <textarea
+          value={notes}
+          onChange={e => setNotes(e.target.value)}
+          rows={3}
+          placeholder="Ajoutez vos notes internes (raison du refus, conditions, etc.)"
+          className="w-full border rounded-md px-3 py-2.5 text-[13px] mb-4 focus:outline-none focus:border-[#1B5BDA] resize-none"
+          style={{ borderColor: "#E2E8F0" }}
+        />
+        <div className="flex items-center gap-3">
+          {validationStatus !== "approved" && (
+            <button
+              onClick={() => handleAction("approved")}
+              disabled={acting}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-md text-[12px] font-bold text-white transition-opacity hover:opacity-90"
+              style={{ backgroundColor: "#059669" }}
+            >
+              {acting ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
+              Approuver le vendeur
+            </button>
+          )}
+          {validationStatus !== "rejected" && (
+            <button
+              onClick={() => handleAction("rejected")}
+              disabled={acting}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-md text-[12px] font-bold text-white transition-opacity hover:opacity-90"
+              style={{ backgroundColor: "#DC2626" }}
+            >
+              {acting ? <Loader2 size={14} className="animate-spin" /> : <XCircle size={14} />}
+              Refuser
+            </button>
+          )}
+          {validationStatus === "pending_review" && (
+            <button
+              onClick={() => handleAction("under_review")}
+              disabled={acting}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-md text-[12px] font-bold transition-opacity hover:opacity-90"
+              style={{ backgroundColor: "#EFF6FF", color: "#1B5BDA", border: "1px solid #BFDBFE" }}
+            >
+              <FileText size={14} /> Passer en review
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default AdminVendeurDetail;

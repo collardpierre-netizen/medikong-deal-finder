@@ -26,6 +26,8 @@ export function CatalogSidebar({ filters, setFilter, clearAll, resultCategoryIds
   const [brandDropdownOpen, setBrandDropdownOpen] = useState(false);
   const brandDropdownRef = useRef<HTMLDivElement>(null);
   const [mfSearch, setMfSearch] = useState("");
+  const [mfDropdownOpen, setMfDropdownOpen] = useState(false);
+  const mfDropdownRef = useRef<HTMLDivElement>(null);
   const [showAllBrands, setShowAllBrands] = useState(false);
   const [showAllMf, setShowAllMf] = useState(false);
   const [priceMin, setPriceMin] = useState(filters.priceMin?.toString() || "");

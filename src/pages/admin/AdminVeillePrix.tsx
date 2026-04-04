@@ -474,6 +474,7 @@ export default function AdminVeillePrix() {
       <div className="text-xs text-muted-foreground mb-3">
         Comparaison sur le <span className="font-semibold text-foreground">prix {priceType}</span> — L'écart % est calculé entre le prix MediKong et le prix {priceType} de la source.
       </div>
+      {isLoading ? (
         <div className="text-center py-12 text-sm text-muted-foreground">Chargement…</div>
       ) : (
         <>
@@ -486,10 +487,11 @@ export default function AdminVeillePrix() {
                   <TableHead className="text-[11px] text-right">Prix MediKong <SortIcon k="qogita" /></TableHead>
                   {visibleSources.map(src => (
                     <TableHead key={src.slug} className="text-[11px] text-right">
-                      {src.name} {src.country_code && <span className="text-muted-foreground">({src.country_code})</span>} <SortIcon k={src.slug} />
+                      {src.name} <span className="text-muted-foreground capitalize">({priceType})</span> <SortIcon k={src.slug} />
                     </TableHead>
                   ))}
                   <TableHead className="text-[11px] text-right">Écart % <SortIcon k="ecart" /></TableHead>
+                  <TableHead className="text-[11px] text-center w-[60px]">Fiche</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -503,7 +505,7 @@ export default function AdminVeillePrix() {
                     <TableCell className="text-right text-[13px] font-medium">{formatPrice(row.qogitaPrice)}</TableCell>
                     {visibleSources.map(src => {
                       const mp = row.sources[src.slug];
-                      const price = mp?.prix_grossiste || mp?.prix_pharmacien || null;
+                      const price = getSourcePrice(mp);
                       return <TableCell key={src.slug} className="text-right text-[13px]">{formatPrice(price)}</TableCell>;
                     })}
                     <TableCell className="text-right">
@@ -516,6 +518,11 @@ export default function AdminVeillePrix() {
                           {row.ecart > 0 ? "-" : "+"}{Math.abs(row.ecart).toFixed(1)}%
                         </Badge>
                       ) : <span className="text-xs text-muted-foreground">—</span>}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <a href={`/produit/${row.product.id}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center h-7 w-7 rounded-md hover:bg-accent">
+                        <ExternalLink size={14} className="text-muted-foreground hover:text-primary" />
+                      </a>
                     </TableCell>
                   </TableRow>
                 ))}

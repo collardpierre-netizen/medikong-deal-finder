@@ -3,8 +3,10 @@ import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Store, Building2, User, ShoppingBag, Truck, Package,
-  Shield, ChevronRight, ChevronLeft, Check, FileText,
+  Shield, ChevronRight, ChevronLeft, Check, FileText, Globe, Loader2,
 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 /* ─── Constants ─── */
 const businessTypes = [

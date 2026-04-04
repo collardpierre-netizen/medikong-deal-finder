@@ -132,6 +132,8 @@ const AdminVendeurDetail = () => {
               <InfoRow label="Raison sociale" value={vendor.company_name || ""} />
               <InfoRow label="N° TVA" value={vendor.vat_number || ""} />
               <InfoRow label="Type" value={vendor.type} />
+              <InfoRow label="Type d'activité" value={(vendor as any).business_type || "—"} />
+              <InfoRow label="Langue" value={(vendor as any).preferred_language?.toUpperCase() || "FR"} />
               <InfoRow label="Vérifié" value={vendor.is_verified ? "Oui" : "Non"} />
             </div>
             <div className="p-5 rounded-[10px]" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
@@ -144,6 +146,10 @@ const AdminVendeurDetail = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {activeTab === "validation" && (
+        <VendorValidationTab vendor={vendor} onUpdate={() => queryClient.invalidateQueries({ queryKey: ["vendor-detail", id] })} />
       )}
 
       {activeTab === "visibility" && (

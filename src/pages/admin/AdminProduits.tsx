@@ -377,32 +377,128 @@ const AdminProduits = () => {
       )}
 
       {activeTab === "offers" && (
-        <div className="rounded-[10px] overflow-hidden" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
-          {loadingOffers ? <div className="py-12 text-center text-[13px]" style={{ color: "#8B95A5" }}>Chargement...</div> : (
-            <table className="w-full text-left">
-              <thead>
-                <tr style={{ borderBottom: "1px solid #E2E8F0", backgroundColor: "#F8FAFC" }}>
-                  {["Produit", "Vendeur", "Prix HT", "Stock", "MOQ", "Délai", "Statut"].map((h) => (
-                    <th key={h} className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider" style={{ color: "#8B95A5" }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {filteredOffers.map((o) => (
-                  <tr key={o.id} style={{ borderBottom: "1px solid #F1F5F9" }}>
-                    <td className="px-4 py-3 text-[13px] font-medium" style={{ color: "#1D2530" }}>{(o.products as any)?.name || "—"}</td>
-                    <td className="px-4 py-3 text-[12px]" style={{ color: "#1B5BDA" }}>{(o.vendors as any)?.company_name || (o.vendors as any)?.name || "—"}</td>
-                    <td className="px-4 py-3 text-[13px] font-bold" style={{ color: "#1D2530" }}>€{Number(o.price_excl_vat).toFixed(2)}</td>
-                    <td className="px-4 py-3 text-[12px]" style={{ color: "#616B7C" }}>{o.stock_quantity.toLocaleString()}</td>
-                    <td className="px-4 py-3 text-[12px]" style={{ color: "#616B7C" }}>{o.moq || 1}</td>
-                    <td className="px-4 py-3 text-[12px]" style={{ color: "#616B7C" }}>{o.delivery_days}j</td>
-                    <td className="px-4 py-3"><StatusBadge status={o.is_active ? "active" : "inactive"} /></td>
-                  </tr>
+        <>
+          {/* Offers filters */}
+          <div className="flex items-center gap-3 mb-4 flex-wrap">
+            <div className="flex items-center gap-2 px-3 py-2 rounded-md flex-1 max-w-sm" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
+              <Search size={14} style={{ color: "#8B95A5" }} />
+              <input type="text" placeholder="Rechercher par produit, EAN, CNK..." value={offersSearch} onChange={(e) => handleOffersSearchChange(e.target.value)}
+                className="flex-1 text-[13px] outline-none bg-transparent" style={{ color: "#1D2530" }} />
+            </div>
+            <Select value={offersVendorFilter} onValueChange={(v) => { setOffersVendorFilter(v); setOffersPage(1); }}>
+              <SelectTrigger className="w-[180px] h-9 text-[13px]"><SelectValue placeholder="Tous les vendeurs" /></SelectTrigger>
+              <SelectContent className="max-h-60">
+                <SelectItem value="all">Tous les vendeurs</SelectItem>
+                {sortedVendors.map((v) => (
+                  <SelectItem key={v.id} value={v.id}>{v.company_name || v.name}</SelectItem>
                 ))}
-              </tbody>
-            </table>
+              </SelectContent>
+            </Select>
+            <Select value={offersBrandFilter} onValueChange={(v) => { setOffersBrandFilter(v); setOffersPage(1); }}>
+              <SelectTrigger className="w-[180px] h-9 text-[13px]"><SelectValue placeholder="Toutes les marques" /></SelectTrigger>
+              <SelectContent className="max-h-60">
+                <SelectItem value="all">Toutes les marques</SelectItem>
+                {sortedBrands.map((b) => (
+                  <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={offersCountryFilter} onValueChange={(v) => { setOffersCountryFilter(v); setOffersPage(1); }}>
+              <SelectTrigger className="w-[120px] h-9 text-[13px]"><SelectValue placeholder="Pays" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tous pays</SelectItem>
+                <SelectItem value="BE">🇧🇪 BE</SelectItem>
+                <SelectItem value="FR">🇫🇷 FR</SelectItem>
+                <SelectItem value="NL">🇳🇱 NL</SelectItem>
+                <SelectItem value="LU">🇱🇺 LU</SelectItem>
+                <SelectItem value="DE">🇩🇪 DE</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={offersStatusFilter} onValueChange={(v) => { setOffersStatusFilter(v); setOffersPage(1); }}>
+              <SelectTrigger className="w-[130px] h-9 text-[13px]"><SelectValue placeholder="Statut" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tous statuts</SelectItem>
+                <SelectItem value="active">Actives</SelectItem>
+                <SelectItem value="inactive">Inactives</SelectItem>
+              </SelectContent>
+            </Select>
+            {(offersVendorFilter !== "all" || offersBrandFilter !== "all" || offersCountryFilter !== "all" || offersStatusFilter !== "active" || debouncedOffersSearch) && (
+              <Button variant="ghost" size="sm" className="text-[12px] h-9" onClick={() => {
+                setOffersVendorFilter("all"); setOffersBrandFilter("all"); setOffersCountryFilter("all"); setOffersStatusFilter("active");
+                setOffersSearch(""); setDebouncedOffersSearch(""); setOffersPage(1);
+              }}>Réinitialiser</Button>
+            )}
+          </div>
+
+          {/* Offers count + pagination */}
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[12px]" style={{ color: "#8B95A5" }}>
+              {totalOffersFiltered.toLocaleString("fr-BE")} offre{totalOffersFiltered > 1 ? "s" : ""} trouvée{totalOffersFiltered > 1 ? "s" : ""}
+            </span>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" className="h-7 w-7 p-0" disabled={offersPage <= 1} onClick={() => setOffersPage(p => p - 1)}>
+                <ChevronLeft size={14} />
+              </Button>
+              <span className="text-[12px] font-medium" style={{ color: "#616B7C" }}>
+                {offersPage} / {totalOffersPages.toLocaleString("fr-BE")}
+              </span>
+              <Button variant="outline" size="sm" className="h-7 w-7 p-0" disabled={offersPage >= totalOffersPages} onClick={() => setOffersPage(p => p + 1)}>
+                <ChevronRight size={14} />
+              </Button>
+            </div>
+          </div>
+
+          <div className="rounded-[10px] overflow-hidden" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
+            {loadingOffers ? <div className="py-12 text-center text-[13px]" style={{ color: "#8B95A5" }}>Chargement...</div> : (
+              <table className="w-full text-left">
+                <thead>
+                  <tr style={{ borderBottom: "1px solid #E2E8F0", backgroundColor: "#F8FAFC" }}>
+                    {["Produit", "EAN", "Vendeur", "Pays", "Prix HT", "Prix TTC", "Stock", "MOQ", "Délai", "Marge", "Statut"].map((h) => (
+                      <th key={h} className="px-3 py-3 text-[11px] font-semibold uppercase tracking-wider" style={{ color: "#8B95A5" }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {offersItems.map((o: any) => (
+                    <tr key={o.id} style={{ borderBottom: "1px solid #F1F5F9" }}>
+                      <td className="px-3 py-3">
+                        <span className="text-[13px] font-medium block" style={{ color: "#1D2530" }}>{o.products?.name || "—"}</span>
+                        <span className="text-[10px]" style={{ color: "#8B95A5" }}>{o.products?.brand_name || ""}</span>
+                      </td>
+                      <td className="px-3 py-3 text-[11px] font-mono" style={{ color: "#616B7C" }}>{o.products?.gtin || "—"}</td>
+                      <td className="px-3 py-3 text-[12px] font-medium" style={{ color: "#1B5BDA" }}>{o.vendors?.company_name || o.vendors?.name || "—"}</td>
+                      <td className="px-3 py-3 text-[12px]" style={{ color: "#616B7C" }}>{o.country_code || "—"}</td>
+                      <td className="px-3 py-3 text-[13px] font-bold" style={{ color: "#1D2530" }}>€{Number(o.price_excl_vat).toFixed(2)}</td>
+                      <td className="px-3 py-3 text-[12px]" style={{ color: "#616B7C" }}>€{Number(o.price_incl_vat).toFixed(2)}</td>
+                      <td className="px-3 py-3 text-[12px]" style={{ color: "#616B7C" }}>{o.stock_quantity.toLocaleString()}</td>
+                      <td className="px-3 py-3 text-[12px]" style={{ color: "#616B7C" }}>{o.moq || 1}</td>
+                      <td className="px-3 py-3 text-[12px]" style={{ color: "#616B7C" }}>{o.delivery_days}j</td>
+                      <td className="px-3 py-3 text-[12px]" style={{ color: o.margin_amount && o.margin_amount > 0 ? "#059669" : "#616B7C" }}>
+                        {o.margin_amount ? `€${Number(o.margin_amount).toFixed(2)}` : "—"}
+                        {o.applied_margin_percentage ? <span className="text-[10px] ml-1">({o.applied_margin_percentage}%)</span> : null}
+                      </td>
+                      <td className="px-3 py-3"><StatusBadge status={o.is_active ? "active" : "inactive"} /></td>
+                    </tr>
+                  ))}
+                  {offersItems.length === 0 && (
+                    <tr><td colSpan={11} className="px-4 py-12 text-center text-[13px]" style={{ color: "#8B95A5" }}>Aucune offre trouvée</td></tr>
+                  )}
+                </tbody>
+              </table>
+            )}
+          </div>
+
+          {/* Pagination bottom */}
+          {totalOffersPages > 1 && (
+            <div className="flex items-center justify-center gap-2 mt-4">
+              <Button variant="outline" size="sm" disabled={offersPage <= 1} onClick={() => setOffersPage(1)} className="text-[12px] h-8">Début</Button>
+              <Button variant="outline" size="sm" disabled={offersPage <= 1} onClick={() => setOffersPage(p => p - 1)} className="h-8 w-8 p-0"><ChevronLeft size={14} /></Button>
+              <span className="text-[13px] font-medium px-3" style={{ color: "#1D2530" }}>Page {offersPage} sur {totalOffersPages.toLocaleString("fr-BE")}</span>
+              <Button variant="outline" size="sm" disabled={offersPage >= totalOffersPages} onClick={() => setOffersPage(p => p + 1)} className="h-8 w-8 p-0"><ChevronRight size={14} /></Button>
+              <Button variant="outline" size="sm" disabled={offersPage >= totalOffersPages} onClick={() => setOffersPage(totalOffersPages)} className="text-[12px] h-8">Fin</Button>
+            </div>
           )}
-        </div>
+        </>
       )}
 
       <ProductFormDialog open={productDialogOpen} onOpenChange={setProductDialogOpen} product={editProduct} brands={brands} manufacturers={manufacturers} />

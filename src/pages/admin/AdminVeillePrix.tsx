@@ -341,10 +341,12 @@ export default function AdminVeillePrix() {
       const rowsWithEan = batchInsert.filter(r => r.ean && r.ean.trim() !== "");
       const rowsWithCnkOnly = batchInsert.filter(r => (!r.ean || r.ean.trim() === "") && r.cnk && r.cnk.trim() !== "");
 
+      const totalToInsert = rowsWithEan.length + rowsWithCnkOnly.length;
+      let insertedSoFar = 0;
+
       const upsertBatches = async (rows: any[], conflictKey: string) => {
         for (let i = 0; i < rows.length; i += 500) {
           const batch = rows.slice(i, i + 500);
-          // Deduplicate within batch on conflict key
           const deduped = new Map<string, any>();
           for (const r of batch) {
             const key = conflictKey === "source_id,ean" ? `${r.source_id}__${r.ean}` : `${r.source_id}__${r.cnk}`;
@@ -354,12 +356,13 @@ export default function AdminVeillePrix() {
           const { error } = await supabase.from("market_prices").upsert(dedupedRows, { onConflict: conflictKey });
           if (error) {
             console.error(`Upsert error (${conflictKey}):`, error);
-            // Fallback: insert one by one
             for (const r of dedupedRows) {
               try { await supabase.from("market_prices").upsert(r, { onConflict: conflictKey }); } catch {}
             }
           }
           inserted += dedupedRows.length;
+          insertedSoFar += dedupedRows.length;
+          setImportProgress({ phase: "Insertion en base…", current: insertedSoFar, total: totalToInsert });
         }
       };
 

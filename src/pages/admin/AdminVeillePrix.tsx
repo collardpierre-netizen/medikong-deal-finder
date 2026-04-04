@@ -333,10 +333,10 @@ export default function AdminVeillePrix() {
             console.error(`Upsert error (${conflictKey}):`, error);
             // Fallback: insert one by one
             for (const r of dedupedRows) {
-              await supabase.from("market_prices").upsert(r, { onConflict: conflictKey }).catch(() => {});
+              try { await supabase.from("market_prices").upsert(r, { onConflict: conflictKey }); } catch {}
             }
           }
-          inserted += dedupedRows.size || dedupedRows.length;
+          inserted += dedupedRows.length;
         }
       };
 

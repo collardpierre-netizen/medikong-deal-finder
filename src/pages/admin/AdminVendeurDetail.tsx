@@ -616,4 +616,84 @@ function VendorValidationTab({ vendor, onUpdate }: { vendor: any; onUpdate: () =
   );
 }
 
+function VendorEditDialog({ open, onOpenChange, vendor, onSaved }: { open: boolean; onOpenChange: (o: boolean) => void; vendor: any; onSaved: () => void }) {
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({
+    company_name: vendor.company_name || "",
+    email: vendor.email || "",
+    phone: vendor.phone || "",
+    vat_number: vendor.vat_number || "",
+    address_line1: vendor.address_line1 || "",
+    city: vendor.city || "",
+    postal_code: vendor.postal_code || "",
+    country_code: vendor.country_code || "BE",
+    commission_rate: String(vendor.commission_rate ?? 0),
+    description: vendor.description || "",
+  });
+
+  const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const { error } = await supabase.from("vendors").update({
+        company_name: form.company_name.trim(),
+        name: form.company_name.trim(),
+        email: form.email.trim() || null,
+        phone: form.phone.trim() || null,
+        vat_number: form.vat_number.trim() || null,
+        address_line1: form.address_line1.trim() || null,
+        city: form.city.trim() || null,
+        postal_code: form.postal_code.trim() || null,
+        country_code: form.country_code || "BE",
+        commission_rate: parseFloat(form.commission_rate) || 0,
+        description: form.description.trim() || null,
+      } as any).eq("id", vendor.id);
+      if (error) throw error;
+      toast.success("Vendeur mis à jour");
+      onSaved();
+      onOpenChange(false);
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Modifier le vendeur</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3 mt-2">
+          <div>
+            <Label>Nom de l'entreprise</Label>
+            <Input value={form.company_name} onChange={e => set("company_name", e.target.value)} />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div><Label>Email</Label><Input value={form.email} onChange={e => set("email", e.target.value)} /></div>
+            <div><Label>Téléphone</Label><Input value={form.phone} onChange={e => set("phone", e.target.value)} /></div>
+          </div>
+          <div><Label>N° TVA</Label><Input value={form.vat_number} onChange={e => set("vat_number", e.target.value)} /></div>
+          <div><Label>Adresse</Label><Input value={form.address_line1} onChange={e => set("address_line1", e.target.value)} /></div>
+          <div className="grid grid-cols-3 gap-3">
+            <div><Label>Ville</Label><Input value={form.city} onChange={e => set("city", e.target.value)} /></div>
+            <div><Label>Code postal</Label><Input value={form.postal_code} onChange={e => set("postal_code", e.target.value)} /></div>
+            <div><Label>Pays</Label><Input value={form.country_code} onChange={e => set("country_code", e.target.value)} /></div>
+          </div>
+          <div><Label>Commission (%)</Label><Input type="number" value={form.commission_rate} onChange={e => set("commission_rate", e.target.value)} /></div>
+          <div>
+            <Label>Description</Label>
+            <textarea className="w-full border border-border rounded-md px-3 py-2 text-sm bg-background min-h-[60px] resize-y" value={form.description} onChange={e => set("description", e.target.value)} />
+          </div>
+          <button onClick={handleSave} disabled={saving} className="w-full flex items-center justify-center gap-2 py-2.5 rounded-md text-sm font-semibold text-white disabled:opacity-50" style={{ backgroundColor: "#1B5BDA" }}>
+            <Save size={14} /> {saving ? "Enregistrement..." : "Enregistrer"}
+          </button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default AdminVendeurDetail;

@@ -9,12 +9,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Search, TrendingDown, TrendingUp, Download, ArrowUpDown, Upload, Plus, Loader2, Trash2 } from "lucide-react";
+import { Search, TrendingDown, TrendingUp, Download, ArrowUpDown, Upload, Plus, Loader2, Trash2, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 
 type SortKey = "ecart" | "name" | "qogita" | string;
 type SortDir = "asc" | "desc";
+type PriceType = "grossiste" | "pharmacien" | "public";
 
 interface MarketSource {
   id: string;
@@ -34,6 +35,7 @@ export default function AdminVeillePrix() {
   const [countryFilter, setCountryFilter] = useState("all");
   const [sourceFilter, setSourceFilter] = useState("all");
   const [ecartMinFilter, setEcartMinFilter] = useState<number | null>(null);
+  const [priceType, setPriceType] = useState<PriceType>("grossiste");
   const [sortKey, setSortKey] = useState<SortKey>("ecart");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [page, setPage] = useState(1);
@@ -119,6 +121,14 @@ export default function AdminVeillePrix() {
     return [...slugSet.values()].sort((a, b) => a.name.localeCompare(b.name));
   }, [rawData]);
 
+  // Helper to get the right price from a market_price row based on selected type
+  const getSourcePrice = useCallback((mp: any): number | null => {
+    if (priceType === "grossiste") return mp?.prix_grossiste || null;
+    if (priceType === "pharmacien") return mp?.prix_pharmacien || null;
+    if (priceType === "public") return mp?.prix_public || null;
+    return mp?.prix_grossiste || mp?.prix_pharmacien || mp?.prix_public || null;
+  }, [priceType]);
+
   // Build comparison rows — dynamic per source
   const rows = useMemo(() => {
     const productMap = Object.fromEntries(products.map((p: any) => [p.id, p]));
@@ -131,9 +141,7 @@ export default function AdminVeillePrix() {
       const srcCountry = (mp as any).market_price_sources?.country_code;
       if (!slug) continue;
 
-      // Apply country filter
       if (countryFilter !== "all" && srcCountry !== countryFilter) continue;
-      // Apply source filter
       if (sourceFilter !== "all" && slug !== sourceFilter) continue;
 
       if (!grouped[pid]) grouped[pid] = { product: productMap[pid], sources: {} };
@@ -142,16 +150,15 @@ export default function AdminVeillePrix() {
 
     return Object.values(grouped).map((row) => {
       const qogitaPrice = row.product.best_price_excl_vat || 0;
-      // Find best ref price across all sources
       let refPrice: number | null = null;
       for (const src of Object.values(row.sources)) {
-        const p = (src as any).prix_grossiste || (src as any).prix_pharmacien || null;
+        const p = getSourcePrice(src);
         if (p && (refPrice === null || p < refPrice)) refPrice = p;
       }
       const ecart = refPrice && qogitaPrice > 0 ? ((refPrice - qogitaPrice) / refPrice) * 100 : null;
       return { ...row, qogitaPrice, ecart };
     });
-  }, [rawData, products, countryFilter, sourceFilter]);
+  }, [rawData, products, countryFilter, sourceFilter, getSourcePrice]);
 
   // Visible source columns (based on active filters)
   const visibleSources = useMemo(() => {
@@ -181,12 +188,12 @@ export default function AdminVeillePrix() {
         return sortDir === "asc" ? aV - bV : bV - aV;
       }
       // Source-specific sort
-      const aPrice = a.sources[sortKey]?.prix_grossiste || a.sources[sortKey]?.prix_pharmacien || 0;
-      const bPrice = b.sources[sortKey]?.prix_grossiste || b.sources[sortKey]?.prix_pharmacien || 0;
+      const aPrice = getSourcePrice(a.sources[sortKey]) || 0;
+      const bPrice = getSourcePrice(b.sources[sortKey]) || 0;
       return sortDir === "asc" ? aPrice - bPrice : bPrice - aPrice;
     });
     return r;
-  }, [rows, search, brandFilter, categoryFilter, ecartMinFilter, sortKey, sortDir]);
+  }, [rows, search, brandFilter, categoryFilter, ecartMinFilter, sortKey, sortDir, getSourcePrice]);
 
   const totalPages = Math.max(1, Math.ceil(filteredRows.length / perPage));
   const pagedRows = filteredRows.slice((page - 1) * perPage, page * perPage);
@@ -453,9 +460,20 @@ export default function AdminVeillePrix() {
             <SelectItem value="20">≥ 20%</SelectItem>
           </SelectContent>
         </Select>
+        <Select value={priceType} onValueChange={v => { setPriceType(v as PriceType); setPage(1); }}>
+          <SelectTrigger className="w-[150px] h-9 text-xs"><SelectValue placeholder="Type de prix" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="grossiste">Prix grossiste</SelectItem>
+            <SelectItem value="pharmacien">Prix pharmacien</SelectItem>
+            <SelectItem value="public">Prix public</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
-      {/* Table */}
+      {/* Price type legend */}
+      <div className="text-xs text-muted-foreground mb-3">
+        Comparaison sur le <span className="font-semibold text-foreground">prix {priceType}</span> — L'écart % est calculé entre le prix MediKong et le prix {priceType} de la source.
+      </div>
       {isLoading ? (
         <div className="text-center py-12 text-sm text-muted-foreground">Chargement…</div>
       ) : (
@@ -469,10 +487,11 @@ export default function AdminVeillePrix() {
                   <TableHead className="text-[11px] text-right">Prix MediKong <SortIcon k="qogita" /></TableHead>
                   {visibleSources.map(src => (
                     <TableHead key={src.slug} className="text-[11px] text-right">
-                      {src.name} {src.country_code && <span className="text-muted-foreground">({src.country_code})</span>} <SortIcon k={src.slug} />
+                      {src.name} <span className="text-muted-foreground capitalize">({priceType})</span> <SortIcon k={src.slug} />
                     </TableHead>
                   ))}
                   <TableHead className="text-[11px] text-right">Écart % <SortIcon k="ecart" /></TableHead>
+                  <TableHead className="text-[11px] text-center w-[60px]">Fiche</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -486,7 +505,7 @@ export default function AdminVeillePrix() {
                     <TableCell className="text-right text-[13px] font-medium">{formatPrice(row.qogitaPrice)}</TableCell>
                     {visibleSources.map(src => {
                       const mp = row.sources[src.slug];
-                      const price = mp?.prix_grossiste || mp?.prix_pharmacien || null;
+                      const price = getSourcePrice(mp);
                       return <TableCell key={src.slug} className="text-right text-[13px]">{formatPrice(price)}</TableCell>;
                     })}
                     <TableCell className="text-right">
@@ -499,6 +518,11 @@ export default function AdminVeillePrix() {
                           {row.ecart > 0 ? "-" : "+"}{Math.abs(row.ecart).toFixed(1)}%
                         </Badge>
                       ) : <span className="text-xs text-muted-foreground">—</span>}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <a href={`/produit/${row.product.id}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center h-7 w-7 rounded-md hover:bg-accent">
+                        <ExternalLink size={14} className="text-muted-foreground hover:text-primary" />
+                      </a>
                     </TableCell>
                   </TableRow>
                 ))}

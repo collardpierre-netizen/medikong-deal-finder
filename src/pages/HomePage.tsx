@@ -64,6 +64,7 @@ export default function HomePage() {
         .select("id, name, slug, logo_url, product_count")
         .eq("is_active", true)
         .gt("product_count", 0)
+        .not("logo_url", "is", null)
         .order("product_count", { ascending: false })
         .limit(20);
       return data || [];

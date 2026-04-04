@@ -202,7 +202,7 @@ export async function importProducts(file: File, onProgress?: (p: ImportProgress
       short_description: r.short_description || null,
       unit_quantity: r.unit_quantity ? Number(r.unit_quantity) : 1,
       origin_country: r.origin_country || null,
-      source: r.source || "medikong",
+      source: ["qogita", "medikong", "vendor"].includes(String(r.source || "").toLowerCase()) ? String(r.source).toLowerCase() : "medikong",
       is_active: r.is_active === false || r.is_active === "false" ? false : true,
     };
     if (imageUrls.length > 0) payload.image_urls = imageUrls;

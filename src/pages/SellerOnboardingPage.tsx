@@ -23,6 +23,13 @@ const countries = [
   "Espagne", "Italie", "Portugal", "Royaume-Uni", "Suisse", "Autre UE", "Autre hors UE",
 ];
 
+const languages = [
+  { code: "fr", label: "Français" },
+  { code: "nl", label: "Nederlands" },
+  { code: "de", label: "Deutsch" },
+  { code: "en", label: "English" },
+];
+
 const revenueOptions = ["< 50k€", "50k-250k€", "250k-1M€", "1M-5M€", "> 5M€", "Préfère ne pas répondre"];
 
 const productCategories = [

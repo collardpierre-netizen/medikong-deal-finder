@@ -188,12 +188,12 @@ export default function AdminVeillePrix() {
         return sortDir === "asc" ? aV - bV : bV - aV;
       }
       // Source-specific sort
-      const aPrice = a.sources[sortKey]?.prix_grossiste || a.sources[sortKey]?.prix_pharmacien || 0;
-      const bPrice = b.sources[sortKey]?.prix_grossiste || b.sources[sortKey]?.prix_pharmacien || 0;
+      const aPrice = getSourcePrice(a.sources[sortKey]) || 0;
+      const bPrice = getSourcePrice(b.sources[sortKey]) || 0;
       return sortDir === "asc" ? aPrice - bPrice : bPrice - aPrice;
     });
     return r;
-  }, [rows, search, brandFilter, categoryFilter, ecartMinFilter, sortKey, sortDir]);
+  }, [rows, search, brandFilter, categoryFilter, ecartMinFilter, sortKey, sortDir, getSourcePrice]);
 
   const totalPages = Math.max(1, Math.ceil(filteredRows.length / perPage));
   const pagedRows = filteredRows.slice((page - 1) * perPage, page * perPage);

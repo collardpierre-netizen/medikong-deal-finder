@@ -270,18 +270,33 @@ export default function AdminVeillePrix() {
       const allProducts: any[] = [];
       let from = 0;
       while (true) {
-        const { data } = await supabase.from("products").select("id, gtin, cnk_code").eq("is_active", true).range(from, from + 999);
+        const { data } = await supabase.from("products").select("id, gtin, cnk_code").range(from, from + 999);
         if (!data || data.length === 0) break;
         allProducts.push(...data);
         if (data.length < 1000) break;
         from += 1000;
       }
 
+      // Also fetch market_codes for cross-matching
+      const allMarketCodes: any[] = [];
+      from = 0;
+      while (true) {
+        const { data } = await supabase.from("product_market_codes").select("product_id, code_value").range(from, from + 999);
+        if (!data || data.length === 0) break;
+        allMarketCodes.push(...data);
+        if (data.length < 1000) break;
+        from += 1000;
+      }
+
       const gtinMap = new Map<string, string>();
       const cnkMap = new Map<string, string>();
+      const marketCodeMap = new Map<string, string>(); // code_value -> product_id
       for (const p of allProducts) {
         if (p.gtin) gtinMap.set(p.gtin.replace(/^0+/, ""), p.id);
         if (p.cnk_code) cnkMap.set(p.cnk_code.replace(/^0+/, ""), p.id);
+      }
+      for (const mc of allMarketCodes) {
+        if (mc.code_value) marketCodeMap.set(mc.code_value.replace(/^0+/, ""), mc.product_id);
       }
 
       let inserted = 0, matched = 0;
@@ -292,9 +307,12 @@ export default function AdminVeillePrix() {
         const cnk = colCnk ? String(row[colCnk] || "").trim().replace(/^0+/, "") : "";
         const name = colName ? String(row[colName] || "").trim() : "";
 
+        // Double matching: EAN→gtin, CNK→cnk_code, CNK→market_codes, EAN→market_codes
         let productId: string | null = null;
         if (ean && gtinMap.has(ean)) productId = gtinMap.get(ean)!;
-        else if (cnk && cnkMap.has(cnk)) productId = cnkMap.get(cnk)!;
+        if (!productId && cnk && cnkMap.has(cnk)) productId = cnkMap.get(cnk)!;
+        if (!productId && cnk && marketCodeMap.has(cnk)) productId = marketCodeMap.get(cnk)!;
+        if (!productId && ean && marketCodeMap.has(ean)) productId = marketCodeMap.get(ean)!;
 
         if (productId) matched++;
 

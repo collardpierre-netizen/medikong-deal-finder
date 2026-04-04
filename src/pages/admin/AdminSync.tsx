@@ -661,26 +661,12 @@ export default function AdminSync() {
                 ))}
               </SelectContent>
             </Select>
-            <button
-              onClick={() => launchPipeline.mutate({ mode: "incremental" })}
-              disabled={launchPipeline.isPending || !!activePipeline}
-              className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg text-[13px] font-semibold hover:bg-blue-700 disabled:opacity-50 transition-colors"
-            >
-              {launchPipeline.isPending || activePipeline ? (
-                <Loader2 size={16} className="animate-spin" />
-              ) : (
-                <Zap size={16} />
-              )}
-              {activePipeline ? "Pipeline en cours..." : "Sync incrémentale (~56K)"}
-            </button>
-            <button
-              onClick={() => launchPipeline.mutate({ mode: "full" })}
-              disabled={launchPipeline.isPending || !!activePipeline}
-              className="flex items-center gap-2 px-4 py-2.5 border border-blue-300 text-blue-700 rounded-lg text-[13px] font-medium hover:bg-blue-50 disabled:opacity-50 transition-colors"
-            >
-              <RotateCcw size={14} />
-              Full sync (CSV)
-            </button>
+          </div>
+          <div className="mt-3 flex items-start gap-2 p-3 rounded-lg border border-amber-200 bg-amber-50">
+            <AlertTriangle size={16} className="text-amber-600 mt-0.5 shrink-0" />
+            <p className="text-[12px] text-amber-800">
+              Le pipeline de synchronisation est désormais géré par un script externe (<code className="font-mono bg-amber-100 px-1 rounded">sync-daily.js</code>) lancé quotidiennement via cron. Les boutons de lancement manuel ont été désactivés. Utilisez cette page pour la configuration (marge, pays, credentials).
+            </p>
           </div>
         </div>
 

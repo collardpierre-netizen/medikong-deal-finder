@@ -39,6 +39,11 @@ export function CatalogSidebar({ filters, setFilter, clearAll, resultCategoryIds
     return brands.filter(b => b.name.toLowerCase().includes(brandSearch.toLowerCase())).slice(0, 8);
   }, [brands, brandSearch]);
 
+  const mfSuggestions = useMemo(() => {
+    if (!mfSearch) return [];
+    return manufacturers.filter(m => m.name.toLowerCase().includes(mfSearch.toLowerCase())).slice(0, 8);
+  }, [manufacturers, mfSearch]);
+
   // Close dropdown on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {

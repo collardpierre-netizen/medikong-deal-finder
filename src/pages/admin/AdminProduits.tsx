@@ -16,6 +16,57 @@ import { Package, Tag, ShoppingCart, Search, Download, Upload, Plus, FileSpreads
 import { Progress } from "@/components/ui/progress";
 
 const PER_PAGE = 50;
+const OFFERS_PER_PAGE = 50;
+
+function useAdminPaginatedOffers(page: number, search: string, vendorFilter: string, brandFilter: string, countryFilter: string, statusFilter: string) {
+  return useQuery({
+    queryKey: ["admin-offers-paginated", page, search, vendorFilter, brandFilter, countryFilter, statusFilter],
+    queryFn: async () => {
+      let query = supabase
+        .from("offers")
+        .select("*, vendors(name, company_name), products(name, brand_name, gtin, cnk_code)", { count: "exact" });
+
+      if (statusFilter === "active") query = query.eq("is_active", true);
+      else if (statusFilter === "inactive") query = query.eq("is_active", false);
+
+      if (vendorFilter !== "all") query = query.eq("vendor_id", vendorFilter);
+      if (countryFilter !== "all") query = query.eq("country_code", countryFilter);
+
+      if (brandFilter !== "all") {
+        // Need to filter via product's brand_id
+        const { data: productIds } = await supabase.from("products").select("id").eq("brand_id", brandFilter);
+        if (productIds && productIds.length > 0) {
+          query = query.in("product_id", productIds.map(p => p.id));
+        } else {
+          return { offers: [], total: 0 };
+        }
+      }
+
+      if (search) {
+        // Search by product name or vendor name — use product name via textSearch
+        const { data: matchProducts } = await supabase
+          .from("products")
+          .select("id")
+          .or(`name.ilike.%${search}%,gtin.ilike.%${search}%,cnk_code.ilike.%${search}%`)
+          .limit(500);
+        if (matchProducts && matchProducts.length > 0) {
+          query = query.in("product_id", matchProducts.map(p => p.id));
+        } else {
+          return { offers: [], total: 0 };
+        }
+      }
+
+      query = query.order("updated_at", { ascending: false });
+      const offset = (page - 1) * OFFERS_PER_PAGE;
+      query = query.range(offset, offset + OFFERS_PER_PAGE - 1);
+
+      const { data, error, count } = await query;
+      if (error) throw error;
+      return { offers: data || [], total: count || 0 };
+    },
+    staleTime: 30_000,
+  });
+}
 
 function useAdminPaginatedProducts(page: number, search: string, brandFilter: string, manufacturerFilter: string) {
   return useQuery({

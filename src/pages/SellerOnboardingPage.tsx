@@ -59,6 +59,7 @@ const referralOptions = ["Google", "Réseaux sociaux", "Bouche à oreille", "Sal
 /* ─── Types ─── */
 interface FormData {
   businessType: string;
+  preferredLanguage: string;
   firstName: string; lastName: string; email: string; phone: string; jobTitle: string;
   companyName: string; country: string; city: string; vatNumber: string; website: string;
   annualRevenue: string; companyDescription: string;
@@ -68,7 +69,8 @@ interface FormData {
 }
 
 const initialData: FormData = {
-  businessType: "", firstName: "", lastName: "", email: "", phone: "", jobTitle: "",
+  businessType: "", preferredLanguage: "fr",
+  firstName: "", lastName: "", email: "", phone: "", jobTitle: "",
   companyName: "", country: "", city: "", vatNumber: "", website: "",
   annualRevenue: "", companyDescription: "",
   productCategories: [], skuCount: "", brands: "", hasEAN: "", salesChannels: [],

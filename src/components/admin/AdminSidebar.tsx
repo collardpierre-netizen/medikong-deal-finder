@@ -153,21 +153,29 @@ const AdminSidebar = () => {
             >
               {t(section.labelKey)}
             </p>
-            {section.items.map((item) => (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                className={`flex items-center gap-2.5 px-3 py-[7px] rounded-md text-[13px] transition-colors ${
-                  isActive(item.path)
-                    ? "text-white font-medium"
-                    : "text-slate-400 hover:text-white hover:bg-white/5"
-                }`}
-                style={isActive(item.path) ? { backgroundColor: "#1B5BDA" } : {}}
-              >
-                <item.icon size={16} strokeWidth={1.8} />
-                {t(item.labelKey)}
-              </NavLink>
-            ))}
+            {section.items.map((item) => {
+              const showBadge = item.path === "/admin/vendeurs" && pendingVendorsCount > 0;
+              return (
+                <NavLink
+                  key={item.path}
+                  to={item.path}
+                  className={`flex items-center gap-2.5 px-3 py-[7px] rounded-md text-[13px] transition-colors ${
+                    isActive(item.path)
+                      ? "text-white font-medium"
+                      : "text-slate-400 hover:text-white hover:bg-white/5"
+                  }`}
+                  style={isActive(item.path) ? { backgroundColor: "#1B5BDA" } : {}}
+                >
+                  <item.icon size={16} strokeWidth={1.8} />
+                  <span className="flex-1">{t(item.labelKey)}</span>
+                  {showBadge && (
+                    <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold text-white" style={{ backgroundColor: "#EF4444", minWidth: 18, textAlign: "center" }}>
+                      {pendingVendorsCount}
+                    </span>
+                  )}
+                </NavLink>
+              );
+            })}
           </div>
         ))}
       </nav>

@@ -383,6 +383,7 @@ export default function AdminVeillePrix() {
       toast.error("Erreur d'import: " + (e.message || e));
     } finally {
       setImporting(false);
+      setImportProgress(null);
     }
   }, [importSourceId, qc]);
 

@@ -95,7 +95,7 @@ const AdminProduits = () => {
 
   const tabs = [
     { key: "catalog" as const, label: "Catalogue master", count: totalProductCount.toLocaleString("fr-BE") },
-    { key: "offers" as const, label: "Offres vendeurs", count: String(offers.length) },
+    { key: "offers" as const, label: "Offres vendeurs", count: totalActiveOfferCount.toLocaleString("fr-BE") },
   ];
 
   const filteredOffers = offers.filter(

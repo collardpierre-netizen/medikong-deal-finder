@@ -303,6 +303,7 @@ export default function AdminVeillePrix() {
         if (mc.code_value) marketCodeMap.set(mc.code_value.replace(/^0+/, ""), mc.product_id);
       }
 
+      setImportProgress({ phase: "Matching des lignes…", current: 0, total: jsonRows.length });
       let inserted = 0, matched = 0;
       const batchInsert: any[] = [];
 

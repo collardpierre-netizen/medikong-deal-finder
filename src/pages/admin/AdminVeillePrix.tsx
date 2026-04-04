@@ -52,6 +52,7 @@ export default function AdminVeillePrix() {
   const [importSourceId, setImportSourceId] = useState("");
   const [importing, setImporting] = useState(false);
   const [importReport, setImportReport] = useState<{ total: number; matched: number; inserted: number } | null>(null);
+  const [importProgress, setImportProgress] = useState<{ phase: string; current: number; total: number } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   // Fetch sources

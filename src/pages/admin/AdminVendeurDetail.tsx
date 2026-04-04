@@ -139,7 +139,25 @@ const AdminVendeurDetail = () => {
           <p className="text-[13px] mt-0.5" style={{ color: "#616B7C" }}>{vendor.email || "—"}</p>
         </div>
         <div className="flex items-center gap-2">
-          <button className="px-4 py-2 rounded-md text-[12px] font-bold text-white" style={{ backgroundColor: "#1E293B" }}>Modifier</button>
+          <button
+            onClick={toggleActive}
+            disabled={togglingStatus}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-md text-[12px] font-bold transition-opacity hover:opacity-90"
+            style={{
+              backgroundColor: vendor.is_active ? "#FEF2F2" : "#F0FDF4",
+              color: vendor.is_active ? "#DC2626" : "#059669",
+              border: `1px solid ${vendor.is_active ? "#FECACA" : "#BBF7D0"}`,
+            }}
+          >
+            <Power size={14} />
+            {togglingStatus ? "..." : vendor.is_active ? "Désactiver" : "Activer"}
+          </button>
+          <button onClick={() => setShowEdit(true)} className="flex items-center gap-1.5 px-3 py-2 rounded-md text-[12px] font-bold text-white" style={{ backgroundColor: "#1B5BDA" }}>
+            <Pencil size={14} /> Modifier
+          </button>
+          <button onClick={() => setShowDelete(true)} className="flex items-center gap-1.5 px-3 py-2 rounded-md text-[12px] font-bold transition-opacity hover:opacity-90" style={{ backgroundColor: "#FEF2F2", color: "#DC2626", border: "1px solid #FECACA" }}>
+            <Trash2 size={14} /> Supprimer
+          </button>
         </div>
       </div>
 

@@ -240,6 +240,7 @@ export default function AdminVeillePrix() {
 
     setImporting(true);
     setImportReport(null);
+    setImportProgress({ phase: "Lecture du fichier…", current: 0, total: 0 });
     try {
       const ab = await file.arrayBuffer();
       const wb = XLSX.read(ab, { type: "array" });

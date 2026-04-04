@@ -86,6 +86,34 @@ const AdminVendeurDetail = () => {
     toast.success("Règle supprimée");
   };
 
+  const toggleActive = async () => {
+    setTogglingStatus(true);
+    try {
+      const { error } = await supabase.from("vendors").update({ is_active: !vendor.is_active } as any).eq("id", id!);
+      if (error) throw error;
+      toast.success(vendor.is_active ? "Vendeur désactivé" : "Vendeur activé");
+      queryClient.invalidateQueries({ queryKey: ["vendor-detail", id] });
+      queryClient.invalidateQueries({ queryKey: ["admin-vendors"] });
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setTogglingStatus(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      const { error } = await supabase.from("vendors").delete().eq("id", id!);
+      if (error) throw error;
+      toast.success("Vendeur supprimé");
+      queryClient.invalidateQueries({ queryKey: ["admin-vendors"] });
+      navigate("/admin/vendeurs");
+    } catch (e: any) {
+      toast.error(e.message || "Impossible de supprimer ce vendeur");
+    }
+    setShowDelete(false);
+  };
+
   if (isLoading) return <div className="py-12 text-center text-[13px]" style={{ color: "#8B95A5" }}>Chargement...</div>;
   if (!vendor) return <div className="py-12 text-center text-[13px]" style={{ color: "#EF4343" }}>Vendeur non trouvé</div>;
 

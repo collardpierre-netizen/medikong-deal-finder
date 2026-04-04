@@ -179,11 +179,69 @@ export default function SellerOnboardingPage() {
     if (validate()) setStep(s => s + 1);
   };
   const prev = () => { setErrors({}); setStep(s => s - 1); };
-  const submit = () => {
+  const submit = async () => {
     if (!validate()) return;
-    console.log("Seller onboarding data:", data);
-    setSubmitted(true);
-    setStep(6);
+    setSubmitting(true);
+    try {
+      const slug = data.companyName
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-|-$)/g, "");
+
+      const { error } = await supabase.from("vendors").insert({
+        name: data.companyName.trim(),
+        slug,
+        company_name: data.companyName.trim(),
+        email: data.email.trim(),
+        phone: data.phone.trim() || null,
+        vat_number: data.vatNumber.trim() || null,
+        city: data.city.trim(),
+        country_code: data.country === "Belgique" ? "BE" : data.country === "France" ? "FR" : data.country === "Pays-Bas" ? "NL" : data.country === "Luxembourg" ? "LU" : data.country === "Allemagne" ? "DE" : "BE",
+        type: "real" as any,
+        is_active: false,
+        is_verified: false,
+        business_type: data.businessType,
+        preferred_language: data.preferredLanguage,
+        description: [
+          data.companyDescription,
+          `CA: ${data.annualRevenue}`,
+          `Canaux: ${data.salesChannels.join(", ")}`,
+          `Fulfillment: ${data.fulfillment}`,
+          `Délai: ${data.leadTime}`,
+          `MOQ: ${data.moq}`,
+          `Source: ${data.referralSource}`,
+          data.notes ? `Notes: ${data.notes}` : "",
+        ].filter(Boolean).join(" | "),
+        validation_status: "pending_review" as any,
+      } as any);
+
+      if (error) throw error;
+
+      // Notify admin via edge function (fire & forget)
+      supabase.functions.invoke("send-transactional-email", {
+        body: {
+          templateName: "vendor-application",
+          recipientEmail: "admin@medikong.pro",
+          idempotencyKey: `vendor-app-${data.email}-${Date.now()}`,
+          templateData: {
+            companyName: data.companyName,
+            email: data.email,
+            phone: data.phone,
+            businessType: data.businessType,
+            country: data.country,
+          },
+        },
+      }).catch(() => {});
+
+      setSubmitted(true);
+      setStep(6);
+    } catch (err: any) {
+      toast.error("Erreur lors de l'envoi : " + (err.message || "Réessayez"));
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const canContinue = () => {

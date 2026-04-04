@@ -29,6 +29,9 @@ const AdminVendeurDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("resume");
+  const [showEdit, setShowEdit] = useState(false);
+  const [showDelete, setShowDelete] = useState(false);
+  const [togglingStatus, setTogglingStatus] = useState(false);
   const queryClient = useQueryClient();
   const { data: vendor, isLoading } = useQuery({
     queryKey: ["vendor-detail", id],

@@ -3,8 +3,10 @@ import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Store, Building2, User, ShoppingBag, Truck, Package,
-  Shield, ChevronRight, ChevronLeft, Check, FileText,
+  Shield, ChevronRight, ChevronLeft, Check, FileText, Globe, Loader2,
 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 /* ─── Constants ─── */
 const businessTypes = [
@@ -19,6 +21,13 @@ const businessTypes = [
 const countries = [
   "Belgique", "France", "Pays-Bas", "Luxembourg", "Allemagne",
   "Espagne", "Italie", "Portugal", "Royaume-Uni", "Suisse", "Autre UE", "Autre hors UE",
+];
+
+const languages = [
+  { code: "fr", label: "Français" },
+  { code: "nl", label: "Nederlands" },
+  { code: "de", label: "Deutsch" },
+  { code: "en", label: "English" },
 ];
 
 const revenueOptions = ["< 50k€", "50k-250k€", "250k-1M€", "1M-5M€", "> 5M€", "Préfère ne pas répondre"];
@@ -50,6 +59,7 @@ const referralOptions = ["Google", "Réseaux sociaux", "Bouche à oreille", "Sal
 /* ─── Types ─── */
 interface FormData {
   businessType: string;
+  preferredLanguage: string;
   firstName: string; lastName: string; email: string; phone: string; jobTitle: string;
   companyName: string; country: string; city: string; vatNumber: string; website: string;
   annualRevenue: string; companyDescription: string;
@@ -59,7 +69,8 @@ interface FormData {
 }
 
 const initialData: FormData = {
-  businessType: "", firstName: "", lastName: "", email: "", phone: "", jobTitle: "",
+  businessType: "", preferredLanguage: "fr",
+  firstName: "", lastName: "", email: "", phone: "", jobTitle: "",
   companyName: "", country: "", city: "", vatNumber: "", website: "",
   annualRevenue: "", companyDescription: "",
   productCategories: [], skuCount: "", brands: "", hasEAN: "", salesChannels: [],
@@ -131,6 +142,7 @@ export default function SellerOnboardingPage() {
   const [data, setData] = useState<FormData>(initialData);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const set = (key: keyof FormData, val: FormData[keyof FormData]) =>
@@ -167,11 +179,69 @@ export default function SellerOnboardingPage() {
     if (validate()) setStep(s => s + 1);
   };
   const prev = () => { setErrors({}); setStep(s => s - 1); };
-  const submit = () => {
+  const submit = async () => {
     if (!validate()) return;
-    console.log("Seller onboarding data:", data);
-    setSubmitted(true);
-    setStep(6);
+    setSubmitting(true);
+    try {
+      const slug = data.companyName
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-|-$)/g, "");
+
+      const { error } = await supabase.from("vendors").insert({
+        name: data.companyName.trim(),
+        slug,
+        company_name: data.companyName.trim(),
+        email: data.email.trim(),
+        phone: data.phone.trim() || null,
+        vat_number: data.vatNumber.trim() || null,
+        city: data.city.trim(),
+        country_code: data.country === "Belgique" ? "BE" : data.country === "France" ? "FR" : data.country === "Pays-Bas" ? "NL" : data.country === "Luxembourg" ? "LU" : data.country === "Allemagne" ? "DE" : "BE",
+        type: "real" as any,
+        is_active: false,
+        is_verified: false,
+        business_type: data.businessType,
+        preferred_language: data.preferredLanguage,
+        description: [
+          data.companyDescription,
+          `CA: ${data.annualRevenue}`,
+          `Canaux: ${data.salesChannels.join(", ")}`,
+          `Fulfillment: ${data.fulfillment}`,
+          `Délai: ${data.leadTime}`,
+          `MOQ: ${data.moq}`,
+          `Source: ${data.referralSource}`,
+          data.notes ? `Notes: ${data.notes}` : "",
+        ].filter(Boolean).join(" | "),
+        validation_status: "pending_review" as any,
+      } as any);
+
+      if (error) throw error;
+
+      // Notify admin via edge function (fire & forget)
+      supabase.functions.invoke("send-transactional-email", {
+        body: {
+          templateName: "vendor-application",
+          recipientEmail: "admin@medikong.pro",
+          idempotencyKey: `vendor-app-${data.email}-${Date.now()}`,
+          templateData: {
+            companyName: data.companyName,
+            email: data.email,
+            phone: data.phone,
+            businessType: data.businessType,
+            country: data.country,
+          },
+        },
+      }).catch(() => {});
+
+      setSubmitted(true);
+      setStep(6);
+    } catch (err: any) {
+      toast.error("Erreur lors de l'envoi : " + (err.message || "Réessayez"));
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const canContinue = () => {
@@ -275,6 +345,20 @@ export default function SellerOnboardingPage() {
                       </div>
                       <InputField label="Email professionnel" required type="email" value={data.email} onChange={e => set("email", e.target.value)} error={errors.email} />
                       <InputField label="Téléphone" required type="tel" placeholder="+32 470 123 456" value={data.phone} onChange={e => set("phone", e.target.value)} error={errors.phone} />
+                      <div>
+                        <label className="text-[13px] text-mk-sec mb-2 block">Langue préférée <span className="text-mk-red ml-0.5">*</span></label>
+                        <div className="flex gap-2">
+                          {languages.map(l => {
+                            const active = data.preferredLanguage === l.code;
+                            return (
+                              <button key={l.code} onClick={() => set("preferredLanguage", l.code)}
+                                className={`flex items-center gap-1.5 px-4 py-2.5 rounded-md text-xs font-medium border-2 transition-colors ${active ? "border-mk-blue bg-[#EFF6FF] text-mk-blue" : "border-mk-line text-mk-sec hover:border-mk-lb"}`}>
+                                <Globe size={14} /> {l.label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
                       <InputField label="Fonction / Rôle" value={data.jobTitle} onChange={e => set("jobTitle", e.target.value)} placeholder="Ex: Directeur commercial" />
                     </div>
                   </div>
@@ -501,10 +585,10 @@ export default function SellerOnboardingPage() {
               ) : (
                 <button
                   onClick={submit}
-                  disabled={!data.acceptTerms}
-                  className={`text-[13px] font-bold px-6 py-3 rounded-md transition-opacity inline-flex items-center gap-2 ${data.acceptTerms ? "bg-mk-green text-white hover:opacity-90" : "bg-[#E5E7EB] text-[#9CA3AF] cursor-default"}`}
+                  disabled={!data.acceptTerms || submitting}
+                  className={`text-[13px] font-bold px-6 py-3 rounded-md transition-opacity inline-flex items-center gap-2 ${data.acceptTerms && !submitting ? "bg-mk-green text-white hover:opacity-90" : "bg-[#E5E7EB] text-[#9CA3AF] cursor-default"}`}
                 >
-                  Soumettre ma candidature
+                  {submitting ? <><Loader2 size={14} className="animate-spin" /> Envoi...</> : "Soumettre ma candidature"}
                 </button>
               )}
             </div>

@@ -3079,6 +3079,7 @@ export type Database = {
           address_line1: string | null
           auth_user_id: string | null
           auto_forward_to_qogita: boolean
+          business_type: string | null
           can_manage_offers: boolean
           city: string | null
           commission_rate: number
@@ -3096,6 +3097,7 @@ export type Database = {
           name: string
           phone: string | null
           postal_code: string | null
+          preferred_language: string | null
           qogita_seller_alias: string | null
           rating: number | null
           show_real_name: boolean
@@ -3107,6 +3109,12 @@ export type Database = {
           total_sales: number
           type: Database["public"]["Enums"]["vendor_type"]
           updated_at: string
+          validated_at: string | null
+          validated_by: string | null
+          validation_notes: string | null
+          validation_status:
+            | Database["public"]["Enums"]["vendor_validation_status"]
+            | null
           vat_number: string | null
           vendor_code: string | null
         }
@@ -3114,6 +3122,7 @@ export type Database = {
           address_line1?: string | null
           auth_user_id?: string | null
           auto_forward_to_qogita?: boolean
+          business_type?: string | null
           can_manage_offers?: boolean
           city?: string | null
           commission_rate?: number
@@ -3131,6 +3140,7 @@ export type Database = {
           name: string
           phone?: string | null
           postal_code?: string | null
+          preferred_language?: string | null
           qogita_seller_alias?: string | null
           rating?: number | null
           show_real_name?: boolean
@@ -3142,6 +3152,12 @@ export type Database = {
           total_sales?: number
           type?: Database["public"]["Enums"]["vendor_type"]
           updated_at?: string
+          validated_at?: string | null
+          validated_by?: string | null
+          validation_notes?: string | null
+          validation_status?:
+            | Database["public"]["Enums"]["vendor_validation_status"]
+            | null
           vat_number?: string | null
           vendor_code?: string | null
         }
@@ -3149,6 +3165,7 @@ export type Database = {
           address_line1?: string | null
           auth_user_id?: string | null
           auto_forward_to_qogita?: boolean
+          business_type?: string | null
           can_manage_offers?: boolean
           city?: string | null
           commission_rate?: number
@@ -3166,6 +3183,7 @@ export type Database = {
           name?: string
           phone?: string | null
           postal_code?: string | null
+          preferred_language?: string | null
           qogita_seller_alias?: string | null
           rating?: number | null
           show_real_name?: boolean
@@ -3177,6 +3195,12 @@ export type Database = {
           total_sales?: number
           type?: Database["public"]["Enums"]["vendor_type"]
           updated_at?: string
+          validated_at?: string | null
+          validated_by?: string | null
+          validation_notes?: string | null
+          validation_status?:
+            | Database["public"]["Enums"]["vendor_validation_status"]
+            | null
           vat_number?: string | null
           vendor_code?: string | null
         }
@@ -3294,6 +3318,11 @@ export type Database = {
         | "offers_multi_vendor"
       urgency_enum: "low" | "medium" | "high"
       vendor_type: "medikong" | "qogita_virtual" | "real" | "qogita"
+      vendor_validation_status:
+        | "pending_review"
+        | "under_review"
+        | "approved"
+        | "rejected"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3484,6 +3513,12 @@ export const Constants = {
       ],
       urgency_enum: ["low", "medium", "high"],
       vendor_type: ["medikong", "qogita_virtual", "real", "qogita"],
+      vendor_validation_status: [
+        "pending_review",
+        "under_review",
+        "approved",
+        "rejected",
+      ],
     },
   },
 } as const

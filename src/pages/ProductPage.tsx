@@ -1264,15 +1264,37 @@ export default function ProductPage() {
                               {mpVisMap.show_public_price && <th className="text-right py-3 px-4 text-xs font-semibold text-muted-foreground">Prix public</th>}
                               {mpVisMap.show_tva && <th className="text-right py-3 px-4 text-xs font-semibold text-muted-foreground">TVA</th>}
                               {mpVisMap.show_supplier_name && <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground">Fournisseur</th>}
-                              {bestOffer && <th className="text-right py-3 px-4 text-xs font-semibold text-muted-foreground">vs MediKong</th>}
+                              {bestOffer && mpVisMap.show_wholesale_price && <th className="text-right py-3 px-4 text-xs font-semibold text-muted-foreground">Δ Grossiste</th>}
+                              {bestOffer && mpVisMap.show_pharmacist_price && <th className="text-right py-3 px-4 text-xs font-semibold text-muted-foreground">Δ Pharmacien</th>}
+                              {bestOffer && mpVisMap.show_public_price && <th className="text-right py-3 px-4 text-xs font-semibold text-muted-foreground">Δ Public</th>}
                             </tr>
                           </thead>
                           <tbody>
                             {marketPriceItems.map((mp: any, i: number) => {
                               const mkPrice = bestOffer ? (isTVAC ? bestOffer.unitPriceInclVat : bestOffer.unitPriceEur) : 0;
-                              const refPrice = mp.prix_pharmacien || mp.prix_grossiste || mp.prix_public || 0;
-                              const deltaAbs = refPrice && mkPrice ? refPrice - mkPrice : 0;
-                              const deltaPct = refPrice && mkPrice ? Math.round((deltaAbs / refPrice) * 100) : 0;
+                              const calcDelta = (ref: number | null) => {
+                                const r = Number(ref || 0);
+                                if (!r || !mkPrice) return null;
+                                const abs = r - mkPrice;
+                                const pct = Math.round((abs / r) * 100);
+                                return { abs, pct };
+                              };
+                              const deltaGross = calcDelta(mp.prix_grossiste);
+                              const deltaPharm = calcDelta(mp.prix_pharmacien);
+                              const deltaPublic = calcDelta(mp.prix_public);
+                              const renderDelta = (d: { abs: number; pct: number } | null) => {
+                                if (!d) return "—";
+                                return (
+                                  <div className="flex flex-col items-end gap-0.5">
+                                    <span className={`text-xs font-bold ${d.abs > 0 ? "text-emerald-600" : d.abs < 0 ? "text-destructive" : "text-muted-foreground"}`}>
+                                      {d.abs > 0 ? "−" : "+"}{formatEur(Math.abs(d.abs))} €
+                                    </span>
+                                    <span className={`text-[11px] font-semibold px-1.5 py-0.5 rounded-full ${d.abs > 0 ? "bg-emerald-100 text-emerald-700" : d.abs < 0 ? "bg-red-100 text-destructive" : "bg-muted text-muted-foreground"}`}>
+                                      {d.pct > 0 ? "−" : "+"}{Math.abs(d.pct)}%
+                                    </span>
+                                  </div>
+                                );
+                              };
                               return (
                                 <tr key={mp.id} className={`border-b border-border last:border-0 ${i % 2 === 0 ? "bg-muted/20" : ""}`}>
                                   <td className="py-3 px-4 font-medium text-foreground">{mp.market_price_sources?.name}</td>
@@ -1281,20 +1303,9 @@ export default function ProductPage() {
                                   {mpVisMap.show_public_price && <td className="text-right py-3 px-4 text-foreground">{mp.prix_public ? `${formatEur(mp.prix_public)} €` : "—"}</td>}
                                   {mpVisMap.show_tva && <td className="text-right py-3 px-4 text-muted-foreground">{mp.tva_rate ? `${(Number(mp.tva_rate) * 100).toFixed(0)}%` : "—"}</td>}
                                   {mpVisMap.show_supplier_name && <td className="py-3 px-4 text-muted-foreground">{mp.supplier_name || "—"}</td>}
-                                  {bestOffer && (
-                                    <td className="text-right py-3 px-4">
-                                      {refPrice > 0 && mkPrice > 0 ? (
-                                        <div className="flex flex-col items-end gap-0.5">
-                                          <span className={`text-xs font-bold ${deltaAbs > 0 ? "text-emerald-600" : deltaAbs < 0 ? "text-destructive" : "text-muted-foreground"}`}>
-                                            {deltaAbs > 0 ? "−" : "+"}{formatEur(Math.abs(deltaAbs))} €
-                                          </span>
-                                          <span className={`text-[11px] font-semibold px-1.5 py-0.5 rounded-full ${deltaAbs > 0 ? "bg-emerald-100 text-emerald-700" : deltaAbs < 0 ? "bg-red-100 text-destructive" : "bg-muted text-muted-foreground"}`}>
-                                            {deltaPct > 0 ? "−" : "+"}{Math.abs(deltaPct)}%
-                                          </span>
-                                        </div>
-                                      ) : "—"}
-                                    </td>
-                                  )}
+                                  {bestOffer && mpVisMap.show_wholesale_price && <td className="text-right py-3 px-4">{renderDelta(deltaGross)}</td>}
+                                  {bestOffer && mpVisMap.show_pharmacist_price && <td className="text-right py-3 px-4">{renderDelta(deltaPharm)}</td>}
+                                  {bestOffer && mpVisMap.show_public_price && <td className="text-right py-3 px-4">{renderDelta(deltaPublic)}</td>}
                                 </tr>
                               );
                             })}

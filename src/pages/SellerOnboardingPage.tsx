@@ -585,10 +585,10 @@ export default function SellerOnboardingPage() {
               ) : (
                 <button
                   onClick={submit}
-                  disabled={!data.acceptTerms}
-                  className={`text-[13px] font-bold px-6 py-3 rounded-md transition-opacity inline-flex items-center gap-2 ${data.acceptTerms ? "bg-mk-green text-white hover:opacity-90" : "bg-[#E5E7EB] text-[#9CA3AF] cursor-default"}`}
+                  disabled={!data.acceptTerms || submitting}
+                  className={`text-[13px] font-bold px-6 py-3 rounded-md transition-opacity inline-flex items-center gap-2 ${data.acceptTerms && !submitting ? "bg-mk-green text-white hover:opacity-90" : "bg-[#E5E7EB] text-[#9CA3AF] cursor-default"}`}
                 >
-                  Soumettre ma candidature
+                  {submitting ? <><Loader2 size={14} className="animate-spin" /> Envoi...</> : "Soumettre ma candidature"}
                 </button>
               )}
             </div>

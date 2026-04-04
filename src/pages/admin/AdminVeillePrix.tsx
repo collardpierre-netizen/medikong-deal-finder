@@ -269,12 +269,14 @@ export default function AdminVeillePrix() {
       const colTva = findCol(["tva", "vat", "tax"]);
 
       // Fetch all products for matching
+      setImportProgress({ phase: "Chargement des produits…", current: 0, total: 0 });
       const allProducts: any[] = [];
       let from = 0;
       while (true) {
         const { data } = await supabase.from("products").select("id, gtin, cnk_code").range(from, from + 999);
         if (!data || data.length === 0) break;
         allProducts.push(...data);
+        setImportProgress({ phase: "Chargement des produits…", current: allProducts.length, total: 0 });
         if (data.length < 1000) break;
         from += 1000;
       }

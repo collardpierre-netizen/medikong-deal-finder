@@ -376,7 +376,29 @@ function VendorValidationTab({ vendor, onUpdate }: { vendor: any; onUpdate: () =
       }
       const { error } = await supabase.from("vendors").update(update).eq("id", vendor.id);
       if (error) throw error;
-      toast.success(action === "approved" ? "Vendeur approuvé !" : action === "rejected" ? "Vendeur refusé" : "Statut mis à jour");
+
+      // Send notification email to vendor
+      if (action === "approved") {
+        supabase.functions.invoke("send-transactional-email", {
+          body: {
+            templateName: "vendor-approved",
+            recipientEmail: vendor.email,
+            idempotencyKey: `vendor-approved-${vendor.id}-${Date.now()}`,
+            templateData: { companyName: vendor.company_name || vendor.name },
+          },
+        }).catch(() => {});
+      } else if (action === "rejected") {
+        supabase.functions.invoke("send-transactional-email", {
+          body: {
+            templateName: "vendor-rejected",
+            recipientEmail: vendor.email,
+            idempotencyKey: `vendor-rejected-${vendor.id}-${Date.now()}`,
+            templateData: { companyName: vendor.company_name || vendor.name, reason: notes || undefined },
+          },
+        }).catch(() => {});
+      }
+
+      toast.success(action === "approved" ? "Vendeur approuvé ! Email envoyé." : action === "rejected" ? "Vendeur refusé. Email envoyé." : "Statut mis à jour");
       onUpdate();
     } catch (err: any) {
       toast.error(err.message);

@@ -15,6 +15,7 @@ import * as XLSX from "xlsx";
 
 type SortKey = "ecart" | "name" | "qogita" | string;
 type SortDir = "asc" | "desc";
+type PriceType = "grossiste" | "pharmacien" | "public";
 
 interface MarketSource {
   id: string;

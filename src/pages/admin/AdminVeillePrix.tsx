@@ -121,6 +121,14 @@ export default function AdminVeillePrix() {
     return [...slugSet.values()].sort((a, b) => a.name.localeCompare(b.name));
   }, [rawData]);
 
+  // Helper to get the right price from a market_price row based on selected type
+  const getSourcePrice = useCallback((mp: any): number | null => {
+    if (priceType === "grossiste") return mp?.prix_grossiste || null;
+    if (priceType === "pharmacien") return mp?.prix_pharmacien || null;
+    if (priceType === "public") return mp?.prix_public || null;
+    return mp?.prix_grossiste || mp?.prix_pharmacien || mp?.prix_public || null;
+  }, [priceType]);
+
   // Build comparison rows — dynamic per source
   const rows = useMemo(() => {
     const productMap = Object.fromEntries(products.map((p: any) => [p.id, p]));
@@ -133,9 +141,7 @@ export default function AdminVeillePrix() {
       const srcCountry = (mp as any).market_price_sources?.country_code;
       if (!slug) continue;
 
-      // Apply country filter
       if (countryFilter !== "all" && srcCountry !== countryFilter) continue;
-      // Apply source filter
       if (sourceFilter !== "all" && slug !== sourceFilter) continue;
 
       if (!grouped[pid]) grouped[pid] = { product: productMap[pid], sources: {} };
@@ -144,16 +150,15 @@ export default function AdminVeillePrix() {
 
     return Object.values(grouped).map((row) => {
       const qogitaPrice = row.product.best_price_excl_vat || 0;
-      // Find best ref price across all sources
       let refPrice: number | null = null;
       for (const src of Object.values(row.sources)) {
-        const p = (src as any).prix_grossiste || (src as any).prix_pharmacien || null;
+        const p = getSourcePrice(src);
         if (p && (refPrice === null || p < refPrice)) refPrice = p;
       }
       const ecart = refPrice && qogitaPrice > 0 ? ((refPrice - qogitaPrice) / refPrice) * 100 : null;
       return { ...row, qogitaPrice, ecart };
     });
-  }, [rawData, products, countryFilter, sourceFilter]);
+  }, [rawData, products, countryFilter, sourceFilter, getSourcePrice]);
 
   // Visible source columns (based on active filters)
   const visibleSources = useMemo(() => {

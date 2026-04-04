@@ -235,8 +235,8 @@ export function useCatalogCategories() {
       // Build full tree: L1 > L2 > L3, sorted alphabetically
       const roots = all.filter(c => !c.parent_id).sort((a, b) => a.name.localeCompare(b.name, 'fr'));
       return roots.map(r => {
-        const l2Children = all.filter(c => c.parent_id === r.id).map(l2 => {
-          const l3Children = all.filter(c => c.parent_id === l2.id);
+        const l2Children = all.filter(c => c.parent_id === r.id).sort((a, b) => a.name.localeCompare(b.name, 'fr')).map(l2 => {
+          const l3Children = all.filter(c => c.parent_id === l2.id).sort((a, b) => a.name.localeCompare(b.name, 'fr'));
           const l2Total = l2.product_count + l3Children.reduce((s, c) => s + c.product_count, 0);
           return { ...l2, product_count: l2Total, children: l3Children };
         });

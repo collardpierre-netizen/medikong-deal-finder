@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { ChevronLeft, X, Search, Filter, Eye } from "lucide-react";
 import { useCountry } from "@/contexts/CountryContext";
 import { useCatalogCategories, useCatalogBrands, useCatalogManufacturers, type CatalogFilters } from "@/hooks/useCatalog";
@@ -26,6 +26,8 @@ export function CatalogSidebar({ filters, setFilter, clearAll, resultCategoryIds
   const [brandDropdownOpen, setBrandDropdownOpen] = useState(false);
   const brandDropdownRef = useRef<HTMLDivElement>(null);
   const [mfSearch, setMfSearch] = useState("");
+  const [mfDropdownOpen, setMfDropdownOpen] = useState(false);
+  const mfDropdownRef = useRef<HTMLDivElement>(null);
   const [showAllBrands, setShowAllBrands] = useState(false);
   const [showAllMf, setShowAllMf] = useState(false);
   const [priceMin, setPriceMin] = useState(filters.priceMin?.toString() || "");
@@ -37,11 +39,19 @@ export function CatalogSidebar({ filters, setFilter, clearAll, resultCategoryIds
     return brands.filter(b => b.name.toLowerCase().includes(brandSearch.toLowerCase())).slice(0, 8);
   }, [brands, brandSearch]);
 
+  const mfSuggestions = useMemo(() => {
+    if (!mfSearch) return [];
+    return manufacturers.filter(m => m.name.toLowerCase().includes(mfSearch.toLowerCase())).slice(0, 8);
+  }, [manufacturers, mfSearch]);
+
   // Close dropdown on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (brandDropdownRef.current && !brandDropdownRef.current.contains(e.target as Node)) {
         setBrandDropdownOpen(false);
+      }
+      if (mfDropdownRef.current && !mfDropdownRef.current.contains(e.target as Node)) {
+        setMfDropdownOpen(false);
       }
     };
     document.addEventListener("mousedown", handler);
@@ -322,16 +332,50 @@ export function CatalogSidebar({ filters, setFilter, clearAll, resultCategoryIds
       {/* Manufacturers */}
       <div>
         <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Fabricant</h4>
-        <div className="relative mb-2">
+        <div className="relative mb-2" ref={mfDropdownRef}>
           <Search size={14} className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Rechercher..."
+            placeholder="Rechercher un fabricant..."
             value={mfSearch}
-            onChange={e => setMfSearch(e.target.value)}
+            onChange={e => { setMfSearch(e.target.value); setMfDropdownOpen(true); }}
+            onFocus={() => { if (mfSearch.length > 0) setMfDropdownOpen(true); }}
             className="pl-7 h-8 text-sm"
           />
+          {mfDropdownOpen && mfSearch.length >= 1 && mfSuggestions.length > 0 && (
+            <div className="absolute z-20 left-0 right-0 top-full mt-1 bg-background border border-border rounded-md shadow-lg max-h-[200px] overflow-y-auto">
+              {mfSuggestions.map(m => {
+                const isSelected = filters.manufacturers?.includes(m.slug) || false;
+                return (
+                  <button
+                    key={m.id}
+                    onClick={() => { toggleMf(m.slug); setMfSearch(""); setMfDropdownOpen(false); }}
+                    className={`w-full text-left px-3 py-1.5 text-sm hover:bg-muted flex items-center justify-between ${isSelected ? "bg-primary/5 font-medium" : ""}`}
+                  >
+                    <span className="truncate">{m.name}</span>
+                    <span className="text-xs text-muted-foreground shrink-0 ml-2">({m.product_count})</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
-        <ScrollArea className="max-h-[200px]">
+
+        {/* Selected manufacturer chips */}
+        {(filters.manufacturers || []).length > 0 && (
+          <div className="flex flex-wrap gap-1 mb-2">
+            {(filters.manufacturers || []).map(slug => {
+              const mf = manufacturers.find(m => m.slug === slug);
+              return mf ? (
+                <span key={slug} className="inline-flex items-center gap-1 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                  {mf.name}
+                  <button onClick={() => toggleMf(slug)} className="hover:text-destructive"><X size={12} /></button>
+                </span>
+              ) : null;
+            })}
+          </div>
+        )}
+
+        <ScrollArea className="max-h-[280px]">
           <div className="space-y-1">
             {filteredMf.map(m => (
               <label key={m.id} className="flex items-center gap-2 text-sm cursor-pointer py-0.5 hover:bg-muted px-1 rounded">

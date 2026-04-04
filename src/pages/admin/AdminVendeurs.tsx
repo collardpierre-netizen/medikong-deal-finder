@@ -90,6 +90,12 @@ const AdminVendeurs = () => {
                     <p className="text-[11px]" style={{ color: "#8B95A5" }}>{s.email || "—"}</p>
                   </td>
                   <td className="px-4 py-3">
+                    <span className="text-[10px] font-mono select-all" style={{ color: "#8B95A5" }} title={s.id}>{s.id.slice(0, 8)}…</span>
+                    {(s as any).qogita_seller_fid && (
+                      <p className="text-[10px] font-mono mt-0.5" style={{ color: "#7C3AED" }} title={(s as any).qogita_seller_fid}>Q: {(s as any).qogita_seller_fid}</p>
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
                     <span className="px-2 py-1 rounded text-[11px] font-mono" style={{ backgroundColor: "#F1F5F9", color: "#616B7C" }}>{s.display_code || "—"}</span>
                   </td>
                   <td className="px-4 py-3">

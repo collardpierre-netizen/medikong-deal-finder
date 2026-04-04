@@ -170,10 +170,14 @@ export async function importProducts(file: File, onProgress?: (p: ImportProgress
     }
   }
 
-  // Pre-fetch existing slugs to detect duplicates vs new
+  // Pre-fetch existing slugs and gtins to detect duplicates vs new
   const existingSlugs = new Set<string>();
-  const allProducts = await fetchAllRows("products", "slug", "slug");
-  allProducts.forEach((p: any) => existingSlugs.add(p.slug));
+  const existingGtins = new Set<string>();
+  const allProducts = await fetchAllRows("products", "slug,gtin", "slug");
+  allProducts.forEach((p: any) => {
+    existingSlugs.add(p.slug);
+    if (p.gtin) existingGtins.add(String(p.gtin).trim());
+  });
 
   // --- Import products ---
   currentPhase = "products"; notify();

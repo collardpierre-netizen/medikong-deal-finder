@@ -266,7 +266,31 @@ const AdminVendeurDetail = () => {
           <h3 className="text-[14px] font-bold mb-4" style={{ color: "#1D2530" }}>Activité récente</h3>
           <p className="text-[12px]" style={{ color: "#8B95A5" }}>Inscrit le {new Date(vendor.created_at).toLocaleDateString("fr-BE")}</p>
         </div>
-      )}
+       )}
+
+      {/* Delete confirmation */}
+      <Dialog open={showDelete} onOpenChange={setShowDelete}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle size={20} /> Supprimer le vendeur
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Êtes-vous sûr de vouloir supprimer <strong>{vendor.company_name || vendor.name}</strong> ? Cette action est irréversible et supprimera toutes les offres associées.
+          </p>
+          <div className="flex justify-end gap-3 mt-4">
+            <button onClick={() => setShowDelete(false)} className="px-4 py-2 rounded-md text-[12px] font-semibold" style={{ border: "1px solid #E2E8F0" }}>Annuler</button>
+            <button onClick={handleDelete} className="px-4 py-2 rounded-md text-[12px] font-bold text-white" style={{ backgroundColor: "#DC2626" }}>Confirmer la suppression</button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit dialog */}
+      <VendorEditDialog open={showEdit} onOpenChange={setShowEdit} vendor={vendor} onSaved={() => {
+        queryClient.invalidateQueries({ queryKey: ["vendor-detail", id] });
+        queryClient.invalidateQueries({ queryKey: ["admin-vendors"] });
+      }} />
     </div>
   );
 };

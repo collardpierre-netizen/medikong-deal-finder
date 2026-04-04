@@ -1413,14 +1413,14 @@ export default function ProductPage() {
                             <label className="text-xs text-muted-foreground mb-1.5 block">Mode de saisie</label>
                             <div className="flex gap-2">
                               <button
-                                onClick={() => { (window as any).__calcMode = 'manual'; setUserPrice(userPrice); }}
-                                className={`px-3 py-1.5 rounded-md text-xs font-medium border transition-colors ${!(window as any).__calcMode || (window as any).__calcMode === 'manual' ? 'bg-primary text-primary-foreground border-primary' : 'bg-background text-muted-foreground border-border hover:border-primary/50'}`}
+                                onClick={() => setCalcMode('manual')}
+                                className={`px-3 py-1.5 rounded-md text-xs font-medium border transition-colors ${calcMode === 'manual' ? 'bg-primary text-primary-foreground border-primary' : 'bg-background text-muted-foreground border-border hover:border-primary/50'}`}
                               >
                                 Prix manuel
                               </button>
                               <button
-                                onClick={() => { (window as any).__calcMode = 'pct'; setUserPrice(""); }}
-                                className={`px-3 py-1.5 rounded-md text-xs font-medium border transition-colors ${(window as any).__calcMode === 'pct' ? 'bg-primary text-primary-foreground border-primary' : 'bg-background text-muted-foreground border-border hover:border-primary/50'}`}
+                                onClick={() => { setCalcMode('pct'); setUserPrice(""); }}
+                                className={`px-3 py-1.5 rounded-md text-xs font-medium border transition-colors ${calcMode === 'pct' ? 'bg-primary text-primary-foreground border-primary' : 'bg-background text-muted-foreground border-border hover:border-primary/50'}`}
                               >
                                 % remise vs prix marché
                               </button>
@@ -1428,7 +1428,7 @@ export default function ProductPage() {
                           </div>
                         )}
 
-                        {(!(window as any).__calcMode || (window as any).__calcMode === 'manual' || !hasAnyRef) ? (
+                        {(calcMode === 'manual' || !hasAnyRef) ? (
                           /* Manual mode */
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>

@@ -93,6 +93,18 @@ const AdminSidebar = () => {
   const navigate = useNavigate();
   const { adminName, role } = useAdminAuth();
 
+  const { data: pendingVendorsCount = 0 } = useQuery({
+    queryKey: ["pending-vendors-count"],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("vendors")
+        .select("id", { count: "exact", head: true })
+        .in("validation_status" as any, ["pending_review", "under_review"] as any);
+      return count || 0;
+    },
+    refetchInterval: 30000,
+  });
+
   const isActive = (path: string) => location.pathname === path;
 
   const handleLogout = async () => {

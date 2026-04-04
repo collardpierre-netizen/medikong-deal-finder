@@ -345,6 +345,20 @@ export default function SellerOnboardingPage() {
                       </div>
                       <InputField label="Email professionnel" required type="email" value={data.email} onChange={e => set("email", e.target.value)} error={errors.email} />
                       <InputField label="Téléphone" required type="tel" placeholder="+32 470 123 456" value={data.phone} onChange={e => set("phone", e.target.value)} error={errors.phone} />
+                      <div>
+                        <label className="text-[13px] text-mk-sec mb-2 block">Langue préférée <span className="text-mk-red ml-0.5">*</span></label>
+                        <div className="flex gap-2">
+                          {languages.map(l => {
+                            const active = data.preferredLanguage === l.code;
+                            return (
+                              <button key={l.code} onClick={() => set("preferredLanguage", l.code)}
+                                className={`flex items-center gap-1.5 px-4 py-2.5 rounded-md text-xs font-medium border-2 transition-colors ${active ? "border-mk-blue bg-[#EFF6FF] text-mk-blue" : "border-mk-line text-mk-sec hover:border-mk-lb"}`}>
+                                <Globe size={14} /> {l.label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
                       <InputField label="Fonction / Rôle" value={data.jobTitle} onChange={e => set("jobTitle", e.target.value)} placeholder="Ex: Directeur commercial" />
                     </div>
                   </div>

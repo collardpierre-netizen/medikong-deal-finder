@@ -153,6 +153,15 @@ const AdminProduits = () => {
     }, 400);
   }, []);
 
+  const handleOffersSearchChange = useCallback((value: string) => {
+    setOffersSearch(value);
+    clearTimeout(offersDebounceRef.current);
+    offersDebounceRef.current = setTimeout(() => {
+      setDebouncedOffersSearch(value);
+      setOffersPage(1);
+    }, 400);
+  }, []);
+
   const handleFilterChange = useCallback((type: "brand" | "manufacturer", value: string) => {
     if (type === "brand") setBrandFilter(value);
     else setManufacturerFilter(value);
@@ -164,11 +173,7 @@ const AdminProduits = () => {
     { key: "offers" as const, label: "Offres vendeurs", count: totalActiveOfferCount.toLocaleString("fr-BE") },
   ];
 
-  const filteredOffers = offers.filter(
-    (o) =>
-      ((o.products as any)?.name || "").toLowerCase().includes(search.toLowerCase()) ||
-      ((o.vendors as any)?.company_name || "").toLowerCase().includes(search.toLowerCase())
-  );
+  const sortedVendors = [...vendors].sort((a, b) => (a.company_name || a.name).localeCompare(b.company_name || b.name));
 
   const [importProgress, setImportProgress] = useState<ImportProgress | null>(null);
   const [importResult, setImportResult] = useState<{ created: number; updated: number; skipped: number; errors: { line: number; name: string; code: string; message: string }[]; brandsCreated?: number; manufacturersCreated?: number; totalRows: number } | null>(null);

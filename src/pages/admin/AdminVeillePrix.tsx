@@ -460,10 +460,20 @@ export default function AdminVeillePrix() {
             <SelectItem value="20">≥ 20%</SelectItem>
           </SelectContent>
         </Select>
+        <Select value={priceType} onValueChange={v => { setPriceType(v as PriceType); setPage(1); }}>
+          <SelectTrigger className="w-[150px] h-9 text-xs"><SelectValue placeholder="Type de prix" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="grossiste">Prix grossiste</SelectItem>
+            <SelectItem value="pharmacien">Prix pharmacien</SelectItem>
+            <SelectItem value="public">Prix public</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
-      {/* Table */}
-      {isLoading ? (
+      {/* Price type legend */}
+      <div className="text-xs text-muted-foreground mb-3">
+        Comparaison sur le <span className="font-semibold text-foreground">prix {priceType}</span> — L'écart % est calculé entre le prix MediKong et le prix {priceType} de la source.
+      </div>
         <div className="text-center py-12 text-sm text-muted-foreground">Chargement…</div>
       ) : (
         <>

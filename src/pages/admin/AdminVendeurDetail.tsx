@@ -8,11 +8,13 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   ArrowLeft, Building2, Mail, MapPin,
   DollarSign, Package, Tag, Factory, Activity, Eye, Plus, Trash2,
+  CheckCircle2, XCircle, Clock, Globe, Phone, FileText, Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 
 const tabList = [
   { key: "resume", label: "Résumé", icon: Building2 },
+  { key: "validation", label: "Validation", icon: CheckCircle2 },
   { key: "visibility", label: "Visibilité", icon: Eye },
   { key: "portfolio", label: "Portefeuille", icon: Tag },
   { key: "products", label: "Produits", icon: Package },

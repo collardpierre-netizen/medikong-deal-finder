@@ -99,7 +99,8 @@ const AdminSidebar = () => {
       const { count } = await supabase
         .from("vendors")
         .select("id", { count: "exact", head: true })
-        .in("validation_status" as any, ["pending_review", "under_review"] as any);
+        .eq("is_active", false)
+        .eq("is_verified", false);
       return count || 0;
     },
     refetchInterval: 30000,

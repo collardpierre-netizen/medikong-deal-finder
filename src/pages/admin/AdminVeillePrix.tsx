@@ -317,7 +317,7 @@ export default function AdminVeillePrix() {
       // Insert in batches of 500
       for (let i = 0; i < batchInsert.length; i += 500) {
         const batch = batchInsert.slice(i, i + 500);
-        const { error } = await supabase.from("market_prices").insert(batch);
+        const { error } = await supabase.from("market_prices").upsert(batch, { onConflict: "source_id,ean" });
         if (error) { toast.error(`Erreur batch ${i}: ${error.message}`); break; }
         inserted += batch.length;
       }

@@ -314,13 +314,34 @@ export default function AdminVeillePrix() {
         });
       }
 
-      // Insert in batches of 500
-      for (let i = 0; i < batchInsert.length; i += 500) {
-        const batch = batchInsert.slice(i, i + 500);
-        const { error } = await supabase.from("market_prices").upsert(batch, { onConflict: "source_id,ean" });
-        if (error) { toast.error(`Erreur batch ${i}: ${error.message}`); break; }
-        inserted += batch.length;
-      }
+      // Split rows: those with EAN use source_id,ean conflict; those with only CNK use source_id,cnk
+      const rowsWithEan = batchInsert.filter(r => r.ean && r.ean.trim() !== "");
+      const rowsWithCnkOnly = batchInsert.filter(r => (!r.ean || r.ean.trim() === "") && r.cnk && r.cnk.trim() !== "");
+
+      const upsertBatches = async (rows: any[], conflictKey: string) => {
+        for (let i = 0; i < rows.length; i += 500) {
+          const batch = rows.slice(i, i + 500);
+          // Deduplicate within batch on conflict key
+          const deduped = new Map<string, any>();
+          for (const r of batch) {
+            const key = conflictKey === "source_id,ean" ? `${r.source_id}__${r.ean}` : `${r.source_id}__${r.cnk}`;
+            deduped.set(key, r);
+          }
+          const dedupedRows = Array.from(deduped.values());
+          const { error } = await supabase.from("market_prices").upsert(dedupedRows, { onConflict: conflictKey });
+          if (error) {
+            console.error(`Upsert error (${conflictKey}):`, error);
+            // Fallback: insert one by one
+            for (const r of dedupedRows) {
+              try { await supabase.from("market_prices").upsert(r, { onConflict: conflictKey }); } catch {}
+            }
+          }
+          inserted += dedupedRows.length;
+        }
+      };
+
+      if (rowsWithEan.length > 0) await upsertBatches(rowsWithEan, "source_id,ean");
+      if (rowsWithCnkOnly.length > 0) await upsertBatches(rowsWithCnkOnly, "source_id,cnk");
 
       // Update source stats
       await supabase.from("market_price_sources").update({

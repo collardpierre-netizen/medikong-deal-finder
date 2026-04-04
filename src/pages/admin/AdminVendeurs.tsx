@@ -74,7 +74,7 @@ const AdminVendeurs = () => {
           <table className="w-full text-left">
             <thead>
               <tr style={{ borderBottom: "1px solid #E2E8F0", backgroundColor: "#F8FAFC" }}>
-                {["Vendeur", "Code public", "Type", "Ville", "Commission", "Visible", "Statut", "Inscrit", ""].map((h) => (
+                {["Vendeur", "ID MediKong", "Code public", "Type", "Ville", "Commission", "Visible", "Statut", "Inscrit", ""].map((h) => (
                   <th key={h} className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider" style={{ color: "#8B95A5" }}>{h}</th>
                 ))}
               </tr>

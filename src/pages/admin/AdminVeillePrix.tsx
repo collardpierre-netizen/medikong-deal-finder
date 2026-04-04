@@ -621,10 +621,34 @@ export default function AdminVeillePrix() {
               <p>EAN/GTIN, CNK, Nom/Désignation, Prix grossiste, Prix pharmacien, Prix public, TVA</p>
               <p>Le matching se fait par EAN → CNK vers vos produits existants.</p>
             </div>
+            {importing && importProgress && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="font-medium">{importProgress.phase}</span>
+                  {importProgress.total > 0 && (
+                    <span className="text-muted-foreground">{importProgress.current.toLocaleString()} / {importProgress.total.toLocaleString()}</span>
+                  )}
+                  {importProgress.total === 0 && importProgress.current > 0 && (
+                    <span className="text-muted-foreground">{importProgress.current.toLocaleString()} chargés</span>
+                  )}
+                </div>
+                <div className="h-2 rounded-full bg-muted overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-primary transition-all duration-300"
+                    style={{ width: importProgress.total > 0 ? `${Math.min(100, (importProgress.current / importProgress.total) * 100)}%` : '100%' }}
+                  />
+                </div>
+                {importProgress.total === 0 && (
+                  <div className="h-2 rounded-full bg-muted overflow-hidden -mt-4">
+                    <div className="h-full w-1/3 rounded-full bg-primary animate-pulse" />
+                  </div>
+                )}
+              </div>
+            )}
             {importReport && (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-sm">
-                <p className="font-medium text-green-800">Import terminé</p>
-                <p className="text-green-700">{importReport.inserted} lignes insérées, {importReport.matched} matchées sur {importReport.total} total</p>
+              <div className="bg-accent/50 border border-border rounded-lg p-3 text-sm">
+                <p className="font-medium">Import terminé ✓</p>
+                <p className="text-muted-foreground">{importReport.inserted} lignes insérées, {importReport.matched} matchées sur {importReport.total} total</p>
               </div>
             )}
           </div>

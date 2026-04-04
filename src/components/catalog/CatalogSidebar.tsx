@@ -45,6 +45,9 @@ export function CatalogSidebar({ filters, setFilter, clearAll, resultCategoryIds
       if (brandDropdownRef.current && !brandDropdownRef.current.contains(e.target as Node)) {
         setBrandDropdownOpen(false);
       }
+      if (mfDropdownRef.current && !mfDropdownRef.current.contains(e.target as Node)) {
+        setMfDropdownOpen(false);
+      }
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);

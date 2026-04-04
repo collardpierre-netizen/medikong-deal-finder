@@ -52,6 +52,7 @@ export default function AdminVeillePrix() {
   const [importSourceId, setImportSourceId] = useState("");
   const [importing, setImporting] = useState(false);
   const [importReport, setImportReport] = useState<{ total: number; matched: number; inserted: number } | null>(null);
+  const [importProgress, setImportProgress] = useState<{ phase: string; current: number; total: number } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   // Fetch sources
@@ -239,6 +240,7 @@ export default function AdminVeillePrix() {
 
     setImporting(true);
     setImportReport(null);
+    setImportProgress({ phase: "Lecture du fichier…", current: 0, total: 0 });
     try {
       const ab = await file.arrayBuffer();
       const wb = XLSX.read(ab, { type: "array" });
@@ -267,12 +269,14 @@ export default function AdminVeillePrix() {
       const colTva = findCol(["tva", "vat", "tax"]);
 
       // Fetch all products for matching
+      setImportProgress({ phase: "Chargement des produits…", current: 0, total: 0 });
       const allProducts: any[] = [];
       let from = 0;
       while (true) {
         const { data } = await supabase.from("products").select("id, gtin, cnk_code").range(from, from + 999);
         if (!data || data.length === 0) break;
         allProducts.push(...data);
+        setImportProgress({ phase: "Chargement des produits…", current: allProducts.length, total: 0 });
         if (data.length < 1000) break;
         from += 1000;
       }
@@ -299,6 +303,7 @@ export default function AdminVeillePrix() {
         if (mc.code_value) marketCodeMap.set(mc.code_value.replace(/^0+/, ""), mc.product_id);
       }
 
+      setImportProgress({ phase: "Matching des lignes…", current: 0, total: jsonRows.length });
       let inserted = 0, matched = 0;
       const batchInsert: any[] = [];
 
@@ -336,10 +341,12 @@ export default function AdminVeillePrix() {
       const rowsWithEan = batchInsert.filter(r => r.ean && r.ean.trim() !== "");
       const rowsWithCnkOnly = batchInsert.filter(r => (!r.ean || r.ean.trim() === "") && r.cnk && r.cnk.trim() !== "");
 
+      const totalToInsert = rowsWithEan.length + rowsWithCnkOnly.length;
+      let insertedSoFar = 0;
+
       const upsertBatches = async (rows: any[], conflictKey: string) => {
         for (let i = 0; i < rows.length; i += 500) {
           const batch = rows.slice(i, i + 500);
-          // Deduplicate within batch on conflict key
           const deduped = new Map<string, any>();
           for (const r of batch) {
             const key = conflictKey === "source_id,ean" ? `${r.source_id}__${r.ean}` : `${r.source_id}__${r.cnk}`;
@@ -349,12 +356,13 @@ export default function AdminVeillePrix() {
           const { error } = await supabase.from("market_prices").upsert(dedupedRows, { onConflict: conflictKey });
           if (error) {
             console.error(`Upsert error (${conflictKey}):`, error);
-            // Fallback: insert one by one
             for (const r of dedupedRows) {
               try { await supabase.from("market_prices").upsert(r, { onConflict: conflictKey }); } catch {}
             }
           }
           inserted += dedupedRows.length;
+          insertedSoFar += dedupedRows.length;
+          setImportProgress({ phase: "Insertion en base…", current: insertedSoFar, total: totalToInsert });
         }
       };
 
@@ -375,6 +383,7 @@ export default function AdminVeillePrix() {
       toast.error("Erreur d'import: " + (e.message || e));
     } finally {
       setImporting(false);
+      setImportProgress(null);
     }
   }, [importSourceId, qc]);
 
@@ -612,10 +621,34 @@ export default function AdminVeillePrix() {
               <p>EAN/GTIN, CNK, Nom/Désignation, Prix grossiste, Prix pharmacien, Prix public, TVA</p>
               <p>Le matching se fait par EAN → CNK vers vos produits existants.</p>
             </div>
+            {importing && importProgress && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="font-medium">{importProgress.phase}</span>
+                  {importProgress.total > 0 && (
+                    <span className="text-muted-foreground">{importProgress.current.toLocaleString()} / {importProgress.total.toLocaleString()}</span>
+                  )}
+                  {importProgress.total === 0 && importProgress.current > 0 && (
+                    <span className="text-muted-foreground">{importProgress.current.toLocaleString()} chargés</span>
+                  )}
+                </div>
+                <div className="h-2 rounded-full bg-muted overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-primary transition-all duration-300"
+                    style={{ width: importProgress.total > 0 ? `${Math.min(100, (importProgress.current / importProgress.total) * 100)}%` : '100%' }}
+                  />
+                </div>
+                {importProgress.total === 0 && (
+                  <div className="h-2 rounded-full bg-muted overflow-hidden -mt-4">
+                    <div className="h-full w-1/3 rounded-full bg-primary animate-pulse" />
+                  </div>
+                )}
+              </div>
+            )}
             {importReport && (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-sm">
-                <p className="font-medium text-green-800">Import terminé</p>
-                <p className="text-green-700">{importReport.inserted} lignes insérées, {importReport.matched} matchées sur {importReport.total} total</p>
+              <div className="bg-accent/50 border border-border rounded-lg p-3 text-sm">
+                <p className="font-medium">Import terminé ✓</p>
+                <p className="text-muted-foreground">{importReport.inserted} lignes insérées, {importReport.matched} matchées sur {importReport.total} total</p>
               </div>
             )}
           </div>

@@ -897,7 +897,7 @@ export default function OnboardingPage() {
 
         <div style={{ marginBottom: 14 }}>
           <div
-            style={{ display: "flex", justifyContent: "center", gap: 8, marginBottom: 8, flexWrap: "wrap" }}
+            style={{ display: "flex", justifyContent: "center", gap: 6, marginBottom: 8 }}
             onPaste={handleOtpPaste}
           >
             {otpDigits.map((digit, idx) => (

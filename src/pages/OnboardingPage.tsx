@@ -657,42 +657,37 @@ export default function OnboardingPage() {
     setVerifyingOtp(true);
     setOtpError(false);
 
-    try {
-      // Try "email" type first (signInWithOtp flow)
-      const { error } = await supabase.auth.verifyOtp({
-        email,
-        token: code,
-        type: "email",
-      });
+    // Try all OTP types in a single pass — stop at first success
+    const types: Array<"email" | "recovery" | "magiclink" | "signup"> = ["recovery", "email", "magiclink", "signup"];
+    let verified = false;
 
-      if (error) {
-        // Fallback: try "recovery" type (existing user with password)
-        const { error: recoveryError } = await supabase.auth.verifyOtp({
+    for (const otpType of types) {
+      if (verified) break;
+      try {
+        const { error } = await supabase.auth.verifyOtp({
           email,
           token: code,
-          type: "recovery",
+          type: otpType,
         });
-        if (recoveryError) {
-          // Last fallback: try "signup" type
-          const { error: signupError } = await supabase.auth.verifyOtp({
-            email,
-            token: code,
-            type: "signup",
-          });
-          if (signupError) throw signupError;
+        if (!error) {
+          verified = true;
         }
+      } catch {
+        // continue to next type
       }
+    }
 
+    if (verified) {
       setOtpVerified(true);
       setTimeout(() => goNext(), 400);
-    } catch (error) {
-      console.error("OTP verify error:", error);
+    } else {
+      console.error("OTP verify failed for all types");
       setOtpError(true);
       setOtpShake(true);
       setTimeout(() => setOtpShake(false), 400);
-    } finally {
-      setVerifyingOtp(false);
     }
+
+    setVerifyingOtp(false);
   };
 
   const handleContinueAfterEmailConfirmation = async () => {

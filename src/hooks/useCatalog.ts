@@ -232,8 +232,8 @@ export function useCatalogCategories() {
         product_count: countMap.get(c.id) || 0,
       }));
 
-      // Build full tree: L1 > L2 > L3
-      const roots = all.filter(c => !c.parent_id);
+      // Build full tree: L1 > L2 > L3, sorted alphabetically
+      const roots = all.filter(c => !c.parent_id).sort((a, b) => a.name.localeCompare(b.name, 'fr'));
       return roots.map(r => {
         const l2Children = all.filter(c => c.parent_id === r.id).map(l2 => {
           const l3Children = all.filter(c => c.parent_id === l2.id);

@@ -44,6 +44,7 @@ export interface CatalogProduct {
 export interface CategoryNode {
   id: string;
   name: string;
+  name_fr: string | null;
   slug: string;
   parent_id: string | null;
   product_count: number;

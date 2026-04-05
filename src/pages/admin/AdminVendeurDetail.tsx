@@ -484,7 +484,8 @@ function VendorValidationTab({ vendor, onUpdate }: { vendor: any; onUpdate: () =
   const statusLabels: Record<string, { label: string; color: string; bg: string }> = {
     pending_review: { label: "En attente de review", color: "#D97706", bg: "#FFFBEB" },
     under_review: { label: "En cours d'analyse", color: "#2563EB", bg: "#EFF6FF" },
-    approved: { label: "Approuvé", color: "#059669", bg: "#F0FDF4" },
+    accepted: { label: "Candidature acceptée — KYC en cours", color: "#7C3AED", bg: "#F5F3FF" },
+    approved: { label: "Validé — Compte opérationnel", color: "#059669", bg: "#F0FDF4" },
     rejected: { label: "Refusé", color: "#DC2626", bg: "#FEF2F2" },
   };
   const st = statusLabels[validationStatus] || statusLabels.pending_review;

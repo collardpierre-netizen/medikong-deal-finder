@@ -116,17 +116,18 @@ export interface ImportProgress {
   categoriesCreated: number;
 }
 
-export async function importProducts(file: File, onProgress?: (p: ImportProgress) => void): Promise<{ created: number; updated: number; skipped: number; errors: { line: number; name: string; code: string; message: string }[]; brandsCreated: number; manufacturersCreated: number; totalRows: number }> {
+export async function importProducts(file: File, onProgress?: (p: ImportProgress) => void): Promise<{ created: number; updated: number; skipped: number; errors: { line: number; name: string; code: string; message: string }[]; brandsCreated: number; manufacturersCreated: number; categoriesCreated: number; totalRows: number }> {
   const rows = await readXlsx(file);
   let created = 0;
   let updated = 0;
   let skipped = 0;
   let brandsCreated = 0;
   let manufacturersCreated = 0;
+  let categoriesCreated = 0;
   const errors: { line: number; name: string; code: string; message: string }[] = [];
   let currentPhase: ImportProgress["phase"] = "reading";
   let currentIdx = 0;
-  const notify = () => onProgress?.({ phase: currentPhase, current: currentIdx, total: rows.length, created, updated, skipped, errors, brandsCreated, manufacturersCreated });
+  const notify = () => onProgress?.({ phase: currentPhase, current: currentIdx, total: rows.length, created, updated, skipped, errors, brandsCreated, manufacturersCreated, categoriesCreated });
   notify();
 
   // --- Auto-create brands & manufacturers ---

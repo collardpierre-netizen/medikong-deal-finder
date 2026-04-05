@@ -85,6 +85,12 @@ export function CatalogProductCard({ product, index = 0, view = "grid" }: Props)
       return;
     }
 
+    // Verification check
+    if (!isVerifiedBuyer) {
+      toast.error(t("catalog.pendingValidation", "Votre compte est en attente de validation"));
+      return;
+    }
+
     // Single offer (or 0) — fetch the offer and add to cart
     if (product.offer_count === 0) return;
 

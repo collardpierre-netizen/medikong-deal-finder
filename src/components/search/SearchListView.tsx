@@ -1,5 +1,6 @@
 import { Package, ShoppingCart } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { MEDIKONG_PLACEHOLDER, isQogitaPlaceholder } from "@/lib/image-utils";
 import type { Product } from "@/hooks/useProducts";
 
 interface Props {

@@ -301,7 +301,7 @@ export function CatalogSidebar({ filters, setFilter, clearAll, resultCategoryIds
 
       {/* Price */}
       <div>
-        <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Prix</h4>
+        <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">{t("catalog.priceRange")}</h4>
         <div className="flex gap-2 items-center">
           <Input placeholder="Min €" value={priceMin} onChange={e => setPriceMin(e.target.value)} className="h-8 text-sm" type="number" />
           <Input placeholder="Max €" value={priceMax} onChange={e => setPriceMax(e.target.value)} className="h-8 text-sm" type="number" />

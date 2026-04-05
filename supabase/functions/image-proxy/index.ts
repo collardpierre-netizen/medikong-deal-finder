@@ -9,16 +9,22 @@ Deno.serve(async (req) => {
   }
 
   const url = new URL(req.url);
-  const imageUrl = url.searchParams.get("url");
+  let imageUrl = url.searchParams.get("url");
+
+  // Also support POST with JSON body
+  if (!imageUrl && req.method === "POST") {
+    try {
+      const body = await req.json();
+      imageUrl = body.url;
+    } catch { /* ignore */ }
+  }
 
   if (!imageUrl) {
     return new Response("Missing url param", { status: 400, headers: corsHeaders });
   }
 
   try {
-    // Deno doesn't support disabling SSL verification in fetch directly,
-    // but we can use Deno.createHttpClient for that
-    const client = Deno.createHttpClient({ caCerts: [], proxy: undefined });
+    const client = Deno.createHttpClient({ caCerts: [] });
 
     const resp = await fetch(imageUrl, {
       client,
@@ -43,7 +49,6 @@ Deno.serve(async (req) => {
         ...corsHeaders,
         "Content-Type": contentType,
         "Cache-Control": "public, max-age=86400, s-maxage=604800",
-        "X-Proxied-From": new URL(imageUrl).hostname,
       },
     });
   } catch (e) {

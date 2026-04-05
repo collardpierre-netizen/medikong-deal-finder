@@ -362,8 +362,10 @@ export default function AdminVeillePrix() {
       const colName = findCol(["nom", "name", "désignation", "designation", "libellé", "libelle", "produit", "product"]);
       const colPrixGros = findCol(["grossiste", "prix achat", "prix_achat", "wholesale", "prix grossiste", "p.achat", "prix de gros"]);
       const colPrixPharma = findCol(["pharmacien", "prix vente", "prix_vente", "pharma", "prix pharmacien", "pvp", "p.vente"]);
-      const colPrixPublic = findCol(["public", "prix public", "prix_public", "pvp ttc", "retail"]);
+      const colPrixPublic = findCol(["public", "prix public", "prix_public", "pvp ttc", "retail", "prix", "price", "prix ttc"]);
       const colTva = findCol(["tva", "vat", "tax"]);
+      const colSupplier = findCol(["fournisseur", "supplier", "vendeur", "vendor", "supplier_name"]);
+      const colUrl = findCol(["url", "product_url", "lien", "link"]);
 
       // Fetch all products for matching
       setImportProgress({ phase: "Chargement des produits…", current: 0, total: 0 });

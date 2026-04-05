@@ -132,6 +132,7 @@ const AdminExternalVendors = lazy(() => import("./pages/admin/AdminExternalVendo
 const AdminStripeCommissions = lazy(() => import("./pages/admin/AdminStripeCommissions"));
 const AdminStripeRevenue = lazy(() => import("./pages/admin/AdminStripeRevenue"));
 const AdminOrderRefund = lazy(() => import("./pages/admin/AdminOrderRefund"));
+const AdminTranslations = lazy(() => import("./pages/admin/AdminTranslations"));
 
 // Vendor pages
 const VendorLoginPage = lazy(() => import("./pages/vendor/VendorLoginPage"));
@@ -304,6 +305,7 @@ const App = () => (
               <Route path="stripe-commissions" element={<LP><AdminStripeCommissions /></LP>} />
               <Route path="stripe-revenue" element={<LP><AdminStripeRevenue /></LP>} />
               <Route path="commandes/:orderId/refund" element={<LP><AdminOrderRefund /></LP>} />
+              <Route path="translations" element={<LP><AdminTranslations /></LP>} />
             </Route>
 
             {/* Vendor Dashboard */}

@@ -68,6 +68,7 @@ const sections: NavSection[] = [
       { labelKey: "cms", path: "/admin/cms", icon: Layout },
       { labelKey: "onboardingCms", path: "/admin/onboarding-cms", icon: ClipboardList },
       { labelKey: "investPipeline", path: "/admin/invest-pipeline", icon: DollarSign },
+      { labelKey: "translations", path: "/admin/translations", icon: Globe },
     ],
   },
   {

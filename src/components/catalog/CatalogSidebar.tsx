@@ -6,6 +6,7 @@ import { useVisibleCategories } from "@/hooks/useVisibleCategories";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   filters: CatalogFilters;
@@ -15,6 +16,7 @@ interface Props {
 }
 
 export function CatalogSidebar({ filters, setFilter, clearAll, resultCategoryIds }: Props) {
+  const { t } = useTranslation();
   const { currentCountry } = useCountry();
   const { data: categories = [] } = useCatalogCategories();
   const { data: brands = [] } = useCatalogBrands(filters.category);
@@ -157,8 +159,8 @@ export function CatalogSidebar({ filters, setFilter, clearAll, resultCategoryIds
     <div className="space-y-6">
       {/* Clear all */}
       {hasFilters && (
-        <button onClick={clearAll} className="text-sm text-mk-blue hover:underline flex items-center gap-1">
-          <X size={14} /> Effacer tous les filtres
+         <button onClick={clearAll} className="text-sm text-mk-blue hover:underline flex items-center gap-1">
+           <X size={14} /> {t("catalog.clearAll")}
         </button>
       )}
 
@@ -188,7 +190,7 @@ export function CatalogSidebar({ filters, setFilter, clearAll, resultCategoryIds
 
       {/* Categories — collapsible with max-height scroll */}
       <div>
-        <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Catégorie</h4>
+        <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">{t("catalog.categories")}</h4>
         {filters.category && (
           <button
             onClick={() => {
@@ -197,8 +199,8 @@ export function CatalogSidebar({ filters, setFilter, clearAll, resultCategoryIds
             }}
             className="text-sm text-mk-blue hover:underline flex items-center gap-1 mb-2"
           >
-            <ChevronLeft size={14} />
-            {parentCategory ? parentCategory.name : "Toutes les catégories"}
+             <ChevronLeft size={14} />
+             {parentCategory ? parentCategory.name : t("catalog.categories")}
           </button>
         )}
         <div className="relative">
@@ -230,11 +232,11 @@ export function CatalogSidebar({ filters, setFilter, clearAll, resultCategoryIds
 
       {/* Brands */}
       <div>
-        <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Marque</h4>
+        <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">{t("catalog.brands")}</h4>
         <div className="relative mb-2" ref={brandDropdownRef}>
           <Search size={14} className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Rechercher une marque..."
+            placeholder={t("catalog.searchBrands")}
             value={brandSearch}
             onChange={e => { setBrandSearch(e.target.value); setBrandDropdownOpen(true); }}
             onFocus={() => { if (brandSearch.length > 0) setBrandDropdownOpen(true); }}
@@ -291,15 +293,15 @@ export function CatalogSidebar({ filters, setFilter, clearAll, resultCategoryIds
           </div>
         </div>
         {brands.length > 15 && !showAllBrands && (
-          <button onClick={() => setShowAllBrands(true)} className="text-xs text-mk-blue hover:underline mt-1">
-            Voir plus ({brands.length - 15})
+           <button onClick={() => setShowAllBrands(true)} className="text-xs text-mk-blue hover:underline mt-1">
+             {t("catalog.showMore")} ({brands.length - 15})
           </button>
         )}
       </div>
 
       {/* Price */}
       <div>
-        <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Prix</h4>
+        <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">{t("catalog.priceRange")}</h4>
         <div className="flex gap-2 items-center">
           <Input placeholder="Min €" value={priceMin} onChange={e => setPriceMin(e.target.value)} className="h-8 text-sm" type="number" />
           <Input placeholder="Max €" value={priceMax} onChange={e => setPriceMax(e.target.value)} className="h-8 text-sm" type="number" />
@@ -311,9 +313,9 @@ export function CatalogSidebar({ filters, setFilter, clearAll, resultCategoryIds
       <div>
         <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Disponibilité</h4>
         <div className="space-y-1.5">
-          {[
-            { label: "Tous", value: undefined },
-            { label: "En stock uniquement", value: true },
+           {[
+             { label: t("common.viewAll"), value: undefined },
+             { label: t("catalog.inStockOnly"), value: true },
           ].map(opt => (
             <label key={String(opt.value)} className="flex items-center gap-2 text-sm cursor-pointer">
               <input
@@ -331,11 +333,11 @@ export function CatalogSidebar({ filters, setFilter, clearAll, resultCategoryIds
 
       {/* Manufacturers */}
       <div>
-        <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Fabricant</h4>
+        <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">{t("catalog.manufacturers")}</h4>
         <div className="relative mb-2" ref={mfDropdownRef}>
           <Search size={14} className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Rechercher un fabricant..."
+            placeholder={t("catalog.searchManufacturers")}
             value={mfSearch}
             onChange={e => { setMfSearch(e.target.value); setMfDropdownOpen(true); }}
             onFocus={() => { if (mfSearch.length > 0) setMfDropdownOpen(true); }}
@@ -392,8 +394,8 @@ export function CatalogSidebar({ filters, setFilter, clearAll, resultCategoryIds
           </div>
         </div>
         {manufacturers.length > 10 && !showAllMf && (
-          <button onClick={() => setShowAllMf(true)} className="text-xs text-mk-blue hover:underline mt-1">
-            Voir plus ({manufacturers.length - 10})
+           <button onClick={() => setShowAllMf(true)} className="text-xs text-mk-blue hover:underline mt-1">
+             {t("catalog.showMore")} ({manufacturers.length - 10})
           </button>
         )}
       </div>

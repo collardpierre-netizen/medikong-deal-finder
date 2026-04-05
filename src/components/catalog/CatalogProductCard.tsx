@@ -9,6 +9,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useCountry } from "@/contexts/CountryContext";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
+import { getLocalizedName } from "@/lib/localization";
 import type { CatalogProduct } from "@/hooks/useCatalog";
 
 interface Props {
@@ -42,13 +44,14 @@ function ProductImg({ product, className = "" }: { product: CatalogProduct; clas
 }
 
 function StockBadge({ product }: { product: CatalogProduct }) {
+  const { t } = useTranslation();
   if (product.is_in_stock && product.total_stock > 10) {
-    return <span className="text-xs text-mk-green font-medium">● En stock</span>;
+    return <span className="text-xs text-mk-green font-medium">● {t("catalog.inStock")}</span>;
   }
   if (product.is_in_stock && product.total_stock > 0) {
-    return <span className="text-xs text-mk-amber font-medium">● Stock limité ({product.total_stock})</span>;
+    return <span className="text-xs text-mk-amber font-medium">● {t("catalog.limitedStock", { count: product.total_stock })}</span>;
   }
-  return <span className="text-xs text-destructive font-medium">● Rupture</span>;
+  return <span className="text-xs text-destructive font-medium">● {t("catalog.outOfStock")}</span>;
 }
 
 export function CatalogProductCard({ product, index = 0, view = "grid" }: Props) {
@@ -59,10 +62,12 @@ export function CatalogProductCard({ product, index = 0, view = "grid" }: Props)
   const { country } = useCountry();
   const navigate = useNavigate();
   const location = useLocation();
+  const { t, i18n } = useTranslation();
   const fromState = { from: location.pathname + location.search };
   const price = product.best_price_excl_vat || 0;
   const priceIncl = product.best_price_incl_vat || 0;
   const isLoggedIn = !!user;
+  const displayName = getLocalizedName(product, i18n.language);
 
   const handleAddToCart = async () => {
     // If multiple offers, open product page to let user choose
@@ -73,8 +78,8 @@ export function CatalogProductCard({ product, index = 0, view = "grid" }: Props)
 
     // Auth check
     if (!user) {
-      toast.error("Connectez-vous pour ajouter des produits au panier", {
-        action: { label: "Se connecter", onClick: () => navigate("/connexion") },
+      toast.error(t("catalog.loginToAdd"), {
+        action: { label: t("catalog.signIn"), onClick: () => navigate("/connexion") },
       });
       return;
     }
@@ -127,7 +132,7 @@ export function CatalogProductCard({ product, index = 0, view = "grid" }: Props)
       className="flex-1 bg-primary text-primary-foreground text-xs font-semibold py-1.5 rounded-md hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-1"
     >
       {adding ? <Loader2 size={14} className="animate-spin" /> : null}
-      {product.offer_count > 1 ? "Voir offres" : "Ajouter"}
+      {product.offer_count > 1 ? t("catalog.viewOffers") : t("catalog.add")}
     </button>
   );
 
@@ -145,7 +150,7 @@ export function CatalogProductCard({ product, index = 0, view = "grid" }: Props)
         <div className="flex-1 min-w-0">
           <Link to={`/produit/${product.slug}`} state={fromState}>
             <p className="text-xs text-muted-foreground mb-0.5">{product.brand_name}</p>
-            <h3 className="text-sm font-medium text-foreground line-clamp-2 mb-1">{product.name}</h3>
+            <h3 className="text-sm font-medium text-foreground line-clamp-2 mb-1">{displayName}</h3>
           </Link>
           {product.short_description && (
             <p className="text-xs text-muted-foreground line-clamp-1">{product.short_description}</p>
@@ -160,7 +165,7 @@ export function CatalogProductCard({ product, index = 0, view = "grid" }: Props)
               {priceIncl > price && (
                 <p className="text-xs text-muted-foreground">{formatPrice(priceIncl)} € TTC</p>
               )}
-              <p className="text-xs text-muted-foreground">{product.offer_count} offre{product.offer_count > 1 ? "s" : ""}</p>
+              <p className="text-xs text-muted-foreground">{product.offer_count > 1 ? t("catalog.offersPlural", { count: product.offer_count }) : t("catalog.offers", { count: product.offer_count })}</p>
               <div className="flex items-center gap-1 mt-2">
                 {product.offer_count <= 1 && (
                   <div className="flex items-center border border-border rounded-md">
@@ -174,7 +179,7 @@ export function CatalogProductCard({ product, index = 0, view = "grid" }: Props)
             </>
           ) : (
             <Link to="/onboarding" className="inline-flex items-center gap-1.5 bg-primary text-primary-foreground text-xs font-semibold px-3 py-2 rounded-md hover:opacity-90 transition-opacity">
-              <Lock size={12} /> Voir les prix
+              <Lock size={12} /> {t("catalog.seePrices")}
             </Link>
           )}
         </div>
@@ -192,7 +197,7 @@ export function CatalogProductCard({ product, index = 0, view = "grid" }: Props)
       <div className="relative mb-2">
         {product.is_promotion && (
           <span className="absolute top-1.5 left-1.5 bg-destructive text-destructive-foreground text-[10px] font-bold px-1.5 py-0.5 rounded z-10">
-            {product.promotion_label || "Promo"}
+            {product.promotion_label || t("catalog.promo")}
           </span>
         )}
         <Link to={`/produit/${product.slug}`} state={fromState}>
@@ -201,7 +206,7 @@ export function CatalogProductCard({ product, index = 0, view = "grid" }: Props)
       </div>
       <Link to={`/produit/${product.slug}`} state={fromState}>
         <p className="text-xs text-muted-foreground mb-0.5 truncate">{product.brand_name || "—"}</p>
-        <h3 className="text-sm font-medium text-foreground leading-snug mb-1.5 line-clamp-2 min-h-[2.5rem]">{product.name}</h3>
+        <h3 className="text-sm font-medium text-foreground leading-snug mb-1.5 line-clamp-2 min-h-[2.5rem]">{displayName}</h3>
       </Link>
       {isLoggedIn ? (
         <>
@@ -213,7 +218,7 @@ export function CatalogProductCard({ product, index = 0, view = "grid" }: Props)
           </div>
           <div className="flex items-center justify-between mb-2">
             <StockBadge product={product} />
-            <span className="text-xs text-muted-foreground">{product.offer_count} offre{product.offer_count > 1 ? "s" : ""}</span>
+            <span className="text-xs text-muted-foreground">{product.offer_count > 1 ? t("catalog.offersPlural", { count: product.offer_count }) : t("catalog.offers", { count: product.offer_count })}</span>
           </div>
           <p className="text-[10px] text-muted-foreground mb-2 truncate">EAN: {product.gtin || "—"}</p>
           <div className="flex items-center gap-1.5">
@@ -231,11 +236,11 @@ export function CatalogProductCard({ product, index = 0, view = "grid" }: Props)
         <>
           <div className="flex items-center justify-between mb-2">
             <StockBadge product={product} />
-            <span className="text-xs text-muted-foreground">{product.offer_count} offre{product.offer_count > 1 ? "s" : ""}</span>
+            <span className="text-xs text-muted-foreground">{product.offer_count > 1 ? t("catalog.offersPlural", { count: product.offer_count }) : t("catalog.offers", { count: product.offer_count })}</span>
           </div>
           <p className="text-[10px] text-muted-foreground mb-2 truncate">EAN: {product.gtin || "—"}</p>
           <Link to="/onboarding" className="w-full bg-primary text-primary-foreground text-xs font-semibold py-2 rounded-md hover:opacity-90 transition-opacity flex items-center justify-center gap-1.5">
-            <Lock size={12} /> Voir les prix
+            <Lock size={12} /> {t("catalog.seePrices")}
           </Link>
         </>
       )}

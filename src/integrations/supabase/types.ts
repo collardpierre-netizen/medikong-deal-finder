@@ -2138,6 +2138,7 @@ export type Database = {
           delay_days: number | null
           depth: number | null
           description: string | null
+          description_fr: string | null
           dimension_unit: string | null
           dimensions: Json | null
           estimated_delivery_weeks: number | null
@@ -2157,6 +2158,7 @@ export type Database = {
           manufacturer_id: string | null
           min_delivery_days: number | null
           name: string
+          name_fr: string | null
           offer_count: number
           origin_country: string | null
           popularity: number | null
@@ -2197,6 +2199,7 @@ export type Database = {
           delay_days?: number | null
           depth?: number | null
           description?: string | null
+          description_fr?: string | null
           dimension_unit?: string | null
           dimensions?: Json | null
           estimated_delivery_weeks?: number | null
@@ -2216,6 +2219,7 @@ export type Database = {
           manufacturer_id?: string | null
           min_delivery_days?: number | null
           name: string
+          name_fr?: string | null
           offer_count?: number
           origin_country?: string | null
           popularity?: number | null
@@ -2256,6 +2260,7 @@ export type Database = {
           delay_days?: number | null
           depth?: number | null
           description?: string | null
+          description_fr?: string | null
           dimension_unit?: string | null
           dimensions?: Json | null
           estimated_delivery_weeks?: number | null
@@ -2275,6 +2280,7 @@ export type Database = {
           manufacturer_id?: string | null
           min_delivery_days?: number | null
           name?: string
+          name_fr?: string | null
           offer_count?: number
           origin_country?: string | null
           popularity?: number | null

@@ -431,6 +431,8 @@ export default function AdminVeillePrix() {
           prix_pharmacien: colPrixPharma ? parseNum(row[colPrixPharma]) : null,
           prix_public: colPrixPublic ? parseNum(row[colPrixPublic]) : null,
           tva_rate: colTva ? parseNum(row[colTva]) : null,
+          supplier_name: colSupplier ? String(row[colSupplier] || "").trim() || null : null,
+          product_url: colUrl ? String(row[colUrl] || "").trim() || null : null,
           product_id: productId,
           is_matched: !!productId,
         });

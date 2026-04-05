@@ -159,8 +159,8 @@ export function CatalogSidebar({ filters, setFilter, clearAll, resultCategoryIds
     <div className="space-y-6">
       {/* Clear all */}
       {hasFilters && (
-        <button onClick={clearAll} className="text-sm text-mk-blue hover:underline flex items-center gap-1">
-          <X size={14} /> Effacer tous les filtres
+         <button onClick={clearAll} className="text-sm text-mk-blue hover:underline flex items-center gap-1">
+           <X size={14} /> {t("catalog.clearAll")}
         </button>
       )}
 

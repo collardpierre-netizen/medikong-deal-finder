@@ -123,7 +123,7 @@ export default function AdminUsers() {
 
       const { data: profile } = await supabase
         .from("profiles" as any)
-        .select("full_name, sector, country, price_level_code")
+        .select("full_name, sector, country, price_level_code, preferred_language")
         .eq("user_id", u.userId)
         .maybeSingle();
 

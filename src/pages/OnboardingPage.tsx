@@ -903,6 +903,10 @@ export default function OnboardingPage() {
       removeOnboardingStorage(onboardingDraftStorageKey);
       setTempPassword("");
 
+      // Apply chosen language
+      i18n.changeLanguage(preferredLang);
+      localStorage.setItem("medikong_language", preferredLang);
+
       goNext();
     } catch (err: any) {
       console.error("Signup error:", err);

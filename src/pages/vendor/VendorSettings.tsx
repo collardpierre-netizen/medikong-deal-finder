@@ -6,6 +6,7 @@ import { VTabBar } from "@/components/vendor/ui/VTabBar";
 import { VBadge } from "@/components/vendor/ui/VBadge";
 import { VBtn } from "@/components/vendor/ui/VBtn";
 import VendorCommissionTab from "@/components/vendor/VendorCommissionTab";
+import VendorCommercialSettings from "@/components/vendor/VendorCommercialSettings";
 import { Check, Save, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 

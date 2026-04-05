@@ -100,20 +100,12 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
         // Try CNK match if no EAN match
         if (!product && line.cnk) {
           const { data } = await supabase
-            .from("product_market_codes")
-            .select("product_id")
-            .eq("code_type", "CNK")
-            .eq("code_value", line.cnk)
+            .from("products")
+            .select("id, name, image_url, gtin")
+            .eq("cnk_code", line.cnk)
+            .eq("is_active", true)
             .maybeSingle();
-          if (data?.product_id) {
-            const { data: p } = await supabase
-              .from("products")
-              .select("id, name, image_url, gtin")
-              .eq("id", data.product_id)
-              .eq("is_active", true)
-              .maybeSingle();
-            product = p;
-          }
+          product = data;
         }
 
         if (product) {

@@ -558,6 +558,7 @@ const AdminProduits = () => {
                     {importProgress.phase === "reading" && "Lecture du fichier…"}
                     {importProgress.phase === "manufacturers" && "Création fabricants…"}
                     {importProgress.phase === "brands" && "Création marques…"}
+                    {importProgress.phase === "categories" && "Création catégories…"}
                     {importProgress.phase === "products" && `Produit ${importProgress.current.toLocaleString("fr-BE")} / ${importProgress.total.toLocaleString("fr-BE")}`}
                     {importProgress.phase === "resolving" && "Résolution des liens…"}
                   </span>

@@ -337,7 +337,7 @@ export function CatalogSidebar({ filters, setFilter, clearAll, resultCategoryIds
         <div className="relative mb-2" ref={mfDropdownRef}>
           <Search size={14} className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Rechercher un fabricant..."
+            placeholder={t("catalog.searchManufacturers")}
             value={mfSearch}
             onChange={e => { setMfSearch(e.target.value); setMfDropdownOpen(true); }}
             onFocus={() => { if (mfSearch.length > 0) setMfDropdownOpen(true); }}

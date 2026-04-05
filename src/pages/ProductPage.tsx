@@ -395,7 +395,7 @@ function VendorSuggestions({ vendorId, vendorSlug, vendorName, currentProductId,
                   const img = validImg || getProductImageSrc(p.image_url);
                   return (
                     <Link key={p.id} to={`/produit/${p.slug}`} className="border border-border rounded-lg p-2 hover:shadow-sm transition-shadow group">
-                      <img src={img} alt={p.name} className="w-full h-20 object-contain mb-1.5 rounded" onError={(e) => { (e.target as HTMLImageElement).src = "/medikong-placeholder.png"; }} />
+                      <img src={img} alt={p.name} className="w-full h-20 object-contain mb-1.5 rounded" onLoad={(e) => { if (isQogitaPlaceholder(e.currentTarget)) e.currentTarget.src = MEDIKONG_PLACEHOLDER; }} onError={(e) => { (e.target as HTMLImageElement).src = MEDIKONG_PLACEHOLDER; }} />
                       <p className="text-[10px] text-muted-foreground">{p.brand_name}</p>
                       <p className="text-xs font-medium text-foreground line-clamp-2 leading-tight group-hover:text-primary transition-colors">{p.name}</p>
                       {p.best_price_excl_vat > 0 && (

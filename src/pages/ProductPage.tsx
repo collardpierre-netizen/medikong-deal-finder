@@ -914,8 +914,9 @@ export default function ProductPage() {
                         alt={product.name}
                         className="w-full h-full object-contain p-4"
                         referrerPolicy="no-referrer"
+                        onLoad={(e) => { if (isQogitaPlaceholder(e.currentTarget)) e.currentTarget.src = MEDIKONG_PLACEHOLDER; }}
                         onError={(e) => {
-                          e.currentTarget.src = "/medikong-placeholder.png";
+                          e.currentTarget.src = MEDIKONG_PLACEHOLDER;
                         }}
                       />
                     ) : (

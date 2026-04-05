@@ -709,15 +709,19 @@ export default function AdminSync() {
 
         {showManual && (
           <div className="px-5 pb-5 space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="p-4 rounded-lg border border-amber-200 bg-amber-50 text-[12px] text-amber-800 flex items-center gap-2">
+              <AlertTriangle size={16} className="text-amber-600 shrink-0" />
+              Toutes les actions de synchronisation sont désactivées. Le sync est géré exclusivement par le script externe <code className="font-mono bg-amber-100 px-1 rounded">sync-daily.js</code>.
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 opacity-50 pointer-events-none">
               {syncButtons.map(({ type, label, icon: Icon, desc }) => {
                 const isRunning = runningSyncs.has(type);
                 return (
                   <button
                     key={type}
-                    onClick={() => runSyncLooping(type)}
-                    disabled={isRunning}
-                    className="flex flex-col items-start gap-2 p-4 border rounded-lg text-left transition-all hover:border-blue-500 hover:bg-blue-50 disabled:opacity-50"
+                    onClick={() => {}}
+                    disabled={true}
+                    className="flex flex-col items-start gap-2 p-4 border rounded-lg text-left transition-all disabled:opacity-50"
                     style={{ borderColor: "#E2E8F0" }}
                   >
                     <div className="flex items-center gap-2">

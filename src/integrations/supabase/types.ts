@@ -3291,7 +3291,7 @@ export type Database = {
         | "error"
       payment_method_enum: "invoice" | "bank_transfer" | "card"
       payment_status_enum: "pending" | "paid" | "overdue" | "refunded"
-      product_source: "qogita" | "medikong" | "vendor"
+      product_source: "qogita" | "medikong" | "vendor" | "medi-market"
       reshipment_status_enum:
         | "not_applicable"
         | "awaiting_reception"
@@ -3483,7 +3483,7 @@ export const Constants = {
       ],
       payment_method_enum: ["invoice", "bank_transfer", "card"],
       payment_status_enum: ["pending", "paid", "overdue", "refunded"],
-      product_source: ["qogita", "medikong", "vendor"],
+      product_source: ["qogita", "medikong", "vendor", "medi-market"],
       reshipment_status_enum: [
         "not_applicable",
         "awaiting_reception",

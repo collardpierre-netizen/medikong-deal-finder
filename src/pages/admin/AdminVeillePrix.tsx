@@ -782,7 +782,7 @@ export default function AdminVeillePrix() {
                     <span className="text-muted-foreground">{importProgress.current.toLocaleString()} / {importProgress.total.toLocaleString()}</span>
                   )}
                   {importProgress.total === 0 && importProgress.current > 0 && (
-                    <span className="text-muted-foreground">{importProgress.current.toLocaleString()} chargés</span>
+                    <span className="text-muted-foreground">{importProgress.current.toLocaleString()} produits en base chargés pour matching</span>
                   )}
                 </div>
                 <div className="h-2 rounded-full bg-muted overflow-hidden">

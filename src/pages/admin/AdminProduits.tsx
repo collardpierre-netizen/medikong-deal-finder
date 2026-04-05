@@ -104,6 +104,7 @@ function useAdminPaginatedProducts(page: number, search: string, brandFilter: st
 
 const AdminProduits = () => {
   const { t } = useI18n();
+  const { addJob, updateJob, finishJob } = useImportJobs();
   const navigate = useNavigate();
   const qc = useQueryClient();
 

@@ -5,6 +5,7 @@ import { ProductCard } from "@/components/shared/ProductCard";
 import SearchTrivagoCard from "@/components/search/SearchTrivagoCard";
 import { Star, ExternalLink, Heart, Download, Upload, Users, Grid, List, Columns, Factory, Store, MapPin, ShoppingCart, Award, ChevronRight } from "lucide-react";
 import { useState } from "react";
+import { BuyerImportModal } from "@/components/buyer/BuyerImportModal";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getVendorPublicName } from "@/lib/vendor-display";

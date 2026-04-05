@@ -104,7 +104,7 @@ function slugify(s: string) {
 }
 
 export interface ImportProgress {
-  phase: "reading" | "brands" | "manufacturers" | "products" | "resolving" | "done";
+  phase: "reading" | "brands" | "manufacturers" | "categories" | "products" | "resolving" | "done";
   current: number;
   total: number;
   created: number;
@@ -113,6 +113,7 @@ export interface ImportProgress {
   errors: { line: number; name: string; code: string; message: string }[];
   brandsCreated: number;
   manufacturersCreated: number;
+  categoriesCreated: number;
 }
 
 export async function importProducts(file: File, onProgress?: (p: ImportProgress) => void): Promise<{ created: number; updated: number; skipped: number; errors: { line: number; name: string; code: string; message: string }[]; brandsCreated: number; manufacturersCreated: number; totalRows: number }> {

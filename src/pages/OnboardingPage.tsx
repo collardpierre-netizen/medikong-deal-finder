@@ -823,6 +823,7 @@ export default function OnboardingPage() {
         company_name: companyName || null,
         vat_number: vatNumber || null,
         country: country || "Belgique",
+        preferred_language: preferredLang,
       }).eq("user_id", userId);
       if (profileError) console.warn("Profile update warning:", profileError.message);
 

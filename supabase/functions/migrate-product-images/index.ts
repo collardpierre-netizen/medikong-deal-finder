@@ -26,8 +26,8 @@ Deno.serve(async (req) => {
     const { data: products, error: fetchErr } = await supabase
       .from("products")
       .select("id, name, image_urls, image_url")
-      .not("image_urls", "eq", "[]")
       .not("image_urls", "is", null)
+      .filter("image_urls", "neq", "{}")
       .limit(limit);
 
     if (fetchErr) throw fetchErr;

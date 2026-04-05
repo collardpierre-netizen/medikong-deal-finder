@@ -2402,6 +2402,7 @@ export type Database = {
           full_name: string | null
           id: string
           phone: string | null
+          preferred_language: string | null
           price_level_code: string | null
           profession_type_id: string | null
           sector: string | null
@@ -2419,6 +2420,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           phone?: string | null
+          preferred_language?: string | null
           price_level_code?: string | null
           profession_type_id?: string | null
           sector?: string | null
@@ -2436,6 +2438,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           phone?: string | null
+          preferred_language?: string | null
           price_level_code?: string | null
           profession_type_id?: string | null
           sector?: string | null

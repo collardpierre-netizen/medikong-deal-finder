@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Search, X, Package, Tag, FolderOpen, Loader2 } from "lucide-react";
+import { getProductImageSrc, MEDIKONG_PLACEHOLDER } from "@/lib/image-utils";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { federatedSearch } from "@/lib/supabase-search";
@@ -161,11 +162,11 @@ export function InstantSearchBar({ className = "", placeholder, variant = "navba
                   className={`w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-accent/50 transition-colors ${selectedIndex === i ? "bg-accent/50" : ""}`}
                 >
                   <img
-                    src={p.image_urls?.[0] || "/medikong-placeholder.png"}
+                    src={getProductImageSrc(p.image_urls?.[0] || p.image_url)}
                     alt=""
                     className="w-8 h-8 rounded object-contain bg-muted/20 shrink-0"
                     referrerPolicy="no-referrer"
-                    onError={e => { e.currentTarget.src = "/medikong-placeholder.png"; }}
+                    onError={e => { e.currentTarget.src = MEDIKONG_PLACEHOLDER; }}
                   />
                   <div className="min-w-0 flex-1">
                     <div className="text-sm font-medium text-foreground truncate">{p.name}</div>

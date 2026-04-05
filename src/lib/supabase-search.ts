@@ -46,7 +46,7 @@ async function postgresFederatedSearch(query: string): Promise<FederatedResults>
   const [productsRes, brandsRes, categoriesRes] = await Promise.all([
     supabase
       .from("products")
-      .select("id, name, slug, brand_name, gtin, cnk_code, image_urls, best_price_excl_vat, best_price_incl_vat, offer_count, is_in_stock, category_name")
+      .select("id, name, slug, brand_name, gtin, cnk_code, image_urls, image_url, best_price_excl_vat, best_price_incl_vat, offer_count, is_in_stock, category_name")
       .eq("is_active", true)
       .or(`name.ilike.${pattern},gtin.ilike.${pattern},cnk_code.ilike.${pattern},brand_name.ilike.${pattern}`)
       .order("offer_count", { ascending: false })
@@ -89,7 +89,8 @@ export async function federatedSearch(query: string): Promise<FederatedResults> 
         return {
           products: meiliRes.products.map(p => ({
             ...p,
-            image_urls: p.image_url ? [p.image_url] : null,
+            image_urls: p.image_url ? [p.image_url] : [],
+            image_url: p.image_url || null,
             gtin: (p as any).gtin || null,
             cnk_code: (p as any).cnk_code || null,
           })) as SearchProduct[],

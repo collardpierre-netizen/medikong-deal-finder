@@ -67,7 +67,6 @@ export default function AdminUsers() {
     const { data: customers } = await supabase
       .from("customers")
       .select("id, auth_user_id, email, company_name, customer_type")
-      .select("id, auth_user_id, email, company_name, customer_type, is_verified")
       .order("company_name");
 
     customers?.forEach(b => {

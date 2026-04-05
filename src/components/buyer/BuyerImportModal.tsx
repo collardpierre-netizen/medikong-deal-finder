@@ -192,7 +192,7 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
         </DialogHeader>
 
         {/* Instructions */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm space-y-1">
+        <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 text-sm space-y-1">
           <p className="font-semibold text-primary">Comment ça marche ?</p>
           <ol className="list-decimal list-inside space-y-0.5 text-primary/80">
             <li>Téléchargez le template Excel ci-dessous</li>

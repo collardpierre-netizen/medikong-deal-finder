@@ -104,7 +104,7 @@ function slugify(s: string) {
 }
 
 export interface ImportProgress {
-  phase: "reading" | "brands" | "manufacturers" | "products" | "resolving" | "done";
+  phase: "reading" | "brands" | "manufacturers" | "categories" | "products" | "resolving" | "done";
   current: number;
   total: number;
   created: number;
@@ -113,19 +113,21 @@ export interface ImportProgress {
   errors: { line: number; name: string; code: string; message: string }[];
   brandsCreated: number;
   manufacturersCreated: number;
+  categoriesCreated: number;
 }
 
-export async function importProducts(file: File, onProgress?: (p: ImportProgress) => void): Promise<{ created: number; updated: number; skipped: number; errors: { line: number; name: string; code: string; message: string }[]; brandsCreated: number; manufacturersCreated: number; totalRows: number }> {
+export async function importProducts(file: File, onProgress?: (p: ImportProgress) => void): Promise<{ created: number; updated: number; skipped: number; errors: { line: number; name: string; code: string; message: string }[]; brandsCreated: number; manufacturersCreated: number; categoriesCreated: number; totalRows: number }> {
   const rows = await readXlsx(file);
   let created = 0;
   let updated = 0;
   let skipped = 0;
   let brandsCreated = 0;
   let manufacturersCreated = 0;
+  let categoriesCreated = 0;
   const errors: { line: number; name: string; code: string; message: string }[] = [];
   let currentPhase: ImportProgress["phase"] = "reading";
   let currentIdx = 0;
-  const notify = () => onProgress?.({ phase: currentPhase, current: currentIdx, total: rows.length, created, updated, skipped, errors, brandsCreated, manufacturersCreated });
+  const notify = () => onProgress?.({ phase: currentPhase, current: currentIdx, total: rows.length, created, updated, skipped, errors, brandsCreated, manufacturersCreated, categoriesCreated });
   notify();
 
   // --- Auto-create brands & manufacturers ---
@@ -170,7 +172,28 @@ export async function importProducts(file: File, onProgress?: (p: ImportProgress
     }
   }
 
-  // Pre-fetch existing slugs and gtins to detect duplicates vs new
+  // --- Auto-create categories ---
+  const catNames = new Set<string>();
+  for (const row of rows) {
+    const r = row as any;
+    if (r.category_name) catNames.add(String(r.category_name).trim());
+  }
+
+  currentPhase = "categories"; notify();
+  if (catNames.size > 0) {
+    const { data: existingCats } = await supabase.from("categories").select("name").limit(5000);
+    const existingSet = new Set((existingCats || []).map(c => c.name.toLowerCase()));
+    for (const name of catNames) {
+      if (!existingSet.has(name.toLowerCase())) {
+        const { error } = await supabase.from("categories").upsert(
+          { name, slug: slugify(name), is_active: true },
+          { onConflict: "slug" }
+        );
+        if (!error) { categoriesCreated++; existingSet.add(name.toLowerCase()); }
+      }
+    }
+  }
+
   const existingSlugs = new Set<string>();
   const existingGtins = new Set<string>();
   const allProducts = await fetchAllRows("products", "slug,gtin", "slug");
@@ -227,7 +250,7 @@ export async function importProducts(file: File, onProgress?: (p: ImportProgress
   await supabase.rpc("resolve_product_brands");
   await supabase.rpc("resolve_product_categories");
   currentPhase = "done"; notify();
-  return { created, updated, skipped, errors, brandsCreated, manufacturersCreated, totalRows: rows.length };
+  return { created, updated, skipped, errors, brandsCreated, manufacturersCreated, categoriesCreated, totalRows: rows.length };
 }
 
 export async function importBrands(file: File): Promise<{ created: number; errors: string[] }> {

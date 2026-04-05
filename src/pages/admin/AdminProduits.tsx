@@ -176,7 +176,7 @@ const AdminProduits = () => {
   const sortedVendors = [...vendors].sort((a, b) => (a.company_name || a.name).localeCompare(b.company_name || b.name));
 
   const [importProgress, setImportProgress] = useState<ImportProgress | null>(null);
-  const [importResult, setImportResult] = useState<{ created: number; updated: number; skipped: number; errors: { line: number; name: string; code: string; message: string }[]; brandsCreated?: number; manufacturersCreated?: number; totalRows: number } | null>(null);
+  const [importResult, setImportResult] = useState<{ created: number; updated: number; skipped: number; errors: { line: number; name: string; code: string; message: string }[]; brandsCreated?: number; manufacturersCreated?: number; categoriesCreated?: number; totalRows: number } | null>(null);
   const [importing, setImporting] = useState(false);
   const [importPanelOpen, setImportPanelOpen] = useState(false);
   const [migratingImages, setMigratingImages] = useState(false);
@@ -206,7 +206,7 @@ const AdminProduits = () => {
     setImporting(true);
     setImportResult(null);
     setImportPanelOpen(true);
-    setImportProgress({ phase: "reading", current: 0, total: 0, created: 0, updated: 0, skipped: 0, errors: [], brandsCreated: 0, manufacturersCreated: 0 });
+    setImportProgress({ phase: "reading", current: 0, total: 0, created: 0, updated: 0, skipped: 0, errors: [], brandsCreated: 0, manufacturersCreated: 0, categoriesCreated: 0 });
     try {
       const result = await importProducts(file, (p) => setImportProgress({ ...p }));
       setImportResult(result);
@@ -558,6 +558,7 @@ const AdminProduits = () => {
                     {importProgress.phase === "reading" && "Lecture du fichier…"}
                     {importProgress.phase === "manufacturers" && "Création fabricants…"}
                     {importProgress.phase === "brands" && "Création marques…"}
+                    {importProgress.phase === "categories" && "Création catégories…"}
                     {importProgress.phase === "products" && `Produit ${importProgress.current.toLocaleString("fr-BE")} / ${importProgress.total.toLocaleString("fr-BE")}`}
                     {importProgress.phase === "resolving" && "Résolution des liens…"}
                   </span>
@@ -606,11 +607,13 @@ const AdminProduits = () => {
                   </div>
                 </div>
 
-                {((importResult.brandsCreated || 0) > 0 || (importResult.manufacturersCreated || 0) > 0) && (
+                {((importResult.brandsCreated || 0) > 0 || (importResult.manufacturersCreated || 0) > 0 || (importResult.categoriesCreated || 0) > 0) && (
                   <div className="bg-primary/5 rounded-lg p-3 space-y-1">
                     <p className="text-xs font-medium text-primary">Entités auto-créées</p>
                     {(importResult.brandsCreated || 0) > 0 && <p className="text-xs">🏷️ <strong>{importResult.brandsCreated}</strong> marque(s)</p>}
+                    {(importResult.categoriesCreated || 0) > 0 && <p className="text-xs">📂 <strong>{importResult.categoriesCreated}</strong> catégorie(s)</p>}
                     {(importResult.manufacturersCreated || 0) > 0 && <p className="text-xs">🏭 <strong>{importResult.manufacturersCreated}</strong> fabricant(s)</p>}
+                    <p className="text-[10px] text-muted-foreground mt-1">Vérifiez ces entités dans Admin → Marques / Catégories / Fabricants</p>
                   </div>
                 )}
 

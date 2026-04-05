@@ -365,11 +365,17 @@ export default function AdminVeillePrix() {
       const colCnk = findCol(["cnk", "cnk_code"]);
       const colName = findCol(["nom", "name", "désignation", "designation", "libellé", "libelle", "produit", "product"]);
       const colPrixGros = findCol(["grossiste", "prix achat", "prix_achat", "wholesale", "prix grossiste", "p.achat", "prix de gros"]);
-      const colPrixPharma = findCol(["pharmacien", "prix vente", "prix_vente", "pharma", "prix pharmacien", "pvp", "p.vente"]);
-      const colPrixPublic = findCol(["public", "prix public", "prix_public", "pvp ttc", "retail", "prix", "price", "prix ttc"]);
+      // For competitor files: "Prix EUR" = their selling price → prix_pharmacien
+      const colPrixPharma = findCol(["pharmacien", "prix vente", "prix_vente", "pharma", "prix pharmacien", "pvp", "p.vente", "prix eur"]);
+      // "Prix conseille" = recommended retail → prix_public
+      const colPrixPublic = findCol(["public", "prix public", "prix_public", "pvp ttc", "retail", "prix conseill", "prix ttc"]);
+      // Fallback: if neither pharma nor public found, try generic "prix" / "price"
+      const colPrixGeneric = !colPrixPharma && !colPrixPublic ? findCol(["prix", "price"]) : null;
       const colTva = findCol(["tva", "vat", "tax"]);
       const colSupplier = findCol(["fournisseur", "supplier", "vendeur", "vendor", "supplier_name"]);
       const colUrl = findCol(["url", "product_url", "lien", "link"]);
+      const colStock = findCol(["stock", "disponib", "quantit", "qty", "available"]);
+      const colRemise = findCol(["remise", "discount", "reduction", "remise pct", "remise_pct"]);
 
       // Fetch all products for matching
       setImportProgress({ phase: "Chargement des produits…", current: 0, total: 0 });

@@ -11,13 +11,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
-type VStatus = "all" | "pending_review" | "under_review" | "approved" | "rejected";
+type VStatus = "all" | "pending_review" | "under_review" | "accepted" | "approved" | "rejected";
 type ActiveFilter = "all" | "active" | "inactive";
 
 const VALIDATION_LABELS: Record<string, { label: string; color: string; bg: string; icon: typeof Clock }> = {
   pending_review: { label: "En attente", color: "#D97706", bg: "#FFFBEB", icon: Clock },
   under_review: { label: "En cours d'analyse", color: "#2563EB", bg: "#EFF6FF", icon: AlertTriangle },
-  approved: { label: "Approuvé", color: "#059669", bg: "#ECFDF5", icon: CheckCircle2 },
+  accepted: { label: "Candidature acceptée", color: "#7C3AED", bg: "#F5F3FF", icon: CheckCircle2 },
+  approved: { label: "Validé", color: "#059669", bg: "#ECFDF5", icon: CheckCircle2 },
   rejected: { label: "Rejeté", color: "#DC2626", bg: "#FEF2F2", icon: XCircle },
 };
 

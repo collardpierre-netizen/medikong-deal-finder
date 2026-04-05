@@ -16,6 +16,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
+type VendorValidationStatus = "pending_review" | "under_review" | "accepted" | "approved" | "rejected";
+
 const tabList = [
   { key: "resume", label: "Résumé", icon: Building2 },
   { key: "validation", label: "Validation", icon: CheckCircle2 },
@@ -482,12 +484,18 @@ function VendorValidationTab({ vendor, onUpdate }: { vendor: any; onUpdate: () =
   const statusLabels: Record<string, { label: string; color: string; bg: string }> = {
     pending_review: { label: "En attente de review", color: "#D97706", bg: "#FFFBEB" },
     under_review: { label: "En cours d'analyse", color: "#2563EB", bg: "#EFF6FF" },
-    approved: { label: "Approuvé", color: "#059669", bg: "#F0FDF4" },
+    accepted: { label: "Candidature acceptée — KYC en cours", color: "#7C3AED", bg: "#F5F3FF" },
+    approved: { label: "Validé — Compte opérationnel", color: "#059669", bg: "#F0FDF4" },
     rejected: { label: "Refusé", color: "#DC2626", bg: "#FEF2F2" },
   };
   const st = statusLabels[validationStatus] || statusLabels.pending_review;
 
-  const handleAction = async (action: "under_review" | "approved" | "rejected") => {
+  const kycAllApproved = criteria.length > 0 && criteria.every((cr: any) => {
+    const sub = submissions.find((s: any) => s.criteria_id === cr.id);
+    return sub?.status === "approved";
+  });
+
+  const handleAction = async (action: "under_review" | "accepted" | "approved" | "rejected") => {
     setActing(true);
     try {
       const update: any = {
@@ -495,18 +503,32 @@ function VendorValidationTab({ vendor, onUpdate }: { vendor: any; onUpdate: () =
         validation_notes: notes,
         validated_at: new Date().toISOString(),
       };
-      if (action === "approved") {
+      if (action === "accepted") {
+        // Step 1: Accept candidature → portal access, KYC starts
+        update.is_active = true;
+        update.is_verified = false;
+      } else if (action === "approved") {
+        // Step 2: Final validation → fully operational
         update.is_active = true;
         update.is_verified = true;
-      }
-      if (action === "rejected") {
+      } else if (action === "rejected") {
         update.is_active = false;
+        update.is_verified = false;
       }
       const { error } = await supabase.from("vendors").update(update).eq("id", vendor.id);
       if (error) throw error;
 
-      // Send notification email to vendor
-      if (action === "approved") {
+      // Send notification email
+      if (action === "accepted") {
+        supabase.functions.invoke("send-transactional-email", {
+          body: {
+            templateName: "vendor-approved",
+            recipientEmail: vendor.email,
+            idempotencyKey: `vendor-accepted-${vendor.id}-${Date.now()}`,
+            templateData: { companyName: vendor.company_name || vendor.name, isAcceptance: true },
+          },
+        }).catch(() => {});
+      } else if (action === "approved") {
         supabase.functions.invoke("send-transactional-email", {
           body: {
             templateName: "vendor-approved",
@@ -526,7 +548,13 @@ function VendorValidationTab({ vendor, onUpdate }: { vendor: any; onUpdate: () =
         }).catch(() => {});
       }
 
-      toast.success(action === "approved" ? "Vendeur approuvé ! Email envoyé." : action === "rejected" ? "Vendeur refusé. Email envoyé." : "Statut mis à jour");
+      const messages: Record<string, string> = {
+        under_review: "Statut mis à jour",
+        accepted: "Candidature acceptée ! Le vendeur peut accéder au portail et compléter son KYC.",
+        approved: "Vendeur validé ! Compte pleinement opérationnel.",
+        rejected: "Vendeur refusé. Email envoyé.",
+      };
+      toast.success(messages[action]);
       onUpdate();
     } catch (err: any) {
       toast.error(err.message);
@@ -541,10 +569,16 @@ function VendorValidationTab({ vendor, onUpdate }: { vendor: any; onUpdate: () =
       <div className="p-5 rounded-[10px] flex items-center gap-4" style={{ backgroundColor: st.bg, border: `1px solid ${st.color}20` }}>
         {validationStatus === "pending_review" && <Clock size={24} style={{ color: st.color }} />}
         {validationStatus === "under_review" && <FileText size={24} style={{ color: st.color }} />}
+        {validationStatus === "accepted" && <CheckCircle2 size={24} style={{ color: st.color }} />}
         {validationStatus === "approved" && <CheckCircle2 size={24} style={{ color: st.color }} />}
         {validationStatus === "rejected" && <XCircle size={24} style={{ color: st.color }} />}
         <div>
           <p className="text-[14px] font-bold" style={{ color: st.color }}>{st.label}</p>
+          {validationStatus === "accepted" && (
+            <p className="text-[12px] mt-0.5" style={{ color: "#7C3AED" }}>
+              Le vendeur a accès au portail et doit compléter son KYC
+            </p>
+          )}
           {(vendor as any).validated_at && (
             <p className="text-[11px]" style={{ color: "#8B95A5" }}>
               Le {new Date((vendor as any).validated_at).toLocaleDateString("fr-BE")} à {new Date((vendor as any).validated_at).toLocaleTimeString("fr-BE", { hour: "2-digit", minute: "2-digit" })}
@@ -626,18 +660,48 @@ function VendorValidationTab({ vendor, onUpdate }: { vendor: any; onUpdate: () =
           className="w-full border rounded-md px-3 py-2.5 text-[13px] mb-4 focus:outline-none focus:border-[#1B5BDA] resize-none"
           style={{ borderColor: "#E2E8F0" }}
         />
-        <div className="flex items-center gap-3">
-          {validationStatus !== "approved" && (
+        <div className="flex items-center gap-3 flex-wrap">
+          {/* Step 0: Pass to review */}
+          {validationStatus === "pending_review" && (
             <button
-              onClick={() => handleAction("approved")}
+              onClick={() => handleAction("under_review")}
               disabled={acting}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-md text-[12px] font-bold text-white transition-opacity hover:opacity-90"
-              style={{ backgroundColor: "#059669" }}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-md text-[12px] font-bold transition-opacity hover:opacity-90"
+              style={{ backgroundColor: "#EFF6FF", color: "#1B5BDA", border: "1px solid #BFDBFE" }}
             >
-              {acting ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
-              Approuver le vendeur
+              <FileText size={14} /> Passer en review
             </button>
           )}
+
+          {/* Step 1: Accept candidature → portal access + KYC */}
+          {(validationStatus === "pending_review" || validationStatus === "under_review") && (
+            <button
+              onClick={() => handleAction("accepted")}
+              disabled={acting}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-md text-[12px] font-bold text-white transition-opacity hover:opacity-90"
+              style={{ backgroundColor: "#7C3AED" }}
+            >
+              {acting ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
+              Accepter la candidature
+            </button>
+          )}
+
+          {/* Step 2: Final validation → only when KYC is complete */}
+          {validationStatus === "accepted" && (
+            <button
+              onClick={() => handleAction("approved")}
+              disabled={acting || !kycAllApproved}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-md text-[12px] font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ backgroundColor: "#059669" }}
+              title={!kycAllApproved ? "Tous les critères KYC doivent être approuvés" : undefined}
+            >
+              {acting ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
+              Validation finale
+              {!kycAllApproved && <span className="text-[10px] ml-1 opacity-75">(KYC incomplet)</span>}
+            </button>
+          )}
+
+          {/* Reject — always available unless already rejected */}
           {validationStatus !== "rejected" && (
             <button
               onClick={() => handleAction("rejected")}
@@ -647,16 +711,6 @@ function VendorValidationTab({ vendor, onUpdate }: { vendor: any; onUpdate: () =
             >
               {acting ? <Loader2 size={14} className="animate-spin" /> : <XCircle size={14} />}
               Refuser
-            </button>
-          )}
-          {validationStatus === "pending_review" && (
-            <button
-              onClick={() => handleAction("under_review")}
-              disabled={acting}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-md text-[12px] font-bold transition-opacity hover:opacity-90"
-              style={{ backgroundColor: "#EFF6FF", color: "#1B5BDA", border: "1px solid #BFDBFE" }}
-            >
-              <FileText size={14} /> Passer en review
             </button>
           )}
         </div>

@@ -44,8 +44,8 @@ export default function VendorKycStepper({ vendor }: { vendor: any }) {
   const validationStatus = vendor?.validation_status || "pending_review";
 
   // Current step based on validation_status
-  const currentStep = validationStatus === "approved" ? 5
-    : validationStatus === "under_review" ? 4
+  const currentStep = validationStatus === "approved" ? 6
+    : validationStatus === "under_review" ? 5
     : 2; // pending_review
 
   // Fetch criteria for this business type

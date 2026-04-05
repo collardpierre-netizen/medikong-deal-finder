@@ -179,6 +179,28 @@ const AdminProduits = () => {
   const [importResult, setImportResult] = useState<{ created: number; updated: number; skipped: number; errors: { line: number; name: string; code: string; message: string }[]; brandsCreated?: number; manufacturersCreated?: number; totalRows: number } | null>(null);
   const [importing, setImporting] = useState(false);
   const [importPanelOpen, setImportPanelOpen] = useState(false);
+  const [migratingImages, setMigratingImages] = useState(false);
+
+  const handleMigrateImages = async () => {
+    if (!confirm("Migrer les images externes vers le stockage MediKong ? Cela peut prendre quelques minutes.")) return;
+    setMigratingImages(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("migrate-product-images", {
+        body: { limit: 100 },
+      });
+      if (error) throw error;
+      const result = data as { migrated: number; failed: number; total_candidates: number; errors?: { product: string; error: string }[] };
+      toast.success(`${result.migrated} produits migrés, ${result.failed} erreurs sur ${result.total_candidates} candidats`);
+      if (result.errors && result.errors.length > 0) {
+        console.warn("Migration errors:", result.errors);
+      }
+      qc.invalidateQueries({ queryKey: ["admin-products-paginated"] });
+    } catch (e: any) {
+      toast.error("Erreur migration : " + (e.message || "inconnue"));
+    } finally {
+      setMigratingImages(false);
+    }
+  };
 
   const handleImport = async (file: File) => {
     setImporting(true);

@@ -65,7 +65,18 @@ const AdminDashboard = () => {
     date: new Date(o.created_at).toLocaleDateString("fr-BE", { day: "2-digit", month: "2-digit" }),
   }));
 
+  const pendingVendorsList = pendingVendors.data || [];
+  const pendingBuyersList = pendingBuyers.data || [];
+  const totalPending = pendingVendorsList.length + pendingBuyersList.length;
+
   const fmt = (n: number) => n.toLocaleString("fr-BE");
+  const timeAgo = (d: string) => {
+    const diff = Date.now() - new Date(d).getTime();
+    const h = Math.floor(diff / 3600000);
+    if (h < 1) return "< 1h";
+    if (h < 24) return `${h}h`;
+    return `${Math.floor(h / 24)}j`;
+  };
 
   const EmptyState = ({ message }: { message: string }) => (
     <div className="flex flex-col items-center justify-center py-10 text-center">

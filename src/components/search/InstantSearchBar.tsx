@@ -101,7 +101,7 @@ export function InstantSearchBar({ className = "", placeholder, variant = "navba
   const isHero = variant === "hero";
   const inputClasses = isHero
     ? "w-full pl-11 pr-10 py-3.5 rounded-xl text-sm bg-white text-foreground placeholder:text-muted-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary shadow-md"
-    : "w-full pl-9 pr-8 py-2 rounded-md text-sm bg-white text-foreground placeholder:text-muted-foreground border-0 focus:outline-none focus:ring-2 focus:ring-primary";
+    : "w-full pl-9 pr-8 py-2 rounded-lg text-sm bg-background text-foreground placeholder:text-muted-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary shadow-sm";
 
   return (
     <div className={`relative ${className}`}>

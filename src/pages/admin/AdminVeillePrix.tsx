@@ -481,16 +481,18 @@ export default function AdminVeillePrix() {
       }).eq("id", importSourceId);
 
       setImportReport({ total: jsonRows.length, matched, inserted });
+      finishJob(jobId, { success: inserted, errors: [] });
       toast.success(`${inserted} lignes importées, ${matched} matchées`);
       qc.invalidateQueries({ queryKey: ["veille-prix-data"] });
       qc.invalidateQueries({ queryKey: ["market-sources"] });
     } catch (e: any) {
+      finishJob(jobId, { success: 0, errors: [e.message || "Erreur"] });
       toast.error("Erreur d'import: " + (e.message || e));
     } finally {
       setImporting(false);
       setImportProgress(null);
     }
-  }, [importSourceId, qc]);
+  }, [importSourceId, qc, addJob, updateJob, finishJob]);
 
   // Export
   const handleExport = () => {

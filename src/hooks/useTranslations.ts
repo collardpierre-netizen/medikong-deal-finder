@@ -13,17 +13,27 @@ interface Translation {
   value: string;
 }
 
-// Fetch all translations for an entity type
+// Fetch all translations for an entity type (paginated to bypass 1000 row limit)
 export function useEntityTranslations(entityType: EntityType) {
   return useQuery({
     queryKey: ["translations", entityType],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("translations")
-        .select("*")
-        .eq("entity_type", entityType);
-      if (error) throw error;
-      return data as Translation[];
+      const all: Translation[] = [];
+      let from = 0;
+      const PAGE = 1000;
+      while (true) {
+        const { data, error } = await supabase
+          .from("translations")
+          .select("*")
+          .eq("entity_type", entityType)
+          .range(from, from + PAGE - 1);
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        all.push(...(data as Translation[]));
+        if (data.length < PAGE) break;
+        from += PAGE;
+      }
+      return all;
     },
   });
 }

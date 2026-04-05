@@ -35,7 +35,6 @@ function mapSearchResult(row: any, offersData?: any[]): Product {
     category: row.category_name || undefined,
     color: ["blue", "teal", "green", "amber", "rose", "purple", "orange", "cyan"][(row.name || "").length % 8],
     iconName: "Package",
-    imageUrl: row.image_urls?.[0] || undefined,
     imageUrl: (row.image_urls?.filter(isValidProductImage)?.[0]) || (isValidProductImage(row.image_url) ? row.image_url : undefined),
     descriptionShort: row.short_description || row.description || undefined,
   };

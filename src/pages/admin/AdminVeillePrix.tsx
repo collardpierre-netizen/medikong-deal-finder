@@ -808,10 +808,11 @@ export default function AdminVeillePrix() {
               <Select value={newSourceType} onValueChange={setNewSourceType}>
                 <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="wholesaler">Grossiste</SelectItem>
-                  <SelectItem value="pharmacy">Pharmacie</SelectItem>
-                  <SelectItem value="retailer">Détaillant</SelectItem>
-                  <SelectItem value="online">E-commerce</SelectItem>
+                  <SelectItem value="wholesaler">Grossiste (ex: Febelco, CERP)</SelectItem>
+                  <SelectItem value="pharmacy">Pharmacie (ex: Pharmacie en ligne)</SelectItem>
+                  <SelectItem value="online">E-commerce (ex: Newpharma, Farmaline)</SelectItem>
+                  <SelectItem value="retailer">Détaillant / Parapharmacie</SelectItem>
+                  <SelectItem value="public">Source publique (ex: INAMI, CBIP)</SelectItem>
                 </SelectContent>
               </Select>
             </div>

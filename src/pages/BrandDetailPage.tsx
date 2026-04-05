@@ -5,6 +5,7 @@ import { ProductCard } from "@/components/shared/ProductCard";
 import SearchTrivagoCard from "@/components/search/SearchTrivagoCard";
 import { Star, ExternalLink, Heart, Download, Upload, Users, Grid, List, Columns, Factory, Store, MapPin, ShoppingCart, Award, ChevronRight } from "lucide-react";
 import { useState } from "react";
+import { BuyerImportModal } from "@/components/buyer/BuyerImportModal";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getVendorPublicName } from "@/lib/vendor-display";
@@ -16,7 +17,7 @@ export default function BrandDetailPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [showAllSellers, setShowAllSellers] = useState(false);
   const [activeCat, setActiveCat] = useState<string | null>(null);
-
+  const [importOpen, setImportOpen] = useState(false);
   const { data: brandData } = useQuery({
     queryKey: ["brand-detail", slug],
     enabled: !!slug,
@@ -285,10 +286,11 @@ export default function BrandDetailPage() {
             <Upload size={18} className="text-mk-blue shrink-0" />
             <span className="text-sm text-mk-navy">Importez votre liste de produits pour des prix personnalisés</span>
           </div>
-          <button className="bg-mk-blue text-white text-sm font-semibold px-4 py-2 rounded-md flex items-center gap-1.5 whitespace-nowrap">
+          <button onClick={() => setImportOpen(true)} className="bg-mk-blue text-white text-sm font-semibold px-4 py-2 rounded-md flex items-center gap-1.5 whitespace-nowrap">
             <Upload size={13} /> Importer
           </button>
         </div>
+        <BuyerImportModal open={importOpen} onOpenChange={setImportOpen} />
 
         {/* Category chips */}
         {catChips.length > 0 && (

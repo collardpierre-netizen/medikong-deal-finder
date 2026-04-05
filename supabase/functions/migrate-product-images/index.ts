@@ -23,8 +23,12 @@ Deno.serve(async (req) => {
     const dryRun = body.dry_run === true;
 
     // Find products with external image_urls that haven't been migrated yet
-    // Use raw SQL via RPC to reliably find products with external images
-    const { data: products, error: fetchErr } = await supabase.rpc("get_products_with_external_images" as any, { p_limit: limit });
+    // Find products with image_urls that contain external URLs
+    const { data: products, error: fetchErr } = await supabase
+      .from("products")
+      .select("id, name, image_urls, image_url")
+      .not("image_urls", "is", null)
+      .limit(limit);
 
     if (fetchErr) throw fetchErr;
 

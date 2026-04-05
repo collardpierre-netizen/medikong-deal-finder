@@ -175,7 +175,7 @@ export default function AdminVeillePrix() {
       while (true) {
         const { data, error } = await supabase
           .from("market_prices")
-          .select("id, product_id, prix_grossiste, prix_pharmacien, prix_public, tva_rate, source_id, market_price_sources(name, slug, country_code)")
+          .select("id, product_id, prix_grossiste, prix_pharmacien, prix_public, tva_rate, source_id, stock_source, remise_pct, imported_at, market_price_sources(name, slug, country_code)")
           .eq("is_matched", true)
           .not("product_id", "is", null)
           .range(from, from + batchSize - 1);

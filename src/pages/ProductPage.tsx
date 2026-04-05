@@ -1316,14 +1316,29 @@ export default function ProductPage() {
                                         {mp.market_price_sources.source_type}
                                       </span>
                                     )}
+                                    {mp.stock_source && (
+                                      <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-medium ${mp.stock_source.toLowerCase().includes("rupture") || mp.stock_source === "0" ? "bg-destructive/10 text-destructive" : "bg-emerald-100 text-emerald-700"}`}>
+                                        {mp.stock_source}
+                                      </span>
+                                    )}
+                                    {mp.imported_at && (
+                                      <span className="text-[10px] text-muted-foreground">
+                                        Relevé le {new Date(mp.imported_at).toLocaleDateString("fr-FR")}
+                                      </span>
+                                    )}
                                   </div>
                                 </div>
+                                {mp.product_url && (
+                                  <a href={mp.product_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline">
+                                    Voir chez le concurrent →
+                                  </a>
+                                )}
                               </div>
 
                               <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                                 {mpVisMap.show_pharmacist_price && (
                                   <div className="rounded-lg border border-border bg-background px-3 py-3">
-                                    <p className="text-[11px] font-medium text-muted-foreground mb-1">Prix pharmacien</p>
+                                    <p className="text-[11px] font-medium text-muted-foreground mb-1">Prix concurrent</p>
                                     <p className="text-lg font-bold text-foreground tabular-nums">{mp.prix_pharmacien ? `${formatEur(mp.prix_pharmacien)} €` : "—"}</p>
                                   </div>
                                 )}
@@ -1333,8 +1348,8 @@ export default function ProductPage() {
                                     <p className="text-lg font-bold text-foreground tabular-nums">{mp.prix_public ? `${formatEur(mp.prix_public)} €` : "—"}</p>
                                   </div>
                                 )}
-                                {bestOffer && mpVisMap.show_pharmacist_price && renderDelta("Écart vs MediKong (pharmacien)", deltaPharm)}
-                                {bestOffer && mpVisMap.show_public_price && renderDelta("Écart vs MediKong (public)", deltaPublic)}
+                                {bestOffer && mpVisMap.show_pharmacist_price && renderDelta("Écart vs MediKong", deltaPharm)}
+                                {bestOffer && mpVisMap.show_public_price && renderDelta("Écart vs prix public", deltaPublic)}
                               </div>
                             </div>
                           );

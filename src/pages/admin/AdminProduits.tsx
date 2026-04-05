@@ -210,6 +210,7 @@ const AdminProduits = () => {
     try {
       const result = await importProducts(file, (p) => setImportProgress({ ...p }));
       setImportResult(result);
+      setImportProgress(prev => prev ? { ...prev, phase: "done" } : null);
       qc.invalidateQueries({ queryKey: ["admin-products-paginated"] });
       qc.invalidateQueries({ queryKey: ["admin-products-count"] });
       qc.invalidateQueries({ queryKey: ["admin-brands"] });
@@ -218,7 +219,6 @@ const AdminProduits = () => {
       setImportResult({ created: 0, updated: 0, skipped: 0, errors: [{ line: 0, name: "—", code: "EXCEPTION", message: e.message || "Erreur inconnue" }], totalRows: 0 });
     } finally {
       setImporting(false);
-      setImportProgress(null);
     }
   };
 
@@ -543,7 +543,7 @@ const AdminProduits = () => {
               </span>
             </div>
             {!importing && (
-              <button onClick={() => { setImportPanelOpen(false); setImportResult(null); }} className="text-muted-foreground hover:text-foreground">
+              <button onClick={() => { setImportPanelOpen(false); setImportResult(null); setImportProgress(null); }} className="text-muted-foreground hover:text-foreground">
                 <X size={16} />
               </button>
             )}
@@ -551,7 +551,7 @@ const AdminProduits = () => {
 
           <div className="overflow-y-auto flex-1 p-4 space-y-3">
             {/* Progress bar during import */}
-            {importing && importProgress && (
+            {importProgress && (importing || !importResult) && (
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
                   <span>

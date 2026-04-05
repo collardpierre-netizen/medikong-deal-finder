@@ -17,7 +17,7 @@ export default function BrandDetailPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [showAllSellers, setShowAllSellers] = useState(false);
   const [activeCat, setActiveCat] = useState<string | null>(null);
-
+  const [importOpen, setImportOpen] = useState(false);
   const { data: brandData } = useQuery({
     queryKey: ["brand-detail", slug],
     enabled: !!slug,

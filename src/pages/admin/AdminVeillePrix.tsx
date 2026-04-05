@@ -536,6 +536,10 @@ export default function AdminVeillePrix() {
       {/* KPI */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <div className="bg-background border border-border rounded-xl p-4">
+          <p className="text-xs text-muted-foreground">Non matchés</p>
+          <p className="text-2xl font-bold text-orange-600">{unmatchedCount.toLocaleString("fr-FR")}</p>
+        </div>
+        <div className="bg-background border border-border rounded-xl p-4">
           <p className="text-xs text-muted-foreground">Produits matchés</p>
           <p className="text-2xl font-bold text-foreground">{rows.length.toLocaleString("fr-FR")}</p>
         </div>

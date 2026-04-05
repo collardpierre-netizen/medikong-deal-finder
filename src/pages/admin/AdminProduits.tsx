@@ -11,6 +11,7 @@ import { useI18n } from "@/contexts/I18nContext";
 import { useBrands, useManufacturers, useProductCount, useBrandCount, useActiveOfferCount, useVendors } from "@/hooks/useAdminData";
 import { ProductFormDialog } from "@/components/admin/ProductFormDialog";
 import { exportProducts, importProducts, downloadProductTemplate, type ImportProgress } from "@/lib/xlsx-utils";
+import { getProductImageSrc } from "@/lib/image-utils";
 import { toast } from "sonner";
 import { useImportJobs } from "@/contexts/ImportContext";
 import { Package, Tag, ShoppingCart, Search, Download, Upload, Plus, FileSpreadsheet, ChevronLeft, ChevronRight, X, Loader2, ImageIcon } from "lucide-react";
@@ -351,7 +352,8 @@ const AdminProduits = () => {
                 </thead>
                 <tbody>
                   {products.map((p) => {
-                    const imgUrl = (p.image_urls as string[] | null)?.[0] || (p as any).image_url || null;
+                    const rawImgUrl = (p.image_urls as string[] | null)?.[0] || (p as any).image_url || null;
+                    const imgUrl = rawImgUrl ? getProductImageSrc(rawImgUrl) : null;
                     return (
                     <tr key={p.id} className="cursor-pointer transition-colors" style={{ borderBottom: "1px solid #F1F5F9" }}
                       onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#F8FAFC")}

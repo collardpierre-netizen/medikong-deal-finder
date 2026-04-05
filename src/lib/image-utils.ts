@@ -10,6 +10,9 @@ const BLOCKED_URL_PATTERNS = [
   /no[._-]?image/i,
 ];
 
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const IMAGE_PROXY_PATH = "/functions/v1/image-proxy?url=";
+
 export function isValidProductImage(url: string | undefined | null): boolean {
   if (!url || url.trim() === "") return false;
   if (/no.?image/i.test(url)) return false;
@@ -18,8 +21,27 @@ export function isValidProductImage(url: string | undefined | null): boolean {
   return true;
 }
 
+function isProxyUrl(url: string): boolean {
+  return url.includes(IMAGE_PROXY_PATH);
+}
+
+function shouldProxyImage(url: string): boolean {
+  if (!/^https?:\/\//i.test(url)) return false;
+  if (isProxyUrl(url)) return false;
+  if (url.includes("/storage/v1/object/public/product-images/")) return false;
+  if (SUPABASE_URL && url.startsWith(SUPABASE_URL)) return false;
+  return true;
+}
+
+function buildProxyUrl(url: string): string {
+  if (!SUPABASE_URL) return url;
+  return `${SUPABASE_URL}${IMAGE_PROXY_PATH}${encodeURIComponent(url)}`;
+}
+
 export function getProductImageSrc(url: string | undefined | null): string {
-  return isValidProductImage(url) ? url! : MEDIKONG_PLACEHOLDER;
+  if (!isValidProductImage(url)) return MEDIKONG_PLACEHOLDER;
+  const normalizedUrl = url!.trim();
+  return shouldProxyImage(normalizedUrl) ? buildProxyUrl(normalizedUrl) : normalizedUrl;
 }
 
 /** Call in onLoad to detect Qogita "No Image Available" placeholder (618×602 with Q logo) */

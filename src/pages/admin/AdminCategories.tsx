@@ -33,26 +33,19 @@ const AdminCategories = () => {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<any>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [importStatus, setImportStatus] = useState<{ loading: boolean; result?: { created: number; errors: string[] } } | null>(null);
 
   const handleImport = async (file: File) => {
-    const loadingId = toast.loading("Import en cours…");
+    setImportStatus({ loading: true });
     try {
       const result = await importCategories(file);
-      toast.dismiss(loadingId);
+      setImportStatus({ loading: false, result });
       if (result.created > 0) {
-        toast.success(`✅ ${result.created} catégorie(s) importée(s) avec succès`);
-      } else {
-        toast.warning("Aucune catégorie importée. Vérifiez le format du fichier.");
-      }
-      if (result.errors.length > 0) {
-        toast.warning(`⚠️ ${result.errors.length} erreur(s)`, {
-          description: result.errors.slice(0, 3).join(" | "),
-          duration: 8000,
-        });
+        toast.success(`✅ ${result.created} catégorie(s) importée(s)`);
       }
       qc.invalidateQueries({ queryKey: ["admin-categories"] });
     } catch (e: any) {
-      toast.dismiss(loadingId);
+      setImportStatus({ loading: false, result: { created: 0, errors: [e.message || "Erreur inconnue"] } });
       toast.error(`Erreur import: ${e.message || "Erreur inconnue"}`);
     }
   };
@@ -347,6 +340,8 @@ const AdminCategories = () => {
                       <div className="ml-8 space-y-0.5">
                         {subs.map((sub) => {
                           const isSubActive = selectedId === sub.id;
+                          const grandchildren = childrenOf(sub.id);
+                          const hasGrandchildren = grandchildren.length > 0;
                           return (
                             <React.Fragment key={sub.id}>
                             <button
@@ -354,16 +349,22 @@ const AdminCategories = () => {
                               className={`flex items-center gap-2 px-3 py-1.5 rounded-md w-full text-left transition-colors ${isSubActive ? "bg-blue-50" : "hover:bg-gray-50"}`}
                             >
                               <Checkbox checked={selectedIds.includes(sub.id)} onCheckedChange={() => toggleSelect(sub.id)} onClick={(e: any) => e.stopPropagation()} className="mr-0.5 h-3.5 w-3.5" />
+                              {hasGrandchildren ? (
+                                <span onClick={(e) => { e.stopPropagation(); toggle(sub.id); }} className="cursor-pointer">
+                                  {expanded.includes(sub.id) ? <ChevronDown size={12} className="text-muted-foreground" /> : <ChevronRight size={12} className="text-muted-foreground" />}
+                                </span>
+                              ) : <div className="w-3" />}
                               <Tag size={12} style={{ color: "#7C3AED" }} />
                               <span className="text-[12px] flex-1" style={{ color: "#616B7C" }}>
                                 {getTranslated(translations, sub.id, "name", "fr", sub.name)}
                               </span>
+                              {hasGrandchildren && <span className="text-[9px] text-muted-foreground">{grandchildren.length}</span>}
                               <TranslationBadges catId={sub.id} />
                             </button>
-                            {/* Grandchildren */}
-                            {childrenOf(sub.id).length > 0 && (
+                            {/* Grandchildren - collapsible */}
+                            {hasGrandchildren && expanded.includes(sub.id) && (
                               <div className="ml-6 space-y-0.5">
-                                {childrenOf(sub.id).map(gc => (
+                                {grandchildren.map(gc => (
                                   <button key={gc.id} onClick={() => selectCategory(gc)}
                                     className={`flex items-center gap-1.5 px-2 py-1 rounded-md w-full text-left text-[11px] ${selectedId === gc.id ? "bg-blue-50" : "hover:bg-gray-50"}`}>
                                     <Checkbox checked={selectedIds.includes(gc.id)} onCheckedChange={() => toggleSelect(gc.id)} onClick={(e: any) => e.stopPropagation()} className="h-3 w-3" />
@@ -541,6 +542,39 @@ const AdminCategories = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {/* Import Status Panel */}
+      {importStatus && (
+        <div className="fixed bottom-6 right-6 z-50 w-80 bg-white border rounded-xl shadow-lg p-4" style={{ borderColor: "#E2E8F0" }}>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[13px] font-semibold" style={{ color: "#1D2530" }}>
+              {importStatus.loading ? "Import en cours…" : "Import terminé"}
+            </span>
+            {!importStatus.loading && (
+              <button onClick={() => setImportStatus(null)} className="text-muted-foreground hover:text-foreground"><X size={14} /></button>
+            )}
+          </div>
+          {importStatus.loading ? (
+            <div className="flex items-center gap-2">
+              <div className="h-1.5 flex-1 bg-secondary rounded-full overflow-hidden">
+                <div className="h-full bg-primary rounded-full animate-pulse w-2/3" />
+              </div>
+              <span className="text-[11px] text-muted-foreground">Lecture…</span>
+            </div>
+          ) : importStatus.result && (
+            <div className="space-y-1.5">
+              <p className="text-[12px]" style={{ color: "#059669" }}>✅ {importStatus.result.created} catégorie(s) créée(s)</p>
+              {importStatus.result.errors.length > 0 && (
+                <div>
+                  <p className="text-[12px] text-destructive">⚠️ {importStatus.result.errors.length} erreur(s)</p>
+                  <ul className="text-[10px] text-muted-foreground mt-1 max-h-20 overflow-y-auto">
+                    {importStatus.result.errors.slice(0, 5).map((err, i) => <li key={i}>• {err}</li>)}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };

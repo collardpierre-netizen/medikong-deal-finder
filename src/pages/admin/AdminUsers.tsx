@@ -66,7 +66,7 @@ export default function AdminUsers() {
     // Load customers as buyers
     const { data: customers } = await supabase
       .from("customers")
-      .select("id, auth_user_id, email, company_name, customer_type")
+      .select("id, auth_user_id, email, company_name, customer_type, is_verified")
       .order("company_name");
 
     customers?.forEach(b => {
@@ -78,7 +78,7 @@ export default function AdminUsers() {
           type: "buyer",
           company: b.company_name,
           plan: b.customer_type || "pharmacy",
-          status: (b as any).is_verified ? "active" : "pending",
+          status: b.is_verified ? "active" : "pending",
           lastLogin: null,
         });
       }

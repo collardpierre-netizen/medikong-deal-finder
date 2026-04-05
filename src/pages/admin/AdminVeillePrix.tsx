@@ -337,6 +337,8 @@ export default function AdminVeillePrix() {
     const file = fileRef.current?.files?.[0];
     if (!file || !importSourceId) { toast.error("Sélectionnez un fichier et une source"); return; }
 
+    const jobId = "import-veille-" + Date.now();
+    addJob(jobId, "Import veille prix");
     setImporting(true);
     setImportReport(null);
     setImportProgress({ phase: "Lecture du fichier…", current: 0, total: 0 });

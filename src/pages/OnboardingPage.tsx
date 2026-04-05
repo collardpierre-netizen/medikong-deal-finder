@@ -152,6 +152,7 @@ export default function OnboardingPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const [step, setStep] = useState(0);
+  const stepRef = useRef(0);
   const [dir, setDir] = useState<"up" | "down">("up");
   const [animClass, setAnimClass] = useState("");
   const [transitioning, setTransitioning] = useState(false);
@@ -248,6 +249,10 @@ export default function OnboardingPage() {
     [role, buyerProfile, businessType, email]
   );
 
+  useEffect(() => {
+    stepRef.current = step;
+  }, [step]);
+
   const restoreFromUrlContext = useCallback(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("flow") !== "onboarding") return;
@@ -279,10 +284,13 @@ export default function OnboardingPage() {
       setEmail(emailParam.trim().toLowerCase());
     }
 
-    if (inferredRole && step === 0) {
-      setStep(inferredRole === "buyer" ? 2.5 : 12.5);
+    if (inferredRole) {
+      setStep((currentStep) => {
+        if (currentStep !== 0) return currentStep;
+        return inferredRole === "buyer" ? 2.5 : 12.5;
+      });
     }
-  }, [step]);
+  }, []);
 
   const consumeAuthCallbackTokens = useCallback(async () => {
     const params = new URLSearchParams(window.location.search);
@@ -437,6 +445,16 @@ export default function OnboardingPage() {
     return [0];
   }, [role]);
 
+  const getResumeStep = useCallback((targetRole: "buyer" | "seller") => {
+    const currentStep = stepRef.current;
+
+    if (targetRole === "buyer") {
+      return [3, 4, 5, 6, 7].includes(currentStep) ? currentStep : 3;
+    }
+
+    return [13, 14, 15, 16, 17, 18].includes(currentStep) ? currentStep : 13;
+  }, []);
+
   const stepsList = getSteps();
   const currentIdx = stepsList.indexOf(step);
 
@@ -469,14 +487,14 @@ export default function OnboardingPage() {
         if (typeof metadata.onboarding_buyer_profile === "string") {
           setBuyerProfile(metadata.onboarding_buyer_profile);
         }
-        setStep(3);
+        setStep(getResumeStep("buyer"));
         return;
       }
 
       if (typeof metadata.onboarding_business_type === "string") {
         setBusinessType(metadata.onboarding_business_type);
       }
-      setStep(13);
+      setStep(getResumeStep("seller"));
       return;
     }
 
@@ -495,12 +513,12 @@ export default function OnboardingPage() {
 
           if (draft.role === "buyer") {
             if (draft.buyerProfile) setBuyerProfile(draft.buyerProfile);
-            setStep(3);
+            setStep(getResumeStep("buyer"));
             return;
           }
 
           if (draft.businessType) setBusinessType(draft.businessType);
-          setStep(13);
+          setStep(getResumeStep("seller"));
           return;
         }
       } catch {
@@ -520,9 +538,9 @@ export default function OnboardingPage() {
       if (bp) setBuyerProfile(bp);
       const bt = params.get("businessType");
       if (bt) setBusinessType(bt);
-      setStep(urlRole === "buyer" ? 3 : 13);
+      setStep(getResumeStep(urlRole));
     }
-  }, [onboardingDraftStorageKey, readOnboardingStorage, removeOnboardingStorage]);
+  }, [getResumeStep, onboardingDraftStorageKey, readOnboardingStorage, removeOnboardingStorage]);
 
   useEffect(() => {
     restoreFromUrlContext();

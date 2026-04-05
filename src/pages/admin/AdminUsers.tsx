@@ -435,6 +435,53 @@ export default function AdminUsers() {
           </div>
         </div>
       )}
+
+      {/* Delete / Refuse modal */}
+      {deleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setDeleteModal(null)}>
+          <div className="bg-card rounded-xl w-full max-w-lg shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="p-6 border-b border-border">
+              <h2 className="text-lg font-bold text-foreground">Refuser / Supprimer — {deleteModal.company}</h2>
+            </div>
+            <div className="p-6 space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Vous allez supprimer <strong>{deleteModal.company}</strong> ({deleteModal.email}).
+              </p>
+
+              {buyerDetail?.profile?.preferred_language && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex gap-2 items-center">
+                  <span className="text-lg">{buyerDetail.profile.preferred_language === "nl" ? "🇳🇱" : buyerDetail.profile.preferred_language === "en" ? "🇬🇧" : buyerDetail.profile.preferred_language === "de" ? "🇩🇪" : "🇫🇷"}</span>
+                  <p className="text-sm text-blue-800">
+                    Langue du destinataire : <strong>{LANG_FLAGS[buyerDetail.profile.preferred_language] || buyerDetail.profile.preferred_language}</strong>
+                  </p>
+                </div>
+              )}
+
+              <div>
+                <label className="text-sm font-medium text-foreground mb-1.5 block">Motif du refus (optionnel)</label>
+                <textarea
+                  value={deleteReason}
+                  onChange={e => setDeleteReason(e.target.value)}
+                  placeholder={buyerDetail?.profile?.preferred_language === "nl" ? "Schrijf hier de reden van weigering..." : buyerDetail?.profile?.preferred_language === "en" ? "Write the rejection reason here..." : "Écrivez ici le motif du refus..."}
+                  className="w-full min-h-[100px] rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-y"
+                />
+              </div>
+
+              <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-3 flex gap-2">
+                <AlertTriangle size={18} className="text-destructive shrink-0 mt-0.5" />
+                <p className="text-sm text-destructive"><strong>Attention :</strong> cette action est irréversible.</p>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 p-6 border-t border-border">
+              <Button variant="outline" onClick={() => setDeleteModal(null)}>Annuler</Button>
+              <Button variant="destructive" onClick={confirmDelete}>
+                Confirmer la suppression
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <UserCreateDialog open={showCreate} onOpenChange={setShowCreate} onCreated={loadUsers} />
     </div>
   );

@@ -543,7 +543,7 @@ const AdminProduits = () => {
               </span>
             </div>
             {!importing && (
-              <button onClick={() => { setImportPanelOpen(false); setImportResult(null); }} className="text-muted-foreground hover:text-foreground">
+              <button onClick={() => { setImportPanelOpen(false); setImportResult(null); setImportProgress(null); }} className="text-muted-foreground hover:text-foreground">
                 <X size={16} />
               </button>
             )}

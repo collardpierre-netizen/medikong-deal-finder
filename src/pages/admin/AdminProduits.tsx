@@ -551,7 +551,7 @@ const AdminProduits = () => {
 
           <div className="overflow-y-auto flex-1 p-4 space-y-3">
             {/* Progress bar during import */}
-            {importing && importProgress && (
+            {importProgress && (importing || !importResult) && (
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
                   <span>

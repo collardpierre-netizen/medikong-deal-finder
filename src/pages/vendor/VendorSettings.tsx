@@ -75,6 +75,7 @@ export default function VendorSettings() {
 
   const tabs = [
     { id: "profile", label: "Profil entreprise" },
+    { id: "commercial", label: "Paramètres commerciaux" },
     { id: "commission", label: "Commission" },
   ];
 

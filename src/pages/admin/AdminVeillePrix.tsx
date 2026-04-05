@@ -433,19 +433,36 @@ export default function AdminVeillePrix() {
 
         const parseNum = (v: any) => { const n = parseFloat(String(v || "").replace(",", ".")); return isNaN(n) ? null : n; };
 
+        // Determine competitor price: use specific columns or fallback to generic
+        const prixPharma = colPrixPharma ? parseNum(row[colPrixPharma]) : (colPrixGeneric ? parseNum(row[colPrixGeneric]) : null);
+
+        // Stock: parse as text (could be number or "En stock"/"Rupture")
+        let stockVal: string | null = null;
+        if (colStock) {
+          const raw = String(row[colStock] || "").trim();
+          if (raw) {
+            const num = parseInt(raw, 10);
+            if (!isNaN(num)) stockVal = num > 0 ? `En stock (${num})` : "Rupture";
+            else stockVal = raw;
+          }
+        }
+
         batchInsert.push({
           source_id: importSourceId,
           ean: colEan ? String(row[colEan] || "").trim() : null,
           cnk: colCnk ? String(row[colCnk] || "").trim() : null,
           product_name_source: name || null,
           prix_grossiste: colPrixGros ? parseNum(row[colPrixGros]) : null,
-          prix_pharmacien: colPrixPharma ? parseNum(row[colPrixPharma]) : null,
+          prix_pharmacien: prixPharma,
           prix_public: colPrixPublic ? parseNum(row[colPrixPublic]) : null,
           tva_rate: colTva ? parseNum(row[colTva]) : null,
           supplier_name: colSupplier ? String(row[colSupplier] || "").trim() || null : null,
           product_url: colUrl ? String(row[colUrl] || "").trim() || null : null,
+          stock_source: stockVal,
+          remise_pct: colRemise ? parseNum(row[colRemise]) : null,
           product_id: productId,
           is_matched: !!productId,
+          imported_at: new Date().toISOString(),
         });
       }
 

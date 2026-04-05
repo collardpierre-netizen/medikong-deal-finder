@@ -170,7 +170,7 @@ export default function SearchTrivagoCard({ product: p }: Props) {
                         )}
                         <span className="text-sm font-bold text-foreground">{offer.unitPriceEur.toFixed(2)} €</span>
                         <button
-                          onClick={() => navigate(`/produit/${p.slug}`)}
+                          onClick={() => navigate(`/produit/${p.slug}`, fromState)}
                           className="px-3.5 py-1 border border-border text-foreground text-[11px] font-semibold
                                     rounded-md hover:bg-muted transition-colors"
                         >

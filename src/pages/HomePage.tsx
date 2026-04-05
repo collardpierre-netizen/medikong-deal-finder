@@ -111,10 +111,6 @@ export default function HomePage() {
     { label: t("hero.exampleMasks"), q: "Masques FFP2" },
   ];
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    navigate(searchQuery.trim() ? `/catalogue?q=${encodeURIComponent(searchQuery.trim())}` : `/catalogue`);
-  };
 
   const orgJsonLd = {
     "@context": "https://schema.org",

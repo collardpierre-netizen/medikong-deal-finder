@@ -1273,87 +1273,83 @@ export default function ProductPage() {
                   {/* ── Tab: Prix du marché ── */}
                   <TabsContent value="market">
                     {marketPriceItems.length > 0 ? (
-                      <div className="space-y-3">
-                        {marketPriceItems.map((mp: any) => {
-                          const mkHT = bestOffer ? bestOffer.unitPriceEur : 0;
-                          const mkTTC = bestOffer ? bestOffer.unitPriceInclVat : 0;
-                          const calcDelta = (ref: number | null, vsTTC = false) => {
-                            const r = Number(ref || 0);
-                            const mk = vsTTC ? mkTTC : mkHT;
-                            if (!r || !mk) return null;
-                            const abs = r - mk;
-                            const pct = Math.round((abs / r) * 100);
-                            return { abs, pct };
-                          };
-                          const deltaPharm = calcDelta(mp.prix_pharmacien);
-                          const deltaPublic = calcDelta(mp.prix_public, true);
-                          const renderDelta = (label: string, d: { abs: number; pct: number } | null) => {
-                            if (!d) return null;
-                            const positive = d.abs > 0;
-                            return (
-                              <div className="rounded-lg border border-border bg-muted/30 px-3 py-2">
-                                <p className="text-[11px] font-medium text-muted-foreground mb-1">{label}</p>
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <span className={`text-sm font-bold tabular-nums ${positive ? "text-emerald-600" : d.abs < 0 ? "text-destructive" : "text-muted-foreground"}`}>
-                                    {positive ? "−" : "+"}{formatEur(Math.abs(d.abs))} €
-                                  </span>
-                                  <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${positive ? "bg-emerald-100 text-emerald-700" : d.abs < 0 ? "bg-red-100 text-destructive" : "bg-muted text-muted-foreground"}`}>
-                                    {positive ? "−" : "+"}{Math.abs(d.pct)}%
-                                  </span>
-                                </div>
-                              </div>
-                            );
-                          };
+                      <div className="rounded-xl border border-border overflow-hidden">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="bg-muted/50 border-b border-border text-left">
+                              <th className="px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Source</th>
+                              {mpVisMap.show_pharmacist_price && <th className="px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider text-right">Prix concurrent</th>}
+                              {mpVisMap.show_public_price && <th className="px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider text-right">Prix public TTC</th>}
+                              <th className="px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider text-center">Stock</th>
+                              <th className="px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider text-right">Écart MK</th>
+                              <th className="px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider text-right">Relevé</th>
+                              <th className="px-3 py-2.5 w-8"></th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-border">
+                            {marketPriceItems.map((mp: any) => {
+                              const mkHT = bestOffer ? bestOffer.unitPriceEur : 0;
+                              const pharmPrice = Number(mp.prix_pharmacien || 0);
+                              const pubPrice = Number(mp.prix_public || 0);
+                              const refPrice = pharmPrice || pubPrice;
+                              const deltaAbs = refPrice && mkHT ? refPrice - mkHT : null;
+                              const deltaPct = deltaAbs && refPrice ? Math.round((deltaAbs / refPrice) * 100) : null;
+                              const positive = deltaAbs !== null && deltaAbs > 0;
 
-                          return (
-                            <div key={mp.id} className="rounded-xl border border-border bg-card p-4 sm:p-5 shadow-sm">
-                              <div className="flex items-start justify-between gap-3 mb-4 flex-wrap">
-                                <div>
-                                  <p className="text-base font-semibold text-foreground">{mp.market_price_sources?.name}</p>
-                                  <div className="mt-1 flex items-center gap-2 flex-wrap">
+                              return (
+                                <tr key={mp.id} className="hover:bg-muted/20 transition-colors">
+                                  <td className="px-3 py-2.5">
+                                    <p className="font-medium text-foreground text-[13px]">{mp.market_price_sources?.name}</p>
                                     {mp.market_price_sources?.source_type && (
-                                      <span className="inline-flex rounded-full bg-secondary px-2.5 py-1 text-[11px] font-medium text-secondary-foreground">
+                                      <span className="inline-flex rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium text-secondary-foreground mt-0.5">
                                         {mp.market_price_sources.source_type}
                                       </span>
                                     )}
-                                    {mp.stock_source && (
-                                      <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-medium ${mp.stock_source.toLowerCase().includes("rupture") || mp.stock_source === "0" ? "bg-destructive/10 text-destructive" : "bg-emerald-100 text-emerald-700"}`}>
+                                  </td>
+                                  {mpVisMap.show_pharmacist_price && (
+                                    <td className="px-3 py-2.5 text-right font-bold tabular-nums text-foreground">
+                                      {pharmPrice ? `${formatEur(pharmPrice)} €` : "—"}
+                                    </td>
+                                  )}
+                                  {mpVisMap.show_public_price && (
+                                    <td className="px-3 py-2.5 text-right font-bold tabular-nums text-foreground">
+                                      {pubPrice ? `${formatEur(pubPrice)} €` : "—"}
+                                    </td>
+                                  )}
+                                  <td className="px-3 py-2.5 text-center">
+                                    {mp.stock_source ? (
+                                      <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium ${mp.stock_source.toLowerCase().includes("rupture") || mp.stock_source === "0" ? "bg-destructive/10 text-destructive" : "bg-emerald-100 text-emerald-700"}`}>
                                         {mp.stock_source}
                                       </span>
+                                    ) : <span className="text-muted-foreground">—</span>}
+                                  </td>
+                                  <td className="px-3 py-2.5 text-right">
+                                    {deltaAbs !== null ? (
+                                      <div className="flex items-center justify-end gap-1.5">
+                                        <span className={`font-bold tabular-nums text-[13px] ${positive ? "text-emerald-600" : "text-destructive"}`}>
+                                          {positive ? "−" : "+"}{formatEur(Math.abs(deltaAbs))} €
+                                        </span>
+                                        <span className={`inline-flex rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${positive ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-destructive"}`}>
+                                          {positive ? "−" : "+"}{Math.abs(deltaPct!)}%
+                                        </span>
+                                      </div>
+                                    ) : <span className="text-muted-foreground">—</span>}
+                                  </td>
+                                  <td className="px-3 py-2.5 text-right text-[11px] text-muted-foreground whitespace-nowrap">
+                                    {mp.imported_at ? new Date(mp.imported_at).toLocaleDateString("fr-FR") : "—"}
+                                  </td>
+                                  <td className="px-2 py-2.5">
+                                    {mp.product_url && (
+                                      <a href={mp.product_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80">
+                                        <ExternalLink size={14} />
+                                      </a>
                                     )}
-                                    {mp.imported_at && (
-                                      <span className="text-[10px] text-muted-foreground">
-                                        Relevé le {new Date(mp.imported_at).toLocaleDateString("fr-FR")}
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-                                {mp.product_url && (
-                                  <a href={mp.product_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline">
-                                    Voir chez le concurrent →
-                                  </a>
-                                )}
-                              </div>
-
-                              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                                {mpVisMap.show_pharmacist_price && (
-                                  <div className="rounded-lg border border-border bg-background px-3 py-3">
-                                    <p className="text-[11px] font-medium text-muted-foreground mb-1">Prix concurrent</p>
-                                    <p className="text-lg font-bold text-foreground tabular-nums">{mp.prix_pharmacien ? `${formatEur(mp.prix_pharmacien)} €` : "—"}</p>
-                                  </div>
-                                )}
-                                {mpVisMap.show_public_price && (
-                                  <div className="rounded-lg border border-border bg-background px-3 py-3">
-                                    <p className="text-[11px] font-medium text-muted-foreground mb-1">Prix public TTC</p>
-                                    <p className="text-lg font-bold text-foreground tabular-nums">{mp.prix_public ? `${formatEur(mp.prix_public)} €` : "—"}</p>
-                                  </div>
-                                )}
-                                {bestOffer && mpVisMap.show_pharmacist_price && renderDelta("Écart vs MediKong", deltaPharm)}
-                                {bestOffer && mpVisMap.show_public_price && renderDelta("Écart vs prix public", deltaPublic)}
-                              </div>
-                            </div>
-                          );
-                        })}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
                       </div>
                     ) : (
                       <div className="border border-border rounded-xl p-8 text-center">

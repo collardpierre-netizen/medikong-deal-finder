@@ -599,13 +599,17 @@ export default function AdminVeillePrix() {
       {/* Sources overview */}
       {sources.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-4">
-          {sources.map(s => (
-            <Badge key={s.id} variant="outline" className="text-xs gap-1">
-              {s.country_code && <span>{s.country_code}</span>}
-              {s.name}
-              <span className="text-muted-foreground">({s.total_products || 0})</span>
-            </Badge>
-          ))}
+          {sources.map(s => {
+            const liveCount = rows.filter(r => r.sources[s.slug]).length;
+            return (
+              <Badge key={s.id} variant="outline" className="text-xs gap-1 cursor-pointer" onClick={() => { setSourceFilter(sourceFilter === s.slug ? "all" : s.slug); setPage(1); }}
+                style={sourceFilter === s.slug ? { backgroundColor: "hsl(var(--primary))", color: "hsl(var(--primary-foreground))" } : {}}>
+                {s.country_code && <span>{s.country_code}</span>}
+                {s.name}
+                <span className="text-muted-foreground">({liveCount})</span>
+              </Badge>
+            );
+          })}
         </div>
       )}
 

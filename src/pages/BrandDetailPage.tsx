@@ -285,10 +285,11 @@ export default function BrandDetailPage() {
             <Upload size={18} className="text-mk-blue shrink-0" />
             <span className="text-sm text-mk-navy">Importez votre liste de produits pour des prix personnalisés</span>
           </div>
-          <button className="bg-mk-blue text-white text-sm font-semibold px-4 py-2 rounded-md flex items-center gap-1.5 whitespace-nowrap">
+          <button onClick={() => setImportOpen(true)} className="bg-mk-blue text-white text-sm font-semibold px-4 py-2 rounded-md flex items-center gap-1.5 whitespace-nowrap">
             <Upload size={13} /> Importer
           </button>
         </div>
+        <BuyerImportModal open={importOpen} onOpenChange={setImportOpen} />
 
         {/* Category chips */}
         {catChips.length > 0 && (

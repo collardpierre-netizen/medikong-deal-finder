@@ -175,18 +175,27 @@ export function useCatalogProducts(filters: CatalogFilters) {
             .order("sort_order", { ascending: true });
           if (featured && featured.length > 0) {
             const featuredIds = new Set(featured.map(f => f.category_id));
-            const { data: rawData, error: rawError, count: rawCount } = await query;
+            const offset = (filters.page - 1) * filters.perPage;
+            // Fetch a larger window to allow client-side reordering across featured/non-featured
+            const fetchSize = Math.max(filters.perPage * 3, 200);
+            const { data: rawData, error: rawError, count: rawCount } = await query.range(0, fetchSize - 1);
             if (rawError) throw rawError;
             const products = rawData || [];
-            // Sort: featured categories first, then rest
+            // Sort: featured categories first (by sort_order), then rest
+            const featuredOrder = featured.map(f => f.category_id);
             const boosted = products.sort((a: any, b: any) => {
               const aFeatured = featuredIds.has(a.category_id);
               const bFeatured = featuredIds.has(b.category_id);
               if (aFeatured && !bFeatured) return -1;
               if (!aFeatured && bFeatured) return 1;
-              return 0; // Keep existing order within groups
+              if (aFeatured && bFeatured) {
+                return featuredOrder.indexOf(a.category_id) - featuredOrder.indexOf(b.category_id);
+              }
+              return 0;
             });
-            return { products: boosted as CatalogProduct[], total: rawCount || 0 };
+            // Apply pagination on the sorted result
+            const paged = boosted.slice(offset, offset + filters.perPage);
+            return { products: paged as CatalogProduct[], total: rawCount || 0 };
           }
         } catch {
           // Fall through to normal query if featured categories fail

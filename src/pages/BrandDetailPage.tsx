@@ -12,7 +12,7 @@ import { getVendorPublicName } from "@/lib/vendor-display";
 
 export default function BrandDetailPage() {
   const { slug } = useParams();
-  const { data: products = [] } = useFeaturedProducts(30, { brandSlug: slug });
+  const { data: products = [] } = useFeaturedProducts(200, { brandSlug: slug, categoryName: activeCat || undefined });
   const [view, setView] = useState<"grid" | "list" | "trivago">("grid");
   const [showFilters, setShowFilters] = useState(false);
   const [showAllSellers, setShowAllSellers] = useState(false);

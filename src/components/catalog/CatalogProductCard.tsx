@@ -165,7 +165,7 @@ export function CatalogProductCard({ product, index = 0, view = "grid" }: Props)
               {priceIncl > price && (
                 <p className="text-xs text-muted-foreground">{formatPrice(priceIncl)} € TTC</p>
               )}
-              <p className="text-xs text-muted-foreground">{product.offer_count} offre{product.offer_count > 1 ? "s" : ""}</p>
+              <p className="text-xs text-muted-foreground">{product.offer_count > 1 ? t("catalog.offersPlural", { count: product.offer_count }) : t("catalog.offers", { count: product.offer_count })}</p>
               <div className="flex items-center gap-1 mt-2">
                 {product.offer_count <= 1 && (
                   <div className="flex items-center border border-border rounded-md">

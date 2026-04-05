@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Search, TrendingDown, TrendingUp, Download, ArrowUpDown, Upload, Plus, Loader2, Trash2, ExternalLink } from "lucide-react";
+import { Search, TrendingDown, TrendingUp, Download, ArrowUpDown, Upload, Plus, Loader2, Trash2, ExternalLink, RefreshCcw } from "lucide-react";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 
@@ -54,6 +54,8 @@ export default function AdminVeillePrix() {
   const [importReport, setImportReport] = useState<{ total: number; matched: number; inserted: number } | null>(null);
   const [importProgress, setImportProgress] = useState<{ phase: string; current: number; total: number } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [rematching, setRematching] = useState(false);
+  const [rematchResult, setRematchResult] = useState<{ matched: number; total: number } | null>(null);
 
   // Fetch sources
   const { data: sources = [] } = useQuery({
@@ -66,7 +68,102 @@ export default function AdminVeillePrix() {
     staleTime: 60_000,
   });
 
-  // Fetch ALL matched market prices with pagination to break the 1000 limit
+  // Fetch unmatched count
+  const { data: unmatchedCount = 0 } = useQuery({
+    queryKey: ["market-prices-unmatched-count"],
+    queryFn: async () => {
+      const { count } = await supabase.from("market_prices").select("id", { count: "exact", head: true }).eq("is_matched", false);
+      return count || 0;
+    },
+    staleTime: 60_000,
+  });
+
+  // Re-matcher: attempt to match unmatched lines against current products
+  const handleRematch = useCallback(async () => {
+    setRematching(true);
+    setRematchResult(null);
+    try {
+      // Fetch all products for matching
+      const allProducts: any[] = [];
+      let from = 0;
+      while (true) {
+        const { data } = await supabase.from("products").select("id, gtin, cnk_code").range(from, from + 999);
+        if (!data || data.length === 0) break;
+        allProducts.push(...data);
+        if (data.length < 1000) break;
+        from += 1000;
+      }
+
+      // Fetch market codes
+      const allMarketCodes: any[] = [];
+      from = 0;
+      while (true) {
+        const { data } = await supabase.from("product_market_codes").select("product_id, code_value").range(from, from + 999);
+        if (!data || data.length === 0) break;
+        allMarketCodes.push(...data);
+        if (data.length < 1000) break;
+        from += 1000;
+      }
+
+      const gtinMap = new Map<string, string>();
+      const cnkMap = new Map<string, string>();
+      const codeMap = new Map<string, string>();
+      for (const p of allProducts) {
+        if (p.gtin) gtinMap.set(p.gtin.replace(/^0+/, ""), p.id);
+        if (p.cnk_code) cnkMap.set(p.cnk_code.replace(/^0+/, ""), p.id);
+      }
+      for (const mc of allMarketCodes) {
+        if (mc.code_value) codeMap.set(mc.code_value.replace(/^0+/, ""), mc.product_id);
+      }
+
+      // Fetch unmatched lines in batches
+      const unmatched: any[] = [];
+      from = 0;
+      while (true) {
+        const { data } = await supabase.from("market_prices").select("id, ean, cnk").eq("is_matched", false).range(from, from + 999);
+        if (!data || data.length === 0) break;
+        unmatched.push(...data);
+        if (data.length < 1000) break;
+        from += 1000;
+      }
+
+      let matchedCount = 0;
+      const updates: { id: string; product_id: string }[] = [];
+
+      for (const row of unmatched) {
+        const ean = row.ean ? String(row.ean).trim().replace(/^0+/, "") : "";
+        const cnk = row.cnk ? String(row.cnk).trim().replace(/^0+/, "") : "";
+        let pid: string | null = null;
+        if (ean && gtinMap.has(ean)) pid = gtinMap.get(ean)!;
+        if (!pid && cnk && cnkMap.has(cnk)) pid = cnkMap.get(cnk)!;
+        if (!pid && cnk && codeMap.has(cnk)) pid = codeMap.get(cnk)!;
+        if (!pid && ean && codeMap.has(ean)) pid = codeMap.get(ean)!;
+        if (pid) { updates.push({ id: row.id, product_id: pid }); matchedCount++; }
+      }
+
+      // Batch update
+      for (let i = 0; i < updates.length; i += 100) {
+        const batch = updates.slice(i, i + 100);
+        for (const u of batch) {
+          await supabase.from("market_prices").update({ product_id: u.product_id, is_matched: true }).eq("id", u.id);
+        }
+      }
+
+      setRematchResult({ matched: matchedCount, total: unmatched.length });
+      if (matchedCount > 0) {
+        toast.success(`${matchedCount} nouvelles lignes matchées sur ${unmatched.length}`);
+        qc.invalidateQueries({ queryKey: ["veille-prix-data"] });
+        qc.invalidateQueries({ queryKey: ["market-prices-unmatched-count"] });
+      } else {
+        toast.info(`Aucune nouvelle correspondance trouvée (${unmatched.length} lignes analysées)`);
+      }
+    } catch (e: any) {
+      toast.error("Erreur re-matching: " + (e.message || e));
+    } finally {
+      setRematching(false);
+    }
+  }, [qc]);
+
   const { data: rawData = [], isLoading } = useQuery({
     queryKey: ["veille-prix-data"],
     queryFn: async () => {
@@ -265,8 +362,10 @@ export default function AdminVeillePrix() {
       const colName = findCol(["nom", "name", "désignation", "designation", "libellé", "libelle", "produit", "product"]);
       const colPrixGros = findCol(["grossiste", "prix achat", "prix_achat", "wholesale", "prix grossiste", "p.achat", "prix de gros"]);
       const colPrixPharma = findCol(["pharmacien", "prix vente", "prix_vente", "pharma", "prix pharmacien", "pvp", "p.vente"]);
-      const colPrixPublic = findCol(["public", "prix public", "prix_public", "pvp ttc", "retail"]);
+      const colPrixPublic = findCol(["public", "prix public", "prix_public", "pvp ttc", "retail", "prix", "price", "prix ttc"]);
       const colTva = findCol(["tva", "vat", "tax"]);
+      const colSupplier = findCol(["fournisseur", "supplier", "vendeur", "vendor", "supplier_name"]);
+      const colUrl = findCol(["url", "product_url", "lien", "link"]);
 
       // Fetch all products for matching
       setImportProgress({ phase: "Chargement des produits…", current: 0, total: 0 });
@@ -332,6 +431,8 @@ export default function AdminVeillePrix() {
           prix_pharmacien: colPrixPharma ? parseNum(row[colPrixPharma]) : null,
           prix_public: colPrixPublic ? parseNum(row[colPrixPublic]) : null,
           tva_rate: colTva ? parseNum(row[colTva]) : null,
+          supplier_name: colSupplier ? String(row[colSupplier] || "").trim() || null : null,
+          product_url: colUrl ? String(row[colUrl] || "").trim() || null : null,
           product_id: productId,
           is_matched: !!productId,
         });
@@ -421,6 +522,15 @@ export default function AdminVeillePrix() {
         <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setShowSourceDialog(true)}>
           <Plus size={14} /> Nouvelle source
         </Button>
+        <Button size="sm" variant="outline" className="gap-1.5" onClick={handleRematch} disabled={rematching || unmatchedCount === 0}>
+          {rematching ? <Loader2 size={14} className="animate-spin" /> : <RefreshCcw size={14} />}
+          Re-matcher ({unmatchedCount.toLocaleString("fr-FR")})
+        </Button>
+        {rematchResult && (
+          <span className="text-xs text-muted-foreground">
+            {rematchResult.matched}/{rematchResult.total} matchées
+          </span>
+        )}
         <div className="flex-1" />
         <Button variant="outline" size="sm" className="gap-1.5" onClick={handleExport}>
           <Download size={14} /> Export XLSX
@@ -429,6 +539,10 @@ export default function AdminVeillePrix() {
 
       {/* KPI */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div className="bg-background border border-border rounded-xl p-4">
+          <p className="text-xs text-muted-foreground">Non matchés</p>
+          <p className="text-2xl font-bold text-orange-600">{unmatchedCount.toLocaleString("fr-FR")}</p>
+        </div>
         <div className="bg-background border border-border rounded-xl p-4">
           <p className="text-xs text-muted-foreground">Produits matchés</p>
           <p className="text-2xl font-bold text-foreground">{rows.length.toLocaleString("fr-FR")}</p>
@@ -618,7 +732,10 @@ export default function AdminVeillePrix() {
             </div>
             <div className="bg-muted/50 rounded-lg p-3 text-xs text-muted-foreground space-y-1">
               <p className="font-medium text-foreground">Colonnes reconnues :</p>
-              <p>EAN/GTIN, CNK, Nom/Désignation, Prix grossiste, Prix pharmacien, Prix public, TVA</p>
+              <p><strong>Identifiants :</strong> EAN/GTIN, CNK</p>
+              <p><strong>Prix :</strong> Prix grossiste, Prix pharmacien, Prix public/Prix, TVA</p>
+              <p><strong>Infos :</strong> Nom/Désignation, Fournisseur/Vendor, URL produit</p>
+              <p className="mt-1">💡 <strong>E-commerce :</strong> Un simple fichier avec les colonnes <code className="bg-muted px-1 rounded">EAN</code>, <code className="bg-muted px-1 rounded">Nom</code>, <code className="bg-muted px-1 rounded">Prix</code> suffit.</p>
               <p>Le matching se fait par EAN → CNK vers vos produits existants.</p>
             </div>
             {importing && importProgress && (
@@ -691,10 +808,11 @@ export default function AdminVeillePrix() {
               <Select value={newSourceType} onValueChange={setNewSourceType}>
                 <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="wholesaler">Grossiste</SelectItem>
-                  <SelectItem value="pharmacy">Pharmacie</SelectItem>
-                  <SelectItem value="retailer">Détaillant</SelectItem>
-                  <SelectItem value="online">E-commerce</SelectItem>
+                  <SelectItem value="wholesaler">Grossiste (ex: Febelco, CERP)</SelectItem>
+                  <SelectItem value="pharmacy">Pharmacie (ex: Pharmacie en ligne)</SelectItem>
+                  <SelectItem value="online">E-commerce (ex: Newpharma, Farmaline)</SelectItem>
+                  <SelectItem value="retailer">Détaillant / Parapharmacie</SelectItem>
+                  <SelectItem value="public">Source publique (ex: INAMI, CBIP)</SelectItem>
                 </SelectContent>
               </Select>
             </div>

@@ -607,11 +607,13 @@ const AdminProduits = () => {
                   </div>
                 </div>
 
-                {((importResult.brandsCreated || 0) > 0 || (importResult.manufacturersCreated || 0) > 0) && (
+                {((importResult.brandsCreated || 0) > 0 || (importResult.manufacturersCreated || 0) > 0 || (importResult.categoriesCreated || 0) > 0) && (
                   <div className="bg-primary/5 rounded-lg p-3 space-y-1">
                     <p className="text-xs font-medium text-primary">Entités auto-créées</p>
                     {(importResult.brandsCreated || 0) > 0 && <p className="text-xs">🏷️ <strong>{importResult.brandsCreated}</strong> marque(s)</p>}
+                    {(importResult.categoriesCreated || 0) > 0 && <p className="text-xs">📂 <strong>{importResult.categoriesCreated}</strong> catégorie(s)</p>}
                     {(importResult.manufacturersCreated || 0) > 0 && <p className="text-xs">🏭 <strong>{importResult.manufacturersCreated}</strong> fabricant(s)</p>}
+                    <p className="text-[10px] text-muted-foreground mt-1">Vérifiez ces entités dans Admin → Marques / Catégories / Fabricants</p>
                   </div>
                 )}
 

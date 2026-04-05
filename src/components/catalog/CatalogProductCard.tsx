@@ -160,7 +160,7 @@ export function CatalogProductCard({ product, index = 0, view = "grid" }: Props)
           <StockBadge product={product} />
         </div>
         <div className="text-right shrink-0 space-y-1">
-          {isLoggedIn ? (
+          {canSeePrices ? (
             <>
               {price > 0 ? (
                 <>
@@ -184,6 +184,11 @@ export function CatalogProductCard({ product, index = 0, view = "grid" }: Props)
                 <p className="text-xs text-muted-foreground italic">{t("catalog.noOfferYet", "Pas encore d'offre")}</p>
               )}
             </>
+          ) : isLoggedIn ? (
+            <div className="text-center">
+              <p className="text-xs text-amber-600 font-medium">{t("catalog.pendingValidation", "Compte en attente de validation")}</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">{t("catalog.pendingValidationDesc", "Les prix seront visibles après validation de votre profil")}</p>
+            </div>
           ) : (
             <Link to="/onboarding" className="inline-flex items-center gap-1.5 bg-primary text-primary-foreground text-xs font-semibold px-3 py-2 rounded-md hover:opacity-90 transition-opacity">
               <Lock size={12} /> {t("catalog.seePrices")}

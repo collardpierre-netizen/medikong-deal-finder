@@ -341,9 +341,7 @@ export default function BrandDetailPage() {
           {/* Content */}
           <div className="flex-1 min-w-0 overflow-hidden">
             {(() => {
-              const filtered = activeCat
-                ? products.filter(p => p.category === activeCat || p.categoryL1 === activeCat || p.categoryL2 === activeCat || p.categoryL3 === activeCat)
-                : products;
+              const filtered = products;
               return (
                 <>
                   <div className="flex items-center justify-between mb-5 gap-3">

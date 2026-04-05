@@ -211,19 +211,28 @@ export async function importProducts(file: File, onProgress?: (p: ImportProgress
     if (i % 10 === 0) notify(); // throttle progress updates
     if (!r.name) { errors.push({ line: lineNum, name: "—", code: "MISSING_NAME", message: "Nom du produit manquant" }); skipped++; continue; }
     const slug = r.slug || slugify(r.name);
-    const isUpdate = existingSlugs.has(slug);
     const rawImageUrls = r.image_urls ?? r.image_url ?? r["Image URL"] ?? r["Image URL "] ?? r["image url"] ?? "";
     const imageUrls = String(rawImageUrls)
       .split(/[;\n,]+/)
       .map((u: string) => u.trim())
       .filter((u: string) => /^https?:\/\//i.test(u));
     const gtinVal = r.gtin ? String(r.gtin).trim() : null;
-    // Skip gtin if it already belongs to a different product (avoid unique constraint violation)
-    const gtinToUse = gtinVal && existingGtins.has(gtinVal) && !existingSlugs.has(slug) ? null : gtinVal;
+
+    // Check if product already exists by GTIN first, then by slug
+    let existingId: string | null = null;
+    let isUpdate = false;
+    if (gtinVal && existingGtins.has(gtinVal)) {
+      const match = allProducts.find((p: any) => String(p.gtin).trim() === gtinVal);
+      if (match) { existingId = match.id; isUpdate = true; }
+    }
+    if (!existingId && existingSlugs.has(slug)) {
+      isUpdate = true;
+    }
+
     const payload: any = {
       name: r.name,
       slug,
-      gtin: gtinToUse,
+      gtin: gtinVal,
       cnk_code: r.cnk_code ? String(r.cnk_code) : null,
       sku: r.sku ? String(r.sku) : null,
       brand_name: r.brand_name || null,
@@ -235,8 +244,21 @@ export async function importProducts(file: File, onProgress?: (p: ImportProgress
       source: ["qogita", "medikong", "vendor"].includes(String(r.source || "").toLowerCase()) ? String(r.source).toLowerCase() : "medikong",
       is_active: r.is_active === false || r.is_active === "false" ? false : true,
     };
-    if (imageUrls.length > 0) payload.image_urls = imageUrls;
-    const { error } = await supabase.from("products").upsert(payload, { onConflict: "slug" });
+    // Always set both image_url and image_urls when images are provided
+    if (imageUrls.length > 0) {
+      payload.image_urls = imageUrls;
+      payload.image_url = imageUrls[0];
+    }
+
+    let error: any = null;
+    if (existingId) {
+      // Update by ID to ensure we hit the right product (GTIN match)
+      const { error: updateErr } = await supabase.from("products").update(payload).eq("id", existingId);
+      error = updateErr;
+    } else {
+      const { error: upsertErr } = await supabase.from("products").upsert(payload, { onConflict: "slug" });
+      error = upsertErr;
+    }
     if (error) {
       const code = error.code === "23505" ? "DUPLICATE" : error.code || "DB_ERROR";
       errors.push({ line: lineNum, name: r.name, code, message: error.message });

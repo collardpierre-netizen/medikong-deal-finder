@@ -27,7 +27,7 @@ export default function AdminUsers() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [showCreate, setShowCreate] = useState(false);
-  const [typeFilter, setTypeFilter] = useState<"all" | "vendor" | "buyer">("all");
+  const [typeFilter, setTypeFilter] = useState<"all" | "vendor" | "buyer" | "pending">("all");
   const [confirmModal, setConfirmModal] = useState<UserRow | null>(null);
   const [confirmed, setConfirmed] = useState(false);
   const [openInNewTab, setOpenInNewTab] = useState(false);

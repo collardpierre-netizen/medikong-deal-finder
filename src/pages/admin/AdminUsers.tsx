@@ -164,15 +164,22 @@ export default function AdminUsers() {
   }
 
   async function handleDelete(user: UserRow) {
-    if (!window.confirm(`Supprimer définitivement ${user.company} (${user.email}) ?`)) return;
-    if (user.type === "vendor") {
-      const { error } = await supabase.from("vendors").delete().eq("auth_user_id", user.userId);
+    setDeleteModal(user);
+    setDeleteReason("");
+  }
+
+  async function confirmDelete() {
+    if (!deleteModal) return;
+    if (deleteModal.type === "vendor") {
+      const { error } = await supabase.from("vendors").delete().eq("auth_user_id", deleteModal.userId);
       if (error) { toast.error("Erreur: " + error.message); return; }
     } else {
-      const { error } = await supabase.from("customers").delete().eq("auth_user_id", user.userId);
+      const { error } = await supabase.from("customers").delete().eq("auth_user_id", deleteModal.userId);
       if (error) { toast.error("Erreur: " + error.message); return; }
     }
+    // TODO: send rejection email with deleteReason
     toast.success("Utilisateur supprimé");
+    setDeleteModal(null);
     closeDetail();
     loadUsers();
   }

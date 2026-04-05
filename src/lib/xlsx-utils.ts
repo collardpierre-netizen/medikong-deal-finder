@@ -195,11 +195,11 @@ export async function importProducts(file: File, onProgress?: (p: ImportProgress
   }
 
   const existingSlugs = new Set<string>();
-  const existingGtins = new Set<string>();
-  const allProducts = await fetchAllRows("products", "slug,gtin", "slug");
+  const existingGtins = new Map<string, string>(); // gtin -> id
+  const allProducts = await fetchAllRows("products", "slug", "id,slug,gtin");
   allProducts.forEach((p: any) => {
     existingSlugs.add(p.slug);
-    if (p.gtin) existingGtins.add(String(p.gtin).trim());
+    if (p.gtin) existingGtins.set(String(p.gtin).trim(), p.id);
   });
 
   // --- Import products ---

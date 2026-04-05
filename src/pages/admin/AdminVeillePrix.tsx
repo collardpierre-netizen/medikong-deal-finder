@@ -30,6 +30,7 @@ interface MarketSource {
 
 export default function AdminVeillePrix() {
   const qc = useQueryClient();
+  const { addJob, updateJob, finishJob } = useImportJobs();
   const [search, setSearch] = useState("");
   const [brandFilter, setBrandFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");

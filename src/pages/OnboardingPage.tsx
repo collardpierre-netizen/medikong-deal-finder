@@ -876,6 +876,23 @@ export default function OnboardingPage() {
             is_verified: false,
           });
           if (customerError) console.warn("Customer insert warning:", customerError.message);
+
+          // Notify admins of new buyer registration
+          supabase.functions.invoke("send-transactional-email", {
+            body: {
+              templateName: "buyer-registration",
+              recipientEmail: "admin@medikong.pro",
+              idempotencyKey: `buyer-reg-${userId}`,
+              templateData: {
+                companyName: companyName || `${firstName} ${lastName}`,
+                email,
+                phone: phone || undefined,
+                sector: sector || undefined,
+                country: selectedCountry || "Belgique",
+                vatNumber: vatNumber || undefined,
+              },
+            },
+          }).catch(() => {});
         }
       }
 

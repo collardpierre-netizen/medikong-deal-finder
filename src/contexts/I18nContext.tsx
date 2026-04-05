@@ -93,6 +93,7 @@ const translations: Record<Lang, Record<string, string>> = {
     confirm: "Confirmer",
     filter: "Filtrer",
     messages: "Messages",
+    translations: "Traductions",
   },
   nl: {
     dashboard: "Dashboard",

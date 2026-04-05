@@ -68,7 +68,102 @@ export default function AdminVeillePrix() {
     staleTime: 60_000,
   });
 
-  // Fetch ALL matched market prices with pagination to break the 1000 limit
+  // Fetch unmatched count
+  const { data: unmatchedCount = 0 } = useQuery({
+    queryKey: ["market-prices-unmatched-count"],
+    queryFn: async () => {
+      const { count } = await supabase.from("market_prices").select("id", { count: "exact", head: true }).eq("is_matched", false);
+      return count || 0;
+    },
+    staleTime: 60_000,
+  });
+
+  // Re-matcher: attempt to match unmatched lines against current products
+  const handleRematch = useCallback(async () => {
+    setRematching(true);
+    setRematchResult(null);
+    try {
+      // Fetch all products for matching
+      const allProducts: any[] = [];
+      let from = 0;
+      while (true) {
+        const { data } = await supabase.from("products").select("id, gtin, cnk_code").range(from, from + 999);
+        if (!data || data.length === 0) break;
+        allProducts.push(...data);
+        if (data.length < 1000) break;
+        from += 1000;
+      }
+
+      // Fetch market codes
+      const allMarketCodes: any[] = [];
+      from = 0;
+      while (true) {
+        const { data } = await supabase.from("product_market_codes").select("product_id, code_value").range(from, from + 999);
+        if (!data || data.length === 0) break;
+        allMarketCodes.push(...data);
+        if (data.length < 1000) break;
+        from += 1000;
+      }
+
+      const gtinMap = new Map<string, string>();
+      const cnkMap = new Map<string, string>();
+      const codeMap = new Map<string, string>();
+      for (const p of allProducts) {
+        if (p.gtin) gtinMap.set(p.gtin.replace(/^0+/, ""), p.id);
+        if (p.cnk_code) cnkMap.set(p.cnk_code.replace(/^0+/, ""), p.id);
+      }
+      for (const mc of allMarketCodes) {
+        if (mc.code_value) codeMap.set(mc.code_value.replace(/^0+/, ""), mc.product_id);
+      }
+
+      // Fetch unmatched lines in batches
+      const unmatched: any[] = [];
+      from = 0;
+      while (true) {
+        const { data } = await supabase.from("market_prices").select("id, ean, cnk").eq("is_matched", false).range(from, from + 999);
+        if (!data || data.length === 0) break;
+        unmatched.push(...data);
+        if (data.length < 1000) break;
+        from += 1000;
+      }
+
+      let matchedCount = 0;
+      const updates: { id: string; product_id: string }[] = [];
+
+      for (const row of unmatched) {
+        const ean = row.ean ? String(row.ean).trim().replace(/^0+/, "") : "";
+        const cnk = row.cnk ? String(row.cnk).trim().replace(/^0+/, "") : "";
+        let pid: string | null = null;
+        if (ean && gtinMap.has(ean)) pid = gtinMap.get(ean)!;
+        if (!pid && cnk && cnkMap.has(cnk)) pid = cnkMap.get(cnk)!;
+        if (!pid && cnk && codeMap.has(cnk)) pid = codeMap.get(cnk)!;
+        if (!pid && ean && codeMap.has(ean)) pid = codeMap.get(ean)!;
+        if (pid) { updates.push({ id: row.id, product_id: pid }); matchedCount++; }
+      }
+
+      // Batch update
+      for (let i = 0; i < updates.length; i += 100) {
+        const batch = updates.slice(i, i + 100);
+        for (const u of batch) {
+          await supabase.from("market_prices").update({ product_id: u.product_id, is_matched: true }).eq("id", u.id);
+        }
+      }
+
+      setRematchResult({ matched: matchedCount, total: unmatched.length });
+      if (matchedCount > 0) {
+        toast.success(`${matchedCount} nouvelles lignes matchées sur ${unmatched.length}`);
+        qc.invalidateQueries({ queryKey: ["veille-prix-data"] });
+        qc.invalidateQueries({ queryKey: ["market-prices-unmatched-count"] });
+      } else {
+        toast.info(`Aucune nouvelle correspondance trouvée (${unmatched.length} lignes analysées)`);
+      }
+    } catch (e: any) {
+      toast.error("Erreur re-matching: " + (e.message || e));
+    } finally {
+      setRematching(false);
+    }
+  }, [qc]);
+
   const { data: rawData = [], isLoading } = useQuery({
     queryKey: ["veille-prix-data"],
     queryFn: async () => {

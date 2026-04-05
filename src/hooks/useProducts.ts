@@ -87,10 +87,10 @@ export function useProducts() {
 /**
  * Lightweight hook: fetches only `limit` products with offers, no full table scan.
  */
-export function useFeaturedProducts(limit = 10, options?: { promotion?: boolean; brandSlug?: string }) {
+export function useFeaturedProducts(limit = 10, options?: { promotion?: boolean; brandSlug?: string; categoryName?: string }) {
   const { country } = useCountry();
   return useQuery({
-    queryKey: ["featured-products", limit, country, options?.promotion, options?.brandSlug],
+    queryKey: ["featured-products", limit, country, options?.promotion, options?.brandSlug, options?.categoryName],
     queryFn: async () => {
       let query = supabase
         .from("products")
@@ -110,6 +110,9 @@ export function useFeaturedProducts(limit = 10, options?: { promotion?: boolean;
         } else {
           return [];
         }
+      }
+      if (options?.categoryName) {
+        query = query.eq("category_name", options.categoryName);
       }
 
       const { data, error } = await query

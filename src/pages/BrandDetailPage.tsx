@@ -12,12 +12,12 @@ import { getVendorPublicName } from "@/lib/vendor-display";
 
 export default function BrandDetailPage() {
   const { slug } = useParams();
-  const { data: products = [] } = useFeaturedProducts(30, { brandSlug: slug });
+  const [activeCat, setActiveCat] = useState<string | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
+  const { data: products = [] } = useFeaturedProducts(200, { brandSlug: slug, categoryName: activeCat || undefined });
   const [view, setView] = useState<"grid" | "list" | "trivago">("grid");
   const [showFilters, setShowFilters] = useState(false);
   const [showAllSellers, setShowAllSellers] = useState(false);
-  const [activeCat, setActiveCat] = useState<string | null>(null);
-  const [importOpen, setImportOpen] = useState(false);
   const { data: brandData } = useQuery({
     queryKey: ["brand-detail", slug],
     enabled: !!slug,
@@ -341,9 +341,7 @@ export default function BrandDetailPage() {
           {/* Content */}
           <div className="flex-1 min-w-0 overflow-hidden">
             {(() => {
-              const filtered = activeCat
-                ? products.filter(p => p.category === activeCat || p.categoryL1 === activeCat || p.categoryL2 === activeCat || p.categoryL3 === activeCat)
-                : products;
+              const filtered = products;
               return (
                 <>
                   <div className="flex items-center justify-between mb-5 gap-3">

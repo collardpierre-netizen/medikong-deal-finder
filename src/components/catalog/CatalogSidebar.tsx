@@ -313,9 +313,9 @@ export function CatalogSidebar({ filters, setFilter, clearAll, resultCategoryIds
       <div>
         <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Disponibilité</h4>
         <div className="space-y-1.5">
-          {[
-            { label: "Tous", value: undefined },
-            { label: "En stock uniquement", value: true },
+           {[
+             { label: t("common.viewAll"), value: undefined },
+             { label: t("catalog.inStockOnly"), value: true },
           ].map(opt => (
             <label key={String(opt.value)} className="flex items-center gap-2 text-sm cursor-pointer">
               <input

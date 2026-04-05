@@ -5,7 +5,7 @@ import { useState } from "react";
 import { Package } from "lucide-react";
 import { motion } from "framer-motion";
 
-import { MEDIKONG_PLACEHOLDER, isValidProductImage, getProductImageSrc } from "@/lib/image-utils";
+import { MEDIKONG_PLACEHOLDER, isValidProductImage, getProductImageSrc, isQogitaPlaceholder } from "@/lib/image-utils";
 
 function getProductImages(product: Product): string[] {
   if (product.imageUrls && product.imageUrls.length > 0) {

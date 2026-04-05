@@ -21,6 +21,7 @@ export interface CatalogProduct {
   id: string;
   slug: string;
   name: string;
+  name_fr: string | null;
   brand_name: string | null;
   brand_id: string | null;
   category_id: string | null;

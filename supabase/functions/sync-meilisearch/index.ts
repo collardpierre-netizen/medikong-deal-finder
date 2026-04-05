@@ -70,7 +70,7 @@ async function setupIndexes() {
 
 // Bulk sync a table to an index
 async function bulkSync(supabase: ReturnType<typeof createClient>, table: string, indexUid: string, transform?: (row: any) => any) {
-  const BATCH = 500;
+  const BATCH = 1000;
   let offset = 0;
   let total = 0;
 
@@ -133,6 +133,80 @@ serve(async (req) => {
       });
     }
 
+    if (action === "sync-products-batch") {
+      const offset = body.offset || 0;
+      const batchSize = body.batch_size || 2000;
+      
+      const { data, error } = await supabase
+        .from("products")
+        .select("id, name, slug, brand_name, gtin, cnk_code, short_description, image_url, image_urls, best_price_excl_vat, best_price_incl_vat, offer_count, is_in_stock, is_active, category_name")
+        .range(offset, offset + batchSize - 1);
+      
+      if (error) throw error;
+      if (!data || data.length === 0) {
+        return new Response(JSON.stringify({ success: true, indexed: 0, done: true }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const docs = data.map((p: any) => ({
+        id: p.id,
+        name: p.name,
+        slug: p.slug,
+        brand_name: p.brand_name || "",
+        gtin: p.gtin || "",
+        cnk_code: p.cnk_code || "",
+        short_description: p.short_description || "",
+        image_url: p.image_urls?.[0] || p.image_url || "",
+        best_price_excl_vat: p.best_price_excl_vat || 0,
+        best_price_incl_vat: p.best_price_incl_vat || 0,
+        offer_count: p.offer_count || 0,
+        is_in_stock: p.is_in_stock,
+        is_active: p.is_active,
+        category_name: p.category_name || "",
+      }));
+
+      await meiliRequest("/indexes/products/documents", "POST", docs);
+
+      return new Response(JSON.stringify({ 
+        success: true, 
+        indexed: docs.length, 
+        next_offset: offset + docs.length,
+        done: docs.length < batchSize,
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (action === "sync-brands-categories") {
+      const brandCount = await bulkSync(supabase, "brands", "brands", (b) => ({
+        id: b.id,
+        name: b.name,
+        slug: b.slug,
+        logo_url: b.logo_url || "",
+        description: b.description || "",
+        product_count: b.product_count || 0,
+        is_active: b.is_active,
+      }));
+
+      const catCount = await bulkSync(supabase, "categories", "categories", (c) => ({
+        id: c.id,
+        name: c.name,
+        slug: c.slug,
+        description: c.description || "",
+        icon: c.icon || "",
+        image_url: c.image_url || "",
+        is_active: c.is_active,
+      }));
+
+      return new Response(JSON.stringify({
+        success: true,
+        synced: { brands: brandCount, categories: catCount },
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     if (action === "full-sync") {
       await setupIndexes();
 
@@ -144,7 +218,7 @@ serve(async (req) => {
         gtin: p.gtin || "",
         cnk_code: p.cnk_code || "",
         short_description: p.short_description || "",
-        image_url: p.image_urls?.[0] || "",
+        image_url: p.image_urls?.[0] || p.image_url || "",
         best_price_excl_vat: p.best_price_excl_vat || 0,
         best_price_incl_vat: p.best_price_incl_vat || 0,
         offer_count: p.offer_count || 0,

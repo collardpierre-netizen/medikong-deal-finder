@@ -428,6 +428,55 @@ function VendorVisibilityTab({ vendorId, vendorName, showRealName, rules, onAddR
 function VendorValidationTab({ vendor, onUpdate }: { vendor: any; onUpdate: () => void }) {
   const [notes, setNotes] = useState((vendor as any).validation_notes || "");
   const [acting, setActing] = useState(false);
+  const [reviewingId, setReviewingId] = useState<string | null>(null);
+  const [rejectNote, setRejectNote] = useState("");
+  const queryClient = useQueryClient();
+
+  // Fetch KYC criteria for this vendor's business type
+  const businessType = (vendor as any).business_type || "grossiste";
+  const { data: criteria = [] } = useQuery({
+    queryKey: ["kyc-criteria", businessType],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("vendor_kyc_criteria")
+        .select("*")
+        .eq("business_type", businessType)
+        .eq("is_active", true)
+        .order("sort_order");
+      return data || [];
+    },
+  });
+
+  // Fetch KYC submissions for this vendor
+  const { data: submissions = [] } = useQuery({
+    queryKey: ["kyc-submissions", vendor.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("vendor_kyc_submissions")
+        .select("*, vendor_kyc_criteria(label, requires_document)")
+        .eq("vendor_id", vendor.id)
+        .order("created_at", { ascending: false });
+      return data || [];
+    },
+  });
+
+  const handleReviewSubmission = async (submissionId: string, status: "approved" | "rejected") => {
+    setReviewingId(submissionId);
+    try {
+      await supabase.from("vendor_kyc_submissions").update({
+        status,
+        admin_notes: status === "rejected" ? rejectNote || null : null,
+        reviewed_at: new Date().toISOString(),
+      } as any).eq("id", submissionId);
+      queryClient.invalidateQueries({ queryKey: ["kyc-submissions", vendor.id] });
+      toast.success(status === "approved" ? "Critère KYC approuvé" : "Critère KYC rejeté");
+      setRejectNote("");
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setReviewingId(null);
+    }
+  };
 
   const validationStatus = (vendor as any).validation_status || "pending_review";
   const statusLabels: Record<string, { label: string; color: string; bg: string }> = {
@@ -609,6 +658,104 @@ function VendorValidationTab({ vendor, onUpdate }: { vendor: any; onUpdate: () =
             >
               <FileText size={14} /> Passer en review
             </button>
+          )}
+        </div>
+      </div>
+
+      {/* KYC Submissions Review Panel */}
+      <div className="p-5 rounded-[10px]" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
+        <h3 className="text-[14px] font-bold mb-1 flex items-center gap-2" style={{ color: "#1D2530" }}>
+          <FileText size={16} style={{ color: "#1B5BDA" }} /> Critères KYC — {businessType.replace(/_/g, " ")}
+        </h3>
+        <p className="text-[12px] mb-4" style={{ color: "#8B95A5" }}>
+          {criteria.length} critère(s) requis • {submissions.filter((s: any) => s.status === "approved").length} approuvé(s) • {submissions.filter((s: any) => s.status === "submitted").length} en attente
+        </p>
+
+        <div className="space-y-2">
+          {criteria.map((cr: any) => {
+            const sub = submissions.find((s: any) => s.criteria_id === cr.id);
+            const statusColor = !sub ? { bg: "#F1F5F9", color: "#8B95A5", label: "Non soumis" }
+              : sub.status === "approved" ? { bg: "#F0FDF4", color: "#059669", label: "Approuvé" }
+              : sub.status === "rejected" ? { bg: "#FEF2F2", color: "#DC2626", label: "Rejeté" }
+              : sub.status === "submitted" ? { bg: "#FFFBEB", color: "#D97706", label: "À valider" }
+              : { bg: "#F1F5F9", color: "#8B95A5", label: sub.status };
+
+            return (
+              <div key={cr.id} className="p-3 rounded-lg" style={{ backgroundColor: "#F8FAFC", border: "1px solid #E2E8F0" }}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 flex-1">
+                    {sub?.status === "approved" ? <CheckCircle2 size={16} style={{ color: "#059669" }} /> :
+                     sub?.status === "rejected" ? <XCircle size={16} style={{ color: "#DC2626" }} /> :
+                     sub?.status === "submitted" ? <Clock size={16} style={{ color: "#D97706" }} /> :
+                     <div className="w-4 h-4 rounded-full" style={{ border: "2px solid #D4D9E1" }} />}
+                    <div>
+                      <span className="text-[13px] font-medium" style={{ color: "#1D2530" }}>{cr.label}</span>
+                      {cr.description && <p className="text-[11px]" style={{ color: "#8B95A5" }}>{cr.description}</p>}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {cr.requires_document && (
+                      <span className="text-[10px] px-2 py-0.5 rounded" style={{ backgroundColor: "#EFF6FF", color: "#1B5BDA" }}>Document</span>
+                    )}
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded" style={{ backgroundColor: statusColor.bg, color: statusColor.color }}>
+                      {statusColor.label}
+                    </span>
+                  </div>
+                </div>
+
+                {sub?.document_url && (
+                  <div className="mt-2 ml-6">
+                    <a href={sub.document_url} target="_blank" rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-1 rounded"
+                      style={{ backgroundColor: "#EFF6FF", color: "#1B5BDA" }}>
+                      <Eye size={12} /> Voir le document
+                    </a>
+                  </div>
+                )}
+
+                {sub?.notes && (
+                  <p className="mt-1 ml-6 text-[11px]" style={{ color: "#616B7C" }}>Note vendeur : {sub.notes}</p>
+                )}
+
+                {sub?.status === "submitted" && (
+                  <div className="mt-2 ml-6 flex items-center gap-2">
+                    <button
+                      onClick={() => handleReviewSubmission(sub.id, "approved")}
+                      disabled={reviewingId === sub.id}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded text-[11px] font-bold text-white"
+                      style={{ backgroundColor: "#059669" }}>
+                      {reviewingId === sub.id ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle2 size={12} />}
+                      Approuver
+                    </button>
+                    <button
+                      onClick={() => handleReviewSubmission(sub.id, "rejected")}
+                      disabled={reviewingId === sub.id}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded text-[11px] font-bold text-white"
+                      style={{ backgroundColor: "#DC2626" }}>
+                      <XCircle size={12} /> Rejeter
+                    </button>
+                    <input
+                      value={rejectNote}
+                      onChange={e => setRejectNote(e.target.value)}
+                      placeholder="Motif (optionnel)"
+                      className="flex-1 px-2 py-1 text-[11px] rounded border"
+                      style={{ borderColor: "#E2E8F0" }}
+                    />
+                  </div>
+                )}
+
+                {sub?.status === "rejected" && sub?.admin_notes && (
+                  <p className="mt-1 ml-6 text-[11px] font-medium" style={{ color: "#DC2626" }}>Motif : {sub.admin_notes}</p>
+                )}
+              </div>
+            );
+          })}
+
+          {criteria.length === 0 && (
+            <p className="text-[12px] text-center py-4" style={{ color: "#8B95A5" }}>
+              Aucun critère KYC configuré pour le type "{businessType.replace(/_/g, " ")}".
+              Configurez-les dans Onboarding → Critères éligibilité.
+            </p>
           )}
         </div>
       </div>

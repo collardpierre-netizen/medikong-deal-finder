@@ -763,10 +763,12 @@ export default function AdminVeillePrix() {
             <div className="bg-muted/50 rounded-lg p-3 text-xs text-muted-foreground space-y-1">
               <p className="font-medium text-foreground">Colonnes reconnues :</p>
               <p><strong>Identifiants :</strong> EAN/GTIN, CNK</p>
-              <p><strong>Prix :</strong> Prix grossiste, Prix pharmacien, Prix public/Prix, TVA</p>
-              <p><strong>Infos :</strong> Nom/Désignation, Fournisseur/Vendor, URL produit</p>
-              <p className="mt-1">💡 <strong>E-commerce :</strong> Un simple fichier avec les colonnes <code className="bg-muted px-1 rounded">EAN</code>, <code className="bg-muted px-1 rounded">Nom</code>, <code className="bg-muted px-1 rounded">Prix</code> suffit.</p>
+              <p><strong>Prix :</strong> Prix grossiste, Prix pharmacien/Prix EUR, Prix public/Prix conseillé, TVA</p>
+              <p><strong>Stock :</strong> Stock, Disponibilité, Quantité</p>
+              <p><strong>Infos :</strong> Nom/Désignation, Fournisseur/Vendor, URL produit, Remise %</p>
+              <p className="mt-1">💡 <strong>E-commerce :</strong> Un fichier avec <code className="bg-muted px-1 rounded">EAN</code>, <code className="bg-muted px-1 rounded">Nom</code>, <code className="bg-muted px-1 rounded">Prix EUR</code>, <code className="bg-muted px-1 rounded">Stock</code> suffit.</p>
               <p>Le matching se fait par EAN → CNK vers vos produits existants.</p>
+              <p>📅 La date d'import est automatiquement enregistrée pour chaque relevé.</p>
             </div>
             {importing && importProgress && (
               <div className="space-y-2">

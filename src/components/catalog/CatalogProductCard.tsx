@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { getProductImageSrc, MEDIKONG_PLACEHOLDER } from "@/lib/image-utils";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Plus, Minus, Package, Loader2, Lock } from "lucide-react";
 import { motion } from "framer-motion";
 import { formatPrice } from "@/data/mock";
@@ -57,6 +57,8 @@ export function CatalogProductCard({ product, index = 0, view = "grid" }: Props)
   const { user } = useAuth();
   const { country } = useCountry();
   const navigate = useNavigate();
+  const location = useLocation();
+  const fromState = { from: location.pathname + location.search };
   const price = product.best_price_excl_vat || 0;
   const priceIncl = product.best_price_incl_vat || 0;
   const isLoggedIn = !!user;
@@ -136,11 +138,11 @@ export function CatalogProductCard({ product, index = 0, view = "grid" }: Props)
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: index * 0.02, duration: 0.25 }}
       >
-        <Link to={`/produit/${product.slug}`} className="shrink-0">
+        <Link to={`/produit/${product.slug}`} state={fromState} className="shrink-0">
           <ProductImg product={product} className="w-[100px] h-[100px] aspect-square" />
         </Link>
         <div className="flex-1 min-w-0">
-          <Link to={`/produit/${product.slug}`}>
+          <Link to={`/produit/${product.slug}`} state={fromState}>
             <p className="text-xs text-muted-foreground mb-0.5">{product.brand_name}</p>
             <h3 className="text-sm font-medium text-foreground line-clamp-2 mb-1">{product.name}</h3>
           </Link>
@@ -192,11 +194,11 @@ export function CatalogProductCard({ product, index = 0, view = "grid" }: Props)
             {product.promotion_label || "Promo"}
           </span>
         )}
-        <Link to={`/produit/${product.slug}`}>
+        <Link to={`/produit/${product.slug}`} state={fromState}>
           <ProductImg product={product} className="aspect-square" />
         </Link>
       </div>
-      <Link to={`/produit/${product.slug}`}>
+      <Link to={`/produit/${product.slug}`} state={fromState}>
         <p className="text-xs text-muted-foreground mb-0.5 truncate">{product.brand_name || "—"}</p>
         <h3 className="text-sm font-medium text-foreground leading-snug mb-1.5 line-clamp-2 min-h-[2.5rem]">{product.name}</h3>
       </Link>

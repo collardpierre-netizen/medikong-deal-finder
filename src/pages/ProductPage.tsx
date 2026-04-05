@@ -3,7 +3,7 @@ import { isValidProductImage, getProductImageSrc } from "@/lib/image-utils";
 import { useProduct, useProductOffers, type Offer } from "@/hooks/useProducts";
 import { useCart } from "@/hooks/useCart";
 import { useAuth } from "@/contexts/AuthContext";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, Link, useNavigate, useLocation } from "react-router-dom";
 import {
   Copy, Sliders, ShoppingCart, Shield, Check, Truck, Minus, Plus,
   Heart, Tag, Package, ChevronRight, Home, Star, Info, Award, Globe, BarChart3, Calculator, TrendingDown, Bell, ExternalLink, Lock, ArrowRight, HelpCircle, ChevronDown
@@ -573,6 +573,7 @@ export default function ProductPage() {
 
   const { slug } = useParams();
   const navigate = useNavigate();
+  const routeLocation = useLocation();
   const { user } = useAuth();
   const { country } = useCountry();
   const { isTVAC } = usePriceDisplay();
@@ -836,8 +837,25 @@ export default function ProductPage() {
       </Helmet>
 
       <PageTransition>
-        {/* Breadcrumb */}
-        <nav aria-label="Fil d'Ariane" className="mk-container py-3">
+        {/* Back to results + Breadcrumb */}
+        <div className="mk-container pt-3 pb-1 flex items-center gap-3">
+          {(() => {
+            const from = (routeLocation.state as any)?.from;
+            if (from && (from.startsWith("/catalogue") || from.startsWith("/recherche"))) {
+              return (
+                <button
+                  onClick={() => navigate(from)}
+                  className="inline-flex items-center gap-1 text-xs text-primary hover:underline shrink-0"
+                >
+                  <ChevronRight size={12} className="rotate-180" />
+                  Retour aux résultats
+                </button>
+              );
+            }
+            return null;
+          })()}
+        </div>
+        <nav aria-label="Fil d'Ariane" className="mk-container pb-3">
           <ol className="flex items-center gap-1.5 text-xs flex-wrap text-muted-foreground">
             <li className="inline-flex items-center">
               <Link to="/" className="inline-flex items-center gap-1 hover:text-primary transition-colors"><Home size={13} /> Accueil</Link>

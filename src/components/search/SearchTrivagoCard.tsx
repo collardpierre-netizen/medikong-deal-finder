@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { getProductImageSrc, MEDIKONG_PLACEHOLDER } from "@/lib/image-utils";
 import { Heart, Check, ChevronDown, ChevronUp, Package, Truck, RotateCcw, ArrowRight } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useProductOffers } from "@/hooks/useProducts";
 import type { Product } from "@/hooks/useProducts";
 
@@ -11,6 +11,8 @@ interface Props {
 
 export default function SearchTrivagoCard({ product: p }: Props) {
   const navigate = useNavigate();
+  const location = useLocation();
+  const fromState = { state: { from: location.pathname + location.search } };
   const [showMore, setShowMore] = useState(false);
   const { data: offers = [] } = useProductOffers(p.id);
 
@@ -28,7 +30,7 @@ export default function SearchTrivagoCard({ product: p }: Props) {
       <div className="flex flex-col md:flex-row">
         {/* ZONE 1 — Image */}
         <div
-          onClick={() => navigate(`/produit/${p.slug}`)}
+          onClick={() => navigate(`/produit/${p.slug}`, fromState)}
           className="w-full md:w-[190px] bg-white flex items-center justify-center relative shrink-0 cursor-pointer
                      aspect-square md:aspect-auto min-h-[170px] border-b md:border-b-0 md:border-r border-border"
         >
@@ -48,7 +50,7 @@ export default function SearchTrivagoCard({ product: p }: Props) {
 
         {/* ZONE 2 — Product info */}
         <div
-          onClick={() => navigate(`/produit/${p.slug}`)}
+          onClick={() => navigate(`/produit/${p.slug}`, fromState)}
           className="flex-1 p-4 flex flex-col justify-center cursor-pointer"
         >
           <p className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider">
@@ -104,7 +106,7 @@ export default function SearchTrivagoCard({ product: p }: Props) {
               </div>
             )}
             <button
-              onClick={() => navigate(`/produit/${p.slug}`)}
+              onClick={() => navigate(`/produit/${p.slug}`, fromState)}
               className="w-full mt-3 py-2.5 text-white text-[13px] font-bold rounded-lg
                         transition-all bg-emerald-700 hover:bg-emerald-800 flex items-center justify-center gap-2 shadow-sm"
             >
@@ -135,7 +137,7 @@ export default function SearchTrivagoCard({ product: p }: Props) {
                 )}
                 <span className="text-sm font-bold text-foreground">{offer.unitPriceEur.toFixed(2)} €</span>
                 <button
-                  onClick={() => navigate(`/produit/${p.slug}`)}
+                  onClick={() => navigate(`/produit/${p.slug}`, fromState)}
                   className="px-3.5 py-1 border border-border text-foreground text-[11px] font-semibold
                             rounded-md hover:bg-muted transition-colors"
                 >
@@ -168,7 +170,7 @@ export default function SearchTrivagoCard({ product: p }: Props) {
                         )}
                         <span className="text-sm font-bold text-foreground">{offer.unitPriceEur.toFixed(2)} €</span>
                         <button
-                          onClick={() => navigate(`/produit/${p.slug}`)}
+                          onClick={() => navigate(`/produit/${p.slug}`, fromState)}
                           className="px-3.5 py-1 border border-border text-foreground text-[11px] font-semibold
                                     rounded-md hover:bg-muted transition-colors"
                         >

@@ -186,7 +186,7 @@ export function CatalogProductCard({ product, index = 0, view = "grid" }: Props)
             </>
           ) : isLoggedIn ? (
             <div className="text-center">
-              <p className="text-xs text-amber-600 font-medium">{t("catalog.pendingValidation", "Compte en attente de validation")}</p>
+              <p className="text-xs text-mk-amber font-medium">{t("catalog.pendingValidation", "Compte en attente de validation")}</p>
               <p className="text-[10px] text-muted-foreground mt-0.5">{t("catalog.pendingValidationDesc", "Les prix seront visibles après validation de votre profil")}</p>
             </div>
           ) : (

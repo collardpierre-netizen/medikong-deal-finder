@@ -179,7 +179,7 @@ export function CatalogProductCard({ product, index = 0, view = "grid" }: Props)
             </>
           ) : (
             <Link to="/onboarding" className="inline-flex items-center gap-1.5 bg-primary text-primary-foreground text-xs font-semibold px-3 py-2 rounded-md hover:opacity-90 transition-opacity">
-              <Lock size={12} /> Voir les prix
+              <Lock size={12} /> {t("catalog.seePrices")}
             </Link>
           )}
         </div>

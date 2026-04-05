@@ -1273,16 +1273,14 @@ export default function ProductPage() {
                   <TabsContent value="market">
                     {marketPriceItems.length > 0 ? (
                       <div className="border border-border rounded-xl overflow-hidden">
-                        <table className="w-full text-sm">
+                        <table className="w-full text-sm table-fixed">
                           <thead>
                             <tr className="bg-muted/50 border-b border-border">
-                              <th className="text-left py-3 px-3 text-xs font-semibold text-muted-foreground">Source</th>
-                              {mpVisMap.show_wholesale_price && <th className="text-right py-3 px-3 text-xs font-semibold text-muted-foreground">Grossiste</th>}
-                              {mpVisMap.show_pharmacist_price && <th className="text-right py-3 px-3 text-xs font-semibold text-muted-foreground">Pharmacien</th>}
-                              {mpVisMap.show_public_price && <th className="text-right py-3 px-3 text-xs font-semibold text-muted-foreground">Public TTC</th>}
-                              {bestOffer && mpVisMap.show_wholesale_price && <th className="text-right py-3 px-3 text-xs font-semibold text-muted-foreground">Δ Grossiste</th>}
-                              {bestOffer && mpVisMap.show_pharmacist_price && <th className="text-right py-3 px-3 text-xs font-semibold text-muted-foreground">Δ Pharmacien</th>}
-                              {bestOffer && mpVisMap.show_public_price && <th className="text-right py-3 px-3 text-xs font-semibold text-muted-foreground">Δ Public</th>}
+                              <th className="text-left py-2.5 px-3 text-xs font-semibold text-muted-foreground w-[30%]">Source</th>
+                              {mpVisMap.show_pharmacist_price && <th className="text-right py-2.5 px-3 text-xs font-semibold text-muted-foreground">Pharmacien</th>}
+                              {mpVisMap.show_public_price && <th className="text-right py-2.5 px-3 text-xs font-semibold text-muted-foreground">Public TTC</th>}
+                              {bestOffer && mpVisMap.show_pharmacist_price && <th className="text-right py-2.5 px-3 text-xs font-semibold text-muted-foreground">Δ Pharmacien</th>}
+                              {bestOffer && mpVisMap.show_public_price && <th className="text-right py-2.5 px-3 text-xs font-semibold text-muted-foreground">Δ Public</th>}
                             </tr>
                           </thead>
                           <tbody>
@@ -1297,7 +1295,6 @@ export default function ProductPage() {
                                 const pct = Math.round((abs / r) * 100);
                                 return { abs, pct };
                               };
-                              const deltaGross = calcDelta(mp.prix_grossiste);
                               const deltaPharm = calcDelta(mp.prix_pharmacien);
                               const deltaPublic = calcDelta(mp.prix_public, true);
                               const renderDelta = (d: { abs: number; pct: number } | null) => {
@@ -1305,32 +1302,25 @@ export default function ProductPage() {
                                 const color = d.abs > 0 ? "text-emerald-600" : d.abs < 0 ? "text-destructive" : "text-muted-foreground";
                                 const bgColor = d.abs > 0 ? "bg-emerald-100 text-emerald-700" : d.abs < 0 ? "bg-red-100 text-destructive" : "bg-muted text-muted-foreground";
                                 return (
-                                  <span className="inline-flex items-center gap-1.5">
-                                    <span className={`text-xs font-bold ${color}`}>
+                                  <span className="inline-flex items-center gap-1">
+                                    <span className={`text-xs font-bold tabular-nums ${color}`}>
                                       {d.abs > 0 ? "−" : "+"}{formatEur(Math.abs(d.abs))}€
                                     </span>
-                                    <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${bgColor}`}>
+                                    <span className={`text-[10px] font-semibold px-1 py-0.5 rounded-full ${bgColor}`}>
                                       {d.pct > 0 ? "−" : "+"}{Math.abs(d.pct)}%
                                     </span>
                                   </span>
                                 );
                               };
-                              const sourceType = mp.market_price_sources?.source_type;
-                              const sourceLabel = sourceType === "wholesaler" ? "Grossiste" : sourceType === "pharmacy" ? "Pharmacie" : sourceType === "public" ? "Public" : sourceType || "";
                               return (
                                 <tr key={mp.id} className={`border-b border-border last:border-0 ${i % 2 === 0 ? "bg-muted/20" : ""}`}>
-                                  <td className="py-3 px-3">
-                                    <div className="flex items-center gap-2">
-                                      <span className="font-medium text-foreground">{mp.market_price_sources?.name}</span>
-                                      {sourceLabel && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{sourceLabel}</span>}
-                                    </div>
+                                  <td className="py-2.5 px-3">
+                                    <span className="font-medium text-foreground text-xs">{mp.market_price_sources?.name}</span>
                                   </td>
-                                  {mpVisMap.show_wholesale_price && <td className="text-right py-3 px-3 text-foreground font-medium">{mp.prix_grossiste ? `${formatEur(mp.prix_grossiste)} €` : "—"}</td>}
-                                  {mpVisMap.show_pharmacist_price && <td className="text-right py-3 px-3 text-foreground font-medium">{mp.prix_pharmacien ? `${formatEur(mp.prix_pharmacien)} €` : "—"}</td>}
-                                  {mpVisMap.show_public_price && <td className="text-right py-3 px-3 text-foreground font-medium">{mp.prix_public ? `${formatEur(mp.prix_public)} €` : "—"}</td>}
-                                  {bestOffer && mpVisMap.show_wholesale_price && <td className="text-right py-3 px-3">{renderDelta(deltaGross)}</td>}
-                                  {bestOffer && mpVisMap.show_pharmacist_price && <td className="text-right py-3 px-3">{renderDelta(deltaPharm)}</td>}
-                                  {bestOffer && mpVisMap.show_public_price && <td className="text-right py-3 px-3">{renderDelta(deltaPublic)}</td>}
+                                  {mpVisMap.show_pharmacist_price && <td className="text-right py-2.5 px-3 text-foreground font-medium tabular-nums">{mp.prix_pharmacien ? `${formatEur(mp.prix_pharmacien)} €` : "—"}</td>}
+                                  {mpVisMap.show_public_price && <td className="text-right py-2.5 px-3 text-foreground font-medium tabular-nums">{mp.prix_public ? `${formatEur(mp.prix_public)} €` : "—"}</td>}
+                                  {bestOffer && mpVisMap.show_pharmacist_price && <td className="text-right py-2.5 px-3">{renderDelta(deltaPharm)}</td>}
+                                  {bestOffer && mpVisMap.show_public_price && <td className="text-right py-2.5 px-3">{renderDelta(deltaPublic)}</td>}
                                 </tr>
                               );
                             })}

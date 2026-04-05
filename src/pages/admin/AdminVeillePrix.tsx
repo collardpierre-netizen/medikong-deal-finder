@@ -37,7 +37,7 @@ export default function AdminVeillePrix() {
   const [countryFilter, setCountryFilter] = useState("all");
   const [sourceFilter, setSourceFilter] = useState("all");
   const [ecartMinFilter, setEcartMinFilter] = useState<number | null>(null);
-  const [priceType, setPriceType] = useState<PriceType>("grossiste");
+  const [priceType, setPriceType] = useState<PriceType>("pharmacien");
   const [sortKey, setSortKey] = useState<SortKey>("ecart");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [page, setPage] = useState(1);
@@ -223,10 +223,10 @@ export default function AdminVeillePrix() {
 
   // Helper to get the right price from a market_price row based on selected type
   const getSourcePrice = useCallback((mp: any): number | null => {
-    if (priceType === "grossiste") return mp?.prix_grossiste || null;
-    if (priceType === "pharmacien") return mp?.prix_pharmacien || null;
-    if (priceType === "public") return mp?.prix_public || null;
-    return mp?.prix_grossiste || mp?.prix_pharmacien || mp?.prix_public || null;
+    if (priceType === "grossiste") return mp?.prix_grossiste ?? mp?.prix_pharmacien ?? null;
+    if (priceType === "pharmacien") return mp?.prix_pharmacien ?? mp?.prix_grossiste ?? null;
+    if (priceType === "public") return mp?.prix_public ?? mp?.prix_pharmacien ?? null;
+    return mp?.prix_pharmacien || mp?.prix_grossiste || mp?.prix_public || null;
   }, [priceType]);
 
   // Build comparison rows — dynamic per source
@@ -599,13 +599,17 @@ export default function AdminVeillePrix() {
       {/* Sources overview */}
       {sources.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-4">
-          {sources.map(s => (
-            <Badge key={s.id} variant="outline" className="text-xs gap-1">
-              {s.country_code && <span>{s.country_code}</span>}
-              {s.name}
-              <span className="text-muted-foreground">({s.total_products || 0})</span>
-            </Badge>
-          ))}
+          {sources.map(s => {
+            const liveCount = rows.filter(r => r.sources[s.slug]).length;
+            return (
+              <Badge key={s.id} variant="outline" className="text-xs gap-1 cursor-pointer" onClick={() => { setSourceFilter(sourceFilter === s.slug ? "all" : s.slug); setPage(1); }}
+                style={sourceFilter === s.slug ? { backgroundColor: "hsl(var(--primary))", color: "hsl(var(--primary-foreground))" } : {}}>
+                {s.country_code && <span>{s.country_code}</span>}
+                {s.name}
+                <span className="text-muted-foreground">({liveCount})</span>
+              </Badge>
+            );
+          })}
         </div>
       )}
 

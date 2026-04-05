@@ -490,7 +490,12 @@ function VendorValidationTab({ vendor, onUpdate }: { vendor: any; onUpdate: () =
   };
   const st = statusLabels[validationStatus] || statusLabels.pending_review;
 
-  const handleAction = async (action: "under_review" | "approved" | "rejected") => {
+  const kycAllApproved = criteria.length > 0 && criteria.every((cr: any) => {
+    const sub = submissions.find((s: any) => s.criteria_id === cr.id);
+    return sub?.status === "approved";
+  });
+
+  const handleAction = async (action: "under_review" | "accepted" | "approved" | "rejected") => {
     setActing(true);
     try {
       const update: any = {
@@ -498,18 +503,32 @@ function VendorValidationTab({ vendor, onUpdate }: { vendor: any; onUpdate: () =
         validation_notes: notes,
         validated_at: new Date().toISOString(),
       };
-      if (action === "approved") {
+      if (action === "accepted") {
+        // Step 1: Accept candidature → portal access, KYC starts
+        update.is_active = true;
+        update.is_verified = false;
+      } else if (action === "approved") {
+        // Step 2: Final validation → fully operational
         update.is_active = true;
         update.is_verified = true;
-      }
-      if (action === "rejected") {
+      } else if (action === "rejected") {
         update.is_active = false;
+        update.is_verified = false;
       }
       const { error } = await supabase.from("vendors").update(update).eq("id", vendor.id);
       if (error) throw error;
 
-      // Send notification email to vendor
-      if (action === "approved") {
+      // Send notification email
+      if (action === "accepted") {
+        supabase.functions.invoke("send-transactional-email", {
+          body: {
+            templateName: "vendor-approved",
+            recipientEmail: vendor.email,
+            idempotencyKey: `vendor-accepted-${vendor.id}-${Date.now()}`,
+            templateData: { companyName: vendor.company_name || vendor.name, isAcceptance: true },
+          },
+        }).catch(() => {});
+      } else if (action === "approved") {
         supabase.functions.invoke("send-transactional-email", {
           body: {
             templateName: "vendor-approved",
@@ -529,7 +548,13 @@ function VendorValidationTab({ vendor, onUpdate }: { vendor: any; onUpdate: () =
         }).catch(() => {});
       }
 
-      toast.success(action === "approved" ? "Vendeur approuvé ! Email envoyé." : action === "rejected" ? "Vendeur refusé. Email envoyé." : "Statut mis à jour");
+      const messages: Record<string, string> = {
+        under_review: "Statut mis à jour",
+        accepted: "Candidature acceptée ! Le vendeur peut accéder au portail et compléter son KYC.",
+        approved: "Vendeur validé ! Compte pleinement opérationnel.",
+        rejected: "Vendeur refusé. Email envoyé.",
+      };
+      toast.success(messages[action]);
       onUpdate();
     } catch (err: any) {
       toast.error(err.message);

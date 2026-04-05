@@ -373,6 +373,7 @@ export default function AdminVeillePrix() {
 
       // Fetch all products for matching
       setImportProgress({ phase: "Chargement des produits…", current: 0, total: 0 });
+      updateJob(jobId, { phase: "Chargement produits…" });
       const allProducts: any[] = [];
       let from = 0;
       while (true) {

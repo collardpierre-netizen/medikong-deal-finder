@@ -21,3 +21,8 @@ export function isValidProductImage(url: string | undefined | null): boolean {
 export function getProductImageSrc(url: string | undefined | null): string {
   return isValidProductImage(url) ? url! : MEDIKONG_PLACEHOLDER;
 }
+
+/** Call in onLoad to detect Qogita "No Image Available" placeholder (618×602 with Q logo) */
+export function isQogitaPlaceholder(img: HTMLImageElement): boolean {
+  return img.naturalWidth === 618 && img.naturalHeight === 602;
+}

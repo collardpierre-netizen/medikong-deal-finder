@@ -1,5 +1,5 @@
 import { Layout } from "@/components/layout/Layout";
-import { isValidProductImage, getProductImageSrc } from "@/lib/image-utils";
+import { isValidProductImage, getProductImageSrc, MEDIKONG_PLACEHOLDER, isQogitaPlaceholder } from "@/lib/image-utils";
 import { useProduct, useProductOffers, type Offer } from "@/hooks/useProducts";
 import { useCart } from "@/hooks/useCart";
 import { useAuth } from "@/contexts/AuthContext";
@@ -395,7 +395,7 @@ function VendorSuggestions({ vendorId, vendorSlug, vendorName, currentProductId,
                   const img = validImg || getProductImageSrc(p.image_url);
                   return (
                     <Link key={p.id} to={`/produit/${p.slug}`} className="border border-border rounded-lg p-2 hover:shadow-sm transition-shadow group">
-                      <img src={img} alt={p.name} className="w-full h-20 object-contain mb-1.5 rounded" onError={(e) => { (e.target as HTMLImageElement).src = "/medikong-placeholder.png"; }} />
+                      <img src={img} alt={p.name} className="w-full h-20 object-contain mb-1.5 rounded" onLoad={(e) => { if (isQogitaPlaceholder(e.currentTarget)) e.currentTarget.src = MEDIKONG_PLACEHOLDER; }} onError={(e) => { (e.target as HTMLImageElement).src = MEDIKONG_PLACEHOLDER; }} />
                       <p className="text-[10px] text-muted-foreground">{p.brand_name}</p>
                       <p className="text-xs font-medium text-foreground line-clamp-2 leading-tight group-hover:text-primary transition-colors">{p.name}</p>
                       {p.best_price_excl_vat > 0 && (
@@ -914,8 +914,9 @@ export default function ProductPage() {
                         alt={product.name}
                         className="w-full h-full object-contain p-4"
                         referrerPolicy="no-referrer"
+                        onLoad={(e) => { if (isQogitaPlaceholder(e.currentTarget)) e.currentTarget.src = MEDIKONG_PLACEHOLDER; }}
                         onError={(e) => {
-                          e.currentTarget.src = "/medikong-placeholder.png";
+                          e.currentTarget.src = MEDIKONG_PLACEHOLDER;
                         }}
                       />
                     ) : (
@@ -1666,8 +1667,9 @@ export default function ProductPage() {
                           className="w-full h-full object-contain p-2"
                           loading="lazy"
                           referrerPolicy="no-referrer"
+                          onLoad={(e) => { if (isQogitaPlaceholder(e.currentTarget)) e.currentTarget.src = MEDIKONG_PLACEHOLDER; }}
                           onError={(e) => {
-                            e.currentTarget.src = getProductImageSrc(null);
+                            e.currentTarget.src = MEDIKONG_PLACEHOLDER;
                           }}
                         />
                       </div>

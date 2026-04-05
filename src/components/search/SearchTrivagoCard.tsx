@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { getProductImageSrc, MEDIKONG_PLACEHOLDER } from "@/lib/image-utils";
+import { getProductImageSrc, MEDIKONG_PLACEHOLDER, isQogitaPlaceholder } from "@/lib/image-utils";
 import { Heart, Check, ChevronDown, ChevronUp, Package, Truck, RotateCcw, ArrowRight } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useProductOffers } from "@/hooks/useProducts";
@@ -45,6 +45,7 @@ export default function SearchTrivagoCard({ product: p }: Props) {
           </button>
           <img src={getProductImageSrc(p.imageUrls?.[0] || p.imageUrl)} alt={p.name} className="w-full h-full object-contain p-4"
                loading="lazy" referrerPolicy="no-referrer"
+               onLoad={e => { if (isQogitaPlaceholder(e.currentTarget)) e.currentTarget.src = MEDIKONG_PLACEHOLDER; }}
                onError={e => { e.currentTarget.src = MEDIKONG_PLACEHOLDER; }} />
         </div>
 

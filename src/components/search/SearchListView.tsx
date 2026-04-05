@@ -1,5 +1,6 @@
 import { Package, ShoppingCart } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { MEDIKONG_PLACEHOLDER, isQogitaPlaceholder } from "@/lib/image-utils";
 import type { Product } from "@/hooks/useProducts";
 
 interface Props {
@@ -40,9 +41,10 @@ export default function SearchListView({ products }: Props) {
           >
             {/* Thumb */}
             <div className="w-12 h-12 bg-muted rounded flex items-center justify-center shrink-0">
-              <img src={p.imageUrls?.[0] || p.imageUrl || "/medikong-placeholder.png"} alt={p.name} className="w-full h-full object-contain p-1" loading="lazy"
+              <img src={p.imageUrls?.[0] || p.imageUrl || MEDIKONG_PLACEHOLDER} alt={p.name} className="w-full h-full object-contain p-1" loading="lazy"
                    referrerPolicy="no-referrer"
-                   onError={e => { e.currentTarget.src = "/medikong-placeholder.png"; }} />
+                   onLoad={e => { if (isQogitaPlaceholder(e.currentTarget)) e.currentTarget.src = MEDIKONG_PLACEHOLDER; }}
+                   onError={e => { e.currentTarget.src = MEDIKONG_PLACEHOLDER; }} />
             </div>
 
             {/* Name */}

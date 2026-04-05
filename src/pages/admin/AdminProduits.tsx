@@ -12,7 +12,7 @@ import { useBrands, useManufacturers, useProductCount, useBrandCount, useActiveO
 import { ProductFormDialog } from "@/components/admin/ProductFormDialog";
 import { exportProducts, importProducts, downloadProductTemplate, type ImportProgress } from "@/lib/xlsx-utils";
 import { toast } from "sonner";
-import { Package, Tag, ShoppingCart, Search, Download, Upload, Plus, FileSpreadsheet, ChevronLeft, ChevronRight, X, Loader2 } from "lucide-react";
+import { Package, Tag, ShoppingCart, Search, Download, Upload, Plus, FileSpreadsheet, ChevronLeft, ChevronRight, X, Loader2, ImageIcon } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
 const PER_PAGE = 50;
@@ -179,6 +179,28 @@ const AdminProduits = () => {
   const [importResult, setImportResult] = useState<{ created: number; updated: number; skipped: number; errors: { line: number; name: string; code: string; message: string }[]; brandsCreated?: number; manufacturersCreated?: number; totalRows: number } | null>(null);
   const [importing, setImporting] = useState(false);
   const [importPanelOpen, setImportPanelOpen] = useState(false);
+  const [migratingImages, setMigratingImages] = useState(false);
+
+  const handleMigrateImages = async () => {
+    if (!confirm("Migrer les images externes vers le stockage MediKong ? Cela peut prendre quelques minutes.")) return;
+    setMigratingImages(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("migrate-product-images", {
+        body: { limit: 100 },
+      });
+      if (error) throw error;
+      const result = data as { migrated: number; failed: number; total_candidates: number; errors?: { product: string; error: string }[] };
+      toast.success(`${result.migrated} produits migrés, ${result.failed} erreurs sur ${result.total_candidates} candidats`);
+      if (result.errors && result.errors.length > 0) {
+        console.warn("Migration errors:", result.errors);
+      }
+      qc.invalidateQueries({ queryKey: ["admin-products-paginated"] });
+    } catch (e: any) {
+      toast.error("Erreur migration : " + (e.message || "inconnue"));
+    } finally {
+      setMigratingImages(false);
+    }
+  };
 
   const handleImport = async (file: File) => {
     setImporting(true);
@@ -213,6 +235,10 @@ const AdminProduits = () => {
             <Button variant="outline" size="sm" onClick={() => exportProducts()}><Download size={14} className="mr-1" />Export XLSX</Button>
             <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()}><Upload size={14} className="mr-1" />Import XLSX</Button>
             <input ref={fileRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={e => { if (e.target.files?.[0]) handleImport(e.target.files[0]); e.target.value = ""; }} />
+            <Button variant="outline" size="sm" onClick={handleMigrateImages} disabled={migratingImages}>
+              {migratingImages ? <Loader2 size={14} className="mr-1 animate-spin" /> : <ImageIcon size={14} className="mr-1" />}
+              {migratingImages ? "Migration..." : "Migrer images"}
+            </Button>
             <Button size="sm" onClick={() => { setEditProduct(null); setProductDialogOpen(true); }} className="bg-[#1E293B] hover:bg-[#1E293B]/90"><Plus size={14} className="mr-1" />Produit</Button>
           </div>
         }

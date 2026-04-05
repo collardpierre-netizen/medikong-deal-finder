@@ -37,7 +37,7 @@ export default function AdminVeillePrix() {
   const [countryFilter, setCountryFilter] = useState("all");
   const [sourceFilter, setSourceFilter] = useState("all");
   const [ecartMinFilter, setEcartMinFilter] = useState<number | null>(null);
-  const [priceType, setPriceType] = useState<PriceType>("grossiste");
+  const [priceType, setPriceType] = useState<PriceType>("pharmacien");
   const [sortKey, setSortKey] = useState<SortKey>("ecart");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [page, setPage] = useState(1);

@@ -218,7 +218,7 @@ export function CatalogProductCard({ product, index = 0, view = "grid" }: Props)
           </div>
           <div className="flex items-center justify-between mb-2">
             <StockBadge product={product} />
-            <span className="text-xs text-muted-foreground">{product.offer_count} offre{product.offer_count > 1 ? "s" : ""}</span>
+            <span className="text-xs text-muted-foreground">{product.offer_count > 1 ? t("catalog.offersPlural", { count: product.offer_count }) : t("catalog.offers", { count: product.offer_count })}</span>
           </div>
           <p className="text-[10px] text-muted-foreground mb-2 truncate">EAN: {product.gtin || "—"}</p>
           <div className="flex items-center gap-1.5">

@@ -78,8 +78,8 @@ export function CatalogProductCard({ product, index = 0, view = "grid" }: Props)
 
     // Auth check
     if (!user) {
-      toast.error("Connectez-vous pour ajouter des produits au panier", {
-        action: { label: "Se connecter", onClick: () => navigate("/connexion") },
+      toast.error(t("catalog.loginToAdd"), {
+        action: { label: t("catalog.signIn"), onClick: () => navigate("/connexion") },
       });
       return;
     }

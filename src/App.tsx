@@ -305,6 +305,7 @@ const App = () => (
               <Route path="stripe-commissions" element={<LP><AdminStripeCommissions /></LP>} />
               <Route path="stripe-revenue" element={<LP><AdminStripeRevenue /></LP>} />
               <Route path="commandes/:orderId/refund" element={<LP><AdminOrderRefund /></LP>} />
+              <Route path="translations" element={<LP><AdminTranslations /></LP>} />
             </Route>
 
             {/* Vendor Dashboard */}

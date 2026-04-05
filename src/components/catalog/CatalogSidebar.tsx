@@ -293,8 +293,8 @@ export function CatalogSidebar({ filters, setFilter, clearAll, resultCategoryIds
           </div>
         </div>
         {brands.length > 15 && !showAllBrands && (
-          <button onClick={() => setShowAllBrands(true)} className="text-xs text-mk-blue hover:underline mt-1">
-            Voir plus ({brands.length - 15})
+           <button onClick={() => setShowAllBrands(true)} className="text-xs text-mk-blue hover:underline mt-1">
+             {t("catalog.showMore")} ({brands.length - 15})
           </button>
         )}
       </div>

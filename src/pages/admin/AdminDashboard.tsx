@@ -97,6 +97,103 @@ const AdminDashboard = () => {
         <KpiCard icon={AlertTriangle} label={t("disputeRate")} value={`${stats.disputeRate}%`} iconColor="#EF4343" iconBg="#FEF2F2" />
       </div>
 
+      {/* Pending Actions */}
+      {totalPending > 0 && (
+        <div className="mb-6 p-5 rounded-[10px]" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: "#FEF3C7" }}>
+              <Clock size={16} style={{ color: "#D97706" }} />
+            </div>
+            <h3 className="text-[14px] font-semibold" style={{ color: "#1D2530" }}>
+              Actions en attente
+            </h3>
+            <span className="ml-1 px-2 py-0.5 rounded-full text-[11px] font-bold text-white" style={{ backgroundColor: "#D97706" }}>
+              {totalPending}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Pending Vendors */}
+            {pendingVendorsList.length > 0 && (
+              <div className="rounded-lg p-4" style={{ backgroundColor: "#FFFBEB", border: "1px solid #FDE68A" }}>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <Store size={15} style={{ color: "#D97706" }} />
+                    <span className="text-[13px] font-semibold" style={{ color: "#92400E" }}>
+                      Vendeurs en attente
+                    </span>
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold" style={{ backgroundColor: "#FDE68A", color: "#92400E" }}>
+                      {pendingVendorsList.length}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => navigate("/admin/vendeurs")}
+                    className="flex items-center gap-1 text-[12px] font-medium hover:underline"
+                    style={{ color: "#D97706" }}
+                  >
+                    Voir tout <ChevronRight size={14} />
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  {pendingVendorsList.slice(0, 3).map((v) => (
+                    <div key={v.id} className="flex items-center justify-between rounded-md px-3 py-2" style={{ backgroundColor: "#fff" }}>
+                      <div>
+                        <span className="text-[13px] font-medium" style={{ color: "#1D2530" }}>
+                          {v.company_name || v.name}
+                        </span>
+                        <span className="ml-2 text-[11px]" style={{ color: "#8B95A5" }}>
+                          {v.display_code}
+                        </span>
+                      </div>
+                      <span className="text-[11px]" style={{ color: "#8B95A5" }}>il y a {timeAgo(v.created_at)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Pending Buyers */}
+            {pendingBuyersList.length > 0 && (
+              <div className="rounded-lg p-4" style={{ backgroundColor: "#EFF6FF", border: "1px solid #BFDBFE" }}>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <Users size={15} style={{ color: "#1D4ED8" }} />
+                    <span className="text-[13px] font-semibold" style={{ color: "#1E3A5F" }}>
+                      Acheteurs en attente
+                    </span>
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold" style={{ backgroundColor: "#BFDBFE", color: "#1E3A5F" }}>
+                      {pendingBuyersList.length}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => navigate("/admin/users")}
+                    className="flex items-center gap-1 text-[12px] font-medium hover:underline"
+                    style={{ color: "#1D4ED8" }}
+                  >
+                    Voir tout <ChevronRight size={14} />
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  {pendingBuyersList.slice(0, 3).map((b) => (
+                    <div key={b.id} className="flex items-center justify-between rounded-md px-3 py-2" style={{ backgroundColor: "#fff" }}>
+                      <div>
+                        <span className="text-[13px] font-medium" style={{ color: "#1D2530" }}>
+                          {b.company_name}
+                        </span>
+                        <span className="ml-2 text-[11px]" style={{ color: "#8B95A5" }}>
+                          {b.email}
+                        </span>
+                      </div>
+                      <span className="text-[11px]" style={{ color: "#8B95A5" }}>il y a {timeAgo(b.created_at)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-2 gap-4">
         {/* GMV Chart */}
         <div className="p-5 rounded-[10px]" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>

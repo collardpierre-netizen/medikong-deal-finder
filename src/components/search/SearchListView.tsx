@@ -1,5 +1,5 @@
 import { Package, ShoppingCart } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import type { Product } from "@/hooks/useProducts";
 
 interface Props {
@@ -8,6 +8,8 @@ interface Props {
 
 export default function SearchListView({ products }: Props) {
   const navigate = useNavigate();
+  const location = useLocation();
+  const fromState = { state: { from: location.pathname + location.search } };
 
   return (
     <div className="bg-card border border-border rounded-xl overflow-hidden">
@@ -31,7 +33,7 @@ export default function SearchListView({ products }: Props) {
         return (
           <div
             key={p.id}
-            onClick={() => navigate(`/produit/${p.slug}`)}
+            onClick={() => navigate(`/produit/${p.slug}`, fromState)}
             className="grid grid-cols-[48px_1fr] md:grid-cols-[48px_1fr_100px_100px_120px_80px_80px_100px]
                        gap-3 px-4 py-3 border-b border-border last:border-b-0
                        hover:bg-muted/50 cursor-pointer transition-colors items-center"
@@ -79,7 +81,7 @@ export default function SearchListView({ products }: Props) {
 
             {/* Action */}
             <button
-              onClick={(e) => { e.stopPropagation(); navigate(`/produit/${p.slug}`); }}
+              onClick={(e) => { e.stopPropagation(); navigate(`/produit/${p.slug}`, fromState); }}
               className="hidden md:flex items-center justify-center gap-1 px-3 py-1.5
                          bg-primary text-primary-foreground text-[11px] font-bold rounded-md"
             >

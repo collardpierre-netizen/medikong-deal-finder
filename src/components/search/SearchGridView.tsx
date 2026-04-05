@@ -1,6 +1,6 @@
 import { Heart, ShoppingCart, Package } from "lucide-react";
 import { getProductImageSrc, MEDIKONG_PLACEHOLDER } from "@/lib/image-utils";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { formatPrice } from "@/data/mock";
 import type { Product } from "@/hooks/useProducts";
 
@@ -10,6 +10,8 @@ interface Props {
 
 export default function SearchGridView({ products }: Props) {
   const navigate = useNavigate();
+  const location = useLocation();
+  const fromState = { state: { from: location.pathname + location.search } };
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -21,7 +23,7 @@ export default function SearchGridView({ products }: Props) {
         return (
           <div
             key={p.id}
-            onClick={() => navigate(`/produit/${p.slug}`)}
+            onClick={() => navigate(`/produit/${p.slug}`, fromState)}
             className="bg-card border border-border rounded-xl overflow-hidden relative cursor-pointer
                        hover:shadow-md transition-shadow group"
           >

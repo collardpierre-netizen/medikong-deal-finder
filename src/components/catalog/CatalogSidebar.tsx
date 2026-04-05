@@ -190,7 +190,7 @@ export function CatalogSidebar({ filters, setFilter, clearAll, resultCategoryIds
 
       {/* Categories — collapsible with max-height scroll */}
       <div>
-        <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Catégorie</h4>
+        <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">{t("catalog.categories")}</h4>
         {filters.category && (
           <button
             onClick={() => {

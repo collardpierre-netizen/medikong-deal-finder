@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { getProductImageSrc, MEDIKONG_PLACEHOLDER } from "@/lib/image-utils";
+import { getProductImageSrc, MEDIKONG_PLACEHOLDER, isQogitaPlaceholder } from "@/lib/image-utils";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Plus, Minus, Package, Loader2, Lock } from "lucide-react";
 import { motion } from "framer-motion";

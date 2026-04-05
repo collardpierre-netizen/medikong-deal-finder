@@ -3048,6 +3048,102 @@ export type Database = {
         }
         Relationships: []
       }
+      vendor_kyc_criteria: {
+        Row: {
+          business_type: string
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          is_required: boolean
+          label: string
+          requires_document: boolean
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          business_type?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_required?: boolean
+          label: string
+          requires_document?: boolean
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          business_type?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_required?: boolean
+          label?: string
+          requires_document?: boolean
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      vendor_kyc_submissions: {
+        Row: {
+          admin_notes: string | null
+          created_at: string
+          criteria_id: string
+          document_url: string | null
+          id: string
+          notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+          vendor_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string
+          criteria_id: string
+          document_url?: string | null
+          id?: string
+          notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+          vendor_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string
+          criteria_id?: string
+          document_url?: string | null
+          id?: string
+          notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_kyc_submissions_criteria_id_fkey"
+            columns: ["criteria_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_kyc_criteria"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_kyc_submissions_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vendor_visibility_rules: {
         Row: {
           country_code: string | null

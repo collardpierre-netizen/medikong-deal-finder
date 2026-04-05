@@ -15,6 +15,7 @@ import { useCountry } from "@/contexts/CountryContext";
 import { AnimatedCounter } from "@/components/entreprise/AnimatedCounter";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { InstantSearchBar } from "@/components/search/InstantSearchBar";
 
 const iconMap: Record<string, React.ReactNode> = {
   Shield: <Shield size={20} className="text-mk-navy" />,
@@ -31,7 +32,7 @@ const iconMap: Record<string, React.ReactNode> = {
 
 export default function HomePage() {
   const { t } = useTranslation();
-  const [searchQuery, setSearchQuery] = useState("");
+  
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const { data: products = [] } = useFeaturedProducts(5);
   const { country, currentCountry } = useCountry();
@@ -110,10 +111,6 @@ export default function HomePage() {
     { label: t("hero.exampleMasks"), q: "Masques FFP2" },
   ];
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    navigate(searchQuery.trim() ? `/catalogue?q=${encodeURIComponent(searchQuery.trim())}` : `/catalogue`);
-  };
 
   const orgJsonLd = {
     "@context": "https://schema.org",
@@ -166,28 +163,14 @@ export default function HomePage() {
           </motion.p>
 
           {/* Search */}
-          <motion.form
-            onSubmit={handleSearch}
+          <motion.div
             className="max-w-[560px] mx-auto mb-5"
             initial={{ opacity: 0, y: 14, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
-            <div className="flex border border-mk-line rounded-xl overflow-hidden shadow-md bg-white">
-              <div className="flex items-center pl-4">
-                <Search size={18} className="text-mk-sec" />
-              </div>
-              <input
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                placeholder={t("common.searchPlaceholder")}
-                className="flex-1 px-3 py-3.5 text-sm focus:outline-none min-w-0"
-              />
-              <button type="submit" className="bg-mk-blue text-white px-6 py-3.5 text-sm font-semibold hover:opacity-90 whitespace-nowrap transition-opacity">
-                {t("common.search")}
-              </button>
-            </div>
-          </motion.form>
+            <InstantSearchBar variant="hero" placeholder={t("common.searchPlaceholder")} />
+          </motion.div>
 
           <motion.div
             className="flex items-center justify-center gap-4 text-xs text-mk-ter flex-wrap mb-8"

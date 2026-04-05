@@ -166,6 +166,7 @@ export function InstantSearchBar({ className = "", placeholder, variant = "navba
                     alt=""
                     className="w-8 h-8 rounded object-contain bg-muted/20 shrink-0"
                     referrerPolicy="no-referrer"
+                    onLoad={e => { if (isQogitaPlaceholder(e.currentTarget)) e.currentTarget.src = MEDIKONG_PLACEHOLDER; }}
                     onError={e => { e.currentTarget.src = MEDIKONG_PLACEHOLDER; }}
                   />
                   <div className="min-w-0 flex-1">

@@ -43,6 +43,7 @@ export default function SearchGridView({ products }: Props) {
                   loading="lazy"
                   referrerPolicy="no-referrer"
                   className="w-full h-full object-contain"
+                  onLoad={e => { if (isQogitaPlaceholder(e.currentTarget)) e.currentTarget.src = MEDIKONG_PLACEHOLDER; }}
                   onError={e => { e.currentTarget.src = MEDIKONG_PLACEHOLDER; }}
                 />
             </div>

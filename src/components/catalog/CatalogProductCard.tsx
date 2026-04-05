@@ -28,6 +28,7 @@ function ProductImg({ product, className = "" }: { product: CatalogProduct; clas
           loading="lazy"
           referrerPolicy="no-referrer"
           className="w-full h-full object-contain p-2"
+          onLoad={e => { if (isQogitaPlaceholder(e.currentTarget)) e.currentTarget.src = MEDIKONG_PLACEHOLDER; }}
           onError={e => { e.currentTarget.src = MEDIKONG_PLACEHOLDER; }}
         />
       </div>

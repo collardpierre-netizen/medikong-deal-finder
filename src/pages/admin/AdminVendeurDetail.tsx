@@ -428,6 +428,55 @@ function VendorVisibilityTab({ vendorId, vendorName, showRealName, rules, onAddR
 function VendorValidationTab({ vendor, onUpdate }: { vendor: any; onUpdate: () => void }) {
   const [notes, setNotes] = useState((vendor as any).validation_notes || "");
   const [acting, setActing] = useState(false);
+  const [reviewingId, setReviewingId] = useState<string | null>(null);
+  const [rejectNote, setRejectNote] = useState("");
+  const queryClient = useQueryClient();
+
+  // Fetch KYC criteria for this vendor's business type
+  const businessType = (vendor as any).business_type || "grossiste";
+  const { data: criteria = [] } = useQuery({
+    queryKey: ["kyc-criteria", businessType],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("vendor_kyc_criteria")
+        .select("*")
+        .eq("business_type", businessType)
+        .eq("is_active", true)
+        .order("sort_order");
+      return data || [];
+    },
+  });
+
+  // Fetch KYC submissions for this vendor
+  const { data: submissions = [] } = useQuery({
+    queryKey: ["kyc-submissions", vendor.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("vendor_kyc_submissions")
+        .select("*, vendor_kyc_criteria(label, requires_document)")
+        .eq("vendor_id", vendor.id)
+        .order("created_at", { ascending: false });
+      return data || [];
+    },
+  });
+
+  const handleReviewSubmission = async (submissionId: string, status: "approved" | "rejected") => {
+    setReviewingId(submissionId);
+    try {
+      await supabase.from("vendor_kyc_submissions").update({
+        status,
+        admin_notes: status === "rejected" ? rejectNote || null : null,
+        reviewed_at: new Date().toISOString(),
+      } as any).eq("id", submissionId);
+      queryClient.invalidateQueries({ queryKey: ["kyc-submissions", vendor.id] });
+      toast.success(status === "approved" ? "Critère KYC approuvé" : "Critère KYC rejeté");
+      setRejectNote("");
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setReviewingId(null);
+    }
+  };
 
   const validationStatus = (vendor as any).validation_status || "pending_review";
   const statusLabels: Record<string, { label: string; color: string; bg: string }> = {

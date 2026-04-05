@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Label } from "@/components/ui/label";
 import { Search, TrendingDown, TrendingUp, Download, ArrowUpDown, Upload, Plus, Loader2, Trash2, ExternalLink, RefreshCcw } from "lucide-react";
 import { toast } from "sonner";
+import { useImportJobs } from "@/contexts/ImportContext";
 import * as XLSX from "xlsx";
 
 type SortKey = "ecart" | "name" | "qogita" | string;
@@ -29,6 +30,7 @@ interface MarketSource {
 
 export default function AdminVeillePrix() {
   const qc = useQueryClient();
+  const { addJob, updateJob, finishJob } = useImportJobs();
   const [search, setSearch] = useState("");
   const [brandFilter, setBrandFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
@@ -335,6 +337,8 @@ export default function AdminVeillePrix() {
     const file = fileRef.current?.files?.[0];
     if (!file || !importSourceId) { toast.error("Sélectionnez un fichier et une source"); return; }
 
+    const jobId = "import-veille-" + Date.now();
+    addJob(jobId, "Import veille prix");
     setImporting(true);
     setImportReport(null);
     setImportProgress({ phase: "Lecture du fichier…", current: 0, total: 0 });
@@ -369,6 +373,7 @@ export default function AdminVeillePrix() {
 
       // Fetch all products for matching
       setImportProgress({ phase: "Chargement des produits…", current: 0, total: 0 });
+      updateJob(jobId, { phase: "Chargement produits…" });
       const allProducts: any[] = [];
       let from = 0;
       while (true) {
@@ -477,16 +482,18 @@ export default function AdminVeillePrix() {
       }).eq("id", importSourceId);
 
       setImportReport({ total: jsonRows.length, matched, inserted });
+      finishJob(jobId, { success: inserted, errors: [] });
       toast.success(`${inserted} lignes importées, ${matched} matchées`);
       qc.invalidateQueries({ queryKey: ["veille-prix-data"] });
       qc.invalidateQueries({ queryKey: ["market-sources"] });
     } catch (e: any) {
+      finishJob(jobId, { success: 0, errors: [e.message || "Erreur"] });
       toast.error("Erreur d'import: " + (e.message || e));
     } finally {
       setImporting(false);
       setImportProgress(null);
     }
-  }, [importSourceId, qc]);
+  }, [importSourceId, qc, addJob, updateJob, finishJob]);
 
   // Export
   const handleExport = () => {

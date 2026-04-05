@@ -12,6 +12,7 @@ import { useBrands, useManufacturers, useProductCount, useBrandCount, useActiveO
 import { ProductFormDialog } from "@/components/admin/ProductFormDialog";
 import { exportProducts, importProducts, downloadProductTemplate, type ImportProgress } from "@/lib/xlsx-utils";
 import { toast } from "sonner";
+import { useImportJobs } from "@/contexts/ImportContext";
 import { Package, Tag, ShoppingCart, Search, Download, Upload, Plus, FileSpreadsheet, ChevronLeft, ChevronRight, X, Loader2, ImageIcon } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
@@ -103,6 +104,7 @@ function useAdminPaginatedProducts(page: number, search: string, brandFilter: st
 
 const AdminProduits = () => {
   const { t } = useI18n();
+  const { addJob, updateJob, finishJob } = useImportJobs();
   const navigate = useNavigate();
   const qc = useQueryClient();
 
@@ -203,20 +205,27 @@ const AdminProduits = () => {
   };
 
   const handleImport = async (file: File) => {
+    const jobId = "import-products-" + Date.now();
+    addJob(jobId, "Import produits");
     setImporting(true);
     setImportResult(null);
     setImportPanelOpen(true);
     setImportProgress({ phase: "reading", current: 0, total: 0, created: 0, updated: 0, skipped: 0, errors: [], brandsCreated: 0, manufacturersCreated: 0, categoriesCreated: 0 });
     try {
-      const result = await importProducts(file, (p) => setImportProgress({ ...p }));
+      const result = await importProducts(file, (p) => {
+        setImportProgress({ ...p });
+        updateJob(jobId, { phase: p.phase === "reading" ? "Lecture…" : p.phase === "products" ? `Produit ${p.current}/${p.total}` : p.phase, current: p.current, total: p.total });
+      });
       setImportResult(result);
       setImportProgress(prev => prev ? { ...prev, phase: "done" } : null);
+      finishJob(jobId, { success: result.created + result.updated, errors: result.errors.map(e => e.message) });
       qc.invalidateQueries({ queryKey: ["admin-products-paginated"] });
       qc.invalidateQueries({ queryKey: ["admin-products-count"] });
       qc.invalidateQueries({ queryKey: ["admin-brands"] });
       qc.invalidateQueries({ queryKey: ["admin-manufacturers"] });
     } catch (e: any) {
       setImportResult({ created: 0, updated: 0, skipped: 0, errors: [{ line: 0, name: "—", code: "EXCEPTION", message: e.message || "Erreur inconnue" }], totalRows: 0 });
+      finishJob(jobId, { success: 0, errors: [e.message || "Erreur inconnue"] });
     } finally {
       setImporting(false);
     }

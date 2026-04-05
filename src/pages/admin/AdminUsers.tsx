@@ -4,8 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useImpersonation } from "@/contexts/ImpersonationContext";
 import KpiCard from "@/components/admin/KpiCard";
 import StatusBadge from "@/components/admin/StatusBadge";
-import { Eye, MoreHorizontal, Users, Store, ShoppingBag, AlertTriangle, Search, Plus, Ban, CheckCircle, Trash2 } from "lucide-react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  Eye, Users, Store, ShoppingBag, AlertTriangle, Search, Plus,
+  Ban, CheckCircle, Trash2, X, Building2, Mail, Phone, MapPin,
+  Calendar, FileText, Clock, ChevronRight, UserCheck, UserX
+} from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -22,27 +25,50 @@ interface UserRow {
   lastLogin: string | null;
 }
 
+interface BuyerDetail {
+  id: string;
+  auth_user_id: string;
+  company_name: string;
+  email: string;
+  phone: string | null;
+  vat_number: string | null;
+  country_code: string;
+  city: string;
+  address_line1: string;
+  postal_code: string;
+  customer_type: string;
+  is_verified: boolean;
+  is_professional: boolean;
+  payment_terms_days: number;
+  created_at: string;
+  profile?: {
+    full_name: string;
+    sector: string | null;
+    country: string | null;
+    price_level_code: string | null;
+  };
+}
+
 export default function AdminUsers() {
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [showCreate, setShowCreate] = useState(false);
   const [typeFilter, setTypeFilter] = useState<"all" | "vendor" | "buyer" | "pending">("all");
+  const [selectedUser, setSelectedUser] = useState<UserRow | null>(null);
+  const [buyerDetail, setBuyerDetail] = useState<BuyerDetail | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
   const [confirmModal, setConfirmModal] = useState<UserRow | null>(null);
   const [confirmed, setConfirmed] = useState(false);
-  const [openInNewTab, setOpenInNewTab] = useState(false);
   const { startImpersonation } = useImpersonation();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    loadUsers();
-  }, []);
+  useEffect(() => { loadUsers(); }, []);
 
   async function loadUsers() {
     setLoading(true);
     const rows: UserRow[] = [];
 
-    // Load vendors
     const { data: vendors } = await supabase
       .from("vendors")
       .select("id, auth_user_id, email, company_name, type, is_active")
@@ -51,19 +77,14 @@ export default function AdminUsers() {
     vendors?.forEach(v => {
       if (v.auth_user_id) {
         rows.push({
-          id: v.id,
-          userId: v.auth_user_id,
-          email: v.email || "",
-          type: "vendor",
-          company: v.company_name || v.id,
-          plan: v.type || "real",
-          status: v.is_active ? "active" : "inactive",
+          id: v.id, userId: v.auth_user_id, email: v.email || "",
+          type: "vendor", company: v.company_name || v.id,
+          plan: v.type || "real", status: v.is_active ? "active" : "inactive",
           lastLogin: null,
         });
       }
     });
 
-    // Load customers as buyers
     const { data: customers } = await supabase
       .from("customers")
       .select("id, auth_user_id, email, company_name, customer_type, is_verified")
@@ -72,11 +93,8 @@ export default function AdminUsers() {
     customers?.forEach(b => {
       if (b.auth_user_id) {
         rows.push({
-          id: b.id,
-          userId: b.auth_user_id,
-          email: b.email || "",
-          type: "buyer",
-          company: b.company_name,
+          id: b.id, userId: b.auth_user_id, email: b.email || "",
+          type: "buyer", company: b.company_name,
           plan: b.customer_type || "pharmacy",
           status: b.is_verified ? "active" : "pending",
           lastLogin: null,
@@ -88,10 +106,82 @@ export default function AdminUsers() {
     setLoading(false);
   }
 
+  async function openDetail(u: UserRow) {
+    setSelectedUser(u);
+    if (u.type === "buyer") {
+      setDetailLoading(true);
+      const { data: customer } = await supabase
+        .from("customers")
+        .select("*")
+        .eq("auth_user_id", u.userId)
+        .maybeSingle();
+
+      const { data: profile } = await supabase
+        .from("profiles" as any)
+        .select("full_name, sector, country, price_level_code")
+        .eq("user_id", u.userId)
+        .maybeSingle();
+
+      if (customer) {
+        setBuyerDetail({ ...customer, profile: profile || undefined } as any);
+      }
+      setDetailLoading(false);
+    } else {
+      setBuyerDetail(null);
+    }
+  }
+
+  function closeDetail() {
+    setSelectedUser(null);
+    setBuyerDetail(null);
+  }
+
+  async function handleValidate(userId: string) {
+    const { error } = await supabase
+      .from("customers")
+      .update({ is_verified: true } as any)
+      .eq("auth_user_id", userId);
+    if (error) { toast.error("Erreur: " + error.message); return; }
+    toast.success("✅ Compte acheteur validé");
+    loadUsers();
+    if (buyerDetail) setBuyerDetail({ ...buyerDetail, is_verified: true });
+  }
+
+  async function handleSuspend(userId: string) {
+    const { error } = await supabase
+      .from("customers")
+      .update({ is_verified: false } as any)
+      .eq("auth_user_id", userId);
+    if (error) { toast.error("Erreur: " + error.message); return; }
+    toast.success("Compte suspendu");
+    loadUsers();
+    if (buyerDetail) setBuyerDetail({ ...buyerDetail, is_verified: false });
+  }
+
+  async function handleDelete(user: UserRow) {
+    if (!window.confirm(`Supprimer définitivement ${user.company} (${user.email}) ?`)) return;
+    if (user.type === "vendor") {
+      const { error } = await supabase.from("vendors").delete().eq("auth_user_id", user.userId);
+      if (error) { toast.error("Erreur: " + error.message); return; }
+    } else {
+      const { error } = await supabase.from("customers").delete().eq("auth_user_id", user.userId);
+      if (error) { toast.error("Erreur: " + error.message); return; }
+    }
+    toast.success("Utilisateur supprimé");
+    closeDetail();
+    loadUsers();
+  }
+
+  async function handleImpersonate(user: UserRow) {
+    await startImpersonation(user.userId, user.email, user.type, user.company);
+    setConfirmModal(null);
+    setConfirmed(false);
+    navigate(user.type === "vendor" ? "/vendor" : "/");
+  }
+
   const filtered = users.filter(u => {
-    if (typeFilter === "pending") {
-      if (u.status !== "pending") return false;
-    } else if (typeFilter !== "all" && u.type !== typeFilter) return false;
+    if (typeFilter === "pending") { if (u.status !== "pending") return false; }
+    else if (typeFilter !== "all" && u.type !== typeFilter) return false;
     if (search) {
       const q = search.toLowerCase();
       return u.company.toLowerCase().includes(q) || u.email.toLowerCase().includes(q);
@@ -102,60 +192,21 @@ export default function AdminUsers() {
   const vendorCount = users.filter(u => u.type === "vendor" && u.status === "active").length;
   const buyerCount = users.filter(u => u.type === "buyer" && u.status === "active").length;
   const pendingCount = users.filter(u => u.status === "pending").length;
-  const suspendedCount = users.filter(u => u.status === "suspended" || u.status === "inactive").length;
 
-  async function handleImpersonate(user: UserRow) {
-    await startImpersonation(user.userId, user.email, user.type, user.company);
-    setConfirmModal(null);
-    setConfirmed(false);
-    const target = user.type === "vendor" ? "/vendor" : "/";
-    if (openInNewTab) {
-      window.open(target, "_blank");
-    } else {
-      navigate(target);
-    }
-  }
-
-  async function handleToggleStatus(user: UserRow) {
-    const newStatus = user.status === "active" ? false : true;
-    const table = user.type === "vendor" ? "vendors" : "customers";
-    
-    if (user.type === "vendor") {
-      const { error } = await supabase
-        .from("vendors")
-        .update({ is_active: newStatus } as any)
-        .eq("auth_user_id", user.userId);
-      if (error) { toast.error("Erreur: " + error.message); return; }
-    } else {
-      const { error } = await supabase
-        .from("customers")
-        .update({ is_verified: newStatus } as any)
-        .eq("auth_user_id", user.userId);
-      if (error) { toast.error("Erreur: " + error.message); return; }
-    }
-    toast.success(newStatus ? "Compte activé" : "Compte suspendu");
-    loadUsers();
-  }
-
-  async function handleDelete(user: UserRow) {
-    if (!window.confirm(`Supprimer définitivement ${user.company} (${user.email}) ? Cette action est irréversible.`)) return;
-    
-    const table = user.type === "vendor" ? "vendors" : "customers";
-    if (user.type === "vendor") {
-      const { error } = await supabase.from("vendors").delete().eq("auth_user_id", user.userId);
-      if (error) { toast.error("Erreur: " + error.message); return; }
-    } else {
-      const { error } = await supabase.from("customers").delete().eq("auth_user_id", user.userId);
-      if (error) { toast.error("Erreur: " + error.message); return; }
-    }
-    toast.success("Utilisateur supprimé");
-    loadUsers();
-  }
+  const DetailField = ({ icon: Icon, label, value }: { icon: any; label: string; value: string | null | undefined }) => (
+    <div className="flex items-start gap-3 py-2.5">
+      <Icon size={15} className="text-muted-foreground mt-0.5 shrink-0" />
+      <div className="min-w-0">
+        <p className="text-[11px] text-muted-foreground uppercase tracking-wide">{label}</p>
+        <p className="text-sm font-medium text-foreground">{value || "—"}</p>
+      </div>
+    </div>
+  );
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-[#1D2530]">Gestion des Utilisateurs</h1>
+        <h1 className="text-xl font-bold text-foreground">Gestion des Utilisateurs</h1>
         <Button onClick={() => setShowCreate(true)} className="gap-1.5">
           <Plus size={16} /> Créer un utilisateur
         </Button>
@@ -164,91 +215,189 @@ export default function AdminUsers() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <KpiCard label="Total utilisateurs" value={String(users.length)} icon={Users} iconColor="#1B5BDA" />
         <KpiCard label="Vendeurs actifs" value={String(vendorCount)} icon={Store} iconColor="#F59E0B" />
-        <KpiCard label="Acheteurs actifs" value={String(buyerCount)} icon={ShoppingBag} iconColor="#059669" />
-        <KpiCard label="En attente" value={String(pendingCount)} icon={AlertTriangle} iconColor="#F59E0B" />
+        <KpiCard label="Acheteurs validés" value={String(buyerCount)} icon={ShoppingBag} iconColor="#059669" />
+        <button onClick={() => setTypeFilter("pending")} className="text-left">
+          <KpiCard label="⏳ En attente" value={String(pendingCount)} icon={AlertTriangle} iconColor={pendingCount > 0 ? "#EF4444" : "#F59E0B"} />
+        </button>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3">
-        <select value={typeFilter} onChange={e => setTypeFilter(e.target.value as any)} className="px-3 py-2 text-sm border border-[#E2E8F0] rounded-md bg-white">
+        <select value={typeFilter} onChange={e => setTypeFilter(e.target.value as any)}
+          className="px-3 py-2 text-sm border border-border rounded-md bg-background">
           <option value="all">Tous</option>
           <option value="vendor">Vendeurs</option>
           <option value="buyer">Acheteurs</option>
-          <option value="pending">En attente</option>
+          <option value="pending">🔴 En attente ({pendingCount})</option>
         </select>
         <div className="relative flex-1 max-w-md">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8B95A5]" />
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Rechercher par nom ou email…" className="pl-9" />
         </div>
       </div>
 
-      <div className="bg-white rounded-lg border border-[#E2E8F0] overflow-x-auto">
-        <table className="w-full text-[13px]">
-          <thead>
-            <tr className="border-b border-[#E2E8F0] text-[11px] font-medium text-[#8B95A5] uppercase tracking-wide">
-              <th className="text-left px-4 py-3">Entreprise</th>
-              <th className="text-left px-4 py-3">Email</th>
-              <th className="text-left px-4 py-3">Type</th>
-              <th className="text-left px-4 py-3">Plan</th>
-              <th className="text-left px-4 py-3">Statut</th>
-              <th className="text-right px-4 py-3">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr><td colSpan={6} className="px-4 py-8 text-center text-[#8B95A5]">Chargement…</td></tr>
-            ) : filtered.length === 0 ? (
-              <tr><td colSpan={6} className="px-4 py-8 text-center text-[#8B95A5]">Aucun utilisateur trouvé</td></tr>
-            ) : filtered.map(u => (
-              <tr key={u.id} className="border-b border-[#F1F5F9] hover:bg-[#F8FAFC] transition-colors">
-                <td className="px-4 py-3 font-semibold text-[#1D2530]">{u.company}</td>
-                <td className="px-4 py-3 text-[#616B7C]">{u.email}</td>
-                <td className="px-4 py-3">
-                  <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${u.type === "vendor" ? "bg-amber-50 text-amber-700" : "bg-blue-50 text-blue-700"}`}>
-                    {u.type === "vendor" ? "Vendeur" : "Acheteur"}
-                  </span>
-                </td>
-                <td className="px-4 py-3">
-                  <span className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-[#F1F5F9] text-[#616B7C] capitalize">{u.plan}</span>
-                </td>
-                <td className="px-4 py-3"><StatusBadge status={u.status === "active" ? "active" : "pending"} /></td>
-                <td className="px-4 py-3">
-                  <div className="flex items-center justify-end gap-1">
-                    <button onClick={() => { setConfirmModal(u); setConfirmed(false); setOpenInNewTab(false); }}
-                      className="p-1.5 rounded hover:bg-[#F1F5F9] text-[#8B95A5] hover:text-[#1B5BDA] transition-colors" title="Voir comme ce user">
-                      <Eye size={16} />
-                    </button>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <button className="p-1.5 rounded hover:bg-[#F1F5F9] text-[#8B95A5] hover:text-[#616B7C] transition-colors" title="Plus d'actions">
-                          <MoreHorizontal size={16} />
-                        </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-48">
-                        <DropdownMenuItem onClick={() => handleToggleStatus(u)} className="gap-2">
-                          {u.status === "active" ? <><Ban size={14} className="text-amber-500" /> Suspendre</> : <><CheckCircle size={14} className="text-emerald-500" /> Réactiver</>}
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => handleDelete(u)} className="gap-2 text-destructive focus:text-destructive">
-                          <Trash2 size={14} /> Supprimer
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </td>
+      <div className="flex gap-6">
+        {/* Table */}
+        <div className={`bg-card rounded-lg border border-border overflow-x-auto transition-all ${selectedUser ? "flex-1" : "w-full"}`}>
+          <table className="w-full text-[13px]">
+            <thead>
+              <tr className="border-b border-border text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
+                <th className="text-left px-4 py-3">Entreprise</th>
+                <th className="text-left px-4 py-3">Email</th>
+                <th className="text-left px-4 py-3">Type</th>
+                <th className="text-left px-4 py-3">Statut</th>
+                <th className="text-right px-4 py-3">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr><td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">Chargement…</td></tr>
+              ) : filtered.length === 0 ? (
+                <tr><td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">Aucun utilisateur trouvé</td></tr>
+              ) : filtered.map(u => (
+                <tr key={u.id}
+                  onClick={() => openDetail(u)}
+                  className={`border-b border-border/50 hover:bg-accent/30 transition-colors cursor-pointer ${selectedUser?.id === u.id ? "bg-accent/40" : ""}`}>
+                  <td className="px-4 py-3 font-semibold text-foreground">{u.company}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{u.email}</td>
+                  <td className="px-4 py-3">
+                    <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${u.type === "vendor" ? "bg-amber-50 text-amber-700" : "bg-blue-50 text-blue-700"}`}>
+                      {u.type === "vendor" ? "Vendeur" : "Acheteur"}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <StatusBadge status={u.status === "active" ? "active" : u.status === "inactive" ? "cancelled" : "pending"} />
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <ChevronRight size={16} className="inline text-muted-foreground" />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Detail Panel */}
+        {selectedUser && (
+          <div className="w-[420px] shrink-0 bg-card rounded-lg border border-border overflow-y-auto max-h-[calc(100vh-200px)]">
+            {/* Header */}
+            <div className="p-5 border-b border-border flex items-start justify-between">
+              <div>
+                <h2 className="text-base font-bold text-foreground">{selectedUser.company}</h2>
+                <p className="text-sm text-muted-foreground">{selectedUser.email}</p>
+                <div className="flex items-center gap-2 mt-2">
+                  <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${selectedUser.type === "vendor" ? "bg-amber-50 text-amber-700" : "bg-blue-50 text-blue-700"}`}>
+                    {selectedUser.type === "vendor" ? "Vendeur" : "Acheteur"}
+                  </span>
+                  <StatusBadge status={selectedUser.status === "active" ? "active" : selectedUser.status === "inactive" ? "cancelled" : "pending"} />
+                </div>
+              </div>
+              <button onClick={closeDetail} className="p-1 rounded hover:bg-accent">
+                <X size={18} className="text-muted-foreground" />
+              </button>
+            </div>
+
+            {/* Action Buttons */}
+            {selectedUser.type === "buyer" && (
+              <div className="p-4 border-b border-border space-y-2">
+                {buyerDetail && !buyerDetail.is_verified ? (
+                  <>
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex gap-2 mb-3">
+                      <AlertTriangle size={16} className="text-amber-600 shrink-0 mt-0.5" />
+                      <p className="text-xs text-amber-800">Ce compte est <strong>en attente de validation</strong>. Vérifiez les informations avant d'approuver.</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button onClick={() => handleValidate(selectedUser.userId)} className="flex-1 gap-1.5 bg-emerald-600 hover:bg-emerald-700">
+                        <UserCheck size={15} /> Valider le compte
+                      </Button>
+                      <Button onClick={() => handleDelete(selectedUser)} variant="destructive" className="gap-1.5">
+                        <UserX size={15} /> Refuser
+                      </Button>
+                    </div>
+                  </>
+                ) : buyerDetail?.is_verified ? (
+                  <div className="flex gap-2">
+                    <Button onClick={() => handleSuspend(selectedUser.userId)} variant="outline" className="flex-1 gap-1.5 text-amber-600 border-amber-300 hover:bg-amber-50">
+                      <Ban size={15} /> Suspendre
+                    </Button>
+                    <Button onClick={() => { setConfirmModal(selectedUser); setConfirmed(false); }} variant="outline" className="flex-1 gap-1.5">
+                      <Eye size={15} /> Impersonner
+                    </Button>
+                  </div>
+                ) : null}
+              </div>
+            )}
+
+            {selectedUser.type === "vendor" && (
+              <div className="p-4 border-b border-border">
+                <div className="flex gap-2">
+                  <Button onClick={() => navigate(`/admin/vendeurs/${selectedUser.id}`)} variant="outline" className="flex-1 gap-1.5">
+                    <FileText size={15} /> Fiche vendeur
+                  </Button>
+                  <Button onClick={() => { setConfirmModal(selectedUser); setConfirmed(false); }} variant="outline" className="flex-1 gap-1.5">
+                    <Eye size={15} /> Impersonner
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Buyer Details */}
+            {selectedUser.type === "buyer" && (
+              <div className="p-5">
+                {detailLoading ? (
+                  <p className="text-sm text-muted-foreground text-center py-8">Chargement…</p>
+                ) : buyerDetail ? (
+                  <div className="space-y-1">
+                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Informations du compte</h3>
+                    <DetailField icon={Building2} label="Entreprise" value={buyerDetail.company_name} />
+                    <DetailField icon={Mail} label="Email" value={buyerDetail.email} />
+                    <DetailField icon={Phone} label="Téléphone" value={buyerDetail.phone} />
+                    <DetailField icon={FileText} label="N° TVA" value={buyerDetail.vat_number} />
+                    <DetailField icon={MapPin} label="Adresse" value={[buyerDetail.address_line1, buyerDetail.postal_code, buyerDetail.city].filter(Boolean).join(", ")} />
+                    <DetailField icon={MapPin} label="Pays" value={buyerDetail.country_code} />
+                    <DetailField icon={Users} label="Type client" value={buyerDetail.customer_type} />
+                    <DetailField icon={Calendar} label="Inscrit le" value={new Date(buyerDetail.created_at).toLocaleDateString("fr-BE", { day: "numeric", month: "long", year: "numeric" })} />
+
+                    {buyerDetail.profile && (
+                      <>
+                        <div className="border-t border-border my-3" />
+                        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Profil utilisateur</h3>
+                        <DetailField icon={Users} label="Nom complet" value={buyerDetail.profile.full_name} />
+                        <DetailField icon={Building2} label="Secteur" value={buyerDetail.profile.sector} />
+                        <DetailField icon={MapPin} label="Pays (profil)" value={buyerDetail.profile.country} />
+                        <DetailField icon={Clock} label="Niveau de prix" value={buyerDetail.profile.price_level_code} />
+                      </>
+                    )}
+
+                    <div className="border-t border-border my-3" />
+                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Paramètres</h3>
+                    <DetailField icon={Clock} label="Délai de paiement" value={`${buyerDetail.payment_terms_days} jours`} />
+                    <DetailField icon={CheckCircle} label="Professionnel" value={buyerDetail.is_professional ? "Oui" : "Non"} />
+                    <DetailField icon={CheckCircle} label="Vérifié" value={buyerDetail.is_verified ? "✅ Oui" : "❌ Non"} />
+
+                    {/* Danger zone */}
+                    <div className="border-t border-border my-4" />
+                    <Button onClick={() => handleDelete(selectedUser)} variant="ghost" size="sm" className="w-full text-destructive hover:bg-destructive/10 gap-1.5">
+                      <Trash2 size={14} /> Supprimer définitivement
+                    </Button>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center py-8">Aucune donnée trouvée</p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
+      {/* Impersonation modal */}
       {confirmModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setConfirmModal(null)}>
-          <div className="bg-white rounded-xl w-full max-w-lg shadow-2xl" onClick={e => e.stopPropagation()}>
-            <div className="p-6 border-b border-[#E2E8F0]">
-              <h2 className="text-lg font-bold text-[#1D2530]">Impersonation — {confirmModal.company}</h2>
+          <div className="bg-card rounded-xl w-full max-w-lg shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="p-6 border-b border-border">
+              <h2 className="text-lg font-bold text-foreground">Impersonation — {confirmModal.company}</h2>
             </div>
             <div className="p-6 space-y-4">
-              <p className="text-sm text-[#616B7C]">
+              <p className="text-sm text-muted-foreground">
                 Vous allez accéder à l'interface de <strong>{confirmModal.company}</strong> ({confirmModal.email}).
               </p>
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex gap-2">
@@ -256,17 +405,15 @@ export default function AdminUsers() {
                 <p className="text-sm text-amber-800"><strong>Attention :</strong> les actions effectuées en mode shadow sont réelles.</p>
               </div>
               <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" checked={confirmed} onChange={e => setConfirmed(e.target.checked)} className="rounded border-[#E2E8F0] text-[#1B5BDA]" />
-                <span className="text-sm text-[#1D2530]">Je comprends que mes actions seront enregistrées</span>
+                <input type="checkbox" checked={confirmed} onChange={e => setConfirmed(e.target.checked)} className="rounded" />
+                <span className="text-sm text-foreground">Je comprends que mes actions seront enregistrées</span>
               </label>
             </div>
-            <div className="flex justify-end gap-2 p-6 border-t border-[#E2E8F0]">
-              <button onClick={() => setConfirmModal(null)} className="px-4 py-2 text-sm rounded-md border border-[#E2E8F0] hover:bg-[#F8FAFC]">Annuler</button>
-              <button disabled={!confirmed} onClick={() => handleImpersonate(confirmModal)}
-                className="px-4 py-2 text-sm rounded-md text-white font-medium disabled:opacity-40 transition-colors"
-                style={{ backgroundColor: confirmed ? "#1B5BDA" : "#94A3B8" }}>
+            <div className="flex justify-end gap-2 p-6 border-t border-border">
+              <Button variant="outline" onClick={() => setConfirmModal(null)}>Annuler</Button>
+              <Button disabled={!confirmed} onClick={() => handleImpersonate(confirmModal)}>
                 Accéder au compte
-              </button>
+              </Button>
             </div>
           </div>
         </div>

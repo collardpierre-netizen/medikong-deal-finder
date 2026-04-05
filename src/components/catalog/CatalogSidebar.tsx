@@ -375,7 +375,7 @@ export function CatalogSidebar({ filters, setFilter, clearAll, resultCategoryIds
           </div>
         )}
 
-        <ScrollArea className="max-h-[280px]">
+        <div className="max-h-[220px] overflow-y-auto pr-1">
           <div className="space-y-1">
             {filteredMf.map(m => (
               <label key={m.id} className="flex items-center gap-2 text-sm cursor-pointer py-0.5 hover:bg-muted px-1 rounded">
@@ -390,7 +390,7 @@ export function CatalogSidebar({ filters, setFilter, clearAll, resultCategoryIds
               </label>
             ))}
           </div>
-        </ScrollArea>
+        </div>
         {manufacturers.length > 10 && !showAllMf && (
           <button onClick={() => setShowAllMf(true)} className="text-xs text-mk-blue hover:underline mt-1">
             Voir plus ({manufacturers.length - 10})

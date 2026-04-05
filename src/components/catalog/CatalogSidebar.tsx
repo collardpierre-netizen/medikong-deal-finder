@@ -333,7 +333,7 @@ export function CatalogSidebar({ filters, setFilter, clearAll, resultCategoryIds
 
       {/* Manufacturers */}
       <div>
-        <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Fabricant</h4>
+        <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">{t("catalog.manufacturers")}</h4>
         <div className="relative mb-2" ref={mfDropdownRef}>
           <Search size={14} className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input

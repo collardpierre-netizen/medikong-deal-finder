@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import i18n from "@/i18n";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -181,6 +182,7 @@ export default function OnboardingPage() {
   const [companyName, setCompanyName] = useState("");
   const [vatNumber, setVatNumber] = useState("");
   const [country, setCountry] = useState("Belgique");
+  const [preferredLang, setPreferredLang] = useState("fr");
   const [city, setCity] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
@@ -822,6 +824,7 @@ export default function OnboardingPage() {
         company_name: companyName || null,
         vat_number: vatNumber || null,
         country: country || "Belgique",
+        preferred_language: preferredLang,
       }).eq("user_id", userId);
       if (profileError) console.warn("Profile update warning:", profileError.message);
 
@@ -852,6 +855,7 @@ export default function OnboardingPage() {
             type: "real",
             is_active: false,
             can_manage_offers: true,
+            preferred_language: preferredLang,
           });
           if (vendorError) console.warn("Vendor insert warning:", vendorError.message);
         }
@@ -898,6 +902,10 @@ export default function OnboardingPage() {
       removeOnboardingStorage(getTempPasswordStorageKey(email));
       removeOnboardingStorage(onboardingDraftStorageKey);
       setTempPassword("");
+
+      // Apply chosen language
+      i18n.changeLanguage(preferredLang);
+      localStorage.setItem("medikong_language", preferredLang);
 
       goNext();
     } catch (err: any) {
@@ -1140,6 +1148,17 @@ export default function OnboardingPage() {
             <TfInput value={lastName} onChange={setLastName} placeholder="Nom" />
           </div>
           <TfInput value={phone} onChange={setPhone} placeholder="+32 470 123 456" type="tel" />
+          <div style={{ marginTop: 14 }}>
+            <label style={{ fontSize: 12, fontWeight: 600, color: S.sec, marginBottom: 6, display: "block" }}>Langue de l'interface</label>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
+              {([["fr", "🇧🇪 Français"], ["nl", "🇧🇪 Nederlands"], ["en", "🇬🇧 English"], ["de", "🇩🇪 Deutsch"]] as const).map(([code, label]) => (
+                <button key={code} onClick={() => setPreferredLang(code)}
+                  style={{ padding: "8px 4px", borderRadius: S.radiusSm, border: preferredLang === code ? `2px solid ${S.blue}` : `1px solid ${S.line}`, background: preferredLang === code ? S.blueBg : "#fff", cursor: "pointer", fontSize: 12, fontWeight: preferredLang === code ? 700 : 500, color: preferredLang === code ? S.blue : S.text, transition: "all .2s" }}>
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
           <div style={{ marginTop: 16 }}>
             <Cta onClick={goNext} disabled={!firstName || !lastName || !phone}>Continuer</Cta>
             <KbdHint />
@@ -1255,6 +1274,17 @@ export default function OnboardingPage() {
           </div>
           <TfInput value={phone} onChange={setPhone} placeholder="+32 470 123 456" type="tel" style={{ marginBottom: 14 }} />
           <TfInput value={jobTitle} onChange={setJobTitle} placeholder="Fonction (ex: Directeur commercial)" />
+          <div style={{ marginTop: 14 }}>
+            <label style={{ fontSize: 12, fontWeight: 600, color: S.sec, marginBottom: 6, display: "block" }}>Langue de l'interface</label>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
+              {([["fr", "🇧🇪 Français"], ["nl", "🇧🇪 Nederlands"], ["en", "🇬🇧 English"], ["de", "🇩🇪 Deutsch"]] as const).map(([code, label]) => (
+                <button key={code} onClick={() => setPreferredLang(code)}
+                  style={{ padding: "8px 4px", borderRadius: S.radiusSm, border: preferredLang === code ? `2px solid ${S.blue}` : `1px solid ${S.line}`, background: preferredLang === code ? S.blueBg : "#fff", cursor: "pointer", fontSize: 12, fontWeight: preferredLang === code ? 700 : 500, color: preferredLang === code ? S.blue : S.text, transition: "all .2s" }}>
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
           <div style={{ marginTop: 16 }}>
             <Cta onClick={goNext} disabled={!firstName || !lastName || !phone}>Continuer</Cta>
             <KbdHint />

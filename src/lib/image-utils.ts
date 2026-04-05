@@ -8,6 +8,7 @@ const BLOCKED_URL_PATTERNS = [
   /image[._-]?non/i,
   /default[_-]?image/i,
   /no[._-]?image/i,
+  /static\.prod\.qogita\.com/i,
 ];
 
 export function isValidProductImage(url: string | undefined | null): boolean {

@@ -2,8 +2,9 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { CheckCircle2, Clock, Upload, FileText, Shield, Award, AlertTriangle, X, Loader2 } from "lucide-react";
+import { CheckCircle2, Clock, Upload, FileText, Shield, Award, AlertTriangle, X, Loader2, Settings2 } from "lucide-react";
 import { toast } from "sonner";
+import VendorCommercialSettings from "./VendorCommercialSettings";
 
 interface KycCriteria {
   id: string;
@@ -29,8 +30,9 @@ const STEP_CONFIG = [
   { num: 1, label: "Inscription", icon: FileText, key: "registered" },
   { num: 2, label: "Vérification KYC", icon: Shield, key: "kyc" },
   { num: 3, label: "Documents", icon: Upload, key: "docs" },
-  { num: 4, label: "Revue finale", icon: Award, key: "review" },
-  { num: 5, label: "Activé", icon: CheckCircle2, key: "active" },
+  { num: 4, label: "Paramètres", icon: Settings2, key: "commercial" },
+  { num: 5, label: "Revue finale", icon: Award, key: "review" },
+  { num: 6, label: "Activé", icon: CheckCircle2, key: "active" },
 ];
 
 export default function VendorKycStepper({ vendor }: { vendor: any }) {
@@ -42,8 +44,8 @@ export default function VendorKycStepper({ vendor }: { vendor: any }) {
   const validationStatus = vendor?.validation_status || "pending_review";
 
   // Current step based on validation_status
-  const currentStep = validationStatus === "approved" ? 5
-    : validationStatus === "under_review" ? 4
+  const currentStep = validationStatus === "approved" ? 6
+    : validationStatus === "under_review" ? 5
     : 2; // pending_review
 
   // Fetch criteria for this business type
@@ -260,6 +262,24 @@ export default function VendorKycStepper({ vendor }: { vendor: any }) {
                 </div>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {/* Commercial settings step */}
+      {currentStep < 6 && (
+        <div className="rounded-xl overflow-hidden" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
+          <div className="px-5 py-3 border-b" style={{ borderColor: "#E2E8F0", backgroundColor: "#F8FAFC" }}>
+            <h3 className="text-[13px] font-bold flex items-center gap-2" style={{ color: "#1D2530" }}>
+              <Settings2 size={14} style={{ color: "#1B5BDA" }} />
+              Paramètres commerciaux
+            </h3>
+            <p className="text-[11px] mt-0.5" style={{ color: "#8B95A5" }}>
+              Configurez vos pays de vente, clients cibles, conditions d'expédition et retours
+            </p>
+          </div>
+          <div className="p-5">
+            <VendorCommercialSettings vendorId={vendor.id} compact />
           </div>
         </div>
       )}

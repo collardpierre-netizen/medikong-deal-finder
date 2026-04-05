@@ -1231,7 +1231,9 @@ export type Database = {
           product_id: string | null
           product_name_source: string | null
           product_url: string | null
+          remise_pct: number | null
           source_id: string
+          stock_source: string | null
           supplier_code: string | null
           supplier_name: string | null
           tva_rate: number | null
@@ -1248,7 +1250,9 @@ export type Database = {
           product_id?: string | null
           product_name_source?: string | null
           product_url?: string | null
+          remise_pct?: number | null
           source_id: string
+          stock_source?: string | null
           supplier_code?: string | null
           supplier_name?: string | null
           tva_rate?: number | null
@@ -1265,7 +1269,9 @@ export type Database = {
           product_id?: string | null
           product_name_source?: string | null
           product_url?: string | null
+          remise_pct?: number | null
           source_id?: string
+          stock_source?: string | null
           supplier_code?: string | null
           supplier_name?: string | null
           tva_rate?: number | null

@@ -175,7 +175,7 @@ export default function AdminVeillePrix() {
       while (true) {
         const { data, error } = await supabase
           .from("market_prices")
-          .select("id, product_id, prix_grossiste, prix_pharmacien, prix_public, tva_rate, source_id, market_price_sources(name, slug, country_code)")
+          .select("id, product_id, prix_grossiste, prix_pharmacien, prix_public, tva_rate, source_id, stock_source, remise_pct, imported_at, market_price_sources(name, slug, country_code)")
           .eq("is_matched", true)
           .not("product_id", "is", null)
           .range(from, from + batchSize - 1);
@@ -365,11 +365,17 @@ export default function AdminVeillePrix() {
       const colCnk = findCol(["cnk", "cnk_code"]);
       const colName = findCol(["nom", "name", "désignation", "designation", "libellé", "libelle", "produit", "product"]);
       const colPrixGros = findCol(["grossiste", "prix achat", "prix_achat", "wholesale", "prix grossiste", "p.achat", "prix de gros"]);
-      const colPrixPharma = findCol(["pharmacien", "prix vente", "prix_vente", "pharma", "prix pharmacien", "pvp", "p.vente"]);
-      const colPrixPublic = findCol(["public", "prix public", "prix_public", "pvp ttc", "retail", "prix", "price", "prix ttc"]);
+      // For competitor files: "Prix EUR" = their selling price → prix_pharmacien
+      const colPrixPharma = findCol(["pharmacien", "prix vente", "prix_vente", "pharma", "prix pharmacien", "pvp", "p.vente", "prix eur"]);
+      // "Prix conseille" = recommended retail → prix_public
+      const colPrixPublic = findCol(["public", "prix public", "prix_public", "pvp ttc", "retail", "prix conseill", "prix ttc"]);
+      // Fallback: if neither pharma nor public found, try generic "prix" / "price"
+      const colPrixGeneric = !colPrixPharma && !colPrixPublic ? findCol(["prix", "price"]) : null;
       const colTva = findCol(["tva", "vat", "tax"]);
       const colSupplier = findCol(["fournisseur", "supplier", "vendeur", "vendor", "supplier_name"]);
       const colUrl = findCol(["url", "product_url", "lien", "link"]);
+      const colStock = findCol(["stock", "disponib", "quantit", "qty", "available"]);
+      const colRemise = findCol(["remise", "discount", "reduction", "remise pct", "remise_pct"]);
 
       // Fetch all products for matching
       setImportProgress({ phase: "Chargement des produits…", current: 0, total: 0 });
@@ -427,19 +433,36 @@ export default function AdminVeillePrix() {
 
         const parseNum = (v: any) => { const n = parseFloat(String(v || "").replace(",", ".")); return isNaN(n) ? null : n; };
 
+        // Determine competitor price: use specific columns or fallback to generic
+        const prixPharma = colPrixPharma ? parseNum(row[colPrixPharma]) : (colPrixGeneric ? parseNum(row[colPrixGeneric]) : null);
+
+        // Stock: parse as text (could be number or "En stock"/"Rupture")
+        let stockVal: string | null = null;
+        if (colStock) {
+          const raw = String(row[colStock] || "").trim();
+          if (raw) {
+            const num = parseInt(raw, 10);
+            if (!isNaN(num)) stockVal = num > 0 ? `En stock (${num})` : "Rupture";
+            else stockVal = raw;
+          }
+        }
+
         batchInsert.push({
           source_id: importSourceId,
           ean: colEan ? String(row[colEan] || "").trim() : null,
           cnk: colCnk ? String(row[colCnk] || "").trim() : null,
           product_name_source: name || null,
           prix_grossiste: colPrixGros ? parseNum(row[colPrixGros]) : null,
-          prix_pharmacien: colPrixPharma ? parseNum(row[colPrixPharma]) : null,
+          prix_pharmacien: prixPharma,
           prix_public: colPrixPublic ? parseNum(row[colPrixPublic]) : null,
           tva_rate: colTva ? parseNum(row[colTva]) : null,
           supplier_name: colSupplier ? String(row[colSupplier] || "").trim() || null : null,
           product_url: colUrl ? String(row[colUrl] || "").trim() || null : null,
+          stock_source: stockVal,
+          remise_pct: colRemise ? parseNum(row[colRemise]) : null,
           product_id: productId,
           is_matched: !!productId,
+          imported_at: new Date().toISOString(),
         });
       }
 
@@ -740,10 +763,12 @@ export default function AdminVeillePrix() {
             <div className="bg-muted/50 rounded-lg p-3 text-xs text-muted-foreground space-y-1">
               <p className="font-medium text-foreground">Colonnes reconnues :</p>
               <p><strong>Identifiants :</strong> EAN/GTIN, CNK</p>
-              <p><strong>Prix :</strong> Prix grossiste, Prix pharmacien, Prix public/Prix, TVA</p>
-              <p><strong>Infos :</strong> Nom/Désignation, Fournisseur/Vendor, URL produit</p>
-              <p className="mt-1">💡 <strong>E-commerce :</strong> Un simple fichier avec les colonnes <code className="bg-muted px-1 rounded">EAN</code>, <code className="bg-muted px-1 rounded">Nom</code>, <code className="bg-muted px-1 rounded">Prix</code> suffit.</p>
+              <p><strong>Prix :</strong> Prix grossiste, Prix pharmacien/Prix EUR, Prix public/Prix conseillé, TVA</p>
+              <p><strong>Stock :</strong> Stock, Disponibilité, Quantité</p>
+              <p><strong>Infos :</strong> Nom/Désignation, Fournisseur/Vendor, URL produit, Remise %</p>
+              <p className="mt-1">💡 <strong>E-commerce :</strong> Un fichier avec <code className="bg-muted px-1 rounded">EAN</code>, <code className="bg-muted px-1 rounded">Nom</code>, <code className="bg-muted px-1 rounded">Prix EUR</code>, <code className="bg-muted px-1 rounded">Stock</code> suffit.</p>
               <p>Le matching se fait par EAN → CNK vers vos produits existants.</p>
+              <p>📅 La date d'import est automatiquement enregistrée pour chaque relevé.</p>
             </div>
             {importing && importProgress && (
               <div className="space-y-2">

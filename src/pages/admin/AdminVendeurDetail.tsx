@@ -569,10 +569,16 @@ function VendorValidationTab({ vendor, onUpdate }: { vendor: any; onUpdate: () =
       <div className="p-5 rounded-[10px] flex items-center gap-4" style={{ backgroundColor: st.bg, border: `1px solid ${st.color}20` }}>
         {validationStatus === "pending_review" && <Clock size={24} style={{ color: st.color }} />}
         {validationStatus === "under_review" && <FileText size={24} style={{ color: st.color }} />}
+        {validationStatus === "accepted" && <CheckCircle2 size={24} style={{ color: st.color }} />}
         {validationStatus === "approved" && <CheckCircle2 size={24} style={{ color: st.color }} />}
         {validationStatus === "rejected" && <XCircle size={24} style={{ color: st.color }} />}
         <div>
           <p className="text-[14px] font-bold" style={{ color: st.color }}>{st.label}</p>
+          {validationStatus === "accepted" && (
+            <p className="text-[12px] mt-0.5" style={{ color: "#7C3AED" }}>
+              Le vendeur a accès au portail et doit compléter son KYC
+            </p>
+          )}
           {(vendor as any).validated_at && (
             <p className="text-[11px]" style={{ color: "#8B95A5" }}>
               Le {new Date((vendor as any).validated_at).toLocaleDateString("fr-BE")} à {new Date((vendor as any).validated_at).toLocaleTimeString("fr-BE", { hour: "2-digit", minute: "2-digit" })}

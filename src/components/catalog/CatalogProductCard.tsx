@@ -132,7 +132,7 @@ export function CatalogProductCard({ product, index = 0, view = "grid" }: Props)
       className="flex-1 bg-primary text-primary-foreground text-xs font-semibold py-1.5 rounded-md hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-1"
     >
       {adding ? <Loader2 size={14} className="animate-spin" /> : null}
-      {product.offer_count > 1 ? "Voir offres" : "Ajouter"}
+      {product.offer_count > 1 ? t("catalog.viewOffers") : t("catalog.add")}
     </button>
   );
 

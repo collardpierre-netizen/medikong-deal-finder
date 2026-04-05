@@ -67,6 +67,7 @@ export default function AdminUsers() {
     const { data: customers } = await supabase
       .from("customers")
       .select("id, auth_user_id, email, company_name, customer_type")
+      .select("id, auth_user_id, email, company_name, customer_type, is_verified")
       .order("company_name");
 
     customers?.forEach(b => {
@@ -78,7 +79,7 @@ export default function AdminUsers() {
           type: "buyer",
           company: b.company_name,
           plan: b.customer_type || "pharmacy",
-          status: "active",
+          status: (b as any).is_verified ? "active" : "pending",
           lastLogin: null,
         });
       }
@@ -89,7 +90,9 @@ export default function AdminUsers() {
   }
 
   const filtered = users.filter(u => {
-    if (typeFilter !== "all" && u.type !== typeFilter) return false;
+    if (typeFilter === "pending") {
+      if (u.status !== "pending") return false;
+    } else if (typeFilter !== "all" && u.type !== typeFilter) return false;
     if (search) {
       const q = search.toLowerCase();
       return u.company.toLowerCase().includes(q) || u.email.toLowerCase().includes(q);
@@ -98,7 +101,8 @@ export default function AdminUsers() {
   });
 
   const vendorCount = users.filter(u => u.type === "vendor" && u.status === "active").length;
-  const buyerCount = users.filter(u => u.type === "buyer").length;
+  const buyerCount = users.filter(u => u.type === "buyer" && u.status === "active").length;
+  const pendingCount = users.filter(u => u.status === "pending").length;
   const suspendedCount = users.filter(u => u.status === "suspended" || u.status === "inactive").length;
 
   async function handleImpersonate(user: UserRow) {
@@ -162,7 +166,7 @@ export default function AdminUsers() {
         <KpiCard label="Total utilisateurs" value={String(users.length)} icon={Users} iconColor="#1B5BDA" />
         <KpiCard label="Vendeurs actifs" value={String(vendorCount)} icon={Store} iconColor="#F59E0B" />
         <KpiCard label="Acheteurs actifs" value={String(buyerCount)} icon={ShoppingBag} iconColor="#059669" />
-        <KpiCard label="Inactifs" value={String(suspendedCount)} icon={AlertTriangle} iconColor="#EF4343" />
+        <KpiCard label="En attente" value={String(pendingCount)} icon={AlertTriangle} iconColor="#F59E0B" />
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3">
@@ -170,6 +174,7 @@ export default function AdminUsers() {
           <option value="all">Tous</option>
           <option value="vendor">Vendeurs</option>
           <option value="buyer">Acheteurs</option>
+          <option value="pending">En attente</option>
         </select>
         <div className="relative flex-1 max-w-md">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8B95A5]" />

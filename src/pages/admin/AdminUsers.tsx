@@ -387,7 +387,26 @@ export default function AdminUsers() {
 
                     <div className="border-t border-border my-3" />
                     <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Paramètres</h3>
-                    <DetailField icon={Clock} label="Délai de paiement" value={`${buyerDetail.payment_terms_days} jours`} />
+                    <div className="flex items-center gap-2 py-1.5">
+                      <Clock size={14} className="text-muted-foreground shrink-0" />
+                      <div className="flex-1">
+                        <p className="text-[11px] text-muted-foreground uppercase tracking-wide">Délai de paiement</p>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="number"
+                            min={0}
+                            className="w-16 text-sm font-semibold border border-border rounded px-2 py-0.5 bg-background"
+                            value={buyerDetail.payment_terms_days}
+                            onChange={async (e) => {
+                              const val = parseInt(e.target.value) || 0;
+                              await supabase.from("customers").update({ payment_terms_days: val }).eq("id", buyerDetail.id);
+                              setBuyerDetail((prev: any) => prev ? { ...prev, payment_terms_days: val } : prev);
+                            }}
+                          />
+                          <span className="text-sm text-muted-foreground">jours</span>
+                        </div>
+                      </div>
+                    </div>
                     <DetailField icon={CheckCircle} label="Professionnel" value={buyerDetail.is_professional ? "Oui" : "Non"} />
                     <DetailField icon={CheckCircle} label="Vérifié" value={buyerDetail.is_verified ? "✅ Oui" : "❌ Non"} />
 

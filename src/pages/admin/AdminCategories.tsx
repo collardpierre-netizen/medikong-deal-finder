@@ -325,10 +325,19 @@ const AdminCategories = () => {
                       className={`flex items-center gap-2 w-full text-left px-3 py-2 rounded-md transition-colors ${isActive ? "bg-blue-50" : "hover:bg-gray-50"}`}
                     >
                       <Checkbox checked={selectedIds.includes(cat.id)} onCheckedChange={() => toggleSelect(cat.id)} onClick={(e: any) => e.stopPropagation()} className="mr-0.5 h-3.5 w-3.5" />
-                      <span onClick={(e) => { e.stopPropagation(); if (subs.length > 0) toggle(cat.id); }} className="cursor-pointer">
+                      <span
+                        onClick={(e) => { e.stopPropagation(); if (subs.length > 0) toggle(cat.id); }}
+                        className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-medium shrink-0 ${subs.length > 0 ? "cursor-pointer border-border bg-background text-muted-foreground hover:bg-accent hover:text-accent-foreground" : "border-transparent text-transparent"}`}
+                        title={subs.length > 0 ? (expanded.includes(cat.id) ? "Replier cette catégorie" : "Déplier cette catégorie") : undefined}
+                      >
                         {subs.length > 0 ? (
-                          expanded.includes(cat.id) ? <ChevronDown size={14} style={{ color: "#8B95A5" }} /> : <ChevronRight size={14} style={{ color: "#8B95A5" }} />
-                        ) : <div className="w-3.5" />}
+                          <>
+                            {expanded.includes(cat.id) ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+                            <span>{expanded.includes(cat.id) ? "Replier" : "Déplier"}</span>
+                          </>
+                        ) : (
+                          <span>Vide</span>
+                        )}
                       </span>
                       <Layers size={14} style={{ color: "#1B5BDA" }} />
                       <span className="text-[13px] font-semibold flex-1" style={{ color: "#1D2530" }}>
@@ -353,10 +362,16 @@ const AdminCategories = () => {
                             >
                               <Checkbox checked={selectedIds.includes(sub.id)} onCheckedChange={() => toggleSelect(sub.id)} onClick={(e: any) => e.stopPropagation()} className="mr-0.5 h-3.5 w-3.5" />
                               {hasGrandchildren ? (
-                                <span onClick={(e) => { e.stopPropagation(); toggle(sub.id); }} className="cursor-pointer">
-                                  {expanded.includes(sub.id) ? <ChevronDown size={12} className="text-muted-foreground" /> : <ChevronRight size={12} className="text-muted-foreground" />}
+                                <span
+                                  onClick={(e) => { e.stopPropagation(); toggle(sub.id); }}
+                                  className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground cursor-pointer shrink-0"
+                                  title={expanded.includes(sub.id) ? "Replier cette sous-catégorie" : "Déplier cette sous-catégorie"}
+                                >
+                                  {expanded.includes(sub.id) ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                                  <span>{expanded.includes(sub.id) ? "Replier" : "Déplier"}</span>
                                 </span>
-                              ) : <div className="w-3" />}
+                              ) : <div className="w-[62px]" />}
+
                               <Tag size={12} style={{ color: "#7C3AED" }} />
                               <span className="text-[12px] flex-1" style={{ color: "#616B7C" }}>
                                 {getTranslated(translations, sub.id, "name", "fr", sub.name)}

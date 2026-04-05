@@ -54,6 +54,8 @@ export default function AdminVeillePrix() {
   const [importReport, setImportReport] = useState<{ total: number; matched: number; inserted: number } | null>(null);
   const [importProgress, setImportProgress] = useState<{ phase: string; current: number; total: number } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [rematching, setRematching] = useState(false);
+  const [rematchResult, setRematchResult] = useState<{ matched: number; total: number } | null>(null);
 
   // Fetch sources
   const { data: sources = [] } = useQuery({

@@ -176,7 +176,7 @@ const AdminProduits = () => {
   const sortedVendors = [...vendors].sort((a, b) => (a.company_name || a.name).localeCompare(b.company_name || b.name));
 
   const [importProgress, setImportProgress] = useState<ImportProgress | null>(null);
-  const [importResult, setImportResult] = useState<{ created: number; updated: number; skipped: number; errors: { line: number; name: string; code: string; message: string }[]; brandsCreated?: number; manufacturersCreated?: number; totalRows: number } | null>(null);
+  const [importResult, setImportResult] = useState<{ created: number; updated: number; skipped: number; errors: { line: number; name: string; code: string; message: string }[]; brandsCreated?: number; manufacturersCreated?: number; categoriesCreated?: number; totalRows: number } | null>(null);
   const [importing, setImporting] = useState(false);
   const [importPanelOpen, setImportPanelOpen] = useState(false);
   const [migratingImages, setMigratingImages] = useState(false);

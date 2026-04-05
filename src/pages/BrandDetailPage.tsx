@@ -305,19 +305,7 @@ export default function BrandDetailPage() {
           </div>
         )}
 
-        {/* Group buy CTA */}
-        <div className="rounded-lg p-4 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3" style={{ background: "linear-gradient(135deg, #FEF3C7, #FDE68A)" }}>
-          <div className="flex items-center gap-3">
-            <Users size={18} className="text-mk-amber shrink-0" />
-            <div>
-              <span className="text-sm font-bold text-mk-navy">Achat groupe {brand.name}</span>
-              <p className="text-xs text-mk-sec">Regroupez vos commandes avec d'autres pharmacies</p>
-            </div>
-          </div>
-          <Link to={`/sourcing?brand=${encodeURIComponent(brand.name)}`} className="bg-mk-amber text-white text-sm font-semibold px-4 py-2 rounded-md whitespace-nowrap">
-            Rejoindre le groupe
-          </Link>
-        </div>
+        {/* Group buy CTA — disabled for now */}
 
         <div className="flex gap-7">
           {/* Sidebar */}

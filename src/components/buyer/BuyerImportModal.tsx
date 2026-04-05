@@ -171,7 +171,7 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
     selected.forEach(idx => {
       const r = results[idx];
       if (r.offerId && r.productId) {
-        addToCart(r.offerId, r.quantity);
+        addToCart.mutate({ offerId: r.offerId, productId: r.productId, quantity: r.quantity });
         added++;
       }
     });

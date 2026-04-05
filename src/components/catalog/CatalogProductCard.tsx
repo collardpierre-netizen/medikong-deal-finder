@@ -58,7 +58,7 @@ export function CatalogProductCard({ product, index = 0, view = "grid" }: Props)
   const [qty, setQty] = useState(1);
   const [adding, setAdding] = useState(false);
   const { addToCart } = useCart();
-  const { user } = useAuth();
+  const { user, isVerifiedBuyer } = useAuth();
   const { country } = useCountry();
   const navigate = useNavigate();
   const location = useLocation();
@@ -67,6 +67,7 @@ export function CatalogProductCard({ product, index = 0, view = "grid" }: Props)
   const price = product.best_price_excl_vat || 0;
   const priceIncl = product.best_price_incl_vat || 0;
   const isLoggedIn = !!user;
+  const canSeePrices = isLoggedIn && isVerifiedBuyer;
   const displayName = getLocalizedName(product, i18n.language);
 
   const handleAddToCart = async () => {

@@ -63,6 +63,8 @@ export default function AdminUsers() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [confirmModal, setConfirmModal] = useState<UserRow | null>(null);
   const [confirmed, setConfirmed] = useState(false);
+  const [deleteModal, setDeleteModal] = useState<UserRow | null>(null);
+  const [deleteReason, setDeleteReason] = useState("");
   const { startImpersonation } = useImpersonation();
   const navigate = useNavigate();
 

@@ -16,6 +16,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
+type VendorValidationStatus = "pending_review" | "under_review" | "accepted" | "approved" | "rejected";
+
 const tabList = [
   { key: "resume", label: "Résumé", icon: Building2 },
   { key: "validation", label: "Validation", icon: CheckCircle2 },

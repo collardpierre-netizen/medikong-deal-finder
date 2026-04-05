@@ -265,6 +265,24 @@ export default function VendorKycStepper({ vendor }: { vendor: any }) {
           </div>
         </div>
       )}
+
+      {/* Commercial settings step */}
+      {currentStep < 6 && (
+        <div className="rounded-xl overflow-hidden" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
+          <div className="px-5 py-3 border-b" style={{ borderColor: "#E2E8F0", backgroundColor: "#F8FAFC" }}>
+            <h3 className="text-[13px] font-bold flex items-center gap-2" style={{ color: "#1D2530" }}>
+              <Settings2 size={14} style={{ color: "#1B5BDA" }} />
+              Paramètres commerciaux
+            </h3>
+            <p className="text-[11px] mt-0.5" style={{ color: "#8B95A5" }}>
+              Configurez vos pays de vente, clients cibles, conditions d'expédition et retours
+            </p>
+          </div>
+          <div className="p-5">
+            <VendorCommercialSettings vendorId={vendor.id} compact />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

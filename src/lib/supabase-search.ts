@@ -89,7 +89,8 @@ export async function federatedSearch(query: string): Promise<FederatedResults> 
         return {
           products: meiliRes.products.map(p => ({
             ...p,
-            image_urls: p.image_url ? [p.image_url] : null,
+            image_urls: p.image_url ? [p.image_url] : [],
+            image_url: p.image_url || null,
             gtin: (p as any).gtin || null,
             cnk_code: (p as any).cnk_code || null,
           })) as SearchProduct[],

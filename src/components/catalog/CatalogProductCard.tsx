@@ -206,7 +206,7 @@ export function CatalogProductCard({ product, index = 0, view = "grid" }: Props)
       </div>
       <Link to={`/produit/${product.slug}`} state={fromState}>
         <p className="text-xs text-muted-foreground mb-0.5 truncate">{product.brand_name || "—"}</p>
-        <h3 className="text-sm font-medium text-foreground leading-snug mb-1.5 line-clamp-2 min-h-[2.5rem]">{product.name}</h3>
+        <h3 className="text-sm font-medium text-foreground leading-snug mb-1.5 line-clamp-2 min-h-[2.5rem]">{displayName}</h3>
       </Link>
       {isLoggedIn ? (
         <>

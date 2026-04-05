@@ -654,18 +654,48 @@ function VendorValidationTab({ vendor, onUpdate }: { vendor: any; onUpdate: () =
           className="w-full border rounded-md px-3 py-2.5 text-[13px] mb-4 focus:outline-none focus:border-[#1B5BDA] resize-none"
           style={{ borderColor: "#E2E8F0" }}
         />
-        <div className="flex items-center gap-3">
-          {validationStatus !== "approved" && (
+        <div className="flex items-center gap-3 flex-wrap">
+          {/* Step 0: Pass to review */}
+          {validationStatus === "pending_review" && (
             <button
-              onClick={() => handleAction("approved")}
+              onClick={() => handleAction("under_review")}
               disabled={acting}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-md text-[12px] font-bold text-white transition-opacity hover:opacity-90"
-              style={{ backgroundColor: "#059669" }}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-md text-[12px] font-bold transition-opacity hover:opacity-90"
+              style={{ backgroundColor: "#EFF6FF", color: "#1B5BDA", border: "1px solid #BFDBFE" }}
             >
-              {acting ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
-              Approuver le vendeur
+              <FileText size={14} /> Passer en review
             </button>
           )}
+
+          {/* Step 1: Accept candidature → portal access + KYC */}
+          {(validationStatus === "pending_review" || validationStatus === "under_review") && (
+            <button
+              onClick={() => handleAction("accepted")}
+              disabled={acting}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-md text-[12px] font-bold text-white transition-opacity hover:opacity-90"
+              style={{ backgroundColor: "#7C3AED" }}
+            >
+              {acting ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
+              Accepter la candidature
+            </button>
+          )}
+
+          {/* Step 2: Final validation → only when KYC is complete */}
+          {validationStatus === "accepted" && (
+            <button
+              onClick={() => handleAction("approved")}
+              disabled={acting || !kycAllApproved}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-md text-[12px] font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ backgroundColor: "#059669" }}
+              title={!kycAllApproved ? "Tous les critères KYC doivent être approuvés" : undefined}
+            >
+              {acting ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
+              Validation finale
+              {!kycAllApproved && <span className="text-[10px] ml-1 opacity-75">(KYC incomplet)</span>}
+            </button>
+          )}
+
+          {/* Reject — always available unless already rejected */}
           {validationStatus !== "rejected" && (
             <button
               onClick={() => handleAction("rejected")}
@@ -675,16 +705,6 @@ function VendorValidationTab({ vendor, onUpdate }: { vendor: any; onUpdate: () =
             >
               {acting ? <Loader2 size={14} className="animate-spin" /> : <XCircle size={14} />}
               Refuser
-            </button>
-          )}
-          {validationStatus === "pending_review" && (
-            <button
-              onClick={() => handleAction("under_review")}
-              disabled={acting}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-md text-[12px] font-bold transition-opacity hover:opacity-90"
-              style={{ backgroundColor: "#EFF6FF", color: "#1B5BDA", border: "1px solid #BFDBFE" }}
-            >
-              <FileText size={14} /> Passer en review
             </button>
           )}
         </div>

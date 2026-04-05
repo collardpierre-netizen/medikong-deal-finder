@@ -340,6 +340,8 @@ const AdminCategories = () => {
                       <div className="ml-8 space-y-0.5">
                         {subs.map((sub) => {
                           const isSubActive = selectedId === sub.id;
+                          const grandchildren = childrenOf(sub.id);
+                          const hasGrandchildren = grandchildren.length > 0;
                           return (
                             <React.Fragment key={sub.id}>
                             <button
@@ -347,16 +349,22 @@ const AdminCategories = () => {
                               className={`flex items-center gap-2 px-3 py-1.5 rounded-md w-full text-left transition-colors ${isSubActive ? "bg-blue-50" : "hover:bg-gray-50"}`}
                             >
                               <Checkbox checked={selectedIds.includes(sub.id)} onCheckedChange={() => toggleSelect(sub.id)} onClick={(e: any) => e.stopPropagation()} className="mr-0.5 h-3.5 w-3.5" />
+                              {hasGrandchildren ? (
+                                <span onClick={(e) => { e.stopPropagation(); toggle(sub.id); }} className="cursor-pointer">
+                                  {expanded.includes(sub.id) ? <ChevronDown size={12} className="text-muted-foreground" /> : <ChevronRight size={12} className="text-muted-foreground" />}
+                                </span>
+                              ) : <div className="w-3" />}
                               <Tag size={12} style={{ color: "#7C3AED" }} />
                               <span className="text-[12px] flex-1" style={{ color: "#616B7C" }}>
                                 {getTranslated(translations, sub.id, "name", "fr", sub.name)}
                               </span>
+                              {hasGrandchildren && <span className="text-[9px] text-muted-foreground">{grandchildren.length}</span>}
                               <TranslationBadges catId={sub.id} />
                             </button>
-                            {/* Grandchildren */}
-                            {childrenOf(sub.id).length > 0 && (
+                            {/* Grandchildren - collapsible */}
+                            {hasGrandchildren && expanded.includes(sub.id) && (
                               <div className="ml-6 space-y-0.5">
-                                {childrenOf(sub.id).map(gc => (
+                                {grandchildren.map(gc => (
                                   <button key={gc.id} onClick={() => selectCategory(gc)}
                                     className={`flex items-center gap-1.5 px-2 py-1 rounded-md w-full text-left text-[11px] ${selectedId === gc.id ? "bg-blue-50" : "hover:bg-gray-50"}`}>
                                     <Checkbox checked={selectedIds.includes(gc.id)} onCheckedChange={() => toggleSelect(gc.id)} onClick={(e: any) => e.stopPropagation()} className="h-3 w-3" />

@@ -573,6 +573,7 @@ export default function ProductPage() {
 
   const { slug } = useParams();
   const navigate = useNavigate();
+  const routeLocation = useLocation();
   const { user } = useAuth();
   const { country } = useCountry();
   const { isTVAC } = usePriceDisplay();
@@ -839,8 +840,7 @@ export default function ProductPage() {
         {/* Back to results + Breadcrumb */}
         <div className="mk-container pt-3 pb-1 flex items-center gap-3">
           {(() => {
-            const loc = location as any;
-            const from = loc.state?.from;
+            const from = (routeLocation.state as any)?.from;
             if (from && (from.startsWith("/catalogue") || from.startsWith("/recherche"))) {
               return (
                 <button

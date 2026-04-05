@@ -16,6 +16,7 @@ import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { exportCategories, importCategories } from "@/lib/xlsx-utils";
 import { toast } from "sonner";
+import { useImportJobs } from "@/contexts/ImportContext";
 import { Layers, Tag, Package, ChevronDown, ChevronRight, Download, Upload, Languages, X, Save, Wand2, Merge } from "lucide-react";
 import { Search, FolderTree, ArrowRight, Plus, Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";

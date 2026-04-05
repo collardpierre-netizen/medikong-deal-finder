@@ -166,28 +166,14 @@ export default function HomePage() {
           </motion.p>
 
           {/* Search */}
-          <motion.form
-            onSubmit={handleSearch}
+          <motion.div
             className="max-w-[560px] mx-auto mb-5"
             initial={{ opacity: 0, y: 14, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
-            <div className="flex border border-mk-line rounded-xl overflow-hidden shadow-md bg-white">
-              <div className="flex items-center pl-4">
-                <Search size={18} className="text-mk-sec" />
-              </div>
-              <input
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                placeholder={t("common.searchPlaceholder")}
-                className="flex-1 px-3 py-3.5 text-sm focus:outline-none min-w-0"
-              />
-              <button type="submit" className="bg-mk-blue text-white px-6 py-3.5 text-sm font-semibold hover:opacity-90 whitespace-nowrap transition-opacity">
-                {t("common.search")}
-              </button>
-            </div>
-          </motion.form>
+            <InstantSearchBar variant="hero" placeholder={t("common.searchPlaceholder")} />
+          </motion.div>
 
           <motion.div
             className="flex items-center justify-center gap-4 text-xs text-mk-ter flex-wrap mb-8"

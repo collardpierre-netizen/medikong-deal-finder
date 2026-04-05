@@ -222,8 +222,8 @@ export async function importProducts(file: File, onProgress?: (p: ImportProgress
     let existingId: string | null = null;
     let isUpdate = false;
     if (gtinVal && existingGtins.has(gtinVal)) {
-      const match = allProducts.find((p: any) => String(p.gtin).trim() === gtinVal);
-      if (match) { existingId = match.id; isUpdate = true; }
+      existingId = existingGtins.get(gtinVal)!;
+      isUpdate = true;
     }
     if (!existingId && existingSlugs.has(slug)) {
       isUpdate = true;

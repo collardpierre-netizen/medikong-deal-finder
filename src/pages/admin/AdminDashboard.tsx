@@ -1,11 +1,14 @@
 import { useI18n } from "@/contexts/I18nContext";
+import { useNavigate } from "react-router-dom";
 import AdminTopBar from "@/components/admin/AdminTopBar";
 import KpiCard from "@/components/admin/KpiCard";
 import StatusBadge from "@/components/admin/StatusBadge";
 import { useDashboardStats, useVendors, useOrders } from "@/hooks/useAdminData";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import {
   DollarSign, ShoppingCart, Store, Package, AlertTriangle,
-  TrendingUp, Info,
+  TrendingUp, Info, UserCheck, Users, ChevronRight, Clock,
 } from "lucide-react";
 import {
   XAxis, YAxis, CartesianGrid, Tooltip,

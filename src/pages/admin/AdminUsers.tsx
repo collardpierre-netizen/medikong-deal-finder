@@ -301,6 +301,11 @@ export default function AdminUsers() {
                     {selectedUser.type === "vendor" ? "Vendeur" : "Acheteur"}
                   </span>
                   <StatusBadge status={selectedUser.status === "active" ? "active" : selectedUser.status === "inactive" ? "cancelled" : "pending"} />
+                  {buyerDetail?.profile?.preferred_language && (
+                    <span className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-muted text-muted-foreground">
+                      {LANG_FLAGS[buyerDetail.profile.preferred_language] || buyerDetail.profile.preferred_language}
+                    </span>
+                  )}
                 </div>
               </div>
               <button onClick={closeDetail} className="p-1 rounded hover:bg-accent">

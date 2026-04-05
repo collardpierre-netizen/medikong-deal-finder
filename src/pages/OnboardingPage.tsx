@@ -440,10 +440,10 @@ export default function OnboardingPage() {
 
   /* ─── Step sequences ─── */
   // Buyer: 0(role) → 1(profile) → 2(email) → 2.5(otp) → 3(name) → 4(company) → 5(interests) → 6(password) → 7(done)
-  // Seller: 0(role) → 11(businessType) → 12(email) → 12.5(otp) → 13(contact) → 14(company) → 15(products) → 16(logistics) → 17(password) → 18(done)
+  // Seller: 0(role) → 11(businessType) → 12(email) → 12.5(otp) → 13(contact) → 14(company) → 15(products) → 17(password) → 18(done)
   const getSteps = useCallback(() => {
     if (role === "buyer") return [0, 1, 2, 2.5, 3, 4, 5, 6, 7];
-    if (role === "seller") return [0, 11, 12, 12.5, 13, 14, 15, 16, 17, 18];
+    if (role === "seller") return [0, 11, 12, 12.5, 13, 14, 15, 17, 18];
     return [0];
   }, [role]);
 

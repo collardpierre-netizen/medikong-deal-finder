@@ -6,6 +6,12 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  /** Whether the buyer account has been validated by admin */
+  isVerifiedBuyer: boolean;
+  /** Whether the vendor account has been validated by admin */
+  isVerifiedVendor: boolean;
+  /** Whether account verification status is still loading */
+  verificationLoading: boolean;
   signUp: (email: string, password: string, metadata?: Record<string, string>) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
@@ -17,6 +23,55 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isVerifiedBuyer, setIsVerifiedBuyer] = useState(false);
+  const [isVerifiedVendor, setIsVerifiedVendor] = useState(false);
+  const [verificationLoading, setVerificationLoading] = useState(true);
+
+  // Fetch verification status when user changes
+  useEffect(() => {
+    if (!user) {
+      setIsVerifiedBuyer(false);
+      setIsVerifiedVendor(false);
+      setVerificationLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setVerificationLoading(true);
+
+    const fetchVerification = async () => {
+      try {
+        // Check buyer (customer) verification
+        const { data: customer } = await supabase
+          .from("customers")
+          .select("is_verified")
+          .eq("auth_user_id", user.id)
+          .maybeSingle();
+
+        // Check vendor verification
+        const { data: vendor } = await supabase
+          .from("vendors")
+          .select("is_verified, validation_status")
+          .eq("auth_user_id", user.id)
+          .maybeSingle();
+
+        if (!cancelled) {
+          setIsVerifiedBuyer(customer?.is_verified ?? false);
+          setIsVerifiedVendor(
+            vendor?.is_verified === true && vendor?.validation_status === "approved"
+          );
+          setVerificationLoading(false);
+        }
+      } catch {
+        if (!cancelled) {
+          setVerificationLoading(false);
+        }
+      }
+    };
+
+    fetchVerification();
+    return () => { cancelled = true; };
+  }, [user]);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -56,7 +111,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signUp, signIn, signOut }}>
+    <AuthContext.Provider value={{
+      user, session, loading,
+      isVerifiedBuyer, isVerifiedVendor, verificationLoading,
+      signUp, signIn, signOut,
+    }}>
       {children}
     </AuthContext.Provider>
   );

@@ -58,7 +58,7 @@ export function CatalogProductCard({ product, index = 0, view = "grid" }: Props)
   const [qty, setQty] = useState(1);
   const [adding, setAdding] = useState(false);
   const { addToCart } = useCart();
-  const { user } = useAuth();
+  const { user, isVerifiedBuyer } = useAuth();
   const { country } = useCountry();
   const navigate = useNavigate();
   const location = useLocation();
@@ -67,6 +67,7 @@ export function CatalogProductCard({ product, index = 0, view = "grid" }: Props)
   const price = product.best_price_excl_vat || 0;
   const priceIncl = product.best_price_incl_vat || 0;
   const isLoggedIn = !!user;
+  const canSeePrices = isLoggedIn && isVerifiedBuyer;
   const displayName = getLocalizedName(product, i18n.language);
 
   const handleAddToCart = async () => {
@@ -81,6 +82,12 @@ export function CatalogProductCard({ product, index = 0, view = "grid" }: Props)
       toast.error(t("catalog.loginToAdd"), {
         action: { label: t("catalog.signIn"), onClick: () => navigate("/connexion") },
       });
+      return;
+    }
+
+    // Verification check
+    if (!isVerifiedBuyer) {
+      toast.error(t("catalog.pendingValidation", "Votre compte est en attente de validation"));
       return;
     }
 
@@ -159,7 +166,7 @@ export function CatalogProductCard({ product, index = 0, view = "grid" }: Props)
           <StockBadge product={product} />
         </div>
         <div className="text-right shrink-0 space-y-1">
-          {isLoggedIn ? (
+          {canSeePrices ? (
             <>
               {price > 0 ? (
                 <>
@@ -183,6 +190,11 @@ export function CatalogProductCard({ product, index = 0, view = "grid" }: Props)
                 <p className="text-xs text-muted-foreground italic">{t("catalog.noOfferYet", "Pas encore d'offre")}</p>
               )}
             </>
+          ) : isLoggedIn ? (
+            <div className="text-center">
+              <p className="text-xs text-mk-amber font-medium">{t("catalog.pendingValidation", "Compte en attente de validation")}</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">{t("catalog.pendingValidationDesc", "Les prix seront visibles après validation de votre profil")}</p>
+            </div>
           ) : (
             <Link to="/onboarding" className="inline-flex items-center gap-1.5 bg-primary text-primary-foreground text-xs font-semibold px-3 py-2 rounded-md hover:opacity-90 transition-opacity">
               <Lock size={12} /> {t("catalog.seePrices")}
@@ -214,7 +226,7 @@ export function CatalogProductCard({ product, index = 0, view = "grid" }: Props)
         <p className="text-xs text-muted-foreground mb-0.5 truncate">{product.brand_name || "—"}</p>
         <h3 className="text-sm font-medium text-foreground leading-snug mb-1.5 line-clamp-2 min-h-[2.5rem]">{displayName}</h3>
       </Link>
-      {isLoggedIn ? (
+      {canSeePrices ? (
         <>
           {price > 0 ? (
             <>
@@ -247,6 +259,11 @@ export function CatalogProductCard({ product, index = 0, view = "grid" }: Props)
             </>
           )}
         </>
+      ) : isLoggedIn ? (
+        <div className="text-center py-2">
+          <p className="text-xs text-warning font-medium">{t("catalog.pendingValidation", "Compte en attente de validation")}</p>
+          <p className="text-[10px] text-muted-foreground mt-0.5">{t("catalog.pendingValidationDesc", "Les prix seront visibles après validation")}</p>
+        </div>
       ) : (
         <>
           <div className="flex items-center justify-between mb-2">

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Outlet, Navigate } from "react-router-dom";
 import { I18nProvider } from "@/contexts/I18nContext";
+import { ImportProvider } from "@/contexts/ImportContext";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "react-router-dom";

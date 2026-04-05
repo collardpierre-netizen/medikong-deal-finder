@@ -228,6 +228,10 @@ export default function VendorSettings() {
         </div>
       )}
 
+      {activeTab === "commercial" && vendor && (
+        <VendorCommercialSettings vendorId={vendor.id} />
+      )}
+
       {activeTab === "commission" && <VendorCommissionTab />}
     </div>
   );

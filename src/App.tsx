@@ -38,12 +38,9 @@ const CheckoutPage = lazy(() => import("./pages/CheckoutPage"));
 const ConfirmationPage = lazy(() => import("./pages/ConfirmationPage"));
 const OrderDetailPage = lazy(() => import("./pages/OrderDetailPage"));
 const LoginPage = lazy(() => import("./pages/LoginPage"));
-const RegisterPage = lazy(() => import("./pages/RegisterPage"));
 const CategoryPage = lazy(() => import("./pages/CategoryPage"));
 const CataloguePage = lazy(() => import("./pages/CataloguePage"));
 const PromotionsPage = lazy(() => import("./pages/PromotionsPage"));
-const SellerOnboardingPage = lazy(() => import("./pages/SellerOnboardingPage"));
-const BuyerOnboardingPage = lazy(() => import("./pages/BuyerOnboardingPage"));
 const OnboardingPage = lazy(() => import("./pages/OnboardingPage"));
 const BuyerCompletionPage = lazy(() => import("./pages/BuyerCompletionPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -71,9 +68,6 @@ const AboutPage = lazy(() => import("./pages/entreprise/AboutPage"));
 const WhyMedikongPage = lazy(() => import("./pages/entreprise/WhyMedikongPage"));
 const HowItWorksPage = lazy(() => import("./pages/entreprise/HowItWorksPage"));
 const TeamPage = lazy(() => import("./pages/entreprise/TeamPage"));
-const CareersPage = lazy(() => import("./pages/entreprise/CareersPage"));
-const PressPage = lazy(() => import("./pages/entreprise/PressPage"));
-const InvestirPage = lazy(() => import("./pages/entreprise/InvestirPage"));
 
 // Trust pages
 const SupplierVerificationPage = lazy(() => import("./pages/trust/SupplierVerificationPage"));
@@ -210,8 +204,8 @@ const App = () => (
             <Route path="/categorie/:slug" element={<LP><CataloguePage /></LP>} />
             <Route path="/catalogue" element={<LP><CataloguePage /></LP>} />
             <Route path="/promotions" element={<LP><PromotionsPage /></LP>} />
-            <Route path="/seller-onboarding" element={<LP><SellerOnboardingPage /></LP>} />
-            <Route path="/buyer-onboarding" element={<LP><BuyerOnboardingPage /></LP>} />
+            <Route path="/seller-onboarding" element={<Navigate to="/onboarding" replace />} />
+            <Route path="/buyer-onboarding" element={<Navigate to="/onboarding" replace />} />
             <Route path="/onboarding" element={<LP><OnboardingPage /></LP>} />
             <Route path="/buyer-completion" element={<LP><BuyerCompletionPage /></LP>} />
             <Route path="/invest" element={<LP><InvestPage /></LP>} />

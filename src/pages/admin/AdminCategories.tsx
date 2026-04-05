@@ -33,26 +33,19 @@ const AdminCategories = () => {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<any>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [importStatus, setImportStatus] = useState<{ loading: boolean; result?: { created: number; errors: string[] } } | null>(null);
 
   const handleImport = async (file: File) => {
-    const loadingId = toast.loading("Import en cours…");
+    setImportStatus({ loading: true });
     try {
       const result = await importCategories(file);
-      toast.dismiss(loadingId);
+      setImportStatus({ loading: false, result });
       if (result.created > 0) {
-        toast.success(`✅ ${result.created} catégorie(s) importée(s) avec succès`);
-      } else {
-        toast.warning("Aucune catégorie importée. Vérifiez le format du fichier.");
-      }
-      if (result.errors.length > 0) {
-        toast.warning(`⚠️ ${result.errors.length} erreur(s)`, {
-          description: result.errors.slice(0, 3).join(" | "),
-          duration: 8000,
-        });
+        toast.success(`✅ ${result.created} catégorie(s) importée(s)`);
       }
       qc.invalidateQueries({ queryKey: ["admin-categories"] });
     } catch (e: any) {
-      toast.dismiss(loadingId);
+      setImportStatus({ loading: false, result: { created: 0, errors: [e.message || "Erreur inconnue"] } });
       toast.error(`Erreur import: ${e.message || "Erreur inconnue"}`);
     }
   };

@@ -220,7 +220,7 @@ export function CatalogProductCard({ product, index = 0, view = "grid" }: Props)
         <p className="text-xs text-muted-foreground mb-0.5 truncate">{product.brand_name || "—"}</p>
         <h3 className="text-sm font-medium text-foreground leading-snug mb-1.5 line-clamp-2 min-h-[2.5rem]">{displayName}</h3>
       </Link>
-      {isLoggedIn ? (
+      {canSeePrices ? (
         <>
           {price > 0 ? (
             <>
@@ -253,6 +253,11 @@ export function CatalogProductCard({ product, index = 0, view = "grid" }: Props)
             </>
           )}
         </>
+      ) : isLoggedIn ? (
+        <div className="text-center py-2">
+          <p className="text-xs text-warning font-medium">{t("catalog.pendingValidation", "Compte en attente de validation")}</p>
+          <p className="text-[10px] text-muted-foreground mt-0.5">{t("catalog.pendingValidationDesc", "Les prix seront visibles après validation")}</p>
+        </div>
       ) : (
         <>
           <div className="flex items-center justify-between mb-2">

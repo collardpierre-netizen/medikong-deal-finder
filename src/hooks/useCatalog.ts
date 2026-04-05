@@ -135,7 +135,7 @@ export function useCatalogProducts(filters: CatalogFilters) {
       const hasFilters = !!(filters.search || filters.brands?.length || filters.category || filters.manufacturers?.length || filters.inStock || filters.priceMin !== undefined || filters.priceMax !== undefined);
       let query = supabase
         .from("products")
-        .select("id, slug, name, brand_name, brand_id, category_id, category_name, gtin, cnk_code, image_url, image_urls, short_description, is_promotion, promotion_label, best_price_excl_vat, best_price_incl_vat, offer_count, total_stock, is_in_stock, created_at, brands(slug)", { count: hasFilters ? "exact" : "estimated" })
+        .select("id, slug, name, name_fr, brand_name, brand_id, category_id, category_name, gtin, cnk_code, image_url, image_urls, short_description, is_promotion, promotion_label, best_price_excl_vat, best_price_incl_vat, offer_count, total_stock, is_in_stock, created_at, brands(slug)", { count: hasFilters ? "exact" : "estimated" })
         .eq("is_active", true);
 
       // Only filter by offer_count when not searching — allow search to find all products

@@ -629,7 +629,7 @@ export default function ProductPage() {
       const orFilter = filters.length > 0 ? filters.join(",") : "id.neq.impossible";
       const { data } = await supabase
         .from("products")
-        .select("id, name, slug, best_price_excl_vat, image_urls, brand_name")
+        .select("id, name, slug, best_price_excl_vat, image_urls, image_url, brand_name")
         .or(orFilter)
         .neq("id", product!.id)
         .eq("is_active", true)
@@ -1636,11 +1636,20 @@ export default function ProductPage() {
                   >
                     <Link to={`/produit/${p.slug}`} className="w-40 shrink-0 border border-border rounded-xl p-3 block bg-card hover:border-primary/30 transition-colors">
                       <div className="aspect-square rounded-lg overflow-hidden bg-muted mb-2">
-                        {p.image_urls?.[0] ? (
-                          <img src={p.image_urls[0]} alt={p.name} className="w-full h-full object-contain p-2" loading="lazy" />
-                        ) : (
-                          <img src="/medikong-placeholder.png" alt="" className="w-full h-full object-contain p-4" />
-                        )}
+                        <img
+                          src={getProductImageSrc(
+                            Array.isArray(p.image_urls)
+                              ? p.image_urls.find((url: string) => isValidProductImage(url)) || p.image_url
+                              : p.image_url
+                          )}
+                          alt={p.name}
+                          className="w-full h-full object-contain p-2"
+                          loading="lazy"
+                          referrerPolicy="no-referrer"
+                          onError={(e) => {
+                            e.currentTarget.src = getProductImageSrc(null);
+                          }}
+                        />
                       </div>
                       <p className="text-xs text-foreground truncate font-medium">{p.name}</p>
                       {p.brand_name && <p className="text-[11px] text-muted-foreground truncate">{p.brand_name}</p>}

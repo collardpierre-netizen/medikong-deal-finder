@@ -14,6 +14,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import UserCreateDialog from "@/components/admin/UserCreateDialog";
 
+const LANG_FLAGS: Record<string, string> = { fr: "🇫🇷 Français", nl: "🇳🇱 Nederlands", en: "🇬🇧 English", de: "🇩🇪 Deutsch" };
+
 interface UserRow {
   id: string;
   userId: string;
@@ -46,6 +48,7 @@ interface BuyerDetail {
     sector: string | null;
     country: string | null;
     price_level_code: string | null;
+    preferred_language: string | null;
   };
 }
 

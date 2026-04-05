@@ -3048,6 +3048,68 @@ export type Database = {
         }
         Relationships: []
       }
+      vendor_commercial_settings: {
+        Row: {
+          created_at: string
+          default_delivery_days: number | null
+          default_mov: number | null
+          default_mov_currency: string | null
+          id: string
+          is_dropshipping: boolean | null
+          payment_terms_note: string | null
+          return_policy: string | null
+          shipping_from_country: string | null
+          shipping_zones: string[] | null
+          target_countries: string[]
+          target_customer_types: string[]
+          updated_at: string
+          vendor_id: string
+          warranty_info: string | null
+        }
+        Insert: {
+          created_at?: string
+          default_delivery_days?: number | null
+          default_mov?: number | null
+          default_mov_currency?: string | null
+          id?: string
+          is_dropshipping?: boolean | null
+          payment_terms_note?: string | null
+          return_policy?: string | null
+          shipping_from_country?: string | null
+          shipping_zones?: string[] | null
+          target_countries?: string[]
+          target_customer_types?: string[]
+          updated_at?: string
+          vendor_id: string
+          warranty_info?: string | null
+        }
+        Update: {
+          created_at?: string
+          default_delivery_days?: number | null
+          default_mov?: number | null
+          default_mov_currency?: string | null
+          id?: string
+          is_dropshipping?: boolean | null
+          payment_terms_note?: string | null
+          return_policy?: string | null
+          shipping_from_country?: string | null
+          shipping_zones?: string[] | null
+          target_countries?: string[]
+          target_customer_types?: string[]
+          updated_at?: string
+          vendor_id?: string
+          warranty_info?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_commercial_settings_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: true
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vendor_kyc_criteria: {
         Row: {
           business_type: string

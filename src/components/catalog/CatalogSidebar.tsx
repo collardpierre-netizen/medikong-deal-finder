@@ -199,8 +199,8 @@ export function CatalogSidebar({ filters, setFilter, clearAll, resultCategoryIds
             }}
             className="text-sm text-mk-blue hover:underline flex items-center gap-1 mb-2"
           >
-            <ChevronLeft size={14} />
-            {parentCategory ? parentCategory.name : "Toutes les catégories"}
+             <ChevronLeft size={14} />
+             {parentCategory ? parentCategory.name : t("catalog.categories")}
           </button>
         )}
         <div className="relative">

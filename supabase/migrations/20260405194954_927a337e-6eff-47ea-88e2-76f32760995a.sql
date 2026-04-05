@@ -1,0 +1,1 @@
+ALTER TABLE public.customers ALTER COLUMN payment_terms_days SET DEFAULT 0;

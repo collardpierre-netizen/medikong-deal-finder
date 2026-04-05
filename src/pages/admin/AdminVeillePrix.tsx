@@ -223,10 +223,10 @@ export default function AdminVeillePrix() {
 
   // Helper to get the right price from a market_price row based on selected type
   const getSourcePrice = useCallback((mp: any): number | null => {
-    if (priceType === "grossiste") return mp?.prix_grossiste || null;
-    if (priceType === "pharmacien") return mp?.prix_pharmacien || null;
-    if (priceType === "public") return mp?.prix_public || null;
-    return mp?.prix_grossiste || mp?.prix_pharmacien || mp?.prix_public || null;
+    if (priceType === "grossiste") return mp?.prix_grossiste ?? mp?.prix_pharmacien ?? null;
+    if (priceType === "pharmacien") return mp?.prix_pharmacien ?? mp?.prix_grossiste ?? null;
+    if (priceType === "public") return mp?.prix_public ?? mp?.prix_pharmacien ?? null;
+    return mp?.prix_pharmacien || mp?.prix_grossiste || mp?.prix_public || null;
   }, [priceType]);
 
   // Build comparison rows — dynamic per source

@@ -6,7 +6,6 @@ const corsHeaders = {
 };
 
 const BUCKET = "product-images";
-const BATCH_SIZE = 20;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -16,27 +15,32 @@ Deno.serve(async (req) => {
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const supabase = createClient(supabaseUrl, serviceKey);
+  const storageHost = new URL(supabaseUrl).hostname;
 
   try {
     const body = await req.json().catch(() => ({}));
     const limit = Math.min(body.limit || 50, 200);
     const dryRun = body.dry_run === true;
+    const brandName: string | null = body.brand_name || null;
 
-    // Find products with external image_urls that haven't been migrated yet
-    const { data: products, error: fetchErr } = await supabase
+    let query = supabase
       .from("products")
       .select("id, name, image_urls, image_url")
       .not("image_urls", "is", null)
-      .filter("image_urls", "neq", "{}")
       .limit(limit);
 
+    if (brandName) {
+      query = query.ilike("brand_name", `%${brandName}%`);
+    }
+
+    const { data: products, error: fetchErr } = await query;
     if (fetchErr) throw fetchErr;
 
-    // Filter to only products with external URLs (not already on our storage)
+    // Filter to only products with external URLs
     const toMigrate = (products || []).filter((p: any) => {
       const urls = p.image_urls as string[];
-      return urls && urls.length > 0 && urls.some((u: string) => 
-        u && !u.includes("supabase.co/storage") && u.startsWith("http")
+      return urls && urls.length > 0 && urls.some((u: string) =>
+        u && u.startsWith("http") && !u.includes(storageHost)
       );
     });
 
@@ -47,7 +51,7 @@ Deno.serve(async (req) => {
         sample: toMigrate.slice(0, 5).map((p: any) => ({
           id: p.id,
           name: p.name,
-          image_count: (p.image_urls as string[]).length,
+          urls: (p.image_urls as string[]).slice(0, 2),
         })),
       }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
@@ -63,30 +67,25 @@ Deno.serve(async (req) => {
 
       for (let i = 0; i < oldUrls.length; i++) {
         const url = oldUrls[i];
-        if (!url || url.includes("supabase.co/storage") || !url.startsWith("http")) {
+        if (!url || url.includes(storageHost) || !url.startsWith("http")) {
           newUrls.push(url);
           continue;
         }
 
         try {
-          // Download the image
           const resp = await fetch(url, {
-            headers: {
-              "User-Agent": "MediKong-ImageMigrator/1.0",
-              "Accept": "image/*",
-            },
+            headers: { "User-Agent": "MediKong-ImageMigrator/1.0", "Accept": "image/*" },
           });
 
           if (!resp.ok) {
-            newUrls.push(url); // keep original if download fails
+            newUrls.push(url);
             errors.push({ product: product.name, error: `HTTP ${resp.status} for ${url.substring(0, 80)}` });
             continue;
           }
 
           const contentType = resp.headers.get("content-type") || "image/jpeg";
           const blob = await resp.blob();
-          
-          // Determine extension
+
           let ext = "jpg";
           if (contentType.includes("png")) ext = "png";
           else if (contentType.includes("webp")) ext = "webp";
@@ -96,13 +95,9 @@ Deno.serve(async (req) => {
 
           const filePath = `${product.id}/${i}.${ext}`;
 
-          // Upload to storage
           const { error: uploadErr } = await supabase.storage
             .from(BUCKET)
-            .upload(filePath, blob, {
-              contentType,
-              upsert: true,
-            });
+            .upload(filePath, blob, { contentType, upsert: true });
 
           if (uploadErr) {
             newUrls.push(url);
@@ -110,7 +105,6 @@ Deno.serve(async (req) => {
             continue;
           }
 
-          // Get public URL
           const { data: { publicUrl } } = supabase.storage
             .from(BUCKET)
             .getPublicUrl(filePath);
@@ -126,10 +120,7 @@ Deno.serve(async (req) => {
       if (hasChanges) {
         const { error: updateErr } = await supabase
           .from("products")
-          .update({
-            image_urls: newUrls,
-            image_url: newUrls[0] || null,
-          })
+          .update({ image_urls: newUrls, image_url: newUrls[0] || null })
           .eq("id", product.id);
 
         if (updateErr) {
@@ -146,9 +137,7 @@ Deno.serve(async (req) => {
       migrated,
       failed,
       errors: errors.slice(0, 50),
-    }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
     return new Response(JSON.stringify({ error: (e as Error).message }), {
       status: 500,

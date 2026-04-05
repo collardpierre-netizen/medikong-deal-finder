@@ -32,7 +32,7 @@ const iconMap: Record<string, React.ReactNode> = {
 
 export default function HomePage() {
   const { t } = useTranslation();
-  const [searchQuery, setSearchQuery] = useState("");
+  
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const { data: products = [] } = useFeaturedProducts(5);
   const { country, currentCountry } = useCountry();

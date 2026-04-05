@@ -854,6 +854,7 @@ export default function OnboardingPage() {
             type: "real",
             is_active: false,
             can_manage_offers: true,
+            preferred_language: preferredLang,
           });
           if (vendorError) console.warn("Vendor insert warning:", vendorError.message);
         }

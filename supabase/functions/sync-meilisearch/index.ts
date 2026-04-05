@@ -70,7 +70,7 @@ async function setupIndexes() {
 
 // Bulk sync a table to an index
 async function bulkSync(supabase: ReturnType<typeof createClient>, table: string, indexUid: string, transform?: (row: any) => any) {
-  const BATCH = 500;
+  const BATCH = 1000;
   let offset = 0;
   let total = 0;
 

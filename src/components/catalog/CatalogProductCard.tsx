@@ -197,7 +197,7 @@ export function CatalogProductCard({ product, index = 0, view = "grid" }: Props)
       <div className="relative mb-2">
         {product.is_promotion && (
           <span className="absolute top-1.5 left-1.5 bg-destructive text-destructive-foreground text-[10px] font-bold px-1.5 py-0.5 rounded z-10">
-            {product.promotion_label || "Promo"}
+            {product.promotion_label || t("catalog.promo")}
           </span>
         )}
         <Link to={`/produit/${product.slug}`} state={fromState}>

@@ -44,13 +44,14 @@ function ProductImg({ product, className = "" }: { product: CatalogProduct; clas
 }
 
 function StockBadge({ product }: { product: CatalogProduct }) {
+  const { t } = useTranslation();
   if (product.is_in_stock && product.total_stock > 10) {
-    return <span className="text-xs text-mk-green font-medium">● En stock</span>;
+    return <span className="text-xs text-mk-green font-medium">● {t("catalog.inStock")}</span>;
   }
   if (product.is_in_stock && product.total_stock > 0) {
-    return <span className="text-xs text-mk-amber font-medium">● Stock limité ({product.total_stock})</span>;
+    return <span className="text-xs text-mk-amber font-medium">● {t("catalog.limitedStock", { count: product.total_stock })}</span>;
   }
-  return <span className="text-xs text-destructive font-medium">● Rupture</span>;
+  return <span className="text-xs text-destructive font-medium">● {t("catalog.outOfStock")}</span>;
 }
 
 export function CatalogProductCard({ product, index = 0, view = "grid" }: Props) {

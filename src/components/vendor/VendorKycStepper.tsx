@@ -30,8 +30,9 @@ const STEP_CONFIG = [
   { num: 1, label: "Inscription", icon: FileText, key: "registered" },
   { num: 2, label: "Vérification KYC", icon: Shield, key: "kyc" },
   { num: 3, label: "Documents", icon: Upload, key: "docs" },
-  { num: 4, label: "Revue finale", icon: Award, key: "review" },
-  { num: 5, label: "Activé", icon: CheckCircle2, key: "active" },
+  { num: 4, label: "Paramètres", icon: Settings2, key: "commercial" },
+  { num: 5, label: "Revue finale", icon: Award, key: "review" },
+  { num: 6, label: "Activé", icon: CheckCircle2, key: "active" },
 ];
 
 export default function VendorKycStepper({ vendor }: { vendor: any }) {

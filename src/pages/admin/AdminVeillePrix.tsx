@@ -518,6 +518,15 @@ export default function AdminVeillePrix() {
         <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setShowSourceDialog(true)}>
           <Plus size={14} /> Nouvelle source
         </Button>
+        <Button size="sm" variant="outline" className="gap-1.5" onClick={handleRematch} disabled={rematching || unmatchedCount === 0}>
+          {rematching ? <Loader2 size={14} className="animate-spin" /> : <RefreshCcw size={14} />}
+          Re-matcher ({unmatchedCount.toLocaleString("fr-FR")})
+        </Button>
+        {rematchResult && (
+          <span className="text-xs text-muted-foreground">
+            {rematchResult.matched}/{rematchResult.total} matchées
+          </span>
+        )}
         <div className="flex-1" />
         <Button variant="outline" size="sm" className="gap-1.5" onClick={handleExport}>
           <Download size={14} /> Export XLSX

@@ -206,7 +206,7 @@ const AdminProduits = () => {
     setImporting(true);
     setImportResult(null);
     setImportPanelOpen(true);
-    setImportProgress({ phase: "reading", current: 0, total: 0, created: 0, updated: 0, skipped: 0, errors: [], brandsCreated: 0, manufacturersCreated: 0 });
+    setImportProgress({ phase: "reading", current: 0, total: 0, created: 0, updated: 0, skipped: 0, errors: [], brandsCreated: 0, manufacturersCreated: 0, categoriesCreated: 0 });
     try {
       const result = await importProducts(file, (p) => setImportProgress({ ...p }));
       setImportResult(result);

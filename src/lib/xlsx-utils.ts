@@ -250,7 +250,7 @@ export async function importProducts(file: File, onProgress?: (p: ImportProgress
   await supabase.rpc("resolve_product_brands");
   await supabase.rpc("resolve_product_categories");
   currentPhase = "done"; notify();
-  return { created, updated, skipped, errors, brandsCreated, manufacturersCreated, totalRows: rows.length };
+  return { created, updated, skipped, errors, brandsCreated, manufacturersCreated, categoriesCreated, totalRows: rows.length };
 }
 
 export async function importBrands(file: File): Promise<{ created: number; errors: string[] }> {

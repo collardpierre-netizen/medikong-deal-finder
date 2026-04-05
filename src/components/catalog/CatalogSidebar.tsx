@@ -236,7 +236,7 @@ export function CatalogSidebar({ filters, setFilter, clearAll, resultCategoryIds
         <div className="relative mb-2" ref={brandDropdownRef}>
           <Search size={14} className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Rechercher une marque..."
+            placeholder={t("catalog.searchBrands")}
             value={brandSearch}
             onChange={e => { setBrandSearch(e.target.value); setBrandDropdownOpen(true); }}
             onFocus={() => { if (brandSearch.length > 0) setBrandDropdownOpen(true); }}

@@ -1667,8 +1667,9 @@ export default function ProductPage() {
                           className="w-full h-full object-contain p-2"
                           loading="lazy"
                           referrerPolicy="no-referrer"
+                          onLoad={(e) => { if (isQogitaPlaceholder(e.currentTarget)) e.currentTarget.src = MEDIKONG_PLACEHOLDER; }}
                           onError={(e) => {
-                            e.currentTarget.src = getProductImageSrc(null);
+                            e.currentTarget.src = MEDIKONG_PLACEHOLDER;
                           }}
                         />
                       </div>

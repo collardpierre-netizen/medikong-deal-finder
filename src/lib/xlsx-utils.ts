@@ -172,7 +172,28 @@ export async function importProducts(file: File, onProgress?: (p: ImportProgress
     }
   }
 
-  // Pre-fetch existing slugs and gtins to detect duplicates vs new
+  // --- Auto-create categories ---
+  const catNames = new Set<string>();
+  for (const row of rows) {
+    const r = row as any;
+    if (r.category_name) catNames.add(String(r.category_name).trim());
+  }
+
+  currentPhase = "categories"; notify();
+  if (catNames.size > 0) {
+    const { data: existingCats } = await supabase.from("categories").select("name").limit(5000);
+    const existingSet = new Set((existingCats || []).map(c => c.name.toLowerCase()));
+    for (const name of catNames) {
+      if (!existingSet.has(name.toLowerCase())) {
+        const { error } = await supabase.from("categories").upsert(
+          { name, slug: slugify(name), is_active: true },
+          { onConflict: "slug" }
+        );
+        if (!error) { categoriesCreated++; existingSet.add(name.toLowerCase()); }
+      }
+    }
+  }
+
   const existingSlugs = new Set<string>();
   const existingGtins = new Set<string>();
   const allProducts = await fetchAllRows("products", "slug,gtin", "slug");

@@ -12,7 +12,7 @@ import { useBrands, useManufacturers, useProductCount, useBrandCount, useActiveO
 import { ProductFormDialog } from "@/components/admin/ProductFormDialog";
 import { exportProducts, importProducts, downloadProductTemplate, type ImportProgress } from "@/lib/xlsx-utils";
 import { toast } from "sonner";
-import { Package, Tag, ShoppingCart, Search, Download, Upload, Plus, FileSpreadsheet, ChevronLeft, ChevronRight, X, Loader2 } from "lucide-react";
+import { Package, Tag, ShoppingCart, Search, Download, Upload, Plus, FileSpreadsheet, ChevronLeft, ChevronRight, X, Loader2, ImageIcon } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
 const PER_PAGE = 50;

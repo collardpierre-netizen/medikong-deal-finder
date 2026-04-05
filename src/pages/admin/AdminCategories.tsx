@@ -34,7 +34,7 @@ const AdminCategories = () => {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<any>(null);
   const fileRef = useRef<HTMLInputElement>(null);
-  const [importStatus, setImportStatus] = useState<{ loading: boolean; result?: { created: number; errors: string[] } } | null>(null);
+  const { addJob, updateJob, finishJob } = useImportJobs();
 
   const handleImport = async (file: File) => {
     setImportStatus({ loading: true });

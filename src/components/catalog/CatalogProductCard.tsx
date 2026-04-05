@@ -161,21 +161,27 @@ export function CatalogProductCard({ product, index = 0, view = "grid" }: Props)
         <div className="text-right shrink-0 space-y-1">
           {isLoggedIn ? (
             <>
-              <p className="text-lg font-bold text-primary">{formatPrice(price)} €</p>
-              {priceIncl > price && (
-                <p className="text-xs text-muted-foreground">{formatPrice(priceIncl)} € TTC</p>
-              )}
-              <p className="text-xs text-muted-foreground">{product.offer_count > 1 ? t("catalog.offersPlural", { count: product.offer_count }) : t("catalog.offers", { count: product.offer_count })}</p>
-              <div className="flex items-center gap-1 mt-2">
-                {product.offer_count <= 1 && (
-                  <div className="flex items-center border border-border rounded-md">
-                    <button onClick={() => setQty(Math.max(1, qty - 1))} className="px-1.5 py-1 text-muted-foreground hover:text-foreground"><Minus size={12} /></button>
-                    <span className="px-1.5 text-xs font-medium">{qty}</span>
-                    <button onClick={() => setQty(qty + 1)} className="px-1.5 py-1 text-muted-foreground hover:text-foreground"><Plus size={12} /></button>
+              {price > 0 ? (
+                <>
+                  <p className="text-lg font-bold text-primary">{formatPrice(price)} €</p>
+                  {priceIncl > price && (
+                    <p className="text-xs text-muted-foreground">{formatPrice(priceIncl)} € TTC</p>
+                  )}
+                  <p className="text-xs text-muted-foreground">{product.offer_count > 1 ? t("catalog.offersPlural", { count: product.offer_count }) : t("catalog.offers", { count: product.offer_count })}</p>
+                  <div className="flex items-center gap-1 mt-2">
+                    {product.offer_count <= 1 && (
+                      <div className="flex items-center border border-border rounded-md">
+                        <button onClick={() => setQty(Math.max(1, qty - 1))} className="px-1.5 py-1 text-muted-foreground hover:text-foreground"><Minus size={12} /></button>
+                        <span className="px-1.5 text-xs font-medium">{qty}</span>
+                        <button onClick={() => setQty(qty + 1)} className="px-1.5 py-1 text-muted-foreground hover:text-foreground"><Plus size={12} /></button>
+                      </div>
+                    )}
+                    {addButton}
                   </div>
-                )}
-                {addButton}
-              </div>
+                </>
+              ) : (
+                <p className="text-xs text-muted-foreground italic">{t("catalog.noOfferYet", "Pas encore d'offre")}</p>
+              )}
             </>
           ) : (
             <Link to="/onboarding" className="inline-flex items-center gap-1.5 bg-primary text-primary-foreground text-xs font-semibold px-3 py-2 rounded-md hover:opacity-90 transition-opacity">

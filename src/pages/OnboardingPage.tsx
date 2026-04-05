@@ -181,6 +181,7 @@ export default function OnboardingPage() {
   const [companyName, setCompanyName] = useState("");
   const [vatNumber, setVatNumber] = useState("");
   const [country, setCountry] = useState("Belgique");
+  const [preferredLang, setPreferredLang] = useState("fr");
   const [city, setCity] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");

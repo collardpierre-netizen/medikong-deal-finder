@@ -542,6 +542,39 @@ const AdminCategories = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {/* Import Status Panel */}
+      {importStatus && (
+        <div className="fixed bottom-6 right-6 z-50 w-80 bg-white border rounded-xl shadow-lg p-4" style={{ borderColor: "#E2E8F0" }}>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[13px] font-semibold" style={{ color: "#1D2530" }}>
+              {importStatus.loading ? "Import en cours…" : "Import terminé"}
+            </span>
+            {!importStatus.loading && (
+              <button onClick={() => setImportStatus(null)} className="text-muted-foreground hover:text-foreground"><X size={14} /></button>
+            )}
+          </div>
+          {importStatus.loading ? (
+            <div className="flex items-center gap-2">
+              <div className="h-1.5 flex-1 bg-secondary rounded-full overflow-hidden">
+                <div className="h-full bg-primary rounded-full animate-pulse w-2/3" />
+              </div>
+              <span className="text-[11px] text-muted-foreground">Lecture…</span>
+            </div>
+          ) : importStatus.result && (
+            <div className="space-y-1.5">
+              <p className="text-[12px]" style={{ color: "#059669" }}>✅ {importStatus.result.created} catégorie(s) créée(s)</p>
+              {importStatus.result.errors.length > 0 && (
+                <div>
+                  <p className="text-[12px] text-destructive">⚠️ {importStatus.result.errors.length} erreur(s)</p>
+                  <ul className="text-[10px] text-muted-foreground mt-1 max-h-20 overflow-y-auto">
+                    {importStatus.result.errors.slice(0, 5).map((err, i) => <li key={i}>• {err}</li>)}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };

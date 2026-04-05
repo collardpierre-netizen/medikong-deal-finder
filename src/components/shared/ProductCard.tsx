@@ -32,6 +32,11 @@ export function ProductImage({ product, className = "", selectedIndex = 0 }: { p
         loading="lazy"
         referrerPolicy="no-referrer"
         className="w-full h-full object-contain p-2"
+        onLoad={(e) => {
+          if (isQogitaPlaceholder(e.currentTarget)) {
+            e.currentTarget.src = MEDIKONG_PLACEHOLDER;
+          }
+        }}
         onError={(e) => {
           if (e.currentTarget.src !== window.location.origin + MEDIKONG_PLACEHOLDER) {
             e.currentTarget.src = MEDIKONG_PLACEHOLDER;

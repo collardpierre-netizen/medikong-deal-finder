@@ -37,16 +37,18 @@ const AdminCategories = () => {
   const { addJob, updateJob, finishJob } = useImportJobs();
 
   const handleImport = async (file: File) => {
-    setImportStatus({ loading: true });
+    const jobId = "import-categories-" + Date.now();
+    addJob(jobId, "Import catégories");
     try {
+      updateJob(jobId, { phase: "Lecture du fichier…" });
       const result = await importCategories(file);
-      setImportStatus({ loading: false, result });
+      finishJob(jobId, { success: result.created, errors: result.errors });
       if (result.created > 0) {
         toast.success(`✅ ${result.created} catégorie(s) importée(s)`);
       }
       qc.invalidateQueries({ queryKey: ["admin-categories"] });
     } catch (e: any) {
-      setImportStatus({ loading: false, result: { created: 0, errors: [e.message || "Erreur inconnue"] } });
+      finishJob(jobId, { success: 0, errors: [e.message || "Erreur inconnue"] });
       toast.error(`Erreur import: ${e.message || "Erreur inconnue"}`);
     }
   };

@@ -16,8 +16,35 @@ import {
 } from "recharts";
 
 const AdminDashboard = () => {
+  const navigate = useNavigate();
   const { t } = useI18n();
   const stats = useDashboardStats();
+
+  const pendingVendors = useQuery({
+    queryKey: ["pending-vendors"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("vendors")
+        .select("id, name, company_name, created_at, display_code, validation_status")
+        .eq("validation_status", "pending_review")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const pendingBuyers = useQuery({
+    queryKey: ["pending-buyers"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("customers")
+        .select("id, company_name, email, created_at, is_verified")
+        .eq("is_verified", false)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+  });
   const vendorsQuery = useVendors();
   const ordersQuery = useOrders();
 

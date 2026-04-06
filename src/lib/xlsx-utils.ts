@@ -65,15 +65,51 @@ async function fetchAllRows(table: string, orderBy: string, selectCols = "*") {
 
 
 export async function exportProducts() {
-  const data = await fetchAllRows("products", "name").catch(() => null);
-  if (!data) { toast.error("Erreur export produits"); return; }
-  const rows = (data || []).map(p => ({
-    gtin: p.gtin, name: p.name, slug: p.slug,
-    cnk_code: p.cnk_code, sku: p.sku,
-    description: p.description, short_description: p.short_description,
-    source: p.source, is_active: p.is_active,
-  }));
-  exportToXlsx(rows, "medikong-produits", "Produits");
+  const toastId = toast.loading("Export en cours... 0 produits chargés");
+  try {
+    const PAGE = 1000;
+    let all: any[] = [];
+    let from = 0;
+    while (true) {
+      const { data, error } = await supabase
+        .from("products")
+        .select("id, gtin, name, name_fr, slug, cnk_code, sku, brand_name, category_name, description, description_fr, short_description, unit_quantity, origin_country, image_url, image_urls, source, is_active")
+        .order("name")
+        .range(from, from + PAGE - 1);
+      if (error) throw error;
+      if (!data || data.length === 0) break;
+      all = all.concat(data);
+      toast.loading(`Export en cours... ${all.length.toLocaleString()} produits chargés`, { id: toastId });
+      if (data.length < PAGE) break;
+      from += PAGE;
+    }
+    const rows = all.map(p => ({
+      gtin: p.gtin || "",
+      name: p.name || "",
+      name_fr: p.name_fr || "",
+      slug: p.slug || "",
+      cnk_code: p.cnk_code || "",
+      sku: p.sku || "",
+      brand_name: p.brand_name || "",
+      category_name: p.category_name || "",
+      description: p.description || "",
+      description_fr: p.description_fr || "",
+      short_description: p.short_description || "",
+      unit_quantity: p.unit_quantity || 1,
+      origin_country: p.origin_country || "",
+      image_urls: Array.isArray(p.image_urls) ? p.image_urls.join(";") : (p.image_url || ""),
+      source: p.source || "",
+      is_active: p.is_active,
+    }));
+    toast.loading(`Génération du fichier XLSX (${rows.length.toLocaleString()} lignes)...`, { id: toastId });
+    // Use setTimeout to let the UI update before heavy XLSX generation
+    await new Promise(r => setTimeout(r, 50));
+    exportToXlsx(rows, "medikong-produits", "Produits");
+    toast.success(`${rows.length.toLocaleString()} produits exportés`, { id: toastId });
+  } catch (e) {
+    console.error("Export error:", e);
+    toast.error("Erreur lors de l'export", { id: toastId });
+  }
 }
 
 export async function exportBrands() {

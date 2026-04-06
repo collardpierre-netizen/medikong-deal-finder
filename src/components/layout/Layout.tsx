@@ -36,6 +36,11 @@ export function Layout({ children, title, description }: { children: React.React
     <div className="min-h-screen flex flex-col">
       <Helmet>
         <link rel="canonical" href={canonicalUrl} />
+        <link rel="alternate" hrefLang="fr" href={`${canonicalUrl}?lang=fr`} />
+        <link rel="alternate" hrefLang="nl" href={`${canonicalUrl}?lang=nl`} />
+        <link rel="alternate" hrefLang="de" href={`${canonicalUrl}?lang=de`} />
+        <link rel="alternate" hrefLang="en" href={`${canonicalUrl}?lang=en`} />
+        <link rel="alternate" hrefLang="x-default" href={canonicalUrl} />
         {title && <title>{title}</title>}
         {description && <meta name="description" content={description} />}
       </Helmet>

@@ -1,6 +1,6 @@
 import { Layout } from "@/components/layout/Layout";
 import { formatPrice } from "@/data/mock";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { PageTransition } from "@/components/shared/PageTransition";
@@ -10,6 +10,19 @@ import { useCreateOrder } from "@/hooks/useOrders";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ShoppingCart, Loader2, Truck } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+
+interface AddressForm {
+  company: string;
+  street: string;
+  street2: string;
+  postalCode: string;
+  city: string;
+  country: string;
+}
+
+const emptyAddress: AddressForm = { company: "", street: "", street2: "", postalCode: "", city: "", country: "BE" };
 
 export default function CheckoutPage() {
   const { user } = useAuth();
@@ -18,20 +31,19 @@ export default function CheckoutPage() {
   const navigate = useNavigate();
 
   const [step, setStep] = useState(1);
-  const [selectedAddr, setSelectedAddr] = useState(0);
+  const [shippingAddr, setShippingAddr] = useState<AddressForm>(emptyAddress);
+  const [billingAddr, setBillingAddr] = useState<AddressForm>(emptyAddress);
+  const [sameAsBilling, setSameAsBilling] = useState(true);
   const [shipping, setShipping] = useState(0);
   const [payment, setPayment] = useState(0);
+  const [submitting, setSubmitting] = useState(false);
 
-  const addresses = [
-    { label: "Adresse principale", addr: "23 rue de la Procession, B-7822 Ath" },
-    { label: "Siege social", addr: "15 avenue Louise, B-1050 Bruxelles" },
-  ];
   const shippingOpts = [
     { name: "Standard", delay: "5-7 jours", price: 0 },
     { name: "Express", delay: "2-3 jours", price: 15 },
-    { name: "Economique", delay: "7-10 jours", price: -2.5 },
+    { name: "Économique", delay: "7-10 jours", price: -2.5 },
   ];
-  const paymentMethods = ["Carte bancaire", "Virement SEPA", "Paiement differe Mondu"];
+  const paymentMethods = ["Carte bancaire", "Virement SEPA", "Paiement différé Mondu"];
 
   const getItemPrice = (item: typeof items[0]) => item.price_excl_vat || item.product?.price || 0;
   const subtotal = items.reduce((s, i) => s + getItemPrice(i) * i.quantity, 0);
@@ -43,6 +55,61 @@ export default function CheckoutPage() {
     animate: { opacity: 1, x: 0 },
     exit: { opacity: 0, x: -30 },
   };
+
+  const isAddressValid = (addr: AddressForm) =>
+    addr.company.trim().length > 1 && addr.street.trim().length > 3 && addr.postalCode.trim().length > 2 && addr.city.trim().length > 1;
+
+  const canProceedStep1 = isAddressValid(shippingAddr) && (sameAsBilling || isAddressValid(billingAddr));
+
+  const formatAddr = (a: AddressForm) =>
+    `${a.company}, ${a.street}${a.street2 ? ", " + a.street2 : ""}, ${a.postalCode} ${a.city}, ${a.country}`;
+
+  const handlePlaceOrder = useCallback(async () => {
+    if (submitting) return; // double-click guard
+    setSubmitting(true);
+    try {
+      const finalBilling = sameAsBilling ? shippingAddr : billingAddr;
+      const order = await createOrder.mutateAsync({
+        shippingAddress: formatAddr(shippingAddr),
+        billingAddress: formatAddr(finalBilling),
+        paymentMethod: paymentMethods[payment],
+        subtotal,
+        total,
+        items: items.map(item => ({
+          offer_id: item.offer_id,
+          product_id: item.product_id,
+          quantity: item.quantity,
+          unit_price_excl_vat: item.price_excl_vat || 0,
+          unit_price_incl_vat: item.price_incl_vat || item.price_excl_vat || 0,
+        })),
+      });
+      clearCart.mutate();
+
+      try {
+        await supabase.functions.invoke("send-transactional-email", {
+          body: {
+            templateName: "order-confirmation",
+            recipientEmail: user!.email,
+            idempotencyKey: `order-confirm-${order.id}`,
+            templateData: {
+              orderNumber: order.order_number,
+              total: `${formatPrice(total)} EUR`,
+              itemCount: items.length,
+              shippingAddress: formatAddr(shippingAddr),
+              paymentMethod: paymentMethods[payment],
+            },
+          },
+        });
+      } catch (emailErr) {
+        console.warn("Email confirmation failed:", emailErr);
+      }
+
+      navigate(`/confirmation?order=${order.order_number}`);
+    } catch (e: any) {
+      toast.error("Erreur lors de la commande: " + (e.message || "Réessayez"));
+      setSubmitting(false);
+    }
+  }, [submitting, shippingAddr, billingAddr, sameAsBilling, payment, subtotal, total, items]);
 
   if (!user) {
     return (
@@ -68,48 +135,41 @@ export default function CheckoutPage() {
     );
   }
 
-  const handlePlaceOrder = async () => {
-    try {
-      const order = await createOrder.mutateAsync({
-        shippingAddress: addresses[selectedAddr].addr,
-        paymentMethod: paymentMethods[payment],
-        subtotal,
-        total,
-        items: items.map(item => ({
-          offer_id: item.offer_id,
-          product_id: item.product_id,
-          quantity: item.quantity,
-          unit_price_excl_vat: item.price_excl_vat || 0,
-          unit_price_incl_vat: item.price_incl_vat || item.price_excl_vat || 0,
-        })),
-      });
-      clearCart.mutate();
-
-      // Send order confirmation email
-      try {
-        await supabase.functions.invoke("send-transactional-email", {
-          body: {
-            templateName: "order-confirmation",
-            recipientEmail: user!.email,
-            idempotencyKey: `order-confirm-${order.id}`,
-            templateData: {
-              orderNumber: order.order_number,
-              total: `${formatPrice(total)} EUR`,
-              itemCount: items.length,
-              shippingAddress: addresses[selectedAddr].addr,
-              paymentMethod: paymentMethods[payment],
-            },
-          },
-        });
-      } catch (emailErr) {
-        console.warn("Email confirmation failed:", emailErr);
-      }
-
-      navigate(`/confirmation?order=${order.order_number}`);
-    } catch (e: any) {
-      toast.error("Erreur lors de la commande: " + (e.message || "Réessayez"));
-    }
-  };
+  const AddressFields = ({ value, onChange, prefix }: { value: AddressForm; onChange: (v: AddressForm) => void; prefix: string }) => (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="sm:col-span-2">
+        <Label htmlFor={`${prefix}-company`} className="text-xs text-mk-sec mb-1">Société *</Label>
+        <Input id={`${prefix}-company`} value={value.company} onChange={e => onChange({ ...value, company: e.target.value })} placeholder="Nom de la société" />
+      </div>
+      <div className="sm:col-span-2">
+        <Label htmlFor={`${prefix}-street`} className="text-xs text-mk-sec mb-1">Adresse *</Label>
+        <Input id={`${prefix}-street`} value={value.street} onChange={e => onChange({ ...value, street: e.target.value })} placeholder="Rue et numéro" />
+      </div>
+      <div className="sm:col-span-2">
+        <Label htmlFor={`${prefix}-street2`} className="text-xs text-mk-sec mb-1">Complément</Label>
+        <Input id={`${prefix}-street2`} value={value.street2} onChange={e => onChange({ ...value, street2: e.target.value })} placeholder="Étage, boîte, etc." />
+      </div>
+      <div>
+        <Label htmlFor={`${prefix}-postal`} className="text-xs text-mk-sec mb-1">Code postal *</Label>
+        <Input id={`${prefix}-postal`} value={value.postalCode} onChange={e => onChange({ ...value, postalCode: e.target.value })} placeholder="1000" />
+      </div>
+      <div>
+        <Label htmlFor={`${prefix}-city`} className="text-xs text-mk-sec mb-1">Ville *</Label>
+        <Input id={`${prefix}-city`} value={value.city} onChange={e => onChange({ ...value, city: e.target.value })} placeholder="Bruxelles" />
+      </div>
+      <div>
+        <Label htmlFor={`${prefix}-country`} className="text-xs text-mk-sec mb-1">Pays</Label>
+        <select id={`${prefix}-country`} value={value.country} onChange={e => onChange({ ...value, country: e.target.value })}
+          className="w-full border border-input rounded-md px-3 py-2 text-sm bg-background">
+          <option value="BE">Belgique</option>
+          <option value="FR">France</option>
+          <option value="LU">Luxembourg</option>
+          <option value="NL">Pays-Bas</option>
+          <option value="DE">Allemagne</option>
+        </select>
+      </div>
+    </div>
+  );
 
   return (
     <Layout>
@@ -117,7 +177,7 @@ export default function CheckoutPage() {
         <div className="mk-container py-6 md:py-8">
           {/* Stepper */}
           <div className="flex items-center justify-center gap-3 md:gap-6 mb-8 md:mb-10">
-            {["Livraison", "Paiement", "Verification"].map((s, i) => (
+            {["Livraison", "Paiement", "Vérification"].map((s, i) => (
               <div key={s} className="flex items-center gap-2 md:gap-3">
                 <motion.div
                   className={`w-7 h-7 md:w-8 md:h-8 rounded-full flex items-center justify-center text-xs md:text-sm font-bold ${step > i ? "bg-mk-green text-white" : step === i + 1 ? "bg-mk-navy text-white" : "bg-mk-alt text-mk-sec"}`}
@@ -140,17 +200,22 @@ export default function CheckoutPage() {
                 {step === 1 && (
                   <motion.div key="step1" variants={stepVariants} initial="initial" animate="animate" exit="exit" transition={{ duration: 0.3 }}>
                     <h2 className="text-xl font-bold text-mk-navy mb-5">Adresse de livraison</h2>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-                      {addresses.map((a, i) => (
-                        <motion.button key={i} onClick={() => setSelectedAddr(i)}
-                          className={`border rounded-lg p-4 text-left ${selectedAddr === i ? "border-mk-blue border-2 bg-blue-50" : "border-mk-line"}`}
-                          whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                          <p className="text-sm font-bold text-mk-navy mb-1">{a.label}</p>
-                          <p className="text-sm text-mk-sec">{a.addr}</p>
-                        </motion.button>
-                      ))}
-                    </div>
-                    <h3 className="text-lg font-bold text-mk-navy mb-4">Options de livraison</h3>
+                    <AddressFields value={shippingAddr} onChange={setShippingAddr} prefix="ship" />
+
+                    <label className="flex items-center gap-2 mt-4 mb-4 cursor-pointer">
+                      <input type="checkbox" checked={sameAsBilling} onChange={e => setSameAsBilling(e.target.checked)}
+                        className="w-4 h-4 rounded border-input" />
+                      <span className="text-sm text-mk-text">Adresse de facturation identique</span>
+                    </label>
+
+                    {!sameAsBilling && (
+                      <>
+                        <h3 className="text-lg font-bold text-mk-navy mb-3">Adresse de facturation</h3>
+                        <AddressFields value={billingAddr} onChange={setBillingAddr} prefix="bill" />
+                      </>
+                    )}
+
+                    <h3 className="text-lg font-bold text-mk-navy mb-4 mt-6">Options de livraison</h3>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
                       {shippingOpts.map((s, i) => (
                         <motion.button key={i} onClick={() => setShipping(i)}
@@ -162,8 +227,11 @@ export default function CheckoutPage() {
                         </motion.button>
                       ))}
                     </div>
-                    <motion.button onClick={() => setStep(2)} className="w-full sm:w-auto bg-mk-navy text-white font-bold text-sm px-6 py-3 rounded-md"
-                      whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+                    <motion.button
+                      onClick={() => setStep(2)}
+                      disabled={!canProceedStep1}
+                      className="w-full sm:w-auto bg-mk-navy text-white font-bold text-sm px-6 py-3 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+                      whileHover={canProceedStep1 ? { scale: 1.03 } : {}} whileTap={canProceedStep1 ? { scale: 0.97 } : {}}>
                       Continuer vers le paiement
                     </motion.button>
                   </motion.div>
@@ -171,7 +239,7 @@ export default function CheckoutPage() {
 
                 {step === 2 && (
                   <motion.div key="step2" variants={stepVariants} initial="initial" animate="animate" exit="exit" transition={{ duration: 0.3 }}>
-                    <h2 className="text-xl font-bold text-mk-navy mb-5">Methode de paiement</h2>
+                    <h2 className="text-xl font-bold text-mk-navy mb-5">Méthode de paiement</h2>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
                       {paymentMethods.map((m, i) => (
                         <motion.button key={i} onClick={() => setPayment(i)}
@@ -190,10 +258,10 @@ export default function CheckoutPage() {
 
                 {step === 3 && (
                   <motion.div key="step3" variants={stepVariants} initial="initial" animate="animate" exit="exit" transition={{ duration: 0.3 }}>
-                    <h2 className="text-xl font-bold text-mk-navy mb-5">Verification</h2>
+                    <h2 className="text-xl font-bold text-mk-navy mb-5">Vérification</h2>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
                       {[
-                        { label: "Adresse", value: addresses[selectedAddr].addr },
+                        { label: "Adresse de livraison", value: formatAddr(shippingAddr) },
                         { label: "Livraison", value: shippingOpts[shipping].name },
                         { label: "Paiement", value: paymentMethods[payment] },
                       ].map((item, i) => (
@@ -205,7 +273,6 @@ export default function CheckoutPage() {
                       ))}
                     </div>
 
-                    {/* Order items summary */}
                     <div className="border border-mk-line rounded-lg mb-6">
                       <div className="p-3 border-b border-mk-line">
                         <span className="text-sm font-semibold text-mk-navy">{items.length} article{items.length > 1 ? "s" : ""}</span>
@@ -222,12 +289,12 @@ export default function CheckoutPage() {
                       <motion.button onClick={() => setStep(2)} className="border border-mk-navy text-mk-navy font-bold text-sm px-6 py-3 rounded-md" whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>Retour</motion.button>
                       <motion.button
                         onClick={handlePlaceOrder}
-                        disabled={createOrder.isPending}
-                        className="bg-mk-green text-white font-bold text-sm px-6 py-3 rounded-md flex items-center gap-2 disabled:opacity-60"
-                        whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                        disabled={submitting || createOrder.isPending}
+                        className="bg-mk-green text-white font-bold text-sm px-6 py-3 rounded-md flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                        whileHover={!submitting ? { scale: 1.03 } : {}} whileTap={!submitting ? { scale: 0.97 } : {}}
                       >
-                        {createOrder.isPending && <Loader2 size={16} className="animate-spin" />}
-                        Passer la commande
+                        {(submitting || createOrder.isPending) && <Loader2 size={16} className="animate-spin" />}
+                        {submitting ? "Traitement en cours..." : "Passer la commande"}
                       </motion.button>
                     </div>
                   </motion.div>
@@ -239,7 +306,7 @@ export default function CheckoutPage() {
             <motion.aside className="w-full lg:w-[320px] shrink-0"
               initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.2 }}>
               <div className="border border-mk-line rounded-lg p-5 lg:sticky lg:top-20">
-                <h3 className="text-lg font-bold text-mk-navy mb-4">Recapitulatif</h3>
+                <h3 className="text-lg font-bold text-mk-navy mb-4">Récapitulatif</h3>
                 <div className="space-y-2 text-sm mb-4">
                   <div className="flex justify-between"><span className="text-mk-sec">Sous-total ({items.length} article{items.length > 1 ? "s" : ""})</span><span className="text-mk-navy">{formatPrice(subtotal)} EUR</span></div>
                   <div className="flex justify-between"><span className="text-mk-sec">Livraison</span><span className="text-mk-navy">{shippingCost === 0 ? "Incluse" : `${formatPrice(shippingCost)} EUR`}</span></div>

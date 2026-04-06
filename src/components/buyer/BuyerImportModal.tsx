@@ -36,6 +36,7 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
   const [phase, setPhase] = useState<"instructions" | "loading" | "results">("instructions");
   const [results, setResults] = useState<MatchedLine[]>([]);
   const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [progress, setProgress] = useState({ current: 0, total: 0, startTime: 0 });
   const fileRef = useRef<HTMLInputElement>(null);
   const { addToCart } = useCart();
 
@@ -43,6 +44,7 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
     setPhase("instructions");
     setResults([]);
     setSelected(new Set());
+    setProgress({ current: 0, total: 0, startTime: 0 });
   }, []);
 
   const handleClose = (v: boolean) => {

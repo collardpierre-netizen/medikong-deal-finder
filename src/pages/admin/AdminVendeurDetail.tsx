@@ -478,6 +478,7 @@ function VendorValidationTab({ vendor, onUpdate }: { vendor: any; onUpdate: () =
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ["vendor-detail", vendor.id] }),
       queryClient.invalidateQueries({ queryKey: ["admin-vendors"] }),
+      queryClient.invalidateQueries({ queryKey: ["pending-vendors"] }),
       queryClient.invalidateQueries({ queryKey: ["admin-kyc-submissions"] }),
       queryClient.invalidateQueries({ queryKey: ["admin-dashboard-counts"] }),
     ]);

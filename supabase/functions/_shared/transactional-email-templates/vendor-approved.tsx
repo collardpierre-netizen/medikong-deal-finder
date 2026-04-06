@@ -25,7 +25,7 @@ const VendorApprovedEmail = ({ companyName }: VendorApprovedProps) => (
         <Text style={text}>
           Vous pouvez maintenant accéder à votre portail vendeur pour configurer votre catalogue, vos prix et vos paramètres de livraison.
         </Text>
-        <Button href="https://medikong.pro/vendor/login" style={button}>
+        <Button href="https://www.medikong.pro/vendor/login" style={button}>
           Accéder à mon portail vendeur
         </Button>
         <Hr style={divider} />

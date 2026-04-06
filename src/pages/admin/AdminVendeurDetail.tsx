@@ -9,8 +9,9 @@ import {
   ArrowLeft, Building2, Mail, MapPin,
   DollarSign, Package, Tag, Factory, Activity, Eye, Plus, Trash2,
   CheckCircle2, XCircle, Clock, Globe, Phone, FileText, Loader2,
-  Pencil, Power, AlertTriangle, Save,
+  Pencil, Power, AlertTriangle, Save, ExternalLink,
 } from "lucide-react";
+import { useImpersonation } from "@/contexts/ImpersonationContext";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -35,6 +36,7 @@ const AdminVendeurDetail = () => {
   const [showDelete, setShowDelete] = useState(false);
   const [togglingStatus, setTogglingStatus] = useState(false);
   const queryClient = useQueryClient();
+  const { startImpersonation } = useImpersonation();
   const { data: vendor, isLoading } = useQuery({
     queryKey: ["vendor-detail", id],
     queryFn: async () => {
@@ -141,6 +143,21 @@ const AdminVendeurDetail = () => {
           <p className="text-[13px] mt-0.5" style={{ color: "#616B7C" }}>{vendor.email || "—"}</p>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              startImpersonation(
+                vendor.auth_user_id || vendor.id,
+                vendor.email || "",
+                "vendor",
+                vendor.company_name || vendor.name,
+                vendor.id
+              ).then(() => navigate("/vendor"));
+            }}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-md text-[12px] font-bold text-white transition-opacity hover:opacity-90"
+            style={{ backgroundColor: "#7C3AED" }}
+          >
+            <ExternalLink size={14} /> Accéder au portail
+          </button>
           <button
             onClick={toggleActive}
             disabled={togglingStatus}

@@ -9,6 +9,7 @@ interface ImpersonationSession {
   target_email: string;
   target_type: string;
   target_company_name: string;
+  target_vendor_id?: string;
   actions_count: number;
   started_at: string;
 }
@@ -21,7 +22,7 @@ interface ImpersonationState {
 
 interface ImpersonationContextType {
   state: ImpersonationState;
-  startImpersonation: (targetUserId: string, targetEmail: string, targetType: string, targetCompany: string) => Promise<void>;
+  startImpersonation: (targetUserId: string, targetEmail: string, targetType: string, targetCompany: string, targetVendorId?: string) => Promise<void>;
   stopImpersonation: () => Promise<void>;
   logAction: (action: string, entityType: string, entityId: string, payload: Record<string, any>) => Promise<void>;
   isImpersonating: boolean;
@@ -44,8 +45,25 @@ export function ImpersonationProvider({ children }: { children: ReactNode }) {
     else sessionStorage.removeItem("mk_impersonation");
   }, [state]);
 
-  const startImpersonation = useCallback(async (_targetUserId: string, _targetEmail: string, _targetType: string, targetCompany: string) => {
-    toast.info(`Impersonation non disponible — ${targetCompany}`);
+  const startImpersonation = useCallback(async (targetUserId: string, targetEmail: string, targetType: string, targetCompany: string, targetVendorId?: string) => {
+    const session: ImpersonationSession = {
+      id: crypto.randomUUID(),
+      admin_user_id: "admin",
+      admin_email: "admin",
+      target_user_id: targetUserId,
+      target_email: targetEmail,
+      target_type: targetType,
+      target_company_name: targetCompany,
+      target_vendor_id: targetVendorId,
+      actions_count: 0,
+      started_at: new Date().toISOString(),
+    };
+    setState({
+      isImpersonating: true,
+      session,
+      originalAdmin: { userId: "admin", email: "admin", name: "Admin" },
+    });
+    toast.success(`Mode shadow activé pour ${targetCompany}`);
   }, []);
 
   const stopImpersonation = useCallback(async () => {

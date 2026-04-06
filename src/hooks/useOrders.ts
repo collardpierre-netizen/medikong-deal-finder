@@ -13,6 +13,7 @@ export interface OrderItemInput {
 
 export interface OrderInput {
   shippingAddress: string;
+  billingAddress?: string;
   shippingMethod?: string;
   shippingCost?: number;
   paymentMethod: string;

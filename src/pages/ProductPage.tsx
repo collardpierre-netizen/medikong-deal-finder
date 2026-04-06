@@ -574,7 +574,7 @@ export default function ProductPage() {
   const { slug } = useParams();
   const navigate = useNavigate();
   const routeLocation = useLocation();
-  const { user, isVerifiedBuyer } = useAuth();
+  const { user, isVerifiedBuyer, verificationLoading } = useAuth();
   const { country } = useCountry();
   const { isTVAC } = usePriceDisplay();
   const { data: product, isLoading } = useProduct(slug);
@@ -1006,7 +1006,7 @@ export default function ProductPage() {
               <p className="text-xs text-muted-foreground mb-2">Prix soumis a TVA selon votre pays.</p>
 
               {/* Price level badge */}
-              {user && isVerifiedBuyer && (
+              {user && (isVerifiedBuyer || verificationLoading) && (
                 <span className="inline-flex items-center gap-1.5 text-xs font-semibold bg-amber-50 text-amber-700 px-3 py-1.5 rounded-full border border-amber-200 mb-4">
                   <Tag size={12} /> {levelLabel}
                 </span>
@@ -1045,7 +1045,7 @@ export default function ProductPage() {
               )}
 
               {/* ── Pending verification gate ── */}
-              {user && !isVerifiedBuyer && (
+              {user && !isVerifiedBuyer && !verificationLoading && (
                 <div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-6 mb-6 text-center">
                   <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-3">
                     <Info size={22} className="text-amber-600" />
@@ -1059,7 +1059,7 @@ export default function ProductPage() {
               )}
 
               {/* ── Offers Tabs (only for verified buyers) ── */}
-              {user && isVerifiedBuyer && (
+              {user && (isVerifiedBuyer || verificationLoading) && (
               <div ref={offerSectionRef}>
                 <Tabs defaultValue="marketplace" className="mb-6">
                   <TabsList className="w-full grid grid-cols-3 mb-4">

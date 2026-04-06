@@ -18,31 +18,31 @@ const sidebarSections = [
     items: [
       { key: "catalog", icon: Package, path: "/vendor/catalog" },
       { key: "myOffers", icon: Tag, path: "/vendor/offers" },
-      { key: "orders", icon: ShoppingCart, path: "/vendor/orders", badge: 3 },
+      { key: "orders", icon: ShoppingCart, path: "/vendor/orders" },
     ],
   },
   {
     label: "INTELLIGENCE",
     items: [
-      { key: "opportunities", icon: Lightbulb, path: "/vendor/opportunities" },
-      { key: "alerts", icon: Bell, path: "/vendor/alerts", badge: 5 },
-      { key: "tenders", icon: FileText, path: "/vendor/tenders" },
-      { key: "analytics", icon: BarChart3, path: "/vendor/analytics" },
+      { key: "opportunities", icon: Lightbulb, path: "/vendor/opportunities", comingSoon: true },
+      { key: "alerts", icon: Bell, path: "/vendor/alerts", comingSoon: true },
+      { key: "tenders", icon: FileText, path: "/vendor/tenders", comingSoon: true },
+      { key: "analytics", icon: BarChart3, path: "/vendor/analytics", comingSoon: true },
     ],
   },
   {
     label: "COMPTE",
     items: [
-      { key: "finances", icon: DollarSign, path: "/vendor/finance" },
-      { key: "logistics", icon: Truck, path: "/vendor/logistics" },
+      { key: "finances", icon: DollarSign, path: "/vendor/finance", comingSoon: true },
+      { key: "logistics", icon: Truck, path: "/vendor/logistics", comingSoon: true },
       { key: "health", icon: HeartPulse, path: "/vendor/health" },
-      { key: "messages", icon: MessageSquare, path: "/vendor/messages", badge: 2 },
+      { key: "messages", icon: MessageSquare, path: "/vendor/messages", comingSoon: true },
     ],
   },
   {
     label: "RESSOURCES",
     items: [
-      { key: "academy", icon: GraduationCap, path: "/vendor/academy" },
+      { key: "academy", icon: GraduationCap, path: "/vendor/academy", comingSoon: true },
       { key: "settings", icon: Settings, path: "/vendor/settings" },
     ],
   },
@@ -87,6 +87,29 @@ export function VendorSidebar({ onNavigate }: VendorSidebarProps) {
             <div className="space-y-0.5">
               {section.items.map((item) => {
                 const isActive = location.pathname === item.path || (item.path !== "/vendor" && location.pathname.startsWith(item.path));
+                const isDisabled = 'comingSoon' in item && item.comingSoon;
+
+                if (isDisabled) {
+                  return (
+                    <div
+                      key={item.key}
+                      className={cn(
+                        "flex items-center gap-3 rounded-md text-[13px] font-medium cursor-not-allowed select-none",
+                        collapsed ? "justify-center px-2 py-2.5" : "px-3 py-2",
+                        "text-white/25"
+                      )}
+                    >
+                      <item.icon size={18} className="shrink-0" />
+                      {!collapsed && <span className="flex-1 truncate">{t(item.key)}</span>}
+                      {!collapsed && (
+                        <span className="text-[9px] font-semibold uppercase tracking-wide text-white/20 bg-white/5 rounded px-1.5 py-0.5 shrink-0">
+                          Bientôt
+                        </span>
+                      )}
+                    </div>
+                  );
+                }
+
                 return (
                   <NavLink
                     key={item.key}
@@ -103,14 +126,6 @@ export function VendorSidebar({ onNavigate }: VendorSidebarProps) {
                     {isActive && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full" style={{ backgroundColor: "#E70866" }} />}
                     <item.icon size={18} className="shrink-0" />
                     {!collapsed && <span className="flex-1 truncate">{t(item.key)}</span>}
-                    {!collapsed && item.badge && (
-                      <span className="min-w-[20px] h-5 flex items-center justify-center rounded-full text-[10px] font-bold text-white px-1.5" style={{ backgroundColor: "#E70866" }}>
-                        {item.badge}
-                      </span>
-                    )}
-                    {collapsed && item.badge && (
-                      <span className="absolute top-1 right-1 w-2 h-2 rounded-full" style={{ backgroundColor: "#E70866" }} />
-                    )}
                   </NavLink>
                 );
               })}

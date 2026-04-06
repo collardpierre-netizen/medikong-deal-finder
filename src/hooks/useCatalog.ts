@@ -276,6 +276,28 @@ export function useCatalogBrands(categorySlug?: string) {
   });
 }
 
+/** Server-side brand search — returns brands matching a text query */
+export function useBrandSearch(search: string) {
+  const trimmed = search.trim();
+  return useQuery({
+    queryKey: ["brand-search", trimmed],
+    queryFn: async () => {
+      if (!trimmed) return [] as BrandCount[];
+      const { data, error } = await supabase
+        .from("brands")
+        .select("id, name, slug, product_count")
+        .eq("is_active", true)
+        .ilike("name", `%${trimmed}%`)
+        .order("product_count", { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      return (data || []) as BrandCount[];
+    },
+    enabled: trimmed.length >= 2,
+    staleTime: 30_000,
+  });
+}
+
 export function useCatalogManufacturers() {
   return useQuery({
     queryKey: ["catalog-manufacturers"],

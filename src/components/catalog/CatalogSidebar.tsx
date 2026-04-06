@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { ChevronLeft, X, Search, Filter, Eye } from "lucide-react";
 import { useCountry } from "@/contexts/CountryContext";
-import { useCatalogCategories, useCatalogBrands, useCatalogManufacturers, type CatalogFilters } from "@/hooks/useCatalog";
+import { useCatalogCategories, useCatalogBrands, useCatalogManufacturers, useBrandSearch, type CatalogFilters } from "@/hooks/useCatalog";
 import { useVisibleCategories } from "@/hooks/useVisibleCategories";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -35,11 +35,21 @@ export function CatalogSidebar({ filters, setFilter, clearAll, resultCategoryIds
   const [priceMin, setPriceMin] = useState(filters.priceMin?.toString() || "");
   const [priceMax, setPriceMax] = useState(filters.priceMax?.toString() || "");
 
-  // Auto-suggest: top 8 matching brands for dropdown
+  const { data: serverBrands } = useBrandSearch(brandSearch);
+
+  // Merge local brands with server search results to cover brands beyond the 500 limit
+  const mergedBrands = useMemo(() => {
+    if (!serverBrands || serverBrands.length === 0) return brands;
+    const localIds = new Set(brands.map(b => b.id));
+    const extras = serverBrands.filter(b => !localIds.has(b.id));
+    return [...brands, ...extras];
+  }, [brands, serverBrands]);
+
+  // Auto-suggest: top 12 matching brands for dropdown
   const brandSuggestions = useMemo(() => {
     if (!brandSearch) return [];
     const q = brandSearch.toLowerCase();
-    return brands
+    return mergedBrands
       .filter(b => b.name.toLowerCase().includes(q))
       .sort((a, b) => {
         const aExact = a.name.toLowerCase() === q;
@@ -53,7 +63,7 @@ export function CatalogSidebar({ filters, setFilter, clearAll, resultCategoryIds
         return b.product_count - a.product_count;
       })
       .slice(0, 12);
-  }, [brands, brandSearch]);
+  }, [mergedBrands, brandSearch]);
 
   const mfSuggestions = useMemo(() => {
     if (!mfSearch) return [];
@@ -75,10 +85,10 @@ export function CatalogSidebar({ filters, setFilter, clearAll, resultCategoryIds
   }, []);
 
   const filteredBrands = useMemo(() => {
-    let list = brands;
+    let list = mergedBrands;
     if (brandSearch) list = list.filter(b => b.name.toLowerCase().includes(brandSearch.toLowerCase()));
     return showAllBrands ? list : list.slice(0, 15);
-  }, [brands, brandSearch, showAllBrands]);
+  }, [mergedBrands, brandSearch, showAllBrands]);
 
   const filteredMf = useMemo(() => {
     let list = manufacturers;

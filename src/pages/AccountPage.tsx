@@ -322,6 +322,15 @@ export default function AccountPage() {
                       >
                         {profileSaving ? "Enregistrement..." : "Enregistrer les modifications"}
                       </motion.button>
+
+                      {/* GDPR - Delete Account */}
+                      <div className="mt-12 pt-8 border-t border-destructive/20">
+                        <h3 className="text-lg font-bold text-destructive mb-2">Zone dangereuse</h3>
+                        <p className="text-sm text-muted-foreground mb-4">
+                          La suppression de votre compte est irréversible. Toutes vos données personnelles, commandes, favoris et alertes seront définitivement supprimées conformément au RGPD.
+                        </p>
+                        <DeleteAccountButton />
+                      </div>
                     </div>
                   )}
 

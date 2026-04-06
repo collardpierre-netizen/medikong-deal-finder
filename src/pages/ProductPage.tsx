@@ -844,7 +844,7 @@ export default function ProductPage() {
             if (from && (from.startsWith("/catalogue") || from.startsWith("/recherche"))) {
               return (
                 <button
-                  onClick={() => navigate(from)}
+                  onClick={() => navigate(-1)}
                   className="inline-flex items-center gap-1 text-xs text-primary hover:underline shrink-0"
                 >
                   <ChevronRight size={12} className="rotate-180" />

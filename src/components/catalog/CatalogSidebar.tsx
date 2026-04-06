@@ -38,7 +38,21 @@ export function CatalogSidebar({ filters, setFilter, clearAll, resultCategoryIds
   // Auto-suggest: top 8 matching brands for dropdown
   const brandSuggestions = useMemo(() => {
     if (!brandSearch) return [];
-    return brands.filter(b => b.name.toLowerCase().includes(brandSearch.toLowerCase())).slice(0, 8);
+    const q = brandSearch.toLowerCase();
+    return brands
+      .filter(b => b.name.toLowerCase().includes(q))
+      .sort((a, b) => {
+        const aExact = a.name.toLowerCase() === q;
+        const bExact = b.name.toLowerCase() === q;
+        if (aExact && !bExact) return -1;
+        if (!aExact && bExact) return 1;
+        const aStarts = a.name.toLowerCase().startsWith(q);
+        const bStarts = b.name.toLowerCase().startsWith(q);
+        if (aStarts && !bStarts) return -1;
+        if (!aStarts && bStarts) return 1;
+        return b.product_count - a.product_count;
+      })
+      .slice(0, 12);
   }, [brands, brandSearch]);
 
   const mfSuggestions = useMemo(() => {

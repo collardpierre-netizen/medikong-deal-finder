@@ -219,9 +219,12 @@ const AdminVendeurs = () => {
             <button onClick={() => bulkAction("activate")} className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-bold transition-colors hover:opacity-90" style={{ backgroundColor: "#F0FDF4", color: "#16A34A" }}>
               <ToggleRight size={13} /> Activer
             </button>
-            <button onClick={() => bulkAction("deactivate")} className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-bold transition-colors hover:opacity-90" style={{ backgroundColor: "#FEF2F2", color: "#DC2626" }}>
-              <ToggleLeft size={13} /> Désactiver
-            </button>
+             <button onClick={() => bulkAction("deactivate")} className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-bold transition-colors hover:opacity-90" style={{ backgroundColor: "#FEF2F2", color: "#DC2626" }}>
+               <ToggleLeft size={13} /> Désactiver
+             </button>
+             <button onClick={() => bulkAction("delete")} className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-bold transition-colors hover:opacity-90" style={{ backgroundColor: "#FEE2E2", color: "#991B1B" }}>
+               <Trash2 size={13} /> Supprimer
+             </button>
             <button onClick={() => setSelected(new Set())} className="px-3 py-1.5 rounded-md text-[11px] font-bold transition-colors hover:opacity-90" style={{ color: "#64748B" }}>
               Annuler
             </button>

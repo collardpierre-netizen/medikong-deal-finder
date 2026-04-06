@@ -9,8 +9,9 @@ import {
   ArrowLeft, Building2, Mail, MapPin,
   DollarSign, Package, Tag, Factory, Activity, Eye, Plus, Trash2,
   CheckCircle2, XCircle, Clock, Globe, Phone, FileText, Loader2,
-  Pencil, Power, AlertTriangle, Save,
+  Pencil, Power, AlertTriangle, Save, ExternalLink,
 } from "lucide-react";
+import { useImpersonation } from "@/contexts/ImpersonationContext";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

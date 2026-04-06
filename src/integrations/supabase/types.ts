@@ -3411,6 +3411,24 @@ export type Database = {
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      match_import_lines: {
+        Args: { _lines: Json }
+        Returns: {
+          cnk: string
+          current_price: number
+          ean: string
+          line_index: number
+          medi_price: number
+          offer_id: string
+          product_id: string
+          product_image: string
+          product_name: string
+          quantity: number
+          saving: number
+          status: string
+          vendor_name: string
+        }[]
+      }
       move_to_dlq: {
         Args: {
           dlq_name: string

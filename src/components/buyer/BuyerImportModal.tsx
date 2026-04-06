@@ -88,88 +88,46 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
         return;
       }
 
-      setProgress({ current: 0, total: 3, startTime: Date.now() });
+      setProgress({ current: 0, total: lines.length, startTime: Date.now() });
 
-      // Step 1: Collect all EANs and CNKs
-      const allEans = lines.map(l => l.ean).filter(Boolean) as string[];
-      const allCnks = lines.map(l => l.cnk).filter(Boolean) as string[];
+      const CHUNK_SIZE = 150;
+      const matched: MatchedLine[] = [];
 
-      setProgress(p => ({ ...p, current: 1 }));
+      for (let start = 0; start < lines.length; start += CHUNK_SIZE) {
+        const chunk = lines.slice(start, start + CHUNK_SIZE).map((line, offset) => ({
+          index: start + offset,
+          ean: line.ean ?? null,
+          cnk: line.cnk ?? null,
+          quantity: line.quantity,
+          currentPrice: line.currentPrice,
+        }));
 
-      // Step 2: Bulk fetch products by GTIN and CNK in batches of 500 (Supabase .in() limit)
-      const productsByGtin = new Map<string, any>();
-      const productsByCnk = new Map<string, any>();
-      
-      const fetchProductBatch = async (codes: string[], field: "gtin" | "cnk_code") => {
-        const results: any[] = [];
-        for (let i = 0; i < codes.length; i += 500) {
-          const chunk = codes.slice(i, i + 500);
-          const { data } = await supabase
-            .from("products")
-            .select("id, name, image_url, gtin, cnk_code")
-            .eq("is_active", true)
-            .in(field, chunk);
-          if (data) results.push(...data);
-        }
-        return results;
-      };
+        const { data, error } = await (supabase as any).rpc("match_import_lines", {
+          _lines: chunk,
+        });
 
-      const [gtinProducts, cnkProducts] = await Promise.all([
-        allEans.length > 0 ? fetchProductBatch(allEans, "gtin") : Promise.resolve([]),
-        allCnks.length > 0 ? fetchProductBatch(allCnks, "cnk_code") : Promise.resolve([]),
-      ]);
+        if (error) throw error;
 
-      for (const p of gtinProducts) { if (p.gtin) productsByGtin.set(p.gtin, p); }
-      for (const p of cnkProducts) { if (p.cnk_code) productsByCnk.set(p.cnk_code, p); }
+        const chunkResults = ((data || []) as any[])
+          .sort((a, b) => a.line_index - b.line_index)
+          .map((row) => ({
+            ean: row.ean ?? undefined,
+            cnk: row.cnk ?? undefined,
+            quantity: Number(row.quantity || 1),
+            currentPrice: Number(row.current_price || 0),
+            productId: row.product_id ?? undefined,
+            productName: row.product_name ?? undefined,
+            productImage: row.product_image ?? undefined,
+            mediPrice: row.medi_price != null ? Number(row.medi_price) : undefined,
+            offerId: row.offer_id ?? undefined,
+            vendorName: row.vendor_name ?? undefined,
+            status: row.status === "found" ? "found" : "unavailable",
+            saving: row.saving != null ? Math.max(0, Number(row.saving)) : 0,
+          })) as MatchedLine[];
 
-      setProgress(p => ({ ...p, current: 2 }));
-
-      // Step 3: Bulk fetch best offers for all matched product IDs
-      const matchedProductIds = new Set<string>();
-      for (const line of lines) {
-        const prod = (line.ean && productsByGtin.get(line.ean)) || (line.cnk && productsByCnk.get(line.cnk));
-        if (prod) matchedProductIds.add(prod.id);
+        matched.push(...chunkResults);
+        setProgress((p) => ({ ...p, current: Math.min(start + CHUNK_SIZE, lines.length) }));
       }
-
-      const offersByProductId = new Map<string, any>();
-      const productIdArr = Array.from(matchedProductIds);
-      
-      for (let i = 0; i < productIdArr.length; i += 500) {
-        const chunk = productIdArr.slice(i, i + 500);
-        const { data: offers } = await supabase
-          .from("offers")
-          .select("id, product_id, price_excl_vat, vendor_id, vendors(company_name)")
-          .eq("is_active", true)
-          .in("product_id", chunk)
-          .order("price_excl_vat", { ascending: true });
-        if (offers) {
-          for (const o of offers) {
-            // Keep only the cheapest offer per product
-            if (!offersByProductId.has(o.product_id)) {
-              offersByProductId.set(o.product_id, o);
-            }
-          }
-        }
-      }
-
-      setProgress(p => ({ ...p, current: 3 }));
-
-      // Step 4: Assemble results
-      const matched: MatchedLine[] = lines.map(line => {
-        const product = (line.ean && productsByGtin.get(line.ean)) || (line.cnk && productsByCnk.get(line.cnk));
-        if (!product) return { ...line, status: "unavailable" as const };
-
-        const offer = offersByProductId.get(product.id);
-        if (!offer) return { ...line, productId: product.id, productName: product.name, status: "unavailable" as const };
-
-        const saving = line.currentPrice > 0 ? line.currentPrice - offer.price_excl_vat : 0;
-        return {
-          ...line, productId: product.id, productName: product.name, productImage: product.image_url,
-          mediPrice: offer.price_excl_vat, offerId: offer.id,
-          vendorName: (offer as any).vendors?.company_name || "—",
-          status: "found" as const, saving: saving > 0 ? saving : 0,
-        };
-      });
 
       setResults(matched);
       setPhase("results");
@@ -245,17 +203,22 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
         </div>
 
         {phase === "loading" && (() => {
-          const steps = ["Lecture du fichier…", "Recherche des produits…", "Recherche des offres…", "Terminé"];
-          const stepLabel = steps[Math.min(progress.current, steps.length - 1)];
           const pct = progress.total > 0 ? Math.round((progress.current / progress.total) * 100) : 0;
+          const elapsed = (Date.now() - progress.startTime) / 1000;
+          const rate = progress.current > 0 ? elapsed / progress.current : 0;
+          const remaining = progress.current > 0 ? Math.max(0, Math.round(rate * (progress.total - progress.current))) : null;
           return (
             <div className="py-6 space-y-3">
               <div className="flex items-center justify-between text-sm text-muted-foreground">
-                <span className="flex items-center gap-2"><Loader2 size={14} className="animate-spin" /> {stepLabel}</span>
-                <span>Étape {progress.current}/{progress.total}</span>
+                <span className="flex items-center gap-2"><Loader2 size={14} className="animate-spin" /> Analyse de votre fichier…</span>
+                <span>{progress.current}/{progress.total} lignes</span>
               </div>
               <div className="w-full bg-muted rounded-full h-2.5 overflow-hidden">
                 <div className="bg-primary h-full rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
+              </div>
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span>{pct}%</span>
+                <span>{remaining === null ? "Estimation…" : `Temps restant ~${remaining}s`}</span>
               </div>
             </div>
           );

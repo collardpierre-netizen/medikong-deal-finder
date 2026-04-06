@@ -137,6 +137,7 @@ export default function AccountPage() {
   const { data: dbOrders = [], isLoading: ordersLoading } = useOrders();
   const [activeTab, setActiveTab] = useState("profil");
   const [newListName, setNewListName] = useState("");
+  const [importOpen, setImportOpen] = useState(false);
 
   // ---- Profile state ----
   const [profileForm, setProfileForm] = useState({

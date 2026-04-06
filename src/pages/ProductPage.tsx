@@ -1059,7 +1059,7 @@ export default function ProductPage() {
               )}
 
               {/* ── Offers Tabs (only for verified buyers) ── */}
-              {user && isVerifiedBuyer && (
+              {user && (isVerifiedBuyer || verificationLoading) && (
               <div ref={offerSectionRef}>
                 <Tabs defaultValue="marketplace" className="mb-6">
                   <TabsList className="w-full grid grid-cols-3 mb-4">

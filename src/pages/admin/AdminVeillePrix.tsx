@@ -288,6 +288,10 @@ export default function AdminVeillePrix() {
     r.sort((a, b) => {
       if (sortKey === "name") return sortDir === "asc" ? (a.product.name || "").localeCompare(b.product.name || "") : (b.product.name || "").localeCompare(a.product.name || "");
       if (sortKey === "qogita") return sortDir === "asc" ? a.qogitaPrice - b.qogitaPrice : b.qogitaPrice - a.qogitaPrice;
+      if (sortKey === "bestCompetitor") {
+        const aV = a.bestPrice ?? 0; const bV = b.bestPrice ?? 0;
+        return sortDir === "asc" ? aV - bV : bV - aV;
+      }
       if (sortKey === "ecart") {
         const aV = a.ecart ?? -999; const bV = b.ecart ?? -999;
         return sortDir === "asc" ? aV - bV : bV - aV;

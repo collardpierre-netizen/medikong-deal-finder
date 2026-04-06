@@ -5,20 +5,42 @@ import { VendorTopBar } from "./VendorTopBar";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
+import { useImpersonation } from "@/contexts/ImpersonationContext";
 
 export default function VendorLayout() {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [checking, setChecking] = useState(true);
+  const { state: impState } = useImpersonation();
 
   useEffect(() => {
     const check = async () => {
+      // If admin is impersonating a vendor, skip auth check
+      if (impState.isImpersonating && impState.session?.target_type === "vendor" && impState.session?.target_vendor_id) {
+        setChecking(false);
+        return;
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         navigate("/vendor/login", { replace: true });
         return;
       }
+
+      // Check if user is admin — allow access
+      const { data: adminUser } = await supabase
+        .from("admin_users")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("is_active", true)
+        .maybeSingle();
+
+      if (adminUser && impState.isImpersonating) {
+        setChecking(false);
+        return;
+      }
+
       const { data: vendor } = await supabase
         .from("vendors")
         .select("id")
@@ -31,7 +53,7 @@ export default function VendorLayout() {
       setChecking(false);
     };
     check();
-  }, [navigate]);
+  }, [navigate, impState.isImpersonating, impState.session?.target_vendor_id]);
 
   if (checking) {
     return (

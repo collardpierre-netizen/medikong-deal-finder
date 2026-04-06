@@ -482,30 +482,26 @@ export default function AdminVeillePrix() {
       const totalToInsert = rowsWithEan.length + rowsWithCnkOnly.length;
       let insertedSoFar = 0;
 
-      const upsertBatches = async (rows: any[], conflictKey: string) => {
-        for (let i = 0; i < rows.length; i += 500) {
-          const batch = rows.slice(i, i + 500);
-          const deduped = new Map<string, any>();
-          for (const r of batch) {
-            const key = conflictKey === "source_id,ean" ? `${r.source_id}__${r.ean}` : `${r.source_id}__${r.cnk}`;
-            deduped.set(key, r);
-          }
-          const dedupedRows = Array.from(deduped.values());
-          const { error } = await supabase.from("market_prices").upsert(dedupedRows, { onConflict: conflictKey });
-          if (error) {
-            console.error(`Upsert error (${conflictKey}):`, error);
-            for (const r of dedupedRows) {
-              try { await supabase.from("market_prices").upsert(r, { onConflict: conflictKey }); } catch {}
-            }
-          }
-          inserted += dedupedRows.length;
-          insertedSoFar += dedupedRows.length;
-          setImportProgress({ phase: "Insertion en base…", current: insertedSoFar, total: totalToInsert });
-        }
-      };
+      // Use RPC function for proper upsert with filtered unique indexes
+      const allRows = [...rowsWithEan, ...rowsWithCnkOnly];
+      // Deduplicate by source_id + ean/cnk
+      const deduped = new Map<string, any>();
+      for (const r of allRows) {
+        const key = r.ean && r.ean.trim() !== "" ? `ean__${r.source_id}__${r.ean}` : `cnk__${r.source_id}__${r.cnk}`;
+        deduped.set(key, r);
+      }
+      const dedupedRows = Array.from(deduped.values());
 
-      if (rowsWithEan.length > 0) await upsertBatches(rowsWithEan, "source_id,ean");
-      if (rowsWithCnkOnly.length > 0) await upsertBatches(rowsWithCnkOnly, "source_id,cnk");
+      for (let i = 0; i < dedupedRows.length; i += 200) {
+        const batch = dedupedRows.slice(i, i + 200);
+        const { error } = await supabase.rpc("upsert_market_prices", { rows: batch });
+        if (error) {
+          console.error("Upsert RPC error:", error);
+        }
+        inserted += batch.length;
+        insertedSoFar += batch.length;
+        setImportProgress({ phase: "Insertion en base…", current: insertedSoFar, total: totalToInsert });
+      }
 
       // Update source stats
       await supabase.from("market_price_sources").update({

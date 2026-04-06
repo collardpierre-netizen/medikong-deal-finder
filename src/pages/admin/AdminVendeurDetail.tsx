@@ -143,6 +143,21 @@ const AdminVendeurDetail = () => {
         </div>
         <div className="flex items-center gap-2">
           <button
+            onClick={() => {
+              startImpersonation(
+                vendor.auth_user_id || vendor.id,
+                vendor.email || "",
+                "vendor",
+                vendor.company_name || vendor.name,
+                vendor.id
+              ).then(() => navigate("/vendor"));
+            }}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-md text-[12px] font-bold text-white transition-opacity hover:opacity-90"
+            style={{ backgroundColor: "#7C3AED" }}
+          >
+            <ExternalLink size={14} /> Accéder au portail
+          </button>
+          <button
             onClick={toggleActive}
             disabled={togglingStatus}
             className="flex items-center gap-1.5 px-3 py-2 rounded-md text-[12px] font-bold transition-opacity hover:opacity-90"

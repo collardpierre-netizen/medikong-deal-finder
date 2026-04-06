@@ -1,0 +1,1 @@
+ALTER TYPE vendor_validation_status ADD VALUE IF NOT EXISTS 'accepted' AFTER 'under_review';

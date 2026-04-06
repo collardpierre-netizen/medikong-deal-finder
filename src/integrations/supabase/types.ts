@@ -3433,6 +3433,7 @@ export type Database = {
       show_trgm: { Args: { "": string }; Returns: string[] }
       update_brand_product_counts: { Args: never; Returns: undefined }
       update_manufacturer_product_counts: { Args: never; Returns: undefined }
+      upsert_market_prices: { Args: { rows: Json }; Returns: number }
     }
     Enums: {
       admin_role:

@@ -792,9 +792,10 @@ export default function ProductPage() {
 
   // Build images from real data only — no fallbacks, no Qogita placeholders
   const productImageUrls = product.imageUrls?.filter((u: string) => isValidProductImage(u)) || [];
-  const images: string[] = productImageUrls.length > 0
+  const rawImages: string[] = productImageUrls.length > 0
     ? productImageUrls
     : isValidProductImage(product.imageUrl) ? [product.imageUrl!] : [];
+  const images: string[] = rawImages.map((u) => getProductImageSrc(u));
   const hasImages = images.length > 0;
   const description = productDetails?.description || (productDetails as any)?.label || product.descriptionShort || "";
 

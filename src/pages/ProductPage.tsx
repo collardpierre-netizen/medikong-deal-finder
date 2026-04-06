@@ -1006,7 +1006,7 @@ export default function ProductPage() {
               <p className="text-xs text-muted-foreground mb-2">Prix soumis a TVA selon votre pays.</p>
 
               {/* Price level badge */}
-              {user && (
+              {user && isVerifiedBuyer && (
                 <span className="inline-flex items-center gap-1.5 text-xs font-semibold bg-amber-50 text-amber-700 px-3 py-1.5 rounded-full border border-amber-200 mb-4">
                   <Tag size={12} /> {levelLabel}
                 </span>

@@ -186,7 +186,7 @@ export default function VendorKycStepper({ vendor }: { vendor: any }) {
         <h2 className="text-[15px] font-bold mb-4" style={{ color: "#1D2530" }}>Progression de votre dossier</h2>
         <div className="flex items-center gap-0">
           {STEP_CONFIG.map((step, i) => {
-            const done = step.num < currentStep;
+            const done = stepCompleted(step.key);
             const active = step.num === currentStep;
             const Icon = step.icon;
             return (

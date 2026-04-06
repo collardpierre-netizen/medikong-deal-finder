@@ -9,12 +9,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Search, TrendingDown, TrendingUp, Download, ArrowUpDown, Upload, Plus, Loader2, Trash2, ExternalLink, RefreshCcw } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Search, TrendingDown, TrendingUp, Download, ArrowUpDown, Upload, Plus, Loader2, Trash2, ExternalLink, RefreshCcw, Info } from "lucide-react";
 import { toast } from "sonner";
 import { useImportJobs } from "@/contexts/ImportContext";
 import * as XLSX from "xlsx";
 
-type SortKey = "ecart" | "name" | "qogita" | string;
+type SortKey = "ecart" | "name" | "qogita" | "bestCompetitor" | string;
 type SortDir = "asc" | "desc";
 type PriceType = "grossiste" | "pharmacien" | "public";
 
@@ -250,13 +251,17 @@ export default function AdminVeillePrix() {
 
     return Object.values(grouped).map((row) => {
       const qogitaPrice = row.product.best_price_excl_vat || 0;
-      let refPrice: number | null = null;
-      for (const src of Object.values(row.sources)) {
+      let bestPrice: number | null = null;
+      let bestSourceSlug: string | null = null;
+      for (const [slug, src] of Object.entries(row.sources)) {
         const p = getSourcePrice(src);
-        if (p && (refPrice === null || p < refPrice)) refPrice = p;
+        if (p && (bestPrice === null || p < bestPrice)) {
+          bestPrice = p;
+          bestSourceSlug = slug;
+        }
       }
-      const ecart = refPrice && qogitaPrice > 0 ? ((refPrice - qogitaPrice) / refPrice) * 100 : null;
-      return { ...row, qogitaPrice, ecart };
+      const ecart = bestPrice && qogitaPrice > 0 ? ((bestPrice - qogitaPrice) / bestPrice) * 100 : null;
+      return { ...row, qogitaPrice, ecart, bestPrice, bestSourceSlug };
     });
   }, [rawData, products, countryFilter, sourceFilter, getSourcePrice]);
 
@@ -283,6 +288,10 @@ export default function AdminVeillePrix() {
     r.sort((a, b) => {
       if (sortKey === "name") return sortDir === "asc" ? (a.product.name || "").localeCompare(b.product.name || "") : (b.product.name || "").localeCompare(a.product.name || "");
       if (sortKey === "qogita") return sortDir === "asc" ? a.qogitaPrice - b.qogitaPrice : b.qogitaPrice - a.qogitaPrice;
+      if (sortKey === "bestCompetitor") {
+        const aV = a.bestPrice ?? 0; const bV = b.bestPrice ?? 0;
+        return sortDir === "asc" ? aV - bV : bV - aV;
+      }
       if (sortKey === "ecart") {
         const aV = a.ecart ?? -999; const bV = b.ecart ?? -999;
         return sortDir === "asc" ? aV - bV : bV - aV;
@@ -577,7 +586,7 @@ export default function AdminVeillePrix() {
           <p className="text-xs text-muted-foreground">Produits matchés</p>
           <p className="text-2xl font-bold text-foreground">{rows.length.toLocaleString("fr-FR")}</p>
         </div>
-        {visibleSources.slice(0, 2).map(src => {
+        {sources.map(src => {
           const count = rows.filter(r => r.sources[src.slug]).length;
           return (
             <div key={src.slug} className="bg-background border border-border rounded-xl p-4">
@@ -681,47 +690,91 @@ export default function AdminVeillePrix() {
                   <TableHead className="text-[11px] min-w-[250px]">Produit <SortIcon k="name" /></TableHead>
                   <TableHead className="text-[11px]">GTIN</TableHead>
                   <TableHead className="text-[11px] text-right">Prix MediKong <SortIcon k="qogita" /></TableHead>
-                  {visibleSources.map(src => (
-                    <TableHead key={src.slug} className="text-[11px] text-right">
-                      {src.name} <span className="text-muted-foreground capitalize">({priceType})</span> <SortIcon k={src.slug} />
-                    </TableHead>
-                  ))}
+                  <TableHead className="text-[11px] text-right">Meilleur concurrent <SortIcon k="bestCompetitor" /></TableHead>
+                  <TableHead className="text-[11px] text-center">Sources</TableHead>
                   <TableHead className="text-[11px] text-right">Écart % <SortIcon k="ecart" /></TableHead>
                   <TableHead className="text-[11px] text-center w-[60px]">Fiche</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {pagedRows.map((row) => (
-                  <TableRow key={row.product.id}>
-                    <TableCell>
-                      <p className="text-[13px] font-medium text-foreground truncate max-w-[300px]">{row.product.name}</p>
-                      <p className="text-[11px] text-muted-foreground">{row.product.brand_name}</p>
-                    </TableCell>
-                    <TableCell className="text-[12px] font-mono text-muted-foreground">{row.product.gtin}</TableCell>
-                    <TableCell className="text-right text-[13px] font-medium">{formatPrice(row.qogitaPrice)}</TableCell>
-                    {visibleSources.map(src => {
-                      const mp = row.sources[src.slug];
-                      const price = getSourcePrice(mp);
-                      return <TableCell key={src.slug} className="text-right text-[13px]">{formatPrice(price)}</TableCell>;
-                    })}
-                    <TableCell className="text-right">
-                      {row.ecart !== null ? (
-                        <Badge
-                          variant="outline"
-                          className={`text-[11px] font-bold ${row.ecart > 0 ? "text-green-700 border-green-300 bg-green-50" : row.ecart < -5 ? "text-red-700 border-red-300 bg-red-50" : "text-muted-foreground"}`}
-                        >
-                          {row.ecart > 0 ? <TrendingDown size={12} className="mr-0.5" /> : <TrendingUp size={12} className="mr-0.5" />}
-                          {row.ecart > 0 ? "-" : "+"}{Math.abs(row.ecart).toFixed(1)}%
-                        </Badge>
-                      ) : <span className="text-xs text-muted-foreground">—</span>}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <a href={`/produit/${row.product.id}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center h-7 w-7 rounded-md hover:bg-accent">
-                        <ExternalLink size={14} className="text-muted-foreground hover:text-primary" />
-                      </a>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {pagedRows.map((row) => {
+                  const sourceEntries = Object.entries(row.sources)
+                    .map(([slug, mp]) => ({ slug, name: sources.find(s => s.slug === slug)?.name || slug, price: getSourcePrice(mp), mp }))
+                    .filter(e => e.price != null)
+                    .sort((a, b) => (a.price || 0) - (b.price || 0));
+
+                  return (
+                    <TableRow key={row.product.id}>
+                      <TableCell>
+                        <p className="text-[13px] font-medium text-foreground truncate max-w-[300px]">{row.product.name}</p>
+                        <p className="text-[11px] text-muted-foreground">{row.product.brand_name}</p>
+                      </TableCell>
+                      <TableCell className="text-[12px] font-mono text-muted-foreground">{row.product.gtin}</TableCell>
+                      <TableCell className="text-right text-[13px] font-medium tabular-nums">{formatPrice(row.qogitaPrice)}</TableCell>
+                      <TableCell className="text-right">
+                        {row.bestPrice ? (
+                          <div>
+                            <span className="text-[13px] font-medium tabular-nums">{formatPrice(row.bestPrice)}</span>
+                            <span className="text-[10px] text-muted-foreground ml-1">
+                              ({sources.find(s => s.slug === row.bestSourceSlug)?.name || row.bestSourceSlug})
+                            </span>
+                          </div>
+                        ) : <span className="text-xs text-muted-foreground">—</span>}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {sourceEntries.length > 0 ? (
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <button className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline font-medium">
+                                <Info size={12} />
+                                {sourceEntries.length} source{sourceEntries.length > 1 ? "s" : ""}
+                              </button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-72 p-0" align="center">
+                              <div className="p-3 border-b border-border">
+                                <p className="text-[12px] font-semibold text-foreground">Détail des prix ({priceType})</p>
+                                <p className="text-[11px] text-muted-foreground truncate">{row.product.name}</p>
+                              </div>
+                              <div className="divide-y divide-border">
+                                {sourceEntries.map((entry, idx) => (
+                                  <div key={entry.slug} className={`flex items-center justify-between px-3 py-2 text-[12px] ${idx === 0 ? "bg-accent/40" : ""}`}>
+                                    <div className="flex items-center gap-1.5">
+                                      {idx === 0 && <Badge variant="outline" className="text-[9px] px-1 py-0 border-primary text-primary">Best</Badge>}
+                                      <span className="font-medium text-foreground">{entry.name}</span>
+                                    </div>
+                                    <span className="font-medium tabular-nums">{formatPrice(entry.price)}</span>
+                                  </div>
+                                ))}
+                              </div>
+                              <div className="p-2 border-t border-border bg-muted/30">
+                                <div className="flex items-center justify-between text-[11px]">
+                                  <span className="text-muted-foreground">Prix MediKong</span>
+                                  <span className="font-semibold text-foreground tabular-nums">{formatPrice(row.qogitaPrice)}</span>
+                                </div>
+                              </div>
+                            </PopoverContent>
+                          </Popover>
+                        ) : <span className="text-[11px] text-muted-foreground">—</span>}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {row.ecart !== null ? (
+                          <Badge
+                            variant="outline"
+                            className={`text-[11px] font-bold ${row.ecart > 0 ? "text-green-700 border-green-300 bg-green-50" : row.ecart < -5 ? "text-red-700 border-red-300 bg-red-50" : "text-muted-foreground"}`}
+                          >
+                            {row.ecart > 0 ? <TrendingDown size={12} className="mr-0.5" /> : <TrendingUp size={12} className="mr-0.5" />}
+                            {row.ecart > 0 ? "-" : "+"}{Math.abs(row.ecart).toFixed(1)}%
+                          </Badge>
+                        ) : <span className="text-xs text-muted-foreground">—</span>}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <a href={`/produit/${row.product.id}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center h-7 w-7 rounded-md hover:bg-accent">
+                          <ExternalLink size={14} className="text-muted-foreground hover:text-primary" />
+                        </a>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </div>

@@ -28,6 +28,7 @@ const tabs = [
   { key: "mesprix", label: "Mes prix", icon: BarChart3, disabled: false },
   { key: "categories", label: "Mes catégories", icon: Layers, disabled: false, href: "/compte/mes-categories" },
   { key: "portefeuille", label: "Portefeuille", icon: Zap, disabled: true },
+  { key: "comparateur", label: "Comparateur", icon: FileSpreadsheet, disabled: false },
   { key: "catalogue", label: "Catalogue", icon: Download, disabled: false },
   { key: "bnpl", label: "Payer plus tard", icon: Layers, disabled: true },
 ];

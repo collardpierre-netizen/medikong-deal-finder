@@ -1,4 +1,5 @@
 import { Layout } from "@/components/layout/Layout";
+import { useNavigate } from "react-router-dom";
 import { ProductImage } from "@/components/shared/ProductCard";
 import { Users, MapPin, Package, AlertCircle, Heart, Zap, Download, Layers, Mail, Phone, Clock, List, Plus, Trash2, Eye, ShoppingCart, Search, TrendingDown, BarChart3 } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -68,6 +69,58 @@ function ProfileSelector() {
         <option value="">Sélectionnez...</option>
         {profiles.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
       </select>
+    </div>
+  );
+}
+
+function DeleteAccountButton() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [confirming, setConfirming] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [confirmText, setConfirmText] = useState("");
+
+  const handleDelete = async () => {
+    if (!user || confirmText !== "SUPPRIMER") return;
+    setDeleting(true);
+    try {
+      const { error } = await supabase.rpc("delete_user_account", { _user_id: user.id });
+      if (error) throw error;
+      await supabase.auth.signOut();
+      toast.success("Votre compte a été supprimé");
+      navigate("/");
+    } catch (e: any) {
+      toast.error(e.message || "Erreur lors de la suppression");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  if (!confirming) {
+    return (
+      <Button variant="destructive" size="sm" onClick={() => setConfirming(true)}>
+        Supprimer mon compte
+      </Button>
+    );
+  }
+
+  return (
+    <div className="bg-destructive/5 border border-destructive/20 rounded-lg p-4 space-y-3">
+      <p className="text-sm font-medium text-destructive">Tapez <strong>SUPPRIMER</strong> pour confirmer :</p>
+      <input
+        value={confirmText}
+        onChange={(e) => setConfirmText(e.target.value)}
+        placeholder="SUPPRIMER"
+        className="w-full max-w-xs border border-destructive/30 rounded-md px-3 py-2 text-sm"
+      />
+      <div className="flex gap-2">
+        <Button variant="destructive" size="sm" disabled={confirmText !== "SUPPRIMER" || deleting} onClick={handleDelete}>
+          {deleting ? "Suppression..." : "Confirmer la suppression"}
+        </Button>
+        <Button variant="outline" size="sm" onClick={() => { setConfirming(false); setConfirmText(""); }}>
+          Annuler
+        </Button>
+      </div>
     </div>
   );
 }
@@ -321,6 +374,15 @@ export default function AccountPage() {
                       >
                         {profileSaving ? "Enregistrement..." : "Enregistrer les modifications"}
                       </motion.button>
+
+                      {/* GDPR - Delete Account */}
+                      <div className="mt-12 pt-8 border-t border-destructive/20">
+                        <h3 className="text-lg font-bold text-destructive mb-2">Zone dangereuse</h3>
+                        <p className="text-sm text-muted-foreground mb-4">
+                          La suppression de votre compte est irréversible. Toutes vos données personnelles, commandes, favoris et alertes seront définitivement supprimées conformément au RGPD.
+                        </p>
+                        <DeleteAccountButton />
+                      </div>
                     </div>
                   )}
 

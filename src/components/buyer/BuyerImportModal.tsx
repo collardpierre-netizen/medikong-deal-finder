@@ -2,7 +2,7 @@ import { useState, useRef, useCallback } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Upload, Download, FileSpreadsheet, ShoppingCart, X, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import { Upload, Download, FileSpreadsheet, ShoppingCart, X, Loader2, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import * as XLSX from "xlsx";
 import { formatPrice } from "@/data/mock";
@@ -31,6 +31,30 @@ type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 };
+
+const CHUNK_SIZE = 250;
+const MAX_CONCURRENT_CHUNKS = 4;
+const SINGLE_REQUEST_LIMIT = 1000;
+
+const waitForUiPaint = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+const normalizeMatchedRow = (row: any) => ({
+  lineIndex: Number(row.line_index || 0),
+  result: {
+    ean: row.ean ?? undefined,
+    cnk: row.cnk ?? undefined,
+    quantity: Number(row.quantity || 1),
+    currentPrice: Number(row.current_price || 0),
+    productId: row.product_id ?? undefined,
+    productName: row.product_name ?? undefined,
+    productImage: row.product_image ?? undefined,
+    mediPrice: row.medi_price != null ? Number(row.medi_price) : undefined,
+    offerId: row.offer_id ?? undefined,
+    vendorName: row.vendor_name ?? undefined,
+    status: row.status === "found" ? "found" : "unavailable",
+    saving: row.saving != null ? Math.max(0, Number(row.saving)) : 0,
+  } satisfies MatchedLine,
+});
 
 export function BuyerImportModal({ open, onOpenChange }: Props) {
   const [phase, setPhase] = useState<"instructions" | "loading" | "results">("instructions");
@@ -64,6 +88,7 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
     if (!file) return;
     e.target.value = "";
     setPhase("loading");
+    await waitForUiPaint();
 
     try {
       const ab = await file.arrayBuffer();
@@ -90,46 +115,68 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
 
       setProgress({ current: 0, total: lines.length, startTime: Date.now() });
 
-      const CHUNK_SIZE = 150;
-      const matched: MatchedLine[] = [];
+      await waitForUiPaint();
 
-      for (let start = 0; start < lines.length; start += CHUNK_SIZE) {
-        const chunk = lines.slice(start, start + CHUNK_SIZE).map((line, offset) => ({
-          index: start + offset,
-          ean: line.ean ?? null,
-          cnk: line.cnk ?? null,
-          quantity: line.quantity,
-          currentPrice: line.currentPrice,
-        }));
+      const payload = lines.map((line, index) => ({
+        index,
+        ean: line.ean ?? null,
+        cnk: line.cnk ?? null,
+        quantity: line.quantity,
+        currentPrice: line.currentPrice,
+      }));
 
+      const matchedByIndex: MatchedLine[] = new Array(lines.length);
+
+      if (lines.length <= SINGLE_REQUEST_LIMIT) {
         const { data, error } = await (supabase as any).rpc("match_import_lines", {
-          _lines: chunk,
+          _lines: payload,
         });
 
         if (error) throw error;
 
-        const chunkResults = ((data || []) as any[])
-          .sort((a, b) => a.line_index - b.line_index)
-          .map((row) => ({
-            ean: row.ean ?? undefined,
-            cnk: row.cnk ?? undefined,
-            quantity: Number(row.quantity || 1),
-            currentPrice: Number(row.current_price || 0),
-            productId: row.product_id ?? undefined,
-            productName: row.product_name ?? undefined,
-            productImage: row.product_image ?? undefined,
-            mediPrice: row.medi_price != null ? Number(row.medi_price) : undefined,
-            offerId: row.offer_id ?? undefined,
-            vendorName: row.vendor_name ?? undefined,
-            status: row.status === "found" ? "found" : "unavailable",
-            saving: row.saving != null ? Math.max(0, Number(row.saving)) : 0,
-          })) as MatchedLine[];
+        ((data || []) as any[]).forEach((row) => {
+          const { lineIndex, result } = normalizeMatchedRow(row);
+          matchedByIndex[lineIndex] = result;
+        });
 
-        matched.push(...chunkResults);
-        setProgress((p) => ({ ...p, current: Math.min(start + CHUNK_SIZE, lines.length) }));
+        setProgress((p) => ({ ...p, current: lines.length }));
+      } else {
+        const chunks = [] as typeof payload[];
+        for (let start = 0; start < payload.length; start += CHUNK_SIZE) {
+          chunks.push(payload.slice(start, start + CHUNK_SIZE));
+        }
+
+        let nextChunkIndex = 0;
+        let processedLines = 0;
+
+        const runWorker = async () => {
+          while (nextChunkIndex < chunks.length) {
+            const currentChunkIndex = nextChunkIndex++;
+            const chunk = chunks[currentChunkIndex];
+
+            const { data, error } = await (supabase as any).rpc("match_import_lines", {
+              _lines: chunk,
+            });
+
+            if (error) throw error;
+
+            ((data || []) as any[]).forEach((row) => {
+              const { lineIndex, result } = normalizeMatchedRow(row);
+              matchedByIndex[lineIndex] = result;
+            });
+
+            processedLines += chunk.length;
+            setProgress((p) => ({ ...p, current: Math.min(processedLines, lines.length) }));
+            await waitForUiPaint();
+          }
+        };
+
+        await Promise.all(
+          Array.from({ length: Math.min(MAX_CONCURRENT_CHUNKS, chunks.length) }, () => runWorker())
+        );
       }
 
-      setResults(matched);
+      setResults(matchedByIndex.filter(Boolean));
       setPhase("results");
     } catch (err) {
       console.error(err);

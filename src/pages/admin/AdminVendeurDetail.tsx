@@ -543,33 +543,37 @@ function VendorValidationTab({ vendor, onUpdate }: { vendor: any; onUpdate: () =
       syncVendorCaches(update);
       await refreshVendorQueries();
 
-      if (action === "accepted") {
-        supabase.functions.invoke("send-transactional-email", {
-          body: {
-            templateName: "vendor-approved",
-            recipientEmail: vendor.email,
-            idempotencyKey: `vendor-accepted-${vendor.id}-${Date.now()}`,
-            templateData: { companyName: vendor.company_name || vendor.name, isAcceptance: true },
-          },
-        }).catch(() => {});
-      } else if (action === "approved") {
-        supabase.functions.invoke("send-transactional-email", {
-          body: {
-            templateName: "vendor-approved",
-            recipientEmail: vendor.email,
-            idempotencyKey: `vendor-approved-${vendor.id}-${Date.now()}`,
-            templateData: { companyName: vendor.company_name || vendor.name },
-          },
-        }).catch(() => {});
-      } else if (action === "rejected") {
-        supabase.functions.invoke("send-transactional-email", {
-          body: {
-            templateName: "vendor-rejected",
-            recipientEmail: vendor.email,
-            idempotencyKey: `vendor-rejected-${vendor.id}-${Date.now()}`,
-            templateData: { companyName: vendor.company_name || vendor.name, reason: notes || undefined },
-          },
-        }).catch(() => {});
+      try {
+        if (action === "accepted") {
+          await supabase.functions.invoke("send-transactional-email", {
+            body: {
+              templateName: "vendor-approved",
+              recipientEmail: vendor.email,
+              idempotencyKey: `vendor-accepted-${vendor.id}-${Date.now()}`,
+              templateData: { companyName: vendor.company_name || vendor.name, isAcceptance: true },
+            },
+          });
+        } else if (action === "approved") {
+          await supabase.functions.invoke("send-transactional-email", {
+            body: {
+              templateName: "vendor-approved",
+              recipientEmail: vendor.email,
+              idempotencyKey: `vendor-approved-${vendor.id}-${Date.now()}`,
+              templateData: { companyName: vendor.company_name || vendor.name },
+            },
+          });
+        } else if (action === "rejected") {
+          await supabase.functions.invoke("send-transactional-email", {
+            body: {
+              templateName: "vendor-rejected",
+              recipientEmail: vendor.email,
+              idempotencyKey: `vendor-rejected-${vendor.id}-${Date.now()}`,
+              templateData: { companyName: vendor.company_name || vendor.name, reason: notes || undefined },
+            },
+          });
+        }
+      } catch (emailErr) {
+        console.error("Erreur envoi email vendeur:", emailErr);
       }
 
       const messages: Record<string, string> = {

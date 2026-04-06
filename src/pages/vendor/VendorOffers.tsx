@@ -8,16 +8,7 @@ import { VEmptyState } from "@/components/vendor/ui/VEmptyState";
 import { Tag, Plus, Pencil, Trash2, X, Save, Loader2, Package } from "lucide-react";
 import { toast } from "sonner";
 
-const useCurrentVendor = () =>
-  useQuery({
-    queryKey: ["current-vendor"],
-    queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return null;
-      const { data } = await supabase.from("vendors").select("*").eq("auth_user_id", user.id).maybeSingle();
-      return data;
-    },
-  });
+import { useCurrentVendor } from "@/hooks/useCurrentVendor";
 
 const useVendorOffers = (vendorId: string | undefined) =>
   useQuery({

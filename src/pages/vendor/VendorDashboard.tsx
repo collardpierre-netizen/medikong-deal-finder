@@ -1,6 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
+import { useCurrentVendor } from "@/hooks/useCurrentVendor";
 import { VCard } from "@/components/vendor/ui/VCard";
 import { VStat } from "@/components/vendor/ui/VStat";
 import { Database } from "lucide-react";
@@ -10,21 +8,7 @@ const today = new Date();
 const dateStr = today.toLocaleDateString("fr-BE", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 
 export default function VendorDashboard() {
-  const { user } = useAuth();
-
-  const { data: vendor } = useQuery({
-    queryKey: ["vendor-self", user?.id],
-    queryFn: async () => {
-      if (!user) return null;
-      const { data } = await supabase
-        .from("vendors")
-        .select("*")
-        .eq("auth_user_id", user.id)
-        .maybeSingle();
-      return data;
-    },
-    enabled: !!user,
-  });
+  const { data: vendor } = useCurrentVendor();
 
   const isApproved = vendor?.validation_status === "approved";
 

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { VCard } from "@/components/vendor/ui/VCard";
 import { VTabBar } from "@/components/vendor/ui/VTabBar";
@@ -9,22 +9,7 @@ import VendorCommissionTab from "@/components/vendor/VendorCommissionTab";
 import VendorCommercialSettings from "@/components/vendor/VendorCommercialSettings";
 import { Check, Save, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-
-const useCurrentVendor = () =>
-  useQuery({
-    queryKey: ["current-vendor"],
-    queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return null;
-      const { data, error } = await supabase
-        .from("vendors")
-        .select("*")
-        .eq("auth_user_id", user.id)
-        .maybeSingle();
-      if (error) throw error;
-      return data;
-    },
-  });
+import { useCurrentVendor } from "@/hooks/useCurrentVendor";
 
 export default function VendorSettings() {
   const [activeTab, setActiveTab] = useState("profile");

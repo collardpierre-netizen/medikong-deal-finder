@@ -31,7 +31,9 @@
     "vendor": "Verkoper",
     "vendorSpace": "Verkopersruimte",
     "administration": "Administratie",
-    "signOut": "Uitloggen"
+    "signOut": "Uitloggen",
+    "stripeConnect": "Stripe Connect",
+    "stripeRevenue": "Omzet & Marges"
   },
   "nav": {
     "shop": "Shop",
@@ -40,7 +42,8 @@
     "brands": "Merken",
     "professionals": "Professionals",
     "sourcing": "Sourcing",
-    "account": "Mijn account"
+    "account": "Mijn account",
+    "manufacturers": "Fabrikanten"
   },
   "trustBar": {
     "certifiedCE": "CE-gecertificeerde producten",
@@ -427,5 +430,43 @@
       "s2h": "Multi-leveranciersbeheer",
       "s2": "Diversifieer uw bevoorradingsbronnen om het risico op tekorten te verminderen. MediKong brengt 350+ geverifieerde leveranciers samen. Vergelijk aanbiedingen en levertijden voor elke bestelling. Gebruik favorietenlijsten om terugkerende aankopen te versnellen."
     }
+  },
+  "catalog": {
+    "sortBy": "Sorteer op",
+    "relevance": "Relevantie",
+    "priceAsc": "Prijs oplopend",
+    "priceDesc": "Prijs aflopend",
+    "nameAsc": "Naam A-Z",
+    "nameDesc": "Naam Z-A",
+    "newest": "Nieuwste",
+    "stockDesc": "Voorraad aflopend",
+    "perPage": "{{count}} per pagina",
+    "productsCount": "{{count}} producten",
+    "viewOffers": "Aanbiedingen bekijken",
+    "add": "Toevoegen",
+    "seePrices": "Prijzen bekijken",
+    "inStock": "Op voorraad",
+    "limitedStock": "Beperkte voorraad ({{count}})",
+    "outOfStock": "Niet op voorraad",
+    "promo": "Promo",
+    "offers": "{{count}} aanbieding",
+    "offersPlural": "{{count}} aanbiedingen",
+    "downloadCsv": "CSV downloaden",
+    "grid": "Raster",
+    "list": "Lijst",
+    "comparator": "Vergelijker",
+    "loginToAdd": "Log in om producten aan uw winkelwagen toe te voegen",
+    "signIn": "Inloggen",
+    "filters": "Filters",
+    "categories": "Categorieën",
+    "brands": "Merken",
+    "manufacturers": "Fabrikanten",
+    "priceRange": "Prijs",
+    "inStockOnly": "Alleen op voorraad",
+    "clearAll": "Alles wissen",
+    "searchBrands": "Merken zoeken",
+    "searchManufacturers": "Fabrikanten zoeken",
+    "showMore": "Meer tonen",
+    "showLess": "Minder tonen"
   }
 }

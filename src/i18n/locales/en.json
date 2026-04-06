@@ -31,7 +31,9 @@
     "vendor": "Seller",
     "vendorSpace": "Seller Area",
     "administration": "Administration",
-    "signOut": "Sign out"
+    "signOut": "Sign out",
+    "stripeConnect": "Stripe Connect",
+    "stripeRevenue": "Revenue & Margins"
   },
   "nav": {
     "shop": "Shop",
@@ -40,7 +42,8 @@
     "brands": "Brands",
     "professionals": "Professionals",
     "sourcing": "Sourcing",
-    "account": "My account"
+    "account": "My account",
+    "manufacturers": "Manufacturers"
   },
   "trustBar": {
     "certifiedCE": "CE certified products",

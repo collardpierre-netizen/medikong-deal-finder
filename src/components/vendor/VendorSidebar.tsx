@@ -18,31 +18,31 @@ const sidebarSections = [
     items: [
       { key: "catalog", icon: Package, path: "/vendor/catalog" },
       { key: "myOffers", icon: Tag, path: "/vendor/offers" },
-      { key: "orders", icon: ShoppingCart, path: "/vendor/orders", badge: 3 },
+      { key: "orders", icon: ShoppingCart, path: "/vendor/orders" },
     ],
   },
   {
     label: "INTELLIGENCE",
     items: [
-      { key: "opportunities", icon: Lightbulb, path: "/vendor/opportunities" },
-      { key: "alerts", icon: Bell, path: "/vendor/alerts", badge: 5 },
-      { key: "tenders", icon: FileText, path: "/vendor/tenders" },
-      { key: "analytics", icon: BarChart3, path: "/vendor/analytics" },
+      { key: "opportunities", icon: Lightbulb, path: "/vendor/opportunities", comingSoon: true },
+      { key: "alerts", icon: Bell, path: "/vendor/alerts", comingSoon: true },
+      { key: "tenders", icon: FileText, path: "/vendor/tenders", comingSoon: true },
+      { key: "analytics", icon: BarChart3, path: "/vendor/analytics", comingSoon: true },
     ],
   },
   {
     label: "COMPTE",
     items: [
-      { key: "finances", icon: DollarSign, path: "/vendor/finance" },
-      { key: "logistics", icon: Truck, path: "/vendor/logistics" },
+      { key: "finances", icon: DollarSign, path: "/vendor/finance", comingSoon: true },
+      { key: "logistics", icon: Truck, path: "/vendor/logistics", comingSoon: true },
       { key: "health", icon: HeartPulse, path: "/vendor/health" },
-      { key: "messages", icon: MessageSquare, path: "/vendor/messages", badge: 2 },
+      { key: "messages", icon: MessageSquare, path: "/vendor/messages", comingSoon: true },
     ],
   },
   {
     label: "RESSOURCES",
     items: [
-      { key: "academy", icon: GraduationCap, path: "/vendor/academy" },
+      { key: "academy", icon: GraduationCap, path: "/vendor/academy", comingSoon: true },
       { key: "settings", icon: Settings, path: "/vendor/settings" },
     ],
   },

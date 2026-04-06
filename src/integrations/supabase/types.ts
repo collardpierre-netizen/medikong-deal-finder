@@ -3384,6 +3384,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      bulk_set_cnk_codes: { Args: { pairs: Json }; Returns: number }
       count_products_per_category: {
         Args: never
         Returns: {

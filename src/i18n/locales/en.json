@@ -31,7 +31,9 @@
     "vendor": "Seller",
     "vendorSpace": "Seller Area",
     "administration": "Administration",
-    "signOut": "Sign out"
+    "signOut": "Sign out",
+    "stripeConnect": "Stripe Connect",
+    "stripeRevenue": "Revenue & Margins"
   },
   "nav": {
     "shop": "Shop",

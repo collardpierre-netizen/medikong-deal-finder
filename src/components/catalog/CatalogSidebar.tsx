@@ -21,6 +21,7 @@ export function CatalogSidebar({ filters, setFilter, clearAll, resultCategoryIds
   const { data: categories = [] } = useCatalogCategories();
   const { data: brands = [] } = useCatalogBrands(filters.category);
   const { data: manufacturers = [] } = useCatalogManufacturers();
+  const { data: serverBrands } = useBrandSearch(brandSearch);
   const { visibleCategoryIds, isFiltered: professionFiltered, professionType } = useVisibleCategories();
   const [showAllCats, setShowAllCats] = useState(false);
 
@@ -35,11 +36,19 @@ export function CatalogSidebar({ filters, setFilter, clearAll, resultCategoryIds
   const [priceMin, setPriceMin] = useState(filters.priceMin?.toString() || "");
   const [priceMax, setPriceMax] = useState(filters.priceMax?.toString() || "");
 
-  // Auto-suggest: top 8 matching brands for dropdown
+  // Merge local brands with server search results to cover brands beyond the 500 limit
+  const mergedBrands = useMemo(() => {
+    if (!serverBrands || serverBrands.length === 0) return brands;
+    const localIds = new Set(brands.map(b => b.id));
+    const extras = serverBrands.filter(b => !localIds.has(b.id));
+    return [...brands, ...extras];
+  }, [brands, serverBrands]);
+
+  // Auto-suggest: top 12 matching brands for dropdown
   const brandSuggestions = useMemo(() => {
     if (!brandSearch) return [];
     const q = brandSearch.toLowerCase();
-    return brands
+    return mergedBrands
       .filter(b => b.name.toLowerCase().includes(q))
       .sort((a, b) => {
         const aExact = a.name.toLowerCase() === q;
@@ -53,7 +62,7 @@ export function CatalogSidebar({ filters, setFilter, clearAll, resultCategoryIds
         return b.product_count - a.product_count;
       })
       .slice(0, 12);
-  }, [brands, brandSearch]);
+  }, [mergedBrands, brandSearch]);
 
   const mfSuggestions = useMemo(() => {
     if (!mfSearch) return [];

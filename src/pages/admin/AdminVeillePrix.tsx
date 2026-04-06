@@ -764,7 +764,7 @@ export default function AdminVeillePrix() {
                         ) : <span className="text-xs text-muted-foreground">—</span>}
                       </TableCell>
                       <TableCell className="text-center">
-                        <a href={`/produit/${row.product.id}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center h-7 w-7 rounded-md hover:bg-accent">
+                        <a href={`/produit/${row.product.slug}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center h-7 w-7 rounded-md hover:bg-accent">
                           <ExternalLink size={14} className="text-muted-foreground hover:text-primary" />
                         </a>
                       </TableCell>

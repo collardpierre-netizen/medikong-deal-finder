@@ -462,6 +462,28 @@ function VendorValidationTab({ vendor, onUpdate }: { vendor: any; onUpdate: () =
     },
   });
 
+  const syncVendorCaches = (update: Record<string, any>) => {
+    queryClient.setQueryData(["vendor-detail", vendor.id], (current: any) =>
+      current ? { ...current, ...update } : current,
+    );
+
+    queryClient.setQueryData(["admin-vendors"], (current: any[] | undefined) =>
+      Array.isArray(current)
+        ? current.map((entry) => (entry.id === vendor.id ? { ...entry, ...update } : entry))
+        : current,
+    );
+  };
+
+  const refreshVendorQueries = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["vendor-detail", vendor.id] }),
+      queryClient.invalidateQueries({ queryKey: ["admin-vendors"] }),
+      queryClient.invalidateQueries({ queryKey: ["admin-kyc-submissions"] }),
+      queryClient.invalidateQueries({ queryKey: ["admin-dashboard-counts"] }),
+    ]);
+    onUpdate();
+  };
+
   const handleReviewSubmission = async (submissionId: string, status: "approved" | "rejected") => {
     setReviewingId(submissionId);
     try {
@@ -471,6 +493,7 @@ function VendorValidationTab({ vendor, onUpdate }: { vendor: any; onUpdate: () =
         reviewed_at: new Date().toISOString(),
       } as any).eq("id", submissionId);
       queryClient.invalidateQueries({ queryKey: ["kyc-submissions", vendor.id] });
+      queryClient.invalidateQueries({ queryKey: ["admin-kyc-submissions"] });
       toast.success(status === "approved" ? "Critère KYC approuvé" : "Critère KYC rejeté");
       setRejectNote("");
     } catch (err: any) {
@@ -504,11 +527,9 @@ function VendorValidationTab({ vendor, onUpdate }: { vendor: any; onUpdate: () =
         validated_at: new Date().toISOString(),
       };
       if (action === "accepted") {
-        // Step 1: Accept candidature → portal access, KYC starts
         update.is_active = true;
         update.is_verified = false;
       } else if (action === "approved") {
-        // Step 2: Final validation → fully operational
         update.is_active = true;
         update.is_verified = true;
       } else if (action === "rejected") {
@@ -518,7 +539,9 @@ function VendorValidationTab({ vendor, onUpdate }: { vendor: any; onUpdate: () =
       const { error } = await supabase.from("vendors").update(update).eq("id", vendor.id);
       if (error) throw error;
 
-      // Send notification email
+      syncVendorCaches(update);
+      await refreshVendorQueries();
+
       if (action === "accepted") {
         supabase.functions.invoke("send-transactional-email", {
           body: {
@@ -555,7 +578,6 @@ function VendorValidationTab({ vendor, onUpdate }: { vendor: any; onUpdate: () =
         rejected: "Vendeur refusé. Email envoyé.",
       };
       toast.success(messages[action]);
-      onUpdate();
     } catch (err: any) {
       toast.error(err.message);
     } finally {

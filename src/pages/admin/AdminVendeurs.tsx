@@ -80,9 +80,21 @@ const AdminVendeurs = () => {
   };
 
   // Bulk actions
-  const bulkAction = async (action: "activate" | "deactivate" | "approve" | "reject") => {
+  const bulkAction = async (action: "activate" | "deactivate" | "approve" | "reject" | "delete") => {
     const ids = Array.from(selected);
     if (ids.length === 0) return;
+
+    if (action === "delete") {
+      if (!window.confirm(`Supprimer définitivement ${ids.length} vendeur(s) ? Cette action est irréversible.`)) return;
+      for (const id of ids) {
+        await supabase.from("offers").delete().eq("vendor_id", id);
+        await supabase.from("vendors").delete().eq("id", id);
+      }
+      setSelected(new Set());
+      queryClient.invalidateQueries({ queryKey: ["admin-vendors"] });
+      toast.success(`${ids.length} vendeur(s) supprimé(s)`);
+      return;
+    }
 
     const updates: Record<string, any> = {};
     if (action === "activate") { updates.is_active = true; }

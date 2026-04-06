@@ -80,9 +80,21 @@ const AdminVendeurs = () => {
   };
 
   // Bulk actions
-  const bulkAction = async (action: "activate" | "deactivate" | "approve" | "reject") => {
+  const bulkAction = async (action: "activate" | "deactivate" | "approve" | "reject" | "delete") => {
     const ids = Array.from(selected);
     if (ids.length === 0) return;
+
+    if (action === "delete") {
+      if (!window.confirm(`Supprimer définitivement ${ids.length} vendeur(s) ? Cette action est irréversible.`)) return;
+      for (const id of ids) {
+        await supabase.from("offers").delete().eq("vendor_id", id);
+        await supabase.from("vendors").delete().eq("id", id);
+      }
+      setSelected(new Set());
+      queryClient.invalidateQueries({ queryKey: ["admin-vendors"] });
+      toast.success(`${ids.length} vendeur(s) supprimé(s)`);
+      return;
+    }
 
     const updates: Record<string, any> = {};
     if (action === "activate") { updates.is_active = true; }
@@ -207,9 +219,12 @@ const AdminVendeurs = () => {
             <button onClick={() => bulkAction("activate")} className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-bold transition-colors hover:opacity-90" style={{ backgroundColor: "#F0FDF4", color: "#16A34A" }}>
               <ToggleRight size={13} /> Activer
             </button>
-            <button onClick={() => bulkAction("deactivate")} className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-bold transition-colors hover:opacity-90" style={{ backgroundColor: "#FEF2F2", color: "#DC2626" }}>
-              <ToggleLeft size={13} /> Désactiver
-            </button>
+             <button onClick={() => bulkAction("deactivate")} className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-bold transition-colors hover:opacity-90" style={{ backgroundColor: "#FEF2F2", color: "#DC2626" }}>
+               <ToggleLeft size={13} /> Désactiver
+             </button>
+             <button onClick={() => bulkAction("delete")} className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-bold transition-colors hover:opacity-90" style={{ backgroundColor: "#FEE2E2", color: "#991B1B" }}>
+               <Trash2 size={13} /> Supprimer
+             </button>
             <button onClick={() => setSelected(new Set())} className="px-3 py-1.5 rounded-md text-[11px] font-bold transition-colors hover:opacity-90" style={{ color: "#64748B" }}>
               Annuler
             </button>

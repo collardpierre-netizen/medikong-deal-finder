@@ -88,65 +88,88 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
         return;
       }
 
-      setProgress({ current: 0, total: lines.length, startTime: Date.now() });
+      setProgress({ current: 0, total: 3, startTime: Date.now() });
 
-      // Batch processing: process in chunks of 10 for speed
-      const BATCH_SIZE = 10;
-      const matched: MatchedLine[] = [];
+      // Step 1: Collect all EANs and CNKs
+      const allEans = lines.map(l => l.ean).filter(Boolean) as string[];
+      const allCnks = lines.map(l => l.cnk).filter(Boolean) as string[];
 
-      for (let batchStart = 0; batchStart < lines.length; batchStart += BATCH_SIZE) {
-        const batch = lines.slice(batchStart, batchStart + BATCH_SIZE);
-        
-        const batchResults = await Promise.all(batch.map(async (line) => {
-          let product: any = null;
+      setProgress(p => ({ ...p, current: 1 }));
 
-          if (line.ean) {
-            const { data } = await supabase
-              .from("products")
-              .select("id, name, image_url, gtin")
-              .eq("gtin", line.ean)
-              .eq("is_active", true)
-              .maybeSingle();
-            product = data;
-          }
+      // Step 2: Bulk fetch products by GTIN and CNK in batches of 500 (Supabase .in() limit)
+      const productsByGtin = new Map<string, any>();
+      const productsByCnk = new Map<string, any>();
+      
+      const fetchProductBatch = async (codes: string[], field: "gtin" | "cnk_code") => {
+        const results: any[] = [];
+        for (let i = 0; i < codes.length; i += 500) {
+          const chunk = codes.slice(i, i + 500);
+          const { data } = await supabase
+            .from("products")
+            .select("id, name, image_url, gtin, cnk_code")
+            .eq("is_active", true)
+            .in(field, chunk);
+          if (data) results.push(...data);
+        }
+        return results;
+      };
 
-          if (!product && line.cnk) {
-            const { data } = await supabase
-              .from("products")
-              .select("id, name, image_url, gtin")
-              .eq("cnk_code", line.cnk)
-              .eq("is_active", true)
-              .maybeSingle();
-            product = data;
-          }
+      const [gtinProducts, cnkProducts] = await Promise.all([
+        allEans.length > 0 ? fetchProductBatch(allEans, "gtin") : Promise.resolve([]),
+        allCnks.length > 0 ? fetchProductBatch(allCnks, "cnk_code") : Promise.resolve([]),
+      ]);
 
-          if (product) {
-            const { data: offer } = await supabase
-              .from("offers")
-              .select("id, price_excl_vat, vendor_id, vendors(company_name)")
-              .eq("product_id", product.id)
-              .eq("is_active", true)
-              .order("price_excl_vat", { ascending: true })
-              .limit(1)
-              .maybeSingle();
+      for (const p of gtinProducts) { if (p.gtin) productsByGtin.set(p.gtin, p); }
+      for (const p of cnkProducts) { if (p.cnk_code) productsByCnk.set(p.cnk_code, p); }
 
-            if (offer) {
-              const saving = line.currentPrice > 0 ? line.currentPrice - offer.price_excl_vat : 0;
-              return {
-                ...line, productId: product.id, productName: product.name, productImage: product.image_url,
-                mediPrice: offer.price_excl_vat, offerId: offer.id,
-                vendorName: (offer as any).vendors?.company_name || "—",
-                status: "found" as const, saving: saving > 0 ? saving : 0,
-              };
-            }
-            return { ...line, productId: product.id, productName: product.name, status: "unavailable" as const };
-          }
-          return { ...line, status: "unavailable" as const };
-        }));
+      setProgress(p => ({ ...p, current: 2 }));
 
-        matched.push(...batchResults);
-        setProgress(p => ({ ...p, current: Math.min(batchStart + BATCH_SIZE, lines.length) }));
+      // Step 3: Bulk fetch best offers for all matched product IDs
+      const matchedProductIds = new Set<string>();
+      for (const line of lines) {
+        const prod = (line.ean && productsByGtin.get(line.ean)) || (line.cnk && productsByCnk.get(line.cnk));
+        if (prod) matchedProductIds.add(prod.id);
       }
+
+      const offersByProductId = new Map<string, any>();
+      const productIdArr = Array.from(matchedProductIds);
+      
+      for (let i = 0; i < productIdArr.length; i += 500) {
+        const chunk = productIdArr.slice(i, i + 500);
+        const { data: offers } = await supabase
+          .from("offers")
+          .select("id, product_id, price_excl_vat, vendor_id, vendors(company_name)")
+          .eq("is_active", true)
+          .in("product_id", chunk)
+          .order("price_excl_vat", { ascending: true });
+        if (offers) {
+          for (const o of offers) {
+            // Keep only the cheapest offer per product
+            if (!offersByProductId.has(o.product_id)) {
+              offersByProductId.set(o.product_id, o);
+            }
+          }
+        }
+      }
+
+      setProgress(p => ({ ...p, current: 3 }));
+
+      // Step 4: Assemble results
+      const matched: MatchedLine[] = lines.map(line => {
+        const product = (line.ean && productsByGtin.get(line.ean)) || (line.cnk && productsByCnk.get(line.cnk));
+        if (!product) return { ...line, status: "unavailable" as const };
+
+        const offer = offersByProductId.get(product.id);
+        if (!offer) return { ...line, productId: product.id, productName: product.name, status: "unavailable" as const };
+
+        const saving = line.currentPrice > 0 ? line.currentPrice - offer.price_excl_vat : 0;
+        return {
+          ...line, productId: product.id, productName: product.name, productImage: product.image_url,
+          mediPrice: offer.price_excl_vat, offerId: offer.id,
+          vendorName: (offer as any).vendors?.company_name || "—",
+          status: "found" as const, saving: saving > 0 ? saving : 0,
+        };
+      });
 
       setResults(matched);
       setPhase("results");
@@ -222,23 +245,17 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
         </div>
 
         {phase === "loading" && (() => {
+          const steps = ["Lecture du fichier…", "Recherche des produits…", "Recherche des offres…", "Terminé"];
+          const stepLabel = steps[Math.min(progress.current, steps.length - 1)];
           const pct = progress.total > 0 ? Math.round((progress.current / progress.total) * 100) : 0;
-          const elapsed = (Date.now() - progress.startTime) / 1000;
-          const rate = progress.current > 0 ? elapsed / progress.current : 0;
-          const remaining = Math.max(0, Math.round(rate * (progress.total - progress.current)));
-          const etaLabel = remaining > 60 ? `~${Math.ceil(remaining / 60)} min` : `~${remaining}s`;
           return (
             <div className="py-6 space-y-3">
               <div className="flex items-center justify-between text-sm text-muted-foreground">
-                <span className="flex items-center gap-2"><Loader2 size={14} className="animate-spin" /> Analyse en cours…</span>
-                <span>{progress.current}/{progress.total} produits</span>
+                <span className="flex items-center gap-2"><Loader2 size={14} className="animate-spin" /> {stepLabel}</span>
+                <span>Étape {progress.current}/{progress.total}</span>
               </div>
               <div className="w-full bg-muted rounded-full h-2.5 overflow-hidden">
-                <div className="bg-primary h-full rounded-full transition-all duration-300" style={{ width: `${pct}%` }} />
-              </div>
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>{pct}%</span>
-                {progress.current > 0 && progress.current < progress.total && <span>Temps restant : {etaLabel}</span>}
+                <div className="bg-primary h-full rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
               </div>
             </div>
           );

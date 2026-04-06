@@ -9,12 +9,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Search, TrendingDown, TrendingUp, Download, ArrowUpDown, Upload, Plus, Loader2, Trash2, ExternalLink, RefreshCcw } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Search, TrendingDown, TrendingUp, Download, ArrowUpDown, Upload, Plus, Loader2, Trash2, ExternalLink, RefreshCcw, Info } from "lucide-react";
 import { toast } from "sonner";
 import { useImportJobs } from "@/contexts/ImportContext";
 import * as XLSX from "xlsx";
 
-type SortKey = "ecart" | "name" | "qogita" | string;
+type SortKey = "ecart" | "name" | "qogita" | "bestCompetitor" | string;
 type SortDir = "asc" | "desc";
 type PriceType = "grossiste" | "pharmacien" | "public";
 

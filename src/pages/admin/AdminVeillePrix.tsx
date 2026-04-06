@@ -251,13 +251,17 @@ export default function AdminVeillePrix() {
 
     return Object.values(grouped).map((row) => {
       const qogitaPrice = row.product.best_price_excl_vat || 0;
-      let refPrice: number | null = null;
-      for (const src of Object.values(row.sources)) {
+      let bestPrice: number | null = null;
+      let bestSourceSlug: string | null = null;
+      for (const [slug, src] of Object.entries(row.sources)) {
         const p = getSourcePrice(src);
-        if (p && (refPrice === null || p < refPrice)) refPrice = p;
+        if (p && (bestPrice === null || p < bestPrice)) {
+          bestPrice = p;
+          bestSourceSlug = slug;
+        }
       }
-      const ecart = refPrice && qogitaPrice > 0 ? ((refPrice - qogitaPrice) / refPrice) * 100 : null;
-      return { ...row, qogitaPrice, ecart };
+      const ecart = bestPrice && qogitaPrice > 0 ? ((bestPrice - qogitaPrice) / bestPrice) * 100 : null;
+      return { ...row, qogitaPrice, ecart, bestPrice, bestSourceSlug };
     });
   }, [rawData, products, countryFilter, sourceFilter, getSourcePrice]);
 

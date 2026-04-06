@@ -1,4 +1,5 @@
 import { Layout } from "@/components/layout/Layout";
+import { useNavigate } from "react-router-dom";
 import { ProductImage } from "@/components/shared/ProductCard";
 import { Users, MapPin, Package, AlertCircle, Heart, Zap, Download, Layers, Mail, Phone, Clock, List, Plus, Trash2, Eye, ShoppingCart, Search, TrendingDown, BarChart3 } from "lucide-react";
 import { useState, useEffect } from "react";

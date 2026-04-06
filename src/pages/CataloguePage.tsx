@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
@@ -25,20 +25,8 @@ export default function CataloguePage() {
     }
   }, [slug]);
 
-  // Auto-detect brand from search query and apply as brand filter
+  // Brand list for sidebar
   const { data: allBrands = [] } = useCatalogBrands();
-  const brandAutoApplied = useRef<string | null>(null);
-  useEffect(() => {
-    if (filters.search && allBrands.length > 0 && brandAutoApplied.current !== filters.search) {
-      const searchLower = filters.search.toLowerCase().trim();
-      const matchedBrand = allBrands.find(b => b.name.toLowerCase() === searchLower);
-      if (matchedBrand && !(filters.brands || []).includes(matchedBrand.slug)) {
-        brandAutoApplied.current = filters.search;
-        setFilter("brand", [matchedBrand.slug]);
-        setFilter("q", undefined);
-      }
-    }
-  }, [filters.search, allBrands]);
 
   const { data, isLoading } = useCatalogProducts(filters);
   const products = data?.products || [];

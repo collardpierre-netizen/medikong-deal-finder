@@ -582,7 +582,7 @@ export default function AdminVeillePrix() {
           <p className="text-xs text-muted-foreground">Produits matchés</p>
           <p className="text-2xl font-bold text-foreground">{rows.length.toLocaleString("fr-FR")}</p>
         </div>
-        {visibleSources.slice(0, 2).map(src => {
+        {sources.map(src => {
           const count = rows.filter(r => r.sources[src.slug]).length;
           return (
             <div key={src.slug} className="bg-background border border-border rounded-xl p-4">

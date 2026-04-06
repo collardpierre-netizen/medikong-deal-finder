@@ -21,7 +21,6 @@ export function CatalogSidebar({ filters, setFilter, clearAll, resultCategoryIds
   const { data: categories = [] } = useCatalogCategories();
   const { data: brands = [] } = useCatalogBrands(filters.category);
   const { data: manufacturers = [] } = useCatalogManufacturers();
-  const { data: serverBrands } = useBrandSearch(brandSearch);
   const { visibleCategoryIds, isFiltered: professionFiltered, professionType } = useVisibleCategories();
   const [showAllCats, setShowAllCats] = useState(false);
 
@@ -35,6 +34,8 @@ export function CatalogSidebar({ filters, setFilter, clearAll, resultCategoryIds
   const [showAllMf, setShowAllMf] = useState(false);
   const [priceMin, setPriceMin] = useState(filters.priceMin?.toString() || "");
   const [priceMax, setPriceMax] = useState(filters.priceMax?.toString() || "");
+
+  const { data: serverBrands } = useBrandSearch(brandSearch);
 
   // Merge local brands with server search results to cover brands beyond the 500 limit
   const mergedBrands = useMemo(() => {

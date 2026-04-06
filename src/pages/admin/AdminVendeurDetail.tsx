@@ -36,6 +36,7 @@ const AdminVendeurDetail = () => {
   const [showDelete, setShowDelete] = useState(false);
   const [togglingStatus, setTogglingStatus] = useState(false);
   const queryClient = useQueryClient();
+  const { startImpersonation } = useImpersonation();
   const { data: vendor, isLoading } = useQuery({
     queryKey: ["vendor-detail", id],
     queryFn: async () => {

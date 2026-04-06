@@ -53,7 +53,15 @@ export function InstantSearchBar({ className = "", placeholder, variant = "navba
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    navigate(query.trim() ? `/catalogue?q=${encodeURIComponent(query)}` : `/catalogue`);
+    const q = query.trim();
+    if (!q) { navigate("/catalogue"); setIsOpen(false); return; }
+    // If search matches a brand from instant results, go directly to brand filter
+    const matchedBrand = results.brands.find(b => b.name.toLowerCase() === q.toLowerCase());
+    if (matchedBrand) {
+      navigate(`/catalogue?brand=${encodeURIComponent(matchedBrand.slug)}`);
+    } else {
+      navigate(`/catalogue?q=${encodeURIComponent(q)}`);
+    }
     setIsOpen(false);
   };
 

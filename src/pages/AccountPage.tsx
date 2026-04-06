@@ -904,6 +904,41 @@ export default function AccountPage() {
                     </div>
                   )}
 
+                  {activeTab === "comparateur" && (
+                    <div>
+                      <h2 className="text-xl font-bold text-foreground mb-5">Comparateur de prix</h2>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Importez votre liste d'achats (fichier Excel avec codes EAN/CNK) pour comparer vos prix actuels avec les offres MediKong et identifier les économies possibles.
+                      </p>
+                      <div className="border-2 border-dashed border-primary/30 rounded-xl p-8 text-center bg-primary/5">
+                        <FileSpreadsheet size={40} className="mx-auto mb-3 text-primary" />
+                        <p className="text-sm font-semibold text-foreground mb-1">Analysez vos achats en un clic</p>
+                        <p className="text-xs text-muted-foreground mb-4">Glissez votre fichier XLSX ou cliquez pour importer</p>
+                        <Button onClick={() => setImportOpen(true)} className="gap-2">
+                          <Upload size={14} /> Importer ma liste
+                        </Button>
+                      </div>
+                      <div className="mt-6 grid grid-cols-3 gap-3">
+                        <div className="border rounded-lg p-4 text-center">
+                          <Search size={20} className="mx-auto mb-2 text-primary" />
+                          <p className="text-xs font-semibold text-foreground">Matching EAN/CNK</p>
+                          <p className="text-[10px] text-muted-foreground mt-1">Recherche automatique dans +338k produits</p>
+                        </div>
+                        <div className="border rounded-lg p-4 text-center">
+                          <TrendingDown size={20} className="mx-auto mb-2 text-primary" />
+                          <p className="text-xs font-semibold text-foreground">Calcul d'économies</p>
+                          <p className="text-[10px] text-muted-foreground mt-1">Comparaison prix actuel vs MediKong</p>
+                        </div>
+                        <div className="border rounded-lg p-4 text-center">
+                          <ShoppingCart size={20} className="mx-auto mb-2 text-primary" />
+                          <p className="text-xs font-semibold text-foreground">Ajout au panier</p>
+                          <p className="text-[10px] text-muted-foreground mt-1">Sélection groupée en un clic</p>
+                        </div>
+                      </div>
+                      <BuyerImportModal open={importOpen} onOpenChange={setImportOpen} />
+                    </div>
+                  )}
+
                   {activeTab === "catalogue" && (
                     <div>
                       <h2 className="text-xl font-bold text-mk-navy mb-5">Catalogue</h2>

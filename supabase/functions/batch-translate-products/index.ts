@@ -6,15 +6,6 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-interface ProductRow {
-  id: string;
-  name: string;
-  name_fr: string | null;
-  short_description: string | null;
-  description: string | null;
-  description_fr: string | null;
-}
-
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
@@ -29,133 +20,128 @@ serve(async (req) => {
     const body = await req.json();
     const batchSize = Math.min(body.batch_size || 20, 50);
     const targetLocales: string[] = body.target_locales || ["nl", "de", "en"];
-    const entityType: string = body.entity_type || "product"; // "product" | "category"
-    const offset = body.offset || 0;
+    const entityType: string = body.entity_type || "product";
     const brandFilter: string | null = body.brand || null;
     const categoryFilter: string | null = body.category_id || null;
+    const firstLocale = targetLocales[0];
 
     let items: { id: string; name: string; description?: string }[] = [];
     let totalUntranslated = 0;
 
     if (entityType === "product") {
-      // Find products that don't have translations yet for the first target locale
-      const firstLocale = targetLocales[0];
-
-      // Get products not yet translated
-      let query = supabase
-        .from("products")
-        .select("id, name, name_fr, short_description, description, description_fr")
-        .eq("is_active", true)
-        .order("name", { ascending: true })
-        .range(offset, offset + batchSize - 1);
-
-      if (brandFilter) {
-        // Get brand id first
-        const { data: brand } = await supabase
-          .from("brands")
-          .select("id")
-          .ilike("name", `%${brandFilter}%`)
-          .limit(1)
-          .single();
-        if (brand) query = query.eq("brand_id", brand.id);
-      }
-      if (categoryFilter) {
-        query = query.eq("category_id", categoryFilter);
-      }
-
-      const { data: products, error } = await query;
-      if (error) throw error;
-
-      // Filter out products that already have translations
-      const productIds = (products || []).map((p: ProductRow) => p.id);
-      const { data: existingTranslations } = await supabase
+      // Get IDs of already-translated products for first locale
+      const { data: translatedRows } = await supabase
         .from("translations")
         .select("entity_id")
-        .eq("entity_type", "product")
-        .eq("locale", firstLocale)
-        .eq("field", "name")
-        .in("entity_id", productIds);
-
-      const translatedIds = new Set((existingTranslations || []).map((t: { entity_id: string }) => t.entity_id));
-
-      items = (products || [])
-        .filter((p: ProductRow) => !translatedIds.has(p.id))
-        .map((p: ProductRow) => ({
-          id: p.id,
-          name: p.name_fr || p.name,
-          description: p.description_fr || p.description || p.short_description || "",
-        }));
-
-      // Get total count of untranslated products
-      const { count } = await supabase
-        .from("products")
-        .select("id", { count: "exact", head: true })
-        .eq("is_active", true);
-      
-      const { count: translatedCount } = await supabase
-        .from("translations")
-        .select("entity_id", { count: "exact", head: true })
         .eq("entity_type", "product")
         .eq("locale", firstLocale)
         .eq("field", "name");
 
-      totalUntranslated = (count || 0) - (translatedCount || 0);
+      const translatedIds = (translatedRows || []).map((t: { entity_id: string }) => t.entity_id);
+
+      // Use RPC or direct query to find untranslated products
+      // We'll fetch a larger pool and filter client-side since .not('id', 'in', bigArray) has limits
+      const pageSize = 200; // fetch more to find untranslated ones
+      const translatedSet = new Set(translatedIds);
+      let found: typeof items = [];
+      let searchOffset = 0;
+      const maxSearchPages = 50; // safety limit
+
+      for (let page = 0; page < maxSearchPages && found.length < batchSize; page++) {
+        let query = supabase
+          .from("products")
+          .select("id, name, name_fr, short_description, description, description_fr")
+          .eq("is_active", true)
+          .order("name", { ascending: true })
+          .range(searchOffset, searchOffset + pageSize - 1);
+
+        if (brandFilter) {
+          const { data: brand } = await supabase
+            .from("brands")
+            .select("id")
+            .ilike("name", `%${brandFilter}%`)
+            .limit(1)
+            .single();
+          if (brand) query = query.eq("brand_id", brand.id);
+        }
+        if (categoryFilter) {
+          query = query.eq("category_id", categoryFilter);
+        }
+
+        const { data: products, error } = await query;
+        if (error) throw error;
+        if (!products || products.length === 0) break;
+
+        for (const p of products) {
+          if (!translatedSet.has(p.id) && found.length < batchSize) {
+            found.push({
+              id: p.id,
+              name: p.name_fr || p.name,
+              description: p.description_fr || p.description || p.short_description || "",
+            });
+          }
+        }
+
+        searchOffset += pageSize;
+      }
+
+      items = found;
+
+      // Count untranslated
+      const { count: totalCount } = await supabase
+        .from("products")
+        .select("id", { count: "exact", head: true })
+        .eq("is_active", true);
+
+      totalUntranslated = (totalCount || 0) - translatedIds.length;
 
     } else if (entityType === "category") {
-      const { data: categories, error } = await supabase
-        .from("categories")
-        .select("id, name, name_fr, description")
-        .eq("is_active", true)
-        .order("name", { ascending: true })
-        .range(offset, offset + batchSize - 1);
-      if (error) throw error;
-
-      const catIds = (categories || []).map((c: { id: string }) => c.id);
-      const firstLocale = targetLocales[0];
-      const { data: existingTranslations } = await supabase
+      const { data: translatedRows } = await supabase
         .from("translations")
         .select("entity_id")
         .eq("entity_type", "category")
         .eq("locale", firstLocale)
-        .eq("field", "name")
-        .in("entity_id", catIds);
+        .eq("field", "name");
 
-      const translatedIds = new Set((existingTranslations || []).map((t: { entity_id: string }) => t.entity_id));
+      const translatedSet = new Set((translatedRows || []).map((t: { entity_id: string }) => t.entity_id));
+
+      const { data: categories, error } = await supabase
+        .from("categories")
+        .select("id, name, name_fr, description")
+        .eq("is_active", true)
+        .order("name", { ascending: true });
+      if (error) throw error;
 
       items = (categories || [])
-        .filter((c: { id: string; name: string; name_fr?: string | null }) => !translatedIds.has(c.id))
+        .filter((c: { id: string }) => !translatedSet.has(c.id))
+        .slice(0, batchSize)
         .map((c: { id: string; name: string; name_fr?: string | null; description?: string | null }) => ({
           id: c.id,
           name: c.name_fr || c.name,
           description: c.description || "",
         }));
 
-      const { count } = await supabase
+      const { count: totalCount } = await supabase
         .from("categories")
         .select("id", { count: "exact", head: true })
         .eq("is_active", true);
-      const { count: translatedCount } = await supabase
-        .from("translations")
-        .select("entity_id", { count: "exact", head: true })
-        .eq("entity_type", "category")
-        .eq("locale", firstLocale)
-        .eq("field", "name");
-      totalUntranslated = (count || 0) - (translatedCount || 0);
+      totalUntranslated = (totalCount || 0) - translatedSet.size;
     }
 
     if (items.length === 0) {
       return new Response(JSON.stringify({
         translated: 0,
         remaining: totalUntranslated,
-        message: "No items to translate in this batch",
+        message: totalUntranslated <= 0 ? "All items are already translated" : "No items to translate in this batch",
       }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
+    console.log(`Translating ${items.length} ${entityType}(s) to ${targetLocales.join(", ")}`);
+
     // Build AI prompt for batch translation
     const itemsList = items.map((item, i) => `${i + 1}. "${item.name}"`).join("\n");
-    const localesList = targetLocales.join(", ");
 
-    const prompt = `Translate these ${entityType === "product" ? "medical/pharmaceutical product" : "category"} names from French (or English if not French) to: ${localesList}.
+    const prompt = `Translate these ${entityType === "product" ? "medical/pharmaceutical product" : "category"} names from French (or English if not French) to: ${targetLocales.join(", ")}.
 
 Items:
 ${itemsList}
@@ -186,6 +172,19 @@ Rules:
 
     if (!aiResponse.ok) {
       const err = await aiResponse.text();
+      console.error("AI API error:", aiResponse.status, err);
+      if (aiResponse.status === 429) {
+        return new Response(JSON.stringify({ error: "Rate limited, please retry in a few seconds" }), {
+          status: 429,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      if (aiResponse.status === 402) {
+        return new Response(JSON.stringify({ error: "AI credits exhausted. Add funds in Settings > Workspace > Usage." }), {
+          status: 402,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
       throw new Error(`AI API error: ${aiResponse.status} - ${err}`);
     }
 
@@ -194,7 +193,10 @@ Rules:
 
     // Parse JSON array from response
     const jsonMatch = content.match(/\[[\s\S]*\]/);
-    if (!jsonMatch) throw new Error("Could not parse AI response as JSON array");
+    if (!jsonMatch) {
+      console.error("Could not parse AI response:", content.substring(0, 500));
+      throw new Error("Could not parse AI response as JSON array");
+    }
 
     const translations: Array<Record<string, string | number>> = JSON.parse(jsonMatch[0]);
 
@@ -233,11 +235,12 @@ Rules:
       if (upsertError) throw upsertError;
     }
 
+    console.log(`Translated ${items.length} items, saved ${upsertRows.length} translations`);
+
     return new Response(JSON.stringify({
       translated: items.length,
       translations_saved: upsertRows.length,
       remaining: Math.max(0, totalUntranslated - items.length),
-      next_offset: offset + batchSize,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

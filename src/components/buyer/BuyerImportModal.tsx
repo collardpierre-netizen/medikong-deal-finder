@@ -203,17 +203,22 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
         </div>
 
         {phase === "loading" && (() => {
-          const steps = ["Lecture du fichier…", "Recherche des produits…", "Recherche des offres…", "Terminé"];
-          const stepLabel = steps[Math.min(progress.current, steps.length - 1)];
           const pct = progress.total > 0 ? Math.round((progress.current / progress.total) * 100) : 0;
+          const elapsed = (Date.now() - progress.startTime) / 1000;
+          const rate = progress.current > 0 ? elapsed / progress.current : 0;
+          const remaining = progress.current > 0 ? Math.max(0, Math.round(rate * (progress.total - progress.current))) : null;
           return (
             <div className="py-6 space-y-3">
               <div className="flex items-center justify-between text-sm text-muted-foreground">
-                <span className="flex items-center gap-2"><Loader2 size={14} className="animate-spin" /> {stepLabel}</span>
-                <span>Étape {progress.current}/{progress.total}</span>
+                <span className="flex items-center gap-2"><Loader2 size={14} className="animate-spin" /> Analyse de votre fichier…</span>
+                <span>{progress.current}/{progress.total} lignes</span>
               </div>
               <div className="w-full bg-muted rounded-full h-2.5 overflow-hidden">
                 <div className="bg-primary h-full rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
+              </div>
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span>{pct}%</span>
+                <span>{remaining === null ? "Estimation…" : `Temps restant ~${remaining}s`}</span>
               </div>
             </div>
           );

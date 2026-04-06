@@ -1715,7 +1715,7 @@ export default function ProductPage() {
 
       {/* ── Sticky Bottom Bar ── */}
       <AnimatePresence>
-        {showStickyBar && bestOffer && (
+        {showStickyBar && bestOffer && isVerifiedBuyer && (
           <motion.div
             initial={{ y: 100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}

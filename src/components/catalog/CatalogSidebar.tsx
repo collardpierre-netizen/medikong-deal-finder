@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { ChevronLeft, X, Search, Filter, Eye } from "lucide-react";
 import { useCountry } from "@/contexts/CountryContext";
-import { useCatalogCategories, useCatalogBrands, useCatalogManufacturers, type CatalogFilters } from "@/hooks/useCatalog";
+import { useCatalogCategories, useCatalogBrands, useCatalogManufacturers, useBrandSearch, type CatalogFilters } from "@/hooks/useCatalog";
 import { useVisibleCategories } from "@/hooks/useVisibleCategories";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";

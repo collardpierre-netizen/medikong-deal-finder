@@ -43,10 +43,44 @@ export default function VendorKycStepper({ vendor }: { vendor: any }) {
   const businessType = vendor?.business_type || "grossiste";
   const validationStatus = vendor?.validation_status || "pending_review";
 
-  // Current step based on validation_status
+  // Per-step completion logic (not just based on validation_status)
+  const stepCompleted = (stepKey: string): boolean => {
+    switch (stepKey) {
+      case "registered":
+        return true; // always done if vendor exists
+      case "kyc": {
+        // KYC is done only if all required criteria have a submission
+        const requiredCriteria = criteria.filter(c => c.is_required);
+        if (requiredCriteria.length === 0 && criteria.length === 0) return false;
+        const target = requiredCriteria.length > 0 ? requiredCriteria : criteria;
+        return target.every(c => {
+          const sub = submissions.find(s => s.criteria_id === c.id);
+          return sub && (sub.status === "submitted" || sub.status === "approved");
+        });
+      }
+      case "docs": {
+        // Docs done if all criteria requiring documents have uploads
+        const docCriteria = criteria.filter(c => c.requires_document);
+        if (docCriteria.length === 0) return stepCompleted("kyc");
+        return docCriteria.every(c => {
+          const sub = submissions.find(s => s.criteria_id === c.id);
+          return sub && sub.document_url && (sub.status === "submitted" || sub.status === "approved");
+        });
+      }
+      case "commercial":
+        return validationStatus === "under_review" || validationStatus === "approved";
+      case "review":
+        return validationStatus === "approved";
+      case "active":
+        return validationStatus === "approved";
+      default:
+        return false;
+    }
+  };
+
+  // Current active step = first incomplete step
   const currentStep = validationStatus === "approved" ? 6
-    : validationStatus === "under_review" ? 5
-    : 2; // pending_review
+    : STEP_CONFIG.findIndex(s => !stepCompleted(s.key)) + 1 || 6;
 
   // Fetch criteria for this business type
   const { data: criteria = [] } = useQuery({
@@ -152,7 +186,7 @@ export default function VendorKycStepper({ vendor }: { vendor: any }) {
         <h2 className="text-[15px] font-bold mb-4" style={{ color: "#1D2530" }}>Progression de votre dossier</h2>
         <div className="flex items-center gap-0">
           {STEP_CONFIG.map((step, i) => {
-            const done = step.num < currentStep;
+            const done = stepCompleted(step.key);
             const active = step.num === currentStep;
             const Icon = step.icon;
             return (

@@ -574,7 +574,7 @@ export default function ProductPage() {
   const { slug } = useParams();
   const navigate = useNavigate();
   const routeLocation = useLocation();
-  const { user } = useAuth();
+  const { user, isVerifiedBuyer } = useAuth();
   const { country } = useCountry();
   const { isTVAC } = usePriceDisplay();
   const { data: product, isLoading } = useProduct(slug);

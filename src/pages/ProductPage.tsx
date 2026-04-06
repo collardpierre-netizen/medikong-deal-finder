@@ -1045,7 +1045,7 @@ export default function ProductPage() {
               )}
 
               {/* ── Pending verification gate ── */}
-              {user && !isVerifiedBuyer && (
+              {user && !isVerifiedBuyer && !verificationLoading && (
                 <div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-6 mb-6 text-center">
                   <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-3">
                     <Info size={22} className="text-amber-600" />

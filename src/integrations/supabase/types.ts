@@ -3494,6 +3494,7 @@ export type Database = {
       vendor_validation_status:
         | "pending_review"
         | "under_review"
+        | "accepted"
         | "approved"
         | "rejected"
     }
@@ -3689,6 +3690,7 @@ export const Constants = {
       vendor_validation_status: [
         "pending_review",
         "under_review",
+        "accepted",
         "approved",
         "rejected",
       ],

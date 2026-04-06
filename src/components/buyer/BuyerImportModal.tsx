@@ -82,64 +82,70 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
         };
       }).filter(l => l.ean || l.cnk);
 
-      // Match against products
+      if (lines.length === 0) {
+        toast.error("Aucune ligne valide trouvée dans le fichier");
+        setPhase("instructions");
+        return;
+      }
+
+      setProgress({ current: 0, total: lines.length, startTime: Date.now() });
+
+      // Batch processing: process in chunks of 10 for speed
+      const BATCH_SIZE = 10;
       const matched: MatchedLine[] = [];
 
-      for (const line of lines) {
-        let product: any = null;
+      for (let batchStart = 0; batchStart < lines.length; batchStart += BATCH_SIZE) {
+        const batch = lines.slice(batchStart, batchStart + BATCH_SIZE);
+        
+        const batchResults = await Promise.all(batch.map(async (line) => {
+          let product: any = null;
 
-        // Try EAN match first
-        if (line.ean) {
-          const { data } = await supabase
-            .from("products")
-            .select("id, name, image_url, gtin")
-            .eq("gtin", line.ean)
-            .eq("is_active", true)
-            .maybeSingle();
-          product = data;
-        }
-
-        // Try CNK match if no EAN match
-        if (!product && line.cnk) {
-          const { data } = await supabase
-            .from("products")
-            .select("id, name, image_url, gtin")
-            .eq("cnk_code", line.cnk)
-            .eq("is_active", true)
-            .maybeSingle();
-          product = data;
-        }
-
-        if (product) {
-          // Get best offer
-          const { data: offer } = await supabase
-            .from("offers")
-            .select("id, price_excl_vat, vendor_id, vendors(company_name)")
-            .eq("product_id", product.id)
-            .eq("is_active", true)
-            .order("price_excl_vat", { ascending: true })
-            .limit(1)
-            .maybeSingle();
-
-          if (offer) {
-            const saving = line.currentPrice > 0 ? line.currentPrice - offer.price_excl_vat : 0;
-            matched.push({
-              ...line,
-              productId: product.id,
-              productName: product.name,
-              productImage: product.image_url,
-              mediPrice: offer.price_excl_vat,
-              offerId: offer.id,
-              vendorName: (offer as any).vendors?.company_name || "—",
-              status: "found",
-              saving: saving > 0 ? saving : 0,
-            });
-          } else {
-            matched.push({ ...line, productId: product.id, productName: product.name, status: "unavailable" });
+          if (line.ean) {
+            const { data } = await supabase
+              .from("products")
+              .select("id, name, image_url, gtin")
+              .eq("gtin", line.ean)
+              .eq("is_active", true)
+              .maybeSingle();
+            product = data;
           }
-        } else {
-          matched.push({ ...line, status: "unavailable" });
-        }
+
+          if (!product && line.cnk) {
+            const { data } = await supabase
+              .from("products")
+              .select("id, name, image_url, gtin")
+              .eq("cnk_code", line.cnk)
+              .eq("is_active", true)
+              .maybeSingle();
+            product = data;
+          }
+
+          if (product) {
+            const { data: offer } = await supabase
+              .from("offers")
+              .select("id, price_excl_vat, vendor_id, vendors(company_name)")
+              .eq("product_id", product.id)
+              .eq("is_active", true)
+              .order("price_excl_vat", { ascending: true })
+              .limit(1)
+              .maybeSingle();
+
+            if (offer) {
+              const saving = line.currentPrice > 0 ? line.currentPrice - offer.price_excl_vat : 0;
+              return {
+                ...line, productId: product.id, productName: product.name, productImage: product.image_url,
+                mediPrice: offer.price_excl_vat, offerId: offer.id,
+                vendorName: (offer as any).vendors?.company_name || "—",
+                status: "found" as const, saving: saving > 0 ? saving : 0,
+              };
+            }
+            return { ...line, productId: product.id, productName: product.name, status: "unavailable" as const };
+          }
+          return { ...line, status: "unavailable" as const };
+        }));
+
+        matched.push(...batchResults);
+        setProgress(p => ({ ...p, current: Math.min(batchStart + BATCH_SIZE, lines.length) }));
       }
 
       setResults(matched);

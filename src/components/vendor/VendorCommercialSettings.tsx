@@ -194,8 +194,9 @@ export default function VendorCommercialSettings({
             <input type="number" min={0} step={1}
               className="w-full px-3 py-2 text-[13px] rounded-lg border focus:border-[#1B5BDA] focus:outline-none"
               style={{ borderColor: "#E2E8F0" }}
-              value={form.default_mov}
-              onChange={e => setForm(f => ({ ...f, default_mov: Number(e.target.value) }))}
+              defaultValue={form.default_mov}
+              key={settings?.id || "new"}
+              onBlur={e => setForm(f => ({ ...f, default_mov: Number(e.target.value) || 0 }))}
             />
           </div>
           <div>
@@ -203,8 +204,9 @@ export default function VendorCommercialSettings({
             <input type="number" min={1}
               className="w-full px-3 py-2 text-[13px] rounded-lg border focus:border-[#1B5BDA] focus:outline-none"
               style={{ borderColor: "#E2E8F0" }}
-              value={form.default_delivery_days}
-              onChange={e => setForm(f => ({ ...f, default_delivery_days: Number(e.target.value) }))}
+              defaultValue={form.default_delivery_days}
+              key={(settings?.id || "new") + "-days"}
+              onBlur={e => setForm(f => ({ ...f, default_delivery_days: Number(e.target.value) || 1 }))}
             />
           </div>
         </div>

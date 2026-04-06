@@ -85,10 +85,10 @@ export function CatalogSidebar({ filters, setFilter, clearAll, resultCategoryIds
   }, []);
 
   const filteredBrands = useMemo(() => {
-    let list = brands;
+    let list = mergedBrands;
     if (brandSearch) list = list.filter(b => b.name.toLowerCase().includes(brandSearch.toLowerCase()));
     return showAllBrands ? list : list.slice(0, 15);
-  }, [brands, brandSearch, showAllBrands]);
+  }, [mergedBrands, brandSearch, showAllBrands]);
 
   const filteredMf = useMemo(() => {
     let list = manufacturers;

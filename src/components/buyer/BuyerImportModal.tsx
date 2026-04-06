@@ -221,11 +221,28 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
           <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" onChange={handleFile} className="hidden" />
         </div>
 
-        {phase === "loading" && (
-          <div className="flex items-center justify-center py-8 gap-2 text-sm text-muted-foreground">
-            <Loader2 size={18} className="animate-spin" /> Analyse en cours…
-          </div>
-        )}
+        {phase === "loading" && (() => {
+          const pct = progress.total > 0 ? Math.round((progress.current / progress.total) * 100) : 0;
+          const elapsed = (Date.now() - progress.startTime) / 1000;
+          const rate = progress.current > 0 ? elapsed / progress.current : 0;
+          const remaining = Math.max(0, Math.round(rate * (progress.total - progress.current)));
+          const etaLabel = remaining > 60 ? `~${Math.ceil(remaining / 60)} min` : `~${remaining}s`;
+          return (
+            <div className="py-6 space-y-3">
+              <div className="flex items-center justify-between text-sm text-muted-foreground">
+                <span className="flex items-center gap-2"><Loader2 size={14} className="animate-spin" /> Analyse en cours…</span>
+                <span>{progress.current}/{progress.total} produits</span>
+              </div>
+              <div className="w-full bg-muted rounded-full h-2.5 overflow-hidden">
+                <div className="bg-primary h-full rounded-full transition-all duration-300" style={{ width: `${pct}%` }} />
+              </div>
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>{pct}%</span>
+                {progress.current > 0 && progress.current < progress.total && <span>Temps restant : {etaLabel}</span>}
+              </div>
+            </div>
+          );
+        })()}
 
         {phase === "results" && (
           <>

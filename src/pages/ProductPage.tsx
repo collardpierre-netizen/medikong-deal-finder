@@ -574,7 +574,7 @@ export default function ProductPage() {
   const { slug } = useParams();
   const navigate = useNavigate();
   const routeLocation = useLocation();
-  const { user } = useAuth();
+  const { user, isVerifiedBuyer } = useAuth();
   const { country } = useCountry();
   const { isTVAC } = usePriceDisplay();
   const { data: product, isLoading } = useProduct(slug);
@@ -1006,7 +1006,7 @@ export default function ProductPage() {
               <p className="text-xs text-muted-foreground mb-2">Prix soumis a TVA selon votre pays.</p>
 
               {/* Price level badge */}
-              {user && (
+              {user && isVerifiedBuyer && (
                 <span className="inline-flex items-center gap-1.5 text-xs font-semibold bg-amber-50 text-amber-700 px-3 py-1.5 rounded-full border border-amber-200 mb-4">
                   <Tag size={12} /> {levelLabel}
                 </span>
@@ -1044,8 +1044,22 @@ export default function ProductPage() {
                 </div>
               )}
 
-              {/* ── Offers Tabs (only for logged users) ── */}
-              {user && (
+              {/* ── Pending verification gate ── */}
+              {user && !isVerifiedBuyer && (
+                <div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-6 mb-6 text-center">
+                  <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-3">
+                    <Info size={22} className="text-amber-600" />
+                  </div>
+                  <h3 className="text-base font-bold text-foreground mb-2">Compte en attente de validation</h3>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Les prix et les offres seront visibles après validation de votre profil par notre équipe.
+                  </p>
+                  <p className="text-xs text-muted-foreground">Cela prend généralement moins de 24h.</p>
+                </div>
+              )}
+
+              {/* ── Offers Tabs (only for verified buyers) ── */}
+              {user && isVerifiedBuyer && (
               <div ref={offerSectionRef}>
                 <Tabs defaultValue="marketplace" className="mb-6">
                   <TabsList className="w-full grid grid-cols-3 mb-4">
@@ -1701,7 +1715,7 @@ export default function ProductPage() {
 
       {/* ── Sticky Bottom Bar ── */}
       <AnimatePresence>
-        {showStickyBar && bestOffer && (
+        {showStickyBar && bestOffer && isVerifiedBuyer && (
           <motion.div
             initial={{ y: 100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}

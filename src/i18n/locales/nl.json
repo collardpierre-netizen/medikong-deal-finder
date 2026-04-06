@@ -31,7 +31,9 @@
     "vendor": "Verkoper",
     "vendorSpace": "Verkopersruimte",
     "administration": "Administratie",
-    "signOut": "Uitloggen"
+    "signOut": "Uitloggen",
+    "stripeConnect": "Stripe Connect",
+    "stripeRevenue": "Omzet & Marges"
   },
   "nav": {
     "shop": "Shop",

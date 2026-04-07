@@ -160,6 +160,13 @@ const AdminVendeurDetail = () => {
             <ExternalLink size={14} /> Accéder au portail
           </button>
           <button
+            onClick={() => setShowInvite(true)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-md text-[12px] font-bold transition-opacity hover:opacity-90"
+            style={{ backgroundColor: "#F0FDF4", color: "#059669", border: "1px solid #BBF7D0" }}
+          >
+            <Send size={14} /> Inviter
+          </button>
+          <button
             onClick={toggleActive}
             disabled={togglingStatus}
             className="flex items-center gap-1.5 px-3 py-2 rounded-md text-[12px] font-bold transition-opacity hover:opacity-90"

@@ -275,12 +275,31 @@ function useOfferImport(vendorId: string | undefined) {
 
       let created = 0, skipped = 0;
       const offers: any[] = [];
+      const profileRulesQueue: { ean: string; cnk: string; rule: any }[] = [];
 
       for (const row of rows) {
         const ean = String(row["EAN"] || row["ean"] || row["GTIN"] || row["gtin"] || "");
         const cnk = String(row["CNK"] || row["cnk"] || "");
         const productId = allIds[ean] || allIds[cnk];
         if (!productId) { skipped++; continue; }
+
+        const profileType = String(row["Profil"] || row["profil"] || row["profile_type"] || "").trim();
+
+        // If profile column is filled, this is a profile rule row
+        if (profileType) {
+          profileRulesQueue.push({
+            ean, cnk,
+            rule: {
+              profile_type: profileType,
+              country_code: row["Profil_Pays"] || row["profil_pays"] || null,
+              custom_price_excl_vat: row["Prix_Profil_HT"] || row["prix_profil_ht"] ? parseFloat(String(row["Prix_Profil_HT"] || row["prix_profil_ht"])) : null,
+              discount_percentage: parseFloat(String(row["Remise_%"] || row["remise_%"] || row["remise_pct"] || "0")) || 0,
+              moq: parseInt(String(row["MOQ_Profil"] || row["moq_profil"] || "1")) || 1,
+              mov_amount: parseFloat(String(row["MOV_Profil"] || row["mov_profil"] || "0")) || 0,
+            },
+          });
+          continue;
+        }
 
         const priceExcl = parseFloat(row["Prix HT"] || row["prix_ht"] || row["price_excl_vat"] || "0");
         const vatRate = parseFloat(row["TVA"] || row["tva"] || row["vat_rate"] || "21");
@@ -301,16 +320,46 @@ function useOfferImport(vendorId: string | undefined) {
           country_code: row["Pays"] || row["pays"] || row["country_code"] || "BE",
           stock_status: stock > 0 ? "in_stock" : "out_of_stock",
           is_active: true,
+          _ean: ean,
+          _cnk: cnk,
         });
         created++;
       }
 
+      // Insert offers and collect IDs
+      const offerIdsByKey: Record<string, string> = {};
       if (offers.length > 0) {
-        // Batch insert in groups of 100
         for (let i = 0; i < offers.length; i += 100) {
-          const batch = offers.slice(i, i + 100);
-          const { error } = await supabase.from("offers").insert(batch);
+          const batch = offers.slice(i, i + 100).map(({ _ean, _cnk, ...rest }) => rest);
+          const { data: inserted, error } = await supabase.from("offers").insert(batch).select("id, product_id");
           if (error) throw error;
+          // Map product_id back to offer_id for profile rules
+          if (inserted) {
+            const batchSource = offers.slice(i, i + 100);
+            inserted.forEach((ins: any, idx: number) => {
+              const src = batchSource[idx];
+              if (src._ean) offerIdsByKey[src._ean] = ins.id;
+              if (src._cnk) offerIdsByKey[src._cnk] = ins.id;
+            });
+          }
+        }
+      }
+
+      // Insert profile rules
+      if (profileRulesQueue.length > 0) {
+        const profileInserts = profileRulesQueue
+          .map(({ ean, cnk, rule }) => {
+            const offerId = offerIdsByKey[ean] || offerIdsByKey[cnk];
+            if (!offerId) return null;
+            return { offer_id: offerId, ...rule };
+          })
+          .filter(Boolean);
+
+        if (profileInserts.length > 0) {
+          for (let i = 0; i < profileInserts.length; i += 100) {
+            const batch = profileInserts.slice(i, i + 100);
+            await supabase.from("offer_profile_rules").insert(batch);
+          }
         }
       }
 

@@ -1300,7 +1300,6 @@ export default function ProductPage() {
                               <th className="px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider text-center">Stock</th>
                               <th className="px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider text-right">Écart MK</th>
                               <th className="px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider text-right">Relevé</th>
-                              <th className="px-3 py-2.5 w-8"></th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-border">

@@ -1,33 +1,29 @@
 
-## Plan : Gestion centralisée des commandes Qogita
+# Système d'Alertes Prix MediKong
 
-### État actuel
-- `order_lines` existe déjà avec `fulfillment_type` (enum: `qogita`, `medikong_direct`, `vendor_direct`), `fulfillment_status` (enum: `pending`, `processing`, `shipped`, `delivered`, `cancelled`), `vendor_id`, `qogita_*` fields
-- `order_items` est utilisé à la création de commande mais sans `vendor_id` ni routage
-- Balooh existe (id: `b3aa8188-...`, type: `real`, **is_active: false**)
-- VendorOrders est une page vide (placeholder)
+## Phase 1 — Fondations (base de données + détection)
+1. **Migration DB** : Créer les tables `price_alerts`, `price_alert_vendors`, `price_alert_settings`, `price_alert_notifications`, `price_adjustment_log`, `vendor_notification_preferences`
+2. **Fonction de détection** : Edge function ou DB function qui compare les prix MediKong vs marché/externes et génère les alertes
+3. **Settings par défaut** : Seuils initiaux (5%, 15%, marge compétitive 1%)
 
-### Étape 1 — Migration DB
-- Ajouter `forwarded` à l'enum `fulfillment_status`
-- Activer le vendeur Balooh (`is_active = true`)
+## Phase 2 — Dashboard Superadmin
+4. **Page `/admin/price-alerts`** : KPI cards + tableau filtrable/triable des alertes
+5. **Vue détail `/admin/price-alerts/:id`** : Graphique prix, tableau vendeurs, historique notifications
+6. **Page settings `/admin/price-alerts/settings`** : Configuration seuils, notifications auto
 
-### Étape 2 — Logique de routage (useOrders.ts)
-- Après création des `order_items`, créer des `order_lines` :
-  - Pour chaque item, récupérer le `vendor_id` et le `type` du vendeur via l'offre
-  - Si vendeur `qogita_virtual` → assigner `vendor_id` = Balooh, `fulfillment_type` = `qogita`
-  - Si vendeur `real` → garder le `vendor_id` d'origine, `fulfillment_type` = `vendor_direct`
-  - Copier les champs `qogita_offer_qid`, `qogita_seller_fid`, `qogita_base_price`
+## Phase 3 — Portail Vendeur
+7. **Page `/vendor/price-alerts`** : Liste des alertes du vendeur avec prix suggéré
+8. **Vue détail vendeur** : Positionnement visuel, suggestion de prix, bouton d'alignement rapide
+9. **Badge notification** : Badge rouge sur nav + bandeau d'alerte sur dashboard
+10. **Préférences notifications** : Page settings vendeur
 
-### Étape 3 — Portail vendeur : page Commandes
-- Construire VendorOrders pour afficher les `order_lines` du vendeur connecté
-- Joindre les infos produit, commande, adresse de livraison
-- Pour les lignes `fulfillment_type = 'qogita'` : afficher les champs Qogita (seller_fid, offer_qid, base_price) — visible uniquement pour Balooh et admin
-- Bouton "Transmis à Qogita" qui passe `fulfillment_status` à `forwarded`
+## Phase 4 — Notifications & Automatisation
+11. **Notifications in-app** : Realtime via Supabase
+12. **Notifications email** : Templates + Edge function d'envoi
+13. **Alignement automatique** : Toggle vendeur + logique d'auto-ajustement
+14. **Actions groupées superadmin** : Sélection multiple + notification en masse
 
-### Étape 4 — Admin
-- Le détail de commande admin montre déjà les order_items avec refs Qogita → rien à changer
-
-### Fichiers modifiés
-- `src/hooks/useOrders.ts` — routage order_lines
-- `src/pages/vendor/VendorOrders.tsx` — interface commandes vendeur
-- Migration DB pour enum + activation Balooh
+## Approche
+- Commencer par Phase 1 + 2 (fondations + admin) car c'est le cœur du système
+- Phase 3 suit naturellement
+- Phase 4 en dernier (notifications email nécessitent l'infra déjà en place)

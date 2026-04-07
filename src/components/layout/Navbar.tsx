@@ -1,4 +1,5 @@
 import { Bell, ShoppingCart, Users, Menu, X, LogOut, Shield, Store, Tag } from "lucide-react";
+import { usePriceDisplay } from "@/contexts/PriceDisplayContext";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -19,6 +20,7 @@ export function Navbar() {
   const { cartCount } = useCart();
   const [isAdmin, setIsAdmin] = useState(false);
   const [isVendor, setIsVendor] = useState(false);
+  const { isTVAC, toggleTVAC } = usePriceDisplay();
 
   useEffect(() => {
     if (!user) { setIsAdmin(false); setIsVendor(false); return; }
@@ -65,6 +67,15 @@ export function Navbar() {
 
         {/* Right icons — desktop */}
         <div className="hidden md:flex items-center gap-3 shrink-0 ml-auto">
+          <button
+            onClick={toggleTVAC}
+            className="flex items-center gap-1 text-[11px] font-semibold rounded-full px-2.5 py-1.5 border border-border hover:bg-muted transition-colors"
+            title="Basculer entre prix HTVA et TTC"
+          >
+            <span className={isTVAC ? "text-muted-foreground" : "text-primary font-bold"}>HTVA</span>
+            <span className="text-muted-foreground">/</span>
+            <span className={isTVAC ? "text-primary font-bold" : "text-muted-foreground"}>TTC</span>
+          </button>
           <button className="p-2 rounded-full hover:bg-muted transition-colors">
             <Bell className="text-foreground" size={20} />
           </button>

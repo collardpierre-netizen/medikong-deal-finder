@@ -2,6 +2,8 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
+const BALOOH_VENDOR_ID = "b3aa8188-7584-47eb-9b5f-fd50e33ec569";
+
 export interface OrderItemInput {
   offer_id: string;
   product_id: string;
@@ -37,7 +39,7 @@ export function useCreateOrder() {
         order_number: orderNumber,
         customer_id: customer.id,
         shipping_address: { line1: input.shippingAddress } as any,
-        billing_address: { line1: input.shippingAddress } as any,
+        billing_address: { line1: input.billingAddress || input.shippingAddress } as any,
         payment_method: (input.paymentMethod === "Carte bancaire" ? "card" : input.paymentMethod === "Virement SEPA" ? "bank_transfer" : "invoice") as any,
         subtotal_excl_vat: input.subtotal,
         vat_amount: vatAmount > 0 ? vatAmount : 0,
@@ -45,16 +47,23 @@ export function useCreateOrder() {
       }).select().single();
       if (error) throw error;
 
-      // Insert order_items with Qogita references from offers
       if (input.items && input.items.length > 0) {
-        // Fetch Qogita refs from offers
+        // Fetch offer details including vendor info
         const offerIds = input.items.map(i => i.offer_id).filter(Boolean);
         const { data: offers } = offerIds.length > 0
-          ? await supabase.from("offers").select("id, qogita_offer_qid, qogita_seller_fid, qogita_base_price").in("id", offerIds)
+          ? await supabase.from("offers").select("id, vendor_id, qogita_offer_qid, qogita_seller_fid, qogita_base_price").in("id", offerIds)
           : { data: [] };
 
         const offerMap = new Map((offers || []).map(o => [o.id, o]));
 
+        // Fetch vendor types for routing
+        const vendorIds = [...new Set((offers || []).map(o => o.vendor_id))];
+        const { data: vendors } = vendorIds.length > 0
+          ? await supabase.from("vendors").select("id, type").in("id", vendorIds)
+          : { data: [] };
+        const vendorTypeMap = new Map((vendors || []).map(v => [v.id, v.type]));
+
+        // Insert order_items (legacy)
         const orderItems = input.items.map(item => {
           const offerRef = offerMap.get(item.offer_id);
           return {
@@ -75,6 +84,36 @@ export function useCreateOrder() {
 
         const { error: itemsError } = await supabase.from("order_items" as any).insert(orderItems as any);
         if (itemsError) console.error("Error inserting order_items:", itemsError);
+
+        // Insert order_lines with vendor routing
+        const orderLines = input.items.map(item => {
+          const offerRef = offerMap.get(item.offer_id);
+          const vendorId = offerRef?.vendor_id;
+          const vendorType = vendorId ? vendorTypeMap.get(vendorId) : null;
+          const isQogitaVirtual = vendorType === "qogita_virtual";
+
+          return {
+            order_id: order.id,
+            offer_id: item.offer_id,
+            product_id: item.product_id,
+            vendor_id: isQogitaVirtual ? BALOOH_VENDOR_ID : vendorId,
+            quantity: item.quantity,
+            unit_price_excl_vat: item.unit_price_excl_vat,
+            unit_price_incl_vat: item.unit_price_incl_vat,
+            vat_rate: item.vat_rate ?? 21,
+            line_total_excl_vat: item.unit_price_excl_vat * item.quantity,
+            line_total_incl_vat: item.unit_price_incl_vat * item.quantity,
+            fulfillment_type: isQogitaVirtual ? "qogita" : "vendor_direct",
+            fulfillment_status: "pending",
+            qogita_order_status: "pending",
+            qogita_offer_qid: offerRef?.qogita_offer_qid || null,
+            qogita_seller_fid: offerRef?.qogita_seller_fid || null,
+            cost_price: offerRef?.qogita_base_price || null,
+          } as any;
+        });
+
+        const { error: linesError } = await supabase.from("order_lines").insert(orderLines);
+        if (linesError) console.error("Error inserting order_lines:", linesError);
       }
 
       return order;

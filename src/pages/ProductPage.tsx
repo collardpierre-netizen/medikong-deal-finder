@@ -1293,9 +1293,9 @@ export default function ProductPage() {
                           <thead>
                             <tr className="bg-muted/50 border-b border-border text-left">
                               <th className="px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Source</th>
-                              {mpVisMap.show_pharmacist_price && <th className="px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider text-right">Prix pharmacien HTVA</th>}
-                              {mpVisMap.show_wholesale_price !== false && <th className="px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider text-right">Prix grossiste HTVA</th>}
-                              {mpVisMap.show_public_price && <th className="px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider text-right">Prix public TTC</th>}
+                              {mpVisMap.show_pharmacist_price && <th className="px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider text-right">Prix HTVA</th>}
+                              {mpVisMap.show_wholesale_price !== false && <th className="px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider text-right">Grossiste HTVA</th>}
+                              {mpVisMap.show_public_price && <th className="px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider text-right">Public TTC</th>}
                               <th className="px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider text-center">Stock</th>
                               <th className="px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider text-right">Écart MK</th>
                               <th className="px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider text-right">Relevé</th>
@@ -1308,9 +1308,11 @@ export default function ProductPage() {
                               const pharmPrice = Number(mp.prix_pharmacien || 0);
                               const grossistePrice = Number(mp.prix_grossiste || 0);
                               const pubPrice = Number(mp.prix_public || 0);
+                              const tvaRate = Number(mp.tva_rate || 21);
                               const isOnline = mp.market_price_sources?.source_type === "online";
-                              // For online sources, prix_pharmacien is actually TTC — compare using prix_public or skip
-                              const refPrice = isOnline ? (pubPrice || pharmPrice) : (pharmPrice || grossistePrice || pubPrice);
+                              // Convert online TTC prices to HTVA for fair comparison
+                              const pharmHT = isOnline && pharmPrice ? Math.round(pharmPrice / (1 + tvaRate / 100) * 100) / 100 : pharmPrice;
+                              const refPrice = pharmHT || grossistePrice || (pubPrice ? Math.round(pubPrice / (1 + tvaRate / 100) * 100) / 100 : 0);
                               const deltaAbs = refPrice && mkHT ? refPrice - mkHT : null;
                               const deltaPct = deltaAbs && refPrice ? Math.round((deltaAbs / refPrice) * 100) : null;
                               const positive = deltaAbs !== null && deltaAbs > 0;
@@ -1318,33 +1320,21 @@ export default function ProductPage() {
                               return (
                                  <tr key={mp.id} className="hover:bg-muted/20 transition-colors">
                                   <td className="px-3 py-2.5">
-                                    <div className="flex items-center gap-2">
-                                      <span className="font-medium text-foreground text-[13px] whitespace-nowrap">{mp.market_price_sources?.name}</span>
-                                      {mp.market_price_sources?.source_type && (
-                                        <span className="inline-flex rounded-full bg-secondary px-1.5 py-0.5 text-[9px] font-medium text-secondary-foreground leading-none">
-                                          {mp.market_price_sources.source_type}
-                                        </span>
-                                      )}
-                                    </div>
+                                    <span className="font-medium text-foreground text-[13px] whitespace-nowrap">{mp.market_price_sources?.name}</span>
                                   </td>
                                   {mpVisMap.show_pharmacist_price && (
-                                    <td className="px-3 py-2.5 text-right tabular-nums text-foreground">
-                                      {pharmPrice ? (
-                                        <div>
-                                          <span className="font-bold">{formatEur(pharmPrice)} €</span>
-                                          {isOnline && <span className="block text-[9px] text-amber-600 font-medium">TTC</span>}
-                                        </div>
-                                      ) : <span className="text-muted-foreground">—</span>}
+                                    <td className="px-3 py-2.5 text-right font-bold tabular-nums text-foreground whitespace-nowrap">
+                                      {pharmHT ? `${formatEur(pharmHT)} €` : <span className="text-muted-foreground font-normal">—</span>}
                                     </td>
                                   )}
                                   {mpVisMap.show_wholesale_price !== false && (
-                                    <td className="px-3 py-2.5 text-right font-bold tabular-nums text-foreground">
-                                      {grossistePrice ? `${formatEur(grossistePrice)} €` : "—"}
+                                    <td className="px-3 py-2.5 text-right font-bold tabular-nums text-foreground whitespace-nowrap">
+                                      {grossistePrice ? `${formatEur(grossistePrice)} €` : <span className="text-muted-foreground font-normal">—</span>}
                                     </td>
                                   )}
                                   {mpVisMap.show_public_price && (
-                                    <td className="px-3 py-2.5 text-right font-bold tabular-nums text-foreground">
-                                      {pubPrice ? `${formatEur(pubPrice)} €` : "—"}
+                                    <td className="px-3 py-2.5 text-right font-bold tabular-nums text-foreground whitespace-nowrap">
+                                      {pubPrice ? `${formatEur(pubPrice)} €` : <span className="text-muted-foreground font-normal">—</span>}
                                     </td>
                                   )}
                                   <td className="px-3 py-2.5 text-center">

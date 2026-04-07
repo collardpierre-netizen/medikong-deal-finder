@@ -33,7 +33,7 @@ type Props = {
   onOpenChange: (open: boolean) => void;
 };
 
-type ResultFilter = "all" | "found" | "savings" | "unavailable";
+type ResultFilter = "all" | "found" | "savings" | "more_expensive" | "unavailable";
 
 const CHUNK_SIZE = 250;
 const MAX_CONCURRENT_CHUNKS = 4;
@@ -194,6 +194,7 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
   const foundLines = results.filter(r => r.status === "found");
   const unavailableLines = results.filter(r => r.status === "unavailable");
   const savingsLines = foundLines.filter(r => (r.saving || 0) > 0);
+  const moreExpensiveLines = foundLines.filter(r => !r.saving || r.saving <= 0);
   const totalSavings = savingsLines.reduce((a, r) => a + (r.saving || 0) * r.quantity, 0);
   const avgSavingPct = savingsLines.length > 0
     ? savingsLines.reduce((a, r) => {
@@ -206,6 +207,7 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
     return results.map((r, i) => ({ ...r, _idx: i })).filter(r => {
       if (filter === "found") return r.status === "found";
       if (filter === "savings") return r.status === "found" && (r.saving || 0) > 0;
+      if (filter === "more_expensive") return r.status === "found" && (!r.saving || r.saving <= 0);
       if (filter === "unavailable") return r.status === "unavailable";
       return true;
     });
@@ -321,9 +323,18 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
                 <Tabs value={filter} onValueChange={(v) => setFilter(v as ResultFilter)}>
                   <TabsList className="h-8">
                     <TabsTrigger value="all" className="text-xs px-3 h-7">Tout ({results.length})</TabsTrigger>
-                    <TabsTrigger value="found" className="text-xs px-3 h-7">Disponibles ({foundLines.length})</TabsTrigger>
-                    <TabsTrigger value="savings" className="text-xs px-3 h-7">Économies ({savingsLines.length})</TabsTrigger>
-                    <TabsTrigger value="unavailable" className="text-xs px-3 h-7">Indispo ({unavailableLines.length})</TabsTrigger>
+                    <TabsTrigger value="savings" className="text-xs px-3 h-7">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 mr-1 inline-block" />
+                      Économies ({savingsLines.length})
+                    </TabsTrigger>
+                    <TabsTrigger value="more_expensive" className="text-xs px-3 h-7">
+                      <span className="w-2 h-2 rounded-full bg-red-500 mr-1 inline-block" />
+                      Plus cher ({moreExpensiveLines.length})
+                    </TabsTrigger>
+                    <TabsTrigger value="unavailable" className="text-xs px-3 h-7">
+                      <span className="w-2 h-2 rounded-full bg-orange-400 mr-1 inline-block" />
+                      Indispo ({unavailableLines.length})
+                    </TabsTrigger>
                   </TabsList>
                 </Tabs>
                 <Button variant="ghost" size="sm" onClick={toggleAll} className="text-xs h-7">
@@ -351,8 +362,11 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
                       {filteredResults.map((r) => {
                         const deltaPct = calcDeltaPct(r.currentPrice, r.mediPrice);
                         const isNeg = deltaPct !== null && deltaPct < 0;
+                        const hasSaving = r.status === "found" && (r.saving || 0) > 0;
+                        const isMoreExpensive = r.status === "found" && (!r.saving || r.saving <= 0);
+                        const rowBg = selected.has(r._idx) ? "bg-primary/5" : hasSaving ? "bg-emerald-50/40" : isMoreExpensive ? "bg-red-50/40" : r.status === "unavailable" ? "bg-orange-50/40" : "";
                         return (
-                          <tr key={r._idx} className={`border-t transition-colors ${selected.has(r._idx) ? "bg-primary/5" : "hover:bg-muted/30"}`}>
+                          <tr key={r._idx} className={`border-t transition-colors hover:bg-muted/30 ${rowBg}`}>
                             <td className="p-2 text-center">
                               {r.status === "found" && (
                                 <Checkbox
@@ -390,6 +404,8 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
                             <td className="p-2 text-right text-xs tabular-nums">
                               {r.saving && r.saving > 0 ? (
                                 <span className="text-emerald-600 font-semibold">-{formatPrice(r.saving)}</span>
+                              ) : r.status === "found" && r.mediPrice && r.currentPrice > 0 ? (
+                                <span className="text-red-600 font-semibold">+{formatPrice(Math.abs((r.mediPrice || 0) - r.currentPrice))}</span>
                               ) : "—"}
                             </td>
                             <td className="p-2 text-right text-xs tabular-nums">
@@ -400,12 +416,16 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
                               ) : "—"}
                             </td>
                             <td className="p-2 text-center">
-                              {r.status === "found" ? (
-                                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-600 bg-emerald-50 rounded-full px-2 py-0.5">
+                              {r.status === "found" && hasSaving ? (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 bg-emerald-100 rounded-full px-2 py-0.5">
                                   <CheckCircle2 size={10} /> Dispo
                                 </span>
+                              ) : r.status === "found" ? (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-red-600 bg-red-100 rounded-full px-2 py-0.5">
+                                  <AlertCircle size={10} /> Dispo
+                                </span>
                               ) : (
-                                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-destructive bg-destructive/10 rounded-full px-2 py-0.5">
+                                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-orange-600 bg-orange-100 rounded-full px-2 py-0.5">
                                   <X size={10} /> Indispo
                                 </span>
                               )}

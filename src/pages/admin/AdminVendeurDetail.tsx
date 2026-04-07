@@ -325,6 +325,148 @@ const AdminVendeurDetail = () => {
   );
 };
 
+/* ─── Vendor Invite Dialog ─── */
+function VendorInviteDialog({ open, onOpenChange, vendor }: { open: boolean; onOpenChange: (o: boolean) => void; vendor: any }) {
+  const [mode, setMode] = useState<"choice" | "link" | "email">("choice");
+  const [loading, setLoading] = useState(false);
+  const [link, setLink] = useState("");
+  const [copied, setCopied] = useState(false);
+  const [sent, setSent] = useState(false);
+
+  const reset = () => { setMode("choice"); setLink(""); setCopied(false); setSent(false); };
+  const handleClose = (o: boolean) => { if (!o) reset(); onOpenChange(o); };
+
+  const doInvite = async (m: "link" | "email") => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("invite-vendor", {
+        body: { vendor_id: vendor.id, mode: m },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      setLink(data.invitation_link || "");
+      if (m === "email") setSent(true);
+      setMode(m);
+      if (m === "email") toast.success("Invitation envoyée par email !");
+    } catch (err: any) {
+      toast.error(err.message || "Erreur lors de l'invitation");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const copyLink = () => {
+    navigator.clipboard.writeText(link);
+    setCopied(true);
+    toast.success("Lien copié !");
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Send size={18} style={{ color: "#059669" }} /> Inviter {vendor.company_name || vendor.name}
+          </DialogTitle>
+        </DialogHeader>
+
+        {mode === "choice" && (
+          <div className="space-y-3 mt-2">
+            <p className="text-[12px]" style={{ color: "#616B7C" }}>
+              Choisissez comment inviter ce vendeur à accéder à son portail :
+            </p>
+            <button
+              onClick={() => doInvite("link")}
+              disabled={loading}
+              className="w-full flex items-center gap-3 p-4 rounded-lg text-left transition-colors hover:bg-[#F8FAFC]"
+              style={{ border: "1px solid #E2E8F0" }}
+            >
+              <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: "#EFF6FF" }}>
+                <Link2 size={18} style={{ color: "#1B5BDA" }} />
+              </div>
+              <div>
+                <p className="text-[13px] font-bold" style={{ color: "#1D2530" }}>Générer un lien d'invitation</p>
+                <p className="text-[11px]" style={{ color: "#8B95A5" }}>Copiez le lien et partagez-le manuellement avec le vendeur</p>
+              </div>
+            </button>
+            <button
+              onClick={() => doInvite("email")}
+              disabled={loading}
+              className="w-full flex items-center gap-3 p-4 rounded-lg text-left transition-colors hover:bg-[#F8FAFC]"
+              style={{ border: "1px solid #E2E8F0" }}
+            >
+              <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: "#F0FDF4" }}>
+                <Mail size={18} style={{ color: "#059669" }} />
+              </div>
+              <div>
+                <p className="text-[13px] font-bold" style={{ color: "#1D2530" }}>Envoyer par email</p>
+                <p className="text-[11px]" style={{ color: "#8B95A5" }}>Un email d'invitation sera envoyé à <strong>{vendor.email}</strong></p>
+              </div>
+            </button>
+            {loading && (
+              <div className="flex items-center justify-center py-2">
+                <Loader2 size={16} className="animate-spin" style={{ color: "#1B5BDA" }} />
+                <span className="ml-2 text-[12px]" style={{ color: "#8B95A5" }}>Génération en cours...</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {mode === "link" && (
+          <div className="space-y-4 mt-2">
+            <div className="flex items-center gap-2 p-3 rounded-lg" style={{ backgroundColor: "#F0FDF4", border: "1px solid #BBF7D0" }}>
+              <CheckCircle2 size={16} style={{ color: "#059669" }} />
+              <span className="text-[12px] font-medium" style={{ color: "#059669" }}>Lien d'invitation généré !</span>
+            </div>
+            <div>
+              <Label className="text-[11px] font-semibold uppercase" style={{ color: "#8B95A5" }}>Lien d'invitation</Label>
+              <div className="flex items-center gap-2 mt-1">
+                <Input value={link} readOnly className="text-[11px] font-mono" />
+                <button onClick={copyLink} className="shrink-0 p-2 rounded-md transition-colors hover:bg-[#F1F5F9]" style={{ border: "1px solid #E2E8F0" }}>
+                  {copied ? <CheckCircle2 size={16} style={{ color: "#059669" }} /> : <Copy size={16} style={{ color: "#616B7C" }} />}
+                </button>
+              </div>
+            </div>
+            <p className="text-[11px]" style={{ color: "#8B95A5" }}>
+              Ce lien permet au vendeur de définir son mot de passe et d'accéder à son portail. Il expire après une utilisation.
+            </p>
+            <button onClick={() => handleClose(false)} className="w-full py-2.5 rounded-md text-[12px] font-semibold text-white" style={{ backgroundColor: "#1E293B" }}>
+              Fermer
+            </button>
+          </div>
+        )}
+
+        {mode === "email" && (
+          <div className="space-y-4 mt-2">
+            <div className="flex items-center gap-2 p-3 rounded-lg" style={{ backgroundColor: "#F0FDF4", border: "1px solid #BBF7D0" }}>
+              <CheckCircle2 size={16} style={{ color: "#059669" }} />
+              <span className="text-[12px] font-medium" style={{ color: "#059669" }}>Invitation envoyée à {vendor.email}</span>
+            </div>
+            <p className="text-[11px]" style={{ color: "#8B95A5" }}>
+              Le vendeur recevra un email avec un lien pour définir son mot de passe et accéder à son portail.
+            </p>
+            {link && (
+              <div>
+                <Label className="text-[11px] font-semibold uppercase" style={{ color: "#8B95A5" }}>Lien de secours (si l'email n'arrive pas)</Label>
+                <div className="flex items-center gap-2 mt-1">
+                  <Input value={link} readOnly className="text-[11px] font-mono" />
+                  <button onClick={copyLink} className="shrink-0 p-2 rounded-md transition-colors hover:bg-[#F1F5F9]" style={{ border: "1px solid #E2E8F0" }}>
+                    {copied ? <CheckCircle2 size={16} style={{ color: "#059669" }} /> : <Copy size={16} style={{ color: "#616B7C" }} />}
+                  </button>
+                </div>
+              </div>
+            )}
+            <button onClick={() => handleClose(false)} className="w-full py-2.5 rounded-md text-[12px] font-semibold text-white" style={{ backgroundColor: "#1E293B" }}>
+              Fermer
+            </button>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 const CUSTOMER_TYPES = [
   { value: "", label: "Tous les profils" },
   { value: "pharmacy", label: "Pharmacie" },

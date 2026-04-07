@@ -102,12 +102,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+    if (!error) {
+      setSession(data.session ?? null);
+      setUser(data.user ?? data.session?.user ?? null);
+      setLoading(false);
+    }
+
     return { error: error as Error | null };
   };
 
   const signOut = async () => {
     await supabase.auth.signOut();
+    setSession(null);
+    setUser(null);
+    setIsVerifiedBuyer(false);
+    setIsVerifiedVendor(false);
+    setVerificationLoading(false);
+    setLoading(false);
   };
 
   return (

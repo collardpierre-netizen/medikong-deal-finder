@@ -1,4 +1,5 @@
 import { Bell, ShoppingCart, Users, Menu, X, LogOut, Shield, Store, Tag } from "lucide-react";
+import { usePriceDisplay } from "@/contexts/PriceDisplayContext";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";

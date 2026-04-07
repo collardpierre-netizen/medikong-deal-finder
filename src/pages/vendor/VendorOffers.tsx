@@ -85,13 +85,236 @@ interface OfferForm {
   vat_rate: string;
   stock_quantity: string;
   moq: string;
+  mov_amount: string;
   delivery_days: string;
   country_code: string;
 }
 
 const emptyForm: OfferForm = {
-  product_id: "", product_name: "", price_excl_vat: "", vat_rate: "21", stock_quantity: "", moq: "1", delivery_days: "3", country_code: "BE",
+  product_id: "", product_name: "", price_excl_vat: "", vat_rate: "21", stock_quantity: "", moq: "1", mov_amount: "0", delivery_days: "3", country_code: "BE",
 };
+
+/* ─── Competitive Intelligence Module ─── */
+function CompetitiveIntel({ productId, currentPrice, vendorId }: { productId: string; currentPrice: number; vendorId: string }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ["competitive-intel", productId],
+    queryFn: async () => {
+      const [{ data: offers }, { data: marketPrices }, { data: externalOffers }] = await Promise.all([
+        supabase.from("offers").select("id, price_excl_vat, price_incl_vat, vendor_id, moq, mov_amount, country_code, is_active, vendors(company_name)")
+          .eq("product_id", productId).eq("is_active", true).order("price_excl_vat"),
+        supabase.from("market_prices").select("prix_pharmacien, prix_grossiste, prix_public, market_price_sources(name, source_type)")
+          .eq("product_id", productId).limit(10),
+        supabase.from("external_offers").select("unit_price, external_vendors(name), stock_status")
+          .eq("product_id", productId).eq("is_active", true).order("unit_price").limit(10),
+      ]);
+      return { offers: offers || [], marketPrices: marketPrices || [], externalOffers: externalOffers || [] };
+    },
+    enabled: !!productId,
+  });
+
+  if (!productId) return null;
+  if (isLoading) return <div className="mt-3 p-3 rounded-lg border flex items-center gap-2 text-[11px]" style={{ borderColor: "#E2E8F0", color: "#8B95A5" }}><Loader2 size={12} className="animate-spin" /> Analyse concurrentielle…</div>;
+
+  const otherOffers = (data?.offers || []).filter((o: any) => o.vendor_id !== vendorId);
+  const allMkPrices = otherOffers.map((o: any) => Number(o.price_excl_vat));
+  const minMk = allMkPrices.length > 0 ? Math.min(...allMkPrices) : null;
+  const maxMk = allMkPrices.length > 0 ? Math.max(...allMkPrices) : null;
+
+  const marketPriceValues = (data?.marketPrices || []).flatMap((mp: any) => [mp.prix_pharmacien, mp.prix_grossiste].filter(Boolean).map(Number));
+  const minMarket = marketPriceValues.length > 0 ? Math.min(...marketPriceValues) : null;
+
+  const extPrices = (data?.externalOffers || []).map((e: any) => Number(e.unit_price));
+  const minExt = extPrices.length > 0 ? Math.min(...extPrices) : null;
+
+  const lowestCompetitor = [minMk, minMarket, minExt].filter(Boolean).length > 0 ? Math.min(...([minMk, minMarket, minExt].filter(Boolean) as number[])) : null;
+  const positionColor = currentPrice > 0 && lowestCompetitor ? (currentPrice <= lowestCompetitor ? "#059669" : currentPrice <= lowestCompetitor * 1.05 ? "#F59E0B" : "#EF4343") : "#8B95A5";
+  const positionLabel = currentPrice > 0 && lowestCompetitor ? (currentPrice <= lowestCompetitor ? "Meilleur prix" : currentPrice <= lowestCompetitor * 1.05 ? "Compétitif" : "Au-dessus du marché") : "—";
+
+  return (
+    <div className="mt-3 border rounded-lg overflow-hidden" style={{ borderColor: "#E2E8F0" }}>
+      <div className="flex items-center gap-2 px-3 py-2" style={{ backgroundColor: "#F8FAFC" }}>
+        <BarChart3 size={14} style={{ color: "#1B5BDA" }} />
+        <span className="text-[12px] font-semibold" style={{ color: "#1D2530" }}>Veille concurrentielle</span>
+        <span className="ml-auto text-[10px] font-medium px-1.5 py-0.5 rounded-full" style={{ backgroundColor: positionColor + "15", color: positionColor }}>
+          {positionLabel}
+        </span>
+      </div>
+      <div className="px-3 py-2 space-y-1.5">
+        {/* MediKong offers */}
+        <div className="flex items-center justify-between text-[11px]">
+          <span style={{ color: "#616B7C" }}>Offres MediKong actives</span>
+          <span className="font-medium" style={{ color: "#1D2530" }}>
+            {otherOffers.length} offre{otherOffers.length !== 1 ? "s" : ""}
+            {minMk !== null && <span className="ml-1" style={{ color: "#8B95A5" }}>({minMk.toFixed(2)}€ – {maxMk!.toFixed(2)}€)</span>}
+          </span>
+        </div>
+        {/* Market prices */}
+        {marketPriceValues.length > 0 && (
+          <div className="flex items-center justify-between text-[11px]">
+            <span style={{ color: "#616B7C" }}>Prix du marché (grossistes)</span>
+            <span className="font-medium" style={{ color: "#1D2530" }}>dès {minMarket!.toFixed(2)}€ HT</span>
+          </div>
+        )}
+        {/* External offers */}
+        {extPrices.length > 0 && (
+          <div className="flex items-center justify-between text-[11px]">
+            <span style={{ color: "#616B7C" }}>Offres externes</span>
+            <span className="font-medium" style={{ color: "#1D2530" }}>{extPrices.length} offre{extPrices.length !== 1 ? "s" : ""} dès {minExt!.toFixed(2)}€</span>
+          </div>
+        )}
+        {/* Position */}
+        {currentPrice > 0 && lowestCompetitor && (
+          <div className="flex items-center justify-between text-[11px] pt-1 border-t" style={{ borderColor: "#E2E8F0" }}>
+            <span style={{ color: "#616B7C" }}>Votre positionnement</span>
+            <span className="font-bold" style={{ color: positionColor }}>
+              {currentPrice <= lowestCompetitor ? (
+                <><TrendingDown size={12} className="inline mr-1" />{((1 - currentPrice / lowestCompetitor) * 100).toFixed(0)}% moins cher</>
+              ) : (
+                <><TrendingUp size={12} className="inline mr-1" />+{((currentPrice / lowestCompetitor - 1) * 100).toFixed(0)}% vs meilleur prix</>
+              )}
+            </span>
+          </div>
+        )}
+        {otherOffers.length === 0 && marketPriceValues.length === 0 && extPrices.length === 0 && (
+          <p className="text-[10px] text-center py-1" style={{ color: "#8B95A5" }}>Aucune donnée concurrentielle disponible pour ce produit.</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ─── Price Tiers Editor ─── */
+interface PriceTier {
+  id?: string;
+  mov_threshold: string;
+  unit_price: string;
+}
+
+function PriceTiersEditor({ offerId, basePrice, vatRate }: { offerId: string | null; basePrice: number; vatRate: number }) {
+  const [expanded, setExpanded] = useState(false);
+  const [tiers, setTiers] = useState<PriceTier[]>([]);
+  const [saving, setSaving] = useState(false);
+  const qc = useQueryClient();
+
+  const { data: existingTiers } = useQuery({
+    queryKey: ["offer-price-tiers", offerId],
+    queryFn: async () => {
+      if (!offerId) return [];
+      const { data } = await supabase.from("offer_price_tiers").select("*").eq("offer_id", offerId).order("tier_index");
+      return data || [];
+    },
+    enabled: !!offerId,
+  });
+
+  useEffect(() => {
+    if (existingTiers && existingTiers.length > 0) {
+      setTiers(existingTiers.map((t: any) => ({ id: t.id, mov_threshold: String(t.mov_threshold), unit_price: String(t.price_excl_vat) })));
+      setExpanded(true);
+    }
+  }, [existingTiers]);
+
+  const addTier = () => setTiers(prev => [...prev, { mov_threshold: "", unit_price: "" }]);
+  const updateTier = (idx: number, key: keyof PriceTier, val: string) =>
+    setTiers(prev => prev.map((t, i) => i === idx ? { ...t, [key]: val } : t));
+  const removeTier = (idx: number) => setTiers(prev => prev.filter((_, i) => i !== idx));
+
+  const saveTiers = async () => {
+    if (!offerId) { toast.info("Sauvegardez l'offre d'abord."); return; }
+    setSaving(true);
+    try {
+      await supabase.from("offer_price_tiers").delete().eq("offer_id", offerId);
+      if (tiers.length > 0) {
+        const payload = tiers.filter(t => t.mov_threshold && t.unit_price).map((t, idx) => {
+          const priceExcl = parseFloat(t.unit_price);
+          return {
+            offer_id: offerId, tier_index: idx, mov_threshold: parseFloat(t.mov_threshold),
+            price_excl_vat: priceExcl, price_incl_vat: Math.round(priceExcl * (1 + vatRate / 100) * 100) / 100,
+            qogita_unit_price: priceExcl, is_active: true,
+          };
+        });
+        if (payload.length > 0) {
+          const { error } = await supabase.from("offer_price_tiers").insert(payload);
+          if (error) throw error;
+        }
+      }
+      qc.invalidateQueries({ queryKey: ["offer-price-tiers", offerId] });
+      toast.success("Paliers de prix sauvegardés");
+    } catch (err: any) { toast.error(err.message); }
+    finally { setSaving(false); }
+  };
+
+  return (
+    <div className="mt-3 border rounded-lg" style={{ borderColor: "#E2E8F0" }}>
+      <button type="button" onClick={() => setExpanded(!expanded)}
+        className="w-full flex items-center gap-2 px-3 py-2.5 text-left hover:bg-[#F8FAFC] rounded-lg transition-colors">
+        <TrendingDown size={14} style={{ color: "#059669" }} />
+        <span className="text-[12px] font-medium" style={{ color: "#1D2530" }}>Prix dégressifs (paliers MOV/MOQ)</span>
+        {tiers.length > 0 && (
+          <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium" style={{ backgroundColor: "#ECFDF5", color: "#059669" }}>
+            {tiers.length} palier{tiers.length > 1 ? "s" : ""}
+          </span>
+        )}
+        <ChevronRight size={12} className={`ml-auto transition-transform ${expanded ? "rotate-90" : ""}`} style={{ color: "#8B95A5" }} />
+      </button>
+      {expanded && (
+        <div className="px-3 pb-3 space-y-2">
+          {tiers.length === 0 && (
+            <p className="text-[11px] py-2 text-center" style={{ color: "#8B95A5" }}>
+              Aucun palier. Le prix de base s'applique quelle que soit la quantité.
+            </p>
+          )}
+          <div className="space-y-1.5">
+            {tiers.map((tier, idx) => {
+              const tierPrice = parseFloat(tier.unit_price) || 0;
+              const discount = basePrice > 0 && tierPrice > 0 ? Math.round((1 - tierPrice / basePrice) * 100) : 0;
+              return (
+                <div key={idx} className="grid grid-cols-[1fr_1fr_auto_auto] gap-2 items-end p-2 rounded-lg" style={{ backgroundColor: "#F8FAFC" }}>
+                  <div>
+                    <label className="text-[9px] block mb-0.5" style={{ color: "#8B95A5" }}>Seuil MOV (€) *</label>
+                    <input type="number" step="1" min="0" value={tier.mov_threshold}
+                      onChange={e => updateTier(idx, "mov_threshold", e.target.value)}
+                      placeholder="Ex: 500"
+                      className="w-full px-1.5 py-1 text-[11px] border rounded bg-white" style={{ borderColor: "#E2E8F0" }} />
+                  </div>
+                  <div>
+                    <label className="text-[9px] block mb-0.5" style={{ color: "#8B95A5" }}>Prix unitaire HT (€) *</label>
+                    <input type="number" step="0.01" min="0" value={tier.unit_price}
+                      onChange={e => updateTier(idx, "unit_price", e.target.value)}
+                      placeholder={basePrice ? `< ${basePrice.toFixed(2)}` : "—"}
+                      className="w-full px-1.5 py-1 text-[11px] border rounded bg-white" style={{ borderColor: "#E2E8F0" }} />
+                  </div>
+                  {discount > 0 && (
+                    <span className="text-[9px] font-bold whitespace-nowrap pb-1" style={{ color: "#059669" }}>-{discount}%</span>
+                  )}
+                  <button type="button" onClick={() => removeTier(idx)} className="p-0.5 hover:bg-[#FEF2F2] rounded pb-1">
+                    <Trash2 size={12} style={{ color: "#EF4343" }} />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+          <div className="flex items-center gap-2 pt-1">
+            <button type="button" onClick={addTier}
+              className="flex items-center gap-1 text-[11px] font-medium px-2 py-1 rounded hover:bg-[#ECFDF5] transition-colors"
+              style={{ color: "#059669" }}>
+              <Plus size={12} /> Ajouter un palier
+            </button>
+            {tiers.length > 0 && offerId && (
+              <button type="button" onClick={saveTiers} disabled={saving}
+                className="flex items-center gap-1 text-[11px] font-medium px-2 py-1 rounded hover:bg-[#EFF6FF] transition-colors"
+                style={{ color: "#1B5BDA" }}>
+                {saving ? <Loader2 size={12} className="animate-spin" /> : null} Sauvegarder les paliers
+              </button>
+            )}
+            {!offerId && tiers.length > 0 && (
+              <span className="text-[10px]" style={{ color: "#F59E0B" }}>⚠ Créez l'offre d'abord</span>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 /* ─── Searchable Select for filters ─── */
 function SearchableSelect({ value, onChange, options, placeholder }: {

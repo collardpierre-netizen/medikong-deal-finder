@@ -77,8 +77,8 @@ export function usePriceAlerts(filters?: {
         `)
         .order("gap_percentage", { ascending: false });
 
-      if (filters?.severity) query = query.eq("severity", filters.severity);
-      if (filters?.status) query = query.eq("status", filters.status);
+      if (filters?.severity) query = query.eq("severity", filters.severity as any);
+      if (filters?.status) query = query.eq("status", filters.status as any);
       if (filters?.minGap) query = query.gte("gap_percentage", filters.minGap);
 
       const { data, error } = await query;

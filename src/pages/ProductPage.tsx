@@ -1293,7 +1293,8 @@ export default function ProductPage() {
                           <thead>
                             <tr className="bg-muted/50 border-b border-border text-left">
                               <th className="px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Source</th>
-                              {mpVisMap.show_pharmacist_price && <th className="px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider text-right">Prix concurrent</th>}
+                              {mpVisMap.show_pharmacist_price && <th className="px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider text-right">Prix pharmacien HTVA</th>}
+                              {mpVisMap.show_wholesale_price !== false && <th className="px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider text-right">Prix grossiste HTVA</th>}
                               {mpVisMap.show_public_price && <th className="px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider text-right">Prix public TTC</th>}
                               <th className="px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider text-center">Stock</th>
                               <th className="px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider text-right">Écart MK</th>
@@ -1305,8 +1306,11 @@ export default function ProductPage() {
                             {marketPriceItems.map((mp: any) => {
                               const mkHT = bestOffer ? bestOffer.unitPriceEur : 0;
                               const pharmPrice = Number(mp.prix_pharmacien || 0);
+                              const grossistePrice = Number(mp.prix_grossiste || 0);
                               const pubPrice = Number(mp.prix_public || 0);
-                              const refPrice = pharmPrice || pubPrice;
+                              const isOnline = mp.market_price_sources?.source_type === "online";
+                              // For online sources, prix_pharmacien is actually TTC — compare using prix_public or skip
+                              const refPrice = isOnline ? (pubPrice || pharmPrice) : (pharmPrice || grossistePrice || pubPrice);
                               const deltaAbs = refPrice && mkHT ? refPrice - mkHT : null;
                               const deltaPct = deltaAbs && refPrice ? Math.round((deltaAbs / refPrice) * 100) : null;
                               const positive = deltaAbs !== null && deltaAbs > 0;
@@ -1324,8 +1328,18 @@ export default function ProductPage() {
                                     </div>
                                   </td>
                                   {mpVisMap.show_pharmacist_price && (
+                                    <td className="px-3 py-2.5 text-right tabular-nums text-foreground">
+                                      {pharmPrice ? (
+                                        <div>
+                                          <span className="font-bold">{formatEur(pharmPrice)} €</span>
+                                          {isOnline && <span className="block text-[9px] text-amber-600 font-medium">TTC</span>}
+                                        </div>
+                                      ) : <span className="text-muted-foreground">—</span>}
+                                    </td>
+                                  )}
+                                  {mpVisMap.show_wholesale_price !== false && (
                                     <td className="px-3 py-2.5 text-right font-bold tabular-nums text-foreground">
-                                      {pharmPrice ? `${formatEur(pharmPrice)} €` : "—"}
+                                      {grossistePrice ? `${formatEur(grossistePrice)} €` : "—"}
                                     </td>
                                   )}
                                   {mpVisMap.show_public_price && (

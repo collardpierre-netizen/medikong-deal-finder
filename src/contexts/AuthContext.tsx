@@ -13,7 +13,7 @@ interface AuthContextType {
   /** Whether account verification status is still loading */
   verificationLoading: boolean;
   signUp: (email: string, password: string, metadata?: Record<string, string>) => Promise<{ error: Error | null }>;
-  signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signIn: (email: string, password: string) => Promise<{ error: Error | null; user?: User | null }>;
   signOut: () => Promise<void>;
 }
 
@@ -110,7 +110,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
     }
 
-    return { error: error as Error | null };
+    return { error: error as Error | null, user: data?.user ?? null };
   };
 
   const signOut = async () => {

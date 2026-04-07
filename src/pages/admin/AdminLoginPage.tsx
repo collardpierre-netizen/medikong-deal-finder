@@ -18,15 +18,14 @@ export default function AdminLoginPage() {
     setError(null);
     setLoading(true);
 
-    const { error: signInError } = await signIn(email, password);
+    const { error: signInError, user: signedInUser } = await signIn(email, password);
     if (signInError) {
       setError("Email ou mot de passe incorrect.");
       setLoading(false);
       return;
     }
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
+    if (!signedInUser) {
       setError("Erreur d'authentification.");
       setLoading(false);
       return;
@@ -35,7 +34,7 @@ export default function AdminLoginPage() {
     const { data: adminData } = await supabase
       .from("admin_users")
       .select("role, is_active")
-      .eq("user_id", user.id)
+      .eq("user_id", signedInUser.id)
       .eq("is_active", true)
       .maybeSingle();
 

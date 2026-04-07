@@ -13,7 +13,7 @@ interface AuthContextType {
   /** Whether account verification status is still loading */
   verificationLoading: boolean;
   signUp: (email: string, password: string, metadata?: Record<string, string>) => Promise<{ error: Error | null }>;
-  signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signIn: (email: string, password: string) => Promise<{ error: Error | null; user?: User | null }>;
   signOut: () => Promise<void>;
 }
 

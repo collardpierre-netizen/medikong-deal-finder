@@ -38,7 +38,7 @@ export default function HomePage() {
   const { country, currentCountry } = useCountry();
   const navigate = useNavigate();
 
-  const { data: countryStats } = useQuery({
+  const { data: countryStats, isLoading: isCountryStatsLoading, isError: isCountryStatsError } = useQuery({
     queryKey: ["homepage-stats", country],
     queryFn: async () => {
       const [productsRes, offersRes, brandsRes, vendorsRes] = await Promise.all([
@@ -47,6 +47,10 @@ export default function HomePage() {
         supabase.from("brands").select("id", { count: "estimated", head: true }).eq("is_active", true).gt("product_count", 0),
         supabase.from("vendors").select("id", { count: "estimated", head: true }).eq("is_active", true).eq("is_verified", true),
       ]);
+
+      const queryError = productsRes.error || offersRes.error || brandsRes.error || vendorsRes.error;
+      if (queryError) throw queryError;
+
       return {
         products: productsRes.count || 0,
         offers: offersRes.count || 0,
@@ -54,6 +58,7 @@ export default function HomePage() {
         vendors: vendorsRes.count || 0,
       };
     },
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: featuredBrands = [] } = useQuery({
@@ -72,6 +77,18 @@ export default function HomePage() {
   });
 
   const countryLabel = currentCountry?.name || "Belgique";
+
+  const renderCountryStat = (value?: number) => {
+    if (isCountryStatsLoading) {
+      return <span className="inline-block h-7 w-14 animate-pulse rounded-md bg-muted align-middle" aria-hidden="true" />;
+    }
+
+    if (isCountryStatsError) {
+      return <span aria-label="Statistique indisponible">—</span>;
+    }
+
+    return <AnimatedCounter target={value || 0} suffix="+" />;
+  };
 
   const valueProps = [
     { icon: <TrendingDown size={22} />, title: t("valueProps.bestPrices"), desc: t("valueProps.bestPricesDesc") },
@@ -192,25 +209,25 @@ export default function HomePage() {
           >
             <div className="px-4 md:px-6 text-center">
               <div className="text-xl md:text-2xl font-bold text-mk-navy">
-                <AnimatedCounter target={countryStats?.vendors || 0} suffix="+" />
+                {renderCountryStat(countryStats?.vendors)}
               </div>
               <div className="text-xs text-mk-sec mt-0.5">{t("stats.suppliers")}</div>
             </div>
             <div className="px-4 md:px-6 text-center">
               <div className="text-xl md:text-2xl font-bold text-mk-navy">
-                <AnimatedCounter target={countryStats?.brands || 0} suffix="+" />
+                {renderCountryStat(countryStats?.brands)}
               </div>
               <div className="text-xs text-mk-sec mt-0.5">Marques</div>
             </div>
             <div className="px-4 md:px-6 text-center">
               <div className="text-xl md:text-2xl font-bold text-mk-navy">
-                <AnimatedCounter target={countryStats?.products || 0} suffix="+" />
+                {renderCountryStat(countryStats?.products)}
               </div>
               <div className="text-xs text-mk-sec mt-0.5">{t("stats.products")} {countryLabel}</div>
             </div>
             <div className="px-4 md:px-6 text-center">
               <div className="text-xl md:text-2xl font-bold text-mk-navy">
-                <AnimatedCounter target={countryStats?.offers || 0} suffix="+" />
+                {renderCountryStat(countryStats?.offers)}
               </div>
               <div className="text-xs text-mk-sec mt-0.5">{t("stats.offers", "Offres")}</div>
             </div>

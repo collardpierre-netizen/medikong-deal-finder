@@ -44,6 +44,7 @@ export default function VendorPublicPage() {
     brands: initialBrand ? [initialBrand] : [],
   });
   const { currentCountry } = useCountry();
+  const { items: cartItems } = useCart();
 
   const { data: vendor, isLoading } = useQuery({
     queryKey: ["vendor-public", slug],

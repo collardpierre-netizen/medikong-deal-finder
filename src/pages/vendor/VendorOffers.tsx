@@ -953,6 +953,7 @@ export default function VendorOffers() {
         vendor_id: vendor.id, product_id: form.product_id,
         price_excl_vat: priceExcl, price_incl_vat: priceIncl, vat_rate: vatRate,
         stock_quantity: parseInt(form.stock_quantity) || 0, moq: parseInt(form.moq) || 1,
+        mov_amount: parseFloat(form.mov_amount) || 0, mov_currency: "EUR",
         delivery_days: parseInt(form.delivery_days) || 3, country_code: form.country_code,
         stock_status: parseInt(form.stock_quantity) > 0 ? "in_stock" as const : "out_of_stock" as const,
         is_active: true,

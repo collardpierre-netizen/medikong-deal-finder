@@ -75,6 +75,59 @@ const emptyForm: OfferForm = {
   product_id: "", product_name: "", price_excl_vat: "", vat_rate: "21", stock_quantity: "", moq: "1", delivery_days: "3", country_code: "BE",
 };
 
+/* ─── Searchable Select for filters ─── */
+function SearchableSelect({ value, onChange, options, placeholder }: {
+  value: string; onChange: (v: string) => void; options: string[]; placeholder: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [q, setQ] = useState("");
+  const ref = useRef<HTMLDivElement>(null);
+  const filtered = useMemo(() => {
+    if (!q) return options;
+    const lower = q.toLowerCase();
+    return options.filter(o => o.toLowerCase().includes(lower));
+  }, [options, q]);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  return (
+    <div ref={ref} className="flex-1 relative">
+      <button type="button" onClick={() => { setOpen(!open); setQ(""); }}
+        className="w-full flex items-center justify-between text-[11px] px-2 py-1 rounded border border-[#E2E8F0] bg-white text-[#616B7C] text-left">
+        <span className={value ? "text-[#1D2530] truncate" : "text-[#8B95A5] truncate"}>{value || placeholder}</span>
+        {value ? (
+          <X size={10} className="shrink-0 ml-1 hover:text-[#EF4343]" onClick={e => { e.stopPropagation(); onChange(""); }} />
+        ) : (
+          <ChevronDown size={10} className="shrink-0 ml-1" />
+        )}
+      </button>
+      {open && (
+        <div className="absolute z-50 mt-0.5 w-full bg-white rounded-lg shadow-lg border border-[#E2E8F0] max-h-[200px] flex flex-col">
+          <input autoFocus value={q} onChange={e => setQ(e.target.value)} placeholder="Rechercher…"
+            className="px-2 py-1.5 text-[11px] border-b border-[#E2E8F0] focus:outline-none" />
+          <div className="overflow-auto flex-1">
+            <button type="button" onClick={() => { onChange(""); setOpen(false); }}
+              className={`w-full text-left px-2 py-1 text-[11px] hover:bg-[#F8FAFC] ${!value ? "font-medium text-[#1B5BDA]" : "text-[#8B95A5]"}`}>
+              {placeholder}
+            </button>
+            {filtered.map(o => (
+              <button key={o} type="button" onClick={() => { onChange(o); setOpen(false); }}
+                className={`w-full text-left px-2 py-1 text-[11px] hover:bg-[#F8FAFC] truncate ${value === o ? "font-medium text-[#1B5BDA]" : "text-[#616B7C]"}`}>
+                {o}
+              </button>
+            ))}
+            {filtered.length === 0 && <p className="text-[10px] text-[#8B95A5] p-2 text-center">Aucun résultat</p>}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ─── Product Picker Component ─── */
 function ProductPicker({ value, productName, onChange }: { value: string; productName: string; onChange: (id: string, name: string) => void }) {
   const [open, setOpen] = useState(false);

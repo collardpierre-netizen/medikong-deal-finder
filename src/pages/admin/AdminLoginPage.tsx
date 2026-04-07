@@ -34,7 +34,7 @@ export default function AdminLoginPage() {
     const { data: adminData } = await supabase
       .from("admin_users")
       .select("role, is_active")
-      .eq("user_id", user.id)
+      .eq("user_id", signedInUser.id)
       .eq("is_active", true)
       .maybeSingle();
 

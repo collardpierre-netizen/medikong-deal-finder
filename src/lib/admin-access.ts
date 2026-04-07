@@ -22,7 +22,7 @@ async function withTimeout<T>(promise: Promise<T>): Promise<T> {
 
 export async function checkIsAdminUser(userId: string): Promise<boolean> {
   const { data, error } = await withTimeout(
-    supabase.rpc("is_admin", { _user_id: userId })
+    (async () => await supabase.rpc("is_admin", { _user_id: userId }))()
   );
 
   if (error) throw error;
@@ -31,12 +31,13 @@ export async function checkIsAdminUser(userId: string): Promise<boolean> {
 
 export async function fetchAdminProfile(userId: string): Promise<{ role: string | null; name: string | null }> {
   const { data, error } = await withTimeout(
-    supabase
-      .from("admin_users")
-      .select("role, name")
-      .eq("user_id", userId)
-      .eq("is_active", true)
-      .maybeSingle()
+    (async () =>
+      await supabase
+        .from("admin_users")
+        .select("role, name")
+        .eq("user_id", userId)
+        .eq("is_active", true)
+        .maybeSingle())()
   );
 
   if (error) throw error;

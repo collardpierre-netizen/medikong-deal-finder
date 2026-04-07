@@ -134,13 +134,13 @@ Deno.serve(async (req) => {
         const gapPct = Math.round((gapAmount / refPrice) * 100 * 10) / 10;
 
         let severity: string;
-        let alertType: string;
+        const alertType = comp.source === "external_offer" ? "external_offer" : "market_price";
         if (gapPct >= thCrit) {
-          severity = "critical"; alertType = "critical_gap";
+          severity = "critical";
         } else if (gapPct >= thWarn) {
-          severity = "warning"; alertType = "significant_gap";
+          severity = "warning";
         } else if (gapPct >= thInfo) {
-          severity = "info"; alertType = "minor_gap";
+          severity = "info";
         } else {
           continue;
         }

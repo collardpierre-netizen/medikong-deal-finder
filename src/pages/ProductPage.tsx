@@ -1312,14 +1312,16 @@ export default function ProductPage() {
                               const positive = deltaAbs !== null && deltaAbs > 0;
 
                               return (
-                                <tr key={mp.id} className="hover:bg-muted/20 transition-colors">
+                                 <tr key={mp.id} className="hover:bg-muted/20 transition-colors">
                                   <td className="px-3 py-2.5">
-                                    <p className="font-medium text-foreground text-[13px]">{mp.market_price_sources?.name}</p>
-                                    {mp.market_price_sources?.source_type && (
-                                      <span className="inline-flex rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium text-secondary-foreground mt-0.5">
-                                        {mp.market_price_sources.source_type}
-                                      </span>
-                                    )}
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-medium text-foreground text-[13px] whitespace-nowrap">{mp.market_price_sources?.name}</span>
+                                      {mp.market_price_sources?.source_type && (
+                                        <span className="inline-flex rounded-full bg-secondary px-1.5 py-0.5 text-[9px] font-medium text-secondary-foreground leading-none">
+                                          {mp.market_price_sources.source_type}
+                                        </span>
+                                      )}
+                                    </div>
                                   </td>
                                   {mpVisMap.show_pharmacist_price && (
                                     <td className="px-3 py-2.5 text-right font-bold tabular-nums text-foreground">
@@ -1338,16 +1340,16 @@ export default function ProductPage() {
                                       </span>
                                     ) : <span className="text-muted-foreground">—</span>}
                                   </td>
-                                  <td className="px-3 py-2.5 text-right">
+                                  <td className="px-3 py-2.5 text-right whitespace-nowrap">
                                     {deltaAbs !== null ? (
-                                      <div className="flex items-center justify-end gap-1.5">
+                                      <span className="inline-flex items-center gap-1">
                                         <span className={`font-bold tabular-nums text-[13px] ${positive ? "text-emerald-600" : "text-destructive"}`}>
-                                          {positive ? "−" : "+"}{formatEur(Math.abs(deltaAbs))} €
+                                          {positive ? "−" : "+"}{formatEur(Math.abs(deltaAbs))}&nbsp;€
                                         </span>
-                                        <span className={`inline-flex rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${positive ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-destructive"}`}>
+                                        <span className={`inline-flex rounded-full px-1.5 py-0.5 text-[10px] font-semibold leading-none ${positive ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-destructive"}`}>
                                           {positive ? "−" : "+"}{Math.abs(deltaPct!)}%
                                         </span>
-                                      </div>
+                                      </span>
                                     ) : <span className="text-muted-foreground">—</span>}
                                   </td>
                                   <td className="px-3 py-2.5 text-right text-[11px] text-muted-foreground whitespace-nowrap">

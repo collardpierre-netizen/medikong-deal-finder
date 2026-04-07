@@ -536,17 +536,21 @@ export default function VendorPublicPage() {
                     <span className="text-[12px] font-medium text-foreground">
                       Panier {vendorName} : <span className="font-bold">{vendorCartTotal.toFixed(2)} €</span> HTVA
                     </span>
-                    {vendorMov > 0 && (
-                      <span className="text-[11px] text-muted-foreground">
+                    {vendorMov > 0 ? (
+                      <span className="text-[11px]">
                         {vendorCartTotal >= vendorMov
-                          ? <span className="text-emerald-600 font-semibold">✓ MOV atteint</span>
-                          : <>Encore <span className="font-bold text-foreground">{(vendorMov - vendorCartTotal).toFixed(2)} €</span> pour le MOV de {vendorMov.toFixed(0)} €</>
+                          ? <span className="text-emerald-600 font-semibold">✓ MOV atteint ({vendorMov.toFixed(0)} €)</span>
+                          : <span className="text-destructive font-medium">
+                              Encore <span className="font-bold">{(vendorMov - vendorCartTotal).toFixed(2)} €</span> pour le MOV de {vendorMov.toFixed(0)} €
+                            </span>
                         }
                       </span>
+                    ) : (
+                      <span className="text-[11px] text-emerald-600 font-semibold">✓ Pas de minimum de commande</span>
                     )}
                   </div>
                   {vendorMov > 0 && (
-                    <div className="w-full h-2 rounded-full bg-muted overflow-hidden">
+                    <div className="w-full h-2.5 rounded-full bg-muted overflow-hidden">
                       <motion.div
                         className={`h-full rounded-full ${vendorCartTotal >= vendorMov ? "bg-emerald-500" : "bg-primary"}`}
                         initial={{ width: 0 }}

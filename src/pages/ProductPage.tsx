@@ -1308,7 +1308,6 @@ export default function ProductPage() {
                               const isOnline = mp.market_price_sources?.source_type === "online";
                               const tvaRate = Number(mp.tva_rate || 21);
 
-                              // For online sources, prix_pharmacien is actually TTC public price
                               const rawPharm = Number(mp.prix_pharmacien || 0);
                               const rawGrossiste = Number(mp.prix_grossiste || 0);
                               const rawPublic = Number(mp.prix_public || 0);
@@ -1317,10 +1316,20 @@ export default function ProductPage() {
                               const pharmHT = isOnline ? 0 : rawPharm;
                               // Grossiste HTVA
                               const grossisteHT = rawGrossiste;
-                              // Public TTC: for online sources use prix_public (it's TTC), for wholesalers also use prix_public
-                              const publicTTC = rawPublic || (isOnline ? rawPharm : 0);
-                              // Public HTVA: derive from TTC
-                              const publicHTVA = publicTTC ? Math.round(publicTTC / (1 + tvaRate / 100) * 100) / 100 : 0;
+
+                              // Online sources: prices are TTC → derive HTVA
+                              // Wholesaler sources (Febelco, CERP…): ALL prices are HTVA → derive TTC
+                              let publicHTVA: number;
+                              let publicTTC: number;
+                              if (isOnline) {
+                                // Online: rawPublic or rawPharm is TTC
+                                publicTTC = rawPublic || rawPharm;
+                                publicHTVA = publicTTC ? Math.round(publicTTC / (1 + tvaRate / 100) * 100) / 100 : 0;
+                              } else {
+                                // Wholesaler: rawPublic is HTVA
+                                publicHTVA = rawPublic;
+                                publicTTC = publicHTVA ? Math.round(publicHTVA * (1 + tvaRate / 100) * 100) / 100 : 0;
+                              }
 
                               // Reference price for écart: use pharmacien HT > grossiste > public HTVA
                               const refPrice = pharmHT || grossisteHT || publicHTVA;

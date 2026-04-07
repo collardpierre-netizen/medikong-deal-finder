@@ -233,7 +233,7 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
           <ol className="list-decimal list-inside space-y-0.5 text-primary/80">
             <li>Téléchargez le template Excel ci-dessous</li>
             <li>Remplissez avec vos références (EAN ou CNK), quantités et prix d'achat actuels</li>
-            <li>Importez le fichier pour voir les offres MediTrade disponibles</li>
+            <li><li>Importez le fichier pour voir les offres MediKong disponibles</li></li>
             <li>Validez les lignes intéressantes pour les ajouter au panier</li>
           </ol>
         </div>

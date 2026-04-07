@@ -1340,16 +1340,16 @@ export default function ProductPage() {
                                       </span>
                                     ) : <span className="text-muted-foreground">—</span>}
                                   </td>
-                                  <td className="px-3 py-2.5 text-right">
+                                  <td className="px-3 py-2.5 text-right whitespace-nowrap">
                                     {deltaAbs !== null ? (
-                                      <div className="flex items-center justify-end gap-1.5">
+                                      <span className="inline-flex items-center gap-1">
                                         <span className={`font-bold tabular-nums text-[13px] ${positive ? "text-emerald-600" : "text-destructive"}`}>
-                                          {positive ? "−" : "+"}{formatEur(Math.abs(deltaAbs))} €
+                                          {positive ? "−" : "+"}{formatEur(Math.abs(deltaAbs))}&nbsp;€
                                         </span>
-                                        <span className={`inline-flex rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${positive ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-destructive"}`}>
+                                        <span className={`inline-flex rounded-full px-1.5 py-0.5 text-[10px] font-semibold leading-none ${positive ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-destructive"}`}>
                                           {positive ? "−" : "+"}{Math.abs(deltaPct!)}%
                                         </span>
-                                      </div>
+                                      </span>
                                     ) : <span className="text-muted-foreground">—</span>}
                                   </td>
                                   <td className="px-3 py-2.5 text-right text-[11px] text-muted-foreground whitespace-nowrap">

@@ -100,10 +100,15 @@ export default function VendorPublicPage() {
         imageUrl: p.image_urls?.[0],
         imageUrls: p.image_urls || [],
         stock: o.stock_quantity > 0,
+        stockQty: Number(o.stock_quantity || 0),
         sellers: 1,
         mk: false,
         categoryName: p.category_name || "",
         categorySlug: p.category_name ? slugify(p.category_name) : "",
+        offerId: o.id as string,
+        vendorId: o.vendor_id as string,
+        priceInclVat: Number(o.price_incl_vat) || 0,
+        deliveryDays: o.delivery_days ?? o.estimated_delivery_days ?? null,
       };
     }), [offers]);
 

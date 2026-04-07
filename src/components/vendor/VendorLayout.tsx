@@ -28,7 +28,7 @@ export default function VendorLayout() {
         return;
       }
 
-      // Check if user is admin — allow access
+      // Check if user is admin — allow access (with or without impersonation)
       const { data: adminUser } = await supabase
         .from("admin_users")
         .select("id")
@@ -36,7 +36,7 @@ export default function VendorLayout() {
         .eq("is_active", true)
         .maybeSingle();
 
-      if (adminUser && impState.isImpersonating) {
+      if (adminUser) {
         setChecking(false);
         return;
       }

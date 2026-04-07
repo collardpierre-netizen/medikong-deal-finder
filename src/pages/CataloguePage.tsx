@@ -28,7 +28,7 @@ export default function CataloguePage() {
   // Brand list for sidebar
   const { data: allBrands = [] } = useCatalogBrands();
 
-  const { data, isLoading } = useCatalogProducts(filters);
+  const { data, isLoading, isError, error, refetch, isFetching } = useCatalogProducts(filters);
   const products = data?.products || [];
   const total = data?.total || 0;
   const [view, setView] = useState<CatalogViewMode>("grid");
@@ -112,6 +112,14 @@ export default function CataloguePage() {
               <div className="flex items-center justify-center py-20">
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
               </div>
+            ) : isError ? (
+              <div className="text-center py-20 space-y-3">
+                <p className="text-lg text-foreground">Le catalogue ne répond pas correctement.</p>
+                <p className="text-sm text-muted-foreground">{error instanceof Error ? error.message : "Réessayez dans un instant."}</p>
+                <button onClick={() => refetch()} className="text-sm text-primary hover:underline">
+                  Réessayer
+                </button>
+              </div>
             ) : products.length === 0 ? (
               <div className="text-center py-20">
                 <p className="text-lg text-muted-foreground">Aucun produit trouvé</p>
@@ -141,6 +149,12 @@ export default function CataloguePage() {
             )}
 
             <CatalogPagination page={filters.page} perPage={filters.perPage} total={total} onPageChange={p => setFilter("page", p)} />
+
+            {isFetching && !isLoading && !isError && (
+              <div className="flex items-center justify-center py-4 text-sm text-muted-foreground gap-2">
+                <Loader2 className="w-4 h-4 animate-spin text-primary" /> Mise à jour du catalogue...
+              </div>
+            )}
           </div>
         </div>
       </div>

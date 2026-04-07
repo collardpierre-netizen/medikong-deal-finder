@@ -33,7 +33,7 @@ export default function SearchResultsPage() {
   const [sort, setSort] = useState<SortOption>("relevance");
   const [filters, setFilters] = useState<SearchFilters>(defaultFilters);
 
-  const { data: rawProducts = [], isLoading } = useSearchProducts(query, sort);
+  const { data: rawProducts = [], isLoading, isError, error, refetch } = useSearchProducts(query, sort);
 
   // Apply client-side filters
   const products = useMemo(() => {
@@ -77,6 +77,16 @@ export default function SearchResultsPage() {
           {isLoading ? (
             <div className="flex items-center justify-center py-20">
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+          ) : isError ? (
+            <div className="text-center py-20">
+              <p className="text-foreground text-lg">La recherche ne répond pas.</p>
+              <p className="text-muted-foreground text-sm mt-2">
+                {error instanceof Error ? error.message : "Réessayez dans un instant."}
+              </p>
+              <button onClick={() => refetch()} className="mt-3 text-sm text-primary hover:underline">
+                Réessayer
+              </button>
             </div>
           ) : products.length === 0 ? (
             <div className="text-center py-20">

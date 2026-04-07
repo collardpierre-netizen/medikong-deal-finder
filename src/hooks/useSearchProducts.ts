@@ -4,6 +4,23 @@ import { isValidProductImage } from "@/lib/image-utils";
 import { useCountry } from "@/contexts/CountryContext";
 import type { Product } from "./useProducts";
 
+const SEARCH_PRODUCT_FIELDS = "id, slug, name, brand_name, gtin, cnk_code, image_url, image_urls, short_description, description, category_name, offer_count, is_in_stock, best_price_excl_vat, best_price_incl_vat, unit_quantity";
+const SEARCH_TIMEOUT_MS = 7000;
+
+async function withSearchTimeout<T>(promise: Promise<T>, timeoutMs = SEARCH_TIMEOUT_MS): Promise<T> {
+  let timeoutId: number | undefined;
+
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeoutId = window.setTimeout(() => reject(new Error("La recherche prend trop de temps.")), timeoutMs);
+  });
+
+  try {
+    return await Promise.race([promise, timeoutPromise]);
+  } finally {
+    if (timeoutId) window.clearTimeout(timeoutId);
+  }
+}
+
 function slugify(text: string): string {
   return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 }
@@ -51,40 +68,71 @@ export function useSearchProducts(query: string, sort: SortOption = "relevance")
 
       if (query.trim()) {
         const trimmed = query.trim();
-        // Main search
-        const { data, error } = await supabase
-          .from("products")
-          .select("*")
-          .eq("is_active", true)
-          .or(`name.ilike.%${trimmed}%,gtin.ilike.%${trimmed}%,cnk_code.ilike.%${trimmed}%,brand_name.ilike.%${trimmed}%`)
-          .limit(100);
+        const { data, error } = await withSearchTimeout(
+          (async () =>
+            await supabase
+              .from("products")
+              .select(SEARCH_PRODUCT_FIELDS)
+              .eq("is_active", true)
+              .or(`name.ilike.%${trimmed}%,gtin.ilike.%${trimmed}%,cnk_code.ilike.%${trimmed}%,brand_name.ilike.%${trimmed}%`)
+              .limit(60))()
+        );
         if (error) throw error;
         productsData = data || [];
 
-        // Also search market codes if few results
-        if (productsData.length < 10) {
-          const { data: mcResults } = await supabase
-            .from("product_market_codes")
-            .select("product_id")
-            .ilike("code_value", `%${trimmed}%`)
-            .limit(20);
+        if (trimmed.length >= 3 && productsData.length < 10) {
+          const { data: mcResults } = await withSearchTimeout(
+            (async () =>
+              await supabase
+                .from("product_market_codes")
+                .select("product_id")
+                .ilike("code_value", `%${trimmed}%`)
+                .limit(20))(),
+            2500
+          ).catch(() => ({ data: [] as any[] }));
+
           if (mcResults?.length) {
             const extraIds = mcResults.map((r: any) => r.product_id).filter((id: string) => !productsData.some((p: any) => p.id === id));
             if (extraIds.length > 0) {
-              const { data: extraProducts } = await supabase.from("products").select("*").eq("is_active", true).in("id", extraIds);
+              const { data: extraProducts } = await withSearchTimeout(
+                (async () =>
+                  await supabase
+                    .from("products")
+                    .select(SEARCH_PRODUCT_FIELDS)
+                    .eq("is_active", true)
+                    .in("id", extraIds))(),
+                3000
+              );
               if (extraProducts) productsData = [...productsData, ...extraProducts];
             }
           }
         }
       } else {
-        const { data, error } = await supabase.from("products").select("*").eq("is_active", true).order("created_at", { ascending: true }).limit(100);
+        const { data, error } = await withSearchTimeout(
+          (async () =>
+            await supabase
+              .from("products")
+              .select(SEARCH_PRODUCT_FIELDS)
+              .eq("is_active", true)
+              .order("created_at", { ascending: false })
+              .limit(60))()
+        );
         if (error) throw error;
         productsData = data || [];
       }
 
       const productIds = productsData.map((p: any) => p.id);
       const { data: offersData } = productIds.length > 0
-        ? await supabase.from("offers").select("*").eq("is_active", true).eq("country_code", country).in("product_id", productIds)
+        ? await withSearchTimeout(
+            (async () =>
+              await supabase
+                .from("offers")
+                .select("product_id, price_excl_vat, stock_quantity, is_active")
+                .eq("is_active", true)
+                .eq("country_code", country)
+                .in("product_id", productIds))(),
+            3000
+          ).then((result) => result.data)
         : { data: [] as any[] };
 
       let results = productsData.map((row: any) => mapSearchResult(row, offersData || []));
@@ -95,5 +143,6 @@ export function useSearchProducts(query: string, sort: SortOption = "relevance")
 
       return results;
     },
+    retry: false,
   });
 }

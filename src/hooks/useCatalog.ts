@@ -4,6 +4,72 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCountry } from "@/contexts/CountryContext";
 import { useCallback, useMemo } from "react";
 
+const PRODUCT_SELECT_FIELDS = "id, slug, name, name_fr, brand_name, brand_id, category_id, category_name, gtin, cnk_code, image_url, image_urls, short_description, is_promotion, promotion_label, best_price_excl_vat, best_price_incl_vat, offer_count, total_stock, is_in_stock, created_at";
+const CATALOG_QUERY_TIMEOUT_MS = 8000;
+const CATALOG_COUNT_TIMEOUT_MS = 4000;
+const CATEGORY_COUNT_TIMEOUT_MS = 3000;
+
+async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message = "La requête a expiré."): Promise<T> {
+  let timeoutId: number | undefined;
+
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeoutId = window.setTimeout(() => reject(new Error(message)), timeoutMs);
+  });
+
+  try {
+    return await Promise.race([promise, timeoutPromise]);
+  } finally {
+    if (timeoutId) window.clearTimeout(timeoutId);
+  }
+}
+
+function applyCatalogProductFilters(
+  query: any,
+  filters: CatalogFilters,
+  options: {
+    categoryIds: string[] | null;
+    resolvedBrandIds: string[] | null;
+    manufacturerIds: string[] | null;
+    effectiveSearch?: string;
+  }
+) {
+  let next = query;
+
+  if (options.categoryIds?.length) next = next.in("category_id", options.categoryIds);
+  if (options.resolvedBrandIds?.length) next = next.in("brand_id", options.resolvedBrandIds);
+  if (options.manufacturerIds?.length) next = next.in("manufacturer_id", options.manufacturerIds);
+
+  if (filters.priceMin !== undefined) next = next.gte("best_price_excl_vat", filters.priceMin);
+  if (filters.priceMax !== undefined) next = next.lte("best_price_excl_vat", filters.priceMax);
+  if (filters.inStock) next = next.eq("is_in_stock", true);
+
+  if (options.effectiveSearch) {
+    const pattern = `%${options.effectiveSearch}%`;
+    next = next.or(`name.ilike.${pattern},gtin.ilike.${pattern},cnk_code.ilike.${pattern},brand_name.ilike.${pattern}`);
+  }
+
+  return next;
+}
+
+function applyCatalogSort(query: any, sort: string) {
+  switch (sort) {
+    case "price_asc":
+      return query.order("best_price_excl_vat", { ascending: true, nullsFirst: false });
+    case "price_desc":
+      return query.order("best_price_excl_vat", { ascending: false });
+    case "name_asc":
+      return query.order("name", { ascending: true });
+    case "name_desc":
+      return query.order("name", { ascending: false });
+    case "newest":
+      return query.order("created_at", { ascending: false });
+    case "stock_desc":
+      return query.order("total_stock", { ascending: false });
+    default:
+      return query.order("offer_count", { ascending: false });
+  }
+}
+
 export interface CatalogFilters {
   category?: string;
   brands?: string[];
@@ -180,53 +246,58 @@ export function useCatalogProducts(filters: CatalogFilters) {
         filters.priceMax !== undefined
       );
 
-      let query = supabase
-        .from("products")
-        .select(
-          "id, slug, name, name_fr, brand_name, brand_id, category_id, category_name, gtin, cnk_code, image_url, image_urls, short_description, is_promotion, promotion_label, best_price_excl_vat, best_price_incl_vat, offer_count, total_stock, is_in_stock, created_at",
-          { count: hasFilters ? "exact" : "estimated" }
-        )
-        .eq("is_active", true);
-
-      if (categoryIds) query = query.in("category_id", categoryIds);
-      if (resolvedBrandIds?.length) query = query.in("brand_id", resolvedBrandIds);
-      if (mfIds?.length) query = query.in("manufacturer_id", mfIds);
-
-      if (filters.priceMin !== undefined) query = query.gte("best_price_excl_vat", filters.priceMin);
-      if (filters.priceMax !== undefined) query = query.lte("best_price_excl_vat", filters.priceMax);
-      if (filters.inStock) query = query.eq("is_in_stock", true);
-
-      if (effectiveSearch) {
-        const pattern = `%${effectiveSearch}%`;
-        query = query.or(`name.ilike.${pattern},gtin.ilike.${pattern},cnk_code.ilike.${pattern},brand_name.ilike.${pattern}`);
-      }
-
-      switch (filters.sort) {
-        case "price_asc": query = query.order("best_price_excl_vat", { ascending: true, nullsFirst: false }); break;
-        case "price_desc": query = query.order("best_price_excl_vat", { ascending: false }); break;
-        case "name_asc": query = query.order("name", { ascending: true }); break;
-        case "name_desc": query = query.order("name", { ascending: false }); break;
-        case "newest": query = query.order("created_at", { ascending: false }); break;
-        case "stock_desc": query = query.order("total_stock", { ascending: false }); break;
-        default: query = query.order("offer_count", { ascending: false }); break;
-      }
-
       const offset = (filters.page - 1) * filters.perPage;
       const isDefaultCatalogueView = !effectiveSearch && !resolvedBrandIds?.length && !categoryIds && !mfIds?.length && !filters.inStock && filters.priceMin === undefined && filters.priceMax === undefined;
+      const filterContext = {
+        categoryIds,
+        resolvedBrandIds,
+        manufacturerIds: mfIds,
+        effectiveSearch,
+      };
+
+      const buildProductQuery = () =>
+        applyCatalogProductFilters(
+          supabase.from("products").select(PRODUCT_SELECT_FIELDS).eq("is_active", true),
+          filters,
+          filterContext
+        );
+
+      const buildCountQuery = () =>
+        applyCatalogProductFilters(
+          supabase.from("products").select("id", { count: hasFilters ? "estimated" : "estimated" }).eq("is_active", true),
+          filters,
+          filterContext
+        );
+
+      const countPromise = withTimeout(
+        (async () => await buildCountQuery().range(0, 0))(),
+        CATALOG_COUNT_TIMEOUT_MS,
+        "Le comptage des produits est trop lent."
+      ).catch(() => null);
 
       if (filters.sort === "relevance" && isDefaultCatalogueView && filters.page <= 2) {
         try {
-          const { data: featured } = await supabase
-            .from("cms_featured_categories")
-            .select("category_id")
-            .eq("is_active", true)
-            .order("sort_order", { ascending: true });
+          const { data: featured } = await withTimeout(
+            (async () =>
+              await supabase
+                .from("cms_featured_categories")
+                .select("category_id")
+                .eq("is_active", true)
+                .order("sort_order", { ascending: true }))(),
+            CATEGORY_COUNT_TIMEOUT_MS,
+            "Le chargement des catégories vedettes est trop lent."
+          );
 
           if (featured && featured.length > 0) {
             const featuredIds = new Set(featured.map((f) => f.category_id));
             const featuredOrder = featured.map((f) => f.category_id);
-            const fetchSize = Math.max(filters.perPage * 3, 72);
-            const { data: rawData, error: rawError, count: rawCount } = await query.range(0, fetchSize - 1);
+            const fetchSize = Math.max(filters.perPage * 2, 48);
+            const boostedQuery = applyCatalogSort(buildProductQuery(), filters.sort);
+            const { data: rawData, error: rawError } = await withTimeout(
+              (async () => await boostedQuery.range(0, fetchSize - 1))(),
+              CATALOG_QUERY_TIMEOUT_MS,
+              "Le chargement du catalogue est trop lent."
+            );
             if (rawError) throw rawError;
 
             const boosted = [...(rawData || [])].sort((a: any, b: any) => {
@@ -240,9 +311,11 @@ export function useCatalogProducts(filters: CatalogFilters) {
               return 0;
             });
 
+            const countResult = await countPromise;
+
             return {
               products: boosted.slice(offset, offset + filters.perPage) as CatalogProduct[],
-              total: rawCount || 0,
+              total: countResult?.count ?? boosted.length,
             };
           }
         } catch {
@@ -250,12 +323,22 @@ export function useCatalogProducts(filters: CatalogFilters) {
         }
       }
 
-      const { data, error, count } = await query.range(offset, offset + filters.perPage - 1);
+      const query = applyCatalogSort(buildProductQuery(), filters.sort);
+      const { data, error } = await withTimeout(
+        (async () => await query.range(offset, offset + filters.perPage - 1))(),
+        CATALOG_QUERY_TIMEOUT_MS,
+        "Le chargement du catalogue est trop lent."
+      );
       if (error) throw error;
-      return { products: (data || []) as CatalogProduct[], total: count || 0 };
+
+      const countResult = await countPromise;
+      const total = countResult?.count ?? (data?.length === filters.perPage ? offset + data.length + 1 : offset + (data?.length || 0));
+
+      return { products: (data || []) as CatalogProduct[], total };
     },
     placeholderData: (previousData) => previousData,
     staleTime: 2 * 60 * 1000,
+    retry: false,
   });
 }
 
@@ -263,19 +346,24 @@ export function useCatalogCategories() {
   return useQuery({
     queryKey: ["catalog-categories"],
     queryFn: async () => {
-      // Fetch categories and product counts in parallel
       const [catResult, countResult] = await Promise.all([
-        supabase
-          .from("categories")
-          .select("id, name, name_fr, slug, parent_id")
-          .eq("is_active", true)
-          .order("display_order", { ascending: true }),
-        supabase.rpc("count_products_per_category"),
+        (async () =>
+          await supabase
+            .from("categories")
+            .select("id, name, name_fr, slug, parent_id")
+            .eq("is_active", true)
+            .order("display_order", { ascending: true }))(),
+        withTimeout(
+          (async () => await supabase.rpc("count_products_per_category"))(),
+          CATEGORY_COUNT_TIMEOUT_MS,
+          "Le comptage des catégories est trop lent."
+        ).catch(() => null),
       ]);
+
       if (catResult.error) throw catResult.error;
 
       const countMap = new Map<string, number>();
-      if (countResult.data) {
+      if (countResult?.data) {
         for (const row of countResult.data as any[]) {
           countMap.set(row.category_id, Number(row.product_count));
         }
@@ -297,9 +385,10 @@ export function useCatalogCategories() {
         });
         const totalCount = r.product_count + l2Children.reduce((s, c) => s + c.product_count, 0);
         return { ...r, product_count: totalCount, children: l2Children };
-      }).filter(r => r.product_count > 0) as CategoryNode[];
+      }) as CategoryNode[];
     },
     staleTime: 10 * 60 * 1000,
+    retry: false,
   });
 }
 
@@ -320,6 +409,7 @@ export function useCatalogBrands(categorySlug?: string) {
       return (data || []) as BrandCount[];
     },
     staleTime: 5 * 60 * 1000,
+    retry: false,
   });
 }
 
@@ -342,6 +432,7 @@ export function useBrandSearch(search: string) {
     },
     enabled: trimmed.length >= 2,
     staleTime: 30_000,
+    retry: false,
   });
 }
 
@@ -360,5 +451,6 @@ export function useCatalogManufacturers() {
       return (data || []) as ManufacturerCount[];
     },
     staleTime: 5 * 60 * 1000,
+    retry: false,
   });
 }

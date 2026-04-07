@@ -669,6 +669,31 @@ export default function VendorOffers() {
   const fileRef = useRef<HTMLInputElement>(null);
   const { importFile, importing } = useOfferImport(vendor?.id);
 
+  // Fetch all profile rules for export
+  const { data: allProfileRules = [] } = useQuery({
+    queryKey: ["all-offer-profile-rules", vendor?.id],
+    queryFn: async () => {
+      const offerIds = offers.map((o: any) => o.id);
+      if (offerIds.length === 0) return [];
+      const { data } = await supabase
+        .from("offer_profile_rules")
+        .select("*")
+        .in("offer_id", offerIds);
+      return data || [];
+    },
+    enabled: !!vendor?.id && offers.length > 0,
+  });
+
+  const profileRulesMap = useMemo(() => {
+    const m = new Map<string, any[]>();
+    for (const r of allProfileRules) {
+      const arr = m.get(r.offer_id) || [];
+      arr.push(r);
+      m.set(r.offer_id, arr);
+    }
+    return m;
+  }, [allProfileRules]);
+
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<OfferForm>(emptyForm);

@@ -1293,9 +1293,10 @@ export default function ProductPage() {
                           <thead>
                             <tr className="bg-muted/50 border-b border-border text-left">
                               <th className="px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Source</th>
-                              {mpVisMap.show_pharmacist_price && <th className="px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider text-right">Prix HTVA</th>}
+                              {mpVisMap.show_pharmacist_price && <th className="px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider text-right">Prix pharmacien</th>}
                               {mpVisMap.show_wholesale_price !== false && <th className="px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider text-right">Grossiste HTVA</th>}
-                              {mpVisMap.show_public_price && <th className="px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider text-right">Public TTC</th>}
+                              {mpVisMap.show_public_price && <th className="px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider text-right">Public HTVA</th>}
+                              <th className="px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider text-right">Public TTC</th>
                               <th className="px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider text-center">Stock</th>
                               <th className="px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider text-right">Écart MK</th>
                               <th className="px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider text-right">Relevé</th>
@@ -1305,14 +1306,25 @@ export default function ProductPage() {
                           <tbody className="divide-y divide-border">
                             {marketPriceItems.map((mp: any) => {
                               const mkHT = bestOffer ? bestOffer.unitPriceEur : 0;
-                              const pharmPrice = Number(mp.prix_pharmacien || 0);
-                              const grossistePrice = Number(mp.prix_grossiste || 0);
-                              const pubPrice = Number(mp.prix_public || 0);
-                              const tvaRate = Number(mp.tva_rate || 21);
                               const isOnline = mp.market_price_sources?.source_type === "online";
-                              // Convert online TTC prices to HTVA for fair comparison
-                              const pharmHT = isOnline && pharmPrice ? Math.round(pharmPrice / (1 + tvaRate / 100) * 100) / 100 : pharmPrice;
-                              const refPrice = pharmHT || grossistePrice || (pubPrice ? Math.round(pubPrice / (1 + tvaRate / 100) * 100) / 100 : 0);
+                              const tvaRate = Number(mp.tva_rate || 21);
+
+                              // For online sources, prix_pharmacien is actually TTC public price
+                              const rawPharm = Number(mp.prix_pharmacien || 0);
+                              const rawGrossiste = Number(mp.prix_grossiste || 0);
+                              const rawPublic = Number(mp.prix_public || 0);
+
+                              // Pharmacien HTVA: only for non-online sources
+                              const pharmHT = isOnline ? 0 : rawPharm;
+                              // Grossiste HTVA
+                              const grossisteHT = rawGrossiste;
+                              // Public TTC: for online sources use rawPharm (it's TTC), for wholesalers use prix_public
+                              const publicTTC = isOnline ? rawPharm : rawPublic;
+                              // Public HTVA: derive from TTC
+                              const publicHTVA = publicTTC ? Math.round(publicTTC / (1 + tvaRate / 100) * 100) / 100 : 0;
+
+                              // Reference price for écart: use pharmacien HT > grossiste > public HTVA
+                              const refPrice = pharmHT || grossisteHT || publicHTVA;
                               const deltaAbs = refPrice && mkHT ? refPrice - mkHT : null;
                               const deltaPct = deltaAbs && refPrice ? Math.round((deltaAbs / refPrice) * 100) : null;
                               const positive = deltaAbs !== null && deltaAbs > 0;
@@ -1329,14 +1341,17 @@ export default function ProductPage() {
                                   )}
                                   {mpVisMap.show_wholesale_price !== false && (
                                     <td className="px-3 py-2.5 text-right font-bold tabular-nums text-foreground whitespace-nowrap">
-                                      {grossistePrice ? `${formatEur(grossistePrice)} €` : <span className="text-muted-foreground font-normal">—</span>}
+                                      {grossisteHT ? `${formatEur(grossisteHT)} €` : <span className="text-muted-foreground font-normal">—</span>}
                                     </td>
                                   )}
                                   {mpVisMap.show_public_price && (
-                                    <td className="px-3 py-2.5 text-right font-bold tabular-nums text-foreground whitespace-nowrap">
-                                      {pubPrice ? `${formatEur(pubPrice)} €` : <span className="text-muted-foreground font-normal">—</span>}
+                                    <td className="px-3 py-2.5 text-right tabular-nums text-foreground whitespace-nowrap">
+                                      {publicHTVA ? `${formatEur(publicHTVA)} €` : <span className="text-muted-foreground font-normal">—</span>}
                                     </td>
                                   )}
+                                  <td className="px-3 py-2.5 text-right tabular-nums text-foreground whitespace-nowrap">
+                                    {publicTTC ? `${formatEur(publicTTC)} €` : <span className="text-muted-foreground font-normal">—</span>}
+                                  </td>
                                   <td className="px-3 py-2.5 text-center">
                                     {mp.stock_source ? (
                                       <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium ${mp.stock_source.toLowerCase().includes("rupture") || mp.stock_source === "0" ? "bg-destructive/10 text-destructive" : "bg-emerald-100 text-emerald-700"}`}>

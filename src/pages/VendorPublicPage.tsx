@@ -390,6 +390,55 @@ export default function VendorPublicPage() {
           </div>
         </div>
       </div>
+
+      {/* ── Sticky MOV progress bar ── */}
+      <AnimatePresence>
+        {vendorCartTotal > 0 && (
+          <motion.div
+            initial={{ y: 80, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 80, opacity: 0 }}
+            className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background/95 backdrop-blur-sm shadow-lg"
+          >
+            <div className="mk-container py-3">
+              <div className="flex items-center gap-4">
+                <Package size={18} className="text-primary shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[12px] font-medium text-foreground">
+                      Panier {vendorName} : <span className="font-bold">{vendorCartTotal.toFixed(2)} €</span> HTVA
+                    </span>
+                    {vendorMov > 0 && (
+                      <span className="text-[11px] text-muted-foreground">
+                        {vendorCartTotal >= vendorMov
+                          ? <span className="text-emerald-600 font-semibold">✓ MOV atteint</span>
+                          : <>Encore <span className="font-bold text-foreground">{(vendorMov - vendorCartTotal).toFixed(2)} €</span> pour le MOV de {vendorMov.toFixed(0)} €</>
+                        }
+                      </span>
+                    )}
+                  </div>
+                  {vendorMov > 0 && (
+                    <div className="w-full h-2 rounded-full bg-muted overflow-hidden">
+                      <motion.div
+                        className={`h-full rounded-full ${vendorCartTotal >= vendorMov ? "bg-emerald-500" : "bg-primary"}`}
+                        initial={{ width: 0 }}
+                        animate={{ width: `${Math.min((vendorCartTotal / vendorMov) * 100, 100)}%` }}
+                        transition={{ duration: 0.5, ease: "easeOut" }}
+                      />
+                    </div>
+                  )}
+                </div>
+                <Link
+                  to="/panier"
+                  className="shrink-0 bg-primary text-primary-foreground text-[12px] font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity"
+                >
+                  Voir le panier →
+                </Link>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </Layout>
   );
 }

@@ -3465,6 +3465,7 @@ export type Database = {
       fulfillment_status:
         | "pending"
         | "processing"
+        | "forwarded"
         | "shipped"
         | "delivered"
         | "cancelled"
@@ -3656,6 +3657,7 @@ export const Constants = {
       fulfillment_status: [
         "pending",
         "processing",
+        "forwarded",
         "shipped",
         "delivered",
         "cancelled",

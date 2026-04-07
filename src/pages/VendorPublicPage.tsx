@@ -3,7 +3,8 @@ import { useParams, Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ProductCard } from "@/components/shared/ProductCard";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { useCart } from "@/hooks/useCart";
 import {
   Store, MapPin, Phone, Mail, Shield, Clock,
   Star, Package, Truck, Grid, List,

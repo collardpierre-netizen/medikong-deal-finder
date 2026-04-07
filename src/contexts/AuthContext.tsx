@@ -41,6 +41,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const fetchVerification = async () => {
       try {
+        // Check if user is admin — admins bypass buyer verification
+        const { data: adminRow } = await supabase
+          .from("admin_users")
+          .select("id")
+          .eq("user_id", user.id)
+          .eq("is_active", true)
+          .maybeSingle();
+
+        const isAdmin = !!adminRow;
+
         // Check buyer (customer) verification
         const { data: customer } = await supabase
           .from("customers")
@@ -56,7 +66,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .maybeSingle();
 
         if (!cancelled) {
-          setIsVerifiedBuyer(customer?.is_verified ?? false);
+          setIsVerifiedBuyer(isAdmin || (customer?.is_verified ?? false));
           setIsVerifiedVendor(
             vendor?.is_verified === true && vendor?.validation_status === "approved"
           );

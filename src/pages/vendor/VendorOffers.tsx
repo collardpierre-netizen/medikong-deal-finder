@@ -808,7 +808,7 @@ export default function VendorOffers() {
               onChange={e => { if (e.target.files?.[0]) { importFile(e.target.files[0]); e.target.value = ""; } }} />
           </label>
           {offers.length > 0 && (
-            <button onClick={() => exportOffers(offers)}
+            <button onClick={() => exportOffers(offers, profileRulesMap)}
               className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-medium border transition-colors hover:bg-[#F8FAFC]"
               style={{ borderColor: "#E2E8F0", color: "#616B7C" }}>
               <Download size={14} /> Exporter

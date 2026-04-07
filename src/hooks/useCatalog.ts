@@ -101,7 +101,39 @@ function parseFiltersFromParams(params: URLSearchParams): CatalogFilters {
     search: params.get("q") || undefined,
   };
 }
-...
+
+export function useCatalogFilters() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const filters = useMemo(() => parseFiltersFromParams(searchParams), [searchParams]);
+
+  const setFilter = useCallback((key: string, value: string | string[] | number | undefined | null) => {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      if (value === undefined || value === null || value === "" || (Array.isArray(value) && value.length === 0)) {
+        next.delete(key);
+      } else if (Array.isArray(value)) {
+        next.set(key, value.join(","));
+      } else {
+        next.set(key, String(value));
+      }
+      if (key !== "page") next.set("page", "1");
+      return next;
+    }, { replace: true });
+  }, [setSearchParams]);
+
+  const clearAll = useCallback(() => {
+    setSearchParams({}, { replace: true });
+  }, [setSearchParams]);
+
+  return { filters, setFilter, clearAll, searchParams, setSearchParams };
+}
+
+export function useCatalogProducts(filters: CatalogFilters) {
+  const { country } = useCountry();
+
+  return useQuery({
+    queryKey: ["catalog-products", filters, country],
+    queryFn: async () => {
       const [categoryIds, explicitBrandIds, mfIds] = await Promise.all([
         filters.category
           ? supabase.from("categories").select("id").eq("slug", filters.category).maybeSingle().then(({ data: cat }) => {
@@ -122,7 +154,7 @@ function parseFiltersFromParams(params: URLSearchParams): CatalogFilters {
       let resolvedBrandIds = explicitBrandIds;
       let effectiveSearch = filters.search?.trim() || undefined;
 
-      if (effectiveSearch && !resolvedBrandIds && !categoryIds && !mfIds) {
+      if (effectiveSearch && !resolvedBrandIds?.length && !categoryIds && !mfIds?.length) {
         const { data: brandMatches } = await supabase
           .from("brands")
           .select("id, name, slug, product_count")
@@ -157,8 +189,8 @@ function parseFiltersFromParams(params: URLSearchParams): CatalogFilters {
         .eq("is_active", true);
 
       if (categoryIds) query = query.in("category_id", categoryIds);
-      if (resolvedBrandIds) query = query.in("brand_id", resolvedBrandIds);
-      if (mfIds) query = query.in("manufacturer_id", mfIds);
+      if (resolvedBrandIds?.length) query = query.in("brand_id", resolvedBrandIds);
+      if (mfIds?.length) query = query.in("manufacturer_id", mfIds);
 
       if (filters.priceMin !== undefined) query = query.gte("best_price_excl_vat", filters.priceMin);
       if (filters.priceMax !== undefined) query = query.lte("best_price_excl_vat", filters.priceMax);
@@ -180,9 +212,8 @@ function parseFiltersFromParams(params: URLSearchParams): CatalogFilters {
       }
 
       const offset = (filters.page - 1) * filters.perPage;
-      const isDefaultCatalogueView = !effectiveSearch && !resolvedBrandIds && !categoryIds && !mfIds && !filters.inStock && filters.priceMin === undefined && filters.priceMax === undefined;
+      const isDefaultCatalogueView = !effectiveSearch && !resolvedBrandIds?.length && !categoryIds && !mfIds?.length && !filters.inStock && filters.priceMin === undefined && filters.priceMax === undefined;
 
-      // Only boost featured categories on the default catalogue view.
       if (filters.sort === "relevance" && isDefaultCatalogueView && filters.page <= 2) {
         try {
           const { data: featured } = await supabase

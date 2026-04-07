@@ -1330,35 +1330,35 @@ export default function ProductPage() {
 
                               return (
                                  <tr key={mp.id} className="hover:bg-muted/20 transition-colors">
-                                  <td className="px-3 py-2.5">
-                                    <span className="inline-flex items-center gap-1.5">
-                                      <span className="font-medium text-foreground text-[13px] whitespace-nowrap">{mp.market_price_sources?.name}</span>
+                                  <td className="px-2 py-2">
+                                    <span className="inline-flex items-center gap-1">
+                                      <span className="font-medium text-foreground text-[12px] whitespace-nowrap">{mp.market_price_sources?.name}</span>
                                       {mp.product_url && (
                                         <a href={mp.product_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80">
-                                          <ExternalLink size={12} />
+                                          <ExternalLink size={11} />
                                         </a>
                                       )}
                                     </span>
                                   </td>
                                   {mpVisMap.show_pharmacist_price && (
-                                    <td className="px-3 py-2.5 text-right font-bold tabular-nums text-foreground whitespace-nowrap">
+                                    <td className="px-2 py-2 text-right font-bold tabular-nums text-foreground text-[12px] whitespace-nowrap">
                                       {pharmHT ? `${formatEur(pharmHT)} €` : <span className="text-muted-foreground font-normal">—</span>}
                                     </td>
                                   )}
                                   {mpVisMap.show_wholesale_price !== false && (
-                                    <td className="px-3 py-2.5 text-right font-bold tabular-nums text-foreground whitespace-nowrap">
+                                    <td className="px-2 py-2 text-right font-bold tabular-nums text-foreground text-[12px] whitespace-nowrap">
                                       {grossisteHT ? `${formatEur(grossisteHT)} €` : <span className="text-muted-foreground font-normal">—</span>}
                                     </td>
                                   )}
                                   {mpVisMap.show_public_price && (
-                                    <td className="px-3 py-2.5 text-right tabular-nums text-foreground whitespace-nowrap">
+                                    <td className="px-2 py-2 text-right tabular-nums text-foreground text-[12px] whitespace-nowrap">
                                       {publicHTVA ? `${formatEur(publicHTVA)} €` : <span className="text-muted-foreground font-normal">—</span>}
                                     </td>
                                   )}
-                                  <td className="px-3 py-2.5 text-right tabular-nums text-foreground whitespace-nowrap">
+                                  <td className="px-2 py-2 text-right tabular-nums text-foreground text-[12px] whitespace-nowrap">
                                     {publicTTC ? `${formatEur(publicTTC)} €` : <span className="text-muted-foreground font-normal">—</span>}
                                   </td>
-                                  <td className="px-2 py-2.5 text-center">
+                                  <td className="px-1 py-2 text-center">
                                     {mp.stock_source ? (() => {
                                       const inStock = !mp.stock_source.toLowerCase().includes("rupture") && mp.stock_source !== "0";
                                       const qty = mp.stock_source.match(/\d+/)?.[0];
@@ -1368,22 +1368,22 @@ export default function ProductPage() {
                                           {qty && <span className="text-muted-foreground">({qty})</span>}
                                         </span>
                                       );
-                                    })() : <span className="text-muted-foreground">—</span>}
+                                    })() : <span className="text-muted-foreground text-[11px]">—</span>}
                                   </td>
-                                  <td className="px-3 py-2.5 text-right whitespace-nowrap">
+                                  <td className="px-2 py-2 text-right whitespace-nowrap">
                                     {deltaAbs !== null ? (
-                                      <span className="inline-flex items-center gap-1">
-                                        <span className={`font-bold tabular-nums text-[13px] ${positive ? "text-emerald-600" : "text-destructive"}`}>
+                                      <span className="inline-flex items-center gap-0.5">
+                                        <span className={`font-bold tabular-nums text-[12px] ${positive ? "text-emerald-600" : "text-destructive"}`}>
                                           {positive ? "−" : "+"}{formatEur(Math.abs(deltaAbs))}&nbsp;€
                                         </span>
-                                        <span className={`inline-flex rounded-full px-1.5 py-0.5 text-[10px] font-semibold leading-none ${positive ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-destructive"}`}>
+                                        <span className={`inline-flex rounded-full px-1 py-0.5 text-[9px] font-semibold leading-none ${positive ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-destructive"}`}>
                                           {positive ? "−" : "+"}{Math.abs(deltaPct!)}%
                                         </span>
                                       </span>
                                     ) : <span className="text-muted-foreground">—</span>}
                                   </td>
-                                  <td className="px-2 py-2.5 text-right text-[11px] text-muted-foreground whitespace-nowrap">
-                                    {mp.imported_at ? new Date(mp.imported_at).toLocaleDateString("fr-FR") : "—"}
+                                  <td className="px-2 py-2 text-right text-[10px] text-muted-foreground whitespace-nowrap">
+                                    {mp.imported_at ? new Date(mp.imported_at).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" }) : "—"}
                                   </td>
                                 </tr>
                               );

@@ -8,9 +8,9 @@ import { useCart } from "@/hooks/useCart";
 import {
   Store, MapPin, Phone, Mail, Shield, Clock,
   Star, Package, Truck, Grid, List,
-  CheckCircle2, Building2, Search, X,
+  CheckCircle2, Building2, Search, X, Plus, Minus, ShoppingCart,
 } from "lucide-react";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { getVendorPublicName } from "@/lib/vendor-display";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";

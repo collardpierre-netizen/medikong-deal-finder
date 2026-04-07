@@ -42,6 +42,8 @@ function slugify(text: string): string {
 
 function mapDbProduct(row: any, offersData?: any[]): Product {
   const productOffers = offersData?.filter((o: any) => o.product_id === row.id) || [];
+  const validImageUrls = Array.isArray(row.image_urls) ? row.image_urls.filter(isValidProductImage) : [];
+  const fallbackImageUrl = isValidProductImage(row.image_url) ? row.image_url : undefined;
   const lowestPrice = productOffers.length > 0
     ? Math.min(...productOffers.map((o: any) => Number(o.price_excl_vat)))
     : Number(row.best_price_excl_vat) || 0;
@@ -71,8 +73,8 @@ function mapDbProduct(row: any, offersData?: any[]): Product {
     category: row.category_name || undefined,
     color: ["blue", "teal", "green", "amber", "rose", "purple", "orange", "cyan"][row.name.length % 8],
     iconName: "Package",
-    imageUrl: Array.isArray(row.image_urls) ? row.image_urls.filter(isValidProductImage)[0] || undefined : undefined,
-    imageUrls: Array.isArray(row.image_urls) ? row.image_urls.filter(isValidProductImage) : [],
+    imageUrl: validImageUrls[0] || fallbackImageUrl,
+    imageUrls: validImageUrls.length > 0 ? validImageUrls : (fallbackImageUrl ? [fallbackImageUrl] : []),
     descriptionShort: row.short_description || undefined,
     brandId: row.brand_id || undefined,
     brandSlug: row.brands?.slug || (row.brand_name ? slugify(row.brand_name) : undefined),

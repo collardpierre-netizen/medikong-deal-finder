@@ -45,7 +45,7 @@ export function CatalogSidebar({ filters, setFilter, clearAll, resultCategoryIds
     return [...brands, ...extras];
   }, [brands, serverBrands]);
 
-  // Auto-suggest: top 12 matching brands for dropdown
+  // Auto-suggest: matching brands for dropdown – show up to 20, prioritise prefix matches
   const brandSuggestions = useMemo(() => {
     if (!brandSearch) return [];
     const q = brandSearch.toLowerCase();
@@ -62,7 +62,7 @@ export function CatalogSidebar({ filters, setFilter, clearAll, resultCategoryIds
         if (!aStarts && bStarts) return 1;
         return b.product_count - a.product_count;
       })
-      .slice(0, 12);
+      .slice(0, 20);
   }, [mergedBrands, brandSearch]);
 
   const mfSuggestions = useMemo(() => {

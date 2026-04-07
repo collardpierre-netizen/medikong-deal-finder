@@ -1312,14 +1312,16 @@ export default function ProductPage() {
                               const positive = deltaAbs !== null && deltaAbs > 0;
 
                               return (
-                                <tr key={mp.id} className="hover:bg-muted/20 transition-colors">
+                                 <tr key={mp.id} className="hover:bg-muted/20 transition-colors">
                                   <td className="px-3 py-2.5">
-                                    <p className="font-medium text-foreground text-[13px]">{mp.market_price_sources?.name}</p>
-                                    {mp.market_price_sources?.source_type && (
-                                      <span className="inline-flex rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium text-secondary-foreground mt-0.5">
-                                        {mp.market_price_sources.source_type}
-                                      </span>
-                                    )}
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-medium text-foreground text-[13px] whitespace-nowrap">{mp.market_price_sources?.name}</span>
+                                      {mp.market_price_sources?.source_type && (
+                                        <span className="inline-flex rounded-full bg-secondary px-1.5 py-0.5 text-[9px] font-medium text-secondary-foreground leading-none">
+                                          {mp.market_price_sources.source_type}
+                                        </span>
+                                      )}
+                                    </div>
                                   </td>
                                   {mpVisMap.show_pharmacist_price && (
                                     <td className="px-3 py-2.5 text-right font-bold tabular-nums text-foreground">

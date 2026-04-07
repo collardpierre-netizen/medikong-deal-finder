@@ -335,7 +335,7 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
               <div className="border rounded-lg overflow-hidden">
                 <div className="max-h-[340px] overflow-y-auto">
                   <table className="w-full text-sm">
-                    <thead className="bg-muted/60 sticky top-0 z-10">
+                    <thead className="bg-background sticky top-0 z-10 shadow-[0_1px_0_0_hsl(var(--border))]">
                       <tr>
                         <th className="p-2 w-8"></th>
                         <th className="p-2 text-left font-medium text-muted-foreground text-xs">Produit</th>

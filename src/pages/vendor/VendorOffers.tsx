@@ -275,12 +275,31 @@ function useOfferImport(vendorId: string | undefined) {
 
       let created = 0, skipped = 0;
       const offers: any[] = [];
+      const profileRulesQueue: { ean: string; cnk: string; rule: any }[] = [];
 
       for (const row of rows) {
         const ean = String(row["EAN"] || row["ean"] || row["GTIN"] || row["gtin"] || "");
         const cnk = String(row["CNK"] || row["cnk"] || "");
         const productId = allIds[ean] || allIds[cnk];
         if (!productId) { skipped++; continue; }
+
+        const profileType = String(row["Profil"] || row["profil"] || row["profile_type"] || "").trim();
+
+        // If profile column is filled, this is a profile rule row
+        if (profileType) {
+          profileRulesQueue.push({
+            ean, cnk,
+            rule: {
+              profile_type: profileType,
+              country_code: row["Profil_Pays"] || row["profil_pays"] || null,
+              custom_price_excl_vat: row["Prix_Profil_HT"] || row["prix_profil_ht"] ? parseFloat(String(row["Prix_Profil_HT"] || row["prix_profil_ht"])) : null,
+              discount_percentage: parseFloat(String(row["Remise_%"] || row["remise_%"] || row["remise_pct"] || "0")) || 0,
+              moq: parseInt(String(row["MOQ_Profil"] || row["moq_profil"] || "1")) || 1,
+              mov_amount: parseFloat(String(row["MOV_Profil"] || row["mov_profil"] || "0")) || 0,
+            },
+          });
+          continue;
+        }
 
         const priceExcl = parseFloat(row["Prix HT"] || row["prix_ht"] || row["price_excl_vat"] || "0");
         const vatRate = parseFloat(row["TVA"] || row["tva"] || row["vat_rate"] || "21");
@@ -301,16 +320,46 @@ function useOfferImport(vendorId: string | undefined) {
           country_code: row["Pays"] || row["pays"] || row["country_code"] || "BE",
           stock_status: stock > 0 ? "in_stock" : "out_of_stock",
           is_active: true,
+          _ean: ean,
+          _cnk: cnk,
         });
         created++;
       }
 
+      // Insert offers and collect IDs
+      const offerIdsByKey: Record<string, string> = {};
       if (offers.length > 0) {
-        // Batch insert in groups of 100
         for (let i = 0; i < offers.length; i += 100) {
-          const batch = offers.slice(i, i + 100);
-          const { error } = await supabase.from("offers").insert(batch);
+          const batch = offers.slice(i, i + 100).map(({ _ean, _cnk, ...rest }) => rest);
+          const { data: inserted, error } = await supabase.from("offers").insert(batch).select("id, product_id");
           if (error) throw error;
+          // Map product_id back to offer_id for profile rules
+          if (inserted) {
+            const batchSource = offers.slice(i, i + 100);
+            inserted.forEach((ins: any, idx: number) => {
+              const src = batchSource[idx];
+              if (src._ean) offerIdsByKey[src._ean] = ins.id;
+              if (src._cnk) offerIdsByKey[src._cnk] = ins.id;
+            });
+          }
+        }
+      }
+
+      // Insert profile rules
+      if (profileRulesQueue.length > 0) {
+        const profileInserts = profileRulesQueue
+          .map(({ ean, cnk, rule }) => {
+            const offerId = offerIdsByKey[ean] || offerIdsByKey[cnk];
+            if (!offerId) return null;
+            return { offer_id: offerId, ...rule };
+          })
+          .filter(Boolean);
+
+        if (profileInserts.length > 0) {
+          for (let i = 0; i < profileInserts.length; i += 100) {
+            const batch = profileInserts.slice(i, i + 100);
+            await supabase.from("offer_profile_rules").insert(batch);
+          }
         }
       }
 
@@ -327,32 +376,104 @@ function useOfferImport(vendorId: string | undefined) {
 }
 
 function downloadTemplate() {
-  const headers = ["EAN", "CNK", "Prix HT", "TVA", "Stock", "MOQ", "Délai", "Pays"];
-  const example = ["3401560100013", "1234567", "12.50", "21", "100", "1", "3", "BE"];
-  const ws = XLSX.utils.aoa_to_sheet([headers, example]);
-  ws["!cols"] = headers.map(() => ({ wch: 16 }));
+  const ws = XLSX.utils.aoa_to_sheet([
+    [
+      "EAN", "CNK", "Prix HT", "TVA", "Stock", "MOQ", "Délai", "Pays",
+      "Profil", "Profil_Pays", "Prix_Profil_HT", "Remise_%", "MOQ_Profil", "MOV_Profil",
+    ],
+    ["3401560100013", "1234567", "12.50", "21", "100", "1", "3", "BE", "", "", "", "", "", ""],
+    ["3401560100013", "", "", "", "", "", "", "", "pharmacy", "BE", "11.00", "", "5", "150"],
+    ["3401560100013", "", "", "", "", "", "", "", "hospital", "", "", "10", "10", "500"],
+  ]);
+  ws["!cols"] = Array(14).fill(null).map(() => ({ wch: 16 }));
+
+  // Instructions sheet
+  const instrRows = [
+    ["Guide d'import des offres MediKong"],
+    [""],
+    ["Colonnes principales (obligatoires pour créer une offre) :"],
+    ["EAN", "Code-barres EAN/GTIN du produit"],
+    ["CNK", "Code CNK belge (alternative au EAN)"],
+    ["Prix HT", "Prix hors taxes en euros"],
+    ["TVA", "Taux de TVA (ex: 21)"],
+    ["Stock", "Quantité en stock"],
+    ["MOQ", "Quantité minimum de commande"],
+    ["Délai", "Délai de livraison en jours"],
+    ["Pays", "Code pays (BE, FR, NL, LU, DE)"],
+    [""],
+    ["Colonnes profil (optionnelles, pour prix différenciés) :"],
+    ["Profil", "Type de profil : pharmacy, hospital, dentist, nursing, veterinary, ehpad, wholesale"],
+    ["Profil_Pays", "Code pays pour cette règle (vide = tous les pays)"],
+    ["Prix_Profil_HT", "Prix HT fixe pour ce profil (prioritaire sur Remise_%)"],
+    ["Remise_%", "% de remise sur le prix de base (utilisé si pas de prix fixe)"],
+    ["MOQ_Profil", "MOQ spécifique pour ce profil"],
+    ["MOV_Profil", "Montant minimum de commande en € pour ce profil"],
+    [""],
+    ["Règle d'import :"],
+    ["- Une ligne avec EAN + Prix HT = offre principale"],
+    ["- Une ligne avec le même EAN + Profil renseigné = règle profil pour cette offre"],
+    ["- Vous pouvez avoir plusieurs lignes profil pour le même EAN"],
+  ];
+  const wsInstr = XLSX.utils.aoa_to_sheet(instrRows);
+  wsInstr["!cols"] = [{ wch: 20 }, { wch: 60 }];
+
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Offres");
+  XLSX.utils.book_append_sheet(wb, wsInstr, "Instructions");
   XLSX.writeFile(wb, "template_offres_medikong.xlsx");
 }
 
-function exportOffers(offers: any[]) {
+function exportOffers(offers: any[], profileRulesMap?: Map<string, any[]>) {
   if (offers.length === 0) { toast.error("Aucune offre à exporter"); return; }
-  const rows = offers.map((o: any) => ({
-    "Produit": (o.products as any)?.name || "",
-    "EAN": (o.products as any)?.gtin || "",
-    "CNK": (o.products as any)?.cnk_code || "",
-    "Marque": (o.products as any)?.brand_name || "",
-    "Catégorie": (o.products as any)?.category_name || "",
-    "Prix HT": o.price_excl_vat,
-    "Prix TTC": o.price_incl_vat,
-    "TVA": o.vat_rate,
-    "Stock": o.stock_quantity,
-    "MOQ": o.moq,
-    "Délai": o.delivery_days,
-    "Pays": o.country_code,
-    "Statut": o.is_active ? "Active" : "Inactive",
-  }));
+  const rows: any[] = [];
+  for (const o of offers) {
+    rows.push({
+      "Produit": (o.products as any)?.name || "",
+      "EAN": (o.products as any)?.gtin || "",
+      "CNK": (o.products as any)?.cnk_code || "",
+      "Marque": (o.products as any)?.brand_name || "",
+      "Catégorie": (o.products as any)?.category_name || "",
+      "Prix HT": o.price_excl_vat,
+      "Prix TTC": o.price_incl_vat,
+      "TVA": o.vat_rate,
+      "Stock": o.stock_quantity,
+      "MOQ": o.moq,
+      "Délai": o.delivery_days,
+      "Pays": o.country_code,
+      "Statut": o.is_active ? "Active" : "Inactive",
+      "Profil": "",
+      "Profil_Pays": "",
+      "Prix_Profil_HT": "",
+      "Remise_%": "",
+      "MOQ_Profil": "",
+      "MOV_Profil": "",
+    });
+    // Add profile rules as sub-rows
+    const rules = profileRulesMap?.get(o.id) || [];
+    for (const r of rules) {
+      rows.push({
+        "Produit": "",
+        "EAN": (o.products as any)?.gtin || "",
+        "CNK": (o.products as any)?.cnk_code || "",
+        "Marque": "",
+        "Catégorie": "",
+        "Prix HT": "",
+        "Prix TTC": "",
+        "TVA": "",
+        "Stock": "",
+        "MOQ": "",
+        "Délai": "",
+        "Pays": "",
+        "Statut": "",
+        "Profil": r.profile_type,
+        "Profil_Pays": r.country_code || "",
+        "Prix_Profil_HT": r.custom_price_excl_vat ?? "",
+        "Remise_%": r.discount_percentage ?? "",
+        "MOQ_Profil": r.moq ?? "",
+        "MOV_Profil": r.mov_amount ?? "",
+      });
+    }
+  }
   const ws = XLSX.utils.json_to_sheet(rows);
   ws["!cols"] = Object.keys(rows[0]).map(() => ({ wch: 18 }));
   const wb = XLSX.utils.book_new();
@@ -548,6 +669,31 @@ export default function VendorOffers() {
   const fileRef = useRef<HTMLInputElement>(null);
   const { importFile, importing } = useOfferImport(vendor?.id);
 
+  // Fetch all profile rules for export
+  const { data: allProfileRules = [] } = useQuery({
+    queryKey: ["all-offer-profile-rules", vendor?.id],
+    queryFn: async () => {
+      const offerIds = offers.map((o: any) => o.id);
+      if (offerIds.length === 0) return [];
+      const { data } = await supabase
+        .from("offer_profile_rules")
+        .select("*")
+        .in("offer_id", offerIds);
+      return data || [];
+    },
+    enabled: !!vendor?.id && offers.length > 0,
+  });
+
+  const profileRulesMap = useMemo(() => {
+    const m = new Map<string, any[]>();
+    for (const r of allProfileRules) {
+      const arr = m.get(r.offer_id) || [];
+      arr.push(r);
+      m.set(r.offer_id, arr);
+    }
+    return m;
+  }, [allProfileRules]);
+
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<OfferForm>(emptyForm);
@@ -662,7 +808,7 @@ export default function VendorOffers() {
               onChange={e => { if (e.target.files?.[0]) { importFile(e.target.files[0]); e.target.value = ""; } }} />
           </label>
           {offers.length > 0 && (
-            <button onClick={() => exportOffers(offers)}
+            <button onClick={() => exportOffers(offers, profileRulesMap)}
               className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-medium border transition-colors hover:bg-[#F8FAFC]"
               style={{ borderColor: "#E2E8F0", color: "#616B7C" }}>
               <Download size={14} /> Exporter

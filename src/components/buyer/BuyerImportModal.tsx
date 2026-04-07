@@ -35,60 +35,125 @@ type Props = {
 
 type ResultFilter = "all" | "found" | "savings" | "more_expensive" | "unavailable";
 
+type ImportPayloadLine = {
+  index: number;
+  ean: string | null;
+  cnk: string | null;
+  quantity: number;
+  currentPrice: number;
+};
+
 const CHUNK_SIZE = 80;
-const CHUNK_TIMEOUT_MS = 12000;
-const MIN_CHUNK_SIZE = 20;
 
 const waitForUiPaint = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
-
-const normalizeMatchedRow = (row: any) => ({
-  lineIndex: Number(row.line_index || 0),
-  result: {
-    ean: row.ean ?? undefined,
-    cnk: row.cnk ?? undefined,
-    quantity: Number(row.quantity || 1),
-    currentPrice: Number(row.current_price || 0),
-    productId: row.product_id ?? undefined,
-    productName: row.product_name ?? undefined,
-    productImage: row.product_image ?? undefined,
-    mediPrice: row.medi_price != null ? Number(row.medi_price) : undefined,
-    offerId: row.offer_id ?? undefined,
-    vendorName: row.vendor_name ?? undefined,
-    status: row.status === "found" ? "found" : "unavailable",
-    saving: row.saving != null ? Math.max(0, Number(row.saving)) : 0,
-  } satisfies MatchedLine,
-});
 
 const calcDeltaPct = (currentPrice: number, mediPrice?: number): number | null => {
   if (!mediPrice || currentPrice <= 0) return null;
   return ((mediPrice - currentPrice) / currentPrice) * 100;
 };
 
-const rpcMatchImportLines = async (payload: Array<{ index: number; ean: string | null; cnk: string | null; quantity: number; currentPrice: number }>) => {
-  const controller = new AbortController();
-  const timeoutId = window.setTimeout(() => controller.abort(new Error("timeout")), CHUNK_TIMEOUT_MS);
+const fetchBestOffers = async (productIds: string[]) => {
+  const offers: any[] = [];
+  let from = 0;
 
-  try {
-    const { data, error } = await (supabase as any)
-      .rpc("match_import_lines", { _lines: payload })
-      .abortSignal(controller.signal);
+  while (true) {
+    const { data, error } = await supabase
+      .from("offers")
+      .select("id, product_id, price_excl_vat, vendors(name, company_name)")
+      .in("product_id", productIds)
+      .eq("is_active", true)
+      .order("product_id", { ascending: true })
+      .order("price_excl_vat", { ascending: true })
+      .range(from, from + 999);
 
     if (error) throw error;
-    return (data || []) as any[];
-  } catch (error) {
-    if (payload.length > MIN_CHUNK_SIZE) {
-      const middle = Math.ceil(payload.length / 2);
-      const [left, right] = await Promise.all([
-        rpcMatchImportLines(payload.slice(0, middle)),
-        rpcMatchImportLines(payload.slice(middle)),
-      ]);
-      return [...left, ...right];
-    }
 
-    throw error;
-  } finally {
-    window.clearTimeout(timeoutId);
+    const batch = data || [];
+    offers.push(...batch);
+
+    if (batch.length < 1000) break;
+    from += 1000;
   }
+
+  const bestOfferByProduct = new Map<string, any>();
+  for (const offer of offers) {
+    if (offer.product_id && !bestOfferByProduct.has(offer.product_id)) {
+      bestOfferByProduct.set(offer.product_id, offer);
+    }
+  }
+
+  return bestOfferByProduct;
+};
+
+const queryMatchImportLines = async (payload: ImportPayloadLine[]) => {
+  const eans = [...new Set(payload.map((line) => line.ean).filter(Boolean))] as string[];
+  const cnks = [...new Set(payload.map((line) => line.cnk).filter(Boolean))] as string[];
+
+  const [productsByEanResult, productsByCnkResult] = await Promise.all([
+    eans.length > 0
+      ? supabase
+          .from("products")
+          .select("id, name, image_url, gtin, cnk_code")
+          .in("gtin", eans)
+          .eq("is_active", true)
+      : Promise.resolve({ data: [], error: null }),
+    cnks.length > 0
+      ? supabase
+          .from("products")
+          .select("id, name, image_url, gtin, cnk_code")
+          .in("cnk_code", cnks)
+          .eq("is_active", true)
+      : Promise.resolve({ data: [], error: null }),
+  ]);
+
+  if (productsByEanResult.error) throw productsByEanResult.error;
+  if (productsByCnkResult.error) throw productsByCnkResult.error;
+
+  const productByEan = new Map<string, any>();
+  const productByCnk = new Map<string, any>();
+
+  for (const product of [...(productsByEanResult.data || []), ...(productsByCnkResult.data || [])]) {
+    if (product.gtin && !productByEan.has(product.gtin)) productByEan.set(product.gtin, product);
+    if (product.cnk_code && !productByCnk.has(product.cnk_code)) productByCnk.set(product.cnk_code, product);
+  }
+
+  const productIds = [
+    ...new Set(
+      payload
+        .map((line) => {
+          const product = (line.ean ? productByEan.get(line.ean) : undefined) || (line.cnk ? productByCnk.get(line.cnk) : undefined);
+          return product?.id;
+        })
+        .filter(Boolean),
+    ),
+  ] as string[];
+
+  const bestOfferByProduct = productIds.length > 0 ? await fetchBestOffers(productIds) : new Map<string, any>();
+
+  return payload.map(({ index, ean, cnk, quantity, currentPrice }) => {
+    const product = (ean ? productByEan.get(ean) : undefined) || (cnk ? productByCnk.get(cnk) : undefined);
+    const offer = product ? bestOfferByProduct.get(product.id) : undefined;
+    const mediPrice = offer?.price_excl_vat != null ? Number(offer.price_excl_vat) : undefined;
+    const vendor = offer?.vendors as { company_name?: string | null; name?: string | null } | null | undefined;
+
+    return {
+      lineIndex: index,
+      result: {
+        ean: ean ?? undefined,
+        cnk: cnk ?? undefined,
+        quantity,
+        currentPrice,
+        productId: product?.id,
+        productName: product?.name ?? undefined,
+        productImage: product?.image_url ?? undefined,
+        mediPrice,
+        offerId: offer?.id ?? undefined,
+        vendorName: vendor?.company_name || vendor?.name || "—",
+        status: product && offer ? "found" : "unavailable",
+        saving: mediPrice != null && currentPrice > mediPrice ? Math.max(0, currentPrice - mediPrice) : 0,
+      } satisfies MatchedLine,
+    };
+  });
 };
 
 export function BuyerImportModal({ open, onOpenChange }: Props) {
@@ -153,7 +218,7 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
       setProgress({ current: 0, total: lines.length, startTime: Date.now() });
       await waitForUiPaint();
 
-      const payload = lines.map((line, index) => ({
+      const payload: ImportPayloadLine[] = lines.map((line, index) => ({
         index,
         ean: line.ean ?? null,
         cnk: line.cnk ?? null,
@@ -164,10 +229,9 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
       const matchedByIndex: MatchedLine[] = new Array(lines.length);
 
       if (lines.length <= CHUNK_SIZE) {
-        const data = await rpcMatchImportLines(payload);
+        const data = await queryMatchImportLines(payload);
         data.forEach((row) => {
-          const { lineIndex, result } = normalizeMatchedRow(row);
-          matchedByIndex[lineIndex] = result;
+          matchedByIndex[row.lineIndex] = row.result;
         });
         setProgress((p) => ({ ...p, current: lines.length }));
       } else {
@@ -179,10 +243,9 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
         let processedLines = 0;
 
         for (const chunk of chunks) {
-          const data = await rpcMatchImportLines(chunk);
+          const data = await queryMatchImportLines(chunk);
           data.forEach((row) => {
-              const { lineIndex, result } = normalizeMatchedRow(row);
-              matchedByIndex[lineIndex] = result;
+              matchedByIndex[row.lineIndex] = row.result;
           });
           processedLines += chunk.length;
           setProgress((p) => ({ ...p, current: Math.min(processedLines, lines.length) }));

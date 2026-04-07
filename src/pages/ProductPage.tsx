@@ -1292,14 +1292,14 @@ export default function ProductPage() {
                         <table className="w-full text-sm">
                           <thead>
                             <tr className="bg-muted/50 border-b border-border text-left">
-                              <th className="px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Source</th>
-                              {mpVisMap.show_pharmacist_price && <th className="px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider text-right">Prix pharmacien</th>}
-                              {mpVisMap.show_wholesale_price !== false && <th className="px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider text-right">Grossiste HTVA</th>}
-                              {mpVisMap.show_public_price && <th className="px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider text-right">Public HTVA</th>}
-                              <th className="px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider text-right">Public TTC</th>
-                              <th className="px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider text-center">Stock</th>
-                              <th className="px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider text-right">Écart MK</th>
-                              <th className="px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider text-right">Relevé</th>
+                              <th className="px-2 py-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Source</th>
+                              {mpVisMap.show_pharmacist_price && <th className="px-2 py-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider text-right">Pharmacien</th>}
+                              {mpVisMap.show_wholesale_price !== false && <th className="px-2 py-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider text-right">Grossiste</th>}
+                              {mpVisMap.show_public_price && <th className="px-2 py-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider text-right">Pub. HTVA</th>}
+                              <th className="px-2 py-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider text-right">Pub. TTC</th>
+                              <th className="px-1 py-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider text-center">Stock</th>
+                              <th className="px-2 py-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider text-right">Écart MK</th>
+                              <th className="px-2 py-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider text-right">Relevé</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-border">

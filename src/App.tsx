@@ -137,6 +137,7 @@ const AdminTranslations = lazyWithRetry(() => import("./pages/admin/AdminTransla
 const AdminPriceAlerts = lazyWithRetry(() => import("./pages/admin/AdminPriceAlerts"), "AdminPriceAlerts");
 const AdminPriceAlertDetail = lazyWithRetry(() => import("./pages/admin/AdminPriceAlertDetail"), "AdminPriceAlertDetail");
 const AdminPriceAlertSettings = lazyWithRetry(() => import("./pages/admin/AdminPriceAlertSettings"), "AdminPriceAlertSettings");
+const AdminFlashDeals = lazyWithRetry(() => import("./pages/admin/AdminFlashDeals"), "AdminFlashDeals");
 
 // Vendor pages
 const VendorLoginPage = lazyWithRetry(() => import("./pages/vendor/VendorLoginPage"), "VendorLoginPage");

@@ -65,6 +65,28 @@ export interface ManufacturerCount {
   product_count: number;
 }
 
+function normalizeSearchText(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9]+/g, " ")
+    .toLowerCase()
+    .trim();
+}
+
+function pickImplicitBrandMatch(query: string, brands: BrandCount[]) {
+  const normalizedQuery = normalizeSearchText(query);
+  if (!normalizedQuery) return null;
+
+  const exactMatch = brands.find((brand) => normalizeSearchText(brand.name) === normalizedQuery);
+  if (exactMatch) return exactMatch;
+
+  const prefixMatches = brands.filter((brand) => normalizeSearchText(brand.name).startsWith(normalizedQuery));
+  if (prefixMatches.length === 1) return prefixMatches[0];
+
+  return null;
+}
+
 function parseFiltersFromParams(params: URLSearchParams): CatalogFilters {
   return {
     category: params.get("category") || undefined,
@@ -79,42 +101,8 @@ function parseFiltersFromParams(params: URLSearchParams): CatalogFilters {
     search: params.get("q") || undefined,
   };
 }
-
-export function useCatalogFilters() {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const filters = useMemo(() => parseFiltersFromParams(searchParams), [searchParams]);
-
-  const setFilter = useCallback((key: string, value: string | string[] | number | undefined | null) => {
-    setSearchParams(prev => {
-      const next = new URLSearchParams(prev);
-      if (value === undefined || value === null || value === "" || (Array.isArray(value) && value.length === 0)) {
-        next.delete(key);
-      } else if (Array.isArray(value)) {
-        next.set(key, value.join(","));
-      } else {
-        next.set(key, String(value));
-      }
-      // Reset to page 1 on filter change (except page itself)
-      if (key !== "page") next.set("page", "1");
-      return next;
-    }, { replace: true });
-  }, [setSearchParams]);
-
-  const clearAll = useCallback(() => {
-    setSearchParams({}, { replace: true });
-  }, [setSearchParams]);
-
-  return { filters, setFilter, clearAll, searchParams, setSearchParams };
-}
-
-export function useCatalogProducts(filters: CatalogFilters) {
-  const { country } = useCountry();
-
-  return useQuery({
-    queryKey: ["catalog-products", filters, country],
-    queryFn: async () => {
-      // Resolve filter IDs in parallel to avoid sequential waits
-      const [categoryIds, brandIds, mfIds] = await Promise.all([
+...
+      const [categoryIds, explicitBrandIds, mfIds] = await Promise.all([
         filters.category
           ? supabase.from("categories").select("id").eq("slug", filters.category).maybeSingle().then(({ data: cat }) => {
               if (!cat) return null;
@@ -131,11 +119,30 @@ export function useCatalogProducts(filters: CatalogFilters) {
           : Promise.resolve(null),
       ]);
 
+      let resolvedBrandIds = explicitBrandIds;
+      let effectiveSearch = filters.search?.trim() || undefined;
+
+      if (effectiveSearch && !resolvedBrandIds && !categoryIds && !mfIds) {
+        const { data: brandMatches } = await supabase
+          .from("brands")
+          .select("id, name, slug, product_count")
+          .eq("is_active", true)
+          .ilike("name", `%${effectiveSearch}%`)
+          .order("product_count", { ascending: false })
+          .limit(10);
+
+        const implicitBrand = pickImplicitBrandMatch(effectiveSearch, (brandMatches || []) as BrandCount[]);
+        if (implicitBrand) {
+          resolvedBrandIds = [implicitBrand.id];
+          effectiveSearch = undefined;
+        }
+      }
+
       const hasFilters = !!(
-        filters.search ||
-        filters.brands?.length ||
-        filters.category ||
-        filters.manufacturers?.length ||
+        effectiveSearch ||
+        resolvedBrandIds?.length ||
+        categoryIds ||
+        mfIds?.length ||
         filters.inStock ||
         filters.priceMin !== undefined ||
         filters.priceMax !== undefined
@@ -150,15 +157,15 @@ export function useCatalogProducts(filters: CatalogFilters) {
         .eq("is_active", true);
 
       if (categoryIds) query = query.in("category_id", categoryIds);
-      if (brandIds) query = query.in("brand_id", brandIds);
+      if (resolvedBrandIds) query = query.in("brand_id", resolvedBrandIds);
       if (mfIds) query = query.in("manufacturer_id", mfIds);
 
       if (filters.priceMin !== undefined) query = query.gte("best_price_excl_vat", filters.priceMin);
       if (filters.priceMax !== undefined) query = query.lte("best_price_excl_vat", filters.priceMax);
       if (filters.inStock) query = query.eq("is_in_stock", true);
 
-      if (filters.search) {
-        const pattern = `%${filters.search}%`;
+      if (effectiveSearch) {
+        const pattern = `%${effectiveSearch}%`;
         query = query.or(`name.ilike.${pattern},gtin.ilike.${pattern},cnk_code.ilike.${pattern},brand_name.ilike.${pattern}`);
       }
 
@@ -173,10 +180,10 @@ export function useCatalogProducts(filters: CatalogFilters) {
       }
 
       const offset = (filters.page - 1) * filters.perPage;
+      const isDefaultCatalogueView = !effectiveSearch && !resolvedBrandIds && !categoryIds && !mfIds && !filters.inStock && filters.priceMin === undefined && filters.priceMax === undefined;
 
-      // Only boost featured categories near the top of the catalogue.
-      // Fetching 200 full cards on every request was making the page feel empty/slow.
-      if (filters.sort === "relevance" && !filters.category && filters.page <= 2) {
+      // Only boost featured categories on the default catalogue view.
+      if (filters.sort === "relevance" && isDefaultCatalogueView && filters.page <= 2) {
         try {
           const { data: featured } = await supabase
             .from("cms_featured_categories")

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { checkIsAdminUser, fetchAdminProfile } from "@/lib/admin-access";
 
 export type AdminRole = "super_admin" | "admin" | "moderateur" | "support" | "comptable";
 
@@ -27,26 +27,50 @@ export function useAdminAuth(): AdminAuthState {
       return;
     }
 
-    const check = async () => {
-      const { data, error } = await supabase
-        .from("admin_users")
-        .select("role, name, is_active")
-        .eq("user_id", user.id)
-        .eq("is_active", true)
-        .maybeSingle();
+    let cancelled = false;
 
-      if (error || !data) {
-        setState({ isAdmin: false, role: null, adminName: null, loading: false });
-      } else {
-        setState({
-          isAdmin: true,
-          role: data.role as AdminRole,
-          adminName: data.name,
-          loading: false,
-        });
+    const check = async () => {
+      try {
+        const isAdmin = await checkIsAdminUser(user.id);
+
+        if (!isAdmin) {
+          if (!cancelled) {
+            setState({ isAdmin: false, role: null, adminName: null, loading: false });
+          }
+          return;
+        }
+
+        let role: AdminRole | null = null;
+        let adminName = user.user_metadata?.full_name ?? user.email?.split("@")[0] ?? null;
+
+        try {
+          const profile = await fetchAdminProfile(user.id);
+          role = (profile.role as AdminRole | null) ?? null;
+          adminName = profile.name ?? adminName;
+        } catch {
+          // Keep admin access even if profile details are temporarily unavailable.
+        }
+
+        if (!cancelled) {
+          setState({
+            isAdmin: true,
+            role,
+            adminName,
+            loading: false,
+          });
+        }
+      } catch {
+        if (!cancelled) {
+          setState({ isAdmin: false, role: null, adminName: null, loading: false });
+        }
       }
     };
+
     check();
+
+    return () => {
+      cancelled = true;
+    };
   }, [user, authLoading]);
 
   return state;

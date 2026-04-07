@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { checkIsAdminUser } from "@/lib/admin-access";
 import { Shield, Lock, Mail, AlertCircle, Eye, EyeOff } from "lucide-react";
 
 export default function AdminLoginPage() {
@@ -18,34 +19,34 @@ export default function AdminLoginPage() {
     setError(null);
     setLoading(true);
 
-    const { error: signInError, user: signedInUser } = await signIn(email, password);
-    if (signInError) {
-      setError("Email ou mot de passe incorrect.");
+    try {
+      const { error: signInError, user: signedInUser } = await signIn(email, password);
+
+      if (signInError) {
+        setError("Email ou mot de passe incorrect.");
+        return;
+      }
+
+      if (!signedInUser) {
+        setError("Erreur d'authentification.");
+        return;
+      }
+
+      const isAdmin = await checkIsAdminUser(signedInUser.id);
+
+      if (!isAdmin) {
+        await supabase.auth.signOut();
+        setError("Accès refusé. Ce compte n'a pas les droits administrateur.");
+        return;
+      }
+
+      navigate("/admin", { replace: true });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "La connexion admin a échoué.";
+      setError(message);
+    } finally {
       setLoading(false);
-      return;
     }
-
-    if (!signedInUser) {
-      setError("Erreur d'authentification.");
-      setLoading(false);
-      return;
-    }
-
-    const { data: adminData } = await supabase
-      .from("admin_users")
-      .select("role, is_active")
-      .eq("user_id", signedInUser.id)
-      .eq("is_active", true)
-      .maybeSingle();
-
-    if (!adminData) {
-      await supabase.auth.signOut();
-      setError("Accès refusé. Ce compte n'a pas les droits administrateur.");
-      setLoading(false);
-      return;
-    }
-
-    navigate("/admin");
   };
 
   return (

@@ -78,25 +78,30 @@ export async function federatedSearch(query: string): Promise<FederatedResults> 
   const q = query.trim();
   if (!q) return { products: [], brands: [], categories: [] };
 
-  // Try Meilisearch first for instant typo-tolerant search
+  // Try Meilisearch first for instant typo-tolerant search (with 2s timeout)
   try {
-    const meiliReady = await isMeilisearchConfigured();
+    const meiliReadyPromise = isMeilisearchConfigured();
+    const timeoutPromise = new Promise<boolean>((resolve) => setTimeout(() => resolve(false), 2000));
+    const meiliReady = await Promise.race([meiliReadyPromise, timeoutPromise]);
     if (meiliReady) {
-      const meiliRes = await meiliFederatedSearch(q);
-      const hasResults = meiliRes.products.length > 0 || meiliRes.brands.length > 0 || meiliRes.categories.length > 0;
-      if (hasResults) {
-        // Map Meilisearch results to our interface
-        return {
-          products: meiliRes.products.map(p => ({
-            ...p,
-            image_urls: p.image_url ? [p.image_url] : [],
-            image_url: p.image_url || null,
-            gtin: (p as any).gtin || null,
-            cnk_code: (p as any).cnk_code || null,
-          })) as SearchProduct[],
-          brands: meiliRes.brands as SearchBrand[],
-          categories: meiliRes.categories as SearchCategory[],
-        };
+      const searchPromise = meiliFederatedSearch(q);
+      const searchTimeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000));
+      const meiliRes = await Promise.race([searchPromise, searchTimeout]);
+      if (meiliRes) {
+        const hasResults = meiliRes.products.length > 0 || meiliRes.brands.length > 0 || meiliRes.categories.length > 0;
+        if (hasResults) {
+          return {
+            products: meiliRes.products.map(p => ({
+              ...p,
+              image_urls: p.image_url ? [p.image_url] : [],
+              image_url: p.image_url || null,
+              gtin: (p as any).gtin || null,
+              cnk_code: (p as any).cnk_code || null,
+            })) as SearchProduct[],
+            brands: meiliRes.brands as SearchBrand[],
+            categories: meiliRes.categories as SearchCategory[],
+          };
+        }
       }
     }
   } catch (err) {

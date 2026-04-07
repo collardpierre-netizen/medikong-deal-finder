@@ -35,9 +35,8 @@ type Props = {
 
 type ResultFilter = "all" | "found" | "savings" | "more_expensive" | "unavailable";
 
-const CHUNK_SIZE = 250;
-const MAX_CONCURRENT_CHUNKS = 4;
-const SINGLE_REQUEST_LIMIT = 1000;
+const CHUNK_SIZE = 120;
+const MAX_CONCURRENT_CHUNKS = 3;
 
 const waitForUiPaint = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
 
@@ -136,7 +135,7 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
 
       const matchedByIndex: MatchedLine[] = new Array(lines.length);
 
-      if (lines.length <= SINGLE_REQUEST_LIMIT) {
+      if (lines.length <= CHUNK_SIZE) {
         const { data, error } = await (supabase as any).rpc("match_import_lines", {
           _lines: payload,
         });
@@ -151,8 +150,10 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
         for (let start = 0; start < payload.length; start += CHUNK_SIZE) {
           chunks.push(payload.slice(start, start + CHUNK_SIZE));
         }
+
         let nextChunkIndex = 0;
         let processedLines = 0;
+
         const runWorker = async () => {
           while (nextChunkIndex < chunks.length) {
             const currentChunkIndex = nextChunkIndex++;

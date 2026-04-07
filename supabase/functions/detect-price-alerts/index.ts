@@ -16,195 +16,204 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // 1. Load alert settings (thresholds)
+    // 1. Load thresholds
     const { data: settings } = await supabase
       .from("price_alert_settings")
       .select("setting_key, setting_value");
 
-    const getSettingNum = (key: string, fallback: number) => {
+    const getNum = (key: string, fb: number) => {
       const s = settings?.find((r: any) => r.setting_key === key);
-      return s ? parseFloat(s.setting_value) : fallback;
+      return s ? parseFloat(s.setting_value) : fb;
     };
 
-    const thresholdInfo = getSettingNum("threshold_info", 5);
-    const thresholdWarning = getSettingNum("threshold_warning", 15);
-    const thresholdCritical = getSettingNum("threshold_critical", 25);
+    const thInfo = getNum("threshold_info", 5);
+    const thWarn = getNum("threshold_warning", 15);
+    const thCrit = getNum("threshold_critical", 25);
 
-    // 2. Get all active products with offers and their best MediKong price
-    // We compare against market_prices and external_offers
-    const { data: products, error: prodErr } = await supabase
-      .from("products")
-      .select("id, name, best_price_incl_vat, best_price_excl_vat, gtin")
-      .eq("is_active", true)
-      .gt("best_price_incl_vat", 0)
-      .not("best_price_incl_vat", "is", null)
-      .limit(1000);
+    // 2. Build competitor best price per product from market_prices
+    const competitorBest: Record<string, { price: number; source: string }> = {};
 
-    if (prodErr) throw prodErr;
-    if (!products || products.length === 0) {
-      return new Response(JSON.stringify({ message: "No products to check", alerts_created: 0 }), {
+    // Process in batches - get all matched market prices
+    let offset = 0;
+    const batchSize = 1000;
+    while (true) {
+      const { data: mp, error } = await supabase
+        .from("market_prices")
+        .select("product_id, prix_pharmacien, prix_grossiste, prix_public")
+        .eq("is_matched", true)
+        .not("product_id", "is", null)
+        .range(offset, offset + batchSize - 1);
+
+      if (error) throw error;
+      if (!mp || mp.length === 0) break;
+
+      for (const row of mp) {
+        const refPrice = row.prix_pharmacien || row.prix_grossiste || row.prix_public;
+        if (!refPrice || refPrice <= 0) continue;
+        const pid = row.product_id;
+        if (!competitorBest[pid] || refPrice < competitorBest[pid].price) {
+          competitorBest[pid] = { price: refPrice, source: "market_price" };
+        }
+      }
+
+      if (mp.length < batchSize) break;
+      offset += batchSize;
+    }
+
+    // Also check external_offers
+    offset = 0;
+    while (true) {
+      const { data: eo, error } = await supabase
+        .from("external_offers")
+        .select("product_id, unit_price")
+        .eq("is_active", true)
+        .range(offset, offset + batchSize - 1);
+
+      if (error) throw error;
+      if (!eo || eo.length === 0) break;
+
+      for (const row of eo) {
+        if (!row.unit_price || row.unit_price <= 0) continue;
+        const pid = row.product_id;
+        if (!competitorBest[pid] || row.unit_price < competitorBest[pid].price) {
+          competitorBest[pid] = { price: row.unit_price, source: "external_offer" };
+        }
+      }
+
+      if (eo.length < batchSize) break;
+      offset += batchSize;
+    }
+
+    const competitorProductIds = Object.keys(competitorBest);
+    console.log(`Found competitor prices for ${competitorProductIds.length} products`);
+
+    if (competitorProductIds.length === 0) {
+      return new Response(JSON.stringify({ message: "No competitor prices found", alerts_created: 0 }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const productIds = products.map((p: any) => p.id);
-
-    // 3. Get market prices (reference prices from competitors)
-    const { data: marketPrices } = await supabase
-      .from("market_prices")
-      .select("product_id, prix_pharmacien, prix_grossiste, prix_public, source_id")
-      .in("product_id", productIds)
-      .eq("is_matched", true);
-
-    // 4. Get external offers
-    const { data: externalOffers } = await supabase
-      .from("external_offers")
-      .select("product_id, unit_price, external_vendor_id")
-      .in("product_id", productIds)
-      .eq("is_active", true);
-
-    // 5. Build best competitor price per product
-    const competitorBest: Record<string, { price: number; source: string }> = {};
-
-    for (const mp of marketPrices || []) {
-      const refPrice = mp.prix_pharmacien || mp.prix_grossiste || mp.prix_public;
-      if (!refPrice || refPrice <= 0) continue;
-      const pid = mp.product_id;
-      if (!competitorBest[pid] || refPrice < competitorBest[pid].price) {
-        competitorBest[pid] = { price: refPrice, source: "market_price" };
-      }
-    }
-
-    for (const eo of externalOffers || []) {
-      if (!eo.unit_price || eo.unit_price <= 0) continue;
-      const pid = eo.product_id;
-      if (!competitorBest[pid] || eo.unit_price < competitorBest[pid].price) {
-        competitorBest[pid] = { price: eo.unit_price, source: "external_offer" };
-      }
-    }
-
-    // 6. Detect alerts: MediKong price > competitor price
+    // 3. Get MediKong prices for those products (batch)
     let alertsCreated = 0;
     let alertsUpdated = 0;
+    let alertsResolved = 0;
     let refPricesSet = 0;
 
-    for (const product of products) {
-      const comp = competitorBest[product.id];
-      if (!comp) continue;
+    const chunkSize = 200;
+    for (let i = 0; i < competitorProductIds.length; i += chunkSize) {
+      const chunk = competitorProductIds.slice(i, i + chunkSize);
 
-      const mkPrice = product.best_price_incl_vat;
-      const refPrice = comp.price;
-
-      // Update reference_price on the product if not set or changed
-      // This feeds the promotions system
-      await supabase
+      const { data: products, error: pErr } = await supabase
         .from("products")
-        .update({ reference_price: refPrice })
-        .eq("id", product.id)
-        .is("reference_price", null);
-      refPricesSet++;
+        .select("id, name, best_price_incl_vat")
+        .in("id", chunk)
+        .eq("is_active", true)
+        .gt("best_price_incl_vat", 0);
 
-      // Only alert if MediKong is MORE expensive than competitor
-      if (mkPrice <= refPrice) continue;
+      if (pErr) { console.error("Product fetch error:", pErr.message); continue; }
+      if (!products || products.length === 0) continue;
 
-      const gapAmount = mkPrice - refPrice;
-      const gapPercentage = Math.round((gapAmount / refPrice) * 100 * 10) / 10;
+      for (const product of products) {
+        const comp = competitorBest[product.id];
+        if (!comp) continue;
 
-      // Determine severity
-      let severity: string;
-      let alertType: string;
-      if (gapPercentage >= thresholdCritical) {
-        severity = "critical";
-        alertType = "critical_gap";
-      } else if (gapPercentage >= thresholdWarning) {
-        severity = "warning";
-        alertType = "significant_gap";
-      } else if (gapPercentage >= thresholdInfo) {
-        severity = "info";
-        alertType = "minor_gap";
-      } else {
-        continue; // Below threshold
-      }
+        const mkPrice = product.best_price_incl_vat;
+        const refPrice = comp.price;
 
-      // Check if an open alert already exists for this product
-      const { data: existingAlerts } = await supabase
-        .from("price_alerts")
-        .select("id")
-        .eq("product_id", product.id)
-        .in("status", ["open", "acknowledged"])
-        .limit(1);
-
-      if (existingAlerts && existingAlerts.length > 0) {
-        // Update existing alert
+        // Update reference_price
         await supabase
-          .from("price_alerts")
-          .update({
-            reference_price: refPrice,
-            best_medikong_price: mkPrice,
-            gap_amount: gapAmount,
-            gap_percentage: gapPercentage,
-            severity,
-            alert_type: alertType,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", existingAlerts[0].id);
-        alertsUpdated++;
-      } else {
-        // Create new alert
-        const { data: newAlert, error: alertErr } = await supabase
-          .from("price_alerts")
-          .insert({
-            product_id: product.id,
-            alert_type: alertType,
-            severity,
-            reference_price: refPrice,
-            best_medikong_price: mkPrice,
-            gap_amount: gapAmount,
-            gap_percentage: gapPercentage,
-            status: "open",
-          })
-          .select("id")
-          .single();
+          .from("products")
+          .update({ reference_price: refPrice })
+          .eq("id", product.id);
+        refPricesSet++;
 
-        if (alertErr) {
-          console.error(`Alert creation failed for product ${product.id}:`, alertErr.message);
+        // Only alert if MediKong is MORE expensive
+        if (mkPrice <= refPrice) continue;
+
+        const gapAmount = mkPrice - refPrice;
+        const gapPct = Math.round((gapAmount / refPrice) * 100 * 10) / 10;
+
+        let severity: string;
+        let alertType: string;
+        if (gapPct >= thCrit) {
+          severity = "critical"; alertType = "critical_gap";
+        } else if (gapPct >= thWarn) {
+          severity = "warning"; alertType = "significant_gap";
+        } else if (gapPct >= thInfo) {
+          severity = "info"; alertType = "minor_gap";
+        } else {
           continue;
         }
 
-        // Link affected vendors (those with offers on this product)
-        const { data: offers } = await supabase
-          .from("offers")
-          .select("vendor_id, price_incl_vat")
+        // Check existing alert
+        const { data: existing } = await supabase
+          .from("price_alerts")
+          .select("id")
           .eq("product_id", product.id)
-          .eq("is_active", true);
+          .in("status", ["open", "acknowledged"])
+          .limit(1);
 
-        if (offers && offers.length > 0) {
-          const vendorRows = offers.map((o: any) => ({
-            alert_id: newAlert.id,
-            vendor_id: o.vendor_id,
-            vendor_price: o.price_incl_vat,
-            vendor_gap_percentage: Math.round(((o.price_incl_vat - refPrice) / refPrice) * 100 * 10) / 10,
-            suggested_price: Math.round(refPrice * 0.97 * 100) / 100, // 3% under competitor
-          }));
+        if (existing && existing.length > 0) {
+          await supabase
+            .from("price_alerts")
+            .update({
+              reference_price: refPrice, best_medikong_price: mkPrice,
+              gap_amount: gapAmount, gap_percentage: gapPct,
+              severity, alert_type: alertType, updated_at: new Date().toISOString(),
+            })
+            .eq("id", existing[0].id);
+          alertsUpdated++;
+        } else {
+          const { data: newAlert, error: aErr } = await supabase
+            .from("price_alerts")
+            .insert({
+              product_id: product.id, alert_type: alertType, severity,
+              reference_price: refPrice, best_medikong_price: mkPrice,
+              gap_amount: gapAmount, gap_percentage: gapPct, status: "open",
+            })
+            .select("id")
+            .single();
 
-          await supabase.from("price_alert_vendors").insert(vendorRows);
+          if (aErr) { console.error(`Alert err ${product.id}:`, aErr.message); continue; }
+
+          // Link affected vendors
+          const { data: offers } = await supabase
+            .from("offers")
+            .select("vendor_id, price_incl_vat")
+            .eq("product_id", product.id)
+            .eq("is_active", true);
+
+          if (offers && offers.length > 0) {
+            const rows = offers.map((o: any) => ({
+              alert_id: newAlert.id,
+              vendor_id: o.vendor_id,
+              vendor_price: o.price_incl_vat,
+              vendor_gap_percentage: Math.round(((o.price_incl_vat - refPrice) / refPrice) * 100 * 10) / 10,
+              suggested_price: Math.round(refPrice * 0.99 * 100) / 100,
+            }));
+            await supabase.from("price_alert_vendors").insert(rows);
+          }
+          alertsCreated++;
         }
-
-        alertsCreated++;
       }
     }
 
-    // 7. Auto-resolve alerts where MediKong is now cheaper
+    // 4. Auto-resolve alerts where MediKong now cheaper
     const { data: openAlerts } = await supabase
       .from("price_alerts")
       .select("id, product_id, reference_price")
       .in("status", ["open", "acknowledged"]);
 
-    let alertsResolved = 0;
     for (const alert of openAlerts || []) {
-      const product = products.find((p: any) => p.id === alert.product_id);
-      if (!product) continue;
-      if (product.best_price_incl_vat <= alert.reference_price) {
+      const comp = competitorBest[alert.product_id];
+      if (!comp) continue;
+      const { data: prod } = await supabase
+        .from("products")
+        .select("best_price_incl_vat")
+        .eq("id", alert.product_id)
+        .single();
+
+      if (prod && prod.best_price_incl_vat <= comp.price) {
         await supabase
           .from("price_alerts")
           .update({ status: "resolved", resolved_at: new Date().toISOString() })
@@ -214,8 +223,7 @@ Deno.serve(async (req) => {
     }
 
     const result = {
-      products_checked: products.length,
-      competitor_prices_found: Object.keys(competitorBest).length,
+      competitor_prices_found: competitorProductIds.length,
       alerts_created: alertsCreated,
       alerts_updated: alertsUpdated,
       alerts_resolved: alertsResolved,

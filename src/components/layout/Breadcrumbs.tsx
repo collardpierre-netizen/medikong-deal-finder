@@ -1,4 +1,4 @@
-import { Link, useLocation, useParams } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { ChevronRight, Home } from "lucide-react";
 import { Helmet } from "react-helmet-async";
 import { useQuery } from "@tanstack/react-query";
@@ -40,14 +40,10 @@ const parentRoutes: Record<string, string> = {
 export function Breadcrumbs() {
   const location = useLocation();
   const segments = location.pathname.split("/").filter(Boolean);
-
-  // Don't show on homepage
-  if (segments.length === 0) return null;
-  if (segments[0] === "admin") return null;
-  if (segments[0] === "produit") return null;
+  const hideBreadcrumbs = segments.length === 0 || segments[0] === "admin" || segments[0] === "produit";
 
   // Fetch vendor display name when on /vendeur/:slug
-  const vendorSlug = segments[0] === "vendeur" && segments[1] ? segments[1] : null;
+  const vendorSlug = !hideBreadcrumbs && segments[0] === "vendeur" && segments[1] ? segments[1] : null;
   const { data: vendorLabel } = useQuery({
     queryKey: ["breadcrumb-vendor", vendorSlug],
     queryFn: async () => {
@@ -61,7 +57,11 @@ export function Breadcrumbs() {
     },
     enabled: !!vendorSlug,
     staleTime: 5 * 60 * 1000,
+    retry: false,
   });
+
+  // Don't show on homepage
+  if (hideBreadcrumbs) return null;
 
   const crumbs = segments.map((seg, i) => {
     const rawPath = "/" + segments.slice(0, i + 1).join("/");

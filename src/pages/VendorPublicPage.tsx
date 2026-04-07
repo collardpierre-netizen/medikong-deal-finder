@@ -33,7 +33,122 @@ interface VendorFilters {
 
 const EMPTY_FILTERS: VendorFilters = { brands: [], categories: [], search: "" };
 
-/* ───── component ───── */
+import { MEDIKONG_PLACEHOLDER, isValidProductImage, isQogitaPlaceholder } from "@/lib/image-utils";
+
+/* ───── Vendor-specific product card (grid) ───── */
+function VendorProductCard({ product: p, index, addToCart, openDrawer }: { product: any; index: number; addToCart: any; openDrawer: () => void }) {
+  const [qty, setQty] = useState(1);
+  const maxQty = p.stockQty || 999;
+  const handleAdd = () => {
+    addToCart.mutate({
+      offerId: p.offerId,
+      productId: p.id,
+      quantity: qty,
+      maxQuantity: maxQty,
+      vendorId: p.vendorId,
+      priceExclVat: p.price,
+      priceInclVat: p.priceInclVat,
+      deliveryDays: p.deliveryDays,
+      productData: { id: p.id, name: p.name, brand: p.brand, slug: p.slug, price: p.price, imageUrl: p.imageUrl },
+    });
+    openDrawer();
+    setQty(1);
+  };
+  const imgSrc = isValidProductImage(p.imageUrl) ? p.imageUrl : MEDIKONG_PLACEHOLDER;
+  return (
+    <motion.div
+      className="border border-border rounded-lg p-3"
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, delay: index * 0.04 }}
+      whileHover={{ y: -3, boxShadow: "0 6px 20px -6px rgba(0,0,0,0.1)" }}
+    >
+      <Link to={`/produit/${p.slug}`} className="block mb-2">
+        <div className="aspect-square rounded-lg bg-muted overflow-hidden">
+          <img src={imgSrc} alt={p.name} loading="lazy" referrerPolicy="no-referrer" className="w-full h-full object-contain p-2"
+            onLoad={(e) => { if (isQogitaPlaceholder(e.currentTarget)) e.currentTarget.src = MEDIKONG_PLACEHOLDER; }}
+            onError={(e) => { e.currentTarget.src = MEDIKONG_PLACEHOLDER; }}
+          />
+        </div>
+      </Link>
+      {p.brand && <p className="text-[11px] text-muted-foreground mb-0.5">{p.brand}</p>}
+      <Link to={`/produit/${p.slug}`}>
+        <h3 className="text-[13px] font-medium text-foreground leading-snug mb-2 line-clamp-2">{p.name}</h3>
+      </Link>
+      <p className="text-base font-bold text-foreground mb-0.5">{p.price.toFixed(2)} € <span className="text-[10px] font-normal text-muted-foreground">HTVA</span></p>
+      <div className="flex items-center gap-1.5 mt-2">
+        <div className="flex items-center border border-border rounded">
+          <button onClick={() => setQty(Math.max(1, qty - 1))} className="px-1.5 py-1 text-muted-foreground hover:text-foreground"><Minus size={13} /></button>
+          <span className="px-1.5 text-xs font-medium tabular-nums">{qty}</span>
+          <button onClick={() => setQty(Math.min(maxQty, qty + 1))} className="px-1.5 py-1 text-muted-foreground hover:text-foreground"><Plus size={13} /></button>
+        </div>
+        <motion.button
+          onClick={handleAdd}
+          disabled={!p.stock}
+          className="flex-1 bg-primary text-primary-foreground text-xs font-semibold py-1.5 rounded disabled:opacity-40"
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.96 }}
+        >
+          Ajouter
+        </motion.button>
+      </div>
+    </motion.div>
+  );
+}
+
+/* ───── Vendor-specific product row (list) ───── */
+function VendorProductListRow({ product: p, addToCart, openDrawer }: { product: any; addToCart: any; openDrawer: () => void }) {
+  const [qty, setQty] = useState(1);
+  const maxQty = p.stockQty || 999;
+  const handleAdd = () => {
+    addToCart.mutate({
+      offerId: p.offerId,
+      productId: p.id,
+      quantity: qty,
+      maxQuantity: maxQty,
+      vendorId: p.vendorId,
+      priceExclVat: p.price,
+      priceInclVat: p.priceInclVat,
+      deliveryDays: p.deliveryDays,
+      productData: { id: p.id, name: p.name, brand: p.brand, slug: p.slug, price: p.price, imageUrl: p.imageUrl },
+    });
+    openDrawer();
+    setQty(1);
+  };
+  const imgSrc = isValidProductImage(p.imageUrl) ? p.imageUrl : MEDIKONG_PLACEHOLDER;
+  return (
+    <div className="flex items-center gap-3 px-3 py-2.5 hover:bg-muted/40 transition-colors">
+      <Link to={`/produit/${p.slug}`} className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center overflow-hidden shrink-0">
+        <img src={imgSrc} alt="" className="w-full h-full object-contain p-0.5" referrerPolicy="no-referrer"
+          onError={(e) => { e.currentTarget.src = MEDIKONG_PLACEHOLDER; }} />
+      </Link>
+      <Link to={`/produit/${p.slug}`} className="flex-1 min-w-0">
+        <p className="text-[11px] text-muted-foreground">{p.brand}</p>
+        <p className="text-[13px] font-medium text-foreground truncate">{p.name}</p>
+      </Link>
+      <div className="text-right shrink-0">
+        <p className="text-[13px] font-bold text-foreground">{p.price.toFixed(2)} €</p>
+        <p className="text-[10px] text-muted-foreground">HTVA</p>
+      </div>
+      <span className={`w-2 h-2 rounded-full shrink-0 ${p.stock ? "bg-emerald-500" : "bg-destructive"}`} />
+      <div className="flex items-center gap-1 shrink-0">
+        <div className="flex items-center border border-border rounded">
+          <button onClick={() => setQty(Math.max(1, qty - 1))} className="px-1 py-0.5 text-muted-foreground"><Minus size={12} /></button>
+          <span className="px-1 text-[11px] font-medium tabular-nums">{qty}</span>
+          <button onClick={() => setQty(Math.min(maxQty, qty + 1))} className="px-1 py-0.5 text-muted-foreground"><Plus size={12} /></button>
+        </div>
+        <button
+          onClick={handleAdd}
+          disabled={!p.stock}
+          className="p-1.5 rounded bg-primary text-primary-foreground disabled:opacity-40"
+        >
+          <ShoppingCart size={14} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function VendorPublicPage() {
   const { slug } = useParams<{ slug: string }>();
   const [searchParams] = useSearchParams();

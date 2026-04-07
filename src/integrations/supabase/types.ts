@@ -1872,6 +1872,242 @@ export type Database = {
           },
         ]
       }
+      price_adjustment_log: {
+        Row: {
+          adjusted_at: string
+          alert_id: string | null
+          id: string
+          new_price: number
+          old_price: number
+          product_id: string
+          trigger: Database["public"]["Enums"]["adjustment_trigger"]
+          vendor_id: string
+        }
+        Insert: {
+          adjusted_at?: string
+          alert_id?: string | null
+          id?: string
+          new_price: number
+          old_price: number
+          product_id: string
+          trigger?: Database["public"]["Enums"]["adjustment_trigger"]
+          vendor_id: string
+        }
+        Update: {
+          adjusted_at?: string
+          alert_id?: string | null
+          id?: string
+          new_price?: number
+          old_price?: number
+          product_id?: string
+          trigger?: Database["public"]["Enums"]["adjustment_trigger"]
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "price_adjustment_log_alert_id_fkey"
+            columns: ["alert_id"]
+            isOneToOne: false
+            referencedRelation: "price_alerts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "price_adjustment_log_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "price_adjustment_log_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      price_alert_notifications: {
+        Row: {
+          alert_vendor_id: string
+          channel: Database["public"]["Enums"]["notification_channel"]
+          id: string
+          message_content: string | null
+          read_at: string | null
+          sent_at: string
+          sent_by: Database["public"]["Enums"]["notification_sender"]
+        }
+        Insert: {
+          alert_vendor_id: string
+          channel: Database["public"]["Enums"]["notification_channel"]
+          id?: string
+          message_content?: string | null
+          read_at?: string | null
+          sent_at?: string
+          sent_by?: Database["public"]["Enums"]["notification_sender"]
+        }
+        Update: {
+          alert_vendor_id?: string
+          channel?: Database["public"]["Enums"]["notification_channel"]
+          id?: string
+          message_content?: string | null
+          read_at?: string | null
+          sent_at?: string
+          sent_by?: Database["public"]["Enums"]["notification_sender"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "price_alert_notifications_alert_vendor_id_fkey"
+            columns: ["alert_vendor_id"]
+            isOneToOne: false
+            referencedRelation: "price_alert_vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      price_alert_settings: {
+        Row: {
+          id: string
+          setting_key: string
+          setting_value: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          id?: string
+          setting_key: string
+          setting_value: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          id?: string
+          setting_key?: string
+          setting_value?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      price_alert_vendors: {
+        Row: {
+          alert_id: string
+          created_at: string
+          id: string
+          new_price: number | null
+          notification_read_at: string | null
+          notification_sent: boolean
+          notification_sent_at: string | null
+          old_price: number | null
+          price_adjusted: boolean
+          price_adjusted_at: string | null
+          suggested_price: number | null
+          vendor_gap_percentage: number
+          vendor_id: string
+          vendor_price: number
+        }
+        Insert: {
+          alert_id: string
+          created_at?: string
+          id?: string
+          new_price?: number | null
+          notification_read_at?: string | null
+          notification_sent?: boolean
+          notification_sent_at?: string | null
+          old_price?: number | null
+          price_adjusted?: boolean
+          price_adjusted_at?: string | null
+          suggested_price?: number | null
+          vendor_gap_percentage?: number
+          vendor_id: string
+          vendor_price: number
+        }
+        Update: {
+          alert_id?: string
+          created_at?: string
+          id?: string
+          new_price?: number | null
+          notification_read_at?: string | null
+          notification_sent?: boolean
+          notification_sent_at?: string | null
+          old_price?: number | null
+          price_adjusted?: boolean
+          price_adjusted_at?: string | null
+          suggested_price?: number | null
+          vendor_gap_percentage?: number
+          vendor_id?: string
+          vendor_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "price_alert_vendors_alert_id_fkey"
+            columns: ["alert_id"]
+            isOneToOne: false
+            referencedRelation: "price_alerts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "price_alert_vendors_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      price_alerts: {
+        Row: {
+          alert_type: Database["public"]["Enums"]["alert_type"]
+          best_medikong_price: number
+          created_at: string
+          gap_amount: number
+          gap_percentage: number
+          id: string
+          product_id: string
+          reference_price: number
+          resolved_at: string | null
+          severity: Database["public"]["Enums"]["alert_severity"]
+          status: Database["public"]["Enums"]["alert_status"]
+          updated_at: string
+        }
+        Insert: {
+          alert_type: Database["public"]["Enums"]["alert_type"]
+          best_medikong_price: number
+          created_at?: string
+          gap_amount?: number
+          gap_percentage?: number
+          id?: string
+          product_id: string
+          reference_price: number
+          resolved_at?: string | null
+          severity?: Database["public"]["Enums"]["alert_severity"]
+          status?: Database["public"]["Enums"]["alert_status"]
+          updated_at?: string
+        }
+        Update: {
+          alert_type?: Database["public"]["Enums"]["alert_type"]
+          best_medikong_price?: number
+          created_at?: string
+          gap_amount?: number
+          gap_percentage?: number
+          id?: string
+          product_id?: string
+          reference_price?: number
+          resolved_at?: string | null
+          severity?: Database["public"]["Enums"]["alert_severity"]
+          status?: Database["public"]["Enums"]["alert_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "price_alerts_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       price_history: {
         Row: {
           country_code: string
@@ -3206,6 +3442,50 @@ export type Database = {
           },
         ]
       }
+      vendor_notification_preferences: {
+        Row: {
+          auto_align_enabled: boolean
+          created_at: string
+          email_enabled: boolean
+          email_frequency: Database["public"]["Enums"]["email_frequency"]
+          floor_price_enabled: boolean
+          min_severity: Database["public"]["Enums"]["alert_severity"]
+          push_enabled: boolean
+          updated_at: string
+          vendor_id: string
+        }
+        Insert: {
+          auto_align_enabled?: boolean
+          created_at?: string
+          email_enabled?: boolean
+          email_frequency?: Database["public"]["Enums"]["email_frequency"]
+          floor_price_enabled?: boolean
+          min_severity?: Database["public"]["Enums"]["alert_severity"]
+          push_enabled?: boolean
+          updated_at?: string
+          vendor_id: string
+        }
+        Update: {
+          auto_align_enabled?: boolean
+          created_at?: string
+          email_enabled?: boolean
+          email_frequency?: Database["public"]["Enums"]["email_frequency"]
+          floor_price_enabled?: boolean
+          min_severity?: Database["public"]["Enums"]["alert_severity"]
+          push_enabled?: boolean
+          updated_at?: string
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_notification_preferences_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: true
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vendor_visibility_rules: {
         Row: {
           country_code: string | null
@@ -3455,13 +3735,23 @@ export type Database = {
       upsert_market_prices: { Args: { rows: Json }; Returns: number }
     }
     Enums: {
+      adjustment_trigger: "manual" | "quick_align" | "auto_align"
       admin_role:
         | "super_admin"
         | "admin"
         | "moderateur"
         | "support"
         | "comptable"
+      alert_severity: "info" | "warning" | "critical"
+      alert_status:
+        | "new"
+        | "seen"
+        | "in_progress"
+        | "resolved"
+        | "auto_resolved"
+      alert_type: "market_price" | "external_offer"
       customer_type: "pharmacy" | "hospital" | "clinic" | "lab" | "other"
+      email_frequency: "immediate" | "daily_digest" | "weekly_digest"
       fulfillment_status:
         | "pending"
         | "processing"
@@ -3470,6 +3760,8 @@ export type Database = {
         | "delivered"
         | "cancelled"
       fulfillment_type: "qogita" | "medikong_direct" | "vendor_direct"
+      notification_channel: "in_app" | "email" | "push"
+      notification_sender: "system" | "superadmin"
       order_source: "web" | "api"
       order_status:
         | "draft"
@@ -3646,6 +3938,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      adjustment_trigger: ["manual", "quick_align", "auto_align"],
       admin_role: [
         "super_admin",
         "admin",
@@ -3653,7 +3946,11 @@ export const Constants = {
         "support",
         "comptable",
       ],
+      alert_severity: ["info", "warning", "critical"],
+      alert_status: ["new", "seen", "in_progress", "resolved", "auto_resolved"],
+      alert_type: ["market_price", "external_offer"],
       customer_type: ["pharmacy", "hospital", "clinic", "lab", "other"],
+      email_frequency: ["immediate", "daily_digest", "weekly_digest"],
       fulfillment_status: [
         "pending",
         "processing",
@@ -3663,6 +3960,8 @@ export const Constants = {
         "cancelled",
       ],
       fulfillment_type: ["qogita", "medikong_direct", "vendor_direct"],
+      notification_channel: ["in_app", "email", "push"],
+      notification_sender: ["system", "superadmin"],
       order_source: ["web", "api"],
       order_status: [
         "draft",

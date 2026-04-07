@@ -165,21 +165,37 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   // Listen for auth changes to sync
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === "SIGNED_IN" && session?.user) {
-        const cid = await getCustomerId(session.user.id);
-        if (cid) {
+    let cancelled = false;
+
+    const handleSignedIn = (userId: string) => {
+      window.setTimeout(() => {
+        if (cancelled) return;
+
+        void (async () => {
+          const cid = await getCustomerId(userId);
+          if (!cid || cancelled) return;
+
           customerIdRef.current = cid;
           const localItems = loadCart();
           if (localItems.length > 0) {
-            syncCartToDB(localItems, cid).catch(console.error);
+            await syncCartToDB(localItems, cid);
           }
-        }
+        })().catch(console.error);
+      }, 0);
+    };
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_IN" && session?.user) {
+        handleSignedIn(session.user.id);
       } else if (event === "SIGNED_OUT") {
         customerIdRef.current = null;
       }
     });
-    return () => subscription.unsubscribe();
+
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const persistItems = useCallback((next: CartItem[]) => {

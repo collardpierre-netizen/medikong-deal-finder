@@ -9,7 +9,7 @@ import {
   ShoppingCart, AlertCircle, DollarSign, Eye, Link, BarChart3,
   Shield, Upload, MessageSquare, Layout, Truck, ShieldCheck, Settings, FileText,
   LogOut, Users, ClipboardList, Percent, RefreshCw, Key, Book, Factory, Globe, Hash, ExternalLink,
-  CreditCard, TrendingUp, AlertTriangle,
+  CreditCard, TrendingUp, AlertTriangle, Zap,
 } from "lucide-react";
 
 interface NavItem {
@@ -68,6 +68,7 @@ const sections: NavSection[] = [
       { labelKey: "crm", path: "/admin/crm", icon: MessageSquare },
       { labelKey: "cms", path: "/admin/cms", icon: Layout },
       { labelKey: "onboardingCms", path: "/admin/onboarding-cms", icon: ClipboardList },
+      { labelKey: "flashDeals", path: "/admin/flash-deals", icon: Zap },
       { labelKey: "investPipeline", path: "/admin/invest-pipeline", icon: DollarSign },
       { labelKey: "translations", path: "/admin/translations", icon: Globe },
     ],

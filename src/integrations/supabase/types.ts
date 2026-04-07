@@ -1004,6 +1004,66 @@ export type Database = {
           },
         ]
       }
+      flash_deals: {
+        Row: {
+          campaign_id: string | null
+          created_at: string
+          created_by: string | null
+          discount_price_incl_vat: number
+          ends_at: string
+          id: string
+          is_active: boolean
+          label: string | null
+          original_price_incl_vat: number
+          product_id: string
+          starts_at: string
+          updated_at: string
+        }
+        Insert: {
+          campaign_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          discount_price_incl_vat: number
+          ends_at: string
+          id?: string
+          is_active?: boolean
+          label?: string | null
+          original_price_incl_vat: number
+          product_id: string
+          starts_at: string
+          updated_at?: string
+        }
+        Update: {
+          campaign_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          discount_price_incl_vat?: number
+          ends_at?: string
+          id?: string
+          is_active?: boolean
+          label?: string | null
+          original_price_incl_vat?: number
+          product_id?: string
+          starts_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flash_deals_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "promotion_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flash_deals_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       manufacturers: {
         Row: {
           brand_count: number | null
@@ -2383,6 +2443,7 @@ export type Database = {
           description_fr: string | null
           dimension_unit: string | null
           dimensions: Json | null
+          discount_percentage: number | null
           estimated_delivery_weeks: number | null
           gtin: string | null
           height: number | null
@@ -2410,6 +2471,7 @@ export type Database = {
           qogita_fid: string | null
           qogita_qid: string | null
           qogita_slug: string | null
+          reference_price: number | null
           seller_count: number | null
           shipping_from: string[] | null
           short_description: string | null
@@ -2444,6 +2506,7 @@ export type Database = {
           description_fr?: string | null
           dimension_unit?: string | null
           dimensions?: Json | null
+          discount_percentage?: number | null
           estimated_delivery_weeks?: number | null
           gtin?: string | null
           height?: number | null
@@ -2471,6 +2534,7 @@ export type Database = {
           qogita_fid?: string | null
           qogita_qid?: string | null
           qogita_slug?: string | null
+          reference_price?: number | null
           seller_count?: number | null
           shipping_from?: string[] | null
           short_description?: string | null
@@ -2505,6 +2569,7 @@ export type Database = {
           description_fr?: string | null
           dimension_unit?: string | null
           dimensions?: Json | null
+          discount_percentage?: number | null
           estimated_delivery_weeks?: number | null
           gtin?: string | null
           height?: number | null
@@ -2532,6 +2597,7 @@ export type Database = {
           qogita_fid?: string | null
           qogita_qid?: string | null
           qogita_slug?: string | null
+          reference_price?: number | null
           seller_count?: number | null
           shipping_from?: string[] | null
           short_description?: string | null
@@ -2703,6 +2769,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      promotion_campaigns: {
+        Row: {
+          banner_image_url: string | null
+          created_at: string
+          description: string | null
+          ends_at: string
+          id: string
+          is_active: boolean
+          name: string
+          starts_at: string
+          updated_at: string
+        }
+        Insert: {
+          banner_image_url?: string | null
+          created_at?: string
+          description?: string | null
+          ends_at: string
+          id?: string
+          is_active?: boolean
+          name: string
+          starts_at: string
+          updated_at?: string
+        }
+        Update: {
+          banner_image_url?: string | null
+          created_at?: string
+          description?: string | null
+          ends_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          starts_at?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       qogita_config: {
         Row: {

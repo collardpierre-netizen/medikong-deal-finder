@@ -933,6 +933,7 @@ export default function VendorOffers() {
       vat_rate: String(offer.vat_rate),
       stock_quantity: String(offer.stock_quantity),
       moq: String(offer.moq),
+      mov_amount: String(offer.mov_amount || 0),
       delivery_days: String(offer.delivery_days),
       country_code: offer.country_code || "BE",
     });

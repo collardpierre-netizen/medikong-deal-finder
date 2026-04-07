@@ -52,7 +52,8 @@ const statusConfig: Record<string, { label: string; color: "info" | "success" | 
 };
 
 export default function VendorOrders() {
-  const { vendorId } = useCurrentVendor();
+  const vendorQuery = useCurrentVendor();
+  const vendorId = vendorQuery.data?.id;
   const queryClient = useQueryClient();
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
 

@@ -20,7 +20,8 @@ const severityConfig: Record<string, { label: string; color: string; bg: string;
 };
 
 export default function VendorPriceAlerts() {
-  const { vendorId } = useCurrentVendor();
+  const { data: vendor } = useCurrentVendor();
+  const vendorId = vendor?.id;
   const { data: alertVendors = [], isLoading } = useVendorPriceAlerts(vendorId);
   const [search, setSearch] = useState("");
   const [severityFilter, setSeverityFilter] = useState("all");

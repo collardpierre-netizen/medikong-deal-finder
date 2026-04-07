@@ -20,6 +20,7 @@ export function Navbar() {
   const { cartCount } = useCart();
   const [isAdmin, setIsAdmin] = useState(false);
   const [isVendor, setIsVendor] = useState(false);
+  const { isTVAC, toggleTVAC } = usePriceDisplay();
 
   useEffect(() => {
     if (!user) { setIsAdmin(false); setIsVendor(false); return; }

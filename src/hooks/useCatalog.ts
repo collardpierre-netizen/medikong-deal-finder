@@ -131,14 +131,23 @@ export function useCatalogProducts(filters: CatalogFilters) {
           : Promise.resolve(null),
       ]);
 
-      // Use exact count when filters are applied for accurate results display
-      const hasFilters = !!(filters.search || filters.brands?.length || filters.category || filters.manufacturers?.length || filters.inStock || filters.priceMin !== undefined || filters.priceMax !== undefined);
+      const hasFilters = !!(
+        filters.search ||
+        filters.brands?.length ||
+        filters.category ||
+        filters.manufacturers?.length ||
+        filters.inStock ||
+        filters.priceMin !== undefined ||
+        filters.priceMax !== undefined
+      );
+
       let query = supabase
         .from("products")
-        .select("id, slug, name, name_fr, brand_name, brand_id, category_id, category_name, gtin, cnk_code, image_url, image_urls, short_description, is_promotion, promotion_label, best_price_excl_vat, best_price_incl_vat, offer_count, total_stock, is_in_stock, created_at, brands(slug)", { count: hasFilters ? "exact" : "estimated" })
+        .select(
+          "id, slug, name, name_fr, brand_name, brand_id, category_id, category_name, gtin, cnk_code, image_url, image_urls, short_description, is_promotion, promotion_label, best_price_excl_vat, best_price_incl_vat, offer_count, total_stock, is_in_stock, created_at",
+          { count: hasFilters ? "exact" : "estimated" }
+        )
         .eq("is_active", true);
-
-      // Show all active products regardless of offer count
 
       if (categoryIds) query = query.in("category_id", categoryIds);
       if (brandIds) query = query.in("brand_id", brandIds);
@@ -153,7 +162,6 @@ export function useCatalogProducts(filters: CatalogFilters) {
         query = query.or(`name.ilike.${pattern},gtin.ilike.${pattern},cnk_code.ilike.${pattern},brand_name.ilike.${pattern}`);
       }
 
-      // Sort
       switch (filters.sort) {
         case "price_asc": query = query.order("best_price_excl_vat", { ascending: true, nullsFirst: false }); break;
         case "price_desc": query = query.order("best_price_excl_vat", { ascending: false }); break;
@@ -164,25 +172,26 @@ export function useCatalogProducts(filters: CatalogFilters) {
         default: query = query.order("offer_count", { ascending: false }); break;
       }
 
-      // Boost featured categories: if default sort + no category filter, fetch featured category IDs and reorder
-      if (filters.sort === "relevance" && !filters.category) {
+      const offset = (filters.page - 1) * filters.perPage;
+
+      // Only boost featured categories near the top of the catalogue.
+      // Fetching 200 full cards on every request was making the page feel empty/slow.
+      if (filters.sort === "relevance" && !filters.category && filters.page <= 2) {
         try {
           const { data: featured } = await supabase
             .from("cms_featured_categories")
             .select("category_id")
             .eq("is_active", true)
             .order("sort_order", { ascending: true });
+
           if (featured && featured.length > 0) {
-            const featuredIds = new Set(featured.map(f => f.category_id));
-            const offset = (filters.page - 1) * filters.perPage;
-            // Fetch a larger window to allow client-side reordering across featured/non-featured
-            const fetchSize = Math.max(filters.perPage * 3, 200);
+            const featuredIds = new Set(featured.map((f) => f.category_id));
+            const featuredOrder = featured.map((f) => f.category_id);
+            const fetchSize = Math.max(filters.perPage * 3, 72);
             const { data: rawData, error: rawError, count: rawCount } = await query.range(0, fetchSize - 1);
             if (rawError) throw rawError;
-            const products = rawData || [];
-            // Sort: featured categories first (by sort_order), then rest
-            const featuredOrder = featured.map(f => f.category_id);
-            const boosted = products.sort((a: any, b: any) => {
+
+            const boosted = [...(rawData || [])].sort((a: any, b: any) => {
               const aFeatured = featuredIds.has(a.category_id);
               const bFeatured = featuredIds.has(b.category_id);
               if (aFeatured && !bFeatured) return -1;
@@ -192,23 +201,23 @@ export function useCatalogProducts(filters: CatalogFilters) {
               }
               return 0;
             });
-            // Apply pagination on the sorted result
-            const paged = boosted.slice(offset, offset + filters.perPage);
-            return { products: paged as CatalogProduct[], total: rawCount || 0 };
+
+            return {
+              products: boosted.slice(offset, offset + filters.perPage) as CatalogProduct[],
+              total: rawCount || 0,
+            };
           }
         } catch {
-          // Fall through to normal query if featured categories fail
+          // Fallback to normal paginated query
         }
       }
 
-      const offset = (filters.page - 1) * filters.perPage;
-      query = query.range(offset, offset + filters.perPage - 1);
-
-      const { data, error, count } = await query;
+      const { data, error, count } = await query.range(offset, offset + filters.perPage - 1);
       if (error) throw error;
       return { products: (data || []) as CatalogProduct[], total: count || 0 };
     },
-    staleTime: 2 * 60 * 1000, // Cache 2 minutes to avoid re-fetching on tab switches
+    placeholderData: (previousData) => previousData,
+    staleTime: 2 * 60 * 1000,
   });
 }
 

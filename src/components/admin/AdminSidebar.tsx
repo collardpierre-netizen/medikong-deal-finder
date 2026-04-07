@@ -9,7 +9,7 @@ import {
   ShoppingCart, AlertCircle, DollarSign, Eye, Link, BarChart3,
   Shield, Upload, MessageSquare, Layout, Truck, ShieldCheck, Settings, FileText,
   LogOut, Users, ClipboardList, Percent, RefreshCw, Key, Book, Factory, Globe, Hash, ExternalLink,
-  CreditCard, TrendingUp,
+  CreditCard, TrendingUp, AlertTriangle,
 } from "lucide-react";
 
 interface NavItem {
@@ -50,6 +50,7 @@ const sections: NavSection[] = [
     labelKey: "intelligence",
     items: [
       { labelKey: "priceWatch", path: "/admin/veille-prix", icon: Eye },
+      { labelKey: "priceAlerts", path: "/admin/price-alerts", icon: AlertTriangle },
       { labelKey: "leads", path: "/admin/leads", icon: Link },
       { labelKey: "analytics", path: "/admin/analytics", icon: BarChart3 },
     ],

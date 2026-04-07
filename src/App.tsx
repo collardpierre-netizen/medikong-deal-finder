@@ -134,6 +134,9 @@ const AdminStripeCommissions = lazyWithRetry(() => import("./pages/admin/AdminSt
 const AdminStripeRevenue = lazyWithRetry(() => import("./pages/admin/AdminStripeRevenue"), "AdminStripeRevenue");
 const AdminOrderRefund = lazyWithRetry(() => import("./pages/admin/AdminOrderRefund"), "AdminOrderRefund");
 const AdminTranslations = lazyWithRetry(() => import("./pages/admin/AdminTranslations"), "AdminTranslations");
+const AdminPriceAlerts = lazyWithRetry(() => import("./pages/admin/AdminPriceAlerts"), "AdminPriceAlerts");
+const AdminPriceAlertDetail = lazyWithRetry(() => import("./pages/admin/AdminPriceAlertDetail"), "AdminPriceAlertDetail");
+const AdminPriceAlertSettings = lazyWithRetry(() => import("./pages/admin/AdminPriceAlertSettings"), "AdminPriceAlertSettings");
 
 // Vendor pages
 const VendorLoginPage = lazyWithRetry(() => import("./pages/vendor/VendorLoginPage"), "VendorLoginPage");
@@ -143,7 +146,7 @@ const VendorCatalog = lazyWithRetry(() => import("./pages/vendor/VendorCatalog")
 const VendorOffers = lazyWithRetry(() => import("./pages/vendor/VendorOffers"), "VendorOffers");
 const VendorOrders = lazyWithRetry(() => import("./pages/vendor/VendorOrders"), "VendorOrders");
 const VendorOpportunities = lazyWithRetry(() => import("./pages/vendor/VendorOpportunities"), "VendorOpportunities");
-const VendorAlerts = lazyWithRetry(() => import("./pages/vendor/VendorAlerts"), "VendorAlerts");
+const VendorAlerts = lazyWithRetry(() => import("./pages/vendor/VendorPriceAlerts"), "VendorPriceAlerts");
 const VendorTenders = lazyWithRetry(() => import("./pages/vendor/VendorTenders"), "VendorTenders");
 const VendorAnalytics = lazyWithRetry(() => import("./pages/vendor/VendorAnalytics"), "VendorAnalytics");
 const VendorFinance = lazyWithRetry(() => import("./pages/vendor/VendorFinance"), "VendorFinance");
@@ -307,6 +310,9 @@ const App = () => (
               <Route path="stripe-revenue" element={<LP><AdminStripeRevenue /></LP>} />
               <Route path="commandes/:orderId/refund" element={<LP><AdminOrderRefund /></LP>} />
               <Route path="translations" element={<LP><AdminTranslations /></LP>} />
+              <Route path="price-alerts" element={<LP><AdminPriceAlerts /></LP>} />
+              <Route path="price-alerts/settings" element={<LP><AdminPriceAlertSettings /></LP>} />
+              <Route path="price-alerts/:id" element={<LP><AdminPriceAlertDetail /></LP>} />
             </Route>
 
             {/* Vendor Dashboard */}

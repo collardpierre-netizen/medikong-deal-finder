@@ -114,18 +114,20 @@ function ProductPicker({ value, productName, onChange }: { value: string; produc
             </div>
           </div>
 
-          {/* Filters */}
+          {/* Searchable Filters */}
           <div className="px-2 py-1.5 border-b border-[#E2E8F0] flex gap-2">
-            <select value={brandFilter} onChange={e => setBrandFilter(e.target.value)}
-              className="flex-1 text-[11px] px-2 py-1 rounded border border-[#E2E8F0] bg-white text-[#616B7C]">
-              <option value="">Toutes marques</option>
-              {filterOpts?.brands.map((b: string) => <option key={b} value={b}>{b}</option>)}
-            </select>
-            <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)}
-              className="flex-1 text-[11px] px-2 py-1 rounded border border-[#E2E8F0] bg-white text-[#616B7C]">
-              <option value="">Toutes catégories</option>
-              {filterOpts?.categories.map((c: string) => <option key={c} value={c}>{c}</option>)}
-            </select>
+            <SearchableSelect
+              value={brandFilter}
+              onChange={setBrandFilter}
+              options={filterOpts?.brands || []}
+              placeholder="Toutes marques"
+            />
+            <SearchableSelect
+              value={categoryFilter}
+              onChange={setCategoryFilter}
+              options={filterOpts?.categories || []}
+              placeholder="Toutes catégories"
+            />
           </div>
 
           {/* Results */}

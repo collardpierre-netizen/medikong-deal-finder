@@ -78,10 +78,6 @@ export default function VendorKycStepper({ vendor }: { vendor: any }) {
     }
   };
 
-  // Current active step = first incomplete step
-  const currentStep = validationStatus === "approved" ? 6
-    : STEP_CONFIG.findIndex(s => !stepCompleted(s.key)) + 1 || 6;
-
   // Fetch criteria for this business type
   const { data: criteria = [] } = useQuery({
     queryKey: ["kyc-criteria", businessType],
@@ -108,6 +104,10 @@ export default function VendorKycStepper({ vendor }: { vendor: any }) {
     },
     enabled: !!vendor?.id,
   });
+
+  // Current active step = first incomplete step (must be after criteria/submissions declarations)
+  const currentStep = validationStatus === "approved" ? 6
+    : STEP_CONFIG.findIndex(s => !stepCompleted(s.key)) + 1 || 6;
 
   const getSubmission = (criteriaId: string) =>
     submissions.find(s => s.criteria_id === criteriaId);

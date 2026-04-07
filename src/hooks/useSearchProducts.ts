@@ -122,18 +122,22 @@ export function useSearchProducts(query: string, sort: SortOption = "relevance")
       }
 
       const productIds = productsData.map((p: any) => p.id);
-      const { data: offersData } = productIds.length > 0
-        ? await withSearchTimeout(
-            (async () =>
-              await supabase
-                .from("offers")
-                .select("product_id, price_excl_vat, stock_quantity, is_active")
-                .eq("is_active", true)
-                .eq("country_code", country)
-                .in("product_id", productIds))(),
-            3000
-          ).then((result) => result.data)
-        : { data: [] as any[] };
+      let offersData: any[] = [];
+
+      if (productIds.length > 0) {
+        const offersResult = await withSearchTimeout(
+          (async () =>
+            await supabase
+              .from("offers")
+              .select("product_id, price_excl_vat, stock_quantity, is_active")
+              .eq("is_active", true)
+              .eq("country_code", country)
+              .in("product_id", productIds))(),
+          3000
+        ).catch(() => null);
+
+        offersData = offersResult?.data || [];
+      }
 
       let results = productsData.map((row: any) => mapSearchResult(row, offersData || []));
 

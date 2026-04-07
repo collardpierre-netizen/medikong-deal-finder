@@ -314,6 +314,7 @@ const App = () => (
               <Route path="price-alerts" element={<LP><AdminPriceAlerts /></LP>} />
               <Route path="price-alerts/settings" element={<LP><AdminPriceAlertSettings /></LP>} />
               <Route path="price-alerts/:id" element={<LP><AdminPriceAlertDetail /></LP>} />
+              <Route path="flash-deals" element={<LP><AdminFlashDeals /></LP>} />
             </Route>
 
             {/* Vendor Dashboard */}

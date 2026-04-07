@@ -361,6 +361,185 @@ function exportOffers(offers: any[]) {
   toast.success("Export téléchargé");
 }
 
+/* ─── Profile Rules Editor ─── */
+interface ProfileRule {
+  id?: string;
+  profile_type: string;
+  country_code: string;
+  custom_price_excl_vat: string;
+  discount_percentage: string;
+  moq: string;
+  mov_amount: string;
+}
+
+const emptyRule: ProfileRule = {
+  profile_type: "", country_code: "", custom_price_excl_vat: "", discount_percentage: "0", moq: "1", mov_amount: "0",
+};
+
+function ProfileRulesEditor({ offerId, basePrice }: { offerId: string | null; basePrice: number }) {
+  const [expanded, setExpanded] = useState(false);
+  const [rules, setRules] = useState<ProfileRule[]>([]);
+  const [saving, setSaving] = useState(false);
+  const qc = useQueryClient();
+
+  const { data: existingRules } = useQuery({
+    queryKey: ["offer-profile-rules", offerId],
+    queryFn: async () => {
+      if (!offerId) return [];
+      const { data } = await supabase
+        .from("offer_profile_rules")
+        .select("*")
+        .eq("offer_id", offerId)
+        .order("profile_type");
+      return data || [];
+    },
+    enabled: !!offerId,
+  });
+
+  useEffect(() => {
+    if (existingRules && existingRules.length > 0) {
+      setRules(existingRules.map((r: any) => ({
+        id: r.id,
+        profile_type: r.profile_type,
+        country_code: r.country_code || "",
+        custom_price_excl_vat: r.custom_price_excl_vat ? String(r.custom_price_excl_vat) : "",
+        discount_percentage: String(r.discount_percentage || 0),
+        moq: String(r.moq || 1),
+        mov_amount: String(r.mov_amount || 0),
+      })));
+      setExpanded(true);
+    }
+  }, [existingRules]);
+
+  const addRule = () => setRules(prev => [...prev, { ...emptyRule }]);
+  const updateRule = (idx: number, key: keyof ProfileRule, val: string) =>
+    setRules(prev => prev.map((r, i) => i === idx ? { ...r, [key]: val } : r));
+  const removeRule = (idx: number) => setRules(prev => prev.filter((_, i) => i !== idx));
+
+  const saveRules = async () => {
+    if (!offerId) { toast.info("Sauvegardez l'offre d'abord, puis modifiez-la pour ajouter les règles par profil."); return; }
+    setSaving(true);
+    try {
+      await supabase.from("offer_profile_rules").delete().eq("offer_id", offerId);
+      if (rules.length > 0) {
+        const payload = rules.filter(r => r.profile_type).map(r => ({
+          offer_id: offerId, profile_type: r.profile_type, country_code: r.country_code || null,
+          custom_price_excl_vat: r.custom_price_excl_vat ? parseFloat(r.custom_price_excl_vat) : null,
+          discount_percentage: parseFloat(r.discount_percentage) || 0,
+          moq: parseInt(r.moq) || 1, mov_amount: parseFloat(r.mov_amount) || 0,
+        }));
+        if (payload.length > 0) {
+          const { error } = await supabase.from("offer_profile_rules").insert(payload);
+          if (error) throw error;
+        }
+      }
+      qc.invalidateQueries({ queryKey: ["offer-profile-rules", offerId] });
+      toast.success("Règles par profil sauvegardées");
+    } catch (err: any) { toast.error(err.message); }
+    finally { setSaving(false); }
+  };
+
+  const resolvedPrice = (rule: ProfileRule) => {
+    if (rule.custom_price_excl_vat) return parseFloat(rule.custom_price_excl_vat);
+    const disc = parseFloat(rule.discount_percentage) || 0;
+    return basePrice > 0 ? Math.round(basePrice * (1 - disc / 100) * 100) / 100 : 0;
+  };
+
+  return (
+    <div className="mt-4 border rounded-lg" style={{ borderColor: "#E2E8F0" }}>
+      <button type="button" onClick={() => setExpanded(!expanded)}
+        className="w-full flex items-center gap-2 px-3 py-2.5 text-left hover:bg-[#F8FAFC] rounded-lg transition-colors">
+        <Users size={14} style={{ color: "#1B5BDA" }} />
+        <span className="text-[12px] font-medium" style={{ color: "#1D2530" }}>Prix & conditions par profil</span>
+        {rules.length > 0 && (
+          <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium" style={{ backgroundColor: "#EFF6FF", color: "#1B5BDA" }}>
+            {rules.length} règle{rules.length > 1 ? "s" : ""}
+          </span>
+        )}
+        <ChevronRight size={12} className={`ml-auto transition-transform ${expanded ? "rotate-90" : ""}`} style={{ color: "#8B95A5" }} />
+      </button>
+      {expanded && (
+        <div className="px-3 pb-3 space-y-2">
+          {rules.length === 0 && (
+            <p className="text-[11px] py-2 text-center" style={{ color: "#8B95A5" }}>
+              Aucune règle spécifique. Le prix de base s'applique à tous les profils.
+            </p>
+          )}
+          {rules.map((rule, idx) => (
+            <div key={idx} className="grid grid-cols-[1fr_0.8fr_0.8fr_0.6fr_0.6fr_0.6fr_auto] gap-1.5 items-end p-2 rounded-lg" style={{ backgroundColor: "#F8FAFC" }}>
+              <div>
+                <label className="text-[9px] block mb-0.5" style={{ color: "#8B95A5" }}>Profil *</label>
+                <select value={rule.profile_type} onChange={e => updateRule(idx, "profile_type", e.target.value)}
+                  className="w-full px-1.5 py-1 text-[11px] border rounded bg-white" style={{ borderColor: "#E2E8F0" }}>
+                  <option value="">Choisir…</option>
+                  {PROFILE_TYPES.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-[9px] block mb-0.5" style={{ color: "#8B95A5" }}>Pays</label>
+                <select value={rule.country_code} onChange={e => updateRule(idx, "country_code", e.target.value)}
+                  className="w-full px-1.5 py-1 text-[11px] border rounded bg-white" style={{ borderColor: "#E2E8F0" }}>
+                  <option value="">Tous</option>
+                  {COUNTRIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-[9px] block mb-0.5" style={{ color: "#8B95A5" }}>Prix fixe HT</label>
+                <input type="number" step="0.01" min="0" value={rule.custom_price_excl_vat}
+                  onChange={e => updateRule(idx, "custom_price_excl_vat", e.target.value)}
+                  placeholder={basePrice ? `${basePrice.toFixed(2)}` : "—"}
+                  className="w-full px-1.5 py-1 text-[11px] border rounded bg-white" style={{ borderColor: "#E2E8F0" }} />
+              </div>
+              <div>
+                <label className="text-[9px] block mb-0.5" style={{ color: "#8B95A5" }}>Remise %</label>
+                <input type="number" step="0.5" min="0" max="100" value={rule.discount_percentage}
+                  onChange={e => updateRule(idx, "discount_percentage", e.target.value)}
+                  className="w-full px-1.5 py-1 text-[11px] border rounded bg-white" style={{ borderColor: "#E2E8F0" }} />
+              </div>
+              <div>
+                <label className="text-[9px] block mb-0.5" style={{ color: "#8B95A5" }}>MOQ</label>
+                <input type="number" min="1" value={rule.moq} onChange={e => updateRule(idx, "moq", e.target.value)}
+                  className="w-full px-1.5 py-1 text-[11px] border rounded bg-white" style={{ borderColor: "#E2E8F0" }} />
+              </div>
+              <div>
+                <label className="text-[9px] block mb-0.5" style={{ color: "#8B95A5" }}>MOV €</label>
+                <input type="number" step="1" min="0" value={rule.mov_amount}
+                  onChange={e => updateRule(idx, "mov_amount", e.target.value)}
+                  className="w-full px-1.5 py-1 text-[11px] border rounded bg-white" style={{ borderColor: "#E2E8F0" }} />
+              </div>
+              <div className="flex items-center gap-1">
+                {basePrice > 0 && (
+                  <span className="text-[9px] font-medium whitespace-nowrap" style={{ color: "#059669" }}>→{resolvedPrice(rule).toFixed(2)}€</span>
+                )}
+                <button type="button" onClick={() => removeRule(idx)} className="p-0.5 hover:bg-[#FEF2F2] rounded">
+                  <Trash2 size={12} style={{ color: "#EF4343" }} />
+                </button>
+              </div>
+            </div>
+          ))}
+          <div className="flex items-center gap-2 pt-1">
+            <button type="button" onClick={addRule}
+              className="flex items-center gap-1 text-[11px] font-medium px-2 py-1 rounded hover:bg-[#EFF6FF] transition-colors"
+              style={{ color: "#1B5BDA" }}>
+              <Plus size={12} /> Ajouter un profil
+            </button>
+            {rules.length > 0 && offerId && (
+              <button type="button" onClick={saveRules} disabled={saving}
+                className="flex items-center gap-1 text-[11px] font-medium px-2 py-1 rounded hover:bg-[#EFF6FF] transition-colors"
+                style={{ color: "#059669" }}>
+                {saving ? <Loader2 size={12} className="animate-spin" /> : null} Sauvegarder les règles
+              </button>
+            )}
+            {!offerId && rules.length > 0 && (
+              <span className="text-[10px]" style={{ color: "#F59E0B" }}>⚠ Créez l'offre d'abord, puis modifiez-la pour sauvegarder les règles</span>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ─── Main Page ─── */
 export default function VendorOffers() {
   const { data: vendor } = useCurrentVendor();

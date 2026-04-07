@@ -146,6 +146,21 @@ export default function VendorPublicPage() {
 
   const hasFilters = filters.brands.length > 0 || filters.categories.length > 0 || filters.priceMin != null || filters.priceMax != null || filters.inStock || filters.search.length > 0;
 
+  // Compute vendor MOV and cart progress
+  const vendorMov = useMemo(() => {
+    if (!offers.length) return 0;
+    // Take the max mov_amount from this vendor's offers (they typically share the same MOV)
+    const movValues = offers.map((o: any) => Number(o.mov_amount || 0)).filter((v: number) => v > 0);
+    return movValues.length ? Math.max(...movValues) : 0;
+  }, [offers]);
+
+  const vendorCartTotal = useMemo(() => {
+    if (!vendor) return 0;
+    return cartItems
+      .filter(ci => ci.vendor_id === vendor.id)
+      .reduce((sum, ci) => sum + (ci.price_excl_vat || 0) * ci.quantity, 0);
+  }, [cartItems, vendor]);
+
   const vendorName = vendor ? getVendorPublicName(vendor) : "Fournisseur";
 
   if (isLoading) {

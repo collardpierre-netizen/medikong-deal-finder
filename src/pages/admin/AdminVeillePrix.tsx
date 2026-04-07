@@ -195,13 +195,16 @@ export default function AdminVeillePrix() {
   const productIds = useMemo(() => [...new Set(rawData.map((r: any) => r.product_id).filter(Boolean))], [rawData]);
 
   const { data: products = [] } = useQuery({
-    queryKey: ["veille-prix-products", productIds.length],
+    queryKey: ["veille-prix-products", productIds],
     queryFn: async () => {
       if (productIds.length === 0) return [];
       const all: any[] = [];
       for (let i = 0; i < productIds.length; i += 100) {
         const batch = productIds.slice(i, i + 100);
-        const { data } = await supabase.from("products").select("id, name, slug, gtin, brand_name, category_name, best_price_excl_vat").in("id", batch);
+        const { data } = await supabase
+          .from("products")
+          .select("id, name, slug, gtin, brand_name, category_name, best_price_excl_vat")
+          .in("id", batch);
         if (data) all.push(...data);
       }
       return all;

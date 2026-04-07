@@ -6,6 +6,8 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Upload, Download, FileSpreadsheet, ShoppingCart, X, Loader2, CheckCircle2, TrendingDown, AlertCircle, Package } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import { formatPrice } from "@/data/mock";
 import { useCart } from "@/hooks/useCart";
 import { toast } from "sonner";
@@ -50,6 +52,24 @@ const waitForUiPaint = () => new Promise<void>((resolve) => setTimeout(resolve, 
 const calcDeltaPct = (currentPrice: number, mediPrice?: number): number | null => {
   if (!mediPrice || currentPrice <= 0) return null;
   return ((mediPrice - currentPrice) / currentPrice) * 100;
+};
+
+const getFilterLabel = (filter: ResultFilter) => {
+  if (filter === "savings") return "Économies";
+  if (filter === "more_expensive") return "Plus cher";
+  if (filter === "unavailable") return "Indispo";
+  if (filter === "found") return "Trouvés";
+  return "Tout";
+};
+
+const getResultStatusLabel = (line: MatchedLine) => {
+  if (line.status === "unavailable") return "Indispo";
+  return (line.saving || 0) > 0 ? "Dispo - moins cher" : "Dispo - plus cher";
+};
+
+const getDeltaAmount = (line: MatchedLine) => {
+  if (line.status !== "found" || line.mediPrice == null || line.currentPrice <= 0) return null;
+  return Number((line.mediPrice - line.currentPrice).toFixed(2));
 };
 
 const fetchBestOffers = async (productIds: string[]) => {
@@ -291,6 +311,155 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
     });
   }, [results, filter]);
 
+  const exportRows = useMemo(() => {
+    return filteredResults.map((r) => {
+      const deltaPct = calcDeltaPct(r.currentPrice, r.mediPrice);
+      const deltaAmount = getDeltaAmount(r);
+
+      return {
+        Produit: r.productName || "Non trouvé",
+        EAN: r.ean || "",
+        CNK: r.cnk || "",
+        "Qté": r.quantity,
+        "Votre prix HT": r.currentPrice > 0 ? Number(r.currentPrice.toFixed(2)) : null,
+        "Prix MediKong HT": r.mediPrice != null ? Number(r.mediPrice.toFixed(2)) : null,
+        "Δ €": deltaAmount,
+        "Δ %": deltaPct != null ? Number(deltaPct.toFixed(1)) : null,
+        Statut: getResultStatusLabel(r),
+      };
+    });
+  }, [filteredResults]);
+
+  const exportSummary = useMemo(() => {
+    const exportFound = filteredResults.filter((r) => r.status === "found").length;
+    const exportUnavailable = filteredResults.filter((r) => r.status === "unavailable").length;
+    const exportSavings = filteredResults.filter((r) => r.status === "found" && (r.saving || 0) > 0);
+    const exportMoreExpensive = filteredResults.filter((r) => r.status === "found" && (!r.saving || r.saving <= 0)).length;
+    const exportSavingsAmount = exportSavings.reduce((acc, r) => acc + (r.saving || 0) * r.quantity, 0);
+
+    return {
+      label: getFilterLabel(filter),
+      exportedLines: filteredResults.length,
+      found: exportFound,
+      unavailable: exportUnavailable,
+      savings: exportSavings.length,
+      moreExpensive: exportMoreExpensive,
+      totalSavings: exportSavingsAmount,
+    };
+  }, [filteredResults, filter]);
+
+  const exportXlsx = useCallback(() => {
+    if (exportRows.length === 0) {
+      toast.error("Aucune ligne à exporter");
+      return;
+    }
+
+    const wb = XLSX.utils.book_new();
+    const summarySheet = XLSX.utils.aoa_to_sheet([
+      ["Analyse comparateur de prix MediKong"],
+      [],
+      ["Filtre actif", exportSummary.label],
+      ["Lignes exportées", exportSummary.exportedLines],
+      ["Produits trouvés", exportSummary.found],
+      ["Indisponibles", exportSummary.unavailable],
+      ["Moins chers", exportSummary.savings],
+      ["Plus chers", exportSummary.moreExpensive],
+      ["Économie potentielle", Number(exportSummary.totalSavings.toFixed(2))],
+      ["Exporté le", new Date().toLocaleString("fr-FR")],
+    ]);
+    summarySheet["!cols"] = [{ wch: 24 }, { wch: 18 }];
+
+    const detailsSheet = XLSX.utils.json_to_sheet(exportRows);
+    detailsSheet["!cols"] = [
+      { wch: 38 },
+      { wch: 18 },
+      { wch: 14 },
+      { wch: 8 },
+      { wch: 16 },
+      { wch: 18 },
+      { wch: 10 },
+      { wch: 10 },
+      { wch: 20 },
+    ];
+
+    XLSX.utils.book_append_sheet(wb, summarySheet, "Résumé");
+    XLSX.utils.book_append_sheet(wb, detailsSheet, "Analyse");
+
+    const date = new Date().toISOString().slice(0, 10);
+    XLSX.writeFile(wb, `comparateur-medikong-${filter}-${date}.xlsx`);
+    toast.success("Export XLS téléchargé");
+  }, [exportRows, exportSummary, filter]);
+
+  const exportPdf = useCallback(() => {
+    if (exportRows.length === 0) {
+      toast.error("Aucune ligne à exporter");
+      return;
+    }
+
+    const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
+    const generatedAt = new Date().toLocaleString("fr-FR");
+
+    doc.setFontSize(18);
+    doc.text("Analyse comparateur de prix MediKong", 40, 42);
+    doc.setFontSize(10);
+    doc.text(`Filtre : ${exportSummary.label}`, 40, 62);
+    doc.text(`Lignes exportées : ${exportSummary.exportedLines}`, 180, 62);
+    doc.text(`Trouvés : ${exportSummary.found}`, 320, 62);
+    doc.text(`Indispo : ${exportSummary.unavailable}`, 420, 62);
+    doc.text(`Moins chers : ${exportSummary.savings}`, 510, 62);
+    doc.text(`Plus chers : ${exportSummary.moreExpensive}`, 620, 62);
+    doc.text(`Économie potentielle : ${formatPrice(exportSummary.totalSavings)}`, 40, 78);
+    doc.text(`Exporté le ${generatedAt}`, 260, 78);
+
+    autoTable(doc, {
+      startY: 96,
+      head: [["Produit", "EAN/CNK", "Qté", "Votre prix", "Prix MediKong", "Δ €", "Δ %", "Statut"]],
+      body: filteredResults.map((r) => {
+        const deltaPct = calcDeltaPct(r.currentPrice, r.mediPrice);
+        const deltaAmount = getDeltaAmount(r);
+
+        return [
+          r.productName || "Non trouvé",
+          [r.ean ? `EAN: ${r.ean}` : null, r.cnk ? `CNK: ${r.cnk}` : null].filter(Boolean).join(" · ") || "—",
+          String(r.quantity),
+          r.currentPrice > 0 ? formatPrice(r.currentPrice) : "—",
+          r.mediPrice != null ? formatPrice(r.mediPrice) : "—",
+          deltaAmount != null ? `${deltaAmount > 0 ? "+" : ""}${formatPrice(Math.abs(deltaAmount)).replace("€", "").trim()}` : "—",
+          deltaPct != null ? `${deltaPct > 0 ? "+" : ""}${deltaPct.toFixed(1)}%` : "—",
+          getResultStatusLabel(r),
+        ];
+      }),
+      styles: { fontSize: 9, cellPadding: 6, textColor: [31, 41, 55] },
+      headStyles: { fillColor: [37, 99, 235], textColor: [255, 255, 255] },
+      columnStyles: {
+        0: { cellWidth: 210 },
+        1: { cellWidth: 110 },
+        2: { halign: "center", cellWidth: 40 },
+        3: { halign: "right", cellWidth: 70 },
+        4: { halign: "right", cellWidth: 85 },
+        5: { halign: "right", cellWidth: 55 },
+        6: { halign: "right", cellWidth: 55 },
+        7: { cellWidth: 90 },
+      },
+      didParseCell: (hookData) => {
+        if (hookData.section !== "body") return;
+        const row = filteredResults[hookData.row.index];
+        if (!row) return;
+
+        if (row.status === "unavailable") {
+          hookData.cell.styles.fillColor = [255, 247, 237];
+        } else if ((row.saving || 0) > 0) {
+          hookData.cell.styles.fillColor = [236, 253, 245];
+        } else {
+          hookData.cell.styles.fillColor = [254, 242, 242];
+        }
+      },
+    });
+
+    doc.save(`comparateur-medikong-${filter}-${new Date().toISOString().slice(0, 10)}.pdf`);
+    toast.success("Export PDF téléchargé");
+  }, [exportRows, exportSummary, filteredResults, filter]);
+
   const toggleAll = () => {
     const foundIndices = results.map((_, i) => i).filter(i => results[i].status === "found");
     if (selected.size === foundLines.length) {
@@ -345,7 +514,7 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
             </div>
           )}
 
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <Button variant="outline" size="sm" onClick={downloadTemplate} className="gap-1.5">
               <Download size={14} /> Télécharger le template
             </Button>
@@ -353,6 +522,16 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
               {phase === "loading" ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
               {phase === "results" ? "Réimporter" : "Importer un fichier"}
             </Button>
+            {phase === "results" && (
+              <>
+                <Button variant="outline" size="sm" onClick={exportXlsx} className="gap-1.5" disabled={filteredResults.length === 0}>
+                  <Download size={14} /> Exporter XLS
+                </Button>
+                <Button variant="outline" size="sm" onClick={exportPdf} className="gap-1.5" disabled={filteredResults.length === 0}>
+                  <Download size={14} /> Exporter PDF
+                </Button>
+              </>
+            )}
             <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" onChange={handleFile} className="hidden" />
           </div>
 

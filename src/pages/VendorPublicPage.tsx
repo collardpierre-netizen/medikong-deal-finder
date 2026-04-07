@@ -369,11 +369,36 @@ export default function VendorPublicPage() {
             )}
 
             {filteredProducts.length > 0 ? (
-              <div className={view === "grid" ? "grid grid-cols-2 lg:grid-cols-3 gap-3" : "space-y-3"}>
-                {filteredProducts.map((p: any, i: number) => (
-                  <ProductCard key={p.id} product={p} index={i} />
-                ))}
-              </div>
+              view === "grid" ? (
+                <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+                  {filteredProducts.map((p: any, i: number) => (
+                    <ProductCard key={p.id} product={p} index={i} />
+                  ))}
+                </div>
+              ) : (
+                <div className="border border-border rounded-xl overflow-hidden divide-y divide-border">
+                  {filteredProducts.map((p: any) => (
+                    <Link key={p.id} to={`/produit/${p.slug}`} className="flex items-center gap-3 px-3 py-2.5 hover:bg-muted/40 transition-colors">
+                      <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center overflow-hidden shrink-0">
+                        {p.imageUrl ? (
+                          <img src={p.imageUrl} alt="" className="w-full h-full object-contain p-0.5" />
+                        ) : (
+                          <Package size={16} className="text-muted-foreground" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[12px] text-muted-foreground">{p.brand}</p>
+                        <p className="text-[13px] font-medium text-foreground truncate">{p.name}</p>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className="text-[13px] font-bold text-foreground">{p.price.toFixed(2)} €</p>
+                        <p className="text-[10px] text-muted-foreground">HTVA</p>
+                      </div>
+                      <span className={`w-2 h-2 rounded-full shrink-0 ${p.stock ? "bg-emerald-500" : "bg-destructive"}`} title={p.stock ? "En stock" : "Rupture"} />
+                    </Link>
+                  ))}
+                </div>
+              )
             ) : (
               <div className="text-center py-16 border border-dashed border-border rounded-xl">
                 <Package size={40} className="mx-auto text-muted-foreground mb-3" />

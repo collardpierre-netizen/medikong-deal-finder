@@ -1317,8 +1317,8 @@ export default function ProductPage() {
                               const pharmHT = isOnline ? 0 : rawPharm;
                               // Grossiste HTVA
                               const grossisteHT = rawGrossiste;
-                              // Public TTC: for online sources use rawPharm (it's TTC), for wholesalers use prix_public
-                              const publicTTC = isOnline ? rawPharm : rawPublic;
+                              // Public TTC: for online sources use prix_public (it's TTC), for wholesalers also use prix_public
+                              const publicTTC = rawPublic || (isOnline ? rawPharm : 0);
                               // Public HTVA: derive from TTC
                               const publicHTVA = publicTTC ? Math.round(publicTTC / (1 + tvaRate / 100) * 100) / 100 : 0;
 

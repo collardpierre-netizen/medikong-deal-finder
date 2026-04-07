@@ -318,6 +318,9 @@ const AdminVendeurDetail = () => {
         queryClient.invalidateQueries({ queryKey: ["vendor-detail", id] });
         queryClient.invalidateQueries({ queryKey: ["admin-vendors"] });
       }} />
+
+      {/* Invitation dialog */}
+      <VendorInviteDialog open={showInvite} onOpenChange={setShowInvite} vendor={vendor} />
     </div>
   );
 };

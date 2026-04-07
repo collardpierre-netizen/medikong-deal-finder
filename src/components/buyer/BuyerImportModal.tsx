@@ -78,8 +78,8 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
 
   const downloadTemplate = () => {
     const link = document.createElement("a");
-    link.href = "/meditrade_template_import.xlsx";
-    link.download = "meditrade_template_import.xlsx";
+    link.href = "/medikong_template_import.xlsx";
+    link.download = "medikong_template_import.xlsx";
     link.click();
   };
 

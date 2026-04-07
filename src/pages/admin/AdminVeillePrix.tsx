@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Search, TrendingDown, TrendingUp, Download, ArrowUpDown, Upload, Plus, Loader2, Trash2, ExternalLink, RefreshCcw, Info } from "lucide-react";
+import { Search, TrendingDown, TrendingUp, Download, ArrowUpDown, Upload, Plus, Loader2, Trash2, ExternalLink, RefreshCcw, Info, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
 import { useImportJobs } from "@/contexts/ImportContext";
 import * as XLSX from "xlsx";
@@ -551,6 +551,20 @@ export default function AdminVeillePrix() {
 
       {/* Actions bar */}
       <div className="flex items-center gap-2 mb-4">
+        <Button size="sm" variant="outline" className="gap-1.5" onClick={() => {
+          const rows = [
+            { EAN: "3701129803820", CNK: "", Nom: "Bioderma Photoderm Crème Après Soleil 200ml", Prix_Grossiste: "8.50", Prix_Pharmacien: "11.09", Prix_Public_TTC: "16.07", TVA: "21", Fournisseur: "Febelco", Stock: "En stock", Remise_Pct: "", URL: "" },
+            { EAN: "5400951001015", CNK: "1234567", Nom: "Exemple Produit B", Prix_Grossiste: "", Prix_Pharmacien: "13.99", Prix_Public_TTC: "", TVA: "21", Fournisseur: "Medi-market", Stock: "3249", Remise_Pct: "", URL: "https://example.com" },
+          ];
+          const wb = XLSX.utils.book_new();
+          const ws = XLSX.utils.json_to_sheet(rows);
+          ws["!cols"] = [{ wch: 16 }, { wch: 10 }, { wch: 45 }, { wch: 14 }, { wch: 16 }, { wch: 16 }, { wch: 6 }, { wch: 15 }, { wch: 12 }, { wch: 10 }, { wch: 30 }];
+          XLSX.utils.book_append_sheet(wb, ws, "Template");
+          XLSX.writeFile(wb, "template_veille_prix.xlsx");
+          toast.success("Template téléchargé");
+        }}>
+          <FileSpreadsheet size={14} /> Template
+        </Button>
         <Button size="sm" className="gap-1.5" onClick={() => setShowImportDialog(true)}>
           <Upload size={14} /> Importer XLSX
         </Button>

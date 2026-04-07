@@ -1331,7 +1331,14 @@ export default function ProductPage() {
                               return (
                                  <tr key={mp.id} className="hover:bg-muted/20 transition-colors">
                                   <td className="px-3 py-2.5">
-                                    <span className="font-medium text-foreground text-[13px] whitespace-nowrap">{mp.market_price_sources?.name}</span>
+                                    <span className="inline-flex items-center gap-1.5">
+                                      <span className="font-medium text-foreground text-[13px] whitespace-nowrap">{mp.market_price_sources?.name}</span>
+                                      {mp.product_url && (
+                                        <a href={mp.product_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80">
+                                          <ExternalLink size={12} />
+                                        </a>
+                                      )}
+                                    </span>
                                   </td>
                                   {mpVisMap.show_pharmacist_price && (
                                     <td className="px-3 py-2.5 text-right font-bold tabular-nums text-foreground whitespace-nowrap">
@@ -1351,12 +1358,17 @@ export default function ProductPage() {
                                   <td className="px-3 py-2.5 text-right tabular-nums text-foreground whitespace-nowrap">
                                     {publicTTC ? `${formatEur(publicTTC)} €` : <span className="text-muted-foreground font-normal">—</span>}
                                   </td>
-                                  <td className="px-3 py-2.5 text-center">
-                                    {mp.stock_source ? (
-                                      <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium ${mp.stock_source.toLowerCase().includes("rupture") || mp.stock_source === "0" ? "bg-destructive/10 text-destructive" : "bg-emerald-100 text-emerald-700"}`}>
-                                        {mp.stock_source}
-                                      </span>
-                                    ) : <span className="text-muted-foreground">—</span>}
+                                  <td className="px-2 py-2.5 text-center">
+                                    {mp.stock_source ? (() => {
+                                      const inStock = !mp.stock_source.toLowerCase().includes("rupture") && mp.stock_source !== "0";
+                                      const qty = mp.stock_source.match(/\d+/)?.[0];
+                                      return (
+                                        <span className="inline-flex items-center gap-1 text-[11px]" title={mp.stock_source}>
+                                          <span className={`w-2 h-2 rounded-full shrink-0 ${inStock ? "bg-emerald-500" : "bg-destructive"}`} />
+                                          {qty && <span className="text-muted-foreground">({qty})</span>}
+                                        </span>
+                                      );
+                                    })() : <span className="text-muted-foreground">—</span>}
                                   </td>
                                   <td className="px-3 py-2.5 text-right whitespace-nowrap">
                                     {deltaAbs !== null ? (
@@ -1370,15 +1382,8 @@ export default function ProductPage() {
                                       </span>
                                     ) : <span className="text-muted-foreground">—</span>}
                                   </td>
-                                  <td className="px-3 py-2.5 text-right text-[11px] text-muted-foreground whitespace-nowrap">
+                                  <td className="px-2 py-2.5 text-right text-[11px] text-muted-foreground whitespace-nowrap">
                                     {mp.imported_at ? new Date(mp.imported_at).toLocaleDateString("fr-FR") : "—"}
-                                  </td>
-                                  <td className="px-2 py-2.5">
-                                    {mp.product_url && (
-                                      <a href={mp.product_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80">
-                                        <ExternalLink size={14} />
-                                      </a>
-                                    )}
                                   </td>
                                 </tr>
                               );

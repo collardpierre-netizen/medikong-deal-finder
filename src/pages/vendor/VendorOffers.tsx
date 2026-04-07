@@ -547,6 +547,10 @@ export default function VendorOffers() {
               Prix TTC : <strong style={{ color: "#1D2530" }}>{(parseFloat(form.price_excl_vat) * (1 + parseFloat(form.vat_rate) / 100)).toFixed(2)} €</strong>
             </div>
           )}
+
+          {/* ─── Profile Rules Section ─── */}
+          <ProfileRulesEditor offerId={editingId} basePrice={parseFloat(form.price_excl_vat) || 0} />
+
           <div className="flex justify-end gap-2 mt-4">
             <VBtn small onClick={closeForm}>Annuler</VBtn>
             <VBtn small primary onClick={() => saveOffer.mutate()}>

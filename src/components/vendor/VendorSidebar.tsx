@@ -25,7 +25,7 @@ const sidebarSections = [
     label: "INTELLIGENCE",
     items: [
       { key: "opportunities", icon: Lightbulb, path: "/vendor/opportunities", comingSoon: true },
-      { key: "alerts", icon: Bell, path: "/vendor/alerts", comingSoon: true },
+      { key: "alerts", icon: Bell, path: "/vendor/alerts" },
       { key: "tenders", icon: FileText, path: "/vendor/tenders", comingSoon: true },
       { key: "analytics", icon: BarChart3, path: "/vendor/analytics", comingSoon: true },
     ],

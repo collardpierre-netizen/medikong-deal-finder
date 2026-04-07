@@ -3783,6 +3783,10 @@ export type Database = {
         Returns: boolean
       }
       delete_user_account: { Args: { _user_id: string }; Returns: undefined }
+      detect_price_alerts_batch: {
+        Args: { _th_crit?: number; _th_info?: number; _th_warn?: number }
+        Returns: Json
+      }
       enqueue_email: {
         Args: { payload: Json; queue_name: string }
         Returns: number

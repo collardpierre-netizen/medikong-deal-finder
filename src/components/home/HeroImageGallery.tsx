@@ -34,6 +34,8 @@ export function HeroImageGallery() {
       return data as HeroImg[];
     },
     staleTime: 5 * 60 * 1000,
+    retry: false,
+    refetchOnWindowFocus: false,
   });
 
   const images = dbImages ?? fallbackImages;

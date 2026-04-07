@@ -59,6 +59,8 @@ export default function HomePage() {
       };
     },
     staleTime: 5 * 60 * 1000,
+    retry: false,
+    refetchOnWindowFocus: false,
   });
 
   const { data: featuredBrands = [] } = useQuery({
@@ -74,6 +76,9 @@ export default function HomePage() {
         .limit(20);
       return data || [];
     },
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+    refetchOnWindowFocus: false,
   });
 
   const countryLabel = currentCountry?.name || "Belgique";

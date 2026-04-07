@@ -122,6 +122,8 @@ export function useFeaturedProducts(limit = 10, options?: { promotion?: boolean;
       return (data || []).map((row: any) => mapDbProduct(row));
     },
     staleTime: 5 * 60 * 1000,
+    retry: false,
+    refetchOnWindowFocus: false,
   });
 }
 

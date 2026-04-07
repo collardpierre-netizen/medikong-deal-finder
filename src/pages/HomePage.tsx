@@ -42,10 +42,10 @@ export default function HomePage() {
     queryKey: ["homepage-stats", country],
     queryFn: async () => {
       const [productsRes, offersRes, brandsRes, vendorsRes] = await Promise.all([
-        supabase.from("products").select("id", { count: "estimated", head: true }).eq("is_active", true),
-        supabase.from("offers").select("id", { count: "estimated", head: true }).eq("country_code", country).eq("is_active", true),
-        supabase.from("brands").select("id", { count: "estimated", head: true }).eq("is_active", true).gt("product_count", 0),
-        supabase.from("vendors").select("id", { count: "estimated", head: true }).eq("is_active", true).eq("is_verified", true),
+        supabase.from("products").select("id", { count: "estimated" }).eq("is_active", true).range(0, 0),
+        supabase.from("offers").select("id", { count: "estimated" }).eq("country_code", country).eq("is_active", true).range(0, 0),
+        supabase.from("brands").select("id", { count: "estimated" }).eq("is_active", true).gt("product_count", 0).range(0, 0),
+        supabase.from("vendors").select("id", { count: "estimated" }).eq("is_active", true).eq("is_verified", true).range(0, 0),
       ]);
 
       const queryError = productsRes.error || offersRes.error || brandsRes.error || vendorsRes.error;

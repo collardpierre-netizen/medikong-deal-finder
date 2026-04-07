@@ -110,7 +110,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
     }
 
-    return { error: error as Error | null };
+    return { error: error as Error | null, user: data?.user ?? null };
   };
 
   const signOut = async () => {

@@ -1406,6 +1406,59 @@ export type Database = {
           },
         ]
       }
+      offer_profile_rules: {
+        Row: {
+          country_code: string | null
+          created_at: string | null
+          custom_price_excl_vat: number | null
+          discount_percentage: number | null
+          id: string
+          is_active: boolean | null
+          moq: number | null
+          mov_amount: number | null
+          mov_currency: string | null
+          offer_id: string
+          profile_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          country_code?: string | null
+          created_at?: string | null
+          custom_price_excl_vat?: number | null
+          discount_percentage?: number | null
+          id?: string
+          is_active?: boolean | null
+          moq?: number | null
+          mov_amount?: number | null
+          mov_currency?: string | null
+          offer_id: string
+          profile_type: string
+          updated_at?: string | null
+        }
+        Update: {
+          country_code?: string | null
+          created_at?: string | null
+          custom_price_excl_vat?: number | null
+          discount_percentage?: number | null
+          id?: string
+          is_active?: boolean | null
+          moq?: number | null
+          mov_amount?: number | null
+          mov_currency?: string | null
+          offer_id?: string
+          profile_type?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "offer_profile_rules_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       offers: {
         Row: {
           applied_margin_percentage: number | null

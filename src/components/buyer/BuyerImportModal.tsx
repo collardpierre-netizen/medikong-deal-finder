@@ -298,7 +298,7 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
                     <th className="p-2 text-left font-medium text-muted-foreground">Produit</th>
                     <th className="p-2 text-center font-medium text-muted-foreground">Qté</th>
                     <th className="p-2 text-right font-medium text-muted-foreground">Votre prix</th>
-                    <th className="p-2 text-right font-medium text-muted-foreground"><th className="p-2 text-right font-medium text-muted-foreground">Prix MediKong</th></th>
+                    <th className="p-2 text-right font-medium text-muted-foreground">Prix MediKong</th>
                     <th className="p-2 text-right font-medium text-muted-foreground">Économie</th>
                     <th className="p-2 text-center font-medium text-muted-foreground">Statut</th>
                   </tr>

@@ -1,13 +1,31 @@
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { VCard } from "@/components/vendor/ui/VCard";
 import { VBtn } from "@/components/vendor/ui/VBtn";
 import { VBadge } from "@/components/vendor/ui/VBadge";
-import { Tag, Plus, Pencil, Trash2, X, Loader2, Package, Search, Download, Upload, FileSpreadsheet, ChevronDown } from "lucide-react";
+import { Tag, Plus, Pencil, Trash2, X, Loader2, Package, Search, Download, Upload, FileSpreadsheet, ChevronDown, Users, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { useCurrentVendor } from "@/hooks/useCurrentVendor";
 import * as XLSX from "xlsx";
+
+const PROFILE_TYPES = [
+  { value: "pharmacy", label: "Pharmacie" },
+  { value: "hospital", label: "Hôpital" },
+  { value: "dentist", label: "Dentiste" },
+  { value: "nursing", label: "Infirmier" },
+  { value: "veterinary", label: "Vétérinaire" },
+  { value: "ehpad", label: "EHPAD/MRS" },
+  { value: "wholesale", label: "Grossiste" },
+];
+
+const COUNTRIES = [
+  { value: "BE", label: "Belgique" },
+  { value: "FR", label: "France" },
+  { value: "NL", label: "Pays-Bas" },
+  { value: "LU", label: "Luxembourg" },
+  { value: "DE", label: "Allemagne" },
+];
 
 /* ─── Product search hook (server-side, paginated) ─── */
 const useProductSearch = (searchTerm: string, brandFilter: string, categoryFilter: string) =>

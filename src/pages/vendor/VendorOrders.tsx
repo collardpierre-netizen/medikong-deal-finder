@@ -146,9 +146,9 @@ export default function VendorOrders() {
           <p className="text-[13px] text-muted-foreground mt-0.5">Gestion de vos commandes</p>
         </div>
         <VEmptyState
-          icon={<ShoppingCart size={48} />}
+          icon="ShoppingCart"
           title="Aucune commande"
-          description="Vos commandes apparaîtront ici dès qu'un acheteur passera commande sur vos offres."
+          sub="Vos commandes apparaîtront ici dès qu'un acheteur passera commande sur vos offres."
         />
       </div>
     );

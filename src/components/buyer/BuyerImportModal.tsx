@@ -35,8 +35,9 @@ type Props = {
 
 type ResultFilter = "all" | "found" | "savings" | "more_expensive" | "unavailable";
 
-const CHUNK_SIZE = 120;
-const MAX_CONCURRENT_CHUNKS = 3;
+const CHUNK_SIZE = 80;
+const CHUNK_TIMEOUT_MS = 12000;
+const MIN_CHUNK_SIZE = 20;
 
 const waitForUiPaint = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
 
@@ -61,6 +62,33 @@ const normalizeMatchedRow = (row: any) => ({
 const calcDeltaPct = (currentPrice: number, mediPrice?: number): number | null => {
   if (!mediPrice || currentPrice <= 0) return null;
   return ((mediPrice - currentPrice) / currentPrice) * 100;
+};
+
+const rpcMatchImportLines = async (payload: Array<{ index: number; ean: string | null; cnk: string | null; quantity: number; currentPrice: number }>) => {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(new Error("timeout")), CHUNK_TIMEOUT_MS);
+
+  try {
+    const { data, error } = await (supabase as any)
+      .rpc("match_import_lines", { _lines: payload })
+      .abortSignal(controller.signal);
+
+    if (error) throw error;
+    return (data || []) as any[];
+  } catch (error) {
+    if (payload.length > MIN_CHUNK_SIZE) {
+      const middle = Math.ceil(payload.length / 2);
+      const [left, right] = await Promise.all([
+        rpcMatchImportLines(payload.slice(0, middle)),
+        rpcMatchImportLines(payload.slice(middle)),
+      ]);
+      return [...left, ...right];
+    }
+
+    throw error;
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
 };
 
 export function BuyerImportModal({ open, onOpenChange }: Props) {
@@ -136,11 +164,8 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
       const matchedByIndex: MatchedLine[] = new Array(lines.length);
 
       if (lines.length <= CHUNK_SIZE) {
-        const { data, error } = await (supabase as any).rpc("match_import_lines", {
-          _lines: payload,
-        });
-        if (error) throw error;
-        ((data || []) as any[]).forEach((row) => {
+        const data = await rpcMatchImportLines(payload);
+        data.forEach((row) => {
           const { lineIndex, result } = normalizeMatchedRow(row);
           matchedByIndex[lineIndex] = result;
         });
@@ -151,29 +176,18 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
           chunks.push(payload.slice(start, start + CHUNK_SIZE));
         }
 
-        let nextChunkIndex = 0;
         let processedLines = 0;
 
-        const runWorker = async () => {
-          while (nextChunkIndex < chunks.length) {
-            const currentChunkIndex = nextChunkIndex++;
-            const chunk = chunks[currentChunkIndex];
-            const { data, error } = await (supabase as any).rpc("match_import_lines", {
-              _lines: chunk,
-            });
-            if (error) throw error;
-            ((data || []) as any[]).forEach((row) => {
+        for (const chunk of chunks) {
+          const data = await rpcMatchImportLines(chunk);
+          data.forEach((row) => {
               const { lineIndex, result } = normalizeMatchedRow(row);
               matchedByIndex[lineIndex] = result;
-            });
-            processedLines += chunk.length;
-            setProgress((p) => ({ ...p, current: Math.min(processedLines, lines.length) }));
-            await waitForUiPaint();
-          }
-        };
-        await Promise.all(
-          Array.from({ length: Math.min(MAX_CONCURRENT_CHUNKS, chunks.length) }, () => runWorker())
-        );
+          });
+          processedLines += chunk.length;
+          setProgress((p) => ({ ...p, current: Math.min(processedLines, lines.length) }));
+          await waitForUiPaint();
+        }
       }
 
       const finalResults = matchedByIndex.filter(Boolean);

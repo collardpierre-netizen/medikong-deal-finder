@@ -1079,6 +1079,11 @@ export default function VendorOffers() {
                 style={{ borderColor: "#E2E8F0" }} value={form.moq} onChange={e => setForm(p => ({ ...p, moq: e.target.value }))} />
             </div>
             <div>
+              <label className="text-[11px] block mb-1" style={{ color: "#8B95A5" }}>MOV (€ min. commande)</label>
+              <input type="number" step="1" min="0" className="w-full px-3 py-2 text-[13px] border rounded-lg focus:border-[#1B5BDA] focus:outline-none"
+                style={{ borderColor: "#E2E8F0" }} value={form.mov_amount} onChange={e => setForm(p => ({ ...p, mov_amount: e.target.value }))} />
+            </div>
+            <div>
               <label className="text-[11px] block mb-1" style={{ color: "#8B95A5" }}>Délai livraison (jours)</label>
               <input type="number" min="1" className="w-full px-3 py-2 text-[13px] border rounded-lg focus:border-[#1B5BDA] focus:outline-none"
                 style={{ borderColor: "#E2E8F0" }} value={form.delivery_days} onChange={e => setForm(p => ({ ...p, delivery_days: e.target.value }))} />
@@ -1095,8 +1100,17 @@ export default function VendorOffers() {
           {form.price_excl_vat && (
             <div className="mt-3 p-3 rounded-lg text-[12px]" style={{ backgroundColor: "#F8FAFC", color: "#616B7C" }}>
               Prix TTC : <strong style={{ color: "#1D2530" }}>{(parseFloat(form.price_excl_vat) * (1 + parseFloat(form.vat_rate) / 100)).toFixed(2)} €</strong>
+              {parseFloat(form.mov_amount) > 0 && <span className="ml-3">MOV : <strong style={{ color: "#1D2530" }}>{parseFloat(form.mov_amount).toFixed(0)} €</strong></span>}
             </div>
           )}
+
+          {/* ─── Competitive Intelligence ─── */}
+          {form.product_id && vendor && (
+            <CompetitiveIntel productId={form.product_id} currentPrice={parseFloat(form.price_excl_vat) || 0} vendorId={vendor.id} />
+          )}
+
+          {/* ─── Price Tiers ─── */}
+          <PriceTiersEditor offerId={editingId} basePrice={parseFloat(form.price_excl_vat) || 0} vatRate={parseFloat(form.vat_rate) || 21} />
 
           {/* ─── Profile Rules Section ─── */}
           <ProfileRulesEditor offerId={editingId} basePrice={parseFloat(form.price_excl_vat) || 0} />

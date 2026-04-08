@@ -551,8 +551,9 @@ export default function VendorPublicPage() {
                   </div>
                   {vendorMov > 0 && (
                     <div className="w-full h-2.5 rounded-full bg-muted overflow-hidden">
-                      <motion.div
-                        className={`h-full rounded-full ${vendorCartTotal >= vendorMov ? "bg-emerald-500" : "bg-primary"}`}
+                       <motion.div
+                        className="h-full rounded-full"
+                        style={{ backgroundColor: vendorCartTotal >= vendorMov ? "#16A34A" : "#F59E0B" }}
                         initial={{ width: 0 }}
                         animate={{ width: `${Math.min((vendorCartTotal / vendorMov) * 100, 100)}%` }}
                         transition={{ duration: 0.5, ease: "easeOut" }}

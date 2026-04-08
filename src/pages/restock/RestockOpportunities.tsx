@@ -69,8 +69,11 @@ function SwipeCard({
   const rightOverlay = useTransform(x, [0, 80], [0, 1]);
   const leftOverlay = useTransform(x, [-80, 0], [1, 0]);
 
-  const cataloguePrice = (offer.price_ht || 0) * 1.3;
-  const discount = Math.round(((cataloguePrice - (offer.price_ht || 0)) / cataloguePrice) * 100);
+  const medikongPrice = offer.medikong_product?.best_price_excl_vat;
+  const cataloguePrice = medikongPrice || (offer.price_ht || 0) * 1.3;
+  const discount = medikongPrice
+    ? Math.round((1 - (offer.price_ht || 0) / medikongPrice) * 100)
+    : Math.round(((cataloguePrice - (offer.price_ht || 0)) / cataloguePrice) * 100);
   const grade = gradeConfig[offer.grade] || gradeConfig.A;
   const imgSrc = offer.product_image_url && isValidProductImage(offer.product_image_url) ? offer.product_image_url : null;
 
@@ -136,8 +139,11 @@ function SwipeCard({
 function TinderDetailSheet({ offer, onClose, onAddToCart, onCounterOffer }: {
   offer: any; onClose: () => void; onAddToCart: (qty: number) => void; onCounterOffer: () => void;
 }) {
-  const cataloguePrice = (offer.price_ht || 0) * 1.3;
-  const discount = Math.round(((cataloguePrice - (offer.price_ht || 0)) / cataloguePrice) * 100);
+  const medikongPrice = offer.medikong_product?.best_price_excl_vat;
+  const cataloguePrice = medikongPrice || (offer.price_ht || 0) * 1.3;
+  const discount = medikongPrice
+    ? Math.round((1 - (offer.price_ht || 0) / medikongPrice) * 100)
+    : Math.round(((cataloguePrice - (offer.price_ht || 0)) / cataloguePrice) * 100);
   const grade = gradeConfig[offer.grade] || gradeConfig.A;
   const moq = offer.moq || 1;
   const lotSize = offer.lot_size || 1;
@@ -471,7 +477,23 @@ export default function RestockOpportunities() {
         .eq("status", "published")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data || [];
+      const offersData = data || [];
+      // Batch-fetch matched MediKong products
+      const matchedIds = offersData.map((o: any) => o.matched_product_id).filter(Boolean);
+      let productsMap: Record<string, any> = {};
+      if (matchedIds.length > 0) {
+        const { data: products } = await supabase
+          .from("products")
+          .select("id, name, best_price_excl_vat, best_price_incl_vat, image_url, gtin")
+          .in("id", [...new Set(matchedIds)]);
+        if (products) {
+          productsMap = Object.fromEntries(products.map(p => [p.id, p]));
+        }
+      }
+      return offersData.map((o: any) => ({
+        ...o,
+        medikong_product: o.matched_product_id ? productsMap[o.matched_product_id] || null : null,
+      }));
     },
   });
 
@@ -622,12 +644,18 @@ export default function RestockOpportunities() {
     return new Date(d).toLocaleDateString("fr-BE", { day: "2-digit", month: "short", year: "numeric" });
   };
   const formatPrice = (p: number) => `${p.toFixed(2)} €`;
-  const getCataloguePrice = (priceHt: number) => priceHt * 1.3;
+  const getCataloguePrice = (offer: any) => offer.medikong_product?.best_price_excl_vat || (offer.price_ht || 0) * 1.3;
+  const getDiscount = (offer: any) => {
+    const mk = offer.medikong_product?.best_price_excl_vat;
+    if (mk && mk > 0) return Math.round((1 - (offer.price_ht || 0) / mk) * 100);
+    const cat = (offer.price_ht || 0) * 1.3;
+    return Math.round(((cat - (offer.price_ht || 0)) / cat) * 100);
+  };
 
   /* ── Render helpers ── */
   const renderOfferCard = (offer: any) => {
-    const cataloguePrice = getCataloguePrice(offer.price_ht || 0);
-    const discount = Math.round(((cataloguePrice - (offer.price_ht || 0)) / cataloguePrice) * 100);
+    const cataloguePrice = getCataloguePrice(offer);
+    const discount = getDiscount(offer);
     const grade = offer.grade || stateToGrade[offer.product_state] || "A";
     const gc = gradeConfig[grade] || gradeConfig.A;
     const delivery = deliveryLabels[offer.delivery_condition] || deliveryLabels.both;
@@ -663,7 +691,7 @@ export default function RestockOpportunities() {
             <div className="text-right">
               <span className="text-lg font-bold text-primary">{formatPrice(offer.price_ht || 0)}</span>
               <span className="text-[10px] text-muted-foreground ml-1">HT/u</span>
-              {discount > 0 && <span className="ml-2 text-xs font-bold text-emerald-600">-{discount}%</span>}
+              {discount > 0 && <span className="ml-2 text-xs font-bold text-emerald-600">-{discount}% {offer.medikong_product ? 'vs neuf' : ''}</span>}
             </div>
             <div className="flex gap-2 mt-2">
               <Button size="sm" variant="outline" className="h-8 text-xs gap-1" onClick={() => { setCounterOfferTarget(offer); setCounterForm({ price: "", quantity: String(offer.allow_partial ? offer.moq : offer.quantity) }); }}>
@@ -692,7 +720,7 @@ export default function RestockOpportunities() {
             </div>
           )}
           {discount > 0 && (
-            <span className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-emerald-600 text-white text-xs font-bold">-{discount}%</span>
+            <span className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-emerald-600 text-white text-xs font-bold">-{discount}%{offer.medikong_product ? ' vs neuf' : ''}</span>
           )}
           <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ backgroundColor: gc.bg, color: gc.color }} title={gc.desc}>
             {gc.label}
@@ -709,6 +737,7 @@ export default function RestockOpportunities() {
             <span className="text-xl font-bold text-primary">{formatPrice(offer.price_ht || 0)}</span>
             <span className="text-xs text-muted-foreground line-through">{formatPrice(cataloguePrice)}</span>
             <span className="text-[11px] text-muted-foreground">HT/u</span>
+            {offer.medikong_product && <span className="text-[10px] text-emerald-600 font-medium">vs neuf MediKong</span>}
           </div>
 
           <div className="grid grid-cols-2 gap-1.5 text-xs text-muted-foreground">

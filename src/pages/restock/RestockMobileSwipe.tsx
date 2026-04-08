@@ -36,8 +36,11 @@ function SwipeCard({
   const rightOverlay = useTransform(x, [0, 80], [0, 1]);
   const leftOverlay = useTransform(x, [-80, 0], [1, 0]);
 
-  const cataloguePrice = (offer.price_ht || 0) * 1.3;
-  const discount = Math.round(((cataloguePrice - (offer.price_ht || 0)) / cataloguePrice) * 100);
+  const medikongPrice = offer.medikong_product?.best_price_excl_vat;
+  const cataloguePrice = medikongPrice || (offer.price_ht || 0) * 1.3;
+  const discount = medikongPrice
+    ? Math.round((1 - (offer.price_ht || 0) / medikongPrice) * 100)
+    : Math.round(((cataloguePrice - (offer.price_ht || 0)) / cataloguePrice) * 100);
   const grade = gradeConfig[offer.grade] || gradeConfig.A;
   const imgSrc = offer.product_image_url || null;
   const dluDate = offer.dlu ? new Date(offer.dlu) : null;
@@ -100,7 +103,7 @@ function SwipeCard({
           </span>
           {discount > 0 && (
             <span className="absolute top-3 right-3 px-3 py-1 rounded-full bg-emerald-500 text-white text-sm font-bold shadow-md">
-              −{discount}%
+              −{discount}%{medikongPrice ? ' vs neuf' : ''}
             </span>
           )}
           {/* Tap hint */}
@@ -168,8 +171,11 @@ function SwipeCard({
 function DetailSheet({ offer, onClose, onAddToCart, onCounterOffer }: {
   offer: any; onClose: () => void; onAddToCart: (qty: number) => void; onCounterOffer: () => void;
 }) {
-  const cataloguePrice = (offer.price_ht || 0) * 1.3;
-  const discount = Math.round(((cataloguePrice - (offer.price_ht || 0)) / cataloguePrice) * 100);
+  const medikongPrice = offer.medikong_product?.best_price_excl_vat;
+  const cataloguePrice = medikongPrice || (offer.price_ht || 0) * 1.3;
+  const discount = medikongPrice
+    ? Math.round((1 - (offer.price_ht || 0) / medikongPrice) * 100)
+    : Math.round(((cataloguePrice - (offer.price_ht || 0)) / cataloguePrice) * 100);
   const grade = gradeConfig[offer.grade] || gradeConfig.A;
   const moq = offer.moq || 1;
   const lotSize = offer.lot_size || 1;
@@ -337,7 +343,20 @@ export default function RestockMobileSwipe() {
         .select("*")
         .eq("status", "published")
         .order("created_at", { ascending: false });
-      return data || [];
+      const offersData = data || [];
+      const matchedIds = offersData.map((o: any) => o.matched_product_id).filter(Boolean);
+      let productsMap: Record<string, any> = {};
+      if (matchedIds.length > 0) {
+        const { data: products } = await supabase
+          .from("products")
+          .select("id, name, best_price_excl_vat, best_price_incl_vat, image_url, gtin")
+          .in("id", [...new Set(matchedIds)]);
+        if (products) productsMap = Object.fromEntries(products.map(p => [p.id, p]));
+      }
+      return offersData.map((o: any) => ({
+        ...o,
+        medikong_product: o.matched_product_id ? productsMap[o.matched_product_id] || null : null,
+      }));
     },
   });
 

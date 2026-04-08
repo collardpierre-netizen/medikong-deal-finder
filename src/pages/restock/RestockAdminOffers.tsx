@@ -17,6 +17,8 @@ interface AggregatedOffer {
   max_price: number;
   shortest_dlu: string;
   offer_ids: string[];
+  medikong_price_ht: number | null;
+  delta_pct: number | null;
 }
 
 export default function RestockAdminOffers() {
@@ -30,7 +32,20 @@ export default function RestockAdminOffers() {
         .select("*")
         .eq("status", "published");
       if (error) throw error;
-      return data || [];
+      const offersData = data || [];
+      const matchedIds = offersData.map((o: any) => o.matched_product_id).filter(Boolean);
+      let productsMap: Record<string, any> = {};
+      if (matchedIds.length > 0) {
+        const { data: products } = await supabase
+          .from("products")
+          .select("id, name, best_price_excl_vat")
+          .in("id", [...new Set(matchedIds)]);
+        if (products) productsMap = Object.fromEntries(products.map(p => [p.id, p]));
+      }
+      return offersData.map((o: any) => ({
+        ...o,
+        medikong_price_ht: o.matched_product_id ? productsMap[o.matched_product_id]?.best_price_excl_vat : null,
+      }));
     },
   });
 
@@ -62,6 +77,8 @@ export default function RestockAdminOffers() {
           max_price: -Infinity,
           shortest_dlu: o.dlu || "",
           offer_ids: [],
+          medikong_price_ht: o.medikong_price_ht || null,
+          delta_pct: null,
         });
       }
       const agg = map.get(key)!;
@@ -71,6 +88,13 @@ export default function RestockAdminOffers() {
       agg.max_price = Math.max(agg.max_price, o.price_ht || 0);
       if (o.dlu && o.dlu < agg.shortest_dlu) agg.shortest_dlu = o.dlu;
       agg.offer_ids.push(o.id);
+      if (!agg.medikong_price_ht && o.medikong_price_ht) agg.medikong_price_ht = o.medikong_price_ht;
+    }
+    // Calculate delta
+    for (const agg of map.values()) {
+      if (agg.medikong_price_ht && agg.medikong_price_ht > 0 && agg.min_price < Infinity) {
+        agg.delta_pct = Math.round((1 - agg.min_price / agg.medikong_price_ht) * 100);
+      }
     }
     return Array.from(map.values());
   }, [offers]);
@@ -164,15 +188,17 @@ export default function RestockAdminOffers() {
                 <th className="text-center px-4 py-3 font-medium text-[#5C6470]">Qté totale</th>
                 <th className="text-right px-4 py-3 font-medium text-[#5C6470]">Prix min</th>
                 <th className="text-right px-4 py-3 font-medium text-[#5C6470]">Prix max</th>
+                <th className="text-right px-4 py-3 font-medium text-[#5C6470]">Prix neuf MK</th>
+                <th className="text-center px-4 py-3 font-medium text-[#5C6470]">Δ vs neuf</th>
                 <th className="text-center px-4 py-3 font-medium text-[#5C6470]">DLU courte</th>
                 <th className="text-center px-4 py-3 font-medium text-[#5C6470]">Actions</th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
-                <tr><td colSpan={8} className="text-center py-12 text-[#8B929C]">Chargement…</td></tr>
+                <tr><td colSpan={10} className="text-center py-12 text-[#8B929C]">Chargement…</td></tr>
               ) : filtered.length === 0 ? (
-                <tr><td colSpan={8} className="text-center py-12 text-[#8B929C]">Aucune offre publiée</td></tr>
+                <tr><td colSpan={10} className="text-center py-12 text-[#8B929C]">Aucune offre publiée</td></tr>
               ) : (
                 filtered.map((item, i) => (
                   <tr key={i} className="border-b border-[#D0D5DC] last:border-0 hover:bg-[#F7F8FA]">
@@ -186,6 +212,14 @@ export default function RestockAdminOffers() {
                     <td className="px-4 py-3 text-center font-medium text-[#1E252F]">{item.total_quantity}</td>
                     <td className="px-4 py-3 text-right text-[#1E252F]">{item.min_price === Infinity ? "—" : `${item.min_price.toFixed(2)} €`}</td>
                     <td className="px-4 py-3 text-right text-[#1E252F]">{item.max_price === -Infinity ? "—" : `${item.max_price.toFixed(2)} €`}</td>
+                    <td className="px-4 py-3 text-right text-[#5C6470]">{item.medikong_price_ht ? `${item.medikong_price_ht.toFixed(2)} €` : "—"}</td>
+                    <td className="px-4 py-3 text-center">
+                      {item.delta_pct !== null ? (
+                        <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-bold ${item.delta_pct > 0 ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"}`}>
+                          {item.delta_pct > 0 ? `−${item.delta_pct}%` : `+${Math.abs(item.delta_pct)}%`}
+                        </span>
+                      ) : <span className="text-[#8B929C]">—</span>}
+                    </td>
                     <td className="px-4 py-3 text-center text-xs text-[#5C6470]">{formatDate(item.shortest_dlu)}</td>
                     <td className="px-4 py-3 text-center">
                       <Button size="sm" variant="outline" onClick={() => handleDiffuse(item)} className="text-xs gap-1 border-[#1C58D9] text-[#1C58D9] hover:bg-[#EBF0FB] rounded-lg">

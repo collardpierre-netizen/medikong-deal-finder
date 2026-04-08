@@ -484,7 +484,7 @@ export default function RestockOpportunities() {
       if (matchedIds.length > 0) {
         const { data: products } = await supabase
           .from("products")
-          .select("id, name, best_price_excl_vat, best_price_incl_vat, image_url, gtin")
+          .select("id, name, slug, best_price_excl_vat, best_price_incl_vat, image_url, gtin")
           .in("id", [...new Set(matchedIds)]);
         if (products) {
           productsMap = Object.fromEntries(products.map(p => [p.id, p]));
@@ -691,7 +691,12 @@ export default function RestockOpportunities() {
             <div className="text-right">
               <span className="text-lg font-bold text-primary">{formatPrice(offer.price_ht || 0)}</span>
               <span className="text-[10px] text-muted-foreground ml-1">HT/u</span>
-              {discount > 0 && <span className="ml-2 text-xs font-bold text-emerald-600">-{discount}% {offer.medikong_product ? 'vs neuf' : ''}</span>}
+              {discount > 0 && <span className="ml-2 text-xs font-bold text-emerald-600">-{discount}%</span>}
+              {offer.medikong_product && (
+                <a href={`/produit/${offer.medikong_product.slug || offer.medikong_product.id}`} className="ml-2 text-[10px] text-emerald-600 hover:underline" onClick={e => e.stopPropagation()}>
+                  Voir neuf →
+                </a>
+              )}
             </div>
             <div className="flex gap-2 mt-2">
               <Button size="sm" variant="outline" className="h-8 text-xs gap-1" onClick={() => { setCounterOfferTarget(offer); setCounterForm({ price: "", quantity: String(offer.allow_partial ? offer.moq : offer.quantity) }); }}>
@@ -737,7 +742,11 @@ export default function RestockOpportunities() {
             <span className="text-xl font-bold text-primary">{formatPrice(offer.price_ht || 0)}</span>
             <span className="text-xs text-muted-foreground line-through">{formatPrice(cataloguePrice)}</span>
             <span className="text-[11px] text-muted-foreground">HT/u</span>
-            {offer.medikong_product && <span className="text-[10px] text-emerald-600 font-medium">vs neuf MediKong</span>}
+            {offer.medikong_product && (
+              <a href={`/produit/${offer.medikong_product.slug || offer.medikong_product.id}`} className="text-[10px] text-emerald-600 font-medium hover:underline" onClick={e => e.stopPropagation()}>
+                vs neuf →
+              </a>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-1.5 text-xs text-muted-foreground">

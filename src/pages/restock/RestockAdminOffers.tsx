@@ -17,6 +17,8 @@ interface AggregatedOffer {
   max_price: number;
   shortest_dlu: string;
   offer_ids: string[];
+  medikong_price_ht: number | null;
+  delta_pct: number | null;
 }
 
 export default function RestockAdminOffers() {

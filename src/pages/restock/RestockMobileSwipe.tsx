@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useCallback } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import TinderCard from "react-tinder-card";
@@ -19,6 +19,7 @@ const gradeConfig: Record<string, { label: string; color: string; bg: string }> 
 
 export default function RestockMobileSwipe() {
   const { campaignId } = useParams();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [currentIdx, setCurrentIdx] = useState(0);
   const [cart, setCart] = useState<any[]>([]);
@@ -107,7 +108,13 @@ export default function RestockMobileSwipe() {
           <img src={logoHorizontal} alt="MediKong" className="h-7" />
           <span className="text-[#00B85C] font-bold text-sm">ReStock</span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => navigate(`/opportunities/${campaignId || "demo"}`)}
+            className="text-[10px] text-[#5C6470] border border-[#D0D5DC] px-2 py-1 rounded-full hover:bg-[#F0F1F3]"
+          >
+            ☰ Grille
+          </button>
           <div className="relative">
             <ShoppingCart size={20} className="text-[#5C6470]" />
             {cart.length > 0 && (

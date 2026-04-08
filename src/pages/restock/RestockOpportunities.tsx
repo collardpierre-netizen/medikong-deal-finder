@@ -258,7 +258,38 @@ function TinderView({ offers, tinderIdx, setTinderIdx, tinderCart, setTinderCart
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 relative">
+      {/* Full-screen flash feedback */}
+      <AnimatePresence>
+        {flash && (
+          <motion.div
+            key={flash}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15, ease: "easeOut" }}
+            className="fixed inset-0 z-[100] pointer-events-none flex items-center justify-center"
+          >
+            {/* Halo border glow */}
+            <div className={`absolute inset-0 ${flash === "accept" ? "shadow-[inset_0_0_80px_20px_rgba(16,185,129,0.4)]" : "shadow-[inset_0_0_80px_20px_rgba(239,68,68,0.4)]"}`} />
+            {/* Centered icon + text */}
+            <motion.div
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 1.2, opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className={`flex flex-col items-center gap-2 px-8 py-5 rounded-2xl backdrop-blur-sm ${flash === "accept" ? "bg-emerald-500/20" : "bg-red-500/20"}`}
+            >
+              <div className={`w-16 h-16 rounded-full flex items-center justify-center ${flash === "accept" ? "bg-emerald-500" : "bg-red-500"}`}>
+                {flash === "accept" ? <ShoppingCart size={32} className="text-white" /> : <X size={32} className="text-white" />}
+              </div>
+              <span className={`text-lg font-bold ${flash === "accept" ? "text-emerald-700" : "text-red-700"}`}>
+                {flash === "accept" ? "Ajouté au panier !" : "Passé"}
+              </span>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       {/* Progress */}
       <div className="flex items-center justify-between text-[11px] text-muted-foreground">
         <span>{tinderIdx}/{offers.length} offres vues</span>

@@ -184,6 +184,11 @@ const translations: Record<Lang, Record<string, string>> = {
     filter: "Filteren",
     messages: "Berichten",
     translations: "Vertalingen",
+    restock: "ReStock",
+    restockOffers: "ReStock aanbiedingen",
+    restockBuyers: "Kopers",
+    restockCampaigns: "E-mailcampagnes",
+    restockRules: "Filterregels",
   },
   de: {
     dashboard: "Dashboard",

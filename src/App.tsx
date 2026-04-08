@@ -161,7 +161,7 @@ const VendorStripeRefreshPage = lazyWithRetry(() => import("./pages/vendor/Vendo
 const VendorMessages = lazyWithRetry(() => import("./pages/vendor/VendorMessages"), "VendorMessages");
 
 // ReStock pages
-const RestockLayout = lazyWithRetry(() => import("./components/restock/RestockLayout"), "RestockLayout");
+const RestockSiteLayout = lazyWithRetry(() => import("./components/restock/RestockSiteLayout"), "RestockSiteLayout");
 const RestockSellerNewOffer = lazyWithRetry(() => import("./pages/restock/RestockSellerNewOffer"), "RestockSellerNewOffer");
 const RestockSellerOffers = lazyWithRetry(() => import("./pages/restock/RestockSellerOffers"), "RestockSellerOffers");
 const RestockSellerCounterOffers = lazyWithRetry(() => import("./pages/restock/RestockSellerCounterOffers"), "RestockSellerCounterOffers");
@@ -357,37 +357,35 @@ const App = () => (
               <Route path="settings" element={<LP><VendorSettings /></LP>} />
             </Route>
 
-            {/* ReStock Landing */}
-            <Route path="/restock" element={<LP><RestockLandingPage /></LP>} />
+            {/* ReStock — all routes under main site layout with sub-nav */}
+            <Route element={<LP><RestockSiteLayout /></LP>}>
+              <Route path="/restock" element={<LP><RestockLandingPage /></LP>} />
+              <Route path="/restock/opportunities/:campaignId" element={<LP><RestockOpportunities /></LP>} />
+              <Route path="/restock/opportunities" element={<LP><RestockOpportunities /></LP>} />
+              <Route path="/restock/buyer/dashboard" element={<LP><RestockBuyerDashboard /></LP>} />
 
-            {/* ReStock Seller */}
-            <Route path="/restock/seller" element={<LP><RestockLayout /></LP>}>
-              <Route index element={<Navigate to="/restock/seller/new" replace />} />
-              <Route path="new" element={<LP><RestockSellerNewOffer /></LP>} />
-              <Route path="offers" element={<LP><RestockSellerOffers /></LP>} />
-              <Route path="counteroffers" element={<LP><RestockSellerCounterOffers /></LP>} />
-              <Route path="sales" element={<LP><RestockSellerSales /></LP>} />
-              <Route path="help" element={<LP><RestockSellerHelp /></LP>} />
+              {/* Seller */}
+              <Route path="/restock/seller" element={<Navigate to="/restock/seller/new" replace />} />
+              <Route path="/restock/seller/new" element={<LP><RestockSellerNewOffer /></LP>} />
+              <Route path="/restock/seller/offers" element={<LP><RestockSellerOffers /></LP>} />
+              <Route path="/restock/seller/counteroffers" element={<LP><RestockSellerCounterOffers /></LP>} />
+              <Route path="/restock/seller/sales" element={<LP><RestockSellerSales /></LP>} />
+              <Route path="/restock/seller/help" element={<LP><RestockSellerHelp /></LP>} />
+
+              {/* Admin */}
+              <Route path="/restock/admin" element={<Navigate to="/restock/admin/offers" replace />} />
+              <Route path="/restock/admin/offers" element={<LP><RestockAdminOffers /></LP>} />
+              <Route path="/restock/admin/buyers" element={<LP><RestockAdminBuyers /></LP>} />
+              <Route path="/restock/admin/campaigns" element={<LP><RestockAdminCampaigns /></LP>} />
+              <Route path="/restock/admin/rules" element={<LP><RestockAdminRules /></LP>} />
+              <Route path="/restock/admin/settings" element={<LP><RestockSettings /></LP>} />
+              <Route path="/restock/admin/drops" element={<LP><RestockDrops /></LP>} />
             </Route>
 
-            {/* ReStock Admin */}
-            <Route path="/restock/admin" element={<LP><RestockLayout /></LP>}>
-              <Route index element={<Navigate to="/restock/admin/offers" replace />} />
-              <Route path="offers" element={<LP><RestockAdminOffers /></LP>} />
-              <Route path="buyers" element={<LP><RestockAdminBuyers /></LP>} />
-              <Route path="campaigns" element={<LP><RestockAdminCampaigns /></LP>} />
-              <Route path="rules" element={<LP><RestockAdminRules /></LP>} />
-              <Route path="settings" element={<LP><RestockSettings /></LP>} />
-              <Route path="drops" element={<LP><RestockDrops /></LP>} />
-            </Route>
-
-            {/* ReStock Public Opportunities */}
-            <Route path="/restock/opportunities/:campaignId" element={<LP><RestockOpportunities /></LP>} />
-            <Route path="/restock/opportunities" element={<LP><RestockOpportunities /></LP>} />
+            {/* ReStock standalone mobile */}
             <Route path="/opportunities/:campaignId" element={<LP><RestockOpportunities /></LP>} />
             <Route path="/m/opportunities/:campaignId" element={<LP><RestockMobileSwipe /></LP>} />
             <Route path="/m/opportunities" element={<LP><RestockMobileSwipe /></LP>} />
-            <Route path="/restock/buyer/dashboard" element={<LP><RestockBuyerDashboard /></LP>} />
 
             <Route path="*" element={<LP><NotFound /></LP>} />
           </Routes>

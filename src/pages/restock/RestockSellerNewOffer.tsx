@@ -534,37 +534,55 @@ export default function RestockSellerNewOffer() {
                 </tr>
               </thead>
               <tbody>
-                {rows.map((r, i) => (
-                  <tr key={i} className={`border-b border-[#F0F4FF] ${!r.valid ? "bg-red-50/50" : ""}`}>
-                    <td className="py-2 pr-3">
-                      {r.valid
-                        ? <Badge className="bg-[#EEFBF4] text-[#00B85C] text-[10px]">OK</Badge>
-                        : <Badge className="bg-red-50 text-[#E54545] text-[10px]">Rejetée</Badge>
-                      }
-                    </td>
-                    <td className="py-2 pr-3 font-medium text-[#1E252F] max-w-[200px] truncate">{r.designation}</td>
-                    <td className="py-2 pr-3 text-[#5C6470]">{r.ean || "—"}</td>
-                    <td className="py-2 pr-3 text-[#5C6470]">{r.cnk || "—"}</td>
-                    <td className="py-2 pr-3 text-right text-[#1E252F]">{r.quantity}</td>
-                    <td className="py-2 pr-3 text-right font-semibold text-[#1C58D9]">{r.price_ht.toFixed(2)} €</td>
-                    <td className="py-2 pr-3 text-[#5C6470]">{r.dlu || "—"}</td>
-                    <td className="py-2 pr-3"><Badge variant="outline" className="text-[10px]">{stateLabel(r.product_state)}</Badge></td>
-                    <td className="py-2 pr-3"><Badge variant="outline" className="text-[10px]">{deliveryLabel(r.delivery_condition)}</Badge></td>
-                    <td className="py-2 pr-3">
-                      {r.errors.length > 0 && (
-                        <div className="flex items-start gap-1 text-[#E54545]">
-                          <AlertTriangle size={12} className="mt-0.5 shrink-0" />
-                          <span>{r.errors.join(", ")}</span>
-                        </div>
-                      )}
-                    </td>
-                    <td className="py-2">
-                      <button onClick={() => removeRow(i)} className="text-[#8B929C] hover:text-[#E54545] transition-colors">
-                        <Trash2 size={14} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                  {rows.map((r, i) => (
+                    <tr key={i} className={`border-b border-[#F0F4FF] ${!r.valid ? "bg-red-50/50" : ""}`}>
+                      <td className="py-2 pr-3">
+                        {r.valid
+                          ? <Badge className="bg-[#EEFBF4] text-[#00B85C] text-[10px]">OK</Badge>
+                          : <Badge className="bg-red-50 text-[#E54545] text-[10px]">Rejetée</Badge>
+                        }
+                      </td>
+                      <td className="py-2 pr-3 font-medium text-[#1E252F] max-w-[200px] truncate">{r.designation}</td>
+                      <td className="py-2 pr-3 text-[#5C6470]">{r.ean || "—"}</td>
+                      <td className="py-2 pr-3 text-[#5C6470]">{r.cnk || "—"}</td>
+                      <td className="py-2 pr-3 text-right text-[#1E252F]">{r.quantity}</td>
+                      <td className="py-2 pr-3 text-right font-semibold text-[#1C58D9]">{r.price_ht.toFixed(2)} €</td>
+                      <td className="py-2 pr-3 text-[#5C6470]">{r.dlu || "—"}</td>
+                      <td className="py-2 pr-3"><Badge variant="outline" className="text-[10px]">{stateLabel(r.product_state)}</Badge></td>
+                      <td className="py-2 pr-3"><Badge variant="outline" className="text-[10px]">{deliveryLabel(r.delivery_condition)}</Badge></td>
+                      <td className="py-2 pr-3">
+                        {r.errors.length > 0 && (
+                          <div className="flex items-start gap-1 text-[#E54545]">
+                            <AlertTriangle size={12} className="mt-0.5 shrink-0" />
+                            <span>{r.errors.join(", ")}</span>
+                          </div>
+                        )}
+                      </td>
+                      <td className="py-2">
+                        <button onClick={() => removeRow(i)} className="text-[#8B929C] hover:text-[#E54545] transition-colors">
+                          <Trash2 size={14} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {/* Smart pricing widgets below each row */}
+                  {rows.map((r, i) => (r.ean || r.cnk) && r.price_ht > 0 ? (
+                    <tr key={`pricing-${i}`}>
+                      <td colSpan={11} className="px-2 pb-2">
+                        <SmartPricingWidget
+                          ean={r.ean}
+                          cnk={r.cnk}
+                          priceHt={r.price_ht}
+                          dlu={r.dlu}
+                          grade={r.product_state}
+                          quantity={r.quantity}
+                          onApplySuggestion={(price) => {
+                            setRows(prev => prev.map((row, idx) => idx === i ? revalidateRow({ ...row, price_ht: price }) : row));
+                          }}
+                        />
+                      </td>
+                    </tr>
+                  ) : null)}
               </tbody>
             </table>
           </div>

@@ -198,7 +198,7 @@ export default function RestockAdminOffers() {
               {isLoading ? (
                 <tr><td colSpan={10} className="text-center py-12 text-[#8B929C]">Chargement…</td></tr>
               ) : filtered.length === 0 ? (
-                <tr><td colSpan={8} className="text-center py-12 text-[#8B929C]">Aucune offre publiée</td></tr>
+                <tr><td colSpan={10} className="text-center py-12 text-[#8B929C]">Aucune offre publiée</td></tr>
               ) : (
                 filtered.map((item, i) => (
                   <tr key={i} className="border-b border-[#D0D5DC] last:border-0 hover:bg-[#F7F8FA]">

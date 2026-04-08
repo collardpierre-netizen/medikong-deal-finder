@@ -1,7 +1,7 @@
 import { Layout } from "@/components/layout/Layout";
 import { useNavigate } from "react-router-dom";
 import { ProductImage } from "@/components/shared/ProductCard";
-import { Users, MapPin, Package, AlertCircle, Heart, Zap, Download, Layers, Mail, Phone, Clock, List, Plus, Trash2, Eye, ShoppingCart, Search, TrendingDown, BarChart3, Upload, FileSpreadsheet } from "lucide-react";
+import { Users, MapPin, Package, AlertCircle, Heart, Zap, Download, Layers, Mail, Phone, Clock, List, Plus, Trash2, Eye, ShoppingCart, Search, TrendingDown, BarChart3, Upload, FileSpreadsheet, Recycle } from "lucide-react";
 import { BuyerImportModal } from "@/components/buyer/BuyerImportModal";
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";

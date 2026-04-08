@@ -43,7 +43,7 @@ export default function RestockLandingPage() {
                   </Button>
                 </Link>
                 <Link to="/opportunities/demo">
-                  <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10 rounded-lg text-base px-8 gap-2">
+                  <Button size="lg" className="bg-white text-primary hover:bg-white/90 rounded-lg text-base px-8 gap-2 font-semibold">
                     Voir les opportunités <ArrowRight size={16} />
                   </Button>
                 </Link>

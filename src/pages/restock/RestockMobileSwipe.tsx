@@ -140,7 +140,7 @@ export default function RestockMobileSwipe() {
       </div>
 
       {/* Card stack */}
-      <div className="flex-1 relative flex items-center justify-center px-4">
+      <div className="flex-1 flex items-start justify-center px-4 pt-2 overflow-visible">
         {allSwiped ? (
           <div className="text-center px-6">
             <Package size={48} className="mx-auto mb-4 text-[#1C58D9]" />

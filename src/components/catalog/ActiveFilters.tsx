@@ -27,6 +27,9 @@ export function ActiveFilters({ filters, setFilter }: Props) {
   if (filters.inStock) {
     chips.push({ label: "En stock", onRemove: () => setFilter("stock", undefined) });
   }
+  if (filters.hasOffers) {
+    chips.push({ label: "Avec offres actives", onRemove: () => setFilter("has_offers", undefined) });
+  }
 
   if (chips.length === 0) return null;
 

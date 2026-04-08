@@ -42,6 +42,7 @@ function applyCatalogProductFilters(
   if (filters.priceMin !== undefined) next = next.gte("best_price_excl_vat", filters.priceMin);
   if (filters.priceMax !== undefined) next = next.lte("best_price_excl_vat", filters.priceMax);
   if (filters.inStock) next = next.eq("is_in_stock", true);
+  if (filters.hasOffers) next = next.gt("offer_count", 0);
 
   if (options.effectiveSearch) {
     const pattern = `%${options.effectiveSearch}%`;
@@ -77,6 +78,7 @@ export interface CatalogFilters {
   priceMin?: number;
   priceMax?: number;
   inStock?: boolean;
+  hasOffers?: boolean;
   sort: string;
   page: number;
   perPage: number;
@@ -161,6 +163,7 @@ function parseFiltersFromParams(params: URLSearchParams): CatalogFilters {
     priceMin: params.get("price_min") ? Number(params.get("price_min")) : undefined,
     priceMax: params.get("price_max") ? Number(params.get("price_max")) : undefined,
     inStock: params.get("stock") === "1" ? true : undefined,
+    hasOffers: params.get("has_offers") === "1" ? true : undefined,
     sort: params.get("sort") || "relevance",
     page: Number(params.get("page")) || 1,
     perPage: Number(params.get("per_page")) || 24,
@@ -242,12 +245,13 @@ export function useCatalogProducts(filters: CatalogFilters) {
         categoryIds ||
         mfIds?.length ||
         filters.inStock ||
+        filters.hasOffers ||
         filters.priceMin !== undefined ||
         filters.priceMax !== undefined
       );
 
       const offset = (filters.page - 1) * filters.perPage;
-      const isDefaultCatalogueView = !effectiveSearch && !resolvedBrandIds?.length && !categoryIds && !mfIds?.length && !filters.inStock && filters.priceMin === undefined && filters.priceMax === undefined;
+      const isDefaultCatalogueView = !effectiveSearch && !resolvedBrandIds?.length && !categoryIds && !mfIds?.length && !filters.inStock && !filters.hasOffers && filters.priceMin === undefined && filters.priceMax === undefined;
       const filterContext = {
         categoryIds,
         resolvedBrandIds,

@@ -177,7 +177,7 @@ export function CatalogSidebar({ filters, setFilter, clearAll, resultCategoryIds
     setFilter("price_max", priceMax ? Number(priceMax) : undefined);
   };
 
-  const hasFilters = filters.category || (filters.brands && filters.brands.length > 0) || (filters.manufacturers && filters.manufacturers.length > 0) || filters.priceMin !== undefined || filters.priceMax !== undefined || filters.inStock;
+  const hasFilters = filters.category || (filters.brands && filters.brands.length > 0) || (filters.manufacturers && filters.manufacturers.length > 0) || filters.priceMin !== undefined || filters.priceMax !== undefined || filters.inStock || filters.hasOffers;
 
   return (
     <div className="space-y-6">
@@ -353,6 +353,20 @@ export function CatalogSidebar({ filters, setFilter, clearAll, resultCategoryIds
             </label>
           ))}
         </div>
+      </div>
+
+      {/* Has offers filter */}
+      <div>
+        <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Offres</h4>
+        <label className="flex items-center gap-2 text-sm cursor-pointer">
+          <input
+            type="checkbox"
+            checked={!!filters.hasOffers}
+            onChange={() => setFilter("has_offers", filters.hasOffers ? undefined : "1")}
+            className="rounded border-border"
+          />
+          <span className="text-foreground">Avec offres actives uniquement</span>
+        </label>
       </div>
 
       {/* Manufacturers */}

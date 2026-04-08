@@ -173,6 +173,10 @@ const RestockAdminCampaigns = lazyWithRetry(() => import("./pages/restock/Restoc
 const RestockAdminRules = lazyWithRetry(() => import("./pages/restock/RestockAdminRules"), "RestockAdminRules");
 const RestockOpportunities = lazyWithRetry(() => import("./pages/restock/RestockOpportunities"), "RestockOpportunities");
 const RestockLandingPage = lazyWithRetry(() => import("./pages/restock/RestockLandingPage"), "RestockLandingPage");
+const RestockMobileSwipe = lazyWithRetry(() => import("./pages/restock/RestockMobileSwipe"), "RestockMobileSwipe");
+const RestockSettings = lazyWithRetry(() => import("./pages/restock/RestockSettings"), "RestockSettings");
+const RestockBuyerDashboard = lazyWithRetry(() => import("./pages/restock/RestockBuyerDashboard"), "RestockBuyerDashboard");
+const RestockDrops = lazyWithRetry(() => import("./pages/restock/RestockDrops"), "RestockDrops");
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -373,11 +377,15 @@ const App = () => (
               <Route path="buyers" element={<LP><RestockAdminBuyers /></LP>} />
               <Route path="campaigns" element={<LP><RestockAdminCampaigns /></LP>} />
               <Route path="rules" element={<LP><RestockAdminRules /></LP>} />
+              <Route path="settings" element={<LP><RestockSettings /></LP>} />
+              <Route path="drops" element={<LP><RestockDrops /></LP>} />
             </Route>
 
             {/* ReStock Public Opportunities */}
             <Route path="/restock/opportunities/:campaignId" element={<LP><RestockOpportunities /></LP>} />
             <Route path="/opportunities/:campaignId" element={<LP><RestockOpportunities /></LP>} />
+            <Route path="/m/opportunities/:campaignId" element={<LP><RestockMobileSwipe /></LP>} />
+            <Route path="/restock/buyer/dashboard" element={<LP><RestockBuyerDashboard /></LP>} />
 
             <Route path="*" element={<LP><NotFound /></LP>} />
           </Routes>

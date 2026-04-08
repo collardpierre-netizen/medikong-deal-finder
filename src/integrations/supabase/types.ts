@@ -918,6 +918,45 @@ export type Database = {
         }
         Relationships: []
       }
+      faq_items: {
+        Row: {
+          answer_html: string
+          category: string
+          created_at: string
+          display_order: number
+          id: string
+          is_published: boolean
+          question: string
+          updated_at: string
+          version: string | null
+          view_count: number
+        }
+        Insert: {
+          answer_html: string
+          category?: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_published?: boolean
+          question: string
+          updated_at?: string
+          version?: string | null
+          view_count?: number
+        }
+        Update: {
+          answer_html?: string
+          category?: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_published?: boolean
+          question?: string
+          updated_at?: string
+          version?: string | null
+          view_count?: number
+        }
+        Relationships: []
+      }
       favorite_list_items: {
         Row: {
           added_at: string
@@ -2295,6 +2334,48 @@ export type Database = {
         }
         Relationships: []
       }
+      price_references: {
+        Row: {
+          category: string | null
+          cnk: string | null
+          created_at: string
+          designation: string
+          ean: string | null
+          id: string
+          pharmacist_price_estimated_eur: number | null
+          public_price_eur: number | null
+          source: string | null
+          updated_at: string
+          vat_rate: number | null
+        }
+        Insert: {
+          category?: string | null
+          cnk?: string | null
+          created_at?: string
+          designation: string
+          ean?: string | null
+          id?: string
+          pharmacist_price_estimated_eur?: number | null
+          public_price_eur?: number | null
+          source?: string | null
+          updated_at?: string
+          vat_rate?: number | null
+        }
+        Update: {
+          category?: string | null
+          cnk?: string | null
+          created_at?: string
+          designation?: string
+          ean?: string | null
+          id?: string
+          pharmacist_price_estimated_eur?: number | null
+          public_price_eur?: number | null
+          source?: string | null
+          updated_at?: string
+          vat_rate?: number | null
+        }
+        Relationships: []
+      }
       product_alerts: {
         Row: {
           created_at: string | null
@@ -2945,6 +3026,8 @@ export type Database = {
           id: string
           interests: string[] | null
           is_suspended: boolean
+          legal_faq_acknowledged_at: string | null
+          legal_faq_version_acknowledged: string | null
           pharmacy_name: string
           phone: string | null
           reception_mode: string
@@ -2965,6 +3048,8 @@ export type Database = {
           id?: string
           interests?: string[] | null
           is_suspended?: boolean
+          legal_faq_acknowledged_at?: string | null
+          legal_faq_version_acknowledged?: string | null
           pharmacy_name: string
           phone?: string | null
           reception_mode?: string
@@ -2985,6 +3070,8 @@ export type Database = {
           id?: string
           interests?: string[] | null
           is_suspended?: boolean
+          legal_faq_acknowledged_at?: string | null
+          legal_faq_version_acknowledged?: string | null
           pharmacy_name?: string
           phone?: string | null
           reception_mode?: string

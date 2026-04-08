@@ -357,6 +357,15 @@ const App = () => (
               <Route path="counteroffers" element={<LP><RestockSellerCounterOffers /></LP>} />
             </Route>
 
+            {/* ReStock Admin */}
+            <Route path="/restock/admin" element={<LP><RestockLayout /></LP>}>
+              <Route index element={<Navigate to="/restock/admin/offers" replace />} />
+              <Route path="offers" element={<LP><RestockAdminOffers /></LP>} />
+              <Route path="buyers" element={<LP><RestockAdminBuyers /></LP>} />
+              <Route path="campaigns" element={<LP><RestockAdminCampaigns /></LP>} />
+              <Route path="rules" element={<LP><RestockAdminRules /></LP>} />
+            </Route>
+
             <Route path="*" element={<LP><NotFound /></LP>} />
           </Routes>
           </Suspense>

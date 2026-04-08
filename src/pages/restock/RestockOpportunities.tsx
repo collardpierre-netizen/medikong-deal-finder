@@ -214,11 +214,19 @@ export default function RestockOpportunities() {
             <img src={logoHorizontal} alt="MediKong" className="h-9" />
             <span className="text-[#00B85C] font-bold text-lg" style={{ fontFamily: "'DM Sans', sans-serif" }}>ReStock</span>
           </div>
-          {buyer && (
-            <span className="text-sm text-[#5C6470]">
-              {buyer.pharmacy_name}
-            </span>
-          )}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate(`/m/opportunities/${campaignId || "demo"}`)}
+              className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[#D0D5DC] text-xs font-medium text-[#5C6470] hover:bg-[#F0F1F3] transition-colors"
+            >
+              📱 Mode Swipe
+            </button>
+            {buyer && (
+              <span className="text-sm text-[#5C6470]">
+                {buyer.pharmacy_name}
+              </span>
+            )}
+          </div>
         </div>
       </header>
 

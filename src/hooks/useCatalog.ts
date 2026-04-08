@@ -163,6 +163,7 @@ function parseFiltersFromParams(params: URLSearchParams): CatalogFilters {
     priceMin: params.get("price_min") ? Number(params.get("price_min")) : undefined,
     priceMax: params.get("price_max") ? Number(params.get("price_max")) : undefined,
     inStock: params.get("stock") === "1" ? true : undefined,
+    hasOffers: params.get("has_offers") === "1" ? true : undefined,
     sort: params.get("sort") || "relevance",
     page: Number(params.get("page")) || 1,
     perPage: Number(params.get("per_page")) || 24,

@@ -30,6 +30,7 @@ const tabs = [
   { key: "portefeuille", label: "Portefeuille", icon: Zap, disabled: true },
   { key: "comparateur", label: "Comparateur", icon: FileSpreadsheet, disabled: false },
   { key: "catalogue", label: "Catalogue", icon: Download, disabled: false },
+  { key: "restock", label: "ReStock", icon: Recycle, disabled: false, href: "/restock" },
   { key: "bnpl", label: "Payer plus tard", icon: Layers, disabled: true },
 ];
 

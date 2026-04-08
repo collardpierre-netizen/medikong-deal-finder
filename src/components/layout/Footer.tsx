@@ -47,6 +47,7 @@ export function Footer() {
             {[
               { label: t("footer.about"), to: "/entreprise/a-propos" },
               { label: t("footer.team"), to: "/entreprise/equipe" },
+              { label: "ReStock", to: "/restock" },
               { label: t("footer.invest"), to: "/invest" },
               { label: t("footer.contact"), to: "/contact" },
               { label: t("footer.helpCenter"), to: "/centre-aide" },

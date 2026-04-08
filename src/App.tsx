@@ -351,6 +351,9 @@ const App = () => (
               <Route path="settings" element={<LP><VendorSettings /></LP>} />
             </Route>
 
+            {/* ReStock Landing */}
+            <Route path="/restock" element={<LP><RestockLandingPage /></LP>} />
+
             {/* ReStock Seller */}
             <Route path="/restock/seller" element={<LP><RestockLayout /></LP>}>
               <Route index element={<Navigate to="/restock/seller/new" replace />} />

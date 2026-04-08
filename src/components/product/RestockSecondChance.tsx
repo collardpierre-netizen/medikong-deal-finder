@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
-import { Tag, Clock, MapPin, Package, ArrowRight, Sparkles } from "lucide-react";
+import { Tag, Clock, MapPin, Package, ArrowRight, RefreshCw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 const GRADE_CONFIG: Record<string, { label: string; color: string; bg: string }> = {

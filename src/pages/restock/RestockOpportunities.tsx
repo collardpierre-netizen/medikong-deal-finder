@@ -329,12 +329,12 @@ export default function RestockOpportunities() {
                         <span>DLU {formatDate(offer.dlu)}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Shield size={14} style={{ color: sc.text }} />
+                        <Shield size={14} style={{ color: gc.color }} />
                         <span
-                          className="px-2 py-0.5 rounded-full text-[11px] font-medium"
-                          style={{ backgroundColor: sc.bg, color: sc.text }}
+                          className="px-2 py-0.5 rounded-full text-[11px] font-bold"
+                          style={{ backgroundColor: gc.bg, color: gc.color }}
                         >
-                          {stateLabels[state] || state}
+                          {gc.label}
                         </span>
                       </div>
                       <div className="flex items-center gap-2 text-sm text-[#5C6470]">

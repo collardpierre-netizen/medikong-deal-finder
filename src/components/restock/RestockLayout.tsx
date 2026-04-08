@@ -1,5 +1,5 @@
 import { Outlet, NavLink, useLocation } from "react-router-dom";
-import { PackagePlus, List, MessageSquare, CheckCircle, HelpCircle, LayoutGrid, Users, Mail, Shield } from "lucide-react";
+import { PackagePlus, List, MessageSquare, CheckCircle, HelpCircle, LayoutGrid, Users, Mail, Shield, Settings, Zap } from "lucide-react";
 import logoHorizontal from "@/assets/logo-medikong.png";
 
 const sellerNav = [
@@ -14,7 +14,9 @@ const adminNav = [
   { to: "/restock/admin/offers", label: "Toutes les offres", icon: LayoutGrid },
   { to: "/restock/admin/buyers", label: "Acheteurs", icon: Users },
   { to: "/restock/admin/campaigns", label: "Campagnes email", icon: Mail },
+  { to: "/restock/admin/drops", label: "Drops", icon: Zap },
   { to: "/restock/admin/rules", label: "Règles de filtrage", icon: Shield },
+  { to: "/restock/admin/settings", label: "Paramètres", icon: Settings },
 ];
 
 export default function RestockLayout() {

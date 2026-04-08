@@ -726,18 +726,20 @@ export default function ProductPage() {
   const [supplierName, setSupplierName] = useState<string>("");
   const [savingPrice, setSavingPrice] = useState(false);
   const [calcMode, setCalcMode] = useState<'manual' | 'pct'>('manual');
+  const [priceSavedPopup, setPriceSavedPopup] = useState(false);
 
-  // Load saved user price
+  // Load saved user price from user_price_watches (same table as "Mes prix" in account)
   const { data: savedUserPrice } = useQuery({
     queryKey: ["user-price", product?.id, user?.id],
     queryFn: async () => {
       const { data } = await supabase
-        .from("user_prices")
-        .select("my_purchase_price, supplier_name")
+        .from("user_price_watches")
+        .select("user_price_excl_vat, notes")
         .eq("user_id", user!.id)
         .eq("product_id", product!.id)
         .maybeSingle();
-      return data;
+      if (!data) return null;
+      return { my_purchase_price: data.user_price_excl_vat, supplier_name: data.notes };
     },
     enabled: !!product?.id && !!user?.id,
   });
@@ -1600,17 +1602,18 @@ export default function ProductPage() {
                           const price = parseFloat(userPrice.replace(",", "."));
                           if (!price || price <= 0) { toast.error("Entrez un prix valide"); return; }
                           setSavingPrice(true);
-                          const { error } = await supabase.from("user_prices").upsert({
+                          const { error } = await supabase.from("user_price_watches" as any).upsert({
                             user_id: user.id,
                             product_id: product.id,
-                            my_purchase_price: price,
-                            supplier_name: supplierName || null,
+                            user_price_excl_vat: price,
+                            notes: supplierName || null,
                             updated_at: new Date().toISOString(),
                           }, { onConflict: "user_id,product_id" });
                           setSavingPrice(false);
                           if (!error) {
-                            toast.success("Prix sauvegarde ! Retrouvez-le dans Mes Prix.");
+                            setPriceSavedPopup(true);
                             queryClient.invalidateQueries({ queryKey: ["user-price", product.id] });
+                            queryClient.invalidateQueries({ queryKey: ["price_watches"] });
                           } else {
                             toast.error("Erreur lors de la sauvegarde");
                           }
@@ -1819,6 +1822,37 @@ export default function ProductPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Price saved popup */}
+      <Dialog open={priceSavedPopup} onOpenChange={setPriceSavedPopup}>
+        <DialogContent className="sm:max-w-sm text-center">
+          <div className="flex flex-col items-center gap-4 py-4">
+            <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
+              <Check size={32} className="text-green-600" />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-foreground mb-1">Prix sauvegardé !</h3>
+              <p className="text-sm text-muted-foreground">
+                Retrouvez-le dans votre espace <strong>Mon compte → Mes prix</strong> pour suivre vos économies.
+              </p>
+            </div>
+            <div className="flex gap-3 w-full">
+              <button
+                onClick={() => setPriceSavedPopup(false)}
+                className="flex-1 px-4 py-2.5 border border-border rounded-lg text-sm font-medium text-foreground hover:bg-muted transition-colors"
+              >
+                Continuer
+              </button>
+              <button
+                onClick={() => { setPriceSavedPopup(false); navigate("/compte"); }}
+                className="flex-1 px-4 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
+              >
+                Voir mes prix
+              </button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 }

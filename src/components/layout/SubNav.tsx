@@ -12,6 +12,7 @@ export function SubNav() {
     { label: t("nav.promotions"), path: "/promotions" },
     { label: t("nav.sourcing"), path: "/sourcing" },
     { label: t("nav.professionals"), path: "/professionnels" },
+    { label: "ReStock", path: "/restock" },
   ];
 
   return (

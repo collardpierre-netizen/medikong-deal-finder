@@ -16,6 +16,9 @@ const adminNav = [
   { to: "/restock/admin/buyers", label: "Acheteurs", icon: Users },
   { to: "/restock/admin/campaigns", label: "Campagnes", icon: Mail },
   { to: "/restock/admin/drops", label: "Drops", icon: Zap },
+  { to: "/restock/admin/payouts", label: "Payouts", icon: Wallet },
+  { to: "/restock/admin/price-references", label: "Prix réf.", icon: Database },
+  { to: "/restock/admin/faq", label: "FAQ", icon: Shield },
   { to: "/restock/admin/rules", label: "Règles", icon: Shield },
   { to: "/restock/admin/settings", label: "Paramètres", icon: Settings },
 ];

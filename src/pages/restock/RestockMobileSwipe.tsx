@@ -140,6 +140,11 @@ function SwipeCard({
             <span className="text-2xl font-extrabold text-primary">{formatPrice(offer.price_ht || 0)}</span>
             <span className="text-xs text-muted-foreground">HT/u</span>
           </div>
+          {offer.medikong_product && (
+            <a href={`/produit/${offer.medikong_product.slug || offer.medikong_product.id}`} className="text-[11px] text-emerald-600 font-medium hover:underline" onClick={e => e.stopPropagation()}>
+              Voir le produit neuf sur MediKong →
+            </a>
+          )}
 
           {/* Info grid */}
           <div className="grid grid-cols-2 gap-2 text-[12px] text-muted-foreground">

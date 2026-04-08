@@ -5,7 +5,7 @@ import { useCountry } from "@/contexts/CountryContext";
 import { getLocalizedName } from "@/lib/localization";
 import { useCallback, useMemo } from "react";
 
-const PRODUCT_SELECT_FIELDS = "id, slug, name, name_fr, brand_name, brand_id, category_id, category_name, gtin, cnk_code, image_url, image_urls, short_description, is_promotion, promotion_label, best_price_excl_vat, best_price_incl_vat, offer_count, total_stock, is_in_stock, created_at";
+const PRODUCT_SELECT_FIELDS = "id, slug, name, name_fr, name_nl, name_de, brand_name, brand_id, category_id, category_name, gtin, cnk_code, image_url, image_urls, short_description, is_promotion, promotion_label, best_price_excl_vat, best_price_incl_vat, offer_count, total_stock, is_in_stock, created_at";
 const CATALOG_QUERY_TIMEOUT_MS = 8000;
 const CATALOG_COUNT_TIMEOUT_MS = 4000;
 const CATEGORY_COUNT_TIMEOUT_MS = 3000;

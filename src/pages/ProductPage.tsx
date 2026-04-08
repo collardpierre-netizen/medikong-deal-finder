@@ -726,6 +726,7 @@ export default function ProductPage() {
   const [supplierName, setSupplierName] = useState<string>("");
   const [savingPrice, setSavingPrice] = useState(false);
   const [calcMode, setCalcMode] = useState<'manual' | 'pct'>('manual');
+  const [priceSavedPopup, setPriceSavedPopup] = useState(false);
 
   // Load saved user price
   const { data: savedUserPrice } = useQuery({

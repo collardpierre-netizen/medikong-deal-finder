@@ -408,6 +408,9 @@ export default function RestockSellerNewOffer() {
       product_state: r.product_state,
       lot_number: r.lot_number || null,
       delivery_condition: r.delivery_condition,
+      allow_partial: r.allow_partial,
+      moq: r.moq,
+      lot_size: r.lot_size,
       status: "published",
     }));
 

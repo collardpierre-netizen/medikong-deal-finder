@@ -4,11 +4,11 @@ import { Link } from "react-router-dom";
 import { Tag, Clock, MapPin, Package, ArrowRight, RefreshCw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
-const GRADE_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
-  A: { label: "Neuf / Parfait", color: "text-green-700", bg: "bg-green-50 border-green-200" },
-  B: { label: "Bon état", color: "text-blue-700", bg: "bg-blue-50 border-blue-200" },
-  C: { label: "Emballage abîmé", color: "text-amber-700", bg: "bg-amber-50 border-amber-200" },
-  D: { label: "Proche DLU", color: "text-red-700", bg: "bg-red-50 border-red-200" },
+const GRADE_CONFIG: Record<string, { label: string; desc: string; color: string; bg: string }> = {
+  A: { label: "A — Neuf", desc: "Emballage intact, DLU longue", color: "text-green-700", bg: "bg-green-50 border-green-200" },
+  B: { label: "B — Bon état", desc: "Emballage légèrement abîmé", color: "text-blue-700", bg: "bg-blue-50 border-blue-200" },
+  C: { label: "C — Abîmé", desc: "Emballage visiblement abîmé", color: "text-amber-700", bg: "bg-amber-50 border-amber-200" },
+  D: { label: "D — DLU courte", desc: "Date limite d'utilisation proche", color: "text-red-700", bg: "bg-red-50 border-red-200" },
 };
 
 function formatEur(n: number) {
@@ -112,7 +112,7 @@ export function RestockSecondChance({ ean, cnk, productName }: Props) {
                         <MapPin size={10} /> {offer.seller_city}
                       </span>
                     )}
-                    <span className={`${grade.color} font-medium`}>{grade.label}</span>
+                    <span className={`${grade.color} font-medium`} title={grade.desc}>{grade.label}</span>
                   </div>
                 </div>
 

@@ -15,11 +15,11 @@ import {
 import { toast } from "sonner";
 import { MEDIKONG_PLACEHOLDER, isValidProductImage } from "@/lib/image-utils";
 
-const gradeConfig: Record<string, { label: string; color: string; bg: string }> = {
-  A: { label: "A — Intact", color: "#00B85C", bg: "#EEFBF4" },
-  B: { label: "B — Emb. abîmé", color: "#1C58D9", bg: "#EBF0FB" },
-  C: { label: "C — DLU courte", color: "#F59E0B", bg: "#FEF3C7" },
-  D: { label: "D — DLU courte + abîmé", color: "#E54545", bg: "#FEE2E2" },
+const gradeConfig: Record<string, { label: string; desc: string; color: string; bg: string }> = {
+  A: { label: "A — Neuf", desc: "Emballage intact, DLU longue", color: "#00B85C", bg: "#EEFBF4" },
+  B: { label: "B — Bon état", desc: "Emballage légèrement abîmé", color: "#1C58D9", bg: "#EBF0FB" },
+  C: { label: "C — Abîmé", desc: "Emballage visiblement abîmé", color: "#F59E0B", bg: "#FEF3C7" },
+  D: { label: "D — DLU courte", desc: "Date limite d'utilisation proche", color: "#E54545", bg: "#FEE2E2" },
 };
 
 const stateToGrade: Record<string, string> = {
@@ -279,7 +279,7 @@ export default function RestockOpportunities() {
               {offer.ean && `EAN ${offer.ean}`}{offer.ean && offer.cnk && " · "}{offer.cnk && `CNK ${offer.cnk}`}
             </p>
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ backgroundColor: gc.bg, color: gc.color }}>{gc.label}</span>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ backgroundColor: gc.bg, color: gc.color }} title={gc.desc}>{gc.label}</span>
               <span className="text-xs text-muted-foreground"><b>{offer.quantity}</b> u</span>
               <span className="text-xs text-muted-foreground">DLU {formatDate(offer.dlu)}</span>
               <span className="text-xs text-muted-foreground flex items-center gap-1"><MapPin size={10} />{offer.seller_city || "BE"}</span>
@@ -321,7 +321,7 @@ export default function RestockOpportunities() {
           {discount > 0 && (
             <span className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-emerald-600 text-white text-xs font-bold">-{discount}%</span>
           )}
-          <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ backgroundColor: gc.bg, color: gc.color }}>
+          <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ backgroundColor: gc.bg, color: gc.color }} title={gc.desc}>
             {gc.label}
           </span>
         </div>

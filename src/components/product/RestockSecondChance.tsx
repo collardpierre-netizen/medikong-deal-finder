@@ -33,7 +33,7 @@ export function RestockSecondChance({ ean, cnk, productName }: Props) {
       let query = supabase
         .from("restock_offers" as any)
         .select("id, designation, quantity, price_ht, dlu, grade, seller_city, product_image_url, status, moq, lot_size, allow_partial")
-        .eq("status", "approved")
+        .eq("status", "published")
         .order("price_ht", { ascending: true })
         .limit(5);
 

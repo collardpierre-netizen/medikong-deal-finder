@@ -88,6 +88,13 @@ export default function RestockAdminOffers() {
       agg.max_price = Math.max(agg.max_price, o.price_ht || 0);
       if (o.dlu && o.dlu < agg.shortest_dlu) agg.shortest_dlu = o.dlu;
       agg.offer_ids.push(o.id);
+      if (!agg.medikong_price_ht && o.medikong_price_ht) agg.medikong_price_ht = o.medikong_price_ht;
+    }
+    // Calculate delta
+    for (const agg of map.values()) {
+      if (agg.medikong_price_ht && agg.medikong_price_ht > 0 && agg.min_price < Infinity) {
+        agg.delta_pct = Math.round((1 - agg.min_price / agg.medikong_price_ht) * 100);
+      }
     }
     return Array.from(map.values());
   }, [offers]);

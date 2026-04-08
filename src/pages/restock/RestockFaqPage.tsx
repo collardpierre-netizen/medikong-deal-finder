@@ -34,9 +34,11 @@ export default function RestockFaqPage() {
   // Track view count on expand
   const viewMutation = useMutation({
     mutationFn: async (id: string) => {
-      await supabase.rpc("increment_faq_view", { faq_id: id }).catch(() => {
-        // RPC might not exist yet, silently fail
-      });
+      // Increment view count directly
+      const item = items.find((i: any) => i.id === id);
+      if (item) {
+        await supabase.from("faq_items").update({ view_count: (item.view_count || 0) + 1 }).eq("id", id);
+      }
     },
   });
 

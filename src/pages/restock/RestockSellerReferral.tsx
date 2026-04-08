@@ -20,7 +20,7 @@ export default function RestockSellerReferral() {
       const { data: existing } = await supabase
         .from("restock_referral_codes")
         .select("*")
-        .eq("user_id", user!.id)
+        .eq("owner_id", user!.id)
         .maybeSingle();
 
       if (existing) return existing;
@@ -29,7 +29,7 @@ export default function RestockSellerReferral() {
       const code = `MK-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
       const { data: created, error } = await supabase
         .from("restock_referral_codes")
-        .insert({ user_id: user!.id, code })
+        .insert({ owner_id: user!.id, code })
         .select()
         .single();
       if (error) throw error;

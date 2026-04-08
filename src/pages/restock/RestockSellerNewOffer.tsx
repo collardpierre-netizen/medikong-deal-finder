@@ -122,6 +122,9 @@ function ManualAddForm({ onAdd }: { onAdd: (row: OfferRow) => void }) {
   const [lot, setLot] = useState("");
   const [delivery, setDelivery] = useState("both");
   const [manualName, setManualName] = useState("");
+  const [allowPartial, setAllowPartial] = useState(false);
+  const [moq, setMoq] = useState("1");
+  const [lotSize, setLotSize] = useState("1");
 
   const lookupCode = async () => {
     const trimmed = code.trim();

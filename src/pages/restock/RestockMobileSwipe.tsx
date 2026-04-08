@@ -347,19 +347,30 @@ export default function RestockMobileSwipe() {
   const progress = offers.length > 0 ? Math.round((currentIdx / offers.length) * 100) : 0;
   const cartTotal = cart.reduce((sum, c) => sum + (c.price_ht || 0) * (c.qty || c.quantity || 1), 0);
 
+  // Full-screen flash feedback
+  const [flash, setFlash] = useState<"accept" | "reject" | null>(null);
+  const flashTimer = useRef<NodeJS.Timeout | null>(null);
+  const triggerFlash = useCallback((type: "accept" | "reject") => {
+    if (flashTimer.current) clearTimeout(flashTimer.current);
+    setFlash(type);
+    flashTimer.current = setTimeout(() => setFlash(null), 900);
+  }, []);
+
   const onSwipe = useCallback((dir: "left" | "right") => {
     const offer = offers[currentIdx];
     setExitDir(dir);
     if (dir === "right" && offer) {
       setCart(prev => [...prev, { ...offer, qty: offer.allow_partial ? (offer.moq || 1) : offer.quantity }]);
-      toast.success("Ajouté au panier !", { icon: "🛒" });
+      triggerFlash("accept");
+    } else {
+      triggerFlash("reject");
     }
     setCurrentIdx(prev => prev + 1);
-  }, [currentIdx, offers]);
+  }, [currentIdx, offers, triggerFlash]);
 
   const addFromDetail = (offer: any, qty: number) => {
     setCart(prev => [...prev, { ...offer, qty }]);
-    toast.success(`${qty} × ${offer.designation} ajouté !`, { icon: "🛒" });
+    triggerFlash("accept");
     setDetailOffer(null);
     setCurrentIdx(prev => prev + 1);
   };

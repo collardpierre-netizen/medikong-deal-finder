@@ -355,6 +355,20 @@ export function CatalogSidebar({ filters, setFilter, clearAll, resultCategoryIds
         </div>
       </div>
 
+      {/* Has offers filter */}
+      <div>
+        <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Offres</h4>
+        <label className="flex items-center gap-2 text-sm cursor-pointer">
+          <input
+            type="checkbox"
+            checked={!!filters.hasOffers}
+            onChange={() => setFilter("has_offers", filters.hasOffers ? undefined : "1")}
+            className="rounded border-border"
+          />
+          <span className="text-foreground">Avec offres actives uniquement</span>
+        </label>
+      </div>
+
       {/* Manufacturers */}
       <div>
         <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">{t("catalog.manufacturers")}</h4>

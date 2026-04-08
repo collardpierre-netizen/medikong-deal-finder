@@ -208,6 +208,143 @@ function TinderDetailSheet({ offer, onClose, onAddToCart, onCounterOffer }: {
     </motion.div>
   );
 }
+/* ── Tinder View (inline) ── */
+function TinderView({ offers, tinderIdx, setTinderIdx, tinderCart, setTinderCart, tinderDetail, setTinderDetail, tinderCounter, setTinderCounter, tinderCounterPrice, setTinderCounterPrice, tinderCounterQty, setTinderCounterQty, buyer, formatPrice }: any) {
+  const remaining = offers.slice(tinderIdx);
+  const currentOffer = remaining[0];
+  const allSwiped = tinderIdx >= offers.length;
+  const progress = offers.length > 0 ? Math.round((tinderIdx / offers.length) * 100) : 0;
+  const cartTotal = tinderCart.reduce((sum: number, c: any) => sum + (c.price_ht || 0) * (c.qty || c.quantity || 1), 0);
+
+  const onSwipe = useCallback((dir: "left" | "right") => {
+    const offer = offers[tinderIdx];
+    if (dir === "right" && offer) {
+      setTinderCart((prev: any[]) => [...prev, { ...offer, qty: offer.allow_partial ? (offer.moq || 1) : offer.quantity }]);
+      toast.success("Ajouté au panier !", { icon: "🛒" });
+    }
+    setTinderIdx((prev: number) => prev + 1);
+  }, [tinderIdx, offers, setTinderCart, setTinderIdx]);
+
+  const addFromDetail = (offer: any, qty: number) => {
+    setTinderCart((prev: any[]) => [...prev, { ...offer, qty }]);
+    toast.success(`${qty} × ${offer.designation} ajouté !`, { icon: "🛒" });
+    setTinderDetail(null);
+    setTinderIdx((prev: number) => prev + 1);
+  };
+
+  const handleCounter = async () => {
+    const target = tinderDetail || currentOffer;
+    if (!target || !tinderCounterPrice) return;
+    const { data: buyerData } = await supabase.from("restock_buyers").select("id").limit(1).maybeSingle();
+    await supabase.from("restock_counter_offers").insert({
+      offer_id: target.id, buyer_id: buyerData?.id || "00000000-0000-0000-0000-000000000000",
+      proposed_price: parseFloat(tinderCounterPrice), proposed_quantity: parseInt(tinderCounterQty) || target.quantity, status: "pending",
+    });
+    toast.success("Contre-offre envoyée !", { icon: "💬" });
+    setTinderCounter(false);
+    setTinderDetail(null);
+    setTinderCounterPrice("");
+    setTinderCounterQty("");
+    setTinderIdx((prev: number) => prev + 1);
+  };
+
+  return (
+    <div className="space-y-3">
+      {/* Progress */}
+      <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+        <span>{tinderIdx}/{offers.length} offres vues</span>
+        <span>{tinderCart.length} au panier</span>
+      </div>
+      <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+        <motion.div className="h-full bg-primary rounded-full" animate={{ width: `${progress}%` }} transition={{ duration: 0.3 }} />
+      </div>
+
+      {tinderIdx === 0 && !allSwiped && (
+        <div className="flex items-center justify-center gap-4 text-[10px] text-muted-foreground py-1">
+          <span>← Passer</span><span>↑ Détails</span><span>Panier →</span>
+        </div>
+      )}
+
+      {allSwiped ? (
+        <div className="text-center px-4 py-8">
+          <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4"><Package size={32} className="text-primary" /></div>
+          <h2 className="text-lg font-bold text-foreground mb-2">Toutes les offres parcourues !</h2>
+          {tinderCart.length > 0 ? (
+            <div className="space-y-3">
+              <p className="text-muted-foreground text-sm"><b className="text-foreground">{tinderCart.length}</b> produit{tinderCart.length > 1 ? "s" : ""}</p>
+              <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-left space-y-1.5">
+                {tinderCart.slice(0, 5).map((c: any, i: number) => (
+                  <div key={i} className="flex justify-between text-xs text-emerald-700">
+                    <span className="truncate flex-1 mr-2">{c.designation}</span>
+                    <span className="font-medium">{formatPrice((c.price_ht || 0) * (c.qty || c.quantity))}</span>
+                  </div>
+                ))}
+                {tinderCart.length > 5 && <p className="text-[10px] text-emerald-600">+{tinderCart.length - 5} autres…</p>}
+                <div className="border-t border-emerald-200 pt-2 flex justify-between text-sm font-bold text-emerald-800">
+                  <span>Total HT</span><span>{formatPrice(cartTotal)}</span>
+                </div>
+              </div>
+              <Button className="w-full bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl py-5 text-base font-bold shadow-lg shadow-emerald-500/30">Finaliser ma commande →</Button>
+            </div>
+          ) : (
+            <p className="text-muted-foreground text-sm">Revenez bientôt pour de nouvelles opportunités</p>
+          )}
+          <button onClick={() => { setTinderIdx(0); setTinderCart([]); }} className="text-xs text-primary hover:underline mt-3">Recommencer</button>
+        </div>
+      ) : (
+        <>
+          <div className="relative w-full max-w-sm mx-auto" style={{ height: "min(480px, 55dvh)" }}>
+            <AnimatePresence>
+              {remaining.slice(0, 3).reverse().map((offer: any, i: number) => {
+                const isFront = i === Math.min(remaining.length, 3) - 1;
+                return <SwipeCard key={offer.id} offer={offer} onSwipe={onSwipe} isFront={isFront} onTap={() => isFront && setTinderDetail(offer)} />;
+              })}
+            </AnimatePresence>
+          </div>
+          <div className="flex items-center justify-center gap-5 py-3">
+            <button onClick={() => onSwipe("left")} className="w-14 h-14 rounded-full bg-white border-2 border-red-400 flex items-center justify-center shadow-md active:scale-90 transition-transform"><X size={26} className="text-red-500" /></button>
+            <button onClick={() => currentOffer && setTinderDetail(currentOffer)} className="w-11 h-11 rounded-full bg-white border-2 border-primary/40 flex items-center justify-center shadow-md active:scale-90 transition-transform"><Info size={20} className="text-primary" /></button>
+            <button onClick={() => onSwipe("right")} className="w-14 h-14 rounded-full bg-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/30 active:scale-90 transition-transform"><ShoppingCart size={26} className="text-white" /></button>
+          </div>
+        </>
+      )}
+
+      {tinderCart.length > 0 && !allSwiped && (
+        <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-2 flex items-center justify-between">
+          <span className="text-xs text-emerald-700"><b>{tinderCart.length}</b> produit{tinderCart.length > 1 ? "s" : ""} · <b>{formatPrice(cartTotal)}</b> HT</span>
+        </div>
+      )}
+
+      <AnimatePresence>
+        {tinderDetail && !tinderCounter && (
+          <TinderDetailSheet offer={tinderDetail} onClose={() => setTinderDetail(null)} onAddToCart={(qty: number) => addFromDetail(tinderDetail, qty)} onCounterOffer={() => setTinderCounter(true)} />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {tinderCounter && (tinderDetail || currentOffer) && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-end" onClick={() => { setTinderCounter(false); setTinderDetail(null); }}>
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+            <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ type: "spring", damping: 25, stiffness: 300 }} className="relative w-full bg-white rounded-t-3xl p-6 space-y-4" onClick={(e: any) => e.stopPropagation()}>
+              <div className="w-10 h-1 bg-muted-foreground/30 rounded-full mx-auto" />
+              <h3 className="font-bold text-foreground text-lg">Faire une contre-offre</h3>
+              <p className="text-sm text-muted-foreground"><b>{(tinderDetail || currentOffer)?.designation}</b> — Prix : {formatPrice((tinderDetail || currentOffer)?.price_ht || 0)} HT</p>
+              <div>
+                <Label className="text-xs font-medium">Prix proposé (€ HT/unité)</Label>
+                <Input type="number" step="0.01" value={tinderCounterPrice} onChange={(e: any) => setTinderCounterPrice(e.target.value)} className="rounded-xl mt-1" placeholder="Ex: 3.50" autoFocus />
+              </div>
+              <div>
+                <Label className="text-xs font-medium">Quantité souhaitée</Label>
+                <Input type="number" value={tinderCounterQty} onChange={(e: any) => setTinderCounterQty(e.target.value)} className="rounded-xl mt-1" placeholder={String((tinderDetail || currentOffer)?.quantity)} />
+              </div>
+              <Button onClick={handleCounter} disabled={!tinderCounterPrice || parseFloat(tinderCounterPrice) <= 0} className="w-full bg-primary text-primary-foreground rounded-xl py-5 text-base font-bold">Envoyer la contre-offre</Button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
 
 export default function RestockOpportunities() {
   const { campaignId } = useParams();

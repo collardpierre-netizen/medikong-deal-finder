@@ -20,7 +20,6 @@ const benefits = [
 
 export default function RestockLandingPage() {
   return (
-    <Layout>
       <div className="min-h-screen">
         {/* Hero */}
         <section className="bg-gradient-to-br from-[#1C58D9] via-[#1549B8] to-[#0F3A8A] text-white py-16 md:py-24">

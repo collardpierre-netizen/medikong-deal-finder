@@ -43,6 +43,7 @@ export default function RestockOpportunities() {
   const [counterOfferTarget, setCounterOfferTarget] = useState<any>(null);
   const [counterForm, setCounterForm] = useState({ price: "", quantity: "" });
   const [confirmTarget, setConfirmTarget] = useState<any>(null);
+  const [buyQuantity, setBuyQuantity] = useState<number>(0);
 
   // Fetch buyer info from token (campaignId used as token)
   const { data: buyer } = useQuery({
@@ -118,12 +119,24 @@ export default function RestockOpportunities() {
 
   // "Je prends" mutation
   const takeMutation = useMutation({
-    mutationFn: async (offer: any) => {
-      const { error } = await supabase
-        .from("restock_offers")
-        .update({ status: "sold" })
-        .eq("id", offer.id);
-      if (error) throw error;
+    mutationFn: async ({ offer, qty }: { offer: any; qty: number }) => {
+      const isFullTake = qty >= offer.quantity;
+      
+      if (isFullTake) {
+        // Mark as sold
+        const { error } = await supabase
+          .from("restock_offers")
+          .update({ status: "sold" })
+          .eq("id", offer.id);
+        if (error) throw error;
+      } else {
+        // Partial: reduce remaining quantity
+        const { error } = await supabase
+          .from("restock_offers")
+          .update({ quantity: offer.quantity - qty })
+          .eq("id", offer.id);
+        if (error) throw error;
+      }
 
       // Create transaction
       await supabase.from("restock_transactions").insert({
@@ -131,10 +144,10 @@ export default function RestockOpportunities() {
         buyer_id: buyer?.id || null,
         seller_id: offer.seller_id,
         final_price: offer.price_ht,
-        quantity: offer.quantity,
+        quantity: qty,
         delivery_mode: offer.delivery_condition === "pickup" ? "pickup" : "shipping",
         shipping_cost: offer.delivery_condition === "pickup" ? 0 : shippingFee,
-        commission_amount: offer.price_ht * offer.quantity * 0.05,
+        commission_amount: offer.price_ht * qty * 0.05,
         status: "confirmed",
       });
     },
@@ -142,6 +155,7 @@ export default function RestockOpportunities() {
       queryClient.invalidateQueries({ queryKey: ["restock-public-offers"] });
       toast.success("Offre confirmée ! Le vendeur sera notifié.");
       setConfirmTarget(null);
+      setBuyQuantity(0);
     },
     onError: () => toast.error("Erreur lors de la confirmation"),
   });
@@ -319,6 +333,14 @@ export default function RestockOpportunities() {
                       </div>
                     </div>
 
+                    {/* Partial sale info */}
+                    {offer.allow_partial && (
+                      <div className="flex items-center gap-2 text-xs text-[#1C58D9] bg-[#F0F4FF] rounded-lg px-3 py-1.5">
+                        <Package size={12} />
+                        <span>Achat partiel possible — min. {offer.moq} unités{offer.lot_size > 1 ? `, par ${offer.lot_size}` : ""}</span>
+                      </div>
+                    )}
+
                     {offer.delivery_condition !== "pickup" && (
                       <p className="text-xs text-[#8B929C]">
                         Forfait livraison MediKong : {formatPrice(shippingFee)}
@@ -333,14 +355,17 @@ export default function RestockOpportunities() {
                       className="flex-1 rounded-lg gap-2 border-[#D0D5DC] text-[#5C6470] hover:border-[#1C58D9] hover:text-[#1C58D9]"
                       onClick={() => {
                         setCounterOfferTarget(offer);
-                        setCounterForm({ price: "", quantity: String(offer.quantity || 1) });
+                        setCounterForm({ price: "", quantity: String(offer.allow_partial ? offer.moq : offer.quantity) });
                       }}
                     >
                       <MessageSquare size={15} /> Contre-offre
                     </Button>
                     <Button
                       className="flex-1 rounded-lg gap-2 bg-[#00B85C] hover:bg-[#00A050] text-white"
-                      onClick={() => setConfirmTarget(offer)}
+                      onClick={() => {
+                        setConfirmTarget(offer);
+                        setBuyQuantity(offer.allow_partial ? offer.moq : offer.quantity);
+                      }}
                     >
                       <ShoppingCart size={15} /> Je prends
                     </Button>
@@ -401,33 +426,95 @@ export default function RestockOpportunities() {
       </Dialog>
 
       {/* Confirm "Je prends" dialog */}
-      <Dialog open={!!confirmTarget} onOpenChange={(o) => !o && setConfirmTarget(null)}>
-        <DialogContent className="sm:max-w-sm">
+      <Dialog open={!!confirmTarget} onOpenChange={(o) => { if (!o) { setConfirmTarget(null); setBuyQuantity(0); } }}>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Confirmer l'achat</DialogTitle>
           </DialogHeader>
-          {confirmTarget && (
-            <div className="space-y-3">
-              <p className="text-sm text-[#5C6470]">
-                Vous confirmez vouloir acheter :
-              </p>
-              <div className="bg-[#F7F8FA] rounded-lg p-3 space-y-1">
-                <p className="font-semibold text-[#1E252F]">{confirmTarget.designation}</p>
-                <p className="text-sm text-[#5C6470]">{confirmTarget.quantity} unités × {formatPrice(confirmTarget.price_ht || 0)} HT</p>
-                <p className="text-sm font-bold text-[#1C58D9]">
-                  Total : {formatPrice((confirmTarget.price_ht || 0) * (confirmTarget.quantity || 1))} HT
+          {confirmTarget && (() => {
+            const isPartial = confirmTarget.allow_partial;
+            const moq = confirmTarget.moq || 1;
+            const lotSz = confirmTarget.lot_size || 1;
+            const maxQty = confirmTarget.quantity;
+            const isValidQty = buyQuantity >= moq && buyQuantity <= maxQty && (lotSz <= 1 || buyQuantity % lotSz === 0);
+
+            return (
+              <div className="space-y-4">
+                <p className="text-sm text-[#5C6470]">
+                  Vous confirmez vouloir acheter :
+                </p>
+                <div className="bg-[#F7F8FA] rounded-lg p-3 space-y-2">
+                  <p className="font-semibold text-[#1E252F]">{confirmTarget.designation}</p>
+                  
+                  {isPartial ? (
+                    <div className="space-y-2">
+                      <div>
+                        <Label className="text-xs text-[#5C6470]">
+                          Quantité (min. {moq}{lotSz > 1 ? `, par multiple de ${lotSz}` : ""}, max. {maxQty})
+                        </Label>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-9 w-9 p-0 border-[#D0D5DC]"
+                            disabled={buyQuantity - lotSz < moq}
+                            onClick={() => setBuyQuantity(Math.max(moq, buyQuantity - lotSz))}
+                          >−</Button>
+                          <Input
+                            type="number"
+                            min={moq}
+                            max={maxQty}
+                            step={lotSz}
+                            value={buyQuantity}
+                            onChange={(e) => setBuyQuantity(Math.min(maxQty, Math.max(moq, Number(e.target.value) || moq)))}
+                            className="w-24 text-center border-[#D0D5DC]"
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-9 w-9 p-0 border-[#D0D5DC]"
+                            disabled={buyQuantity + lotSz > maxQty}
+                            onClick={() => setBuyQuantity(Math.min(maxQty, buyQuantity + lotSz))}
+                          >+</Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="text-xs text-[#1C58D9]"
+                            onClick={() => setBuyQuantity(maxQty)}
+                          >Tout prendre</Button>
+                        </div>
+                        {!isValidQty && buyQuantity > 0 && (
+                          <p className="text-xs text-[#E54545] mt-1">
+                            {buyQuantity < moq ? `Minimum ${moq} unités` : 
+                             lotSz > 1 && buyQuantity % lotSz !== 0 ? `Doit être un multiple de ${lotSz}` :
+                             `Maximum ${maxQty} unités`}
+                          </p>
+                        )}
+                      </div>
+                      <p className="text-sm text-[#5C6470]">{buyQuantity} unités × {formatPrice(confirmTarget.price_ht || 0)} HT</p>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-[#5C6470]">{maxQty} unités × {formatPrice(confirmTarget.price_ht || 0)} HT</p>
+                  )}
+                  
+                  <p className="text-sm font-bold text-[#1C58D9]">
+                    Total : {formatPrice((confirmTarget.price_ht || 0) * buyQuantity)} HT
+                  </p>
+                </div>
+                <p className="text-xs text-[#8B929C]">
+                  Le vendeur sera notifié et vous recevrez les instructions de retrait/livraison.
                 </p>
               </div>
-              <p className="text-xs text-[#8B929C]">
-                Le vendeur sera notifié et vous recevrez les instructions de retrait/livraison.
-              </p>
-            </div>
-          )}
+            );
+          })()}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setConfirmTarget(null)} className="rounded-lg">Annuler</Button>
+            <Button variant="outline" onClick={() => { setConfirmTarget(null); setBuyQuantity(0); }} className="rounded-lg">Annuler</Button>
             <Button
-              onClick={() => takeMutation.mutate(confirmTarget)}
-              disabled={takeMutation.isPending}
+              onClick={() => takeMutation.mutate({ offer: confirmTarget, qty: buyQuantity })}
+              disabled={takeMutation.isPending || !confirmTarget || buyQuantity < (confirmTarget?.moq || 1) || (confirmTarget?.lot_size > 1 && buyQuantity % confirmTarget.lot_size !== 0)}
               className="bg-[#00B85C] hover:bg-[#00A050] text-white rounded-lg"
             >
               Confirmer l'achat

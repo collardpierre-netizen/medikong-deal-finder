@@ -19,6 +19,9 @@ interface OfferRow {
   product_state: string;
   lot_number: string;
   delivery_condition: string;
+  allow_partial: boolean;
+  moq: number;
+  lot_size: number;
   errors: string[];
   valid: boolean;
   source?: string;
@@ -87,7 +90,8 @@ function validateRow(row: any, idx: number): OfferRow {
 
   return {
     ean, cnk, designation, quantity, price_ht, dlu, product_state, lot_number: lotNumber,
-    delivery_condition, errors, valid: errors.length === 0,
+    delivery_condition, allow_partial: false, moq: 1, lot_size: 1,
+    errors, valid: errors.length === 0,
   };
 }
 
@@ -119,6 +123,9 @@ function ManualAddForm({ onAdd }: { onAdd: (row: OfferRow) => void }) {
   const [lot, setLot] = useState("");
   const [delivery, setDelivery] = useState("both");
   const [manualName, setManualName] = useState("");
+  const [allowPartial, setAllowPartial] = useState(false);
+  const [moq, setMoq] = useState("1");
+  const [lotSize, setLotSize] = useState("1");
 
   const lookupCode = async () => {
     const trimmed = code.trim();
@@ -206,13 +213,16 @@ function ManualAddForm({ onAdd }: { onAdd: (row: OfferRow) => void }) {
       product_state: state,
       lot_number: lot,
       delivery_condition: delivery,
+      allow_partial: allowPartial,
+      moq: Number(moq) || 1,
+      lot_size: Number(lotSize) || 1,
       errors: [],
       valid: true,
       source: found?.source,
     });
     onAdd(row);
     // Reset
-    setCode(""); setFound(null); setNotFound(false); setQty("1"); setPriceHt(""); setDlu(""); setState("intact"); setLot(""); setDelivery("both"); setManualName("");
+    setCode(""); setFound(null); setNotFound(false); setQty("1"); setPriceHt(""); setDlu(""); setState("intact"); setLot(""); setDelivery("both"); setManualName(""); setAllowPartial(false); setMoq("1"); setLotSize("1");
     toast.success("Produit ajouté à la liste");
   };
 
@@ -309,7 +319,36 @@ function ManualAddForm({ onAdd }: { onAdd: (row: OfferRow) => void }) {
               </SelectContent>
             </Select>
           </div>
-          <div className="col-span-2 flex items-end">
+
+          {/* Partial sale options */}
+          <div className="col-span-2 md:col-span-4 border-t border-[#D0D5DC] pt-3 mt-1">
+            <div className="flex items-center gap-3 mb-3">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={allowPartial}
+                  onChange={(e) => setAllowPartial(e.target.checked)}
+                  className="rounded border-[#D0D5DC] text-[#1C58D9] focus:ring-[#1C58D9]"
+                />
+                <span className="text-sm text-[#1E252F] font-medium">Autoriser l'achat partiel</span>
+              </label>
+              <span className="text-xs text-[#8B929C]">L'acheteur pourra prendre une partie du stock</span>
+            </div>
+            {allowPartial && (
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[11px] text-[#8B929C] font-medium">Quantité minimum (MOQ)</label>
+                  <Input type="number" min={1} value={moq} onChange={(e) => setMoq(e.target.value)} className="border-[#D0D5DC]" />
+                </div>
+                <div>
+                  <label className="text-[11px] text-[#8B929C] font-medium">Par multiple de (lot)</label>
+                  <Input type="number" min={1} value={lotSize} onChange={(e) => setLotSize(e.target.value)} className="border-[#D0D5DC]" />
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="col-span-2 md:col-span-4 flex items-end">
             <Button onClick={handleAdd} className="w-full bg-[#00B85C] hover:bg-[#009E4F] text-white rounded-lg gap-2">
               <Plus size={16} /> Ajouter à la liste
             </Button>
@@ -369,6 +408,9 @@ export default function RestockSellerNewOffer() {
       product_state: r.product_state,
       lot_number: r.lot_number || null,
       delivery_condition: r.delivery_condition,
+      allow_partial: r.allow_partial,
+      moq: r.moq,
+      lot_size: r.lot_size,
       status: "published",
     }));
 

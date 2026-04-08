@@ -540,9 +540,12 @@ export default function RestockOpportunities() {
             <span className="text-emerald-600 font-bold text-base">ReStock</span>
           </div>
           <div className="flex items-center gap-3">
-            <button onClick={() => navigate(`/m/opportunities/${campaignId || "demo"}`)} className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-border text-xs font-medium text-muted-foreground hover:bg-accent transition-colors">
-              📱 Mode Swipe
-            </button>
+            {viewMode === "tinder" && tinderCart.length > 0 && (
+              <div className="relative">
+                <ShoppingCart size={20} className="text-muted-foreground" />
+                <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] bg-emerald-500 text-white rounded-full text-[10px] flex items-center justify-center font-bold px-1">{tinderCart.length}</span>
+              </div>
+            )}
             {buyer && <span className="text-sm text-muted-foreground">{buyer.pharmacy_name}</span>}
           </div>
         </div>

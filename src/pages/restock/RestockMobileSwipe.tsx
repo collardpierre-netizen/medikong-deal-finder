@@ -103,7 +103,7 @@ function SwipeCard({
           </span>
           {discount > 0 && (
             <span className="absolute top-3 right-3 px-3 py-1 rounded-full bg-emerald-500 text-white text-sm font-bold shadow-md">
-              −{discount}%
+              −{discount}%{medikongPrice ? ' vs neuf' : ''}
             </span>
           )}
           {/* Tap hint */}

@@ -89,9 +89,16 @@ function validateRow(row: any, idx: number): OfferRow {
   const product_state = STATE_MAP[stateRaw] || "intact";
   const delivery_condition = DELIVERY_MAP[deliveryRaw] || "both";
 
+  const partialRaw = String(row["Vente partielle (oui/non)"] || row["Vente partielle"] || "non").toLowerCase().trim();
+  const allow_partial = partialRaw === "oui" || partialRaw === "yes" || partialRaw === "true" || partialRaw === "1";
+  const moq = allow_partial ? Math.max(1, Number(row["MOQ"] || 1)) : 1;
+  const lot_size = allow_partial ? Math.max(1, Number(row["Par multiple de"] || 1)) : 1;
+
+  if (allow_partial && moq > quantity) errors.push("MOQ > quantité totale");
+
   return {
     ean, cnk, designation, quantity, price_ht, dlu, product_state, lot_number: lotNumber,
-    delivery_condition, allow_partial: false, moq: 1, lot_size: 1,
+    delivery_condition, allow_partial, moq, lot_size,
     errors, valid: errors.length === 0,
   };
 }

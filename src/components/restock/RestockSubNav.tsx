@@ -37,9 +37,18 @@ export function RestockSubNav() {
     <div className="sticky top-[52px] z-[99] bg-[#1C58D9] border-b border-[#1549B8]">
       <div className="mk-container overflow-x-auto">
         <nav className="flex gap-0 whitespace-nowrap min-w-max items-center">
+          {/* Back to main site */}
+          <Link
+            to="/"
+            className="flex items-center gap-1 px-3 py-3 text-white/50 hover:text-white text-[12px] font-medium border-r border-white/20 mr-3 pr-4 transition-colors"
+            title="Retour au site principal"
+          >
+            <ArrowLeft size={14} />
+            MediKong
+          </Link>
+
           {/* ReStock branding pill */}
           <div className="flex items-center gap-1.5 mr-4 pr-4 border-r border-white/20 py-2">
-            <img src={logoHorizontal} alt="MediKong" className="h-6 brightness-0 invert" />
             <span className="text-[#00B85C] font-bold text-sm" style={{ fontFamily: "'DM Sans', sans-serif" }}>
               ReStock
             </span>

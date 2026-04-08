@@ -139,6 +139,6 @@ export default function RestockLandingPage() {
           </div>
         </section>
       </div>
-    </Layout>
+    
   );
 }

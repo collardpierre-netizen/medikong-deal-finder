@@ -640,6 +640,9 @@ export default function RestockOpportunities() {
               </div>
               <span className="text-sm text-muted-foreground">{filtered.length} résultat{filtered.length !== 1 ? "s" : ""}</span>
               <div className="ml-auto flex items-center border border-border rounded-lg overflow-hidden">
+                <button onClick={() => { setViewMode("tinder"); setTinderIdx(0); setTinderCart([]); }} className={`p-2 ${viewMode === "tinder" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`} title="Mode Tinder">
+                  <Flame size={16} />
+                </button>
                 <button onClick={() => setViewMode("grid")} className={`p-2 ${viewMode === "grid" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}>
                   <Grid size={16} />
                 </button>

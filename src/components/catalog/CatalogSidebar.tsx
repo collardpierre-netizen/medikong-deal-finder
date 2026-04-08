@@ -177,7 +177,7 @@ export function CatalogSidebar({ filters, setFilter, clearAll, resultCategoryIds
     setFilter("price_max", priceMax ? Number(priceMax) : undefined);
   };
 
-  const hasFilters = filters.category || (filters.brands && filters.brands.length > 0) || (filters.manufacturers && filters.manufacturers.length > 0) || filters.priceMin !== undefined || filters.priceMax !== undefined || filters.inStock;
+  const hasFilters = filters.category || (filters.brands && filters.brands.length > 0) || (filters.manufacturers && filters.manufacturers.length > 0) || filters.priceMin !== undefined || filters.priceMax !== undefined || filters.inStock || filters.hasOffers;
 
   return (
     <div className="space-y-6">

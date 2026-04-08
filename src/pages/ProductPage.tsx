@@ -1415,6 +1415,13 @@ export default function ProductPage() {
               </div>
               )}
 
+              {/* ── Deuxième Chance — ReStock ── */}
+              <RestockSecondChance
+                ean={product.ean || product.gtin}
+                cnk={product.cnk}
+                productName={product.name}
+              />
+
               {/* ── Description ── */}
               <div className="mb-8">
                 <h2 className="text-lg font-bold text-foreground mb-3">Description du produit</h2>

@@ -3041,6 +3041,45 @@ export type Database = {
           },
         ]
       }
+      restock_drops: {
+        Row: {
+          created_at: string | null
+          ends_at: string
+          hero_image_url: string | null
+          id: string
+          name: string
+          offer_ids: string[] | null
+          starts_at: string
+          status: string
+          theme: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          ends_at: string
+          hero_image_url?: string | null
+          id?: string
+          name: string
+          offer_ids?: string[] | null
+          starts_at: string
+          status?: string
+          theme?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          ends_at?: string
+          hero_image_url?: string | null
+          id?: string
+          name?: string
+          offer_ids?: string[] | null
+          starts_at?: string
+          status?: string
+          theme?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       restock_offers: {
         Row: {
           allow_partial: boolean
@@ -3050,15 +3089,19 @@ export type Database = {
           designation: string
           dlu: string | null
           ean: string | null
+          grade: string
           id: string
           lot_number: string | null
           lot_size: number
           moq: number
+          packaging_photos: string[] | null
           photo_url: string | null
           price_ht: number
+          product_image_url: string | null
           product_state: string
           quantity: number
           rejection_reason: string | null
+          seller_city: string | null
           seller_id: string
           status: string
           updated_at: string
@@ -3071,15 +3114,19 @@ export type Database = {
           designation: string
           dlu?: string | null
           ean?: string | null
+          grade?: string
           id?: string
           lot_number?: string | null
           lot_size?: number
           moq?: number
+          packaging_photos?: string[] | null
           photo_url?: string | null
           price_ht: number
+          product_image_url?: string | null
           product_state?: string
           quantity?: number
           rejection_reason?: string | null
+          seller_city?: string | null
           seller_id: string
           status?: string
           updated_at?: string
@@ -3092,20 +3139,106 @@ export type Database = {
           designation?: string
           dlu?: string | null
           ean?: string | null
+          grade?: string
           id?: string
           lot_number?: string | null
           lot_size?: number
           moq?: number
+          packaging_photos?: string[] | null
           photo_url?: string | null
           price_ht?: number
+          product_image_url?: string | null
           product_state?: string
           quantity?: number
           rejection_reason?: string | null
+          seller_city?: string | null
           seller_id?: string
           status?: string
           updated_at?: string
         }
         Relationships: []
+      }
+      restock_questions: {
+        Row: {
+          answer: string | null
+          answered_at: string | null
+          asked_at: string | null
+          buyer_id: string | null
+          id: string
+          offer_id: string
+          question: string
+          seller_id: string
+        }
+        Insert: {
+          answer?: string | null
+          answered_at?: string | null
+          asked_at?: string | null
+          buyer_id?: string | null
+          id?: string
+          offer_id: string
+          question: string
+          seller_id: string
+        }
+        Update: {
+          answer?: string | null
+          answered_at?: string | null
+          asked_at?: string | null
+          buyer_id?: string | null
+          id?: string
+          offer_id?: string
+          question?: string
+          seller_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restock_questions_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "restock_offers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      restock_ratings: {
+        Row: {
+          comment: string | null
+          created_at: string | null
+          id: string
+          ratee_id: string
+          rater_id: string
+          rater_role: string
+          stars: number
+          transaction_id: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string | null
+          id?: string
+          ratee_id: string
+          rater_id: string
+          rater_role: string
+          stars: number
+          transaction_id: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string | null
+          id?: string
+          ratee_id?: string
+          rater_id?: string
+          rater_role?: string
+          stars?: number
+          transaction_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restock_ratings_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "restock_transactions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       restock_rules: {
         Row: {
@@ -3134,6 +3267,33 @@ export type Database = {
           rule_type?: string
           updated_at?: string
           value?: Json
+        }
+        Relationships: []
+      }
+      restock_settings: {
+        Row: {
+          description: string | null
+          id: string
+          key: string
+          label: string | null
+          updated_at: string | null
+          value: string
+        }
+        Insert: {
+          description?: string | null
+          id?: string
+          key: string
+          label?: string | null
+          updated_at?: string | null
+          value: string
+        }
+        Update: {
+          description?: string | null
+          id?: string
+          key?: string
+          label?: string | null
+          updated_at?: string | null
+          value?: string
         }
         Relationships: []
       }

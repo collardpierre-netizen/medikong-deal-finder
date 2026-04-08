@@ -77,6 +77,7 @@ export interface CatalogFilters {
   priceMin?: number;
   priceMax?: number;
   inStock?: boolean;
+  hasOffers?: boolean;
   sort: string;
   page: number;
   perPage: number;

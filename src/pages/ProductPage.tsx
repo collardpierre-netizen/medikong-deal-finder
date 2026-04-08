@@ -1602,17 +1602,18 @@ export default function ProductPage() {
                           const price = parseFloat(userPrice.replace(",", "."));
                           if (!price || price <= 0) { toast.error("Entrez un prix valide"); return; }
                           setSavingPrice(true);
-                          const { error } = await supabase.from("user_prices").upsert({
+                          const { error } = await supabase.from("user_price_watches" as any).upsert({
                             user_id: user.id,
                             product_id: product.id,
-                            my_purchase_price: price,
-                            supplier_name: supplierName || null,
+                            user_price_excl_vat: price,
+                            notes: supplierName || null,
                             updated_at: new Date().toISOString(),
                           }, { onConflict: "user_id,product_id" });
                           setSavingPrice(false);
                           if (!error) {
-                            toast.success("Prix sauvegarde ! Retrouvez-le dans Mes Prix.");
+                            setPriceSavedPopup(true);
                             queryClient.invalidateQueries({ queryKey: ["user-price", product.id] });
+                            queryClient.invalidateQueries({ queryKey: ["price_watches"] });
                           } else {
                             toast.error("Erreur lors de la sauvegarde");
                           }

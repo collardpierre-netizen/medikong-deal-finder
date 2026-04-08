@@ -319,7 +319,36 @@ function ManualAddForm({ onAdd }: { onAdd: (row: OfferRow) => void }) {
               </SelectContent>
             </Select>
           </div>
-          <div className="col-span-2 flex items-end">
+
+          {/* Partial sale options */}
+          <div className="col-span-2 md:col-span-4 border-t border-[#D0D5DC] pt-3 mt-1">
+            <div className="flex items-center gap-3 mb-3">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={allowPartial}
+                  onChange={(e) => setAllowPartial(e.target.checked)}
+                  className="rounded border-[#D0D5DC] text-[#1C58D9] focus:ring-[#1C58D9]"
+                />
+                <span className="text-sm text-[#1E252F] font-medium">Autoriser l'achat partiel</span>
+              </label>
+              <span className="text-xs text-[#8B929C]">L'acheteur pourra prendre une partie du stock</span>
+            </div>
+            {allowPartial && (
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[11px] text-[#8B929C] font-medium">Quantité minimum (MOQ)</label>
+                  <Input type="number" min={1} value={moq} onChange={(e) => setMoq(e.target.value)} className="border-[#D0D5DC]" />
+                </div>
+                <div>
+                  <label className="text-[11px] text-[#8B929C] font-medium">Par multiple de (lot)</label>
+                  <Input type="number" min={1} value={lotSize} onChange={(e) => setLotSize(e.target.value)} className="border-[#D0D5DC]" />
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="col-span-2 md:col-span-4 flex items-end">
             <Button onClick={handleAdd} className="w-full bg-[#00B85C] hover:bg-[#009E4F] text-white rounded-lg gap-2">
               <Plus size={16} /> Ajouter à la liste
             </Button>

@@ -269,8 +269,8 @@ export default function VendorPublicPage() {
   // Compute vendor MOV and cart progress
   const vendorMov = useMemo(() => {
     if (!offers.length) return 0;
-    // Take the max mov_amount from this vendor's offers (they typically share the same MOV)
-    const movValues = offers.map((o: any) => Number(o.mov_amount || 0)).filter((v: number) => v > 0);
+    // Check both mov and mov_amount columns (mov is the legacy field, mov_amount the newer one)
+    const movValues = offers.map((o: any) => Number(o.mov_amount || o.mov || 0)).filter((v: number) => v > 0);
     return movValues.length ? Math.max(...movValues) : 0;
   }, [offers]);
 

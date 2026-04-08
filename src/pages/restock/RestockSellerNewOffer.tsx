@@ -212,13 +212,16 @@ function ManualAddForm({ onAdd }: { onAdd: (row: OfferRow) => void }) {
       product_state: state,
       lot_number: lot,
       delivery_condition: delivery,
+      allow_partial: allowPartial,
+      moq: Number(moq) || 1,
+      lot_size: Number(lotSize) || 1,
       errors: [],
       valid: true,
       source: found?.source,
     });
     onAdd(row);
     // Reset
-    setCode(""); setFound(null); setNotFound(false); setQty("1"); setPriceHt(""); setDlu(""); setState("intact"); setLot(""); setDelivery("both"); setManualName("");
+    setCode(""); setFound(null); setNotFound(false); setQty("1"); setPriceHt(""); setDlu(""); setState("intact"); setLot(""); setDelivery("both"); setManualName(""); setAllowPartial(false); setMoq("1"); setLotSize("1");
     toast.success("Produit ajouté à la liste");
   };
 

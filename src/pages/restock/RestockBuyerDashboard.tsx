@@ -3,8 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Package, ShoppingCart, MessageSquare, Clock, CheckCircle, Bell, ArrowRight } from "lucide-react";
+import { Package, ShoppingCart, MessageSquare, CheckCircle } from "lucide-react";
 import { Link } from "react-router-dom";
+import logoHorizontal from "@/assets/logo-medikong.png";
 
 const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
   confirmed: { label: "Confirmée", color: "#00B85C", bg: "#EEFBF4" },
@@ -24,7 +25,6 @@ const counterStatusConfig: Record<string, { label: string; color: string; bg: st
 export default function RestockBuyerDashboard() {
   const { user } = useAuth();
 
-  // Fetch transactions
   const { data: transactions = [] } = useQuery({
     queryKey: ["restock-buyer-transactions", user?.id],
     queryFn: async () => {
@@ -38,7 +38,6 @@ export default function RestockBuyerDashboard() {
     enabled: !!user,
   });
 
-  // Fetch counter-offers
   const { data: counterOffers = [] } = useQuery({
     queryKey: ["restock-buyer-counters", user?.id],
     queryFn: async () => {
@@ -62,137 +61,181 @@ export default function RestockBuyerDashboard() {
   const formatPrice = (p: number) => `${p.toFixed(2)} €`;
 
   return (
-    <div className="p-6 max-w-5xl mx-auto" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-      <div className="flex items-center justify-between mb-6">
+    <div className="min-h-screen bg-[#F7F8FA]" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+      {/* Header */}
+      <header className="sticky top-0 z-50 bg-white border-b border-[#D0D5DC] shadow-sm">
+        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <img src={logoHorizontal} alt="MediKong" className="h-8 md:h-9" />
+            <span className="text-[#00B85C] font-bold text-base md:text-lg">ReStock</span>
+          </div>
+          <Link to="/restock/opportunities/demo">
+            <Button size="sm" className="bg-[#1C58D9] hover:bg-[#1549B8] text-white rounded-lg gap-2 text-xs md:text-sm">
+              <Package size={14} /> Opportunités
+            </Button>
+          </Link>
+        </div>
+      </header>
+
+      <div className="max-w-5xl mx-auto px-4 py-6 space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-[#1E252F]">Mon espace ReStock</h1>
+          <h1 className="text-xl md:text-2xl font-bold text-[#1E252F]">Mon espace ReStock</h1>
           <p className="text-[#5C6470] text-sm">Suivez vos achats et contre-offres</p>
         </div>
-        <Link to="/restock/opportunities/demo">
-          <Button className="bg-[#1C58D9] hover:bg-[#1549B8] text-white rounded-lg gap-2">
-            <Package size={16} /> Voir les opportunités
-          </Button>
-        </Link>
-      </div>
 
-      {/* KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        {[
-          { label: "Achats", value: stats.purchases, icon: ShoppingCart, color: "#00B85C" },
-          { label: "Contre-offres en cours", value: stats.pending, icon: MessageSquare, color: "#F59E0B" },
-          { label: "Contre-offres acceptées", value: stats.accepted, icon: CheckCircle, color: "#1C58D9" },
-          { label: "Total dépensé", value: formatPrice(stats.totalSpent), icon: Package, color: "#00B85C" },
-        ].map((kpi) => (
-          <div key={kpi.label} className="bg-white border border-[#D0D5DC] rounded-xl p-4 shadow-sm">
-            <div className="flex items-center gap-2 mb-1">
-              <kpi.icon size={16} style={{ color: kpi.color }} />
-              <span className="text-xs text-[#8B929C]">{kpi.label}</span>
+        {/* KPIs */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+          {[
+            { label: "Achats", value: stats.purchases, icon: ShoppingCart, color: "#00B85C" },
+            { label: "En cours", value: stats.pending, icon: MessageSquare, color: "#F59E0B" },
+            { label: "Acceptées", value: stats.accepted, icon: CheckCircle, color: "#1C58D9" },
+            { label: "Total dépensé", value: formatPrice(stats.totalSpent), icon: Package, color: "#00B85C" },
+          ].map((kpi) => (
+            <div key={kpi.label} className="bg-white border border-[#D0D5DC] rounded-xl p-3 md:p-4 shadow-sm">
+              <div className="flex items-center gap-2 mb-1">
+                <kpi.icon size={14} style={{ color: kpi.color }} />
+                <span className="text-[10px] md:text-xs text-[#8B929C]">{kpi.label}</span>
+              </div>
+              <p className="text-lg md:text-xl font-bold text-[#1E252F]">{kpi.value}</p>
             </div>
-            <p className="text-xl font-bold text-[#1E252F]">{kpi.value}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Transactions */}
-      <div className="bg-white border border-[#D0D5DC] rounded-xl shadow-sm mb-6">
-        <div className="p-4 border-b border-[#D0D5DC]">
-          <h2 className="font-bold text-[#1E252F] flex items-center gap-2">
-            <ShoppingCart size={16} /> Historique des achats
-          </h2>
+          ))}
         </div>
-        {transactions.length === 0 ? (
-          <div className="p-10 text-center text-[#8B929C]">
-            <Package size={40} className="mx-auto mb-2 opacity-40" />
-            <p>Aucun achat pour l'instant</p>
+
+        {/* Transactions */}
+        <div className="bg-white border border-[#D0D5DC] rounded-xl shadow-sm">
+          <div className="p-4 border-b border-[#D0D5DC]">
+            <h2 className="font-bold text-[#1E252F] flex items-center gap-2 text-sm md:text-base">
+              <ShoppingCart size={16} /> Historique des achats
+            </h2>
           </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs">
-              <thead>
-                <tr className="border-b border-[#D0D5DC] text-left text-[#8B929C] bg-[#F7F8FA]">
-                  <th className="px-4 py-3">Produit</th>
-                  <th className="px-4 py-3 text-right">Qté</th>
-                  <th className="px-4 py-3 text-right">Prix HT</th>
-                  <th className="px-4 py-3">Mode</th>
-                  <th className="px-4 py-3">Statut</th>
-                  <th className="px-4 py-3">Date</th>
-                </tr>
-              </thead>
-              <tbody>
+          {transactions.length === 0 ? (
+            <div className="p-10 text-center text-[#8B929C]">
+              <Package size={40} className="mx-auto mb-2 opacity-40" />
+              <p>Aucun achat pour l'instant</p>
+            </div>
+          ) : (
+            <>
+              {/* Mobile cards */}
+              <div className="md:hidden divide-y divide-[#F0F4FF]">
                 {transactions.map((t: any) => {
                   const st = statusConfig[t.status] || statusConfig.confirmed;
                   const offer = t.restock_offers;
                   return (
-                    <tr key={t.id} className="border-b border-[#F0F4FF] hover:bg-[#F7F8FA]">
-                      <td className="px-4 py-3 font-medium text-[#1E252F] max-w-[200px] truncate">
-                        {offer?.designation || "—"}
-                      </td>
-                      <td className="px-4 py-3 text-right">{t.quantity}</td>
-                      <td className="px-4 py-3 text-right font-semibold text-[#1C58D9]">{formatPrice(t.final_price || 0)}</td>
-                      <td className="px-4 py-3 text-[#5C6470]">{t.delivery_mode === "pickup" ? "Enlèvement" : "Livraison"}</td>
-                      <td className="px-4 py-3">
-                        <Badge className="text-[10px]" style={{ backgroundColor: st.bg, color: st.color }}>{st.label}</Badge>
-                      </td>
-                      <td className="px-4 py-3 text-[#5C6470]">
-                        {new Date(t.created_at).toLocaleDateString("fr-BE")}
-                      </td>
-                    </tr>
+                    <div key={t.id} className="p-4 space-y-2">
+                      <div className="flex items-start justify-between">
+                        <p className="font-medium text-[#1E252F] text-sm">{offer?.designation || "—"}</p>
+                        <Badge className="text-[10px] shrink-0" style={{ backgroundColor: st.bg, color: st.color }}>{st.label}</Badge>
+                      </div>
+                      <div className="flex items-center gap-4 text-xs text-[#5C6470]">
+                        <span>{t.quantity} unités</span>
+                        <span className="font-semibold text-[#1C58D9]">{formatPrice(t.final_price || 0)}</span>
+                        <span>{new Date(t.created_at).toLocaleDateString("fr-BE")}</span>
+                      </div>
+                    </div>
                   );
                 })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      {/* Counter-offers */}
-      <div className="bg-white border border-[#D0D5DC] rounded-xl shadow-sm">
-        <div className="p-4 border-b border-[#D0D5DC]">
-          <h2 className="font-bold text-[#1E252F] flex items-center gap-2">
-            <MessageSquare size={16} /> Mes contre-offres
-          </h2>
+              </div>
+              {/* Desktop table */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b border-[#D0D5DC] text-left text-[#8B929C] bg-[#F7F8FA]">
+                      <th className="px-4 py-3">Produit</th>
+                      <th className="px-4 py-3 text-right">Qté</th>
+                      <th className="px-4 py-3 text-right">Prix HT</th>
+                      <th className="px-4 py-3">Mode</th>
+                      <th className="px-4 py-3">Statut</th>
+                      <th className="px-4 py-3">Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {transactions.map((t: any) => {
+                      const st = statusConfig[t.status] || statusConfig.confirmed;
+                      const offer = t.restock_offers;
+                      return (
+                        <tr key={t.id} className="border-b border-[#F0F4FF] hover:bg-[#F7F8FA]">
+                          <td className="px-4 py-3 font-medium text-[#1E252F] max-w-[200px] truncate">{offer?.designation || "—"}</td>
+                          <td className="px-4 py-3 text-right">{t.quantity}</td>
+                          <td className="px-4 py-3 text-right font-semibold text-[#1C58D9]">{formatPrice(t.final_price || 0)}</td>
+                          <td className="px-4 py-3 text-[#5C6470]">{t.delivery_mode === "pickup" ? "Enlèvement" : "Livraison"}</td>
+                          <td className="px-4 py-3"><Badge className="text-[10px]" style={{ backgroundColor: st.bg, color: st.color }}>{st.label}</Badge></td>
+                          <td className="px-4 py-3 text-[#5C6470]">{new Date(t.created_at).toLocaleDateString("fr-BE")}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
         </div>
-        {counterOffers.length === 0 ? (
-          <div className="p-10 text-center text-[#8B929C]">
-            <MessageSquare size={40} className="mx-auto mb-2 opacity-40" />
-            <p>Aucune contre-offre envoyée</p>
+
+        {/* Counter-offers */}
+        <div className="bg-white border border-[#D0D5DC] rounded-xl shadow-sm">
+          <div className="p-4 border-b border-[#D0D5DC]">
+            <h2 className="font-bold text-[#1E252F] flex items-center gap-2 text-sm md:text-base">
+              <MessageSquare size={16} /> Mes contre-offres
+            </h2>
           </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs">
-              <thead>
-                <tr className="border-b border-[#D0D5DC] text-left text-[#8B929C] bg-[#F7F8FA]">
-                  <th className="px-4 py-3">Produit</th>
-                  <th className="px-4 py-3 text-right">Prix proposé</th>
-                  <th className="px-4 py-3 text-right">Qté</th>
-                  <th className="px-4 py-3">Statut</th>
-                  <th className="px-4 py-3">Date</th>
-                </tr>
-              </thead>
-              <tbody>
+          {counterOffers.length === 0 ? (
+            <div className="p-10 text-center text-[#8B929C]">
+              <MessageSquare size={40} className="mx-auto mb-2 opacity-40" />
+              <p>Aucune contre-offre envoyée</p>
+            </div>
+          ) : (
+            <>
+              {/* Mobile cards */}
+              <div className="md:hidden divide-y divide-[#F0F4FF]">
                 {counterOffers.map((c: any) => {
                   const st = counterStatusConfig[c.status] || counterStatusConfig.pending;
                   const offer = c.restock_offers;
                   return (
-                    <tr key={c.id} className="border-b border-[#F0F4FF] hover:bg-[#F7F8FA]">
-                      <td className="px-4 py-3 font-medium text-[#1E252F] max-w-[200px] truncate">
-                        {offer?.designation || "—"}
-                      </td>
-                      <td className="px-4 py-3 text-right font-semibold text-[#1C58D9]">{formatPrice(c.proposed_price || 0)}</td>
-                      <td className="px-4 py-3 text-right">{c.proposed_quantity}</td>
-                      <td className="px-4 py-3">
-                        <Badge className="text-[10px]" style={{ backgroundColor: st.bg, color: st.color }}>{st.label}</Badge>
-                      </td>
-                      <td className="px-4 py-3 text-[#5C6470]">
-                        {new Date(c.created_at).toLocaleDateString("fr-BE")}
-                      </td>
-                    </tr>
+                    <div key={c.id} className="p-4 space-y-2">
+                      <div className="flex items-start justify-between">
+                        <p className="font-medium text-[#1E252F] text-sm">{offer?.designation || "—"}</p>
+                        <Badge className="text-[10px] shrink-0" style={{ backgroundColor: st.bg, color: st.color }}>{st.label}</Badge>
+                      </div>
+                      <div className="flex items-center gap-4 text-xs text-[#5C6470]">
+                        <span className="font-semibold text-[#1C58D9]">{formatPrice(c.proposed_price || 0)}</span>
+                        <span>{c.proposed_quantity} unités</span>
+                        <span>{new Date(c.created_at).toLocaleDateString("fr-BE")}</span>
+                      </div>
+                    </div>
                   );
                 })}
-              </tbody>
-            </table>
-          </div>
-        )}
+              </div>
+              {/* Desktop table */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b border-[#D0D5DC] text-left text-[#8B929C] bg-[#F7F8FA]">
+                      <th className="px-4 py-3">Produit</th>
+                      <th className="px-4 py-3 text-right">Prix proposé</th>
+                      <th className="px-4 py-3 text-right">Qté</th>
+                      <th className="px-4 py-3">Statut</th>
+                      <th className="px-4 py-3">Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {counterOffers.map((c: any) => {
+                      const st = counterStatusConfig[c.status] || counterStatusConfig.pending;
+                      const offer = c.restock_offers;
+                      return (
+                        <tr key={c.id} className="border-b border-[#F0F4FF] hover:bg-[#F7F8FA]">
+                          <td className="px-4 py-3 font-medium text-[#1E252F] max-w-[200px] truncate">{offer?.designation || "—"}</td>
+                          <td className="px-4 py-3 text-right font-semibold text-[#1C58D9]">{formatPrice(c.proposed_price || 0)}</td>
+                          <td className="px-4 py-3 text-right">{c.proposed_quantity}</td>
+                          <td className="px-4 py-3"><Badge className="text-[10px]" style={{ backgroundColor: st.bg, color: st.color }}>{st.label}</Badge></td>
+                          <td className="px-4 py-3 text-[#5C6470]">{new Date(c.created_at).toLocaleDateString("fr-BE")}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -42,6 +42,7 @@ function applyCatalogProductFilters(
   if (filters.priceMin !== undefined) next = next.gte("best_price_excl_vat", filters.priceMin);
   if (filters.priceMax !== undefined) next = next.lte("best_price_excl_vat", filters.priceMax);
   if (filters.inStock) next = next.eq("is_in_stock", true);
+  if (filters.hasOffers) next = next.gt("offer_count", 0);
 
   if (options.effectiveSearch) {
     const pattern = `%${options.effectiveSearch}%`;

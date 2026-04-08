@@ -251,7 +251,7 @@ export function useCatalogProducts(filters: CatalogFilters) {
       );
 
       const offset = (filters.page - 1) * filters.perPage;
-      const isDefaultCatalogueView = !effectiveSearch && !resolvedBrandIds?.length && !categoryIds && !mfIds?.length && !filters.inStock && filters.priceMin === undefined && filters.priceMax === undefined;
+      const isDefaultCatalogueView = !effectiveSearch && !resolvedBrandIds?.length && !categoryIds && !mfIds?.length && !filters.inStock && !filters.hasOffers && filters.priceMin === undefined && filters.priceMax === undefined;
       const filterContext = {
         categoryIds,
         resolvedBrandIds,

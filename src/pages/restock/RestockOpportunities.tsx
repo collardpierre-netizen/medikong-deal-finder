@@ -333,6 +333,14 @@ export default function RestockOpportunities() {
                       </div>
                     </div>
 
+                    {/* Partial sale info */}
+                    {offer.allow_partial && (
+                      <div className="flex items-center gap-2 text-xs text-[#1C58D9] bg-[#F0F4FF] rounded-lg px-3 py-1.5">
+                        <Package size={12} />
+                        <span>Achat partiel possible — min. {offer.moq} unités{offer.lot_size > 1 ? `, par ${offer.lot_size}` : ""}</span>
+                      </div>
+                    )}
+
                     {offer.delivery_condition !== "pickup" && (
                       <p className="text-xs text-[#8B929C]">
                         Forfait livraison MediKong : {formatPrice(shippingFee)}
@@ -347,14 +355,17 @@ export default function RestockOpportunities() {
                       className="flex-1 rounded-lg gap-2 border-[#D0D5DC] text-[#5C6470] hover:border-[#1C58D9] hover:text-[#1C58D9]"
                       onClick={() => {
                         setCounterOfferTarget(offer);
-                        setCounterForm({ price: "", quantity: String(offer.quantity || 1) });
+                        setCounterForm({ price: "", quantity: String(offer.allow_partial ? offer.moq : offer.quantity) });
                       }}
                     >
                       <MessageSquare size={15} /> Contre-offre
                     </Button>
                     <Button
                       className="flex-1 rounded-lg gap-2 bg-[#00B85C] hover:bg-[#00A050] text-white"
-                      onClick={() => setConfirmTarget(offer)}
+                      onClick={() => {
+                        setConfirmTarget(offer);
+                        setBuyQuantity(offer.allow_partial ? offer.moq : offer.quantity);
+                      }}
                     >
                       <ShoppingCart size={15} /> Je prends
                     </Button>

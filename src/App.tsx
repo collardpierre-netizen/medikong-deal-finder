@@ -345,6 +345,14 @@ const App = () => (
               <Route path="settings" element={<LP><VendorSettings /></LP>} />
             </Route>
 
+            {/* ReStock Seller */}
+            <Route path="/restock/seller" element={<LP><RestockLayout /></LP>}>
+              <Route index element={<Navigate to="/restock/seller/new" replace />} />
+              <Route path="new" element={<LP><RestockSellerNewOffer /></LP>} />
+              <Route path="offers" element={<LP><RestockSellerOffers /></LP>} />
+              <Route path="counteroffers" element={<LP><RestockSellerCounterOffers /></LP>} />
+            </Route>
+
             <Route path="*" element={<LP><NotFound /></LP>} />
           </Routes>
           </Suspense>

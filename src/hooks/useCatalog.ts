@@ -376,7 +376,7 @@ export function useCatalogCategories() {
 
       const all = (catResult.data || []).map((c: any) => ({
         ...c,
-        name: c.name_fr || c.name,
+        name: getLocalizedName(c),
         product_count: countMap.get(c.id) || 0,
       }));
 

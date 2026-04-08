@@ -157,7 +157,7 @@ export default function RestockMobileSwipe() {
             )}
           </div>
         ) : (
-          <div className="relative w-full max-w-sm h-[500px]">
+          <div className="relative w-full max-w-sm" style={{ height: "500px" }}>
             {remaining.slice(0, 3).reverse().map((offer, i) => {
               const actualIdx = currentIdx + (remaining.length > 3 ? 3 : remaining.length) - 1 - i;
               const isFront = actualIdx === currentIdx;

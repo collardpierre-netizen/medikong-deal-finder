@@ -19,6 +19,9 @@ interface OfferRow {
   product_state: string;
   lot_number: string;
   delivery_condition: string;
+  allow_partial: boolean;
+  moq: number;
+  lot_size: number;
   errors: string[];
   valid: boolean;
   source?: string;

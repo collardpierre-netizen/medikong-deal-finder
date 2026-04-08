@@ -67,8 +67,10 @@ export default function RestockMobileSwipe() {
 
   const handleCounter = async () => {
     if (!currentOffer || !counterPrice) return;
+    const { data: buyerData } = await supabase.from("restock_buyers").select("id").limit(1).maybeSingle();
     await supabase.from("restock_counter_offers").insert({
       offer_id: currentOffer.id,
+      buyer_id: buyerData?.id || "00000000-0000-0000-0000-000000000000",
       proposed_price: parseFloat(counterPrice),
       proposed_quantity: parseInt(counterQty) || currentOffer.quantity,
       status: "pending",

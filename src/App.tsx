@@ -169,6 +169,7 @@ const RestockAdminOffers = lazyWithRetry(() => import("./pages/restock/RestockAd
 const RestockAdminBuyers = lazyWithRetry(() => import("./pages/restock/RestockAdminBuyers"), "RestockAdminBuyers");
 const RestockAdminCampaigns = lazyWithRetry(() => import("./pages/restock/RestockAdminCampaigns"), "RestockAdminCampaigns");
 const RestockAdminRules = lazyWithRetry(() => import("./pages/restock/RestockAdminRules"), "RestockAdminRules");
+const RestockOpportunities = lazyWithRetry(() => import("./pages/restock/RestockOpportunities"), "RestockOpportunities");
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -365,6 +366,9 @@ const App = () => (
               <Route path="campaigns" element={<LP><RestockAdminCampaigns /></LP>} />
               <Route path="rules" element={<LP><RestockAdminRules /></LP>} />
             </Route>
+
+            {/* ReStock Public Opportunities */}
+            <Route path="/opportunities/:campaignId" element={<LP><RestockOpportunities /></LP>} />
 
             <Route path="*" element={<LP><NotFound /></LP>} />
           </Routes>

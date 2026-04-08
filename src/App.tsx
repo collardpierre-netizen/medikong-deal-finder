@@ -165,6 +165,10 @@ const RestockLayout = lazyWithRetry(() => import("./components/restock/RestockLa
 const RestockSellerNewOffer = lazyWithRetry(() => import("./pages/restock/RestockSellerNewOffer"), "RestockSellerNewOffer");
 const RestockSellerOffers = lazyWithRetry(() => import("./pages/restock/RestockSellerOffers"), "RestockSellerOffers");
 const RestockSellerCounterOffers = lazyWithRetry(() => import("./pages/restock/RestockSellerCounterOffers"), "RestockSellerCounterOffers");
+const RestockAdminOffers = lazyWithRetry(() => import("./pages/restock/RestockAdminOffers"), "RestockAdminOffers");
+const RestockAdminBuyers = lazyWithRetry(() => import("./pages/restock/RestockAdminBuyers"), "RestockAdminBuyers");
+const RestockAdminCampaigns = lazyWithRetry(() => import("./pages/restock/RestockAdminCampaigns"), "RestockAdminCampaigns");
+const RestockAdminRules = lazyWithRetry(() => import("./pages/restock/RestockAdminRules"), "RestockAdminRules");
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -351,6 +355,15 @@ const App = () => (
               <Route path="new" element={<LP><RestockSellerNewOffer /></LP>} />
               <Route path="offers" element={<LP><RestockSellerOffers /></LP>} />
               <Route path="counteroffers" element={<LP><RestockSellerCounterOffers /></LP>} />
+            </Route>
+
+            {/* ReStock Admin */}
+            <Route path="/restock/admin" element={<LP><RestockLayout /></LP>}>
+              <Route index element={<Navigate to="/restock/admin/offers" replace />} />
+              <Route path="offers" element={<LP><RestockAdminOffers /></LP>} />
+              <Route path="buyers" element={<LP><RestockAdminBuyers /></LP>} />
+              <Route path="campaigns" element={<LP><RestockAdminCampaigns /></LP>} />
+              <Route path="rules" element={<LP><RestockAdminRules /></LP>} />
             </Route>
 
             <Route path="*" element={<LP><NotFound /></LP>} />

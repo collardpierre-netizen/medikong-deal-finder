@@ -1,5 +1,5 @@
 import { Outlet, NavLink, useLocation } from "react-router-dom";
-import { PackagePlus, List, MessageSquare, CheckCircle, HelpCircle } from "lucide-react";
+import { PackagePlus, List, MessageSquare, CheckCircle, HelpCircle, LayoutGrid, Users, Mail, Shield } from "lucide-react";
 import logoHorizontal from "@/assets/logo-medikong.png";
 
 const sellerNav = [
@@ -10,8 +10,17 @@ const sellerNav = [
   { to: "/restock/seller/help", label: "Guide d'aide", icon: HelpCircle },
 ];
 
+const adminNav = [
+  { to: "/restock/admin/offers", label: "Toutes les offres", icon: LayoutGrid },
+  { to: "/restock/admin/buyers", label: "Acheteurs", icon: Users },
+  { to: "/restock/admin/campaigns", label: "Campagnes email", icon: Mail },
+  { to: "/restock/admin/rules", label: "Règles de filtrage", icon: Shield },
+];
+
 export default function RestockLayout() {
   const location = useLocation();
+  const isAdmin = location.pathname.startsWith("/restock/admin");
+  const nav = isAdmin ? adminNav : sellerNav;
 
   return (
     <div className="flex min-h-screen bg-[#F7F8FA]">
@@ -22,8 +31,14 @@ export default function RestockLayout() {
           <span className="text-[#00B85C] font-bold text-lg" style={{ fontFamily: "'DM Sans', sans-serif" }}>ReStock</span>
         </div>
 
+        {isAdmin && (
+          <div className="px-5 py-2 border-b border-[#D0D5DC]">
+            <span className="text-[10px] uppercase tracking-wider text-[#8B929C] font-semibold">Administration</span>
+          </div>
+        )}
+
         <nav className="flex-1 px-3 pt-4 space-y-1">
-          {sellerNav.map((item) => {
+          {nav.map((item) => {
             const isActive = location.pathname === item.to;
             return (
               <NavLink

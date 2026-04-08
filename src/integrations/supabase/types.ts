@@ -3043,6 +3043,7 @@ export type Database = {
       }
       restock_offers: {
         Row: {
+          allow_partial: boolean
           cnk: string | null
           created_at: string
           delivery_condition: string
@@ -3051,6 +3052,8 @@ export type Database = {
           ean: string | null
           id: string
           lot_number: string | null
+          lot_size: number
+          moq: number
           photo_url: string | null
           price_ht: number
           product_state: string
@@ -3061,6 +3064,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          allow_partial?: boolean
           cnk?: string | null
           created_at?: string
           delivery_condition?: string
@@ -3069,6 +3073,8 @@ export type Database = {
           ean?: string | null
           id?: string
           lot_number?: string | null
+          lot_size?: number
+          moq?: number
           photo_url?: string | null
           price_ht: number
           product_state?: string
@@ -3079,6 +3085,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          allow_partial?: boolean
           cnk?: string | null
           created_at?: string
           delivery_condition?: string
@@ -3087,6 +3094,8 @@ export type Database = {
           ean?: string | null
           id?: string
           lot_number?: string | null
+          lot_size?: number
+          moq?: number
           photo_url?: string | null
           price_ht?: number
           product_state?: string

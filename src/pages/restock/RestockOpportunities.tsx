@@ -686,6 +686,24 @@ export default function RestockOpportunities() {
                 <p className="text-lg font-medium">Aucune offre trouvée</p>
                 {hasFilters && <button onClick={clearFilters} className="text-sm text-primary hover:underline mt-2">Effacer les filtres</button>}
               </div>
+            ) : viewMode === "tinder" ? (
+              <TinderView
+                offers={filtered}
+                tinderIdx={tinderIdx}
+                setTinderIdx={setTinderIdx}
+                tinderCart={tinderCart}
+                setTinderCart={setTinderCart}
+                tinderDetail={tinderDetail}
+                setTinderDetail={setTinderDetail}
+                tinderCounter={tinderCounter}
+                setTinderCounter={setTinderCounter}
+                tinderCounterPrice={tinderCounterPrice}
+                setTinderCounterPrice={setTinderCounterPrice}
+                tinderCounterQty={tinderCounterQty}
+                setTinderCounterQty={setTinderCounterQty}
+                buyer={buyer}
+                formatPrice={formatPrice}
+              />
             ) : viewMode === "grid" ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                 {filtered.map(renderOfferCard)}

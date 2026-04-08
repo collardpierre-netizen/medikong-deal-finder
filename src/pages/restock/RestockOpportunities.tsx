@@ -644,7 +644,13 @@ export default function RestockOpportunities() {
     return new Date(d).toLocaleDateString("fr-BE", { day: "2-digit", month: "short", year: "numeric" });
   };
   const formatPrice = (p: number) => `${p.toFixed(2)} €`;
-  const getCataloguePrice = (priceHt: number) => priceHt * 1.3;
+  const getCataloguePrice = (offer: any) => offer.medikong_product?.best_price_excl_vat || (offer.price_ht || 0) * 1.3;
+  const getDiscount = (offer: any) => {
+    const mk = offer.medikong_product?.best_price_excl_vat;
+    if (mk && mk > 0) return Math.round((1 - (offer.price_ht || 0) / mk) * 100);
+    const cat = (offer.price_ht || 0) * 1.3;
+    return Math.round(((cat - (offer.price_ht || 0)) / cat) * 100);
+  };
 
   /* ── Render helpers ── */
   const renderOfferCard = (offer: any) => {

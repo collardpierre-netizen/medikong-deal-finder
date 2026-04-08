@@ -380,10 +380,10 @@ export default function AccountPage() {
                       </motion.button>
 
                       {/* GDPR - Delete Account */}
-                      <div className="mt-12 pt-8 border-t border-destructive/20">
-                        <h3 className="text-lg font-bold text-destructive mb-2">Zone dangereuse</h3>
+                      <div className="mt-12 pt-8 border-t border-border">
+                        <h3 className="text-lg font-bold text-foreground mb-2">Gestion de vos données (RGPD)</h3>
                         <p className="text-sm text-muted-foreground mb-4">
-                          La suppression de votre compte est irréversible. Toutes vos données personnelles, commandes, favoris et alertes seront définitivement supprimées conformément au RGPD.
+                          Conformément au RGPD, vous pouvez demander la suppression de votre compte et de toutes vos données personnelles. Cette action est définitive et ne peut pas être annulée.
                         </p>
                         <DeleteAccountButton />
                       </div>

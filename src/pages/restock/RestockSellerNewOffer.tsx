@@ -559,6 +559,13 @@ export default function RestockSellerNewOffer() {
                       <td className="py-2 pr-3"><Badge variant="outline" className="text-[10px]">{stateLabel(r.product_state)}</Badge></td>
                       <td className="py-2 pr-3"><Badge variant="outline" className="text-[10px]">{deliveryLabel(r.delivery_condition)}</Badge></td>
                       <td className="py-2 pr-3">
+                        {r.allow_partial ? (
+                          <span className="text-[10px] text-[#1C58D9] font-medium">Partiel · min {r.moq} · ×{r.lot_size}</span>
+                        ) : (
+                          <span className="text-[10px] text-[#8B929C]">Lot complet</span>
+                        )}
+                      </td>
+                      <td className="py-2 pr-3">
                         {r.errors.length > 0 && (
                           <div className="flex items-start gap-1 text-[#E54545]">
                             <AlertTriangle size={12} className="mt-0.5 shrink-0" />

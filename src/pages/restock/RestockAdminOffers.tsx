@@ -112,9 +112,16 @@ export default function RestockAdminOffers() {
         <h1 className="text-2xl font-bold text-[#1E252F]" style={{ fontFamily: "'DM Sans', sans-serif" }}>
           Offres agrégées
         </h1>
-        <Button onClick={handleCampaign} className="bg-[#1C58D9] hover:bg-[#1549B8] text-white rounded-lg gap-2">
-          <Send size={16} /> Envoyer campagne
-        </Button>
+        <div className="flex items-center gap-3">
+          <Link to="/restock/opportunities" target="_blank">
+            <Button variant="outline" className="gap-2 rounded-lg border-[#D0D5DC] text-[#5C6470] hover:text-[#1E252F]">
+              <ExternalLink size={16} /> Voir côté acheteur
+            </Button>
+          </Link>
+          <Button onClick={handleCampaign} className="bg-[#1C58D9] hover:bg-[#1549B8] text-white rounded-lg gap-2">
+            <Send size={16} /> Envoyer campagne
+          </Button>
+        </div>
       </div>
 
       {/* KPIs */}

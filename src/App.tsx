@@ -177,6 +177,11 @@ const RestockMobileSwipe = lazyWithRetry(() => import("./pages/restock/RestockMo
 const RestockSettings = lazyWithRetry(() => import("./pages/restock/RestockSettings"), "RestockSettings");
 const RestockBuyerDashboard = lazyWithRetry(() => import("./pages/restock/RestockBuyerDashboard"), "RestockBuyerDashboard");
 const RestockDrops = lazyWithRetry(() => import("./pages/restock/RestockDrops"), "RestockDrops");
+const RestockFaqPage = lazyWithRetry(() => import("./pages/restock/RestockFaqPage"), "RestockFaqPage");
+const RestockAdminFaq = lazyWithRetry(() => import("./pages/restock/RestockAdminFaq"), "RestockAdminFaq");
+const RestockAdminPriceReferences = lazyWithRetry(() => import("./pages/restock/RestockAdminPriceReferences"), "RestockAdminPriceReferences");
+const RestockAdminPayouts = lazyWithRetry(() => import("./pages/restock/RestockAdminPayouts"), "RestockAdminPayouts");
+const RestockSellerReferral = lazyWithRetry(() => import("./pages/restock/RestockSellerReferral"), "RestockSellerReferral");
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -370,7 +375,9 @@ const App = () => (
               <Route path="/restock/seller/offers" element={<LP><RestockSellerOffers /></LP>} />
               <Route path="/restock/seller/counteroffers" element={<LP><RestockSellerCounterOffers /></LP>} />
               <Route path="/restock/seller/sales" element={<LP><RestockSellerSales /></LP>} />
+              <Route path="/restock/seller/referral" element={<LP><RestockSellerReferral /></LP>} />
               <Route path="/restock/seller/help" element={<LP><RestockSellerHelp /></LP>} />
+              <Route path="/restock/faq" element={<LP><RestockFaqPage /></LP>} />
 
               {/* Admin */}
               <Route path="/restock/admin" element={<Navigate to="/restock/admin/offers" replace />} />
@@ -380,6 +387,9 @@ const App = () => (
               <Route path="/restock/admin/rules" element={<LP><RestockAdminRules /></LP>} />
               <Route path="/restock/admin/settings" element={<LP><RestockSettings /></LP>} />
               <Route path="/restock/admin/drops" element={<LP><RestockDrops /></LP>} />
+              <Route path="/restock/admin/faq" element={<LP><RestockAdminFaq /></LP>} />
+              <Route path="/restock/admin/price-references" element={<LP><RestockAdminPriceReferences /></LP>} />
+              <Route path="/restock/admin/payouts" element={<LP><RestockAdminPayouts /></LP>} />
             </Route>
 
             {/* ReStock standalone mobile */}

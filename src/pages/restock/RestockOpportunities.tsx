@@ -84,7 +84,7 @@ export default function RestockOpportunities() {
 
   const shippingFee = useMemo(() => {
     const rule = rules.find((r: any) => r.rule_type === "shipping_flat_fee");
-    return rule ? parseFloat(rule.value) : 9.90;
+    return rule ? parseFloat(String(rule.value)) : 9.90;
   }, [rules]);
 
   // Filter offers

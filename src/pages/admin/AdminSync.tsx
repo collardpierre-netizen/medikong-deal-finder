@@ -644,8 +644,8 @@ export default function AdminSync() {
               Pipeline de synchronisation
             </h3>
             <p className="text-[12px] mt-1" style={{ color: "#616B7C" }}>
-              ⚡ Incrémental (quotidien 3h) : met à jour les ~56K produits avec offres actives &nbsp;|&nbsp;
-              🔄 Full (dimanche 4h) : import CSV complet + détection nouveaux produits
+              ⚡ Incrémental (3×/jour : 3h, 11h, 19h UTC) : met à jour les offres & prix actifs &nbsp;|&nbsp;
+              🔄 Full (dimanche + mercredi 4h UTC) : import CSV complet + détection nouveaux produits
             </p>
           </div>
           <div className="flex items-center gap-3">

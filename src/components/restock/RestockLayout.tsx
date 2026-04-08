@@ -1,5 +1,6 @@
 import { Outlet, NavLink, useLocation } from "react-router-dom";
-import { PackagePlus, List, MessageSquare, CheckCircle, HelpCircle, LayoutGrid, Users, Mail, Shield, Settings, Zap } from "lucide-react";
+import { PackagePlus, List, MessageSquare, CheckCircle, HelpCircle, LayoutGrid, Users, Mail, Shield, Settings, Zap, Menu, X } from "lucide-react";
+import { useState, useEffect } from "react";
 import logoHorizontal from "@/assets/logo-medikong.png";
 
 const sellerNav = [
@@ -23,11 +24,40 @@ export default function RestockLayout() {
   const location = useLocation();
   const isAdmin = location.pathname.startsWith("/restock/admin");
   const nav = isAdmin ? adminNav : sellerNav;
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Close mobile sidebar on route change
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [location.pathname]);
 
   return (
     <div className="flex min-h-screen bg-[#F7F8FA]">
+      {/* Mobile header */}
+      <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between bg-white border-b border-[#D0D5DC] px-4 py-3 md:hidden">
+        <div className="flex items-center gap-2">
+          <img src={logoHorizontal} alt="MediKong" className="h-8" />
+          <span className="text-[#00B85C] font-bold text-base" style={{ fontFamily: "'DM Sans', sans-serif" }}>ReStock</span>
+        </div>
+        <button
+          onClick={() => setMobileOpen(!mobileOpen)}
+          className="p-2 rounded-lg hover:bg-[#F0F4FF] transition-colors"
+        >
+          {mobileOpen ? <X size={22} className="text-[#1E252F]" /> : <Menu size={22} className="text-[#1E252F]" />}
+        </button>
+      </header>
+
+      {/* Mobile overlay */}
+      {mobileOpen && (
+        <div className="fixed inset-0 z-40 bg-black/40 md:hidden" onClick={() => setMobileOpen(false)} />
+      )}
+
       {/* Sidebar */}
-      <aside className="fixed left-0 top-0 bottom-0 w-[240px] z-50 overflow-y-auto flex flex-col bg-white border-r border-[#D0D5DC]">
+      <aside
+        className={`fixed left-0 top-0 bottom-0 w-[240px] z-50 overflow-y-auto flex flex-col bg-white border-r border-[#D0D5DC] transition-transform duration-200 ${
+          mobileOpen ? "translate-x-0" : "-translate-x-full"
+        } md:translate-x-0`}
+      >
         <div className="px-5 py-4 border-b border-[#D0D5DC] flex items-center gap-2">
           <img src={logoHorizontal} alt="MediKong" className="h-10" />
           <span className="text-[#00B85C] font-bold text-lg" style={{ fontFamily: "'DM Sans', sans-serif" }}>ReStock</span>
@@ -61,7 +91,7 @@ export default function RestockLayout() {
       </aside>
 
       {/* Main */}
-      <main className="ml-[240px] flex-1 min-h-screen">
+      <main className="flex-1 min-h-screen md:ml-[240px] pt-14 md:pt-0">
         <Outlet />
       </main>
     </div>

@@ -1,5 +1,5 @@
-import { useState, useMemo } from "react";
-import { useParams } from "react-router-dom";
+import { useState, useMemo, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
@@ -13,20 +13,22 @@ import logoHorizontal from "@/assets/logo-medikong.png";
 const FILTERS = [
   { key: "all", label: "Toutes" },
   { key: "dlu3", label: "DLU > 3 mois" },
-  { key: "intact", label: "Emballage intact" },
-  { key: "shipping", label: "Livraison disponible" },
+  { key: "intact", label: "Grade A" },
+  { key: "shipping", label: "Livraison dispo" },
 ];
 
-const stateColors: Record<string, { bg: string; text: string }> = {
-  intact: { bg: "#EEFBF4", text: "#00B85C" },
-  damaged_packaging: { bg: "#FEF3C7", text: "#F59E0B" },
-  near_expiry: { bg: "#FEE2E2", text: "#E54545" },
+const gradeConfig: Record<string, { label: string; color: string; bg: string }> = {
+  A: { label: "A — Intact", color: "#00B85C", bg: "#EEFBF4" },
+  B: { label: "B — Emb. abîmé", color: "#1C58D9", bg: "#EBF0FB" },
+  C: { label: "C — DLU courte", color: "#F59E0B", bg: "#FEF3C7" },
+  D: { label: "D — DLU courte + abîmé", color: "#E54545", bg: "#FEE2E2" },
 };
 
-const stateLabels: Record<string, string> = {
-  intact: "Intact",
-  damaged_packaging: "Emballage abîmé",
-  near_expiry: "Proche péremption",
+// Fallback for old product_state values
+const stateToGrade: Record<string, string> = {
+  intact: "A",
+  damaged_packaging: "B",
+  near_expiry: "C",
 };
 
 const deliveryLabels: Record<string, { label: string; icon: typeof Truck }> = {
@@ -37,6 +39,7 @@ const deliveryLabels: Record<string, { label: string; icon: typeof Truck }> = {
 
 export default function RestockOpportunities() {
   const { campaignId } = useParams();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
@@ -44,6 +47,13 @@ export default function RestockOpportunities() {
   const [counterForm, setCounterForm] = useState({ price: "", quantity: "" });
   const [confirmTarget, setConfirmTarget] = useState<any>(null);
   const [buyQuantity, setBuyQuantity] = useState<number>(0);
+
+  // Auto-redirect to mobile swipe on small screens
+  useEffect(() => {
+    if (window.innerWidth < 768 && campaignId) {
+      navigate(`/m/opportunities/${campaignId}`, { replace: true });
+    }
+  }, [campaignId, navigate]);
 
   // Fetch buyer info from token (campaignId used as token)
   const { data: buyer } = useQuery({
@@ -97,7 +107,7 @@ export default function RestockOpportunities() {
       in3Months.setMonth(in3Months.getMonth() + 3);
       list = list.filter((o: any) => o.dlu && new Date(o.dlu) > in3Months);
     } else if (activeFilter === "intact") {
-      list = list.filter((o: any) => o.product_state === "intact");
+      list = list.filter((o: any) => (o.grade || stateToGrade[o.product_state] || "A") === "A");
     } else if (activeFilter === "shipping") {
       list = list.filter((o: any) => o.delivery_condition === "shipping" || o.delivery_condition === "both");
     }
@@ -268,8 +278,8 @@ export default function RestockOpportunities() {
             {filtered.map((offer: any) => {
               const cataloguePrice = getCataloguePrice(offer.price_ht || 0);
               const discount = Math.round(((cataloguePrice - (offer.price_ht || 0)) / cataloguePrice) * 100);
-              const state = offer.product_state || "intact";
-              const sc = stateColors[state] || stateColors.intact;
+              const grade = offer.grade || stateToGrade[offer.product_state] || "A";
+              const gc = gradeConfig[grade] || gradeConfig.A;
               const delivery = deliveryLabels[offer.delivery_condition] || deliveryLabels.both;
               const DeliveryIcon = delivery.icon;
 
@@ -319,12 +329,12 @@ export default function RestockOpportunities() {
                         <span>DLU {formatDate(offer.dlu)}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Shield size={14} style={{ color: sc.text }} />
+                        <Shield size={14} style={{ color: gc.color }} />
                         <span
-                          className="px-2 py-0.5 rounded-full text-[11px] font-medium"
-                          style={{ backgroundColor: sc.bg, color: sc.text }}
+                          className="px-2 py-0.5 rounded-full text-[11px] font-bold"
+                          style={{ backgroundColor: gc.bg, color: gc.color }}
                         >
-                          {stateLabels[state] || state}
+                          {gc.label}
                         </span>
                       </div>
                       <div className="flex items-center gap-2 text-sm text-[#5C6470]">

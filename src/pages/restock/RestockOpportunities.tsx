@@ -691,7 +691,12 @@ export default function RestockOpportunities() {
             <div className="text-right">
               <span className="text-lg font-bold text-primary">{formatPrice(offer.price_ht || 0)}</span>
               <span className="text-[10px] text-muted-foreground ml-1">HT/u</span>
-              {discount > 0 && <span className="ml-2 text-xs font-bold text-emerald-600">-{discount}% {offer.medikong_product ? 'vs neuf' : ''}</span>}
+              {discount > 0 && <span className="ml-2 text-xs font-bold text-emerald-600">-{discount}%</span>}
+              {offer.medikong_product && (
+                <a href={`/produit/${offer.medikong_product.slug || offer.medikong_product.id}`} className="ml-2 text-[10px] text-emerald-600 hover:underline" onClick={e => e.stopPropagation()}>
+                  Voir neuf →
+                </a>
+              )}
             </div>
             <div className="flex gap-2 mt-2">
               <Button size="sm" variant="outline" className="h-8 text-xs gap-1" onClick={() => { setCounterOfferTarget(offer); setCounterForm({ price: "", quantity: String(offer.allow_partial ? offer.moq : offer.quantity) }); }}>

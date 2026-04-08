@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { PackagePlus, List, MessageSquare, CheckCircle, HelpCircle, LayoutGrid, Users, Mail, Shield, Settings, Zap } from "lucide-react";
+import { PackagePlus, List, MessageSquare, CheckCircle, HelpCircle, LayoutGrid, Users, Mail, Shield, Settings, Zap, Gift, Database, Wallet } from "lucide-react";
 import logoHorizontal from "@/assets/logo-medikong.png";
 
 const sellerNav = [
@@ -7,6 +7,7 @@ const sellerNav = [
   { to: "/restock/seller/offers", label: "Mes offres", icon: List },
   { to: "/restock/seller/counteroffers", label: "Contre-offres", icon: MessageSquare },
   { to: "/restock/seller/sales", label: "Ventes", icon: CheckCircle },
+  { to: "/restock/seller/referral", label: "Parrainage", icon: Gift },
   { to: "/restock/seller/help", label: "Aide", icon: HelpCircle },
 ];
 

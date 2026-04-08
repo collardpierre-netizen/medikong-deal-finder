@@ -177,6 +177,11 @@ const RestockMobileSwipe = lazyWithRetry(() => import("./pages/restock/RestockMo
 const RestockSettings = lazyWithRetry(() => import("./pages/restock/RestockSettings"), "RestockSettings");
 const RestockBuyerDashboard = lazyWithRetry(() => import("./pages/restock/RestockBuyerDashboard"), "RestockBuyerDashboard");
 const RestockDrops = lazyWithRetry(() => import("./pages/restock/RestockDrops"), "RestockDrops");
+const RestockFaqPage = lazyWithRetry(() => import("./pages/restock/RestockFaqPage"), "RestockFaqPage");
+const RestockAdminFaq = lazyWithRetry(() => import("./pages/restock/RestockAdminFaq"), "RestockAdminFaq");
+const RestockAdminPriceReferences = lazyWithRetry(() => import("./pages/restock/RestockAdminPriceReferences"), "RestockAdminPriceReferences");
+const RestockAdminPayouts = lazyWithRetry(() => import("./pages/restock/RestockAdminPayouts"), "RestockAdminPayouts");
+const RestockSellerReferral = lazyWithRetry(() => import("./pages/restock/RestockSellerReferral"), "RestockSellerReferral");
 
 const queryClient = new QueryClient({
   defaultOptions: {

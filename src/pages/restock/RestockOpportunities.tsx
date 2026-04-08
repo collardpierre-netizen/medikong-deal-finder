@@ -19,14 +19,14 @@ const FILTERS = [
 
 const stateColors: Record<string, { bg: string; text: string }> = {
   intact: { bg: "#EEFBF4", text: "#00B85C" },
-  "emballage_abime": { bg: "#FEF3C7", text: "#F59E0B" },
-  "proche_peremption": { bg: "#FEE2E2", text: "#E54545" },
+  damaged_packaging: { bg: "#FEF3C7", text: "#F59E0B" },
+  near_expiry: { bg: "#FEE2E2", text: "#E54545" },
 };
 
 const stateLabels: Record<string, string> = {
   intact: "Intact",
-  "emballage_abime": "Emballage abîmé",
-  "proche_peremption": "Proche péremption",
+  damaged_packaging: "Emballage abîmé",
+  near_expiry: "Proche péremption",
 };
 
 const deliveryLabels: Record<string, { label: string; icon: typeof Truck }> = {

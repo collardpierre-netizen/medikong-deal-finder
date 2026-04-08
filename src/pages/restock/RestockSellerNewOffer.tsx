@@ -90,7 +90,8 @@ function validateRow(row: any, idx: number): OfferRow {
 
   return {
     ean, cnk, designation, quantity, price_ht, dlu, product_state, lot_number: lotNumber,
-    delivery_condition, errors, valid: errors.length === 0,
+    delivery_condition, allow_partial: false, moq: 1, lot_size: 1,
+    errors, valid: errors.length === 0,
   };
 }
 

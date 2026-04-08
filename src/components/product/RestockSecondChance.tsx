@@ -112,7 +112,7 @@ export function RestockSecondChance({ ean, cnk, productName }: Props) {
                         <MapPin size={10} /> {offer.seller_city}
                       </span>
                     )}
-                    <span className={`${grade.color} font-medium`}>{grade.label}</span>
+                    <span className={`${grade.color} font-medium`} title={grade.desc}>{grade.label}</span>
                   </div>
                 </div>
 

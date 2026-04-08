@@ -39,6 +39,7 @@ const deliveryLabels: Record<string, { label: string; icon: typeof Truck }> = {
 
 export default function RestockOpportunities() {
   const { campaignId } = useParams();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
@@ -46,6 +47,13 @@ export default function RestockOpportunities() {
   const [counterForm, setCounterForm] = useState({ price: "", quantity: "" });
   const [confirmTarget, setConfirmTarget] = useState<any>(null);
   const [buyQuantity, setBuyQuantity] = useState<number>(0);
+
+  // Auto-redirect to mobile swipe on small screens
+  useEffect(() => {
+    if (window.innerWidth < 768 && campaignId) {
+      navigate(`/m/opportunities/${campaignId}`, { replace: true });
+    }
+  }, [campaignId, navigate]);
 
   // Fetch buyer info from token (campaignId used as token)
   const { data: buyer } = useQuery({

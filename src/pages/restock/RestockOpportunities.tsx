@@ -216,11 +216,20 @@ function TinderView({ offers, tinderIdx, setTinderIdx, tinderCart, setTinderCart
   const progress = offers.length > 0 ? Math.round((tinderIdx / offers.length) * 100) : 0;
   const cartTotal = tinderCart.reduce((sum: number, c: any) => sum + (c.price_ht || 0) * (c.qty || c.quantity || 1), 0);
 
+  // Full-screen flash feedback
+  const [flash, setFlash] = useState<"accept" | "reject" | null>(null);
+  const triggerFlash = (type: "accept" | "reject") => {
+    setFlash(type);
+    setTimeout(() => setFlash(null), 600);
+  };
+
   const onSwipe = useCallback((dir: "left" | "right") => {
     const offer = offers[tinderIdx];
     if (dir === "right" && offer) {
       setTinderCart((prev: any[]) => [...prev, { ...offer, qty: offer.allow_partial ? (offer.moq || 1) : offer.quantity }]);
-      toast.success("Ajouté au panier !", { icon: "🛒" });
+      triggerFlash("accept");
+    } else {
+      triggerFlash("reject");
     }
     setTinderIdx((prev: number) => prev + 1);
   }, [tinderIdx, offers, setTinderCart, setTinderIdx]);

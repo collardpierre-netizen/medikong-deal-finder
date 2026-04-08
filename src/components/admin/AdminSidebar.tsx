@@ -9,7 +9,7 @@ import {
   ShoppingCart, AlertCircle, DollarSign, Eye, Link, BarChart3,
   Shield, Upload, MessageSquare, Layout, Truck, ShieldCheck, Settings, FileText,
   LogOut, Users, ClipboardList, Percent, RefreshCw, Key, Book, Factory, Globe, Hash, ExternalLink,
-  CreditCard, TrendingUp, AlertTriangle, Zap,
+  CreditCard, TrendingUp, AlertTriangle, Zap, Recycle, LayoutGrid, Users2, Mail, ShieldCheck as ShieldCheckAlt,
 } from "lucide-react";
 
 interface NavItem {

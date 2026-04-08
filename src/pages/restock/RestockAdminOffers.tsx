@@ -30,7 +30,20 @@ export default function RestockAdminOffers() {
         .select("*")
         .eq("status", "published");
       if (error) throw error;
-      return data || [];
+      const offersData = data || [];
+      const matchedIds = offersData.map((o: any) => o.matched_product_id).filter(Boolean);
+      let productsMap: Record<string, any> = {};
+      if (matchedIds.length > 0) {
+        const { data: products } = await supabase
+          .from("products")
+          .select("id, name, best_price_excl_vat")
+          .in("id", [...new Set(matchedIds)]);
+        if (products) productsMap = Object.fromEntries(products.map(p => [p.id, p]));
+      }
+      return offersData.map((o: any) => ({
+        ...o,
+        medikong_price_ht: o.matched_product_id ? productsMap[o.matched_product_id]?.best_price_excl_vat : null,
+      }));
     },
   });
 

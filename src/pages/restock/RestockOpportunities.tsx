@@ -720,7 +720,7 @@ export default function RestockOpportunities() {
             </div>
           )}
           {discount > 0 && (
-            <span className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-emerald-600 text-white text-xs font-bold">-{discount}%</span>
+            <span className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-emerald-600 text-white text-xs font-bold">-{discount}%{offer.medikong_product ? ' vs neuf' : ''}</span>
           )}
           <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ backgroundColor: gc.bg, color: gc.color }} title={gc.desc}>
             {gc.label}

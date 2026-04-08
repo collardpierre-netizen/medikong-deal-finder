@@ -46,11 +46,11 @@ const DELIVERY_MAP: Record<string, string> = {
 
 function downloadTemplate() {
   const ws = XLSX.utils.aoa_to_sheet([
-    ["EAN", "CNK", "Désignation", "Quantité", "Prix HT unitaire", "DLU (AAAA-MM-JJ)", "État", "Numéro de lot", "Condition de livraison"],
-    ["5412345678901", "1234567", "Doliprane 1000mg x8", 50, 3.20, "2027-06-30", "Intact", "LOT2024A", "Les deux"],
-    ["5412345678902", "7654321", "Efferalgan 500mg x16", 30, 2.10, "2026-12-31", "Emballage abîmé", "LOT2024B", "Expédition uniquement"],
+    ["EAN", "CNK", "Désignation", "Quantité", "Prix HT unitaire", "DLU (AAAA-MM-JJ)", "État", "Numéro de lot", "Condition de livraison", "Vente partielle (oui/non)", "MOQ", "Par multiple de"],
+    ["5412345678901", "1234567", "Doliprane 1000mg x8", 50, 3.20, "2027-06-30", "Intact", "LOT2024A", "Les deux", "oui", 10, 10],
+    ["5412345678902", "7654321", "Efferalgan 500mg x16", 30, 2.10, "2026-12-31", "Emballage abîmé", "LOT2024B", "Expédition uniquement", "non", "", ""],
   ]);
-  ws["!cols"] = [{ wch: 16 }, { wch: 10 }, { wch: 30 }, { wch: 10 }, { wch: 16 }, { wch: 16 }, { wch: 20 }, { wch: 14 }, { wch: 24 }];
+  ws["!cols"] = [{ wch: 16 }, { wch: 10 }, { wch: 30 }, { wch: 10 }, { wch: 16 }, { wch: 16 }, { wch: 20 }, { wch: 14 }, { wch: 24 }, { wch: 20 }, { wch: 8 }, { wch: 14 }];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Offres");
   XLSX.writeFile(wb, "MediKong_ReStock_Template.xlsx");
@@ -89,9 +89,16 @@ function validateRow(row: any, idx: number): OfferRow {
   const product_state = STATE_MAP[stateRaw] || "intact";
   const delivery_condition = DELIVERY_MAP[deliveryRaw] || "both";
 
+  const partialRaw = String(row["Vente partielle (oui/non)"] || row["Vente partielle"] || "non").toLowerCase().trim();
+  const allow_partial = partialRaw === "oui" || partialRaw === "yes" || partialRaw === "true" || partialRaw === "1";
+  const moq = allow_partial ? Math.max(1, Number(row["MOQ"] || 1)) : 1;
+  const lot_size = allow_partial ? Math.max(1, Number(row["Par multiple de"] || 1)) : 1;
+
+  if (allow_partial && moq > quantity) errors.push("MOQ > quantité totale");
+
   return {
     ean, cnk, designation, quantity, price_ht, dlu, product_state, lot_number: lotNumber,
-    delivery_condition, allow_partial: false, moq: 1, lot_size: 1,
+    delivery_condition, allow_partial, moq, lot_size,
     errors, valid: errors.length === 0,
   };
 }
@@ -529,6 +536,7 @@ export default function RestockSellerNewOffer() {
                   <th className="pb-2 pr-3">DLU</th>
                   <th className="pb-2 pr-3">État</th>
                   <th className="pb-2 pr-3">Livraison</th>
+                  <th className="pb-2 pr-3">Vente</th>
                   <th className="pb-2 pr-3">Erreurs</th>
                   <th className="pb-2 w-8"></th>
                 </tr>
@@ -551,6 +559,13 @@ export default function RestockSellerNewOffer() {
                       <td className="py-2 pr-3"><Badge variant="outline" className="text-[10px]">{stateLabel(r.product_state)}</Badge></td>
                       <td className="py-2 pr-3"><Badge variant="outline" className="text-[10px]">{deliveryLabel(r.delivery_condition)}</Badge></td>
                       <td className="py-2 pr-3">
+                        {r.allow_partial ? (
+                          <span className="text-[10px] text-[#1C58D9] font-medium">Partiel · min {r.moq} · ×{r.lot_size}</span>
+                        ) : (
+                          <span className="text-[10px] text-[#8B929C]">Lot complet</span>
+                        )}
+                      </td>
+                      <td className="py-2 pr-3">
                         {r.errors.length > 0 && (
                           <div className="flex items-start gap-1 text-[#E54545]">
                             <AlertTriangle size={12} className="mt-0.5 shrink-0" />
@@ -568,7 +583,7 @@ export default function RestockSellerNewOffer() {
                   {/* Smart pricing widgets below each row */}
                   {rows.map((r, i) => (r.ean || r.cnk) && r.price_ht > 0 ? (
                     <tr key={`pricing-${i}`}>
-                      <td colSpan={11} className="px-2 pb-2">
+                      <td colSpan={12} className="px-2 pb-2">
                         <SmartPricingWidget
                           ean={r.ean}
                           cnk={r.cnk}

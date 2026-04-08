@@ -107,7 +107,7 @@ export default function RestockOpportunities() {
       in3Months.setMonth(in3Months.getMonth() + 3);
       list = list.filter((o: any) => o.dlu && new Date(o.dlu) > in3Months);
     } else if (activeFilter === "intact") {
-      list = list.filter((o: any) => o.product_state === "intact");
+      list = list.filter((o: any) => (o.grade || stateToGrade[o.product_state] || "A") === "A");
     } else if (activeFilter === "shipping") {
       list = list.filter((o: any) => o.delivery_condition === "shipping" || o.delivery_condition === "both");
     }

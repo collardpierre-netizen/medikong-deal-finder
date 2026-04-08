@@ -407,7 +407,35 @@ export default function RestockMobileSwipe() {
 
   return (
     <div className="min-h-[100dvh] bg-background flex flex-col" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-      {/* Header */}
+      {/* Full-screen flash feedback */}
+      <AnimatePresence>
+        {flash && (
+          <motion.div
+            key={flash}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className={`fixed inset-0 z-[100] pointer-events-none flex items-center justify-center ${flash === "accept" ? "bg-emerald-500/25" : "bg-red-500/25"}`}
+          >
+            <div className={`absolute inset-0 border-[6px] ${flash === "accept" ? "border-emerald-400 shadow-[inset_0_0_120px_40px_rgba(16,185,129,0.35)]" : "border-red-400 shadow-[inset_0_0_120px_40px_rgba(239,68,68,0.35)]"}`} />
+            <motion.div
+              initial={{ scale: 0.3, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 1.5, opacity: 0 }}
+              transition={{ type: "spring", damping: 12, stiffness: 200 }}
+              className={`flex flex-col items-center gap-3 px-10 py-6 rounded-3xl backdrop-blur-md ${flash === "accept" ? "bg-emerald-500/30" : "bg-red-500/30"}`}
+            >
+              <div className={`w-20 h-20 rounded-full flex items-center justify-center shadow-2xl ${flash === "accept" ? "bg-emerald-500" : "bg-red-500"}`}>
+                {flash === "accept" ? <ShoppingCart size={40} className="text-white" /> : <X size={40} className="text-white" />}
+              </div>
+              <span className={`text-xl font-extrabold ${flash === "accept" ? "text-emerald-800" : "text-red-800"}`}>
+                {flash === "accept" ? "Ajouté au panier !" : "Passé !"}
+              </span>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-sm border-b border-border px-4 py-2.5 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <button onClick={() => navigate(-1)} className="p-1"><ArrowLeft size={18} className="text-muted-foreground" /></button>

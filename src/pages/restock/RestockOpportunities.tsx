@@ -278,8 +278,8 @@ export default function RestockOpportunities() {
             {filtered.map((offer: any) => {
               const cataloguePrice = getCataloguePrice(offer.price_ht || 0);
               const discount = Math.round(((cataloguePrice - (offer.price_ht || 0)) / cataloguePrice) * 100);
-              const state = offer.product_state || "intact";
-              const sc = stateColors[state] || stateColors.intact;
+              const grade = offer.grade || stateToGrade[offer.product_state] || "A";
+              const gc = gradeConfig[grade] || gradeConfig.A;
               const delivery = deliveryLabels[offer.delivery_condition] || deliveryLabels.both;
               const DeliveryIcon = delivery.icon;
 

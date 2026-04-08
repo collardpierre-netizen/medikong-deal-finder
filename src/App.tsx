@@ -165,6 +165,8 @@ const RestockLayout = lazyWithRetry(() => import("./components/restock/RestockLa
 const RestockSellerNewOffer = lazyWithRetry(() => import("./pages/restock/RestockSellerNewOffer"), "RestockSellerNewOffer");
 const RestockSellerOffers = lazyWithRetry(() => import("./pages/restock/RestockSellerOffers"), "RestockSellerOffers");
 const RestockSellerCounterOffers = lazyWithRetry(() => import("./pages/restock/RestockSellerCounterOffers"), "RestockSellerCounterOffers");
+const RestockSellerSales = lazyWithRetry(() => import("./pages/restock/RestockSellerSales"), "RestockSellerSales");
+const RestockSellerHelp = lazyWithRetry(() => import("./pages/restock/RestockSellerHelp"), "RestockSellerHelp");
 const RestockAdminOffers = lazyWithRetry(() => import("./pages/restock/RestockAdminOffers"), "RestockAdminOffers");
 const RestockAdminBuyers = lazyWithRetry(() => import("./pages/restock/RestockAdminBuyers"), "RestockAdminBuyers");
 const RestockAdminCampaigns = lazyWithRetry(() => import("./pages/restock/RestockAdminCampaigns"), "RestockAdminCampaigns");

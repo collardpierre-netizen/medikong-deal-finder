@@ -105,7 +105,7 @@ export function useIsVerifiedBuyer() {
       const { data } = await supabase
         .from("restock_buyers")
         .select("verified_status")
-        .eq("user_id", user!.id)
+.eq("auth_user_id", user!.id)
         .maybeSingle();
       return data?.verified_status === "approved" || data?.verified_status === null;
     },

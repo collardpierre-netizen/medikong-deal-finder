@@ -1822,6 +1822,37 @@ export default function ProductPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Price saved popup */}
+      <Dialog open={priceSavedPopup} onOpenChange={setPriceSavedPopup}>
+        <DialogContent className="sm:max-w-sm text-center">
+          <div className="flex flex-col items-center gap-4 py-4">
+            <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
+              <Check size={32} className="text-green-600" />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-foreground mb-1">Prix sauvegardé !</h3>
+              <p className="text-sm text-muted-foreground">
+                Retrouvez-le dans votre espace <strong>Mon compte → Mes prix</strong> pour suivre vos économies.
+              </p>
+            </div>
+            <div className="flex gap-3 w-full">
+              <button
+                onClick={() => setPriceSavedPopup(false)}
+                className="flex-1 px-4 py-2.5 border border-border rounded-lg text-sm font-medium text-foreground hover:bg-muted transition-colors"
+              >
+                Continuer
+              </button>
+              <button
+                onClick={() => { setPriceSavedPopup(false); navigate("/compte"); }}
+                className="flex-1 px-4 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
+              >
+                Voir mes prix
+              </button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 }

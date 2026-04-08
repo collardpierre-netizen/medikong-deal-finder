@@ -15,11 +15,11 @@ import {
 import { toast } from "sonner";
 import { MEDIKONG_PLACEHOLDER, isValidProductImage } from "@/lib/image-utils";
 
-const gradeConfig: Record<string, { label: string; color: string; bg: string }> = {
-  A: { label: "A — Intact", color: "#00B85C", bg: "#EEFBF4" },
-  B: { label: "B — Emb. abîmé", color: "#1C58D9", bg: "#EBF0FB" },
-  C: { label: "C — DLU courte", color: "#F59E0B", bg: "#FEF3C7" },
-  D: { label: "D — DLU courte + abîmé", color: "#E54545", bg: "#FEE2E2" },
+const gradeConfig: Record<string, { label: string; desc: string; color: string; bg: string }> = {
+  A: { label: "A — Neuf", desc: "Emballage intact, DLU longue", color: "#00B85C", bg: "#EEFBF4" },
+  B: { label: "B — Bon état", desc: "Emballage légèrement abîmé", color: "#1C58D9", bg: "#EBF0FB" },
+  C: { label: "C — Abîmé", desc: "Emballage visiblement abîmé", color: "#F59E0B", bg: "#FEF3C7" },
+  D: { label: "D — DLU courte", desc: "Date limite d'utilisation proche", color: "#E54545", bg: "#FEE2E2" },
 };
 
 const stateToGrade: Record<string, string> = {

@@ -108,7 +108,13 @@ export default function RestockMobileSwipe() {
           <img src={logoHorizontal} alt="MediKong" className="h-7" />
           <span className="text-[#00B85C] font-bold text-sm">ReStock</span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => navigate(`/opportunities/${campaignId || "demo"}`)}
+            className="text-[10px] text-[#5C6470] border border-[#D0D5DC] px-2 py-1 rounded-full hover:bg-[#F0F1F3]"
+          >
+            ☰ Grille
+          </button>
           <div className="relative">
             <ShoppingCart size={20} className="text-[#5C6470]" />
             {cart.length > 0 && (

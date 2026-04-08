@@ -94,6 +94,11 @@ const translations: Record<Lang, Record<string, string>> = {
     filter: "Filtrer",
     messages: "Messages",
     translations: "Traductions",
+    restock: "ReStock",
+    restockOffers: "Offres ReStock",
+    restockBuyers: "Acheteurs",
+    restockCampaigns: "Campagnes email",
+    restockRules: "Règles de filtrage",
   },
   nl: {
     dashboard: "Dashboard",

@@ -36,7 +36,7 @@ export default function RestockLayout() {
       {/* Mobile header */}
       <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between bg-white border-b border-[#D0D5DC] px-4 py-3 md:hidden">
         <div className="flex items-center gap-2">
-          <img src={logoHorizontal} alt="MediKong" className="h-8" />
+          <img src={logoHorizontal} alt="MediKong" className="h-12" />
           <span className="text-[#00B85C] font-bold text-base" style={{ fontFamily: "'DM Sans', sans-serif" }}>ReStock</span>
         </div>
         <button
@@ -59,7 +59,7 @@ export default function RestockLayout() {
         } md:translate-x-0`}
       >
         <div className="px-5 py-4 border-b border-[#D0D5DC] flex items-center gap-2">
-          <img src={logoHorizontal} alt="MediKong" className="h-10" />
+          <img src={logoHorizontal} alt="MediKong" className="h-14" />
           <span className="text-[#00B85C] font-bold text-lg" style={{ fontFamily: "'DM Sans', sans-serif" }}>ReStock</span>
         </div>
 

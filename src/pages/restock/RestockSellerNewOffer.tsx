@@ -536,6 +536,7 @@ export default function RestockSellerNewOffer() {
                   <th className="pb-2 pr-3">DLU</th>
                   <th className="pb-2 pr-3">État</th>
                   <th className="pb-2 pr-3">Livraison</th>
+                  <th className="pb-2 pr-3">Vente</th>
                   <th className="pb-2 pr-3">Erreurs</th>
                   <th className="pb-2 w-8"></th>
                 </tr>

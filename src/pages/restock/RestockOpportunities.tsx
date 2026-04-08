@@ -654,8 +654,8 @@ export default function RestockOpportunities() {
 
   /* ── Render helpers ── */
   const renderOfferCard = (offer: any) => {
-    const cataloguePrice = getCataloguePrice(offer.price_ht || 0);
-    const discount = Math.round(((cataloguePrice - (offer.price_ht || 0)) / cataloguePrice) * 100);
+    const cataloguePrice = getCataloguePrice(offer);
+    const discount = getDiscount(offer);
     const grade = offer.grade || stateToGrade[offer.product_state] || "A";
     const gc = gradeConfig[grade] || gradeConfig.A;
     const delivery = deliveryLabels[offer.delivery_condition] || deliveryLabels.both;

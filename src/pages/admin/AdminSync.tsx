@@ -662,11 +662,17 @@ export default function AdminSync() {
               </SelectContent>
             </Select>
           </div>
-          <div className="mt-3 flex items-start gap-2 p-3 rounded-lg border border-amber-200 bg-amber-50">
-            <AlertTriangle size={16} className="text-amber-600 mt-0.5 shrink-0" />
-            <p className="text-[12px] text-amber-800">
-              Le pipeline de synchronisation est désormais géré par un script externe (<code className="font-mono bg-amber-100 px-1 rounded">sync-daily.js</code>) lancé quotidiennement via cron. Les boutons de lancement manuel ont été désactivés. Utilisez cette page pour la configuration (marge, pays, credentials).
-            </p>
+          <div className="mt-3 flex items-start gap-2 p-3 rounded-lg border border-emerald-200 bg-emerald-50">
+            <CheckCircle size={16} className="text-emerald-600 mt-0.5 shrink-0" />
+            <div className="text-[12px] text-emerald-800">
+              <p className="font-medium mb-1">Planification automatique active (pg_cron)</p>
+              <ul className="space-y-0.5 list-disc list-inside text-[11px]">
+                <li><b>Offres/Prix</b> — Incrémental 3×/jour : 3h, 11h, 19h UTC</li>
+                <li><b>Produits</b> — Full sync 2×/semaine : dimanche + mercredi à 4h UTC</li>
+                <li><b>Alertes prix</b> — Détection toutes les 6h</li>
+              </ul>
+              <p className="mt-1 text-[10px] text-emerald-600">Prochaine synchro offres : aujourd'hui 19h UTC · Prochaine synchro produits : mercredi 10 avril 4h UTC</p>
+            </div>
           </div>
         </div>
 

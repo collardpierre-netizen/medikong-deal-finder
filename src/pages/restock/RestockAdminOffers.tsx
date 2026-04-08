@@ -212,6 +212,14 @@ export default function RestockAdminOffers() {
                     <td className="px-4 py-3 text-center font-medium text-[#1E252F]">{item.total_quantity}</td>
                     <td className="px-4 py-3 text-right text-[#1E252F]">{item.min_price === Infinity ? "—" : `${item.min_price.toFixed(2)} €`}</td>
                     <td className="px-4 py-3 text-right text-[#1E252F]">{item.max_price === -Infinity ? "—" : `${item.max_price.toFixed(2)} €`}</td>
+                    <td className="px-4 py-3 text-right text-[#5C6470]">{item.medikong_price_ht ? `${item.medikong_price_ht.toFixed(2)} €` : "—"}</td>
+                    <td className="px-4 py-3 text-center">
+                      {item.delta_pct !== null ? (
+                        <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-bold ${item.delta_pct > 0 ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"}`}>
+                          {item.delta_pct > 0 ? `−${item.delta_pct}%` : `+${Math.abs(item.delta_pct)}%`}
+                        </span>
+                      ) : <span className="text-[#8B929C]">—</span>}
+                    </td>
                     <td className="px-4 py-3 text-center text-xs text-[#5C6470]">{formatDate(item.shortest_dlu)}</td>
                     <td className="px-4 py-3 text-center">
                       <Button size="sm" variant="outline" onClick={() => handleDiffuse(item)} className="text-xs gap-1 border-[#1C58D9] text-[#1C58D9] hover:bg-[#EBF0FB] rounded-lg">

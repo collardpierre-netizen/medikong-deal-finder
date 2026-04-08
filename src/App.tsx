@@ -376,6 +376,7 @@ const App = () => (
             </Route>
 
             {/* ReStock Public Opportunities */}
+            <Route path="/restock/opportunities/:campaignId" element={<LP><RestockOpportunities /></LP>} />
             <Route path="/opportunities/:campaignId" element={<LP><RestockOpportunities /></LP>} />
 
             <Route path="*" element={<LP><NotFound /></LP>} />

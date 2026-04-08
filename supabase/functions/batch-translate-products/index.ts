@@ -233,6 +233,20 @@ Rules:
         .from("translations")
         .upsert(upsertRows, { onConflict: "entity_type,entity_id,locale,field" });
       if (upsertError) throw upsertError;
+
+      // Also write directly into the entity columns for faster reads
+      const table = entityType === "product" ? "products" : "categories";
+      for (const t of translations) {
+        const idx = (Number(t.index) || 1) - 1;
+        if (idx < 0 || idx >= items.length) continue;
+        const item = items[idx];
+        const updates: Record<string, string> = {};
+        if (t.nl) updates.name_nl = (t.nl as string).trim();
+        if (t.de) updates.name_de = (t.de as string).trim();
+        if (Object.keys(updates).length > 0) {
+          await supabase.from(table).update(updates).eq("id", item.id);
+        }
+      }
     }
 
     console.log(`Translated ${items.length} items, saved ${upsertRows.length} translations`);

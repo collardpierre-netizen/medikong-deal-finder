@@ -2,9 +2,10 @@ import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useCountry } from "@/contexts/CountryContext";
+import { getLocalizedName } from "@/lib/localization";
 import { useCallback, useMemo } from "react";
 
-const PRODUCT_SELECT_FIELDS = "id, slug, name, name_fr, brand_name, brand_id, category_id, category_name, gtin, cnk_code, image_url, image_urls, short_description, is_promotion, promotion_label, best_price_excl_vat, best_price_incl_vat, offer_count, total_stock, is_in_stock, created_at";
+const PRODUCT_SELECT_FIELDS = "id, slug, name, name_fr, name_nl, name_de, brand_name, brand_id, category_id, category_name, gtin, cnk_code, image_url, image_urls, short_description, is_promotion, promotion_label, best_price_excl_vat, best_price_incl_vat, offer_count, total_stock, is_in_stock, created_at";
 const CATALOG_QUERY_TIMEOUT_MS = 8000;
 const CATALOG_COUNT_TIMEOUT_MS = 4000;
 const CATEGORY_COUNT_TIMEOUT_MS = 3000;
@@ -354,7 +355,7 @@ export function useCatalogCategories() {
         (async () =>
           await supabase
             .from("categories")
-            .select("id, name, name_fr, slug, parent_id")
+            .select("id, name, name_fr, name_nl, name_de, slug, parent_id")
             .eq("is_active", true)
             .order("display_order", { ascending: true }))(),
         withTimeout(
@@ -375,7 +376,7 @@ export function useCatalogCategories() {
 
       const all = (catResult.data || []).map((c: any) => ({
         ...c,
-        name: c.name_fr || c.name,
+        name: getLocalizedName(c),
         product_count: countMap.get(c.id) || 0,
       }));
 

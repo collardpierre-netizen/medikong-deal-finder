@@ -60,7 +60,7 @@ async function postgresFederatedSearch(query: string): Promise<FederatedResults>
       .limit(3),
     supabase
       .from("categories")
-      .select("id, name, slug, icon, image_url")
+      .select("id, name, name_fr, name_nl, name_de, slug, icon, image_url")
       .eq("is_active", true)
       .ilike("name", pattern)
       .order("display_order", { ascending: true })

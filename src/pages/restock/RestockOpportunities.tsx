@@ -471,7 +471,23 @@ export default function RestockOpportunities() {
         .eq("status", "published")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data || [];
+      const offersData = data || [];
+      // Batch-fetch matched MediKong products
+      const matchedIds = offersData.map((o: any) => o.matched_product_id).filter(Boolean);
+      let productsMap: Record<string, any> = {};
+      if (matchedIds.length > 0) {
+        const { data: products } = await supabase
+          .from("products")
+          .select("id, name, best_price_excl_vat, best_price_incl_vat, image_url, gtin")
+          .in("id", [...new Set(matchedIds)]);
+        if (products) {
+          productsMap = Object.fromEntries(products.map(p => [p.id, p]));
+        }
+      }
+      return offersData.map((o: any) => ({
+        ...o,
+        medikong_product: o.matched_product_id ? productsMap[o.matched_product_id] || null : null,
+      }));
     },
   });
 

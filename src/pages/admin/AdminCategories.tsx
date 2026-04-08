@@ -377,9 +377,12 @@ const AdminCategories = () => {
                         {getTranslated(translations, cat.id, "name", "fr", cat.name)}
                       </span>
                       <TranslationBadges catId={cat.id} />
-                      <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ backgroundColor: cat.is_active ? "#ECFDF5" : "#FFFBEB", color: cat.is_active ? "#059669" : "#D97706" }}>
-                        {cat.is_active ? "Actif" : "Inactif"}
-                      </span>
+                      <Switch
+                        checked={cat.is_active}
+                        onCheckedChange={(checked) => { toggleVisibility.mutate({ id: cat.id, newActive: checked }); }}
+                        onClick={(e: any) => e.stopPropagation()}
+                        className="scale-75"
+                      />
                     </button>
                     {expanded.includes(cat.id) && subs.length > 0 && (
                       <div className="ml-8 space-y-0.5">

@@ -259,11 +259,44 @@ function TinderView({ offers, tinderIdx, setTinderIdx, tinderCart, setTinderCart
         <motion.div className="h-full bg-primary rounded-full" animate={{ width: `${progress}%` }} transition={{ duration: 0.3 }} />
       </div>
 
-      {tinderIdx === 0 && !allSwiped && (
-        <div className="flex items-center justify-center gap-4 text-[10px] text-muted-foreground py-1">
-          <span>← Passer</span><span>↑ Détails</span><span>Panier →</span>
-        </div>
-      )}
+      <AnimatePresence>
+        {tinderIdx === 0 && !allSwiped && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="relative bg-gradient-to-br from-primary/10 via-primary/5 to-emerald-500/10 border border-primary/20 rounded-2xl px-5 py-4 mx-auto max-w-sm"
+          >
+            <p className="text-center text-sm font-semibold text-foreground mb-3">Comment ça marche ?</p>
+            <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+              <div className="flex flex-col items-center gap-1.5 flex-1">
+                <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center"><X size={18} className="text-red-500" /></div>
+                <span className="font-medium text-foreground">Passer</span>
+                <span className="text-[10px]">Swipez gauche</span>
+              </div>
+              <div className="flex flex-col items-center gap-1.5 flex-1">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center"><Info size={18} className="text-primary" /></div>
+                <span className="font-medium text-foreground">Détails</span>
+                <span className="text-[10px]">Tapez la carte</span>
+              </div>
+              <div className="flex flex-col items-center gap-1.5 flex-1">
+                <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center"><ShoppingCart size={18} className="text-emerald-600" /></div>
+                <span className="font-medium text-foreground">Panier</span>
+                <span className="text-[10px]">Swipez droite</span>
+              </div>
+            </div>
+            {/* Swipe hand animation */}
+            <motion.div
+              className="absolute -bottom-1 left-1/2 -translate-x-1/2 pointer-events-none"
+              initial={{ x: 0, opacity: 0.7 }}
+              animate={{ x: [0, 40, 0, -40, 0], opacity: [0.7, 1, 0.7, 1, 0.7] }}
+              transition={{ duration: 3, repeat: 2, ease: "easeInOut" }}
+            >
+              <span className="text-2xl">👆</span>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {allSwiped ? (
         <div className="text-center px-4 py-8">

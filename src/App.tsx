@@ -362,6 +362,8 @@ const App = () => (
               <Route path="new" element={<LP><RestockSellerNewOffer /></LP>} />
               <Route path="offers" element={<LP><RestockSellerOffers /></LP>} />
               <Route path="counteroffers" element={<LP><RestockSellerCounterOffers /></LP>} />
+              <Route path="sales" element={<LP><RestockSellerSales /></LP>} />
+              <Route path="help" element={<LP><RestockSellerHelp /></LP>} />
             </Route>
 
             {/* ReStock Admin */}

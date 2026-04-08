@@ -1,14 +1,13 @@
-import { useState, useMemo, useRef, useCallback } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import TinderCard from "react-tinder-card";
+import { motion, useMotionValue, useTransform, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { X, Heart, MessageSquare, ChevronUp, ShoppingCart, Lock, Truck, MapPin, Clock, Box, Shield, Package } from "lucide-react";
+import { X, Heart, MessageSquare, ShoppingCart, Lock, Truck, MapPin, Clock, Box, Package } from "lucide-react";
 import { toast } from "sonner";
-import logoHorizontal from "@/assets/logo-medikong.png";
 
 const gradeConfig: Record<string, { label: string; color: string; bg: string }> = {
   A: { label: "A — Intact", color: "#00B85C", bg: "#EEFBF4" },
@@ -17,18 +16,115 @@ const gradeConfig: Record<string, { label: string; color: string; bg: string }> 
   D: { label: "D — DLU courte + abîmé", color: "#E54545", bg: "#FEE2E2" },
 };
 
+/* ── Swipeable Card ── */
+function SwipeCard({ offer, onSwipe, isFront }: { offer: any; onSwipe: (dir: string) => void; isFront: boolean }) {
+  const x = useMotionValue(0);
+  const rotate = useTransform(x, [-200, 200], [-15, 15]);
+  const opacity = useTransform(x, [-200, -100, 0, 100, 200], [0.5, 1, 1, 1, 0.5]);
+  const takeOpacity = useTransform(x, [0, 80], [0, 1]);
+  const passOpacity = useTransform(x, [-80, 0], [1, 0]);
+
+  const cataloguePrice = (offer.price_ht || 0) * 1.3;
+  const discount = Math.round(((cataloguePrice - (offer.price_ht || 0)) / cataloguePrice) * 100);
+  const grade = gradeConfig[offer.grade] || gradeConfig.A;
+
+  const formatPrice = (p: number) => `${p.toFixed(2)} €`;
+  const formatDate = (d: string) => {
+    if (!d) return "—";
+    return new Date(d).toLocaleDateString("fr-BE", { day: "2-digit", month: "short", year: "numeric" });
+  };
+
+  return (
+    <motion.div
+      style={{ x, rotate, opacity, position: "absolute", top: 0, left: 0, width: "100%", zIndex: isFront ? 10 : 1, touchAction: "none" }}
+      drag={isFront ? "x" : false}
+      dragConstraints={{ left: 0, right: 0 }}
+      dragElastic={0.7}
+      onDragEnd={(_, info) => {
+        if (info.offset.x > 100) onSwipe("right");
+        else if (info.offset.x < -100) onSwipe("left");
+      }}
+      initial={isFront ? { scale: 1 } : { scale: 0.95 }}
+      animate={isFront ? { scale: 1, opacity: 1 } : { scale: 0.95, opacity: 0.7 }}
+      exit={{ x: 300, opacity: 0, transition: { duration: 0.3 } }}
+    >
+      {/* Swipe overlays */}
+      {isFront && (
+        <>
+          <motion.div style={{ opacity: takeOpacity }} className="absolute top-8 right-8 z-50 rotate-12 border-4 border-[#00B85C] text-[#00B85C] rounded-xl px-4 py-2 text-2xl font-bold pointer-events-none">
+            JE PRENDS
+          </motion.div>
+          <motion.div style={{ opacity: passOpacity }} className="absolute top-8 left-8 z-50 -rotate-12 border-4 border-[#E54545] text-[#E54545] rounded-xl px-4 py-2 text-2xl font-bold pointer-events-none">
+            PASSE
+          </motion.div>
+        </>
+      )}
+
+      <div className="bg-white rounded-2xl border border-[#D0D5DC] shadow-lg overflow-hidden select-none">
+        {/* Hero gradient */}
+        <div className="h-28 bg-gradient-to-br from-[#1C58D9] to-[#1549B8] relative flex items-center justify-center">
+          {offer.product_image_url ? (
+            <img src={offer.product_image_url} alt="" className="h-20 object-contain mix-blend-luminosity opacity-60" />
+          ) : (
+            <Package size={48} className="text-white/30" />
+          )}
+          {discount > 0 && (
+            <span className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-[#00B85C] text-white text-xs font-bold">
+              -{discount}%
+            </span>
+          )}
+          <span className="absolute top-3 left-3 px-2 py-1 rounded-full bg-black/30 text-white/90 text-[10px] font-medium flex items-center gap-1">
+            <Lock size={10} /> Vendeur anonyme
+          </span>
+        </div>
+
+        {/* Content */}
+        <div className="p-4 space-y-3">
+          <span
+            className="inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold"
+            style={{ backgroundColor: grade.bg, color: grade.color }}
+          >
+            {grade.label}
+          </span>
+
+          <h3 className="font-bold text-[#1E252F] text-base leading-tight">
+            {offer.designation || "Produit"}
+          </h3>
+          <p className="text-xs text-[#8B929C]">
+            {offer.ean && `EAN ${offer.ean}`}{offer.ean && offer.cnk && " · "}{offer.cnk && `CNK ${offer.cnk}`}
+          </p>
+
+          <div className="flex items-baseline gap-2">
+            <span className="text-sm text-[#8B929C] line-through">{formatPrice(cataloguePrice)}</span>
+            <span className="text-2xl font-bold text-[#1C58D9]">{formatPrice(offer.price_ht || 0)}</span>
+            <span className="text-xs text-[#8B929C]">HT/u</span>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 text-xs text-[#5C6470]">
+            <div className="flex items-center gap-1.5"><Box size={12} className="text-[#8B929C]" /><b>{offer.quantity}</b> unités</div>
+            <div className="flex items-center gap-1.5"><Clock size={12} className="text-[#8B929C]" />DLU {formatDate(offer.dlu)}</div>
+            <div className="flex items-center gap-1.5"><MapPin size={12} className="text-[#8B929C]" />{offer.seller_city || "Belgique"}</div>
+            <div className="flex items-center gap-1.5">
+              {offer.delivery_condition === "pickup" ? <MapPin size={12} /> : <Truck size={12} />}
+              <span className="text-[#8B929C]">
+                {offer.delivery_condition === "pickup" ? "Enlèvement" : offer.delivery_condition === "shipping" ? "Livraison" : "Les deux"}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
 export default function RestockMobileSwipe() {
   const { campaignId } = useParams();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const [currentIdx, setCurrentIdx] = useState(0);
   const [cart, setCart] = useState<any[]>([]);
   const [showCounter, setShowCounter] = useState(false);
   const [counterPrice, setCounterPrice] = useState("");
   const [counterQty, setCounterQty] = useState("");
-  const [swipeDirection, setSwipeDirection] = useState<string | null>(null);
-  const [swipeProgress, setSwipeProgress] = useState(0);
-  const childRefs = useRef<any[]>([]);
 
   const { data: offers = [], isLoading } = useQuery({
     queryKey: ["restock-mobile-offers"],
@@ -46,25 +142,25 @@ export default function RestockMobileSwipe() {
   const currentOffer = remaining[0];
   const allSwiped = currentIdx >= offers.length;
 
-  const onSwipe = useCallback((direction: string, offer: any) => {
-    if (direction === "right") {
+  const onSwipe = useCallback((direction: string) => {
+    const offer = offers[currentIdx];
+    if (direction === "right" && offer) {
       setCart(prev => [...prev, offer]);
       toast.success("Ajouté au panier !");
     }
     setCurrentIdx(prev => prev + 1);
-    setSwipeDirection(null);
-    setSwipeProgress(0);
-  }, []);
-
-  const onCardLeftScreen = () => {};
+  }, [currentIdx, offers]);
 
   const formatPrice = (p: number) => `${p.toFixed(2)} €`;
-  const formatDate = (d: string) => {
-    if (!d) return "—";
-    return new Date(d).toLocaleDateString("fr-BE", { day: "2-digit", month: "short", year: "numeric" });
-  };
 
-  const getCataloguePrice = (p: number) => p * 1.3;
+  const skipCurrent = () => setCurrentIdx(prev => prev + 1);
+  const takeCurrent = () => {
+    if (currentOffer) {
+      setCart(prev => [...prev, currentOffer]);
+      toast.success("Ajouté au panier !");
+      setCurrentIdx(prev => prev + 1);
+    }
+  };
 
   const handleCounter = async () => {
     if (!currentOffer || !counterPrice) return;
@@ -83,15 +179,6 @@ export default function RestockMobileSwipe() {
     setCurrentIdx(prev => prev + 1);
   };
 
-  const skipCurrent = () => setCurrentIdx(prev => prev + 1);
-  const takeCurrent = () => {
-    if (currentOffer) {
-      setCart(prev => [...prev, currentOffer]);
-      toast.success("Ajouté au panier !");
-      setCurrentIdx(prev => prev + 1);
-    }
-  };
-
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[#F7F8FA] flex items-center justify-center">
@@ -105,12 +192,12 @@ export default function RestockMobileSwipe() {
       {/* Header */}
       <header className="sticky top-0 z-50 bg-white border-b border-[#D0D5DC] px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <img src={logoHorizontal} alt="MediKong" className="h-7" />
+          <span className="text-[#1C58D9] font-bold text-lg">MediKong</span>
           <span className="text-[#00B85C] font-bold text-sm">ReStock</span>
         </div>
         <div className="flex items-center gap-3">
           <button
-            onClick={() => navigate(`/opportunities/${campaignId || "demo"}`)}
+            onClick={() => navigate(`/restock/opportunities`)}
             className="text-[10px] text-[#5C6470] border border-[#D0D5DC] px-2 py-1 rounded-full hover:bg-[#F0F1F3]"
           >
             ☰ Grille
@@ -140,9 +227,9 @@ export default function RestockMobileSwipe() {
       </div>
 
       {/* Card stack */}
-      <div className="flex-1 relative flex items-center justify-center px-4">
+      <div className="flex-1 flex items-start justify-center px-4 pt-2">
         {allSwiped ? (
-          <div className="text-center px-6">
+          <div className="text-center px-6 pt-20">
             <Package size={48} className="mx-auto mb-4 text-[#1C58D9]" />
             <h2 className="text-xl font-bold text-[#1E252F] mb-2">Vous avez parcouru toutes les offres</h2>
             {cart.length > 0 ? (
@@ -157,100 +244,20 @@ export default function RestockMobileSwipe() {
             )}
           </div>
         ) : (
-          <div className="relative w-full max-w-sm h-[500px]">
-            {remaining.slice(0, 3).reverse().map((offer, i) => {
-              const actualIdx = currentIdx + (remaining.length > 3 ? 3 : remaining.length) - 1 - i;
-              const isFront = actualIdx === currentIdx;
-              const cataloguePrice = getCataloguePrice(offer.price_ht || 0);
-              const discount = Math.round(((cataloguePrice - (offer.price_ht || 0)) / cataloguePrice) * 100);
-              const grade = gradeConfig[offer.grade] || gradeConfig.A;
-
-              return (
-                <TinderCard
-                  key={offer.id}
-                  onSwipe={(dir) => onSwipe(dir, offer)}
-                  onCardLeftScreen={onCardLeftScreen}
-                  preventSwipe={["up", "down"]}
-                  className="absolute w-full"
-                >
-                  <div
-                    className={`bg-white rounded-2xl border border-[#D0D5DC] shadow-lg overflow-hidden select-none ${
-                      !isFront ? "scale-[0.95] opacity-70" : ""
-                    }`}
-                    style={{ touchAction: "none" }}
-                  >
-                    {/* Hero gradient */}
-                    <div className="h-28 bg-gradient-to-br from-[#1C58D9] to-[#1549B8] relative flex items-center justify-center">
-                      {offer.product_image_url ? (
-                        <img src={offer.product_image_url} alt="" className="h-20 object-contain mix-blend-luminosity opacity-60" />
-                      ) : (
-                        <Package size={48} className="text-white/30" />
-                      )}
-                      {/* Discount badge */}
-                      {discount > 0 && (
-                        <span className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-[#00B85C] text-white text-xs font-bold">
-                          -{discount}%
-                        </span>
-                      )}
-                      {/* Anon badge */}
-                      <span className="absolute top-3 left-3 px-2 py-1 rounded-full bg-black/30 text-white/90 text-[10px] font-medium flex items-center gap-1">
-                        <Lock size={10} /> Vendeur anonyme
-                      </span>
-                    </div>
-
-                    {/* Content */}
-                    <div className="p-4 space-y-3">
-                      {/* Grade */}
-                      <span
-                        className="inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold"
-                        style={{ backgroundColor: grade.bg, color: grade.color }}
-                      >
-                        {grade.label}
-                      </span>
-
-                      <h3 className="font-bold text-[#1E252F] text-base leading-tight">
-                        {offer.designation || "Produit"}
-                      </h3>
-                      <p className="text-xs text-[#8B929C]">
-                        {offer.ean && `EAN ${offer.ean}`}{offer.ean && offer.cnk && " · "}{offer.cnk && `CNK ${offer.cnk}`}
-                      </p>
-
-                      {/* Price */}
-                      <div className="flex items-baseline gap-2">
-                        <span className="text-sm text-[#8B929C] line-through">{formatPrice(cataloguePrice)}</span>
-                        <span className="text-2xl font-bold text-[#1C58D9]">{formatPrice(offer.price_ht || 0)}</span>
-                        <span className="text-xs text-[#8B929C]">HT/u</span>
-                      </div>
-
-                      {/* Metadata */}
-                      <div className="grid grid-cols-2 gap-2 text-xs text-[#5C6470]">
-                        <div className="flex items-center gap-1.5"><Box size={12} className="text-[#8B929C]" /><b>{offer.quantity}</b> unités</div>
-                        <div className="flex items-center gap-1.5"><Clock size={12} className="text-[#8B929C]" />DLU {formatDate(offer.dlu)}</div>
-                        <div className="flex items-center gap-1.5"><MapPin size={12} className="text-[#8B929C]" />{offer.seller_city || "Belgique"}</div>
-                        <div className="flex items-center gap-1.5">
-                          {offer.delivery_condition === "pickup" ? <MapPin size={12} /> : <Truck size={12} />}
-                          <span className="text-[#8B929C]">
-                            {offer.delivery_condition === "pickup" ? "Enlèvement" : offer.delivery_condition === "shipping" ? "Livraison" : "Les deux"}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </TinderCard>
-              );
-            })}
-
-            {/* Swipe overlays */}
-            {swipeDirection === "right" && (
-              <div className="absolute top-8 right-8 z-50 rotate-12 border-4 border-[#00B85C] text-[#00B85C] rounded-xl px-4 py-2 text-2xl font-bold opacity-60">
-                JE PRENDS
-              </div>
-            )}
-            {swipeDirection === "left" && (
-              <div className="absolute top-8 left-8 z-50 -rotate-12 border-4 border-[#E54545] text-[#E54545] rounded-xl px-4 py-2 text-2xl font-bold opacity-60">
-                PASSE
-              </div>
-            )}
+          <div className="relative w-full max-w-sm" style={{ height: 480 }}>
+            <AnimatePresence>
+              {remaining.slice(0, 3).reverse().map((offer, i) => {
+                const isFront = i === (Math.min(remaining.length, 3) - 1);
+                return (
+                  <SwipeCard
+                    key={offer.id}
+                    offer={offer}
+                    onSwipe={onSwipe}
+                    isFront={isFront}
+                  />
+                );
+              })}
+            </AnimatePresence>
           </div>
         )}
       </div>

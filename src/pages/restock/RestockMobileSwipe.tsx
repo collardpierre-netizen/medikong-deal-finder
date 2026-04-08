@@ -171,7 +171,7 @@ export default function RestockMobileSwipe() {
                   onSwipe={(dir) => onSwipe(dir, offer)}
                   onCardLeftScreen={onCardLeftScreen}
                   preventSwipe={["up", "down"]}
-                  className="absolute w-full"
+                  className="absolute top-0 left-0 w-full"
                 >
                   <div
                     className={`bg-white rounded-2xl border border-[#D0D5DC] shadow-lg overflow-hidden select-none ${

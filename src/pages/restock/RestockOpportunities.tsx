@@ -279,7 +279,7 @@ export default function RestockOpportunities() {
               {offer.ean && `EAN ${offer.ean}`}{offer.ean && offer.cnk && " · "}{offer.cnk && `CNK ${offer.cnk}`}
             </p>
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ backgroundColor: gc.bg, color: gc.color }}>{gc.label}</span>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ backgroundColor: gc.bg, color: gc.color }} title={gc.desc}>{gc.label}</span>
               <span className="text-xs text-muted-foreground"><b>{offer.quantity}</b> u</span>
               <span className="text-xs text-muted-foreground">DLU {formatDate(offer.dlu)}</span>
               <span className="text-xs text-muted-foreground flex items-center gap-1"><MapPin size={10} />{offer.seller_city || "BE"}</span>

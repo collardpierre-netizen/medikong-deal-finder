@@ -288,7 +288,9 @@ export type Database = {
           image_url: string | null
           is_active: boolean
           name: string
+          name_de: string | null
           name_fr: string | null
+          name_nl: string | null
           parent_id: string | null
           qogita_qid: string | null
           slug: string
@@ -304,7 +306,9 @@ export type Database = {
           image_url?: string | null
           is_active?: boolean
           name: string
+          name_de?: string | null
           name_fr?: string | null
+          name_nl?: string | null
           parent_id?: string | null
           qogita_qid?: string | null
           slug: string
@@ -320,7 +324,9 @@ export type Database = {
           image_url?: string | null
           is_active?: boolean
           name?: string
+          name_de?: string | null
           name_fr?: string | null
+          name_nl?: string | null
           parent_id?: string | null
           qogita_qid?: string | null
           slug?: string
@@ -2493,7 +2499,9 @@ export type Database = {
           delay_days: number | null
           depth: number | null
           description: string | null
+          description_de: string | null
           description_fr: string | null
+          description_nl: string | null
           dimension_unit: string | null
           dimensions: Json | null
           discount_percentage: number | null
@@ -2514,7 +2522,9 @@ export type Database = {
           manufacturer_id: string | null
           min_delivery_days: number | null
           name: string
+          name_de: string | null
           name_fr: string | null
+          name_nl: string | null
           offer_count: number
           origin_country: string | null
           popularity: number | null
@@ -2556,7 +2566,9 @@ export type Database = {
           delay_days?: number | null
           depth?: number | null
           description?: string | null
+          description_de?: string | null
           description_fr?: string | null
+          description_nl?: string | null
           dimension_unit?: string | null
           dimensions?: Json | null
           discount_percentage?: number | null
@@ -2577,7 +2589,9 @@ export type Database = {
           manufacturer_id?: string | null
           min_delivery_days?: number | null
           name: string
+          name_de?: string | null
           name_fr?: string | null
+          name_nl?: string | null
           offer_count?: number
           origin_country?: string | null
           popularity?: number | null
@@ -2619,7 +2633,9 @@ export type Database = {
           delay_days?: number | null
           depth?: number | null
           description?: string | null
+          description_de?: string | null
           description_fr?: string | null
+          description_nl?: string | null
           dimension_unit?: string | null
           dimensions?: Json | null
           discount_percentage?: number | null
@@ -2640,7 +2656,9 @@ export type Database = {
           manufacturer_id?: string | null
           min_delivery_days?: number | null
           name?: string
+          name_de?: string | null
           name_fr?: string | null
+          name_nl?: string | null
           offer_count?: number
           origin_country?: string | null
           popularity?: number | null

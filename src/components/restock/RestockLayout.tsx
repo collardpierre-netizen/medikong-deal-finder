@@ -59,7 +59,7 @@ export default function RestockLayout() {
         } md:translate-x-0`}
       >
         <div className="px-5 py-4 border-b border-[#D0D5DC] flex items-center gap-2">
-          <img src={logoHorizontal} alt="MediKong" className="h-10" />
+          <img src={logoHorizontal} alt="MediKong" className="h-14" />
           <span className="text-[#00B85C] font-bold text-lg" style={{ fontFamily: "'DM Sans', sans-serif" }}>ReStock</span>
         </div>
 

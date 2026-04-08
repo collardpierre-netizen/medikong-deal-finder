@@ -20,7 +20,7 @@ export function BuyerVerificationGate({ children }: BuyerVerificationGateProps) 
       const { data } = await supabase
         .from("restock_buyers")
         .select("id, verified_status, pharmacy_name")
-        .eq("user_id", user!.id)
+.eq("auth_user_id", user!.id)
         .maybeSingle();
       return data;
     },

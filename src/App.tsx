@@ -160,6 +160,12 @@ const VendorStripeSuccessPage = lazyWithRetry(() => import("./pages/vendor/Vendo
 const VendorStripeRefreshPage = lazyWithRetry(() => import("./pages/vendor/VendorStripeRefreshPage"), "VendorStripeRefreshPage");
 const VendorMessages = lazyWithRetry(() => import("./pages/vendor/VendorMessages"), "VendorMessages");
 
+// ReStock pages
+const RestockLayout = lazyWithRetry(() => import("./components/restock/RestockLayout"), "RestockLayout");
+const RestockSellerNewOffer = lazyWithRetry(() => import("./pages/restock/RestockSellerNewOffer"), "RestockSellerNewOffer");
+const RestockSellerOffers = lazyWithRetry(() => import("./pages/restock/RestockSellerOffers"), "RestockSellerOffers");
+const RestockSellerCounterOffers = lazyWithRetry(() => import("./pages/restock/RestockSellerCounterOffers"), "RestockSellerCounterOffers");
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -337,6 +343,14 @@ const App = () => (
               <Route path="messages" element={<LP><VendorMessages /></LP>} />
               <Route path="academy" element={<LP><VendorAcademy /></LP>} />
               <Route path="settings" element={<LP><VendorSettings /></LP>} />
+            </Route>
+
+            {/* ReStock Seller */}
+            <Route path="/restock/seller" element={<LP><RestockLayout /></LP>}>
+              <Route index element={<Navigate to="/restock/seller/new" replace />} />
+              <Route path="new" element={<LP><RestockSellerNewOffer /></LP>} />
+              <Route path="offers" element={<LP><RestockSellerOffers /></LP>} />
+              <Route path="counteroffers" element={<LP><RestockSellerCounterOffers /></LP>} />
             </Route>
 
             <Route path="*" element={<LP><NotFound /></LP>} />

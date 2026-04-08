@@ -2915,6 +2915,279 @@ export type Database = {
           },
         ]
       }
+      restock_buyers: {
+        Row: {
+          access_token: string | null
+          auth_user_id: string | null
+          city: string | null
+          created_at: string
+          email: string
+          id: string
+          interests: string[] | null
+          pharmacy_name: string
+          phone: string | null
+          reception_mode: string
+          updated_at: string
+        }
+        Insert: {
+          access_token?: string | null
+          auth_user_id?: string | null
+          city?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          interests?: string[] | null
+          pharmacy_name: string
+          phone?: string | null
+          reception_mode?: string
+          updated_at?: string
+        }
+        Update: {
+          access_token?: string | null
+          auth_user_id?: string | null
+          city?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          interests?: string[] | null
+          pharmacy_name?: string
+          phone?: string | null
+          reception_mode?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      restock_campaigns: {
+        Row: {
+          admin_id: string
+          buyer_ids: string[] | null
+          created_at: string
+          id: string
+          offer_ids: string[] | null
+          open_count: number | null
+          sent_at: string | null
+          subject: string
+          take_count: number | null
+        }
+        Insert: {
+          admin_id: string
+          buyer_ids?: string[] | null
+          created_at?: string
+          id?: string
+          offer_ids?: string[] | null
+          open_count?: number | null
+          sent_at?: string | null
+          subject: string
+          take_count?: number | null
+        }
+        Update: {
+          admin_id?: string
+          buyer_ids?: string[] | null
+          created_at?: string
+          id?: string
+          offer_ids?: string[] | null
+          open_count?: number | null
+          sent_at?: string | null
+          subject?: string
+          take_count?: number | null
+        }
+        Relationships: []
+      }
+      restock_counter_offers: {
+        Row: {
+          buyer_id: string
+          created_at: string
+          id: string
+          offer_id: string
+          proposed_price: number
+          proposed_quantity: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          buyer_id: string
+          created_at?: string
+          id?: string
+          offer_id: string
+          proposed_price: number
+          proposed_quantity?: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          buyer_id?: string
+          created_at?: string
+          id?: string
+          offer_id?: string
+          proposed_price?: number
+          proposed_quantity?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restock_counter_offers_buyer_id_fkey"
+            columns: ["buyer_id"]
+            isOneToOne: false
+            referencedRelation: "restock_buyers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "restock_counter_offers_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "restock_offers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      restock_offers: {
+        Row: {
+          cnk: string | null
+          created_at: string
+          delivery_condition: string
+          designation: string
+          dlu: string | null
+          ean: string | null
+          id: string
+          lot_number: string | null
+          photo_url: string | null
+          price_ht: number
+          product_state: string
+          quantity: number
+          rejection_reason: string | null
+          seller_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          cnk?: string | null
+          created_at?: string
+          delivery_condition?: string
+          designation: string
+          dlu?: string | null
+          ean?: string | null
+          id?: string
+          lot_number?: string | null
+          photo_url?: string | null
+          price_ht: number
+          product_state?: string
+          quantity?: number
+          rejection_reason?: string | null
+          seller_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          cnk?: string | null
+          created_at?: string
+          delivery_condition?: string
+          designation?: string
+          dlu?: string | null
+          ean?: string | null
+          id?: string
+          lot_number?: string | null
+          photo_url?: string | null
+          price_ht?: number
+          product_state?: string
+          quantity?: number
+          rejection_reason?: string | null
+          seller_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      restock_rules: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean | null
+          label: string | null
+          rule_type: string
+          updated_at: string
+          value: Json
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          label?: string | null
+          rule_type: string
+          updated_at?: string
+          value?: Json
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          label?: string | null
+          rule_type?: string
+          updated_at?: string
+          value?: Json
+        }
+        Relationships: []
+      }
+      restock_transactions: {
+        Row: {
+          buyer_id: string
+          commission_amount: number | null
+          commission_rate: number | null
+          created_at: string
+          delivery_mode: string
+          final_price: number
+          id: string
+          offer_id: string
+          quantity: number
+          seller_id: string
+          shipping_cost: number | null
+          status: string
+        }
+        Insert: {
+          buyer_id: string
+          commission_amount?: number | null
+          commission_rate?: number | null
+          created_at?: string
+          delivery_mode?: string
+          final_price: number
+          id?: string
+          offer_id: string
+          quantity: number
+          seller_id: string
+          shipping_cost?: number | null
+          status?: string
+        }
+        Update: {
+          buyer_id?: string
+          commission_amount?: number | null
+          commission_rate?: number | null
+          created_at?: string
+          delivery_mode?: string
+          final_price?: number
+          id?: string
+          offer_id?: string
+          quantity?: number
+          seller_id?: string
+          shipping_cost?: number | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restock_transactions_buyer_id_fkey"
+            columns: ["buyer_id"]
+            isOneToOne: false
+            referencedRelation: "restock_buyers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "restock_transactions_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "restock_offers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       site_config: {
         Row: {
           country: string

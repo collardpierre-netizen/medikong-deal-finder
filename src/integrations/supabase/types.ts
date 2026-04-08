@@ -3082,6 +3082,13 @@ export type Database = {
             foreignKeyName: "restock_counter_offers_offer_id_fkey"
             columns: ["offer_id"]
             isOneToOne: false
+            referencedRelation: "restock_offers_with_delta"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "restock_counter_offers_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
             referencedRelation: "restock_public_offers_view"
             referencedColumns: ["id"]
           },
@@ -3212,6 +3219,7 @@ export type Database = {
           id: string
           lot_number: string | null
           lot_size: number
+          matched_product_id: string | null
           moq: number
           packaging_photos: string[] | null
           photo_url: string | null
@@ -3243,6 +3251,7 @@ export type Database = {
           id?: string
           lot_number?: string | null
           lot_size?: number
+          matched_product_id?: string | null
           moq?: number
           packaging_photos?: string[] | null
           photo_url?: string | null
@@ -3274,6 +3283,7 @@ export type Database = {
           id?: string
           lot_number?: string | null
           lot_size?: number
+          matched_product_id?: string | null
           moq?: number
           packaging_photos?: string[] | null
           photo_url?: string | null
@@ -3297,6 +3307,13 @@ export type Database = {
             columns: ["drop_id"]
             isOneToOne: false
             referencedRelation: "restock_drops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "restock_offers_matched_product_id_fkey"
+            columns: ["matched_product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
             referencedColumns: ["id"]
           },
         ]
@@ -3338,6 +3355,13 @@ export type Database = {
             columns: ["offer_id"]
             isOneToOne: false
             referencedRelation: "restock_offers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "restock_questions_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "restock_offers_with_delta"
             referencedColumns: ["id"]
           },
           {
@@ -3639,6 +3663,13 @@ export type Database = {
             columns: ["offer_id"]
             isOneToOne: false
             referencedRelation: "restock_offers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "restock_transactions_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "restock_offers_with_delta"
             referencedColumns: ["id"]
           },
           {
@@ -4551,6 +4582,60 @@ export type Database = {
       }
     }
     Views: {
+      restock_offers_with_delta: {
+        Row: {
+          allow_partial: boolean | null
+          cnk: string | null
+          created_at: string | null
+          delivery_condition: string | null
+          designation: string | null
+          dlu: string | null
+          drop_id: string | null
+          ean: string | null
+          expires_at: string | null
+          grade: string | null
+          id: string | null
+          lot_size: number | null
+          matched_product_id: string | null
+          medikong_ean: string | null
+          medikong_image_url: string | null
+          medikong_price_ht: number | null
+          medikong_price_ttc: number | null
+          medikong_product_name: string | null
+          moq: number | null
+          packaging_photos: string[] | null
+          photo_url: string | null
+          price_ht: number | null
+          price_ttc: number | null
+          product_image_url: string | null
+          product_state: string | null
+          quantity: number | null
+          savings_amount: number | null
+          savings_pct: number | null
+          seller_city: string | null
+          status: string | null
+          unit_weight_g: number | null
+          updated_at: string | null
+          vat_rate: number | null
+          views_count: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restock_offers_drop_id_fkey"
+            columns: ["drop_id"]
+            isOneToOne: false
+            referencedRelation: "restock_drops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "restock_offers_matched_product_id_fkey"
+            columns: ["matched_product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       restock_public_offers_view: {
         Row: {
           allow_partial: boolean | null

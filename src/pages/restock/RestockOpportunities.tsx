@@ -119,12 +119,24 @@ export default function RestockOpportunities() {
 
   // "Je prends" mutation
   const takeMutation = useMutation({
-    mutationFn: async (offer: any) => {
-      const { error } = await supabase
-        .from("restock_offers")
-        .update({ status: "sold" })
-        .eq("id", offer.id);
-      if (error) throw error;
+    mutationFn: async ({ offer, qty }: { offer: any; qty: number }) => {
+      const isFullTake = qty >= offer.quantity;
+      
+      if (isFullTake) {
+        // Mark as sold
+        const { error } = await supabase
+          .from("restock_offers")
+          .update({ status: "sold" })
+          .eq("id", offer.id);
+        if (error) throw error;
+      } else {
+        // Partial: reduce remaining quantity
+        const { error } = await supabase
+          .from("restock_offers")
+          .update({ quantity: offer.quantity - qty })
+          .eq("id", offer.id);
+        if (error) throw error;
+      }
 
       // Create transaction
       await supabase.from("restock_transactions").insert({
@@ -132,10 +144,10 @@ export default function RestockOpportunities() {
         buyer_id: buyer?.id || null,
         seller_id: offer.seller_id,
         final_price: offer.price_ht,
-        quantity: offer.quantity,
+        quantity: qty,
         delivery_mode: offer.delivery_condition === "pickup" ? "pickup" : "shipping",
         shipping_cost: offer.delivery_condition === "pickup" ? 0 : shippingFee,
-        commission_amount: offer.price_ht * offer.quantity * 0.05,
+        commission_amount: offer.price_ht * qty * 0.05,
         status: "confirmed",
       });
     },
@@ -143,6 +155,7 @@ export default function RestockOpportunities() {
       queryClient.invalidateQueries({ queryKey: ["restock-public-offers"] });
       toast.success("Offre confirmée ! Le vendeur sera notifié.");
       setConfirmTarget(null);
+      setBuyQuantity(0);
     },
     onError: () => toast.error("Erreur lors de la confirmation"),
   });

@@ -19,6 +19,7 @@ const gradeConfig: Record<string, { label: string; color: string; bg: string }> 
 
 export default function RestockMobileSwipe() {
   const { campaignId } = useParams();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [currentIdx, setCurrentIdx] = useState(0);
   const [cart, setCart] = useState<any[]>([]);

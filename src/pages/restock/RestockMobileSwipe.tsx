@@ -349,7 +349,7 @@ export default function RestockMobileSwipe() {
       if (matchedIds.length > 0) {
         const { data: products } = await supabase
           .from("products")
-          .select("id, name, best_price_excl_vat, best_price_incl_vat, image_url, gtin")
+          .select("id, name, slug, best_price_excl_vat, best_price_incl_vat, image_url, gtin")
           .in("id", [...new Set(matchedIds)]);
         if (products) productsMap = Object.fromEntries(products.map(p => [p.id, p]));
       }

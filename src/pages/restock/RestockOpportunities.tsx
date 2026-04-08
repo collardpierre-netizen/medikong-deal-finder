@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,11 +8,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
+import { motion, useMotionValue, useTransform, AnimatePresence, PanInfo } from "framer-motion";
 import {
   Search, Package, ShoppingCart, MessageSquare, Truck, MapPin, Clock, Box, Shield,
-  Grid, List, ChevronDown, ChevronUp, X,
+  Grid, List, ChevronDown, ChevronUp, X, Info, Minus, Plus, Lock, Flame,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { MEDIKONG_PLACEHOLDER, isValidProductImage } from "@/lib/image-utils";
 
 const gradeConfig: Record<string, { label: string; desc: string; color: string; bg: string }> = {
@@ -56,16 +58,313 @@ function CheckItem({ label, count, checked, onChange }: { label: string; count: 
   );
 }
 
+/* ── Swipe Card (inline for mobile tinder mode) ── */
+function SwipeCard({
+  offer, onSwipe, isFront, onTap,
+}: {
+  offer: any; onSwipe: (dir: "left" | "right") => void; isFront: boolean; onTap: () => void;
+}) {
+  const x = useMotionValue(0);
+  const rotate = useTransform(x, [-200, 200], [-12, 12]);
+  const rightOverlay = useTransform(x, [0, 80], [0, 1]);
+  const leftOverlay = useTransform(x, [-80, 0], [1, 0]);
+
+  const cataloguePrice = (offer.price_ht || 0) * 1.3;
+  const discount = Math.round(((cataloguePrice - (offer.price_ht || 0)) / cataloguePrice) * 100);
+  const grade = gradeConfig[offer.grade] || gradeConfig.A;
+  const imgSrc = offer.product_image_url && isValidProductImage(offer.product_image_url) ? offer.product_image_url : null;
+
+  const handleDragEnd = (_: any, info: PanInfo) => {
+    if (info.offset.x > 100) onSwipe("right");
+    else if (info.offset.x < -100) onSwipe("left");
+  };
+
+  return (
+    <motion.div
+      style={{ x, rotate, position: "absolute", top: 0, left: 0, width: "100%", zIndex: isFront ? 10 : 1, touchAction: "none" }}
+      drag={isFront ? "x" : false}
+      dragConstraints={{ left: 0, right: 0 }}
+      dragElastic={0.7}
+      onDragEnd={handleDragEnd}
+      onTap={isFront ? onTap : undefined}
+      initial={isFront ? { scale: 1 } : { scale: 0.95, y: 8 }}
+      animate={isFront ? { scale: 1, opacity: 1, y: 0 } : { scale: 0.95, opacity: 0.6, y: 8 }}
+      exit={{ x: 300, opacity: 0, transition: { duration: 0.25 } }}
+    >
+      {isFront && (
+        <>
+          <motion.div style={{ opacity: rightOverlay }} className="absolute inset-0 z-20 rounded-2xl bg-emerald-500/20 border-4 border-emerald-500 flex items-center justify-center pointer-events-none">
+            <div className="bg-emerald-500 text-white px-5 py-2 rounded-xl text-xl font-bold rotate-12 shadow-lg"><ShoppingCart className="inline mr-2" size={20} />PANIER</div>
+          </motion.div>
+          <motion.div style={{ opacity: leftOverlay }} className="absolute inset-0 z-20 rounded-2xl bg-red-500/20 border-4 border-red-500 flex items-center justify-center pointer-events-none">
+            <div className="bg-red-500 text-white px-5 py-2 rounded-xl text-xl font-bold -rotate-12 shadow-lg"><X className="inline mr-2" size={20} />PASSE</div>
+          </motion.div>
+        </>
+      )}
+      <div className="bg-white rounded-2xl shadow-xl overflow-hidden select-none border border-border">
+        <div className="relative h-44 bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center overflow-hidden">
+          {imgSrc ? <img src={imgSrc} alt="" className="h-36 object-contain drop-shadow-lg" /> : <Package size={56} className="text-white/25" />}
+          <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-black/30 backdrop-blur-sm text-white/90 text-[10px] font-medium flex items-center gap-1"><Lock size={10} /> Vendeur anonyme</span>
+          {discount > 0 && <span className="absolute top-3 right-3 px-3 py-1 rounded-full bg-emerald-500 text-white text-sm font-bold shadow-md">−{discount}%</span>}
+          {isFront && <div className="absolute bottom-2 right-2 bg-white/20 backdrop-blur-sm rounded-full px-2 py-0.5 flex items-center gap-1 text-[9px] text-white/80"><ChevronUp size={10} /> Détails</div>}
+        </div>
+        <div className="p-4 space-y-2.5">
+          <div className="flex items-center gap-2">
+            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold" style={{ backgroundColor: grade.bg, color: grade.color }}>{grade.label}</span>
+            <span className="text-[10px] text-muted-foreground italic">{grade.desc}</span>
+          </div>
+          <h3 className="font-bold text-foreground text-[17px] leading-tight line-clamp-2">{offer.designation || "Produit"}</h3>
+          <p className="text-[11px] text-muted-foreground">{offer.ean && `EAN ${offer.ean}`}{offer.ean && offer.cnk && " · "}{offer.cnk && `CNK ${offer.cnk}`}</p>
+          <div className="flex items-baseline gap-2">
+            <span className="text-sm text-muted-foreground line-through">{cataloguePrice.toFixed(2)} €</span>
+            <span className="text-2xl font-extrabold text-primary">{(offer.price_ht || 0).toFixed(2)} €</span>
+            <span className="text-xs text-muted-foreground">HT/u</span>
+          </div>
+          <div className="grid grid-cols-2 gap-2 text-[12px] text-muted-foreground">
+            <div className="flex items-center gap-1.5"><Box size={13} /><b className="text-foreground">{offer.quantity}</b> unités</div>
+            <div className="flex items-center gap-1.5"><Clock size={13} />DLU {offer.dlu ? new Date(offer.dlu).toLocaleDateString("fr-BE", { day: "2-digit", month: "short", year: "numeric" }) : "—"}</div>
+            <div className="flex items-center gap-1.5"><MapPin size={13} />{offer.seller_city || "Belgique"}</div>
+            <div className="flex items-center gap-1.5">{offer.delivery_condition === "pickup" ? <MapPin size={13} /> : <Truck size={13} />}{offer.delivery_condition === "pickup" ? "Enlèvement" : offer.delivery_condition === "shipping" ? "Livraison" : "Les deux"}</div>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+/* ── Detail bottom sheet ── */
+function TinderDetailSheet({ offer, onClose, onAddToCart, onCounterOffer }: {
+  offer: any; onClose: () => void; onAddToCart: (qty: number) => void; onCounterOffer: () => void;
+}) {
+  const cataloguePrice = (offer.price_ht || 0) * 1.3;
+  const discount = Math.round(((cataloguePrice - (offer.price_ht || 0)) / cataloguePrice) * 100);
+  const grade = gradeConfig[offer.grade] || gradeConfig.A;
+  const moq = offer.moq || 1;
+  const lotSize = offer.lot_size || 1;
+  const maxQty = offer.quantity || 1;
+  const [qty, setQty] = useState(offer.allow_partial ? moq : maxQty);
+  const adjustQty = (delta: number) => setQty(prev => Math.max(moq, Math.min(maxQty, prev + delta * lotSize)));
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-end" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+      <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ type: "spring", damping: 25, stiffness: 300 }} className="relative w-full max-h-[85vh] bg-white rounded-t-3xl overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="sticky top-0 bg-white pt-3 pb-2 flex justify-center z-10"><div className="w-10 h-1 bg-muted-foreground/30 rounded-full" /></div>
+        <div className="px-5 pb-6 space-y-4">
+          <div className="flex items-start gap-3">
+            <div className="w-16 h-16 rounded-xl bg-muted flex items-center justify-center overflow-hidden shrink-0">
+              {offer.product_image_url ? <img src={offer.product_image_url} alt="" className="w-full h-full object-contain" /> : <Package size={28} className="text-muted-foreground" />}
+            </div>
+            <div className="flex-1 min-w-0">
+              <h2 className="font-bold text-foreground text-lg leading-tight">{offer.designation}</h2>
+              <p className="text-xs text-muted-foreground mt-0.5">{offer.ean && `EAN ${offer.ean}`}{offer.ean && offer.cnk && " · "}{offer.cnk && `CNK ${offer.cnk}`}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 bg-muted/50 rounded-xl px-3 py-2">
+            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold" style={{ backgroundColor: grade.bg, color: grade.color }}>{grade.label}</span>
+            <span className="text-xs text-muted-foreground">{grade.desc}</span>
+          </div>
+          <div className="bg-primary/5 rounded-xl p-4">
+            <div className="flex items-baseline gap-2 mb-1">
+              <span className="text-3xl font-extrabold text-primary">{(offer.price_ht || 0).toFixed(2)} €</span>
+              <span className="text-sm text-muted-foreground">HT/unité</span>
+            </div>
+            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+              <span className="line-through">{cataloguePrice.toFixed(2)} €</span>
+              {discount > 0 && <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-bold">−{discount}%</span>}
+              <span>soit <b className="text-foreground">{((offer.price_ht || 0) * qty).toFixed(2)} €</b> pour {qty} u</span>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              { icon: Box, label: "Quantité", value: `${offer.quantity} unités` },
+              { icon: Clock, label: "DLU", value: offer.dlu ? new Date(offer.dlu).toLocaleDateString("fr-BE", { day: "2-digit", month: "short", year: "numeric" }) : "—" },
+              { icon: MapPin, label: "Localisation", value: offer.seller_city || "Belgique" },
+              { icon: Truck, label: "Livraison", value: offer.delivery_condition === "pickup" ? "Enlèvement" : offer.delivery_condition === "shipping" ? "Livraison" : "Les deux" },
+            ].map((item, i) => (
+              <div key={i} className="bg-muted/40 rounded-xl p-3">
+                <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground uppercase tracking-wider mb-1"><item.icon size={11} />{item.label}</div>
+                <p className="text-sm font-semibold text-foreground">{item.value}</p>
+              </div>
+            ))}
+          </div>
+          {offer.allow_partial && (
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-foreground">Quantité (min. {moq}{lotSize > 1 ? `, ×${lotSize}` : ""}, max. {maxQty})</p>
+              <div className="flex items-center gap-3">
+                <button onClick={() => adjustQty(-1)} disabled={qty - lotSize < moq} className="w-10 h-10 rounded-full border border-border flex items-center justify-center disabled:opacity-30"><Minus size={16} /></button>
+                <span className="text-xl font-bold text-foreground w-16 text-center">{qty}</span>
+                <button onClick={() => adjustQty(1)} disabled={qty + lotSize > maxQty} className="w-10 h-10 rounded-full border border-border flex items-center justify-center disabled:opacity-30"><Plus size={16} /></button>
+                <button onClick={() => setQty(maxQty)} className="text-xs text-primary font-medium ml-auto">Tout prendre</button>
+              </div>
+            </div>
+          )}
+          <div className="flex gap-3 pt-2">
+            <button onClick={onCounterOffer} className="flex-1 h-12 rounded-xl border-2 border-amber-400 text-amber-600 font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform"><MessageSquare size={16} /> Contre-offre</button>
+            <button onClick={() => onAddToCart(qty)} className="flex-1 h-12 rounded-xl bg-emerald-500 text-white font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform shadow-lg shadow-emerald-500/30"><ShoppingCart size={16} /> Ajouter ({qty} u)</button>
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+/* ── Tinder View (inline) ── */
+function TinderView({ offers, tinderIdx, setTinderIdx, tinderCart, setTinderCart, tinderDetail, setTinderDetail, tinderCounter, setTinderCounter, tinderCounterPrice, setTinderCounterPrice, tinderCounterQty, setTinderCounterQty, buyer, formatPrice }: any) {
+  const remaining = offers.slice(tinderIdx);
+  const currentOffer = remaining[0];
+  const allSwiped = tinderIdx >= offers.length;
+  const progress = offers.length > 0 ? Math.round((tinderIdx / offers.length) * 100) : 0;
+  const cartTotal = tinderCart.reduce((sum: number, c: any) => sum + (c.price_ht || 0) * (c.qty || c.quantity || 1), 0);
+
+  const onSwipe = useCallback((dir: "left" | "right") => {
+    const offer = offers[tinderIdx];
+    if (dir === "right" && offer) {
+      setTinderCart((prev: any[]) => [...prev, { ...offer, qty: offer.allow_partial ? (offer.moq || 1) : offer.quantity }]);
+      toast.success("Ajouté au panier !", { icon: "🛒" });
+    }
+    setTinderIdx((prev: number) => prev + 1);
+  }, [tinderIdx, offers, setTinderCart, setTinderIdx]);
+
+  const addFromDetail = (offer: any, qty: number) => {
+    setTinderCart((prev: any[]) => [...prev, { ...offer, qty }]);
+    toast.success(`${qty} × ${offer.designation} ajouté !`, { icon: "🛒" });
+    setTinderDetail(null);
+    setTinderIdx((prev: number) => prev + 1);
+  };
+
+  const handleCounter = async () => {
+    const target = tinderDetail || currentOffer;
+    if (!target || !tinderCounterPrice) return;
+    const { data: buyerData } = await supabase.from("restock_buyers").select("id").limit(1).maybeSingle();
+    await supabase.from("restock_counter_offers").insert({
+      offer_id: target.id, buyer_id: buyerData?.id || "00000000-0000-0000-0000-000000000000",
+      proposed_price: parseFloat(tinderCounterPrice), proposed_quantity: parseInt(tinderCounterQty) || target.quantity, status: "pending",
+    });
+    toast.success("Contre-offre envoyée !", { icon: "💬" });
+    setTinderCounter(false);
+    setTinderDetail(null);
+    setTinderCounterPrice("");
+    setTinderCounterQty("");
+    setTinderIdx((prev: number) => prev + 1);
+  };
+
+  return (
+    <div className="space-y-3">
+      {/* Progress */}
+      <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+        <span>{tinderIdx}/{offers.length} offres vues</span>
+        <span>{tinderCart.length} au panier</span>
+      </div>
+      <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+        <motion.div className="h-full bg-primary rounded-full" animate={{ width: `${progress}%` }} transition={{ duration: 0.3 }} />
+      </div>
+
+      {tinderIdx === 0 && !allSwiped && (
+        <div className="flex items-center justify-center gap-4 text-[10px] text-muted-foreground py-1">
+          <span>← Passer</span><span>↑ Détails</span><span>Panier →</span>
+        </div>
+      )}
+
+      {allSwiped ? (
+        <div className="text-center px-4 py-8">
+          <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4"><Package size={32} className="text-primary" /></div>
+          <h2 className="text-lg font-bold text-foreground mb-2">Toutes les offres parcourues !</h2>
+          {tinderCart.length > 0 ? (
+            <div className="space-y-3">
+              <p className="text-muted-foreground text-sm"><b className="text-foreground">{tinderCart.length}</b> produit{tinderCart.length > 1 ? "s" : ""}</p>
+              <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-left space-y-1.5">
+                {tinderCart.slice(0, 5).map((c: any, i: number) => (
+                  <div key={i} className="flex justify-between text-xs text-emerald-700">
+                    <span className="truncate flex-1 mr-2">{c.designation}</span>
+                    <span className="font-medium">{formatPrice((c.price_ht || 0) * (c.qty || c.quantity))}</span>
+                  </div>
+                ))}
+                {tinderCart.length > 5 && <p className="text-[10px] text-emerald-600">+{tinderCart.length - 5} autres…</p>}
+                <div className="border-t border-emerald-200 pt-2 flex justify-between text-sm font-bold text-emerald-800">
+                  <span>Total HT</span><span>{formatPrice(cartTotal)}</span>
+                </div>
+              </div>
+              <Button className="w-full bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl py-5 text-base font-bold shadow-lg shadow-emerald-500/30">Finaliser ma commande →</Button>
+            </div>
+          ) : (
+            <p className="text-muted-foreground text-sm">Revenez bientôt pour de nouvelles opportunités</p>
+          )}
+          <button onClick={() => { setTinderIdx(0); setTinderCart([]); }} className="text-xs text-primary hover:underline mt-3">Recommencer</button>
+        </div>
+      ) : (
+        <>
+          <div className="relative w-full max-w-sm mx-auto" style={{ height: "min(480px, 55dvh)" }}>
+            <AnimatePresence>
+              {remaining.slice(0, 3).reverse().map((offer: any, i: number) => {
+                const isFront = i === Math.min(remaining.length, 3) - 1;
+                return <SwipeCard key={offer.id} offer={offer} onSwipe={onSwipe} isFront={isFront} onTap={() => isFront && setTinderDetail(offer)} />;
+              })}
+            </AnimatePresence>
+          </div>
+          <div className="flex items-center justify-center gap-5 py-3">
+            <button onClick={() => onSwipe("left")} className="w-14 h-14 rounded-full bg-white border-2 border-red-400 flex items-center justify-center shadow-md active:scale-90 transition-transform"><X size={26} className="text-red-500" /></button>
+            <button onClick={() => currentOffer && setTinderDetail(currentOffer)} className="w-11 h-11 rounded-full bg-white border-2 border-primary/40 flex items-center justify-center shadow-md active:scale-90 transition-transform"><Info size={20} className="text-primary" /></button>
+            <button onClick={() => onSwipe("right")} className="w-14 h-14 rounded-full bg-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/30 active:scale-90 transition-transform"><ShoppingCart size={26} className="text-white" /></button>
+          </div>
+        </>
+      )}
+
+      {tinderCart.length > 0 && !allSwiped && (
+        <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-2 flex items-center justify-between">
+          <span className="text-xs text-emerald-700"><b>{tinderCart.length}</b> produit{tinderCart.length > 1 ? "s" : ""} · <b>{formatPrice(cartTotal)}</b> HT</span>
+        </div>
+      )}
+
+      <AnimatePresence>
+        {tinderDetail && !tinderCounter && (
+          <TinderDetailSheet offer={tinderDetail} onClose={() => setTinderDetail(null)} onAddToCart={(qty: number) => addFromDetail(tinderDetail, qty)} onCounterOffer={() => setTinderCounter(true)} />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {tinderCounter && (tinderDetail || currentOffer) && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-end" onClick={() => { setTinderCounter(false); setTinderDetail(null); }}>
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+            <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ type: "spring", damping: 25, stiffness: 300 }} className="relative w-full bg-white rounded-t-3xl p-6 space-y-4" onClick={(e: any) => e.stopPropagation()}>
+              <div className="w-10 h-1 bg-muted-foreground/30 rounded-full mx-auto" />
+              <h3 className="font-bold text-foreground text-lg">Faire une contre-offre</h3>
+              <p className="text-sm text-muted-foreground"><b>{(tinderDetail || currentOffer)?.designation}</b> — Prix : {formatPrice((tinderDetail || currentOffer)?.price_ht || 0)} HT</p>
+              <div>
+                <Label className="text-xs font-medium">Prix proposé (€ HT/unité)</Label>
+                <Input type="number" step="0.01" value={tinderCounterPrice} onChange={(e: any) => setTinderCounterPrice(e.target.value)} className="rounded-xl mt-1" placeholder="Ex: 3.50" autoFocus />
+              </div>
+              <div>
+                <Label className="text-xs font-medium">Quantité souhaitée</Label>
+                <Input type="number" value={tinderCounterQty} onChange={(e: any) => setTinderCounterQty(e.target.value)} className="rounded-xl mt-1" placeholder={String((tinderDetail || currentOffer)?.quantity)} />
+              </div>
+              <Button onClick={handleCounter} disabled={!tinderCounterPrice || parseFloat(tinderCounterPrice) <= 0} className="w-full bg-primary text-primary-foreground rounded-xl py-5 text-base font-bold">Envoyer la contre-offre</Button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 export default function RestockOpportunities() {
   const { campaignId } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const isMobile = useIsMobile();
   const [search, setSearch] = useState("");
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [viewMode, setViewMode] = useState<"grid" | "list" | "tinder">("grid");
   const [counterOfferTarget, setCounterOfferTarget] = useState<any>(null);
   const [counterForm, setCounterForm] = useState({ price: "", quantity: "" });
   const [confirmTarget, setConfirmTarget] = useState<any>(null);
   const [buyQuantity, setBuyQuantity] = useState<number>(0);
+
+  // Tinder mode state
+  const [tinderIdx, setTinderIdx] = useState(0);
+  const [tinderCart, setTinderCart] = useState<any[]>([]);
+  const [tinderDetail, setTinderDetail] = useState<any>(null);
+  const [tinderCounter, setTinderCounter] = useState(false);
+  const [tinderCounterPrice, setTinderCounterPrice] = useState("");
+  const [tinderCounterQty, setTinderCounterQty] = useState("");
 
   // Sidebar filters
   const [selectedGrades, setSelectedGrades] = useState<string[]>([]);
@@ -74,11 +373,10 @@ export default function RestockOpportunities() {
   const [dluMin, setDluMin] = useState<number>(0);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
 
+  // Default to tinder on mobile
   useEffect(() => {
-    if (window.innerWidth < 768 && campaignId) {
-      navigate(`/m/opportunities/${campaignId}`, { replace: true });
-    }
-  }, [campaignId, navigate]);
+    if (isMobile) setViewMode("tinder");
+  }, [isMobile]);
 
   const { data: buyer } = useQuery({
     queryKey: ["restock-buyer-token", campaignId],
@@ -379,9 +677,12 @@ export default function RestockOpportunities() {
             <span className="text-emerald-600 font-bold text-base">ReStock</span>
           </div>
           <div className="flex items-center gap-3">
-            <button onClick={() => navigate(`/m/opportunities/${campaignId || "demo"}`)} className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-border text-xs font-medium text-muted-foreground hover:bg-accent transition-colors">
-              📱 Mode Swipe
-            </button>
+            {viewMode === "tinder" && tinderCart.length > 0 && (
+              <div className="relative">
+                <ShoppingCart size={20} className="text-muted-foreground" />
+                <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] bg-emerald-500 text-white rounded-full text-[10px] flex items-center justify-center font-bold px-1">{tinderCart.length}</span>
+              </div>
+            )}
             {buyer && <span className="text-sm text-muted-foreground">{buyer.pharmacy_name}</span>}
           </div>
         </div>
@@ -476,6 +777,9 @@ export default function RestockOpportunities() {
               </div>
               <span className="text-sm text-muted-foreground">{filtered.length} résultat{filtered.length !== 1 ? "s" : ""}</span>
               <div className="ml-auto flex items-center border border-border rounded-lg overflow-hidden">
+                <button onClick={() => { setViewMode("tinder"); setTinderIdx(0); setTinderCart([]); }} className={`p-2 ${viewMode === "tinder" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`} title="Mode Tinder">
+                  <Flame size={16} />
+                </button>
                 <button onClick={() => setViewMode("grid")} className={`p-2 ${viewMode === "grid" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}>
                   <Grid size={16} />
                 </button>
@@ -519,6 +823,24 @@ export default function RestockOpportunities() {
                 <p className="text-lg font-medium">Aucune offre trouvée</p>
                 {hasFilters && <button onClick={clearFilters} className="text-sm text-primary hover:underline mt-2">Effacer les filtres</button>}
               </div>
+            ) : viewMode === "tinder" ? (
+              <TinderView
+                offers={filtered}
+                tinderIdx={tinderIdx}
+                setTinderIdx={setTinderIdx}
+                tinderCart={tinderCart}
+                setTinderCart={setTinderCart}
+                tinderDetail={tinderDetail}
+                setTinderDetail={setTinderDetail}
+                tinderCounter={tinderCounter}
+                setTinderCounter={setTinderCounter}
+                tinderCounterPrice={tinderCounterPrice}
+                setTinderCounterPrice={setTinderCounterPrice}
+                tinderCounterQty={tinderCounterQty}
+                setTinderCounterQty={setTinderCounterQty}
+                buyer={buyer}
+                formatPrice={formatPrice}
+              />
             ) : viewMode === "grid" ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                 {filtered.map(renderOfferCard)}

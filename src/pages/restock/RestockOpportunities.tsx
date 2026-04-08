@@ -43,6 +43,7 @@ export default function RestockOpportunities() {
   const [counterOfferTarget, setCounterOfferTarget] = useState<any>(null);
   const [counterForm, setCounterForm] = useState({ price: "", quantity: "" });
   const [confirmTarget, setConfirmTarget] = useState<any>(null);
+  const [buyQuantity, setBuyQuantity] = useState<number>(0);
 
   // Fetch buyer info from token (campaignId used as token)
   const { data: buyer } = useQuery({

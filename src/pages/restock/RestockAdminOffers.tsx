@@ -196,7 +196,7 @@ export default function RestockAdminOffers() {
             </thead>
             <tbody>
               {isLoading ? (
-                <tr><td colSpan={8} className="text-center py-12 text-[#8B929C]">Chargement…</td></tr>
+                <tr><td colSpan={10} className="text-center py-12 text-[#8B929C]">Chargement…</td></tr>
               ) : filtered.length === 0 ? (
                 <tr><td colSpan={8} className="text-center py-12 text-[#8B929C]">Aucune offre publiée</td></tr>
               ) : (

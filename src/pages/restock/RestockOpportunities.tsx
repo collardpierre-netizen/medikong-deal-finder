@@ -269,24 +269,24 @@ function TinderView({ offers, tinderIdx, setTinderIdx, tinderCart, setTinderCart
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.15, ease: "easeOut" }}
-            className="fixed inset-0 z-[100] pointer-events-none flex items-center justify-center"
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className={`fixed inset-0 z-[100] pointer-events-none flex items-center justify-center ${flash === "accept" ? "bg-emerald-500/25" : "bg-red-500/25"}`}
           >
-            {/* Halo border glow */}
-            <div className={`absolute inset-0 ${flash === "accept" ? "shadow-[inset_0_0_80px_20px_rgba(16,185,129,0.4)]" : "shadow-[inset_0_0_80px_20px_rgba(239,68,68,0.4)]"}`} />
-            {/* Centered icon + text */}
+            {/* Thick glowing border */}
+            <div className={`absolute inset-0 border-[6px] rounded-none ${flash === "accept" ? "border-emerald-400 shadow-[inset_0_0_120px_40px_rgba(16,185,129,0.35)]" : "border-red-400 shadow-[inset_0_0_120px_40px_rgba(239,68,68,0.35)]"}`} />
+            {/* Centered feedback */}
             <motion.div
-              initial={{ scale: 0.5, opacity: 0 }}
+              initial={{ scale: 0.3, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 1.2, opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              className={`flex flex-col items-center gap-2 px-8 py-5 rounded-2xl backdrop-blur-sm ${flash === "accept" ? "bg-emerald-500/20" : "bg-red-500/20"}`}
+              exit={{ scale: 1.5, opacity: 0 }}
+              transition={{ type: "spring", damping: 12, stiffness: 200 }}
+              className={`flex flex-col items-center gap-3 px-10 py-6 rounded-3xl backdrop-blur-md ${flash === "accept" ? "bg-emerald-500/30" : "bg-red-500/30"}`}
             >
-              <div className={`w-16 h-16 rounded-full flex items-center justify-center ${flash === "accept" ? "bg-emerald-500" : "bg-red-500"}`}>
-                {flash === "accept" ? <ShoppingCart size={32} className="text-white" /> : <X size={32} className="text-white" />}
+              <div className={`w-20 h-20 rounded-full flex items-center justify-center shadow-2xl ${flash === "accept" ? "bg-emerald-500" : "bg-red-500"}`}>
+                {flash === "accept" ? <ShoppingCart size={40} className="text-white" /> : <X size={40} className="text-white" />}
               </div>
-              <span className={`text-lg font-bold ${flash === "accept" ? "text-emerald-700" : "text-red-700"}`}>
-                {flash === "accept" ? "Ajouté au panier !" : "Passé"}
+              <span className={`text-xl font-extrabold ${flash === "accept" ? "text-emerald-800" : "text-red-800"}`}>
+                {flash === "accept" ? "Ajouté au panier !" : "Passé !"}
               </span>
             </motion.div>
           </motion.div>

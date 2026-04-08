@@ -218,10 +218,12 @@ function TinderView({ offers, tinderIdx, setTinderIdx, tinderCart, setTinderCart
 
   // Full-screen flash feedback
   const [flash, setFlash] = useState<"accept" | "reject" | null>(null);
-  const triggerFlash = (type: "accept" | "reject") => {
+  const flashRef = useRef<NodeJS.Timeout | null>(null);
+  const triggerFlash = useCallback((type: "accept" | "reject") => {
+    if (flashRef.current) clearTimeout(flashRef.current);
     setFlash(type);
-    setTimeout(() => setFlash(null), 600);
-  };
+    flashRef.current = setTimeout(() => setFlash(null), 900);
+  }, []);
 
   const onSwipe = useCallback((dir: "left" | "right") => {
     const offer = offers[tinderIdx];
@@ -232,7 +234,7 @@ function TinderView({ offers, tinderIdx, setTinderIdx, tinderCart, setTinderCart
       triggerFlash("reject");
     }
     setTinderIdx((prev: number) => prev + 1);
-  }, [tinderIdx, offers, setTinderCart, setTinderIdx]);
+  }, [tinderIdx, offers, setTinderCart, setTinderIdx, triggerFlash]);
 
   const addFromDetail = (offer: any, qty: number) => {
     setTinderCart((prev: any[]) => [...prev, { ...offer, qty }]);

@@ -80,12 +80,15 @@ function SwipeCard({ offer, onSwipe, isFront }: { offer: any; onSwipe: (dir: str
 
         {/* Content */}
         <div className="p-4 space-y-3">
-          <span
-            className="inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold"
-            style={{ backgroundColor: grade.bg, color: grade.color }}
-          >
-            {grade.label}
-          </span>
+          <div className="flex items-center gap-2">
+            <span
+              className="inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold"
+              style={{ backgroundColor: grade.bg, color: grade.color }}
+            >
+              {grade.label}
+            </span>
+            <span className="text-[11px] text-[#8B929C] italic">{grade.desc}</span>
+          </div>
 
           <h3 className="font-bold text-[#1E252F] text-base leading-tight">
             {offer.designation || "Produit"}

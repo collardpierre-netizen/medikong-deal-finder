@@ -27,7 +27,7 @@ export default function RestockLandingPage() {
           <div className="mk-container">
             <div className="max-w-3xl mx-auto text-center">
               <div className="flex items-center justify-center gap-2 mb-6">
-                <img src={logoHorizontal} alt="MediKong" className="h-12 brightness-0 invert" />
+                <img src={logoHorizontal} alt="MediKong" className="h-16 brightness-0 invert" />
                 <span className="text-[#00B85C] font-bold text-2xl" style={{ fontFamily: "'DM Sans', sans-serif" }}>ReStock</span>
               </div>
               <h1 className="text-3xl md:text-5xl font-bold mb-4 leading-tight" style={{ fontFamily: "'DM Sans', sans-serif" }}>

@@ -737,6 +737,7 @@ export default function RestockOpportunities() {
             <span className="text-xl font-bold text-primary">{formatPrice(offer.price_ht || 0)}</span>
             <span className="text-xs text-muted-foreground line-through">{formatPrice(cataloguePrice)}</span>
             <span className="text-[11px] text-muted-foreground">HT/u</span>
+            {offer.medikong_product && <span className="text-[10px] text-emerald-600 font-medium">vs neuf MediKong</span>}
           </div>
 
           <div className="grid grid-cols-2 gap-1.5 text-xs text-muted-foreground">

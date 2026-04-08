@@ -171,8 +171,11 @@ function SwipeCard({
 function DetailSheet({ offer, onClose, onAddToCart, onCounterOffer }: {
   offer: any; onClose: () => void; onAddToCart: (qty: number) => void; onCounterOffer: () => void;
 }) {
-  const cataloguePrice = (offer.price_ht || 0) * 1.3;
-  const discount = Math.round(((cataloguePrice - (offer.price_ht || 0)) / cataloguePrice) * 100);
+  const medikongPrice = offer.medikong_product?.best_price_excl_vat;
+  const cataloguePrice = medikongPrice || (offer.price_ht || 0) * 1.3;
+  const discount = medikongPrice
+    ? Math.round((1 - (offer.price_ht || 0) / medikongPrice) * 100)
+    : Math.round(((cataloguePrice - (offer.price_ht || 0)) / cataloguePrice) * 100);
   const grade = gradeConfig[offer.grade] || gradeConfig.A;
   const moq = offer.moq || 1;
   const lotSize = offer.lot_size || 1;

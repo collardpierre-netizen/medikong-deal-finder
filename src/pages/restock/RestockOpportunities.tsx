@@ -808,6 +808,15 @@ export default function RestockOpportunities() {
           </div>
         </div>
 
+        {/* Anonymisation disclaimer */}
+        <div className="bg-[#EBF0FB] border border-[#1C58D9]/20 rounded-xl p-4 mb-6 flex items-start gap-3">
+          <Lock size={18} className="text-[#1C58D9] shrink-0 mt-0.5" />
+          <p className="text-sm text-[#5C6470]">
+            <b className="text-[#1E252F]">Vendeurs anonymisés.</b> L'identité est révélée uniquement après paiement.
+            Vous voyez la ville d'origine et le mode de mise à disposition.
+          </p>
+        </div>
+
         <div className="flex gap-6">
           {/* Sidebar */}
           <aside className="hidden lg:block w-60 shrink-0 space-y-1">

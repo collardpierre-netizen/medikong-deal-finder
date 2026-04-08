@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
-import { Upload, Download, AlertTriangle, Check, X, Loader2, Plus, Search, Trash2 } from "lucide-react";
+import { Upload, Download, AlertTriangle, Check, X, Loader2, Plus, Search, Trash2, Flame } from "lucide-react";
+import { SmartPricingWidget } from "@/components/restock/SmartPricingWidget";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -433,7 +434,17 @@ export default function RestockSellerNewOffer() {
   return (
     <div className="p-6 max-w-6xl mx-auto" style={{ fontFamily: "'DM Sans', sans-serif" }}>
       <h1 className="text-2xl font-bold text-[#1E252F] mb-1">Nouvelle offre de déstockage</h1>
-      <p className="text-[#5C6470] text-sm mb-6">Ajoutez vos produits via import Excel ou saisie manuelle.</p>
+      <p className="text-[#5C6470] text-sm mb-4">Ajoutez vos produits via import Excel ou saisie manuelle.</p>
+
+      {/* Destruction banner */}
+      <div className="bg-gradient-to-r from-[#1C58D9]/10 to-[#00B85C]/10 border border-[#1C58D9]/20 rounded-xl p-4 mb-6 flex items-start gap-3">
+        <Flame size={20} className="text-[#F59E0B] shrink-0 mt-0.5" />
+        <div className="text-sm text-[#1E252F]">
+          <b>Rappel :</b> la destruction de médicaments vous coûte en moyenne <b>1,20 €/unité</b> (collecte pharma-déchets).
+          <span className="text-[#00B85C] font-semibold"> Toute vente ReStock est un gain net</span> par rapport au réflexe destruction.
+          Mieux vaut −70% que −100%.
+        </div>
+      </div>
 
       {/* Mode switcher */}
       <div className="flex gap-2 mb-4">
@@ -523,37 +534,55 @@ export default function RestockSellerNewOffer() {
                 </tr>
               </thead>
               <tbody>
-                {rows.map((r, i) => (
-                  <tr key={i} className={`border-b border-[#F0F4FF] ${!r.valid ? "bg-red-50/50" : ""}`}>
-                    <td className="py-2 pr-3">
-                      {r.valid
-                        ? <Badge className="bg-[#EEFBF4] text-[#00B85C] text-[10px]">OK</Badge>
-                        : <Badge className="bg-red-50 text-[#E54545] text-[10px]">Rejetée</Badge>
-                      }
-                    </td>
-                    <td className="py-2 pr-3 font-medium text-[#1E252F] max-w-[200px] truncate">{r.designation}</td>
-                    <td className="py-2 pr-3 text-[#5C6470]">{r.ean || "—"}</td>
-                    <td className="py-2 pr-3 text-[#5C6470]">{r.cnk || "—"}</td>
-                    <td className="py-2 pr-3 text-right text-[#1E252F]">{r.quantity}</td>
-                    <td className="py-2 pr-3 text-right font-semibold text-[#1C58D9]">{r.price_ht.toFixed(2)} €</td>
-                    <td className="py-2 pr-3 text-[#5C6470]">{r.dlu || "—"}</td>
-                    <td className="py-2 pr-3"><Badge variant="outline" className="text-[10px]">{stateLabel(r.product_state)}</Badge></td>
-                    <td className="py-2 pr-3"><Badge variant="outline" className="text-[10px]">{deliveryLabel(r.delivery_condition)}</Badge></td>
-                    <td className="py-2 pr-3">
-                      {r.errors.length > 0 && (
-                        <div className="flex items-start gap-1 text-[#E54545]">
-                          <AlertTriangle size={12} className="mt-0.5 shrink-0" />
-                          <span>{r.errors.join(", ")}</span>
-                        </div>
-                      )}
-                    </td>
-                    <td className="py-2">
-                      <button onClick={() => removeRow(i)} className="text-[#8B929C] hover:text-[#E54545] transition-colors">
-                        <Trash2 size={14} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                  {rows.map((r, i) => (
+                    <tr key={i} className={`border-b border-[#F0F4FF] ${!r.valid ? "bg-red-50/50" : ""}`}>
+                      <td className="py-2 pr-3">
+                        {r.valid
+                          ? <Badge className="bg-[#EEFBF4] text-[#00B85C] text-[10px]">OK</Badge>
+                          : <Badge className="bg-red-50 text-[#E54545] text-[10px]">Rejetée</Badge>
+                        }
+                      </td>
+                      <td className="py-2 pr-3 font-medium text-[#1E252F] max-w-[200px] truncate">{r.designation}</td>
+                      <td className="py-2 pr-3 text-[#5C6470]">{r.ean || "—"}</td>
+                      <td className="py-2 pr-3 text-[#5C6470]">{r.cnk || "—"}</td>
+                      <td className="py-2 pr-3 text-right text-[#1E252F]">{r.quantity}</td>
+                      <td className="py-2 pr-3 text-right font-semibold text-[#1C58D9]">{r.price_ht.toFixed(2)} €</td>
+                      <td className="py-2 pr-3 text-[#5C6470]">{r.dlu || "—"}</td>
+                      <td className="py-2 pr-3"><Badge variant="outline" className="text-[10px]">{stateLabel(r.product_state)}</Badge></td>
+                      <td className="py-2 pr-3"><Badge variant="outline" className="text-[10px]">{deliveryLabel(r.delivery_condition)}</Badge></td>
+                      <td className="py-2 pr-3">
+                        {r.errors.length > 0 && (
+                          <div className="flex items-start gap-1 text-[#E54545]">
+                            <AlertTriangle size={12} className="mt-0.5 shrink-0" />
+                            <span>{r.errors.join(", ")}</span>
+                          </div>
+                        )}
+                      </td>
+                      <td className="py-2">
+                        <button onClick={() => removeRow(i)} className="text-[#8B929C] hover:text-[#E54545] transition-colors">
+                          <Trash2 size={14} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {/* Smart pricing widgets below each row */}
+                  {rows.map((r, i) => (r.ean || r.cnk) && r.price_ht > 0 ? (
+                    <tr key={`pricing-${i}`}>
+                      <td colSpan={11} className="px-2 pb-2">
+                        <SmartPricingWidget
+                          ean={r.ean}
+                          cnk={r.cnk}
+                          priceHt={r.price_ht}
+                          dlu={r.dlu}
+                          grade={r.product_state}
+                          quantity={r.quantity}
+                          onApplySuggestion={(price) => {
+                            setRows(prev => prev.map((row, idx) => idx === i ? revalidateRow({ ...row, price_ht: price }) : row));
+                          }}
+                        />
+                      </td>
+                    </tr>
+                  ) : null)}
               </tbody>
             </table>
           </div>

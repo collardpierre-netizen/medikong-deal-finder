@@ -58,16 +58,176 @@ function CheckItem({ label, count, checked, onChange }: { label: string; count: 
   );
 }
 
+/* ── Swipe Card (inline for mobile tinder mode) ── */
+function SwipeCard({
+  offer, onSwipe, isFront, onTap,
+}: {
+  offer: any; onSwipe: (dir: "left" | "right") => void; isFront: boolean; onTap: () => void;
+}) {
+  const x = useMotionValue(0);
+  const rotate = useTransform(x, [-200, 200], [-12, 12]);
+  const rightOverlay = useTransform(x, [0, 80], [0, 1]);
+  const leftOverlay = useTransform(x, [-80, 0], [1, 0]);
+
+  const cataloguePrice = (offer.price_ht || 0) * 1.3;
+  const discount = Math.round(((cataloguePrice - (offer.price_ht || 0)) / cataloguePrice) * 100);
+  const grade = gradeConfig[offer.grade] || gradeConfig.A;
+  const imgSrc = offer.product_image_url && isValidProductImage(offer.product_image_url) ? offer.product_image_url : null;
+
+  const handleDragEnd = (_: any, info: PanInfo) => {
+    if (info.offset.x > 100) onSwipe("right");
+    else if (info.offset.x < -100) onSwipe("left");
+  };
+
+  return (
+    <motion.div
+      style={{ x, rotate, position: "absolute", top: 0, left: 0, width: "100%", zIndex: isFront ? 10 : 1, touchAction: "none" }}
+      drag={isFront ? "x" : false}
+      dragConstraints={{ left: 0, right: 0 }}
+      dragElastic={0.7}
+      onDragEnd={handleDragEnd}
+      onTap={isFront ? onTap : undefined}
+      initial={isFront ? { scale: 1 } : { scale: 0.95, y: 8 }}
+      animate={isFront ? { scale: 1, opacity: 1, y: 0 } : { scale: 0.95, opacity: 0.6, y: 8 }}
+      exit={{ x: 300, opacity: 0, transition: { duration: 0.25 } }}
+    >
+      {isFront && (
+        <>
+          <motion.div style={{ opacity: rightOverlay }} className="absolute inset-0 z-20 rounded-2xl bg-emerald-500/20 border-4 border-emerald-500 flex items-center justify-center pointer-events-none">
+            <div className="bg-emerald-500 text-white px-5 py-2 rounded-xl text-xl font-bold rotate-12 shadow-lg"><ShoppingCart className="inline mr-2" size={20} />PANIER</div>
+          </motion.div>
+          <motion.div style={{ opacity: leftOverlay }} className="absolute inset-0 z-20 rounded-2xl bg-red-500/20 border-4 border-red-500 flex items-center justify-center pointer-events-none">
+            <div className="bg-red-500 text-white px-5 py-2 rounded-xl text-xl font-bold -rotate-12 shadow-lg"><X className="inline mr-2" size={20} />PASSE</div>
+          </motion.div>
+        </>
+      )}
+      <div className="bg-white rounded-2xl shadow-xl overflow-hidden select-none border border-border">
+        <div className="relative h-44 bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center overflow-hidden">
+          {imgSrc ? <img src={imgSrc} alt="" className="h-36 object-contain drop-shadow-lg" /> : <Package size={56} className="text-white/25" />}
+          <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-black/30 backdrop-blur-sm text-white/90 text-[10px] font-medium flex items-center gap-1"><Lock size={10} /> Vendeur anonyme</span>
+          {discount > 0 && <span className="absolute top-3 right-3 px-3 py-1 rounded-full bg-emerald-500 text-white text-sm font-bold shadow-md">−{discount}%</span>}
+          {isFront && <div className="absolute bottom-2 right-2 bg-white/20 backdrop-blur-sm rounded-full px-2 py-0.5 flex items-center gap-1 text-[9px] text-white/80"><ChevronUp size={10} /> Détails</div>}
+        </div>
+        <div className="p-4 space-y-2.5">
+          <div className="flex items-center gap-2">
+            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold" style={{ backgroundColor: grade.bg, color: grade.color }}>{grade.label}</span>
+            <span className="text-[10px] text-muted-foreground italic">{grade.desc}</span>
+          </div>
+          <h3 className="font-bold text-foreground text-[17px] leading-tight line-clamp-2">{offer.designation || "Produit"}</h3>
+          <p className="text-[11px] text-muted-foreground">{offer.ean && `EAN ${offer.ean}`}{offer.ean && offer.cnk && " · "}{offer.cnk && `CNK ${offer.cnk}`}</p>
+          <div className="flex items-baseline gap-2">
+            <span className="text-sm text-muted-foreground line-through">{cataloguePrice.toFixed(2)} €</span>
+            <span className="text-2xl font-extrabold text-primary">{(offer.price_ht || 0).toFixed(2)} €</span>
+            <span className="text-xs text-muted-foreground">HT/u</span>
+          </div>
+          <div className="grid grid-cols-2 gap-2 text-[12px] text-muted-foreground">
+            <div className="flex items-center gap-1.5"><Box size={13} /><b className="text-foreground">{offer.quantity}</b> unités</div>
+            <div className="flex items-center gap-1.5"><Clock size={13} />DLU {offer.dlu ? new Date(offer.dlu).toLocaleDateString("fr-BE", { day: "2-digit", month: "short", year: "numeric" }) : "—"}</div>
+            <div className="flex items-center gap-1.5"><MapPin size={13} />{offer.seller_city || "Belgique"}</div>
+            <div className="flex items-center gap-1.5">{offer.delivery_condition === "pickup" ? <MapPin size={13} /> : <Truck size={13} />}{offer.delivery_condition === "pickup" ? "Enlèvement" : offer.delivery_condition === "shipping" ? "Livraison" : "Les deux"}</div>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+/* ── Detail bottom sheet ── */
+function TinderDetailSheet({ offer, onClose, onAddToCart, onCounterOffer }: {
+  offer: any; onClose: () => void; onAddToCart: (qty: number) => void; onCounterOffer: () => void;
+}) {
+  const cataloguePrice = (offer.price_ht || 0) * 1.3;
+  const discount = Math.round(((cataloguePrice - (offer.price_ht || 0)) / cataloguePrice) * 100);
+  const grade = gradeConfig[offer.grade] || gradeConfig.A;
+  const moq = offer.moq || 1;
+  const lotSize = offer.lot_size || 1;
+  const maxQty = offer.quantity || 1;
+  const [qty, setQty] = useState(offer.allow_partial ? moq : maxQty);
+  const adjustQty = (delta: number) => setQty(prev => Math.max(moq, Math.min(maxQty, prev + delta * lotSize)));
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-end" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+      <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ type: "spring", damping: 25, stiffness: 300 }} className="relative w-full max-h-[85vh] bg-white rounded-t-3xl overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="sticky top-0 bg-white pt-3 pb-2 flex justify-center z-10"><div className="w-10 h-1 bg-muted-foreground/30 rounded-full" /></div>
+        <div className="px-5 pb-6 space-y-4">
+          <div className="flex items-start gap-3">
+            <div className="w-16 h-16 rounded-xl bg-muted flex items-center justify-center overflow-hidden shrink-0">
+              {offer.product_image_url ? <img src={offer.product_image_url} alt="" className="w-full h-full object-contain" /> : <Package size={28} className="text-muted-foreground" />}
+            </div>
+            <div className="flex-1 min-w-0">
+              <h2 className="font-bold text-foreground text-lg leading-tight">{offer.designation}</h2>
+              <p className="text-xs text-muted-foreground mt-0.5">{offer.ean && `EAN ${offer.ean}`}{offer.ean && offer.cnk && " · "}{offer.cnk && `CNK ${offer.cnk}`}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 bg-muted/50 rounded-xl px-3 py-2">
+            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold" style={{ backgroundColor: grade.bg, color: grade.color }}>{grade.label}</span>
+            <span className="text-xs text-muted-foreground">{grade.desc}</span>
+          </div>
+          <div className="bg-primary/5 rounded-xl p-4">
+            <div className="flex items-baseline gap-2 mb-1">
+              <span className="text-3xl font-extrabold text-primary">{(offer.price_ht || 0).toFixed(2)} €</span>
+              <span className="text-sm text-muted-foreground">HT/unité</span>
+            </div>
+            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+              <span className="line-through">{cataloguePrice.toFixed(2)} €</span>
+              {discount > 0 && <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-bold">−{discount}%</span>}
+              <span>soit <b className="text-foreground">{((offer.price_ht || 0) * qty).toFixed(2)} €</b> pour {qty} u</span>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              { icon: Box, label: "Quantité", value: `${offer.quantity} unités` },
+              { icon: Clock, label: "DLU", value: offer.dlu ? new Date(offer.dlu).toLocaleDateString("fr-BE", { day: "2-digit", month: "short", year: "numeric" }) : "—" },
+              { icon: MapPin, label: "Localisation", value: offer.seller_city || "Belgique" },
+              { icon: Truck, label: "Livraison", value: offer.delivery_condition === "pickup" ? "Enlèvement" : offer.delivery_condition === "shipping" ? "Livraison" : "Les deux" },
+            ].map((item, i) => (
+              <div key={i} className="bg-muted/40 rounded-xl p-3">
+                <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground uppercase tracking-wider mb-1"><item.icon size={11} />{item.label}</div>
+                <p className="text-sm font-semibold text-foreground">{item.value}</p>
+              </div>
+            ))}
+          </div>
+          {offer.allow_partial && (
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-foreground">Quantité (min. {moq}{lotSize > 1 ? `, ×${lotSize}` : ""}, max. {maxQty})</p>
+              <div className="flex items-center gap-3">
+                <button onClick={() => adjustQty(-1)} disabled={qty - lotSize < moq} className="w-10 h-10 rounded-full border border-border flex items-center justify-center disabled:opacity-30"><Minus size={16} /></button>
+                <span className="text-xl font-bold text-foreground w-16 text-center">{qty}</span>
+                <button onClick={() => adjustQty(1)} disabled={qty + lotSize > maxQty} className="w-10 h-10 rounded-full border border-border flex items-center justify-center disabled:opacity-30"><Plus size={16} /></button>
+                <button onClick={() => setQty(maxQty)} className="text-xs text-primary font-medium ml-auto">Tout prendre</button>
+              </div>
+            </div>
+          )}
+          <div className="flex gap-3 pt-2">
+            <button onClick={onCounterOffer} className="flex-1 h-12 rounded-xl border-2 border-amber-400 text-amber-600 font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform"><MessageSquare size={16} /> Contre-offre</button>
+            <button onClick={() => onAddToCart(qty)} className="flex-1 h-12 rounded-xl bg-emerald-500 text-white font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform shadow-lg shadow-emerald-500/30"><ShoppingCart size={16} /> Ajouter ({qty} u)</button>
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
 export default function RestockOpportunities() {
   const { campaignId } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const isMobile = useIsMobile();
   const [search, setSearch] = useState("");
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [viewMode, setViewMode] = useState<"grid" | "list" | "tinder">("grid");
   const [counterOfferTarget, setCounterOfferTarget] = useState<any>(null);
   const [counterForm, setCounterForm] = useState({ price: "", quantity: "" });
   const [confirmTarget, setConfirmTarget] = useState<any>(null);
   const [buyQuantity, setBuyQuantity] = useState<number>(0);
+
+  // Tinder mode state
+  const [tinderIdx, setTinderIdx] = useState(0);
+  const [tinderCart, setTinderCart] = useState<any[]>([]);
+  const [tinderDetail, setTinderDetail] = useState<any>(null);
+  const [tinderCounter, setTinderCounter] = useState(false);
+  const [tinderCounterPrice, setTinderCounterPrice] = useState("");
+  const [tinderCounterQty, setTinderCounterQty] = useState("");
 
   // Sidebar filters
   const [selectedGrades, setSelectedGrades] = useState<string[]>([]);
@@ -76,11 +236,10 @@ export default function RestockOpportunities() {
   const [dluMin, setDluMin] = useState<number>(0);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
 
+  // Default to tinder on mobile
   useEffect(() => {
-    if (window.innerWidth < 768 && campaignId) {
-      navigate(`/m/opportunities/${campaignId}`, { replace: true });
-    }
-  }, [campaignId, navigate]);
+    if (isMobile) setViewMode("tinder");
+  }, [isMobile]);
 
   const { data: buyer } = useQuery({
     queryKey: ["restock-buyer-token", campaignId],

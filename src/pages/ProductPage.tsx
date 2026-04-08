@@ -728,17 +728,18 @@ export default function ProductPage() {
   const [calcMode, setCalcMode] = useState<'manual' | 'pct'>('manual');
   const [priceSavedPopup, setPriceSavedPopup] = useState(false);
 
-  // Load saved user price
+  // Load saved user price from user_price_watches (same table as "Mes prix" in account)
   const { data: savedUserPrice } = useQuery({
     queryKey: ["user-price", product?.id, user?.id],
     queryFn: async () => {
       const { data } = await supabase
-        .from("user_prices")
-        .select("my_purchase_price, supplier_name")
+        .from("user_price_watches")
+        .select("user_price_excl_vat, notes")
         .eq("user_id", user!.id)
         .eq("product_id", product!.id)
         .maybeSingle();
-      return data;
+      if (!data) return null;
+      return { my_purchase_price: data.user_price_excl_vat, supplier_name: data.notes };
     },
     enabled: !!product?.id && !!user?.id,
   });

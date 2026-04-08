@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
-import { Tag, Clock, MapPin, Package, ArrowRight, Sparkles } from "lucide-react";
+import { Tag, Clock, MapPin, Package, ArrowRight, RefreshCw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 const GRADE_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
@@ -63,7 +63,7 @@ export function RestockSecondChance({ ean, cnk, productName }: Props) {
         <div className="px-5 py-4 flex items-center justify-between border-b border-amber-200/60">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center">
-              <Sparkles size={16} className="text-amber-600" />
+              <RefreshCw size={16} className="text-amber-600" />
             </div>
             <div>
               <h3 className="text-sm font-bold text-foreground">Deuxième Chance</h3>

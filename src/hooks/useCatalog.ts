@@ -354,7 +354,7 @@ export function useCatalogCategories() {
         (async () =>
           await supabase
             .from("categories")
-            .select("id, name, name_fr, slug, parent_id")
+            .select("id, name, name_fr, name_nl, name_de, slug, parent_id")
             .eq("is_active", true)
             .order("display_order", { ascending: true }))(),
         withTimeout(

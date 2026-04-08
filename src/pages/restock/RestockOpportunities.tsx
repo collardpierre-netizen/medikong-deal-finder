@@ -69,8 +69,11 @@ function SwipeCard({
   const rightOverlay = useTransform(x, [0, 80], [0, 1]);
   const leftOverlay = useTransform(x, [-80, 0], [1, 0]);
 
-  const cataloguePrice = (offer.price_ht || 0) * 1.3;
-  const discount = Math.round(((cataloguePrice - (offer.price_ht || 0)) / cataloguePrice) * 100);
+  const medikongPrice = offer.medikong_product?.best_price_excl_vat;
+  const cataloguePrice = medikongPrice || (offer.price_ht || 0) * 1.3;
+  const discount = medikongPrice
+    ? Math.round((1 - (offer.price_ht || 0) / medikongPrice) * 100)
+    : Math.round(((cataloguePrice - (offer.price_ht || 0)) / cataloguePrice) * 100);
   const grade = gradeConfig[offer.grade] || gradeConfig.A;
   const imgSrc = offer.product_image_url && isValidProductImage(offer.product_image_url) ? offer.product_image_url : null;
 

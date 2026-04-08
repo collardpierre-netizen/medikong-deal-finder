@@ -583,7 +583,7 @@ export default function RestockSellerNewOffer() {
                   {/* Smart pricing widgets below each row */}
                   {rows.map((r, i) => (r.ean || r.cnk) && r.price_ht > 0 ? (
                     <tr key={`pricing-${i}`}>
-                      <td colSpan={11} className="px-2 pb-2">
+                      <td colSpan={12} className="px-2 pb-2">
                         <SmartPricingWidget
                           ean={r.ean}
                           cnk={r.cnk}

@@ -46,11 +46,11 @@ const DELIVERY_MAP: Record<string, string> = {
 
 function downloadTemplate() {
   const ws = XLSX.utils.aoa_to_sheet([
-    ["EAN", "CNK", "Désignation", "Quantité", "Prix HT unitaire", "DLU (AAAA-MM-JJ)", "État", "Numéro de lot", "Condition de livraison"],
-    ["5412345678901", "1234567", "Doliprane 1000mg x8", 50, 3.20, "2027-06-30", "Intact", "LOT2024A", "Les deux"],
-    ["5412345678902", "7654321", "Efferalgan 500mg x16", 30, 2.10, "2026-12-31", "Emballage abîmé", "LOT2024B", "Expédition uniquement"],
+    ["EAN", "CNK", "Désignation", "Quantité", "Prix HT unitaire", "DLU (AAAA-MM-JJ)", "État", "Numéro de lot", "Condition de livraison", "Vente partielle (oui/non)", "MOQ", "Par multiple de"],
+    ["5412345678901", "1234567", "Doliprane 1000mg x8", 50, 3.20, "2027-06-30", "Intact", "LOT2024A", "Les deux", "oui", 10, 10],
+    ["5412345678902", "7654321", "Efferalgan 500mg x16", 30, 2.10, "2026-12-31", "Emballage abîmé", "LOT2024B", "Expédition uniquement", "non", "", ""],
   ]);
-  ws["!cols"] = [{ wch: 16 }, { wch: 10 }, { wch: 30 }, { wch: 10 }, { wch: 16 }, { wch: 16 }, { wch: 20 }, { wch: 14 }, { wch: 24 }];
+  ws["!cols"] = [{ wch: 16 }, { wch: 10 }, { wch: 30 }, { wch: 10 }, { wch: 16 }, { wch: 16 }, { wch: 20 }, { wch: 14 }, { wch: 24 }, { wch: 20 }, { wch: 8 }, { wch: 14 }];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Offres");
   XLSX.writeFile(wb, "MediKong_ReStock_Template.xlsx");

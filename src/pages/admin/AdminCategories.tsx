@@ -173,6 +173,39 @@ const AdminCategories = () => {
     onError: (e: any) => toast.error(e.message),
   });
 
+  // Toggle visibility of a category + its children + cascade to products
+  const toggleVisibility = useMutation({
+    mutationFn: async ({ id, newActive }: { id: string; newActive: boolean }) => {
+      // Collect all category IDs to update (this cat + all descendants)
+      const allIds = [id];
+      const collectChildren = (parentId: string) => {
+        const kids = categoriesData.filter(c => c.parent_id === parentId);
+        for (const kid of kids) {
+          allIds.push(kid.id);
+          collectChildren(kid.id);
+        }
+      };
+      collectChildren(id);
+
+      // Update categories
+      const { error: catError } = await supabase.from("categories").update({ is_active: newActive }).in("id", allIds);
+      if (catError) throw catError;
+
+      // Cascade to products in those categories
+      const { error: prodError } = await supabase.from("products").update({ is_active: newActive }).in("category_id", allIds);
+      if (prodError) throw prodError;
+
+      return { count: allIds.length, newActive };
+    },
+    onSuccess: (result) => {
+      const verb = result.newActive ? "activée(s)" : "désactivée(s)";
+      toast.success(`${result.count} catégorie(s) ${verb} + produits associés`);
+      qc.invalidateQueries({ queryKey: ["admin-categories"] });
+      qc.invalidateQueries({ queryKey: ["admin-products"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const handleAutoTranslate = async (locale: "fr" | "nl" | "de") => {
     // Collect categories without translation
     const missing: typeof categoriesData = [];

@@ -253,6 +253,11 @@ const translations: Record<Lang, Record<string, string>> = {
     searchPlaceholder: "Suchen...",
     pageUnderConstruction: "Seite im Aufbau",
     comingSoon: "Dieser Bereich wird bald verfügbar sein.",
+    restock: "ReStock",
+    restockOffers: "ReStock Angebote",
+    restockBuyers: "Käufer",
+    restockCampaigns: "E-Mail-Kampagnen",
+    restockRules: "Filterregeln",
   },
 };
 

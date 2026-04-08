@@ -245,6 +245,7 @@ export function useCatalogProducts(filters: CatalogFilters) {
         categoryIds ||
         mfIds?.length ||
         filters.inStock ||
+        filters.hasOffers ||
         filters.priceMin !== undefined ||
         filters.priceMax !== undefined
       );

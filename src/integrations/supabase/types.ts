@@ -2936,42 +2936,63 @@ export type Database = {
       restock_buyers: {
         Row: {
           access_token: string | null
+          apn_number: string | null
           auth_user_id: string | null
           city: string | null
           created_at: string
           email: string
+          flake_count: number
           id: string
           interests: string[] | null
+          is_suspended: boolean
           pharmacy_name: string
           phone: string | null
           reception_mode: string
+          referral_code: string | null
+          suspended_until: string | null
           updated_at: string
+          verified_at: string | null
+          verified_status: string
         }
         Insert: {
           access_token?: string | null
+          apn_number?: string | null
           auth_user_id?: string | null
           city?: string | null
           created_at?: string
           email: string
+          flake_count?: number
           id?: string
           interests?: string[] | null
+          is_suspended?: boolean
           pharmacy_name: string
           phone?: string | null
           reception_mode?: string
+          referral_code?: string | null
+          suspended_until?: string | null
           updated_at?: string
+          verified_at?: string | null
+          verified_status?: string
         }
         Update: {
           access_token?: string | null
+          apn_number?: string | null
           auth_user_id?: string | null
           city?: string | null
           created_at?: string
           email?: string
+          flake_count?: number
           id?: string
           interests?: string[] | null
+          is_suspended?: boolean
           pharmacy_name?: string
           phone?: string | null
           reception_mode?: string
+          referral_code?: string | null
+          suspended_until?: string | null
           updated_at?: string
+          verified_at?: string | null
+          verified_status?: string
         }
         Relationships: []
       }
@@ -3057,6 +3078,13 @@ export type Database = {
             referencedRelation: "restock_offers"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "restock_counter_offers_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "restock_public_offers_view"
+            referencedColumns: ["id"]
+          },
         ]
       }
       restock_drops: {
@@ -3098,6 +3126,77 @@ export type Database = {
         }
         Relationships: []
       }
+      restock_invoice_sequences: {
+        Row: {
+          current_value: number
+          id: string
+          prefix: string
+          updated_at: string
+        }
+        Insert: {
+          current_value?: number
+          id?: string
+          prefix: string
+          updated_at?: string
+        }
+        Update: {
+          current_value?: number
+          id?: string
+          prefix?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      restock_invoices: {
+        Row: {
+          amount_ht: number
+          amount_ttc: number
+          commission_amount: number
+          created_at: string
+          id: string
+          invoice_number: string
+          invoice_type: string
+          issued_at: string
+          pdf_url: string | null
+          transaction_id: string
+          vat_amount: number
+        }
+        Insert: {
+          amount_ht: number
+          amount_ttc: number
+          commission_amount?: number
+          created_at?: string
+          id?: string
+          invoice_number: string
+          invoice_type: string
+          issued_at?: string
+          pdf_url?: string | null
+          transaction_id: string
+          vat_amount: number
+        }
+        Update: {
+          amount_ht?: number
+          amount_ttc?: number
+          commission_amount?: number
+          created_at?: string
+          id?: string
+          invoice_number?: string
+          invoice_type?: string
+          issued_at?: string
+          pdf_url?: string | null
+          transaction_id?: string
+          vat_amount?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restock_invoices_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "restock_transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       restock_offers: {
         Row: {
           allow_partial: boolean
@@ -3106,7 +3205,9 @@ export type Database = {
           delivery_condition: string
           designation: string
           dlu: string | null
+          drop_id: string | null
           ean: string | null
+          expires_at: string | null
           grade: string
           id: string
           lot_number: string | null
@@ -3115,6 +3216,7 @@ export type Database = {
           packaging_photos: string[] | null
           photo_url: string | null
           price_ht: number
+          price_ttc: number | null
           product_image_url: string | null
           product_state: string
           quantity: number
@@ -3122,7 +3224,10 @@ export type Database = {
           seller_city: string | null
           seller_id: string
           status: string
+          unit_weight_g: number | null
           updated_at: string
+          vat_rate: number
+          views_count: number
         }
         Insert: {
           allow_partial?: boolean
@@ -3131,7 +3236,9 @@ export type Database = {
           delivery_condition?: string
           designation: string
           dlu?: string | null
+          drop_id?: string | null
           ean?: string | null
+          expires_at?: string | null
           grade?: string
           id?: string
           lot_number?: string | null
@@ -3140,6 +3247,7 @@ export type Database = {
           packaging_photos?: string[] | null
           photo_url?: string | null
           price_ht: number
+          price_ttc?: number | null
           product_image_url?: string | null
           product_state?: string
           quantity?: number
@@ -3147,7 +3255,10 @@ export type Database = {
           seller_city?: string | null
           seller_id: string
           status?: string
+          unit_weight_g?: number | null
           updated_at?: string
+          vat_rate?: number
+          views_count?: number
         }
         Update: {
           allow_partial?: boolean
@@ -3156,7 +3267,9 @@ export type Database = {
           delivery_condition?: string
           designation?: string
           dlu?: string | null
+          drop_id?: string | null
           ean?: string | null
+          expires_at?: string | null
           grade?: string
           id?: string
           lot_number?: string | null
@@ -3165,6 +3278,7 @@ export type Database = {
           packaging_photos?: string[] | null
           photo_url?: string | null
           price_ht?: number
+          price_ttc?: number | null
           product_image_url?: string | null
           product_state?: string
           quantity?: number
@@ -3172,9 +3286,20 @@ export type Database = {
           seller_city?: string | null
           seller_id?: string
           status?: string
+          unit_weight_g?: number | null
           updated_at?: string
+          vat_rate?: number
+          views_count?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "restock_offers_drop_id_fkey"
+            columns: ["drop_id"]
+            isOneToOne: false
+            referencedRelation: "restock_drops"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       restock_questions: {
         Row: {
@@ -3213,6 +3338,13 @@ export type Database = {
             columns: ["offer_id"]
             isOneToOne: false
             referencedRelation: "restock_offers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "restock_questions_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "restock_public_offers_view"
             referencedColumns: ["id"]
           },
         ]
@@ -3254,6 +3386,115 @@ export type Database = {
             columns: ["transaction_id"]
             isOneToOne: false
             referencedRelation: "restock_transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      restock_referral_codes: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          is_active: boolean
+          max_uses: number | null
+          owner_id: string
+          uses_count: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          owner_id: string
+          uses_count?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          owner_id?: string
+          uses_count?: number
+        }
+        Relationships: []
+      }
+      restock_referrals: {
+        Row: {
+          created_at: string
+          id: string
+          referral_code_id: string
+          referred_user_id: string
+          referrer_id: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          referral_code_id: string
+          referred_user_id: string
+          referrer_id: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          referral_code_id?: string
+          referred_user_id?: string
+          referrer_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restock_referrals_referral_code_id_fkey"
+            columns: ["referral_code_id"]
+            isOneToOne: false
+            referencedRelation: "restock_referral_codes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      restock_rewards: {
+        Row: {
+          amount: number | null
+          created_at: string
+          description: string | null
+          expires_at: string | null
+          id: string
+          is_claimed: boolean
+          referral_id: string | null
+          reward_type: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string
+          description?: string | null
+          expires_at?: string | null
+          id?: string
+          is_claimed?: boolean
+          referral_id?: string | null
+          reward_type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string
+          description?: string | null
+          expires_at?: string | null
+          id?: string
+          is_claimed?: boolean
+          referral_id?: string | null
+          reward_type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restock_rewards_referral_id_fkey"
+            columns: ["referral_id"]
+            isOneToOne: false
+            referencedRelation: "restock_referrals"
             referencedColumns: ["id"]
           },
         ]
@@ -3322,13 +3563,22 @@ export type Database = {
           commission_rate: number | null
           created_at: string
           delivery_mode: string
+          dispute_reason: string | null
+          escrow_released_at: string | null
           final_price: number
           id: string
+          invoice_buyer_id: string | null
+          invoice_seller_id: string | null
           offer_id: string
+          penalty_applied: boolean
           quantity: number
           seller_id: string
+          sendcloud_parcel_id: string | null
           shipping_cost: number | null
           status: string
+          tracking_number: string | null
+          tracking_url: string | null
+          updated_at: string
         }
         Insert: {
           buyer_id: string
@@ -3336,13 +3586,22 @@ export type Database = {
           commission_rate?: number | null
           created_at?: string
           delivery_mode?: string
+          dispute_reason?: string | null
+          escrow_released_at?: string | null
           final_price: number
           id?: string
+          invoice_buyer_id?: string | null
+          invoice_seller_id?: string | null
           offer_id: string
+          penalty_applied?: boolean
           quantity: number
           seller_id: string
+          sendcloud_parcel_id?: string | null
           shipping_cost?: number | null
           status?: string
+          tracking_number?: string | null
+          tracking_url?: string | null
+          updated_at?: string
         }
         Update: {
           buyer_id?: string
@@ -3350,13 +3609,22 @@ export type Database = {
           commission_rate?: number | null
           created_at?: string
           delivery_mode?: string
+          dispute_reason?: string | null
+          escrow_released_at?: string | null
           final_price?: number
           id?: string
+          invoice_buyer_id?: string | null
+          invoice_seller_id?: string | null
           offer_id?: string
+          penalty_applied?: boolean
           quantity?: number
           seller_id?: string
+          sendcloud_parcel_id?: string | null
           shipping_cost?: number | null
           status?: string
+          tracking_number?: string | null
+          tracking_url?: string | null
+          updated_at?: string
         }
         Relationships: [
           {
@@ -3371,6 +3639,13 @@ export type Database = {
             columns: ["offer_id"]
             isOneToOne: false
             referencedRelation: "restock_offers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "restock_transactions_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "restock_public_offers_view"
             referencedColumns: ["id"]
           },
         ]
@@ -4276,7 +4551,101 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      restock_public_offers_view: {
+        Row: {
+          allow_partial: boolean | null
+          cnk: string | null
+          created_at: string | null
+          delivery_condition: string | null
+          designation: string | null
+          dlu: string | null
+          drop_id: string | null
+          ean: string | null
+          expires_at: string | null
+          grade: string | null
+          id: string | null
+          lot_size: number | null
+          moq: number | null
+          packaging_photos: string[] | null
+          photo_url: string | null
+          price_ht: number | null
+          price_ttc: number | null
+          product_image_url: string | null
+          product_state: string | null
+          quantity: number | null
+          seller_city: string | null
+          status: string | null
+          unit_weight_g: number | null
+          updated_at: string | null
+          vat_rate: number | null
+          views_count: number | null
+        }
+        Insert: {
+          allow_partial?: boolean | null
+          cnk?: string | null
+          created_at?: string | null
+          delivery_condition?: string | null
+          designation?: string | null
+          dlu?: string | null
+          drop_id?: string | null
+          ean?: string | null
+          expires_at?: string | null
+          grade?: string | null
+          id?: string | null
+          lot_size?: number | null
+          moq?: number | null
+          packaging_photos?: string[] | null
+          photo_url?: string | null
+          price_ht?: number | null
+          price_ttc?: number | null
+          product_image_url?: string | null
+          product_state?: string | null
+          quantity?: number | null
+          seller_city?: string | null
+          status?: string | null
+          unit_weight_g?: number | null
+          updated_at?: string | null
+          vat_rate?: number | null
+          views_count?: number | null
+        }
+        Update: {
+          allow_partial?: boolean | null
+          cnk?: string | null
+          created_at?: string | null
+          delivery_condition?: string | null
+          designation?: string | null
+          dlu?: string | null
+          drop_id?: string | null
+          ean?: string | null
+          expires_at?: string | null
+          grade?: string | null
+          id?: string | null
+          lot_size?: number | null
+          moq?: number | null
+          packaging_photos?: string[] | null
+          photo_url?: string | null
+          price_ht?: number | null
+          price_ttc?: number | null
+          product_image_url?: string | null
+          product_state?: string | null
+          quantity?: number | null
+          seller_city?: string | null
+          status?: string | null
+          unit_weight_g?: number | null
+          updated_at?: string | null
+          vat_rate?: number | null
+          views_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restock_offers_drop_id_fkey"
+            columns: ["drop_id"]
+            isOneToOne: false
+            referencedRelation: "restock_drops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       bulk_set_cnk_codes: { Args: { pairs: Json }; Returns: number }

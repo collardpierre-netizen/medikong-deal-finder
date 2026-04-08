@@ -26,6 +26,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { applyMargin, formatPriceEur } from "@/lib/pricing";
 import { useMarketPrices } from "@/hooks/useMarketPrices";
+import { RestockSecondChance } from "@/components/product/RestockSecondChance";
 
 function formatEur(n: number): string {
   return n.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });

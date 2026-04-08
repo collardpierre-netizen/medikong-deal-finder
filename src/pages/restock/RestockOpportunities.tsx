@@ -236,7 +236,7 @@ function TinderView({ offers, tinderIdx, setTinderIdx, tinderCart, setTinderCart
 
   const addFromDetail = (offer: any, qty: number) => {
     setTinderCart((prev: any[]) => [...prev, { ...offer, qty }]);
-    toast.success(`${qty} × ${offer.designation} ajouté !`, { icon: "🛒" });
+    triggerFlash("accept");
     setTinderDetail(null);
     setTinderIdx((prev: number) => prev + 1);
   };

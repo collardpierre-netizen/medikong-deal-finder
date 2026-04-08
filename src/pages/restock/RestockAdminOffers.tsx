@@ -188,6 +188,8 @@ export default function RestockAdminOffers() {
                 <th className="text-center px-4 py-3 font-medium text-[#5C6470]">Qté totale</th>
                 <th className="text-right px-4 py-3 font-medium text-[#5C6470]">Prix min</th>
                 <th className="text-right px-4 py-3 font-medium text-[#5C6470]">Prix max</th>
+                <th className="text-right px-4 py-3 font-medium text-[#5C6470]">Prix neuf MK</th>
+                <th className="text-center px-4 py-3 font-medium text-[#5C6470]">Δ vs neuf</th>
                 <th className="text-center px-4 py-3 font-medium text-[#5C6470]">DLU courte</th>
                 <th className="text-center px-4 py-3 font-medium text-[#5C6470]">Actions</th>
               </tr>

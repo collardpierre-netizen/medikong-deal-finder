@@ -94,6 +94,11 @@ const translations: Record<Lang, Record<string, string>> = {
     filter: "Filtrer",
     messages: "Messages",
     translations: "Traductions",
+    restock: "ReStock",
+    restockOffers: "Offres ReStock",
+    restockBuyers: "Acheteurs",
+    restockCampaigns: "Campagnes email",
+    restockRules: "Règles de filtrage",
   },
   nl: {
     dashboard: "Dashboard",
@@ -179,6 +184,11 @@ const translations: Record<Lang, Record<string, string>> = {
     filter: "Filteren",
     messages: "Berichten",
     translations: "Vertalingen",
+    restock: "ReStock",
+    restockOffers: "ReStock aanbiedingen",
+    restockBuyers: "Kopers",
+    restockCampaigns: "E-mailcampagnes",
+    restockRules: "Filterregels",
   },
   de: {
     dashboard: "Dashboard",
@@ -243,6 +253,11 @@ const translations: Record<Lang, Record<string, string>> = {
     searchPlaceholder: "Suchen...",
     pageUnderConstruction: "Seite im Aufbau",
     comingSoon: "Dieser Bereich wird bald verfügbar sein.",
+    restock: "ReStock",
+    restockOffers: "ReStock Angebote",
+    restockBuyers: "Käufer",
+    restockCampaigns: "E-Mail-Kampagnen",
+    restockRules: "Filterregeln",
   },
 };
 

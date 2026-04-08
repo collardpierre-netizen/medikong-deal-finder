@@ -77,6 +77,8 @@ export default function RestockAdminOffers() {
           max_price: -Infinity,
           shortest_dlu: o.dlu || "",
           offer_ids: [],
+          medikong_price_ht: o.medikong_price_ht || null,
+          delta_pct: null,
         });
       }
       const agg = map.get(key)!;

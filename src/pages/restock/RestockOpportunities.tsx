@@ -426,33 +426,95 @@ export default function RestockOpportunities() {
       </Dialog>
 
       {/* Confirm "Je prends" dialog */}
-      <Dialog open={!!confirmTarget} onOpenChange={(o) => !o && setConfirmTarget(null)}>
-        <DialogContent className="sm:max-w-sm">
+      <Dialog open={!!confirmTarget} onOpenChange={(o) => { if (!o) { setConfirmTarget(null); setBuyQuantity(0); } }}>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Confirmer l'achat</DialogTitle>
           </DialogHeader>
-          {confirmTarget && (
-            <div className="space-y-3">
-              <p className="text-sm text-[#5C6470]">
-                Vous confirmez vouloir acheter :
-              </p>
-              <div className="bg-[#F7F8FA] rounded-lg p-3 space-y-1">
-                <p className="font-semibold text-[#1E252F]">{confirmTarget.designation}</p>
-                <p className="text-sm text-[#5C6470]">{confirmTarget.quantity} unités × {formatPrice(confirmTarget.price_ht || 0)} HT</p>
-                <p className="text-sm font-bold text-[#1C58D9]">
-                  Total : {formatPrice((confirmTarget.price_ht || 0) * (confirmTarget.quantity || 1))} HT
+          {confirmTarget && (() => {
+            const isPartial = confirmTarget.allow_partial;
+            const moq = confirmTarget.moq || 1;
+            const lotSz = confirmTarget.lot_size || 1;
+            const maxQty = confirmTarget.quantity;
+            const isValidQty = buyQuantity >= moq && buyQuantity <= maxQty && (lotSz <= 1 || buyQuantity % lotSz === 0);
+
+            return (
+              <div className="space-y-4">
+                <p className="text-sm text-[#5C6470]">
+                  Vous confirmez vouloir acheter :
+                </p>
+                <div className="bg-[#F7F8FA] rounded-lg p-3 space-y-2">
+                  <p className="font-semibold text-[#1E252F]">{confirmTarget.designation}</p>
+                  
+                  {isPartial ? (
+                    <div className="space-y-2">
+                      <div>
+                        <Label className="text-xs text-[#5C6470]">
+                          Quantité (min. {moq}{lotSz > 1 ? `, par multiple de ${lotSz}` : ""}, max. {maxQty})
+                        </Label>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-9 w-9 p-0 border-[#D0D5DC]"
+                            disabled={buyQuantity - lotSz < moq}
+                            onClick={() => setBuyQuantity(Math.max(moq, buyQuantity - lotSz))}
+                          >−</Button>
+                          <Input
+                            type="number"
+                            min={moq}
+                            max={maxQty}
+                            step={lotSz}
+                            value={buyQuantity}
+                            onChange={(e) => setBuyQuantity(Math.min(maxQty, Math.max(moq, Number(e.target.value) || moq)))}
+                            className="w-24 text-center border-[#D0D5DC]"
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-9 w-9 p-0 border-[#D0D5DC]"
+                            disabled={buyQuantity + lotSz > maxQty}
+                            onClick={() => setBuyQuantity(Math.min(maxQty, buyQuantity + lotSz))}
+                          >+</Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="text-xs text-[#1C58D9]"
+                            onClick={() => setBuyQuantity(maxQty)}
+                          >Tout prendre</Button>
+                        </div>
+                        {!isValidQty && buyQuantity > 0 && (
+                          <p className="text-xs text-[#E54545] mt-1">
+                            {buyQuantity < moq ? `Minimum ${moq} unités` : 
+                             lotSz > 1 && buyQuantity % lotSz !== 0 ? `Doit être un multiple de ${lotSz}` :
+                             `Maximum ${maxQty} unités`}
+                          </p>
+                        )}
+                      </div>
+                      <p className="text-sm text-[#5C6470]">{buyQuantity} unités × {formatPrice(confirmTarget.price_ht || 0)} HT</p>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-[#5C6470]">{maxQty} unités × {formatPrice(confirmTarget.price_ht || 0)} HT</p>
+                  )}
+                  
+                  <p className="text-sm font-bold text-[#1C58D9]">
+                    Total : {formatPrice((confirmTarget.price_ht || 0) * buyQuantity)} HT
+                  </p>
+                </div>
+                <p className="text-xs text-[#8B929C]">
+                  Le vendeur sera notifié et vous recevrez les instructions de retrait/livraison.
                 </p>
               </div>
-              <p className="text-xs text-[#8B929C]">
-                Le vendeur sera notifié et vous recevrez les instructions de retrait/livraison.
-              </p>
-            </div>
-          )}
+            );
+          })()}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setConfirmTarget(null)} className="rounded-lg">Annuler</Button>
+            <Button variant="outline" onClick={() => { setConfirmTarget(null); setBuyQuantity(0); }} className="rounded-lg">Annuler</Button>
             <Button
-              onClick={() => takeMutation.mutate(confirmTarget)}
-              disabled={takeMutation.isPending}
+              onClick={() => takeMutation.mutate({ offer: confirmTarget, qty: buyQuantity })}
+              disabled={takeMutation.isPending || !confirmTarget || buyQuantity < (confirmTarget?.moq || 1) || (confirmTarget?.lot_size > 1 && buyQuantity % confirmTarget.lot_size !== 0)}
               className="bg-[#00B85C] hover:bg-[#00A050] text-white rounded-lg"
             >
               Confirmer l'achat

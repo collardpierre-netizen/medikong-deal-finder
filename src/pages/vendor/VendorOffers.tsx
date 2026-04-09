@@ -601,14 +601,14 @@ function useOfferImport(vendorId: string | undefined) {
 function downloadTemplate() {
   const ws = XLSX.utils.aoa_to_sheet([
     [
-      "EAN", "CNK", "Prix HT", "TVA", "Stock", "MOQ", "Délai", "Pays",
+      "EAN", "CNK", "Prix HT", "Prix_Achat_HT", "TVA", "Stock", "MOQ", "Délai", "Pays",
       "Profil", "Profil_Pays", "Prix_Profil_HT", "Remise_%", "MOQ_Profil", "MOV_Profil",
     ],
-    ["3401560100013", "1234567", "12.50", "21", "100", "1", "3", "BE", "", "", "", "", "", ""],
-    ["3401560100013", "", "", "", "", "", "", "", "pharmacy", "BE", "11.00", "", "5", "150"],
-    ["3401560100013", "", "", "", "", "", "", "", "hospital", "", "", "10", "10", "500"],
+    ["3401560100013", "1234567", "12.50", "8.00", "21", "100", "1", "3", "BE", "", "", "", "", "", ""],
+    ["3401560100013", "", "", "", "", "", "", "", "", "pharmacy", "BE", "11.00", "", "5", "150"],
+    ["3401560100013", "", "", "", "", "", "", "", "", "hospital", "", "", "10", "10", "500"],
   ]);
-  ws["!cols"] = Array(14).fill(null).map(() => ({ wch: 16 }));
+  ws["!cols"] = Array(15).fill(null).map(() => ({ wch: 16 }));
 
   // Instructions sheet
   const instrRows = [
@@ -617,7 +617,8 @@ function downloadTemplate() {
     ["Colonnes principales (obligatoires pour créer une offre) :"],
     ["EAN", "Code-barres EAN/GTIN du produit"],
     ["CNK", "Code CNK belge (alternative au EAN)"],
-    ["Prix HT", "Prix hors taxes en euros"],
+    ["Prix HT", "Prix de vente hors taxes en euros"],
+    ["Prix_Achat_HT", "Prix d'achat HT (pour calcul de marge). Obligatoire en mode partage de marge."],
     ["TVA", "Taux de TVA (ex: 21)"],
     ["Stock", "Quantité en stock"],
     ["MOQ", "Quantité minimum de commande"],
@@ -636,9 +637,10 @@ function downloadTemplate() {
     ["- Une ligne avec EAN + Prix HT = offre principale"],
     ["- Une ligne avec le même EAN + Profil renseigné = règle profil pour cette offre"],
     ["- Vous pouvez avoir plusieurs lignes profil pour le même EAN"],
+    ["- Le Prix_Achat_HT permet de calculer la marge nette (vente - achat)"],
   ];
   const wsInstr = XLSX.utils.aoa_to_sheet(instrRows);
-  wsInstr["!cols"] = [{ wch: 20 }, { wch: 60 }];
+  wsInstr["!cols"] = [{ wch: 20 }, { wch: 70 }];
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Offres");

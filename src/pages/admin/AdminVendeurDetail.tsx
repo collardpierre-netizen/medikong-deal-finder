@@ -1281,6 +1281,16 @@ function VendorEditDialog({ open, onOpenChange, vendor, onSaved }: { open: boole
                 {uploading ? "Upload..." : "Choisir un fichier"}
                 <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} disabled={uploading} />
               </label>
+              {form.logo_url && (
+                <button type="button" onClick={() => set("logo_url", "")} className="text-xs text-destructive hover:underline">Supprimer</button>
+              )}
+            </div>
+            <div className="mt-2">
+              <Input
+                placeholder="Ou coller une URL (https://...)"
+                value={form.logo_url?.startsWith("http") && !form.logo_url.includes("supabase") ? form.logo_url : ""}
+                onChange={e => set("logo_url", e.target.value)}
+              />
             </div>
           </div>
           <div>

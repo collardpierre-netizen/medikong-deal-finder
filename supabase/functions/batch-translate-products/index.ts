@@ -157,35 +157,63 @@ Rules:
 - For German: use standard German
 - Return ONLY the JSON array, no markdown`;
 
-    const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash-lite",
-        messages: [{ role: "user", content: prompt }],
-        temperature: 0.1,
-      }),
-    });
+    // Retry up to 3 times on 5xx errors
+    let aiResponse: Response | null = null;
+    let lastError = "";
+    for (let attempt = 0; attempt < 3; attempt++) {
+      if (attempt > 0) {
+        console.log(`Retry attempt ${attempt + 1}...`);
+        await new Promise(r => setTimeout(r, 2000 * attempt));
+      }
+      const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash-lite",
+          messages: [{ role: "user", content: prompt }],
+          temperature: 0.1,
+        }),
+      });
 
-    if (!aiResponse.ok) {
-      const err = await aiResponse.text();
-      console.error("AI API error:", aiResponse.status, err);
-      if (aiResponse.status === 429) {
+      if (resp.ok) {
+        aiResponse = resp;
+        break;
+      }
+
+      const err = await resp.text();
+      lastError = `${resp.status} - ${err}`;
+      console.error(`AI API error (attempt ${attempt + 1}):`, lastError);
+
+      if (resp.status === 429) {
         return new Response(JSON.stringify({ error: "Rate limited, please retry in a few seconds" }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      if (aiResponse.status === 402) {
+      if (resp.status === 402) {
         return new Response(JSON.stringify({ error: "AI credits exhausted. Add funds in Settings > Workspace > Usage." }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      throw new Error(`AI API error: ${aiResponse.status} - ${err}`);
+      // Only retry on 5xx
+      if (resp.status < 500) {
+        throw new Error(`AI API error: ${lastError}`);
+      }
+    }
+
+    if (!aiResponse) {
+      // All retries failed — return 200 with fallback flag so frontend doesn't crash
+      return new Response(JSON.stringify({
+        error: "SERVICE_UNAVAILABLE",
+        fallback: true,
+        message: "AI service temporarily unavailable, please retry later",
+        translated: 0,
+        remaining: totalUntranslated,
+      }), {
+        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const aiResult = await aiResponse.json();

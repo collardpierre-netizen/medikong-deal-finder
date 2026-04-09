@@ -8,8 +8,8 @@ import {
 const buyerNav = [
   { to: "/restock", label: "Accueil", icon: Home },
   { to: "/opportunities/demo", label: "Opportunités", icon: ShoppingCart },
-  { to: "/restock/buyer", label: "Mon espace", icon: LayoutGrid },
-  { to: "/restock/drops", label: "Drops", icon: Zap },
+  { to: "/restock/buyer/dashboard", label: "Mon espace", icon: LayoutGrid },
+  { to: "/restock/buyer/drops", label: "Drops", icon: Zap },
   { to: "/restock/faq", label: "FAQ", icon: HelpCircle },
 ];
 

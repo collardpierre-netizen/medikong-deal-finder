@@ -531,11 +531,14 @@ function useOfferImport(vendorId: string | undefined) {
         const priceIncl = Math.round(priceExcl * (1 + vatRate / 100) * 100) / 100;
         const stock = parseInt(row["Stock"] || row["stock"] || row["stock_quantity"] || "0") || 0;
 
+        const purchasePrice = parseFloat(String(row["Prix_Achat_HT"] || row["prix_achat_ht"] || row["purchase_price"] || "0")) || null;
+
         offers.push({
           vendor_id: vendorId,
           product_id: productId,
           price_excl_vat: priceExcl,
           price_incl_vat: priceIncl,
+          purchase_price: purchasePrice,
           vat_rate: vatRate,
           stock_quantity: stock,
           moq: parseInt(row["MOQ"] || row["moq"] || "1") || 1,
@@ -601,14 +604,14 @@ function useOfferImport(vendorId: string | undefined) {
 function downloadTemplate() {
   const ws = XLSX.utils.aoa_to_sheet([
     [
-      "EAN", "CNK", "Prix HT", "TVA", "Stock", "MOQ", "Délai", "Pays",
+      "EAN", "CNK", "Prix HT", "Prix_Achat_HT", "TVA", "Stock", "MOQ", "Délai", "Pays",
       "Profil", "Profil_Pays", "Prix_Profil_HT", "Remise_%", "MOQ_Profil", "MOV_Profil",
     ],
-    ["3401560100013", "1234567", "12.50", "21", "100", "1", "3", "BE", "", "", "", "", "", ""],
-    ["3401560100013", "", "", "", "", "", "", "", "pharmacy", "BE", "11.00", "", "5", "150"],
-    ["3401560100013", "", "", "", "", "", "", "", "hospital", "", "", "10", "10", "500"],
+    ["3401560100013", "1234567", "12.50", "8.00", "21", "100", "1", "3", "BE", "", "", "", "", "", ""],
+    ["3401560100013", "", "", "", "", "", "", "", "", "pharmacy", "BE", "11.00", "", "5", "150"],
+    ["3401560100013", "", "", "", "", "", "", "", "", "hospital", "", "", "10", "10", "500"],
   ]);
-  ws["!cols"] = Array(14).fill(null).map(() => ({ wch: 16 }));
+  ws["!cols"] = Array(15).fill(null).map(() => ({ wch: 16 }));
 
   // Instructions sheet
   const instrRows = [
@@ -617,7 +620,8 @@ function downloadTemplate() {
     ["Colonnes principales (obligatoires pour créer une offre) :"],
     ["EAN", "Code-barres EAN/GTIN du produit"],
     ["CNK", "Code CNK belge (alternative au EAN)"],
-    ["Prix HT", "Prix hors taxes en euros"],
+    ["Prix HT", "Prix de vente hors taxes en euros"],
+    ["Prix_Achat_HT", "Prix d'achat HT (pour calcul de marge). Obligatoire en mode partage de marge."],
     ["TVA", "Taux de TVA (ex: 21)"],
     ["Stock", "Quantité en stock"],
     ["MOQ", "Quantité minimum de commande"],
@@ -636,9 +640,10 @@ function downloadTemplate() {
     ["- Une ligne avec EAN + Prix HT = offre principale"],
     ["- Une ligne avec le même EAN + Profil renseigné = règle profil pour cette offre"],
     ["- Vous pouvez avoir plusieurs lignes profil pour le même EAN"],
+    ["- Le Prix_Achat_HT permet de calculer la marge nette (vente - achat)"],
   ];
   const wsInstr = XLSX.utils.aoa_to_sheet(instrRows);
-  wsInstr["!cols"] = [{ wch: 20 }, { wch: 60 }];
+  wsInstr["!cols"] = [{ wch: 20 }, { wch: 70 }];
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Offres");
@@ -657,6 +662,9 @@ function exportOffers(offers: any[], profileRulesMap?: Map<string, any[]>) {
       "Marque": (o.products as any)?.brand_name || "",
       "Catégorie": (o.products as any)?.category_name || "",
       "Prix HT": o.price_excl_vat,
+      "Prix_Achat_HT": o.purchase_price ?? "",
+      "Marge €": o.purchase_price ? Math.round((o.price_excl_vat - o.purchase_price) * 100) / 100 : "",
+      "Marge %": o.purchase_price && o.purchase_price > 0 ? Math.round((o.price_excl_vat - o.purchase_price) / o.purchase_price * 10000) / 100 : "",
       "Prix TTC": o.price_incl_vat,
       "TVA": o.vat_rate,
       "Stock": o.stock_quantity,

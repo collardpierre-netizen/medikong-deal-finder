@@ -182,6 +182,7 @@ const RestockAdminFaq = lazyWithRetry(() => import("./pages/restock/RestockAdmin
 const RestockAdminPriceReferences = lazyWithRetry(() => import("./pages/restock/RestockAdminPriceReferences"), "RestockAdminPriceReferences");
 const RestockAdminPayouts = lazyWithRetry(() => import("./pages/restock/RestockAdminPayouts"), "RestockAdminPayouts");
 const RestockSellerReferral = lazyWithRetry(() => import("./pages/restock/RestockSellerReferral"), "RestockSellerReferral");
+const RestockCheckout = lazyWithRetry(() => import("./pages/restock/RestockCheckout"), "RestockCheckout");
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -369,6 +370,7 @@ const App = () => (
               <Route path="/restock/opportunities" element={<LP><RestockOpportunities /></LP>} />
               <Route path="/restock/buyer/dashboard" element={<LP><RestockBuyerDashboard /></LP>} />
               <Route path="/restock/buyer/drops" element={<LP><RestockDrops /></LP>} />
+              <Route path="/restock/checkout" element={<LP><RestockCheckout /></LP>} />
               {/* Seller */}
               <Route path="/restock/seller" element={<Navigate to="/restock/seller/new" replace />} />
               <Route path="/restock/seller/new" element={<LP><RestockSellerNewOffer /></LP>} />

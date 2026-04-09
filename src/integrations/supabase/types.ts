@@ -4074,11 +4074,23 @@ export type Database = {
       }
       restock_transactions: {
         Row: {
+          billing_same_as_shipping: boolean | null
+          buyer_city: string | null
+          buyer_company: string | null
+          buyer_country: string | null
+          buyer_email: string | null
           buyer_id: string
+          buyer_name: string | null
+          buyer_phone: string | null
+          buyer_postal_code: string | null
+          buyer_street: string | null
+          buyer_vat_number: string | null
           commission_amount: number | null
           commission_rate: number | null
           created_at: string
+          delivered_at: string | null
           delivery_mode: string
+          delivery_notes: string | null
           dispute_reason: string | null
           escrow_released_at: string | null
           final_price: number
@@ -4086,9 +4098,14 @@ export type Database = {
           invoice_buyer_id: string | null
           invoice_seller_id: string | null
           offer_id: string
+          paid_at: string | null
           penalty_applied: boolean
           quantity: number
           seller_id: string
+          seller_pickup_address: string | null
+          seller_pickup_city: string | null
+          seller_pickup_instructions: string | null
+          seller_pickup_phone: string | null
           sendcloud_parcel_id: string | null
           shipping_cost: number | null
           status: string
@@ -4097,11 +4114,23 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          billing_same_as_shipping?: boolean | null
+          buyer_city?: string | null
+          buyer_company?: string | null
+          buyer_country?: string | null
+          buyer_email?: string | null
           buyer_id: string
+          buyer_name?: string | null
+          buyer_phone?: string | null
+          buyer_postal_code?: string | null
+          buyer_street?: string | null
+          buyer_vat_number?: string | null
           commission_amount?: number | null
           commission_rate?: number | null
           created_at?: string
+          delivered_at?: string | null
           delivery_mode?: string
+          delivery_notes?: string | null
           dispute_reason?: string | null
           escrow_released_at?: string | null
           final_price: number
@@ -4109,9 +4138,14 @@ export type Database = {
           invoice_buyer_id?: string | null
           invoice_seller_id?: string | null
           offer_id: string
+          paid_at?: string | null
           penalty_applied?: boolean
           quantity: number
           seller_id: string
+          seller_pickup_address?: string | null
+          seller_pickup_city?: string | null
+          seller_pickup_instructions?: string | null
+          seller_pickup_phone?: string | null
           sendcloud_parcel_id?: string | null
           shipping_cost?: number | null
           status?: string
@@ -4120,11 +4154,23 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          billing_same_as_shipping?: boolean | null
+          buyer_city?: string | null
+          buyer_company?: string | null
+          buyer_country?: string | null
+          buyer_email?: string | null
           buyer_id?: string
+          buyer_name?: string | null
+          buyer_phone?: string | null
+          buyer_postal_code?: string | null
+          buyer_street?: string | null
+          buyer_vat_number?: string | null
           commission_amount?: number | null
           commission_rate?: number | null
           created_at?: string
+          delivered_at?: string | null
           delivery_mode?: string
+          delivery_notes?: string | null
           dispute_reason?: string | null
           escrow_released_at?: string | null
           final_price?: number
@@ -4132,9 +4178,14 @@ export type Database = {
           invoice_buyer_id?: string | null
           invoice_seller_id?: string | null
           offer_id?: string
+          paid_at?: string | null
           penalty_applied?: boolean
           quantity?: number
           seller_id?: string
+          seller_pickup_address?: string | null
+          seller_pickup_city?: string | null
+          seller_pickup_instructions?: string | null
+          seller_pickup_phone?: string | null
           sendcloud_parcel_id?: string | null
           shipping_cost?: number | null
           status?: string

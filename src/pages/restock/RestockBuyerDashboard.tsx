@@ -25,30 +25,44 @@ const counterStatusConfig: Record<string, { label: string; color: string; bg: st
 export default function RestockBuyerDashboard() {
   const { user } = useAuth();
 
-  const { data: transactions = [] } = useQuery({
-    queryKey: ["restock-buyer-transactions", user?.id],
+  // Get the buyer record linked to auth user
+  const { data: buyerRecord } = useQuery({
+    queryKey: ["restock-buyer-record", user?.id],
     queryFn: async () => {
       const { data } = await supabase
-        .from("restock_transactions")
-        .select("*, restock_offers(designation, ean, cnk, grade)")
-        .eq("buyer_id", user!.id)
-        .order("created_at", { ascending: false });
-      return data || [];
+        .from("restock_buyers")
+        .select("id")
+        .eq("auth_user_id", user!.id)
+        .maybeSingle();
+      return data;
     },
     enabled: !!user,
   });
 
+  const { data: transactions = [] } = useQuery({
+    queryKey: ["restock-buyer-transactions", buyerRecord?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("restock_transactions")
+        .select("*, restock_offers(designation, ean, cnk, grade)")
+        .eq("buyer_id", buyerRecord!.id)
+        .order("created_at", { ascending: false });
+      return data || [];
+    },
+    enabled: !!buyerRecord,
+  });
+
   const { data: counterOffers = [] } = useQuery({
-    queryKey: ["restock-buyer-counters", user?.id],
+    queryKey: ["restock-buyer-counters", buyerRecord?.id],
     queryFn: async () => {
       const { data } = await supabase
         .from("restock_counter_offers")
         .select("*, restock_offers(designation, ean, cnk)")
-        .eq("buyer_id", user!.id)
+        .eq("buyer_id", buyerRecord!.id)
         .order("created_at", { ascending: false });
       return data || [];
     },
-    enabled: !!user,
+    enabled: !!buyerRecord,
   });
 
   const stats = {

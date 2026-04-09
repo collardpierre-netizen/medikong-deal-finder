@@ -171,6 +171,17 @@ export default function VendorPublicPage() {
     enabled: !!slug,
   });
 
+  // Fetch visibility rules for this vendor
+  const { data: visRules = [] } = useQuery({
+    queryKey: ["vendor-visibility-rules-public", vendor?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from("vendor_visibility_rules" as any).select("*").eq("vendor_id", vendor!.id);
+      return (data || []) as any[];
+    },
+    enabled: !!vendor?.id,
+    staleTime: 5 * 60 * 1000,
+  });
+
   // Fetch ALL vendor offers (paginated past 1000 limit)
   const { data: offers = [] } = useQuery({
     queryKey: ["vendor-offers-public", vendor?.id],

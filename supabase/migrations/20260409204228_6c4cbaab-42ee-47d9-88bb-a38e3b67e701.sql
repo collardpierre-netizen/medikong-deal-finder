@@ -1,0 +1,1 @@
+SELECT cron.unschedule('auto-migrate-product-images');

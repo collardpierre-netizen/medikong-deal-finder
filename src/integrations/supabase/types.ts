@@ -3745,6 +3745,132 @@ export type Database = {
         }
         Relationships: []
       }
+      restock_sendcloud_api_logs: {
+        Row: {
+          called_at: string | null
+          duration_ms: number | null
+          error_message: string | null
+          id: string
+          operation: string
+          status_code: number | null
+          user_id: string | null
+        }
+        Insert: {
+          called_at?: string | null
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: string
+          operation: string
+          status_code?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          called_at?: string | null
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: string
+          operation?: string
+          status_code?: number | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      restock_sendcloud_invoice_lines: {
+        Row: {
+          id: string
+          line_cost_cents: number | null
+          matched: boolean | null
+          notes: string | null
+          sendcloud_invoice_id: string | null
+          sendcloud_parcel_id: string | null
+          shipment_id: string | null
+          vat_rate: number | null
+        }
+        Insert: {
+          id?: string
+          line_cost_cents?: number | null
+          matched?: boolean | null
+          notes?: string | null
+          sendcloud_invoice_id?: string | null
+          sendcloud_parcel_id?: string | null
+          shipment_id?: string | null
+          vat_rate?: number | null
+        }
+        Update: {
+          id?: string
+          line_cost_cents?: number | null
+          matched?: boolean | null
+          notes?: string | null
+          sendcloud_invoice_id?: string | null
+          sendcloud_parcel_id?: string | null
+          shipment_id?: string | null
+          vat_rate?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restock_sendcloud_invoice_lines_sendcloud_invoice_id_fkey"
+            columns: ["sendcloud_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "restock_sendcloud_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "restock_sendcloud_invoice_lines_shipment_id_fkey"
+            columns: ["shipment_id"]
+            isOneToOne: false
+            referencedRelation: "restock_shipments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      restock_sendcloud_invoices: {
+        Row: {
+          created_at: string | null
+          id: string
+          invoice_number: string | null
+          pdf_url: string | null
+          period_end: string | null
+          period_start: string | null
+          reconciled: boolean | null
+          reconciled_at: string | null
+          reconciled_by: string | null
+          total_cents: number | null
+          total_ttc_cents: number | null
+          total_vat_cents: number | null
+          unmatched_cents: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          invoice_number?: string | null
+          pdf_url?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          reconciled?: boolean | null
+          reconciled_at?: string | null
+          reconciled_by?: string | null
+          total_cents?: number | null
+          total_ttc_cents?: number | null
+          total_vat_cents?: number | null
+          unmatched_cents?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          invoice_number?: string | null
+          pdf_url?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          reconciled?: boolean | null
+          reconciled_at?: string | null
+          reconciled_by?: string | null
+          total_cents?: number | null
+          total_ttc_cents?: number | null
+          total_vat_cents?: number | null
+          unmatched_cents?: number | null
+        }
+        Relationships: []
+      }
       restock_settings: {
         Row: {
           description: string | null
@@ -3771,6 +3897,180 @@ export type Database = {
           value?: string
         }
         Relationships: []
+      }
+      restock_shipment_events: {
+        Row: {
+          event_message: string | null
+          event_timestamp: string | null
+          event_type: string | null
+          id: string
+          processed_at: string | null
+          raw_payload: Json | null
+          sendcloud_event_id: string | null
+          sendcloud_parcel_id: string | null
+          shipment_id: string | null
+        }
+        Insert: {
+          event_message?: string | null
+          event_timestamp?: string | null
+          event_type?: string | null
+          id?: string
+          processed_at?: string | null
+          raw_payload?: Json | null
+          sendcloud_event_id?: string | null
+          sendcloud_parcel_id?: string | null
+          shipment_id?: string | null
+        }
+        Update: {
+          event_message?: string | null
+          event_timestamp?: string | null
+          event_type?: string | null
+          id?: string
+          processed_at?: string | null
+          raw_payload?: Json | null
+          sendcloud_event_id?: string | null
+          sendcloud_parcel_id?: string | null
+          shipment_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restock_shipment_events_shipment_id_fkey"
+            columns: ["shipment_id"]
+            isOneToOne: false
+            referencedRelation: "restock_shipments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      restock_shipment_incidents: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          incident_type: string | null
+          indemnity_cents: number | null
+          indemnity_paid_to: string | null
+          photos: string[] | null
+          reported_by: string | null
+          resolved_at: string | null
+          sendcloud_claim_id: string | null
+          shipment_id: string | null
+          status: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          incident_type?: string | null
+          indemnity_cents?: number | null
+          indemnity_paid_to?: string | null
+          photos?: string[] | null
+          reported_by?: string | null
+          resolved_at?: string | null
+          sendcloud_claim_id?: string | null
+          shipment_id?: string | null
+          status?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          incident_type?: string | null
+          indemnity_cents?: number | null
+          indemnity_paid_to?: string | null
+          photos?: string[] | null
+          reported_by?: string | null
+          resolved_at?: string | null
+          sendcloud_claim_id?: string | null
+          shipment_id?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restock_shipment_incidents_shipment_id_fkey"
+            columns: ["shipment_id"]
+            isOneToOne: false
+            referencedRelation: "restock_shipments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      restock_shipments: {
+        Row: {
+          buyer_id: string
+          buyer_shipping_fee_cents: number | null
+          carrier: string | null
+          created_at: string | null
+          declared_value_cents: number | null
+          exception_reason: string | null
+          id: string
+          medikong_margin_cents: number | null
+          medikong_margin_pct: number | null
+          seller_charge_cents: number | null
+          seller_id: string
+          sendcloud_cost_cents: number | null
+          sendcloud_label_url: string | null
+          sendcloud_parcel_id: string | null
+          sendcloud_tracking_number: string | null
+          sendcloud_tracking_url: string | null
+          status: string | null
+          status_updated_at: string | null
+          transaction_id: string
+          weight_g: number | null
+        }
+        Insert: {
+          buyer_id: string
+          buyer_shipping_fee_cents?: number | null
+          carrier?: string | null
+          created_at?: string | null
+          declared_value_cents?: number | null
+          exception_reason?: string | null
+          id?: string
+          medikong_margin_cents?: number | null
+          medikong_margin_pct?: number | null
+          seller_charge_cents?: number | null
+          seller_id: string
+          sendcloud_cost_cents?: number | null
+          sendcloud_label_url?: string | null
+          sendcloud_parcel_id?: string | null
+          sendcloud_tracking_number?: string | null
+          sendcloud_tracking_url?: string | null
+          status?: string | null
+          status_updated_at?: string | null
+          transaction_id: string
+          weight_g?: number | null
+        }
+        Update: {
+          buyer_id?: string
+          buyer_shipping_fee_cents?: number | null
+          carrier?: string | null
+          created_at?: string | null
+          declared_value_cents?: number | null
+          exception_reason?: string | null
+          id?: string
+          medikong_margin_cents?: number | null
+          medikong_margin_pct?: number | null
+          seller_charge_cents?: number | null
+          seller_id?: string
+          sendcloud_cost_cents?: number | null
+          sendcloud_label_url?: string | null
+          sendcloud_parcel_id?: string | null
+          sendcloud_tracking_number?: string | null
+          sendcloud_tracking_url?: string | null
+          status?: string | null
+          status_updated_at?: string | null
+          transaction_id?: string
+          weight_g?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restock_shipments_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "restock_transactions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       restock_transactions: {
         Row: {
@@ -4684,6 +4984,8 @@ export type Database = {
           can_manage_offers: boolean
           city: string | null
           commission_rate: number
+          commissionnaire_agreement_accepted_at: string | null
+          commissionnaire_agreement_version: string | null
           company_name: string | null
           country_code: string
           created_at: string
@@ -4701,6 +5003,19 @@ export type Database = {
           preferred_language: string | null
           qogita_seller_alias: string | null
           rating: number | null
+          sendcloud_brand_id: string | null
+          sendcloud_sender_address_id: string | null
+          shipping_address_line1: string | null
+          shipping_address_line2: string | null
+          shipping_city: string | null
+          shipping_contact_name: string | null
+          shipping_country: string | null
+          shipping_email: string | null
+          shipping_logo_url: string | null
+          shipping_onboarded_at: string | null
+          shipping_phone: string | null
+          shipping_pickup_instructions: string | null
+          shipping_postal_code: string | null
           show_real_name: boolean
           slug: string
           stripe_account_id: string | null
@@ -4727,6 +5042,8 @@ export type Database = {
           can_manage_offers?: boolean
           city?: string | null
           commission_rate?: number
+          commissionnaire_agreement_accepted_at?: string | null
+          commissionnaire_agreement_version?: string | null
           company_name?: string | null
           country_code?: string
           created_at?: string
@@ -4744,6 +5061,19 @@ export type Database = {
           preferred_language?: string | null
           qogita_seller_alias?: string | null
           rating?: number | null
+          sendcloud_brand_id?: string | null
+          sendcloud_sender_address_id?: string | null
+          shipping_address_line1?: string | null
+          shipping_address_line2?: string | null
+          shipping_city?: string | null
+          shipping_contact_name?: string | null
+          shipping_country?: string | null
+          shipping_email?: string | null
+          shipping_logo_url?: string | null
+          shipping_onboarded_at?: string | null
+          shipping_phone?: string | null
+          shipping_pickup_instructions?: string | null
+          shipping_postal_code?: string | null
           show_real_name?: boolean
           slug: string
           stripe_account_id?: string | null
@@ -4770,6 +5100,8 @@ export type Database = {
           can_manage_offers?: boolean
           city?: string | null
           commission_rate?: number
+          commissionnaire_agreement_accepted_at?: string | null
+          commissionnaire_agreement_version?: string | null
           company_name?: string | null
           country_code?: string
           created_at?: string
@@ -4787,6 +5119,19 @@ export type Database = {
           preferred_language?: string | null
           qogita_seller_alias?: string | null
           rating?: number | null
+          sendcloud_brand_id?: string | null
+          sendcloud_sender_address_id?: string | null
+          shipping_address_line1?: string | null
+          shipping_address_line2?: string | null
+          shipping_city?: string | null
+          shipping_contact_name?: string | null
+          shipping_country?: string | null
+          shipping_email?: string | null
+          shipping_logo_url?: string | null
+          shipping_onboarded_at?: string | null
+          shipping_phone?: string | null
+          shipping_pickup_instructions?: string | null
+          shipping_postal_code?: string | null
           show_real_name?: boolean
           slug?: string
           stripe_account_id?: string | null

@@ -2867,6 +2867,7 @@ export type Database = {
           filter_mode: string
           full_name: string | null
           id: string
+          legal_faq_acknowledged_at: string | null
           phone: string | null
           preferred_language: string | null
           price_level_code: string | null
@@ -2885,6 +2886,7 @@ export type Database = {
           filter_mode?: string
           full_name?: string | null
           id?: string
+          legal_faq_acknowledged_at?: string | null
           phone?: string | null
           preferred_language?: string | null
           price_level_code?: string | null
@@ -2903,6 +2905,7 @@ export type Database = {
           filter_mode?: string
           full_name?: string | null
           id?: string
+          legal_faq_acknowledged_at?: string | null
           phone?: string | null
           preferred_language?: string | null
           price_level_code?: string | null

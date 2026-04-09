@@ -531,11 +531,14 @@ function useOfferImport(vendorId: string | undefined) {
         const priceIncl = Math.round(priceExcl * (1 + vatRate / 100) * 100) / 100;
         const stock = parseInt(row["Stock"] || row["stock"] || row["stock_quantity"] || "0") || 0;
 
+        const purchasePrice = parseFloat(String(row["Prix_Achat_HT"] || row["prix_achat_ht"] || row["purchase_price"] || "0")) || null;
+
         offers.push({
           vendor_id: vendorId,
           product_id: productId,
           price_excl_vat: priceExcl,
           price_incl_vat: priceIncl,
+          purchase_price: purchasePrice,
           vat_rate: vatRate,
           stock_quantity: stock,
           moq: parseInt(row["MOQ"] || row["moq"] || "1") || 1,
@@ -659,6 +662,9 @@ function exportOffers(offers: any[], profileRulesMap?: Map<string, any[]>) {
       "Marque": (o.products as any)?.brand_name || "",
       "Catégorie": (o.products as any)?.category_name || "",
       "Prix HT": o.price_excl_vat,
+      "Prix_Achat_HT": o.purchase_price ?? "",
+      "Marge €": o.purchase_price ? Math.round((o.price_excl_vat - o.purchase_price) * 100) / 100 : "",
+      "Marge %": o.purchase_price && o.purchase_price > 0 ? Math.round((o.price_excl_vat - o.purchase_price) / o.purchase_price * 10000) / 100 : "",
       "Prix TTC": o.price_incl_vat,
       "TVA": o.vat_rate,
       "Stock": o.stock_quantity,

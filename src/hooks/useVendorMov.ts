@@ -68,9 +68,9 @@ export function useVendorMov(vendorIds: string[]) {
   const getMovForVendor = (vendorId: string): number => {
     const vendorInfo = vendorTypes?.find(v => v.id === vendorId);
 
-    // For Qogita vendors (virtual or qogita type), use the MOV from the offers/vendor table
+    // For Qogita vendors (virtual or qogita type), keep the global default MOV
     if (vendorInfo && vendorInfo.type !== "real") {
-      return Number(vendorInfo.mov) || DEFAULT_MOV;
+      return DEFAULT_MOV;
     }
 
     // For real vendors, resolve from vendor_profile_defaults

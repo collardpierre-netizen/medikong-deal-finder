@@ -519,6 +519,24 @@ function ManualAddForm({ onAdd }: { onAdd: (row: OfferRow) => void }) {
             )}
           </div>
 
+          {/* Publication dates */}
+          <div className="col-span-2 md:col-span-4 border-t border-[#D0D5DC] pt-3 mt-1">
+            <label className="text-[11px] text-[#8B929C] font-medium flex items-center gap-1 mb-2">
+              📅 Planification de publication <span className="text-[10px]">(optionnel)</span>
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-[11px] text-[#8B929C] font-medium">Début de publication</label>
+                <Input type="datetime-local" value={publishStart} onChange={(e) => setPublishStart(e.target.value)} className="border-[#D0D5DC]" />
+              </div>
+              <div>
+                <label className="text-[11px] text-[#8B929C] font-medium">Fin de publication</label>
+                <Input type="datetime-local" value={publishEnd} onChange={(e) => setPublishEnd(e.target.value)} className="border-[#D0D5DC]" />
+              </div>
+            </div>
+            <p className="text-[10px] text-[#8B929C] mt-1">Laissez vide pour publier immédiatement et sans date de fin.</p>
+          </div>
+
           <div className="col-span-2 md:col-span-4 flex items-end">
             <Button onClick={handleAdd} className="w-full bg-[#00B85C] hover:bg-[#009E4F] text-white rounded-lg gap-2">
               <Plus size={16} /> Ajouter à la liste

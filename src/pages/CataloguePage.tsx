@@ -143,7 +143,7 @@ export default function CataloguePage() {
                 : "space-y-3"
               }>
                 {products.map((p, i) => (
-                  <CatalogProductCard key={p.id} product={p} index={i} view={view} />
+                  <CatalogProductCard key={p.id} product={p} index={i} view={view} searchQuery={filters.search} />
                 ))}
               </div>
             )}

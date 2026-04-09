@@ -17,6 +17,24 @@ interface Props {
   product: CatalogProduct;
   index?: number;
   view?: "grid" | "list";
+  searchQuery?: string;
+}
+
+function HighlightText({ text, query }: { text: string; query?: string }) {
+  if (!query || query.trim().length < 2) return <>{text}</>;
+  const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+  const parts = text.split(regex);
+  return (
+    <>
+      {parts.map((part, i) =>
+        regex.test(part) ? (
+          <mark key={i} className="bg-primary/20 text-foreground rounded-sm px-0.5">{part}</mark>
+        ) : (
+          <span key={i}>{part}</span>
+        )
+      )}
+    </>
+  );
 }
 
 function ProductImg({ product, className = "" }: { product: CatalogProduct; className?: string }) {
@@ -54,7 +72,7 @@ function StockBadge({ product }: { product: CatalogProduct }) {
   return <span className="text-xs text-destructive font-medium">● {t("catalog.outOfStock")}</span>;
 }
 
-export function CatalogProductCard({ product, index = 0, view = "grid" }: Props) {
+export function CatalogProductCard({ product, index = 0, view = "grid", searchQuery }: Props) {
   const [qty, setQty] = useState(1);
   const [adding, setAdding] = useState(false);
   const { addToCart } = useCart();
@@ -157,7 +175,7 @@ export function CatalogProductCard({ product, index = 0, view = "grid" }: Props)
         <div className="flex-1 min-w-0">
           <Link to={`/produit/${product.slug}`} state={fromState}>
             <p className="text-xs text-muted-foreground mb-0.5">{product.brand_name}</p>
-            <h3 className="text-sm font-medium text-foreground line-clamp-2 mb-1">{displayName}</h3>
+            <h3 className="text-sm font-medium text-foreground line-clamp-2 mb-1"><HighlightText text={displayName} query={searchQuery} /></h3>
           </Link>
           {product.short_description && (
             <p className="text-xs text-muted-foreground line-clamp-1">{product.short_description}</p>
@@ -224,7 +242,7 @@ export function CatalogProductCard({ product, index = 0, view = "grid" }: Props)
       </div>
       <Link to={`/produit/${product.slug}`} state={fromState}>
         <p className="text-xs text-muted-foreground mb-0.5 truncate">{product.brand_name || "—"}</p>
-        <h3 className="text-sm font-medium text-foreground leading-snug mb-1.5 line-clamp-2 min-h-[2.5rem]">{displayName}</h3>
+        <h3 className="text-sm font-medium text-foreground leading-snug mb-1.5 line-clamp-2 min-h-[2.5rem]"><HighlightText text={displayName} query={searchQuery} /></h3>
       </Link>
       {canSeePrices ? (
         <>

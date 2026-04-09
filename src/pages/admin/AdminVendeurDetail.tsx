@@ -249,6 +249,14 @@ const AdminVendeurDetail = () => {
               <InfoRow label="Type d'activité" value={(vendor as any).business_type || "—"} />
               <InfoRow label="Langue" value={(vendor as any).preferred_language?.toUpperCase() || "FR"} />
               <InfoRow label="Vérifié" value={vendor.is_verified ? "Oui" : "Non"} />
+              <InfoRow label="Compte accès" value={vendor.auth_user_id ? "✅ Oui" : "❌ Non"} />
+              <InfoRow label="Modèle commission" value={
+                (vendor as any).commission_model === 'margin_split'
+                  ? `Partage de marge (${(vendor as any).margin_split_pct || 50}% vendeur / ${100 - ((vendor as any).margin_split_pct || 50)}% MediKong)`
+                  : (vendor as any).commission_model === 'fixed_amount'
+                  ? `Montant fixe : €${(vendor as any).fixed_commission_amount || 0}/unité`
+                  : `Pourcentage fixe : ${vendor.commission_rate}%`
+              } />
             </div>
             <div className="p-5 rounded-[10px]" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
               <h3 className="text-[14px] font-bold mb-3 flex items-center gap-2" style={{ color: "#1D2530" }}><Mail size={16} /> Contact</h3>

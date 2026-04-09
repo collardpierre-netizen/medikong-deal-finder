@@ -138,6 +138,7 @@ const AdminPriceAlerts = lazyWithRetry(() => import("./pages/admin/AdminPriceAle
 const AdminPriceAlertDetail = lazyWithRetry(() => import("./pages/admin/AdminPriceAlertDetail"), "AdminPriceAlertDetail");
 const AdminPriceAlertSettings = lazyWithRetry(() => import("./pages/admin/AdminPriceAlertSettings"), "AdminPriceAlertSettings");
 const AdminFlashDeals = lazyWithRetry(() => import("./pages/admin/AdminFlashDeals"), "AdminFlashDeals");
+const AdminDelegues = lazyWithRetry(() => import("./pages/admin/AdminDelegues"), "AdminDelegues");
 
 // Vendor pages
 const VendorLoginPage = lazyWithRetry(() => import("./pages/vendor/VendorLoginPage"), "VendorLoginPage");
@@ -318,6 +319,7 @@ const App = () => (
               <Route path="invest-pipeline" element={<LP><AdminInvestPipeline /></LP>} />
               <Route path="logistique" element={<LP><AdminLogistique /></LP>} />
               <Route path="equipe" element={<LP><AdminEquipe /></LP>} />
+              <Route path="delegues" element={<LP><AdminDelegues /></LP>} />
               <Route path="profils" element={<LP><AdminProfils /></LP>} />
               <Route path="parametres" element={<LP><AdminParametres /></LP>} />
               <Route path="logs" element={<LP><AdminLogs /></LP>} />

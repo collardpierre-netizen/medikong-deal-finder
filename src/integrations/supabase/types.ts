@@ -631,6 +631,86 @@ export type Database = {
         }
         Relationships: []
       }
+      delegate_assignments: {
+        Row: {
+          created_at: string
+          delegate_id: string
+          entity_id: string
+          entity_type: Database["public"]["Enums"]["delegate_entity_type"]
+          id: string
+          is_primary: boolean
+        }
+        Insert: {
+          created_at?: string
+          delegate_id: string
+          entity_id: string
+          entity_type: Database["public"]["Enums"]["delegate_entity_type"]
+          id?: string
+          is_primary?: boolean
+        }
+        Update: {
+          created_at?: string
+          delegate_id?: string
+          entity_id?: string
+          entity_type?: Database["public"]["Enums"]["delegate_entity_type"]
+          id?: string
+          is_primary?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delegate_assignments_delegate_id_fkey"
+            columns: ["delegate_id"]
+            isOneToOne: false
+            referencedRelation: "delegates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      delegates: {
+        Row: {
+          bio: string | null
+          created_at: string
+          delegate_type: Database["public"]["Enums"]["delegate_type"]
+          email: string | null
+          full_name: string
+          id: string
+          is_visible: boolean
+          phone: string | null
+          photo_url: string | null
+          specialties: string[] | null
+          updated_at: string
+          zones: string[] | null
+        }
+        Insert: {
+          bio?: string | null
+          created_at?: string
+          delegate_type?: Database["public"]["Enums"]["delegate_type"]
+          email?: string | null
+          full_name: string
+          id?: string
+          is_visible?: boolean
+          phone?: string | null
+          photo_url?: string | null
+          specialties?: string[] | null
+          updated_at?: string
+          zones?: string[] | null
+        }
+        Update: {
+          bio?: string | null
+          created_at?: string
+          delegate_type?: Database["public"]["Enums"]["delegate_type"]
+          email?: string | null
+          full_name?: string
+          id?: string
+          is_visible?: boolean
+          phone?: string | null
+          photo_url?: string | null
+          specialties?: string[] | null
+          updated_at?: string
+          zones?: string[] | null
+        }
+        Relationships: []
+      }
       discount_tiers: {
         Row: {
           created_at: string | null
@@ -5588,6 +5668,8 @@ export type Database = {
       alert_type: "market_price" | "external_offer"
       commission_model_enum: "flat_percentage" | "margin_split" | "fixed_amount"
       customer_type: "pharmacy" | "hospital" | "clinic" | "lab" | "other"
+      delegate_entity_type: "brand" | "manufacturer" | "vendor"
+      delegate_type: "commercial" | "contact_referent"
       email_frequency: "immediate" | "daily_digest" | "weekly_digest"
       fulfillment_status:
         | "pending"
@@ -5792,6 +5874,8 @@ export const Constants = {
         "fixed_amount",
       ],
       customer_type: ["pharmacy", "hospital", "clinic", "lab", "other"],
+      delegate_entity_type: ["brand", "manufacturer", "vendor"],
+      delegate_type: ["commercial", "contact_referent"],
       email_frequency: ["immediate", "daily_digest", "weekly_digest"],
       fulfillment_status: [
         "pending",

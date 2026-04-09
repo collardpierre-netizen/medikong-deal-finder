@@ -16,6 +16,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { EntityDelegatesSection } from "@/components/admin/EntityDelegatesSection";
 
 type VendorValidationStatus = "pending_review" | "under_review" | "accepted" | "approved" | "rejected";
 
@@ -26,6 +27,7 @@ const tabList = [
   { key: "offers", label: "Offres & Marges", icon: DollarSign },
   { key: "portfolio", label: "Portefeuille", icon: Tag },
   { key: "products", label: "Produits", icon: Package },
+  { key: "delegates", label: "Délégués", icon: Globe },
   { key: "activity", label: "Activité", icon: Activity },
 ];
 
@@ -454,6 +456,10 @@ const AdminVendeurDetail = () => {
             <div className="py-12 text-center text-[13px]" style={{ color: "#8B95A5" }}>Aucun produit</div>
           )}
         </div>
+      )}
+
+      {activeTab === "delegates" && (
+        <EntityDelegatesSection entityType="vendor" entityId={vendor.id} />
       )}
 
       {activeTab === "activity" && (

@@ -26,6 +26,7 @@ const tabList = [
   { key: "offers", label: "Offres & Marges", icon: DollarSign },
   { key: "portfolio", label: "Portefeuille", icon: Tag },
   { key: "products", label: "Produits", icon: Package },
+  { key: "delegates", label: "Délégués", icon: Globe },
   { key: "activity", label: "Activité", icon: Activity },
 ];
 

@@ -23,6 +23,7 @@ const tabList = [
   { key: "resume", label: "Résumé", icon: Building2 },
   { key: "validation", label: "Validation", icon: CheckCircle2 },
   { key: "visibility", label: "Visibilité", icon: Eye },
+  { key: "offers", label: "Offres & Marges", icon: DollarSign },
   { key: "portfolio", label: "Portefeuille", icon: Tag },
   { key: "products", label: "Produits", icon: Package },
   { key: "activity", label: "Activité", icon: Activity },

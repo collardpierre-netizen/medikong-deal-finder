@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Package, ShoppingCart, MessageSquare, CheckCircle } from "lucide-react";
+import { Package, ShoppingCart, MessageSquare, CheckCircle, HelpCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import logoHorizontal from "@/assets/logo-medikong.png";
 

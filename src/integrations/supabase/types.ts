@@ -3381,6 +3381,7 @@ export type Database = {
       restock_offers: {
         Row: {
           allow_partial: boolean
+          boxes_per_pallet: number | null
           cnk: string | null
           created_at: string
           delivery_condition: string
@@ -3396,7 +3397,9 @@ export type Database = {
           matched_product_id: string | null
           moq: number
           packaging_photos: string[] | null
+          packs_per_box: number | null
           photo_url: string | null
+          pieces_per_pack: number | null
           price_ht: number
           price_ttc: number | null
           product_image_url: string | null
@@ -3413,6 +3416,7 @@ export type Database = {
         }
         Insert: {
           allow_partial?: boolean
+          boxes_per_pallet?: number | null
           cnk?: string | null
           created_at?: string
           delivery_condition?: string
@@ -3428,7 +3432,9 @@ export type Database = {
           matched_product_id?: string | null
           moq?: number
           packaging_photos?: string[] | null
+          packs_per_box?: number | null
           photo_url?: string | null
+          pieces_per_pack?: number | null
           price_ht: number
           price_ttc?: number | null
           product_image_url?: string | null
@@ -3445,6 +3451,7 @@ export type Database = {
         }
         Update: {
           allow_partial?: boolean
+          boxes_per_pallet?: number | null
           cnk?: string | null
           created_at?: string
           delivery_condition?: string
@@ -3460,7 +3467,9 @@ export type Database = {
           matched_product_id?: string | null
           moq?: number
           packaging_photos?: string[] | null
+          packs_per_box?: number | null
           photo_url?: string | null
+          pieces_per_pack?: number | null
           price_ht?: number
           price_ttc?: number | null
           product_image_url?: string | null

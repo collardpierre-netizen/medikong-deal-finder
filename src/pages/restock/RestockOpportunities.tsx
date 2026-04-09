@@ -826,6 +826,20 @@ export default function RestockOpportunities() {
           </p>
         </div>
 
+        {/* Promo banner — sell your unsold stock */}
+        <div className="bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-xl p-4 mb-6 flex items-center justify-between gap-4 flex-wrap">
+          <p className="text-white text-sm font-medium">
+            🏷️ Vous aussi vous souhaitez vendre vos invendus ou produits abîmés ?{" "}
+            <span className="font-bold">Créez votre compte. 100% gratuit.</span>
+          </p>
+          <a
+            href="/restock/seller/new"
+            className="inline-flex items-center gap-2 bg-white text-emerald-700 font-bold text-sm px-5 py-2 rounded-lg hover:bg-emerald-50 transition-colors shrink-0"
+          >
+            Commencer à vendre →
+          </a>
+        </div>
+
         <div className="flex gap-6">
           {/* Sidebar */}
           <aside className="hidden lg:block w-60 shrink-0 space-y-1">

@@ -393,9 +393,12 @@ const App = () => (
             </Route>
 
             {/* ReStock standalone mobile */}
-            <Route path="/opportunities/:campaignId" element={<LP><RestockOpportunities /></LP>} />
-            <Route path="/m/opportunities/:campaignId" element={<LP><RestockMobileSwipe /></LP>} />
-            <Route path="/m/opportunities" element={<LP><RestockMobileSwipe /></LP>} />
+            {/* ReStock standalone routes — wrapped in RestockSiteLayout for SubNav */}
+            <Route element={<LP><RestockSiteLayout /></LP>}>
+              <Route path="/opportunities/:campaignId" element={<LP><RestockOpportunities /></LP>} />
+              <Route path="/m/opportunities/:campaignId" element={<LP><RestockMobileSwipe /></LP>} />
+              <Route path="/m/opportunities" element={<LP><RestockMobileSwipe /></LP>} />
+            </Route>
 
             <Route path="*" element={<LP><NotFound /></LP>} />
           </Routes>

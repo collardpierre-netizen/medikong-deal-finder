@@ -11,7 +11,7 @@ import {
   CheckCircle2, Building2, Search, X, Plus, Minus, ShoppingCart,
 } from "lucide-react";
 import { useState, useMemo, useCallback } from "react";
-import { getVendorPublicName } from "@/lib/vendor-display";
+import { getVendorPublicName, resolveVendorVisibility } from "@/lib/vendor-display";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";

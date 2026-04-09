@@ -73,11 +73,14 @@ Deno.serve(async (req) => {
     const dryRun = body.dry_run === true;
     const brandName: string | null = body.brand_name || null;
 
+    // Use RPC or raw filter to only get products with external images
+    // Filter: image_urls is not null, not empty, and contains at least one external URL
     let query = supabase
       .from("products")
       .select("id, name, image_urls, image_url")
       .not("image_urls", "is", null)
-      .limit(limit);
+      .not("image_urls", "eq", "{}")
+      .limit(limit * 4); // Fetch more to compensate for client-side filtering
 
     if (brandName) {
       query = query.ilike("brand_name", `%${brandName}%`);
@@ -91,7 +94,7 @@ Deno.serve(async (req) => {
       return urls && urls.length > 0 && urls.some((u: string) =>
         u && u.startsWith("http") && !u.includes(storageHost)
       );
-    });
+    }).slice(0, limit);
 
     if (dryRun) {
       return new Response(JSON.stringify({

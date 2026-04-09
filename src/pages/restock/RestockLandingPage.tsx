@@ -1,6 +1,6 @@
 
 import { Link } from "react-router-dom";
-import { Package, TrendingDown, Truck, Shield, ArrowRight, Clock, Users, CheckCircle } from "lucide-react";
+import { Package, TrendingDown, Truck, Shield, ArrowRight, Clock, Users, CheckCircle, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import logoHorizontal from "@/assets/logo-medikong.png";
 

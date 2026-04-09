@@ -600,8 +600,58 @@ function useOfferImport(vendorId: string | undefined) {
         }
       }
 
+      // Parse price tiers from "Paliers" sheet
+      const tiersSheetName = wb.SheetNames.find(n => n.toLowerCase().includes("palier"));
+      if (tiersSheetName && wb.Sheets[tiersSheetName]) {
+        const tiersRows: any[] = XLSX.utils.sheet_to_json(wb.Sheets[tiersSheetName]);
+        const tierInserts: any[] = [];
+        for (const tr of tiersRows) {
+          const tEan = String(tr["EAN"] || tr["ean"] || tr["GTIN"] || "");
+          const tCnk = String(tr["CNK"] || tr["cnk"] || "");
+          const tCountry = String(tr["Pays"] || tr["pays"] || "BE");
+          const tierIndex = parseInt(String(tr["Palier"] || tr["palier"] || "1")) || 1;
+          const movThreshold = parseFloat(String(tr["Seuil_MOV"] || tr["seuil_mov"] || "0")) || 0;
+          const tierPrice = parseFloat(String(tr["Prix_HT"] || tr["prix_ht"] || "0"));
+          if (!tierPrice || tierPrice <= 0) continue;
+
+          // Find the offer ID by matching EAN/CNK
+          const offerId = offerIdsByKey[tEan] || offerIdsByKey[tCnk];
+          if (!offerId) continue;
+
+          // Find base offer VAT rate
+          const baseOffer = uniqueOffers.find(o => {
+            const matchEan = o._ean && o._ean === tEan;
+            const matchCnk = o._cnk && o._cnk === tCnk;
+            return (matchEan || matchCnk) && o.country_code === tCountry;
+          });
+          const vatRate = baseOffer?.vat_rate || 21;
+          const tierPriceIncl = Math.round(tierPrice * (1 + vatRate / 100) * 100) / 100;
+
+          tierInserts.push({
+            offer_id: offerId,
+            tier_index: tierIndex,
+            mov_threshold: movThreshold,
+            qogita_unit_price: tierPrice,
+            price_excl_vat: tierPrice,
+            price_incl_vat: tierPriceIncl,
+            is_active: true,
+          });
+        }
+        if (tierInserts.length > 0) {
+          // Delete existing tiers for these offers, then insert new ones
+          const tierOfferIds = [...new Set(tierInserts.map(t => t.offer_id))];
+          for (const oid of tierOfferIds) {
+            await supabase.from("offer_price_tiers").delete().eq("offer_id", oid);
+          }
+          for (let i = 0; i < tierInserts.length; i += 100) {
+            await supabase.from("offer_price_tiers").insert(tierInserts.slice(i, i + 100));
+          }
+        }
+      }
+
       qc.invalidateQueries({ queryKey: ["vendor-offers"] });
-      toast.success(`Import terminé : ${created} offres créées, ${skipped} ignorées`);
+      const tiersMsg = tiersSheetName ? " + paliers dégressifs" : "";
+      toast.success(`Import terminé : ${created} offres créées, ${skipped} ignorées${tiersMsg}`);
     } catch (err: any) {
       toast.error(err.message || "Erreur d'import");
     } finally {

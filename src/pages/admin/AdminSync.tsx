@@ -81,7 +81,8 @@ const useLastSyncDates = () =>
   useQuery({
     queryKey: ["last-sync-dates"],
     queryFn: async () => {
-      const { data: lastProducts } = await supabase
+      // Primary: check sync_logs
+      const { data: lastProductsLog } = await supabase
         .from("sync_logs")
         .select("completed_at")
         .eq("status", "completed")
@@ -89,18 +90,41 @@ const useLastSyncDates = () =>
         .order("completed_at", { ascending: false })
         .limit(1)
         .maybeSingle();
-      const { data: lastOffers } = await supabase
+      const { data: lastOffersLog } = await supabase
         .from("sync_logs")
         .select("completed_at")
         .eq("status", "completed")
-        .eq("sync_type", "offers_detail")
+        .in("sync_type", ["offers_detail", "offers_multi_vendor"])
         .order("completed_at", { ascending: false })
         .limit(1)
         .maybeSingle();
-      return {
-        lastProductsSync: lastProducts?.completed_at || null,
-        lastOffersSync: lastOffers?.completed_at || null,
-      };
+
+      // Fallback: read MAX(synced_at) directly from tables
+      let lastProductsSync = lastProductsLog?.completed_at || null;
+      let lastOffersSync = lastOffersLog?.completed_at || null;
+
+      if (!lastProductsSync) {
+        const { data } = await supabase
+          .from("products")
+          .select("synced_at")
+          .not("synced_at", "is", null)
+          .order("synced_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        lastProductsSync = data?.synced_at || null;
+      }
+      if (!lastOffersSync) {
+        const { data } = await supabase
+          .from("offers")
+          .select("synced_at")
+          .not("synced_at", "is", null)
+          .order("synced_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        lastOffersSync = data?.synced_at || null;
+      }
+
+      return { lastProductsSync, lastOffersSync };
     },
     refetchInterval: 10000,
   });

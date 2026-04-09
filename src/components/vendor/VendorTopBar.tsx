@@ -1,8 +1,13 @@
-import { Search, Bell, MessageSquare, Globe, Menu } from "lucide-react";
+import { Search, Bell, MessageSquare, Menu } from "lucide-react";
 import { useI18n, type Lang } from "@/contexts/I18nContext";
-import { vendorProfile } from "@/lib/vendor-tokens";
+import { useCurrentVendor } from "@/hooks/useCurrentVendor";
+import { commissionRates } from "@/lib/vendor-tokens";
 
 const langs: Lang[] = ["fr", "nl", "de"];
+
+function getLevel(score: number) {
+  return commissionRates.find(r => score >= r.minScore && score <= r.maxScore) ?? commissionRates[0];
+}
 
 interface VendorTopBarProps {
   onMenuClick?: () => void;
@@ -10,16 +15,20 @@ interface VendorTopBarProps {
 
 export function VendorTopBar({ onMenuClick }: VendorTopBarProps) {
   const { lang, setLang, t } = useI18n();
+  const { data: vendor } = useCurrentVendor();
+
+  const name = vendor?.company_name || vendor?.name || "Vendeur";
+  const score = (vendor as any)?.score ?? 0;
+  const level = getLevel(score);
+  const initials = name.split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase();
 
   return (
     <header className="h-14 bg-white border-b border-[#E2E8F0] flex items-center gap-2 md:gap-4 px-3 md:px-5 shrink-0">
-      {/* Hamburger on mobile */}
       {onMenuClick && (
         <button onClick={onMenuClick} className="p-2 rounded-md hover:bg-[#F1F5F9] md:hidden">
           <Menu size={20} className="text-[#1D2530]" />
         </button>
       )}
-      {/* Search */}
       <div className="flex-1 max-w-md relative">
         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8B95A5]" />
         <input
@@ -30,7 +39,6 @@ export function VendorTopBar({ onMenuClick }: VendorTopBarProps) {
       </div>
 
       <div className="flex items-center gap-3 ml-auto">
-        {/* Lang switcher */}
         <div className="flex gap-0.5 bg-[#F1F5F9] rounded-md p-0.5">
           {langs.map((l) => (
             <button
@@ -45,29 +53,25 @@ export function VendorTopBar({ onMenuClick }: VendorTopBarProps) {
           ))}
         </div>
 
-        {/* Notifications */}
         <button className="relative p-2 rounded-md hover:bg-[#F1F5F9] transition-colors">
           <Bell size={18} className="text-[#616B7C]" />
           <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#EF4343]" />
         </button>
 
-        {/* Messages */}
         <button className="relative p-2 rounded-md hover:bg-[#F1F5F9] transition-colors">
           <MessageSquare size={18} className="text-[#616B7C]" />
           <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#EF4343]" />
         </button>
 
-        {/* Separator */}
         <div className="w-px h-7 bg-[#E2E8F0]" />
 
-        {/* Avatar */}
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-[11px] font-bold" style={{ backgroundColor: "#1B5BDA" }}>
-            PM
+            {initials}
           </div>
           <div className="hidden md:block">
-            <p className="text-[13px] font-semibold text-[#1D2530] leading-tight">{vendorProfile.name}</p>
-            <p className="text-[10px] text-[#8B95A5]">{vendorProfile.level} · {vendorProfile.score}/100</p>
+            <p className="text-[13px] font-semibold text-[#1D2530] leading-tight">{name}</p>
+            <p className="text-[10px] text-[#8B95A5]">{level.level} · {score}/100</p>
           </div>
         </div>
       </div>

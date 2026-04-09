@@ -12,14 +12,22 @@ export function useCurrentVendor() {
   const { user } = useAuth();
   const { state: impState } = useImpersonation();
 
-  const isImpersonatingVendor =
-    impState.isImpersonating &&
-    impState.session?.target_type === "vendor" &&
-    !!impState.session?.target_vendor_id;
+  const impersonationVendorIdFromUrl =
+    typeof window !== "undefined"
+      ? new URLSearchParams(window.location.search).get("impersonation_vendor_id")
+      : null;
 
-  const vendorId = isImpersonatingVendor
-    ? impState.session!.target_vendor_id!
-    : undefined;
+  const isImpersonatingVendor =
+    (impState.isImpersonating &&
+      impState.session?.target_type === "vendor" &&
+      !!impState.session?.target_vendor_id) ||
+    !!impersonationVendorIdFromUrl;
+
+  const vendorId = impersonationVendorIdFromUrl || (
+    isImpersonatingVendor
+      ? impState.session?.target_vendor_id
+      : undefined
+  );
 
   return useQuery({
     queryKey: ["current-vendor", vendorId || user?.id],

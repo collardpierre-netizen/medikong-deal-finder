@@ -55,7 +55,7 @@ export default function VendorFormDialog({ open, onOpenChange }: Props) {
   const set = (key: string, val: string | boolean) => setForm(f => ({ ...f, [key]: val }));
 
   const resetForm = () => {
-    setForm({ company_name: "", email: "", phone: "", vat_number: "", address_line1: "", city: "", postal_code: "", country_code: "BE", commission_rate: "15", description: "", type: "real", create_account: true });
+    setForm({ company_name: "", email: "", phone: "", vat_number: "", address_line1: "", city: "", postal_code: "", country_code: "BE", commission_rate: "15", commission_model: "flat_percentage", margin_split_pct: "50", fixed_commission_amount: "2", description: "", type: "real", create_account: true });
     setResult(null);
     setCopied(false);
   };

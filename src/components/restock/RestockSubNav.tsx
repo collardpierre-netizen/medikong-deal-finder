@@ -2,7 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import {
   PackagePlus, List, MessageSquare, CheckCircle, HelpCircle, LayoutGrid,
   Users, Mail, Shield, Settings, Zap, Gift, Database, Wallet, ArrowLeft,
-  Home, ShoppingCart, Gavel,
+  Home, ShoppingCart, Gavel, Store,
 } from "lucide-react";
 
 const buyerNav = [
@@ -34,13 +34,23 @@ const adminNav = [
   { to: "/restock/admin/settings", label: "Paramètres", icon: Settings },
 ];
 
+type Role = "buyer" | "seller" | "admin";
+
+const roleTabs: { role: Role; label: string; icon: typeof Home; defaultTo: string }[] = [
+  { role: "buyer", label: "Acheteur", icon: ShoppingCart, defaultTo: "/restock" },
+  { role: "seller", label: "Vendeur", icon: Store, defaultTo: "/restock/seller/offers" },
+  { role: "admin", label: "Admin", icon: Shield, defaultTo: "/restock/admin/offers" },
+];
+
 export function RestockSubNav() {
   const { pathname } = useLocation();
-  const isAdmin = pathname.startsWith("/restock/admin");
-  const isSeller = pathname.startsWith("/restock/seller");
+  const currentRole: Role = pathname.startsWith("/restock/admin")
+    ? "admin"
+    : pathname.startsWith("/restock/seller")
+    ? "seller"
+    : "buyer";
 
-  const nav = isAdmin ? adminNav : isSeller ? sellerNav : buyerNav;
-  const contextLabel = isAdmin ? "Admin" : isSeller ? "Vendeur" : null;
+  const nav = currentRole === "admin" ? adminNav : currentRole === "seller" ? sellerNav : buyerNav;
 
   return (
     <header className="sticky top-0 z-[100] bg-gradient-to-r from-[#0F172A] to-[#1E293B] shadow-lg">
@@ -66,11 +76,24 @@ export function RestockSubNav() {
             >
               ReStock
             </span>
-            {contextLabel && (
-              <span className="text-[9px] uppercase tracking-widest bg-white/10 text-white/70 rounded-full px-2 py-0.5 font-bold">
-                {contextLabel}
-              </span>
-            )}
+          </div>
+
+          {/* Role switcher tabs */}
+          <div className="flex items-center gap-0.5 mr-2 border-r border-white/10 pr-3">
+            {roleTabs.map((tab) => (
+              <Link
+                key={tab.role}
+                to={tab.defaultTo}
+                className={`flex items-center gap-1 px-2.5 py-1.5 rounded-md text-[11px] font-semibold uppercase tracking-wide transition-all ${
+                  currentRole === tab.role
+                    ? "bg-white/15 text-white"
+                    : "text-white/35 hover:text-white/70 hover:bg-white/5"
+                }`}
+              >
+                <tab.icon size={12} strokeWidth={currentRole === tab.role ? 2.2 : 1.5} />
+                {tab.label}
+              </Link>
+            ))}
           </div>
 
           {/* Navigation links */}

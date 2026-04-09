@@ -23,6 +23,7 @@ const tabList = [
   { key: "resume", label: "Résumé", icon: Building2 },
   { key: "validation", label: "Validation", icon: CheckCircle2 },
   { key: "visibility", label: "Visibilité", icon: Eye },
+  { key: "offers", label: "Offres & Marges", icon: DollarSign },
   { key: "portfolio", label: "Portefeuille", icon: Tag },
   { key: "products", label: "Produits", icon: Package },
   { key: "activity", label: "Activité", icon: Activity },
@@ -63,9 +64,67 @@ const AdminVendeurDetail = () => {
     queryFn: async () => {
       const { data: offers } = await supabase
         .from("offers")
-        .select("product_id, price_excl_vat, stock_quantity, is_active, products(name)")
+        .select("product_id, price_excl_vat, stock_quantity, is_active, purchase_price, margin_amount, applied_margin_percentage, qogita_base_price, products(name, offer_count, gtin)")
         .eq("vendor_id", id!);
       return offers || [];
+    },
+    enabled: !!id,
+  });
+
+  // Detailed offers with all vendors per product for the Offres & Marges tab
+  const { data: detailedOffers = [] } = useQuery({
+    queryKey: ["vendor-offers-detailed", id],
+    queryFn: async () => {
+      // Get this vendor's offers with product info
+      const { data: myOffers } = await supabase
+        .from("offers")
+        .select("id, product_id, price_excl_vat, purchase_price, margin_amount, applied_margin_percentage, qogita_base_price, stock_quantity, is_active, vat_rate, products(name, gtin, offer_count, best_price_excl_vat)")
+        .eq("vendor_id", id!)
+        .eq("is_active", true)
+        .order("price_excl_vat", { ascending: true });
+
+      if (!myOffers?.length) return [];
+
+      // For each product, get total vendor count
+      const productIds = [...new Set(myOffers.map(o => o.product_id))];
+      const vendorCounts: Record<string, number> = {};
+      
+      // Batch query vendor counts
+      for (let i = 0; i < productIds.length; i += 50) {
+        const batch = productIds.slice(i, i + 50);
+        const { data: counts } = await supabase
+          .from("offers")
+          .select("product_id, vendor_id")
+          .in("product_id", batch)
+          .eq("is_active", true);
+        if (counts) {
+          for (const c of counts) {
+            vendorCounts[c.product_id] = (vendorCounts[c.product_id] || 0) + 1;
+          }
+        }
+      }
+
+      return myOffers.map(o => {
+        const product = o.products as any;
+        const purchasePrice = o.purchase_price ? Number(o.purchase_price) : null;
+        const sellPrice = Number(o.price_excl_vat);
+        const netMargin = purchasePrice ? sellPrice - purchasePrice : (o.margin_amount ? Number(o.margin_amount) : null);
+        const marginPct = netMargin && sellPrice > 0 ? (netMargin / sellPrice * 100) : (o.applied_margin_percentage ? Number(o.applied_margin_percentage) : null);
+
+        return {
+          id: o.id,
+          product_id: o.product_id,
+          product_name: product?.name || "—",
+          gtin: product?.gtin || "—",
+          total_offers: vendorCounts[o.product_id] || 1,
+          sell_price: sellPrice,
+          purchase_price: purchasePrice,
+          qogita_base: o.qogita_base_price ? Number(o.qogita_base_price) : null,
+          net_margin: netMargin,
+          margin_pct: marginPct,
+          stock: o.stock_quantity,
+        };
+      });
     },
     enabled: !!id,
   });
@@ -285,6 +344,69 @@ const AdminVendeurDetail = () => {
         />
       )}
 
+      {activeTab === "offers" && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-3 gap-3">
+            <KpiCard icon={Package} label="Offres actives" value={String(detailedOffers.length)} />
+            <KpiCard icon={DollarSign} label="Marge moyenne" value={
+              detailedOffers.length > 0
+                ? `${(detailedOffers.reduce((s, o) => s + (o.margin_pct || 0), 0) / detailedOffers.length).toFixed(1)}%`
+                : "—"
+            } iconColor="#059669" iconBg="#F0FDF4" />
+            <KpiCard icon={Factory} label="Marge totale €" value={
+              detailedOffers.length > 0
+                ? `€${detailedOffers.reduce((s, o) => s + (o.net_margin || 0), 0).toFixed(2)}`
+                : "—"
+            } iconColor="#7C3AED" iconBg="#F5F3FF" />
+          </div>
+          <div className="rounded-[10px] overflow-hidden" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
+            <table className="w-full text-left">
+              <thead>
+                <tr style={{ borderBottom: "1px solid #E2E8F0", backgroundColor: "#F8FAFC" }}>
+                  {["Produit", "GTIN", "Offres", "Prix vente HT", "Prix achat HT", "Marge €", "Marge %", "Stock"].map(h => (
+                    <th key={h} className="px-3 py-3 text-[11px] font-semibold uppercase tracking-wider" style={{ color: "#8B95A5" }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {detailedOffers.map((o) => (
+                  <tr key={o.id} style={{ borderBottom: "1px solid #F1F5F9" }}>
+                    <td className="px-3 py-2.5 text-[12px] font-medium max-w-[250px] truncate" style={{ color: "#1D2530" }}>{o.product_name}</td>
+                    <td className="px-3 py-2.5 text-[11px] font-mono" style={{ color: "#616B7C" }}>{o.gtin}</td>
+                    <td className="px-3 py-2.5">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold" style={{ backgroundColor: "#EFF6FF", color: "#1B5BDA" }}>
+                        {o.total_offers} vendeur{o.total_offers > 1 ? "s" : ""}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2.5 text-[12px] font-bold" style={{ color: "#1D2530" }}>€{o.sell_price.toFixed(2)}</td>
+                    <td className="px-3 py-2.5 text-[12px]" style={{ color: "#616B7C" }}>
+                      {o.purchase_price != null ? `€${o.purchase_price.toFixed(2)}` : o.qogita_base ? `€${o.qogita_base.toFixed(2)}` : "—"}
+                    </td>
+                    <td className="px-3 py-2.5 text-[12px] font-bold" style={{ color: o.net_margin && o.net_margin > 0 ? "#059669" : "#DC2626" }}>
+                      {o.net_margin != null ? `€${o.net_margin.toFixed(2)}` : "—"}
+                    </td>
+                    <td className="px-3 py-2.5">
+                      {o.margin_pct != null ? (
+                        <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-bold" style={{
+                          backgroundColor: o.margin_pct >= 15 ? "#F0FDF4" : o.margin_pct >= 5 ? "#FFFBEB" : "#FEF2F2",
+                          color: o.margin_pct >= 15 ? "#059669" : o.margin_pct >= 5 ? "#D97706" : "#DC2626",
+                        }}>
+                          {o.margin_pct.toFixed(1)}%
+                        </span>
+                      ) : "—"}
+                    </td>
+                    <td className="px-3 py-2.5 text-[12px]" style={{ color: "#616B7C" }}>{o.stock}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {detailedOffers.length === 0 && (
+              <div className="py-12 text-center text-[13px]" style={{ color: "#8B95A5" }}>Aucune offre active</div>
+            )}
+          </div>
+        </div>
+      )}
+
       {activeTab === "portfolio" && (
         <div className="space-y-4">
           <div className="p-5 rounded-[10px]" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
@@ -306,7 +428,7 @@ const AdminVendeurDetail = () => {
           <table className="w-full text-left">
             <thead>
               <tr style={{ borderBottom: "1px solid #E2E8F0", backgroundColor: "#F8FAFC" }}>
-                {["Produit", "Prix HT", "Stock", "Statut"].map(h => (
+                {["Produit", "GTIN", "Offres", "Prix HT", "Stock", "Statut"].map(h => (
                   <th key={h} className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider" style={{ color: "#8B95A5" }}>{h}</th>
                 ))}
               </tr>
@@ -314,7 +436,13 @@ const AdminVendeurDetail = () => {
             <tbody>
               {vendorProducts.map((offer: any) => (
                 <tr key={offer.product_id} style={{ borderBottom: "1px solid #F1F5F9" }}>
-                  <td className="px-4 py-3 text-[13px] font-medium" style={{ color: "#1D2530" }}>{offer.products?.name || "—"}</td>
+                  <td className="px-4 py-3 text-[13px] font-medium max-w-[300px] truncate" style={{ color: "#1D2530" }}>{offer.products?.name || "—"}</td>
+                  <td className="px-4 py-3 text-[11px] font-mono" style={{ color: "#616B7C" }}>{offer.products?.gtin || "—"}</td>
+                  <td className="px-4 py-3">
+                    <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-bold" style={{ backgroundColor: "#EFF6FF", color: "#1B5BDA" }}>
+                      {offer.products?.offer_count || 1}
+                    </span>
+                  </td>
                   <td className="px-4 py-3 text-[13px] font-bold" style={{ color: "#1D2530" }}>{offer.price_excl_vat ? `€${Number(offer.price_excl_vat).toFixed(2)}` : "—"}</td>
                   <td className="px-4 py-3 text-[12px]" style={{ color: "#616B7C" }}>{offer.stock_quantity ?? "—"}</td>
                   <td className="px-4 py-3"><StatusBadge status={offer.is_active ? "active" : "inactive"} /></td>

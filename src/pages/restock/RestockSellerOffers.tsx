@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Package, MessageSquare, CheckCircle, DollarSign, Eye } from "lucide-react";
+import { Package, MessageSquare, CheckCircle, DollarSign, Eye, HelpCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const statusConfig: Record<string, { label: string; color: string; bg: string }> = {

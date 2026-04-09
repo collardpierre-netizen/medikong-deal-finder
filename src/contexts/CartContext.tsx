@@ -105,7 +105,7 @@ async function loadCartFromDB(customerId: string): Promise<CartItem[]> {
         brand: product.brand_name || "",
         slug: product.slug,
         price: offer?.price_excl_vat || 0,
-        imageUrl: product.image_url || undefined,
+        imageUrl: (Array.isArray(product.image_urls) && product.image_urls.length > 0 ? product.image_urls[0] : product.image_url) || undefined,
       } : undefined,
     };
   });

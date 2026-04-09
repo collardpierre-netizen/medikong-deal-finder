@@ -28,7 +28,7 @@ function HighlightText({ text, query }: { text: string; query?: string }) {
     <>
       {parts.map((part, i) =>
         regex.test(part) ? (
-          <mark key={i} className="bg-yellow-200 text-foreground rounded-sm px-0.5">{part}</mark>
+          <mark key={i} className="bg-primary/20 text-foreground rounded-sm px-0.5">{part}</mark>
         ) : (
           <span key={i}>{part}</span>
         )

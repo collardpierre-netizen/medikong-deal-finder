@@ -16,7 +16,7 @@ function StepItem({ step, isLast, delay }: { step: ProcessStep; isLast: boolean;
   return (
     <div
       ref={ref}
-      className={`flex gap-6 md:gap-8 py-8 relative transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+      className={`flex gap-6 md:gap-8 py-8 relative transition-all duration-700 ease-expressive ${
         isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
       }`}
       style={{ transitionDelay: `${delay}ms` }}

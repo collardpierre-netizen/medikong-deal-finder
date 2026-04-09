@@ -18,7 +18,7 @@ function TimelineItem({ node, index }: { node: VTimelineNode; index: number }) {
   return (
     <div
       ref={ref}
-      className={`relative pl-8 pb-10 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+      className={`relative pl-8 pb-10 transition-all duration-700 ease-expressive ${
         isVisible ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-5"
       }`}
       style={{ transitionDelay: `${index * 150}ms` }}

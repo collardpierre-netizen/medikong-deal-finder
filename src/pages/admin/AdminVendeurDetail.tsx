@@ -11,7 +11,7 @@ import {
   CheckCircle2, XCircle, Clock, Globe, Phone, FileText, Loader2,
   Pencil, Power, AlertTriangle, Save, ExternalLink, Link2, Send, Copy,
 } from "lucide-react";
-import { useImpersonation } from "@/contexts/ImpersonationContext";
+import { useImpersonation } from "@/contexts/impersonation";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

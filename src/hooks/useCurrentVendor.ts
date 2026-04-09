@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { useImpersonation } from "@/contexts/ImpersonationContext";
+import { useImpersonation } from "@/contexts/impersonation";
 
 /**
  * Returns the current vendor record.

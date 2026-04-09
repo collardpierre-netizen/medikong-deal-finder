@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Shield } from "lucide-react";
-import { useImpersonation } from "@/contexts/ImpersonationContext";
+import { useImpersonation } from "@/contexts/impersonation";
 
 function formatDuration(startedAt: string) {
   const diff = Math.floor((Date.now() - new Date(startedAt).getTime()) / 60000);

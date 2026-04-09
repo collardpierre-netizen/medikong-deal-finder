@@ -5,7 +5,7 @@ import { VendorTopBar } from "./VendorTopBar";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
-import { useImpersonation } from "@/contexts/ImpersonationContext";
+import { useImpersonation } from "@/contexts/impersonation";
 
 export default function VendorLayout() {
   const isMobile = useIsMobile();

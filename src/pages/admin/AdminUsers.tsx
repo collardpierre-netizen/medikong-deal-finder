@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { useImpersonation } from "@/contexts/ImpersonationContext";
+import { useImpersonation } from "@/contexts/impersonation";
 import KpiCard from "@/components/admin/KpiCard";
 import StatusBadge from "@/components/admin/StatusBadge";
 import {

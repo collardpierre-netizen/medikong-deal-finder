@@ -19,7 +19,7 @@ export function SplitSection({ tag, title, paragraphs, checklist, imagePlacehold
   return (
     <div
       ref={ref}
-      className={`grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16 items-center transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+      className={`grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16 items-center transition-all duration-700 ease-expressive ${
         isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
       }`}
     >

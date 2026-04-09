@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
@@ -10,22 +10,39 @@ import logoDark from "@/assets/Logo_horizontal_sombre2.png";
 
 export default function VendorLoginPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPwd, setShowPwd] = useState(false);
   const [loading, setLoading] = useState(false);
+  const impersonationVendorId = searchParams.get("impersonation_vendor_id");
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) return;
     setLoading(true);
+
     try {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
 
-      // Check if this user is a vendor
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Session introuvable");
+
+      if (impersonationVendorId) {
+        const { data: adminUser } = await supabase
+          .from("admin_users")
+          .select("id")
+          .eq("user_id", user.id)
+          .eq("is_active", true)
+          .maybeSingle();
+
+        if (adminUser) {
+          toast.success("Connexion admin réussie");
+          navigate(`/vendor?impersonation_vendor_id=${encodeURIComponent(impersonationVendorId)}`, { replace: true });
+          return;
+        }
+      }
 
       const { data: vendor } = await supabase
         .from("vendors")
@@ -40,7 +57,7 @@ export default function VendorLoginPage() {
       }
 
       toast.success("Connexion réussie");
-      navigate("/vendor");
+      navigate("/vendor", { replace: true });
     } catch (err: any) {
       toast.error(err.message || "Erreur de connexion");
     } finally {
@@ -52,7 +69,6 @@ export default function VendorLoginPage() {
     <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#F1F5F9" }}>
       <div className="w-full max-w-md mx-4">
         <div className="bg-white rounded-2xl shadow-lg p-8">
-          {/* Header */}
           <div className="flex flex-col items-center mb-8">
             <Link to="/" className="mb-4">
               <img src={logoDark} alt="MediKong.pro" className="h-12" />

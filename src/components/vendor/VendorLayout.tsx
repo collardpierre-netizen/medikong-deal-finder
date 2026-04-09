@@ -1,24 +1,30 @@
 import { useState, useEffect } from "react";
-import { Outlet, useNavigate } from "react-router-dom";
+import { Outlet, useNavigate, useSearchParams } from "react-router-dom";
 import { VendorSidebar } from "./VendorSidebar";
 import { VendorTopBar } from "./VendorTopBar";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import { useImpersonation } from "@/contexts/impersonation";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function VendorLayout() {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [checking, setChecking] = useState(true);
   const { state: impState } = useImpersonation();
+  const { user, loading } = useAuth();
+  const impersonationVendorIdFromUrl = searchParams.get("impersonation_vendor_id");
 
   useEffect(() => {
-    const check = async () => {
-      const impersonationVendorIdFromUrl = new URLSearchParams(window.location.search).get("impersonation_vendor_id");
+    if (loading) {
+      setChecking(true);
+      return;
+    }
 
-      // If admin is impersonating a vendor, or the target vendor id is passed in URL, skip auth check
+    const check = async () => {
       if (
         (impState.isImpersonating && impState.session?.target_type === "vendor" && impState.session?.target_vendor_id) ||
         impersonationVendorIdFromUrl
@@ -27,13 +33,11 @@ export default function VendorLayout() {
         return;
       }
 
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         navigate("/vendor/login", { replace: true });
         return;
       }
 
-      // Check if user is admin — allow access (with or without impersonation)
       const { data: adminUser } = await supabase
         .from("admin_users")
         .select("id")
@@ -51,14 +55,25 @@ export default function VendorLayout() {
         .select("id")
         .eq("auth_user_id", user.id)
         .maybeSingle();
+
       if (!vendor) {
         navigate("/vendor/login", { replace: true });
         return;
       }
+
       setChecking(false);
     };
-    check();
-  }, [navigate, impState.isImpersonating, impState.session?.target_vendor_id]);
+
+    void check();
+  }, [
+    loading,
+    user,
+    navigate,
+    impState.isImpersonating,
+    impState.session?.target_type,
+    impState.session?.target_vendor_id,
+    impersonationVendorIdFromUrl,
+  ]);
 
   if (checking) {
     return (

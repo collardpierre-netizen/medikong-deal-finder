@@ -10,7 +10,7 @@ import { useSearchParams } from "react-router-dom";
  * Otherwise, fetches by the logged-in user's auth id.
  */
 export function useCurrentVendor() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const { state: impState } = useImpersonation();
   const [searchParams] = useSearchParams();
 
@@ -29,26 +29,30 @@ export function useCurrentVendor() {
   );
 
   return useQuery({
-    queryKey: ["current-vendor", vendorId || user?.id],
+    queryKey: ["current-vendor", vendorId ?? null, user?.id ?? null],
     queryFn: async () => {
       if (vendorId) {
-        // Impersonation: fetch by vendor id directly
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from("vendors")
           .select("*")
           .eq("id", vendorId)
           .maybeSingle();
+
+        if (error) throw error;
         return data;
       }
-      // Normal: fetch by auth user id
+
       if (!user) return null;
-      const { data } = await supabase
+
+      const { data, error } = await supabase
         .from("vendors")
         .select("*")
         .eq("auth_user_id", user.id)
         .maybeSingle();
+
+      if (error) throw error;
       return data;
     },
-    enabled: !!vendorId || !!user,
+    enabled: !loading && (!!vendorId || !!user),
   });
 }

@@ -10,9 +10,7 @@ import { PageTransition } from "@/components/shared/PageTransition";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getVendorPublicName } from "@/lib/vendor-display";
-
-// MOV tiers per supplier
-const MOV_TIERS = [500, 1500, 5000, 10000];
+import { useVendorMov } from "@/hooks/useVendorMov";
 
 interface SupplierGroup {
   vendorId: string;
@@ -37,7 +35,8 @@ export default function CartPage() {
   const [remark, setRemark] = useState("");
 
   // Fetch real vendor data for all vendor_ids in cart
-  const vendorIds = useMemo(() => [...new Set(items.map(i => i.vendor_id).filter(Boolean))], [items]);
+  const vendorIds = useMemo(() => [...new Set(items.map(i => i.vendor_id).filter(Boolean))], [items]) as string[];
+  const { getMovForVendor } = useVendorMov(vendorIds);
   const { data: vendors = [] } = useQuery({
     queryKey: ["cart-vendors", vendorIds],
     queryFn: async () => {
@@ -64,7 +63,7 @@ export default function CartPage() {
     return Object.entries(groups).map(([vendorId, groupItems]) => {
       const total = groupItems.reduce((s, i) => s + (i.price_excl_vat || i.product?.price || 0) * i.quantity, 0);
       const vendor = vendorMap.get(vendorId);
-      const currentMov = MOV_TIERS[0];
+      const currentMov = getMovForVendor(vendorId);
       const remaining = Math.max(currentMov - total, 0);
       const progress = Math.min((total / currentMov) * 100, 100);
       return {
@@ -80,7 +79,7 @@ export default function CartPage() {
         meetsMinimum: total >= currentMov,
       };
     });
-  }, [items, vendorMap]);
+  }, [items, vendorMap, getMovForVendor]);
 
   const totalCart = items.reduce((s, i) => s + (i.price_excl_vat || i.product?.price || 0) * i.quantity, 0);
   const readyCount = supplierGroups.filter(g => g.meetsMinimum).length;
@@ -262,19 +261,12 @@ export default function CartPage() {
                         </div>
                       </div>
 
-                      {/* MOV tiers */}
+                      {/* MOV info */}
                       <div className="flex items-center gap-2 text-xs text-mk-sec mb-4 border-t border-mk-line pt-3">
                         <span className="flex items-center gap-1 font-medium">
-                          Paliers MOV: <HelpCircle size={11} className="text-mk-ter" />
+                          MOV fournisseur: <span className="text-mk-navy">{formatPrice(group.currentMov)}€</span>
+                          <HelpCircle size={11} className="text-mk-ter" />
                         </span>
-                        {MOV_TIERS.map((tier, i) => (
-                          <span key={tier} className="flex items-center gap-1">
-                            {i > 0 && <span className="text-mk-line">|</span>}
-                            <span className={group.total >= tier ? "font-semibold text-mk-navy" : ""}>
-                              {formatPrice(tier)}€
-                            </span>
-                          </span>
-                        ))}
                       </div>
 
                       {/* Products toggle */}

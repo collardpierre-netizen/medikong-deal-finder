@@ -31,13 +31,31 @@ interface ImpersonationContextType {
 const ImpersonationContext = createContext<ImpersonationContextType | null>(null);
 
 export function ImpersonationProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<ImpersonationState>({
-    isImpersonating: false, session: null, originalAdmin: null,
+  const [state, setState] = useState<ImpersonationState>(() => {
+    try {
+      const saved = localStorage.getItem("mk_impersonation");
+      return saved
+        ? JSON.parse(saved)
+        : { isImpersonating: false, session: null, originalAdmin: null };
+    } catch {
+      return { isImpersonating: false, session: null, originalAdmin: null };
+    }
   });
 
   useEffect(() => {
-    const saved = localStorage.getItem("mk_impersonation");
-    if (saved) { try { setState(JSON.parse(saved)); } catch {} }
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key !== "mk_impersonation") return;
+      if (!event.newValue) {
+        setState({ isImpersonating: false, session: null, originalAdmin: null });
+        return;
+      }
+      try {
+        setState(JSON.parse(event.newValue));
+      } catch {}
+    };
+
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
   }, []);
 
   useEffect(() => {

@@ -83,7 +83,7 @@ async function syncCartToDB(items: CartItem[], customerId: string) {
 async function loadCartFromDB(customerId: string): Promise<CartItem[]> {
   const { data } = await supabase
     .from("cart_items")
-    .select("id, offer_id, quantity, offers:offer_id(id, product_id, vendor_id, price_excl_vat, price_incl_vat, delivery_days, stock_quantity, products:product_id(id, name, brand_name, slug, image_url))")
+    .select("id, offer_id, quantity, offers:offer_id(id, product_id, vendor_id, price_excl_vat, price_incl_vat, delivery_days, stock_quantity, products:product_id(id, name, brand_name, slug, image_url, image_urls))")
     .eq("customer_id", customerId);
   if (!data) return [];
   return data.map((row: any) => {
@@ -105,7 +105,7 @@ async function loadCartFromDB(customerId: string): Promise<CartItem[]> {
         brand: product.brand_name || "",
         slug: product.slug,
         price: offer?.price_excl_vat || 0,
-        imageUrl: product.image_url || undefined,
+        imageUrl: (Array.isArray(product.image_urls) && product.image_urls.length > 0 ? product.image_urls[0] : product.image_url) || undefined,
       } : undefined,
     };
   });
@@ -217,6 +217,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
             if (i.offer_id !== offerId) return i;
             const resolvedMax = safeMax ?? i.max_quantity;
             const nextQuantity = resolvedMax ? Math.min(i.quantity + quantity, resolvedMax) : i.quantity + quantity;
+            if (resolvedMax && i.quantity + quantity > resolvedMax) {
+              toast.warning(`Stock limité à ${resolvedMax} unités pour ce produit`);
+            }
             return { ...i, quantity: nextQuantity, max_quantity: resolvedMax };
           });
         } else {

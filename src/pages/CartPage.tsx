@@ -79,7 +79,7 @@ export default function CartPage() {
         meetsMinimum: total >= currentMov,
       };
     });
-  }, [items, vendorMap]);
+  }, [items, vendorMap, getMovForVendor]);
 
   const totalCart = items.reduce((s, i) => s + (i.price_excl_vat || i.product?.price || 0) * i.quantity, 0);
   const readyCount = supplierGroups.filter(g => g.meetsMinimum).length;

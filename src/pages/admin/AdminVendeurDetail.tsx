@@ -428,7 +428,7 @@ const AdminVendeurDetail = () => {
           <table className="w-full text-left">
             <thead>
               <tr style={{ borderBottom: "1px solid #E2E8F0", backgroundColor: "#F8FAFC" }}>
-                {["Produit", "Prix HT", "Stock", "Statut"].map(h => (
+                {["Produit", "GTIN", "Offres", "Prix HT", "Stock", "Statut"].map(h => (
                   <th key={h} className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider" style={{ color: "#8B95A5" }}>{h}</th>
                 ))}
               </tr>
@@ -436,7 +436,13 @@ const AdminVendeurDetail = () => {
             <tbody>
               {vendorProducts.map((offer: any) => (
                 <tr key={offer.product_id} style={{ borderBottom: "1px solid #F1F5F9" }}>
-                  <td className="px-4 py-3 text-[13px] font-medium" style={{ color: "#1D2530" }}>{offer.products?.name || "—"}</td>
+                  <td className="px-4 py-3 text-[13px] font-medium max-w-[300px] truncate" style={{ color: "#1D2530" }}>{offer.products?.name || "—"}</td>
+                  <td className="px-4 py-3 text-[11px] font-mono" style={{ color: "#616B7C" }}>{offer.products?.gtin || "—"}</td>
+                  <td className="px-4 py-3">
+                    <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-bold" style={{ backgroundColor: "#EFF6FF", color: "#1B5BDA" }}>
+                      {offer.products?.offer_count || 1}
+                    </span>
+                  </td>
                   <td className="px-4 py-3 text-[13px] font-bold" style={{ color: "#1D2530" }}>{offer.price_excl_vat ? `€${Number(offer.price_excl_vat).toFixed(2)}` : "—"}</td>
                   <td className="px-4 py-3 text-[12px]" style={{ color: "#616B7C" }}>{offer.stock_quantity ?? "—"}</td>
                   <td className="px-4 py-3"><StatusBadge status={offer.is_active ? "active" : "inactive"} /></td>

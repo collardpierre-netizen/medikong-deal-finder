@@ -1908,6 +1908,13 @@ export type Database = {
             foreignKeyName: "order_line_sub_orders_order_line_id_fkey"
             columns: ["order_line_id"]
             isOneToOne: true
+            referencedRelation: "customer_order_lines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_line_sub_orders_order_line_id_fkey"
+            columns: ["order_line_id"]
+            isOneToOne: true
             referencedRelation: "order_lines"
             referencedColumns: ["id"]
           },
@@ -5297,6 +5304,118 @@ export type Database = {
       }
     }
     Views: {
+      customer_order_lines: {
+        Row: {
+          fulfillment_status:
+            | Database["public"]["Enums"]["fulfillment_status"]
+            | null
+          fulfillment_type:
+            | Database["public"]["Enums"]["fulfillment_type"]
+            | null
+          id: string | null
+          line_total_excl_vat: number | null
+          line_total_incl_vat: number | null
+          offer_id: string | null
+          order_id: string | null
+          product_id: string | null
+          qogita_order_status: string | null
+          quantity: number | null
+          tracking_number: string | null
+          tracking_url: string | null
+          unit_price_excl_vat: number | null
+          unit_price_incl_vat: number | null
+          vat_rate: number | null
+          vendor_id: string | null
+        }
+        Insert: {
+          fulfillment_status?:
+            | Database["public"]["Enums"]["fulfillment_status"]
+            | null
+          fulfillment_type?:
+            | Database["public"]["Enums"]["fulfillment_type"]
+            | null
+          id?: string | null
+          line_total_excl_vat?: number | null
+          line_total_incl_vat?: number | null
+          offer_id?: string | null
+          order_id?: string | null
+          product_id?: string | null
+          qogita_order_status?: string | null
+          quantity?: number | null
+          tracking_number?: string | null
+          tracking_url?: string | null
+          unit_price_excl_vat?: number | null
+          unit_price_incl_vat?: number | null
+          vat_rate?: number | null
+          vendor_id?: string | null
+        }
+        Update: {
+          fulfillment_status?:
+            | Database["public"]["Enums"]["fulfillment_status"]
+            | null
+          fulfillment_type?:
+            | Database["public"]["Enums"]["fulfillment_type"]
+            | null
+          id?: string | null
+          line_total_excl_vat?: number | null
+          line_total_incl_vat?: number | null
+          offer_id?: string | null
+          order_id?: string | null
+          product_id?: string | null
+          qogita_order_status?: string | null
+          quantity?: number | null
+          tracking_number?: string | null
+          tracking_url?: string | null
+          unit_price_excl_vat?: number | null
+          unit_price_incl_vat?: number | null
+          vat_rate?: number | null
+          vendor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_lines_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_lines_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "public_offers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_lines_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_lines_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_lines_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_lines_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       public_offers: {
         Row: {
           country_code: string | null

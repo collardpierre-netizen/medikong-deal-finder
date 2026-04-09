@@ -276,6 +276,13 @@ export type Database = {
             referencedRelation: "offers"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "cart_items_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "public_offers"
+            referencedColumns: ["id"]
+          },
         ]
       }
       categories: {
@@ -664,6 +671,13 @@ export type Database = {
             columns: ["offer_id"]
             isOneToOne: false
             referencedRelation: "offers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "discount_tiers_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "public_offers"
             referencedColumns: ["id"]
           },
         ]
@@ -1240,6 +1254,13 @@ export type Database = {
             foreignKeyName: "margin_rules_vendor_id_fkey"
             columns: ["vendor_id"]
             isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "margin_rules_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
             referencedRelation: "vendors"
             referencedColumns: ["id"]
           },
@@ -1449,6 +1470,13 @@ export type Database = {
             referencedRelation: "offers"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "offer_price_tiers_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "public_offers"
+            referencedColumns: ["id"]
+          },
         ]
       }
       offer_profile_rules: {
@@ -1500,6 +1528,13 @@ export type Database = {
             columns: ["offer_id"]
             isOneToOne: false
             referencedRelation: "offers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offer_profile_rules_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "public_offers"
             referencedColumns: ["id"]
           },
         ]
@@ -1635,6 +1670,13 @@ export type Database = {
             foreignKeyName: "offers_vendor_id_fkey"
             columns: ["vendor_id"]
             isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offers_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
             referencedRelation: "vendors"
             referencedColumns: ["id"]
           },
@@ -1740,6 +1782,13 @@ export type Database = {
             columns: ["offer_id"]
             isOneToOne: false
             referencedRelation: "offers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "public_offers"
             referencedColumns: ["id"]
           },
           {
@@ -1867,6 +1916,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "order_lines_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "public_offers"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "order_lines_order_id_fkey"
             columns: ["order_id"]
             isOneToOne: false
@@ -1878,6 +1934,13 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_lines_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
             referencedColumns: ["id"]
           },
           {
@@ -1929,6 +1992,13 @@ export type Database = {
             columns: ["order_id"]
             isOneToOne: false
             referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_transfers_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
             referencedColumns: ["id"]
           },
           {
@@ -2080,6 +2150,13 @@ export type Database = {
             foreignKeyName: "price_adjustment_log_vendor_id_fkey"
             columns: ["vendor_id"]
             isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "price_adjustment_log_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
             referencedRelation: "vendors"
             referencedColumns: ["id"]
           },
@@ -2202,6 +2279,13 @@ export type Database = {
             columns: ["alert_id"]
             isOneToOne: false
             referencedRelation: "price_alerts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "price_alert_vendors_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
             referencedColumns: ["id"]
           },
           {
@@ -4017,6 +4101,13 @@ export type Database = {
             foreignKeyName: "sub_orders_vendor_id_fkey"
             columns: ["vendor_id"]
             isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sub_orders_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
             referencedRelation: "vendors"
             referencedColumns: ["id"]
           },
@@ -4352,6 +4443,13 @@ export type Database = {
             foreignKeyName: "vendor_commercial_settings_vendor_id_fkey"
             columns: ["vendor_id"]
             isOneToOne: true
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_commercial_settings_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: true
             referencedRelation: "vendors"
             referencedColumns: ["id"]
           },
@@ -4448,6 +4546,13 @@ export type Database = {
             foreignKeyName: "vendor_kyc_submissions_vendor_id_fkey"
             columns: ["vendor_id"]
             isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_kyc_submissions_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
             referencedRelation: "vendors"
             referencedColumns: ["id"]
           },
@@ -4492,6 +4597,13 @@ export type Database = {
             foreignKeyName: "vendor_notification_preferences_vendor_id_fkey"
             columns: ["vendor_id"]
             isOneToOne: true
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_notification_preferences_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: true
             referencedRelation: "vendors"
             referencedColumns: ["id"]
           },
@@ -4529,6 +4641,13 @@ export type Database = {
           vendor_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "vendor_visibility_rules_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "vendor_visibility_rules_vendor_id_fkey"
             columns: ["vendor_id"]
@@ -4672,6 +4791,136 @@ export type Database = {
       }
     }
     Views: {
+      public_offers: {
+        Row: {
+          country_code: string | null
+          created_at: string | null
+          delivery_days: number | null
+          down_payment_pct: number | null
+          estimated_delivery_days: number | null
+          has_extended_delivery: boolean | null
+          id: string | null
+          is_active: boolean | null
+          is_top_seller: boolean | null
+          max_delivery_days: number | null
+          min_delivery_days: number | null
+          moq: number | null
+          mov: number | null
+          mov_amount: number | null
+          mov_currency: string | null
+          price_excl_vat: number | null
+          price_incl_vat: number | null
+          product_id: string | null
+          shipping_from_country: string | null
+          stock_quantity: number | null
+          stock_status: Database["public"]["Enums"]["stock_status_enum"] | null
+          updated_at: string | null
+          vat_rate: number | null
+          vendor_id: string | null
+        }
+        Insert: {
+          country_code?: string | null
+          created_at?: string | null
+          delivery_days?: number | null
+          down_payment_pct?: number | null
+          estimated_delivery_days?: number | null
+          has_extended_delivery?: boolean | null
+          id?: string | null
+          is_active?: boolean | null
+          is_top_seller?: boolean | null
+          max_delivery_days?: number | null
+          min_delivery_days?: number | null
+          moq?: number | null
+          mov?: number | null
+          mov_amount?: number | null
+          mov_currency?: string | null
+          price_excl_vat?: number | null
+          price_incl_vat?: number | null
+          product_id?: string | null
+          shipping_from_country?: string | null
+          stock_quantity?: number | null
+          stock_status?: Database["public"]["Enums"]["stock_status_enum"] | null
+          updated_at?: string | null
+          vat_rate?: number | null
+          vendor_id?: string | null
+        }
+        Update: {
+          country_code?: string | null
+          created_at?: string | null
+          delivery_days?: number | null
+          down_payment_pct?: number | null
+          estimated_delivery_days?: number | null
+          has_extended_delivery?: boolean | null
+          id?: string | null
+          is_active?: boolean | null
+          is_top_seller?: boolean | null
+          max_delivery_days?: number | null
+          min_delivery_days?: number | null
+          moq?: number | null
+          mov?: number | null
+          mov_amount?: number | null
+          mov_currency?: string | null
+          price_excl_vat?: number | null
+          price_incl_vat?: number | null
+          product_id?: string | null
+          shipping_from_country?: string | null
+          stock_quantity?: number | null
+          stock_status?: Database["public"]["Enums"]["stock_status_enum"] | null
+          updated_at?: string | null
+          vat_rate?: number | null
+          vendor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "offers_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offers_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offers_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      public_vendors: {
+        Row: {
+          description: string | null
+          id: string | null
+          is_active: boolean | null
+          logo_url: string | null
+          name: string | null
+          slug: string | null
+        }
+        Insert: {
+          description?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          logo_url?: string | null
+          name?: string | null
+          slug?: string | null
+        }
+        Update: {
+          description?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          logo_url?: string | null
+          name?: string | null
+          slug?: string | null
+        }
+        Relationships: []
+      }
       restock_offers_with_delta: {
         Row: {
           allow_partial: boolean | null
@@ -4891,8 +5140,6 @@ export type Database = {
       }
       resolve_product_brands: { Args: never; Returns: undefined }
       resolve_product_categories: { Args: never; Returns: undefined }
-      show_limit: { Args: never; Returns: number }
-      show_trgm: { Args: { "": string }; Returns: string[] }
       update_brand_product_counts: { Args: never; Returns: undefined }
       update_manufacturer_product_counts: { Args: never; Returns: undefined }
       upsert_market_prices: { Args: { rows: Json }; Returns: number }

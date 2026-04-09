@@ -35,7 +35,8 @@ export default function CartPage() {
   const [remark, setRemark] = useState("");
 
   // Fetch real vendor data for all vendor_ids in cart
-  const vendorIds = useMemo(() => [...new Set(items.map(i => i.vendor_id).filter(Boolean))], [items]);
+  const vendorIds = useMemo(() => [...new Set(items.map(i => i.vendor_id).filter(Boolean))], [items]) as string[];
+  const { getMovForVendor } = useVendorMov(vendorIds);
   const { data: vendors = [] } = useQuery({
     queryKey: ["cart-vendors", vendorIds],
     queryFn: async () => {

@@ -339,7 +339,7 @@ export default function VendorPublicPage() {
           <div className="mk-container py-8 md:py-10">
             <div className="flex flex-col sm:flex-row items-start gap-4 md:gap-6">
               <div className="w-16 h-16 md:w-20 md:h-20 rounded-xl border border-border bg-background shadow-sm flex items-center justify-center shrink-0 overflow-hidden">
-                {vendor.logo_url && vendor.show_real_name ? (
+                {vendor.logo_url && showReal ? (
                   <img src={vendor.logo_url} alt={vendorName} className="w-full h-full object-contain p-1" />
                 ) : (
                   <span className="text-xl font-bold text-primary">{vendorName[0]}</span>

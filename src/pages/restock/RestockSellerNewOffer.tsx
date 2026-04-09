@@ -1,5 +1,5 @@
-import { useState, useCallback } from "react";
-import { Upload, Download, AlertTriangle, Check, X, Loader2, Plus, Search, Trash2, Flame } from "lucide-react";
+import { useState, useCallback, useRef } from "react";
+import { Upload, Download, AlertTriangle, Check, X, Loader2, Plus, Search, Trash2, Flame, Camera, Package } from "lucide-react";
 import { SmartPricingWidget } from "@/components/restock/SmartPricingWidget";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -26,6 +26,12 @@ interface OfferRow {
   errors: string[];
   valid: boolean;
   source?: string;
+  product_image_url?: string;
+  photos?: string[];
+  photo_files?: File[];
+  pieces_per_pack?: number;
+  packs_per_box?: number;
+  boxes_per_pallet?: number;
 }
 
 const STATE_MAP: Record<string, string> = {
@@ -56,7 +62,7 @@ function downloadTemplate() {
   XLSX.writeFile(wb, "MediKong_ReStock_Template.xlsx");
 }
 
-function validateRow(row: any, idx: number): OfferRow {
+function validateRow(row: any, _idx: number): OfferRow {
   const errors: string[] = [];
   const ean = String(row["EAN"] || "").trim();
   const cnk = String(row["CNK"] || "").trim();
@@ -88,7 +94,6 @@ function validateRow(row: any, idx: number): OfferRow {
 
   const product_state = STATE_MAP[stateRaw] || "intact";
   const delivery_condition = DELIVERY_MAP[deliveryRaw] || "both";
-
   const partialRaw = String(row["Vente partielle (oui/non)"] || row["Vente partielle"] || "non").toLowerCase().trim();
   const allow_partial = partialRaw === "oui" || partialRaw === "yes" || partialRaw === "true" || partialRaw === "1";
   const moq = allow_partial ? Math.max(1, Number(row["MOQ"] || 1)) : 1;
@@ -118,11 +123,70 @@ function revalidateRow(r: OfferRow): OfferRow {
   return { ...r, errors, valid: errors.length === 0 };
 }
 
+/* ── Photo upload thumbnails ── */
+function PhotoUploader({ photos, productImage, onAdd, onRemove }: {
+  photos: string[];
+  productImage?: string;
+  onAdd: (files: File[]) => void;
+  onRemove: (idx: number) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  return (
+    <div className="space-y-2">
+      <label className="text-[11px] text-[#8B929C] font-medium flex items-center gap-1">
+        <Camera size={12} /> Photos du produit
+      </label>
+      <div className="flex gap-2 flex-wrap">
+        {productImage && (
+          <div className="relative w-16 h-16 rounded-lg border border-[#1C58D9]/30 overflow-hidden bg-[#F0F4FF] flex items-center justify-center">
+            <img src={productImage} alt="Produit" className="w-full h-full object-contain" />
+            <span className="absolute bottom-0 left-0 right-0 bg-[#1C58D9]/80 text-white text-[8px] text-center py-0.5">Catalogue</span>
+          </div>
+        )}
+        {photos.map((url, i) => (
+          <div key={i} className="relative w-16 h-16 rounded-lg border border-[#D0D5DC] overflow-hidden group">
+            <img src={url} alt={`Photo ${i + 1}`} className="w-full h-full object-cover" />
+            <button
+              onClick={() => onRemove(i)}
+              className="absolute top-0.5 right-0.5 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+            >
+              <X size={10} />
+            </button>
+          </div>
+        ))}
+        {photos.length < 5 && (
+          <button
+            onClick={() => inputRef.current?.click()}
+            className="w-16 h-16 rounded-lg border-2 border-dashed border-[#D0D5DC] hover:border-[#1C58D9] flex flex-col items-center justify-center text-[#8B929C] hover:text-[#1C58D9] transition-colors"
+          >
+            <Plus size={16} />
+            <span className="text-[8px] mt-0.5">Ajouter</span>
+          </button>
+        )}
+      </div>
+      <p className="text-[10px] text-[#8B929C]">Max 5 photos · JPG, PNG · L'image catalogue s'affiche automatiquement</p>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        multiple
+        className="hidden"
+        onChange={(e) => {
+          const files = Array.from(e.target.files || []);
+          if (files.length > 0) onAdd(files);
+          e.target.value = "";
+        }}
+      />
+    </div>
+  );
+}
+
 /* ── Manual add form ── */
 function ManualAddForm({ onAdd }: { onAdd: (row: OfferRow) => void }) {
   const [code, setCode] = useState("");
   const [searching, setSearching] = useState(false);
-  const [found, setFound] = useState<{ ean: string; cnk: string; name: string; prix_pharmacien: number | null; source: string } | null>(null);
+  const [found, setFound] = useState<{ ean: string; cnk: string; name: string; prix_pharmacien: number | null; source: string; image_url?: string } | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [qty, setQty] = useState("1");
   const [priceHt, setPriceHt] = useState("");
@@ -134,6 +198,12 @@ function ManualAddForm({ onAdd }: { onAdd: (row: OfferRow) => void }) {
   const [allowPartial, setAllowPartial] = useState(false);
   const [moq, setMoq] = useState("1");
   const [lotSize, setLotSize] = useState("1");
+  const [photos, setPhotos] = useState<string[]>([]);
+  const [photoFiles, setPhotoFiles] = useState<File[]>([]);
+  const [showPackaging, setShowPackaging] = useState(false);
+  const [piecesPack, setPiecesPack] = useState("");
+  const [packsBox, setPacksBox] = useState("");
+  const [boxesPallet, setBoxesPallet] = useState("");
 
   const lookupCode = async () => {
     const trimmed = code.trim();
@@ -142,7 +212,6 @@ function ManualAddForm({ onAdd }: { onAdd: (row: OfferRow) => void }) {
     setFound(null);
     setNotFound(false);
 
-    // Search in market_prices (Febelco, CERP, etc.)
     const isNumeric = /^\d+$/.test(trimmed);
     const isCnk = isNumeric && trimmed.length <= 7;
 
@@ -159,24 +228,49 @@ function ManualAddForm({ onAdd }: { onAdd: (row: OfferRow) => void }) {
 
     const { data } = await query;
 
+    // Look up product image from products table
+    let productImageUrl: string | undefined;
+    const eanToSearch = isCnk ? null : trimmed;
+    if (eanToSearch) {
+      const { data: pImgData } = await supabase
+        .from("products")
+        .select("image_url")
+        .eq("gtin", eanToSearch)
+        .limit(1);
+      if (pImgData && pImgData[0]?.image_url) {
+        productImageUrl = pImgData[0].image_url;
+      }
+    }
+
     if (data && data.length > 0) {
       const row = data[0];
       const sourceName = typeof row.source === "object" && row.source ? (row.source as any).name : "DB";
+
+      if (!productImageUrl && row.ean) {
+        const { data: pImgData } = await supabase
+          .from("products")
+          .select("image_url")
+          .eq("gtin", row.ean)
+          .limit(1);
+        if (pImgData && pImgData[0]?.image_url) {
+          productImageUrl = pImgData[0].image_url;
+        }
+      }
+
       setFound({
         ean: row.ean || "",
         cnk: row.cnk || "",
         name: row.product_name_source || "",
         prix_pharmacien: row.prix_pharmacien,
         source: sourceName,
+        image_url: productImageUrl,
       });
       if (row.prix_pharmacien && !priceHt) {
         setPriceHt(row.prix_pharmacien.toFixed(2));
       }
     } else {
-      // Fallback: search in products table
-      let pQuery = supabase.from("products").select("gtin, name").limit(1);
+      let pQuery = supabase.from("products").select("gtin, name, image_url").limit(1);
       if (isCnk) {
-        // search product_market_codes
         const { data: pmcData } = await supabase
           .from("product_market_codes")
           .select("product_id, code_value")
@@ -185,11 +279,11 @@ function ManualAddForm({ onAdd }: { onAdd: (row: OfferRow) => void }) {
         if (pmcData && pmcData.length > 0) {
           const { data: pData } = await supabase
             .from("products")
-            .select("gtin, name")
+            .select("gtin, name, image_url")
             .eq("id", pmcData[0].product_id)
             .limit(1);
           if (pData && pData.length > 0) {
-            setFound({ ean: pData[0].gtin || "", cnk: trimmed, name: pData[0].name, prix_pharmacien: null, source: "Catalogue" });
+            setFound({ ean: pData[0].gtin || "", cnk: trimmed, name: pData[0].name, prix_pharmacien: null, source: "Catalogue", image_url: pData[0].image_url || undefined });
             setSearching(false);
             return;
           }
@@ -199,13 +293,27 @@ function ManualAddForm({ onAdd }: { onAdd: (row: OfferRow) => void }) {
         pQuery = pQuery.eq("gtin", trimmed);
         const { data: pData } = await pQuery;
         if (pData && pData.length > 0) {
-          setFound({ ean: pData[0].gtin || trimmed, cnk: "", name: pData[0].name, prix_pharmacien: null, source: "Catalogue" });
+          setFound({ ean: pData[0].gtin || trimmed, cnk: "", name: pData[0].name, prix_pharmacien: null, source: "Catalogue", image_url: pData[0].image_url || undefined });
         } else {
           setNotFound(true);
         }
       }
     }
     setSearching(false);
+  };
+
+  const addPhotos = (files: File[]) => {
+    const remaining = 5 - photos.length;
+    const toAdd = files.slice(0, remaining);
+    const urls = toAdd.map((f) => URL.createObjectURL(f));
+    setPhotos((prev) => [...prev, ...urls]);
+    setPhotoFiles((prev) => [...prev, ...toAdd]);
+  };
+
+  const removePhoto = (idx: number) => {
+    URL.revokeObjectURL(photos[idx]);
+    setPhotos((prev) => prev.filter((_, i) => i !== idx));
+    setPhotoFiles((prev) => prev.filter((_, i) => i !== idx));
   };
 
   const handleAdd = () => {
@@ -227,10 +335,15 @@ function ManualAddForm({ onAdd }: { onAdd: (row: OfferRow) => void }) {
       errors: [],
       valid: true,
       source: found?.source,
+      product_image_url: found?.image_url,
+      photos,
+      photo_files: photoFiles,
+      pieces_per_pack: piecesPack ? Number(piecesPack) : undefined,
+      packs_per_box: packsBox ? Number(packsBox) : undefined,
+      boxes_per_pallet: boxesPallet ? Number(boxesPallet) : undefined,
     });
     onAdd(row);
-    // Reset
-    setCode(""); setFound(null); setNotFound(false); setQty("1"); setPriceHt(""); setDlu(""); setState("intact"); setLot(""); setDelivery("both"); setManualName(""); setAllowPartial(false); setMoq("1"); setLotSize("1");
+    setCode(""); setFound(null); setNotFound(false); setQty("1"); setPriceHt(""); setDlu(""); setState("intact"); setLot(""); setDelivery("both"); setManualName(""); setAllowPartial(false); setMoq("1"); setLotSize("1"); setPhotos([]); setPhotoFiles([]); setShowPackaging(false); setPiecesPack(""); setPacksBox(""); setBoxesPallet("");
     toast.success("Produit ajouté à la liste");
   };
 
@@ -253,11 +366,16 @@ function ManualAddForm({ onAdd }: { onAdd: (row: OfferRow) => void }) {
         </Button>
       </div>
 
-      {/* Result */}
+      {/* Result with product image */}
       {found && (
         <div className="bg-[#F0F4FF] border border-[#1C58D9]/20 rounded-lg p-3">
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex items-center gap-3">
+            {found.image_url && (
+              <div className="w-14 h-14 rounded-lg border border-[#D0D5DC] overflow-hidden bg-white shrink-0">
+                <img src={found.image_url} alt={found.name} className="w-full h-full object-contain" />
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-[#1E252F]">{found.name}</p>
               <p className="text-xs text-[#5C6470]">
                 {found.ean && `EAN: ${found.ean}`}{found.ean && found.cnk && " · "}{found.cnk && `CNK: ${found.cnk}`}
@@ -265,7 +383,7 @@ function ManualAddForm({ onAdd }: { onAdd: (row: OfferRow) => void }) {
               </p>
             </div>
             {found.prix_pharmacien && (
-              <Badge className="bg-white text-[#1C58D9] border border-[#1C58D9]/30">
+              <Badge className="bg-white text-[#1C58D9] border border-[#1C58D9]/30 shrink-0">
                 Prix réf. {found.prix_pharmacien.toFixed(2)} €
               </Badge>
             )}
@@ -286,7 +404,7 @@ function ManualAddForm({ onAdd }: { onAdd: (row: OfferRow) => void }) {
         </div>
       )}
 
-      {/* Details form – show when product found or manual mode */}
+      {/* Details form */}
       {(found || (notFound && manualName)) && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div>
@@ -328,7 +446,46 @@ function ManualAddForm({ onAdd }: { onAdd: (row: OfferRow) => void }) {
             </Select>
           </div>
 
-          {/* Partial sale options */}
+          {/* Photos */}
+          <div className="col-span-2 md:col-span-4">
+            <PhotoUploader
+              photos={photos}
+              productImage={found?.image_url}
+              onAdd={addPhotos}
+              onRemove={removePhoto}
+            />
+          </div>
+
+          {/* Packaging */}
+          <div className="col-span-2 md:col-span-4 border-t border-[#D0D5DC] pt-3 mt-1">
+            <button
+              onClick={() => setShowPackaging(!showPackaging)}
+              className="flex items-center gap-2 text-sm text-[#5C6470] hover:text-[#1C58D9] transition-colors mb-2"
+            >
+              <Package size={14} />
+              <span className="font-medium">Conditionnement</span>
+              <span className="text-[10px] text-[#8B929C]">(optionnel)</span>
+              <span className="text-xs">{showPackaging ? "▲" : "▼"}</span>
+            </button>
+            {showPackaging && (
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="text-[11px] text-[#8B929C] font-medium">Pièces / emballage</label>
+                  <Input type="number" min={1} value={piecesPack} onChange={(e) => setPiecesPack(e.target.value)} placeholder="ex: 10" className="border-[#D0D5DC]" />
+                </div>
+                <div>
+                  <label className="text-[11px] text-[#8B929C] font-medium">Emballages / carton</label>
+                  <Input type="number" min={1} value={packsBox} onChange={(e) => setPacksBox(e.target.value)} placeholder="ex: 12" className="border-[#D0D5DC]" />
+                </div>
+                <div>
+                  <label className="text-[11px] text-[#8B929C] font-medium">Cartons / palette</label>
+                  <Input type="number" min={1} value={boxesPallet} onChange={(e) => setBoxesPallet(e.target.value)} placeholder="ex: 48" className="border-[#D0D5DC]" />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Partial sale */}
           <div className="col-span-2 md:col-span-4 border-t border-[#D0D5DC] pt-3 mt-1">
             <div className="flex items-center gap-3 mb-3">
               <label className="flex items-center gap-2 cursor-pointer">
@@ -401,35 +558,61 @@ export default function RestockSellerNewOffer() {
 
   const removeRow = (idx: number) => setRows((prev) => prev.filter((_, i) => i !== idx));
 
+  const uploadPhotos = async (offerId: string, row: OfferRow) => {
+    if (!row.photo_files || row.photo_files.length === 0) return;
+    for (let i = 0; i < row.photo_files.length; i++) {
+      const file = row.photo_files[i];
+      const ext = file.name.split(".").pop() || "jpg";
+      const filePath = `${offerId}/${i}.${ext}`;
+      await supabase.storage.from("restock-photos").upload(filePath, file, {
+        contentType: file.type,
+        upsert: true,
+      });
+    }
+  };
+
   const publishOffers = async () => {
     if (!user) return;
     setPublishing(true);
     const validRows = rows.filter((r) => r.valid);
-    const inserts = validRows.map((r) => ({
-      seller_id: user.id,
-      ean: r.ean || null,
-      cnk: r.cnk || null,
-      designation: r.designation,
-      quantity: r.quantity,
-      price_ht: r.price_ht,
-      dlu: r.dlu || null,
-      product_state: r.product_state,
-      lot_number: r.lot_number || null,
-      delivery_condition: r.delivery_condition,
-      allow_partial: r.allow_partial,
-      moq: r.moq,
-      lot_size: r.lot_size,
-      status: "published",
-    }));
+    
+    for (const r of validRows) {
+      const insert: Record<string, any> = {
+        seller_id: user.id,
+        ean: r.ean || null,
+        cnk: r.cnk || null,
+        designation: r.designation,
+        quantity: r.quantity,
+        price_ht: r.price_ht,
+        dlu: r.dlu || null,
+        product_state: r.product_state,
+        lot_number: r.lot_number || null,
+        delivery_condition: r.delivery_condition,
+        allow_partial: r.allow_partial,
+        moq: r.moq,
+        lot_size: r.lot_size,
+        status: "published",
+      };
 
-    const { error } = await supabase.from("restock_offers").insert(inserts);
-    setPublishing(false);
-    if (error) {
-      toast.error("Erreur lors de la publication");
-    } else {
-      toast.success(`${validRows.length} offre(s) publiée(s) avec succès`);
-      setRows([]);
+      // Add packaging if provided
+      if (r.pieces_per_pack) insert.pieces_per_pack = r.pieces_per_pack;
+      if (r.packs_per_box) insert.packs_per_box = r.packs_per_box;
+      if (r.boxes_per_pallet) insert.boxes_per_pallet = r.boxes_per_pallet;
+
+      const { data, error } = await supabase.from("restock_offers").insert(insert).select("id").single();
+      if (error) {
+        toast.error(`Erreur pour ${r.designation}`);
+        continue;
+      }
+      // Upload photos
+      if (data?.id && r.photo_files && r.photo_files.length > 0) {
+        await uploadPhotos(data.id, r);
+      }
     }
+
+    setPublishing(false);
+    toast.success(`${validRows.length} offre(s) publiée(s) avec succès`);
+    setRows([]);
   };
 
   const validCount = rows.filter((r) => r.valid).length;
@@ -528,9 +711,9 @@ export default function RestockSellerNewOffer() {
               <thead>
                 <tr className="border-b border-[#D0D5DC] text-left text-[#8B929C]">
                   <th className="pb-2 pr-3">Statut</th>
+                  <th className="pb-2 pr-3">Photo</th>
                   <th className="pb-2 pr-3">Désignation</th>
                   <th className="pb-2 pr-3">EAN</th>
-                  <th className="pb-2 pr-3">CNK</th>
                   <th className="pb-2 pr-3 text-right">Qté</th>
                   <th className="pb-2 pr-3 text-right">Prix HT</th>
                   <th className="pb-2 pr-3">DLU</th>
@@ -550,9 +733,23 @@ export default function RestockSellerNewOffer() {
                           : <Badge className="bg-red-50 text-[#E54545] text-[10px]">Rejetée</Badge>
                         }
                       </td>
+                      <td className="py-2 pr-3">
+                        {(r.product_image_url || (r.photos && r.photos.length > 0)) ? (
+                          <div className="w-8 h-8 rounded border border-[#D0D5DC] overflow-hidden bg-white">
+                            <img
+                              src={r.photos?.[0] || r.product_image_url}
+                              alt=""
+                              className="w-full h-full object-contain"
+                            />
+                          </div>
+                        ) : (
+                          <div className="w-8 h-8 rounded border border-dashed border-[#D0D5DC] flex items-center justify-center text-[#8B929C]">
+                            <Camera size={10} />
+                          </div>
+                        )}
+                      </td>
                       <td className="py-2 pr-3 font-medium text-[#1E252F] max-w-[200px] truncate">{r.designation}</td>
-                      <td className="py-2 pr-3 text-[#5C6470]">{r.ean || "—"}</td>
-                      <td className="py-2 pr-3 text-[#5C6470]">{r.cnk || "—"}</td>
+                      <td className="py-2 pr-3 text-[#5C6470]">{r.ean || r.cnk || "—"}</td>
                       <td className="py-2 pr-3 text-right text-[#1E252F]">{r.quantity}</td>
                       <td className="py-2 pr-3 text-right font-semibold text-[#1C58D9]">{r.price_ht.toFixed(2)} €</td>
                       <td className="py-2 pr-3 text-[#5C6470]">{r.dlu || "—"}</td>

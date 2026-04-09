@@ -16,8 +16,13 @@ export default function VendorLayout() {
 
   useEffect(() => {
     const check = async () => {
-      // If admin is impersonating a vendor, skip auth check
-      if (impState.isImpersonating && impState.session?.target_type === "vendor" && impState.session?.target_vendor_id) {
+      const impersonationVendorIdFromUrl = new URLSearchParams(window.location.search).get("impersonation_vendor_id");
+
+      // If admin is impersonating a vendor, or the target vendor id is passed in URL, skip auth check
+      if (
+        (impState.isImpersonating && impState.session?.target_type === "vendor" && impState.session?.target_vendor_id) ||
+        impersonationVendorIdFromUrl
+      ) {
         setChecking(false);
         return;
       }

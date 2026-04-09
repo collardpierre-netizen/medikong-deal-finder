@@ -32,6 +32,8 @@ interface OfferRow {
   pieces_per_pack?: number;
   packs_per_box?: number;
   boxes_per_pallet?: number;
+  publish_start?: string;
+  publish_end?: string;
 }
 
 const STATE_MAP: Record<string, string> = {

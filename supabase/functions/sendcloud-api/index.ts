@@ -1,5 +1,9 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
-import { corsHeaders } from "https://esm.sh/@supabase/supabase-js@2.49.1/cors";
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
 const SENDCLOUD_BASE = Deno.env.get("SENDCLOUD_API_BASE_URL") || "https://panel.sendcloud.sc/api/v2";
 const SENDCLOUD_PUBLIC = Deno.env.get("SENDCLOUD_PUBLIC_KEY") || "";
@@ -171,14 +175,13 @@ Deno.serve(async (req) => {
     global: { headers: { Authorization: authHeader } },
   });
 
-  const token = authHeader.replace("Bearer ", "");
-  const { data: claimsData, error: claimsErr } = await supabase.auth.getClaims(token);
-  if (claimsErr || !claimsData?.claims) {
+  const { data: { user }, error: userErr } = await supabase.auth.getUser();
+  if (userErr || !user) {
     return new Response(JSON.stringify({ success: false, error: "Unauthorized" }), {
       status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
-  const userId = claimsData.claims.sub as string;
+  const userId = user.id;
 
   // Check Sendcloud credentials
   if (!SENDCLOUD_PUBLIC || !SENDCLOUD_SECRET) {

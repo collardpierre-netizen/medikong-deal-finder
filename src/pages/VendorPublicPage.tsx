@@ -292,7 +292,12 @@ export default function VendorPublicPage() {
       .reduce((sum, ci) => sum + (ci.price_excl_vat || 0) * ci.quantity, 0);
   }, [cartItems, vendor]);
 
-  const vendorName = vendor ? getVendorPublicName(vendor) : "Fournisseur";
+  const showReal = vendor ? resolveVendorVisibility(
+    { ...vendor, id: vendor.id },
+    visRules,
+    { country: currentCountry }
+  ) : false;
+  const vendorName = vendor ? getVendorPublicName(vendor, showReal) : "Fournisseur";
 
   if (isLoading) {
     return (

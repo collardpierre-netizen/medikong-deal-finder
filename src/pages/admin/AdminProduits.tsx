@@ -242,7 +242,7 @@ const AdminProduits = () => {
         actions={
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={() => downloadProductTemplate()} title="Télécharger le template d'import"><FileSpreadsheet size={14} className="mr-1" />Template</Button>
-            <Button variant="outline" size="sm" onClick={() => tab === "offers" ? exportOffers() : exportProducts()}><Download size={14} className="mr-1" />{tab === "offers" ? "Export Offres" : "Export XLSX"}</Button>
+            <Button variant="outline" size="sm" onClick={() => activeTab === "offers" ? exportOffers() : exportProducts()}><Download size={14} className="mr-1" />{activeTab === "offers" ? "Export Offres" : "Export XLSX"}</Button>
             <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()}><Upload size={14} className="mr-1" />Import XLSX</Button>
             <input ref={fileRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={e => { if (e.target.files?.[0]) handleImport(e.target.files[0]); e.target.value = ""; }} />
             <Button variant="outline" size="sm" onClick={handleMigrateImages} disabled={migratingImages}>

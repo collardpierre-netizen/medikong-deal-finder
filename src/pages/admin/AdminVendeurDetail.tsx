@@ -1322,7 +1322,27 @@ function VendorEditDialog({ open, onOpenChange, vendor, onSaved }: { open: boole
             <div><Label>Code postal</Label><Input value={form.postal_code} onChange={e => set("postal_code", e.target.value)} /></div>
             <div><Label>Pays</Label><Input value={form.country_code} onChange={e => set("country_code", e.target.value)} /></div>
           </div>
-          <div><Label>Commission (%)</Label><Input type="number" value={form.commission_rate} onChange={e => set("commission_rate", e.target.value)} /></div>
+          {/* Commission */}
+          <div>
+            <Label>Modèle de commission</Label>
+            <select className="w-full border border-border rounded-md px-3 py-2 text-sm bg-background" value={form.commission_model} onChange={e => set("commission_model", e.target.value)}>
+              <option value="flat_percentage">Pourcentage fixe (%)</option>
+              <option value="margin_split">Partage de marge (margin split)</option>
+              <option value="fixed_amount">Montant fixe par unité (€)</option>
+            </select>
+          </div>
+          {form.commission_model === "flat_percentage" && (
+            <div><Label>Taux de commission (%)</Label><Input type="number" value={form.commission_rate} onChange={e => set("commission_rate", e.target.value)} /></div>
+          )}
+          {form.commission_model === "margin_split" && (
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Part vendeur (%)</Label><Input type="number" value={form.margin_split_pct} onChange={e => set("margin_split_pct", e.target.value)} /></div>
+              <div><Label>Part MediKong (%)</Label><Input type="number" value={String(100 - (parseInt(form.margin_split_pct) || 50))} disabled /></div>
+            </div>
+          )}
+          {form.commission_model === "fixed_amount" && (
+            <div><Label>Montant fixe par unité (€)</Label><Input type="number" value={form.fixed_commission_amount} onChange={e => set("fixed_commission_amount", e.target.value)} /></div>
+          )}
           <div>
             <Label>Description</Label>
             <textarea className="w-full border border-border rounded-md px-3 py-2 text-sm bg-background min-h-[60px] resize-y" value={form.description} onChange={e => set("description", e.target.value)} />

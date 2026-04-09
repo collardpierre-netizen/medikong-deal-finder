@@ -305,8 +305,20 @@ export default function CartPage() {
                             <div className="mt-4 border border-mk-line rounded-lg divide-y divide-mk-line">
                               {group.items.map(item => (
                                 <div key={item.id} className="px-4 py-3 flex items-center gap-3 flex-wrap">
-                                  <div className="w-10 h-10 bg-mk-alt rounded flex items-center justify-center shrink-0">
-                                    <Package size={16} className="text-mk-sec" />
+                                  <div className="w-10 h-10 bg-muted rounded overflow-hidden flex items-center justify-center shrink-0">
+                                    {item.product?.imageUrl ? (
+                                      <img
+                                        src={getProductImageSrc(item.product.imageUrl)}
+                                        alt={item.product.name || "Produit"}
+                                        className="w-full h-full object-contain p-0.5"
+                                        loading="lazy"
+                                        referrerPolicy="no-referrer"
+                                        onLoad={e => { if (isQogitaPlaceholder(e.currentTarget)) e.currentTarget.src = MEDIKONG_PLACEHOLDER; }}
+                                        onError={e => { e.currentTarget.src = MEDIKONG_PLACEHOLDER; }}
+                                      />
+                                    ) : (
+                                      <Package size={16} className="text-muted-foreground" />
+                                    )}
                                   </div>
                                   <div className="flex-1 min-w-[140px]">
                                     <Link
@@ -343,6 +355,11 @@ export default function CartPage() {
                                         <Plus size={13} />
                                       </button>
                                     </div>
+                                    {!!item.max_quantity && item.quantity >= item.max_quantity && (
+                                      <span className="text-[10px] text-destructive font-medium flex items-center gap-0.5" title="Stock maximum atteint">
+                                        <AlertCircle size={11} /> Max
+                                      </span>
+                                    )}
                                     <button
                                       className="text-mk-ter hover:text-mk-red transition-colors p-1"
                                       onClick={() => removeFromCart.mutate(item.id)}

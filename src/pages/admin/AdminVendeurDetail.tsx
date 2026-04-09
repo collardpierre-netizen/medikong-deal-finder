@@ -1184,6 +1184,7 @@ function VendorValidationTab({ vendor, onUpdate }: { vendor: any; onUpdate: () =
 
 function VendorEditDialog({ open, onOpenChange, vendor, onSaved }: { open: boolean; onOpenChange: (o: boolean) => void; vendor: any; onSaved: () => void }) {
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [form, setForm] = useState({
     company_name: vendor.company_name || "",
     email: vendor.email || "",
@@ -1195,9 +1196,31 @@ function VendorEditDialog({ open, onOpenChange, vendor, onSaved }: { open: boole
     country_code: vendor.country_code || "BE",
     commission_rate: String(vendor.commission_rate ?? 0),
     description: vendor.description || "",
+    logo_url: vendor.logo_url || "",
+    website_url: vendor.website_url || "",
+    contact_name: vendor.contact_name || "",
   });
 
   const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop();
+      const path = `vendors/${vendor.id}/logo.${ext}`;
+      const { error: upErr } = await supabase.storage.from("cms-images").upload(path, file, { upsert: true });
+      if (upErr) throw upErr;
+      const { data: urlData } = supabase.storage.from("cms-images").getPublicUrl(path);
+      set("logo_url", urlData.publicUrl);
+      toast.success("Logo uploadé");
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -1214,6 +1237,9 @@ function VendorEditDialog({ open, onOpenChange, vendor, onSaved }: { open: boole
         country_code: form.country_code || "BE",
         commission_rate: parseFloat(form.commission_rate) || 0,
         description: form.description.trim() || null,
+        logo_url: form.logo_url.trim() || null,
+        website_url: form.website_url.trim() || null,
+        contact_name: form.contact_name.trim() || null,
       } as any).eq("id", vendor.id);
       if (error) throw error;
       toast.success("Vendeur mis à jour");
@@ -1233,13 +1259,36 @@ function VendorEditDialog({ open, onOpenChange, vendor, onSaved }: { open: boole
           <DialogTitle>Modifier le vendeur</DialogTitle>
         </DialogHeader>
         <div className="space-y-3 mt-2">
+          {/* Logo */}
+          <div>
+            <Label>Logo</Label>
+            <div className="flex items-center gap-3 mt-1">
+              {form.logo_url ? (
+                <img src={form.logo_url} alt="Logo" className="w-12 h-12 rounded-md object-contain border border-border bg-muted" />
+              ) : (
+                <div className="w-12 h-12 rounded-md border border-dashed border-border bg-muted flex items-center justify-center text-muted-foreground text-xs">Logo</div>
+              )}
+              <label className="cursor-pointer px-3 py-1.5 rounded-md border border-border text-xs font-medium hover:bg-muted transition-colors">
+                {uploading ? "Upload..." : "Choisir un fichier"}
+                <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} disabled={uploading} />
+              </label>
+            </div>
+          </div>
           <div>
             <Label>Nom de l'entreprise</Label>
             <Input value={form.company_name} onChange={e => set("company_name", e.target.value)} />
           </div>
+          <div>
+            <Label>Personne de contact</Label>
+            <Input value={form.contact_name} onChange={e => set("contact_name", e.target.value)} placeholder="Nom du contact principal" />
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <div><Label>Email</Label><Input value={form.email} onChange={e => set("email", e.target.value)} /></div>
             <div><Label>Téléphone</Label><Input value={form.phone} onChange={e => set("phone", e.target.value)} /></div>
+          </div>
+          <div>
+            <Label>Site web</Label>
+            <Input value={form.website_url} onChange={e => set("website_url", e.target.value)} placeholder="https://..." />
           </div>
           <div><Label>N° TVA</Label><Input value={form.vat_number} onChange={e => set("vat_number", e.target.value)} /></div>
           <div><Label>Adresse</Label><Input value={form.address_line1} onChange={e => set("address_line1", e.target.value)} /></div>

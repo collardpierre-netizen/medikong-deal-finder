@@ -202,7 +202,13 @@ const AdminVendeurDetail = () => {
       {activeTab === "resume" && (
         <div className="space-y-4">
           <div className="grid grid-cols-3 gap-3">
-            <KpiCard icon={DollarSign} label="Commission" value={`${vendor.commission_rate}%`} />
+            <KpiCard icon={DollarSign} label="Commission" value={
+              (vendor as any).commission_model === 'margin_split'
+                ? `Partage ${(vendor as any).margin_split_pct || 50}/${100 - ((vendor as any).margin_split_pct || 50)}`
+                : (vendor as any).commission_model === 'fixed_amount'
+                ? `€${(vendor as any).fixed_commission_amount || 0}/unité`
+                : `${vendor.commission_rate}%`
+            } />
             <KpiCard icon={Package} label="Type" value={vendor.type} iconColor="#7C3AED" iconBg="#F5F3FF" />
             <KpiCard icon={Package} label="Ventes totales" value={String(vendor.total_sales)} iconColor="#059669" iconBg="#F0FDF4" />
           </div>

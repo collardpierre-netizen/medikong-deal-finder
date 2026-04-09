@@ -599,7 +599,7 @@ export default function RestockSellerNewOffer() {
       if (r.packs_per_box) insert.packs_per_box = r.packs_per_box;
       if (r.boxes_per_pallet) insert.boxes_per_pallet = r.boxes_per_pallet;
 
-      const { data, error } = await supabase.from("restock_offers").insert(insert).select("id").single();
+      const { data, error } = await supabase.from("restock_offers").insert(insert as any).select("id").single();
       if (error) {
         toast.error(`Erreur pour ${r.designation}`);
         continue;

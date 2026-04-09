@@ -58,11 +58,14 @@ export function ImpersonationProvider({ children }: { children: ReactNode }) {
       actions_count: 0,
       started_at: new Date().toISOString(),
     };
-    setState({
+    const newState = {
       isImpersonating: true,
       session,
       originalAdmin: { userId: "admin", email: "admin", name: "Admin" },
-    });
+    };
+    // Write to localStorage immediately so new tabs can read it right away
+    localStorage.setItem("mk_impersonation", JSON.stringify(newState));
+    setState(newState);
     toast.success(`Mode shadow activé pour ${targetCompany}`);
   }, []);
 

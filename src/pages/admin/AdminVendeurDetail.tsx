@@ -213,7 +213,10 @@ const AdminVendeurDetail = () => {
                 "vendor",
                 vendor.company_name || vendor.name,
                 vendor.id
-              ).then(() => window.open("/vendor", "_blank"));
+              ).then(() => {
+                // Small delay to ensure localStorage is written before the new tab reads it
+                setTimeout(() => window.open("/vendor", "_blank"), 150);
+              });
             }}
             className="flex items-center gap-1.5 px-3 py-2 rounded-md text-[12px] font-bold text-white transition-opacity hover:opacity-90"
             style={{ backgroundColor: "#7C3AED" }}

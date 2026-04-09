@@ -1565,6 +1565,7 @@ export type Database = {
           price_incl_vat: number
           price_tiers: Json | null
           product_id: string
+          purchase_price: number | null
           qogita_base_delay_days: number | null
           qogita_base_price: number | null
           qogita_offer_qid: string | null
@@ -1602,6 +1603,7 @@ export type Database = {
           price_incl_vat: number
           price_tiers?: Json | null
           product_id: string
+          purchase_price?: number | null
           qogita_base_delay_days?: number | null
           qogita_base_price?: number | null
           qogita_offer_qid?: string | null
@@ -1639,6 +1641,7 @@ export type Database = {
           price_incl_vat?: number
           price_tiers?: Json | null
           product_id?: string
+          purchase_price?: number | null
           qogita_base_delay_days?: number | null
           qogita_base_price?: number | null
           qogita_offer_qid?: string | null
@@ -5034,6 +5037,7 @@ export type Database = {
           business_type: string | null
           can_manage_offers: boolean
           city: string | null
+          commission_model: Database["public"]["Enums"]["commission_model_enum"]
           commission_rate: number
           commissionnaire_agreement_accepted_at: string | null
           commissionnaire_agreement_version: string | null
@@ -5043,11 +5047,13 @@ export type Database = {
           description: string | null
           display_code: string | null
           email: string | null
+          fixed_commission_amount: number | null
           id: string
           is_active: boolean
           is_top_seller: boolean | null
           is_verified: boolean
           logo_url: string | null
+          margin_split_pct: number
           name: string
           phone: string | null
           postal_code: string | null
@@ -5092,6 +5098,7 @@ export type Database = {
           business_type?: string | null
           can_manage_offers?: boolean
           city?: string | null
+          commission_model?: Database["public"]["Enums"]["commission_model_enum"]
           commission_rate?: number
           commissionnaire_agreement_accepted_at?: string | null
           commissionnaire_agreement_version?: string | null
@@ -5101,11 +5108,13 @@ export type Database = {
           description?: string | null
           display_code?: string | null
           email?: string | null
+          fixed_commission_amount?: number | null
           id?: string
           is_active?: boolean
           is_top_seller?: boolean | null
           is_verified?: boolean
           logo_url?: string | null
+          margin_split_pct?: number
           name: string
           phone?: string | null
           postal_code?: string | null
@@ -5150,6 +5159,7 @@ export type Database = {
           business_type?: string | null
           can_manage_offers?: boolean
           city?: string | null
+          commission_model?: Database["public"]["Enums"]["commission_model_enum"]
           commission_rate?: number
           commissionnaire_agreement_accepted_at?: string | null
           commissionnaire_agreement_version?: string | null
@@ -5159,11 +5169,13 @@ export type Database = {
           description?: string | null
           display_code?: string | null
           email?: string | null
+          fixed_commission_amount?: number | null
           id?: string
           is_active?: boolean
           is_top_seller?: boolean | null
           is_verified?: boolean
           logo_url?: string | null
+          margin_split_pct?: number
           name?: string
           phone?: string | null
           postal_code?: string | null
@@ -5574,6 +5586,7 @@ export type Database = {
         | "resolved"
         | "auto_resolved"
       alert_type: "market_price" | "external_offer"
+      commission_model_enum: "flat_percentage" | "margin_split" | "fixed_amount"
       customer_type: "pharmacy" | "hospital" | "clinic" | "lab" | "other"
       email_frequency: "immediate" | "daily_digest" | "weekly_digest"
       fulfillment_status:
@@ -5773,6 +5786,11 @@ export const Constants = {
       alert_severity: ["info", "warning", "critical"],
       alert_status: ["new", "seen", "in_progress", "resolved", "auto_resolved"],
       alert_type: ["market_price", "external_offer"],
+      commission_model_enum: [
+        "flat_percentage",
+        "margin_split",
+        "fixed_amount",
+      ],
       customer_type: ["pharmacy", "hospital", "clinic", "lab", "other"],
       email_frequency: ["immediate", "daily_digest", "weekly_digest"],
       fulfillment_status: [

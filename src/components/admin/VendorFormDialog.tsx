@@ -23,6 +23,12 @@ const VENDOR_TYPES = [
   { value: "qogita", label: "Qogita", description: "Vendeur via Qogita" },
 ] as const;
 
+const COMMISSION_MODELS = [
+  { value: "flat_percentage", label: "Pourcentage fixe", description: "Commission en % du prix de vente" },
+  { value: "margin_split", label: "Partage de marge", description: "Partage de la marge nette (vente − achat)" },
+  { value: "fixed_amount", label: "Montant fixe", description: "Commission fixe en € par unité vendue" },
+] as const;
+
 export default function VendorFormDialog({ open, onOpenChange }: Props) {
   const queryClient = useQueryClient();
   const [saving, setSaving] = useState(false);
@@ -38,6 +44,9 @@ export default function VendorFormDialog({ open, onOpenChange }: Props) {
     postal_code: "",
     country_code: "BE",
     commission_rate: "15",
+    commission_model: "flat_percentage" as string,
+    margin_split_pct: "50",
+    fixed_commission_amount: "2",
     description: "",
     type: "real" as string,
     create_account: true,
@@ -46,7 +55,7 @@ export default function VendorFormDialog({ open, onOpenChange }: Props) {
   const set = (key: string, val: string | boolean) => setForm(f => ({ ...f, [key]: val }));
 
   const resetForm = () => {
-    setForm({ company_name: "", email: "", phone: "", vat_number: "", address_line1: "", city: "", postal_code: "", country_code: "BE", commission_rate: "15", description: "", type: "real", create_account: true });
+    setForm({ company_name: "", email: "", phone: "", vat_number: "", address_line1: "", city: "", postal_code: "", country_code: "BE", commission_rate: "15", commission_model: "flat_percentage", margin_split_pct: "50", fixed_commission_amount: "2", description: "", type: "real", create_account: true });
     setResult(null);
     setCopied(false);
   };
@@ -72,6 +81,9 @@ export default function VendorFormDialog({ open, onOpenChange }: Props) {
             vat_number: form.vat_number.trim() || null,
             address: [form.address_line1, form.city, form.postal_code, form.country_code].filter(Boolean).join(", ") || null,
             commission_rate: form.commission_rate,
+            commission_model: form.commission_model,
+            margin_split_pct: form.margin_split_pct,
+            fixed_commission_amount: form.fixed_commission_amount,
             description: form.description.trim() || null,
             type: form.type,
           },
@@ -96,6 +108,9 @@ export default function VendorFormDialog({ open, onOpenChange }: Props) {
           postal_code: form.postal_code.trim() || null,
           country_code: form.country_code || "BE",
           commission_rate: parseFloat(form.commission_rate) || 0,
+          commission_model: form.commission_model as any,
+          margin_split_pct: parseFloat(form.margin_split_pct) || 50,
+          fixed_commission_amount: form.commission_model === 'fixed_amount' ? (parseFloat(form.fixed_commission_amount) || 0) : null,
           description: form.description.trim() || null,
           type: form.type as any,
           is_active: true,
@@ -237,10 +252,58 @@ export default function VendorFormDialog({ open, onOpenChange }: Props) {
               <Input value={form.country_code} onChange={e => set("country_code", e.target.value)} placeholder="BE" />
             </div>
           </div>
+
+          {/* Commission model */}
           <div>
-            <Label>Commission (%)</Label>
-            <Input type="number" min="0" max="100" step="0.5" value={form.commission_rate} onChange={e => set("commission_rate", e.target.value)} />
+            <Label>Modèle de commission *</Label>
+            <Select value={form.commission_model} onValueChange={(v) => set("commission_model", v)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {COMMISSION_MODELS.map((m) => (
+                  <SelectItem key={m.value} value={m.value}>
+                    <div>
+                      <span className="font-medium">{m.label}</span>
+                      <span className="text-muted-foreground ml-2 text-xs">— {m.description}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
+
+          {form.commission_model === "flat_percentage" && (
+            <div>
+              <Label>Commission (%)</Label>
+              <Input type="number" min="0" max="100" step="0.5" value={form.commission_rate} onChange={e => set("commission_rate", e.target.value)} />
+            </div>
+          )}
+
+          {form.commission_model === "margin_split" && (
+            <div className="space-y-2">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Part vendeur (%)</Label>
+                  <Input type="number" min="0" max="100" step="5" value={form.margin_split_pct} onChange={e => set("margin_split_pct", e.target.value)} />
+                </div>
+                <div>
+                  <Label>Part MediKong (%)</Label>
+                  <Input type="number" disabled value={String(100 - (parseFloat(form.margin_split_pct) || 0))} className="bg-muted" />
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                La marge nette = Prix de vente HTVA − Prix d'achat HTVA. Un prix d'achat devra être renseigné pour chaque offre.
+              </p>
+            </div>
+          )}
+
+          {form.commission_model === "fixed_amount" && (
+            <div>
+              <Label>Commission fixe (€ / unité)</Label>
+              <Input type="number" min="0" step="0.5" value={form.fixed_commission_amount} onChange={e => set("fixed_commission_amount", e.target.value)} />
+            </div>
+          )}
           <div>
             <Label>Description</Label>
             <textarea

@@ -217,6 +217,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
             if (i.offer_id !== offerId) return i;
             const resolvedMax = safeMax ?? i.max_quantity;
             const nextQuantity = resolvedMax ? Math.min(i.quantity + quantity, resolvedMax) : i.quantity + quantity;
+            if (resolvedMax && i.quantity + quantity > resolvedMax) {
+              toast.warning(`Stock limité à ${resolvedMax} unités pour ce produit`);
+            }
             return { ...i, quantity: nextQuantity, max_quantity: resolvedMax };
           });
         } else {

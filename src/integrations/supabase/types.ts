@@ -2711,6 +2711,7 @@ export type Database = {
           unit: string | null
           unit_quantity: number
           updated_at: string
+          vat_rate_be: number | null
           weight: number | null
           weight_unit: string | null
           width: number | null
@@ -2778,6 +2779,7 @@ export type Database = {
           unit?: string | null
           unit_quantity?: number
           updated_at?: string
+          vat_rate_be?: number | null
           weight?: number | null
           weight_unit?: string | null
           width?: number | null
@@ -2845,6 +2847,7 @@ export type Database = {
           unit?: string | null
           unit_quantity?: number
           updated_at?: string
+          vat_rate_be?: number | null
           weight?: number | null
           weight_unit?: string | null
           width?: number | null

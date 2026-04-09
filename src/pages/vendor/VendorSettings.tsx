@@ -7,6 +7,7 @@ import { VBadge } from "@/components/vendor/ui/VBadge";
 import { VBtn } from "@/components/vendor/ui/VBtn";
 import VendorCommissionTab from "@/components/vendor/VendorCommissionTab";
 import VendorCommercialSettings from "@/components/vendor/VendorCommercialSettings";
+import VendorProfileDefaults from "@/components/vendor/VendorProfileDefaults";
 import { Check, Save, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useCurrentVendor } from "@/hooks/useCurrentVendor";
@@ -61,6 +62,7 @@ export default function VendorSettings() {
   const tabs = [
     { id: "profile", label: "Profil entreprise" },
     { id: "commercial", label: "Paramètres commerciaux" },
+    { id: "mov_moq", label: "MOV / MOQ par profil" },
     { id: "commission", label: "Commission" },
   ];
 
@@ -215,6 +217,10 @@ export default function VendorSettings() {
 
       {activeTab === "commercial" && vendor && (
         <VendorCommercialSettings vendorId={vendor.id} />
+      )}
+
+      {activeTab === "mov_moq" && vendor && (
+        <VendorProfileDefaults vendorId={vendor.id} />
       )}
 
       {activeTab === "commission" && <VendorCommissionTab />}

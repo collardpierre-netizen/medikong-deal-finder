@@ -276,7 +276,7 @@ export default function CheckoutPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
                       {[
                         { label: "Adresse de livraison", value: formatAddr(shippingAddr) },
-                        { label: "Livraison", value: shippingOpts[shipping].name },
+                        { label: "Livraison", value: selectedOpt?.name_fr || selectedOpt?.name || "Standard" },
                         { label: "Paiement", value: paymentMethods[payment] },
                       ].map((item, i) => (
                         <motion.div key={item.label} className="border border-mk-line rounded-lg p-4"

@@ -622,6 +622,8 @@ export default function RestockSellerNewOffer() {
       if (r.pieces_per_pack) insert.pieces_per_pack = r.pieces_per_pack;
       if (r.packs_per_box) insert.packs_per_box = r.packs_per_box;
       if (r.boxes_per_pallet) insert.boxes_per_pallet = r.boxes_per_pallet;
+      if (r.publish_start) insert.publish_start = r.publish_start;
+      if (r.publish_end) insert.publish_end = r.publish_end;
 
       const { data, error } = await supabase.from("restock_offers").insert(insert as any).select("id").single();
       if (error) {

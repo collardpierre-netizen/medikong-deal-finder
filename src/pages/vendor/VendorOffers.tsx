@@ -529,9 +529,13 @@ function useOfferImport(vendorId: string | undefined) {
         if (!priceExcl || priceExcl <= 0) { skipped++; continue; }
 
         const priceIncl = Math.round(priceExcl * (1 + vatRate / 100) * 100) / 100;
-        const stock = parseInt(row["Stock"] || row["stock"] || row["stock_quantity"] || "0") || 0;
+        // Stock: empty/undefined = in stock (99999), 0 = out of stock, number = exact qty
+        const rawStock = row["Stock"] ?? row["stock"] ?? row["stock_quantity"];
+        const stockIsEmpty = rawStock === undefined || rawStock === null || String(rawStock).trim() === "";
+        const stock = stockIsEmpty ? 99999 : (parseInt(String(rawStock)) || 0);
 
         const purchasePrice = parseFloat(String(row["Prix_Achat_HT"] || row["prix_achat_ht"] || row["purchase_price"] || "0")) || null;
+        const movAmount = parseFloat(String(row["MOV"] || row["mov"] || row["mov_amount"] || "0")) || 0;
 
         offers.push({
           vendor_id: vendorId,
@@ -542,6 +546,7 @@ function useOfferImport(vendorId: string | undefined) {
           vat_rate: vatRate,
           stock_quantity: stock,
           moq: parseInt(row["MOQ"] || row["moq"] || "1") || 1,
+          mov_amount: movAmount || null,
           delivery_days: parseInt(row["Délai"] || row["delai"] || row["delivery_days"] || "3") || 3,
           country_code: row["Pays"] || row["pays"] || row["country_code"] || "BE",
           stock_status: stock > 0 ? "in_stock" : "out_of_stock",

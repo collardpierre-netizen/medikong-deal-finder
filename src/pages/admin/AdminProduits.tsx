@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useI18n } from "@/contexts/I18nContext";
 import { useBrands, useManufacturers, useProductCount, useBrandCount, useActiveOfferCount, useVendors } from "@/hooks/useAdminData";
 import { ProductFormDialog } from "@/components/admin/ProductFormDialog";
-import { exportProducts, importProducts, downloadProductTemplate, type ImportProgress } from "@/lib/xlsx-utils";
+import { exportProducts, exportOffers, importProducts, downloadProductTemplate, type ImportProgress } from "@/lib/xlsx-utils";
 import { getProductImageSrc } from "@/lib/image-utils";
 import { toast } from "sonner";
 import { useImportJobs } from "@/contexts/ImportContext";

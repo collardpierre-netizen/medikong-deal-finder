@@ -57,23 +57,23 @@ export function RestockSubNav() {
       {/* Row 1: Brand + Role switcher */}
       <div className="border-b border-white/[0.06]">
         <div className="mk-container">
-          <div className="flex items-center justify-between h-11">
+          <div className="flex items-center justify-between h-10 sm:h-11">
             <div className="flex items-center gap-0">
               {/* Brand + back */}
               <Link
                 to="/"
-                className="flex items-center gap-1.5 pr-4 mr-3 border-r border-white/10 shrink-0 group"
+                className="flex items-center gap-1.5 pr-3 sm:pr-4 mr-2 sm:mr-3 border-r border-white/10 shrink-0 group"
                 title="Retour à MediKong"
               >
-                <ArrowLeft size={13} className="text-white/40 group-hover:text-white/80 transition-colors" />
-                <span className="text-white font-bold text-[13px] tracking-tight">
+                <ArrowLeft size={12} className="text-white/40 group-hover:text-white/80 transition-colors" />
+                <span className="text-white font-bold text-xs sm:text-[13px] tracking-tight">
                   Medi<span className="text-[#3B82F6]">Kong</span>
                 </span>
               </Link>
 
               {/* ReStock badge */}
               <span
-                className="text-[#00D26A] font-extrabold text-[15px] tracking-tight mr-4"
+                className="text-[#00D26A] font-extrabold text-sm sm:text-[15px] tracking-tight mr-2 sm:mr-4"
                 style={{ fontFamily: "'DM Sans', sans-serif" }}
               >
                 ReStock
@@ -81,19 +81,19 @@ export function RestockSubNav() {
             </div>
 
             {/* Role switcher */}
-            <div className="flex items-center gap-1 bg-white/[0.04] rounded-lg p-0.5">
+            <div className="flex items-center gap-0.5 bg-white/[0.04] rounded-lg p-0.5">
               {roleTabs.map((tab) => (
                 <Link
                   key={tab.role}
                   to={tab.defaultTo}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-semibold uppercase tracking-wider transition-all ${
+                  className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider transition-all ${
                     currentRole === tab.role
                       ? "bg-white/15 text-white shadow-sm"
                       : "text-white/40 hover:text-white/70 hover:bg-white/5"
                   }`}
                 >
-                  <tab.icon size={12} strokeWidth={currentRole === tab.role ? 2.2 : 1.5} />
-                  {tab.label}
+                  <tab.icon size={11} strokeWidth={currentRole === tab.role ? 2.2 : 1.5} />
+                  <span className="hidden xs:inline sm:inline">{tab.label}</span>
                 </Link>
               ))}
             </div>
@@ -101,30 +101,39 @@ export function RestockSubNav() {
         </div>
       </div>
 
-      {/* Row 2: Contextual navigation */}
-      <div className="mk-container">
-        <nav className="flex items-center gap-0.5 h-10 -mb-px">
-          {nav.map((item) => {
-            const isActive =
-              item.to === "/restock"
-                ? pathname === "/restock"
-                : pathname.startsWith(item.to);
-            return (
-              <Link
-                key={item.to}
-                to={item.to}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-medium transition-all ${
-                  isActive
-                    ? "bg-white/15 text-white"
-                    : "text-white/45 hover:text-white/85 hover:bg-white/5"
-                }`}
-              >
-                <item.icon size={13} strokeWidth={isActive ? 2.2 : 1.6} />
-                {item.label}
-              </Link>
-            );
-          })}
-        </nav>
+      {/* Row 2: Contextual navigation — scrollable on mobile with fade hints */}
+      <div className="relative">
+        {/* Right fade gradient hint for scroll */}
+        <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-[#1E293B] to-transparent z-10 pointer-events-none sm:hidden" />
+        <div className="mk-container">
+          <nav
+            className="flex items-center gap-0.5 h-9 sm:h-10 overflow-x-auto scrollbar-none -mb-px"
+            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+          >
+            {nav.map((item) => {
+              const isActive =
+                item.to === "/restock"
+                  ? pathname === "/restock"
+                  : pathname.startsWith(item.to);
+              return (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md text-[11px] sm:text-[12px] font-medium transition-all whitespace-nowrap shrink-0 ${
+                    isActive
+                      ? "bg-white/15 text-white"
+                      : "text-white/45 hover:text-white/85 hover:bg-white/5"
+                  }`}
+                >
+                  <item.icon size={12} strokeWidth={isActive ? 2.2 : 1.6} />
+                  {item.label}
+                </Link>
+              );
+            })}
+            {/* Spacer so last item isn't hidden by fade */}
+            <div className="w-6 shrink-0 sm:hidden" aria-hidden />
+          </nav>
+        </div>
       </div>
     </header>
   );

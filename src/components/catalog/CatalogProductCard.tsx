@@ -17,6 +17,24 @@ interface Props {
   product: CatalogProduct;
   index?: number;
   view?: "grid" | "list";
+  searchQuery?: string;
+}
+
+function HighlightText({ text, query }: { text: string; query?: string }) {
+  if (!query || query.trim().length < 2) return <>{text}</>;
+  const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+  const parts = text.split(regex);
+  return (
+    <>
+      {parts.map((part, i) =>
+        regex.test(part) ? (
+          <mark key={i} className="bg-yellow-200 text-foreground rounded-sm px-0.5">{part}</mark>
+        ) : (
+          <span key={i}>{part}</span>
+        )
+      )}
+    </>
+  );
 }
 
 function ProductImg({ product, className = "" }: { product: CatalogProduct; className?: string }) {

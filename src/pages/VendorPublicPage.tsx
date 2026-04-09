@@ -11,7 +11,7 @@ import {
   CheckCircle2, Building2, Search, X, Plus, Minus, ShoppingCart,
 } from "lucide-react";
 import { useState, useMemo, useCallback } from "react";
-import { getVendorPublicName } from "@/lib/vendor-display";
+import { getVendorPublicName, resolveVendorVisibility } from "@/lib/vendor-display";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -171,6 +171,17 @@ export default function VendorPublicPage() {
     enabled: !!slug,
   });
 
+  // Fetch visibility rules for this vendor
+  const { data: visRules = [] } = useQuery({
+    queryKey: ["vendor-visibility-rules-public", vendor?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from("vendor_visibility_rules" as any).select("*").eq("vendor_id", vendor!.id);
+      return (data || []) as any[];
+    },
+    enabled: !!vendor?.id,
+    staleTime: 5 * 60 * 1000,
+  });
+
   // Fetch ALL vendor offers (paginated past 1000 limit)
   const { data: offers = [] } = useQuery({
     queryKey: ["vendor-offers-public", vendor?.id],
@@ -281,7 +292,12 @@ export default function VendorPublicPage() {
       .reduce((sum, ci) => sum + (ci.price_excl_vat || 0) * ci.quantity, 0);
   }, [cartItems, vendor]);
 
-  const vendorName = vendor ? getVendorPublicName(vendor) : "Fournisseur";
+  const showReal = vendor ? resolveVendorVisibility(
+    { ...vendor, id: vendor.id },
+    visRules,
+    { country: String(currentCountry) }
+  ) : false;
+  const vendorName = vendor ? getVendorPublicName(vendor, showReal) : "Fournisseur";
 
   if (isLoading) {
     return (
@@ -323,7 +339,7 @@ export default function VendorPublicPage() {
           <div className="mk-container py-8 md:py-10">
             <div className="flex flex-col sm:flex-row items-start gap-4 md:gap-6">
               <div className="w-16 h-16 md:w-20 md:h-20 rounded-xl border border-border bg-background shadow-sm flex items-center justify-center shrink-0 overflow-hidden">
-                {vendor.logo_url && vendor.show_real_name ? (
+                {vendor.logo_url && showReal ? (
                   <img src={vendor.logo_url} alt={vendorName} className="w-full h-full object-contain p-1" />
                 ) : (
                   <span className="text-xl font-bold text-primary">{vendorName[0]}</span>
@@ -338,9 +354,9 @@ export default function VendorPublicPage() {
                     </span>
                   )}
                 </div>
-                {vendor.show_real_name && vendor.description && <p className="text-sm text-muted-foreground mb-2 max-w-[600px]">{vendor.description}</p>}
+                {showReal && vendor.description && <p className="text-sm text-muted-foreground mb-2 max-w-[600px]">{vendor.description}</p>}
                 <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                  {vendor.city && vendor.show_real_name && <span className="flex items-center gap-1"><MapPin size={12} /> {vendor.city}, {vendor.country_code}</span>}
+                  {vendor.city && showReal && <span className="flex items-center gap-1"><MapPin size={12} /> {vendor.city}, {vendor.country_code}</span>}
                   <span className="flex items-center gap-1"><Package size={12} /> {vendorProducts.length} produits</span>
                 </div>
               </div>

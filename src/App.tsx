@@ -115,6 +115,7 @@ const AdminCMS = lazyWithRetry(() => import("./pages/admin/AdminCMS"), "AdminCMS
 const AdminProductPrices = lazyWithRetry(() => import("./pages/admin/AdminProductPrices"), "AdminProductPrices");
 const AdminInvestPipeline = lazyWithRetry(() => import("./pages/admin/AdminInvestPipeline"), "AdminInvestPipeline");
 const AdminLogistique = lazyWithRetry(() => import("./pages/admin/AdminLogistique"), "AdminLogistique");
+const AdminShippingOptions = lazyWithRetry(() => import("./pages/admin/AdminShippingOptions"), "AdminShippingOptions");
 const AdminEquipe = lazyWithRetry(() => import("./pages/admin/AdminEquipe"), "AdminEquipe");
 const AdminProfils = lazyWithRetry(() => import("./pages/admin/AdminProfils"), "AdminProfils");
 const AdminParametres = lazyWithRetry(() => import("./pages/admin/AdminParametres"), "AdminParametres");
@@ -318,6 +319,7 @@ const App = () => (
               <Route path="product-prices" element={<LP><AdminProductPrices /></LP>} />
               <Route path="invest-pipeline" element={<LP><AdminInvestPipeline /></LP>} />
               <Route path="logistique" element={<LP><AdminLogistique /></LP>} />
+              <Route path="shipping-options" element={<LP><AdminShippingOptions /></LP>} />
               <Route path="equipe" element={<LP><AdminEquipe /></LP>} />
               <Route path="delegues" element={<LP><AdminDelegues /></LP>} />
               <Route path="profils" element={<LP><AdminProfils /></LP>} />

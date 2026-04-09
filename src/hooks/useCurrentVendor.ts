@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useImpersonation } from "@/contexts/impersonation";
+import { useSearchParams } from "react-router-dom";
 
 /**
  * Returns the current vendor record.
@@ -11,11 +12,9 @@ import { useImpersonation } from "@/contexts/impersonation";
 export function useCurrentVendor() {
   const { user } = useAuth();
   const { state: impState } = useImpersonation();
+  const [searchParams] = useSearchParams();
 
-  const impersonationVendorIdFromUrl =
-    typeof window !== "undefined"
-      ? new URLSearchParams(window.location.search).get("impersonation_vendor_id")
-      : null;
+  const impersonationVendorIdFromUrl = searchParams.get("impersonation_vendor_id");
 
   const isImpersonatingVendor =
     (impState.isImpersonating &&

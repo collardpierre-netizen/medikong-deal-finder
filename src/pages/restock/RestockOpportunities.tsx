@@ -601,19 +601,22 @@ export default function RestockOpportunities() {
         const { error } = await supabase.from("restock_offers").update({ quantity: offer.quantity - qty }).eq("id", offer.id);
         if (error) throw error;
       }
-      await supabase.from("restock_transactions").insert({
+      const { data: txData, error: txError } = await supabase.from("restock_transactions").insert({
         offer_id: offer.id, buyer_id: buyer?.id || null, seller_id: offer.seller_id,
         final_price: offer.price_ht, quantity: qty,
         delivery_mode: offer.delivery_condition === "pickup" ? "pickup" : "shipping",
         shipping_cost: offer.delivery_condition === "pickup" ? 0 : shippingFee,
-        commission_amount: offer.price_ht * qty * 0.05, status: "confirmed",
-      });
+        commission_amount: offer.price_ht * qty * 0.05, status: "pending_payment",
+      }).select("id").single();
+      if (txError) throw txError;
+      return txData;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["restock-public-offers"] });
-      toast.success("Offre confirmée !");
       setConfirmTarget(null);
       setBuyQuantity(0);
+      // Redirect to checkout with transaction ID
+      navigate(`/restock/checkout?tx=${data.id}`);
     },
     onError: () => toast.error("Erreur lors de la confirmation"),
   });

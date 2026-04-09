@@ -1,0 +1,1 @@
+ALTER TYPE public.product_source ADD VALUE IF NOT EXISTS 'valerco';

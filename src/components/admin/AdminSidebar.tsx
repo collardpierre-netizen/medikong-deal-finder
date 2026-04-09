@@ -34,6 +34,7 @@ const sections: NavSection[] = [
       { labelKey: "categories", path: "/admin/categories", icon: Layers },
       { labelKey: "brands", path: "/admin/marques", icon: Tag },
       { labelKey: "manufacturers", path: "/admin/fabricants", icon: Factory },
+      { labelKey: "delegates", path: "/admin/delegues", icon: Users2 },
       { labelKey: "pimSchemas", path: "/admin/schemas-pim", icon: SlidersHorizontal },
       { labelKey: "productPrices", path: "/admin/product-prices", icon: Tag },
       { labelKey: "orders", path: "/admin/commandes", icon: ShoppingCart },

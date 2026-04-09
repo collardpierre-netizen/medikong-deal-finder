@@ -23,6 +23,12 @@ const VENDOR_TYPES = [
   { value: "qogita", label: "Qogita", description: "Vendeur via Qogita" },
 ] as const;
 
+const COMMISSION_MODELS = [
+  { value: "flat_percentage", label: "Pourcentage fixe", description: "Commission en % du prix de vente" },
+  { value: "margin_split", label: "Partage de marge", description: "Partage de la marge nette (vente − achat)" },
+  { value: "fixed_amount", label: "Montant fixe", description: "Commission fixe en € par unité vendue" },
+] as const;
+
 export default function VendorFormDialog({ open, onOpenChange }: Props) {
   const queryClient = useQueryClient();
   const [saving, setSaving] = useState(false);

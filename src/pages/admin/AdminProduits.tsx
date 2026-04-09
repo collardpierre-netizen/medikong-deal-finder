@@ -345,8 +345,18 @@ const AdminProduits = () => {
               <table className="w-full text-left">
                 <thead>
                   <tr style={{ borderBottom: "1px solid #E2E8F0", backgroundColor: "#F8FAFC" }}>
-                    {["", "Produit", "CNK", "EAN", "Offres", "Stock", "Meilleur prix", "Statut", ""].map((h) => (
-                      <th key={h} className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider" style={{ color: "#8B95A5" }}>{h}</th>
+                    {[
+                      { key: "thumb", label: "" },
+                      { key: "product", label: "Produit" },
+                      { key: "cnk", label: "CNK" },
+                      { key: "ean", label: "EAN" },
+                      { key: "offers", label: "Offres" },
+                      { key: "stock", label: "Stock" },
+                      { key: "price", label: "Meilleur prix" },
+                      { key: "status", label: "Statut" },
+                      { key: "actions", label: "" },
+                    ].map((h) => (
+                      <th key={h.key} className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider" style={{ color: "#8B95A5" }}>{h.label}</th>
                     ))}
                   </tr>
                 </thead>

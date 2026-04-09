@@ -1,154 +1,159 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Upload, Download, Database, Loader2, Search } from "lucide-react";
-import { toast } from "sonner";
-import { useState, useCallback } from "react";
-import * as XLSX from "xlsx";
+import { Input } from "@/components/ui/input";
+import { Database, Search, Loader2 } from "lucide-react";
+import { useState } from "react";
 
 export default function RestockAdminPriceReferences() {
-  const qc = useQueryClient();
   const [search, setSearch] = useState("");
-  const [importing, setImporting] = useState(false);
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [timer, setTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
 
-  const { data: refs = [], isLoading } = useQuery({
-    queryKey: ["price-references", search],
+  const handleSearch = (val: string) => {
+    setSearch(val);
+    if (timer) clearTimeout(timer);
+    const t = setTimeout(() => setDebouncedSearch(val.trim()), 350);
+    setTimer(t);
+  };
+
+  const { data: results = [], isLoading, isFetching } = useQuery({
+    queryKey: ["market-prices-search", debouncedSearch],
     queryFn: async () => {
-      let q = supabase.from("price_references").select("*").order("designation").limit(200);
-      if (search.trim()) {
-        q = q.or(`ean.ilike.%${search}%,cnk.ilike.%${search}%,designation.ilike.%${search}%`);
+      if (!debouncedSearch || debouncedSearch.length < 2) return [];
+      const q = debouncedSearch;
+      const isCode = /^\d+$/.test(q);
+
+      let query = supabase
+        .from("market_prices")
+        .select("id, ean, cnk, product_name_source, prix_grossiste, prix_pharmacien, prix_public, tva_rate, supplier_name, source:market_price_sources(name)")
+        .order("product_name_source")
+        .limit(100);
+
+      if (isCode && q.length <= 7) {
+        query = query.ilike("cnk", `%${q}%`);
+      } else if (isCode) {
+        query = query.ilike("ean", `%${q}%`);
+      } else {
+        query = query.ilike("product_name_source", `%${q}%`);
       }
-      const { data, error } = await q;
+
+      const { data, error } = await query;
       if (error) throw error;
       return data || [];
     },
+    enabled: debouncedSearch.length >= 2,
   });
 
-  const importCSV = useCallback(async (file: File) => {
-    setImporting(true);
-    try {
-      const data = await file.arrayBuffer();
-      const wb = XLSX.read(data, { type: "array" });
-      const ws = wb.Sheets[wb.SheetNames[0]];
-      const rows: any[] = XLSX.utils.sheet_to_json(ws);
+  const { data: stats } = useQuery({
+    queryKey: ["market-prices-stats"],
+    queryFn: async () => {
+      const { count: total } = await supabase.from("market_prices").select("id", { count: "exact", head: true });
+      const { data: sources } = await supabase
+        .from("market_price_sources")
+        .select("name, total_products")
+        .eq("is_active", true)
+        .order("total_products", { ascending: false });
+      return { total: total || 0, sources: sources || [] };
+    },
+  });
 
-      const inserts = rows.map((r) => {
-        const pp = Number(r.public_price_eur || r["Prix public"] || 0);
-        const vatRate = Number(r.vat_rate || r["TVA"] || 21);
-        const isRx = vatRate === 6;
-        const ratio = isRx ? 0.69 : 0.55;
-        const pharmacistPrice = Math.round(pp * ratio / (1 + vatRate / 100) * 100) / 100;
+  const formatPrice = (p: number | null) => {
+    if (!p) return "—";
+    return `${Number(p).toFixed(2)} €`;
+  };
 
-        return {
-          ean: String(r.ean || r.EAN || "").trim() || null,
-          cnk: String(r.cnk || r.CNK || "").trim() || null,
-          designation: String(r.designation || r["Désignation"] || r.Designation || "").trim(),
-          category: String(r.category || r["Catégorie"] || "").trim() || null,
-          public_price_eur: pp || null,
-          pharmacist_price_estimated_eur: pharmacistPrice || null,
-          vat_rate: vatRate,
-          source: String(r.source || "manual").trim(),
-        };
-      }).filter((r) => r.designation && (r.ean || r.cnk));
-
-      // Upsert in batches of 50
-      let count = 0;
-      for (let i = 0; i < inserts.length; i += 50) {
-        const batch = inserts.slice(i, i + 50);
-        const { error } = await supabase.from("price_references").upsert(batch, { onConflict: "ean" });
-        if (error) throw error;
-        count += batch.length;
-      }
-
-      toast.success(`${count} références importées`);
-      qc.invalidateQueries({ queryKey: ["price-references"] });
-    } catch (err) {
-      toast.error("Erreur d'import");
-    } finally {
-      setImporting(false);
-    }
-  }, [qc]);
-
-  const downloadTemplate = () => {
-    const ws = XLSX.utils.aoa_to_sheet([
-      ["ean", "cnk", "designation", "category", "public_price_eur", "vat_rate", "source"],
-      ["5410063011027", "0031-102", "Dafalgan 500mg 30 comp", "Analgésiques", 4.50, 6, "cbip"],
-    ]);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "PriceRef");
-    XLSX.writeFile(wb, "MediKong_PriceReferences_Template.xlsx");
+  const getSourceName = (row: any) => {
+    if (typeof row.source === "object" && row.source?.name) return row.source.name;
+    return row.supplier_name || "—";
   };
 
   return (
     <div className="p-6 max-w-6xl mx-auto" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <Database size={24} className="text-[#1C58D9]" />
-          <h1 className="text-2xl font-bold text-[#1E252F]">Référentiel Prix (CBIP)</h1>
-          <Badge variant="outline">{refs.length} entrées</Badge>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={downloadTemplate} className="gap-2 text-[#1C58D9] border-[#D0D5DC]">
-            <Download size={16} /> Template
-          </Button>
-          <label>
-            <Button asChild className="bg-[#1C58D9] hover:bg-[#1549B8] text-white gap-2 cursor-pointer" disabled={importing}>
-              <span>
-                {importing ? <Loader2 className="animate-spin" size={16} /> : <Upload size={16} />}
-                Importer CSV/XLSX
-              </span>
-            </Button>
-            <input type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={(e) => e.target.files?.[0] && importCSV(e.target.files[0])} />
-          </label>
-        </div>
+      {/* Header */}
+      <div className="flex items-center gap-3 mb-2">
+        <Database size={24} className="text-[#1C58D9]" />
+        <h1 className="text-2xl font-bold text-[#1E252F]">Référentiel Prix</h1>
       </div>
+      <p className="text-sm text-[#5C6470] mb-4">
+        Recherchez parmi {stats?.total?.toLocaleString("fr-FR") || "—"} références de prix importées.
+      </p>
 
-      <div className="relative mb-4">
+      {/* Source badges */}
+      {stats?.sources && stats.sources.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-5">
+          {stats.sources.map((s: any) => (
+            <Badge key={s.name} variant="outline" className="text-xs gap-1 border-[#D0D5DC]">
+              {s.name} <span className="text-[#1C58D9] font-semibold">{(s.total_products || 0).toLocaleString("fr-FR")}</span>
+            </Badge>
+          ))}
+        </div>
+      )}
+
+      {/* Search */}
+      <div className="relative mb-6 max-w-xl">
         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8B929C]" />
         <Input
-          placeholder="Rechercher par EAN, CNK ou désignation..."
+          placeholder="Rechercher par EAN, CNK ou nom de produit (min. 2 caractères)…"
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="pl-9 border-[#D0D5DC] rounded-lg max-w-md"
+          onChange={(e) => handleSearch(e.target.value)}
+          className="pl-9 border-[#D0D5DC] rounded-lg text-sm"
         />
+        {isFetching && (
+          <Loader2 size={16} className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-[#1C58D9]" />
+        )}
       </div>
 
-      {isLoading ? (
+      {/* Results */}
+      {!debouncedSearch || debouncedSearch.length < 2 ? (
+        <div className="bg-white border border-[#D0D5DC] rounded-xl p-16 text-center shadow-sm">
+          <Search size={40} className="mx-auto mb-3 text-[#D0D5DC]" />
+          <p className="text-[#5C6470] text-sm">Tapez au moins 2 caractères pour lancer une recherche</p>
+          <p className="text-[#8B929C] text-xs mt-1">Exemple : "dafalgan", "5410063", "0031"</p>
+        </div>
+      ) : isLoading ? (
         <div className="text-center py-16 text-[#8B929C]">Chargement…</div>
+      ) : results.length === 0 ? (
+        <div className="bg-white border border-[#D0D5DC] rounded-xl p-12 text-center shadow-sm">
+          <p className="text-[#5C6470] text-sm">Aucun résultat pour « {debouncedSearch} »</p>
+        </div>
       ) : (
-        <div className="bg-white border border-[#D0D5DC] rounded-xl shadow-sm overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-[#F7F8FA] text-[#5C6470]">
-              <tr>
-                <th className="text-left px-4 py-3 font-medium">EAN</th>
-                <th className="text-left px-4 py-3 font-medium">CNK</th>
-                <th className="text-left px-4 py-3 font-medium">Désignation</th>
-                <th className="text-left px-4 py-3 font-medium">Catégorie</th>
-                <th className="text-right px-4 py-3 font-medium">PP (€)</th>
-                <th className="text-right px-4 py-3 font-medium">Prix pharma. est.</th>
-                <th className="text-center px-4 py-3 font-medium">TVA</th>
-                <th className="text-left px-4 py-3 font-medium">Source</th>
-              </tr>
-            </thead>
-            <tbody>
-              {refs.map((r: any) => (
-                <tr key={r.id} className="border-t border-[#D0D5DC]/50 hover:bg-[#F7F8FA]/50">
-                  <td className="px-4 py-2.5 font-mono text-[#1E252F]">{r.ean || "—"}</td>
-                  <td className="px-4 py-2.5 font-mono text-[#5C6470]">{r.cnk || "—"}</td>
-                  <td className="px-4 py-2.5 text-[#1E252F]">{r.designation}</td>
-                  <td className="px-4 py-2.5 text-[#8B929C]">{r.category || "—"}</td>
-                  <td className="px-4 py-2.5 text-right font-medium">{r.public_price_eur ? `${Number(r.public_price_eur).toFixed(2)} €` : "—"}</td>
-                  <td className="px-4 py-2.5 text-right text-[#1C58D9] font-medium">{r.pharmacist_price_estimated_eur ? `${Number(r.pharmacist_price_estimated_eur).toFixed(2)} €` : "—"}</td>
-                  <td className="px-4 py-2.5 text-center">
-                    <Badge variant="outline" className="text-[10px]">{r.vat_rate}%</Badge>
-                  </td>
-                  <td className="px-4 py-2.5 text-[#8B929C]">{r.source}</td>
+        <div className="bg-white border border-[#D0D5DC] rounded-xl shadow-sm overflow-hidden">
+          <div className="px-4 py-2 bg-[#F7F8FA] border-b border-[#D0D5DC] flex items-center justify-between">
+            <span className="text-xs text-[#5C6470]">{results.length} résultat{results.length > 1 ? "s" : ""} (max 100)</span>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-[#F7F8FA] text-[#5C6470]">
+                <tr>
+                  <th className="text-left px-4 py-3 font-medium">EAN</th>
+                  <th className="text-left px-4 py-3 font-medium">CNK</th>
+                  <th className="text-left px-4 py-3 font-medium">Désignation</th>
+                  <th className="text-right px-4 py-3 font-medium">Prix grossiste</th>
+                  <th className="text-right px-4 py-3 font-medium">Prix pharmacien</th>
+                  <th className="text-right px-4 py-3 font-medium">Prix public</th>
+                  <th className="text-center px-4 py-3 font-medium">TVA</th>
+                  <th className="text-left px-4 py-3 font-medium">Source</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {results.map((r: any) => (
+                  <tr key={r.id} className="border-t border-[#D0D5DC]/50 hover:bg-[#F7F8FA]/50">
+                    <td className="px-4 py-2.5 font-mono text-xs text-[#1E252F]">{r.ean || "—"}</td>
+                    <td className="px-4 py-2.5 font-mono text-xs text-[#5C6470]">{r.cnk || "—"}</td>
+                    <td className="px-4 py-2.5 text-[#1E252F] max-w-[300px] truncate">{r.product_name_source || "—"}</td>
+                    <td className="px-4 py-2.5 text-right text-[#5C6470]">{formatPrice(r.prix_grossiste)}</td>
+                    <td className="px-4 py-2.5 text-right font-medium text-[#1C58D9]">{formatPrice(r.prix_pharmacien)}</td>
+                    <td className="px-4 py-2.5 text-right text-[#1E252F]">{formatPrice(r.prix_public)}</td>
+                    <td className="px-4 py-2.5 text-center">
+                      {r.tva_rate ? <Badge variant="outline" className="text-[10px]">{r.tva_rate}%</Badge> : <span className="text-[#8B929C]">—</span>}
+                    </td>
+                    <td className="px-4 py-2.5 text-[#8B929C] text-xs">{getSourceName(r)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>

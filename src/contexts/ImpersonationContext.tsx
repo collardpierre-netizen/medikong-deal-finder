@@ -36,13 +36,13 @@ export function ImpersonationProvider({ children }: { children: ReactNode }) {
   });
 
   useEffect(() => {
-    const saved = sessionStorage.getItem("mk_impersonation");
+    const saved = localStorage.getItem("mk_impersonation");
     if (saved) { try { setState(JSON.parse(saved)); } catch {} }
   }, []);
 
   useEffect(() => {
-    if (state.isImpersonating) sessionStorage.setItem("mk_impersonation", JSON.stringify(state));
-    else sessionStorage.removeItem("mk_impersonation");
+    if (state.isImpersonating) localStorage.setItem("mk_impersonation", JSON.stringify(state));
+    else localStorage.removeItem("mk_impersonation");
   }, [state]);
 
   const startImpersonation = useCallback(async (targetUserId: string, targetEmail: string, targetType: string, targetCompany: string, targetVendorId?: string) => {

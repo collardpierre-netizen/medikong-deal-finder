@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { ShoppingCart, Loader2, Truck } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useQuery } from "@tanstack/react-query";
 
 interface AddressForm {
   company: string;
@@ -38,16 +39,29 @@ export default function CheckoutPage() {
   const [payment, setPayment] = useState(0);
   const [submitting, setSubmitting] = useState(false);
 
-  const shippingOpts = [
-    { name: "Standard", delay: "5-7 jours", price: 0 },
-    { name: "Express", delay: "2-3 jours", price: 15 },
-    { name: "Économique", delay: "7-10 jours", price: -2.5 },
-  ];
+  const { data: shippingOpts = [] } = useQuery({
+    queryKey: ["shipping-options", shippingAddr.country],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("shipping_options")
+        .select("*")
+        .eq("country_code", shippingAddr.country)
+        .eq("is_active", true)
+        .order("sort_order");
+      if (!data || data.length === 0) {
+        return [{ id: "default", name: "Standard", name_fr: "Standard", delivery_min_days: 5, delivery_max_days: 7, price_adjustment: 0, is_free: true, currency: "EUR" }];
+      }
+      return data;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
   const paymentMethods = ["Carte bancaire", "Virement SEPA", "Paiement différé Mondu"];
 
   const getItemPrice = (item: typeof items[0]) => item.price_excl_vat || item.product?.price || 0;
   const subtotal = items.reduce((s, i) => s + getItemPrice(i) * i.quantity, 0);
-  const shippingCost = shippingOpts[shipping].price;
+  const selectedOpt = shippingOpts[shipping] || shippingOpts[0];
+  const shippingCost = selectedOpt ? Number(selectedOpt.price_adjustment) || 0 : 0;
   const total = subtotal + shippingCost;
 
   const stepVariants = {

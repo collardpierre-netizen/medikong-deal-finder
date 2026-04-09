@@ -69,11 +69,18 @@ export default function RestockBuyerDashboard() {
             <img src={logoHorizontal} alt="MediKong" className="h-8 md:h-9" />
             <span className="text-[#00B85C] font-bold text-base md:text-lg">ReStock</span>
           </div>
-          <Link to="/restock/opportunities/demo">
-            <Button size="sm" className="bg-[#1C58D9] hover:bg-[#1549B8] text-white rounded-lg gap-2 text-xs md:text-sm">
-              <Package size={14} /> Opportunités
-            </Button>
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link to="/restock/faq">
+              <Button size="sm" variant="outline" className="border-[#D0D5DC] text-[#5C6470] hover:bg-[#F7F8FA] rounded-lg gap-1 text-xs md:text-sm">
+                <HelpCircle size={14} /> FAQ
+              </Button>
+            </Link>
+            <Link to="/restock/opportunities/demo">
+              <Button size="sm" className="bg-[#1C58D9] hover:bg-[#1549B8] text-white rounded-lg gap-2 text-xs md:text-sm">
+                <Package size={14} /> Opportunités
+              </Button>
+            </Link>
+          </div>
         </div>
       </header>
 

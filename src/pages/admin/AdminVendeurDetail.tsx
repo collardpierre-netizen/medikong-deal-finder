@@ -457,6 +457,10 @@ const AdminVendeurDetail = () => {
         </div>
       )}
 
+      {activeTab === "delegates" && (
+        <EntityDelegatesSection entityType="vendor" entityId={vendor.id} />
+      )}
+
       {activeTab === "activity" && (
         <div className="p-5 rounded-[10px]" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
           <h3 className="text-[14px] font-bold mb-4" style={{ color: "#1D2530" }}>Activité récente</h3>

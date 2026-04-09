@@ -14,7 +14,7 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json();
-    const { product_id, image_index, image_base64, content_type, ext } = body;
+    const { product_id, image_index, image_base64, content_type, ext, update_product } = body;
 
     if (!product_id || image_base64 === undefined) {
       return new Response(JSON.stringify({ error: "Missing fields" }), { status: 400, headers: corsHeaders });
@@ -35,7 +35,33 @@ Deno.serve(async (req) => {
       .from("product-images")
       .getPublicUrl(filePath);
 
-    return new Response(JSON.stringify({ url: publicUrl }), {
+    if (update_product === true) {
+      const normalizedIndex = Number.isInteger(image_index) ? image_index : 0;
+      const { data: product, error: productErr } = await supabase
+        .from("products")
+        .select("image_urls")
+        .eq("id", product_id)
+        .maybeSingle();
+
+      if (productErr) throw productErr;
+
+      const imageUrls = Array.isArray(product?.image_urls) ? [...product.image_urls] : [];
+      imageUrls[normalizedIndex] = publicUrl;
+
+      const cleanedUrls = imageUrls.filter((url): url is string => typeof url === "string" && url.trim().length > 0);
+
+      const { error: updateErr } = await supabase
+        .from("products")
+        .update({
+          image_url: cleanedUrls[0] ?? publicUrl,
+          image_urls: cleanedUrls.length > 0 ? cleanedUrls : [publicUrl],
+        })
+        .eq("id", product_id);
+
+      if (updateErr) throw updateErr;
+    }
+
+    return new Response(JSON.stringify({ url: publicUrl, updated: update_product === true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {

@@ -353,16 +353,25 @@ const AdminProduits = () => {
                 <tbody>
                   {products.map((p) => {
                     const rawImgUrl = (p.image_urls as string[] | null)?.[0] || (p as any).image_url || null;
-                    const imgUrl = rawImgUrl ? getProductImageSrc(rawImgUrl) : null;
+                    const proxiedUrl = rawImgUrl ? getProductImageSrc(rawImgUrl) : null;
                     return (
                     <tr key={p.id} className="cursor-pointer transition-colors" style={{ borderBottom: "1px solid #F1F5F9" }}
                       onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#F8FAFC")}
                       onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}>
                       <td className="px-4 py-3 w-12">
-                        {imgUrl ? (
-                          <img src={imgUrl} alt={p.name} className="w-9 h-9 rounded object-contain bg-gray-50 border" style={{ borderColor: "#E2E8F0" }} referrerPolicy="no-referrer" onError={(e) => { const el = e.target as HTMLImageElement; el.classList.add("hidden"); el.nextElementSibling && (el.nextElementSibling as HTMLElement).classList.remove("hidden"); }} />
+                        {proxiedUrl ? (
+                          <img src={proxiedUrl} alt={p.name} className="w-9 h-9 rounded object-contain bg-gray-50 border" style={{ borderColor: "#E2E8F0" }} referrerPolicy="no-referrer" onError={(e) => {
+                            const el = e.target as HTMLImageElement;
+                            // If proxy failed, try direct URL as fallback
+                            if (rawImgUrl && el.src !== rawImgUrl) {
+                              el.src = rawImgUrl;
+                            } else {
+                              el.classList.add("hidden");
+                              el.nextElementSibling && (el.nextElementSibling as HTMLElement).classList.remove("hidden");
+                            }
+                          }} />
                         ) : null}
-                        <div className={`w-9 h-9 rounded bg-gray-50 border flex items-center justify-center ${imgUrl ? "hidden" : ""}`} style={{ borderColor: "#E2E8F0" }}>
+                        <div className={`w-9 h-9 rounded bg-gray-50 border flex items-center justify-center ${proxiedUrl ? "hidden" : ""}`} style={{ borderColor: "#E2E8F0" }}>
                           <Package size={14} className="text-gray-300" />
                         </div>
                       </td>

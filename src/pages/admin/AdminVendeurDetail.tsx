@@ -344,6 +344,69 @@ const AdminVendeurDetail = () => {
         />
       )}
 
+      {activeTab === "offers" && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-3 gap-3">
+            <KpiCard icon={Package} label="Offres actives" value={String(detailedOffers.length)} />
+            <KpiCard icon={DollarSign} label="Marge moyenne" value={
+              detailedOffers.length > 0
+                ? `${(detailedOffers.reduce((s, o) => s + (o.margin_pct || 0), 0) / detailedOffers.length).toFixed(1)}%`
+                : "—"
+            } iconColor="#059669" iconBg="#F0FDF4" />
+            <KpiCard icon={Factory} label="Marge totale €" value={
+              detailedOffers.length > 0
+                ? `€${detailedOffers.reduce((s, o) => s + (o.net_margin || 0), 0).toFixed(2)}`
+                : "—"
+            } iconColor="#7C3AED" iconBg="#F5F3FF" />
+          </div>
+          <div className="rounded-[10px] overflow-hidden" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
+            <table className="w-full text-left">
+              <thead>
+                <tr style={{ borderBottom: "1px solid #E2E8F0", backgroundColor: "#F8FAFC" }}>
+                  {["Produit", "GTIN", "Offres", "Prix vente HT", "Prix achat HT", "Marge €", "Marge %", "Stock"].map(h => (
+                    <th key={h} className="px-3 py-3 text-[11px] font-semibold uppercase tracking-wider" style={{ color: "#8B95A5" }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {detailedOffers.map((o) => (
+                  <tr key={o.id} style={{ borderBottom: "1px solid #F1F5F9" }}>
+                    <td className="px-3 py-2.5 text-[12px] font-medium max-w-[250px] truncate" style={{ color: "#1D2530" }}>{o.product_name}</td>
+                    <td className="px-3 py-2.5 text-[11px] font-mono" style={{ color: "#616B7C" }}>{o.gtin}</td>
+                    <td className="px-3 py-2.5">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold" style={{ backgroundColor: "#EFF6FF", color: "#1B5BDA" }}>
+                        {o.total_offers} vendeur{o.total_offers > 1 ? "s" : ""}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2.5 text-[12px] font-bold" style={{ color: "#1D2530" }}>€{o.sell_price.toFixed(2)}</td>
+                    <td className="px-3 py-2.5 text-[12px]" style={{ color: "#616B7C" }}>
+                      {o.purchase_price != null ? `€${o.purchase_price.toFixed(2)}` : o.qogita_base ? `€${o.qogita_base.toFixed(2)}` : "—"}
+                    </td>
+                    <td className="px-3 py-2.5 text-[12px] font-bold" style={{ color: o.net_margin && o.net_margin > 0 ? "#059669" : "#DC2626" }}>
+                      {o.net_margin != null ? `€${o.net_margin.toFixed(2)}` : "—"}
+                    </td>
+                    <td className="px-3 py-2.5">
+                      {o.margin_pct != null ? (
+                        <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-bold" style={{
+                          backgroundColor: o.margin_pct >= 15 ? "#F0FDF4" : o.margin_pct >= 5 ? "#FFFBEB" : "#FEF2F2",
+                          color: o.margin_pct >= 15 ? "#059669" : o.margin_pct >= 5 ? "#D97706" : "#DC2626",
+                        }}>
+                          {o.margin_pct.toFixed(1)}%
+                        </span>
+                      ) : "—"}
+                    </td>
+                    <td className="px-3 py-2.5 text-[12px]" style={{ color: "#616B7C" }}>{o.stock}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {detailedOffers.length === 0 && (
+              <div className="py-12 text-center text-[13px]" style={{ color: "#8B95A5" }}>Aucune offre active</div>
+            )}
+          </div>
+        </div>
+      )}
+
       {activeTab === "portfolio" && (
         <div className="space-y-4">
           <div className="p-5 rounded-[10px]" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>

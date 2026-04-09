@@ -182,6 +182,7 @@ const RestockAdminFaq = lazyWithRetry(() => import("./pages/restock/RestockAdmin
 const RestockAdminPriceReferences = lazyWithRetry(() => import("./pages/restock/RestockAdminPriceReferences"), "RestockAdminPriceReferences");
 const RestockAdminPayouts = lazyWithRetry(() => import("./pages/restock/RestockAdminPayouts"), "RestockAdminPayouts");
 const RestockSellerReferral = lazyWithRetry(() => import("./pages/restock/RestockSellerReferral"), "RestockSellerReferral");
+const RestockCheckout = lazyWithRetry(() => import("./pages/restock/RestockCheckout"), "RestockCheckout");
 
 const queryClient = new QueryClient({
   defaultOptions: {

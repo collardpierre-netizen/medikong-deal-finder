@@ -610,31 +610,42 @@ function useOfferImport(vendorId: string | undefined) {
 function downloadTemplate() {
   const ws = XLSX.utils.aoa_to_sheet([
     [
-      "EAN", "CNK", "Prix HT", "Prix_Achat_HT", "TVA", "Stock", "MOQ", "Délai", "Pays",
+      "EAN", "CNK", "Prix HT", "Prix_Achat_HT", "TVA", "Stock", "MOQ", "MOV", "Délai", "Pays",
       "Profil", "Profil_Pays", "Prix_Profil_HT", "Remise_%", "MOQ_Profil", "MOV_Profil",
     ],
-    ["3401560100013", "1234567", "12.50", "8.00", "21", "100", "1", "3", "BE", "", "", "", "", "", ""],
-    ["3401560100013", "", "", "", "", "", "", "", "", "pharmacy", "BE", "11.00", "", "5", "150"],
-    ["3401560100013", "", "", "", "", "", "", "", "", "hospital", "", "", "10", "10", "500"],
+    ["3401560100013", "1234567", "12.50", "8.00", "21", "100", "1", "150", "3", "BE", "", "", "", "", "", ""],
+    ["3401560100013", "", "13.00", "8.50", "20", "", "1", "200", "5", "FR", "", "", "", "", "", ""],
+    ["3401560100013", "", "", "", "", "", "", "", "", "", "pharmacy", "BE", "11.00", "", "5", "150"],
+    ["3401560100013", "", "", "", "", "", "", "", "", "", "hospital", "", "", "10", "10", "500"],
   ]);
-  ws["!cols"] = Array(15).fill(null).map(() => ({ wch: 16 }));
+  ws["!cols"] = Array(16).fill(null).map(() => ({ wch: 16 }));
+
+  // Price tiers sheet
+  const wsTiers = XLSX.utils.aoa_to_sheet([
+    ["EAN", "CNK", "Pays", "Palier", "Seuil_MOV", "Prix_HT"],
+    ["3401560100013", "", "BE", "1", "0", "12.50"],
+    ["3401560100013", "", "BE", "2", "500", "11.50"],
+    ["3401560100013", "", "BE", "3", "1000", "10.80"],
+  ]);
+  wsTiers["!cols"] = Array(6).fill(null).map(() => ({ wch: 16 }));
 
   // Instructions sheet
   const instrRows = [
     ["Guide d'import des offres MediKong"],
     [""],
-    ["Colonnes principales (obligatoires pour créer une offre) :"],
+    ["=== Onglet 'Offres' — Colonnes principales ==="],
     ["EAN", "Code-barres EAN/GTIN du produit"],
     ["CNK", "Code CNK belge (alternative au EAN)"],
     ["Prix HT", "Prix de vente hors taxes en euros"],
     ["Prix_Achat_HT", "Prix d'achat HT (pour calcul de marge). Obligatoire en mode partage de marge."],
     ["TVA", "Taux de TVA (ex: 21)"],
-    ["Stock", "Quantité en stock"],
-    ["MOQ", "Quantité minimum de commande"],
-    ["Délai", "Délai de livraison en jours"],
-    ["Pays", "Code pays (BE, FR, NL, LU, DE)"],
+    ["Stock", "Quantité en stock. Vide = en stock sans limite. 0 = rupture de stock."],
+    ["MOQ", "Quantité minimum de commande (par défaut : 1)"],
+    ["MOV", "Montant minimum de commande en € (par défaut : 0)"],
+    ["Délai", "Délai de livraison en jours (par défaut : 3)"],
+    ["Pays", "Code pays (BE, FR, NL, LU, DE) — une ligne par pays pour des configs différentes"],
     [""],
-    ["Colonnes profil (optionnelles, pour prix différenciés) :"],
+    ["=== Colonnes profil (optionnelles, pour prix différenciés) ==="],
     ["Profil", "Type de profil : pharmacy, hospital, dentist, nursing, veterinary, ehpad, wholesale"],
     ["Profil_Pays", "Code pays pour cette règle (vide = tous les pays)"],
     ["Prix_Profil_HT", "Prix HT fixe pour ce profil (prioritaire sur Remise_%)"],
@@ -642,10 +653,19 @@ function downloadTemplate() {
     ["MOQ_Profil", "MOQ spécifique pour ce profil"],
     ["MOV_Profil", "Montant minimum de commande en € pour ce profil"],
     [""],
-    ["Règle d'import :"],
-    ["- Une ligne avec EAN + Prix HT = offre principale"],
+    ["=== Onglet 'Paliers' — Prix dégressifs ==="],
+    ["EAN", "Code-barres EAN/GTIN du produit"],
+    ["CNK", "Code CNK belge (alternative au EAN)"],
+    ["Pays", "Code pays"],
+    ["Palier", "Numéro du palier (1 = prix de base, 2 = palier 2, etc.)"],
+    ["Seuil_MOV", "Seuil de commande minimum en € pour accéder à ce palier"],
+    ["Prix_HT", "Prix unitaire HT pour ce palier"],
+    [""],
+    ["=== Règles d'import ==="],
+    ["- Une ligne avec EAN + Prix HT = offre principale (une par pays)"],
+    ["- Stock vide = en stock sans limite, Stock = 0 = rupture"],
     ["- Une ligne avec le même EAN + Profil renseigné = règle profil pour cette offre"],
-    ["- Vous pouvez avoir plusieurs lignes profil pour le même EAN"],
+    ["- Onglet 'Paliers' : prix dégressifs par seuil de commande"],
     ["- Le Prix_Achat_HT permet de calculer la marge nette (vente - achat)"],
   ];
   const wsInstr = XLSX.utils.aoa_to_sheet(instrRows);
@@ -653,6 +673,7 @@ function downloadTemplate() {
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Offres");
+  XLSX.utils.book_append_sheet(wb, wsTiers, "Paliers");
   XLSX.utils.book_append_sheet(wb, wsInstr, "Instructions");
   XLSX.writeFile(wb, "template_offres_medikong.xlsx");
 }

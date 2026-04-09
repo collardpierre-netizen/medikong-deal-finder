@@ -354,9 +354,9 @@ export default function VendorPublicPage() {
                     </span>
                   )}
                 </div>
-                {vendor.show_real_name && vendor.description && <p className="text-sm text-muted-foreground mb-2 max-w-[600px]">{vendor.description}</p>}
+                {showReal && vendor.description && <p className="text-sm text-muted-foreground mb-2 max-w-[600px]">{vendor.description}</p>}
                 <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                  {vendor.city && vendor.show_real_name && <span className="flex items-center gap-1"><MapPin size={12} /> {vendor.city}, {vendor.country_code}</span>}
+                  {vendor.city && showReal && <span className="flex items-center gap-1"><MapPin size={12} /> {vendor.city}, {vendor.country_code}</span>}
                   <span className="flex items-center gap-1"><Package size={12} /> {vendorProducts.length} produits</span>
                 </div>
               </div>

@@ -252,10 +252,58 @@ export default function VendorFormDialog({ open, onOpenChange }: Props) {
               <Input value={form.country_code} onChange={e => set("country_code", e.target.value)} placeholder="BE" />
             </div>
           </div>
+
+          {/* Commission model */}
           <div>
-            <Label>Commission (%)</Label>
-            <Input type="number" min="0" max="100" step="0.5" value={form.commission_rate} onChange={e => set("commission_rate", e.target.value)} />
+            <Label>Modèle de commission *</Label>
+            <Select value={form.commission_model} onValueChange={(v) => set("commission_model", v)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {COMMISSION_MODELS.map((m) => (
+                  <SelectItem key={m.value} value={m.value}>
+                    <div>
+                      <span className="font-medium">{m.label}</span>
+                      <span className="text-muted-foreground ml-2 text-xs">— {m.description}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
+
+          {form.commission_model === "flat_percentage" && (
+            <div>
+              <Label>Commission (%)</Label>
+              <Input type="number" min="0" max="100" step="0.5" value={form.commission_rate} onChange={e => set("commission_rate", e.target.value)} />
+            </div>
+          )}
+
+          {form.commission_model === "margin_split" && (
+            <div className="space-y-2">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Part vendeur (%)</Label>
+                  <Input type="number" min="0" max="100" step="5" value={form.margin_split_pct} onChange={e => set("margin_split_pct", e.target.value)} />
+                </div>
+                <div>
+                  <Label>Part MediKong (%)</Label>
+                  <Input type="number" disabled value={String(100 - (parseFloat(form.margin_split_pct) || 0))} className="bg-muted" />
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                La marge nette = Prix de vente HTVA − Prix d'achat HTVA. Un prix d'achat devra être renseigné pour chaque offre.
+              </p>
+            </div>
+          )}
+
+          {form.commission_model === "fixed_amount" && (
+            <div>
+              <Label>Commission fixe (€ / unité)</Label>
+              <Input type="number" min="0" step="0.5" value={form.fixed_commission_amount} onChange={e => set("fixed_commission_amount", e.target.value)} />
+            </div>
+          )}
           <div>
             <Label>Description</Label>
             <textarea

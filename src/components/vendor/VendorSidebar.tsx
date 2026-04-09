@@ -56,6 +56,7 @@ export function VendorSidebar({ onNavigate }: VendorSidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const { t } = useI18n();
   const location = useLocation();
+  const preservedSearch = location.search;
 
   return (
     <aside
@@ -65,7 +66,6 @@ export function VendorSidebar({ onNavigate }: VendorSidebarProps) {
       )}
       style={{ backgroundColor: "#1E293B" }}
     >
-      {/* Logo */}
       <div className="flex items-center gap-3 px-4 h-14 shrink-0">
         {collapsed ? (
           <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-sm shrink-0" style={{ backgroundColor: "#1B5BDA" }}>M</div>
@@ -77,7 +77,6 @@ export function VendorSidebar({ onNavigate }: VendorSidebarProps) {
         )}
       </div>
 
-      {/* Nav sections */}
       <nav className="flex-1 overflow-y-auto py-2 px-2 space-y-4">
         {sidebarSections.map((section, si) => (
           <div key={si}>
@@ -87,7 +86,7 @@ export function VendorSidebar({ onNavigate }: VendorSidebarProps) {
             <div className="space-y-0.5">
               {section.items.map((item) => {
                 const isActive = location.pathname === item.path || (item.path !== "/vendor" && location.pathname.startsWith(item.path));
-                const isDisabled = 'comingSoon' in item && item.comingSoon;
+                const isDisabled = "comingSoon" in item && item.comingSoon;
 
                 if (isDisabled) {
                   return (
@@ -113,7 +112,7 @@ export function VendorSidebar({ onNavigate }: VendorSidebarProps) {
                 return (
                   <NavLink
                     key={item.key}
-                    to={item.path}
+                    to={{ pathname: item.path, search: preservedSearch }}
                     onClick={onNavigate}
                     className={cn(
                       "flex items-center gap-3 rounded-md text-[13px] font-medium transition-colors relative",
@@ -134,7 +133,6 @@ export function VendorSidebar({ onNavigate }: VendorSidebarProps) {
         ))}
       </nav>
 
-      {/* Collapse toggle */}
       <button
         onClick={() => setCollapsed(!collapsed)}
         className="flex items-center justify-center h-10 text-white/40 hover:text-white/70 transition-colors shrink-0 border-t border-white/10"

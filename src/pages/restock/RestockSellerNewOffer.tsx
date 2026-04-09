@@ -206,6 +206,8 @@ function ManualAddForm({ onAdd }: { onAdd: (row: OfferRow) => void }) {
   const [piecesPack, setPiecesPack] = useState("");
   const [packsBox, setPacksBox] = useState("");
   const [boxesPallet, setBoxesPallet] = useState("");
+  const [publishStart, setPublishStart] = useState("");
+  const [publishEnd, setPublishEnd] = useState("");
 
   const lookupCode = async () => {
     const trimmed = code.trim();

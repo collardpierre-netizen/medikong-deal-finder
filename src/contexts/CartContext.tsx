@@ -83,7 +83,7 @@ async function syncCartToDB(items: CartItem[], customerId: string) {
 async function loadCartFromDB(customerId: string): Promise<CartItem[]> {
   const { data } = await supabase
     .from("cart_items")
-    .select("id, offer_id, quantity, offers:offer_id(id, product_id, vendor_id, price_excl_vat, price_incl_vat, delivery_days, stock_quantity, products:product_id(id, name, brand_name, slug, image_url))")
+    .select("id, offer_id, quantity, offers:offer_id(id, product_id, vendor_id, price_excl_vat, price_incl_vat, delivery_days, stock_quantity, products:product_id(id, name, brand_name, slug, image_url, image_urls))")
     .eq("customer_id", customerId);
   if (!data) return [];
   return data.map((row: any) => {

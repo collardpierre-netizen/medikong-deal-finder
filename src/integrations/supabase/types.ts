@@ -5180,6 +5180,7 @@ export type Database = {
           commissionnaire_agreement_accepted_at: string | null
           commissionnaire_agreement_version: string | null
           company_name: string | null
+          contact_name: string | null
           country_code: string
           created_at: string
           description: string | null
@@ -5241,6 +5242,7 @@ export type Database = {
           commissionnaire_agreement_accepted_at?: string | null
           commissionnaire_agreement_version?: string | null
           company_name?: string | null
+          contact_name?: string | null
           country_code?: string
           created_at?: string
           description?: string | null
@@ -5302,6 +5304,7 @@ export type Database = {
           commissionnaire_agreement_accepted_at?: string | null
           commissionnaire_agreement_version?: string | null
           company_name?: string | null
+          contact_name?: string | null
           country_code?: string
           created_at?: string
           description?: string | null

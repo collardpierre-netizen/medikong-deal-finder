@@ -552,16 +552,22 @@ function useOfferImport(vendorId: string | undefined) {
         created++;
       }
 
-      // Insert offers and collect IDs
+      // Deduplicate offers by product_id+vendor_id+country_code (keep last occurrence)
+      const deduped = new Map<string, typeof offers[number]>();
+      for (const o of offers) {
+        deduped.set(`${o.product_id}|${o.vendor_id}|${o.country_code}`, o);
+      }
+      const uniqueOffers = Array.from(deduped.values());
+
+      // Upsert offers and collect IDs
       const offerIdsByKey: Record<string, string> = {};
-      if (offers.length > 0) {
-        for (let i = 0; i < offers.length; i += 100) {
-          const batch = offers.slice(i, i + 100).map(({ _ean, _cnk, ...rest }) => rest);
+      if (uniqueOffers.length > 0) {
+        for (let i = 0; i < uniqueOffers.length; i += 100) {
+          const batchSource = uniqueOffers.slice(i, i + 100);
+          const batch = batchSource.map(({ _ean, _cnk, ...rest }) => rest);
           const { data: inserted, error } = await supabase.from("offers").upsert(batch, { onConflict: "product_id,vendor_id,country_code", ignoreDuplicates: false }).select("id, product_id");
           if (error) throw error;
-          // Map product_id back to offer_id for profile rules
           if (inserted) {
-            const batchSource = offers.slice(i, i + 100);
             inserted.forEach((ins: any, idx: number) => {
               const src = batchSource[idx];
               if (src._ean) offerIdsByKey[src._ean] = ins.id;

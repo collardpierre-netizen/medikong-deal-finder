@@ -4314,6 +4314,69 @@ export type Database = {
           },
         ]
       }
+      shipping_options: {
+        Row: {
+          country_code: string
+          created_at: string
+          currency: string
+          delivery_max_days: number
+          delivery_min_days: number
+          description: string | null
+          id: string
+          is_active: boolean
+          is_free: boolean
+          name: string
+          name_de: string | null
+          name_fr: string | null
+          name_nl: string | null
+          price_adjustment: number
+          sendcloud_carrier: string | null
+          sendcloud_method_id: number | null
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          country_code?: string
+          created_at?: string
+          currency?: string
+          delivery_max_days?: number
+          delivery_min_days?: number
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_free?: boolean
+          name: string
+          name_de?: string | null
+          name_fr?: string | null
+          name_nl?: string | null
+          price_adjustment?: number
+          sendcloud_carrier?: string | null
+          sendcloud_method_id?: number | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          country_code?: string
+          created_at?: string
+          currency?: string
+          delivery_max_days?: number
+          delivery_min_days?: number
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_free?: boolean
+          name?: string
+          name_de?: string | null
+          name_fr?: string | null
+          name_nl?: string | null
+          price_adjustment?: number
+          sendcloud_carrier?: string | null
+          sendcloud_method_id?: number | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       site_config: {
         Row: {
           country: string

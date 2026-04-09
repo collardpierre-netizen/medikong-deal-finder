@@ -64,9 +64,67 @@ const AdminVendeurDetail = () => {
     queryFn: async () => {
       const { data: offers } = await supabase
         .from("offers")
-        .select("product_id, price_excl_vat, stock_quantity, is_active, products(name)")
+        .select("product_id, price_excl_vat, stock_quantity, is_active, purchase_price, margin_amount, applied_margin_percentage, qogita_base_price, products(name, offer_count, gtin)")
         .eq("vendor_id", id!);
       return offers || [];
+    },
+    enabled: !!id,
+  });
+
+  // Detailed offers with all vendors per product for the Offres & Marges tab
+  const { data: detailedOffers = [] } = useQuery({
+    queryKey: ["vendor-offers-detailed", id],
+    queryFn: async () => {
+      // Get this vendor's offers with product info
+      const { data: myOffers } = await supabase
+        .from("offers")
+        .select("id, product_id, price_excl_vat, purchase_price, margin_amount, applied_margin_percentage, qogita_base_price, stock_quantity, is_active, vat_rate, products(name, gtin, offer_count, best_price_excl_vat)")
+        .eq("vendor_id", id!)
+        .eq("is_active", true)
+        .order("price_excl_vat", { ascending: true });
+
+      if (!myOffers?.length) return [];
+
+      // For each product, get total vendor count
+      const productIds = [...new Set(myOffers.map(o => o.product_id))];
+      const vendorCounts: Record<string, number> = {};
+      
+      // Batch query vendor counts
+      for (let i = 0; i < productIds.length; i += 50) {
+        const batch = productIds.slice(i, i + 50);
+        const { data: counts } = await supabase
+          .from("offers")
+          .select("product_id, vendor_id")
+          .in("product_id", batch)
+          .eq("is_active", true);
+        if (counts) {
+          for (const c of counts) {
+            vendorCounts[c.product_id] = (vendorCounts[c.product_id] || 0) + 1;
+          }
+        }
+      }
+
+      return myOffers.map(o => {
+        const product = o.products as any;
+        const purchasePrice = o.purchase_price ? Number(o.purchase_price) : null;
+        const sellPrice = Number(o.price_excl_vat);
+        const netMargin = purchasePrice ? sellPrice - purchasePrice : (o.margin_amount ? Number(o.margin_amount) : null);
+        const marginPct = netMargin && sellPrice > 0 ? (netMargin / sellPrice * 100) : (o.applied_margin_percentage ? Number(o.applied_margin_percentage) : null);
+
+        return {
+          id: o.id,
+          product_id: o.product_id,
+          product_name: product?.name || "—",
+          gtin: product?.gtin || "—",
+          total_offers: vendorCounts[o.product_id] || 1,
+          sell_price: sellPrice,
+          purchase_price: purchasePrice,
+          qogita_base: o.qogita_base_price ? Number(o.qogita_base_price) : null,
+          net_margin: netMargin,
+          margin_pct: marginPct,
+          stock: o.stock_quantity,
+        };
+      });
     },
     enabled: !!id,
   });

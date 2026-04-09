@@ -232,12 +232,12 @@ export default function CheckoutPage() {
                     <h3 className="text-lg font-bold text-mk-navy mb-4 mt-6">Options de livraison</h3>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
                       {shippingOpts.map((s, i) => (
-                        <motion.button key={i} onClick={() => setShipping(i)}
+                        <motion.button key={s.id || i} onClick={() => setShipping(i)}
                           className={`border rounded-lg p-4 text-center ${shipping === i ? "border-mk-blue border-2 bg-blue-50" : "border-mk-line"}`}
                           whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-                          <p className="text-sm font-bold text-mk-navy">{s.name}</p>
-                          <p className="text-xs text-mk-sec">{s.delay}</p>
-                          <p className="text-sm font-bold text-mk-navy mt-1">{s.price === 0 ? "Gratuit" : `${s.price > 0 ? "+" : ""}${formatPrice(s.price)} EUR`}</p>
+                          <p className="text-sm font-bold text-mk-navy">{s.name_fr || s.name}</p>
+                          <p className="text-xs text-mk-sec">{s.delivery_min_days}–{s.delivery_max_days} jours</p>
+                          <p className="text-sm font-bold text-mk-navy mt-1">{s.is_free ? "Gratuit" : `${Number(s.price_adjustment) > 0 ? "+" : ""}${formatPrice(Number(s.price_adjustment))} EUR`}</p>
                         </motion.button>
                       ))}
                     </div>

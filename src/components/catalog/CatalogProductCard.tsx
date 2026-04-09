@@ -175,7 +175,7 @@ export function CatalogProductCard({ product, index = 0, view = "grid", searchQu
         <div className="flex-1 min-w-0">
           <Link to={`/produit/${product.slug}`} state={fromState}>
             <p className="text-xs text-muted-foreground mb-0.5">{product.brand_name}</p>
-            <h3 className="text-sm font-medium text-foreground line-clamp-2 mb-1">{displayName}</h3>
+            <h3 className="text-sm font-medium text-foreground line-clamp-2 mb-1"><HighlightText text={displayName} query={searchQuery} /></h3>
           </Link>
           {product.short_description && (
             <p className="text-xs text-muted-foreground line-clamp-1">{product.short_description}</p>
@@ -242,7 +242,7 @@ export function CatalogProductCard({ product, index = 0, view = "grid", searchQu
       </div>
       <Link to={`/produit/${product.slug}`} state={fromState}>
         <p className="text-xs text-muted-foreground mb-0.5 truncate">{product.brand_name || "—"}</p>
-        <h3 className="text-sm font-medium text-foreground leading-snug mb-1.5 line-clamp-2 min-h-[2.5rem]">{displayName}</h3>
+        <h3 className="text-sm font-medium text-foreground leading-snug mb-1.5 line-clamp-2 min-h-[2.5rem]"><HighlightText text={displayName} query={searchQuery} /></h3>
       </Link>
       {canSeePrices ? (
         <>

@@ -159,6 +159,32 @@ const AdminVendeurDetail = () => {
           >
             <ExternalLink size={14} /> Accéder au portail
           </button>
+          {!vendor.auth_user_id && (
+            <button
+              onClick={async () => {
+                if (!vendor.email) { toast.error("Email requis pour créer un compte"); return; }
+                try {
+                  const { data, error } = await supabase.functions.invoke("create-vendor-account", {
+                    body: {
+                      company_name: vendor.company_name || vendor.name,
+                      email: vendor.email,
+                      vendor_id: vendor.id,
+                    },
+                  });
+                  if (error) throw error;
+                  if (data?.error) throw new Error(data.error);
+                  toast.success(`Compte créé ! Mot de passe temporaire : ${data.temp_password}`);
+                  queryClient.invalidateQueries({ queryKey: ["vendor-detail", id] });
+                } catch (e: any) {
+                  toast.error(e.message || "Erreur");
+                }
+              }}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-md text-[12px] font-bold transition-opacity hover:opacity-90"
+              style={{ backgroundColor: "#EFF6FF", color: "#1B5BDA", border: "1px solid #DBEAFE" }}
+            >
+              <Plus size={14} /> Créer un accès
+            </button>
+          )}
           <button
             onClick={() => setShowInvite(true)}
             className="flex items-center gap-1.5 px-3 py-2 rounded-md text-[12px] font-bold transition-opacity hover:opacity-90"
@@ -202,7 +228,13 @@ const AdminVendeurDetail = () => {
       {activeTab === "resume" && (
         <div className="space-y-4">
           <div className="grid grid-cols-3 gap-3">
-            <KpiCard icon={DollarSign} label="Commission" value={`${vendor.commission_rate}%`} />
+            <KpiCard icon={DollarSign} label="Commission" value={
+              (vendor as any).commission_model === 'margin_split'
+                ? `Partage ${(vendor as any).margin_split_pct || 50}/${100 - ((vendor as any).margin_split_pct || 50)}`
+                : (vendor as any).commission_model === 'fixed_amount'
+                ? `€${(vendor as any).fixed_commission_amount || 0}/unité`
+                : `${vendor.commission_rate}%`
+            } />
             <KpiCard icon={Package} label="Type" value={vendor.type} iconColor="#7C3AED" iconBg="#F5F3FF" />
             <KpiCard icon={Package} label="Ventes totales" value={String(vendor.total_sales)} iconColor="#059669" iconBg="#F0FDF4" />
           </div>
@@ -217,6 +249,14 @@ const AdminVendeurDetail = () => {
               <InfoRow label="Type d'activité" value={(vendor as any).business_type || "—"} />
               <InfoRow label="Langue" value={(vendor as any).preferred_language?.toUpperCase() || "FR"} />
               <InfoRow label="Vérifié" value={vendor.is_verified ? "Oui" : "Non"} />
+              <InfoRow label="Compte accès" value={vendor.auth_user_id ? "✅ Oui" : "❌ Non"} />
+              <InfoRow label="Modèle commission" value={
+                (vendor as any).commission_model === 'margin_split'
+                  ? `Partage de marge (${(vendor as any).margin_split_pct || 50}% vendeur / ${100 - ((vendor as any).margin_split_pct || 50)}% MediKong)`
+                  : (vendor as any).commission_model === 'fixed_amount'
+                  ? `Montant fixe : €${(vendor as any).fixed_commission_amount || 0}/unité`
+                  : `Pourcentage fixe : ${vendor.commission_rate}%`
+              } />
             </div>
             <div className="p-5 rounded-[10px]" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
               <h3 className="text-[14px] font-bold mb-3 flex items-center gap-2" style={{ color: "#1D2530" }}><Mail size={16} /> Contact</h3>

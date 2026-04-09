@@ -94,7 +94,7 @@ Deno.serve(async (req) => {
       return urls && urls.length > 0 && urls.some((u: string) =>
         u && u.startsWith("http") && !u.includes(storageHost)
       );
-    });
+    }).slice(0, limit);
 
     if (dryRun) {
       return new Response(JSON.stringify({

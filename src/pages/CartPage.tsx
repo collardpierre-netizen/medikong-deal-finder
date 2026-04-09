@@ -261,19 +261,12 @@ export default function CartPage() {
                         </div>
                       </div>
 
-                      {/* MOV tiers */}
+                      {/* MOV info */}
                       <div className="flex items-center gap-2 text-xs text-mk-sec mb-4 border-t border-mk-line pt-3">
                         <span className="flex items-center gap-1 font-medium">
-                          Paliers MOV: <HelpCircle size={11} className="text-mk-ter" />
+                          MOV fournisseur: <span className="text-mk-navy">{formatPrice(group.currentMov)}€</span>
+                          <HelpCircle size={11} className="text-mk-ter" />
                         </span>
-                        {MOV_TIERS.map((tier, i) => (
-                          <span key={tier} className="flex items-center gap-1">
-                            {i > 0 && <span className="text-mk-line">|</span>}
-                            <span className={group.total >= tier ? "font-semibold text-mk-navy" : ""}>
-                              {formatPrice(tier)}€
-                            </span>
-                          </span>
-                        ))}
                       </div>
 
                       {/* Products toggle */}

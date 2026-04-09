@@ -210,7 +210,7 @@ const AdminVendeurDetail = () => {
             <div className="p-5 rounded-[10px]" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
               <h3 className="text-[14px] font-bold mb-3 flex items-center gap-2" style={{ color: "#1D2530" }}><Building2 size={16} /> Identité</h3>
               <InfoRow label="ID MediKong" value={vendor.id} />
-              <InfoRow label="ID Qogita" value={(vendor as any).qogita_seller_fid || "—"} />
+              <InfoRow label="ID Qogita" value={(vendor as any).qogita_seller_alias || "—"} />
               <InfoRow label="Raison sociale" value={vendor.company_name || ""} />
               <InfoRow label="N° TVA" value={vendor.vat_number || ""} />
               <InfoRow label="Type" value={vendor.type} />

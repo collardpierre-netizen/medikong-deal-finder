@@ -112,7 +112,60 @@ export async function exportProducts() {
   }
 }
 
-export async function exportBrands() {
+export async function exportOffers() {
+  const toastId = toast.loading("Export offres en cours...");
+  try {
+    const PAGE = 1000;
+    let all: any[] = [];
+    let from = 0;
+    while (true) {
+      const { data, error } = await supabase
+        .from("offers")
+        .select("id, product_id, vendor_id, country_code, price_excl_vat, price_incl_vat, vat_rate, stock_quantity, stock_status, moq, mov, mov_amount, mov_currency, delivery_days, is_active, purchase_price, qogita_base_price, applied_margin_percentage, margin_amount, is_qogita_backed, products(gtin, name, cnk_code, brand_name, category_name), vendors:vendor_id(company_name, display_code)")
+        .order("created_at", { ascending: false })
+        .range(from, from + PAGE - 1);
+      if (error) throw error;
+      if (!data || data.length === 0) break;
+      all = all.concat(data);
+      toast.loading(`Export offres... ${all.length.toLocaleString()} chargées`, { id: toastId });
+      if (data.length < PAGE) break;
+      from += PAGE;
+    }
+    const rows = all.map((o: any) => ({
+      offer_id: o.id,
+      gtin: o.products?.gtin || "",
+      cnk_code: o.products?.cnk_code || "",
+      product_name: o.products?.name || "",
+      brand_name: o.products?.brand_name || "",
+      category_name: o.products?.category_name || "",
+      vendor: o.vendors?.company_name || o.vendors?.display_code || "",
+      country: o.country_code || "",
+      prix_ht: o.price_excl_vat,
+      prix_ttc: o.price_incl_vat,
+      tva: o.vat_rate,
+      prix_achat_ht: o.purchase_price || "",
+      prix_base_qogita: o.qogita_base_price || "",
+      marge_pct: o.applied_margin_percentage || "",
+      marge_eur: o.margin_amount || "",
+      stock: o.stock_quantity,
+      stock_status: o.stock_status,
+      moq: o.moq,
+      mov: o.mov_amount || o.mov || "",
+      mov_currency: o.mov_currency || "",
+      delai_jours: o.delivery_days || "",
+      qogita: o.is_qogita_backed ? "Oui" : "Non",
+      actif: o.is_active ? "Oui" : "Non",
+    }));
+    toast.loading(`Génération XLSX (${rows.length.toLocaleString()} lignes)...`, { id: toastId });
+    await new Promise(r => setTimeout(r, 50));
+    exportToXlsx(rows, "medikong-offres", "Offres");
+    toast.success(`${rows.length.toLocaleString()} offres exportées`, { id: toastId });
+  } catch (e) {
+    console.error("Export offers error:", e);
+    toast.error("Erreur lors de l'export des offres", { id: toastId });
+  }
+}
+
   const data = await fetchAllRows("brands", "name").catch(() => null);
   if (!data) { toast.error("Erreur export marques"); return; }
   // Fetch translations

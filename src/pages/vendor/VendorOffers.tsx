@@ -733,10 +733,12 @@ function downloadTemplate() {
   XLSX.writeFile(wb, "template_offres_medikong.xlsx");
 }
 
-function exportOffers(offers: any[], profileRulesMap?: Map<string, any[]>) {
+function exportOffers(offers: any[], profileRulesMap?: Map<string, any[]>, priceTiersMap?: Map<string, any[]>) {
   if (offers.length === 0) { toast.error("Aucune offre à exporter"); return; }
   const rows: any[] = [];
+  const tiersRows: any[] = [];
   for (const o of offers) {
+    const stockDisplay = o.stock_quantity >= 99999 ? "" : o.stock_quantity;
     rows.push({
       "Produit": (o.products as any)?.name || "",
       "EAN": (o.products as any)?.gtin || "",
@@ -749,8 +751,9 @@ function exportOffers(offers: any[], profileRulesMap?: Map<string, any[]>) {
       "Marge %": o.purchase_price && o.purchase_price > 0 ? Math.round((o.price_excl_vat - o.purchase_price) / o.purchase_price * 10000) / 100 : "",
       "Prix TTC": o.price_incl_vat,
       "TVA": o.vat_rate,
-      "Stock": o.stock_quantity,
+      "Stock": stockDisplay,
       "MOQ": o.moq,
+      "MOV": o.mov_amount ?? "",
       "Délai": o.delivery_days,
       "Pays": o.country_code,
       "Statut": o.is_active ? "Active" : "Inactive",
@@ -765,25 +768,26 @@ function exportOffers(offers: any[], profileRulesMap?: Map<string, any[]>) {
     const rules = profileRulesMap?.get(o.id) || [];
     for (const r of rules) {
       rows.push({
-        "Produit": "",
+        "Produit": "", "EAN": (o.products as any)?.gtin || "", "CNK": (o.products as any)?.cnk_code || "",
+        "Marque": "", "Catégorie": "", "Prix HT": "", "Prix_Achat_HT": "", "Marge €": "", "Marge %": "",
+        "Prix TTC": "", "TVA": "", "Stock": "", "MOQ": "", "MOV": "", "Délai": "", "Pays": "", "Statut": "",
+        "Profil": r.profile_type, "Profil_Pays": r.country_code || "",
+        "Prix_Profil_HT": r.custom_price_excl_vat ?? "", "Remise_%": r.discount_percentage ?? "",
+        "MOQ_Profil": r.moq ?? "", "MOV_Profil": r.mov_amount ?? "",
+      });
+    }
+    // Collect price tiers
+    const tiers = priceTiersMap?.get(o.id) || [];
+    for (const t of tiers) {
+      tiersRows.push({
+        "Produit": (o.products as any)?.name || "",
         "EAN": (o.products as any)?.gtin || "",
         "CNK": (o.products as any)?.cnk_code || "",
-        "Marque": "",
-        "Catégorie": "",
-        "Prix HT": "",
-        "Prix TTC": "",
-        "TVA": "",
-        "Stock": "",
-        "MOQ": "",
-        "Délai": "",
-        "Pays": "",
-        "Statut": "",
-        "Profil": r.profile_type,
-        "Profil_Pays": r.country_code || "",
-        "Prix_Profil_HT": r.custom_price_excl_vat ?? "",
-        "Remise_%": r.discount_percentage ?? "",
-        "MOQ_Profil": r.moq ?? "",
-        "MOV_Profil": r.mov_amount ?? "",
+        "Pays": o.country_code,
+        "Palier": t.tier_index,
+        "Seuil_MOV": t.mov_threshold,
+        "Prix_HT": t.price_excl_vat,
+        "Prix_TTC": t.price_incl_vat,
       });
     }
   }
@@ -791,6 +795,11 @@ function exportOffers(offers: any[], profileRulesMap?: Map<string, any[]>) {
   ws["!cols"] = Object.keys(rows[0]).map(() => ({ wch: 18 }));
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Mes Offres");
+  if (tiersRows.length > 0) {
+    const wsTiers = XLSX.utils.json_to_sheet(tiersRows);
+    wsTiers["!cols"] = Object.keys(tiersRows[0]).map(() => ({ wch: 16 }));
+    XLSX.utils.book_append_sheet(wb, wsTiers, "Paliers");
+  }
   XLSX.writeFile(wb, `offres_${new Date().toISOString().slice(0, 10)}.xlsx`);
   toast.success("Export téléchargé");
 }

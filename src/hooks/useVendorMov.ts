@@ -29,22 +29,50 @@ export function useVendorMov(vendorIds: string[]) {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Get vendor_profile_defaults for these vendors
-  const { data: vendorDefaults } = useQuery({
-    queryKey: ["vendor-profile-defaults-cart", vendorIds, customer?.customer_type, customer?.country_code],
+  // Get vendor types to distinguish real vs qogita vendors
+  const { data: vendorTypes } = useQuery({
+    queryKey: ["cart-vendor-types", vendorIds],
     queryFn: async () => {
       if (vendorIds.length === 0) return [];
       const { data } = await supabase
-        .from("vendor_profile_defaults" as any)
-        .select("*")
-        .in("vendor_id", vendorIds);
-      return (data || []) as any[];
+        .from("vendors")
+        .select("id, type, mov")
+        .in("id", vendorIds);
+      return (data || []) as { id: string; type: string; mov: number | null }[];
     },
     enabled: vendorIds.length > 0,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Get vendor_profile_defaults only for real vendors
+  const realVendorIds = useMemo(() => {
+    if (!vendorTypes) return [];
+    return vendorTypes.filter(v => v.type === "real").map(v => v.id);
+  }, [vendorTypes]);
+
+  const { data: vendorDefaults } = useQuery({
+    queryKey: ["vendor-profile-defaults-cart", realVendorIds, customer?.customer_type, customer?.country_code],
+    queryFn: async () => {
+      if (realVendorIds.length === 0) return [];
+      const { data } = await supabase
+        .from("vendor_profile_defaults" as any)
+        .select("*")
+        .in("vendor_id", realVendorIds);
+      return (data || []) as any[];
+    },
+    enabled: realVendorIds.length > 0,
     staleTime: 2 * 60 * 1000,
   });
 
   const getMovForVendor = (vendorId: string): number => {
+    const vendorInfo = vendorTypes?.find(v => v.id === vendorId);
+
+    // For Qogita vendors (virtual or qogita type), use the MOV from the offers/vendor table
+    if (vendorInfo && vendorInfo.type !== "real") {
+      return Number(vendorInfo.mov) || DEFAULT_MOV;
+    }
+
+    // For real vendors, resolve from vendor_profile_defaults
     if (!vendorDefaults || !customer) return DEFAULT_MOV;
 
     const profileType = customer.customer_type || "pharmacy";

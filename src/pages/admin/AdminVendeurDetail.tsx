@@ -159,6 +159,32 @@ const AdminVendeurDetail = () => {
           >
             <ExternalLink size={14} /> Accéder au portail
           </button>
+          {!vendor.auth_user_id && (
+            <button
+              onClick={async () => {
+                if (!vendor.email) { toast.error("Email requis pour créer un compte"); return; }
+                try {
+                  const { data, error } = await supabase.functions.invoke("create-vendor-account", {
+                    body: {
+                      company_name: vendor.company_name || vendor.name,
+                      email: vendor.email,
+                      vendor_id: vendor.id,
+                    },
+                  });
+                  if (error) throw error;
+                  if (data?.error) throw new Error(data.error);
+                  toast.success(`Compte créé ! Mot de passe temporaire : ${data.temp_password}`);
+                  queryClient.invalidateQueries({ queryKey: ["vendor-detail", id] });
+                } catch (e: any) {
+                  toast.error(e.message || "Erreur");
+                }
+              }}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-md text-[12px] font-bold transition-opacity hover:opacity-90"
+              style={{ backgroundColor: "#EFF6FF", color: "#1B5BDA", border: "1px solid #DBEAFE" }}
+            >
+              <Plus size={14} /> Créer un accès
+            </button>
+          )}
           <button
             onClick={() => setShowInvite(true)}
             className="flex items-center gap-1.5 px-3 py-2 rounded-md text-[12px] font-bold transition-opacity hover:opacity-90"

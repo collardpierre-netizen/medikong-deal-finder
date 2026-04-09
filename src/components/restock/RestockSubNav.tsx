@@ -57,7 +57,7 @@ export function RestockSubNav() {
       {/* Row 1: Brand + Role switcher */}
       <div className="border-b border-white/[0.06]">
         <div className="mk-container">
-          <div className="flex items-center justify-between h-10 sm:h-11">
+          <div className="flex items-center justify-between h-12 sm:h-14">
             <div className="flex items-center gap-0">
               {/* Brand + back */}
               <Link
@@ -66,14 +66,14 @@ export function RestockSubNav() {
                 title="Retour à MediKong"
               >
                 <ArrowLeft size={12} className="text-white/40 group-hover:text-white/80 transition-colors" />
-                <span className="text-white font-bold text-xs sm:text-[13px] tracking-tight">
+                <span className="text-white font-bold text-sm sm:text-base tracking-tight">
                   Medi<span className="text-[#3B82F6]">Kong</span>
                 </span>
               </Link>
 
               {/* ReStock badge */}
               <span
-                className="text-[#00D26A] font-extrabold text-sm sm:text-[15px] tracking-tight mr-2 sm:mr-4"
+                className="text-[#00D26A] font-extrabold text-base sm:text-lg tracking-tight mr-2 sm:mr-4"
                 style={{ fontFamily: "'DM Sans', sans-serif" }}
               >
                 ReStock
@@ -107,7 +107,7 @@ export function RestockSubNav() {
         <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-[#1E293B] to-transparent z-10 pointer-events-none sm:hidden" />
         <div className="mk-container">
           <nav
-            className="flex items-center gap-0.5 h-9 sm:h-10 overflow-x-auto scrollbar-none -mb-px"
+            className="flex items-center gap-0.5 h-10 sm:h-11 overflow-x-auto scrollbar-none -mb-px"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
           >
             {nav.map((item) => {

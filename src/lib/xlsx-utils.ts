@@ -166,6 +166,7 @@ export async function exportOffers() {
   }
 }
 
+export async function exportBrands() {
   const data = await fetchAllRows("brands", "name").catch(() => null);
   if (!data) { toast.error("Erreur export marques"); return; }
   // Fetch translations

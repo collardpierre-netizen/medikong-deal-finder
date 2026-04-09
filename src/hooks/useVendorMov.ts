@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -36,9 +37,9 @@ export function useVendorMov(vendorIds: string[]) {
       if (vendorIds.length === 0) return [];
       const { data } = await supabase
         .from("vendors")
-        .select("id, type, mov")
+        .select("id, type")
         .in("id", vendorIds);
-      return (data || []) as { id: string; type: string; mov: number | null }[];
+      return (data || []) as { id: string; type: string }[];
     },
     enabled: vendorIds.length > 0,
     staleTime: 5 * 60 * 1000,

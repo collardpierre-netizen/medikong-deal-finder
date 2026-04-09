@@ -72,7 +72,7 @@ function StockBadge({ product }: { product: CatalogProduct }) {
   return <span className="text-xs text-destructive font-medium">● {t("catalog.outOfStock")}</span>;
 }
 
-export function CatalogProductCard({ product, index = 0, view = "grid" }: Props) {
+export function CatalogProductCard({ product, index = 0, view = "grid", searchQuery }: Props) {
   const [qty, setQty] = useState(1);
   const [adding, setAdding] = useState(false);
   const { addToCart } = useCart();

@@ -11,7 +11,6 @@ Deno.serve(async (req) => {
   const url = new URL(req.url);
   let imageUrl = url.searchParams.get("url");
 
-  // Also support POST with JSON body
   if (!imageUrl && req.method === "POST") {
     try {
       const body = await req.json();
@@ -24,44 +23,53 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Try multiple fetch strategies for SSL compatibility
     let resp: Response | null = null;
+
+    // Strategy 1: standard fetch (works for valid SSL)
     try {
-      const client = Deno.createHttpClient({ caCerts: [] });
       resp = await fetch(imageUrl, {
-        client,
         headers: {
           "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
           "Accept": "image/*,*/*",
-          "Referer": new URL(imageUrl).origin,
         },
-      } as any);
-      client.close();
+        redirect: "follow",
+      });
     } catch {
       resp = null;
     }
 
+    // Strategy 2: try HTTP if HTTPS failed (some sites serve images on both)
     if (!resp || !resp.ok) {
-      const proc = new Deno.Command("curl", {
-        args: ["-skL", "--max-time", "20", "-H", "User-Agent: Mozilla/5.0", "-H", "Accept: image/*,*/*", "-o", "-", imageUrl],
-        stdout: "piped",
-        stderr: "piped",
-      });
-      const output = await proc.output();
-      if (!output.success || !output.stdout || output.stdout.length < 100) {
-        return new Response(`Upstream ${resp?.status ?? 0}`, { status: 502, headers: corsHeaders });
+      const httpUrl = imageUrl.replace(/^https:\/\//i, "http://");
+      if (httpUrl !== imageUrl) {
+        try {
+          resp = await fetch(httpUrl, {
+            headers: {
+              "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+              "Accept": "image/*,*/*",
+            },
+            redirect: "follow",
+          });
+        } catch {
+          // keep previous resp
+        }
       }
-      return new Response(output.stdout, {
-        status: 200,
-        headers: {
-          ...corsHeaders,
-          "Content-Type": "image/jpeg",
-          "Cache-Control": "public, max-age=86400, s-maxage=604800",
-        },
+    }
+
+    if (!resp || !resp.ok) {
+      return new Response(`Upstream ${resp?.status ?? 0}`, {
+        status: 502,
+        headers: corsHeaders,
       });
     }
 
     const contentType = resp.headers.get("content-type") || "image/jpeg";
     const body = await resp.arrayBuffer();
+
+    if (body.byteLength < 100) {
+      return new Response("Image too small", { status: 502, headers: corsHeaders });
+    }
 
     return new Response(body, {
       status: 200,

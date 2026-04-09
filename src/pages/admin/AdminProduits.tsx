@@ -364,51 +364,57 @@ const AdminProduits = () => {
                   {products.map((p) => {
                     const rawImgUrl = (p.image_urls as string[] | null)?.[0] || (p as any).image_url || null;
                     const proxiedUrl = rawImgUrl ? getProductImageSrc(rawImgUrl) : null;
+
                     return (
-                    <tr key={p.id} className="cursor-pointer transition-colors" style={{ borderBottom: "1px solid #F1F5F9" }}
-                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#F8FAFC")}
-                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}>
-                      <td className="px-4 py-3 w-12">
-                        {proxiedUrl ? (
-                          <img
-                            src={proxiedUrl}
-                            alt={p.name}
-                            className="w-9 h-9 rounded object-contain bg-gray-50 border"
+                      <tr
+                        key={p.id}
+                        className="cursor-pointer transition-colors"
+                        style={{ borderBottom: "1px solid #F1F5F9" }}
+                        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#F8FAFC")}
+                        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                      >
+                        <td className="px-4 py-3 w-12">
+                          {proxiedUrl ? (
+                            <img
+                              src={proxiedUrl}
+                              alt={p.name}
+                              className="w-9 h-9 rounded object-contain bg-gray-50 border"
+                              style={{ borderColor: "#E2E8F0" }}
+                              referrerPolicy="no-referrer"
+                              loading="lazy"
+                              onError={(e) => {
+                                const el = e.target as HTMLImageElement;
+                                if (rawImgUrl && el.dataset.fallbackTried !== "true") {
+                                  el.dataset.fallbackTried = "true";
+                                  el.src = rawImgUrl;
+                                  return;
+                                }
+                                el.classList.add("hidden");
+                                el.nextElementSibling && (el.nextElementSibling as HTMLElement).classList.remove("hidden");
+                              }}
+                            />
+                          ) : null}
+                          <div
+                            className={`w-9 h-9 rounded bg-gray-50 border flex items-center justify-center ${proxiedUrl ? "hidden" : ""}`}
                             style={{ borderColor: "#E2E8F0" }}
-                            referrerPolicy="no-referrer"
-                            loading="lazy"
-                            onError={(e) => {
-                              const el = e.target as HTMLImageElement;
-                              if (rawImgUrl && el.dataset.fallbackTried !== "true") {
-                                el.dataset.fallbackTried = "true";
-                                el.src = rawImgUrl;
-                                return;
-                              }
-                              el.classList.add("hidden");
-                              el.nextElementSibling && (el.nextElementSibling as HTMLElement).classList.remove("hidden");
-                            }}
-                          />
-                        ) : null}
-                        <div className={`w-9 h-9 rounded bg-gray-50 border flex items-center justify-center ${proxiedUrl ? "hidden" : ""}`} style={{ borderColor: "#E2E8F0" }}>
-                          <Package size={14} className="text-gray-300" />
-                        </div>
-                          <Package size={14} className="text-gray-300" />
-                        </div>
-                      </td>
-                      <td className="px-4 py-3" onClick={() => navigate(`/admin/produits/${p.id}`)}>
-                        <span className="text-[13px] font-semibold block" style={{ color: "#1D2530" }}>{p.name}</span>
-                        <span className="text-[11px]" style={{ color: "#8B95A5" }}>{p.brand_name || p.source}</span>
-                      </td>
-                      <td className="px-4 py-3 text-[12px] font-mono" style={{ color: "#1B5BDA" }}>{p.cnk_code || "—"}</td>
-                      <td className="px-4 py-3 text-[11px] font-mono" style={{ color: "#616B7C" }}>{p.gtin || "—"}</td>
-                      <td className="px-4 py-3 text-[12px]" style={{ color: "#616B7C" }}>{p.offer_count}</td>
-                      <td className="px-4 py-3 text-[12px]" style={{ color: "#616B7C" }}>{p.total_stock}</td>
-                      <td className="px-4 py-3 text-[13px] font-bold" style={{ color: "#059669" }}>{p.best_price_excl_vat ? `€${Number(p.best_price_excl_vat).toFixed(2)}` : "—"}</td>
-                      <td className="px-4 py-3"><StatusBadge status={p.is_active ? "active" : "inactive"} /></td>
-                      <td className="px-4 py-3">
-                        <Button variant="ghost" size="sm" className="text-[11px] h-7" onClick={() => { setEditProduct(p); setProductDialogOpen(true); }}>Éditer</Button>
-                      </td>
-                    </tr>
+                          >
+                            <Package size={14} className="text-gray-300" />
+                          </div>
+                        </td>
+                        <td className="px-4 py-3" onClick={() => navigate(`/admin/produits/${p.id}`)}>
+                          <span className="text-[13px] font-semibold block" style={{ color: "#1D2530" }}>{p.name}</span>
+                          <span className="text-[11px]" style={{ color: "#8B95A5" }}>{p.brand_name || p.source}</span>
+                        </td>
+                        <td className="px-4 py-3 text-[12px] font-mono" style={{ color: "#1B5BDA" }}>{p.cnk_code || "—"}</td>
+                        <td className="px-4 py-3 text-[11px] font-mono" style={{ color: "#616B7C" }}>{p.gtin || "—"}</td>
+                        <td className="px-4 py-3 text-[12px]" style={{ color: "#616B7C" }}>{p.offer_count}</td>
+                        <td className="px-4 py-3 text-[12px]" style={{ color: "#616B7C" }}>{p.total_stock}</td>
+                        <td className="px-4 py-3 text-[13px] font-bold" style={{ color: "#059669" }}>{p.best_price_excl_vat ? `€${Number(p.best_price_excl_vat).toFixed(2)}` : "—"}</td>
+                        <td className="px-4 py-3"><StatusBadge status={p.is_active ? "active" : "inactive"} /></td>
+                        <td className="px-4 py-3">
+                          <Button variant="ghost" size="sm" className="text-[11px] h-7" onClick={() => { setEditProduct(p); setProductDialogOpen(true); }}>Éditer</Button>
+                        </td>
+                      </tr>
                     );
                   })}
                   {products.length === 0 && (

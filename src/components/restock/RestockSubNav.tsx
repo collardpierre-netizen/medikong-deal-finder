@@ -2,7 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import {
   PackagePlus, List, MessageSquare, CheckCircle, HelpCircle, LayoutGrid,
   Users, Mail, Shield, Settings, Zap, Gift, Database, Wallet, ArrowLeft,
-  Home, ShoppingCart, Gavel, Store,
+  Home, ShoppingCart, Store,
 } from "lucide-react";
 
 const buyerNav = [
@@ -54,72 +54,77 @@ export function RestockSubNav() {
 
   return (
     <header className="sticky top-0 z-[100] bg-gradient-to-r from-[#0F172A] to-[#1E293B] shadow-lg">
-      <div className="mk-container">
-        <div className="flex items-center h-14 gap-0">
-          {/* Brand + back */}
-          <Link
-            to="/"
-            className="flex items-center gap-2 pr-5 mr-1 border-r border-white/10 shrink-0 group"
-            title="Retour à MediKong"
-          >
-            <ArrowLeft size={14} className="text-white/40 group-hover:text-white/80 transition-colors" />
-            <span className="text-white font-bold text-sm tracking-tight">
-              Medi<span className="text-[#3B82F6]">Kong</span>
-            </span>
-          </Link>
-
-          {/* ReStock badge */}
-          <div className="flex items-center gap-2 pl-4 pr-5 mr-1 border-r border-white/10 shrink-0">
-            <span
-              className="text-[#00D26A] font-extrabold text-base tracking-tight"
-              style={{ fontFamily: "'DM Sans', sans-serif" }}
-            >
-              ReStock
-            </span>
-          </div>
-
-          {/* Role switcher tabs */}
-          <div className="flex items-center gap-0.5 mr-2 border-r border-white/10 pr-3">
-            {roleTabs.map((tab) => (
+      {/* Row 1: Brand + Role switcher */}
+      <div className="border-b border-white/[0.06]">
+        <div className="mk-container">
+          <div className="flex items-center justify-between h-11">
+            <div className="flex items-center gap-0">
+              {/* Brand + back */}
               <Link
-                key={tab.role}
-                to={tab.defaultTo}
-                className={`flex items-center gap-1 px-2.5 py-1.5 rounded-md text-[11px] font-semibold uppercase tracking-wide transition-all ${
-                  currentRole === tab.role
-                    ? "bg-white/15 text-white"
-                    : "text-white/35 hover:text-white/70 hover:bg-white/5"
-                }`}
+                to="/"
+                className="flex items-center gap-1.5 pr-4 mr-3 border-r border-white/10 shrink-0 group"
+                title="Retour à MediKong"
               >
-                <tab.icon size={12} strokeWidth={currentRole === tab.role ? 2.2 : 1.5} />
-                {tab.label}
+                <ArrowLeft size={13} className="text-white/40 group-hover:text-white/80 transition-colors" />
+                <span className="text-white font-bold text-[13px] tracking-tight">
+                  Medi<span className="text-[#3B82F6]">Kong</span>
+                </span>
               </Link>
-            ))}
-          </div>
 
-          {/* Navigation links */}
-          <nav className="flex items-center gap-0 overflow-x-auto ml-1">
-            {nav.map((item) => {
-              const isActive =
-                item.to === "/restock"
-                  ? pathname === "/restock"
-                  : pathname.startsWith(item.to);
-              return (
+              {/* ReStock badge */}
+              <span
+                className="text-[#00D26A] font-extrabold text-[15px] tracking-tight mr-4"
+                style={{ fontFamily: "'DM Sans', sans-serif" }}
+              >
+                ReStock
+              </span>
+            </div>
+
+            {/* Role switcher */}
+            <div className="flex items-center gap-1 bg-white/[0.04] rounded-lg p-0.5">
+              {roleTabs.map((tab) => (
                 <Link
-                  key={item.to}
-                  to={item.to}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-all mx-0.5 ${
-                    isActive
+                  key={tab.role}
+                  to={tab.defaultTo}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-semibold uppercase tracking-wider transition-all ${
+                    currentRole === tab.role
                       ? "bg-white/15 text-white shadow-sm"
-                      : "text-white/50 hover:text-white/90 hover:bg-white/5"
+                      : "text-white/40 hover:text-white/70 hover:bg-white/5"
                   }`}
                 >
-                  <item.icon size={14} strokeWidth={isActive ? 2.2 : 1.6} />
-                  {item.label}
+                  <tab.icon size={12} strokeWidth={currentRole === tab.role ? 2.2 : 1.5} />
+                  {tab.label}
                 </Link>
-              );
-            })}
-          </nav>
+              ))}
+            </div>
+          </div>
         </div>
+      </div>
+
+      {/* Row 2: Contextual navigation */}
+      <div className="mk-container">
+        <nav className="flex items-center gap-0.5 h-10 -mb-px">
+          {nav.map((item) => {
+            const isActive =
+              item.to === "/restock"
+                ? pathname === "/restock"
+                : pathname.startsWith(item.to);
+            return (
+              <Link
+                key={item.to}
+                to={item.to}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-medium transition-all ${
+                  isActive
+                    ? "bg-white/15 text-white"
+                    : "text-white/45 hover:text-white/85 hover:bg-white/5"
+                }`}
+              >
+                <item.icon size={13} strokeWidth={isActive ? 2.2 : 1.6} />
+                {item.label}
+              </Link>
+            );
+          })}
+        </nav>
       </div>
     </header>
   );

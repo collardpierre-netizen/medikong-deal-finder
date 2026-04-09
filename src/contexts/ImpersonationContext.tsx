@@ -1,44 +1,24 @@
-import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
+import { useState, useCallback, useEffect, type ReactNode } from "react";
 import { toast } from "sonner";
+import {
+  ImpersonationContext,
+  type ImpersonationSession,
+  type ImpersonationState,
+} from "./impersonation";
 
-interface ImpersonationSession {
-  id: string;
-  admin_user_id: string;
-  admin_email: string;
-  target_user_id: string;
-  target_email: string;
-  target_type: string;
-  target_company_name: string;
-  target_vendor_id?: string;
-  actions_count: number;
-  started_at: string;
-}
-
-interface ImpersonationState {
-  isImpersonating: boolean;
-  session: ImpersonationSession | null;
-  originalAdmin: { userId: string; email: string; name: string } | null;
-}
-
-interface ImpersonationContextType {
-  state: ImpersonationState;
-  startImpersonation: (targetUserId: string, targetEmail: string, targetType: string, targetCompany: string, targetVendorId?: string) => Promise<void>;
-  stopImpersonation: () => Promise<void>;
-  logAction: (action: string, entityType: string, entityId: string, payload: Record<string, any>) => Promise<void>;
-  isImpersonating: boolean;
-}
-
-const ImpersonationContext = createContext<ImpersonationContextType | null>(null);
+const defaultState: ImpersonationState = {
+  isImpersonating: false,
+  session: null,
+  originalAdmin: null,
+};
 
 export function ImpersonationProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<ImpersonationState>(() => {
     try {
       const saved = localStorage.getItem("mk_impersonation");
-      return saved
-        ? JSON.parse(saved)
-        : { isImpersonating: false, session: null, originalAdmin: null };
+      return saved ? JSON.parse(saved) : defaultState;
     } catch {
-      return { isImpersonating: false, session: null, originalAdmin: null };
+      return defaultState;
     }
   });
 
@@ -46,12 +26,14 @@ export function ImpersonationProvider({ children }: { children: ReactNode }) {
     const handleStorage = (event: StorageEvent) => {
       if (event.key !== "mk_impersonation") return;
       if (!event.newValue) {
-        setState({ isImpersonating: false, session: null, originalAdmin: null });
+        setState(defaultState);
         return;
       }
       try {
         setState(JSON.parse(event.newValue));
-      } catch {}
+      } catch {
+        setState(defaultState);
+      }
     };
 
     window.addEventListener("storage", handleStorage);
@@ -59,11 +41,21 @@ export function ImpersonationProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (state.isImpersonating) localStorage.setItem("mk_impersonation", JSON.stringify(state));
-    else localStorage.removeItem("mk_impersonation");
+    if (state.isImpersonating) {
+      localStorage.setItem("mk_impersonation", JSON.stringify(state));
+      return;
+    }
+
+    localStorage.removeItem("mk_impersonation");
   }, [state]);
 
-  const startImpersonation = useCallback(async (targetUserId: string, targetEmail: string, targetType: string, targetCompany: string, targetVendorId?: string) => {
+  const startImpersonation = useCallback(async (
+    targetUserId: string,
+    targetEmail: string,
+    targetType: string,
+    targetCompany: string,
+    targetVendorId?: string,
+  ) => {
     const session: ImpersonationSession = {
       id: crypto.randomUUID(),
       admin_user_id: "admin",
@@ -76,33 +68,36 @@ export function ImpersonationProvider({ children }: { children: ReactNode }) {
       actions_count: 0,
       started_at: new Date().toISOString(),
     };
-    const newState = {
+
+    const newState: ImpersonationState = {
       isImpersonating: true,
       session,
       originalAdmin: { userId: "admin", email: "admin", name: "Admin" },
     };
-    // Write to localStorage immediately so new tabs can read it right away
+
     localStorage.setItem("mk_impersonation", JSON.stringify(newState));
     setState(newState);
     toast.success(`Mode shadow activé pour ${targetCompany}`);
   }, []);
 
   const stopImpersonation = useCallback(async () => {
-    setState({ isImpersonating: false, session: null, originalAdmin: null });
+    setState(defaultState);
     toast.info("Session d'impersonation terminée");
   }, []);
 
   const logAction = useCallback(async () => {}, []);
 
   return (
-    <ImpersonationContext.Provider value={{ state, startImpersonation, stopImpersonation, logAction, isImpersonating: state.isImpersonating }}>
+    <ImpersonationContext.Provider
+      value={{
+        state,
+        startImpersonation,
+        stopImpersonation,
+        logAction,
+        isImpersonating: state.isImpersonating,
+      }}
+    >
       {children}
     </ImpersonationContext.Provider>
   );
-}
-
-export function useImpersonation() {
-  const ctx = useContext(ImpersonationContext);
-  if (!ctx) throw new Error("useImpersonation must be used within ImpersonationProvider");
-  return ctx;
 }

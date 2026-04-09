@@ -15,6 +15,9 @@ export default {
         sans: ['"DM Sans"', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'sans-serif'],
         display: ['"Plus Jakarta Sans"', '"DM Sans"', 'sans-serif'],
       },
+      transitionTimingFunction: {
+        expressive: "cubic-bezier(0.16,1,0.3,1)",
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",

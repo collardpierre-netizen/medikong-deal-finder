@@ -1,0 +1,1 @@
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS legal_faq_acknowledged_at timestamp with time zone DEFAULT NULL;

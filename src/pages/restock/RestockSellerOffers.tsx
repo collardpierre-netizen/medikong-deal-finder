@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Package, MessageSquare, CheckCircle, DollarSign, Eye } from "lucide-react";
+import { Package, MessageSquare, CheckCircle, DollarSign, Eye, HelpCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
@@ -41,7 +41,14 @@ export default function RestockSellerOffers() {
 
   return (
     <div className="p-6 max-w-6xl mx-auto" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-      <h1 className="text-2xl font-bold text-[#1E252F] mb-6">Mes offres</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-[#1E252F]">Mes offres</h1>
+        <Link to="/restock/faq">
+          <Button size="sm" variant="outline" className="border-[#D0D5DC] text-[#5C6470] hover:bg-[#F7F8FA] rounded-lg gap-1 text-xs">
+            <HelpCircle size={14} /> FAQ juridique
+          </Button>
+        </Link>
+      </div>
 
       {/* KPI cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">

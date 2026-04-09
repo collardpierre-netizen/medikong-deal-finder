@@ -1,6 +1,6 @@
 
 import { Link } from "react-router-dom";
-import { Package, TrendingDown, Truck, Shield, ArrowRight, Clock, Users, CheckCircle } from "lucide-react";
+import { Package, TrendingDown, Truck, Shield, ArrowRight, Clock, Users, CheckCircle, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import logoHorizontal from "@/assets/logo-medikong.png";
 
@@ -112,6 +112,26 @@ export default function RestockLandingPage() {
                 </div>
               ))}
             </div>
+          </div>
+        </section>
+
+        {/* FAQ Banner */}
+        <section className="py-12 bg-[#F7F8FA] border-t border-[#D0D5DC]">
+          <div className="mk-container text-center">
+            <div className="flex items-center justify-center gap-2 mb-3">
+              <HelpCircle size={24} className="text-[#1C58D9]" />
+              <h2 className="text-xl md:text-2xl font-bold text-[#1E252F]" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+                FAQ réglementaire & juridique
+              </h2>
+            </div>
+            <p className="text-sm text-[#5C6470] mb-5 max-w-lg mx-auto">
+              Vous avez des questions sur la légalité de la revente entre pharmaciens ? Consultez notre FAQ complète.
+            </p>
+            <Link to="/restock/faq">
+              <Button variant="outline" className="border-[#1C58D9] text-[#1C58D9] hover:bg-[#EBF0FB] rounded-lg gap-2">
+                <Shield size={16} /> Consulter la FAQ
+              </Button>
+            </Link>
           </div>
         </section>
 

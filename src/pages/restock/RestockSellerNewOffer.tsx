@@ -345,9 +345,11 @@ function ManualAddForm({ onAdd }: { onAdd: (row: OfferRow) => void }) {
       pieces_per_pack: piecesPack ? Number(piecesPack) : undefined,
       packs_per_box: packsBox ? Number(packsBox) : undefined,
       boxes_per_pallet: boxesPallet ? Number(boxesPallet) : undefined,
+      publish_start: publishStart || undefined,
+      publish_end: publishEnd || undefined,
     });
     onAdd(row);
-    setCode(""); setFound(null); setNotFound(false); setQty("1"); setPriceHt(""); setDlu(""); setState("intact"); setLot(""); setDelivery("both"); setManualName(""); setAllowPartial(false); setMoq("1"); setLotSize("1"); setPhotos([]); setPhotoFiles([]); setShowPackaging(false); setPiecesPack(""); setPacksBox(""); setBoxesPallet("");
+    setCode(""); setFound(null); setNotFound(false); setQty("1"); setPriceHt(""); setDlu(""); setState("intact"); setLot(""); setDelivery("both"); setManualName(""); setAllowPartial(false); setMoq("1"); setLotSize("1"); setPhotos([]); setPhotoFiles([]); setShowPackaging(false); setPiecesPack(""); setPacksBox(""); setBoxesPallet(""); setPublishStart(""); setPublishEnd("");
     toast.success("Produit ajouté à la liste");
   };
 

@@ -63,7 +63,7 @@ export default function CartPage() {
     return Object.entries(groups).map(([vendorId, groupItems]) => {
       const total = groupItems.reduce((s, i) => s + (i.price_excl_vat || i.product?.price || 0) * i.quantity, 0);
       const vendor = vendorMap.get(vendorId);
-      const currentMov = MOV_TIERS[0];
+      const currentMov = getMovForVendor(vendorId);
       const remaining = Math.max(currentMov - total, 0);
       const progress = Math.min((total / currentMov) * 100, 100);
       return {

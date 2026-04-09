@@ -557,7 +557,7 @@ function useOfferImport(vendorId: string | undefined) {
       if (offers.length > 0) {
         for (let i = 0; i < offers.length; i += 100) {
           const batch = offers.slice(i, i + 100).map(({ _ean, _cnk, ...rest }) => rest);
-          const { data: inserted, error } = await supabase.from("offers").insert(batch).select("id, product_id");
+          const { data: inserted, error } = await supabase.from("offers").upsert(batch, { onConflict: "product_id,vendor_id,country_code", ignoreDuplicates: false }).select("id, product_id");
           if (error) throw error;
           // Map product_id back to offer_id for profile rules
           if (inserted) {

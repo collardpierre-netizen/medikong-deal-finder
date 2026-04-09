@@ -3404,6 +3404,8 @@ export type Database = {
           price_ttc: number | null
           product_image_url: string | null
           product_state: string
+          publish_end: string | null
+          publish_start: string | null
           quantity: number
           rejection_reason: string | null
           seller_city: string | null
@@ -3439,6 +3441,8 @@ export type Database = {
           price_ttc?: number | null
           product_image_url?: string | null
           product_state?: string
+          publish_end?: string | null
+          publish_start?: string | null
           quantity?: number
           rejection_reason?: string | null
           seller_city?: string | null
@@ -3474,6 +3478,8 @@ export type Database = {
           price_ttc?: number | null
           product_image_url?: string | null
           product_state?: string
+          publish_end?: string | null
+          publish_start?: string | null
           quantity?: number
           rejection_reason?: string | null
           seller_city?: string | null

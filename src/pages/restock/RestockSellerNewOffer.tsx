@@ -32,6 +32,8 @@ interface OfferRow {
   pieces_per_pack?: number;
   packs_per_box?: number;
   boxes_per_pallet?: number;
+  publish_start?: string;
+  publish_end?: string;
 }
 
 const STATE_MAP: Record<string, string> = {
@@ -204,6 +206,8 @@ function ManualAddForm({ onAdd }: { onAdd: (row: OfferRow) => void }) {
   const [piecesPack, setPiecesPack] = useState("");
   const [packsBox, setPacksBox] = useState("");
   const [boxesPallet, setBoxesPallet] = useState("");
+  const [publishStart, setPublishStart] = useState("");
+  const [publishEnd, setPublishEnd] = useState("");
 
   const lookupCode = async () => {
     const trimmed = code.trim();
@@ -341,9 +345,11 @@ function ManualAddForm({ onAdd }: { onAdd: (row: OfferRow) => void }) {
       pieces_per_pack: piecesPack ? Number(piecesPack) : undefined,
       packs_per_box: packsBox ? Number(packsBox) : undefined,
       boxes_per_pallet: boxesPallet ? Number(boxesPallet) : undefined,
+      publish_start: publishStart || undefined,
+      publish_end: publishEnd || undefined,
     });
     onAdd(row);
-    setCode(""); setFound(null); setNotFound(false); setQty("1"); setPriceHt(""); setDlu(""); setState("intact"); setLot(""); setDelivery("both"); setManualName(""); setAllowPartial(false); setMoq("1"); setLotSize("1"); setPhotos([]); setPhotoFiles([]); setShowPackaging(false); setPiecesPack(""); setPacksBox(""); setBoxesPallet("");
+    setCode(""); setFound(null); setNotFound(false); setQty("1"); setPriceHt(""); setDlu(""); setState("intact"); setLot(""); setDelivery("both"); setManualName(""); setAllowPartial(false); setMoq("1"); setLotSize("1"); setPhotos([]); setPhotoFiles([]); setShowPackaging(false); setPiecesPack(""); setPacksBox(""); setBoxesPallet(""); setPublishStart(""); setPublishEnd("");
     toast.success("Produit ajouté à la liste");
   };
 
@@ -513,6 +519,24 @@ function ManualAddForm({ onAdd }: { onAdd: (row: OfferRow) => void }) {
             )}
           </div>
 
+          {/* Publication dates */}
+          <div className="col-span-2 md:col-span-4 border-t border-[#D0D5DC] pt-3 mt-1">
+            <label className="text-[11px] text-[#8B929C] font-medium flex items-center gap-1 mb-2">
+              📅 Planification de publication <span className="text-[10px]">(optionnel)</span>
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-[11px] text-[#8B929C] font-medium">Début de publication</label>
+                <Input type="datetime-local" value={publishStart} onChange={(e) => setPublishStart(e.target.value)} className="border-[#D0D5DC]" />
+              </div>
+              <div>
+                <label className="text-[11px] text-[#8B929C] font-medium">Fin de publication</label>
+                <Input type="datetime-local" value={publishEnd} onChange={(e) => setPublishEnd(e.target.value)} className="border-[#D0D5DC]" />
+              </div>
+            </div>
+            <p className="text-[10px] text-[#8B929C] mt-1">Laissez vide pour publier immédiatement et sans date de fin.</p>
+          </div>
+
           <div className="col-span-2 md:col-span-4 flex items-end">
             <Button onClick={handleAdd} className="w-full bg-[#00B85C] hover:bg-[#009E4F] text-white rounded-lg gap-2">
               <Plus size={16} /> Ajouter à la liste
@@ -598,6 +622,8 @@ export default function RestockSellerNewOffer() {
       if (r.pieces_per_pack) insert.pieces_per_pack = r.pieces_per_pack;
       if (r.packs_per_box) insert.packs_per_box = r.packs_per_box;
       if (r.boxes_per_pallet) insert.boxes_per_pallet = r.boxes_per_pallet;
+      if (r.publish_start) insert.publish_start = r.publish_start;
+      if (r.publish_end) insert.publish_end = r.publish_end;
 
       const { data, error } = await supabase.from("restock_offers").insert(insert as any).select("id").single();
       if (error) {

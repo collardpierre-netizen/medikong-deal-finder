@@ -3,8 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Package, MessageSquare, CheckCircle, DollarSign, Eye, HelpCircle } from "lucide-react";
+import { Package, MessageSquare, CheckCircle, DollarSign, Eye, HelpCircle, AlertTriangle, TrendingDown, TrendingUp, Calendar } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useMemo } from "react";
 
 const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
   published: { label: "Publiée", color: "#00B85C", bg: "#EEFBF4" },
@@ -15,6 +16,13 @@ const statusConfig: Record<string, { label: string; color: string; bg: string }>
 };
 
 const stateLabel = (s: string) => ({ intact: "Intact", damaged_packaging: "Emb. abîmé", near_expiry: "Proche pér." }[s] || s);
+
+interface CompetitorInfo {
+  count: number;
+  min_price: number;
+  max_price: number;
+  position: "best" | "competitive" | "expensive" | "only";
+}
 
 export default function RestockSellerOffers() {
   const { user } = useAuth();
@@ -32,11 +40,62 @@ export default function RestockSellerOffers() {
     enabled: !!user,
   });
 
+  // Fetch all published offers to compute competitive positioning
+  const eans = useMemo(() => offers.filter((o: any) => o.ean && o.status === "published").map((o: any) => o.ean), [offers]);
+  
+  const { data: allPublishedOffers = [] } = useQuery({
+    queryKey: ["restock-all-offers-for-positioning", eans],
+    queryFn: async () => {
+      if (eans.length === 0) return [];
+      const { data } = await supabase
+        .from("restock_offers")
+        .select("id, ean, cnk, price_ht, seller_id, status")
+        .eq("status", "published")
+        .in("ean", eans);
+      return data || [];
+    },
+    enabled: eans.length > 0,
+  });
+
+  // Build competitor map per EAN
+  const competitorMap = useMemo(() => {
+    const map: Record<string, CompetitorInfo> = {};
+    if (!user) return map;
+    
+    for (const offer of offers) {
+      if (!offer.ean || offer.status !== "published") continue;
+      const competitors = allPublishedOffers.filter(
+        (o: any) => o.ean === offer.ean && o.seller_id !== user.id
+      );
+      
+      if (competitors.length === 0) {
+        map[offer.id] = { count: 0, min_price: 0, max_price: 0, position: "only" };
+      } else {
+        const prices = competitors.map((c: any) => Number(c.price_ht));
+        const minPrice = Math.min(...prices);
+        const maxPrice = Math.max(...prices);
+        const myPrice = Number(offer.price_ht);
+        
+        let position: CompetitorInfo["position"] = "competitive";
+        if (myPrice <= minPrice) position = "best";
+        else if (myPrice > minPrice * 1.15) position = "expensive";
+        
+        map[offer.id] = { count: competitors.length, min_price: minPrice, max_price: maxPrice, position };
+      }
+    }
+    return map;
+  }, [offers, allPublishedOffers, user]);
+
   const stats = {
     active: offers.filter((o: any) => o.status === "published").length,
     counterOffers: offers.filter((o: any) => o.status === "counter_offer").length,
     sold: offers.filter((o: any) => o.status === "sold").length,
     revenue: offers.filter((o: any) => o.status === "sold").reduce((acc: number, o: any) => acc + (o.price_ht * o.quantity), 0),
+  };
+
+  const formatDate = (d: string) => {
+    if (!d) return "";
+    return new Date(d).toLocaleDateString("fr-BE", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
   };
 
   return (
@@ -91,6 +150,8 @@ export default function RestockSellerOffers() {
                   <th className="px-4 py-3 text-right">Prix HT</th>
                   <th className="px-4 py-3">DLU</th>
                   <th className="px-4 py-3">État</th>
+                  <th className="px-4 py-3">Concurrence</th>
+                  <th className="px-4 py-3">Publication</th>
                   <th className="px-4 py-3">Statut</th>
                   <th className="px-4 py-3">Actions</th>
                 </tr>
@@ -98,6 +159,7 @@ export default function RestockSellerOffers() {
               <tbody>
                 {offers.map((o: any) => {
                   const st = statusConfig[o.status] || statusConfig.published;
+                  const comp = competitorMap[o.id];
                   return (
                     <tr key={o.id} className="border-b border-[#F0F4FF] hover:bg-[#F7F8FA]">
                       <td className="px-4 py-3 font-medium text-[#1E252F] max-w-[220px] truncate">{o.designation}</td>
@@ -106,6 +168,41 @@ export default function RestockSellerOffers() {
                       <td className="px-4 py-3 text-right font-semibold text-[#1C58D9]">{Number(o.price_ht).toFixed(2)} €</td>
                       <td className="px-4 py-3 text-[#5C6470]">{o.dlu || "—"}</td>
                       <td className="px-4 py-3"><Badge variant="outline" className="text-[10px]">{stateLabel(o.product_state)}</Badge></td>
+                      <td className="px-4 py-3">
+                        {comp ? (
+                          comp.position === "only" ? (
+                            <span className="text-[10px] text-[#8B929C]">Seul vendeur</span>
+                          ) : comp.position === "best" ? (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600">
+                              <TrendingDown size={11} /> Meilleur prix
+                              <span className="text-[#8B929C] font-normal ml-1">({comp.count} concurrent{comp.count > 1 ? "s" : ""})</span>
+                            </span>
+                          ) : comp.position === "expensive" ? (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-red-500">
+                              <AlertTriangle size={11} /> Trop cher
+                              <span className="text-[#8B929C] font-normal ml-1">min {comp.min_price.toFixed(2)}€</span>
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-medium text-[#F59E0B]">
+                              <TrendingUp size={11} /> Compétitif
+                              <span className="text-[#8B929C] font-normal ml-1">min {comp.min_price.toFixed(2)}€</span>
+                            </span>
+                          )
+                        ) : (
+                          <span className="text-[10px] text-[#8B929C]">—</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-[10px] text-[#5C6470]">
+                        {o.publish_start || o.publish_end ? (
+                          <span className="inline-flex items-center gap-1">
+                            <Calendar size={10} />
+                            {o.publish_start ? formatDate(o.publish_start) : "Immédiat"}
+                            {o.publish_end ? ` → ${formatDate(o.publish_end)}` : ""}
+                          </span>
+                        ) : (
+                          <span className="text-[#8B929C]">Permanent</span>
+                        )}
+                      </td>
                       <td className="px-4 py-3">
                         <Badge className="text-[10px]" style={{ backgroundColor: st.bg, color: st.color }}>{st.label}</Badge>
                       </td>

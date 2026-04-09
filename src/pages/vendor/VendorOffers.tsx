@@ -1006,6 +1006,22 @@ export default function VendorOffers() {
     enabled: !!vendor?.id && offers.length > 0,
   });
 
+  // Fetch all price tiers for export
+  const { data: allPriceTiers = [] } = useQuery({
+    queryKey: ["all-offer-price-tiers", vendor?.id],
+    queryFn: async () => {
+      const offerIds = offers.map((o: any) => o.id);
+      if (offerIds.length === 0) return [];
+      const { data } = await supabase
+        .from("offer_price_tiers")
+        .select("*")
+        .in("offer_id", offerIds)
+        .order("tier_index", { ascending: true });
+      return data || [];
+    },
+    enabled: !!vendor?.id && offers.length > 0,
+  });
+
   const profileRulesMap = useMemo(() => {
     const m = new Map<string, any[]>();
     for (const r of allProfileRules) {
@@ -1015,6 +1031,16 @@ export default function VendorOffers() {
     }
     return m;
   }, [allProfileRules]);
+
+  const priceTiersMap = useMemo(() => {
+    const m = new Map<string, any[]>();
+    for (const t of allPriceTiers) {
+      const arr = m.get(t.offer_id) || [];
+      arr.push(t);
+      m.set(t.offer_id, arr);
+    }
+    return m;
+  }, [allPriceTiers]);
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);

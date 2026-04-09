@@ -50,7 +50,14 @@ export default function CataloguePage() {
         <Breadcrumbs />
 
         <div className="flex items-center justify-between mb-4 mt-2">
-          <h1 className="text-2xl md:text-[28px] font-bold text-foreground">{title}</h1>
+          <div className="space-y-1">
+            <h1 className="text-2xl md:text-[28px] font-bold text-foreground">{title}</h1>
+            {filters.search && (
+              <p className="text-sm text-muted-foreground">
+                Résultats pour le mot-clé <span className="font-medium text-foreground">“{filters.search}”</span>
+              </p>
+            )}
+          </div>
           <button
             onClick={() => setMobileFilters(true)}
             className="lg:hidden flex items-center gap-1.5 border border-border text-sm px-3 py-1.5 rounded-md text-muted-foreground"
@@ -143,7 +150,7 @@ export default function CataloguePage() {
                 : "space-y-3"
               }>
                 {products.map((p, i) => (
-                  <CatalogProductCard key={p.id} product={p} index={i} view={view} searchQuery={filters.search} />
+                  <CatalogProductCard key={p.id} product={p} index={i} view={view} />
                 ))}
               </div>
             )}

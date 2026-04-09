@@ -295,7 +295,7 @@ export default function VendorPublicPage() {
   const showReal = vendor ? resolveVendorVisibility(
     { ...vendor, id: vendor.id },
     visRules,
-    { country: currentCountry as string }
+    { country: String(currentCountry) }
   ) : false;
   const vendorName = vendor ? getVendorPublicName(vendor, showReal) : "Fournisseur";
 

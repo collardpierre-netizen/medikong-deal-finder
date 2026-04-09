@@ -5068,6 +5068,57 @@ export type Database = {
           },
         ]
       }
+      vendor_profile_defaults: {
+        Row: {
+          country_code: string
+          created_at: string
+          default_moq: number
+          default_mov: number
+          default_mov_currency: string
+          id: string
+          profile_type: string
+          updated_at: string
+          vendor_id: string
+        }
+        Insert: {
+          country_code?: string
+          created_at?: string
+          default_moq?: number
+          default_mov?: number
+          default_mov_currency?: string
+          id?: string
+          profile_type: string
+          updated_at?: string
+          vendor_id: string
+        }
+        Update: {
+          country_code?: string
+          created_at?: string
+          default_moq?: number
+          default_mov?: number
+          default_mov_currency?: string
+          id?: string
+          profile_type?: string
+          updated_at?: string
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_profile_defaults_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_profile_defaults_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vendor_visibility_rules: {
         Row: {
           country_code: string | null

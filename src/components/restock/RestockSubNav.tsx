@@ -26,12 +26,10 @@ const adminNav = [
 export function RestockSubNav() {
   const { pathname } = useLocation();
   const isAdmin = pathname.startsWith("/restock/admin");
-  const isSellerOrAdmin = isAdmin || pathname.startsWith("/restock/seller");
+  const isSeller = pathname.startsWith("/restock/seller");
+  const isSellerOrAdmin = isAdmin || isSeller;
 
-  // Only show sub-nav on seller/admin pages, not on landing or public pages
-  if (!isSellerOrAdmin) return null;
-
-  const nav = isAdmin ? adminNav : sellerNav;
+  const nav = isAdmin ? adminNav : isSeller ? sellerNav : [];
 
   return (
     <div className="sticky top-[52px] z-[99] bg-[#1C58D9] border-b border-[#1549B8]">

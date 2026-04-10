@@ -1,0 +1,1 @@
+ALTER TABLE public.products ALTER COLUMN unit_quantity SET DEFAULT 1;

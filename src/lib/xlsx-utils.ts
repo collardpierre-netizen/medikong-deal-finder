@@ -341,7 +341,7 @@ export async function importProducts(file: File, onProgress?: (p: ImportProgress
       category_name: r.category_name || null,
       description: r.description || null,
       short_description: r.short_description || null,
-      unit_quantity: r.unit_quantity ? Number(r.unit_quantity) : 1,
+      unit_quantity: parseUnitQuantity(r.unit_quantity),
       origin_country: r.origin_country || null,
       source: (() => {
         const raw = r.source ? String(r.source).toLowerCase().trim() : "medikong";

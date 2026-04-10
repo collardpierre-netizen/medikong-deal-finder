@@ -193,6 +193,18 @@ function slugify(s: string) {
   return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 }
 
+function parseUnitQuantity(value: unknown) {
+  if (typeof value === "number") {
+    return Number.isFinite(value) && value > 0 ? Math.round(value) : 1;
+  }
+
+  const raw = String(value ?? "").trim();
+  if (!raw) return 1;
+
+  const parsed = Number(raw.replace(",", "."));
+  return Number.isFinite(parsed) && parsed > 0 ? Math.round(parsed) : 1;
+}
+
 export interface ImportProgress {
   phase: "reading" | "brands" | "manufacturers" | "categories" | "products" | "resolving" | "done";
   current: number;

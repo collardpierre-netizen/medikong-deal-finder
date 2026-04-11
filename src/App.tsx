@@ -45,6 +45,7 @@ const PromotionsPage = lazyWithRetry(() => import("./pages/PromotionsPage"), "Pr
 const OnboardingPage = lazyWithRetry(() => import("./pages/OnboardingPage"), "OnboardingPage");
 const BuyerCompletionPage = lazyWithRetry(() => import("./pages/BuyerCompletionPage"), "BuyerCompletionPage");
 const NotFound = lazyWithRetry(() => import("./pages/NotFound"), "NotFound");
+const SellerTrustBadgeDemo = lazyWithRetry(() => import("./pages/SellerTrustBadgeDemo"), "SellerTrustBadgeDemo");
 const InvestPage = lazyWithRetry(() => import("./pages/InvestPage"), "InvestPage");
 const ForgotPasswordPage = lazyWithRetry(() => import("./pages/ForgotPasswordPage"), "ForgotPasswordPage");
 const ResetPasswordPage = lazyWithRetry(() => import("./pages/ResetPasswordPage"), "ResetPasswordPage");
@@ -406,6 +407,7 @@ const App = () => (
               <Route path="/m/opportunities" element={<LP><RestockMobileSwipe /></LP>} />
             </Route>
 
+            <Route path="/demo/seller-trust-badge" element={<Suspense fallback={<PageLoader />}><SellerTrustBadgeDemo /></Suspense>} />
             <Route path="*" element={<LP><NotFound /></LP>} />
           </Routes>
           </Suspense>

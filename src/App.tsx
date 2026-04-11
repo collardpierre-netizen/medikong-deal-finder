@@ -165,6 +165,7 @@ const VendorMessages = lazyWithRetry(() => import("./pages/vendor/VendorMessages
 const VendorOnboardingWizard = lazyWithRetry(() => import("./pages/vendor/VendorOnboardingWizard"), "VendorOnboardingWizard");
 const VendorNewShipment = lazyWithRetry(() => import("./pages/vendor/VendorNewShipment"), "VendorNewShipment");
 const VendorShipments = lazyWithRetry(() => import("./pages/vendor/VendorShipments"), "VendorShipments");
+const VendorShipmentDetail = lazyWithRetry(() => import("./pages/vendor/VendorShipmentDetail"), "VendorShipmentDetail");
 
 // ReStock pages
 const RestockSiteLayout = lazyWithRetry(() => import("./components/restock/RestockSiteLayout"), "RestockSiteLayout");

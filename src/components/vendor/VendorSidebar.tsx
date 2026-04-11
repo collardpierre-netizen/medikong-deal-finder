@@ -2,7 +2,7 @@ import { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, Package, Tag, ShoppingCart, Lightbulb, Bell, FileText, BarChart3,
-  DollarSign, Truck, HeartPulse, MessageSquare, GraduationCap, Settings, ChevronLeft, ChevronRight,
+  DollarSign, Truck, HeartPulse, MessageSquare, GraduationCap, Settings, ChevronLeft, ChevronRight, Receipt,
 } from "lucide-react";
 import { useI18n } from "@/contexts/I18nContext";
 import { cn } from "@/lib/utils";
@@ -34,6 +34,7 @@ const sidebarSections = [
     label: "COMPTE",
     items: [
       { key: "finances", icon: DollarSign, path: "/vendor/finance", comingSoon: true },
+      { key: "billing", icon: Receipt, path: "/vendor/billing" },
       { key: "logistics", icon: Truck, path: "/vendor/logistics", comingSoon: true },
       { key: "health", icon: HeartPulse, path: "/vendor/health" },
       { key: "messages", icon: MessageSquare, path: "/vendor/messages", comingSoon: true },

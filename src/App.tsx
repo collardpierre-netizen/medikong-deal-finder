@@ -373,6 +373,7 @@ const App = () => (
               <Route path="settings" element={<LP><VendorSettings /></LP>} />
               <Route path="shipments" element={<LP><VendorShipments /></LP>} />
               <Route path="shipments/new" element={<LP><VendorNewShipment /></LP>} />
+              <Route path="shipments/:id" element={<LP><VendorShipmentDetail /></LP>} />
             </Route>
 
             {/* ReStock — all routes under main site layout with sub-nav */}

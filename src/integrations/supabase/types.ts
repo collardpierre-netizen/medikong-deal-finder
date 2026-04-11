@@ -5165,6 +5165,66 @@ export type Database = {
           },
         ]
       }
+      vendor_invoices: {
+        Row: {
+          base_cost_cents: number
+          created_at: string
+          id: string
+          invoice_number: string | null
+          issued_at: string | null
+          margin_cents: number
+          period_end: string
+          period_start: string
+          status: string
+          total_cents: number
+          updated_at: string
+          vendor_id: string
+        }
+        Insert: {
+          base_cost_cents?: number
+          created_at?: string
+          id?: string
+          invoice_number?: string | null
+          issued_at?: string | null
+          margin_cents?: number
+          period_end: string
+          period_start: string
+          status?: string
+          total_cents?: number
+          updated_at?: string
+          vendor_id: string
+        }
+        Update: {
+          base_cost_cents?: number
+          created_at?: string
+          id?: string
+          invoice_number?: string | null
+          issued_at?: string | null
+          margin_cents?: number
+          period_end?: string
+          period_start?: string
+          status?: string
+          total_cents?: number
+          updated_at?: string
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_invoices_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_invoices_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vendor_kyc_criteria: {
         Row: {
           business_type: string

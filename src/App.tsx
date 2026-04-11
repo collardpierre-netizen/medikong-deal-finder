@@ -141,6 +141,8 @@ const AdminPriceAlertDetail = lazyWithRetry(() => import("./pages/admin/AdminPri
 const AdminPriceAlertSettings = lazyWithRetry(() => import("./pages/admin/AdminPriceAlertSettings"), "AdminPriceAlertSettings");
 const AdminFlashDeals = lazyWithRetry(() => import("./pages/admin/AdminFlashDeals"), "AdminFlashDeals");
 const AdminDelegues = lazyWithRetry(() => import("./pages/admin/AdminDelegues"), "AdminDelegues");
+const AdminShipments = lazyWithRetry(() => import("./pages/admin/AdminShipments"), "AdminShipments");
+const AdminReconciliation = lazyWithRetry(() => import("./pages/admin/AdminReconciliation"), "AdminReconciliation");
 
 // Vendor pages
 const VendorLoginPage = lazyWithRetry(() => import("./pages/vendor/VendorLoginPage"), "VendorLoginPage");
@@ -349,6 +351,8 @@ const App = () => (
               <Route path="price-alerts/settings" element={<LP><AdminPriceAlertSettings /></LP>} />
               <Route path="price-alerts/:id" element={<LP><AdminPriceAlertDetail /></LP>} />
               <Route path="flash-deals" element={<LP><AdminFlashDeals /></LP>} />
+              <Route path="shipments" element={<LP><AdminShipments /></LP>} />
+              <Route path="reconciliation" element={<LP><AdminReconciliation /></LP>} />
             </Route>
 
             {/* Vendor Dashboard */}

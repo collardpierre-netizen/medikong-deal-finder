@@ -163,6 +163,7 @@ const VendorStripeSuccessPage = lazyWithRetry(() => import("./pages/vendor/Vendo
 const VendorStripeRefreshPage = lazyWithRetry(() => import("./pages/vendor/VendorStripeRefreshPage"), "VendorStripeRefreshPage");
 const VendorMessages = lazyWithRetry(() => import("./pages/vendor/VendorMessages"), "VendorMessages");
 const VendorOnboardingWizard = lazyWithRetry(() => import("./pages/vendor/VendorOnboardingWizard"), "VendorOnboardingWizard");
+const VendorNewShipment = lazyWithRetry(() => import("./pages/vendor/VendorNewShipment"), "VendorNewShipment");
 
 // ReStock pages
 const RestockSiteLayout = lazyWithRetry(() => import("./components/restock/RestockSiteLayout"), "RestockSiteLayout");
@@ -368,6 +369,7 @@ const App = () => (
               <Route path="messages" element={<LP><VendorMessages /></LP>} />
               <Route path="academy" element={<LP><VendorAcademy /></LP>} />
               <Route path="settings" element={<LP><VendorSettings /></LP>} />
+              <Route path="shipments/new" element={<LP><VendorNewShipment /></LP>} />
             </Route>
 
             {/* ReStock — all routes under main site layout with sub-nav */}

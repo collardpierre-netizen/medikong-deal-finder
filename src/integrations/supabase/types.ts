@@ -5096,6 +5096,69 @@ export type Database = {
         }
         Relationships: []
       }
+      vendor_addresses: {
+        Row: {
+          address_line1: string
+          city: string
+          country: string
+          created_at: string
+          house_number: string | null
+          id: string
+          is_default: boolean
+          label: string
+          phone: string | null
+          postal_code: string
+          sendcloud_sender_address_id: number | null
+          updated_at: string
+          vendor_id: string
+        }
+        Insert: {
+          address_line1: string
+          city: string
+          country?: string
+          created_at?: string
+          house_number?: string | null
+          id?: string
+          is_default?: boolean
+          label?: string
+          phone?: string | null
+          postal_code: string
+          sendcloud_sender_address_id?: number | null
+          updated_at?: string
+          vendor_id: string
+        }
+        Update: {
+          address_line1?: string
+          city?: string
+          country?: string
+          created_at?: string
+          house_number?: string | null
+          id?: string
+          is_default?: boolean
+          label?: string
+          phone?: string | null
+          postal_code?: string
+          sendcloud_sender_address_id?: number | null
+          updated_at?: string
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_addresses_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_addresses_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vendor_commercial_settings: {
         Row: {
           created_at: string
@@ -5372,6 +5435,54 @@ export type Database = {
           },
           {
             foreignKeyName: "vendor_notification_preferences_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: true
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vendor_notification_settings: {
+        Row: {
+          created_at: string
+          id: string
+          notify_invoice_ready: boolean
+          notify_shipment_created: boolean
+          notify_shipment_delivered: boolean
+          notify_shipment_exception: boolean
+          updated_at: string
+          vendor_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notify_invoice_ready?: boolean
+          notify_shipment_created?: boolean
+          notify_shipment_delivered?: boolean
+          notify_shipment_exception?: boolean
+          updated_at?: string
+          vendor_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notify_invoice_ready?: boolean
+          notify_shipment_created?: boolean
+          notify_shipment_delivered?: boolean
+          notify_shipment_exception?: boolean
+          updated_at?: string
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_notification_settings_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: true
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_notification_settings_vendor_id_fkey"
             columns: ["vendor_id"]
             isOneToOne: true
             referencedRelation: "vendors"

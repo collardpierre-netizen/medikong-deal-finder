@@ -81,7 +81,7 @@ const AdminMarques = () => {
                   onClick={() => setSelectedBrand(b)}>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      {b.logo_url ? <img src={b.logo_url} alt="" referrerPolicy="no-referrer" crossOrigin="anonymous" className="w-7 h-7 rounded border object-contain bg-white p-0.5" style={{ borderColor: "#E2E8F0" }} onError={e => { (e.target as HTMLImageElement).style.display = 'none'; const next = (e.target as HTMLImageElement).nextElementSibling as HTMLElement; if (!next) { const tag = document.createElement('span'); tag.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>'; tag.className = 'text-muted-foreground'; (e.target as HTMLImageElement).parentElement?.appendChild(tag); } }} /> : <Tag size={14} className="text-muted-foreground" />}
+                      {b.logo_url ? <img src={b.logo_url} alt="" referrerPolicy="no-referrer" className="w-7 h-7 rounded border object-contain bg-white p-0.5" style={{ borderColor: "#E2E8F0" }} onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} /> : <Tag size={14} className="text-muted-foreground" />}
                       <span className="text-[12px] font-semibold" style={{ color: "#1D2530" }}>{b.name}</span>
                     </div>
                   </TableCell>
@@ -121,7 +121,7 @@ const AdminMarques = () => {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-3">
               {selectedBrand?.logo_url ? (
-                <img src={selectedBrand.logo_url} alt={selectedBrand.name} referrerPolicy="no-referrer" crossOrigin="anonymous" className="w-12 h-12 rounded-lg border object-contain p-1 bg-white" style={{ borderColor: "#E2E8F0" }} onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                <img src={selectedBrand.logo_url} alt={selectedBrand.name} referrerPolicy="no-referrer" className="w-12 h-12 rounded-lg border object-contain p-1 bg-white" style={{ borderColor: "#E2E8F0" }} onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
               ) : (
                 <div className="w-12 h-12 rounded-lg border flex items-center justify-center bg-muted/30" style={{ borderColor: "#E2E8F0" }}>
                   <Tag size={20} className="text-muted-foreground" />

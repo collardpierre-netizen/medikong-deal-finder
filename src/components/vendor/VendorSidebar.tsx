@@ -34,6 +34,7 @@ const sidebarSections = [
     label: "COMPTE",
     items: [
       { key: "finances", icon: DollarSign, path: "/vendor/finance", comingSoon: true },
+      { key: "billing", icon: Receipt, path: "/vendor/billing" },
       { key: "logistics", icon: Truck, path: "/vendor/logistics", comingSoon: true },
       { key: "health", icon: HeartPulse, path: "/vendor/health" },
       { key: "messages", icon: MessageSquare, path: "/vendor/messages", comingSoon: true },

@@ -250,7 +250,7 @@ export default function VendorShipments() {
                       <td className="py-2.5 px-3 text-right">
                         <div className="flex items-center justify-end gap-1">
                           <button
-                            onClick={() => setDetailShipment(s)}
+                            onClick={() => navigate(`/vendor/shipments/${s.id}`)}
                             className="p-1.5 rounded hover:bg-[#F1F5F9] text-[#616B7C]"
                             title="Détails"
                           >

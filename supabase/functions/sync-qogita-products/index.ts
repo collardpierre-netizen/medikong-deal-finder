@@ -282,7 +282,9 @@ async function processBatch(
     const stock = parseInt(inventoryStr, 10) || 0;
     const delivery = parseInt(deliveryStr, 10) || 0;
     const pe = bp > 0 ? Math.round((bp / (1 + vat / 100)) * 100) / 100 : 0;
-    const slug = sl(name) + (gtin ? `-${gtin.slice(-6)}` : `-${stableId.slice(0, 6)}`);
+    const baseSlug = sl(name) + (gtin ? `-${gtin.slice(-6)}` : `-${stableId.slice(0, 6)}`);
+    const slug = dedupeSlug(baseSlug, seenSlugs);
+    seenSlugs.add(slug);
     const isPreorder = preorderStr.toLowerCase() === "true" || preorderStr === "1";
 
     products.push({

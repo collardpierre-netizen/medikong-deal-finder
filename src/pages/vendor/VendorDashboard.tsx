@@ -3,6 +3,8 @@ import { VCard } from "@/components/vendor/ui/VCard";
 import { VStat } from "@/components/vendor/ui/VStat";
 import { Database } from "lucide-react";
 import VendorKycStepper from "@/components/vendor/VendorKycStepper";
+import NoShippingDashboard from "@/components/vendor/dashboard/NoShippingDashboard";
+import SendcloudDashboard from "@/components/vendor/dashboard/SendcloudDashboard";
 
 const today = new Date();
 const dateStr = today.toLocaleDateString("fr-BE", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
@@ -11,6 +13,7 @@ export default function VendorDashboard() {
   const { data: vendor } = useCurrentVendor();
 
   const isApproved = vendor?.validation_status === "approved";
+  const shippingMode = (vendor as any)?.vendor_shipping_mode ?? "no_shipping";
 
   return (
     <div className="space-y-5">
@@ -34,16 +37,34 @@ export default function VendorDashboard() {
             <VStat label="Taux Buy Box" value="—" icon="Trophy" color="#F59E0B" sub="pas de données" />
           </div>
 
-          <VCard>
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <Database size={48} className="text-[#CBD5E1] mb-4" />
-              <h3 className="text-[15px] font-bold text-[#1D2530] mb-2">Bienvenue sur votre espace vendeur</h3>
-              <p className="text-[13px] text-[#8B95A5] max-w-md">
-                Votre tableau de bord s'alimentera automatiquement dès que vous aurez des offres actives et des commandes.
-                Commencez par créer vos premières offres dans la section "Mes Offres".
-              </p>
+          {/* Shipping section — adapts to vendor's shipping mode */}
+          {vendor && (
+            <div className="space-y-2">
+              <h2 className="text-[15px] font-bold text-[#1D2530]">Logistique</h2>
+              {shippingMode === "no_shipping" && (
+                <NoShippingDashboard vendorId={vendor.id} />
+              )}
+              {shippingMode === "own_sendcloud" && (
+                <SendcloudDashboard vendorId={vendor.id} />
+              )}
+              {shippingMode === "medikong_whitelabel" && (
+                <SendcloudDashboard vendorId={vendor.id} showCostKpis />
+              )}
             </div>
-          </VCard>
+          )}
+
+          {shippingMode === "no_shipping" && (
+            <VCard>
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <Database size={48} className="text-[#CBD5E1] mb-4" />
+                <h3 className="text-[15px] font-bold text-[#1D2530] mb-2">Bienvenue sur votre espace vendeur</h3>
+                <p className="text-[13px] text-[#8B95A5] max-w-md">
+                  Votre tableau de bord s'alimentera automatiquement dès que vous aurez des offres actives et des commandes.
+                  Commencez par créer vos premières offres dans la section "Mes Offres".
+                </p>
+              </div>
+            </VCard>
+          )}
         </>
       )}
     </div>

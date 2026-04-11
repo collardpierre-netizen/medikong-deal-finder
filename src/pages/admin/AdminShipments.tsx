@@ -5,8 +5,14 @@ import KpiCard from "@/components/admin/KpiCard";
 import StatusBadge from "@/components/admin/StatusBadge";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Truck, Package, Search, Filter, AlertTriangle, CheckCircle2, Clock, X } from "lucide-react";
+import { Truck, Package, Search, CheckCircle2, Clock, AlertTriangle, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
+
+const modeLabel: Record<string, string> = {
+  no_shipping: "Manuel",
+  own_sendcloud: "Sendcloud propre",
+  medikong_whitelabel: "Whitelabel",
+};
 
 const AdminShipments = () => {
   const navigate = useNavigate();
@@ -19,7 +25,7 @@ const AdminShipments = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("shipments")
-        .select("*, vendors(company_name, name, shipping_mode)")
+        .select("*, vendors(company_name, name, vendor_shipping_mode)")
         .order("created_at", { ascending: false })
         .limit(500);
       if (error) throw error;
@@ -33,7 +39,7 @@ const AdminShipments = () => {
   const filtered = shipments.filter((s: any) => {
     if (statusFilter !== "all" && s.status !== statusFilter) return false;
     if (modeFilter !== "all") {
-      const vendorMode = (s.vendors as any)?.shipping_mode;
+      const vendorMode = (s.vendors as any)?.vendor_shipping_mode;
       if (vendorMode !== modeFilter) return false;
     }
     if (search) {
@@ -53,12 +59,6 @@ const AdminShipments = () => {
   const totalDelivered = shipments.filter((s: any) => s.status === "delivered").length;
   const totalExceptions = shipments.filter((s: any) => s.status === "exception").length;
 
-  const modeLabel: Record<string, string> = {
-    no_shipping: "Manuel",
-    own_sendcloud: "Sendcloud propre",
-    medikong_whitelabel: "Whitelabel",
-  };
-
   return (
     <div>
       <AdminTopBar title="Expéditions globales" subtitle="Vue cross-vendeur de toutes les expéditions" />
@@ -74,32 +74,13 @@ const AdminShipments = () => {
       <div className="flex items-center gap-3 mb-4">
         <div className="relative flex-1 max-w-sm">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "#8B95A5" }} />
-          <Input
-            placeholder="Recherche tracking, commande, vendeur…"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="pl-9 text-[12px] h-9"
-          />
+          <Input placeholder="Recherche tracking, commande, vendeur…" value={search} onChange={e => setSearch(e.target.value)} className="pl-9 text-[12px] h-9" />
         </div>
-        <select
-          value={statusFilter}
-          onChange={e => setStatusFilter(e.target.value)}
-          className="h-9 px-3 rounded-md text-[12px] border"
-          style={{ borderColor: "#E2E8F0", color: "#1D2530" }}
-        >
-          {statuses.map(s => (
-            <option key={s} value={s}>{s === "all" ? "Tous les statuts" : s.replace(/_/g, " ")}</option>
-          ))}
+        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="h-9 px-3 rounded-md text-[12px] border" style={{ borderColor: "#E2E8F0", color: "#1D2530" }}>
+          {statuses.map(s => <option key={s} value={s}>{s === "all" ? "Tous les statuts" : s.replace(/_/g, " ")}</option>)}
         </select>
-        <select
-          value={modeFilter}
-          onChange={e => setModeFilter(e.target.value)}
-          className="h-9 px-3 rounded-md text-[12px] border"
-          style={{ borderColor: "#E2E8F0", color: "#1D2530" }}
-        >
-          {modes.map(m => (
-            <option key={m} value={m}>{m === "all" ? "Tous les modes" : modeLabel[m] || m}</option>
-          ))}
+        <select value={modeFilter} onChange={e => setModeFilter(e.target.value)} className="h-9 px-3 rounded-md text-[12px] border" style={{ borderColor: "#E2E8F0", color: "#1D2530" }}>
+          {modes.map(m => <option key={m} value={m}>{m === "all" ? "Tous les modes" : modeLabel[m] || m}</option>)}
         </select>
         {(search || statusFilter !== "all" || modeFilter !== "all") && (
           <button onClick={() => { setSearch(""); setStatusFilter("all"); setModeFilter("all"); }} className="flex items-center gap-1 text-[11px] font-medium px-2 py-1 rounded" style={{ color: "#EF4343" }}>
@@ -126,20 +107,11 @@ const AdminShipments = () => {
             <tbody>
               {filtered.slice(0, 100).map((s: any) => {
                 const vendor = s.vendors as any;
-                const mode = vendor?.shipping_mode || "—";
+                const mode = vendor?.vendor_shipping_mode || "—";
                 return (
-                  <tr
-                    key={s.id}
-                    className="cursor-pointer hover:bg-[#F8FAFC] transition-colors"
-                    style={{ borderBottom: "1px solid #F1F5F9" }}
-                    onClick={() => navigate(`/admin/vendeurs/${s.vendor_id}`)}
-                  >
-                    <td className="px-4 py-3 text-[12px] font-mono font-medium" style={{ color: "#1B5BDA" }}>
-                      {s.tracking_number || "—"}
-                    </td>
-                    <td className="px-4 py-3 text-[12px]" style={{ color: "#1D2530" }}>
-                      {vendor?.company_name || vendor?.name || "—"}
-                    </td>
+                  <tr key={s.id} className="cursor-pointer hover:bg-[#F8FAFC] transition-colors" style={{ borderBottom: "1px solid #F1F5F9" }} onClick={() => navigate(`/admin/vendeurs/${s.vendor_id}`)}>
+                    <td className="px-4 py-3 text-[12px] font-mono font-medium" style={{ color: "#1B5BDA" }}>{s.tracking_number || "—"}</td>
+                    <td className="px-4 py-3 text-[12px]" style={{ color: "#1D2530" }}>{vendor?.company_name || vendor?.name || "—"}</td>
                     <td className="px-4 py-3">
                       <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{
                         backgroundColor: mode === "medikong_whitelabel" ? "#EFF6FF" : mode === "own_sendcloud" ? "#F5F3FF" : "#F1F5F9",
@@ -151,9 +123,7 @@ const AdminShipments = () => {
                     <td className="px-4 py-3 text-[12px]" style={{ color: "#616B7C" }}>{s.carrier || "—"}</td>
                     <td className="px-4 py-3"><StatusBadge status={s.status} /></td>
                     <td className="px-4 py-3 text-[12px] font-mono" style={{ color: "#616B7C" }}>{s.order_reference || "—"}</td>
-                    <td className="px-4 py-3 text-[11px]" style={{ color: "#8B95A5" }}>
-                      {new Date(s.created_at).toLocaleDateString("fr-BE")}
-                    </td>
+                    <td className="px-4 py-3 text-[11px]" style={{ color: "#8B95A5" }}>{new Date(s.created_at).toLocaleDateString("fr-BE")}</td>
                   </tr>
                 );
               })}
@@ -162,9 +132,7 @@ const AdminShipments = () => {
         )}
       </div>
       {filtered.length > 100 && (
-        <p className="text-[11px] mt-2 text-center" style={{ color: "#8B95A5" }}>
-          Affichage des 100 premiers résultats sur {filtered.length}
-        </p>
+        <p className="text-[11px] mt-2 text-center" style={{ color: "#8B95A5" }}>Affichage des 100 premiers résultats sur {filtered.length}</p>
       )}
     </div>
   );

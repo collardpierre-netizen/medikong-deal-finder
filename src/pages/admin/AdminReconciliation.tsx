@@ -24,7 +24,6 @@ interface VendorInvoiceDraft {
   margin_pct: number;
   margin_amount: number;
   total: number;
-  lines: SendcloudLine[];
 }
 
 const AdminReconciliation = () => {
@@ -33,14 +32,13 @@ const AdminReconciliation = () => {
   const [drafts, setDrafts] = useState<VendorInvoiceDraft[]>([]);
   const [sending, setSending] = useState<string | null>(null);
 
-  // Get whitelabel vendors with their shipments
   const { data: vendors = [] } = useQuery({
     queryKey: ["reconciliation-vendors"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("vendors")
-        .select("id, company_name, name, shipping_mode, whitelabel_margin_percentage")
-        .eq("shipping_mode", "medikong_whitelabel")
+        .select("id, company_name, name, vendor_shipping_mode, shipping_margin_percentage")
+        .eq("vendor_shipping_mode", "medikong_whitelabel")
         .eq("is_active", true);
       if (error) throw error;
       return data;
@@ -51,7 +49,7 @@ const AdminReconciliation = () => {
     queryKey: ["reconciliation-invoices"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("vendor_invoices")
+        .from("shipping_invoices")
         .select("*, vendors(company_name, name)")
         .order("created_at", { ascending: false })
         .limit(50);
@@ -73,7 +71,6 @@ const AdminReconciliation = () => {
 
       if (rows.length === 0) { toast.error("Fichier vide"); setUploading(false); return; }
 
-      // Parse sendcloud lines — detect column names flexibly
       const parsed: SendcloudLine[] = rows.map(r => {
         const parcelId = r["parcel_id"] || r["Parcel ID"] || r["ID"] || "";
         const tracking = r["tracking_number"] || r["Tracking"] || r["tracking"] || "";
@@ -83,23 +80,24 @@ const AdminReconciliation = () => {
         return { parcel_id: String(parcelId), tracking_number: String(tracking), cost, carrier: String(carrier), date: String(date) };
       });
 
-      // Match each line to a shipment via parcel_id or tracking_number
-      const { data: shipments } = await supabase
+      // Match lines to shipments via parcel_id (number) or tracking_number
+      const parcelIds = parsed.map(p => parseInt(p.parcel_id || "0")).filter(n => n > 0);
+      const { data: shipmentsByParcel } = await supabase
         .from("shipments")
-        .select("id, vendor_id, sendcloud_parcel_id, tracking_number, base_cost_cents, margin_cents")
-        .in("sendcloud_parcel_id", parsed.map(p => p.parcel_id).filter(Boolean));
+        .select("id, vendor_id, parcel_id, tracking_number, cost_base_cents, cost_margin_cents")
+        .in("parcel_id", parcelIds);
 
       const shipmentMap = new Map<string, any>();
-      (shipments || []).forEach(s => {
-        if (s.sendcloud_parcel_id) shipmentMap.set(String(s.sendcloud_parcel_id), s);
+      (shipmentsByParcel || []).forEach(s => {
+        if (s.parcel_id) shipmentMap.set(String(s.parcel_id), s);
       });
 
-      // Also try matching by tracking_number for lines not matched
-      const unmatchedTracking = parsed.filter(p => !shipmentMap.has(p.parcel_id || "")).map(p => p.tracking_number).filter(Boolean);
+      // Also try matching by tracking_number
+      const unmatchedTracking = parsed.filter(p => !shipmentMap.has(p.parcel_id || "")).map(p => p.tracking_number).filter(Boolean) as string[];
       if (unmatchedTracking.length > 0) {
         const { data: trackingMatches } = await supabase
           .from("shipments")
-          .select("id, vendor_id, sendcloud_parcel_id, tracking_number, base_cost_cents, margin_cents")
+          .select("id, vendor_id, parcel_id, tracking_number, cost_base_cents, cost_margin_cents")
           .in("tracking_number", unmatchedTracking);
         (trackingMatches || []).forEach(s => {
           if (s.tracking_number) shipmentMap.set(s.tracking_number, s);
@@ -107,33 +105,29 @@ const AdminReconciliation = () => {
       }
 
       // Group by vendor
-      const vendorMap = new Map<string, { lines: SendcloudLine[]; baseCost: number }>();
+      const vendorAgg = new Map<string, { count: number; baseCost: number }>();
       for (const line of parsed) {
         const matched = shipmentMap.get(line.parcel_id || "") || shipmentMap.get(line.tracking_number || "");
         if (!matched) continue;
-        const vendorId = matched.vendor_id;
-        if (!vendorMap.has(vendorId)) vendorMap.set(vendorId, { lines: [], baseCost: 0 });
-        const entry = vendorMap.get(vendorId)!;
-        entry.lines.push(line);
-        entry.baseCost += line.cost || 0;
+        const vid = matched.vendor_id;
+        const prev = vendorAgg.get(vid) || { count: 0, baseCost: 0 };
+        vendorAgg.set(vid, { count: prev.count + 1, baseCost: prev.baseCost + (line.cost || 0) });
       }
 
-      // Build drafts
       const vendorLookup = new Map(vendors.map(v => [v.id, v]));
       const newDrafts: VendorInvoiceDraft[] = [];
-      for (const [vendorId, data] of vendorMap.entries()) {
+      for (const [vendorId, data] of vendorAgg.entries()) {
         const v = vendorLookup.get(vendorId);
-        const marginPct = v?.whitelabel_margin_percentage ?? 15;
+        const marginPct = v?.shipping_margin_percentage ?? 15;
         const marginAmount = data.baseCost * (marginPct / 100);
         newDrafts.push({
           vendor_id: vendorId,
           vendor_name: v?.company_name || v?.name || vendorId,
-          shipment_count: data.lines.length,
+          shipment_count: data.count,
           base_cost: Math.round(data.baseCost * 100) / 100,
           margin_pct: marginPct,
           margin_amount: Math.round(marginAmount * 100) / 100,
           total: Math.round((data.baseCost + marginAmount) * 100) / 100,
-          lines: data.lines,
         });
       }
 
@@ -142,7 +136,6 @@ const AdminReconciliation = () => {
       } else {
         toast.success(`${newDrafts.length} vendeur(s) identifié(s), ${parsed.length} lignes traitées`);
       }
-
       setDrafts(newDrafts);
     } catch (err: any) {
       toast.error(err.message || "Erreur de traitement du fichier");
@@ -156,13 +149,17 @@ const AdminReconciliation = () => {
     setSending(draft.vendor_id);
     try {
       const now = new Date();
-      const period = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-      const { error } = await supabase.from("vendor_invoices").insert({
+      const periodStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
+      const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+      const periodEnd = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${lastDay}`;
+
+      const { error } = await supabase.from("shipping_invoices").insert({
         vendor_id: draft.vendor_id,
-        period,
-        base_cost_cents: Math.round(draft.base_cost * 100),
-        margin_cents: Math.round(draft.margin_amount * 100),
-        total_cents: Math.round(draft.total * 100),
+        period_start: periodStart,
+        period_end: periodEnd,
+        total_base_cents: Math.round(draft.base_cost * 100),
+        total_margin_cents: Math.round(draft.margin_amount * 100),
+        total_invoiced_cents: Math.round(draft.total * 100),
         status: "sent",
         shipment_count: draft.shipment_count,
       });
@@ -190,7 +187,7 @@ const AdminReconciliation = () => {
         <KpiCard icon={Receipt} label="Vendeurs whitelabel" value={String(vendors.length)} />
         <KpiCard icon={FileText} label="Factures envoyées" value={String(invoices.filter((i: any) => i.status === "sent" || i.status === "paid").length)} iconColor="#059669" iconBg="#F0FDF4" />
         <KpiCard icon={AlertTriangle} label="En attente" value={String(invoices.filter((i: any) => i.status === "draft").length)} iconColor="#F59E0B" iconBg="#FFFBEB" />
-        <KpiCard icon={Receipt} label="Marge totale" value={fmt(invoices.reduce((s: number, i: any) => s + (i.margin_cents || 0) / 100, 0))} iconColor="#7C3AED" iconBg="#F5F3FF" />
+        <KpiCard icon={Receipt} label="Marge totale" value={fmt(invoices.reduce((s: number, i: any) => s + (i.total_margin_cents || 0) / 100, 0))} iconColor="#7C3AED" iconBg="#F5F3FF" />
       </div>
 
       {/* Upload */}
@@ -280,10 +277,10 @@ const AdminReconciliation = () => {
                     <td className="px-4 py-3 text-[12px] font-medium" style={{ color: "#1D2530" }}>
                       {vendor?.company_name || vendor?.name || "—"}
                     </td>
-                    <td className="px-4 py-3 text-[12px] font-mono" style={{ color: "#616B7C" }}>{inv.period}</td>
-                    <td className="px-4 py-3 text-[12px] font-mono" style={{ color: "#1D2530" }}>{fmt((inv.base_cost_cents || 0) / 100)}</td>
-                    <td className="px-4 py-3 text-[12px] font-mono" style={{ color: "#059669" }}>{fmt((inv.margin_cents || 0) / 100)}</td>
-                    <td className="px-4 py-3 text-[12px] font-mono font-bold" style={{ color: "#1D2530" }}>{fmt((inv.total_cents || 0) / 100)}</td>
+                    <td className="px-4 py-3 text-[12px] font-mono" style={{ color: "#616B7C" }}>{inv.period_start} → {inv.period_end}</td>
+                    <td className="px-4 py-3 text-[12px] font-mono" style={{ color: "#1D2530" }}>{fmt((inv.total_base_cents || 0) / 100)}</td>
+                    <td className="px-4 py-3 text-[12px] font-mono" style={{ color: "#059669" }}>{fmt((inv.total_margin_cents || 0) / 100)}</td>
+                    <td className="px-4 py-3 text-[12px] font-mono font-bold" style={{ color: "#1D2530" }}>{fmt((inv.total_invoiced_cents || 0) / 100)}</td>
                     <td className="px-4 py-3"><StatusBadge status={inv.status} /></td>
                     <td className="px-4 py-3 text-[11px]" style={{ color: "#8B95A5" }}>
                       {new Date(inv.created_at).toLocaleDateString("fr-BE")}

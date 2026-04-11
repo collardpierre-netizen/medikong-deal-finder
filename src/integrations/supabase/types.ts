@@ -4314,6 +4314,194 @@ export type Database = {
           },
         ]
       }
+      shipment_events: {
+        Row: {
+          created_at: string
+          event_message: string
+          event_timestamp: string
+          event_type: string
+          id: string
+          raw_payload: Json | null
+          sendcloud_event_id: string | null
+          shipment_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_message?: string
+          event_timestamp?: string
+          event_type: string
+          id?: string
+          raw_payload?: Json | null
+          sendcloud_event_id?: string | null
+          shipment_id: string
+        }
+        Update: {
+          created_at?: string
+          event_message?: string
+          event_timestamp?: string
+          event_type?: string
+          id?: string
+          raw_payload?: Json | null
+          sendcloud_event_id?: string | null
+          shipment_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shipment_events_shipment_id_fkey"
+            columns: ["shipment_id"]
+            isOneToOne: false
+            referencedRelation: "shipments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shipments: {
+        Row: {
+          carrier: string | null
+          cost_base_cents: number | null
+          cost_margin_cents: number | null
+          cost_total_cents: number | null
+          created_at: string
+          dimensions_cm: Json | null
+          id: string
+          label_url: string | null
+          order_reference: string
+          parcel_id: number | null
+          recipient_address: Json
+          recipient_email: string | null
+          recipient_name: string
+          recipient_phone: string | null
+          shipping_mode_used: Database["public"]["Enums"]["vendor_shipping_mode"]
+          status: Database["public"]["Enums"]["shipment_status"]
+          tracking_number: string | null
+          tracking_url: string | null
+          updated_at: string
+          vendor_id: string
+          weight_grams: number | null
+        }
+        Insert: {
+          carrier?: string | null
+          cost_base_cents?: number | null
+          cost_margin_cents?: number | null
+          cost_total_cents?: number | null
+          created_at?: string
+          dimensions_cm?: Json | null
+          id?: string
+          label_url?: string | null
+          order_reference: string
+          parcel_id?: number | null
+          recipient_address?: Json
+          recipient_email?: string | null
+          recipient_name?: string
+          recipient_phone?: string | null
+          shipping_mode_used: Database["public"]["Enums"]["vendor_shipping_mode"]
+          status?: Database["public"]["Enums"]["shipment_status"]
+          tracking_number?: string | null
+          tracking_url?: string | null
+          updated_at?: string
+          vendor_id: string
+          weight_grams?: number | null
+        }
+        Update: {
+          carrier?: string | null
+          cost_base_cents?: number | null
+          cost_margin_cents?: number | null
+          cost_total_cents?: number | null
+          created_at?: string
+          dimensions_cm?: Json | null
+          id?: string
+          label_url?: string | null
+          order_reference?: string
+          parcel_id?: number | null
+          recipient_address?: Json
+          recipient_email?: string | null
+          recipient_name?: string
+          recipient_phone?: string | null
+          shipping_mode_used?: Database["public"]["Enums"]["vendor_shipping_mode"]
+          status?: Database["public"]["Enums"]["shipment_status"]
+          tracking_number?: string | null
+          tracking_url?: string | null
+          updated_at?: string
+          vendor_id?: string
+          weight_grams?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shipments_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipments_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shipping_invoices: {
+        Row: {
+          created_at: string
+          id: string
+          pdf_url: string | null
+          period_end: string
+          period_start: string
+          sent_at: string | null
+          shipment_count: number
+          status: Database["public"]["Enums"]["shipping_invoice_status"]
+          total_base_cents: number
+          total_invoiced_cents: number
+          total_margin_cents: number
+          vendor_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          pdf_url?: string | null
+          period_end: string
+          period_start: string
+          sent_at?: string | null
+          shipment_count?: number
+          status?: Database["public"]["Enums"]["shipping_invoice_status"]
+          total_base_cents?: number
+          total_invoiced_cents?: number
+          total_margin_cents?: number
+          vendor_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          pdf_url?: string | null
+          period_end?: string
+          period_start?: string
+          sent_at?: string | null
+          shipment_count?: number
+          status?: Database["public"]["Enums"]["shipping_invoice_status"]
+          total_base_cents?: number
+          total_invoiced_cents?: number
+          total_margin_cents?: number
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shipping_invoices_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipping_invoices_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shipping_options: {
         Row: {
           country_code: string
@@ -5182,6 +5370,120 @@ export type Database = {
           },
         ]
       }
+      vendor_sendcloud_credentials: {
+        Row: {
+          created_at: string
+          id: string
+          is_connected: boolean
+          last_verified_at: string | null
+          sendcloud_public_key: string
+          sendcloud_secret_key: string
+          vendor_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_connected?: boolean
+          last_verified_at?: string | null
+          sendcloud_public_key?: string
+          sendcloud_secret_key?: string
+          vendor_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_connected?: boolean
+          last_verified_at?: string | null
+          sendcloud_public_key?: string
+          sendcloud_secret_key?: string
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_sendcloud_credentials_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: true
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_sendcloud_credentials_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: true
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vendor_shipping_addresses: {
+        Row: {
+          address_line_1: string
+          address_line_2: string | null
+          city: string
+          company_name: string
+          country: string
+          created_at: string
+          email: string
+          house_number: string
+          id: string
+          is_default: boolean
+          label: string
+          name: string
+          phone: string
+          postal_code: string
+          vendor_id: string
+        }
+        Insert: {
+          address_line_1?: string
+          address_line_2?: string | null
+          city?: string
+          company_name?: string
+          country?: string
+          created_at?: string
+          email?: string
+          house_number?: string
+          id?: string
+          is_default?: boolean
+          label?: string
+          name?: string
+          phone?: string
+          postal_code?: string
+          vendor_id: string
+        }
+        Update: {
+          address_line_1?: string
+          address_line_2?: string | null
+          city?: string
+          company_name?: string
+          country?: string
+          created_at?: string
+          email?: string
+          house_number?: string
+          id?: string
+          is_default?: boolean
+          label?: string
+          name?: string
+          phone?: string
+          postal_code?: string
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_shipping_addresses_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_shipping_addresses_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vendor_visibility_rules: {
         Row: {
           country_code: string | null
@@ -5271,6 +5573,7 @@ export type Database = {
           shipping_country: string | null
           shipping_email: string | null
           shipping_logo_url: string | null
+          shipping_margin_percentage: number
           shipping_onboarded_at: string | null
           shipping_phone: string | null
           shipping_pickup_instructions: string | null
@@ -5292,6 +5595,7 @@ export type Database = {
             | null
           vat_number: string | null
           vendor_code: string | null
+          vendor_shipping_mode: Database["public"]["Enums"]["vendor_shipping_mode"]
         }
         Insert: {
           address_line1?: string | null
@@ -5333,6 +5637,7 @@ export type Database = {
           shipping_country?: string | null
           shipping_email?: string | null
           shipping_logo_url?: string | null
+          shipping_margin_percentage?: number
           shipping_onboarded_at?: string | null
           shipping_phone?: string | null
           shipping_pickup_instructions?: string | null
@@ -5354,6 +5659,7 @@ export type Database = {
             | null
           vat_number?: string | null
           vendor_code?: string | null
+          vendor_shipping_mode?: Database["public"]["Enums"]["vendor_shipping_mode"]
         }
         Update: {
           address_line1?: string | null
@@ -5395,6 +5701,7 @@ export type Database = {
           shipping_country?: string | null
           shipping_email?: string | null
           shipping_logo_url?: string | null
+          shipping_margin_percentage?: number
           shipping_onboarded_at?: string | null
           shipping_phone?: string | null
           shipping_pickup_instructions?: string | null
@@ -5416,6 +5723,7 @@ export type Database = {
             | null
           vat_number?: string | null
           vendor_code?: string | null
+          vendor_shipping_mode?: Database["public"]["Enums"]["vendor_shipping_mode"]
         }
         Relationships: []
       }
@@ -5942,6 +6250,15 @@ export type Database = {
         | "received_at_warehouse"
         | "repackaging"
         | "reshipped"
+      shipment_status:
+        | "pending"
+        | "created"
+        | "announced"
+        | "in_transit"
+        | "delivered"
+        | "exception"
+        | "cancelled"
+      shipping_invoice_status: "draft" | "sent" | "paid" | "overdue"
       shipping_mode_enum: "direct_to_customer" | "via_warehouse"
       sourcing_status:
         | "new"
@@ -5964,6 +6281,10 @@ export type Database = {
         | "manual"
         | "offers_multi_vendor"
       urgency_enum: "low" | "medium" | "high"
+      vendor_shipping_mode:
+        | "no_shipping"
+        | "own_sendcloud"
+        | "medikong_whitelabel"
       vendor_type: "medikong" | "qogita_virtual" | "real" | "qogita"
       vendor_validation_status:
         | "pending_review"
@@ -6157,6 +6478,16 @@ export const Constants = {
         "repackaging",
         "reshipped",
       ],
+      shipment_status: [
+        "pending",
+        "created",
+        "announced",
+        "in_transit",
+        "delivered",
+        "exception",
+        "cancelled",
+      ],
+      shipping_invoice_status: ["draft", "sent", "paid", "overdue"],
       shipping_mode_enum: ["direct_to_customer", "via_warehouse"],
       sourcing_status: [
         "new",
@@ -6181,6 +6512,11 @@ export const Constants = {
         "offers_multi_vendor",
       ],
       urgency_enum: ["low", "medium", "high"],
+      vendor_shipping_mode: [
+        "no_shipping",
+        "own_sendcloud",
+        "medikong_whitelabel",
+      ],
       vendor_type: ["medikong", "qogita_virtual", "real", "qogita"],
       vendor_validation_status: [
         "pending_review",

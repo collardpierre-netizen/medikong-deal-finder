@@ -124,7 +124,7 @@ export default function SendcloudDashboard({ vendorId, showCostKpis = false }: P
       <div className={`grid grid-cols-1 sm:grid-cols-2 ${showCostKpis ? "lg:grid-cols-5" : "lg:grid-cols-4"} gap-4`}>
         <VStat label="Expéditions ce mois" value={monthShipments.length} icon="Package" color="#1B5BDA" sub="total" />
         <VStat label="En attente" value={pending} icon="Clock" color="#F59E0B" sub="à traiter" />
-        <VStat label="Taux livraison" value={`${deliveredRate}%`} icon="CheckCircle" color="#059669" sub={`${delivered} livrées`} />
+        <VStat label="Taux livraison" value={`${deliveredRate}%`} icon="CircleCheckBig" color="#059669" sub={`${delivered} livrées`} />
         <VStat label="Total 30j" value={shipments.length} icon="TrendingUp" color="#7C3AED" sub="expéditions" />
         {showCostKpis && (
           <VStat label="Dépense du mois" value={`${spendEur} €`} icon="Euro" color="#EF4343" sub="shipping" />

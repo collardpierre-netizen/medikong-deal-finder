@@ -97,7 +97,7 @@ export default function NoShippingDashboard({ vendorId }: Props) {
                     </td>
                     <td className="py-3 text-right">
                       <VBtn
-                        size="sm"
+                        small
                         onClick={() => setShipDialog({ id: s.id, ref: s.order_reference })}
                       >
                         <Truck size={14} className="mr-1" />
@@ -131,7 +131,7 @@ export default function NoShippingDashboard({ vendorId }: Props) {
             />
           </div>
           <DialogFooter className="mt-4">
-            <VBtn variant="ghost" onClick={() => setShipDialog(null)}>Annuler</VBtn>
+            <VBtn onClick={() => setShipDialog(null)}>Annuler</VBtn>
             <VBtn
               onClick={() => shipDialog && markShipped.mutate({ id: shipDialog.id, tracking: trackingNumber })}
               disabled={markShipped.isPending}

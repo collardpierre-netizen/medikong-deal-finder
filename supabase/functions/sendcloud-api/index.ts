@@ -12,8 +12,12 @@ const SENDCLOUD_SECRET = Deno.env.get("SENDCLOUD_SECRET_KEY") || "";
 const AUTH_HEADER = "Basic " + btoa(`${SENDCLOUD_PUBLIC}:${SENDCLOUD_SECRET}`);
 
 interface ApiRequest {
-  operation: string;
+  operation?: string;
+  action?: string;
   payload?: Record<string, unknown>;
+  vendor_id?: string;
+  public_key?: string;
+  secret_key?: string;
 }
 
 // Retry with exponential backoff
@@ -192,7 +196,34 @@ Deno.serve(async (req) => {
 
   try {
     const body: ApiRequest = await req.json();
+
+    // Handle test_connection action (uses vendor's own keys)
+    if (body.action === "test_connection") {
+      const pk = body.public_key;
+      const sk = body.secret_key;
+      if (!pk || !sk) {
+        return new Response(JSON.stringify({ success: false, error: "Missing Sendcloud keys" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const testAuth = "Basic " + btoa(`${pk}:${sk}`);
+      const testRes = await fetchWithRetry(`${SENDCLOUD_BASE}/user/addresses/sender`, {
+        method: "GET",
+        headers: { Authorization: testAuth, "Content-Type": "application/json" },
+      });
+      const testData = await testRes.json();
+      return new Response(JSON.stringify({ success: testRes.ok, data: testData }), {
+        status: testRes.ok ? 200 : 502,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const { operation, payload = {} } = body;
+    if (!operation) {
+      return new Response(JSON.stringify({ success: false, error: "Missing operation" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const handler = OPERATIONS[operation];
     if (!handler) {

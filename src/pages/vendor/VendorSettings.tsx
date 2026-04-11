@@ -8,6 +8,7 @@ import { VBtn } from "@/components/vendor/ui/VBtn";
 import VendorCommissionTab from "@/components/vendor/VendorCommissionTab";
 import VendorCommercialSettings from "@/components/vendor/VendorCommercialSettings";
 import VendorProfileDefaults from "@/components/vendor/VendorProfileDefaults";
+import VendorShippingSettings from "@/components/vendor/VendorShippingSettings";
 import { Check, Save, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useCurrentVendor } from "@/hooks/useCurrentVendor";
@@ -64,6 +65,7 @@ export default function VendorSettings() {
     { id: "commercial", label: "Paramètres commerciaux" },
     { id: "mov_moq", label: "MOV / MOQ par profil" },
     { id: "commission", label: "Commission" },
+    { id: "shipping", label: "Expédition" },
   ];
 
   const countryLabels: Record<string, string> = { BE: "Belgique", FR: "France", NL: "Pays-Bas", LU: "Luxembourg", DE: "Allemagne" };
@@ -224,6 +226,14 @@ export default function VendorSettings() {
       )}
 
       {activeTab === "commission" && <VendorCommissionTab />}
+
+      {activeTab === "shipping" && vendor && (
+        <VendorShippingSettings
+          vendorId={vendor.id}
+          currentMode={(vendor as any).vendor_shipping_mode || "no_shipping"}
+          marginPercentage={(vendor as any).shipping_margin_percentage || 15}
+        />
+      )}
     </div>
   );
 }

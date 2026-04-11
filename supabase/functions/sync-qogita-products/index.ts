@@ -27,6 +27,13 @@ function sl(t: string) {
   return t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 }
 
+function dedupeSlug(base: string, seen: Set<string>): string {
+  if (!seen.has(base)) return base;
+  let i = 2;
+  while (seen.has(`${base}-${i}`)) i++;
+  return `${base}-${i}`;
+}
+
 function parseCSVLine(line: string): string[] {
   const result: string[] = [];
   let current = "";
@@ -137,6 +144,7 @@ async function syncCountryStream(sb: any, country: string, vat: number, logId: s
   let batchLines: string[] = [];
   const brandNames = new Set<string>();
   const catNames = new Set<string>();
+  const seenSlugs = new Set<string>();
 
   await sb.from("sync_logs").update({
     progress_message: `${country}: streaming & import...`,
@@ -179,7 +187,7 @@ async function syncCountryStream(sb: any, country: string, vat: number, logId: s
 
       // Flush batch
       if (batchLines.length >= CHUNK) {
-        processed += await processBatch(sb, batchLines, colMap, vat, country, brandNames, catNames, qogitaVendorId);
+        processed += await processBatch(sb, batchLines, colMap, vat, country, brandNames, catNames, qogitaVendorId, seenSlugs);
         batchLines = [];
 
         // Update progress every few chunks — use totalLines as running estimate of total
@@ -199,7 +207,7 @@ async function syncCountryStream(sb: any, country: string, vat: number, logId: s
     batchLines.push(buffer);
   }
   if (batchLines.length > 0) {
-    processed += await processBatch(sb, batchLines, colMap, vat, country, brandNames, catNames, qogitaVendorId);
+    processed += await processBatch(sb, batchLines, colMap, vat, country, brandNames, catNames, qogitaVendorId, seenSlugs);
   }
 
   // Upsert brands
@@ -250,6 +258,7 @@ async function processBatch(
   vat: number, country: string,
   brandNames: Set<string>, catNames: Set<string>,
   qogitaVendorId: string,
+  seenSlugs: Set<string>,
 ): Promise<number> {
   const products: any[] = [];
   const csvData: any[] = [];
@@ -281,7 +290,9 @@ async function processBatch(
     const stock = parseInt(inventoryStr, 10) || 0;
     const delivery = parseInt(deliveryStr, 10) || 0;
     const pe = bp > 0 ? Math.round((bp / (1 + vat / 100)) * 100) / 100 : 0;
-    const slug = sl(name) + (gtin ? `-${gtin.slice(-6)}` : `-${stableId.slice(0, 6)}`);
+    const baseSlug = sl(name) + (gtin ? `-${gtin.slice(-6)}` : `-${stableId.slice(0, 6)}`);
+    const slug = dedupeSlug(baseSlug, seenSlugs);
+    seenSlugs.add(slug);
     const isPreorder = preorderStr.toLowerCase() === "true" || preorderStr === "1";
 
     products.push({

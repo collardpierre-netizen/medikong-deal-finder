@@ -8,7 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
   DollarSign, ShoppingCart, Store, Package, AlertTriangle,
-  TrendingUp, Info, UserCheck, Users, ChevronRight, Clock,
+  TrendingUp, Info, UserCheck, Users, ChevronRight, Clock, Truck, Percent,
 } from "lucide-react";
 import {
   XAxis, YAxis, CartesianGrid, Tooltip,
@@ -85,6 +85,34 @@ const AdminDashboard = () => {
     </div>
   );
 
+  // Shipping stats
+  const shippingStats = useQuery({
+    queryKey: ["admin-shipping-stats"],
+    queryFn: async () => {
+      const [vendorsByMode, shipmentsRes, marginRes] = await Promise.all([
+        supabase.from("vendors").select("vendor_shipping_mode").eq("is_active", true),
+        supabase.from("shipments").select("id", { count: "exact", head: true }),
+        supabase.from("shipping_invoices").select("total_margin_cents, total_base_cents").eq("status", "paid"),
+      ]);
+      const modes = (vendorsByMode.data || []).reduce((acc: Record<string, number>, v: any) => {
+        acc[v.vendor_shipping_mode] = (acc[v.vendor_shipping_mode] || 0) + 1;
+        return acc;
+      }, {});
+      const totalMarginRevenue = (marginRes.data || []).reduce((s: number, i: any) => s + (i.total_margin_cents || 0), 0) / 100;
+      const totalBase = (marginRes.data || []).reduce((s: number, i: any) => s + (i.total_base_cents || 0), 0) / 100;
+      const avgMargin = totalBase > 0 ? (totalMarginRevenue / totalBase * 100) : 0;
+      return {
+        modes,
+        totalShipments: shipmentsRes.count ?? 0,
+        totalMarginRevenue,
+        avgMargin: Math.round(avgMargin * 10) / 10,
+      };
+    },
+    staleTime: 60_000,
+  });
+
+  const ss = shippingStats.data;
+
   return (
     <div>
       <AdminTopBar title={t("dashboard")} subtitle="Vue d'ensemble de la plateforme MediKong.pro" />
@@ -95,6 +123,14 @@ const AdminDashboard = () => {
         <KpiCard icon={Store} label={t("activeSellers")} value={String(stats.activeVendors)} iconColor="#059669" iconBg="#F0FDF4" />
         <KpiCard icon={Package} label={t("catalogProducts")} value={fmt(stats.totalProducts)} iconColor="#F59E0B" iconBg="#FFFBEB" />
         <KpiCard icon={AlertTriangle} label={t("disputeRate")} value={`${stats.disputeRate}%`} iconColor="#EF4343" iconBg="#FEF2F2" />
+      </div>
+
+      {/* Shipping KPIs */}
+      <div className="grid grid-cols-4 gap-4 mb-6">
+        <KpiCard icon={Truck} label="Expéditions totales" value={String(ss?.totalShipments ?? 0)} iconColor="#1B5BDA" iconBg="#EFF6FF" />
+        <KpiCard icon={Store} label="Vendeurs par mode" value={`WL: ${ss?.modes?.medikong_whitelabel ?? 0} | SC: ${ss?.modes?.own_sendcloud ?? 0} | M: ${ss?.modes?.no_shipping ?? 0}`} iconColor="#7C3AED" iconBg="#F5F3FF" />
+        <KpiCard icon={DollarSign} label="Revenu marge WL" value={`€${fmt(ss?.totalMarginRevenue ?? 0)}`} iconColor="#059669" iconBg="#F0FDF4" />
+        <KpiCard icon={Percent} label="Marge moyenne" value={`${ss?.avgMargin ?? 0}%`} iconColor="#F59E0B" iconBg="#FFFBEB" />
       </div>
 
       {/* Pending Actions */}

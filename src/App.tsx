@@ -370,6 +370,7 @@ const App = () => (
               <Route path="messages" element={<LP><VendorMessages /></LP>} />
               <Route path="academy" element={<LP><VendorAcademy /></LP>} />
               <Route path="settings" element={<LP><VendorSettings /></LP>} />
+              <Route path="shipments" element={<LP><VendorShipments /></LP>} />
               <Route path="shipments/new" element={<LP><VendorNewShipment /></LP>} />
             </Route>
 

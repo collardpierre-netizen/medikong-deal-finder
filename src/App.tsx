@@ -162,6 +162,7 @@ const VendorStripeOnboardingPage = lazyWithRetry(() => import("./pages/vendor/Ve
 const VendorStripeSuccessPage = lazyWithRetry(() => import("./pages/vendor/VendorStripeSuccessPage"), "VendorStripeSuccessPage");
 const VendorStripeRefreshPage = lazyWithRetry(() => import("./pages/vendor/VendorStripeRefreshPage"), "VendorStripeRefreshPage");
 const VendorMessages = lazyWithRetry(() => import("./pages/vendor/VendorMessages"), "VendorMessages");
+const VendorOnboardingWizard = lazyWithRetry(() => import("./pages/vendor/VendorOnboardingWizard"), "VendorOnboardingWizard");
 
 // ReStock pages
 const RestockSiteLayout = lazyWithRetry(() => import("./components/restock/RestockSiteLayout"), "RestockSiteLayout");
@@ -348,6 +349,7 @@ const App = () => (
 
             {/* Vendor Dashboard */}
             <Route path="/vendor/login" element={<LP><VendorLoginPage /></LP>} />
+            <Route path="/vendor/onboarding" element={<LP><VendorOnboardingWizard /></LP>} />
             <Route path="/vendor/stripe-onboarding" element={<LP><VendorStripeOnboardingPage /></LP>} />
             <Route path="/vendor/stripe-onboarding/success" element={<LP><VendorStripeSuccessPage /></LP>} />
             <Route path="/vendor/stripe-onboarding/refresh" element={<LP><VendorStripeRefreshPage /></LP>} />

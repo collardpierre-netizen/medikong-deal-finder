@@ -250,6 +250,7 @@ async function processBatch(
   vat: number, country: string,
   brandNames: Set<string>, catNames: Set<string>,
   qogitaVendorId: string,
+  seenSlugs: Set<string>,
 ): Promise<number> {
   const products: any[] = [];
   const csvData: any[] = [];

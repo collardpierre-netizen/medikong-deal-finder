@@ -523,7 +523,7 @@ async function processSingleProduct(
         else if (res.status === 429) { localStats.rate_limited++; localStats.errors++; }
         else localStats.errors++;
         await sleep(API_DELAY_MS);
-        continue;
+        return localStats;
       }
 
       const variant = await res.json();

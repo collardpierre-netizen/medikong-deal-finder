@@ -230,6 +230,7 @@ export default function OnboardingPage() {
   const [groupMemberCount, setGroupMemberCount] = useState("");
   const [resellerWebsite, setResellerWebsite] = useState("");
   const [interests, setInterests] = useState<string[]>([]);
+  const [restockOptIn, setRestockOptIn] = useState(false);
 
   /* ─── Seller-specific ─── */
   const [businessType, setBusinessType] = useState("");
@@ -899,7 +900,29 @@ export default function OnboardingPage() {
         }
       }
 
-      removeOnboardingStorage(getTempPasswordStorageKey(email));
+      // 6. If ReStock opt-in, create restock_buyers record
+      if (restockOptIn && userId) {
+        const { data: existingRestockBuyer } = await supabase
+          .from("restock_buyers")
+          .select("id")
+          .eq("auth_user_id", userId)
+          .maybeSingle();
+
+        if (!existingRestockBuyer) {
+          const { error: restockError } = await supabase.from("restock_buyers").insert({
+            auth_user_id: userId,
+            pharmacy_name: companyName || `${firstName} ${lastName}`,
+            email,
+            phone: phone || null,
+            city: city || null,
+            apn_number: professionalId || null,
+            verified_status: "pending",
+            interests: role === "buyer" ? interests : sellerCats,
+          });
+          if (restockError) console.warn("ReStock buyer insert warning:", restockError.message);
+        }
+      }
+
       removeOnboardingStorage(onboardingDraftStorageKey);
       setTempPassword("");
 
@@ -1195,7 +1218,9 @@ export default function OnboardingPage() {
         </div>
       );
 
-      case 5: return (
+      case 5: {
+        const restockEligibleBuyer = ["pharmacist", "care_facility", "purchasing_group", "reseller"].includes(buyerProfile);
+        return (
         <div>
           <BackLink onClick={goBack} />
           <h1 style={{ fontSize: 20, fontWeight: 700, color: S.text, marginBottom: 6 }}>Qu'est-ce qui vous intéresse ?</h1>
@@ -1215,9 +1240,43 @@ export default function OnboardingPage() {
               );
             })}
           </div>
+
+          {/* ReStock opt-in for eligible profiles */}
+          {restockEligibleBuyer && (
+            <div
+              onClick={() => setRestockOptIn(!restockOptIn)}
+              style={{
+                background: restockOptIn ? "#F0FDF4" : "#fff",
+                border: `2px solid ${restockOptIn ? S.green : S.line}`,
+                borderRadius: S.radius, padding: "14px 16px", marginBottom: 16,
+                cursor: "pointer", transition: "all .2s", display: "flex", alignItems: "flex-start", gap: 12,
+              }}
+            >
+              <div style={{
+                width: 20, height: 20, minWidth: 20, borderRadius: 4, marginTop: 1,
+                border: `2px solid ${restockOptIn ? S.green : S.line}`,
+                background: restockOptIn ? S.green : "#fff",
+                display: "flex", alignItems: "center", justifyContent: "center", transition: "all .2s",
+              }}>
+                {restockOptIn && <Check size={12} color="#fff" />}
+              </div>
+              <div>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                  <Package size={16} color={restockOptIn ? S.green : S.blue} />
+                  <span style={{ fontSize: 13, fontWeight: 700, color: S.text }}>Activer MediKong ReStock</span>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: "#fff", background: S.green, borderRadius: 100, padding: "2px 8px" }}>Nouveau</span>
+                </div>
+                <p style={{ fontSize: 12, color: S.sec, margin: 0, lineHeight: 1.5 }}>
+                  Accédez aux opportunités de déstockage entre pharmaciens belges : surplus, proches péremptions, emballages abîmés à prix réduit.
+                </p>
+              </div>
+            </div>
+          )}
+
           <Cta onClick={goNext} disabled={interests.length === 0}>Continuer</Cta>
         </div>
-      );
+        );
+      }
 
       case 6: return renderPasswordScreen();
       case 7: return renderDoneScreen();
@@ -1314,7 +1373,9 @@ export default function OnboardingPage() {
         </div>
       );
 
-      case 15: return (
+      case 15: {
+        const restockEligibleSeller = ["brand", "distributor", "wholesaler"].includes(businessType);
+        return (
         <div>
           <BackLink onClick={goBack} />
           <h1 style={{ fontSize: 20, fontWeight: 700, color: S.text, marginBottom: 6 }}>Vos produits</h1>
@@ -1335,11 +1396,45 @@ export default function OnboardingPage() {
           <div style={{ marginTop: 14 }}>
             <TfInput value={brands} onChange={setBrands} placeholder="Marques principales (ex: 3M, Hartmann...)" />
           </div>
+
+          {/* ReStock opt-in for eligible seller profiles */}
+          {restockEligibleSeller && (
+            <div
+              onClick={() => setRestockOptIn(!restockOptIn)}
+              style={{
+                background: restockOptIn ? "#F0FDF4" : "#fff",
+                border: `2px solid ${restockOptIn ? S.green : S.line}`,
+                borderRadius: S.radius, padding: "14px 16px", marginTop: 16,
+                cursor: "pointer", transition: "all .2s", display: "flex", alignItems: "flex-start", gap: 12,
+              }}
+            >
+              <div style={{
+                width: 20, height: 20, minWidth: 20, borderRadius: 4, marginTop: 1,
+                border: `2px solid ${restockOptIn ? S.green : S.line}`,
+                background: restockOptIn ? S.green : "#fff",
+                display: "flex", alignItems: "center", justifyContent: "center", transition: "all .2s",
+              }}>
+                {restockOptIn && <Check size={12} color="#fff" />}
+              </div>
+              <div>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                  <Package size={16} color={restockOptIn ? S.green : S.blue} />
+                  <span style={{ fontSize: 13, fontWeight: 700, color: S.text }}>Activer MediKong ReStock</span>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: "#fff", background: S.green, borderRadius: 100, padding: "2px 8px" }}>Nouveau</span>
+                </div>
+                <p style={{ fontSize: 12, color: S.sec, margin: 0, lineHeight: 1.5 }}>
+                  Vendez vos surplus, proches péremptions et emballages abîmés à d'autres pharmaciens belges via la marketplace ReStock.
+                </p>
+              </div>
+            </div>
+          )}
+
           <div style={{ marginTop: 16 }}>
             <Cta onClick={goNext} disabled={sellerCats.length === 0}>Continuer</Cta>
           </div>
         </div>
-      );
+        );
+      }
 
       case 16: return (
         <div>

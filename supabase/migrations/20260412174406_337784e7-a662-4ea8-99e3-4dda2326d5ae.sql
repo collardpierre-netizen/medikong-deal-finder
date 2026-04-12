@@ -1,0 +1,1 @@
+UPDATE categories SET is_active = false WHERE name LIKE '%>%';

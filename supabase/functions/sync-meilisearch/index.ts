@@ -69,16 +69,15 @@ async function setupIndexes() {
 }
 
 // Bulk sync a table to an index
-async function bulkSync(supabase: ReturnType<typeof createClient>, table: string, indexUid: string, transform?: (row: any) => any) {
+async function bulkSync(supabase: ReturnType<typeof createClient>, table: string, indexUid: string, transform?: (row: any) => any, filter?: { column: string; value: any }) {
   const BATCH = 1000;
   let offset = 0;
   let total = 0;
 
   while (true) {
-    const { data, error } = await supabase
-      .from(table)
-      .select("*")
-      .range(offset, offset + BATCH - 1);
+    let query = supabase.from(table).select("*");
+    if (filter) query = query.eq(filter.column, filter.value);
+    const { data, error } = await query.range(offset, offset + BATCH - 1);
 
     if (error) throw error;
     if (!data || data.length === 0) break;

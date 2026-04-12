@@ -50,11 +50,13 @@ Deno.serve(async (req) => {
       progress_message: `${total} marques uniques trouvées dans ${products?.length || 0} produits`,
     }).eq("id", syncLogId);
 
-    // Batch upsert in chunks of 500
+    // Batch upsert in chunks of 500 — use name as conflict target to avoid brands_name_unique violation
     for (let i = 0; i < brandsData.length; i += 500) {
       const chunk = brandsData.slice(i, i + 500);
-      const { error } = await supabase.from("brands").upsert(chunk, {
-        onConflict: "slug",
+      // Deduplicate by name within chunk to be safe
+      const uniqueChunk = [...new Map(chunk.map(b => [b.name, b])).values()];
+      const { error } = await supabase.from("brands").upsert(uniqueChunk, {
+        onConflict: "name",
         ignoreDuplicates: false,
       });
       if (error) throw error;

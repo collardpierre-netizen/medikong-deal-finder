@@ -69,16 +69,15 @@ async function setupIndexes() {
 }
 
 // Bulk sync a table to an index
-async function bulkSync(supabase: ReturnType<typeof createClient>, table: string, indexUid: string, transform?: (row: any) => any) {
+async function bulkSync(supabase: ReturnType<typeof createClient>, table: string, indexUid: string, transform?: (row: any) => any, filter?: { column: string; value: any }) {
   const BATCH = 1000;
   let offset = 0;
   let total = 0;
 
   while (true) {
-    const { data, error } = await supabase
-      .from(table)
-      .select("*")
-      .range(offset, offset + BATCH - 1);
+    let query = supabase.from(table).select("*");
+    if (filter) query = query.eq(filter.column, filter.value);
+    const { data, error } = await query.range(offset, offset + BATCH - 1);
 
     if (error) throw error;
     if (!data || data.length === 0) break;
@@ -179,6 +178,7 @@ serve(async (req) => {
     }
 
     if (action === "sync-brands-categories") {
+      const activeFilter = { column: "is_active", value: true };
       const brandCount = await bulkSync(supabase, "brands", "brands", (b) => ({
         id: b.id,
         name: b.name,
@@ -187,7 +187,7 @@ serve(async (req) => {
         description: b.description || "",
         product_count: b.product_count || 0,
         is_active: b.is_active,
-      }));
+      }), activeFilter);
 
       const catCount = await bulkSync(supabase, "categories", "categories", (c) => ({
         id: c.id,
@@ -197,7 +197,7 @@ serve(async (req) => {
         icon: c.icon || "",
         image_url: c.image_url || "",
         is_active: c.is_active,
-      }));
+      }), activeFilter);
 
       return new Response(JSON.stringify({
         success: true,
@@ -227,6 +227,7 @@ serve(async (req) => {
         category_name: p.category_name || "",
       }));
 
+      const activeFilter = { column: "is_active", value: true };
       const brandCount = await bulkSync(supabase, "brands", "brands", (b) => ({
         id: b.id,
         name: b.name,
@@ -235,7 +236,7 @@ serve(async (req) => {
         description: b.description || "",
         product_count: b.product_count || 0,
         is_active: b.is_active,
-      }));
+      }), activeFilter);
 
       const catCount = await bulkSync(supabase, "categories", "categories", (c) => ({
         id: c.id,
@@ -245,7 +246,7 @@ serve(async (req) => {
         icon: c.icon || "",
         image_url: c.image_url || "",
         is_active: c.is_active,
-      }));
+      }), activeFilter);
 
       return new Response(JSON.stringify({
         success: true,

@@ -80,9 +80,9 @@ export async function federatedSearch(query: string): Promise<FederatedResults> 
   try {
     const response = await client.multiSearch({
       queries: [
-        { indexUid: "products", q: query, limit: 6 },
-        { indexUid: "brands", q: query, limit: 3 },
-        { indexUid: "categories", q: query, limit: 3 },
+        { indexUid: "products", q: query, limit: 6, filter: "is_active = true" },
+        { indexUid: "brands", q: query, limit: 3, filter: "is_active = true" },
+        { indexUid: "categories", q: query, limit: 3, filter: "is_active = true" },
       ],
     });
 

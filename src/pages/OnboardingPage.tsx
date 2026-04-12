@@ -230,6 +230,7 @@ export default function OnboardingPage() {
   const [groupMemberCount, setGroupMemberCount] = useState("");
   const [resellerWebsite, setResellerWebsite] = useState("");
   const [interests, setInterests] = useState<string[]>([]);
+  const [restockOptIn, setRestockOptIn] = useState(false);
 
   /* ─── Seller-specific ─── */
   const [businessType, setBusinessType] = useState("");

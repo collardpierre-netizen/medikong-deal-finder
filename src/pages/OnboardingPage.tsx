@@ -900,7 +900,29 @@ export default function OnboardingPage() {
         }
       }
 
-      removeOnboardingStorage(getTempPasswordStorageKey(email));
+      // 6. If ReStock opt-in, create restock_buyers record
+      if (restockOptIn && userId) {
+        const { data: existingRestockBuyer } = await supabase
+          .from("restock_buyers")
+          .select("id")
+          .eq("auth_user_id", userId)
+          .maybeSingle();
+
+        if (!existingRestockBuyer) {
+          const { error: restockError } = await supabase.from("restock_buyers").insert({
+            auth_user_id: userId,
+            pharmacy_name: companyName || `${firstName} ${lastName}`,
+            email,
+            phone: phone || null,
+            city: city || null,
+            apn_number: professionalId || null,
+            verified_status: "pending",
+            interests: role === "buyer" ? interests : sellerCats,
+          });
+          if (restockError) console.warn("ReStock buyer insert warning:", restockError.message);
+        }
+      }
+
       removeOnboardingStorage(onboardingDraftStorageKey);
       setTempPassword("");
 

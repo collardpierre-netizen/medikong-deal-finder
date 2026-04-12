@@ -522,7 +522,7 @@ async function processSingleProduct(
         if (res.status === 404) localStats.skipped++;
         else if (res.status === 429) { localStats.rate_limited++; localStats.errors++; }
         else localStats.errors++;
-        await sleep(API_DELAY_MS);
+        await sleep(BATCH_DELAY_MS);
         return localStats;
       }
 

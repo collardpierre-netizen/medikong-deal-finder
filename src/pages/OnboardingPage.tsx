@@ -1351,7 +1351,9 @@ export default function OnboardingPage() {
         </div>
       );
 
-      case 15: return (
+      case 15: {
+        const restockEligibleSeller = ["brand", "distributor", "wholesaler"].includes(businessType);
+        return (
         <div>
           <BackLink onClick={goBack} />
           <h1 style={{ fontSize: 20, fontWeight: 700, color: S.text, marginBottom: 6 }}>Vos produits</h1>
@@ -1372,11 +1374,45 @@ export default function OnboardingPage() {
           <div style={{ marginTop: 14 }}>
             <TfInput value={brands} onChange={setBrands} placeholder="Marques principales (ex: 3M, Hartmann...)" />
           </div>
+
+          {/* ReStock opt-in for eligible seller profiles */}
+          {restockEligibleSeller && (
+            <div
+              onClick={() => setRestockOptIn(!restockOptIn)}
+              style={{
+                background: restockOptIn ? "#F0FDF4" : "#fff",
+                border: `2px solid ${restockOptIn ? S.green : S.line}`,
+                borderRadius: S.radius, padding: "14px 16px", marginTop: 16,
+                cursor: "pointer", transition: "all .2s", display: "flex", alignItems: "flex-start", gap: 12,
+              }}
+            >
+              <div style={{
+                width: 20, height: 20, minWidth: 20, borderRadius: 4, marginTop: 1,
+                border: `2px solid ${restockOptIn ? S.green : S.line}`,
+                background: restockOptIn ? S.green : "#fff",
+                display: "flex", alignItems: "center", justifyContent: "center", transition: "all .2s",
+              }}>
+                {restockOptIn && <Check size={12} color="#fff" />}
+              </div>
+              <div>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                  <Package size={16} color={restockOptIn ? S.green : S.blue} />
+                  <span style={{ fontSize: 13, fontWeight: 700, color: S.text }}>Activer MediKong ReStock</span>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: "#fff", background: S.green, borderRadius: 100, padding: "2px 8px" }}>Nouveau</span>
+                </div>
+                <p style={{ fontSize: 12, color: S.sec, margin: 0, lineHeight: 1.5 }}>
+                  Vendez vos surplus, proches péremptions et emballages abîmés à d'autres pharmaciens belges via la marketplace ReStock.
+                </p>
+              </div>
+            </div>
+          )}
+
           <div style={{ marginTop: 16 }}>
             <Cta onClick={goNext} disabled={sellerCats.length === 0}>Continuer</Cta>
           </div>
         </div>
-      );
+        );
+      }
 
       case 16: return (
         <div>

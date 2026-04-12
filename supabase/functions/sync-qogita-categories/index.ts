@@ -29,8 +29,15 @@ Deno.serve(async (req) => {
 
     const uniqueCategories = new Map<string, string | null>();
     for (const p of (products || [])) {
-      if (p.category_name && !uniqueCategories.has(p.category_name)) {
-        uniqueCategories.set(p.category_name, p.category_qid || null);
+      if (p.category_name) {
+        // Extract the LEAF category name (last segment after ">")
+        const rawName = p.category_name.trim();
+        const leafName = rawName.includes(">")
+          ? rawName.split(">").pop()!.trim()
+          : rawName;
+        if (leafName && !uniqueCategories.has(leafName)) {
+          uniqueCategories.set(leafName, p.category_qid || null);
+        }
       }
     }
 

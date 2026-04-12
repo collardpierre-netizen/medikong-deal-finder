@@ -8,18 +8,22 @@ const corsHeaders = {
 const CHUNK = 200;
 
 async function getToken(sb: any) {
-  const { data: c } = await sb.from("qogita_config").select("*").eq("id", 1).single();
-  if (!c?.qogita_email || !c?.qogita_password) throw new Error("Qogita credentials missing");
-  const base = c.base_url || "https://api.qogita.com";
+  // qogita_config is a key-value table (key, value)
+  const { data: rows } = await sb.from("qogita_config").select("key, value");
+  const cfg: Record<string, string> = {};
+  for (const r of (rows || [])) cfg[r.key] = r.value;
+
+  if (!cfg.qogita_email || !cfg.qogita_password) throw new Error("Qogita credentials missing");
+  const base = cfg.base_url || "https://api.qogita.com";
   const r = await fetch(`${base}/auth/login/`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email: c.qogita_email, password: c.qogita_password }),
+    body: JSON.stringify({ email: cfg.qogita_email, password: cfg.qogita_password }),
   });
   if (!r.ok) throw new Error(`Auth failed (${r.status})`);
   const { accessToken } = await r.json();
   if (!accessToken) throw new Error("No accessToken");
-  await sb.from("qogita_config").update({ bearer_token: accessToken }).eq("id", 1);
+  await sb.from("qogita_config").upsert({ key: "bearer_token", value: accessToken, updated_at: new Date().toISOString() }, { onConflict: "key" });
   return { token: accessToken, baseUrl: base };
 }
 

@@ -5,10 +5,22 @@ import {
   DollarSign, Truck, HeartPulse, MessageSquare, GraduationCap, Settings, ChevronLeft, ChevronRight, Receipt,
 } from "lucide-react";
 import { useI18n } from "@/contexts/I18nContext";
+import { useCurrentVendor } from "@/hooks/useCurrentVendor";
 import { cn } from "@/lib/utils";
 import logoLight from "@/assets/logo-horizontal.png";
 
-const sidebarSections = [
+type ShippingMode = "no_shipping" | "own_sendcloud" | "medikong_whitelabel";
+
+interface SidebarItem {
+  key: string;
+  icon: typeof LayoutDashboard;
+  path: string;
+  comingSoon?: boolean;
+  /** Show only for these shipping modes. undefined = always show */
+  modes?: ShippingMode[];
+}
+
+const sidebarSections: { label: string | null; items: SidebarItem[] }[] = [
   {
     label: null,
     items: [{ key: "dashboard", icon: LayoutDashboard, path: "/vendor" }],
@@ -34,8 +46,8 @@ const sidebarSections = [
     label: "COMPTE",
     items: [
       { key: "finances", icon: DollarSign, path: "/vendor/finance", comingSoon: true },
-      { key: "billing", icon: Receipt, path: "/vendor/billing" },
-      { key: "logistics", icon: Truck, path: "/vendor/logistics", comingSoon: true },
+      { key: "billing", icon: Receipt, path: "/vendor/billing", modes: ["medikong_whitelabel"] },
+      { key: "shipments", icon: Truck, path: "/vendor/shipments" },
       { key: "health", icon: HeartPulse, path: "/vendor/health" },
       { key: "messages", icon: MessageSquare, path: "/vendor/messages", comingSoon: true },
     ],
@@ -58,6 +70,8 @@ export function VendorSidebar({ onNavigate }: VendorSidebarProps) {
   const { t } = useI18n();
   const location = useLocation();
   const preservedSearch = location.search;
+  const { data: vendor } = useCurrentVendor();
+  const shippingMode = ((vendor as any)?.vendor_shipping_mode ?? "no_shipping") as ShippingMode;
 
   return (
     <aside
@@ -79,59 +93,66 @@ export function VendorSidebar({ onNavigate }: VendorSidebarProps) {
       </div>
 
       <nav className="flex-1 overflow-y-auto py-2 px-2 space-y-4">
-        {sidebarSections.map((section, si) => (
-          <div key={si}>
-            {section.label && !collapsed && (
-              <p className="text-[10px] font-semibold text-white/30 tracking-widest px-2 mb-1.5">{section.label}</p>
-            )}
-            <div className="space-y-0.5">
-              {section.items.map((item) => {
-                const isActive = location.pathname === item.path || (item.path !== "/vendor" && location.pathname.startsWith(item.path));
-                const isDisabled = "comingSoon" in item && item.comingSoon;
+        {sidebarSections.map((section, si) => {
+          const visibleItems = section.items.filter(
+            (item) => !item.modes || item.modes.includes(shippingMode)
+          );
+          if (visibleItems.length === 0) return null;
 
-                if (isDisabled) {
+          return (
+            <div key={si}>
+              {section.label && !collapsed && (
+                <p className="text-[10px] font-semibold text-white/30 tracking-widest px-2 mb-1.5">{section.label}</p>
+              )}
+              <div className="space-y-0.5">
+                {visibleItems.map((item) => {
+                  const isActive = location.pathname === item.path || (item.path !== "/vendor" && location.pathname.startsWith(item.path));
+                  const isDisabled = item.comingSoon;
+
+                  if (isDisabled) {
+                    return (
+                      <div
+                        key={item.key}
+                        className={cn(
+                          "flex items-center gap-3 rounded-md text-[13px] font-medium cursor-not-allowed select-none",
+                          collapsed ? "justify-center px-2 py-2.5" : "px-3 py-2",
+                          "text-white/25"
+                        )}
+                      >
+                        <item.icon size={18} className="shrink-0" />
+                        {!collapsed && <span className="flex-1 truncate">{t(item.key)}</span>}
+                        {!collapsed && (
+                          <span className="text-[9px] font-semibold uppercase tracking-wide text-white/20 bg-white/5 rounded px-1.5 py-0.5 shrink-0">
+                            Bientôt
+                          </span>
+                        )}
+                      </div>
+                    );
+                  }
+
                   return (
-                    <div
+                    <NavLink
                       key={item.key}
+                      to={{ pathname: item.path, search: preservedSearch }}
+                      onClick={onNavigate}
                       className={cn(
-                        "flex items-center gap-3 rounded-md text-[13px] font-medium cursor-not-allowed select-none",
+                        "flex items-center gap-3 rounded-md text-[13px] font-medium transition-colors relative",
                         collapsed ? "justify-center px-2 py-2.5" : "px-3 py-2",
-                        "text-white/25"
+                        isActive
+                          ? "bg-white/10 text-white"
+                          : "text-white/55 hover:text-white hover:bg-white/5"
                       )}
                     >
+                      {isActive && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full" style={{ backgroundColor: "#E70866" }} />}
                       <item.icon size={18} className="shrink-0" />
                       {!collapsed && <span className="flex-1 truncate">{t(item.key)}</span>}
-                      {!collapsed && (
-                        <span className="text-[9px] font-semibold uppercase tracking-wide text-white/20 bg-white/5 rounded px-1.5 py-0.5 shrink-0">
-                          Bientôt
-                        </span>
-                      )}
-                    </div>
+                    </NavLink>
                   );
-                }
-
-                return (
-                  <NavLink
-                    key={item.key}
-                    to={{ pathname: item.path, search: preservedSearch }}
-                    onClick={onNavigate}
-                    className={cn(
-                      "flex items-center gap-3 rounded-md text-[13px] font-medium transition-colors relative",
-                      collapsed ? "justify-center px-2 py-2.5" : "px-3 py-2",
-                      isActive
-                        ? "bg-white/10 text-white"
-                        : "text-white/55 hover:text-white hover:bg-white/5"
-                    )}
-                  >
-                    {isActive && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full" style={{ backgroundColor: "#E70866" }} />}
-                    <item.icon size={18} className="shrink-0" />
-                    {!collapsed && <span className="flex-1 truncate">{t(item.key)}</span>}
-                  </NavLink>
-                );
-              })}
+                })}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </nav>
 
       <button

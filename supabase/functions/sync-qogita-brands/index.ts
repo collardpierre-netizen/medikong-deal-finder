@@ -34,15 +34,17 @@ Deno.serve(async (req) => {
       }
     }
 
-    const brandsRaw = Array.from(uniqueBrands.entries()).map(([name, qid]) => ({
-      name,
-      qogita_qid: qid,
-      slug: name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, ""),
-      is_active: true,
-      synced_at: new Date().toISOString(),
-    }));
-    // Deduplicate by slug to avoid "cannot affect a row a second time" error
-    const brandsData = [...new Map(brandsRaw.map(b => [b.slug, b])).values()];
+    const slugSeen = new Set<string>();
+    const nameSeen = new Set<string>();
+    const brandsData: any[] = [];
+    for (const [name, qid] of uniqueBrands.entries()) {
+      const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+      // Skip if slug or name already seen (both have unique constraints)
+      if (slugSeen.has(slug) || nameSeen.has(name)) continue;
+      slugSeen.add(slug);
+      nameSeen.add(name);
+      brandsData.push({ name, qogita_qid: qid, slug, is_active: true, synced_at: new Date().toISOString() });
+    }
 
     const total = brandsData.length;
     await supabase.from("sync_logs").update({
@@ -50,21 +52,33 @@ Deno.serve(async (req) => {
       progress_message: `${total} marques uniques trouvées dans ${products?.length || 0} produits`,
     }).eq("id", syncLogId);
 
-    // Batch upsert in chunks of 500 — use name as conflict target to avoid brands_name_unique violation
-    for (let i = 0; i < brandsData.length; i += 500) {
-      const chunk = brandsData.slice(i, i + 500);
-      // Deduplicate by name within chunk to be safe
-      const uniqueChunk = [...new Map(chunk.map(b => [b.name, b])).values()];
-      const { error } = await supabase.from("brands").upsert(uniqueChunk, {
-        onConflict: "name",
-        ignoreDuplicates: false,
+    // Upsert one by one to handle dual unique constraints (name + slug)
+    let upserted = 0;
+    for (const brand of brandsData) {
+      // Try upsert on slug first
+      const { error } = await supabase.from("brands").upsert(brand, {
+        onConflict: "slug",
+        ignoreDuplicates: true,
       });
-      if (error) throw error;
-
-      await supabase.from("sync_logs").update({
-        progress_current: Math.min(i + 500, total),
-        progress_message: `Upsert ${Math.min(i + 500, total)}/${total} marques`,
-      }).eq("id", syncLogId);
+      if (error) {
+        // If name conflict, update existing brand by name instead
+        if (error.message?.includes("brands_name_unique")) {
+          await supabase.from("brands").update({
+            qogita_qid: brand.qogita_qid,
+            is_active: true,
+            synced_at: brand.synced_at,
+          }).eq("name", brand.name);
+        } else {
+          console.error(`Brand upsert error for ${brand.name}:`, error.message);
+        }
+      }
+      upserted++;
+      if (upserted % 200 === 0) {
+        await supabase.from("sync_logs").update({
+          progress_current: upserted,
+          progress_message: `Upsert ${upserted}/${total} marques`,
+        }).eq("id", syncLogId);
+      }
     }
 
     // Resolve brand_id on products

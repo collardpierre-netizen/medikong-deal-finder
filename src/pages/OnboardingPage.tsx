@@ -1196,7 +1196,9 @@ export default function OnboardingPage() {
         </div>
       );
 
-      case 5: return (
+      case 5: {
+        const restockEligibleBuyer = ["pharmacist", "care_facility", "purchasing_group", "reseller"].includes(buyerProfile);
+        return (
         <div>
           <BackLink onClick={goBack} />
           <h1 style={{ fontSize: 20, fontWeight: 700, color: S.text, marginBottom: 6 }}>Qu'est-ce qui vous intéresse ?</h1>
@@ -1216,9 +1218,43 @@ export default function OnboardingPage() {
               );
             })}
           </div>
+
+          {/* ReStock opt-in for eligible profiles */}
+          {restockEligibleBuyer && (
+            <div
+              onClick={() => setRestockOptIn(!restockOptIn)}
+              style={{
+                background: restockOptIn ? "#F0FDF4" : "#fff",
+                border: `2px solid ${restockOptIn ? S.green : S.line}`,
+                borderRadius: S.radius, padding: "14px 16px", marginBottom: 16,
+                cursor: "pointer", transition: "all .2s", display: "flex", alignItems: "flex-start", gap: 12,
+              }}
+            >
+              <div style={{
+                width: 20, height: 20, minWidth: 20, borderRadius: 4, marginTop: 1,
+                border: `2px solid ${restockOptIn ? S.green : S.line}`,
+                background: restockOptIn ? S.green : "#fff",
+                display: "flex", alignItems: "center", justifyContent: "center", transition: "all .2s",
+              }}>
+                {restockOptIn && <Check size={12} color="#fff" />}
+              </div>
+              <div>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                  <Package size={16} color={restockOptIn ? S.green : S.blue} />
+                  <span style={{ fontSize: 13, fontWeight: 700, color: S.text }}>Activer MediKong ReStock</span>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: "#fff", background: S.green, borderRadius: 100, padding: "2px 8px" }}>Nouveau</span>
+                </div>
+                <p style={{ fontSize: 12, color: S.sec, margin: 0, lineHeight: 1.5 }}>
+                  Accédez aux opportunités de déstockage entre pharmaciens belges : surplus, proches péremptions, emballages abîmés à prix réduit.
+                </p>
+              </div>
+            </div>
+          )}
+
           <Cta onClick={goNext} disabled={interests.length === 0}>Continuer</Cta>
         </div>
-      );
+        );
+      }
 
       case 6: return renderPasswordScreen();
       case 7: return renderDoneScreen();

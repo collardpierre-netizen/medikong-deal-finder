@@ -1,0 +1,1 @@
+UPDATE sync_pipeline_runs SET status = 'failed', error_message = 'Timeout — pipeline function expired', completed_at = now() WHERE status = 'running' AND started_at < now() - interval '1 hour'

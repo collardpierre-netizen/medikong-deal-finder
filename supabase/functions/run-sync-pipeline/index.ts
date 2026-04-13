@@ -109,20 +109,32 @@ function getPipelineSteps(country: string, mode: string): StepConfig[] {
   ];
 }
 
-async function callEdgeFunction(functionName: string, params: unknown): Promise<unknown> {
-  const res = await fetch(`${SUPABASE_URL}/functions/v1/${functionName}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-    },
-    body: JSON.stringify(params),
-  });
-  const text = await res.text();
+async function callEdgeFunction(functionName: string, params: unknown, timeoutMs = 280000): Promise<unknown> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    return JSON.parse(text);
-  } catch {
-    return { raw: text, status: res.status };
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/${functionName}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+      },
+      body: JSON.stringify(params),
+      signal: controller.signal,
+    });
+    clearTimeout(timer);
+    const text = await res.text();
+    try {
+      return JSON.parse(text);
+    } catch {
+      return { raw: text, status: res.status };
+    }
+  } catch (e: any) {
+    clearTimeout(timer);
+    if (e.name === "AbortError") {
+      return { timeout: true, message: `Function ${functionName} timed out after ${timeoutMs}ms` };
+    }
+    throw e;
   }
 }
 
@@ -210,11 +222,14 @@ serve(async (req) => {
 
           while (iterations < maxIterations) {
             const result = (await callEdgeFunction(step.functionName, step.params)) as any;
-            const processed = result?.stats?.enriched || result?.stats?.upserted || result?.processed || 0;
+            // Match actual response keys from sync-qogita-offers-detail
+            const processed = result?.products_enriched || result?.stats?.enriched || result?.stats?.upserted || result?.processed || 0;
+            const remaining = result?.remaining ?? -1;
             totalProcessed += processed;
             iterations++;
 
-            if (processed === 0 || processed < (step.batchSize || 100)) break;
+            // Stop if nothing processed, or function completed (no remaining), or timeout
+            if (processed === 0 || remaining <= 0 || result?.timeout) break;
             await new Promise((r) => setTimeout(r, 500));
           }
           await updateStep(i, "completed", { totalProcessed, iterations });

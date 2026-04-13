@@ -222,11 +222,14 @@ serve(async (req) => {
 
           while (iterations < maxIterations) {
             const result = (await callEdgeFunction(step.functionName, step.params)) as any;
-            const processed = result?.stats?.enriched || result?.stats?.upserted || result?.processed || 0;
+            // Match actual response keys from sync-qogita-offers-detail
+            const processed = result?.products_enriched || result?.stats?.enriched || result?.stats?.upserted || result?.processed || 0;
+            const remaining = result?.remaining ?? -1;
             totalProcessed += processed;
             iterations++;
 
-            if (processed === 0 || processed < (step.batchSize || 100)) break;
+            // Stop if nothing processed, or function completed (no remaining), or timeout
+            if (processed === 0 || remaining <= 0 || result?.timeout) break;
             await new Promise((r) => setTimeout(r, 500));
           }
           await updateStep(i, "completed", { totalProcessed, iterations });

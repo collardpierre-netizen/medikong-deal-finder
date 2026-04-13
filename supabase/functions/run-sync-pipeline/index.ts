@@ -109,20 +109,32 @@ function getPipelineSteps(country: string, mode: string): StepConfig[] {
   ];
 }
 
-async function callEdgeFunction(functionName: string, params: unknown): Promise<unknown> {
-  const res = await fetch(`${SUPABASE_URL}/functions/v1/${functionName}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-    },
-    body: JSON.stringify(params),
-  });
-  const text = await res.text();
+async function callEdgeFunction(functionName: string, params: unknown, timeoutMs = 280000): Promise<unknown> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    return JSON.parse(text);
-  } catch {
-    return { raw: text, status: res.status };
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/${functionName}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+      },
+      body: JSON.stringify(params),
+      signal: controller.signal,
+    });
+    clearTimeout(timer);
+    const text = await res.text();
+    try {
+      return JSON.parse(text);
+    } catch {
+      return { raw: text, status: res.status };
+    }
+  } catch (e: any) {
+    clearTimeout(timer);
+    if (e.name === "AbortError") {
+      return { timeout: true, message: `Function ${functionName} timed out after ${timeoutMs}ms` };
+    }
+    throw e;
   }
 }
 

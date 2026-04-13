@@ -214,8 +214,8 @@ const AdminVendeurDetail = () => {
                 vendor.company_name || vendor.name,
                 vendor.id
               ).then(() => {
-                const portalUrl = `/vendor?impersonation_vendor_id=${encodeURIComponent(vendor.id)}`;
-                setTimeout(() => window.open(portalUrl, "_blank"), 150);
+                const portalUrl = `${window.location.origin}/vendor?impersonation_vendor_id=${encodeURIComponent(vendor.id)}`;
+                setTimeout(() => window.open(portalUrl, "_blank"), 300);
               });
             }}
             className="flex items-center gap-1.5 px-3 py-2 rounded-md text-[12px] font-bold text-white transition-opacity hover:opacity-90"

@@ -360,6 +360,36 @@ export default function MyPricesPage() {
                         </td>
                         <td className="px-4 py-3 text-center">
                           <div className="flex items-center justify-center gap-1">
+                            {isPositive && offerMap.has(row.product_id) && (
+                              <button
+                                onClick={() => {
+                                  const offer = offerMap.get(row.product_id);
+                                  addToCart.mutate({
+                                    offerId: offer.id,
+                                    productId: row.product_id,
+                                    quantity: 1,
+                                    maxQuantity: offer.stock_quantity,
+                                    vendorId: offer.vendor_id,
+                                    priceExclVat: offer.price_excl_vat,
+                                    priceInclVat: offer.price_incl_vat,
+                                    deliveryDays: offer.delivery_days,
+                                    productData: {
+                                      id: row.product_id,
+                                      name: row.product?.name || "",
+                                      brand: row.product?.brand_name || "",
+                                      slug: row.product?.slug || "",
+                                      price: offer.price_excl_vat,
+                                      imageUrl: row.product?.image_urls?.[0],
+                                    },
+                                  });
+                                }}
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-primary text-primary-foreground rounded-md text-xs font-semibold hover:opacity-90 transition-opacity"
+                                title="Commander sur MediKong"
+                              >
+                                <ShoppingCart size={12} />
+                                Commander
+                              </button>
+                            )}
                             <button onClick={() => { setEditRow(row); setEditPrice(row.my_purchase_price.toString()); setEditSupplier(row.supplier_name || ""); }} className="p-1.5 hover:bg-muted rounded-md transition-colors text-muted-foreground hover:text-foreground">
                               <Edit2 size={14} />
                             </button>

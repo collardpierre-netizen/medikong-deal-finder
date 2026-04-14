@@ -311,26 +311,26 @@ export default function HomePage() {
               transition={{ x: { repeat: Infinity, repeatType: "loop", duration: featuredBrands.length * 3, ease: "linear" } }}
             >
               {/* Duplicate brands for seamless loop */}
-              {[...featuredBrands, ...featuredBrands].map((b: any, i: number) => (
+              {[...featuredBrands, ...featuredBrands].map((b: any, i: number) => {
+                const logoSrc = getBrandLogoUrl(b);
+                if (!logoSrc) return null;
+                return (
                 <Link key={`${b.id}-${i}`} to={`/marque/${b.slug}`} className="shrink-0 w-[160px] group">
                   <div className="aspect-square rounded-xl bg-gradient-to-br from-mk-alt to-white border border-mk-line flex items-center justify-center mb-2 overflow-hidden group-hover:shadow-md group-hover:border-mk-navy/20 transition-all">
-                    {b.logo_url ? (
-                      <img
-                        src={b.logo_url}
-                        alt={b.name}
-                        className="w-24 h-24 object-contain"
-                        referrerPolicy="no-referrer"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).style.display = "none";
-                          (e.target as HTMLImageElement).nextElementSibling?.classList.remove("hidden");
-                        }}
-                      />
-                    ) : null}
-                    <span className={`text-lg font-bold text-mk-navy/70 ${b.logo_url ? "hidden" : ""}`}>{b.name}</span>
+                    <img
+                      src={logoSrc}
+                      alt={b.name}
+                      className="w-24 h-24 object-contain"
+                      referrerPolicy="no-referrer"
+                      onError={() => {
+                        setFailedLogos(prev => new Set([...prev, b.id]));
+                      }}
+                    />
                   </div>
                   <p className="text-xs font-semibold text-mk-navy text-center uppercase tracking-wide group-hover:text-mk-blue transition-colors">{b.name}</p>
                 </Link>
-              ))}
+                );
+              })}
             </motion.div>
           </div>
           

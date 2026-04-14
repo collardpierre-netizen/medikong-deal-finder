@@ -8,8 +8,9 @@ import { toast } from "sonner";
 import { applyMargin, formatPriceEur } from "@/lib/pricing";
 import {
   Tag, Package, Trash2, Edit2, Download, Upload, TrendingDown, TrendingUp,
-  BarChart3, Hash, X, Check, Loader2
+  BarChart3, Hash, X, Check, Loader2, ShoppingCart
 } from "lucide-react";
+import { useCart } from "@/hooks/useCart";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { motion } from "framer-motion";

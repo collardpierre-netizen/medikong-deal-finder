@@ -63,23 +63,38 @@ export default function HomePage() {
     refetchOnWindowFocus: false,
   });
 
-  const { data: featuredBrands = [] } = useQuery({
+  const [failedLogos, setFailedLogos] = useState<Set<string>>(new Set());
+
+  const { data: rawFeaturedBrands = [] } = useQuery({
     queryKey: ["featured-brands-homepage"],
     queryFn: async () => {
       const { data } = await supabase
         .from("brands")
-        .select("id, name, slug, logo_url, product_count")
+        .select("id, name, slug, logo_url, website_url, product_count")
         .eq("is_active", true)
         .gt("product_count", 0)
-        .not("logo_url", "is", null)
         .order("product_count", { ascending: false })
-        .limit(20);
-      return data || [];
+        .limit(40);
+      // Keep only brands that have a logo_url OR a website_url (for Clearbit fallback)
+      return (data || []).filter((b: any) => b.logo_url || b.website_url);
     },
     staleTime: 5 * 60 * 1000,
     retry: false,
     refetchOnWindowFocus: false,
   });
+
+  const featuredBrands = rawFeaturedBrands.filter((b: any) => !failedLogos.has(b.id));
+
+  const getBrandLogoUrl = (b: any) => {
+    if (b.logo_url) return b.logo_url;
+    if (b.website_url) {
+      try {
+        const domain = new URL(b.website_url.startsWith("http") ? b.website_url : `https://${b.website_url}`).hostname;
+        return `https://logo.clearbit.com/${domain}?size=160`;
+      } catch { /* ignore */ }
+    }
+    return null;
+  };
 
   const countryLabel = currentCountry?.name || "Belgique";
 
@@ -296,26 +311,26 @@ export default function HomePage() {
               transition={{ x: { repeat: Infinity, repeatType: "loop", duration: featuredBrands.length * 3, ease: "linear" } }}
             >
               {/* Duplicate brands for seamless loop */}
-              {[...featuredBrands, ...featuredBrands].map((b: any, i: number) => (
+              {[...featuredBrands, ...featuredBrands].map((b: any, i: number) => {
+                const logoSrc = getBrandLogoUrl(b);
+                if (!logoSrc) return null;
+                return (
                 <Link key={`${b.id}-${i}`} to={`/marque/${b.slug}`} className="shrink-0 w-[160px] group">
                   <div className="aspect-square rounded-xl bg-gradient-to-br from-mk-alt to-white border border-mk-line flex items-center justify-center mb-2 overflow-hidden group-hover:shadow-md group-hover:border-mk-navy/20 transition-all">
-                    {b.logo_url ? (
-                      <img
-                        src={b.logo_url}
-                        alt={b.name}
-                        className="w-24 h-24 object-contain"
-                        referrerPolicy="no-referrer"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).style.display = "none";
-                          (e.target as HTMLImageElement).nextElementSibling?.classList.remove("hidden");
-                        }}
-                      />
-                    ) : null}
-                    <span className={`text-lg font-bold text-mk-navy/70 ${b.logo_url ? "hidden" : ""}`}>{b.name}</span>
+                    <img
+                      src={logoSrc}
+                      alt={b.name}
+                      className="w-24 h-24 object-contain"
+                      referrerPolicy="no-referrer"
+                      onError={() => {
+                        setFailedLogos(prev => new Set([...prev, b.id]));
+                      }}
+                    />
                   </div>
                   <p className="text-xs font-semibold text-mk-navy text-center uppercase tracking-wide group-hover:text-mk-blue transition-colors">{b.name}</p>
                 </Link>
-              ))}
+                );
+              })}
             </motion.div>
           </div>
           

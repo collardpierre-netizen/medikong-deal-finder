@@ -8,8 +8,9 @@ import { toast } from "sonner";
 import { applyMargin, formatPriceEur } from "@/lib/pricing";
 import {
   Tag, Package, Trash2, Edit2, Download, Upload, TrendingDown, TrendingUp,
-  BarChart3, Hash, X, Check, Loader2
+  BarChart3, Hash, X, Check, Loader2, ShoppingCart
 } from "lucide-react";
+import { useCart } from "@/hooks/useCart";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { motion } from "framer-motion";
@@ -41,6 +42,7 @@ export default function MyPricesPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { addToCart } = useCart();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [editRow, setEditRow] = useState<UserPriceRow | null>(null);
   const [editPrice, setEditPrice] = useState("");
@@ -75,6 +77,34 @@ export default function MyPricesPage() {
     },
     enabled: !!user,
   });
+
+  // Fetch best offers for products to enable add-to-cart
+  const productIds = prices.map(p => p.product_id);
+  const { data: bestOffers = [] } = useQuery({
+    queryKey: ["best-offers-for-prices", productIds],
+    queryFn: async () => {
+      if (!productIds.length) return [];
+      const { data } = await supabase
+        .from("offers")
+        .select("id, product_id, price_excl_vat, price_incl_vat, vendor_id, delivery_days, stock_quantity")
+        .in("product_id", productIds)
+        .eq("is_active", true)
+        .order("price_excl_vat", { ascending: true });
+      const seen = new Set<string>();
+      return (data || []).filter((o: any) => {
+        if (seen.has(o.product_id)) return false;
+        seen.add(o.product_id);
+        return true;
+      });
+    },
+    enabled: productIds.length > 0,
+  });
+
+  const offerMap = useMemo(() => {
+    const map = new Map<string, any>();
+    bestOffers.forEach((o: any) => map.set(o.product_id, o));
+    return map;
+  }, [bestOffers]);
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -330,6 +360,36 @@ export default function MyPricesPage() {
                         </td>
                         <td className="px-4 py-3 text-center">
                           <div className="flex items-center justify-center gap-1">
+                            {isPositive && offerMap.has(row.product_id) && (
+                              <button
+                                onClick={() => {
+                                  const offer = offerMap.get(row.product_id);
+                                  addToCart.mutate({
+                                    offerId: offer.id,
+                                    productId: row.product_id,
+                                    quantity: 1,
+                                    maxQuantity: offer.stock_quantity,
+                                    vendorId: offer.vendor_id,
+                                    priceExclVat: offer.price_excl_vat,
+                                    priceInclVat: offer.price_incl_vat,
+                                    deliveryDays: offer.delivery_days,
+                                    productData: {
+                                      id: row.product_id,
+                                      name: row.product?.name || "",
+                                      brand: row.product?.brand_name || "",
+                                      slug: row.product?.slug || "",
+                                      price: offer.price_excl_vat,
+                                      imageUrl: row.product?.image_urls?.[0],
+                                    },
+                                  });
+                                }}
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-primary text-primary-foreground rounded-md text-xs font-semibold hover:opacity-90 transition-opacity"
+                                title="Commander sur MediKong"
+                              >
+                                <ShoppingCart size={12} />
+                                Commander
+                              </button>
+                            )}
                             <button onClick={() => { setEditRow(row); setEditPrice(row.my_purchase_price.toString()); setEditSupplier(row.supplier_name || ""); }} className="p-1.5 hover:bg-muted rounded-md transition-colors text-muted-foreground hover:text-foreground">
                               <Edit2 size={14} />
                             </button>

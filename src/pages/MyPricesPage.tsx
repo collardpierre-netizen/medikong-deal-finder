@@ -78,6 +78,34 @@ export default function MyPricesPage() {
     enabled: !!user,
   });
 
+  // Fetch best offers for products to enable add-to-cart
+  const productIds = prices.map(p => p.product_id);
+  const { data: bestOffers = [] } = useQuery({
+    queryKey: ["best-offers-for-prices", productIds],
+    queryFn: async () => {
+      if (!productIds.length) return [];
+      const { data } = await supabase
+        .from("offers")
+        .select("id, product_id, price_excl_vat, price_incl_vat, vendor_id, delivery_days, stock_quantity")
+        .in("product_id", productIds)
+        .eq("is_active", true)
+        .order("price_excl_vat", { ascending: true });
+      const seen = new Set<string>();
+      return (data || []).filter((o: any) => {
+        if (seen.has(o.product_id)) return false;
+        seen.add(o.product_id);
+        return true;
+      });
+    },
+    enabled: productIds.length > 0,
+  });
+
+  const offerMap = useMemo(() => {
+    const map = new Map<string, any>();
+    bestOffers.forEach((o: any) => map.set(o.product_id, o));
+    return map;
+  }, [bestOffers]);
+
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("user_prices").delete().eq("id", id);

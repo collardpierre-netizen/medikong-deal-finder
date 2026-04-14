@@ -63,23 +63,38 @@ export default function HomePage() {
     refetchOnWindowFocus: false,
   });
 
-  const { data: featuredBrands = [] } = useQuery({
+  const [failedLogos, setFailedLogos] = useState<Set<string>>(new Set());
+
+  const { data: rawFeaturedBrands = [] } = useQuery({
     queryKey: ["featured-brands-homepage"],
     queryFn: async () => {
       const { data } = await supabase
         .from("brands")
-        .select("id, name, slug, logo_url, product_count")
+        .select("id, name, slug, logo_url, website_url, product_count")
         .eq("is_active", true)
         .gt("product_count", 0)
-        .not("logo_url", "is", null)
         .order("product_count", { ascending: false })
-        .limit(20);
-      return data || [];
+        .limit(40);
+      // Keep only brands that have a logo_url OR a website_url (for Clearbit fallback)
+      return (data || []).filter((b: any) => b.logo_url || b.website_url);
     },
     staleTime: 5 * 60 * 1000,
     retry: false,
     refetchOnWindowFocus: false,
   });
+
+  const featuredBrands = rawFeaturedBrands.filter((b: any) => !failedLogos.has(b.id));
+
+  const getBrandLogoUrl = (b: any) => {
+    if (b.logo_url) return b.logo_url;
+    if (b.website_url) {
+      try {
+        const domain = new URL(b.website_url.startsWith("http") ? b.website_url : `https://${b.website_url}`).hostname;
+        return `https://logo.clearbit.com/${domain}?size=160`;
+      } catch { /* ignore */ }
+    }
+    return null;
+  };
 
   const countryLabel = currentCountry?.name || "Belgique";
 

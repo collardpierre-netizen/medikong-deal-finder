@@ -21,8 +21,9 @@ serve(async (req) => {
       return new Response(JSON.stringify({ translations: {} }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const prompt = `Translate the following texts to ${target_locales.join(", ")}. 
-The source text is in French. Return ONLY a valid JSON object with this structure:
+    const prompt = `Translate the following texts into these languages: ${target_locales.join(", ")}. 
+The source text may be in any language (English, French, or other). Auto-detect the source language.
+Return ONLY a valid JSON object with this structure:
 { "fr": { ${fieldsToTranslate.map(([k]) => `"${k}": "..."`).join(", ")} }, "nl": { ... }, "de": { ... } }
 
 Texts to translate:
@@ -31,7 +32,9 @@ ${fieldsToTranslate.map(([k, v]) => `${k}: "${v}"`).join("\n")}
 Rules:
 - Keep brand names, product names, and proper nouns unchanged
 - Keep the same tone and style
-- For "fr", return the original text as-is
+- For each target locale, provide a proper translation in that language
+- If the source is already in a target language, return it as-is for that locale
+- For "fr", if the source is not French, translate it to French
 - Return ONLY the JSON, no markdown, no explanation`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {

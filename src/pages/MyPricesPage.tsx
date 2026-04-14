@@ -42,6 +42,7 @@ export default function MyPricesPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { addToCart } = useCart();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [editRow, setEditRow] = useState<UserPriceRow | null>(null);
   const [editPrice, setEditPrice] = useState("");

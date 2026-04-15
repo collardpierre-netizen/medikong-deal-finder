@@ -555,6 +555,7 @@ export default function RestockSellerNewOffer() {
   const [publishing, setPublishing] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [mode, setMode] = useState<"import" | "manual">("import");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const processFile = useCallback((file: File) => {
     const reader = new FileReader();

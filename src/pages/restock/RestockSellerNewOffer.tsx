@@ -579,6 +579,7 @@ export default function RestockSellerNewOffer() {
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) processFile(file);
+    e.target.value = "";
   };
 
   const removeRow = (idx: number) => setRows((prev) => prev.filter((_, i) => i !== idx));
@@ -711,7 +712,7 @@ export default function RestockSellerNewOffer() {
               <Upload className="mx-auto mb-2 text-[#8B929C]" size={32} />
               <p className="text-sm text-[#5C6470]">Glissez-déposez votre fichier .xlsx ou .csv ici</p>
               <p className="text-xs text-[#8B929C] mt-1">ou cliquez pour parcourir</p>
-              <input ref={fileInputRef} type="file" accept=".xlsx,.csv" className="hidden" onChange={handleFileInput} />
+              <input ref={fileInputRef} type="file" accept=".xlsx,.csv" className="hidden" onChange={handleFileInput} onClick={(e) => e.stopPropagation()} />
             </div>
           </div>
         </>

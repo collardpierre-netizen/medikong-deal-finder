@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from "react";
-import { Upload, Download, AlertTriangle, Check, X, Loader2, Plus, Search, Trash2, Flame, Camera, Package } from "lucide-react";
+import { Upload, Download, AlertTriangle, Check, X, Loader2, Plus, Search, Trash2, Flame, Camera, Package, UserPlus } from "lucide-react";
 import { SmartPricingWidget } from "@/components/restock/SmartPricingWidget";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";

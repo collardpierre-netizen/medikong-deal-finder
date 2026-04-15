@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from "react";
-import { Upload, Download, AlertTriangle, Check, X, Loader2, Plus, Search, Trash2, Flame, Camera, Package } from "lucide-react";
+import { Upload, Download, AlertTriangle, Check, X, Loader2, Plus, Search, Trash2, Flame, Camera, Package, UserPlus } from "lucide-react";
 import { SmartPricingWidget } from "@/components/restock/SmartPricingWidget";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -548,6 +548,115 @@ function ManualAddForm({ onAdd }: { onAdd: (row: OfferRow) => void }) {
   );
 }
 
+/* ── Inline seller registration ── */
+function SellerRegistrationGate({ onRegistered }: { onRegistered: () => void }) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [pharmacy, setPharmacy] = useState("");
+  const [city, setCity] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [isLogin, setIsLogin] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      if (isLogin) {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        toast.success("Connecté !");
+      } else {
+        if (!fullName || !pharmacy || !city) {
+          toast.error("Veuillez remplir tous les champs");
+          setLoading(false);
+          return;
+        }
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              full_name: fullName,
+              pharmacy_name: pharmacy,
+              city: city,
+              role: "restock_seller",
+            },
+            emailRedirectTo: window.location.origin + "/restock/seller/new",
+          },
+        });
+        if (error) throw error;
+        toast.success("Compte créé ! Vérifiez votre email pour confirmer.");
+      }
+      onRegistered();
+    } catch (err: any) {
+      toast.error(err.message || "Erreur lors de l'inscription");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="max-w-md mx-auto mt-8" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+      <div className="bg-white border border-[#D0D5DC] rounded-xl p-6 shadow-sm">
+        <div className="flex items-center gap-3 mb-5">
+          <div className="p-2 rounded-lg bg-[#F0F4FF]">
+            <UserPlus size={22} className="text-[#1C58D9]" />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-[#1E252F]">
+              {isLogin ? "Connexion vendeur" : "Inscription vendeur ReStock"}
+            </h2>
+            <p className="text-xs text-[#5C6470]">
+              {isLogin ? "Connectez-vous pour gérer vos offres" : "Créez votre compte pour commencer à vendre"}
+            </p>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-3">
+          {!isLogin && (
+            <>
+              <div>
+                <label className="text-xs font-medium text-[#1E252F] mb-1 block">Nom complet</label>
+                <Input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Jean Dupont" required className="border-[#D0D5DC]" />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-[#1E252F] mb-1 block">Pharmacie / Établissement</label>
+                <Input value={pharmacy} onChange={(e) => setPharmacy(e.target.value)} placeholder="Pharmacie du Centre" required className="border-[#D0D5DC]" />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-[#1E252F] mb-1 block">Ville</label>
+                <Input value={city} onChange={(e) => setCity(e.target.value)} placeholder="Bruxelles" required className="border-[#D0D5DC]" />
+              </div>
+            </>
+          )}
+          <div>
+            <label className="text-xs font-medium text-[#1E252F] mb-1 block">Email professionnel</label>
+            <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="jean@pharmacie.be" required className="border-[#D0D5DC]" />
+          </div>
+          <div>
+            <label className="text-xs font-medium text-[#1E252F] mb-1 block">Mot de passe</label>
+            <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Min. 6 caractères" required minLength={6} className="border-[#D0D5DC]" />
+          </div>
+
+          <Button type="submit" disabled={loading} className="w-full bg-[#1C58D9] hover:bg-[#1549B8] text-white gap-2 mt-2">
+            {loading && <Loader2 size={16} className="animate-spin" />}
+            {isLogin ? "Se connecter" : "Créer mon compte vendeur"}
+          </Button>
+        </form>
+
+        <p className="text-xs text-center text-[#8B929C] mt-4">
+          {isLogin ? "Pas encore de compte ?" : "Déjà un compte ?"}
+          <button onClick={() => setIsLogin(!isLogin)} className="text-[#1C58D9] ml-1 font-medium hover:underline">
+            {isLogin ? "S'inscrire" : "Se connecter"}
+          </button>
+        </p>
+      </div>
+    </div>
+  );
+}
+
 /* ── Main page ── */
 export default function RestockSellerNewOffer() {
   const { user } = useAuth();
@@ -648,6 +757,27 @@ export default function RestockSellerNewOffer() {
 
   const stateLabel = (s: string) => ({ intact: "Intact", damaged_packaging: "Emb. abîmé", near_expiry: "Proche pér." }[s] || s);
   const deliveryLabel = (d: string) => ({ pickup: "Enlèvement", shipping: "Expédition", both: "Les deux" }[d] || d);
+
+  if (!user) {
+    return (
+      <div className="p-6 max-w-6xl mx-auto" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+        <h1 className="text-2xl font-bold text-[#1E252F] mb-1">Nouvelle offre de déstockage</h1>
+        <p className="text-[#5C6470] text-sm mb-4">Ajoutez vos produits via import Excel ou saisie manuelle.</p>
+
+        {/* Destruction banner */}
+        <div className="bg-gradient-to-r from-[#1C58D9]/10 to-[#00B85C]/10 border border-[#1C58D9]/20 rounded-xl p-4 mb-6 flex items-start gap-3">
+          <Flame size={20} className="text-[#F59E0B] shrink-0 mt-0.5" />
+          <div className="text-sm text-[#1E252F]">
+            <b>Rappel :</b> la destruction de médicaments vous coûte en moyenne <b>1,20 €/unité</b> (collecte pharma-déchets).
+            <span className="text-[#00B85C] font-semibold"> Toute vente ReStock est un gain net</span> par rapport au réflexe destruction.
+            Mieux vaut −70% que −100%.
+          </div>
+        </div>
+
+        <SellerRegistrationGate onRegistered={() => window.location.reload()} />
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 max-w-6xl mx-auto" style={{ fontFamily: "'DM Sans', sans-serif" }}>

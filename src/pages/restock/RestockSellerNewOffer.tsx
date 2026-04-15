@@ -758,6 +758,27 @@ export default function RestockSellerNewOffer() {
   const stateLabel = (s: string) => ({ intact: "Intact", damaged_packaging: "Emb. abîmé", near_expiry: "Proche pér." }[s] || s);
   const deliveryLabel = (d: string) => ({ pickup: "Enlèvement", shipping: "Expédition", both: "Les deux" }[d] || d);
 
+  if (!user) {
+    return (
+      <div className="p-6 max-w-6xl mx-auto" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+        <h1 className="text-2xl font-bold text-[#1E252F] mb-1">Nouvelle offre de déstockage</h1>
+        <p className="text-[#5C6470] text-sm mb-4">Ajoutez vos produits via import Excel ou saisie manuelle.</p>
+
+        {/* Destruction banner */}
+        <div className="bg-gradient-to-r from-[#1C58D9]/10 to-[#00B85C]/10 border border-[#1C58D9]/20 rounded-xl p-4 mb-6 flex items-start gap-3">
+          <Flame size={20} className="text-[#F59E0B] shrink-0 mt-0.5" />
+          <div className="text-sm text-[#1E252F]">
+            <b>Rappel :</b> la destruction de médicaments vous coûte en moyenne <b>1,20 €/unité</b> (collecte pharma-déchets).
+            <span className="text-[#00B85C] font-semibold"> Toute vente ReStock est un gain net</span> par rapport au réflexe destruction.
+            Mieux vaut −70% que −100%.
+          </div>
+        </div>
+
+        <SellerRegistrationGate onRegistered={() => window.location.reload()} />
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 max-w-6xl mx-auto" style={{ fontFamily: "'DM Sans', sans-serif" }}>
       <h1 className="text-2xl font-bold text-[#1E252F] mb-1">Nouvelle offre de déstockage</h1>

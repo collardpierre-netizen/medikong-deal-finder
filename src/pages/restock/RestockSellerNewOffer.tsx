@@ -579,6 +579,7 @@ export default function RestockSellerNewOffer() {
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) processFile(file);
+    e.target.value = "";
   };
 
   const removeRow = (idx: number) => setRows((prev) => prev.filter((_, i) => i !== idx));

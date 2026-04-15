@@ -548,6 +548,115 @@ function ManualAddForm({ onAdd }: { onAdd: (row: OfferRow) => void }) {
   );
 }
 
+/* ── Inline seller registration ── */
+function SellerRegistrationGate({ onRegistered }: { onRegistered: () => void }) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [pharmacy, setPharmacy] = useState("");
+  const [city, setCity] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [isLogin, setIsLogin] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      if (isLogin) {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        toast.success("Connecté !");
+      } else {
+        if (!fullName || !pharmacy || !city) {
+          toast.error("Veuillez remplir tous les champs");
+          setLoading(false);
+          return;
+        }
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              full_name: fullName,
+              pharmacy_name: pharmacy,
+              city: city,
+              role: "restock_seller",
+            },
+            emailRedirectTo: window.location.origin + "/restock/seller/new",
+          },
+        });
+        if (error) throw error;
+        toast.success("Compte créé ! Vérifiez votre email pour confirmer.");
+      }
+      onRegistered();
+    } catch (err: any) {
+      toast.error(err.message || "Erreur lors de l'inscription");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="max-w-md mx-auto mt-8" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+      <div className="bg-white border border-[#D0D5DC] rounded-xl p-6 shadow-sm">
+        <div className="flex items-center gap-3 mb-5">
+          <div className="p-2 rounded-lg bg-[#F0F4FF]">
+            <UserPlus size={22} className="text-[#1C58D9]" />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-[#1E252F]">
+              {isLogin ? "Connexion vendeur" : "Inscription vendeur ReStock"}
+            </h2>
+            <p className="text-xs text-[#5C6470]">
+              {isLogin ? "Connectez-vous pour gérer vos offres" : "Créez votre compte pour commencer à vendre"}
+            </p>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-3">
+          {!isLogin && (
+            <>
+              <div>
+                <label className="text-xs font-medium text-[#1E252F] mb-1 block">Nom complet</label>
+                <Input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Jean Dupont" required className="border-[#D0D5DC]" />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-[#1E252F] mb-1 block">Pharmacie / Établissement</label>
+                <Input value={pharmacy} onChange={(e) => setPharmacy(e.target.value)} placeholder="Pharmacie du Centre" required className="border-[#D0D5DC]" />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-[#1E252F] mb-1 block">Ville</label>
+                <Input value={city} onChange={(e) => setCity(e.target.value)} placeholder="Bruxelles" required className="border-[#D0D5DC]" />
+              </div>
+            </>
+          )}
+          <div>
+            <label className="text-xs font-medium text-[#1E252F] mb-1 block">Email professionnel</label>
+            <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="jean@pharmacie.be" required className="border-[#D0D5DC]" />
+          </div>
+          <div>
+            <label className="text-xs font-medium text-[#1E252F] mb-1 block">Mot de passe</label>
+            <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Min. 6 caractères" required minLength={6} className="border-[#D0D5DC]" />
+          </div>
+
+          <Button type="submit" disabled={loading} className="w-full bg-[#1C58D9] hover:bg-[#1549B8] text-white gap-2 mt-2">
+            {loading && <Loader2 size={16} className="animate-spin" />}
+            {isLogin ? "Se connecter" : "Créer mon compte vendeur"}
+          </Button>
+        </form>
+
+        <p className="text-xs text-center text-[#8B929C] mt-4">
+          {isLogin ? "Pas encore de compte ?" : "Déjà un compte ?"}
+          <button onClick={() => setIsLogin(!isLogin)} className="text-[#1C58D9] ml-1 font-medium hover:underline">
+            {isLogin ? "S'inscrire" : "Se connecter"}
+          </button>
+        </p>
+      </div>
+    </div>
+  );
+}
+
 /* ── Main page ── */
 export default function RestockSellerNewOffer() {
   const { user } = useAuth();

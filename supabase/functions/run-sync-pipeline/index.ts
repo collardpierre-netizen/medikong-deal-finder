@@ -21,7 +21,7 @@ interface StepConfig {
 
 function getPipelineSteps(country: string, mode: string): StepConfig[] {
   if (mode === "incremental") {
-    // Daily incremental: only update offers for products that already have offers
+    // Daily incremental: prioritize best-price offer recovery and keep runtime short enough for cron.
     return [
       {
         name: "offers_detail",
@@ -29,15 +29,6 @@ function getPipelineSteps(country: string, mode: string): StepConfig[] {
         functionName: "sync-qogita-offers-detail",
         params: { country },
         required: true,
-        loopBatch: true,
-        batchSize: 100,
-      },
-      {
-        name: "offers_multi_vendor",
-        label: "Offres multi-vendeurs (incrémental)",
-        functionName: "sync-qogita-offers-detail",
-        params: { country, multi_vendor: true },
-        required: false,
         loopBatch: true,
         batchSize: 100,
       },

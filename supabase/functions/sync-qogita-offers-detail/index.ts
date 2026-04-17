@@ -5,7 +5,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const MAX_EXECUTION_TIME = 290000; // 290s — leave 10s margin for 300s timeout
+const MAX_EXECUTION_TIME = 120000; // stay well below edge runtime limit so partial resumes can persist
 const BATCH_SIZE = 100;
 const PARALLEL_CONCURRENCY = 25;
 const BATCH_DELAY_MS = 500;
@@ -253,6 +253,7 @@ Deno.serve(async (req) => {
   const vatMultiplier = 1 + vatRate / 100;
 
   const syncType = fetchMultiVendor ? "offers_multi_vendor" : "offers_detail";
+  const incrementalProductFilter = "offer_count.gt.0,synced_at.is.null,qogita_qid.is.null";
 
   const { data: existingPartial } = await sb
     .from("sync_logs")
@@ -300,13 +301,12 @@ Deno.serve(async (req) => {
     syncLogId = newLog!.id;
   }
 
-  // Count products with active offers (incremental: only those with offer_count > 0)
   const { count: totalProducts } = await sb
     .from("products")
     .select("id", { count: "exact", head: true })
     .eq("is_active", true)
     .not("gtin", "is", null)
-    .gt("offer_count", 0);
+    .or(incrementalProductFilter);
 
   const remaining = Math.max((totalProducts || 0) - lastOffset, 0);
 
@@ -363,13 +363,14 @@ async function syncOffers(
   const { token, baseUrl } = await getQogitaToken(sb);
   const bestPriceVendorId = await ensureBestPriceVendor(sb, country);
 
-  // INCREMENTAL: only products with active offers
+  const incrementalProductFilter = "offer_count.gt.0,synced_at.is.null,qogita_qid.is.null";
+
   const { data: products, error: pErr } = await sb
     .from("products")
     .select("id, gtin, qogita_qid, qogita_fid, slug")
     .eq("is_active", true)
     .not("gtin", "is", null)
-    .gt("offer_count", 0)
+    .or(incrementalProductFilter)
     .order("created_at", { ascending: true })
     .range(0, 59999);
 
@@ -381,7 +382,7 @@ async function syncOffers(
       .update({
         status: "completed",
         completed_at: new Date().toISOString(),
-        progress_message: `${country}: aucun produit avec GTIN`,
+        progress_message: `${country}: aucun produit éligible à synchroniser`,
       })
       .eq("id", logId);
     return;

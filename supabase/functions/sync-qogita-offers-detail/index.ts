@@ -253,6 +253,7 @@ Deno.serve(async (req) => {
   const vatMultiplier = 1 + vatRate / 100;
 
   const syncType = fetchMultiVendor ? "offers_multi_vendor" : "offers_detail";
+  const incrementalProductFilter = "offer_count.gt.0,synced_at.is.null,qogita_qid.is.null";
 
   const { data: existingPartial } = await sb
     .from("sync_logs")
@@ -300,13 +301,12 @@ Deno.serve(async (req) => {
     syncLogId = newLog!.id;
   }
 
-  // Count products with active offers (incremental: only those with offer_count > 0)
   const { count: totalProducts } = await sb
     .from("products")
     .select("id", { count: "exact", head: true })
     .eq("is_active", true)
     .not("gtin", "is", null)
-    .gt("offer_count", 0);
+    .or(incrementalProductFilter);
 
   const remaining = Math.max((totalProducts || 0) - lastOffset, 0);
 

@@ -647,7 +647,7 @@ async function processSingleProduct(
                   is_active: true,
                   synced_at: new Date().toISOString(),
                 },
-                { onConflict: "qogita_offer_qid", ignoreDuplicates: false },
+                { onConflict: "product_id,vendor_id,country_code", ignoreDuplicates: false },
               );
 
               if (mvErr) {

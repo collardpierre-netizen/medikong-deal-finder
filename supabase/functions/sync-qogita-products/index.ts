@@ -334,10 +334,10 @@ async function processBatch(
 
   const [existingByQidRes, existingByGtinRes] = await Promise.all([
     qids.length > 0
-      ? sb.from("products").select("id, qogita_qid, gtin").in("qogita_qid", qids)
+      ? sb.from("products").select("id, qogita_qid, gtin, slug").in("qogita_qid", qids)
       : Promise.resolve({ data: [], error: null }),
     gtins.length > 0
-      ? sb.from("products").select("id, qogita_qid, gtin").in("gtin", gtins)
+      ? sb.from("products").select("id, qogita_qid, gtin, slug").in("gtin", gtins)
       : Promise.resolve({ data: [], error: null }),
   ]);
 
@@ -358,7 +358,7 @@ async function processBatch(
 
     const existingRow = existingQidRow || existingGtinRow;
     const baseSlug = sl(row.name) + (row.gtin ? `-${row.gtin.slice(-6)}` : `-${row.qid.slice(0, 6)}`);
-    const slug = dedupeSlug(baseSlug, seenSlugs);
+    const slug = existingRow?.slug || dedupeSlug(baseSlug, seenSlugs);
     seenSlugs.add(slug);
 
     products.push({

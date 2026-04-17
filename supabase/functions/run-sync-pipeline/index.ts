@@ -8,6 +8,8 @@ const corsHeaders = {
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const STEP_DELAY_MS = 500;
+const MAX_LOOP_ITERATIONS = 1000;
 
 interface StepConfig {
   name: string;
@@ -100,6 +102,10 @@ function getPipelineSteps(country: string, mode: string): StepConfig[] {
   ];
 }
 
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 async function callEdgeFunction(functionName: string, params: unknown, timeoutMs = 280000): Promise<unknown> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -115,11 +121,19 @@ async function callEdgeFunction(functionName: string, params: unknown, timeoutMs
     });
     clearTimeout(timer);
     const text = await res.text();
+    let parsed: any;
     try {
-      return JSON.parse(text);
+      parsed = JSON.parse(text);
     } catch {
-      return { raw: text, status: res.status };
+      parsed = { raw: text, status: res.status };
     }
+
+    if (!res.ok) {
+      const message = parsed?.error || parsed?.message || `Function ${functionName} failed with status ${res.status}`;
+      throw new Error(message);
+    }
+
+    return parsed;
   } catch (e: any) {
     clearTimeout(timer);
     if (e.name === "AbortError") {
@@ -127,6 +141,137 @@ async function callEdgeFunction(functionName: string, params: unknown, timeoutMs
     }
     throw e;
   }
+}
+
+async function markPreviousRunsAsSuperseded(supabase: any, country: string, runId: string) {
+  await supabase
+    .from("sync_pipeline_runs")
+    .update({
+      status: "failed",
+      completed_at: new Date().toISOString(),
+      error_message: `Remplacé par le run ${runId}`,
+    })
+    .eq("country_code", country)
+    .eq("status", "running")
+    .neq("id", runId);
+}
+
+async function executePipeline({
+  supabase,
+  runId,
+  steps,
+  stepOnly,
+}: {
+  supabase: any;
+  runId: string;
+  steps: StepConfig[];
+  stepOnly?: string;
+}) {
+  const updateStep = async (idx: number, status: string, stats?: unknown) => {
+    const { data: current } = await supabase
+      .from("sync_pipeline_runs")
+      .select("steps_status")
+      .eq("id", runId)
+      .single();
+
+    const stepsStatus = (current?.steps_status as any[]) || [];
+    stepsStatus[idx] = {
+      ...stepsStatus[idx],
+      status,
+      ...(status === "running" ? { started_at: new Date().toISOString() } : {}),
+      ...(status === "completed" || status === "failed"
+        ? { completed_at: new Date().toISOString(), stats }
+        : {}),
+    };
+
+    await supabase
+      .from("sync_pipeline_runs")
+      .update({
+        steps_status: stepsStatus,
+        current_step: idx + (status === "completed" ? 1 : 0),
+      })
+      .eq("id", runId);
+  };
+
+  for (let i = 0; i < steps.length; i++) {
+    const step = steps[i];
+
+    if (stepOnly && step.name !== stepOnly) {
+      await updateStep(i, "skipped");
+      continue;
+    }
+
+    await updateStep(i, "running");
+
+    try {
+      if (step.loopBatch) {
+        let totalProcessed = 0;
+        let iterations = 0;
+
+        while (iterations < MAX_LOOP_ITERATIONS) {
+          const result = (await callEdgeFunction(step.functionName, step.params)) as any;
+          if (result?.timeout) {
+            throw new Error(result.message || `Timeout sur ${step.label}`);
+          }
+
+          const processed = Number(
+            result?.products_enriched ??
+            result?.stats?.products_enriched ??
+            result?.stats?.enriched ??
+            result?.stats?.upserted ??
+            result?.processed ??
+            0,
+          );
+          const remaining = typeof result?.remaining === "number" ? result.remaining : -1;
+
+          totalProcessed += processed;
+          iterations++;
+
+          if (result?.status === "error") {
+            throw new Error(result?.message || `Échec de l'étape ${step.label}`);
+          }
+
+          if (remaining <= 0 || result?.status === "completed") {
+            break;
+          }
+
+          if (processed === 0 && remaining > 0) {
+            throw new Error(`Aucune progression détectée sur ${step.label} alors qu'il reste ${remaining} éléments.`);
+          }
+
+          await sleep(STEP_DELAY_MS);
+        }
+
+        if (iterations >= MAX_LOOP_ITERATIONS) {
+          throw new Error(`Limite de sécurité atteinte sur ${step.label}`);
+        }
+
+        await updateStep(i, "completed", { totalProcessed, iterations });
+      } else {
+        const result = await callEdgeFunction(step.functionName, step.params);
+        await updateStep(i, "completed", result);
+      }
+    } catch (error: any) {
+      await updateStep(i, "failed", { error: error.message });
+
+      if (step.required) {
+        await supabase
+          .from("sync_pipeline_runs")
+          .update({
+            status: "failed",
+            error_message: `Échec étape ${i + 1}: ${step.label} — ${error.message}`,
+            completed_at: new Date().toISOString(),
+          })
+          .eq("id", runId);
+        return;
+      }
+    }
+  }
+
+  await supabase
+    .from("sync_pipeline_runs")
+    .update({ status: "completed", completed_at: new Date().toISOString() })
+    .eq("id", runId);
 }
 
 serve(async (req) => {
@@ -168,93 +313,35 @@ serve(async (req) => {
     if (insertErr) throw insertErr;
     const runId = run.id;
 
-    // Helper to update a step
-    const updateStep = async (idx: number, status: string, stats?: unknown) => {
-      const { data: current } = await supabase
-        .from("sync_pipeline_runs")
-        .select("steps_status")
-        .eq("id", runId)
-        .single();
-      const steps = (current?.steps_status as any[]) || [];
-      steps[idx] = {
-        ...steps[idx],
-        status,
-        ...(status === "running" ? { started_at: new Date().toISOString() } : {}),
-        ...(status === "completed" || status === "failed"
-          ? { completed_at: new Date().toISOString(), stats }
-          : {}),
-      };
+    await markPreviousRunsAsSuperseded(supabase, country, runId);
+
+    const backgroundRun = executePipeline({
+      supabase,
+      runId,
+      steps: STEPS,
+      stepOnly,
+    }).catch(async (error: any) => {
+      console.error("run-sync-pipeline background error:", error);
       await supabase
         .from("sync_pipeline_runs")
         .update({
-          steps_status: steps,
-          current_step: idx + (status === "completed" ? 1 : 0),
+          status: "failed",
+          error_message: error.message,
+          completed_at: new Date().toISOString(),
         })
         .eq("id", runId);
-    };
+    });
 
-    // Run pipeline
-    for (let i = 0; i < STEPS.length; i++) {
-      const step = STEPS[i];
-
-      // If stepOnly is specified, skip non-matching steps
-      if (stepOnly && step.name !== stepOnly) {
-        await updateStep(i, "skipped");
-        continue;
-      }
-
-      await updateStep(i, "running");
-
-      try {
-        if (step.loopBatch) {
-          let totalProcessed = 0;
-          let iterations = 0;
-          const maxIterations = 1000; // safety limit
-
-          while (iterations < maxIterations) {
-            const result = (await callEdgeFunction(step.functionName, step.params)) as any;
-            // Match actual response keys from sync-qogita-offers-detail
-            const processed = result?.products_enriched || result?.stats?.enriched || result?.stats?.upserted || result?.processed || 0;
-            const remaining = result?.remaining ?? -1;
-            totalProcessed += processed;
-            iterations++;
-
-            // Stop if nothing processed, or function completed (no remaining), or timeout
-            if (processed === 0 || remaining <= 0 || result?.timeout) break;
-            await new Promise((r) => setTimeout(r, 500));
-          }
-          await updateStep(i, "completed", { totalProcessed, iterations });
-        } else {
-          const result = await callEdgeFunction(step.functionName, step.params);
-          await updateStep(i, "completed", result);
-        }
-      } catch (error: any) {
-        await updateStep(i, "failed", { error: error.message });
-        if (step.required) {
-          await supabase
-            .from("sync_pipeline_runs")
-            .update({
-              status: "failed",
-              error_message: `Échec étape ${i + 1}: ${step.label} — ${error.message}`,
-              completed_at: new Date().toISOString(),
-            })
-            .eq("id", runId);
-
-          return new Response(JSON.stringify({ success: false, runId, failedStep: step.name }), {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
-        }
-      }
+    const edgeRuntime = (globalThis as any).EdgeRuntime;
+    if (edgeRuntime?.waitUntil) {
+      edgeRuntime.waitUntil(backgroundRun);
+    } else {
+      await backgroundRun;
     }
 
-    // Done
-    await supabase
-      .from("sync_pipeline_runs")
-      .update({ status: "completed", completed_at: new Date().toISOString() })
-      .eq("id", runId);
-
-    return new Response(JSON.stringify({ success: true, runId }), {
+    return new Response(JSON.stringify({ success: true, runId, status: "started" }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 202,
     });
   } catch (error: any) {
     console.error("run-sync-pipeline error:", error);

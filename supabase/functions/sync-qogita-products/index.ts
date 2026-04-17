@@ -91,6 +91,14 @@ Deno.serve(async (req) => {
     });
   }
 
+  // Supersede stale running logs from older product syncs before starting a new one
+  await sb.from("sync_logs").update({
+    status: "error",
+    completed_at: new Date().toISOString(),
+    error_message: "Superseded by a newer products sync",
+    progress_message: `Arrêtée car une nouvelle sync ${targetCountry} a été lancée`,
+  }).eq("sync_type", "products").eq("status", "running");
+
   // Create sync log
   const { data: log } = await sb.from("sync_logs").insert({
     sync_type: "products", status: "running",

@@ -272,12 +272,15 @@ async function processBatch(
   qogitaVendorId: string,
   seenSlugs: Set<string>,
 ): Promise<number> {
+  const parsedRows: any[] = [];
   const products: any[] = [];
   const csvData: any[] = [];
+  const seenBatchGtins = new Set<string>();
+  const seenBatchQids = new Set<string>();
 
   for (const line of lines) {
     const cols = parseCSVLine(line);
-    const gtin = cols[colMap.gtin] || "";
+    const gtin = (cols[colMap.gtin] || "").trim();
     const name = cols[colMap.name] || "";
     if (!name) continue;
 
@@ -295,6 +298,11 @@ async function processBatch(
     const stableId = qid || gtin || sl(name).slice(0, 32);
     if (!stableId) continue;
 
+    if (seenBatchQids.has(stableId)) continue;
+    if (gtin && seenBatchGtins.has(gtin)) continue;
+    seenBatchQids.add(stableId);
+    if (gtin) seenBatchGtins.add(gtin);
+
     if (brand) brandNames.add(brand);
     if (category) catNames.add(category);
 
@@ -302,35 +310,88 @@ async function processBatch(
     const stock = parseInt(inventoryStr, 10) || 0;
     const delivery = parseInt(deliveryStr, 10) || 0;
     const pe = bp > 0 ? Math.round((bp / (1 + vat / 100)) * 100) / 100 : 0;
-    const baseSlug = sl(name) + (gtin ? `-${gtin.slice(-6)}` : `-${stableId.slice(0, 6)}`);
-    const slug = dedupeSlug(baseSlug, seenSlugs);
-    seenSlugs.add(slug);
     const isPreorder = preorderStr.toLowerCase() === "true" || preorderStr === "1";
 
+    parsedRows.push({
+      qid: stableId,
+      gtin: gtin || null,
+      name,
+      brand: brand || null,
+      category: category || null,
+      imageUrl,
+      pe,
+      pi: bp,
+      stock,
+      delivery,
+      isPreorder,
+    });
+  }
+
+  if (parsedRows.length === 0) return 0;
+
+  const qids = parsedRows.map((row) => row.qid);
+  const gtins = parsedRows.map((row) => row.gtin).filter(Boolean);
+
+  const [existingByQidRes, existingByGtinRes] = await Promise.all([
+    qids.length > 0
+      ? sb.from("products").select("id, qogita_qid, gtin, slug").in("qogita_qid", qids)
+      : Promise.resolve({ data: [], error: null }),
+    gtins.length > 0
+      ? sb.from("products").select("id, qogita_qid, gtin, slug").in("gtin", gtins)
+      : Promise.resolve({ data: [], error: null }),
+  ]);
+
+  if (existingByQidRes.error) throw existingByQidRes.error;
+  if (existingByGtinRes.error) throw existingByGtinRes.error;
+
+  const existingByQid = new Map((existingByQidRes.data || []).map((row: any) => [row.qogita_qid, row]));
+  const existingByGtin = new Map((existingByGtinRes.data || []).map((row: any) => [row.gtin, row]));
+
+  for (const row of parsedRows) {
+    const existingQidRow = existingByQid.get(row.qid);
+    const existingGtinRow = row.gtin ? existingByGtin.get(row.gtin) : null;
+
+    if (existingQidRow && existingGtinRow && existingQidRow.id !== existingGtinRow.id) {
+      console.warn(`Skipping conflicting product mapping for gtin ${row.gtin} / qid ${row.qid}`);
+      continue;
+    }
+
+    const existingRow = existingQidRow || existingGtinRow;
+    const baseSlug = sl(row.name) + (row.gtin ? `-${row.gtin.slice(-6)}` : `-${row.qid.slice(0, 6)}`);
+    const slug = existingRow?.slug || dedupeSlug(baseSlug, seenSlugs);
+    seenSlugs.add(slug);
+
     products.push({
-      qogita_qid: stableId, gtin: gtin || null, name, slug,
-      brand_name: brand || null, category_name: category || null,
-      image_urls: imageUrl ? [imageUrl] : [], source: "qogita",
-      is_active: true, is_published: true,
+      ...(existingRow ? { id: existingRow.id } : {}),
+      qogita_qid: row.qid,
+      gtin: row.gtin,
+      name: row.name,
+      slug,
+      brand_name: row.brand,
+      category_name: row.category,
+      image_urls: row.imageUrl ? [row.imageUrl] : [],
+      source: "qogita",
+      is_active: true,
+      is_published: true,
       synced_at: new Date().toISOString(),
-      total_stock: stock, is_in_stock: stock > 0,
-      min_delivery_days: delivery > 0 ? delivery : null,
-      ...(pe > 0 ? { best_price_excl_vat: pe, best_price_incl_vat: bp } : {}),
+      total_stock: row.stock,
+      is_in_stock: row.stock > 0,
+      min_delivery_days: row.delivery > 0 ? row.delivery : null,
+      ...(row.pe > 0 ? { best_price_excl_vat: row.pe, best_price_incl_vat: row.pi } : {}),
     });
 
-    csvData.push({ qid: stableId, pe, pi: bp, stock, delivery, isPreorder });
+    csvData.push({ qid: row.qid, pe: row.pe, pi: row.pi, stock: row.stock, delivery: row.delivery, isPreorder: row.isPreorder });
   }
 
   if (products.length === 0) return 0;
 
   // Upsert products
   const { error } = await sb.from("products").upsert(products, {
-    onConflict: "qogita_qid", ignoreDuplicates: false,
+    onConflict: "id", ignoreDuplicates: false,
   });
-  if (error) console.error("Upsert error:", error.message);
+  if (error) throw new Error(`Products upsert failed: ${error.message}`);
 
   // Get product IDs for offers + stats
-  const qids = csvData.map((s: any) => s.qid);
   const { data: prods } = await sb.from("products").select("id, qogita_qid").in("qogita_qid", qids);
   const m = new Map((prods || []).map((p: any) => [p.qogita_qid, p.id]));
 
@@ -376,7 +437,7 @@ async function processBatch(
     const { error: offerErr } = await sb.from("offers").upsert(offers, {
       onConflict: "product_id,vendor_id,country_code", ignoreDuplicates: false,
     });
-    if (offerErr) console.error("Offer upsert error:", offerErr.message);
+    if (offerErr) throw new Error(`Offer upsert failed: ${offerErr.message}`);
   }
 
   return products.length;

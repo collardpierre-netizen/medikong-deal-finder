@@ -363,13 +363,14 @@ async function syncOffers(
   const { token, baseUrl } = await getQogitaToken(sb);
   const bestPriceVendorId = await ensureBestPriceVendor(sb, country);
 
-  // INCREMENTAL: only products with active offers
+  const incrementalProductFilter = "offer_count.gt.0,synced_at.is.null,qogita_qid.is.null";
+
   const { data: products, error: pErr } = await sb
     .from("products")
     .select("id, gtin, qogita_qid, qogita_fid, slug")
     .eq("is_active", true)
     .not("gtin", "is", null)
-    .gt("offer_count", 0)
+    .or(incrementalProductFilter)
     .order("created_at", { ascending: true })
     .range(0, 59999);
 
@@ -381,11 +382,9 @@ async function syncOffers(
       .update({
         status: "completed",
         completed_at: new Date().toISOString(),
-        progress_message: `${country}: aucun produit avec GTIN`,
+        progress_message: `${country}: aucun produit éligible à synchroniser`,
       })
       .eq("id", logId);
-    return;
-  }
 
   const total = products.length;
   await sb

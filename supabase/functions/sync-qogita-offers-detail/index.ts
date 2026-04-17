@@ -385,6 +385,8 @@ async function syncOffers(
         progress_message: `${country}: aucun produit éligible à synchroniser`,
       })
       .eq("id", logId);
+    return;
+  }
 
   const total = products.length;
   await sb

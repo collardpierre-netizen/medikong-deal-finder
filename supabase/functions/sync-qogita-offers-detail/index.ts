@@ -5,7 +5,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const MAX_EXECUTION_TIME = 290000; // 290s — leave 10s margin for 300s timeout
+const MAX_EXECUTION_TIME = 120000; // stay well below edge runtime limit so partial resumes can persist
 const BATCH_SIZE = 100;
 const PARALLEL_CONCURRENCY = 25;
 const BATCH_DELAY_MS = 500;

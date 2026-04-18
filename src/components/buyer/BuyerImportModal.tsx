@@ -10,6 +10,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { formatPrice } from "@/data/mock";
 import { useCart } from "@/hooks/useCart";
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
 type ImportLine = {
@@ -184,6 +185,9 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
   const [filter, setFilter] = useState<ResultFilter>("all");
   const fileRef = useRef<HTMLInputElement>(null);
   const { addToCart } = useCart();
+  const { user } = useAuth();
+  const [saveToAccount, setSaveToAccount] = useState(true);
+  const [savedCount, setSavedCount] = useState<number | null>(null);
 
   const reset = useCallback(() => {
     setPhase("instructions");
@@ -191,6 +195,7 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
     setSelected(new Set());
     setProgress({ current: 0, total: 0, startTime: 0 });
     setFilter("all");
+    setSavedCount(null);
   }, []);
 
   const handleClose = (v: boolean) => {
@@ -301,6 +306,30 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
       });
       setSelected(autoSelected);
       setPhase("results");
+
+      // Persist matched lines to user account (upsert: update price, never delete others)
+      if (saveToAccount && user) {
+        const toUpsert = finalResults
+          .filter((r) => r.status === "found" && r.productId && r.currentPrice > 0)
+          .map((r) => ({
+            user_id: user.id,
+            product_id: r.productId!,
+            my_purchase_price: r.currentPrice,
+            updated_at: new Date().toISOString(),
+          }));
+        if (toUpsert.length > 0) {
+          const { error } = await supabase
+            .from("user_prices")
+            .upsert(toUpsert, { onConflict: "user_id,product_id" });
+          if (error) {
+            console.error("Save to account failed:", error);
+            toast.error("Impossible d'enregistrer dans votre compte");
+          } else {
+            setSavedCount(toUpsert.length);
+            toast.success(`${toUpsert.length} prix enregistré(s) dans Mes Prix`);
+          }
+        }
+      }
     } catch (err) {
       console.error(err);
       toast.error("Erreur lors de la lecture du fichier");
@@ -553,6 +582,36 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
             )}
             <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" onChange={handleFile} className="hidden" />
           </div>
+
+          {/* Save-to-account toggle (only relevant before import) */}
+          {phase !== "results" && user && (
+            <label className="flex items-start gap-2 text-sm bg-muted/40 border border-border rounded-lg px-3 py-2.5 cursor-pointer hover:bg-muted/60 transition">
+              <Checkbox
+                checked={saveToAccount}
+                onCheckedChange={(c) => setSaveToAccount(c === true)}
+                className="mt-0.5"
+              />
+              <div className="flex-1">
+                <div className="font-medium text-foreground">Enregistrer mes prix dans mon compte</div>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Vos prix d'achat seront sauvegardés dans <span className="font-medium">Mes Prix</span> pour la veille concurrentielle automatique. Aucune ligne existante ne sera supprimée — seuls les prix correspondants sont mis à jour.
+                </p>
+              </div>
+            </label>
+          )}
+
+          {/* Saved-to-account confirmation banner */}
+          {phase === "results" && savedCount !== null && savedCount > 0 && (
+            <div className="flex items-center gap-2 text-sm bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2 text-emerald-800">
+              <CheckCircle2 size={16} />
+              <span className="flex-1">
+                <strong>{savedCount}</strong> prix enregistré{savedCount > 1 ? "s" : ""} dans votre compte.
+              </span>
+              <a href="/mes-prix" className="underline font-medium hover:text-emerald-900">
+                Voir Mes Prix →
+              </a>
+            </div>
+          )}
 
           {/* Loading */}
           {phase === "loading" && <LoadingBar progress={progress} />}

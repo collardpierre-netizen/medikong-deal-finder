@@ -224,8 +224,17 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
         return {
           ean: eanRaw && eanRaw !== "undefined" ? eanRaw : undefined,
           cnk: cnkRaw && cnkRaw !== "undefined" ? cnkRaw : undefined,
-          quantity: Number(r["Quantité"] || r["quantity"] || r["Qty"] || 1),
-          currentPrice: Number(r["Prix achat actuel (€ HT)"] || r["Prix"] || r["price"] || 0),
+          quantity: Number(r["Quantité"] || r["Quantite"] || r["quantity"] || r["Qty"] || 1),
+          currentPrice: Number(
+            r["Prix actuel HTVA (€)"] ||
+            r["Prix actuel HTVA"] ||
+            r["Prix achat actuel (€ HT)"] ||
+            r["Prix achat HT"] ||
+            r["Prix HT"] ||
+            r["Prix"] ||
+            r["price"] ||
+            0
+          ),
         };
       }).filter(l => l.ean || l.cnk);
 

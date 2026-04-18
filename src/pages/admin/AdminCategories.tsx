@@ -173,6 +173,24 @@ const AdminCategories = () => {
     onError: (e: any) => toast.error(e.message),
   });
 
+  // Global toggle: activate or deactivate ALL categories
+  const toggleAllVisibility = useMutation({
+    mutationFn: async (newActive: boolean) => {
+      const { error, count } = await supabase
+        .from("categories")
+        .update({ is_active: newActive }, { count: "exact" })
+        .neq("is_active", newActive);
+      if (error) throw error;
+      return { count: count ?? 0, newActive };
+    },
+    onSuccess: (result) => {
+      const verb = result.newActive ? "activée(s)" : "désactivée(s)";
+      toast.success(`${result.count} catégorie(s) ${verb} globalement`);
+      qc.invalidateQueries({ queryKey: ["admin-categories"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   // Toggle visibility of a category + its children + cascade to products
   const toggleVisibility = useMutation({
     mutationFn: async ({ id, newActive }: { id: string; newActive: boolean }) => {
@@ -306,7 +324,22 @@ const AdminCategories = () => {
     <div>
       <AdminTopBar title="Catégories" subtitle="Arborescence du catalogue produits"
         actions={
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-md border bg-muted/30" style={{ borderColor: "#E2E8F0" }}>
+              <Label htmlFor="global-toggle" className="text-[12px] font-medium cursor-pointer" style={{ color: "#475569" }}>
+                Tout activer
+              </Label>
+              <Switch
+                id="global-toggle"
+                checked={categoriesData.length > 0 && categoriesData.every(c => c.is_active)}
+                disabled={toggleAllVisibility.isPending}
+                onCheckedChange={(checked) => {
+                  if (confirm(`Êtes-vous sûr de vouloir ${checked ? "activer" : "désactiver"} TOUTES les catégories ?`)) {
+                    toggleAllVisibility.mutate(checked);
+                  }
+                }}
+              />
+            </div>
             <Button variant="outline" size="sm" onClick={() => setShowNewCat(true)}><Plus size={14} className="mr-1" />Nouvelle</Button>
             <Button variant="outline" size="sm" onClick={() => handleAutoTranslate("fr")} disabled={!!translating}>
               <Wand2 size={14} className={`mr-1 ${translating === "fr" ? "animate-spin" : ""}`} />{translating === "fr" ? "Traduction..." : "Auto FR"}

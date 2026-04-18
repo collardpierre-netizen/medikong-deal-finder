@@ -27,6 +27,7 @@ import { Input } from "@/components/ui/input";
 import { applyMargin, formatPriceEur } from "@/lib/pricing";
 import { useMarketPrices } from "@/hooks/useMarketPrices";
 import { RestockSecondChance } from "@/components/product/RestockSecondChance";
+import { MyEncodedPriceBanner } from "@/components/product/MyEncodedPriceBanner";
 
 function formatEur(n: number): string {
   return n.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -1141,6 +1142,36 @@ export default function ProductPage() {
                         </div>
                       </div>
                     </div>
+
+                    {/* My encoded price banner — visible only if user has an encoded price for this product */}
+                    <MyEncodedPriceBanner
+                      productId={product.id}
+                      bestPriceExclVat={bestOffer?.unitPriceEur ?? 0}
+                      bestPriceInclVat={bestOffer?.unitPriceInclVat ?? 0}
+                      isTVAC={isTVAC}
+                      canOrder={!!bestOffer && bestOffer.stockQuantity > 0}
+                      onAddToCart={() => {
+                        if (!bestOffer) return;
+                        if (!user) {
+                          toast.error("Connectez-vous pour commander", {
+                            action: { label: "Se connecter", onClick: () => navigate("/connexion") },
+                          });
+                          return;
+                        }
+                        const step = bestOffer.bundleSize > 1 ? bestOffer.bundleSize : 1;
+                        const qty = Math.min(bestOffer.stockQuantity > 0 ? bestOffer.stockQuantity : step, step);
+                        addToCart.mutate({
+                          offerId: bestOffer.id,
+                          productId: product.id,
+                          quantity: qty,
+                          maxQuantity: bestOffer.stockQuantity || 999,
+                          vendorId: bestOffer.sellerId,
+                          priceExclVat: bestOffer.unitPriceEur,
+                          productData: { id: product.id, name: product.name, brand: brandData?.name || product.brand || "", slug: product.slug, price: bestOffer.unitPriceEur },
+                          deliveryDays: bestOffer.deliveryDays || null,
+                        });
+                      }}
+                    />
 
                     {/* Best Offer */}
                     {bestOffer ? (

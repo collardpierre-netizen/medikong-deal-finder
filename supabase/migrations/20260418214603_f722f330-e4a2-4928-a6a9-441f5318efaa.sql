@@ -1,0 +1,1 @@
+UPDATE public.categories SET is_active = true WHERE is_active = false;

@@ -9,11 +9,36 @@ const MAX_EXECUTION_TIME = 120000; // stay well below edge runtime limit so part
 const BATCH_SIZE = 100;
 const PARALLEL_CONCURRENCY = 25;
 const BATCH_DELAY_MS = 500;
+const MULTI_VENDOR_MAX_EXECUTION_TIME = 45000;
+const MULTI_VENDOR_BATCH_SIZE = 20;
+const MULTI_VENDOR_PARALLEL_CONCURRENCY = 5;
+const MULTI_VENDOR_BATCH_DELAY_MS = 800;
+const STALE_RUNNING_MS = 10 * 60 * 1000;
 const MAX_RETRIES_429 = 3;
 const API_TIMEOUT_MS = 8000;
 
 function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
+}
+
+function getExecutionProfile(fetchMultiVendor: boolean) {
+  if (fetchMultiVendor) {
+    return {
+      maxExecutionTime: MULTI_VENDOR_MAX_EXECUTION_TIME,
+      batchSize: MULTI_VENDOR_BATCH_SIZE,
+      parallelConcurrency: MULTI_VENDOR_PARALLEL_CONCURRENCY,
+      batchDelayMs: MULTI_VENDOR_BATCH_DELAY_MS,
+      persistPerChunk: true,
+    };
+  }
+
+  return {
+    maxExecutionTime: MAX_EXECUTION_TIME,
+    batchSize: BATCH_SIZE,
+    parallelConcurrency: PARALLEL_CONCURRENCY,
+    batchDelayMs: BATCH_DELAY_MS,
+    persistPerChunk: false,
+  };
 }
 
 function parseDeliveryDays(raw: string | number | undefined): number {
@@ -255,14 +280,19 @@ Deno.serve(async (req) => {
   const syncType = fetchMultiVendor ? "offers_multi_vendor" : "offers_detail";
   const incrementalProductFilter = "offer_count.gt.0,synced_at.is.null,qogita_qid.is.null";
 
-  const { data: existingPartial } = await sb
+  const { data: resumableLogs } = await sb
     .from("sync_logs")
     .select("*")
     .eq("sync_type", syncType)
-    .eq("status", "partial")
+    .in("status", ["partial", "running"])
     .order("started_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    .limit(5);
+
+  const staleCutoff = Date.now() - STALE_RUNNING_MS;
+  const existingPartial = (resumableLogs || []).find((log: any) => (
+    log.status === "partial" ||
+    (log.status === "running" && new Date(log.started_at).getTime() < staleCutoff)
+  ));
 
   let syncLogId: string;
   let lastOffset = 0;
@@ -270,11 +300,14 @@ Deno.serve(async (req) => {
   if (existingPartial) {
     syncLogId = existingPartial.id;
     const prevStats = (existingPartial.stats as any) || {};
-    lastOffset = prevStats.last_offset || 0;
+    lastOffset = prevStats.last_offset || existingPartial.progress_current || 0;
     await sb
       .from("sync_logs")
       .update({
         status: "running",
+        completed_at: null,
+        error_message: null,
+        progress_current: lastOffset,
         progress_message: `Reprise ${targetCountry} à partir de ${lastOffset}...`,
       })
       .eq("id", syncLogId);

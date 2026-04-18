@@ -265,6 +265,7 @@ export default function RestockBuyerDashboard() {
           )}
         </div>
       </div>
+      <DemoModeToggle />
     </div>
   );
 }

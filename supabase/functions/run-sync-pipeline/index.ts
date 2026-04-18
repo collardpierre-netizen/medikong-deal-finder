@@ -19,6 +19,7 @@ interface StepConfig {
   required: boolean;
   loopBatch?: boolean;
   batchSize?: number;
+  waitsForSyncLog?: boolean;
 }
 
 function getPipelineSteps(country: string, mode: string): StepConfig[] {
@@ -59,6 +60,7 @@ function getPipelineSteps(country: string, mode: string): StepConfig[] {
       functionName: "sync-qogita-products",
       params: { country },
       required: true,
+      waitsForSyncLog: true,
     },
     {
       name: "brands_categories",
@@ -156,6 +158,36 @@ async function markPreviousRunsAsSuperseded(supabase: any, country: string, runI
     .neq("id", runId);
 }
 
+async function waitForSyncLogCompletion(
+  supabase: any,
+  logId: string,
+  timeoutMs = 20 * 60 * 1000,
+  pollMs = 5000,
+) {
+  const deadline = Date.now() + timeoutMs;
+
+  while (Date.now() < deadline) {
+    const { data: log, error } = await supabase
+      .from("sync_logs")
+      .select("id, status, error_message, progress_current, progress_total, progress_message, stats, started_at")
+      .eq("id", logId)
+      .single();
+
+    if (error) throw error;
+    if (!log) throw new Error(`Log ${logId} introuvable`);
+
+    if (log.status === "completed") return log;
+
+    if (log.status === "error") {
+      throw new Error(log.error_message || `Échec du log ${logId}`);
+    }
+
+    await sleep(pollMs);
+  }
+
+  throw new Error(`Timeout en attente de fin pour le log ${logId}`);
+}
+
 async function executePipeline({
   supabase,
   runId,
@@ -249,6 +281,9 @@ async function executePipeline({
         await updateStep(i, "completed", { totalProcessed, iterations });
       } else {
         const result = await callEdgeFunction(step.functionName, step.params);
+        if (step.waitsForSyncLog && (result as any)?.sync_log_id) {
+          await waitForSyncLogCompletion(supabase, (result as any).sync_log_id);
+        }
         await updateStep(i, "completed", result);
       }
     } catch (error: any) {

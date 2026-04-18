@@ -218,25 +218,35 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
       const ws = wb.Sheets[wb.SheetNames[0]];
       const rows = XLSX.utils.sheet_to_json<any>(ws);
 
-      const lines: ImportLine[] = rows.map((r: any) => {
-        const eanRaw = String(r["EAN (ou CNK)"] || r["EAN"] || r["ean"] || "").trim();
-        const cnkRaw = String(r["CNK (optionnel)"] || r["CNK"] || r["cnk"] || "").trim();
-        return {
-          ean: eanRaw && eanRaw !== "undefined" ? eanRaw : undefined,
-          cnk: cnkRaw && cnkRaw !== "undefined" ? cnkRaw : undefined,
-          quantity: Number(r["Quantité"] || r["Quantite"] || r["quantity"] || r["Qty"] || 1),
-          currentPrice: Number(
-            r["Prix actuel HTVA (€)"] ||
-            r["Prix actuel HTVA"] ||
-            r["Prix achat actuel (€ HT)"] ||
-            r["Prix achat HT"] ||
-            r["Prix HT"] ||
-            r["Prix"] ||
-            r["price"] ||
-            0
-          ),
-        };
-      }).filter(l => l.ean || l.cnk);
+      const cleanCode = (raw: any): string | undefined => {
+        if (raw === null || raw === undefined) return undefined;
+        // Strip NBSP, spaces, tabs, dashes — keep digits/alphanumerics only
+        const s = String(raw).replace(/[\s\u00A0\u200B-]/g, "").trim();
+        if (!s || s.toLowerCase() === "undefined" || s.toLowerCase() === "null") return undefined;
+        return s;
+      };
+      const parsePrice = (raw: any): number => {
+        if (raw === null || raw === undefined || raw === "") return 0;
+        if (typeof raw === "number") return raw;
+        const cleaned = String(raw).replace(/[\s\u00A0€$£]/g, "").replace(",", ".");
+        const n = Number(cleaned);
+        return Number.isFinite(n) ? n : 0;
+      };
+
+      const lines: ImportLine[] = rows.map((r: any) => ({
+        ean: cleanCode(r["EAN (ou CNK)"] ?? r["EAN"] ?? r["ean"]),
+        cnk: cleanCode(r["CNK (optionnel)"] ?? r["CNK"] ?? r["cnk"]),
+        quantity: Number(r["Quantité"] || r["Quantite"] || r["quantity"] || r["Qty"] || 1),
+        currentPrice: parsePrice(
+          r["Prix actuel HTVA (€)"] ??
+          r["Prix actuel HTVA"] ??
+          r["Prix achat actuel (€ HT)"] ??
+          r["Prix achat HT"] ??
+          r["Prix HT"] ??
+          r["Prix"] ??
+          r["price"]
+        ),
+      })).filter(l => l.ean || l.cnk);
 
       if (lines.length === 0) {
         toast.error("Aucune ligne valide trouvée dans le fichier");

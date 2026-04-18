@@ -385,9 +385,17 @@ async function processBatch(
 
   if (products.length === 0) return 0;
 
-  // Upsert products
-  const { error } = await sb.from("products").upsert(products, {
-    onConflict: "id", ignoreDuplicates: false,
+  // Upsert products by natural unique keys only after stripping null ids to avoid NOT NULL violations
+  const normalizedProducts = products.map((product) => {
+    if (product.id == null) {
+      const { id, ...rest } = product;
+      return rest;
+    }
+    return product;
+  });
+
+  const { error } = await sb.from("products").upsert(normalizedProducts, {
+    onConflict: "qogita_qid", ignoreDuplicates: false,
   });
   if (error) throw new Error(`Products upsert failed: ${error.message}`);
 

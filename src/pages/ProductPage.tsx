@@ -6,7 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useParams, Link, useNavigate, useLocation } from "react-router-dom";
 import {
   Copy, Sliders, ShoppingCart, Shield, Check, Truck, Minus, Plus,
-  Heart, Tag, Package, ChevronRight, Home, Star, Info, Award, Globe, BarChart3, Calculator, TrendingDown, Bell, ExternalLink, Lock, ArrowRight, HelpCircle, ChevronDown
+  Heart, Tag, Package, ChevronRight, Home, Star, Info, Award, Globe, BarChart3, Calculator, TrendingDown, Bell, ExternalLink, Lock, ArrowRight, HelpCircle, ChevronDown, Store
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useFavorites, useRecentActivity } from "@/hooks/useFavorites";
@@ -205,7 +205,18 @@ function OfferRow({
 
       {/* Desktop grid */}
       <div className="hidden md:grid grid-cols-[1.5fr_2fr_0.8fr_1.5fr] gap-3 items-start">
-        <span className="font-bold text-sm text-foreground">{displayCode}</span>
+        <div className="flex flex-col gap-1.5">
+          <span className="font-bold text-sm text-foreground">{displayCode}</span>
+          {offer.sellerSlug && (
+            <Link
+              to={`/vendeur/${offer.sellerSlug}`}
+              className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline w-fit"
+              title={`Voir la boutique de ${offer.sellerName || displayCode}`}
+            >
+              <Store size={11} /> Voir la boutique
+            </Link>
+          )}
+        </div>
 
         {/* Price + MOV merged column */}
         <div>
@@ -291,7 +302,17 @@ function OfferRow({
       {/* Mobile layout */}
       <div className="md:hidden space-y-3">
         <div className="flex items-center justify-between">
-          <span className="font-bold text-sm">{displayCode}</span>
+          <div className="flex flex-col gap-0.5">
+            <span className="font-bold text-sm">{displayCode}</span>
+            {offer.sellerSlug && (
+              <Link
+                to={`/vendeur/${offer.sellerSlug}`}
+                className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline w-fit"
+              >
+                <Store size={11} /> Voir la boutique
+              </Link>
+            )}
+          </div>
           <span className="text-base font-bold text-green-700">{formatEur(displayPrice)} € <span className="text-[10px] font-normal text-muted-foreground">{priceLabel}</span></span>
         </div>
         <div className="flex items-center gap-4 text-xs text-muted-foreground">

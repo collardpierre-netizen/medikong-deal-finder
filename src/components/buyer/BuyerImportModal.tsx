@@ -583,6 +583,36 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
             <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" onChange={handleFile} className="hidden" />
           </div>
 
+          {/* Save-to-account toggle (only relevant before import) */}
+          {phase !== "results" && user && (
+            <label className="flex items-start gap-2 text-sm bg-muted/40 border border-border rounded-lg px-3 py-2.5 cursor-pointer hover:bg-muted/60 transition">
+              <Checkbox
+                checked={saveToAccount}
+                onCheckedChange={(c) => setSaveToAccount(c === true)}
+                className="mt-0.5"
+              />
+              <div className="flex-1">
+                <div className="font-medium text-foreground">Enregistrer mes prix dans mon compte</div>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Vos prix d'achat seront sauvegardés dans <span className="font-medium">Mes Prix</span> pour la veille concurrentielle automatique. Aucune ligne existante ne sera supprimée — seuls les prix correspondants sont mis à jour.
+                </p>
+              </div>
+            </label>
+          )}
+
+          {/* Saved-to-account confirmation banner */}
+          {phase === "results" && savedCount !== null && savedCount > 0 && (
+            <div className="flex items-center gap-2 text-sm bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2 text-emerald-800">
+              <CheckCircle2 size={16} />
+              <span className="flex-1">
+                <strong>{savedCount}</strong> prix enregistré{savedCount > 1 ? "s" : ""} dans votre compte.
+              </span>
+              <a href="/mes-prix" className="underline font-medium hover:text-emerald-900">
+                Voir Mes Prix →
+              </a>
+            </div>
+          )}
+
           {/* Loading */}
           {phase === "loading" && <LoadingBar progress={progress} />}
 

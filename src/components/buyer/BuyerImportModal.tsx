@@ -10,6 +10,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { formatPrice } from "@/data/mock";
 import { useCart } from "@/hooks/useCart";
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
 type ImportLine = {
@@ -184,6 +185,9 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
   const [filter, setFilter] = useState<ResultFilter>("all");
   const fileRef = useRef<HTMLInputElement>(null);
   const { addToCart } = useCart();
+  const { user } = useAuth();
+  const [saveToAccount, setSaveToAccount] = useState(true);
+  const [savedCount, setSavedCount] = useState<number | null>(null);
 
   const reset = useCallback(() => {
     setPhase("instructions");
@@ -191,6 +195,7 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
     setSelected(new Set());
     setProgress({ current: 0, total: 0, startTime: 0 });
     setFilter("all");
+    setSavedCount(null);
   }, []);
 
   const handleClose = (v: boolean) => {

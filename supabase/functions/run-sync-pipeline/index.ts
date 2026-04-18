@@ -158,6 +158,38 @@ async function markPreviousRunsAsSuperseded(supabase: any, country: string, runI
     .neq("id", runId);
 }
 
+async function waitForSyncLogCompletion(
+  supabase: any,
+  syncType: string,
+  country: string,
+  timeoutMs = 20 * 60 * 1000,
+  pollMs = 5000,
+) {
+  const deadline = Date.now() + timeoutMs;
+
+  while (Date.now() < deadline) {
+    const { data: log, error } = await supabase
+      .from("sync_logs")
+      .select("id, status, error_message, progress_current, progress_total, progress_message, stats, started_at")
+      .eq("sync_type", syncType)
+      .eq("status", "running")
+      .order("started_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) throw error;
+    if (!log) return { status: "completed" };
+
+    if (log.status === "error") {
+      throw new Error(log.error_message || `Échec du log ${syncType}`);
+    }
+
+    await sleep(pollMs);
+  }
+
+  throw new Error(`Timeout en attente de fin pour ${syncType}`);
+}
+
 async function executePipeline({
   supabase,
   runId,
@@ -251,6 +283,9 @@ async function executePipeline({
         await updateStep(i, "completed", { totalProcessed, iterations });
       } else {
         const result = await callEdgeFunction(step.functionName, step.params);
+        if (step.waitsForSyncLog) {
+          await waitForSyncLogCompletion(supabase, "products", (step.params.country as string) || "BE");
+        }
         await updateStep(i, "completed", result);
       }
     } catch (error: any) {

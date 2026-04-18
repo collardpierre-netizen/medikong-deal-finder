@@ -173,6 +173,24 @@ const AdminCategories = () => {
     onError: (e: any) => toast.error(e.message),
   });
 
+  // Global toggle: activate or deactivate ALL categories
+  const toggleAllVisibility = useMutation({
+    mutationFn: async (newActive: boolean) => {
+      const { error, count } = await supabase
+        .from("categories")
+        .update({ is_active: newActive }, { count: "exact" })
+        .neq("is_active", newActive);
+      if (error) throw error;
+      return { count: count ?? 0, newActive };
+    },
+    onSuccess: (result) => {
+      const verb = result.newActive ? "activée(s)" : "désactivée(s)";
+      toast.success(`${result.count} catégorie(s) ${verb} globalement`);
+      qc.invalidateQueries({ queryKey: ["admin-categories"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   // Toggle visibility of a category + its children + cascade to products
   const toggleVisibility = useMutation({
     mutationFn: async ({ id, newActive }: { id: string; newActive: boolean }) => {

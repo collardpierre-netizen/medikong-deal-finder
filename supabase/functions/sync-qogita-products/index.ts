@@ -386,18 +386,27 @@ async function processBatch(
   if (products.length === 0) return 0;
 
   // Upsert products by natural unique keys only after stripping null ids to avoid NOT NULL violations
-  const normalizedProducts = products.map((product) => {
-    if (product.id == null) {
+  const existingProducts = products.filter((product) => product.id != null);
+  const newProducts = products
+    .filter((product) => product.id == null)
+    .map((product) => {
       const { id, ...rest } = product;
       return rest;
-    }
-    return product;
-  });
+    });
 
-  const { error } = await sb.from("products").upsert(normalizedProducts, {
-    onConflict: "qogita_qid", ignoreDuplicates: false,
-  });
-  if (error) throw new Error(`Products upsert failed: ${error.message}`);
+  if (existingProducts.length > 0) {
+    const { error: existingError } = await sb.from("products").upsert(existingProducts, {
+      onConflict: "id", ignoreDuplicates: false,
+    });
+    if (existingError) throw new Error(`Products upsert failed (existing): ${existingError.message}`);
+  }
+
+  if (newProducts.length > 0) {
+    const { error: newError } = await sb.from("products").upsert(newProducts, {
+      onConflict: "qogita_qid", ignoreDuplicates: false,
+    });
+    if (newError) throw new Error(`Products upsert failed (new): ${newError.message}`);
+  }
 
   // Get product IDs for offers + stats
   const { data: prods } = await sb.from("products").select("id, qogita_qid").in("qogita_qid", qids);

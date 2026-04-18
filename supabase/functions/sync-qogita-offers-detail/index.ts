@@ -393,6 +393,7 @@ async function syncOffers(
   startTime: number,
   fetchMultiVendor: boolean,
 ) {
+  const executionProfile = getExecutionProfile(fetchMultiVendor);
   const { token, baseUrl } = await getQogitaToken(sb);
   const bestPriceVendorId = await ensureBestPriceVendor(sb, country);
 
@@ -446,9 +447,9 @@ async function syncOffers(
     first_flat_sample: null,
   };
 
-  // Process in parallel batches of BATCH_SIZE, subdivided into PARALLEL_GROUPS
-  for (let batchStart = startOffset; batchStart < total; batchStart += BATCH_SIZE) {
-    if (Date.now() - startTime > MAX_EXECUTION_TIME) {
+  // Process in parallel batches tuned per mode
+  for (let batchStart = startOffset; batchStart < total; batchStart += executionProfile.batchSize) {
+    if (Date.now() - startTime > executionProfile.maxExecutionTime) {
       stats.last_offset = batchStart;
       await sb
         .from("sync_logs")
@@ -463,13 +464,13 @@ async function syncOffers(
       return stats;
     }
 
-    const batchEnd = Math.min(batchStart + BATCH_SIZE, total);
+    const batchEnd = Math.min(batchStart + executionProfile.batchSize, total);
     const batchProducts = products.slice(batchStart, batchEnd);
 
-    // Process PARALLEL_CONCURRENCY products at the same time
+    // Process products in smaller concurrent chunks, especially for multi-vendor fetches
     const chunks: typeof batchProducts[] = [];
-    for (let i = 0; i < batchProducts.length; i += PARALLEL_CONCURRENCY) {
-      chunks.push(batchProducts.slice(i, i + PARALLEL_CONCURRENCY));
+    for (let i = 0; i < batchProducts.length; i += executionProfile.parallelConcurrency) {
+      chunks.push(batchProducts.slice(i, i + executionProfile.parallelConcurrency));
     }
 
     for (const chunk of chunks) {
@@ -492,6 +493,34 @@ async function syncOffers(
           console.error("Product processing failed:", result.reason);
         }
       }
+
+      stats.last_offset = batchStart + chunk.length;
+      if (executionProfile.persistPerChunk) {
+        await sb
+          .from("sync_logs")
+          .update({
+            status: "partial",
+            stats,
+            progress_current: stats.last_offset,
+            progress_total: total,
+            progress_message: `${country}: ${stats.last_offset}/${total} — ${stats.offers_upserted} offres, ${stats.multi_vendor_offers} multi-vendeur, ${stats.products_enriched} enrichis`,
+          })
+          .eq("id", logId);
+      }
+
+      if (Date.now() - startTime > executionProfile.maxExecutionTime) {
+        await sb
+          .from("sync_logs")
+          .update({
+            status: "partial",
+            stats,
+            progress_current: stats.last_offset,
+            progress_total: total,
+            progress_message: `${country}: pause contrôlée — ${stats.last_offset}/${total} (reprendra automatiquement)`,
+          })
+          .eq("id", logId);
+        return stats;
+      }
     }
 
     stats.last_offset = batchEnd;
@@ -506,7 +535,7 @@ async function syncOffers(
       .eq("id", logId);
 
     // Small pause between batches to avoid rate limiting
-    await sleep(BATCH_DELAY_MS);
+    await sleep(executionProfile.batchDelayMs);
   }
 
   await sb

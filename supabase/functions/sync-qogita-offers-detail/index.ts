@@ -473,7 +473,9 @@ async function syncOffers(
       chunks.push(batchProducts.slice(i, i + executionProfile.parallelConcurrency));
     }
 
-    for (const chunk of chunks) {
+    for (let chunkIndex = 0; chunkIndex < chunks.length; chunkIndex++) {
+      const chunk = chunks[chunkIndex];
+      const currentChunkEnd = Math.min(batchStart + (chunkIndex + 1) * executionProfile.parallelConcurrency, batchEnd);
       const results = await Promise.allSettled(
         chunk.map((p) =>
           processSingleProduct(sb, p, baseUrl, token, country, vatRate, vatMultiplier, bestPriceVendorId, fetchMultiVendor, stats)
@@ -494,7 +496,7 @@ async function syncOffers(
         }
       }
 
-      stats.last_offset = batchStart + chunk.length;
+      stats.last_offset = currentChunkEnd;
       if (executionProfile.persistPerChunk) {
         await sb
           .from("sync_logs")

@@ -653,7 +653,8 @@ async function processSingleProduct(
             is_active: true,
             synced_at: new Date().toISOString(),
           },
-          { onConflict: "product_id,vendor_id,country_code", ignoreDuplicates: false },
+          // Aligned with multi-vendor upsert — qogita_offer_qid is the canonical key.
+          { onConflict: "qogita_offer_qid", ignoreDuplicates: false },
         );
 
         if (offerErr) {
@@ -711,7 +712,10 @@ async function processSingleProduct(
                   is_active: true,
                   synced_at: new Date().toISOString(),
                 },
-                { onConflict: "product_id,vendor_id,country_code", ignoreDuplicates: false },
+                // Use qogita_offer_qid as the conflict target — it is the canonical
+                // unique identifier per (seller, variant, country) on Qogita's side
+                // and matches the offers_qogita_offer_qid_unique constraint.
+                { onConflict: "qogita_offer_qid", ignoreDuplicates: false },
               );
 
               if (mvErr) {

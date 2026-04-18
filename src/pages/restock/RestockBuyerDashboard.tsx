@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Package, ShoppingCart, MessageSquare, CheckCircle, HelpCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import logoHorizontal from "@/assets/logo-medikong.png";
+import { DemoModeToggle } from "@/components/restock/DemoModeToggle";
 
 const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
   confirmed: { label: "Confirmée", color: "#00B85C", bg: "#EEFBF4" },

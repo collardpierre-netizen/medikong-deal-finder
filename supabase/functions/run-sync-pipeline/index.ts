@@ -19,6 +19,7 @@ interface StepConfig {
   required: boolean;
   loopBatch?: boolean;
   batchSize?: number;
+  waitsForSyncLog?: boolean;
 }
 
 function getPipelineSteps(country: string, mode: string): StepConfig[] {
@@ -59,6 +60,7 @@ function getPipelineSteps(country: string, mode: string): StepConfig[] {
       functionName: "sync-qogita-products",
       params: { country },
       required: true,
+      waitsForSyncLog: true,
     },
     {
       name: "brands_categories",

@@ -11,26 +11,47 @@ const MEILI_ADMIN_KEY = Deno.env.get("MEILISEARCH_ADMIN_KEY")!;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-async function meiliRequest(path: string, method = "GET", body?: unknown) {
-  const res = await fetch(`${MEILI_URL}${path}`, {
-    method,
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${MEILI_ADMIN_KEY}`,
-    },
-    body: body ? JSON.stringify(body) : undefined,
-  });
-  if (!res.ok) {
+async function meiliRequest(path: string, method = "GET", body?: unknown, retries = 3): Promise<any> {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    const res = await fetch(`${MEILI_URL}${path}`, {
+      method,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${MEILI_ADMIN_KEY}`,
+      },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    if (res.ok) return res.json();
+
     const text = await res.text();
+    // Meilisearch creates indexes asynchronously via tasks. A 404 right after a POST
+    // /indexes call usually means the index isn't materialized yet. Retry with backoff.
+    const isRetryable = res.status === 404 || res.status === 409 || res.status >= 500;
+    if (isRetryable && attempt < retries) {
+      await new Promise((r) => setTimeout(r, 500 * (attempt + 1)));
+      continue;
+    }
     throw new Error(`Meilisearch ${method} ${path} → ${res.status}: ${text}`);
   }
-  return res.json();
+  throw new Error(`Meilisearch ${method} ${path} → failed after ${retries} retries`);
+}
+
+// Wait until an index actually exists (Meili task processing can lag a few hundred ms).
+async function ensureIndexReady(uid: string, primaryKey: string) {
+  await meiliRequest(`/indexes/${uid}`, "POST", { uid, primaryKey }, 0).catch(() => {});
+  for (let i = 0; i < 10; i++) {
+    const res = await fetch(`${MEILI_URL}/indexes/${uid}`, {
+      headers: { Authorization: `Bearer ${MEILI_ADMIN_KEY}` },
+    });
+    if (res.ok) return;
+    await new Promise((r) => setTimeout(r, 300));
+  }
 }
 
 // Setup index settings
 async function setupIndexes() {
   // Products index
-  await meiliRequest("/indexes/products", "POST", { uid: "products", primaryKey: "id" }).catch(() => {});
+  await ensureIndexReady("products", "id");
   await meiliRequest("/indexes/products/settings", "PATCH", {
     searchableAttributes: ["name", "brand_name", "gtin", "cnk_code", "short_description"],
     displayedAttributes: ["id", "name", "slug", "brand_name", "gtin", "cnk_code", "image_url", "best_price_excl_vat", "best_price_incl_vat", "offer_count", "is_in_stock", "category_name"],
@@ -50,7 +71,7 @@ async function setupIndexes() {
   });
 
   // Brands index
-  await meiliRequest("/indexes/brands", "POST", { uid: "brands", primaryKey: "id" }).catch(() => {});
+  await ensureIndexReady("brands", "id");
   await meiliRequest("/indexes/brands/settings", "PATCH", {
     searchableAttributes: ["name", "description"],
     displayedAttributes: ["id", "name", "slug", "logo_url", "product_count"],
@@ -59,7 +80,7 @@ async function setupIndexes() {
   });
 
   // Categories index
-  await meiliRequest("/indexes/categories", "POST", { uid: "categories", primaryKey: "id" }).catch(() => {});
+  await ensureIndexReady("categories", "id");
   await meiliRequest("/indexes/categories/settings", "PATCH", {
     searchableAttributes: ["name", "description"],
     displayedAttributes: ["id", "name", "slug", "icon", "image_url"],

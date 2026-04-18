@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { isRestockDemoActive, demoOffers } from "@/data/restock-demo-mock";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -468,7 +469,9 @@ export default function RestockOpportunities() {
     },
   });
 
-  const { data: offers = [], isLoading } = useQuery({
+  const demoOn = isRestockDemoActive();
+
+  const { data: offersRaw = [], isLoading } = useQuery({
     queryKey: ["restock-public-offers"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -495,7 +498,20 @@ export default function RestockOpportunities() {
         medikong_product: o.matched_product_id ? productsMap[o.matched_product_id] || null : null,
       }));
     },
+    enabled: !demoOn,
   });
+
+  const offers = demoOn
+    ? demoOffers
+        .filter((o) => o.status === "approved")
+        .map((o) => ({
+          ...o,
+          price_ht: o.unit_price,
+          quantity_available: o.quantity,
+          status: "published",
+          medikong_product: { name: o.designation, best_price_excl_vat: o.reference_price, best_price_incl_vat: o.reference_price * 1.06 },
+        }))
+    : offersRaw;
 
   const { data: rules = [] } = useQuery({
     queryKey: ["restock-rules-public"],

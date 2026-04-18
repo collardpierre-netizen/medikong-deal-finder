@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { isRestockDemoActive, demoBuyers } from "@/data/restock-demo-mock";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -26,14 +27,21 @@ export default function RestockAdminBuyers() {
     reception_mode: "email_portal" as string,
   });
 
-  const { data: buyers = [], isLoading } = useQuery({
+  const demoOn = isRestockDemoActive();
+
+  const { data: buyersRaw = [], isLoading } = useQuery({
     queryKey: ["restock-buyers"],
     queryFn: async () => {
       const { data, error } = await supabase.from("restock_buyers").select("*").order("created_at", { ascending: false });
       if (error) throw error;
       return data || [];
     },
+    enabled: !demoOn,
   });
+
+  const buyers = demoOn
+    ? demoBuyers.map((b) => ({ ...b, pharmacy_name: b.company_name, reception_mode: "email_portal" }))
+    : buyersRaw;
 
   const addBuyer = useMutation({
     mutationFn: async () => {

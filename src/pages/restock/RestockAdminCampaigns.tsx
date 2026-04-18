@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { isRestockDemoActive, demoCampaigns } from "@/data/restock-demo-mock";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Plus, Mail, Eye, ShoppingCart, ExternalLink, FileSearch } from "lucide-react";
@@ -127,8 +128,9 @@ function CampaignPreview({ campaign, onClose }: { campaign: any; onClose: () => 
 
 export default function RestockAdminCampaigns() {
   const [previewCampaign, setPreviewCampaign] = useState<any>(null);
+  const demoOn = isRestockDemoActive();
 
-  const { data: campaigns = [], isLoading } = useQuery({
+  const { data: campaignsRaw = [], isLoading } = useQuery({
     queryKey: ["restock-campaigns"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -138,7 +140,10 @@ export default function RestockAdminCampaigns() {
       if (error) throw error;
       return data || [];
     },
+    enabled: !demoOn,
   });
+
+  const campaigns = demoOn ? demoCampaigns : campaignsRaw;
 
   const formatDate = (d: string | null) => {
     if (!d) return "—";

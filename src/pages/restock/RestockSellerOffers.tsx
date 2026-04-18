@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { isRestockDemoActive, demoOffers } from "@/data/restock-demo-mock";
 import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -26,8 +27,9 @@ interface CompetitorInfo {
 
 export default function RestockSellerOffers() {
   const { user } = useAuth();
+  const demoOn = isRestockDemoActive();
 
-  const { data: offers = [], isLoading } = useQuery({
+  const { data: offersRaw = [], isLoading } = useQuery({
     queryKey: ["restock-seller-offers", user?.id],
     queryFn: async () => {
       const { data } = await supabase
@@ -37,8 +39,12 @@ export default function RestockSellerOffers() {
         .order("created_at", { ascending: false });
       return data || [];
     },
-    enabled: !!user,
+    enabled: !!user && !demoOn,
   });
+
+  const offers = demoOn
+    ? demoOffers.filter((o) => o.seller_id === "demo-seller-1").map((o) => ({ ...o, price_ht: o.unit_price, status: "published" }))
+    : offersRaw;
 
   // Fetch all published offers to compute competitive positioning
   const eans = useMemo(() => offers.filter((o: any) => o.ean && o.status === "published").map((o: any) => o.ean), [offers]);

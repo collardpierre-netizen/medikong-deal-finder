@@ -2,6 +2,7 @@ import { Outlet } from "react-router-dom";
 import { Footer } from "@/components/layout/Footer";
 import CartDrawer from "@/components/cart/CartDrawer";
 import { RestockSubNav } from "./RestockSubNav";
+import { DemoModeToggle } from "./DemoModeToggle";
 
 export default function RestockSiteLayout() {
   return (
@@ -12,6 +13,7 @@ export default function RestockSiteLayout() {
       </main>
       <Footer />
       <CartDrawer />
+      <DemoModeToggle />
     </div>
   );
 }

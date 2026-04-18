@@ -1,11 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { isRestockDemoActive, demoTransactions, demoCounterOffers } from "@/data/restock-demo-mock";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Package, ShoppingCart, MessageSquare, CheckCircle, HelpCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import logoHorizontal from "@/assets/logo-medikong.png";
+import { DemoModeToggle } from "@/components/restock/DemoModeToggle";
 
 const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
   confirmed: { label: "Confirmée", color: "#00B85C", bg: "#EEFBF4" },
@@ -39,7 +41,9 @@ export default function RestockBuyerDashboard() {
     enabled: !!user,
   });
 
-  const { data: transactions = [] } = useQuery({
+  const demoOn = isRestockDemoActive();
+
+  const { data: transactionsRaw = [] } = useQuery({
     queryKey: ["restock-buyer-transactions", buyerRecord?.id],
     queryFn: async () => {
       const { data } = await supabase
@@ -49,10 +53,10 @@ export default function RestockBuyerDashboard() {
         .order("created_at", { ascending: false });
       return data || [];
     },
-    enabled: !!buyerRecord,
+    enabled: !!buyerRecord && !demoOn,
   });
 
-  const { data: counterOffers = [] } = useQuery({
+  const { data: counterOffersRaw = [] } = useQuery({
     queryKey: ["restock-buyer-counters", buyerRecord?.id],
     queryFn: async () => {
       const { data } = await supabase
@@ -62,8 +66,11 @@ export default function RestockBuyerDashboard() {
         .order("created_at", { ascending: false });
       return data || [];
     },
-    enabled: !!buyerRecord,
+    enabled: !!buyerRecord && !demoOn,
   });
+
+  const transactions = demoOn ? demoTransactions.filter((t) => t.buyer_id === "demo-buyer-1") : transactionsRaw;
+  const counterOffers = demoOn ? demoCounterOffers.filter((c) => c.buyer_id === "demo-buyer-1") : counterOffersRaw;
 
   const stats = {
     purchases: transactions.length,
@@ -258,6 +265,7 @@ export default function RestockBuyerDashboard() {
           )}
         </div>
       </div>
+      <DemoModeToggle />
     </div>
   );
 }

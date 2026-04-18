@@ -3,9 +3,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Wallet, CheckCircle, Clock } from "lucide-react";
+import { isRestockDemoActive, demoTransactions } from "@/data/restock-demo-mock";
 
 export default function RestockAdminPayouts() {
-  const { data: transactions = [], isLoading } = useQuery({
+  const demoOn = isRestockDemoActive();
+
+  const { data: transactionsRaw = [], isLoading } = useQuery({
     queryKey: ["restock-admin-payouts"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -16,7 +19,20 @@ export default function RestockAdminPayouts() {
       if (error) throw error;
       return data || [];
     },
+    enabled: !demoOn,
   });
+
+  const transactions = demoOn
+    ? demoTransactions
+        .filter((t) => ["delivered", "paid", "released"].includes(t.status))
+        .map((t) => ({
+          ...t,
+          seller_amount: t.final_price * t.quantity * 0.95,
+          buyer_total: t.final_price * t.quantity,
+          commission_amount: t.final_price * t.quantity * 0.05,
+          delivered_at: t.status === "delivered" || t.status === "released" ? t.created_at : null,
+        }))
+    : transactionsRaw;
 
   const toRelease = transactions.filter((t: any) => t.status === "delivered");
   const released = transactions.filter((t: any) => t.status === "released");

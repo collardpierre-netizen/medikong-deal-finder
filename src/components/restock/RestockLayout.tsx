@@ -2,6 +2,7 @@ import { Outlet, NavLink, useLocation } from "react-router-dom";
 import { PackagePlus, List, MessageSquare, CheckCircle, HelpCircle, LayoutGrid, Users, Mail, Shield, Settings, Zap, Menu, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import logoHorizontal from "@/assets/logo-medikong.png";
+import { DemoModeToggle } from "./DemoModeToggle";
 
 const sellerNav = [
   { to: "/restock/seller/new", label: "Nouvelle offre", icon: PackagePlus },
@@ -94,6 +95,7 @@ export default function RestockLayout() {
       <main className="flex-1 min-h-screen md:ml-[240px] pt-14 md:pt-0">
         <Outlet />
       </main>
+      <DemoModeToggle />
     </div>
   );
 }

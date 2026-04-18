@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { isRestockDemoActive, demoTransactions } from "@/data/restock-demo-mock";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -58,10 +59,11 @@ function EscrowTimeline({ status }: { status: string }) {
 
 export default function RestockSellerSales() {
   const { user } = useAuth();
+  const demoOn = isRestockDemoActive();
 
-  const { data: transactions = [], isLoading } = useQuery({
+  const { data: transactionsRaw = [], isLoading } = useQuery({
     queryKey: ["restock-seller-sales", user?.id],
-    enabled: !!user,
+    enabled: !!user && !demoOn,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("restock_transactions")
@@ -72,6 +74,18 @@ export default function RestockSellerSales() {
       return data || [];
     },
   });
+
+  const transactions = demoOn
+    ? demoTransactions
+        .filter((t) => t.seller_id === "demo-seller-1")
+        .map((t) => ({
+          ...t,
+          seller_amount: t.final_price * t.quantity * 0.95,
+          buyer_total: t.final_price * t.quantity,
+          commission_amount: t.final_price * t.quantity * 0.05,
+          delivered_at: t.status === "delivered" || t.status === "released" ? t.created_at : null,
+        }))
+    : transactionsRaw;
 
   const totalRevenue = transactions
     .filter((t: any) => t.status === "released")

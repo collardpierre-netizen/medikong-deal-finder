@@ -306,6 +306,30 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
       });
       setSelected(autoSelected);
       setPhase("results");
+
+      // Persist matched lines to user account (upsert: update price, never delete others)
+      if (saveToAccount && user) {
+        const toUpsert = finalResults
+          .filter((r) => r.status === "found" && r.productId && r.currentPrice > 0)
+          .map((r) => ({
+            user_id: user.id,
+            product_id: r.productId!,
+            my_purchase_price: r.currentPrice,
+            updated_at: new Date().toISOString(),
+          }));
+        if (toUpsert.length > 0) {
+          const { error } = await supabase
+            .from("user_prices")
+            .upsert(toUpsert, { onConflict: "user_id,product_id" });
+          if (error) {
+            console.error("Save to account failed:", error);
+            toast.error("Impossible d'enregistrer dans votre compte");
+          } else {
+            setSavedCount(toUpsert.length);
+            toast.success(`${toUpsert.length} prix enregistré(s) dans Mes Prix`);
+          }
+        }
+      }
     } catch (err) {
       console.error(err);
       toast.error("Erreur lors de la lecture du fichier");

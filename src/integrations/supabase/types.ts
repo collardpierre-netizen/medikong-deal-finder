@@ -6301,6 +6301,13 @@ export type Database = {
           product_count: number
         }[]
       }
+      count_products_per_category_recursive: {
+        Args: never
+        Returns: {
+          category_id: string
+          product_count: number
+        }[]
+      }
       create_offers_from_products: {
         Args: { _country_code?: string }
         Returns: Json

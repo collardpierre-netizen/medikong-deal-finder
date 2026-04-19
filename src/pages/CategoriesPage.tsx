@@ -43,8 +43,9 @@ export default function CategoriesPage() {
         .order("name");
       if (error) throw error;
 
+      // Recursive count: includes products from all descendants
       const { data: rpcData } = await supabase.rpc(
-        "count_products_per_category" as any
+        "count_products_per_category_recursive" as any
       );
 
       const countMap = new Map<string, number>();

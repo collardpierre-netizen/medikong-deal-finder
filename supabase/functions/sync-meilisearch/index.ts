@@ -36,16 +36,62 @@ async function meiliRequest(path: string, method = "GET", body?: unknown, retrie
   throw new Error(`Meilisearch ${method} ${path} → failed after ${retries} retries`);
 }
 
-// Wait until an index actually exists (Meili task processing can lag a few hundred ms).
-async function ensureIndexReady(uid: string, primaryKey: string) {
-  await meiliRequest(`/indexes/${uid}`, "POST", { uid, primaryKey }, 0).catch(() => {});
-  for (let i = 0; i < 10; i++) {
-    const res = await fetch(`${MEILI_URL}/indexes/${uid}`, {
+// Wait until an index actually exists. Meilisearch creates indexes via async tasks,
+// so we must (1) trigger creation, (2) await the task completion, (3) confirm the
+// index responds to GET before issuing settings PATCH.
+async function waitForTask(taskUid: number, timeoutMs = 30000) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const r = await fetch(`${MEILI_URL}/tasks/${taskUid}`, {
       headers: { Authorization: `Bearer ${MEILI_ADMIN_KEY}` },
     });
-    if (res.ok) return;
+    if (r.ok) {
+      const t = await r.json();
+      if (t.status === "succeeded") return;
+      if (t.status === "failed" || t.status === "canceled") {
+        throw new Error(`Meilisearch task ${taskUid} ${t.status}: ${JSON.stringify(t.error || {})}`);
+      }
+    }
+    await new Promise((r) => setTimeout(r, 250));
+  }
+  throw new Error(`Meilisearch task ${taskUid} timed out`);
+}
+
+async function ensureIndexReady(uid: string, primaryKey: string) {
+  // Check if index already exists
+  const existing = await fetch(`${MEILI_URL}/indexes/${uid}`, {
+    headers: { Authorization: `Bearer ${MEILI_ADMIN_KEY}` },
+  });
+  if (existing.ok) return;
+
+  // Create it and wait for the task to succeed
+  const createRes = await fetch(`${MEILI_URL}/indexes`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${MEILI_ADMIN_KEY}`,
+    },
+    body: JSON.stringify({ uid, primaryKey }),
+  });
+  if (!createRes.ok && createRes.status !== 409) {
+    throw new Error(`Failed to create index ${uid}: ${createRes.status} ${await createRes.text()}`);
+  }
+  if (createRes.ok) {
+    const taskInfo = await createRes.json();
+    if (taskInfo?.taskUid != null) {
+      await waitForTask(taskInfo.taskUid).catch((e) => console.warn(`Task wait warn: ${e.message}`));
+    }
+  }
+
+  // Final confirmation
+  for (let i = 0; i < 20; i++) {
+    const r = await fetch(`${MEILI_URL}/indexes/${uid}`, {
+      headers: { Authorization: `Bearer ${MEILI_ADMIN_KEY}` },
+    });
+    if (r.ok) return;
     await new Promise((r) => setTimeout(r, 300));
   }
+  throw new Error(`Index ${uid} not ready after creation`);
 }
 
 // Setup index settings

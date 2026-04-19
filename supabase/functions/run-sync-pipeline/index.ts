@@ -161,10 +161,13 @@ async function markPreviousRunsAsSuperseded(supabase: any, country: string, runI
 async function waitForSyncLogCompletion(
   supabase: any,
   logId: string,
-  timeoutMs = 20 * 60 * 1000,
+  timeoutMs = 25 * 60 * 1000,
   pollMs = 5000,
+  stallTimeoutMs = 4 * 60 * 1000, // mark as stuck if no progress for 4 minutes
 ) {
   const deadline = Date.now() + timeoutMs;
+  let lastProgress = -1;
+  let lastProgressAt = Date.now();
 
   while (Date.now() < deadline) {
     const { data: log, error } = await supabase
@@ -180,6 +183,24 @@ async function waitForSyncLogCompletion(
 
     if (log.status === "error") {
       throw new Error(log.error_message || `Échec du log ${logId}`);
+    }
+
+    // Detect stalled background runs (edge function killed, log left "running")
+    const cur = Number(log.progress_current || 0);
+    if (cur !== lastProgress) {
+      lastProgress = cur;
+      lastProgressAt = Date.now();
+    } else if (Date.now() - lastProgressAt > stallTimeoutMs) {
+      // Mark log as failed and give up — background worker is dead
+      await supabase
+        .from("sync_logs")
+        .update({
+          status: "error",
+          completed_at: new Date().toISOString(),
+          error_message: `Aucune progression depuis ${Math.round(stallTimeoutMs / 60000)} min — worker arrière-plan probablement tué`,
+        })
+        .eq("id", logId);
+      throw new Error(`Sync log ${logId} bloqué (aucune progression pendant ${Math.round(stallTimeoutMs / 60000)} min)`);
     }
 
     await sleep(pollMs);

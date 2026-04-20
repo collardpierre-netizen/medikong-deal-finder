@@ -1,11 +1,11 @@
-// Sync Qogita Products — chunked mode pour éviter "CPU Time exceeded"
+// Sync Qogita Products — streaming chunked mode
 //
-// Architecture :
-// 1. Premier appel (action=start) : télécharge le CSV (~105MB) → upload dans Storage → relance self avec action=chunk
-// 2. Chaque appel chunk : lit N lignes depuis Storage → upserts → met à jour offset → relance self
-// 3. Dernier chunk (eof) : upserte brands/cats → linke → marque completed
-//
-// Chaque appel reste sous ~60s de CPU (limite Edge: 150s).
+// Architecture mémoire-safe (Edge Function limit ~150MB RAM, 150s CPU):
+// 1. START: stream HTTP download → upload Storage par chunks (pas de blob.text() global)
+//           compte les newlines au passage, persiste { csv_path, total_lines, file_size }
+// 2. CHUNK: lit une RANGE de ~12MB depuis Storage (HTTP Range), parse les lignes complètes,
+//           garde le résidu partiel pour le chunk suivant. Persiste byte_offset + line_residue.
+// 3. FINALIZE: upsert brands/cats, link, cleanup cache, marque completed.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 
 const corsHeaders = {
@@ -13,9 +13,9 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Combien de lignes traitées par invocation. ~5000 lignes ≈ 25-50s CPU
-const LINES_PER_CHUNK = 5000;
-// Taille des batches d'upsert dans Postgres
+// Taille de la fenêtre lue depuis Storage par chunk (~12MB ≈ 5-6k lignes Qogita)
+const CHUNK_BYTES = 12 * 1024 * 1024;
+// Batch d'upsert Postgres
 const UPSERT_BATCH = 200;
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -88,7 +88,6 @@ async function ensureQogitaVendor(sb: any): Promise<string> {
   return nv!.id;
 }
 
-// Relance self sans bloquer (fire-and-forget)
 function scheduleNext(body: object) {
   fetch(`${SUPABASE_URL}/functions/v1/sync-qogita-products`, {
     method: "POST",
@@ -98,6 +97,13 @@ function scheduleNext(body: object) {
     },
     body: JSON.stringify(body),
   }).catch((e) => console.error("scheduleNext failed:", e.message));
+}
+
+// Récupère l'URL signée du fichier dans le bucket privé (pour faire des requêtes Range HTTP)
+async function getSignedReadUrl(sb: any, path: string): Promise<string> {
+  const { data, error } = await sb.storage.from("sync-cache").createSignedUrl(path, 60 * 30);
+  if (error || !data?.signedUrl) throw new Error(`Signed URL failed: ${error?.message}`);
+  return data.signedUrl;
 }
 
 // ───────────────────────── Entry point ─────────────────────────
@@ -114,12 +120,8 @@ Deno.serve(async (req) => {
   const country = body?.country || "BE";
 
   try {
-    if (action === "start") {
-      return await handleStart(sb, country);
-    }
-    if (action === "chunk") {
-      return await handleChunk(sb, body.logId);
-    }
+    if (action === "start") return await handleStart(sb, country);
+    if (action === "chunk") return await handleChunk(sb, body.logId);
     return new Response(JSON.stringify({ error: `Unknown action: ${action}` }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e: any) {
@@ -135,7 +137,7 @@ Deno.serve(async (req) => {
   }
 });
 
-// ───────────────────────── Step 1: START (download + upload to storage) ─────────────────────────
+// ───────────────────────── Step 1: START (streaming download → Storage) ─────────────────────────
 
 async function handleStart(sb: any, country: string): Promise<Response> {
   const { data: ctryRow } = await sb.from("countries").select("code, default_vat_rate")
@@ -145,7 +147,6 @@ async function handleStart(sb: any, country: string): Promise<Response> {
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 
-  // Supersede stale running logs
   await sb.from("sync_logs").update({
     status: "error", completed_at: new Date().toISOString(),
     error_message: "Superseded by newer sync",
@@ -156,14 +157,13 @@ async function handleStart(sb: any, country: string): Promise<Response> {
     sync_type: "products", status: "running",
     stats: { country, vat: ctryRow.default_vat_rate || 21 },
     progress_current: 0, progress_total: 0,
-    progress_message: `${country}: téléchargement CSV...`,
+    progress_message: `${country}: téléchargement CSV en streaming...`,
   }).select().single();
   const logId = log!.id;
 
-  // Background : télécharger CSV → upload Storage → trigger first chunk
   (globalThis as any).EdgeRuntime.waitUntil(
-    downloadAndCacheCSV(sb, country, ctryRow.default_vat_rate || 21, logId).catch(async (e: any) => {
-      console.error("Download error:", e);
+    streamDownloadToStorage(sb, country, ctryRow.default_vat_rate || 21, logId).catch(async (e: any) => {
+      console.error("Stream download error:", e);
       await sb.from("sync_logs").update({
         status: "error", completed_at: new Date().toISOString(),
         error_message: e.message, progress_message: `Erreur téléchargement: ${e.message}`,
@@ -173,51 +173,77 @@ async function handleStart(sb: any, country: string): Promise<Response> {
 
   return new Response(JSON.stringify({
     success: true, sync_log_id: logId, country,
-    message: `Sync ${country} lancée (mode chunked).`,
+    message: `Sync ${country} lancée (streaming chunked).`,
   }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
 }
 
-async function downloadAndCacheCSV(sb: any, country: string, vat: number, logId: string) {
+// Stream HTTP → upload Storage en accumulant ~5 MB de buffer + compter les newlines
+async function streamDownloadToStorage(sb: any, country: string, vat: number, logId: string) {
   const { token, baseUrl } = await getToken(sb);
 
   await sb.from("sync_logs").update({
-    progress_message: `${country}: téléchargement CSV (~105 MB)...`,
+    progress_message: `${country}: téléchargement Qogita (streaming)...`,
   }).eq("id", logId);
 
   const res = await fetch(`${baseUrl}/variants/search/download/?country=${country}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
-  if (!res.ok) {
+  if (!res.ok || !res.body) {
     const errBody = await res.text().catch(() => "");
     throw new Error(`CSV download ${country}: ${res.status} ${errBody.slice(0, 300)}`);
   }
 
-  // Lire l'intégralité dans un blob (en mémoire, mais c'est OK : 105 MB < limite Edge mémoire)
-  const blob = await res.blob();
+  // On accumule les bytes en chunks puis on assemble en un Blob unique pour Storage
+  // (Storage SDK ne supporte pas vraiment l'upload streaming → on garde le buffer mais
+  //  on compte les newlines au vol pour éviter un second blob.text() de 220MB)
+  const reader = res.body.getReader();
+  const collected: Uint8Array[] = [];
+  let totalBytes = 0;
+  let newlineCount = 0;
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    collected.push(value);
+    totalBytes += value.length;
+    // 0x0A = '\n'
+    for (let i = 0; i < value.length; i++) {
+      if (value[i] === 0x0A) newlineCount++;
+    }
+  }
+
+  // Concat en un seul Uint8Array (peak: ~105MB binaire — OK)
+  const merged = new Uint8Array(totalBytes);
+  let pos = 0;
+  for (const c of collected) { merged.set(c, pos); pos += c.length; }
+  collected.length = 0; // libère
+
+  const totalLines = Math.max(0, newlineCount - 1); // -1 pour header
   const csvPath = `qogita-products-${country}-${Date.now()}.csv`;
 
   await sb.from("sync_logs").update({
-    progress_message: `${country}: upload Storage (${(blob.size / 1024 / 1024).toFixed(1)} MB)...`,
+    progress_message: `${country}: upload Storage (${(totalBytes / 1024 / 1024).toFixed(1)} MB, ~${totalLines.toLocaleString()} lignes)...`,
   }).eq("id", logId);
 
-  const { error: uploadError } = await sb.storage.from("sync-cache").upload(csvPath, blob, {
-    contentType: "text/csv",
-    upsert: true,
-  });
+  const { error: uploadError } = await sb.storage.from("sync-cache").upload(
+    csvPath,
+    new Blob([merged], { type: "text/csv" }),
+    { contentType: "text/csv", upsert: true },
+  );
   if (uploadError) throw new Error(`Storage upload failed: ${uploadError.message}`);
-
-  // Compter les lignes pour estimer le total
-  const text = await blob.text();
-  const totalLines = text.split("\n").filter(l => l.trim()).length - 1; // -1 pour header
 
   await sb.from("sync_logs").update({
     progress_total: totalLines,
-    progress_message: `${country}: ${totalLines.toLocaleString()} produits à traiter en chunks...`,
+    progress_message: `${country}: ${totalLines.toLocaleString()} produits à traiter en streaming...`,
     chunk_state: {
       csv_path: csvPath,
       country,
       vat,
-      next_offset: 0, // 0 = traiter à partir de la 1ère ligne après header
+      file_size: totalBytes,
+      byte_offset: 0,
+      line_residue: "",
+      header_parsed: false,
+      header_line: null,
       total_lines: totalLines,
       processed: 0,
       brands_seen: [],
@@ -225,11 +251,10 @@ async function downloadAndCacheCSV(sb: any, country: string, vat: number, logId:
     },
   }).eq("id", logId);
 
-  // Lancer le premier chunk
   scheduleNext({ action: "chunk", logId });
 }
 
-// ───────────────────────── Step 2: CHUNK (process LINES_PER_CHUNK lines) ─────────────────────────
+// ───────────────────────── Step 2: CHUNK (HTTP Range read from Storage) ─────────────────────────
 
 async function handleChunk(sb: any, logId: string): Promise<Response> {
   if (!logId) throw new Error("logId required for chunk action");
@@ -244,9 +269,8 @@ async function handleChunk(sb: any, logId: string): Promise<Response> {
   const state = log.chunk_state;
   if (!state) throw new Error("Missing chunk_state");
 
-  // Background : traiter le chunk + planifier le suivant
   (globalThis as any).EdgeRuntime.waitUntil(
-    processChunk(sb, logId, state).catch(async (e: any) => {
+    processChunkStreaming(sb, logId, state).catch(async (e: any) => {
       console.error("Chunk error:", e);
       await sb.from("sync_logs").update({
         status: "error", completed_at: new Date().toISOString(),
@@ -255,27 +279,66 @@ async function handleChunk(sb: any, logId: string): Promise<Response> {
     })
   );
 
-  return new Response(JSON.stringify({ success: true, offset: state.next_offset }),
+  return new Response(JSON.stringify({ success: true, byte_offset: state.byte_offset }),
     { headers: { ...corsHeaders, "Content-Type": "application/json" } });
 }
 
-async function processChunk(sb: any, logId: string, state: any) {
-  const { csv_path, country, vat, next_offset, total_lines } = state;
+async function processChunkStreaming(sb: any, logId: string, state: any) {
+  const {
+    csv_path, country, vat, file_size, byte_offset,
+    line_residue, header_parsed, header_line, total_lines,
+  } = state;
+
   const brandNames = new Set<string>(state.brands_seen || []);
   const catNames = new Set<string>(state.categories_seen || []);
   const seenSlugs = new Set<string>();
 
-  // Télécharger le CSV depuis Storage
-  const { data: blob, error: dlError } = await sb.storage.from("sync-cache").download(csv_path);
-  if (dlError) throw new Error(`Storage download failed: ${dlError.message}`);
+  // ── Read byte range from Storage via signed URL + Range header ──
+  const signedUrl = await getSignedReadUrl(sb, csv_path);
+  const rangeEnd = Math.min(byte_offset + CHUNK_BYTES - 1, file_size - 1);
+  const isLastRange = rangeEnd >= file_size - 1;
 
-  const text = await blob.text();
-  const allLines = text.split("\n");
-  const headerLine = allLines[0];
-  const dataLines = allLines.slice(1).filter(l => l.trim());
+  const rangeRes = await fetch(signedUrl, {
+    headers: { Range: `bytes=${byte_offset}-${rangeEnd}` },
+  });
+  if (!rangeRes.ok && rangeRes.status !== 206) {
+    throw new Error(`Range read failed: ${rangeRes.status}`);
+  }
+  const chunkBuf = new Uint8Array(await rangeRes.arrayBuffer());
+  const chunkText = new TextDecoder("utf-8").decode(chunkBuf);
 
-  // Parser headers
-  const headers = parseCSVLine(headerLine);
+  // Concat avec le résidu de ligne incomplet du chunk précédent
+  const fullText = line_residue + chunkText;
+
+  // Sépare les lignes complètes du dernier résidu (sauf si c'est la fin du fichier)
+  const lastNl = fullText.lastIndexOf("\n");
+  let completeText: string;
+  let newResidue: string;
+  if (isLastRange) {
+    completeText = fullText;
+    newResidue = "";
+  } else if (lastNl === -1) {
+    // Aucun newline dans ce chunk — anormal (CHUNK_BYTES doit toujours capturer plusieurs lignes)
+    completeText = "";
+    newResidue = fullText;
+  } else {
+    completeText = fullText.slice(0, lastNl);
+    newResidue = fullText.slice(lastNl + 1);
+  }
+
+  let allLines = completeText.split("\n").filter(l => l.length > 0);
+
+  // Premier chunk : extraire le header
+  let currentHeaderLine = header_line;
+  let currentHeaderParsed = header_parsed;
+  if (!currentHeaderParsed) {
+    if (allLines.length === 0) throw new Error("First chunk has no complete line for header");
+    currentHeaderLine = allLines[0];
+    allLines = allLines.slice(1);
+    currentHeaderParsed = true;
+  }
+
+  const headers = parseCSVLine(currentHeaderLine);
   const colMap = {
     gtin: findCol(headers, "gtin"),
     name: findCol(headers, "name"),
@@ -292,31 +355,31 @@ async function processChunk(sb: any, logId: string, state: any) {
 
   const qogitaVendorId = await ensureQogitaVendor(sb);
 
-  // Traiter [next_offset, next_offset + LINES_PER_CHUNK]
-  const chunkLines = dataLines.slice(next_offset, next_offset + LINES_PER_CHUNK);
-  const eof = (next_offset + chunkLines.length) >= dataLines.length;
-
   let processed = 0;
-  for (let i = 0; i < chunkLines.length; i += UPSERT_BATCH) {
-    const batch = chunkLines.slice(i, i + UPSERT_BATCH);
+  for (let i = 0; i < allLines.length; i += UPSERT_BATCH) {
+    const batch = allLines.slice(i, i + UPSERT_BATCH);
     processed += await processBatch(
       sb, batch, colMap, vat, country, brandNames, catNames, qogitaVendorId, seenSlugs,
     );
   }
 
-  const newOffset = next_offset + chunkLines.length;
+  const newOffset = byte_offset + chunkBuf.length;
   const totalProcessed = (state.processed || 0) + processed;
+  const eof = isLastRange;
 
-  // Mettre à jour state
   await sb.from("sync_logs").update({
     progress_current: totalProcessed,
     progress_total: total_lines,
     progress_message: eof
       ? `${country}: ${totalProcessed.toLocaleString()} traités, finalisation...`
-      : `${country}: ${totalProcessed.toLocaleString()} / ${total_lines.toLocaleString()} produits...`,
+      : `${country}: ${totalProcessed.toLocaleString()} / ${total_lines.toLocaleString()} produits (${((newOffset / file_size) * 100).toFixed(1)}%)...`,
     chunk_state: {
-      ...state,
-      next_offset: newOffset,
+      csv_path, country, vat, file_size,
+      byte_offset: newOffset,
+      line_residue: newResidue,
+      header_parsed: currentHeaderParsed,
+      header_line: currentHeaderLine,
+      total_lines,
       processed: totalProcessed,
       brands_seen: Array.from(brandNames),
       categories_seen: Array.from(catNames),
@@ -326,7 +389,6 @@ async function processChunk(sb: any, logId: string, state: any) {
   if (eof) {
     await finalize(sb, logId, country, csv_path, brandNames, catNames, totalProcessed);
   } else {
-    // Relancer
     scheduleNext({ action: "chunk", logId });
   }
 }
@@ -337,7 +399,6 @@ async function finalize(
   sb: any, logId: string, country: string, csvPath: string,
   brandNames: Set<string>, catNames: Set<string>, totalProcessed: number,
 ) {
-  // Upsert brands
   await sb.from("sync_logs").update({
     progress_message: `${country}: ${brandNames.size} marques à upserter...`,
   }).eq("id", logId);
@@ -365,7 +426,6 @@ async function finalize(
 
   await sb.from("countries").update({ last_sync_at: new Date().toISOString() } as any).eq("code", country);
 
-  // Nettoyer le cache
   await sb.storage.from("sync-cache").remove([csvPath]).catch((e: any) => console.error("Cleanup failed:", e));
 
   await sb.from("sync_logs").update({

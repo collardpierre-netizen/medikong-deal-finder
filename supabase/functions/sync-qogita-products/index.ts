@@ -177,111 +177,88 @@ async function handleStart(sb: any, country: string): Promise<Response> {
   }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
 }
 
-// Stream HTTP → S3 multipart upload vers Supabase Storage (zero-buffer global)
+// Stream HTTP Qogita → Supabase Storage via TUS resumable upload protocol.
 //
-// Stratégie : on lit le body Qogita par chunks ; on accumule un buffer de ~6 MB,
-// puis on uploade chaque part via le protocole S3 multipart (PUT signed URL).
-// Le pic mémoire reste ~6-7 MB (taille d'une part S3) au lieu de 105 MB.
+// Pourquoi TUS plutôt que S3 multipart : Supabase Storage REST `upload()` exige
+// un Blob complet, et l'API S3 multipart impose AWS SigV4 strict (lourd à
+// implémenter en Edge). TUS accepte un simple Bearer token + uploads incrémentaux
+// par PATCH chunks, donc on garde un peak RAM = taille d'un chunk (~6 MB).
 //
-// Supabase Storage expose une API S3 multipart compatible :
-//   POST   {endpoint}/{bucket}/{key}?uploads          → CreateMultipartUpload (XML)
-//   PUT    {endpoint}/{bucket}/{key}?partNumber=N&uploadId=ID  → UploadPart (renvoie ETag)
-//   POST   {endpoint}/{bucket}/{key}?uploadId=ID      → CompleteMultipartUpload (XML body)
+// Protocole TUS (https://tus.io/protocols/resumable-upload) :
+//   POST   /upload/resumable             → crée l'upload, renvoie Location URL
+//   PATCH  {Location} (Upload-Offset: N) → ajoute le chunk binaire à l'offset N
+//   HEAD   {Location}                    → check Upload-Offset
 //
-// Auth : on utilise un AWS SigV4 minimal avec les credentials S3 dérivés
-// (Supabase accepte aussi un Bearer SERVICE_ROLE_KEY sur le namespace `/storage/v1/s3/`).
-const S3_PART_SIZE = 6 * 1024 * 1024; // 6 MB (min S3 = 5 MB sauf dernière part)
-const S3_ENDPOINT = `${SUPABASE_URL}/storage/v1/s3`;
+// Supabase Storage TUS endpoint : {SUPABASE_URL}/storage/v1/upload/resumable
+const TUS_CHUNK_SIZE = 6 * 1024 * 1024; // 6 MB par PATCH
+const TUS_ENDPOINT = `${SUPABASE_URL}/storage/v1/upload/resumable`;
 
-function xmlExtract(xml: string, tag: string): string | null {
-  const m = xml.match(new RegExp(`<${tag}>([^<]+)</${tag}>`));
-  return m ? m[1] : null;
+function b64(s: string): string {
+  return btoa(unescape(encodeURIComponent(s)));
 }
 
-async function s3InitiateMultipart(bucket: string, key: string): Promise<string> {
-  const url = `${S3_ENDPOINT}/${bucket}/${encodeURIComponent(key)}?uploads`;
-  const res = await fetch(url, {
+async function tusCreate(bucket: string, objectName: string, totalSize: number): Promise<string> {
+  // Upload-Metadata: clé-valeur base64 séparés par des virgules
+  const meta = [
+    `bucketName ${b64(bucket)}`,
+    `objectName ${b64(objectName)}`,
+    `contentType ${b64("text/csv")}`,
+    `cacheControl ${b64("3600")}`,
+  ].join(",");
+
+  const res = await fetch(TUS_ENDPOINT, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${SERVICE_KEY}`,
-      "x-amz-content-sha256": "UNSIGNED-PAYLOAD",
-      "Content-Type": "text/csv",
+      "Tus-Resumable": "1.0.0",
+      "Upload-Length": String(totalSize),
+      "Upload-Metadata": meta,
+      "x-upsert": "true",
     },
   });
   if (!res.ok) {
     const t = await res.text().catch(() => "");
-    throw new Error(`S3 initiate failed (${res.status}): ${t.slice(0, 300)}`);
+    throw new Error(`TUS create failed (${res.status}): ${t.slice(0, 300)}`);
   }
-  const xml = await res.text();
-  const uploadId = xmlExtract(xml, "UploadId");
-  if (!uploadId) throw new Error(`S3 initiate: no UploadId in response: ${xml.slice(0, 300)}`);
-  return uploadId;
+  const location = res.headers.get("Location");
+  if (!location) throw new Error("TUS create: no Location header");
+  return location;
 }
 
-async function s3UploadPart(
-  bucket: string, key: string, uploadId: string,
-  partNumber: number, body: Uint8Array,
-): Promise<string> {
-  const url = `${S3_ENDPOINT}/${bucket}/${encodeURIComponent(key)}?partNumber=${partNumber}&uploadId=${uploadId}`;
-  const res = await fetch(url, {
-    method: "PUT",
+async function tusPatch(uploadUrl: string, offset: number, body: Uint8Array): Promise<number> {
+  const res = await fetch(uploadUrl, {
+    method: "PATCH",
     headers: {
       Authorization: `Bearer ${SERVICE_KEY}`,
-      "x-amz-content-sha256": "UNSIGNED-PAYLOAD",
+      "Tus-Resumable": "1.0.0",
+      "Upload-Offset": String(offset),
+      "Content-Type": "application/offset+octet-stream",
       "Content-Length": String(body.length),
     },
     body,
   });
   if (!res.ok) {
     const t = await res.text().catch(() => "");
-    throw new Error(`S3 part ${partNumber} failed (${res.status}): ${t.slice(0, 300)}`);
+    throw new Error(`TUS patch @${offset} failed (${res.status}): ${t.slice(0, 300)}`);
   }
-  const etag = res.headers.get("ETag") || res.headers.get("etag");
-  if (!etag) throw new Error(`S3 part ${partNumber}: no ETag`);
-  return etag.replaceAll('"', "");
+  const newOffset = Number(res.headers.get("Upload-Offset") || "0");
+  return newOffset;
 }
 
-async function s3CompleteMultipart(
-  bucket: string, key: string, uploadId: string,
-  parts: Array<{ partNumber: number; etag: string }>,
-): Promise<void> {
-  const partsXml = parts
-    .map(p => `<Part><PartNumber>${p.partNumber}</PartNumber><ETag>"${p.etag}"</ETag></Part>`)
-    .join("");
-  const body = `<?xml version="1.0" encoding="UTF-8"?><CompleteMultipartUpload>${partsXml}</CompleteMultipartUpload>`;
-  const url = `${S3_ENDPOINT}/${bucket}/${encodeURIComponent(key)}?uploadId=${uploadId}`;
-  const res = await fetch(url, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${SERVICE_KEY}`,
-      "x-amz-content-sha256": "UNSIGNED-PAYLOAD",
-      "Content-Type": "application/xml",
-    },
-    body,
-  });
-  if (!res.ok) {
-    const t = await res.text().catch(() => "");
-    throw new Error(`S3 complete failed (${res.status}): ${t.slice(0, 300)}`);
-  }
-}
-
-async function s3AbortMultipart(bucket: string, key: string, uploadId: string): Promise<void> {
-  const url = `${S3_ENDPOINT}/${bucket}/${encodeURIComponent(key)}?uploadId=${uploadId}`;
-  await fetch(url, {
-    method: "DELETE",
-    headers: {
-      Authorization: `Bearer ${SERVICE_KEY}`,
-      "x-amz-content-sha256": "UNSIGNED-PAYLOAD",
-    },
-  }).catch(() => {});
-}
-
-// Stream HTTP Qogita → S3 multipart upload (peak RAM ≤ 1 part = 6 MB)
+// Stream HTTP Qogita → TUS upload (peak RAM ≤ 1 chunk = 6 MB).
+// Problème : TUS exige Upload-Length à la création, mais la longueur du download
+// Qogita n'est pas toujours dans Content-Length. On lit donc le stream en deux
+// passes :
+//   Phase 1 : on streame tout en buffer disque (fichier temporaire dans /tmp)
+//             tout en comptant bytes + newlines.
+//   Phase 2 : on relit le /tmp et on uploade en TUS chunks de 6 MB.
+//
+// Edge runtime Deno permet l'écriture dans /tmp (volatile, ~512 MB dispo).
 async function streamDownloadToStorage(sb: any, country: string, vat: number, logId: string) {
   const { token, baseUrl } = await getToken(sb);
 
   await sb.from("sync_logs").update({
-    progress_message: `${country}: téléchargement Qogita (S3 multipart streaming)...`,
+    progress_message: `${country}: téléchargement Qogita (TUS streaming)...`,
   }).eq("id", logId);
 
   const res = await fetch(`${baseUrl}/variants/search/download/?country=${country}`, {
@@ -293,71 +270,62 @@ async function streamDownloadToStorage(sb: any, country: string, vat: number, lo
   }
 
   const csvPath = `qogita-products-${country}-${Date.now()}.csv`;
-  const uploadId = await s3InitiateMultipart("sync-cache", csvPath);
+  const tmpFile = `/tmp/qogita-${country}-${Date.now()}.csv`;
 
+  // ── Phase 1 : stream HTTP → fichier /tmp + compteurs ──
+  const file = await Deno.open(tmpFile, { create: true, write: true, truncate: true });
   const reader = res.body.getReader();
-  let buffer = new Uint8Array(S3_PART_SIZE);
-  let bufferLen = 0;
-  let partNumber = 1;
   let totalBytes = 0;
   let newlineCount = 0;
-  const parts: Array<{ partNumber: number; etag: string }> = [];
-
-  const flushPart = async (final: boolean) => {
-    if (bufferLen === 0 && !final) return;
-    if (bufferLen === 0 && final && partNumber === 1) {
-      // Empty file edge case — push 1 empty part
-      const etag = await s3UploadPart("sync-cache", csvPath, uploadId, 1, new Uint8Array(0));
-      parts.push({ partNumber: 1, etag });
-      return;
-    }
-    if (bufferLen === 0) return;
-    const slice = buffer.subarray(0, bufferLen);
-    const etag = await s3UploadPart("sync-cache", csvPath, uploadId, partNumber, slice);
-    parts.push({ partNumber, etag });
-    partNumber++;
-    bufferLen = 0;
-  };
-
   try {
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
       totalBytes += value.length;
-      // Compte newlines à la volée (0x0A)
       for (let i = 0; i < value.length; i++) {
         if (value[i] === 0x0A) newlineCount++;
       }
-
-      // Append to buffer, flush per S3_PART_SIZE
-      let srcPos = 0;
-      while (srcPos < value.length) {
-        const space = S3_PART_SIZE - bufferLen;
-        const take = Math.min(space, value.length - srcPos);
-        buffer.set(value.subarray(srcPos, srcPos + take), bufferLen);
-        bufferLen += take;
-        srcPos += take;
-        if (bufferLen === S3_PART_SIZE) {
-          await flushPart(false);
-        }
+      // Write streaming → fichier (pas en RAM)
+      let written = 0;
+      while (written < value.length) {
+        written += await file.write(value.subarray(written));
       }
     }
-    // Flush dernier morceau (peut être < 5 MB, c'est autorisé pour la dernière part)
-    await flushPart(true);
-    await s3CompleteMultipart("sync-cache", csvPath, uploadId, parts);
-  } catch (e) {
-    await s3AbortMultipart("sync-cache", csvPath, uploadId);
-    throw e;
+  } finally {
+    file.close();
   }
 
-  // Libère le buffer
-  buffer = new Uint8Array(0);
+  await sb.from("sync_logs").update({
+    progress_message: `${country}: ${(totalBytes / 1024 / 1024).toFixed(1)} MB téléchargés, upload TUS en cours...`,
+  }).eq("id", logId);
+
+  // ── Phase 2 : relire /tmp en chunks 6 MB → TUS PATCH ──
+  const uploadUrl = await tusCreate("sync-cache", csvPath, totalBytes);
+  const f2 = await Deno.open(tmpFile, { read: true });
+  const buf = new Uint8Array(TUS_CHUNK_SIZE);
+  let offset = 0;
+  try {
+    while (offset < totalBytes) {
+      const n = await f2.read(buf);
+      if (n === null || n === 0) break;
+      const chunk = n === TUS_CHUNK_SIZE ? buf : buf.subarray(0, n);
+      const newOffset = await tusPatch(uploadUrl, offset, chunk);
+      offset = newOffset;
+    }
+  } finally {
+    f2.close();
+    await Deno.remove(tmpFile).catch(() => {});
+  }
+
+  if (offset !== totalBytes) {
+    throw new Error(`TUS upload incomplete: ${offset}/${totalBytes}`);
+  }
 
   const totalLines = Math.max(0, newlineCount - 1); // -1 pour header
 
   await sb.from("sync_logs").update({
     progress_total: totalLines,
-    progress_message: `${country}: ${totalLines.toLocaleString()} produits à traiter (${(totalBytes / 1024 / 1024).toFixed(1)} MB uploadés en ${parts.length} parts)...`,
+    progress_message: `${country}: ${totalLines.toLocaleString()} produits à traiter (${(totalBytes / 1024 / 1024).toFixed(1)} MB uploadés via TUS)...`,
     chunk_state: {
       csv_path: csvPath,
       country,

@@ -625,10 +625,12 @@ async function processBatch(
 
   const [existingByQidRes, existingByGtinRes] = await Promise.all([
     qids.length > 0
-      ? sb.from("products").select("id, qogita_qid, gtin, slug").in("qogita_qid", qids)
+      ? withRetry("select products by qid", () =>
+          sb.from("products").select("id, qogita_qid, gtin, slug").in("qogita_qid", qids))
       : Promise.resolve({ data: [], error: null }),
     gtins.length > 0
-      ? sb.from("products").select("id, qogita_qid, gtin, slug").in("gtin", gtins)
+      ? withRetry("select products by gtin", () =>
+          sb.from("products").select("id, qogita_qid, gtin, slug").in("gtin", gtins))
       : Promise.resolve({ data: [], error: null }),
   ]);
 

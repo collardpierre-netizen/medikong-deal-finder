@@ -16,11 +16,37 @@ const corsHeaders = {
 // Taille de la fenêtre lue depuis Storage par chunk (~3MB ≈ 1.5k lignes Qogita)
 // Petit pour rester sous la limite CPU 150s d'Edge (chaque round-trip DB coûte du CPU)
 const CHUNK_BYTES = 3 * 1024 * 1024;
-// Batch d'upsert Postgres — 500 = compromis entre round-trips et limite paramètres PG (~32k)
-const UPSERT_BATCH = 500;
+// Batch d'upsert Postgres — 150 pour éviter que les SELECT IN(...) génèrent des URLs
+// trop longues pour le proxy PostgREST (fix principal des "error sending request" transients).
+const UPSERT_BATCH = 150;
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+// Retry x3 avec backoff exponentiel (250ms, 750ms, 2.25s) — filet de sécurité
+// pour les vraies erreurs transientes (timeouts réseau, 502 sporadiques).
+async function withRetry<T>(
+  label: string,
+  fn: () => Promise<T>,
+  attempts = 3,
+): Promise<T> {
+  let lastErr: any;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await fn();
+    } catch (err: any) {
+      lastErr = err;
+      const msg = err?.message || String(err);
+      // Ne retry que sur erreurs transientes réseau/proxy
+      const transient = /error sending request|fetch failed|network|timeout|502|503|504|ECONNRESET|socket hang up/i.test(msg);
+      if (!transient || i === attempts - 1) throw err;
+      const delay = 250 * Math.pow(3, i);
+      console.warn(`[retry ${label}] attempt ${i + 1}/${attempts} failed: ${msg} — waiting ${delay}ms`);
+      await new Promise((r) => setTimeout(r, delay));
+    }
+  }
+  throw lastErr;
+}
 
 // ───────────────────────── Helpers ─────────────────────────
 

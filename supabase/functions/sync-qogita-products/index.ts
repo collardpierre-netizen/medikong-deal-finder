@@ -210,6 +210,7 @@ async function tusCreate(bucket: string, objectName: string, totalSize: number):
     method: "POST",
     headers: {
       Authorization: `Bearer ${SERVICE_KEY}`,
+      apikey: SERVICE_KEY,
       "Tus-Resumable": "1.0.0",
       "Upload-Length": String(totalSize),
       "Upload-Metadata": meta,
@@ -230,6 +231,7 @@ async function tusPatch(uploadUrl: string, offset: number, body: Uint8Array): Pr
     method: "PATCH",
     headers: {
       Authorization: `Bearer ${SERVICE_KEY}`,
+      apikey: SERVICE_KEY,
       "Tus-Resumable": "1.0.0",
       "Upload-Offset": String(offset),
       "Content-Type": "application/offset+octet-stream",

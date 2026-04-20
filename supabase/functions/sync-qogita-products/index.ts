@@ -177,12 +177,90 @@ async function handleStart(sb: any, country: string): Promise<Response> {
   }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
 }
 
-// Stream HTTP → upload Storage en accumulant ~5 MB de buffer + compter les newlines
+// Stream HTTP Qogita → Supabase Storage via TUS resumable upload protocol.
+//
+// Pourquoi TUS plutôt que S3 multipart : Supabase Storage REST `upload()` exige
+// un Blob complet, et l'API S3 multipart impose AWS SigV4 strict (lourd à
+// implémenter en Edge). TUS accepte un simple Bearer token + uploads incrémentaux
+// par PATCH chunks, donc on garde un peak RAM = taille d'un chunk (~6 MB).
+//
+// Protocole TUS (https://tus.io/protocols/resumable-upload) :
+//   POST   /upload/resumable             → crée l'upload, renvoie Location URL
+//   PATCH  {Location} (Upload-Offset: N) → ajoute le chunk binaire à l'offset N
+//   HEAD   {Location}                    → check Upload-Offset
+//
+// Supabase Storage TUS endpoint : {SUPABASE_URL}/storage/v1/upload/resumable
+const TUS_CHUNK_SIZE = 6 * 1024 * 1024; // 6 MB par PATCH
+const TUS_ENDPOINT = `${SUPABASE_URL}/storage/v1/upload/resumable`;
+
+function b64(s: string): string {
+  return btoa(unescape(encodeURIComponent(s)));
+}
+
+async function tusCreate(bucket: string, objectName: string, totalSize: number): Promise<string> {
+  // Upload-Metadata: clé-valeur base64 séparés par des virgules
+  const meta = [
+    `bucketName ${b64(bucket)}`,
+    `objectName ${b64(objectName)}`,
+    `contentType ${b64("text/csv")}`,
+    `cacheControl ${b64("3600")}`,
+  ].join(",");
+
+  const res = await fetch(TUS_ENDPOINT, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${SERVICE_KEY}`,
+      apikey: SERVICE_KEY,
+      "Tus-Resumable": "1.0.0",
+      "Upload-Length": String(totalSize),
+      "Upload-Metadata": meta,
+      "x-upsert": "true",
+    },
+  });
+  if (!res.ok) {
+    const t = await res.text().catch(() => "");
+    throw new Error(`TUS create failed (${res.status}): ${t.slice(0, 300)}`);
+  }
+  const location = res.headers.get("Location");
+  if (!location) throw new Error("TUS create: no Location header");
+  return location;
+}
+
+async function tusPatch(uploadUrl: string, offset: number, body: Uint8Array): Promise<number> {
+  const res = await fetch(uploadUrl, {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${SERVICE_KEY}`,
+      apikey: SERVICE_KEY,
+      "Tus-Resumable": "1.0.0",
+      "Upload-Offset": String(offset),
+      "Content-Type": "application/offset+octet-stream",
+      "Content-Length": String(body.length),
+    },
+    body,
+  });
+  if (!res.ok) {
+    const t = await res.text().catch(() => "");
+    throw new Error(`TUS patch @${offset} failed (${res.status}): ${t.slice(0, 300)}`);
+  }
+  const newOffset = Number(res.headers.get("Upload-Offset") || "0");
+  return newOffset;
+}
+
+// Stream HTTP Qogita → TUS upload (peak RAM ≤ 1 chunk = 6 MB).
+// Problème : TUS exige Upload-Length à la création, mais la longueur du download
+// Qogita n'est pas toujours dans Content-Length. On lit donc le stream en deux
+// passes :
+//   Phase 1 : on streame tout en buffer disque (fichier temporaire dans /tmp)
+//             tout en comptant bytes + newlines.
+//   Phase 2 : on relit le /tmp et on uploade en TUS chunks de 6 MB.
+//
+// Edge runtime Deno permet l'écriture dans /tmp (volatile, ~512 MB dispo).
 async function streamDownloadToStorage(sb: any, country: string, vat: number, logId: string) {
   const { token, baseUrl } = await getToken(sb);
 
   await sb.from("sync_logs").update({
-    progress_message: `${country}: téléchargement Qogita (streaming)...`,
+    progress_message: `${country}: téléchargement Qogita (TUS streaming)...`,
   }).eq("id", logId);
 
   const res = await fetch(`${baseUrl}/variants/search/download/?country=${country}`, {
@@ -193,48 +271,63 @@ async function streamDownloadToStorage(sb: any, country: string, vat: number, lo
     throw new Error(`CSV download ${country}: ${res.status} ${errBody.slice(0, 300)}`);
   }
 
-  // On accumule les bytes en chunks puis on assemble en un Blob unique pour Storage
-  // (Storage SDK ne supporte pas vraiment l'upload streaming → on garde le buffer mais
-  //  on compte les newlines au vol pour éviter un second blob.text() de 220MB)
+  const csvPath = `qogita-products-${country}-${Date.now()}.csv`;
+  const tmpFile = `/tmp/qogita-${country}-${Date.now()}.csv`;
+
+  // ── Phase 1 : stream HTTP → fichier /tmp + compteurs ──
+  const file = await Deno.open(tmpFile, { create: true, write: true, truncate: true });
   const reader = res.body.getReader();
-  const collected: Uint8Array[] = [];
   let totalBytes = 0;
   let newlineCount = 0;
-
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    collected.push(value);
-    totalBytes += value.length;
-    // 0x0A = '\n'
-    for (let i = 0; i < value.length; i++) {
-      if (value[i] === 0x0A) newlineCount++;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      totalBytes += value.length;
+      for (let i = 0; i < value.length; i++) {
+        if (value[i] === 0x0A) newlineCount++;
+      }
+      // Write streaming → fichier (pas en RAM)
+      let written = 0;
+      while (written < value.length) {
+        written += await file.write(value.subarray(written));
+      }
     }
+  } finally {
+    file.close();
   }
 
-  // Concat en un seul Uint8Array (peak: ~105MB binaire — OK)
-  const merged = new Uint8Array(totalBytes);
-  let pos = 0;
-  for (const c of collected) { merged.set(c, pos); pos += c.length; }
-  collected.length = 0; // libère
-
-  const totalLines = Math.max(0, newlineCount - 1); // -1 pour header
-  const csvPath = `qogita-products-${country}-${Date.now()}.csv`;
-
   await sb.from("sync_logs").update({
-    progress_message: `${country}: upload Storage (${(totalBytes / 1024 / 1024).toFixed(1)} MB, ~${totalLines.toLocaleString()} lignes)...`,
+    progress_message: `${country}: ${(totalBytes / 1024 / 1024).toFixed(1)} MB téléchargés, upload TUS en cours...`,
   }).eq("id", logId);
 
-  const { error: uploadError } = await sb.storage.from("sync-cache").upload(
-    csvPath,
-    new Blob([merged], { type: "text/csv" }),
-    { contentType: "text/csv", upsert: true },
-  );
-  if (uploadError) throw new Error(`Storage upload failed: ${uploadError.message}`);
+  // ── Phase 2 : relire /tmp en chunks 6 MB → TUS PATCH ──
+  const uploadUrl = await tusCreate("sync-cache", csvPath, totalBytes);
+  const f2 = await Deno.open(tmpFile, { read: true });
+  const buf = new Uint8Array(TUS_CHUNK_SIZE);
+  let offset = 0;
+  try {
+    while (offset < totalBytes) {
+      const n = await f2.read(buf);
+      if (n === null || n === 0) break;
+      const chunk = n === TUS_CHUNK_SIZE ? buf : buf.subarray(0, n);
+      const newOffset = await tusPatch(uploadUrl, offset, chunk);
+      offset = newOffset;
+    }
+  } finally {
+    f2.close();
+    await Deno.remove(tmpFile).catch(() => {});
+  }
+
+  if (offset !== totalBytes) {
+    throw new Error(`TUS upload incomplete: ${offset}/${totalBytes}`);
+  }
+
+  const totalLines = Math.max(0, newlineCount - 1); // -1 pour header
 
   await sb.from("sync_logs").update({
     progress_total: totalLines,
-    progress_message: `${country}: ${totalLines.toLocaleString()} produits à traiter en streaming...`,
+    progress_message: `${country}: ${totalLines.toLocaleString()} produits à traiter (${(totalBytes / 1024 / 1024).toFixed(1)} MB uploadés via TUS)...`,
     chunk_state: {
       csv_path: csvPath,
       country,

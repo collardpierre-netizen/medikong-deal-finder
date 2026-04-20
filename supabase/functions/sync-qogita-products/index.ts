@@ -677,15 +677,20 @@ async function processBatch(
     .map((p) => { const { id, ...rest } = p; return rest; });
 
   if (existingProducts.length > 0) {
-    const { error } = await sb.from("products").upsert(existingProducts, { onConflict: "id", ignoreDuplicates: false });
-    if (error) throw new Error(`Products upsert failed (existing): ${error.message}`);
+    await withRetry("upsert existing products", async () => {
+      const { error } = await sb.from("products").upsert(existingProducts, { onConflict: "id", ignoreDuplicates: false });
+      if (error) throw new Error(`Products upsert failed (existing): ${error.message}`);
+    });
   }
   if (newProducts.length > 0) {
-    const { error } = await sb.from("products").upsert(newProducts, { onConflict: "qogita_qid", ignoreDuplicates: false });
-    if (error) throw new Error(`Products upsert failed (new): ${error.message}`);
+    await withRetry("upsert new products", async () => {
+      const { error } = await sb.from("products").upsert(newProducts, { onConflict: "qogita_qid", ignoreDuplicates: false });
+      if (error) throw new Error(`Products upsert failed (new): ${error.message}`);
+    });
   }
 
-  const { data: prods } = await sb.from("products").select("id, qogita_qid").in("qogita_qid", qids);
+  const { data: prods } = await withRetry("select products by qid (post)", () =>
+    sb.from("products").select("id, qogita_qid").in("qogita_qid", qids));
   const m = new Map((prods || []).map((p: any) => [p.qogita_qid, p.id]));
 
   const countryStats = csvData
@@ -698,9 +703,10 @@ async function processBatch(
       offer_count: 1, min_delivery_days: s.delivery > 0 ? s.delivery : null,
     }));
   if (countryStats.length > 0) {
-    await sb.from("product_country_stats").upsert(countryStats, {
-      onConflict: "product_id,country_code", ignoreDuplicates: false,
-    });
+    await withRetry("upsert product_country_stats", () =>
+      sb.from("product_country_stats").upsert(countryStats, {
+        onConflict: "product_id,country_code", ignoreDuplicates: false,
+      }));
   }
 
   const offers = csvData
@@ -716,10 +722,12 @@ async function processBatch(
       synced_at: new Date().toISOString(),
     }));
   if (offers.length > 0) {
-    const { error } = await sb.from("offers").upsert(offers, {
-      onConflict: "product_id,vendor_id,country_code", ignoreDuplicates: false,
+    await withRetry("upsert offers", async () => {
+      const { error } = await sb.from("offers").upsert(offers, {
+        onConflict: "product_id,vendor_id,country_code", ignoreDuplicates: false,
+      });
+      if (error) throw new Error(`Offer upsert failed: ${error.message}`);
     });
-    if (error) throw new Error(`Offer upsert failed: ${error.message}`);
   }
 
   return products.length;

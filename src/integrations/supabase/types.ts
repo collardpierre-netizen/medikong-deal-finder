@@ -4849,6 +4849,7 @@ export type Database = {
       }
       sync_logs: {
         Row: {
+          chunk_state: Json | null
           completed_at: string | null
           error_message: string | null
           id: string
@@ -4861,6 +4862,7 @@ export type Database = {
           sync_type: Database["public"]["Enums"]["sync_type_enum"]
         }
         Insert: {
+          chunk_state?: Json | null
           completed_at?: string | null
           error_message?: string | null
           id?: string
@@ -4873,6 +4875,7 @@ export type Database = {
           sync_type: Database["public"]["Enums"]["sync_type_enum"]
         }
         Update: {
+          chunk_state?: Json | null
           completed_at?: string | null
           error_message?: string | null
           id?: string

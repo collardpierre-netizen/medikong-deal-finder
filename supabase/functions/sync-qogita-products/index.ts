@@ -177,12 +177,111 @@ async function handleStart(sb: any, country: string): Promise<Response> {
   }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
 }
 
-// Stream HTTP → upload Storage en accumulant ~5 MB de buffer + compter les newlines
+// Stream HTTP → S3 multipart upload vers Supabase Storage (zero-buffer global)
+//
+// Stratégie : on lit le body Qogita par chunks ; on accumule un buffer de ~6 MB,
+// puis on uploade chaque part via le protocole S3 multipart (PUT signed URL).
+// Le pic mémoire reste ~6-7 MB (taille d'une part S3) au lieu de 105 MB.
+//
+// Supabase Storage expose une API S3 multipart compatible :
+//   POST   {endpoint}/{bucket}/{key}?uploads          → CreateMultipartUpload (XML)
+//   PUT    {endpoint}/{bucket}/{key}?partNumber=N&uploadId=ID  → UploadPart (renvoie ETag)
+//   POST   {endpoint}/{bucket}/{key}?uploadId=ID      → CompleteMultipartUpload (XML body)
+//
+// Auth : on utilise un AWS SigV4 minimal avec les credentials S3 dérivés
+// (Supabase accepte aussi un Bearer SERVICE_ROLE_KEY sur le namespace `/storage/v1/s3/`).
+const S3_PART_SIZE = 6 * 1024 * 1024; // 6 MB (min S3 = 5 MB sauf dernière part)
+const S3_ENDPOINT = `${SUPABASE_URL}/storage/v1/s3`;
+
+function xmlExtract(xml: string, tag: string): string | null {
+  const m = xml.match(new RegExp(`<${tag}>([^<]+)</${tag}>`));
+  return m ? m[1] : null;
+}
+
+async function s3InitiateMultipart(bucket: string, key: string): Promise<string> {
+  const url = `${S3_ENDPOINT}/${bucket}/${encodeURIComponent(key)}?uploads`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${SERVICE_KEY}`,
+      "x-amz-content-sha256": "UNSIGNED-PAYLOAD",
+      "Content-Type": "text/csv",
+    },
+  });
+  if (!res.ok) {
+    const t = await res.text().catch(() => "");
+    throw new Error(`S3 initiate failed (${res.status}): ${t.slice(0, 300)}`);
+  }
+  const xml = await res.text();
+  const uploadId = xmlExtract(xml, "UploadId");
+  if (!uploadId) throw new Error(`S3 initiate: no UploadId in response: ${xml.slice(0, 300)}`);
+  return uploadId;
+}
+
+async function s3UploadPart(
+  bucket: string, key: string, uploadId: string,
+  partNumber: number, body: Uint8Array,
+): Promise<string> {
+  const url = `${S3_ENDPOINT}/${bucket}/${encodeURIComponent(key)}?partNumber=${partNumber}&uploadId=${uploadId}`;
+  const res = await fetch(url, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${SERVICE_KEY}`,
+      "x-amz-content-sha256": "UNSIGNED-PAYLOAD",
+      "Content-Length": String(body.length),
+    },
+    body,
+  });
+  if (!res.ok) {
+    const t = await res.text().catch(() => "");
+    throw new Error(`S3 part ${partNumber} failed (${res.status}): ${t.slice(0, 300)}`);
+  }
+  const etag = res.headers.get("ETag") || res.headers.get("etag");
+  if (!etag) throw new Error(`S3 part ${partNumber}: no ETag`);
+  return etag.replaceAll('"', "");
+}
+
+async function s3CompleteMultipart(
+  bucket: string, key: string, uploadId: string,
+  parts: Array<{ partNumber: number; etag: string }>,
+): Promise<void> {
+  const partsXml = parts
+    .map(p => `<Part><PartNumber>${p.partNumber}</PartNumber><ETag>"${p.etag}"</ETag></Part>`)
+    .join("");
+  const body = `<?xml version="1.0" encoding="UTF-8"?><CompleteMultipartUpload>${partsXml}</CompleteMultipartUpload>`;
+  const url = `${S3_ENDPOINT}/${bucket}/${encodeURIComponent(key)}?uploadId=${uploadId}`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${SERVICE_KEY}`,
+      "x-amz-content-sha256": "UNSIGNED-PAYLOAD",
+      "Content-Type": "application/xml",
+    },
+    body,
+  });
+  if (!res.ok) {
+    const t = await res.text().catch(() => "");
+    throw new Error(`S3 complete failed (${res.status}): ${t.slice(0, 300)}`);
+  }
+}
+
+async function s3AbortMultipart(bucket: string, key: string, uploadId: string): Promise<void> {
+  const url = `${S3_ENDPOINT}/${bucket}/${encodeURIComponent(key)}?uploadId=${uploadId}`;
+  await fetch(url, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${SERVICE_KEY}`,
+      "x-amz-content-sha256": "UNSIGNED-PAYLOAD",
+    },
+  }).catch(() => {});
+}
+
+// Stream HTTP Qogita → S3 multipart upload (peak RAM ≤ 1 part = 6 MB)
 async function streamDownloadToStorage(sb: any, country: string, vat: number, logId: string) {
   const { token, baseUrl } = await getToken(sb);
 
   await sb.from("sync_logs").update({
-    progress_message: `${country}: téléchargement Qogita (streaming)...`,
+    progress_message: `${country}: téléchargement Qogita (S3 multipart streaming)...`,
   }).eq("id", logId);
 
   const res = await fetch(`${baseUrl}/variants/search/download/?country=${country}`, {
@@ -193,48 +292,72 @@ async function streamDownloadToStorage(sb: any, country: string, vat: number, lo
     throw new Error(`CSV download ${country}: ${res.status} ${errBody.slice(0, 300)}`);
   }
 
-  // On accumule les bytes en chunks puis on assemble en un Blob unique pour Storage
-  // (Storage SDK ne supporte pas vraiment l'upload streaming → on garde le buffer mais
-  //  on compte les newlines au vol pour éviter un second blob.text() de 220MB)
+  const csvPath = `qogita-products-${country}-${Date.now()}.csv`;
+  const uploadId = await s3InitiateMultipart("sync-cache", csvPath);
+
   const reader = res.body.getReader();
-  const collected: Uint8Array[] = [];
+  let buffer = new Uint8Array(S3_PART_SIZE);
+  let bufferLen = 0;
+  let partNumber = 1;
   let totalBytes = 0;
   let newlineCount = 0;
+  const parts: Array<{ partNumber: number; etag: string }> = [];
 
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    collected.push(value);
-    totalBytes += value.length;
-    // 0x0A = '\n'
-    for (let i = 0; i < value.length; i++) {
-      if (value[i] === 0x0A) newlineCount++;
+  const flushPart = async (final: boolean) => {
+    if (bufferLen === 0 && !final) return;
+    if (bufferLen === 0 && final && partNumber === 1) {
+      // Empty file edge case — push 1 empty part
+      const etag = await s3UploadPart("sync-cache", csvPath, uploadId, 1, new Uint8Array(0));
+      parts.push({ partNumber: 1, etag });
+      return;
     }
+    if (bufferLen === 0) return;
+    const slice = buffer.subarray(0, bufferLen);
+    const etag = await s3UploadPart("sync-cache", csvPath, uploadId, partNumber, slice);
+    parts.push({ partNumber, etag });
+    partNumber++;
+    bufferLen = 0;
+  };
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      totalBytes += value.length;
+      // Compte newlines à la volée (0x0A)
+      for (let i = 0; i < value.length; i++) {
+        if (value[i] === 0x0A) newlineCount++;
+      }
+
+      // Append to buffer, flush per S3_PART_SIZE
+      let srcPos = 0;
+      while (srcPos < value.length) {
+        const space = S3_PART_SIZE - bufferLen;
+        const take = Math.min(space, value.length - srcPos);
+        buffer.set(value.subarray(srcPos, srcPos + take), bufferLen);
+        bufferLen += take;
+        srcPos += take;
+        if (bufferLen === S3_PART_SIZE) {
+          await flushPart(false);
+        }
+      }
+    }
+    // Flush dernier morceau (peut être < 5 MB, c'est autorisé pour la dernière part)
+    await flushPart(true);
+    await s3CompleteMultipart("sync-cache", csvPath, uploadId, parts);
+  } catch (e) {
+    await s3AbortMultipart("sync-cache", csvPath, uploadId);
+    throw e;
   }
 
-  // Concat en un seul Uint8Array (peak: ~105MB binaire — OK)
-  const merged = new Uint8Array(totalBytes);
-  let pos = 0;
-  for (const c of collected) { merged.set(c, pos); pos += c.length; }
-  collected.length = 0; // libère
+  // Libère le buffer
+  buffer = new Uint8Array(0);
 
   const totalLines = Math.max(0, newlineCount - 1); // -1 pour header
-  const csvPath = `qogita-products-${country}-${Date.now()}.csv`;
-
-  await sb.from("sync_logs").update({
-    progress_message: `${country}: upload Storage (${(totalBytes / 1024 / 1024).toFixed(1)} MB, ~${totalLines.toLocaleString()} lignes)...`,
-  }).eq("id", logId);
-
-  const { error: uploadError } = await sb.storage.from("sync-cache").upload(
-    csvPath,
-    new Blob([merged], { type: "text/csv" }),
-    { contentType: "text/csv", upsert: true },
-  );
-  if (uploadError) throw new Error(`Storage upload failed: ${uploadError.message}`);
 
   await sb.from("sync_logs").update({
     progress_total: totalLines,
-    progress_message: `${country}: ${totalLines.toLocaleString()} produits à traiter en streaming...`,
+    progress_message: `${country}: ${totalLines.toLocaleString()} produits à traiter (${(totalBytes / 1024 / 1024).toFixed(1)} MB uploadés en ${parts.length} parts)...`,
     chunk_state: {
       csv_path: csvPath,
       country,

@@ -16,11 +16,37 @@ const corsHeaders = {
 // Taille de la fenêtre lue depuis Storage par chunk (~3MB ≈ 1.5k lignes Qogita)
 // Petit pour rester sous la limite CPU 150s d'Edge (chaque round-trip DB coûte du CPU)
 const CHUNK_BYTES = 3 * 1024 * 1024;
-// Batch d'upsert Postgres — 500 = compromis entre round-trips et limite paramètres PG (~32k)
-const UPSERT_BATCH = 500;
+// Batch d'upsert Postgres — 150 pour éviter que les SELECT IN(...) génèrent des URLs
+// trop longues pour le proxy PostgREST (fix principal des "error sending request" transients).
+const UPSERT_BATCH = 150;
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+// Retry x3 avec backoff exponentiel (250ms, 750ms, 2.25s) — filet de sécurité
+// pour les vraies erreurs transientes (timeouts réseau, 502 sporadiques).
+async function withRetry<T>(
+  label: string,
+  fn: () => Promise<T>,
+  attempts = 3,
+): Promise<T> {
+  let lastErr: any;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await fn();
+    } catch (err: any) {
+      lastErr = err;
+      const msg = err?.message || String(err);
+      // Ne retry que sur erreurs transientes réseau/proxy
+      const transient = /error sending request|fetch failed|network|timeout|502|503|504|ECONNRESET|socket hang up/i.test(msg);
+      if (!transient || i === attempts - 1) throw err;
+      const delay = 250 * Math.pow(3, i);
+      console.warn(`[retry ${label}] attempt ${i + 1}/${attempts} failed: ${msg} — waiting ${delay}ms`);
+      await new Promise((r) => setTimeout(r, delay));
+    }
+  }
+  throw lastErr;
+}
 
 // ───────────────────────── Helpers ─────────────────────────
 
@@ -599,10 +625,12 @@ async function processBatch(
 
   const [existingByQidRes, existingByGtinRes] = await Promise.all([
     qids.length > 0
-      ? sb.from("products").select("id, qogita_qid, gtin, slug").in("qogita_qid", qids)
+      ? withRetry("select products by qid", () =>
+          sb.from("products").select("id, qogita_qid, gtin, slug").in("qogita_qid", qids))
       : Promise.resolve({ data: [], error: null }),
     gtins.length > 0
-      ? sb.from("products").select("id, qogita_qid, gtin, slug").in("gtin", gtins)
+      ? withRetry("select products by gtin", () =>
+          sb.from("products").select("id, qogita_qid, gtin, slug").in("gtin", gtins))
       : Promise.resolve({ data: [], error: null }),
   ]);
 
@@ -649,15 +677,20 @@ async function processBatch(
     .map((p) => { const { id, ...rest } = p; return rest; });
 
   if (existingProducts.length > 0) {
-    const { error } = await sb.from("products").upsert(existingProducts, { onConflict: "id", ignoreDuplicates: false });
-    if (error) throw new Error(`Products upsert failed (existing): ${error.message}`);
+    await withRetry("upsert existing products", async () => {
+      const { error } = await sb.from("products").upsert(existingProducts, { onConflict: "id", ignoreDuplicates: false });
+      if (error) throw new Error(`Products upsert failed (existing): ${error.message}`);
+    });
   }
   if (newProducts.length > 0) {
-    const { error } = await sb.from("products").upsert(newProducts, { onConflict: "qogita_qid", ignoreDuplicates: false });
-    if (error) throw new Error(`Products upsert failed (new): ${error.message}`);
+    await withRetry("upsert new products", async () => {
+      const { error } = await sb.from("products").upsert(newProducts, { onConflict: "qogita_qid", ignoreDuplicates: false });
+      if (error) throw new Error(`Products upsert failed (new): ${error.message}`);
+    });
   }
 
-  const { data: prods } = await sb.from("products").select("id, qogita_qid").in("qogita_qid", qids);
+  const { data: prods } = await withRetry("select products by qid (post)", () =>
+    sb.from("products").select("id, qogita_qid").in("qogita_qid", qids));
   const m = new Map((prods || []).map((p: any) => [p.qogita_qid, p.id]));
 
   const countryStats = csvData
@@ -670,9 +703,10 @@ async function processBatch(
       offer_count: 1, min_delivery_days: s.delivery > 0 ? s.delivery : null,
     }));
   if (countryStats.length > 0) {
-    await sb.from("product_country_stats").upsert(countryStats, {
-      onConflict: "product_id,country_code", ignoreDuplicates: false,
-    });
+    await withRetry("upsert product_country_stats", () =>
+      sb.from("product_country_stats").upsert(countryStats, {
+        onConflict: "product_id,country_code", ignoreDuplicates: false,
+      }));
   }
 
   const offers = csvData
@@ -688,10 +722,12 @@ async function processBatch(
       synced_at: new Date().toISOString(),
     }));
   if (offers.length > 0) {
-    const { error } = await sb.from("offers").upsert(offers, {
-      onConflict: "product_id,vendor_id,country_code", ignoreDuplicates: false,
+    await withRetry("upsert offers", async () => {
+      const { error } = await sb.from("offers").upsert(offers, {
+        onConflict: "product_id,vendor_id,country_code", ignoreDuplicates: false,
+      });
+      if (error) throw new Error(`Offer upsert failed: ${error.message}`);
     });
-    if (error) throw new Error(`Offer upsert failed: ${error.message}`);
   }
 
   return products.length;

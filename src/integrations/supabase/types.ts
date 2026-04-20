@@ -1559,6 +1559,57 @@ export type Database = {
           },
         ]
       }
+      offer_price_tiers_shadow: {
+        Row: {
+          cohort: string
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          margin_amount: number | null
+          mov_currency: string | null
+          mov_progress: number | null
+          mov_threshold: number
+          offer_id: string
+          price_excl_vat: number
+          price_incl_vat: number
+          qogita_payload_sample: Json | null
+          qogita_unit_price: number
+          tier_index: number
+        }
+        Insert: {
+          cohort: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          margin_amount?: number | null
+          mov_currency?: string | null
+          mov_progress?: number | null
+          mov_threshold: number
+          offer_id: string
+          price_excl_vat: number
+          price_incl_vat: number
+          qogita_payload_sample?: Json | null
+          qogita_unit_price: number
+          tier_index: number
+        }
+        Update: {
+          cohort?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          margin_amount?: number | null
+          mov_currency?: string | null
+          mov_progress?: number | null
+          mov_threshold?: number
+          offer_id?: string
+          price_excl_vat?: number
+          price_incl_vat?: number
+          qogita_payload_sample?: Json | null
+          qogita_unit_price?: number
+          tier_index?: number
+        }
+        Relationships: []
+      }
       offer_profile_rules: {
         Row: {
           country_code: string | null

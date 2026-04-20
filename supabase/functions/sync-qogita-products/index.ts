@@ -13,10 +13,11 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Taille de la fenêtre lue depuis Storage par chunk (~12MB ≈ 5-6k lignes Qogita)
-const CHUNK_BYTES = 12 * 1024 * 1024;
-// Batch d'upsert Postgres
-const UPSERT_BATCH = 200;
+// Taille de la fenêtre lue depuis Storage par chunk (~3MB ≈ 1.5k lignes Qogita)
+// Petit pour rester sous la limite CPU 150s d'Edge (chaque round-trip DB coûte du CPU)
+const CHUNK_BYTES = 3 * 1024 * 1024;
+// Batch d'upsert Postgres — 500 = compromis entre round-trips et limite paramètres PG (~32k)
+const UPSERT_BATCH = 500;
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;

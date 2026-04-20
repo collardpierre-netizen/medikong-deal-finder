@@ -16,8 +16,8 @@ const corsHeaders = {
 // Taille de la fenêtre lue depuis Storage par chunk (~3MB ≈ 1.5k lignes Qogita)
 // Petit pour rester sous la limite CPU 150s d'Edge (chaque round-trip DB coûte du CPU)
 const CHUNK_BYTES = 3 * 1024 * 1024;
-// Batch d'upsert Postgres — gros batch = moins de round-trips = moins de CPU Edge
-const UPSERT_BATCH = 1500;
+// Batch d'upsert Postgres — 500 = compromis entre round-trips et limite paramètres PG (~32k)
+const UPSERT_BATCH = 500;
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;

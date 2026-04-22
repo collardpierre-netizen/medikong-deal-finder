@@ -164,10 +164,10 @@ export default function VendorKycStepper({ vendor }: { vendor: any }) {
   };
 
   const statusIcon = (status: string | undefined) => {
-    if (!status || status === "pending") return <Clock size={14} style={{ color: "#8B95A5" }} />;
-    if (status === "submitted") return <Clock size={14} style={{ color: "#2563EB" }} />;
-    if (status === "approved") return <CheckCircle2 size={14} style={{ color: "#059669" }} />;
-    if (status === "rejected") return <AlertTriangle size={14} style={{ color: "#DC2626" }} />;
+    if (!status || status === "pending") return <Clock size={14} className="text-mk-ter" />;
+    if (status === "submitted") return <Clock size={14} className="text-primary" />;
+    if (status === "approved") return <CheckCircle2 size={14} className="text-mk-green" />;
+    if (status === "rejected") return <AlertTriangle size={14} className="text-destructive" />;
     return null;
   };
 
@@ -179,11 +179,18 @@ export default function VendorKycStepper({ vendor }: { vendor: any }) {
     return status;
   };
 
+  const statusTextColor = (status: string | undefined) => {
+    if (status === "approved") return "text-mk-green";
+    if (status === "submitted") return "text-primary";
+    if (status === "rejected") return "text-destructive";
+    return "text-mk-ter";
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 font-sans">
       {/* Stepper */}
-      <div className="p-5 rounded-xl" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
-        <h2 className="text-[15px] font-bold mb-4" style={{ color: "#1D2530" }}>Progression de votre dossier</h2>
+      <div className="p-5 rounded-xl bg-card border border-mk-line">
+        <h2 className="text-[15px] font-bold mb-4 text-mk-text">Progression de votre dossier</h2>
         <div className="flex items-center gap-0">
           {STEP_CONFIG.map((step, i) => {
             const done = stepCompleted(step.key);
@@ -192,19 +199,27 @@ export default function VendorKycStepper({ vendor }: { vendor: any }) {
             return (
               <div key={step.num} className="flex items-center flex-1">
                 <div className="flex flex-col items-center flex-1">
-                  <div className="w-9 h-9 rounded-full flex items-center justify-center mb-1.5"
-                    style={{
-                      backgroundColor: done ? "#ECFDF5" : active ? "#1B5BDA" : "#F1F5F9",
-                      color: done ? "#059669" : active ? "#fff" : "#8B95A5",
-                    }}>
+                  <div
+                    className={`w-9 h-9 rounded-full flex items-center justify-center mb-1.5 ${
+                      done
+                        ? "bg-mk-green/10 text-mk-green"
+                        : active
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-mk-ter"
+                    }`}
+                  >
                     {done ? <CheckCircle2 size={18} /> : <Icon size={16} />}
                   </div>
-                  <span className="text-[11px] font-semibold text-center" style={{ color: active ? "#1B5BDA" : done ? "#059669" : "#8B95A5" }}>
+                  <span
+                    className={`text-[11px] font-semibold text-center ${
+                      active ? "text-primary" : done ? "text-mk-green" : "text-mk-ter"
+                    }`}
+                  >
                     {step.label}
                   </span>
                 </div>
                 {i < STEP_CONFIG.length - 1 && (
-                  <div className="h-0.5 w-full mx-1 rounded" style={{ backgroundColor: done ? "#059669" : "#E2E8F0" }} />
+                  <div className={`h-0.5 w-full mx-1 rounded ${done ? "bg-mk-green" : "bg-mk-line"}`} />
                 )}
               </div>
             );
@@ -214,11 +229,11 @@ export default function VendorKycStepper({ vendor }: { vendor: any }) {
 
       {/* Status message */}
       {validationStatus === "pending_review" && (
-        <div className="flex items-start gap-3 p-4 rounded-xl" style={{ backgroundColor: "#FFFBEB", border: "1px solid #FDE68A" }}>
-          <AlertTriangle size={18} style={{ color: "#D97706" }} className="mt-0.5 shrink-0" />
+        <div className="flex items-start gap-3 p-4 rounded-xl bg-mk-mov-bg border border-mk-mov-border">
+          <AlertTriangle size={18} className="text-mk-amber mt-0.5 shrink-0" />
           <div>
-            <p className="text-[13px] font-bold" style={{ color: "#92400E" }}>Dossier en attente</p>
-            <p className="text-[12px] mt-0.5" style={{ color: "#A16207" }}>
+            <p className="text-[13px] font-bold text-mk-text">Dossier en attente</p>
+            <p className="text-[12px] mt-0.5 text-mk-sec">
               Complétez les critères ci-dessous pour soumettre votre dossier à validation. Une fois tous les documents envoyés, notre équipe examinera votre candidature.
             </p>
           </div>
@@ -226,11 +241,11 @@ export default function VendorKycStepper({ vendor }: { vendor: any }) {
       )}
 
       {validationStatus === "approved" && (
-        <div className="flex items-start gap-3 p-4 rounded-xl" style={{ backgroundColor: "#ECFDF5", border: "1px solid #A7F3D0" }}>
-          <CheckCircle2 size={18} style={{ color: "#059669" }} className="mt-0.5 shrink-0" />
+        <div className="flex items-start gap-3 p-4 rounded-xl bg-mk-deal border border-mk-green/30">
+          <CheckCircle2 size={18} className="text-mk-green mt-0.5 shrink-0" />
           <div>
-            <p className="text-[13px] font-bold" style={{ color: "#065F46" }}>Compte vérifié et activé</p>
-            <p className="text-[12px] mt-0.5" style={{ color: "#047857" }}>
+            <p className="text-[13px] font-bold text-mk-text">Compte vérifié et activé</p>
+            <p className="text-[12px] mt-0.5 text-mk-sec">
               Votre dossier KYC a été approuvé. Vous pouvez maintenant gérer vos offres et commencer à vendre.
             </p>
           </div>
@@ -239,16 +254,16 @@ export default function VendorKycStepper({ vendor }: { vendor: any }) {
 
       {/* Criteria list */}
       {currentStep < 5 && criteria.length > 0 && (
-        <div className="rounded-xl overflow-hidden" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
-          <div className="px-5 py-3 border-b" style={{ borderColor: "#E2E8F0", backgroundColor: "#F8FAFC" }}>
-            <h3 className="text-[13px] font-bold" style={{ color: "#1D2530" }}>
+        <div className="rounded-xl overflow-hidden bg-card border border-mk-line">
+          <div className="px-5 py-3 border-b border-mk-line bg-mk-alt">
+            <h3 className="text-[13px] font-bold text-mk-text">
               Critères KYC — {businessType.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase())}
             </h3>
-            <p className="text-[11px] mt-0.5" style={{ color: "#8B95A5" }}>
+            <p className="text-[11px] mt-0.5 text-mk-ter">
               {submissions.filter(s => s.status === "submitted" || s.status === "approved").length} / {criteria.length} complétés
             </p>
           </div>
-          <div className="divide-y" style={{ borderColor: "#F1F5F9" }}>
+          <div className="divide-y divide-mk-line">
             {criteria.map((c) => {
               const sub = getSubmission(c.id);
               const status = sub?.status;
@@ -257,28 +272,25 @@ export default function VendorKycStepper({ vendor }: { vendor: any }) {
                   {statusIcon(status)}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="text-[13px] font-semibold" style={{ color: "#1D2530" }}>{c.label}</span>
+                      <span className="text-[13px] font-semibold text-mk-text">{c.label}</span>
                       {c.is_required && (
-                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded" style={{ backgroundColor: "#FEF2F2", color: "#DC2626" }}>Requis</span>
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-destructive/10 text-destructive">Requis</span>
                       )}
                     </div>
-                    {c.description && <p className="text-[11px] mt-0.5" style={{ color: "#8B95A5" }}>{c.description}</p>}
+                    {c.description && <p className="text-[11px] mt-0.5 text-mk-ter">{c.description}</p>}
                     {sub?.admin_notes && status === "rejected" && (
-                      <p className="text-[11px] mt-1 px-2 py-1 rounded" style={{ backgroundColor: "#FEF2F2", color: "#DC2626" }}>
+                      <p className="text-[11px] mt-1 px-2 py-1 rounded bg-destructive/10 text-destructive">
                         Motif : {sub.admin_notes}
                       </p>
                     )}
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-[11px] font-medium" style={{
-                      color: status === "approved" ? "#059669" : status === "submitted" ? "#2563EB" : status === "rejected" ? "#DC2626" : "#8B95A5"
-                    }}>
+                    <span className={`text-[11px] font-medium ${statusTextColor(status)}`}>
                       {statusLabel(status)}
                     </span>
                     {(!status || status === "pending" || status === "rejected") && (
                       c.requires_document ? (
-                        <label className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-bold cursor-pointer transition-colors hover:opacity-90"
-                          style={{ backgroundColor: "#EEF2FF", color: "#1B5BDA" }}>
+                        <label className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-bold cursor-pointer transition-colors hover:opacity-90 bg-primary/10 text-primary">
                           {uploading === c.id ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />}
                           Envoyer
                           <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
@@ -286,8 +298,7 @@ export default function VendorKycStepper({ vendor }: { vendor: any }) {
                         </label>
                       ) : (
                         <button onClick={() => markComplete(c.id)}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-bold transition-colors hover:opacity-90"
-                          style={{ backgroundColor: "#ECFDF5", color: "#059669" }}>
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-bold transition-colors hover:opacity-90 bg-mk-green/10 text-mk-green">
                           <CheckCircle2 size={12} /> Confirmer
                         </button>
                       )
@@ -302,13 +313,13 @@ export default function VendorKycStepper({ vendor }: { vendor: any }) {
 
       {/* Commercial settings step */}
       {currentStep < 6 && (
-        <div className="rounded-xl overflow-hidden" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
-          <div className="px-5 py-3 border-b" style={{ borderColor: "#E2E8F0", backgroundColor: "#F8FAFC" }}>
-            <h3 className="text-[13px] font-bold flex items-center gap-2" style={{ color: "#1D2530" }}>
-              <Settings2 size={14} style={{ color: "#1B5BDA" }} />
+        <div className="rounded-xl overflow-hidden bg-card border border-mk-line">
+          <div className="px-5 py-3 border-b border-mk-line bg-mk-alt">
+            <h3 className="text-[13px] font-bold flex items-center gap-2 text-mk-text">
+              <Settings2 size={14} className="text-primary" />
               Paramètres commerciaux
             </h3>
-            <p className="text-[11px] mt-0.5" style={{ color: "#8B95A5" }}>
+            <p className="text-[11px] mt-0.5 text-mk-ter">
               Configurez vos pays de vente, clients cibles, conditions d'expédition et retours
             </p>
           </div>

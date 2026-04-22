@@ -23,6 +23,7 @@ import {
   Mail,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { LucideIcon } from "lucide-react";
 
 type FaqItem = {
   id: string;
@@ -34,7 +35,7 @@ type FaqItem = {
 type FaqCategory = {
   id: string;
   label: string;
-  icon: React.ComponentType<{ size?: number; className?: string }>;
+  icon: LucideIcon;
   important?: boolean;
   intro?: string;
   items: FaqItem[];

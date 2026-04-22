@@ -402,12 +402,23 @@ Deno.serve(async (req) => {
     );
 
     // 7) Upload bucket privé (nom isolé par vendor → RLS conforme).
+    //    contentType + taille max verrouillés via les constantes partagées.
+    if (pdfBytes.byteLength > CONTRACT_PDF_MAX_BYTES) {
+      logEvent("error", "upload_pdf", "pdf too large", {
+        sizeBytes: pdfBytes.byteLength,
+        maxBytes: CONTRACT_PDF_MAX_BYTES,
+      });
+      return jsonResponse(500, { error: "pdf_too_large" });
+    }
     const path = `${body.vendorId}/${CONTRACT_TYPE}-${CONTRACT_VERSION}-${signedAt.getTime()}.pdf`;
     try {
       await measure("upload_pdf", { path, sizeBytes: pdfBytes.byteLength }, async () => {
         const { error } = await adminClient.storage
           .from(SELLER_CONTRACTS_BUCKET)
-          .upload(path, pdfBytes, { contentType: "application/pdf", upsert: false });
+          .upload(path, pdfBytes, {
+            contentType: CONTRACT_PDF_CONTENT_TYPE,
+            upsert: false,
+          });
         if (error) throw error;
       });
     } catch (e) {

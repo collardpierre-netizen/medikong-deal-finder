@@ -10,6 +10,8 @@ import {
   Loader2,
   AlertCircle,
   RefreshCw,
+  GitCompare,
+  CheckCircle2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CONTRACT_VERSION } from "@/lib/contract/mandat-facturation-template";
@@ -17,6 +19,7 @@ import {
   getContractSignedUrl,
   CONTRACT_SIGNED_URL_TTL_SECONDS,
 } from "@/lib/contract/contract-storage";
+import { compareContractVersions } from "@/lib/contract/contract-changelog";
 import { toast } from "sonner";
 
 export type VatComplianceStatus = "unsigned" | "in_progress" | "signed" | "outdated";
@@ -193,6 +196,40 @@ export function VatComplianceBanner({
               )}
             </p>
           )}
+
+          {/* Comparaison de version : version signée vs. version en vigueur */}
+          {(status === "signed" || status === "outdated") && signedVersion && (() => {
+            const cmp = compareContractVersions(signedVersion, CONTRACT_VERSION);
+            const upToDate = cmp >= 0;
+            return (
+              <p className="text-xs mt-1.5 flex flex-wrap items-center gap-1.5">
+                {upToDate ? (
+                  <CheckCircle2 className="w-3 h-3 text-mk-green flex-shrink-0" />
+                ) : (
+                  <GitCompare className="w-3 h-3 text-mk-amber flex-shrink-0" />
+                )}
+                <span className="text-muted-foreground">
+                  Version signée{" "}
+                  <strong className="text-foreground">{signedVersion}</strong> · Version en vigueur{" "}
+                  <strong className="text-foreground">{CONTRACT_VERSION}</strong>
+                </span>
+                {upToDate ? (
+                  <span className="text-mk-green font-medium">— à jour</span>
+                ) : (
+                  <>
+                    <span className="text-mk-amber font-medium">— mise à jour disponible</span>
+                    <Link
+                      to={`/vendor/contract/changelog?from=${encodeURIComponent(signedVersion)}`}
+                      className="text-primary hover:underline font-medium inline-flex items-center gap-0.5"
+                    >
+                      Voir ce qui a changé
+                      <ArrowRight className="w-3 h-3" />
+                    </Link>
+                  </>
+                )}
+              </p>
+            );
+          })()}
 
           {/* Inline error when signed PDF is unavailable */}
           {showPdfError && (

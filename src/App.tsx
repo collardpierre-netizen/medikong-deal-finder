@@ -169,6 +169,7 @@ const VendorNewShipment = lazyWithRetry(() => import("./pages/vendor/VendorNewSh
 const VendorShipments = lazyWithRetry(() => import("./pages/vendor/VendorShipments"), "VendorShipments");
 const VendorShipmentDetail = lazyWithRetry(() => import("./pages/vendor/VendorShipmentDetail"), "VendorShipmentDetail");
 const VendorBilling = lazyWithRetry(() => import("./pages/vendor/VendorBilling"), "VendorBilling");
+const VendorContractPage = lazyWithRetry(() => import("./pages/vendor/VendorContractPage"), "VendorContractPage");
 
 // ReStock pages
 const RestockSiteLayout = lazyWithRetry(() => import("./components/restock/RestockSiteLayout"), "RestockSiteLayout");
@@ -380,6 +381,7 @@ const App = () => (
               <Route path="shipments/new" element={<LP><VendorNewShipment /></LP>} />
               <Route path="shipments/:id" element={<LP><VendorShipmentDetail /></LP>} />
               <Route path="billing" element={<LP><VendorBilling /></LP>} />
+              <Route path="contract" element={<LP><VendorContractPage /></LP>} />
             </Route>
 
             {/* ReStock — all routes under main site layout with sub-nav */}

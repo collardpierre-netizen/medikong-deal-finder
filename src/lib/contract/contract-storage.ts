@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { contractLogger } from "@/lib/contract/contract-logger";
 
 /**
  * Bucket privé des conventions vendeur. RLS :
@@ -24,13 +25,26 @@ export async function getContractSignedUrl(
   ttlSeconds: number = CONTRACT_SIGNED_URL_TTL_SECONDS
 ): Promise<string | null> {
   if (!storagePath) return null;
+  const start = performance.now();
   const { data, error } = await supabase.storage
     .from(SELLER_CONTRACTS_BUCKET)
     .createSignedUrl(storagePath, ttlSeconds, { download: true });
   if (error) {
-    console.warn("contract signed url error:", error.message);
+    contractLogger.error({
+      stage: "sign_url",
+      message: "createSignedUrl failed",
+      durationMs: Math.round(performance.now() - start),
+      context: { storagePath, ttlSeconds },
+      error,
+    });
     return null;
   }
+  contractLogger.debug({
+    stage: "sign_url",
+    message: "createSignedUrl ok",
+    durationMs: Math.round(performance.now() - start),
+    context: { storagePath, ttlSeconds },
+  });
   return data?.signedUrl ?? null;
 }
 
@@ -40,9 +54,28 @@ export async function getContractSignedUrl(
  * que les anciens liens ne fuitent pas.
  */
 export async function openContractPdf(storagePath: string | null | undefined): Promise<boolean> {
-  if (!storagePath) return false;
+  if (!storagePath) {
+    contractLogger.warn({
+      stage: "download_signed_pdf",
+      message: "openContractPdf called without storagePath",
+    });
+    return false;
+  }
   const url = await getContractSignedUrl(storagePath);
-  if (!url) return false;
+  if (!url) {
+    contractLogger.error({
+      stage: "download_signed_pdf",
+      message: "openContractPdf: no URL returned",
+      context: { storagePath },
+    });
+    return false;
+  }
   window.open(url, "_blank", "noopener,noreferrer");
+  contractLogger.info({
+    stage: "download_signed_pdf",
+    message: "openContractPdf opened new tab",
+    context: { storagePath },
+  });
   return true;
 }
+

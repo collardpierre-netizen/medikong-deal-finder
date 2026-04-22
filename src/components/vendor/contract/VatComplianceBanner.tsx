@@ -24,6 +24,39 @@ import { toast } from "sonner";
 
 export type VatComplianceStatus = "unsigned" | "in_progress" | "signed" | "outdated";
 
+/**
+ * Action analytics keys tracked from the VAT compliance banner.
+ * - `open_document`     → CTA principal "Accéder au document" (mode normal)
+ * - `view_document`     → CTA "Consulter le document" (mode lecture seule ou fallback)
+ * - `regenerate_document` → CTA "Accéder au document pour le re-générer" (PDF indisponible)
+ * - `download_signed_pdf` → Téléchargement du PDF signé
+ */
+type ContractBannerAction =
+  | "open_document"
+  | "view_document"
+  | "regenerate_document"
+  | "download_signed_pdf";
+
+/**
+ * Pousse un événement analytics dans `window.dataLayer` (GTM) pour suivre la
+ * progression de signature du mandat de facturation depuis le bandeau.
+ * Best-effort : silencieux en cas d'erreur (e.g. dataLayer non initialisé en SSR/test).
+ */
+function trackBannerAction(action: ContractBannerAction, status: VatComplianceStatus, extra?: Record<string, unknown>) {
+  try {
+    const w = window as unknown as { dataLayer?: Record<string, unknown>[] };
+    w.dataLayer = w.dataLayer || [];
+    w.dataLayer.push({
+      event: "vendor_contract_banner_action",
+      action,
+      contract_status: status,
+      ...extra,
+    });
+  } catch {
+    /* noop */
+  }
+}
+
 interface VatComplianceBannerProps {
   status: VatComplianceStatus;
   signedAt?: string | null;

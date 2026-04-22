@@ -24,7 +24,7 @@ import {
   assertEquals,
   assertExists,
 } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { createClient } from "npm:@supabase/supabase-js@2.58.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.58.0";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Config (lus depuis .env du projet)

@@ -26,11 +26,13 @@ export function SignatureCanvas({ onChange, height = 180 }: SignatureCanvasProps
     canvas.height = height * dpr;
     const ctx = canvas.getContext("2d");
     if (ctx) {
+      // Resolve foreground token (HSL) from the design system for canvas stroke.
+      const fg = getComputedStyle(document.documentElement).getPropertyValue("--mk-text").trim();
       ctx.scale(dpr, dpr);
       ctx.lineWidth = 2;
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
-      ctx.strokeStyle = "#0f172a";
+      ctx.strokeStyle = fg ? `hsl(${fg})` : "#1D2530";
     }
   }, [height]);
 
@@ -126,9 +128,11 @@ export function generateTypedSignature(fullName: string): string {
   canvas.height = h;
   const ctx = canvas.getContext("2d");
   if (!ctx) return "";
-  ctx.fillStyle = "#ffffff";
+  const bg = getComputedStyle(document.documentElement).getPropertyValue("--background").trim();
+  const fg = getComputedStyle(document.documentElement).getPropertyValue("--mk-text").trim();
+  ctx.fillStyle = bg ? `hsl(${bg})` : "#ffffff";
   ctx.fillRect(0, 0, w, h);
-  ctx.fillStyle = "#0f172a";
+  ctx.fillStyle = fg ? `hsl(${fg})` : "#1D2530";
   ctx.font = "italic 56px 'Brush Script MT', 'Lucida Handwriting', cursive";
   ctx.textBaseline = "middle";
   ctx.textAlign = "center";

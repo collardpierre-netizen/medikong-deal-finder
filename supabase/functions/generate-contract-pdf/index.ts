@@ -30,16 +30,15 @@ import {
   type ContractVendorData,
 } from "../_shared/contract-template.ts";
 import { validateContractTemplateData } from "../_shared/contract-validation.ts";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
-
-const SELLER_CONTRACTS_BUCKET = "seller-contracts";
-const SIGNED_URL_TTL_SECONDS = 5 * 60;
+import {
+  CONTRACT_PDF_CONTENT_TYPE,
+  CONTRACT_PDF_MAX_BYTES,
+  CORS_HEADERS as corsHeaders,
+  ContractEnvError,
+  SELLER_CONTRACTS_BUCKET,
+  SIGNED_URL_TTL_SECONDS,
+  loadContractEnv,
+} from "../_shared/contract-env.ts";
 
 const VendorSchema = z.object({
   company_name: z.string().min(1),

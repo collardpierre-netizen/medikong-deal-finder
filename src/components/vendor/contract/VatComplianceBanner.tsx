@@ -24,6 +24,39 @@ import { toast } from "sonner";
 
 export type VatComplianceStatus = "unsigned" | "in_progress" | "signed" | "outdated";
 
+/**
+ * Action analytics keys tracked from the VAT compliance banner.
+ * - `open_document`     → CTA principal "Accéder au document" (mode normal)
+ * - `view_document`     → CTA "Consulter le document" (mode lecture seule ou fallback)
+ * - `regenerate_document` → CTA "Accéder au document pour le re-générer" (PDF indisponible)
+ * - `download_signed_pdf` → Téléchargement du PDF signé
+ */
+type ContractBannerAction =
+  | "open_document"
+  | "view_document"
+  | "regenerate_document"
+  | "download_signed_pdf";
+
+/**
+ * Pousse un événement analytics dans `window.dataLayer` (GTM) pour suivre la
+ * progression de signature du mandat de facturation depuis le bandeau.
+ * Best-effort : silencieux en cas d'erreur (e.g. dataLayer non initialisé en SSR/test).
+ */
+function trackBannerAction(action: ContractBannerAction, status: VatComplianceStatus, extra?: Record<string, unknown>) {
+  try {
+    const w = window as unknown as { dataLayer?: Record<string, unknown>[] };
+    w.dataLayer = w.dataLayer || [];
+    w.dataLayer.push({
+      event: "vendor_contract_banner_action",
+      action,
+      contract_status: status,
+      ...extra,
+    });
+  } catch {
+    /* noop */
+  }
+}
+
 interface VatComplianceBannerProps {
   status: VatComplianceStatus;
   signedAt?: string | null;
@@ -122,6 +155,12 @@ export function VatComplianceBanner({
       if (!pdfStoragePath) setPdfState("missing");
       return;
     }
+    // Track click as soon as the user initiates a download — even if the link
+    // turns out to be unreachable, the intent itself is a useful signal.
+    trackBannerAction("download_signed_pdf", status, {
+      signed_version: signedVersion ?? null,
+      pdf_state: pdfState,
+    });
     setDownloading(true);
     try {
       const url = await getContractSignedUrl(pdfStoragePath, CONTRACT_SIGNED_URL_TTL_SECONDS);
@@ -282,7 +321,15 @@ export function VatComplianceBanner({
               <>
                 {documentHref ? (
                   <Button asChild size="sm" variant="outline" className="h-8">
-                    <Link to={documentHref}>
+                    <Link
+                      to={documentHref}
+                      onClick={() =>
+                        trackBannerAction("view_document", status, {
+                          source: "readonly_consult",
+                          signed_version: signedVersion ?? null,
+                        })
+                      }
+                    >
                       <FileText className="w-3.5 h-3.5 mr-1.5" />
                       Consulter le document
                       <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
@@ -305,14 +352,32 @@ export function VatComplianceBanner({
             {!readOnly && status !== "signed" &&
               (documentHref ? (
                 <Button asChild size="sm" className="h-8">
-                  <Link to={documentHref}>
+                  <Link
+                    to={documentHref}
+                    onClick={() =>
+                      trackBannerAction("open_document", status, {
+                        source: "primary_cta",
+                        signed_version: signedVersion ?? null,
+                      })
+                    }
+                  >
                     <FileText className="w-3.5 h-3.5 mr-1.5" />
                     Accéder au document
                     <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
                   </Link>
                 </Button>
               ) : (
-                <Button size="sm" className="h-8" onClick={onOpenDocument}>
+                <Button
+                  size="sm"
+                  className="h-8"
+                  onClick={() => {
+                    trackBannerAction("open_document", status, {
+                      source: "primary_cta_callback",
+                      signed_version: signedVersion ?? null,
+                    });
+                    onOpenDocument?.();
+                  }}
+                >
                   <FileText className="w-3.5 h-3.5 mr-1.5" />
                   {status === "outdated" ? "Re-signer la nouvelle version" : "Signer le document"}
                   <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
@@ -326,7 +391,20 @@ export function VatComplianceBanner({
             {showPdfError &&
               (documentHref ? (
                 <Button asChild size="sm" variant={readOnly ? "outline" : "default"} className="h-8">
-                  <Link to={documentHref}>
+                  <Link
+                    to={documentHref}
+                    onClick={() =>
+                      trackBannerAction(
+                        readOnly ? "view_document" : "regenerate_document",
+                        status,
+                        {
+                          source: "pdf_error_fallback",
+                          pdf_state: pdfState,
+                          signed_version: signedVersion ?? null,
+                        }
+                      )
+                    }
+                  >
                     {readOnly ? (
                       <FileText className="w-3.5 h-3.5 mr-1.5" />
                     ) : (
@@ -337,7 +415,19 @@ export function VatComplianceBanner({
                   </Link>
                 </Button>
               ) : !readOnly && onOpenDocument ? (
-                <Button size="sm" variant="default" className="h-8" onClick={onOpenDocument}>
+                <Button
+                  size="sm"
+                  variant="default"
+                  className="h-8"
+                  onClick={() => {
+                    trackBannerAction("regenerate_document", status, {
+                      source: "pdf_error_callback",
+                      pdf_state: pdfState,
+                      signed_version: signedVersion ?? null,
+                    });
+                    onOpenDocument();
+                  }}
+                >
                   <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
                   Accéder au document pour le re-générer
                   <ArrowRight className="w-3.5 h-3.5 ml-1.5" />

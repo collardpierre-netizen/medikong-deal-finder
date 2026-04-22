@@ -65,6 +65,10 @@ const AdminContractNotificationEmail = ({
         <Text style={footer}>
           Notification automatique — {SITE_NAME} Admin
         </Text>
+        <Text style={legalFooter}>
+          MediKong by Balooh SRL · TVA : BE 1005.771.323<br />
+          23 rue de la Procession, B-7822 Ath, Belgique
+        </Text>
       </Container>
     </Body>
   </Html>
@@ -113,3 +117,4 @@ const code = {
 }
 const divider = { borderColor: '#d1d5db', margin: '20px 0 12px' }
 const footer = { fontSize: '11px', color: '#9ca3af', margin: '0' }
+const legalFooter = { fontSize: '10px', color: '#9ca3af', margin: '12px 0 0', lineHeight: '1.5' }

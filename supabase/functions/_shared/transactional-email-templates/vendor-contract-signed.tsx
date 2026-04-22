@@ -89,6 +89,10 @@ const VendorContractSignedEmail = ({
           <a href="mailto:facturation@medikong.pro" style={link}>facturation@medikong.pro</a>.
         </Text>
         <Text style={footer}>L'équipe {SITE_NAME}</Text>
+        <Text style={legalFooter}>
+          MediKong by Balooh SRL · TVA : BE 1005.771.323<br />
+          23 rue de la Procession, B-7822 Ath, Belgique
+        </Text>
       </Container>
     </Body>
   </Html>
@@ -142,4 +146,5 @@ const button = {
 const divider = { borderColor: '#d1d5db', margin: '24px 0 16px' }
 const footerText = { fontSize: '13px', color: '#6b7280', margin: '0 0 8px', lineHeight: '1.5' }
 const footer = { fontSize: '11px', color: '#9ca3af', margin: '0' }
+const legalFooter = { fontSize: '10px', color: '#9ca3af', margin: '12px 0 0', lineHeight: '1.5' }
 const link = { color: '#1B5BDA', textDecoration: 'none' }

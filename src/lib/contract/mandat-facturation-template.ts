@@ -29,12 +29,12 @@ export interface ContractMediKongData {
 
 export const MEDIKONG_DEFAULTS: ContractMediKongData = {
   legal_form: "SRL",
-  address: "MediKong SRL — Adresse du siège social",
-  bce: "BE0XXX.XXX.XXX",
-  vat: "BE0XXX.XXX.XXX",
+  address: "MediKong by Balooh SRL — 23 rue de la Procession, B-7822 Ath, Belgique",
+  bce: "BE 1005.771.323",
+  vat: "BE 1005.771.323",
   representative_name: "Représentant légal MediKong",
   representative_role: "Administrateur",
-  jurisdiction_city: "Bruxelles",
+  jurisdiction_city: "Tournai",
 };
 
 export interface ContractArticle {

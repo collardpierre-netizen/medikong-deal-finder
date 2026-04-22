@@ -1,7 +1,10 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ShieldCheck, AlertTriangle, ArrowRight, Download, FileText, Clock } from "lucide-react";
+import { ShieldCheck, AlertTriangle, ArrowRight, Download, FileText, Clock, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CONTRACT_VERSION } from "@/lib/contract/mandat-facturation-template";
+import { openContractPdf } from "@/lib/contract/contract-storage";
+import { toast } from "sonner";
 
 export type VatComplianceStatus = "unsigned" | "in_progress" | "signed" | "outdated";
 
@@ -9,7 +12,12 @@ interface VatComplianceBannerProps {
   status: VatComplianceStatus;
   signedAt?: string | null;
   signedVersion?: string | null;
-  pdfUrl?: string | null;
+  /**
+   * Chemin de stockage du PDF dans le bucket privé `seller-contracts`.
+   * Le lien de téléchargement est généré à la demande (signed URL courte, 5 min)
+   * pour limiter la fenêtre d'exposition.
+   */
+  pdfStoragePath?: string | null;
   /** Lien direct vers le document à signer (déclencheur du wizard). */
   onOpenDocument?: () => void;
   /** Si fourni, rend un Link react-router au lieu d'un bouton. */
@@ -27,12 +35,26 @@ export function VatComplianceBanner({
   status,
   signedAt,
   signedVersion,
-  pdfUrl,
+  pdfStoragePath,
   onOpenDocument,
   documentHref,
 }: VatComplianceBannerProps) {
   const config = getStatusConfig(status);
   const Icon = config.icon;
+  const [downloading, setDownloading] = useState(false);
+
+  const handleDownload = async () => {
+    if (!pdfStoragePath || downloading) return;
+    setDownloading(true);
+    try {
+      const ok = await openContractPdf(pdfStoragePath);
+      if (!ok) {
+        toast.error("Impossible de générer le lien de téléchargement. Réessayez.");
+      }
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   const formattedSignedAt = signedAt
     ? new Date(signedAt).toLocaleDateString("fr-BE", {
@@ -114,17 +136,21 @@ export function VatComplianceBanner({
                 </Button>
               ))}
 
-            {pdfUrl && (
+            {pdfStoragePath && (
               <Button
-                asChild
                 size="sm"
                 variant="outline"
                 className="h-8"
+                onClick={handleDownload}
+                disabled={downloading}
+                title="Le lien expire au bout de 5 minutes pour votre sécurité"
               >
-                <a href={pdfUrl} target="_blank" rel="noreferrer" download>
+                {downloading ? (
+                  <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                ) : (
                   <Download className="w-3.5 h-3.5 mr-1.5" />
-                  Télécharger le PDF signé
-                </a>
+                )}
+                Télécharger le PDF signé
               </Button>
             )}
 

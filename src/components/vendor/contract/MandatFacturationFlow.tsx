@@ -26,6 +26,11 @@ import {
   getMissingVendorFields,
 } from "@/lib/contract/mandat-facturation-template";
 import { generateContractPdf, hashBlob } from "@/lib/contract/generate-pdf";
+import {
+  SELLER_CONTRACTS_BUCKET,
+  CONTRACT_SIGNED_URL_TTL_SECONDS,
+  getContractSignedUrl,
+} from "@/lib/contract/contract-storage";
 import { ContractDocument } from "./ContractDocument";
 import { SignatureCanvas, generateTypedSignature } from "./SignatureCanvas";
 import { VatComplianceBanner, type VatComplianceStatus } from "./VatComplianceBanner";
@@ -48,8 +53,8 @@ interface MandatFacturationFlowProps {
   existingSignedAt?: string | null;
   /** Version contractuelle déjà signée (pour détecter une version obsolète). */
   existingSignedVersion?: string | null;
-  /** URL signée du PDF déjà signé pour téléchargement direct. */
-  existingPdfUrl?: string | null;
+  /** Chemin de stockage privé du PDF déjà signé (pour générer un lien à la demande). */
+  existingPdfStoragePath?: string | null;
 }
 
 type Screen = "intro" | "read" | "sign" | "confirmation";
@@ -62,7 +67,7 @@ export function MandatFacturationFlow({
   readOnly = false,
   existingSignedAt = null,
   existingSignedVersion = null,
-  existingPdfUrl = null,
+  existingPdfStoragePath = null,
 }: MandatFacturationFlowProps) {
   const [screen, setScreen] = useState<Screen>(readOnly ? "read" : "intro");
   const [readAck, setReadAck] = useState(false);
@@ -86,7 +91,7 @@ export function MandatFacturationFlow({
 
   const effectiveSignedAt = result?.signedAt ?? existingSignedAt;
   const effectiveSignedVersion = result ? CONTRACT_VERSION : existingSignedVersion;
-  const effectivePdfUrl = result?.pdfUrl ?? existingPdfUrl;
+  const effectivePdfStoragePath = result?.pdfPath ?? existingPdfStoragePath;
 
   // Signature finale : canvas tracé OU nom tapé
   const finalSignature: string | null = useMemo(() => {
@@ -148,7 +153,7 @@ export function MandatFacturationFlow({
       // 2. Upload PDF dans Supabase Storage
       const path = `${vendorId}/${CONTRACT_TYPE}-${CONTRACT_VERSION}-${signedAt.getTime()}.pdf`;
       const { error: uploadError } = await supabase.storage
-        .from("seller-contracts")
+        .from(SELLER_CONTRACTS_BUCKET)
         .upload(path, pdfBlob, {
           contentType: "application/pdf",
           upsert: false,
@@ -192,10 +197,8 @@ export function MandatFacturationFlow({
         })
         .eq("id", vendorId);
 
-      // 6. URL signée pour téléchargement
-      const { data: signed } = await supabase.storage
-        .from("seller-contracts")
-        .createSignedUrl(path, 60 * 60); // 1h
+      // 6. URL signée à courte durée (rotation/expiration forcée — 5 min)
+      const downloadUrl = await getContractSignedUrl(path, CONTRACT_SIGNED_URL_TTL_SECONDS);
 
       // 7. Email vendeur (template à scaffolder ensuite)
       if (vendorEmail) {
@@ -210,7 +213,7 @@ export function MandatFacturationFlow({
                 signerName: typedName.trim() || vendor.representative_name,
                 signedAtFormatted: signedAt.toLocaleString("fr-BE"),
                 contractVersion: CONTRACT_VERSION,
-                downloadUrl: signed?.signedUrl ?? null,
+                downloadUrl,
               },
             },
           });
@@ -237,7 +240,7 @@ export function MandatFacturationFlow({
       const finalResult: SignedContractResult = {
         contractId: contract.id,
         pdfPath: path,
-        pdfUrl: signed?.signedUrl ?? null,
+        pdfUrl: downloadUrl,
         signedAt: signedAt.toISOString(),
       };
       setResult(finalResult);
@@ -278,7 +281,7 @@ export function MandatFacturationFlow({
       status={complianceStatus}
       signedAt={effectiveSignedAt}
       signedVersion={effectiveSignedVersion}
-      pdfUrl={effectivePdfUrl}
+      pdfStoragePath={effectivePdfStoragePath}
       onOpenDocument={() => setScreen("read")}
     />
   );

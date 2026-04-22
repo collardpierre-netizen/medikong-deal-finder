@@ -98,10 +98,11 @@ async function setupFixture(): Promise<TestFixture> {
   const { data: vendor, error: vendorErr } = await admin
     .from("vendors")
     .insert({
-      name: "Test Vendor PDF",
+      name: `Test Vendor PDF ${stamp}`,
       slug: `test-vendor-pdf-${stamp}`,
+      company_name: "Test Vendor PDF SRL",
       type: "real",
-      user_id: userId,
+      auth_user_id: userId,
       is_active: true,
       is_verified: false,
       country_code: "BE",

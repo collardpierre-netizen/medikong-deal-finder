@@ -360,12 +360,12 @@ Deno.serve(async (req) => {
     const vendor = await measure("load_vendor", { vendorId: body.vendorId, userId }, async () => {
       const { data, error } = await adminClient
         .from("vendors")
-        .select("id, user_id, commissionnaire_agreement_accepted_at, commissionnaire_agreement_version")
+        .select("id, auth_user_id, commissionnaire_agreement_accepted_at, commissionnaire_agreement_version")
         .eq("id", body.vendorId)
         .maybeSingle();
       if (error) throw error;
       if (!data) throw Object.assign(new Error("vendor_not_found"), { statusCode: 404 });
-      if (data.user_id && data.user_id !== userId) {
+      if (data.auth_user_id && data.auth_user_id !== userId) {
         throw Object.assign(new Error("vendor_user_mismatch"), { statusCode: 403 });
       }
       return data;

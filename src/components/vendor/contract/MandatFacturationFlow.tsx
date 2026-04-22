@@ -28,6 +28,7 @@ import {
 import { generateContractPdf, hashBlob } from "@/lib/contract/generate-pdf";
 import { ContractDocument } from "./ContractDocument";
 import { SignatureCanvas, generateTypedSignature } from "./SignatureCanvas";
+import { VatComplianceBanner, type VatComplianceStatus } from "./VatComplianceBanner";
 
 export interface SignedContractResult {
   contractId: string;

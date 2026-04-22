@@ -27,3 +27,5 @@ project_id = "iokwqxhhpblcbkrxgcje"
     verify_jwt = false
   [functions.test-qogita-offers]
     verify_jwt = false
+  [functions.generate-contract-pdf]
+    verify_jwt = false

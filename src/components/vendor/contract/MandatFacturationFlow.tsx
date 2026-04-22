@@ -163,7 +163,7 @@ export function MandatFacturationFlow({
     const logMeta = { vendorId, contractVersion: CONTRACT_VERSION };
     contractLogger.info({
       stage: "validate",
-      message: "sign flow started",
+      message: "sign flow started (server-side)",
       ...logMeta,
       context: {
         signatureMethod: tab === "draw" ? "canvas" : "typed_name",
@@ -171,128 +171,26 @@ export function MandatFacturationFlow({
       },
     });
     try {
-      const signedAt = new Date();
-
-      // 1. Génération PDF (mesurée)
-      const pdfBlob = await measureStage(
-        "render_pdf",
-        "generateContractPdf",
-        () =>
-          generateContractPdf({
-            vendor,
-            signedAt,
-            signatureDataUrl: finalSignature,
-            signatureMethod: tab === "draw" ? "canvas" : "typed_name",
-            signerName: typedName.trim() || vendor.representative_name,
-            signerRole: vendor.representative_role,
-          }),
-        logMeta
-      );
-      const docHash = await measureStage(
-        "hash_pdf",
-        "hashBlob",
-        () => hashBlob(pdfBlob),
-        { ...logMeta, context: { sizeBytes: pdfBlob.size } }
-      );
-
-      // 2. Upload PDF dans Supabase Storage (mesuré + audit en cas d'échec)
-      const path = `${vendorId}/${CONTRACT_TYPE}-${CONTRACT_VERSION}-${signedAt.getTime()}.pdf`;
-      try {
-        await measureStage(
-          "upload_pdf",
-          "storage.upload seller-contracts",
-          async () => {
-            const { error: uploadError } = await supabase.storage
-              .from(SELLER_CONTRACTS_BUCKET)
-              .upload(path, pdfBlob, {
-                contentType: "application/pdf",
-                upsert: false,
-              });
-            if (uploadError) throw uploadError;
-          },
-          { ...logMeta, context: { path, sizeBytes: pdfBlob.size } }
-        );
-      } catch (uploadErr) {
-        // Échec upload = blocage métier critique → audit serveur
-        void recordContractAudit({
-          action: "contract.upload_failed",
-          vendorId,
-          detail: (uploadErr as Error)?.message ?? "unknown upload error",
-          metadata: { path, sizeBytes: pdfBlob.size, contractVersion: CONTRACT_VERSION },
-        });
-        throw uploadErr;
-      }
-
-      // 3. Récupérer User-Agent (IP côté serveur idéalement, ici user_agent client)
-      const userAgent = navigator.userAgent;
-
-      // 4. Insertion seller_contracts
-      const contract = await measureStage(
-        "insert_contract",
-        "insert seller_contracts",
-        async () => {
-          const { data, error: insertError } = await supabase
-            .from("seller_contracts")
-            .insert({
-              vendor_id: vendorId,
-              contract_type: CONTRACT_TYPE,
-              contract_version: CONTRACT_VERSION,
-              signed_at: signedAt.toISOString(),
-              signature_data: finalSignature,
-              signature_method: tab === "draw" ? "canvas" : "typed_name",
-              signer_name: typedName.trim() || vendor.representative_name,
-              signer_role: vendor.representative_role || null,
-              pdf_storage_path: path,
-              document_hash: docHash,
-              user_agent: userAgent,
-              metadata: {
-                screen_size: `${window.screen.width}x${window.screen.height}`,
-                language: navigator.language,
-                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-              },
-            })
-            .select("id, pdf_storage_path")
-            .single();
-          if (insertError) throw insertError;
-          return data;
-        },
-        logMeta
-      );
-
-      // 5. Marquer le vendor comme ayant signé (champ existant)
-      await measureStage(
-        "update_vendor",
-        "update vendors.commissionnaire_agreement_*",
-        async () => {
-          const { error } = await supabase
-            .from("vendors")
-            .update({
-              commissionnaire_agreement_accepted_at: signedAt.toISOString(),
-              commissionnaire_agreement_version: CONTRACT_VERSION,
-            })
-            .eq("id", vendorId);
-          if (error) throw error;
-        },
-        logMeta
-      );
-
-      // 6. URL signée à courte durée (rotation/expiration forcée — 5 min)
-      const downloadUrl = await measureStage(
-        "sign_url",
-        "createSignedUrl",
-        () => getContractSignedUrl(path, CONTRACT_SIGNED_URL_TTL_SECONDS),
-        logMeta
-      );
-
-      // Audit de réussite (best-effort)
-      void recordContractAudit({
-        action: "contract.signed",
+      // Génération PDF + upload Storage + insert seller_contracts + update vendor
+      // sont désormais centralisés dans l'edge function `generate-contract-pdf`.
+      // → Source unique du template (mémoire MediKong defaults), audit serveur,
+      //   capture IP/User-Agent côté serveur, logs structurés.
+      const serverResult = await signContractOnServer({
         vendorId,
-        detail: `contract_id=${contract.id} version=${CONTRACT_VERSION}`,
-        metadata: { path, docHash, signatureMethod: tab === "draw" ? "canvas" : "typed_name" },
+        vendor,
+        signatureDataUrl: finalSignature,
+        signatureMethod: tab === "draw" ? "canvas" : "typed_name",
+        signerName: typedName.trim() || vendor.representative_name,
+        signerRole: vendor.representative_role,
+        metadata: {
+          screen_size: `${window.screen.width}x${window.screen.height}`,
+          language: navigator.language,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          user_agent_client: navigator.userAgent,
+        },
       });
 
-      // 7. Email vendeur (template à scaffolder ensuite)
+      // Email vendeur (template à scaffolder ensuite) — non bloquant
       if (vendorEmail) {
         try {
           await measureStage(
@@ -303,13 +201,13 @@ export function MandatFacturationFlow({
                 body: {
                   templateName: "vendor-contract-signed",
                   recipientEmail: vendorEmail,
-                  idempotencyKey: `contract-signed-${contract.id}`,
+                  idempotencyKey: `contract-signed-${serverResult.contractId}`,
                   templateData: {
                     vendorCompanyName: vendor.company_name,
                     signerName: typedName.trim() || vendor.representative_name,
-                    signedAtFormatted: signedAt.toLocaleString("fr-BE"),
+                    signedAtFormatted: new Date(serverResult.signedAt).toLocaleString("fr-BE"),
                     contractVersion: CONTRACT_VERSION,
-                    downloadUrl,
+                    downloadUrl: serverResult.pdfUrl,
                   },
                 },
               });
@@ -317,12 +215,12 @@ export function MandatFacturationFlow({
                 body: {
                   templateName: "admin-contract-notification",
                   recipientEmail: "admin@medikong.pro",
-                  idempotencyKey: `admin-contract-${contract.id}`,
+                  idempotencyKey: `admin-contract-${serverResult.contractId}`,
                   templateData: {
                     vendorCompanyName: vendor.company_name,
                     vendorEmail,
                     signerName: typedName.trim() || vendor.representative_name,
-                    signedAtFormatted: signedAt.toLocaleString("fr-BE"),
+                    signedAtFormatted: new Date(serverResult.signedAt).toLocaleString("fr-BE"),
                     contractVersion: CONTRACT_VERSION,
                   },
                 },
@@ -331,7 +229,6 @@ export function MandatFacturationFlow({
             logMeta
           );
         } catch (e) {
-          // Non bloquant — déjà tracé par measureStage en `error`
           contractLogger.warn({
             stage: "notify_email",
             message: "Email notification failed (non-blocking)",
@@ -342,23 +239,30 @@ export function MandatFacturationFlow({
       }
 
       const finalResult: SignedContractResult = {
-        contractId: contract.id,
-        pdfPath: path,
-        pdfUrl: downloadUrl,
-        signedAt: signedAt.toISOString(),
+        contractId: serverResult.contractId,
+        pdfPath: serverResult.pdfPath,
+        pdfUrl: serverResult.pdfUrl,
+        signedAt: serverResult.signedAt,
       };
       setResult(finalResult);
       setScreen("confirmation");
       onSigned?.(finalResult);
       toast.success("Convention signée avec succès");
-    } catch (e: any) {
+    } catch (e: unknown) {
+      const err = e as SignContractServerError | Error;
       contractLogger.error({
         stage: "validate",
         message: "sign flow failed",
         ...logMeta,
-        error: e,
+        error: err,
       });
-      toast.error(e?.message || "Erreur lors de la signature de la convention.");
+      const userMsg =
+        err instanceof SignContractServerError && err.status === 409
+          ? "Cette convention a déjà été signée."
+          : err instanceof SignContractServerError && err.status === 400
+            ? "Données contractuelles invalides. Vérifiez votre profil vendeur."
+            : err.message || "Erreur lors de la signature de la convention.";
+      toast.error(userMsg);
     } finally {
       setSigning(false);
     }

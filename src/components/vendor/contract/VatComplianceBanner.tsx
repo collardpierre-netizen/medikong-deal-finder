@@ -255,17 +255,24 @@ export function VatComplianceBanner({
             </div>
           )}
 
-          {/* Prochaines actions */}
-          <div className="mt-3">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-1.5">
-              Prochaines actions
+          {/* Prochaines actions — masquées en lecture seule pour ne pas inviter
+              à des actions (signature) qui ne sont pas disponibles dans ce contexte. */}
+          {!readOnly ? (
+            <div className="mt-3">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-1.5">
+                Prochaines actions
+              </p>
+              <ul className="text-xs text-muted-foreground space-y-1 list-disc pl-4">
+                {config.nextSteps.map((step, i) => (
+                  <li key={i}>{step}</li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <p className="mt-3 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+              Mode consultation — la signature est désactivée
             </p>
-            <ul className="text-xs text-muted-foreground space-y-1 list-disc pl-4">
-              {config.nextSteps.map((step, i) => (
-                <li key={i}>{step}</li>
-              ))}
-            </ul>
-          </div>
+          )}
 
           {/* Actions */}
           <div className="flex flex-wrap items-center gap-2 mt-4">

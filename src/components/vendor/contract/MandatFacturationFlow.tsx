@@ -245,10 +245,21 @@ export function MandatFacturationFlow({
     }
   };
 
+  const banner = (
+    <VatComplianceBanner
+      status={complianceStatus}
+      signedAt={effectiveSignedAt}
+      signedVersion={effectiveSignedVersion}
+      pdfUrl={effectivePdfUrl}
+      onOpenDocument={() => setScreen("read")}
+    />
+  );
+
   /* ─── ÉCRAN 1 : INTRO ─── */
   if (screen === "intro") {
     return (
       <div className="space-y-6">
+        {banner}
         <Alert>
           <Info className="h-4 w-4" />
           <AlertTitle>Document légal obligatoire avant votre première vente</AlertTitle>
@@ -297,6 +308,7 @@ export function MandatFacturationFlow({
       </div>
     );
   }
+
 
   /* ─── ÉCRAN 2 : LECTURE ─── */
   if (screen === "read") {

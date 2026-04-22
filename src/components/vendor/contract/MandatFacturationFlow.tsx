@@ -314,6 +314,7 @@ export function MandatFacturationFlow({
   if (screen === "read") {
     return (
       <div className="space-y-4">
+        {banner}
         <div className="sticky top-0 z-10 -mx-6 px-6 py-3 bg-card/95 backdrop-blur border-b border-border flex items-center justify-between">
           <div className="flex items-center gap-2">
             <ShieldCheck className="w-4 h-4 text-primary" />

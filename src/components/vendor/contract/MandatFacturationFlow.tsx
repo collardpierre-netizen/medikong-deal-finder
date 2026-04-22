@@ -213,7 +213,7 @@ export function MandatFacturationFlow({
                 signerName: typedName.trim() || vendor.representative_name,
                 signedAtFormatted: signedAt.toLocaleString("fr-BE"),
                 contractVersion: CONTRACT_VERSION,
-                downloadUrl: signed?.signedUrl ?? null,
+                downloadUrl,
               },
             },
           });
@@ -240,7 +240,7 @@ export function MandatFacturationFlow({
       const finalResult: SignedContractResult = {
         contractId: contract.id,
         pdfPath: path,
-        pdfUrl: signed?.signedUrl ?? null,
+        pdfUrl: downloadUrl,
         signedAt: signedAt.toISOString(),
       };
       setResult(finalResult);

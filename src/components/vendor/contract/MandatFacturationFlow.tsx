@@ -53,8 +53,8 @@ interface MandatFacturationFlowProps {
   existingSignedAt?: string | null;
   /** Version contractuelle déjà signée (pour détecter une version obsolète). */
   existingSignedVersion?: string | null;
-  /** URL signée du PDF déjà signé pour téléchargement direct. */
-  existingPdfUrl?: string | null;
+  /** Chemin de stockage privé du PDF déjà signé (pour générer un lien à la demande). */
+  existingPdfStoragePath?: string | null;
 }
 
 type Screen = "intro" | "read" | "sign" | "confirmation";
@@ -67,7 +67,7 @@ export function MandatFacturationFlow({
   readOnly = false,
   existingSignedAt = null,
   existingSignedVersion = null,
-  existingPdfUrl = null,
+  existingPdfStoragePath = null,
 }: MandatFacturationFlowProps) {
   const [screen, setScreen] = useState<Screen>(readOnly ? "read" : "intro");
   const [readAck, setReadAck] = useState(false);
@@ -91,7 +91,7 @@ export function MandatFacturationFlow({
 
   const effectiveSignedAt = result?.signedAt ?? existingSignedAt;
   const effectiveSignedVersion = result ? CONTRACT_VERSION : existingSignedVersion;
-  const effectivePdfUrl = result?.pdfUrl ?? existingPdfUrl;
+  const effectivePdfStoragePath = result?.pdfPath ?? existingPdfStoragePath;
 
   // Signature finale : canvas tracé OU nom tapé
   const finalSignature: string | null = useMemo(() => {
@@ -281,7 +281,7 @@ export function MandatFacturationFlow({
       status={complianceStatus}
       signedAt={effectiveSignedAt}
       signedVersion={effectiveSignedVersion}
-      pdfUrl={effectivePdfUrl}
+      pdfStoragePath={effectivePdfStoragePath}
       onOpenDocument={() => setScreen("read")}
     />
   );

@@ -1,9 +1,22 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ShieldCheck, AlertTriangle, ArrowRight, Download, FileText, Clock, Loader2 } from "lucide-react";
+import {
+  ShieldCheck,
+  AlertTriangle,
+  ArrowRight,
+  Download,
+  FileText,
+  Clock,
+  Loader2,
+  AlertCircle,
+  RefreshCw,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CONTRACT_VERSION } from "@/lib/contract/mandat-facturation-template";
-import { openContractPdf } from "@/lib/contract/contract-storage";
+import {
+  getContractSignedUrl,
+  CONTRACT_SIGNED_URL_TTL_SECONDS,
+} from "@/lib/contract/contract-storage";
 import { toast } from "sonner";
 
 export type VatComplianceStatus = "unsigned" | "in_progress" | "signed" | "outdated";
@@ -29,7 +42,10 @@ interface VatComplianceBannerProps {
  * "Convention de mandat de facturation".
  *
  * Affiche l'état de signature, les prochaines actions et un accès direct au
- * document à signer ou téléchargeable.
+ * document à signer ou téléchargeable. Si la convention est marquée signée
+ * mais que le PDF n'est plus accessible (chemin manquant ou 404 storage),
+ * un message d'erreur inline propose de rouvrir le document pour le
+ * re-générer / re-consulter.
  */
 export function VatComplianceBanner({
   status,
@@ -43,14 +59,81 @@ export function VatComplianceBanner({
   const Icon = config.icon;
   const [downloading, setDownloading] = useState(false);
 
+  // Availability state of the signed PDF for status="signed".
+  // - "unknown": not yet probed
+  // - "ok": last attempt succeeded (or not yet attempted but path looks present)
+  // - "missing": no storage path persisted on the contract row
+  // - "unreachable": signed URL generation failed or remote returned 404
+  type PdfState = "unknown" | "ok" | "missing" | "unreachable";
+  const [pdfState, setPdfState] = useState<PdfState>(
+    status === "signed" && !pdfStoragePath ? "missing" : "unknown"
+  );
+  const [probing, setProbing] = useState(false);
+
+  // Passive probe when the banner mounts in "signed" mode: try to obtain a
+  // short-lived signed URL and HEAD it. Failures surface the inline error
+  // without forcing the vendor to click "Download" first.
+  useEffect(() => {
+    let cancelled = false;
+    if (status !== "signed") return;
+    if (!pdfStoragePath) {
+      setPdfState("missing");
+      return;
+    }
+    setProbing(true);
+    (async () => {
+      try {
+        const url = await getContractSignedUrl(pdfStoragePath, CONTRACT_SIGNED_URL_TTL_SECONDS);
+        if (cancelled) return;
+        if (!url) {
+          setPdfState("unreachable");
+          return;
+        }
+        // HEAD probe — Supabase storage signed URLs accept HEAD; treat any
+        // non-2xx (in particular 404 if the object was deleted) as unreachable.
+        try {
+          const res = await fetch(url, { method: "HEAD" });
+          if (cancelled) return;
+          setPdfState(res.ok ? "ok" : "unreachable");
+        } catch {
+          if (!cancelled) setPdfState("unreachable");
+        }
+      } finally {
+        if (!cancelled) setProbing(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [status, pdfStoragePath]);
+
   const handleDownload = async () => {
-    if (!pdfStoragePath || downloading) return;
+    if (!pdfStoragePath || downloading) {
+      if (!pdfStoragePath) setPdfState("missing");
+      return;
+    }
     setDownloading(true);
     try {
-      const ok = await openContractPdf(pdfStoragePath);
-      if (!ok) {
-        toast.error("Impossible de générer le lien de téléchargement. Réessayez.");
+      const url = await getContractSignedUrl(pdfStoragePath, CONTRACT_SIGNED_URL_TTL_SECONDS);
+      if (!url) {
+        setPdfState("unreachable");
+        toast.error("Lien de téléchargement indisponible. Ouvrez le document pour le re-générer.");
+        return;
       }
+      // Final HEAD check before opening — catches objects deleted between probe
+      // and click (e.g. admin purge during a long-lived banner session).
+      try {
+        const res = await fetch(url, { method: "HEAD" });
+        if (!res.ok) {
+          setPdfState("unreachable");
+          toast.error("Le PDF signé n'est plus accessible (404). Ouvrez le document pour le re-générer.");
+          return;
+        }
+      } catch {
+        // Network errors → treat as unreachable but still let the user try opening.
+      }
+      setPdfState("ok");
+      window.open(url, "_blank", "noopener,noreferrer");
     } finally {
       setDownloading(false);
     }
@@ -63,6 +146,12 @@ export function VatComplianceBanner({
         day: "numeric",
       })
     : null;
+
+  const showPdfError = status === "signed" && (pdfState === "missing" || pdfState === "unreachable");
+  const errorMessage =
+    pdfState === "missing"
+      ? "Aucun PDF signé n'est associé à cette convention. Le document peut être re-généré depuis la page de la convention."
+      : "Le PDF signé est temporairement indisponible (lien expiré ou fichier introuvable). Vous pouvez ouvrir le document pour le re-consulter ou le re-générer.";
 
   return (
     <div
@@ -105,6 +194,23 @@ export function VatComplianceBanner({
             </p>
           )}
 
+          {/* Inline error when signed PDF is unavailable */}
+          {showPdfError && (
+            <div
+              role="alert"
+              aria-live="polite"
+              className="mt-3 flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2"
+            >
+              <AlertCircle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-destructive">
+                  PDF signé indisponible
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">{errorMessage}</p>
+              </div>
+            </div>
+          )}
+
           {/* Prochaines actions */}
           <div className="mt-3">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-1.5">
@@ -136,16 +242,35 @@ export function VatComplianceBanner({
                 </Button>
               ))}
 
-            {pdfStoragePath && (
+            {/* Fallback CTA when signed but PDF unreachable: open the contract
+                page so the vendor can re-generate / re-consult the document. */}
+            {showPdfError &&
+              (documentHref ? (
+                <Button asChild size="sm" variant="default" className="h-8">
+                  <Link to={documentHref}>
+                    <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
+                    Accéder au document pour le re-générer
+                    <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+                  </Link>
+                </Button>
+              ) : onOpenDocument ? (
+                <Button size="sm" variant="default" className="h-8" onClick={onOpenDocument}>
+                  <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
+                  Accéder au document pour le re-générer
+                  <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+                </Button>
+              ) : null)}
+
+            {pdfStoragePath && !showPdfError && (
               <Button
                 size="sm"
                 variant="outline"
                 className="h-8"
                 onClick={handleDownload}
-                disabled={downloading}
+                disabled={downloading || probing}
                 title="Le lien expire au bout de 5 minutes pour votre sécurité"
               >
-                {downloading ? (
+                {downloading || probing ? (
                   <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
                 ) : (
                   <Download className="w-3.5 h-3.5 mr-1.5" />

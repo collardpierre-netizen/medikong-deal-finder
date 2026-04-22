@@ -88,6 +88,23 @@ function validateJwt(
   errors: string[],
 ): void {
   if (!value) return;
+
+  // Nouveau format Supabase (2025+) : `sb_publishable_...` / `sb_secret_...`.
+  // Ce ne sont pas des JWT — on valide juste le préfixe et la longueur min.
+  if (value.startsWith("sb_publishable_") || value.startsWith("sb_secret_")) {
+    const expectedPrefix = expectedRole === "anon" ? "sb_publishable_" : "sb_secret_";
+    if (!value.startsWith(expectedPrefix)) {
+      errors.push(
+        `${name}: préfixe Supabase inattendu (attendu "${expectedPrefix}*")`,
+      );
+    }
+    if (value.length < 30) {
+      errors.push(`${name}: clé Supabase trop courte`);
+    }
+    return;
+  }
+
+  // Ancien format : JWT signé avec `role` dans le payload.
   const parts = value.split(".");
   if (parts.length !== 3) {
     errors.push(`${name}: format JWT invalide (attendu 3 segments, reçu ${parts.length})`);

@@ -60,6 +60,9 @@ export function MandatFacturationFlow({
   vendor,
   onSigned,
   readOnly = false,
+  existingSignedAt = null,
+  existingSignedVersion = null,
+  existingPdfUrl = null,
 }: MandatFacturationFlowProps) {
   const [screen, setScreen] = useState<Screen>(readOnly ? "read" : "intro");
   const [readAck, setReadAck] = useState(false);
@@ -71,6 +74,19 @@ export function MandatFacturationFlow({
 
   const missingFields = useMemo(() => getMissingVendorFields(vendor), [vendor]);
   const canSign = missingFields.length === 0;
+
+  // Statut de conformité TVA dérivé
+  const complianceStatus: VatComplianceStatus = useMemo(() => {
+    if (result || (existingSignedAt && existingSignedVersion === CONTRACT_VERSION)) return "signed";
+    if (existingSignedAt && existingSignedVersion && existingSignedVersion !== CONTRACT_VERSION)
+      return "outdated";
+    if (screen === "read" || screen === "sign") return "in_progress";
+    return "unsigned";
+  }, [result, existingSignedAt, existingSignedVersion, screen]);
+
+  const effectiveSignedAt = result?.signedAt ?? existingSignedAt;
+  const effectiveSignedVersion = result ? CONTRACT_VERSION : existingSignedVersion;
+  const effectivePdfUrl = result?.pdfUrl ?? existingPdfUrl;
 
   // Signature finale : canvas tracé OU nom tapé
   const finalSignature: string | null = useMemo(() => {

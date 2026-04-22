@@ -433,26 +433,29 @@ export function MandatFacturationFlow({
 
   /* ─── ÉCRAN 4 : CONFIRMATION ─── */
   return (
-    <div className="text-center py-8 space-y-5">
-      <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
-        <CheckCircle2 className="w-9 h-9 text-primary" />
-      </div>
-      <div>
-        <h3 className="text-xl font-bold text-foreground">Convention signée avec succès</h3>
-        <p className="text-sm text-muted-foreground mt-1 max-w-md mx-auto">
-          Une copie PDF de votre convention vous a été envoyée par email. Vous pouvez également la télécharger
-          ci-dessous.
-        </p>
-      </div>
-      <div className="flex justify-center gap-3 flex-wrap">
-        {result?.pdfUrl && (
-          <Button variant="outline" asChild>
-            <a href={result.pdfUrl} download target="_blank" rel="noreferrer">
-              <Download className="w-4 h-4 mr-2" />
-              Télécharger mon exemplaire PDF
-            </a>
-          </Button>
-        )}
+    <div className="space-y-6">
+      {banner}
+      <div className="text-center py-8 space-y-5">
+        <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+          <CheckCircle2 className="w-9 h-9 text-primary" />
+        </div>
+        <div>
+          <h3 className="text-xl font-bold text-foreground">Convention signée avec succès</h3>
+          <p className="text-sm text-muted-foreground mt-1 max-w-md mx-auto">
+            Une copie PDF de votre convention vous a été envoyée par email. Vous pouvez également la télécharger
+            ci-dessous.
+          </p>
+        </div>
+        <div className="flex justify-center gap-3 flex-wrap">
+          {result?.pdfUrl && (
+            <Button variant="outline" asChild>
+              <a href={result.pdfUrl} download target="_blank" rel="noreferrer">
+                <Download className="w-4 h-4 mr-2" />
+                Télécharger mon exemplaire PDF
+              </a>
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );

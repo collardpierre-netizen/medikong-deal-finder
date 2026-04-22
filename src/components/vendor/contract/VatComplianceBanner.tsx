@@ -38,6 +38,12 @@ interface VatComplianceBannerProps {
   onOpenDocument?: () => void;
   /** Si fourni, rend un Link react-router au lieu d'un bouton. */
   documentHref?: string;
+  /**
+   * Mode lecture seule : la signature et la re-signature sont désactivées
+   * (vue admin, impersonation, page d'archive). Les actions documentaires
+   * (consultation, téléchargement du PDF signé) restent accessibles.
+   */
+  readOnly?: boolean;
 }
 
 /**
@@ -57,6 +63,7 @@ export function VatComplianceBanner({
   pdfStoragePath,
   onOpenDocument,
   documentHref,
+  readOnly = false,
 }: VatComplianceBannerProps) {
   const config = getStatusConfig(status);
   const Icon = config.icon;
@@ -248,21 +255,54 @@ export function VatComplianceBanner({
             </div>
           )}
 
-          {/* Prochaines actions */}
-          <div className="mt-3">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-1.5">
-              Prochaines actions
+          {/* Prochaines actions — masquées en lecture seule pour ne pas inviter
+              à des actions (signature) qui ne sont pas disponibles dans ce contexte. */}
+          {!readOnly ? (
+            <div className="mt-3">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-1.5">
+                Prochaines actions
+              </p>
+              <ul className="text-xs text-muted-foreground space-y-1 list-disc pl-4">
+                {config.nextSteps.map((step, i) => (
+                  <li key={i}>{step}</li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <p className="mt-3 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+              Mode consultation — la signature est désactivée
             </p>
-            <ul className="text-xs text-muted-foreground space-y-1 list-disc pl-4">
-              {config.nextSteps.map((step, i) => (
-                <li key={i}>{step}</li>
-              ))}
-            </ul>
-          </div>
+          )}
 
           {/* Actions */}
           <div className="flex flex-wrap items-center gap-2 mt-4">
-            {status !== "signed" &&
+            {/* Mode lecture seule : la signature est désactivée. On expose
+                à la place une consultation explicite quand un href est fourni. */}
+            {readOnly && status !== "signed" && (
+              <>
+                {documentHref ? (
+                  <Button asChild size="sm" variant="outline" className="h-8">
+                    <Link to={documentHref}>
+                      <FileText className="w-3.5 h-3.5 mr-1.5" />
+                      Consulter le document
+                      <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+                    </Link>
+                  </Button>
+                ) : null}
+                <Button
+                  size="sm"
+                  className="h-8"
+                  disabled
+                  title="Signature désactivée en mode lecture seule"
+                  aria-disabled="true"
+                >
+                  <FileText className="w-3.5 h-3.5 mr-1.5" />
+                  {status === "outdated" ? "Re-signer la nouvelle version" : "Signer le document"}
+                </Button>
+              </>
+            )}
+
+            {!readOnly && status !== "signed" &&
               (documentHref ? (
                 <Button asChild size="sm" className="h-8">
                   <Link to={documentHref}>
@@ -279,18 +319,24 @@ export function VatComplianceBanner({
                 </Button>
               ))}
 
-            {/* Fallback CTA when signed but PDF unreachable: open the contract
-                page so the vendor can re-generate / re-consult the document. */}
+            {/* Fallback CTA when signed but PDF unreachable.
+                - Mode normal : ouvre la page de la convention pour re-générer.
+                - Mode readOnly : libellé "Consulter" et action limitée à l'ouverture
+                  du document, sans déclencher de re-génération. */}
             {showPdfError &&
               (documentHref ? (
-                <Button asChild size="sm" variant="default" className="h-8">
+                <Button asChild size="sm" variant={readOnly ? "outline" : "default"} className="h-8">
                   <Link to={documentHref}>
-                    <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
-                    Accéder au document pour le re-générer
+                    {readOnly ? (
+                      <FileText className="w-3.5 h-3.5 mr-1.5" />
+                    ) : (
+                      <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
+                    )}
+                    {readOnly ? "Consulter le document" : "Accéder au document pour le re-générer"}
                     <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
                   </Link>
                 </Button>
-              ) : onOpenDocument ? (
+              ) : !readOnly && onOpenDocument ? (
                 <Button size="sm" variant="default" className="h-8" onClick={onOpenDocument}>
                   <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
                   Accéder au document pour le re-générer

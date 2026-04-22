@@ -4365,6 +4365,78 @@ export type Database = {
           },
         ]
       }
+      seller_contracts: {
+        Row: {
+          contract_type: string
+          contract_version: string
+          created_at: string
+          document_hash: string | null
+          id: string
+          ip_address: unknown
+          metadata: Json | null
+          pdf_storage_path: string | null
+          pdf_url: string | null
+          signature_data: string
+          signature_method: string
+          signed_at: string
+          signer_name: string
+          signer_role: string | null
+          user_agent: string | null
+          vendor_id: string
+        }
+        Insert: {
+          contract_type?: string
+          contract_version?: string
+          created_at?: string
+          document_hash?: string | null
+          id?: string
+          ip_address?: unknown
+          metadata?: Json | null
+          pdf_storage_path?: string | null
+          pdf_url?: string | null
+          signature_data: string
+          signature_method: string
+          signed_at?: string
+          signer_name: string
+          signer_role?: string | null
+          user_agent?: string | null
+          vendor_id: string
+        }
+        Update: {
+          contract_type?: string
+          contract_version?: string
+          created_at?: string
+          document_hash?: string | null
+          id?: string
+          ip_address?: unknown
+          metadata?: Json | null
+          pdf_storage_path?: string | null
+          pdf_url?: string | null
+          signature_data?: string
+          signature_method?: string
+          signed_at?: string
+          signer_name?: string
+          signer_role?: string | null
+          user_agent?: string | null
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seller_contracts_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seller_contracts_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shipment_events: {
         Row: {
           created_at: string

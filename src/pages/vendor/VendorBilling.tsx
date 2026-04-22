@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { VCard } from "@/components/vendor/ui/VCard";
 import { VBtn } from "@/components/vendor/ui/VBtn";
 import { VBadge } from "@/components/vendor/ui/VBadge";
+import { ContractHistoryTable } from "@/components/vendor/ContractHistoryTable";
 import {
   Receipt, Download, TrendingUp, Truck, Loader2, FileText, Euro,
 } from "lucide-react";
@@ -231,6 +232,19 @@ export default function VendorBilling() {
             </table>
           </div>
         )}
+      </VCard>
+
+      {/* Contract signature history */}
+      <VCard>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-[14px] font-bold text-[#1D2530]">
+            Historique des conventions signées
+          </h2>
+          <span className="text-[11px] text-[#8B95A5]">
+            Date · Statut · Empreinte SHA-256
+          </span>
+        </div>
+        <ContractHistoryTable vendorId={vendorId} />
       </VCard>
     </div>
   );

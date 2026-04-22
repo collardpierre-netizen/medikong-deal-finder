@@ -35,6 +35,11 @@ import { ContractDocument } from "./ContractDocument";
 import { SignatureCanvas, generateTypedSignature } from "./SignatureCanvas";
 import { VatComplianceBanner, type VatComplianceStatus } from "./VatComplianceBanner";
 import { clearContractDraft, setContractDraft } from "@/lib/contract/draft-marker";
+import {
+  contractLogger,
+  measureStage,
+  recordContractAudit,
+} from "@/lib/contract/contract-logger";
 
 export interface SignedContractResult {
   contractId: string;

@@ -155,6 +155,12 @@ export function VatComplianceBanner({
       if (!pdfStoragePath) setPdfState("missing");
       return;
     }
+    // Track click as soon as the user initiates a download — even if the link
+    // turns out to be unreachable, the intent itself is a useful signal.
+    trackBannerAction("download_signed_pdf", status, {
+      signed_version: signedVersion ?? null,
+      pdf_state: pdfState,
+    });
     setDownloading(true);
     try {
       const url = await getContractSignedUrl(pdfStoragePath, CONTRACT_SIGNED_URL_TTL_SECONDS);

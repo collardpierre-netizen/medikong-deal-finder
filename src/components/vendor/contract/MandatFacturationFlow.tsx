@@ -44,6 +44,12 @@ interface MandatFacturationFlowProps {
   onSigned?: (result: SignedContractResult) => void;
   /** Si true, montre uniquement la consultation (déjà signé). */
   readOnly?: boolean;
+  /** Date ISO de la signature existante (si déjà signée). */
+  existingSignedAt?: string | null;
+  /** Version contractuelle déjà signée (pour détecter une version obsolète). */
+  existingSignedVersion?: string | null;
+  /** URL signée du PDF déjà signé pour téléchargement direct. */
+  existingPdfUrl?: string | null;
 }
 
 type Screen = "intro" | "read" | "sign" | "confirmation";

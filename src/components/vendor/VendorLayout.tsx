@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import { useImpersonation } from "@/contexts/impersonation";
 import { useAuth } from "@/contexts/AuthContext";
+import { ContractSignatureBanner } from "./ContractSignatureBanner";
 
 export default function VendorLayout() {
   const isMobile = useIsMobile();

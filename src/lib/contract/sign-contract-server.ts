@@ -72,12 +72,11 @@ export async function signContractOnServer(
         // peut tenter d'extraire le body JSON (status + payload).
         let parsed: { error?: string; issues?: unknown; status?: number } | null = null;
         try {
-          // @ts-expect-error - context.response exposé par la lib
-          const resp = error.context?.response as Response | undefined;
+          const resp = (error as { context?: { response?: Response } }).context?.response;
           if (resp) {
             const text = await resp.text();
             parsed = text ? JSON.parse(text) : null;
-            (parsed as any).status = resp.status;
+            if (parsed) parsed.status = resp.status;
           }
         } catch {
           /* swallow */

@@ -34,6 +34,7 @@ import {
 import { ContractDocument } from "./ContractDocument";
 import { SignatureCanvas, generateTypedSignature } from "./SignatureCanvas";
 import { VatComplianceBanner, type VatComplianceStatus } from "./VatComplianceBanner";
+import { clearContractDraft, setContractDraft } from "@/lib/contract/draft-marker";
 
 export interface SignedContractResult {
   contractId: string;
@@ -55,6 +56,8 @@ interface MandatFacturationFlowProps {
   existingSignedVersion?: string | null;
   /** Chemin de stockage privé du PDF déjà signé (pour générer un lien à la demande). */
   existingPdfStoragePath?: string | null;
+  /** Écran initial du flow. Permet la reprise après interruption (`?screen=sign`). */
+  initialScreen?: Screen;
 }
 
 type Screen = "intro" | "read" | "sign" | "confirmation";
@@ -68,14 +71,32 @@ export function MandatFacturationFlow({
   existingSignedAt = null,
   existingSignedVersion = null,
   existingPdfStoragePath = null,
+  initialScreen,
 }: MandatFacturationFlowProps) {
-  const [screen, setScreen] = useState<Screen>(readOnly ? "read" : "intro");
+  const alreadySigned = !!(existingSignedAt && existingSignedVersion === CONTRACT_VERSION);
+  const defaultScreen: Screen = readOnly
+    ? "read"
+    : alreadySigned
+      ? "intro"
+      : (initialScreen ?? "intro");
+  const [screen, setScreen] = useState<Screen>(defaultScreen);
   const [readAck, setReadAck] = useState(false);
   const [tab, setTab] = useState<"draw" | "type">("draw");
   const [signatureDataUrl, setSignatureDataUrl] = useState<string | null>(null);
   const [typedName, setTypedName] = useState(vendor.representative_name || "");
   const [signing, setSigning] = useState(false);
   const [result, setResult] = useState<SignedContractResult | null>(null);
+
+  // Persist a lightweight draft marker so the banner can offer "Reprendre la signature"
+  // when the vendor leaves the flow before completing it.
+  useEffect(() => {
+    if (readOnly || alreadySigned) return;
+    if (screen === "read" || screen === "sign") {
+      setContractDraft(vendorId, screen);
+    } else if (screen === "confirmation") {
+      clearContractDraft(vendorId);
+    }
+  }, [screen, vendorId, readOnly, alreadySigned]);
 
   const missingFields = useMemo(() => getMissingVendorFields(vendor), [vendor]);
   const canSign = missingFields.length === 0;

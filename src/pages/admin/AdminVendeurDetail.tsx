@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { EntityDelegatesSection } from "@/components/admin/EntityDelegatesSection";
+import { ContractHistoryTable } from "@/components/vendor/ContractHistoryTable";
 
 type VendorValidationStatus = "pending_review" | "under_review" | "accepted" | "approved" | "rejected";
 
@@ -28,6 +29,7 @@ const tabList = [
   { key: "portfolio", label: "Portefeuille", icon: Tag },
   { key: "products", label: "Produits", icon: Package },
   { key: "delegates", label: "Délégués", icon: Globe },
+  { key: "contracts", label: "Conventions", icon: FileText },
   { key: "activity", label: "Activité", icon: Activity },
 ];
 
@@ -462,6 +464,21 @@ const AdminVendeurDetail = () => {
 
       {activeTab === "delegates" && (
         <EntityDelegatesSection entityType="vendor" entityId={vendor.id} />
+      )}
+
+      {activeTab === "contracts" && (
+        <div className="p-5 rounded-[10px]" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-[14px] font-bold flex items-center gap-2" style={{ color: "#1D2530" }}>
+              <FileText size={16} style={{ color: "#1B5BDA" }} />
+              Historique des signatures de conventions
+            </h3>
+            <span className="text-[11px]" style={{ color: "#8B95A5" }}>
+              Date · Statut · Empreinte SHA-256 · IP
+            </span>
+          </div>
+          <ContractHistoryTable vendorId={vendor.id} adminView />
+        </div>
       )}
 
       {activeTab === "activity" && (

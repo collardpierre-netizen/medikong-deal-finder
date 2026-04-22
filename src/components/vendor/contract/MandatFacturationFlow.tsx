@@ -28,6 +28,7 @@ import {
 import { generateContractPdf, hashBlob } from "@/lib/contract/generate-pdf";
 import { ContractDocument } from "./ContractDocument";
 import { SignatureCanvas, generateTypedSignature } from "./SignatureCanvas";
+import { VatComplianceBanner, type VatComplianceStatus } from "./VatComplianceBanner";
 
 export interface SignedContractResult {
   contractId: string;
@@ -43,6 +44,12 @@ interface MandatFacturationFlowProps {
   onSigned?: (result: SignedContractResult) => void;
   /** Si true, montre uniquement la consultation (déjà signé). */
   readOnly?: boolean;
+  /** Date ISO de la signature existante (si déjà signée). */
+  existingSignedAt?: string | null;
+  /** Version contractuelle déjà signée (pour détecter une version obsolète). */
+  existingSignedVersion?: string | null;
+  /** URL signée du PDF déjà signé pour téléchargement direct. */
+  existingPdfUrl?: string | null;
 }
 
 type Screen = "intro" | "read" | "sign" | "confirmation";
@@ -53,6 +60,9 @@ export function MandatFacturationFlow({
   vendor,
   onSigned,
   readOnly = false,
+  existingSignedAt = null,
+  existingSignedVersion = null,
+  existingPdfUrl = null,
 }: MandatFacturationFlowProps) {
   const [screen, setScreen] = useState<Screen>(readOnly ? "read" : "intro");
   const [readAck, setReadAck] = useState(false);
@@ -64,6 +74,19 @@ export function MandatFacturationFlow({
 
   const missingFields = useMemo(() => getMissingVendorFields(vendor), [vendor]);
   const canSign = missingFields.length === 0;
+
+  // Statut de conformité TVA dérivé
+  const complianceStatus: VatComplianceStatus = useMemo(() => {
+    if (result || (existingSignedAt && existingSignedVersion === CONTRACT_VERSION)) return "signed";
+    if (existingSignedAt && existingSignedVersion && existingSignedVersion !== CONTRACT_VERSION)
+      return "outdated";
+    if (screen === "read" || screen === "sign") return "in_progress";
+    return "unsigned";
+  }, [result, existingSignedAt, existingSignedVersion, screen]);
+
+  const effectiveSignedAt = result?.signedAt ?? existingSignedAt;
+  const effectiveSignedVersion = result ? CONTRACT_VERSION : existingSignedVersion;
+  const effectivePdfUrl = result?.pdfUrl ?? existingPdfUrl;
 
   // Signature finale : canvas tracé OU nom tapé
   const finalSignature: string | null = useMemo(() => {
@@ -222,10 +245,21 @@ export function MandatFacturationFlow({
     }
   };
 
+  const banner = (
+    <VatComplianceBanner
+      status={complianceStatus}
+      signedAt={effectiveSignedAt}
+      signedVersion={effectiveSignedVersion}
+      pdfUrl={effectivePdfUrl}
+      onOpenDocument={() => setScreen("read")}
+    />
+  );
+
   /* ─── ÉCRAN 1 : INTRO ─── */
   if (screen === "intro") {
     return (
       <div className="space-y-6">
+        {banner}
         <Alert>
           <Info className="h-4 w-4" />
           <AlertTitle>Document légal obligatoire avant votre première vente</AlertTitle>
@@ -275,10 +309,12 @@ export function MandatFacturationFlow({
     );
   }
 
+
   /* ─── ÉCRAN 2 : LECTURE ─── */
   if (screen === "read") {
     return (
       <div className="space-y-4">
+        {banner}
         <div className="sticky top-0 z-10 -mx-6 px-6 py-3 bg-card/95 backdrop-blur border-b border-border flex items-center justify-between">
           <div className="flex items-center gap-2">
             <ShieldCheck className="w-4 h-4 text-primary" />
@@ -322,6 +358,7 @@ export function MandatFacturationFlow({
   if (screen === "sign") {
     return (
       <div className="space-y-5">
+        {banner}
         <Alert>
           <ShieldCheck className="h-4 w-4" />
           <AlertTitle>Récapitulatif</AlertTitle>
@@ -396,26 +433,29 @@ export function MandatFacturationFlow({
 
   /* ─── ÉCRAN 4 : CONFIRMATION ─── */
   return (
-    <div className="text-center py-8 space-y-5">
-      <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
-        <CheckCircle2 className="w-9 h-9 text-primary" />
-      </div>
-      <div>
-        <h3 className="text-xl font-bold text-foreground">Convention signée avec succès</h3>
-        <p className="text-sm text-muted-foreground mt-1 max-w-md mx-auto">
-          Une copie PDF de votre convention vous a été envoyée par email. Vous pouvez également la télécharger
-          ci-dessous.
-        </p>
-      </div>
-      <div className="flex justify-center gap-3 flex-wrap">
-        {result?.pdfUrl && (
-          <Button variant="outline" asChild>
-            <a href={result.pdfUrl} download target="_blank" rel="noreferrer">
-              <Download className="w-4 h-4 mr-2" />
-              Télécharger mon exemplaire PDF
-            </a>
-          </Button>
-        )}
+    <div className="space-y-6">
+      {banner}
+      <div className="text-center py-8 space-y-5">
+        <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+          <CheckCircle2 className="w-9 h-9 text-primary" />
+        </div>
+        <div>
+          <h3 className="text-xl font-bold text-foreground">Convention signée avec succès</h3>
+          <p className="text-sm text-muted-foreground mt-1 max-w-md mx-auto">
+            Une copie PDF de votre convention vous a été envoyée par email. Vous pouvez également la télécharger
+            ci-dessous.
+          </p>
+        </div>
+        <div className="flex justify-center gap-3 flex-wrap">
+          {result?.pdfUrl && (
+            <Button variant="outline" asChild>
+              <a href={result.pdfUrl} download target="_blank" rel="noreferrer">
+                <Download className="w-4 h-4 mr-2" />
+                Télécharger mon exemplaire PDF
+              </a>
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );

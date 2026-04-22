@@ -25,12 +25,11 @@ import {
   ContractVendorData,
   getMissingVendorFields,
 } from "@/lib/contract/mandat-facturation-template";
-import { generateContractPdf, hashBlob } from "@/lib/contract/generate-pdf";
+import { generateContractPdf } from "@/lib/contract/generate-pdf";
 import {
-  SELLER_CONTRACTS_BUCKET,
-  CONTRACT_SIGNED_URL_TTL_SECONDS,
-  getContractSignedUrl,
-} from "@/lib/contract/contract-storage";
+  signContractOnServer,
+  SignContractServerError,
+} from "@/lib/contract/sign-contract-server";
 import { ContractDocument } from "./ContractDocument";
 import { SignatureCanvas, generateTypedSignature } from "./SignatureCanvas";
 import { VatComplianceBanner, type VatComplianceStatus } from "./VatComplianceBanner";
@@ -38,7 +37,6 @@ import { clearContractDraft, setContractDraft } from "@/lib/contract/draft-marke
 import {
   contractLogger,
   measureStage,
-  recordContractAudit,
 } from "@/lib/contract/contract-logger";
 
 export interface SignedContractResult {

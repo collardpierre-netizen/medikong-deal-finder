@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -96,6 +96,34 @@ export function MandatFacturationFlow({
     }
     return null;
   }, [tab, signatureDataUrl, typedName]);
+
+  // Notification de soumission : envoyée 1× par vendeur+version dès l'accès au flow
+  // tant que la convention n'est pas signée. Idempotent côté serveur.
+  const submittedNotifSent = useRef(false);
+  useEffect(() => {
+    if (submittedNotifSent.current) return;
+    if (readOnly) return;
+    if (!vendorEmail) return;
+    if (existingSignedAt && existingSignedVersion === CONTRACT_VERSION) return;
+    submittedNotifSent.current = true;
+    supabase.functions
+      .invoke("send-transactional-email", {
+        body: {
+          templateName: "vendor-contract-submitted",
+          recipientEmail: vendorEmail,
+          idempotencyKey: `contract-submitted-${vendorId}-${CONTRACT_VERSION}`,
+          templateData: {
+            vendorCompanyName: vendor.company_name,
+            signerName: vendor.representative_name,
+            contractVersion: CONTRACT_VERSION,
+            contractUrl: `${window.location.origin}/vendor/contract`,
+            missingFields,
+          },
+        },
+      })
+      .catch((e) => console.warn("submission notif failed (non-blocking):", e));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vendorId, vendorEmail, readOnly]);
 
   const handleSign = async () => {
     if (!finalSignature) {

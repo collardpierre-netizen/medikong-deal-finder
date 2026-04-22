@@ -38,6 +38,12 @@ interface VatComplianceBannerProps {
   onOpenDocument?: () => void;
   /** Si fourni, rend un Link react-router au lieu d'un bouton. */
   documentHref?: string;
+  /**
+   * Mode lecture seule : la signature et la re-signature sont désactivées
+   * (vue admin, impersonation, page d'archive). Les actions documentaires
+   * (consultation, téléchargement du PDF signé) restent accessibles.
+   */
+  readOnly?: boolean;
 }
 
 /**
@@ -57,6 +63,7 @@ export function VatComplianceBanner({
   pdfStoragePath,
   onOpenDocument,
   documentHref,
+  readOnly = false,
 }: VatComplianceBannerProps) {
   const config = getStatusConfig(status);
   const Icon = config.icon;

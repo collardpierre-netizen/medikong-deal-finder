@@ -1,8 +1,9 @@
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { ArrowLeft, FilePlus2, FileText, FileMinus2, Wand2, ShieldCheck } from "lucide-react";
 import { CONTRACT_VERSION } from "@/lib/contract/mandat-facturation-template";
 import {
   CONTRACT_CHANGELOG,
+  compareContractVersions,
   type ContractChange,
 } from "@/lib/contract/contract-changelog";
 
@@ -12,6 +13,8 @@ import {
  * « Voir ce qui a changé ».
  */
 export default function VendorContractChangelogPage() {
+  const [searchParams] = useSearchParams();
+  const fromVersion = searchParams.get("from");
   return (
     <div className="max-w-3xl mx-auto px-4 md:px-6 py-6 space-y-6">
       <Link
@@ -36,18 +39,29 @@ export default function VendorContractChangelogPage() {
           du document juridique est listée ici pour vous permettre d'identifier précisément ce
           qui a changé avant de re-signer.
         </p>
+        {fromVersion && (
+          <div className="mt-3 rounded-md border border-mk-amber/30 bg-mk-amber/5 px-3 py-2 text-xs text-foreground">
+            Comparaison demandée depuis votre version signée{" "}
+            <strong>{fromVersion}</strong>. Les entrées plus récentes que cette version sont
+            mises en évidence ci-dessous.
+          </div>
+        )}
       </header>
 
       <ol className="space-y-5">
         {CONTRACT_CHANGELOG.map((entry, idx) => {
           const isCurrent = entry.version === CONTRACT_VERSION;
+          const isNewerThanSigned =
+            !!fromVersion && compareContractVersions(entry.version, fromVersion) > 0;
           return (
             <li
               key={entry.version}
               className={`rounded-xl border p-4 md:p-5 ${
-                isCurrent
-                  ? "border-primary/30 bg-primary/5"
-                  : "border-border bg-card"
+                isNewerThanSigned
+                  ? "border-mk-amber/40 bg-mk-amber/5 ring-1 ring-mk-amber/20"
+                  : isCurrent
+                    ? "border-primary/30 bg-primary/5"
+                    : "border-border bg-card"
               }`}
             >
               <div className="flex flex-wrap items-baseline gap-2 mb-2">

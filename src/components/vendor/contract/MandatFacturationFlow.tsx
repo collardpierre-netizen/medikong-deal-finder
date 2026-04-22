@@ -304,6 +304,7 @@ export function MandatFacturationFlow({
       signedVersion={effectiveSignedVersion}
       pdfStoragePath={effectivePdfStoragePath}
       onOpenDocument={() => setScreen("read")}
+      readOnly={readOnly}
     />
   );
 

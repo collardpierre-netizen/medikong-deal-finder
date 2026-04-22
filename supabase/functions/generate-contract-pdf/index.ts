@@ -30,16 +30,15 @@ import {
   type ContractVendorData,
 } from "../_shared/contract-template.ts";
 import { validateContractTemplateData } from "../_shared/contract-validation.ts";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
-
-const SELLER_CONTRACTS_BUCKET = "seller-contracts";
-const SIGNED_URL_TTL_SECONDS = 5 * 60;
+import {
+  CONTRACT_PDF_CONTENT_TYPE,
+  CONTRACT_PDF_MAX_BYTES,
+  CORS_HEADERS as corsHeaders,
+  ContractEnvError,
+  SELLER_CONTRACTS_BUCKET,
+  SIGNED_URL_TTL_SECONDS,
+  loadContractEnv,
+} from "../_shared/contract-env.ts";
 
 const VendorSchema = z.object({
   company_name: z.string().min(1),
@@ -289,9 +288,29 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return jsonResponse(405, { error: "method_not_allowed" });
 
-  const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-  const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-  const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+  // 0) Validation stricte des secrets injectés par Lovable Cloud.
+  //    En prod, les 3 variables sont auto-provisionnées. Toute absence ou
+  //    altération (clé rotée sans redéploiement, JWT expiré) est détectée
+  //    immédiatement et renvoyée comme 500 explicite.
+  let env;
+  try {
+    env = loadContractEnv();
+  } catch (e) {
+    if (e instanceof ContractEnvError) {
+      logEvent("error", "auth", "env misconfigured", {
+        missing: e.missing,
+        invalid: e.invalid,
+      });
+      return jsonResponse(500, {
+        error: "env_misconfigured",
+        // On ne fuite pas les valeurs, juste les noms manquants/invalides.
+        missing: e.missing,
+        invalid: e.invalid.map((s) => s.split(":")[0]),
+      });
+    }
+    throw e;
+  }
+  const { supabaseUrl: SUPABASE_URL, serviceRoleKey: SERVICE_ROLE, anonKey: ANON_KEY } = env;
 
   // 1) Auth — JWT obligatoire (verify_jwt désactivé, on valide en code).
   const authHeader = req.headers.get("Authorization");
@@ -383,12 +402,23 @@ Deno.serve(async (req) => {
     );
 
     // 7) Upload bucket privé (nom isolé par vendor → RLS conforme).
+    //    contentType + taille max verrouillés via les constantes partagées.
+    if (pdfBytes.byteLength > CONTRACT_PDF_MAX_BYTES) {
+      logEvent("error", "upload_pdf", "pdf too large", {
+        sizeBytes: pdfBytes.byteLength,
+        maxBytes: CONTRACT_PDF_MAX_BYTES,
+      });
+      return jsonResponse(500, { error: "pdf_too_large" });
+    }
     const path = `${body.vendorId}/${CONTRACT_TYPE}-${CONTRACT_VERSION}-${signedAt.getTime()}.pdf`;
     try {
       await measure("upload_pdf", { path, sizeBytes: pdfBytes.byteLength }, async () => {
         const { error } = await adminClient.storage
           .from(SELLER_CONTRACTS_BUCKET)
-          .upload(path, pdfBytes, { contentType: "application/pdf", upsert: false });
+          .upload(path, pdfBytes, {
+            contentType: CONTRACT_PDF_CONTENT_TYPE,
+            upsert: false,
+          });
         if (error) throw error;
       });
     } catch (e) {

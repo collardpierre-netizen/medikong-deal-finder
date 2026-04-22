@@ -6,13 +6,19 @@ import { contractLogger } from "@/lib/contract/contract-logger";
  *  - Vendeur : lit/écrit uniquement son dossier `{vendor_id}/...`
  *  - Admin   : lit tout, peut supprimer
  *  - Personne ne peut UPDATE (immuabilité légale)
+ *
+ * Le nom du bucket et la TTL des liens signés sont VERROUILLÉS ici et
+ * dans `supabase/functions/_shared/contract-env.ts`. Toute modification doit
+ * être faite simultanément aux deux endroits (et accompagnée d'une migration
+ * si on renomme le bucket).
  */
 export const SELLER_CONTRACTS_BUCKET = "seller-contracts";
 
 /**
  * Durée de vie courte des liens signés (rotation forcée).
- * Le lien doit être régénéré à chaque consultation pour limiter
- * la fenêtre d'exposition en cas de fuite (logs, historique navigateur, email).
+ * Doit rester alignée avec `SIGNED_URL_TTL_SECONDS` côté edge function pour
+ * que l'expérience utilisateur soit cohérente entre l'aperçu post-signature
+ * et les téléchargements ultérieurs.
  */
 export const CONTRACT_SIGNED_URL_TTL_SECONDS = 5 * 60; // 5 minutes
 

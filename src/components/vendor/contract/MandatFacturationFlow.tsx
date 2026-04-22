@@ -153,7 +153,7 @@ export function MandatFacturationFlow({
       // 2. Upload PDF dans Supabase Storage
       const path = `${vendorId}/${CONTRACT_TYPE}-${CONTRACT_VERSION}-${signedAt.getTime()}.pdf`;
       const { error: uploadError } = await supabase.storage
-        .from("seller-contracts")
+        .from(SELLER_CONTRACTS_BUCKET)
         .upload(path, pdfBlob, {
           contentType: "application/pdf",
           upsert: false,
@@ -197,10 +197,8 @@ export function MandatFacturationFlow({
         })
         .eq("id", vendorId);
 
-      // 6. URL signée pour téléchargement
-      const { data: signed } = await supabase.storage
-        .from("seller-contracts")
-        .createSignedUrl(path, 60 * 60); // 1h
+      // 6. URL signée à courte durée (rotation/expiration forcée — 5 min)
+      const downloadUrl = await getContractSignedUrl(path, CONTRACT_SIGNED_URL_TTL_SECONDS);
 
       // 7. Email vendeur (template à scaffolder ensuite)
       if (vendorEmail) {

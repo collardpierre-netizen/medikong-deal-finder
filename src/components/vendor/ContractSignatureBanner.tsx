@@ -34,7 +34,7 @@ export function ContractSignatureBanner() {
   if (!vendorId || isLoading || contract) return null;
 
   return (
-    <div className="bg-orange-500 text-white border-b border-orange-600">
+    <div className="bg-mk-amber text-white border-b border-mk-amber/80 font-sans">
       <div className="max-w-screen-2xl mx-auto px-4 md:px-6 py-2.5 flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-start gap-2.5 min-w-0">
           <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" />
@@ -48,7 +48,7 @@ export function ContractSignatureBanner() {
         </div>
         <Link
           to="/vendor/onboarding?step=contract"
-          className="inline-flex items-center gap-1.5 bg-white text-orange-700 hover:bg-orange-50 transition-colors text-sm font-semibold px-3.5 py-1.5 rounded-md flex-shrink-0"
+          className="inline-flex items-center gap-1.5 bg-white text-mk-amber hover:bg-mk-alt transition-colors text-sm font-semibold px-3.5 py-1.5 rounded-md flex-shrink-0"
         >
           Signer maintenant
           <ArrowRight className="w-4 h-4" />

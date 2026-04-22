@@ -321,7 +321,15 @@ export function VatComplianceBanner({
               <>
                 {documentHref ? (
                   <Button asChild size="sm" variant="outline" className="h-8">
-                    <Link to={documentHref}>
+                    <Link
+                      to={documentHref}
+                      onClick={() =>
+                        trackBannerAction("view_document", status, {
+                          source: "readonly_consult",
+                          signed_version: signedVersion ?? null,
+                        })
+                      }
+                    >
                       <FileText className="w-3.5 h-3.5 mr-1.5" />
                       Consulter le document
                       <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
@@ -344,14 +352,32 @@ export function VatComplianceBanner({
             {!readOnly && status !== "signed" &&
               (documentHref ? (
                 <Button asChild size="sm" className="h-8">
-                  <Link to={documentHref}>
+                  <Link
+                    to={documentHref}
+                    onClick={() =>
+                      trackBannerAction("open_document", status, {
+                        source: "primary_cta",
+                        signed_version: signedVersion ?? null,
+                      })
+                    }
+                  >
                     <FileText className="w-3.5 h-3.5 mr-1.5" />
                     Accéder au document
                     <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
                   </Link>
                 </Button>
               ) : (
-                <Button size="sm" className="h-8" onClick={onOpenDocument}>
+                <Button
+                  size="sm"
+                  className="h-8"
+                  onClick={() => {
+                    trackBannerAction("open_document", status, {
+                      source: "primary_cta_callback",
+                      signed_version: signedVersion ?? null,
+                    });
+                    onOpenDocument?.();
+                  }}
+                >
                   <FileText className="w-3.5 h-3.5 mr-1.5" />
                   {status === "outdated" ? "Re-signer la nouvelle version" : "Signer le document"}
                   <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
@@ -365,7 +391,20 @@ export function VatComplianceBanner({
             {showPdfError &&
               (documentHref ? (
                 <Button asChild size="sm" variant={readOnly ? "outline" : "default"} className="h-8">
-                  <Link to={documentHref}>
+                  <Link
+                    to={documentHref}
+                    onClick={() =>
+                      trackBannerAction(
+                        readOnly ? "view_document" : "regenerate_document",
+                        status,
+                        {
+                          source: "pdf_error_fallback",
+                          pdf_state: pdfState,
+                          signed_version: signedVersion ?? null,
+                        }
+                      )
+                    }
+                  >
                     {readOnly ? (
                       <FileText className="w-3.5 h-3.5 mr-1.5" />
                     ) : (
@@ -376,7 +415,19 @@ export function VatComplianceBanner({
                   </Link>
                 </Button>
               ) : !readOnly && onOpenDocument ? (
-                <Button size="sm" variant="default" className="h-8" onClick={onOpenDocument}>
+                <Button
+                  size="sm"
+                  variant="default"
+                  className="h-8"
+                  onClick={() => {
+                    trackBannerAction("regenerate_document", status, {
+                      source: "pdf_error_callback",
+                      pdf_state: pdfState,
+                      signed_version: signedVersion ?? null,
+                    });
+                    onOpenDocument();
+                  }}
+                >
                   <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
                   Accéder au document pour le re-générer
                   <ArrowRight className="w-3.5 h-3.5 ml-1.5" />

@@ -2,6 +2,10 @@ import * as React from 'npm:react@18.3.1'
 import { renderAsync } from 'npm:@react-email/components@0.0.22'
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { TEMPLATES } from '../_shared/transactional-email-templates/registry.ts'
+import {
+  isContractTemplate,
+  validateContractTemplateData,
+} from '../_shared/contract-validation.ts'
 
 // Configuration baked in at scaffold time — do NOT change these manually.
 // To update, re-run the email domain setup flow.
@@ -120,6 +124,44 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
     )
+  }
+
+  if (!effectiveRecipient) {
+    return new Response(
+      JSON.stringify({
+        error: 'recipientEmail is required (unless the template defines a fixed recipient)',
+      }),
+      {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    )
+  }
+
+  // Validation côté serveur des templates contractuels : refuser tout envoi
+  // si les coordonnées MediKong/vendeur sont manquantes ou contiennent un
+  // placeholder. Cela protège la valeur juridique du mandat de facturation.
+  if (isContractTemplate(templateName)) {
+    const validation = validateContractTemplateData(templateData ?? {})
+    if (!validation.valid) {
+      console.error('Contract template data invalid — refusing to send', {
+        templateName,
+        effectiveRecipient,
+        issues: validation.issues,
+      })
+      return new Response(
+        JSON.stringify({
+          error: 'contract_data_invalid',
+          message:
+            'Coordonnées contractuelles incomplètes ou contenant un placeholder. Envoi bloqué.',
+          issues: validation.issues,
+        }),
+        {
+          status: 422,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      )
+    }
   }
 
   // Create Supabase client with service role (bypasses RLS)

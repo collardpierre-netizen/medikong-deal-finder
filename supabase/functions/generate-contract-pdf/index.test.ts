@@ -18,6 +18,7 @@
  * Lancer via le tool `supabase--test_edge_functions` (functions:
  * ["generate-contract-pdf"]).
  */
+// @ts-nocheck — runtime Deno strict ne connaît pas les types DB de prod
 import "https://deno.land/std@0.224.0/dotenv/load.ts";
 import {
   assert,

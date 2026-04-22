@@ -288,9 +288,29 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return jsonResponse(405, { error: "method_not_allowed" });
 
-  const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-  const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-  const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+  // 0) Validation stricte des secrets injectés par Lovable Cloud.
+  //    En prod, les 3 variables sont auto-provisionnées. Toute absence ou
+  //    altération (clé rotée sans redéploiement, JWT expiré) est détectée
+  //    immédiatement et renvoyée comme 500 explicite.
+  let env;
+  try {
+    env = loadContractEnv();
+  } catch (e) {
+    if (e instanceof ContractEnvError) {
+      logEvent("error", "auth", "env misconfigured", {
+        missing: e.missing,
+        invalid: e.invalid,
+      });
+      return jsonResponse(500, {
+        error: "env_misconfigured",
+        // On ne fuite pas les valeurs, juste les noms manquants/invalides.
+        missing: e.missing,
+        invalid: e.invalid.map((s) => s.split(":")[0]),
+      });
+    }
+    throw e;
+  }
+  const { supabaseUrl: SUPABASE_URL, serviceRoleKey: SERVICE_ROLE, anonKey: ANON_KEY } = env;
 
   // 1) Auth — JWT obligatoire (verify_jwt désactivé, on valide en code).
   const authHeader = req.headers.get("Authorization");

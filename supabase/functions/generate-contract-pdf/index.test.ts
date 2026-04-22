@@ -137,18 +137,17 @@ async function setupFixture(): Promise<TestFixture> {
 }
 
 async function teardownFixture(f: TestFixture, pdfPath?: string | null) {
-  // Ordre : storage → contracts → vendor → user
+  // Postgrest builders are thenables, not Promises — wrap chaque appel.
+  const safe = async (p: Promise<unknown> | unknown) => {
+    try { await p; } catch { /* swallow */ }
+  };
   if (pdfPath) {
-    await f.admin.storage.from(SELLER_CONTRACTS_BUCKET).remove([pdfPath]).catch(
-      () => {},
-    );
+    await safe(f.admin.storage.from(SELLER_CONTRACTS_BUCKET).remove([pdfPath]));
   }
-  await f.admin.from("seller_contracts").delete().eq("vendor_id", f.vendorId)
-    .catch(() => {});
-  await f.admin.from("audit_logs").delete().like("detail", `%vendor=${f.vendorId}%`)
-    .catch(() => {});
-  await f.admin.from("vendors").delete().eq("id", f.vendorId).catch(() => {});
-  await f.admin.auth.admin.deleteUser(f.userId).catch(() => {});
+  await safe(f.admin.from("seller_contracts").delete().eq("vendor_id", f.vendorId));
+  await safe(f.admin.from("audit_logs").delete().like("detail", `%vendor=${f.vendorId}%`));
+  await safe(f.admin.from("vendors").delete().eq("id", f.vendorId));
+  await safe(f.admin.auth.admin.deleteUser(f.userId));
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

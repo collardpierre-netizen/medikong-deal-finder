@@ -126,6 +126,44 @@ Deno.serve(async (req) => {
     )
   }
 
+  if (!effectiveRecipient) {
+    return new Response(
+      JSON.stringify({
+        error: 'recipientEmail is required (unless the template defines a fixed recipient)',
+      }),
+      {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    )
+  }
+
+  // Validation côté serveur des templates contractuels : refuser tout envoi
+  // si les coordonnées MediKong/vendeur sont manquantes ou contiennent un
+  // placeholder. Cela protège la valeur juridique du mandat de facturation.
+  if (isContractTemplate(templateName)) {
+    const validation = validateContractTemplateData(templateData ?? {})
+    if (!validation.valid) {
+      console.error('Contract template data invalid — refusing to send', {
+        templateName,
+        effectiveRecipient,
+        issues: validation.issues,
+      })
+      return new Response(
+        JSON.stringify({
+          error: 'contract_data_invalid',
+          message:
+            'Coordonnées contractuelles incomplètes ou contenant un placeholder. Envoi bloqué.',
+          issues: validation.issues,
+        }),
+        {
+          status: 422,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      )
+    }
+  }
+
   // Create Supabase client with service role (bypasses RLS)
   const supabase = createClient(supabaseUrl, supabaseServiceKey)
 

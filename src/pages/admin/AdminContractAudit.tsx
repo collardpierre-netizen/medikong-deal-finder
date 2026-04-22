@@ -253,7 +253,7 @@ const AdminContractAudit = () => {
     <div>
       <AdminTopBar
         title="Audit configuration contrats PDF"
-        breadcrumb={["Admin", "Audit", "Contrats PDF"]}
+        subtitle="Vérification temps réel : env, storage, edge function"
       />
 
       <div className="p-6 space-y-6">

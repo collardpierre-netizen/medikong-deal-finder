@@ -6,6 +6,10 @@ import {
   ContractVendorData,
   MEDIKONG_DEFAULTS,
 } from "./mandat-facturation-template";
+import {
+  ContractValidationError,
+  validateContractData,
+} from "./contract-validation";
 
 interface GeneratePdfArgs {
   vendor: ContractVendorData;
@@ -26,6 +30,13 @@ export async function generateContractPdf({
   signerName,
   signerRole,
 }: GeneratePdfArgs): Promise<Blob> {
+  // Garde-fou : refuser de générer un PDF si les coordonnées sont invalides
+  // (mêmes règles que la validation côté serveur dans send-transactional-email).
+  const validation = validateContractData({ medikong, vendor });
+  if (!validation.valid) {
+    throw new ContractValidationError(validation.issues);
+  }
+
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();

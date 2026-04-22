@@ -358,6 +358,7 @@ export function MandatFacturationFlow({
   if (screen === "sign") {
     return (
       <div className="space-y-5">
+        {banner}
         <Alert>
           <ShieldCheck className="h-4 w-4" />
           <AlertTitle>Récapitulatif</AlertTitle>

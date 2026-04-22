@@ -9,6 +9,7 @@ import { StatsRow } from "@/components/entreprise/StatsRow";
 import { CommissionTiersCards } from "@/components/trust/CommissionTiers";
 import { ProcessStepsVertical } from "@/components/trust/ProcessStepsVertical";
 import { TrustTestimonials } from "@/components/trust/TrustTestimonials";
+import { SellerFaqSection } from "@/components/trust/SellerFaqSection";
 import { commissionTiers } from "@/data/trust-process-data";
 
 const sellerSteps = [
@@ -59,6 +60,7 @@ export default function BecomeSellerPage() {
         />
       </Section>
       {/* <TrustTestimonials title="Ils vendent sur MediKong" /> */}
+      <SellerFaqSection />
       <CtaBanner
         variant="dark"
         title="Prêt à développer votre business ?"

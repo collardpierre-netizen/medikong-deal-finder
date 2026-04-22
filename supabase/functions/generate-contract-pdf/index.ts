@@ -29,7 +29,7 @@ import {
   type ContractMediKongData,
   type ContractVendorData,
 } from "../_shared/contract-template.ts";
-import { validateContractData } from "../_shared/contract-validation.ts";
+import { validateContractTemplateData } from "../_shared/contract-validation.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -330,7 +330,7 @@ Deno.serve(async (req) => {
   }
 
   // 3) Validation contractuelle (placeholders, champs vides).
-  const validation = validateContractData({ medikong: MEDIKONG_DEFAULTS, vendor: body.vendor });
+  const validation = validateContractTemplateData({ medikong: MEDIKONG_DEFAULTS, vendor: body.vendor });
   if (!validation.valid) {
     logEvent("warn", "validate_contract", "validation failed", { issues: validation.issues });
     return jsonResponse(400, { error: "contract_invalid", issues: validation.issues });

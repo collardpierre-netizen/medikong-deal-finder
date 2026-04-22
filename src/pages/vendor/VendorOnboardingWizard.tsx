@@ -45,7 +45,7 @@ interface SendcloudKeys {
 
 /* ─── Step indicator ─── */
 function StepIndicator({ current, total }: { current: number; total: number }) {
-  const labels = ["Entreprise", "Expédition", "Configuration", "Confirmation"];
+  const labels = ["Entreprise", "Expédition", "Configuration", "Récap", "Convention"];
   return (
     <div className="flex items-center gap-2 mb-8">
       {Array.from({ length: total }, (_, i) => {
@@ -276,7 +276,7 @@ export default function VendorOnboardingWizard() {
           <p className="text-sm text-muted-foreground mt-1">Complétez votre inscription en quelques minutes</p>
         </div>
 
-        <StepIndicator current={step} total={4} />
+        <StepIndicator current={step} total={5} />
 
         <div className="bg-card rounded-xl border border-border shadow-sm p-6">
           {/* ─── STEP 1: Company ─── */}

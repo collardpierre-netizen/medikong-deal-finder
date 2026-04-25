@@ -3,9 +3,11 @@ import { NavLink, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, Package, Tag, ShoppingCart, Lightbulb, Bell, FileText, BarChart3, Trophy,
   DollarSign, Truck, HeartPulse, MessageSquare, GraduationCap, Settings, ChevronLeft, ChevronRight, Receipt,
+  AlertOctagon,
 } from "lucide-react";
 import { useI18n } from "@/contexts/I18nContext";
 import { useCurrentVendor } from "@/hooks/useCurrentVendor";
+import { useCompetitorAlertsCount } from "@/hooks/useVendorCompetitorAlerts";
 import { cn } from "@/lib/utils";
 import logoLight from "@/assets/logo-horizontal.png";
 
@@ -37,6 +39,7 @@ const sidebarSections: { label: string | null; items: SidebarItem[] }[] = [
     items: [
       { key: "positioning", icon: Trophy, path: "/vendor/positioning" },
       { key: "marketIntel", icon: BarChart3, path: "/vendor/market-intel" },
+      { key: "competitorAlerts", icon: AlertOctagon, path: "/vendor/competitor-alerts" },
       { key: "opportunities", icon: Lightbulb, path: "/vendor/opportunities", comingSoon: true },
       { key: "alerts", icon: Bell, path: "/vendor/alerts" },
       { key: "tenders", icon: FileText, path: "/vendor/tenders", comingSoon: true },

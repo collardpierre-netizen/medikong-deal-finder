@@ -7,11 +7,13 @@ import { VBadge } from "@/components/vendor/ui/VBadge";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Loader2, Plus, Edit2, Trash2, Upload, Mail, Phone, CalendarDays, MapPin, Users, Globe, User as UserIcon, Search, X, Star } from "lucide-react";
+import { Loader2, Plus, Edit2, Trash2, Upload, Mail, Phone, CalendarDays, MapPin, Users, Globe, User as UserIcon, Search, X, Star, Clock, CheckCircle2, Plane, AlertOctagon, CalendarClock } from "lucide-react";
 
 interface Props {
   vendor: any;
 }
+
+type AvailabilityStatus = "available" | "busy" | "in_meeting" | "on_leave" | "unavailable";
 
 interface Delegate {
   id: string;
@@ -32,7 +34,30 @@ interface Delegate {
   primary_target_profiles: string[];
   is_active: boolean;
   display_order: number;
+  availability_status: AvailabilityStatus;
+  availability_message: string | null;
+  availability_until: string | null;
 }
+
+const AVAILABILITY_OPTIONS: {
+  value: AvailabilityStatus;
+  label: string;
+  short: string;
+  dot: string;
+  bg: string;
+  text: string;
+  border: string;
+  Icon: typeof CheckCircle2;
+}[] = [
+  { value: "available",   label: "Disponible",        short: "Dispo",      dot: "#10B981", bg: "#D1FAE5", text: "#065F46", border: "#10B981", Icon: CheckCircle2 },
+  { value: "busy",        label: "Occupé·e",          short: "Occupé",     dot: "#F59E0B", bg: "#FEF3C7", text: "#92400E", border: "#F59E0B", Icon: Clock },
+  { value: "in_meeting",  label: "En rendez-vous",    short: "En RDV",     dot: "#6366F1", bg: "#E0E7FF", text: "#3730A3", border: "#6366F1", Icon: CalendarClock },
+  { value: "on_leave",    label: "En congé",          short: "En congé",   dot: "#0EA5E9", bg: "#E0F2FE", text: "#075985", border: "#0EA5E9", Icon: Plane },
+  { value: "unavailable", label: "Indisponible",      short: "Indispo",    dot: "#EF4343", bg: "#FEE2E2", text: "#991B1B", border: "#EF4343", Icon: AlertOctagon },
+];
+
+const AVAILABILITY_BY_VALUE: Record<AvailabilityStatus, typeof AVAILABILITY_OPTIONS[number]> =
+  AVAILABILITY_OPTIONS.reduce((acc, o) => ({ ...acc, [o.value]: o }), {} as any);
 
 const LANGUAGES = ["fr", "nl", "en", "de", "lu", "es", "it", "pt", "ar", "tr", "pl", "ro"];
 const LANGUAGE_LABELS: Record<string, string> = {
@@ -73,6 +98,7 @@ const TARGET_PROFILES = [
 const empty: Omit<Delegate, "id" | "vendor_id"> = {
   first_name: "", last_name: "", job_title: "", email: "", phone: "", booking_url: "", photo_url: "", bio: "",
   languages: [], country_codes: [], regions: [], postal_codes: [], target_profiles: [], primary_target_profiles: [], is_active: true, display_order: 0,
+  availability_status: "available", availability_message: "", availability_until: null,
 };
 
 export default function VendorTeamTab({ vendor }: Props) {

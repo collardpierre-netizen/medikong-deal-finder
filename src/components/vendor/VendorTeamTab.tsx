@@ -367,6 +367,8 @@ export default function VendorTeamTab({ vendor }: Props) {
             </VCard>
           ))}
         </div>
+          )}
+        </>
       )}
 
       {/* Dialog */}

@@ -634,6 +634,12 @@ const AdminCategories = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <CategoryKeywordDisableDialog
+        open={showKeywordDisable}
+        onOpenChange={setShowKeywordDisable}
+        categories={categoriesData as any}
+      />
     </div>
   );
 };

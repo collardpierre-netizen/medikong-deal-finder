@@ -7,7 +7,7 @@ import { VBadge } from "@/components/vendor/ui/VBadge";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Loader2, Plus, Edit2, Trash2, Upload, Mail, Phone, CalendarDays, MapPin, Users, Globe, User as UserIcon, Search, X } from "lucide-react";
+import { Loader2, Plus, Edit2, Trash2, Upload, Mail, Phone, CalendarDays, MapPin, Users, Globe, User as UserIcon, Search, X, Star } from "lucide-react";
 
 interface Props {
   vendor: any;
@@ -29,6 +29,7 @@ interface Delegate {
   regions: string[];
   postal_codes: string[];
   target_profiles: string[];
+  primary_target_profiles: string[];
   is_active: boolean;
   display_order: number;
 }
@@ -71,7 +72,7 @@ const TARGET_PROFILES = [
 
 const empty: Omit<Delegate, "id" | "vendor_id"> = {
   first_name: "", last_name: "", job_title: "", email: "", phone: "", booking_url: "", photo_url: "", bio: "",
-  languages: [], country_codes: [], regions: [], postal_codes: [], target_profiles: [], is_active: true, display_order: 0,
+  languages: [], country_codes: [], regions: [], postal_codes: [], target_profiles: [], primary_target_profiles: [], is_active: true, display_order: 0,
 };
 
 export default function VendorTeamTab({ vendor }: Props) {
@@ -151,6 +152,7 @@ export default function VendorTeamTab({ vendor }: Props) {
       photo_url: d.photo_url || "", bio: d.bio || "",
       languages: d.languages || [], country_codes: d.country_codes || [],
       regions: d.regions || [], postal_codes: d.postal_codes || [], target_profiles: d.target_profiles || [],
+      primary_target_profiles: d.primary_target_profiles || [],
       is_active: d.is_active, display_order: d.display_order,
     });
     setDialogOpen(true);
@@ -214,6 +216,22 @@ export default function VendorTeamTab({ vendor }: Props) {
     setFilterSearch(""); setFilterCountry(""); setFilterRegion(""); setFilterProfile(""); setFilterLanguage("");
   };
 
+  // Mapping segment → responsables (référent principal en premier, puis contacts secondaires)
+  const responsibilitiesBySegment = useMemo(() => {
+    const map = new Map<string, { primary: Delegate[]; secondary: Delegate[] }>();
+    const active = delegates.filter(d => d.is_active);
+    TARGET_PROFILES.forEach(({ value }) => {
+      const primary = active.filter(d => (d.primary_target_profiles || []).includes(value));
+      const secondary = active.filter(
+        d => d.target_profiles.includes(value) && !(d.primary_target_profiles || []).includes(value)
+      );
+      if (primary.length > 0 || secondary.length > 0) {
+        map.set(value, { primary, secondary });
+      }
+    });
+    return map;
+  }, [delegates]);
+
   if (isLoading) {
     return <div className="flex justify-center py-12"><Loader2 className="animate-spin text-[#1B5BDA]" /></div>;
   }
@@ -239,6 +257,53 @@ export default function VendorTeamTab({ vendor }: Props) {
         </VCard>
       ) : (
         <>
+          {/* Vue Responsables par segment */}
+          {responsibilitiesBySegment.size > 0 && (
+            <VCard>
+              <div className="flex items-center gap-2 mb-3">
+                <Star size={14} className="text-[#F59E0B] fill-[#F59E0B]" />
+                <h3 className="text-[13px] font-bold text-[#1D2530]">Responsables par segment</h3>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2">
+                {Array.from(responsibilitiesBySegment.entries()).map(([segment, { primary, secondary }]) => {
+                  const lbl = TARGET_PROFILES.find(tp => tp.value === segment)?.label || segment;
+                  return (
+                    <div key={segment} className="flex items-start gap-2 py-1 border-b border-[#F1F5F9] last:border-0">
+                      <div className="text-[12px] font-semibold text-[#1D2530] min-w-[100px] flex-shrink-0">
+                        {lbl}
+                      </div>
+                      <div className="flex-1 text-[11px] text-[#616B7C]">
+                        {primary.length > 0 ? (
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            {primary.map(d => (
+                              <span key={d.id} className="inline-flex items-center gap-1 font-semibold text-[#92400E]">
+                                <Star size={9} className="fill-[#F59E0B] text-[#F59E0B]" />
+                                {d.first_name} {d.last_name}
+                              </span>
+                            ))}
+                            {secondary.length > 0 && (
+                              <span className="text-[#8B95A5]">
+                                + {secondary.map(d => `${d.first_name} ${d.last_name}`).join(", ")}
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="italic text-[#8B95A5]">
+                            Aucun référent — {secondary.map(d => `${d.first_name} ${d.last_name}`).join(", ")}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="text-[10px] text-[#8B95A5] mt-3">
+                <Star size={9} className="inline fill-[#F59E0B] text-[#F59E0B] mr-1" />
+                = référent principal (affiché en priorité aux acheteurs du segment).
+              </p>
+            </VCard>
+          )}
+
           {/* Barre de filtres */}
           <VCard>
             <div className="flex flex-wrap items-center gap-2">
@@ -352,7 +417,20 @@ export default function VendorTeamTab({ vendor }: Props) {
                   <div className="mt-2 flex flex-wrap gap-1">
                     {d.target_profiles.map(p => {
                       const lbl = TARGET_PROFILES.find(tp => tp.value === p)?.label || p;
-                      return <VBadge key={p} color="#1B5BDA">{lbl}</VBadge>;
+                      const isPrimary = (d.primary_target_profiles || []).includes(p);
+                      return (
+                        <span
+                          key={p}
+                          className={`inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded font-semibold ${
+                            isPrimary
+                              ? "bg-[#FEF3C7] text-[#92400E] border border-[#F59E0B]"
+                              : "bg-[#1B5BDA]/10 text-[#1B5BDA]"
+                          }`}
+                        >
+                          {isPrimary && <Star size={9} className="fill-[#F59E0B] text-[#F59E0B]" />}
+                          {lbl}
+                        </span>
+                      );
                     })}
                     {d.languages.map(l => (
                       <span key={l} className="text-[10px] px-1.5 py-0.5 rounded bg-[#F1F5F9] text-[#616B7C] uppercase">
@@ -479,12 +557,50 @@ export default function VendorTeamTab({ vendor }: Props) {
             <Field label="Profils d'acheteurs ciblés">
               <div className="flex flex-wrap gap-1.5">
                 {TARGET_PROFILES.map(p => (
-                  <Chip key={p.value} active={form.target_profiles.includes(p.value)} onClick={() => setForm(f => ({ ...f, target_profiles: toggle(f.target_profiles, p.value) }))}>
+                  <Chip key={p.value} active={form.target_profiles.includes(p.value)} onClick={() => setForm(f => ({
+                    ...f,
+                    target_profiles: toggle(f.target_profiles, p.value),
+                    // Si on désélectionne la cible, retire aussi le statut "référent"
+                    primary_target_profiles: f.target_profiles.includes(p.value)
+                      ? f.primary_target_profiles.filter(v => v !== p.value)
+                      : f.primary_target_profiles,
+                  }))}>
                     {p.label}
                   </Chip>
                 ))}
               </div>
             </Field>
+
+            {/* Référent principal */}
+            {form.target_profiles.length > 0 && (
+              <Field label="Référent principal pour ces segments">
+                <p className="text-[10px] text-[#8B95A5] mb-1.5">
+                  Ce délégué sera affiché en priorité aux acheteurs de ces segments.
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {form.target_profiles.map(value => {
+                    const p = TARGET_PROFILES.find(tp => tp.value === value);
+                    if (!p) return null;
+                    const isPrimary = form.primary_target_profiles.includes(value);
+                    return (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => setForm(f => ({ ...f, primary_target_profiles: toggle(f.primary_target_profiles, value) }))}
+                        className={`text-[11px] px-2.5 py-1 rounded-full border transition-colors inline-flex items-center gap-1 ${
+                          isPrimary
+                            ? "bg-[#F59E0B] text-white border-[#F59E0B]"
+                            : "bg-white text-[#616B7C] border-[#E2E8F0] hover:border-[#F59E0B] hover:text-[#F59E0B]"
+                        }`}
+                      >
+                        <Star size={10} className={isPrimary ? "fill-white" : ""} />
+                        {p.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </Field>
+            )}
 
             {/* Bio */}
             <Field label="Bio courte (optionnel)">

@@ -406,6 +406,15 @@ export default function VendorPublicPage() {
           <aside className="hidden lg:block w-[240px] shrink-0 space-y-5">
             {/* Délégué commercial (acheteurs vérifiés) */}
             <VendorDelegatesPublic vendorId={vendor.id} />
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full h-8 text-xs"
+              onClick={() => setDelegateDialogOpen(true)}
+            >
+              <Eye size={12} className="mr-1.5" />
+              Voir délégué
+            </Button>
 
             {/* Delivery */}
             <div>

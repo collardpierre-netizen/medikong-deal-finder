@@ -123,8 +123,15 @@ export default function VendorDelegatesPublic({ vendorId }: Props) {
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-semibold text-foreground truncate">
-                {d.first_name} {d.last_name}
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <div className="text-sm font-semibold text-foreground truncate">
+                  {d.first_name} {d.last_name}
+                </div>
+                {buyerProfile && (d.primary_target_profiles || []).includes(buyerProfile) && (
+                  <span className="inline-flex items-center gap-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-300">
+                    ★ Votre référent
+                  </span>
+                )}
               </div>
               {d.job_title && (
                 <div className="text-[11px] text-muted-foreground truncate">{d.job_title}</div>

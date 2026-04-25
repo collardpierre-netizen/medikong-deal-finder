@@ -36,6 +36,7 @@ const sidebarSections: { label: string | null; items: SidebarItem[] }[] = [
   {
     label: "INTELLIGENCE",
     items: [
+      { key: "positioning", icon: Trophy, path: "/vendor/positioning" },
       { key: "opportunities", icon: Lightbulb, path: "/vendor/opportunities", comingSoon: true },
       { key: "alerts", icon: Bell, path: "/vendor/alerts" },
       { key: "tenders", icon: FileText, path: "/vendor/tenders", comingSoon: true },

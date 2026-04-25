@@ -169,9 +169,14 @@ export default function ProductPhotoUploader({
   const totalAfter =
     mode === "replace" ? files.length : (currentImages.length + files.length);
 
+  const uploadablesCount = files.filter((f) => f.duplicate !== "duplicate-existing").length;
+  const skippedExistingCount = files.filter((f) => f.duplicate === "duplicate-existing").length;
+
   const uploadMutation = useMutation({
     mutationFn: async () => {
-      if (files.length === 0) throw new Error("Aucun fichier sélectionné");
+      // Skip files flagged as duplicates of existing product images
+      const toUpload = files.filter((f) => f.duplicate !== "duplicate-existing");
+      if (toUpload.length === 0) throw new Error("Aucun fichier à téléverser (tous en doublon)");
       if (totalAfter > MAX_IMAGES_PER_PRODUCT) {
         throw new Error(`Maximum ${MAX_IMAGES_PER_PRODUCT} photos par produit`);
       }
@@ -180,7 +185,8 @@ export default function ProductPhotoUploader({
       const uploaded: string[] = [];
       let done = 0;
 
-      for (const file of files) {
+      for (const entry of toUpload) {
+        const file = entry.file;
         const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
         const ts = Date.now();
         const rand = Math.random().toString(36).slice(2, 8);
@@ -199,7 +205,7 @@ export default function ProductPhotoUploader({
         uploaded.push(pub.publicUrl);
 
         done += 1;
-        setProgress(Math.round((done / files.length) * 100));
+        setProgress(Math.round((done / toUpload.length) * 100));
       }
 
       const finalImages =
@@ -214,7 +220,7 @@ export default function ProductPhotoUploader({
         .eq("id", productId);
       if (dbErr) throw new Error(`Mise à jour produit : ${dbErr.message}`);
 
-      return { count: uploaded.length, total: finalImages.length };
+      return { count: uploaded.length, total: finalImages.length, skipped: skippedExistingCount };
     },
     onSuccess: (res) => {
       toast.success(`${res.count} photo(s) ajoutée(s) — ${res.total} au total`);

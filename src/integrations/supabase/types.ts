@@ -5843,16 +5843,21 @@ export type Database = {
           commissionnaire_agreement_version: string | null
           company_name: string | null
           contact_name: string | null
+          contact_person: string | null
           country_code: string
+          cover_image_url: string | null
           created_at: string
           description: string | null
           display_code: string | null
           email: string | null
+          facebook_url: string | null
           fixed_commission_amount: number | null
           id: string
+          instagram_url: string | null
           is_active: boolean
           is_top_seller: boolean | null
           is_verified: boolean
+          linkedin_url: string | null
           logo_url: string | null
           margin_split_pct: number
           name: string
@@ -5881,7 +5886,9 @@ export type Database = {
           stripe_charges_enabled: boolean
           stripe_onboarding_complete: boolean
           stripe_payouts_enabled: boolean
+          tagline: string | null
           total_sales: number
+          twitter_url: string | null
           type: Database["public"]["Enums"]["vendor_type"]
           updated_at: string
           validated_at: string | null
@@ -5893,6 +5900,8 @@ export type Database = {
           vat_number: string | null
           vendor_code: string | null
           vendor_shipping_mode: Database["public"]["Enums"]["vendor_shipping_mode"]
+          website: string | null
+          youtube_url: string | null
         }
         Insert: {
           address_line1?: string | null
@@ -5907,16 +5916,21 @@ export type Database = {
           commissionnaire_agreement_version?: string | null
           company_name?: string | null
           contact_name?: string | null
+          contact_person?: string | null
           country_code?: string
+          cover_image_url?: string | null
           created_at?: string
           description?: string | null
           display_code?: string | null
           email?: string | null
+          facebook_url?: string | null
           fixed_commission_amount?: number | null
           id?: string
+          instagram_url?: string | null
           is_active?: boolean
           is_top_seller?: boolean | null
           is_verified?: boolean
+          linkedin_url?: string | null
           logo_url?: string | null
           margin_split_pct?: number
           name: string
@@ -5945,7 +5959,9 @@ export type Database = {
           stripe_charges_enabled?: boolean
           stripe_onboarding_complete?: boolean
           stripe_payouts_enabled?: boolean
+          tagline?: string | null
           total_sales?: number
+          twitter_url?: string | null
           type?: Database["public"]["Enums"]["vendor_type"]
           updated_at?: string
           validated_at?: string | null
@@ -5957,6 +5973,8 @@ export type Database = {
           vat_number?: string | null
           vendor_code?: string | null
           vendor_shipping_mode?: Database["public"]["Enums"]["vendor_shipping_mode"]
+          website?: string | null
+          youtube_url?: string | null
         }
         Update: {
           address_line1?: string | null
@@ -5971,16 +5989,21 @@ export type Database = {
           commissionnaire_agreement_version?: string | null
           company_name?: string | null
           contact_name?: string | null
+          contact_person?: string | null
           country_code?: string
+          cover_image_url?: string | null
           created_at?: string
           description?: string | null
           display_code?: string | null
           email?: string | null
+          facebook_url?: string | null
           fixed_commission_amount?: number | null
           id?: string
+          instagram_url?: string | null
           is_active?: boolean
           is_top_seller?: boolean | null
           is_verified?: boolean
+          linkedin_url?: string | null
           logo_url?: string | null
           margin_split_pct?: number
           name?: string
@@ -6009,7 +6032,9 @@ export type Database = {
           stripe_charges_enabled?: boolean
           stripe_onboarding_complete?: boolean
           stripe_payouts_enabled?: boolean
+          tagline?: string | null
           total_sales?: number
+          twitter_url?: string | null
           type?: Database["public"]["Enums"]["vendor_type"]
           updated_at?: string
           validated_at?: string | null
@@ -6021,6 +6046,8 @@ export type Database = {
           vat_number?: string | null
           vendor_code?: string | null
           vendor_shipping_mode?: Database["public"]["Enums"]["vendor_shipping_mode"]
+          website?: string | null
+          youtube_url?: string | null
         }
         Relationships: []
       }

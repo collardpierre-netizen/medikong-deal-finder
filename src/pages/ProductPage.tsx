@@ -6,7 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useParams, Link, useNavigate, useLocation } from "react-router-dom";
 import {
   Copy, Sliders, ShoppingCart, Shield, Check, Truck, Minus, Plus,
-  Heart, Tag, Package, ChevronRight, Home, Star, Info, Award, Globe, BarChart3, Calculator, TrendingDown, Bell, ExternalLink, Lock, ArrowRight, HelpCircle, ChevronDown, Store
+  Heart, Tag, Package, ChevronRight, Home, Star, Info, Award, Globe, BarChart3, Calculator, TrendingDown, Bell, ExternalLink, Lock, ArrowRight, HelpCircle, ChevronDown, Store, Play, Pause
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useFavorites, useRecentActivity } from "@/hooks/useFavorites";
@@ -591,6 +591,8 @@ function WatchListDialog({ product, user, bestPrice, isTVAC }: { product: any; u
 
 export default function ProductPage() {
   const [selectedImageIdx, setSelectedImageIdx] = useState(0);
+  const [isGalleryHover, setIsGalleryHover] = useState(false);
+  const [autoplayEnabled, setAutoplayEnabled] = useState(true);
   const [copied, setCopied] = useState(false);
   const [movFilter, setMovFilter] = useState<number | null>(null);
   const [delayFilter, setDelayFilter] = useState<number | null>(null);
@@ -827,6 +829,17 @@ export default function ProductPage() {
     : isValidProductImage(product.imageUrl) ? [product.imageUrl!] : [];
   const images: string[] = rawImages.map((u) => getProductImageSrc(u));
   const hasImages = images.length > 0;
+  const galleryImages = images.slice(0, 6);
+
+  // Auto-rotate gallery photos every 3s when more than 1 image, paused on hover
+  useEffect(() => {
+    if (!autoplayEnabled || isGalleryHover || galleryImages.length <= 1) return;
+    const id = window.setInterval(() => {
+      setSelectedImageIdx((i) => (i + 1) % galleryImages.length);
+    }, 3000);
+    return () => window.clearInterval(id);
+  }, [autoplayEnabled, isGalleryHover, galleryImages.length]);
+
   const description = productDetails?.description || (productDetails as any)?.label || product.descriptionShort || "";
 
   const clientPrice = bestOffer ? (isTVAC ? bestOffer.unitPriceInclVat : bestOffer.unitPriceEur) : 0;
@@ -920,11 +933,15 @@ export default function ProductPage() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
             >
-              <div className="flex gap-3">
+              <div
+                className="flex gap-3"
+                onMouseEnter={() => setIsGalleryHover(true)}
+                onMouseLeave={() => setIsGalleryHover(false)}
+              >
                 {/* Thumbnail column */}
                 {images.length > 1 && (
                   <div className="hidden md:flex flex-col gap-2 w-[60px] shrink-0">
-                    {images.slice(0, 6).map((img, i) => (
+                    {galleryImages.map((img, i) => (
                       <button
                         key={i}
                         onClick={() => setSelectedImageIdx(i)}
@@ -938,12 +955,12 @@ export default function ProductPage() {
 
                 {/* Main image */}
                 <div className="flex-1">
-                  <div className="aspect-square rounded-xl overflow-hidden border border-border bg-muted flex items-center justify-center">
+                  <div className="relative aspect-square rounded-xl overflow-hidden border border-border bg-muted flex items-center justify-center">
                     {hasImages ? (
                       <img
                         src={images[selectedImageIdx] || images[0]}
                         alt={product.name}
-                        className="w-full h-full object-contain p-4"
+                        className="w-full h-full object-contain p-4 transition-opacity duration-300"
                         referrerPolicy="no-referrer"
                         onLoad={(e) => { if (isQogitaPlaceholder(e.currentTarget)) e.currentTarget.src = MEDIKONG_PLACEHOLDER; }}
                         onError={(e) => {
@@ -953,12 +970,29 @@ export default function ProductPage() {
                     ) : (
                       <img src="/medikong-placeholder.png" alt="Image non disponible" className="w-full h-full object-contain p-8" />
                     )}
+
+                    {/* Autoplay control + counter */}
+                    {galleryImages.length > 1 && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => setAutoplayEnabled((v) => !v)}
+                          aria-label={autoplayEnabled ? "Mettre en pause le diaporama" : "Lancer le diaporama"}
+                          className="absolute top-2 right-2 inline-flex items-center justify-center w-8 h-8 rounded-full bg-background/80 backdrop-blur border border-border text-foreground hover:bg-background transition-colors"
+                        >
+                          {autoplayEnabled && !isGalleryHover ? <Pause size={14} /> : <Play size={14} />}
+                        </button>
+                        <div className="absolute bottom-2 right-2 px-2 py-0.5 rounded-full text-[11px] font-medium bg-background/80 backdrop-blur border border-border text-muted-foreground">
+                          {selectedImageIdx + 1} / {galleryImages.length}
+                        </div>
+                      </>
+                    )}
                   </div>
 
                   {/* Mobile thumbnails */}
                   {hasImages && images.length > 1 && (
                     <div className="flex md:hidden gap-2 mt-3 overflow-x-auto">
-                      {images.slice(0, 6).map((img, i) => (
+                      {galleryImages.map((img, i) => (
                         <button
                           key={i}
                           onClick={() => setSelectedImageIdx(i)}

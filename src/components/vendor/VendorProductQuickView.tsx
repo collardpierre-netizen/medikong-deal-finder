@@ -136,10 +136,25 @@ export default function VendorProductQuickView({ product, open, onOpenChange }: 
         </div>
 
         {/* Délégué dédié — filtré par profil acheteur, masqué si non vérifié */}
-        <div className="mt-4 pt-4 border-t border-border">
+        <div className="mt-4 pt-4 border-t border-border space-y-2">
           <VendorDelegateCompact vendorId={product.vendorId} variant="card" />
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full h-8 text-xs"
+            onClick={() => setDelegateOpen(true)}
+          >
+            <UserRound size={12} className="mr-1.5" />
+            Voir délégué
+          </Button>
         </div>
       </DialogContent>
+
+      <VendorDelegateDetailDialog
+        vendorId={product.vendorId}
+        open={delegateOpen}
+        onOpenChange={setDelegateOpen}
+      />
     </Dialog>
   );
 }

@@ -24,9 +24,48 @@ async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message = 
   }
 }
 
+/**
+ * Returns the IDs of all inactive categories AND every descendant of an inactive
+ * category — even if those descendants are individually marked active.
+ *
+ * Rationale: when an admin disables a parent (e.g. "Perfumes"), every child
+ * (Eau De Parfum, Eau De Toilette, …) should cascade to hidden in the catalog
+ * without requiring manual cleanup. We compute the cascade in JS from the full
+ * categories tree so we keep a single round-trip and stay independent from RPC.
+ */
 async function fetchInactiveCategoryIds(): Promise<string[]> {
-  const { data } = await supabase.from("categories").select("id").eq("is_active", false);
-  return (data || []).map((c: any) => c.id);
+  const { data } = await supabase
+    .from("categories")
+    .select("id, parent_id, is_active");
+
+  const all = (data || []) as Array<{ id: string; parent_id: string | null; is_active: boolean }>;
+
+  // Build adjacency: parent -> children
+  const childrenByParent = new Map<string, string[]>();
+  for (const cat of all) {
+    if (!cat.parent_id) continue;
+    const list = childrenByParent.get(cat.parent_id);
+    if (list) list.push(cat.id);
+    else childrenByParent.set(cat.parent_id, [cat.id]);
+  }
+
+  const inactive = new Set<string>(all.filter((c) => !c.is_active).map((c) => c.id));
+
+  // BFS from each inactive root to mark all descendants
+  const queue: string[] = [...inactive];
+  while (queue.length > 0) {
+    const current = queue.shift()!;
+    const kids = childrenByParent.get(current);
+    if (!kids) continue;
+    for (const kid of kids) {
+      if (!inactive.has(kid)) {
+        inactive.add(kid);
+        queue.push(kid);
+      }
+    }
+  }
+
+  return Array.from(inactive);
 }
 
 function applyCatalogProductFilters(

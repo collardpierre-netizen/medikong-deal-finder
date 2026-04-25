@@ -180,6 +180,7 @@ export default function VendorPublicPage() {
   const { currentCountry } = useCountry();
   const { items: cartItems, addToCart, openDrawer } = useCart();
   const [quickViewProduct, setQuickViewProduct] = useState<any | null>(null);
+  const [delegateDialogOpen, setDelegateDialogOpen] = useState(false);
 
   const { data: vendor, isLoading } = useQuery({
     queryKey: ["vendor-public", slug],

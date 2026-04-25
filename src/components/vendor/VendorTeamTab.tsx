@@ -248,13 +248,14 @@ export default function VendorTeamTab({ vendor }: Props) {
       if (filterRegion && !d.regions.includes(filterRegion)) return false;
       if (filterProfile && !d.target_profiles.includes(filterProfile)) return false;
       if (filterLanguage && !d.languages.includes(filterLanguage)) return false;
+      if (filterAvailability && d.availability_status !== filterAvailability) return false;
       return true;
     });
-  }, [delegates, filterSearch, filterCountry, filterRegion, filterProfile, filterLanguage]);
+  }, [delegates, filterSearch, filterCountry, filterRegion, filterProfile, filterLanguage, filterAvailability]);
 
-  const hasActiveFilters = filterSearch || filterCountry || filterRegion || filterProfile || filterLanguage;
+  const hasActiveFilters = filterSearch || filterCountry || filterRegion || filterProfile || filterLanguage || filterAvailability;
   const clearFilters = () => {
-    setFilterSearch(""); setFilterCountry(""); setFilterRegion(""); setFilterProfile(""); setFilterLanguage("");
+    setFilterSearch(""); setFilterCountry(""); setFilterRegion(""); setFilterProfile(""); setFilterLanguage(""); setFilterAvailability("");
   };
 
   // Mapping segment → responsables (référent principal en premier, puis contacts secondaires)

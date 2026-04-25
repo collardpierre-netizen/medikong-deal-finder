@@ -8,13 +8,17 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Upload, X, Image as ImageIcon, ImagePlus, AlertTriangle, ShieldCheck } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Loader2, Upload, X, Image as ImageIcon, ImagePlus, AlertTriangle, ShieldCheck, Sparkles } from "lucide-react";
+import { normalizeImageFile } from "@/lib/imageNormalize";
 
 const MAX_FILE_SIZE = 8 * 1024 * 1024; // 8MB per file
 const ACCEPTED = ["image/jpeg", "image/png", "image/webp", "image/avif"];
 const MAX_IMAGES_PER_PRODUCT = 10;
+const NORMALIZE_SIZE = 1200; // px (square output)
 
 type Mode = "append" | "replace";
+type FitMode = "contain" | "cover";
 
 interface Props {
   productId: string;
@@ -81,6 +85,8 @@ export default function ProductPhotoUploader({
   const [progress, setProgress] = useState(0);
   const [hashing, setHashing] = useState(false);
   const [existingHashes, setExistingHashes] = useState<Set<string>>(new Set());
+  const [normalize, setNormalize] = useState(true);
+  const [fit, setFit] = useState<FitMode>("contain");
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Pre-hash existing product images once the dialog opens
@@ -186,7 +192,24 @@ export default function ProductPhotoUploader({
       let done = 0;
 
       for (const entry of toUpload) {
-        const file = entry.file;
+        // Normalize the image (square canvas, white letterbox, WebP) when enabled.
+        // Falls back gracefully to the original on any failure.
+        let file = entry.file;
+        if (normalize) {
+          try {
+            file = await normalizeImageFile(entry.file, {
+              size: NORMALIZE_SIZE,
+              mime: "image/webp",
+              quality: 0.88,
+              crop: fit === "cover",
+              background: "#ffffff",
+            });
+          } catch {
+            // Keep original if browser cannot decode/encode
+            file = entry.file;
+          }
+        }
+
         const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
         const ts = Date.now();
         const rand = Math.random().toString(36).slice(2, 8);
@@ -199,7 +222,7 @@ export default function ProductPhotoUploader({
             upsert: false,
             contentType: file.type,
           });
-        if (upErr) throw new Error(`Upload "${file.name}" : ${upErr.message}`);
+        if (upErr) throw new Error(`Upload "${entry.file.name}" : ${upErr.message}`);
 
         const { data: pub } = supabase.storage.from("product-images").getPublicUrl(path);
         uploaded.push(pub.publicUrl);
@@ -372,6 +395,59 @@ export default function ProductPhotoUploader({
                 </div>
               </div>
             )}
+
+            {/* Normalization options */}
+            <div className="rounded-md border p-3 space-y-3 bg-muted/20">
+              <div className="flex items-start justify-between gap-3">
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-1.5 text-xs font-semibold">
+                    <Sparkles size={13} className="text-primary" />
+                    Normaliser pour une galerie homogène
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    Recadre toutes les photos en {NORMALIZE_SIZE}×{NORMALIZE_SIZE} (carré),
+                    ajoute un fond blanc et exporte en WebP.
+                  </p>
+                </div>
+                <Switch checked={normalize} onCheckedChange={setNormalize} />
+              </div>
+
+              {normalize && (
+                <div className="space-y-1.5 pt-1 border-t">
+                  <Label className="text-[11px] text-muted-foreground">Mode de cadrage</Label>
+                  <RadioGroup
+                    value={fit}
+                    onValueChange={(v) => setFit(v as FitMode)}
+                    className="grid grid-cols-2 gap-2"
+                  >
+                    <Label
+                      htmlFor="fit-contain"
+                      className={`flex items-start gap-2 rounded-md border p-2 cursor-pointer ${fit === "contain" ? "border-primary bg-primary/5" : ""}`}
+                    >
+                      <RadioGroupItem value="contain" id="fit-contain" className="mt-0.5" />
+                      <div>
+                        <div className="text-[11px] font-semibold">Adapter (recommandé)</div>
+                        <div className="text-[10px] text-muted-foreground">
+                          Photo entière visible, fond blanc autour.
+                        </div>
+                      </div>
+                    </Label>
+                    <Label
+                      htmlFor="fit-cover"
+                      className={`flex items-start gap-2 rounded-md border p-2 cursor-pointer ${fit === "cover" ? "border-primary bg-primary/5" : ""}`}
+                    >
+                      <RadioGroupItem value="cover" id="fit-cover" className="mt-0.5" />
+                      <div>
+                        <div className="text-[11px] font-semibold">Remplir (recadrage)</div>
+                        <div className="text-[10px] text-muted-foreground">
+                          Recadre au centre, peut couper les bords.
+                        </div>
+                      </div>
+                    </Label>
+                  </RadioGroup>
+                </div>
+              )}
+            </div>
 
             {/* Mode */}
             <div className="space-y-2">

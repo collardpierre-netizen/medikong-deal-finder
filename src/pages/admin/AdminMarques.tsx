@@ -8,10 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useBrands, useManufacturers, useBrandCount } from "@/hooks/useAdminData";
 import { BrandFormDialog } from "@/components/admin/BrandFormDialog";
-import { exportBrands, importBrands } from "@/lib/xlsx-utils";
+import { exportBrands, importBrands, downloadBrandTemplate } from "@/lib/xlsx-utils";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Tag, Package, Plus, Download, Upload, Search, ExternalLink, Globe } from "lucide-react";
+import { Tag, Package, Plus, Download, Upload, Search, ExternalLink, Globe, FileSpreadsheet } from "lucide-react";
 
 const fmt = (n: number) => n.toLocaleString("fr-BE");
 
@@ -45,6 +45,7 @@ const AdminMarques = () => {
       <AdminTopBar title="Marques" subtitle="Gestion du portefeuille marques"
         actions={
           <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => downloadBrandTemplate()} title="Télécharger le template d'import"><FileSpreadsheet size={14} className="mr-1" />Template</Button>
             <Button variant="outline" size="sm" onClick={() => exportBrands()}><Download size={14} className="mr-1" />Export XLSX</Button>
             <Button variant="outline" size="sm" onClick={() => brandFileRef.current?.click()}><Upload size={14} className="mr-1" />Import XLSX</Button>
             <input ref={brandFileRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={e => { if (e.target.files?.[0]) handleImport(e.target.files[0]); e.target.value = ""; }} />

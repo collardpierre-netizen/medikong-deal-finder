@@ -48,6 +48,60 @@ export function downloadProductTemplate() {
   toast.success("Template téléchargé");
 }
 
+export function downloadBrandTemplate() {
+  const headers = [
+    {
+      name: "Marque Exemple",
+      slug: "",
+      manufacturer_name: "Fabricant Exemple",
+      description: "Description courte de la marque (FR)",
+      country_of_origin: "BE",
+      website_url: "https://exemple.com",
+      logo_url: "https://exemple.com/logo.png",
+      is_featured: false,
+      is_active: true,
+      name_fr: "Marque Exemple",
+      name_nl: "Voorbeeld Merk",
+      name_de: "Beispielmarke",
+      desc_fr: "Description en français",
+      desc_nl: "Beschrijving in het Nederlands",
+      desc_de: "Beschreibung auf Deutsch",
+    },
+  ];
+  const ws = XLSX.utils.json_to_sheet(headers);
+  ws["!cols"] = [
+    { wch: 28 }, { wch: 24 }, { wch: 24 }, { wch: 40 }, { wch: 12 },
+    { wch: 30 }, { wch: 40 }, { wch: 10 }, { wch: 10 },
+    { wch: 22 }, { wch: 22 }, { wch: 22 }, { wch: 30 }, { wch: 30 }, { wch: 30 },
+  ];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Marques");
+
+  const guide = [
+    ["Champ", "Obligatoire", "Description"],
+    ["name", "OUI", "Nom de la marque (clé d'affichage)"],
+    ["slug", "Non", "Slug URL (auto-généré à partir du nom si vide). Sert de clé d'unicité pour l'upsert."],
+    ["manufacturer_name", "Non", "Nom EXACT d'un fabricant existant (rattachement automatique)"],
+    ["description", "Non", "Description par défaut (utilisée si pas de desc_fr)"],
+    ["country_of_origin", "Non", "Code pays ISO-2 (ex: BE, FR, DE, IT)"],
+    ["website_url", "Non", "URL du site officiel de la marque"],
+    ["logo_url", "Non", "URL absolue du logo (PNG/JPG/SVG)"],
+    ["is_featured", "Non", "true / false — mise en avant sur la home"],
+    ["is_active", "Non", "true / false — défaut true"],
+    ["name_fr / name_nl / name_de", "Non", "Traductions du nom de la marque par langue"],
+    ["desc_fr / desc_nl / desc_de", "Non", "Traductions de la description par langue"],
+    ["", "", ""],
+    ["💡 Astuce", "", "Les lignes existantes (même slug) sont mises à jour ; les nouvelles sont créées."],
+    ["⚠️ Important", "", "Le manufacturer_name doit correspondre EXACTEMENT à un fabricant existant (sinon ignoré)."],
+  ];
+  const wsGuide = XLSX.utils.aoa_to_sheet(guide);
+  wsGuide["!cols"] = [{ wch: 30 }, { wch: 14 }, { wch: 80 }];
+  XLSX.utils.book_append_sheet(wb, wsGuide, "Guide");
+
+  XLSX.writeFile(wb, "template-import-marques.xlsx");
+  toast.success("Template téléchargé");
+}
+
 async function fetchAllRows(table: string, orderBy: string, selectCols = "*") {
   const PAGE = 1000;
   let all: any[] = [];

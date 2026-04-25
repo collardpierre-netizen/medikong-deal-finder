@@ -41,11 +41,48 @@ export default function HomePage() {
   const { data: countryStats, isLoading: isCountryStatsLoading, isError: isCountryStatsError } = useQuery({
     queryKey: ["homepage-stats", country],
     queryFn: async () => {
+      // Compute the cascade of inactive categories so the home counter matches
+      // what the catalogue actually shows (admin-disabled families like Perfumes
+      // must be excluded everywhere, not just on /catalogue).
+      const { data: allCats } = await supabase
+        .from("categories")
+        .select("id, parent_id, is_active");
+      const cats = (allCats || []) as Array<{ id: string; parent_id: string | null; is_active: boolean }>;
+      const childrenByParent = new Map<string, string[]>();
+      for (const c of cats) {
+        if (!c.parent_id) continue;
+        const list = childrenByParent.get(c.parent_id);
+        if (list) list.push(c.id);
+        else childrenByParent.set(c.parent_id, [c.id]);
+      }
+      const inactiveSet = new Set<string>(cats.filter((c) => !c.is_active).map((c) => c.id));
+      const queue: string[] = [...inactiveSet];
+      while (queue.length > 0) {
+        const current = queue.shift()!;
+        const kids = childrenByParent.get(current);
+        if (!kids) continue;
+        for (const kid of kids) {
+          if (!inactiveSet.has(kid)) {
+            inactiveSet.add(kid);
+            queue.push(kid);
+          }
+        }
+      }
+      const inactiveIds = Array.from(inactiveSet);
+
+      let productsQuery = supabase
+        .from("products")
+        .select("id", { count: "exact", head: true })
+        .eq("is_active", true);
+      if (inactiveIds.length > 0) {
+        productsQuery = productsQuery.not("category_id", "in", `(${inactiveIds.join(",")})`);
+      }
+
       const [productsRes, offersRes, brandsRes, vendorsRes] = await Promise.all([
-        supabase.from("products").select("id", { count: "estimated" }).eq("is_active", true).range(0, 0),
-        supabase.from("offers").select("id", { count: "estimated" }).eq("country_code", country).eq("is_active", true).range(0, 0),
-        supabase.from("brands").select("id", { count: "estimated" }).eq("is_active", true).gt("product_count", 0).range(0, 0),
-        supabase.from("vendors").select("id", { count: "estimated" }).eq("is_active", true).eq("is_verified", true).range(0, 0),
+        productsQuery,
+        supabase.from("offers").select("id", { count: "estimated", head: true }).eq("country_code", country).eq("is_active", true),
+        supabase.from("brands").select("id", { count: "estimated", head: true }).eq("is_active", true).gt("product_count", 0),
+        supabase.from("vendors").select("id", { count: "estimated", head: true }).eq("is_active", true).eq("is_verified", true),
       ]);
 
       const queryError = productsRes.error || offersRes.error || brandsRes.error || vendorsRes.error;

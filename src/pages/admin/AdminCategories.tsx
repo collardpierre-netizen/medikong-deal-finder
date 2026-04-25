@@ -130,6 +130,7 @@ const AdminCategories = () => {
   const [showNewCat, setShowNewCat] = useState(false);
   const [newCatName, setNewCatName] = useState("");
   const [newCatParent, setNewCatParent] = useState("none");
+  const [showKeywordDisable, setShowKeywordDisable] = useState(false);
 
   const searchLower = search.toLowerCase().trim();
   const matchesSearch = (cat: any) => {

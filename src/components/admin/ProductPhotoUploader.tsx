@@ -166,11 +166,11 @@ export default function ProductPhotoUploader({
     }
   };
 
-  const totalAfter =
-    mode === "replace" ? files.length : (currentImages.length + files.length);
-
   const uploadablesCount = files.filter((f) => f.duplicate !== "duplicate-existing").length;
   const skippedExistingCount = files.filter((f) => f.duplicate === "duplicate-existing").length;
+
+  const totalAfter =
+    mode === "replace" ? uploadablesCount : (currentImages.length + uploadablesCount);
 
   const uploadMutation = useMutation({
     mutationFn: async () => {

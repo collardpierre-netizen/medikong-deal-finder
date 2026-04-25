@@ -76,6 +76,7 @@ export function VendorSidebar({ onNavigate }: VendorSidebarProps) {
   const preservedSearch = location.search;
   const { data: vendor } = useCurrentVendor();
   const shippingMode = ((vendor as any)?.vendor_shipping_mode ?? "no_shipping") as ShippingMode;
+  const { data: competitorAlertsCount = 0 } = useCompetitorAlertsCount(vendor?.id);
 
   return (
     <aside
@@ -134,6 +135,9 @@ export function VendorSidebar({ onNavigate }: VendorSidebarProps) {
                     );
                   }
 
+                  const badgeCount =
+                    item.key === "competitorAlerts" ? competitorAlertsCount : 0;
+
                   return (
                     <NavLink
                       key={item.key}
@@ -148,8 +152,20 @@ export function VendorSidebar({ onNavigate }: VendorSidebarProps) {
                       )}
                     >
                       {isActive && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full" style={{ backgroundColor: "#E70866" }} />}
-                      <item.icon size={18} className="shrink-0" />
+                      <div className="relative shrink-0">
+                        <item.icon size={18} />
+                        {collapsed && badgeCount > 0 && (
+                          <span className="absolute -top-1 -right-1 min-w-[14px] h-[14px] rounded-full bg-[#E70866] text-white text-[9px] font-bold flex items-center justify-center px-1">
+                            {badgeCount > 9 ? "9+" : badgeCount}
+                          </span>
+                        )}
+                      </div>
                       {!collapsed && <span className="flex-1 truncate">{t(item.key)}</span>}
+                      {!collapsed && badgeCount > 0 && (
+                        <span className="text-[10px] font-bold bg-[#E70866] text-white rounded-full px-1.5 py-0.5 min-w-[18px] text-center shrink-0">
+                          {badgeCount > 99 ? "99+" : badgeCount}
+                        </span>
+                      )}
                     </NavLink>
                   );
                 })}

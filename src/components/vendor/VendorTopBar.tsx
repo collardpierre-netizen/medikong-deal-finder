@@ -1,6 +1,8 @@
 import { Search, Bell, MessageSquare, Menu } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useI18n, type Lang } from "@/contexts/I18nContext";
 import { useCurrentVendor } from "@/hooks/useCurrentVendor";
+import { useCompetitorAlertsCount } from "@/hooks/useVendorCompetitorAlerts";
 import { commissionRates } from "@/lib/vendor-tokens";
 
 const langs: Lang[] = ["fr", "nl", "de"];
@@ -16,6 +18,8 @@ interface VendorTopBarProps {
 export function VendorTopBar({ onMenuClick }: VendorTopBarProps) {
   const { lang, setLang, t } = useI18n();
   const { data: vendor } = useCurrentVendor();
+  const navigate = useNavigate();
+  const { data: alertsCount = 0 } = useCompetitorAlertsCount(vendor?.id);
 
   const name = vendor?.company_name || vendor?.name || "Vendeur";
   const score = (vendor as any)?.score ?? 0;
@@ -53,14 +57,25 @@ export function VendorTopBar({ onMenuClick }: VendorTopBarProps) {
           ))}
         </div>
 
-        <button className="relative p-2 rounded-md hover:bg-[#F1F5F9] transition-colors">
+        <button
+          onClick={() => navigate("/vendor/competitor-alerts")}
+          aria-label={t("competitorAlerts") || "Alertes concurrents"}
+          className="relative p-2 rounded-md hover:bg-[#F1F5F9] transition-colors"
+        >
           <Bell size={18} className="text-[#616B7C]" />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#EF4343]" />
+          {alertsCount > 0 && (
+            <span className="absolute top-0 right-0 min-w-[16px] h-[16px] px-1 rounded-full bg-[#EF4343] text-white text-[9px] font-bold flex items-center justify-center">
+              {alertsCount > 9 ? "9+" : alertsCount}
+            </span>
+          )}
         </button>
 
-        <button className="relative p-2 rounded-md hover:bg-[#F1F5F9] transition-colors">
+        <button
+          onClick={() => navigate("/vendor/messages")}
+          aria-label={t("messages") || "Messages"}
+          className="relative p-2 rounded-md hover:bg-[#F1F5F9] transition-colors"
+        >
           <MessageSquare size={18} className="text-[#616B7C]" />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#EF4343]" />
         </button>
 
         <div className="w-px h-7 bg-[#E2E8F0]" />

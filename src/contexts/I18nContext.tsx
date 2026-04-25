@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
 export type Lang = "fr" | "nl" | "de";
 
@@ -263,6 +263,32 @@ const translations: Record<Lang, Record<string, string>> = {
     searchPlaceholder: "Suchen...",
     pageUnderConstruction: "Seite im Aufbau",
     comingSoon: "Dieser Bereich wird bald verfügbar sein.",
+    catalog: "Katalog",
+    myOffers: "Meine Angebote",
+    opportunities: "Chancen",
+    positioning: "Positionierung",
+    marketIntel: "Marktbeobachtung",
+    competitorAlerts: "Konkurrenz-Warnungen",
+    tenders: "Ausschreibungen",
+    health: "Konto-Gesundheit",
+    academy: "Academy",
+    shipments: "Sendungen",
+    billing: "Abrechnung",
+    search: "Suchen...",
+    all: "Alle",
+    inactive: "Inaktiv",
+    save: "Speichern",
+    cancel: "Abbrechen",
+    export: "Exportieren",
+    import: "Importieren",
+    edit: "Bearbeiten",
+    delete: "Löschen",
+    view: "Ansehen",
+    add: "Hinzufügen",
+    confirm: "Bestätigen",
+    filter: "Filtern",
+    messages: "Nachrichten",
+    translations: "Übersetzungen",
     restock: "ReStock",
     restockOffers: "ReStock Angebote",
     restockBuyers: "Käufer",
@@ -273,8 +299,28 @@ const translations: Record<Lang, Record<string, string>> = {
 
 const I18nContext = createContext<I18nContextType | undefined>(undefined);
 
+const LANG_STORAGE_KEY = "mk_lang";
+
 export const I18nProvider = ({ children }: { children: ReactNode }) => {
-  const [lang, setLang] = useState<Lang>("fr");
+  const [lang, setLangState] = useState<Lang>(() => {
+    if (typeof window === "undefined") return "fr";
+    const stored = window.localStorage.getItem(LANG_STORAGE_KEY) as Lang | null;
+    return stored && ["fr", "nl", "de"].includes(stored) ? stored : "fr";
+  });
+
+  const setLang = (l: Lang) => {
+    setLangState(l);
+    try {
+      window.localStorage.setItem(LANG_STORAGE_KEY, l);
+      document.documentElement.lang = l;
+    } catch {
+      // noop
+    }
+  };
+
+  useEffect(() => {
+    document.documentElement.lang = lang;
+  }, [lang]);
 
   const t = (key: string): string => {
     return translations[lang]?.[key] || translations.fr[key] || key;

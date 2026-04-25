@@ -89,6 +89,9 @@ export default function VendorTeamTab({ vendor }: Props) {
   const [filterRegion, setFilterRegion] = useState<string>("");
   const [filterProfile, setFilterProfile] = useState<string>("");
   const [filterLanguage, setFilterLanguage] = useState<string>("");
+  const [filterPrimaryOnly, setFilterPrimaryOnly] = useState<boolean>(false);
+  type SortKey = "order" | "name" | "zone_size" | "profiles_count" | "primary_first";
+  const [sortKey, setSortKey] = useState<SortKey>("order");
 
   const { data: delegates = [], isLoading } = useQuery<Delegate[]>({
     queryKey: ["vendor-delegates", vendor.id],
@@ -209,22 +212,53 @@ export default function VendorTeamTab({ vendor }: Props) {
 
   const filteredDelegates = useMemo(() => {
     const q = filterSearch.trim().toLowerCase();
-    return delegates.filter(d => {
+    const list = delegates.filter(d => {
       if (q) {
         const hay = `${d.first_name} ${d.last_name} ${d.job_title || ""} ${d.email || ""} ${d.phone || ""}`.toLowerCase();
         if (!hay.includes(q)) return false;
       }
       if (filterCountry && !d.country_codes.includes(filterCountry)) return false;
       if (filterRegion && !d.regions.includes(filterRegion)) return false;
-      if (filterProfile && !d.target_profiles.includes(filterProfile)) return false;
+      if (filterProfile) {
+        if (filterPrimaryOnly) {
+          if (!(d.primary_target_profiles || []).includes(filterProfile)) return false;
+        } else {
+          if (!d.target_profiles.includes(filterProfile)) return false;
+        }
+      } else if (filterPrimaryOnly && (d.primary_target_profiles || []).length === 0) {
+        return false;
+      }
       if (filterLanguage && !d.languages.includes(filterLanguage)) return false;
       return true;
     });
-  }, [delegates, filterSearch, filterCountry, filterRegion, filterProfile, filterLanguage]);
+    const zoneSize = (d: Delegate) =>
+      (d.country_codes?.length || 0) * 100 + (d.regions?.length || 0) * 5 + (d.postal_codes?.length || 0);
+    const sorted = [...list].sort((a, b) => {
+      switch (sortKey) {
+        case "name":
+          return `${a.last_name} ${a.first_name}`.localeCompare(`${b.last_name} ${b.first_name}`, "fr");
+        case "zone_size":
+          return zoneSize(b) - zoneSize(a);
+        case "profiles_count":
+          return (b.target_profiles?.length || 0) - (a.target_profiles?.length || 0);
+        case "primary_first": {
+          const ap = (a.primary_target_profiles?.length || 0) > 0 ? 1 : 0;
+          const bp = (b.primary_target_profiles?.length || 0) > 0 ? 1 : 0;
+          if (ap !== bp) return bp - ap;
+          return (a.display_order || 0) - (b.display_order || 0);
+        }
+        case "order":
+        default:
+          return (a.display_order || 0) - (b.display_order || 0);
+      }
+    });
+    return sorted;
+  }, [delegates, filterSearch, filterCountry, filterRegion, filterProfile, filterLanguage, filterPrimaryOnly, sortKey]);
 
-  const hasActiveFilters = filterSearch || filterCountry || filterRegion || filterProfile || filterLanguage;
+  const hasActiveFilters = filterSearch || filterCountry || filterRegion || filterProfile || filterLanguage || filterPrimaryOnly || sortKey !== "order";
   const clearFilters = () => {
     setFilterSearch(""); setFilterCountry(""); setFilterRegion(""); setFilterProfile(""); setFilterLanguage("");
+    setFilterPrimaryOnly(false); setSortKey("order");
   };
 
   // Mapping segment → responsables (référent principal en premier, puis contacts secondaires)
@@ -359,6 +393,30 @@ export default function VendorTeamTab({ vendor }: Props) {
                 <option value="">Toutes langues</option>
                 {LANGUAGES.map(l => <option key={l} value={l}>{LANGUAGE_LABELS[l]}</option>)}
               </select>
+              <label className="inline-flex items-center gap-1.5 text-[11px] text-[#1D2530] px-2 py-1.5 rounded-lg border border-[#E2E8F0] bg-white cursor-pointer hover:border-[#1B5BDA]">
+                <input
+                  type="checkbox"
+                  checked={filterPrimaryOnly}
+                  onChange={(e) => setFilterPrimaryOnly(e.target.checked)}
+                  className="accent-[#F59E0B]"
+                />
+                <Star size={11} className="text-[#F59E0B] fill-[#F59E0B]" />
+                Référents uniquement
+              </label>
+              <div className="inline-flex items-center gap-1 text-[11px] text-[#8B95A5]">
+                <span>Trier&nbsp;:</span>
+                <select
+                  value={sortKey}
+                  onChange={(e) => setSortKey(e.target.value as typeof sortKey)}
+                  className="rounded-lg border border-[#E2E8F0] bg-white px-2 py-1.5 text-[12px] text-[#1D2530] focus:outline-none focus:border-[#1B5BDA]"
+                >
+                  <option value="order">Ordre d'affichage</option>
+                  <option value="name">Nom (A→Z)</option>
+                  <option value="zone_size">Taille de zone (large → restreinte)</option>
+                  <option value="profiles_count">Nombre de cibles couvertes</option>
+                  <option value="primary_first">Référents en premier</option>
+                </select>
+              </div>
               {hasActiveFilters && (
                 <button
                   onClick={clearFilters}

@@ -28,6 +28,7 @@ import { applyMargin, formatPriceEur } from "@/lib/pricing";
 import { useMarketPrices } from "@/hooks/useMarketPrices";
 import { RestockSecondChance } from "@/components/product/RestockSecondChance";
 import { MyEncodedPriceBanner } from "@/components/product/MyEncodedPriceBanner";
+import VendorDelegateCompact from "@/components/vendor/VendorDelegateCompact";
 
 function formatEur(n: number): string {
   return n.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -346,6 +347,10 @@ function OfferRow({
         currentProductId={productId}
         categoryId={categoryId}
       />
+
+      <div className="mt-3">
+        <VendorDelegateCompact vendorId={offer.sellerId} />
+      </div>
     </motion.div>
   );
 }

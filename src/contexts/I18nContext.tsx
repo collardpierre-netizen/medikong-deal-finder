@@ -169,6 +169,7 @@ const translations: Record<Lang, Record<string, string>> = {
     catalog: "Catalogus",
     myOffers: "Mijn Aanbiedingen",
     opportunities: "Kansen",
+    positioning: "Positionering",
     tenders: "Aanbestedingen",
     health: "Accountgezondheid",
     academy: "Academy",

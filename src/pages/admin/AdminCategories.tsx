@@ -17,10 +17,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { exportCategories, importCategories } from "@/lib/xlsx-utils";
 import { toast } from "sonner";
 import { useImportJobs } from "@/contexts/ImportContext";
-import { Layers, Tag, Package, ChevronDown, ChevronRight, Download, Upload, Languages, X, Save, Wand2, Merge } from "lucide-react";
+import { Layers, Tag, Package, ChevronDown, ChevronRight, Download, Upload, Languages, X, Save, Wand2, Merge, ShieldOff } from "lucide-react";
 import { Search, FolderTree, ArrowRight, Plus, Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
+import CategoryKeywordDisableDialog from "@/components/admin/CategoryKeywordDisableDialog";
 
 const LOCALES = ["fr", "nl", "de"] as const;
 
@@ -129,6 +130,7 @@ const AdminCategories = () => {
   const [showNewCat, setShowNewCat] = useState(false);
   const [newCatName, setNewCatName] = useState("");
   const [newCatParent, setNewCatParent] = useState("none");
+  const [showKeywordDisable, setShowKeywordDisable] = useState(false);
 
   const searchLower = search.toLowerCase().trim();
   const matchesSearch = (cat: any) => {
@@ -340,6 +342,9 @@ const AdminCategories = () => {
                 }}
               />
             </div>
+            <Button variant="outline" size="sm" onClick={() => setShowKeywordDisable(true)} className="text-destructive hover:text-destructive">
+              <ShieldOff size={14} className="mr-1" />Désactiver par mot-clé
+            </Button>
             <Button variant="outline" size="sm" onClick={() => setShowNewCat(true)}><Plus size={14} className="mr-1" />Nouvelle</Button>
             <Button variant="outline" size="sm" onClick={() => handleAutoTranslate("fr")} disabled={!!translating}>
               <Wand2 size={14} className={`mr-1 ${translating === "fr" ? "animate-spin" : ""}`} />{translating === "fr" ? "Traduction..." : "Auto FR"}
@@ -629,6 +634,12 @@ const AdminCategories = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <CategoryKeywordDisableDialog
+        open={showKeywordDisable}
+        onOpenChange={setShowKeywordDisable}
+        categories={categoriesData as any}
+      />
     </div>
   );
 };

@@ -509,7 +509,8 @@ export default function VendorTeamTab({ vendor }: Props) {
                 </div>
               </div>
             </VCard>
-          ))}
+          );
+              })}
         </div>
           )}
         </>

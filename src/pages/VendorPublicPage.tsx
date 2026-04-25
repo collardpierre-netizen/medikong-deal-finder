@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useCountry } from "@/contexts/CountryContext";
+import VendorDelegatesPublic from "@/components/vendor/VendorDelegatesPublic";
 
 /* ───── helpers ───── */
 function slugify(t: string) {
@@ -383,6 +384,9 @@ export default function VendorPublicPage() {
         <div className="flex gap-7">
           {/* ───── Sidebar with filters ───── */}
           <aside className="hidden lg:block w-[240px] shrink-0 space-y-5">
+            {/* Délégué commercial (acheteurs vérifiés) */}
+            <VendorDelegatesPublic vendorId={vendor.id} />
+
             {/* Delivery */}
             <div>
               <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Livraison</h4>

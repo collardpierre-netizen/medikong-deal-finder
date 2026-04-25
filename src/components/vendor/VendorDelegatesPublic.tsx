@@ -124,9 +124,12 @@ export default function VendorDelegatesPublic({ vendorId }: Props) {
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5 flex-wrap">
-                <div className="text-sm font-semibold text-foreground truncate">
+                <Link
+                  to={`/delegue/${d.id}`}
+                  className="text-sm font-semibold text-foreground truncate hover:text-primary"
+                >
                   {d.first_name} {d.last_name}
-                </div>
+                </Link>
                 {buyerProfile && (d.primary_target_profiles || []).includes(buyerProfile) && (
                   <span className="inline-flex items-center gap-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-300">
                     ★ Votre référent
@@ -140,6 +143,13 @@ export default function VendorDelegatesPublic({ vendorId }: Props) {
               {d.bio && (
                 <p className="text-[11px] text-muted-foreground mt-1 line-clamp-2">{d.bio}</p>
               )}
+
+              <Link
+                to={`/delegue/${d.id}`}
+                className="inline-block mt-1.5 text-[10px] font-semibold text-primary hover:underline"
+              >
+                Voir la fiche complète →
+              </Link>
 
               <div className="mt-2 space-y-1 text-[11px]">
                 {d.email && (

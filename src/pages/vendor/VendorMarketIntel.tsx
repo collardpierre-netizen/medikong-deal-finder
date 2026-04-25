@@ -612,6 +612,8 @@ export default function VendorMarketIntel() {
                           <th className="px-3 py-2 text-right">Grossiste</th>
                           <th className="px-3 py-2 text-right">Pharmacien</th>
                           <th className="px-3 py-2 text-right">Public</th>
+                          <th className="px-3 py-2 text-left">Stock</th>
+                          <th className="px-3 py-2 text-left">Importé</th>
                           <th className="px-3 py-2 text-center">Lien</th>
                         </tr>
                       </thead>
@@ -627,6 +629,12 @@ export default function VendorMarketIntel() {
                             </td>
                             <td className="px-3 py-2 text-right tabular-nums">
                               {fmt(e.prix_public)}
+                            </td>
+                            <td className="px-3 py-2 text-[11px] text-muted-foreground">
+                              {e.stock_source || "—"}
+                            </td>
+                            <td className="px-3 py-2">
+                              <FreshnessLabel date={e.imported_at} />
                             </td>
                             <td className="px-3 py-2 text-center">
                               {e.product_url ? (

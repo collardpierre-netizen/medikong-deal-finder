@@ -299,8 +299,28 @@ const translations: Record<Lang, Record<string, string>> = {
 
 const I18nContext = createContext<I18nContextType | undefined>(undefined);
 
+const LANG_STORAGE_KEY = "mk_lang";
+
 export const I18nProvider = ({ children }: { children: ReactNode }) => {
-  const [lang, setLang] = useState<Lang>("fr");
+  const [lang, setLangState] = useState<Lang>(() => {
+    if (typeof window === "undefined") return "fr";
+    const stored = window.localStorage.getItem(LANG_STORAGE_KEY) as Lang | null;
+    return stored && ["fr", "nl", "de"].includes(stored) ? stored : "fr";
+  });
+
+  const setLang = (l: Lang) => {
+    setLangState(l);
+    try {
+      window.localStorage.setItem(LANG_STORAGE_KEY, l);
+      document.documentElement.lang = l;
+    } catch {
+      // noop
+    }
+  };
+
+  useEffect(() => {
+    document.documentElement.lang = lang;
+  }, [lang]);
 
   const t = (key: string): string => {
     return translations[lang]?.[key] || translations.fr[key] || key;

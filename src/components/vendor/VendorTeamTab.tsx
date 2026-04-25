@@ -109,7 +109,18 @@ export default function VendorTeamTab({ vendor }: Props) {
       if (!form.first_name.trim() || !form.last_name.trim()) {
         throw new Error("Prénom et nom obligatoires");
       }
-      const payload = { ...form, vendor_id: vendor.id };
+      // Normalise l'URL d'agenda : ajoute https:// si manquant, valide format
+      let bookingUrl = (form.booking_url || "").trim();
+      if (bookingUrl) {
+        if (!/^https?:\/\//i.test(bookingUrl)) bookingUrl = "https://" + bookingUrl;
+        try {
+          const u = new URL(bookingUrl);
+          if (!/^https?:$/.test(u.protocol)) throw new Error("invalid");
+        } catch {
+          throw new Error("Lien d'agenda invalide. Utilise une URL complète (https://…)");
+        }
+      }
+      const payload = { ...form, booking_url: bookingUrl || null, vendor_id: vendor.id };
       if (editing) {
         const { error } = await supabase.from("vendor_delegates" as any).update(payload as any).eq("id", editing.id);
         if (error) throw error;

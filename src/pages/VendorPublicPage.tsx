@@ -610,6 +610,33 @@ export default function VendorPublicPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* QuickView produit (popup) — montre détails + délégué dédié */}
+      <VendorProductQuickView
+        product={
+          quickViewProduct
+            ? {
+                id: quickViewProduct.id,
+                name: quickViewProduct.name,
+                slug: quickViewProduct.slug,
+                brand: quickViewProduct.brand,
+                imageUrl: quickViewProduct.imageUrl,
+                price: quickViewProduct.price,
+                priceInclVat: quickViewProduct.priceInclVat,
+                stock: quickViewProduct.stock,
+                stockQty: quickViewProduct.stockQty,
+                deliveryDays: quickViewProduct.deliveryDays,
+                description: quickViewProduct.description,
+                gtin: quickViewProduct.gtin,
+                vendorId: quickViewProduct.vendorId || vendor?.id,
+                vendorName: getVendorPublicName(vendor),
+                vendorSlug: vendor?.slug,
+              }
+            : null
+        }
+        open={!!quickViewProduct}
+        onOpenChange={(o) => !o && setQuickViewProduct(null)}
+      />
     </Layout>
   );
 }

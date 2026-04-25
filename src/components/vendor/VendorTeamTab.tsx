@@ -514,8 +514,29 @@ export default function VendorTeamTab({ vendor }: Props) {
                 <input value={form.phone || ""} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} className={inputCls} placeholder="+32 ..." />
               </Field>
             </div>
-            <Field label="Lien de prise de rendez-vous (Calendly, Bookings…)">
-              <input type="url" value={form.booking_url || ""} onChange={e => setForm(f => ({ ...f, booking_url: e.target.value }))} className={inputCls} placeholder="https://calendly.com/laure-durant" />
+            <Field label="Lien de prise de rendez-vous (Calendly, Bookings, Zcal…)">
+              <input
+                type="url"
+                value={form.booking_url || ""}
+                onChange={e => setForm(f => ({ ...f, booking_url: e.target.value }))}
+                className={inputCls}
+                placeholder="https://calendly.com/laure-durant"
+              />
+              <div className="flex items-center justify-between mt-1">
+                <p className="text-[10px] text-[#8B95A5]">
+                  URL complète. Ce bouton « Prendre rendez-vous » s'affichera sur la fiche vue par les acheteurs.
+                </p>
+                {form.booking_url && (
+                  <a
+                    href={/^https?:\/\//i.test(form.booking_url) ? form.booking_url : `https://${form.booking_url}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#1B5BDA] hover:underline"
+                  >
+                    <CalendarDays size={11} /> Tester le lien
+                  </a>
+                )}
+              </div>
             </Field>
 
             {/* Langues */}

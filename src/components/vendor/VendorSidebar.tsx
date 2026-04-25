@@ -133,7 +133,7 @@ export function VendorSidebar({ onNavigate }: VendorSidebarProps) {
                   }
 
                   const badgeCount =
-                    item.key === "competitorAlerts" ? competitorAlertsCount : 0;
+                    item.key === "marketIntel" ? competitorAlertsCount : 0;
 
                   return (
                     <NavLink

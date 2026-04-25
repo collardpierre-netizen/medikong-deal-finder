@@ -36,6 +36,37 @@ const sanitize = (s: string) =>
     .replace(/(^-|-$)/g, "")
     .slice(0, 60);
 
+/** SHA-256 hash hex of file contents — detects exact binary duplicates */
+async function sha256Hex(file: File): Promise<string> {
+  const buf = await file.arrayBuffer();
+  const digest = await crypto.subtle.digest("SHA-256", buf);
+  return Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+/** Fingerprint hashes of remote images already attached to the product (best-effort, CORS-safe URLs only) */
+async function hashRemoteUrl(url: string): Promise<string | null> {
+  try {
+    const res = await fetch(url, { mode: "cors" });
+    if (!res.ok) return null;
+    const buf = await res.arrayBuffer();
+    const digest = await crypto.subtle.digest("SHA-256", buf);
+    return Array.from(new Uint8Array(digest))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+  } catch {
+    return null;
+  }
+}
+
+interface FileEntry {
+  file: File;
+  hash: string;
+  /** "duplicate-in-batch" = same hash as another picked file ; "duplicate-existing" = same as a current product image */
+  duplicate?: "duplicate-in-batch" | "duplicate-existing";
+}
+
 export default function ProductPhotoUploader({
   productId,
   productSlug,
@@ -45,10 +76,29 @@ export default function ProductPhotoUploader({
 }: Props) {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
-  const [files, setFiles] = useState<File[]>([]);
+  const [files, setFiles] = useState<FileEntry[]>([]);
   const [mode, setMode] = useState<Mode>("append");
   const [progress, setProgress] = useState(0);
+  const [hashing, setHashing] = useState(false);
+  const [existingHashes, setExistingHashes] = useState<Set<string>>(new Set());
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Pre-hash existing product images once the dialog opens
+  useEffect(() => {
+    if (!open || currentImages.length === 0) {
+      setExistingHashes(new Set());
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const hashes = await Promise.all(currentImages.map((u) => hashRemoteUrl(u)));
+      if (cancelled) return;
+      setExistingHashes(new Set(hashes.filter((h): h is string => !!h)));
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [open, currentImages]);
 
   const reset = () => {
     setFiles([]);
@@ -56,10 +106,10 @@ export default function ProductPhotoUploader({
     setMode("append");
   };
 
-  const handlePick = (incoming: FileList | null) => {
+  const handlePick = async (incoming: FileList | null) => {
     if (!incoming) return;
-    const next: File[] = [];
     const errors: string[] = [];
+    const accepted: File[] = [];
     Array.from(incoming).forEach((f) => {
       if (!ACCEPTED.includes(f.type)) {
         errors.push(`${f.name} : format non supporté`);
@@ -69,10 +119,51 @@ export default function ProductPhotoUploader({
         errors.push(`${f.name} : trop volumineux (>8 Mo)`);
         return;
       }
-      next.push(f);
+      accepted.push(f);
     });
     if (errors.length > 0) toast.error(errors.slice(0, 3).join("\n"));
-    setFiles((prev) => [...prev, ...next].slice(0, MAX_IMAGES_PER_PRODUCT));
+    if (accepted.length === 0) return;
+
+    setHashing(true);
+    try {
+      const hashed = await Promise.all(
+        accepted.map(async (file) => ({ file, hash: await sha256Hex(file) } as FileEntry))
+      );
+
+      setFiles((prev) => {
+        const merged = [...prev];
+        const seen = new Set(prev.map((p) => p.hash));
+        let duplicatesInBatch = 0;
+        let duplicatesExisting = 0;
+
+        for (const entry of hashed) {
+          if (seen.has(entry.hash)) {
+            duplicatesInBatch += 1;
+            continue; // skip silently — already in selection
+          }
+          if (existingHashes.has(entry.hash)) {
+            entry.duplicate = "duplicate-existing";
+            duplicatesExisting += 1;
+          }
+          merged.push(entry);
+          seen.add(entry.hash);
+        }
+
+        if (duplicatesInBatch > 0) {
+          toast.warning(
+            `${duplicatesInBatch} doublon(s) ignoré(s) (déjà sélectionné${duplicatesInBatch > 1 ? "s" : ""})`
+          );
+        }
+        if (duplicatesExisting > 0) {
+          toast.warning(
+            `${duplicatesExisting} photo(s) déjà présente(s) sur ce produit — marquée(s) en doublon`
+          );
+        }
+        return merged.slice(0, MAX_IMAGES_PER_PRODUCT);
+      });
+    } finally {
+      setHashing(false);
+    }
   };
 
   const totalAfter =

@@ -178,6 +178,7 @@ export default function VendorPublicPage() {
   });
   const { currentCountry } = useCountry();
   const { items: cartItems, addToCart, openDrawer } = useCart();
+  const [quickViewProduct, setQuickViewProduct] = useState<any | null>(null);
 
   const { data: vendor, isLoading } = useQuery({
     queryKey: ["vendor-public", slug],
@@ -529,13 +530,13 @@ export default function VendorPublicPage() {
               view === "grid" ? (
                 <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
                   {filteredProducts.map((p: any, i: number) => (
-                    <VendorProductCard key={p.id} product={p} index={i} addToCart={addToCart} openDrawer={openDrawer} />
+                    <VendorProductCard key={p.id} product={p} index={i} addToCart={addToCart} openDrawer={openDrawer} onQuickView={setQuickViewProduct} />
                   ))}
                 </div>
               ) : (
                 <div className="border border-border rounded-xl overflow-hidden divide-y divide-border">
                   {filteredProducts.map((p: any) => (
-                    <VendorProductListRow key={p.id} product={p} addToCart={addToCart} openDrawer={openDrawer} />
+                    <VendorProductListRow key={p.id} product={p} addToCart={addToCart} openDrawer={openDrawer} onQuickView={setQuickViewProduct} />
                   ))}
                 </div>
               )

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
 export type Lang = "fr" | "nl" | "de";
 
@@ -263,6 +263,32 @@ const translations: Record<Lang, Record<string, string>> = {
     searchPlaceholder: "Suchen...",
     pageUnderConstruction: "Seite im Aufbau",
     comingSoon: "Dieser Bereich wird bald verfügbar sein.",
+    catalog: "Katalog",
+    myOffers: "Meine Angebote",
+    opportunities: "Chancen",
+    positioning: "Positionierung",
+    marketIntel: "Marktbeobachtung",
+    competitorAlerts: "Konkurrenz-Warnungen",
+    tenders: "Ausschreibungen",
+    health: "Konto-Gesundheit",
+    academy: "Academy",
+    shipments: "Sendungen",
+    billing: "Abrechnung",
+    search: "Suchen...",
+    all: "Alle",
+    inactive: "Inaktiv",
+    save: "Speichern",
+    cancel: "Abbrechen",
+    export: "Exportieren",
+    import: "Importieren",
+    edit: "Bearbeiten",
+    delete: "Löschen",
+    view: "Ansehen",
+    add: "Hinzufügen",
+    confirm: "Bestätigen",
+    filter: "Filtern",
+    messages: "Nachrichten",
+    translations: "Übersetzungen",
     restock: "ReStock",
     restockOffers: "ReStock Angebote",
     restockBuyers: "Käufer",

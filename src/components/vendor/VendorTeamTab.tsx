@@ -354,7 +354,20 @@ export default function VendorTeamTab({ vendor }: Props) {
                   <div className="mt-2 flex flex-wrap gap-1">
                     {d.target_profiles.map(p => {
                       const lbl = TARGET_PROFILES.find(tp => tp.value === p)?.label || p;
-                      return <VBadge key={p} color="#1B5BDA">{lbl}</VBadge>;
+                      const isPrimary = (d.primary_target_profiles || []).includes(p);
+                      return (
+                        <span
+                          key={p}
+                          className={`inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded font-semibold ${
+                            isPrimary
+                              ? "bg-[#FEF3C7] text-[#92400E] border border-[#F59E0B]"
+                              : "bg-[#1B5BDA]/10 text-[#1B5BDA]"
+                          }`}
+                        >
+                          {isPrimary && <Star size={9} className="fill-[#F59E0B] text-[#F59E0B]" />}
+                          {lbl}
+                        </span>
+                      );
                     })}
                     {d.languages.map(l => (
                       <span key={l} className="text-[10px] px-1.5 py-0.5 rounded bg-[#F1F5F9] text-[#616B7C] uppercase">

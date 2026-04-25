@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
-  LayoutDashboard, Package, Tag, ShoppingCart, Lightbulb, Bell, FileText, BarChart3,
+  LayoutDashboard, Package, Tag, ShoppingCart, Lightbulb, Bell, FileText, BarChart3, Trophy,
   DollarSign, Truck, HeartPulse, MessageSquare, GraduationCap, Settings, ChevronLeft, ChevronRight, Receipt,
 } from "lucide-react";
 import { useI18n } from "@/contexts/I18nContext";
@@ -36,6 +36,7 @@ const sidebarSections: { label: string | null; items: SidebarItem[] }[] = [
   {
     label: "INTELLIGENCE",
     items: [
+      { key: "positioning", icon: Trophy, path: "/vendor/positioning" },
       { key: "opportunities", icon: Lightbulb, path: "/vendor/opportunities", comingSoon: true },
       { key: "alerts", icon: Bell, path: "/vendor/alerts" },
       { key: "tenders", icon: FileText, path: "/vendor/tenders", comingSoon: true },

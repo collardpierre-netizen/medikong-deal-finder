@@ -6679,6 +6679,29 @@ export type Database = {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["admin_role"]
       }
+      get_vendor_competitive_position: {
+        Args: { _vendor_id: string }
+        Returns: {
+          best_price_excl_vat: number
+          best_vendor_id: string
+          brand_name: string
+          cnk_code: string
+          competitors_count: number
+          country_code: string
+          gap_amount: number
+          gap_percentage: number
+          gtin: string
+          my_offer_id: string
+          my_price_excl_vat: number
+          my_rank: number
+          my_stock: number
+          product_id: string
+          product_image: string
+          product_name: string
+          suggested_price_excl_vat: number
+          total_offers: number
+        }[]
+      }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       match_import_lines: {

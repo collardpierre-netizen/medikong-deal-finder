@@ -432,7 +432,8 @@ export default function ProductPhotoUploader({
             <Button
               onClick={() => uploadMutation.mutate()}
               disabled={
-                files.length === 0 ||
+                uploadablesCount === 0 ||
+                hashing ||
                 uploadMutation.isPending ||
                 totalAfter > MAX_IMAGES_PER_PRODUCT
               }
@@ -445,7 +446,7 @@ export default function ProductPhotoUploader({
               ) : (
                 <>
                   <Upload size={14} className="mr-1.5" />
-                  Téléverser {files.length > 0 ? `(${files.length})` : ""}
+                  Téléverser {uploadablesCount > 0 ? `(${uploadablesCount})` : ""}
                 </>
               )}
             </Button>

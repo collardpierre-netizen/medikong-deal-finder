@@ -6828,6 +6828,8 @@ export type Database = {
           best_medikong_competitor_vendor: string
           brand_name: string
           cnk_code: string
+          competitors_in_stock: number
+          competitors_on_promo: number
           country_code: string
           external_offers: Json
           external_sources_count: number
@@ -6844,6 +6846,9 @@ export type Database = {
           my_price_excl_vat: number
           my_rank: number
           my_stock: number
+          my_stock_status: string
+          my_updated_at: string
+          product_discount_percentage: number
           product_id: string
           product_image: string
           product_name: string

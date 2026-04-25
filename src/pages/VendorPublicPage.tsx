@@ -8,7 +8,7 @@ import { useCart } from "@/hooks/useCart";
 import {
   Store, MapPin, Phone, Mail, Shield, Clock,
   Star, Package, Truck, Grid, List,
-  CheckCircle2, Building2, Search, X, Plus, Minus, ShoppingCart,
+  CheckCircle2, Building2, Search, X, Plus, Minus, ShoppingCart, Eye,
 } from "lucide-react";
 import { useState, useMemo, useCallback } from "react";
 import { getVendorPublicName, resolveVendorVisibility } from "@/lib/vendor-display";
@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useCountry } from "@/contexts/CountryContext";
 import VendorDelegatesPublic from "@/components/vendor/VendorDelegatesPublic";
+import VendorProductQuickView from "@/components/vendor/VendorProductQuickView";
 
 /* ───── helpers ───── */
 function slugify(t: string) {
@@ -37,7 +38,7 @@ const EMPTY_FILTERS: VendorFilters = { brands: [], categories: [], search: "" };
 import { MEDIKONG_PLACEHOLDER, isValidProductImage, isQogitaPlaceholder } from "@/lib/image-utils";
 
 /* ───── Vendor-specific product card (grid) ───── */
-function VendorProductCard({ product: p, index, addToCart, openDrawer }: { product: any; index: number; addToCart: any; openDrawer: () => void }) {
+function VendorProductCard({ product: p, index, addToCart, openDrawer, onQuickView }: { product: any; index: number; addToCart: any; openDrawer: () => void; onQuickView: (p: any) => void }) {
   const [qty, setQty] = useState(1);
   const maxQty = p.stockQty || 999;
   const handleAdd = () => {
@@ -98,7 +99,7 @@ function VendorProductCard({ product: p, index, addToCart, openDrawer }: { produ
 }
 
 /* ───── Vendor-specific product row (list) ───── */
-function VendorProductListRow({ product: p, addToCart, openDrawer }: { product: any; addToCart: any; openDrawer: () => void }) {
+function VendorProductListRow({ product: p, addToCart, openDrawer, onQuickView }: { product: any; addToCart: any; openDrawer: () => void; onQuickView: (p: any) => void }) {
   const [qty, setQty] = useState(1);
   const maxQty = p.stockQty || 999;
   const handleAdd = () => {

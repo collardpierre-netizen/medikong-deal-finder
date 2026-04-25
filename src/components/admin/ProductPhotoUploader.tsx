@@ -301,7 +301,19 @@ export default function ProductPhotoUploader({
             {files.length > 0 && (
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>{files.length} fichier(s) sélectionné(s)</span>
+                  <span>
+                    {files.length} fichier(s) sélectionné(s)
+                    {hashing && (
+                      <span className="ml-2 inline-flex items-center gap-1 text-primary">
+                        <Loader2 size={11} className="animate-spin" /> analyse…
+                      </span>
+                    )}
+                    {skippedExistingCount > 0 && (
+                      <span className="ml-2 text-amber-600">
+                        · {skippedExistingCount} doublon(s) ignoré(s) à l'envoi
+                      </span>
+                    )}
+                  </span>
                   <button
                     type="button"
                     onClick={() => setFiles([])}
@@ -311,16 +323,39 @@ export default function ProductPhotoUploader({
                   </button>
                 </div>
                 <div className="grid grid-cols-4 gap-2">
-                  {files.map((f, i) => {
-                    const url = URL.createObjectURL(f);
+                  {files.map((entry, i) => {
+                    const url = URL.createObjectURL(entry.file);
+                    const isDup = entry.duplicate === "duplicate-existing";
                     return (
-                      <div key={i} className="relative aspect-square rounded border bg-muted overflow-hidden group">
+                      <div
+                        key={entry.hash}
+                        className={`relative aspect-square rounded border bg-muted overflow-hidden group ${
+                          isDup ? "ring-2 ring-amber-500" : ""
+                        }`}
+                      >
                         <img
                           src={url}
-                          alt={f.name}
-                          className="w-full h-full object-contain"
+                          alt={entry.file.name}
+                          className={`w-full h-full object-contain ${isDup ? "opacity-60" : ""}`}
                           onLoad={() => URL.revokeObjectURL(url)}
                         />
+                        {isDup ? (
+                          <Badge
+                            variant="outline"
+                            className="absolute bottom-1 left-1 right-1 justify-center gap-1 text-[10px] py-0 bg-amber-50 border-amber-500 text-amber-700"
+                          >
+                            <AlertTriangle size={10} /> Doublon
+                          </Badge>
+                        ) : (
+                          !hashing && (
+                            <Badge
+                              variant="outline"
+                              className="absolute bottom-1 left-1 right-1 justify-center gap-1 text-[10px] py-0 bg-background/80"
+                            >
+                              <ShieldCheck size={10} className="text-green-600" /> Unique
+                            </Badge>
+                          )
+                        )}
                         <button
                           type="button"
                           aria-label="Retirer"

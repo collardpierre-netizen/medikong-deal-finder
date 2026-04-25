@@ -22,6 +22,7 @@ interface Delegate {
   languages: string[];
   country_codes: string[];
   regions: string[];
+  postal_codes: string[];
   target_profiles: string[];
   is_active: boolean;
   display_order: number;

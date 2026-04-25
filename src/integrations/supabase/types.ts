@@ -5370,6 +5370,7 @@ export type Database = {
           last_name: string
           phone: string | null
           photo_url: string | null
+          postal_codes: string[]
           regions: string[]
           target_profiles: string[]
           updated_at: string
@@ -5390,6 +5391,7 @@ export type Database = {
           last_name: string
           phone?: string | null
           photo_url?: string | null
+          postal_codes?: string[]
           regions?: string[]
           target_profiles?: string[]
           updated_at?: string
@@ -5410,6 +5412,7 @@ export type Database = {
           last_name?: string
           phone?: string | null
           photo_url?: string | null
+          postal_codes?: string[]
           regions?: string[]
           target_profiles?: string[]
           updated_at?: string

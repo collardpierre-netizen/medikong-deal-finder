@@ -7,7 +7,7 @@ import { VBadge } from "@/components/vendor/ui/VBadge";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Loader2, Plus, Edit2, Trash2, Upload, Mail, Phone, CalendarDays, MapPin, Users, Globe, User as UserIcon } from "lucide-react";
+import { Loader2, Plus, Edit2, Trash2, Upload, Mail, Phone, CalendarDays, MapPin, Users, Globe, User as UserIcon, Search, X } from "lucide-react";
 
 interface Props {
   vendor: any;
@@ -27,13 +27,17 @@ interface Delegate {
   languages: string[];
   country_codes: string[];
   regions: string[];
+  postal_codes: string[];
   target_profiles: string[];
   is_active: boolean;
   display_order: number;
 }
 
-const LANGUAGES = ["fr", "nl", "en", "de", "lu"];
-const LANGUAGE_LABELS: Record<string, string> = { fr: "Français", nl: "Nederlands", en: "English", de: "Deutsch", lu: "Lëtzebuergesch" };
+const LANGUAGES = ["fr", "nl", "en", "de", "lu", "es", "it", "pt", "ar", "tr", "pl", "ro"];
+const LANGUAGE_LABELS: Record<string, string> = {
+  fr: "Français", nl: "Nederlands", en: "English", de: "Deutsch", lu: "Lëtzebuergesch",
+  es: "Español", it: "Italiano", pt: "Português", ar: "العربية", tr: "Türkçe", pl: "Polski", ro: "Română",
+};
 
 const COUNTRIES = ["BE", "FR", "NL", "LU", "DE"];
 const COUNTRY_LABELS: Record<string, string> = { BE: "Belgique", FR: "France", NL: "Pays-Bas", LU: "Luxembourg", DE: "Allemagne" };
@@ -48,18 +52,26 @@ const REGIONS_BY_COUNTRY: Record<string, string[]> = {
 
 const TARGET_PROFILES = [
   { value: "pharmacy", label: "Pharmacies" },
+  { value: "parapharmacy", label: "Parapharmacies" },
   { value: "wholesaler", label: "Grossistes" },
-  { value: "hospital", label: "Hôpitaux" },
+  { value: "hospital", label: "Hôpitaux / Cliniques" },
   { value: "dentist", label: "Dentistes" },
   { value: "veterinary", label: "Vétérinaires" },
   { value: "ehpad", label: "EHPAD / Maisons de repos" },
   { value: "medical_practice", label: "Cabinets médicaux" },
-  { value: "parapharmacy", label: "Parapharmacies" },
+  { value: "optician", label: "Opticiens" },
+  { value: "physiotherapist", label: "Kinésithérapeutes" },
+  { value: "midwife", label: "Sages-femmes" },
+  { value: "laboratory", label: "Laboratoires" },
+  { value: "school", label: "Écoles / Crèches" },
+  { value: "community", label: "Collectivités" },
+  { value: "beauty_salon", label: "Instituts de beauté / Spas" },
+  { value: "sports_club", label: "Clubs sportifs" },
 ];
 
 const empty: Omit<Delegate, "id" | "vendor_id"> = {
   first_name: "", last_name: "", job_title: "", email: "", phone: "", booking_url: "", photo_url: "", bio: "",
-  languages: [], country_codes: [], regions: [], target_profiles: [], is_active: true, display_order: 0,
+  languages: [], country_codes: [], regions: [], postal_codes: [], target_profiles: [], is_active: true, display_order: 0,
 };
 
 export default function VendorTeamTab({ vendor }: Props) {
@@ -69,6 +81,13 @@ export default function VendorTeamTab({ vendor }: Props) {
   const [form, setForm] = useState<typeof empty>(empty);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // Filtres liste
+  const [filterSearch, setFilterSearch] = useState("");
+  const [filterCountry, setFilterCountry] = useState<string>("");
+  const [filterRegion, setFilterRegion] = useState<string>("");
+  const [filterProfile, setFilterProfile] = useState<string>("");
+  const [filterLanguage, setFilterLanguage] = useState<string>("");
 
   const { data: delegates = [], isLoading } = useQuery<Delegate[]>({
     queryKey: ["vendor-delegates", vendor.id],
@@ -131,7 +150,7 @@ export default function VendorTeamTab({ vendor }: Props) {
       email: d.email || "", phone: d.phone || "", booking_url: d.booking_url || "",
       photo_url: d.photo_url || "", bio: d.bio || "",
       languages: d.languages || [], country_codes: d.country_codes || [],
-      regions: d.regions || [], target_profiles: d.target_profiles || [],
+      regions: d.regions || [], postal_codes: d.postal_codes || [], target_profiles: d.target_profiles || [],
       is_active: d.is_active, display_order: d.display_order,
     });
     setDialogOpen(true);
@@ -169,6 +188,32 @@ export default function VendorTeamTab({ vendor }: Props) {
     return Array.from(set).sort();
   }, [form.country_codes]);
 
+  // Régions disponibles dans le filtre (selon pays sélectionné)
+  const filterAvailableRegions = useMemo(() => {
+    if (filterCountry) return REGIONS_BY_COUNTRY[filterCountry] || [];
+    return Array.from(new Set(delegates.flatMap(d => d.regions || []))).sort();
+  }, [filterCountry, delegates]);
+
+  const filteredDelegates = useMemo(() => {
+    const q = filterSearch.trim().toLowerCase();
+    return delegates.filter(d => {
+      if (q) {
+        const hay = `${d.first_name} ${d.last_name} ${d.job_title || ""} ${d.email || ""} ${d.phone || ""}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      if (filterCountry && !d.country_codes.includes(filterCountry)) return false;
+      if (filterRegion && !d.regions.includes(filterRegion)) return false;
+      if (filterProfile && !d.target_profiles.includes(filterProfile)) return false;
+      if (filterLanguage && !d.languages.includes(filterLanguage)) return false;
+      return true;
+    });
+  }, [delegates, filterSearch, filterCountry, filterRegion, filterProfile, filterLanguage]);
+
+  const hasActiveFilters = filterSearch || filterCountry || filterRegion || filterProfile || filterLanguage;
+  const clearFilters = () => {
+    setFilterSearch(""); setFilterCountry(""); setFilterRegion(""); setFilterProfile(""); setFilterLanguage("");
+  };
+
   if (isLoading) {
     return <div className="flex justify-center py-12"><Loader2 className="animate-spin text-[#1B5BDA]" /></div>;
   }
@@ -193,8 +238,74 @@ export default function VendorTeamTab({ vendor }: Props) {
           </div>
         </VCard>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {delegates.map(d => (
+        <>
+          {/* Barre de filtres */}
+          <VCard>
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="relative flex-1 min-w-[200px]">
+                <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#8B95A5]" />
+                <input
+                  value={filterSearch}
+                  onChange={(e) => setFilterSearch(e.target.value)}
+                  placeholder="Rechercher (nom, email, téléphone…)"
+                  className="w-full rounded-lg border border-[#E2E8F0] bg-white pl-8 pr-3 py-1.5 text-[12px] text-[#1D2530] focus:outline-none focus:border-[#1B5BDA]"
+                />
+              </div>
+              <select
+                value={filterCountry}
+                onChange={(e) => { setFilterCountry(e.target.value); setFilterRegion(""); }}
+                className="rounded-lg border border-[#E2E8F0] bg-white px-2 py-1.5 text-[12px] text-[#1D2530] focus:outline-none focus:border-[#1B5BDA]"
+              >
+                <option value="">Tous pays</option>
+                {COUNTRIES.map(c => <option key={c} value={c}>{COUNTRY_LABELS[c]}</option>)}
+              </select>
+              <select
+                value={filterRegion}
+                onChange={(e) => setFilterRegion(e.target.value)}
+                className="rounded-lg border border-[#E2E8F0] bg-white px-2 py-1.5 text-[12px] text-[#1D2530] focus:outline-none focus:border-[#1B5BDA] max-w-[180px]"
+              >
+                <option value="">Toutes régions</option>
+                {filterAvailableRegions.map(r => <option key={r} value={r}>{r}</option>)}
+              </select>
+              <select
+                value={filterProfile}
+                onChange={(e) => setFilterProfile(e.target.value)}
+                className="rounded-lg border border-[#E2E8F0] bg-white px-2 py-1.5 text-[12px] text-[#1D2530] focus:outline-none focus:border-[#1B5BDA]"
+              >
+                <option value="">Toutes cibles</option>
+                {TARGET_PROFILES.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
+              </select>
+              <select
+                value={filterLanguage}
+                onChange={(e) => setFilterLanguage(e.target.value)}
+                className="rounded-lg border border-[#E2E8F0] bg-white px-2 py-1.5 text-[12px] text-[#1D2530] focus:outline-none focus:border-[#1B5BDA]"
+              >
+                <option value="">Toutes langues</option>
+                {LANGUAGES.map(l => <option key={l} value={l}>{LANGUAGE_LABELS[l]}</option>)}
+              </select>
+              {hasActiveFilters && (
+                <button
+                  onClick={clearFilters}
+                  className="inline-flex items-center gap-1 text-[11px] text-[#EF4343] hover:underline px-2 py-1"
+                >
+                  <X size={11} /> Effacer
+                </button>
+              )}
+            </div>
+            <div className="text-[11px] text-[#8B95A5] mt-2">
+              {filteredDelegates.length} / {delegates.length} délégué{delegates.length > 1 ? "s" : ""}
+            </div>
+          </VCard>
+
+          {filteredDelegates.length === 0 ? (
+            <VCard>
+              <div className="text-center py-8">
+                <p className="text-[13px] text-[#8B95A5]">Aucun délégué ne correspond aux filtres.</p>
+              </div>
+            </VCard>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {filteredDelegates.map(d => (
             <VCard key={d.id} className={!d.is_active ? "opacity-60" : ""}>
               <div className="flex gap-3">
                 <div className="w-16 h-16 rounded-full bg-[#F1F5F9] border border-[#E2E8F0] flex items-center justify-center overflow-hidden flex-shrink-0">
@@ -256,6 +367,8 @@ export default function VendorTeamTab({ vendor }: Props) {
             </VCard>
           ))}
         </div>
+          )}
+        </>
       )}
 
       {/* Dialog */}
@@ -348,6 +461,19 @@ export default function VendorTeamTab({ vendor }: Props) {
                 </div>
               </Field>
             )}
+
+            {/* Codes postaux */}
+            <Field label="Codes postaux ciblés (optionnel)">
+              <input
+                value={form.postal_codes.join(", ")}
+                onChange={e => setForm(f => ({ ...f, postal_codes: e.target.value.split(/[,;\s]+/).map(s => s.trim()).filter(Boolean) }))}
+                className={inputCls}
+                placeholder="Ex. 1000, 1040, 8000-8999, 1180"
+              />
+              <p className="text-[10px] text-[#8B95A5] mt-1">
+                Séparés par virgule. Plages possibles (ex. 8000-8999). Laisse vide pour cibler toute la région.
+              </p>
+            </Field>
 
             {/* Cibles */}
             <Field label="Profils d'acheteurs ciblés">

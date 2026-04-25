@@ -152,6 +152,7 @@ export default function VendorTeamTab({ vendor }: Props) {
       photo_url: d.photo_url || "", bio: d.bio || "",
       languages: d.languages || [], country_codes: d.country_codes || [],
       regions: d.regions || [], postal_codes: d.postal_codes || [], target_profiles: d.target_profiles || [],
+      primary_target_profiles: d.primary_target_profiles || [],
       is_active: d.is_active, display_order: d.display_order,
     });
     setDialogOpen(true);

@@ -100,9 +100,31 @@ type SortKey =
   | "medikong_competitors_count"
   | "best_medikong_competitor_price"
   | "external_sources_count"
-  | "best_external_price";
+  | "best_external_price"
+  | "availability";
 
 type SortDir = "asc" | "desc";
+
+/**
+ * Score de disponibilité : plus la valeur est élevée, mieux c'est.
+ * Utilisé pour le tri de la colonne "Mon statut".
+ *  4 = En stock + Promo
+ *  3 = En stock
+ *  2 = Stock bas
+ *  1 = Rupture
+ */
+function availabilityScore(r: {
+  my_stock: number;
+  my_stock_status: string | null;
+  product_discount_percentage: number | null;
+}): number {
+  const q = r.my_stock ?? 0;
+  const s = (r.my_stock_status || "").toLowerCase();
+  const promo = (r.product_discount_percentage ?? 0) > 0;
+  if (q <= 0 || s === "out_of_stock") return 1;
+  if (s === "low_stock" || (q > 0 && q < 10)) return 2;
+  return promo ? 4 : 3;
+}
 
 function RankBadge({ rank, total }: { rank: number; total: number }) {
   if (rank === 1)
@@ -305,8 +327,14 @@ export default function VendorMarketIntel() {
       });
     }
     const sorted = [...arr].sort((a, b) => {
-      const va = a[sortKey];
-      const vb = b[sortKey];
+      if (sortKey === "availability") {
+        const va = availabilityScore(a);
+        const vb = availabilityScore(b);
+        if (va === vb) return 0;
+        return sortDir === "asc" ? va - vb : vb - va;
+      }
+      const va = a[sortKey as keyof IntelRow];
+      const vb = b[sortKey as keyof IntelRow];
       if (va == null && vb == null) return 0;
       if (va == null) return 1;
       if (vb == null) return -1;

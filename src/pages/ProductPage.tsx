@@ -806,6 +806,22 @@ export default function ProductPage() {
   // Combined external offer items (from external_offers table)
   const externalOfferItems = externalOffers;
 
+  // Compute gallery images BEFORE the useEffect — must run unconditionally on every render
+  // (Rules of Hooks: do not place useEffect after early returns)
+  const _productImageUrls = product?.imageUrls?.filter((u: string) => isValidProductImage(u)) || [];
+  const _rawImages: string[] = _productImageUrls.length > 0
+    ? _productImageUrls
+    : (product && isValidProductImage(product.imageUrl) ? [product.imageUrl!] : []);
+  const _galleryLen = Math.min(_rawImages.length, 6);
+
+  // Auto-rotate gallery photos every 3s when more than 1 image, paused on hover
+  useEffect(() => {
+    if (!autoplayEnabled || isGalleryHover || _galleryLen <= 1) return;
+    const id = window.setInterval(() => {
+      setSelectedImageIdx((i) => (i + 1) % _galleryLen);
+    }, 3000);
+    return () => window.clearInterval(id);
+  }, [autoplayEnabled, isGalleryHover, _galleryLen]);
 
   if (isLoading) {
     return (
@@ -823,22 +839,10 @@ export default function ProductPage() {
   }
 
   // Build images from real data only — no fallbacks, no Qogita placeholders
-  const productImageUrls = product.imageUrls?.filter((u: string) => isValidProductImage(u)) || [];
-  const rawImages: string[] = productImageUrls.length > 0
-    ? productImageUrls
-    : isValidProductImage(product.imageUrl) ? [product.imageUrl!] : [];
-  const images: string[] = rawImages.map((u) => getProductImageSrc(u));
+  // (Reuses _rawImages computed above the early returns to keep hooks order stable)
+  const images: string[] = _rawImages.map((u) => getProductImageSrc(u));
   const hasImages = images.length > 0;
   const galleryImages = images.slice(0, 6);
-
-  // Auto-rotate gallery photos every 3s when more than 1 image, paused on hover
-  useEffect(() => {
-    if (!autoplayEnabled || isGalleryHover || galleryImages.length <= 1) return;
-    const id = window.setInterval(() => {
-      setSelectedImageIdx((i) => (i + 1) % galleryImages.length);
-    }, 3000);
-    return () => window.clearInterval(id);
-  }, [autoplayEnabled, isGalleryHover, galleryImages.length]);
 
   const description = productDetails?.description || (productDetails as any)?.label || product.descriptionShort || "";
 

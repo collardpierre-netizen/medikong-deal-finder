@@ -93,6 +93,14 @@ function VendorProductCard({ product: p, index, addToCart, openDrawer, onQuickVi
         >
           Ajouter
         </motion.button>
+        <button
+          type="button"
+          onClick={() => onQuickView(p)}
+          title="Aperçu rapide"
+          className="p-1.5 rounded border border-border text-muted-foreground hover:text-primary hover:border-primary"
+        >
+          <Eye size={13} />
+        </button>
       </div>
     </motion.div>
   );
@@ -145,6 +153,14 @@ function VendorProductListRow({ product: p, addToCart, openDrawer, onQuickView }
           className="p-1.5 rounded bg-primary text-primary-foreground disabled:opacity-40"
         >
           <ShoppingCart size={14} />
+        </button>
+        <button
+          type="button"
+          onClick={() => onQuickView(p)}
+          title="Aperçu rapide"
+          className="p-1.5 rounded border border-border text-muted-foreground hover:text-primary hover:border-primary"
+        >
+          <Eye size={12} />
         </button>
       </div>
     </div>

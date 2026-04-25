@@ -94,6 +94,8 @@ export default function VendorDelegatesPublic({ vendorId }: Props) {
 
   const score = (d: Delegate) => {
     let s = 0;
+    // Référent principal pour le segment de l'acheteur = priorité maximale
+    if (buyerProfile && (d.primary_target_profiles || []).includes(buyerProfile)) s += 50;
     if (buyerProfile && d.target_profiles.includes(buyerProfile)) s += 10;
     if (buyerCountry && d.country_codes.includes(buyerCountry)) s += 5;
     if (d.target_profiles.length === 0) s += 1; // generic

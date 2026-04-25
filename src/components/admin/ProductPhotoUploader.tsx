@@ -8,13 +8,17 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Upload, X, Image as ImageIcon, ImagePlus, AlertTriangle, ShieldCheck } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Loader2, Upload, X, Image as ImageIcon, ImagePlus, AlertTriangle, ShieldCheck, Sparkles } from "lucide-react";
+import { normalizeImageFile } from "@/lib/imageNormalize";
 
 const MAX_FILE_SIZE = 8 * 1024 * 1024; // 8MB per file
 const ACCEPTED = ["image/jpeg", "image/png", "image/webp", "image/avif"];
 const MAX_IMAGES_PER_PRODUCT = 10;
+const NORMALIZE_SIZE = 1200; // px (square output)
 
 type Mode = "append" | "replace";
+type FitMode = "contain" | "cover";
 
 interface Props {
   productId: string;

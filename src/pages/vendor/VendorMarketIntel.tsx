@@ -22,7 +22,14 @@ import {
   ExternalLink,
   Globe,
   Store,
+  CheckCircle2,
+  XCircle,
+  AlertCircle,
+  Tag,
+  Clock,
 } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
+import { fr } from "date-fns/locale";
 
 interface MedikongOffer {
   offer_id: string;
@@ -30,7 +37,11 @@ interface MedikongOffer {
   vendor_name: string;
   price_excl_vat: number;
   stock_quantity: number;
+  stock_status: string | null;
+  is_promo: boolean;
+  promo_discount: number | null;
   delivery_days: number | null;
+  updated_at: string | null;
   is_mine: boolean;
 }
 
@@ -42,6 +53,7 @@ interface ExternalOffer {
   prix_public: number | null;
   tva_rate: number | null;
   product_url: string | null;
+  stock_source: string | null;
   imported_at: string | null;
 }
 
@@ -53,17 +65,27 @@ interface IntelRow {
   cnk_code: string | null;
   brand_name: string | null;
   country_code: string;
+  product_discount_percentage: number | null;
   my_offer_id: string;
   my_price_excl_vat: number;
   my_stock: number;
+  my_stock_status: string | null;
+  my_updated_at: string | null;
   my_rank: number;
   medikong_competitors_count: number;
   medikong_total_offers: number;
   best_medikong_competitor_price: number | null;
   best_medikong_competitor_vendor: string | null;
+  medikong_median_price: number | null;
+  gap_vs_best_amount: number | null;
+  gap_vs_best_percentage: number | null;
+  gap_vs_median_amount: number | null;
+  gap_vs_median_percentage: number | null;
   external_sources_count: number;
   best_external_price: number | null;
   best_external_source: string | null;
+  competitors_in_stock: number;
+  competitors_on_promo: number;
   medikong_offers: MedikongOffer[];
   external_offers: ExternalOffer[];
 }
@@ -99,6 +121,59 @@ function RankBadge({ rank, total }: { rank: number; total: number }) {
     <VBadge color="#DC2626" bg="#FEE2E2">
       #{rank} / {total}
     </VBadge>
+  );
+}
+
+function StockBadge({
+  qty,
+  status,
+}: {
+  qty: number | null | undefined;
+  status: string | null | undefined;
+}) {
+  const q = qty ?? 0;
+  const s = (status || "").toLowerCase();
+  if (q <= 0 || s === "out_of_stock") {
+    return (
+      <span className="inline-flex items-center gap-1 text-[11px] font-medium text-red-600">
+        <XCircle size={11} /> Rupture
+      </span>
+    );
+  }
+  if (s === "low_stock" || (q > 0 && q < 10)) {
+    return (
+      <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-600">
+        <AlertCircle size={11} /> Stock bas ({q})
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600">
+      <CheckCircle2 size={11} /> En stock ({q})
+    </span>
+  );
+}
+
+function PromoBadge({ discount }: { discount: number | null | undefined }) {
+  if (!discount || discount <= 0) return null;
+  return (
+    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-pink-100 text-pink-700">
+      <Tag size={9} /> -{Math.round(discount)}%
+    </span>
+  );
+}
+
+function FreshnessLabel({ date }: { date: string | null | undefined }) {
+  if (!date) return <span className="text-[10px] text-muted-foreground">—</span>;
+  const d = new Date(date);
+  const ageDays = (Date.now() - d.getTime()) / 86400000;
+  const colorClass =
+    ageDays <= 2 ? "text-emerald-600" : ageDays <= 14 ? "text-amber-600" : "text-red-600";
+  return (
+    <span className={`inline-flex items-center gap-1 text-[10px] font-medium ${colorClass}`}>
+      <Clock size={9} />
+      {formatDistanceToNow(d, { addSuffix: true, locale: fr })}
+    </span>
   );
 }
 
@@ -289,6 +364,8 @@ export default function VendorMarketIntel() {
                       onClick={() => toggleSort("my_rank")}
                     />
                   </th>
+                  <th className="px-4 py-3 text-left">Mon statut</th>
+                  <th className="px-4 py-3 text-left">Concurrents</th>
                   <th className="px-4 py-3 text-right">
                     <SortHeader
                       label="Concurrents MK"
@@ -371,6 +448,33 @@ export default function VendorMarketIntel() {
                       <td className="px-4 py-3 text-center">
                         <RankBadge rank={r.my_rank} total={r.medikong_total_offers} />
                       </td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-col gap-0.5">
+                          <StockBadge qty={r.my_stock} status={r.my_stock_status} />
+                          <FreshnessLabel date={r.my_updated_at} />
+                          {(r.product_discount_percentage ?? 0) > 0 && (
+                            <PromoBadge discount={r.product_discount_percentage} />
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-col gap-0.5 text-[11px]">
+                          <span
+                            className={`inline-flex items-center gap-1 ${
+                              r.competitors_in_stock > 0
+                                ? "text-emerald-600 font-medium"
+                                : "text-muted-foreground"
+                            }`}
+                          >
+                            <CheckCircle2 size={11} /> {r.competitors_in_stock} en stock
+                          </span>
+                          {r.competitors_on_promo > 0 && (
+                            <span className="inline-flex items-center gap-1 text-pink-700 font-medium">
+                              <Tag size={11} /> {r.competitors_on_promo} en promo
+                            </span>
+                          )}
+                        </div>
+                      </td>
                       <td className="px-4 py-3 text-right tabular-nums">
                         {r.medikong_competitors_count}
                       </td>
@@ -438,8 +542,10 @@ export default function VendorMarketIntel() {
                       <tr>
                         <th className="px-3 py-2 text-left">Vendeur</th>
                         <th className="px-3 py-2 text-right">Prix HTVA</th>
-                        <th className="px-3 py-2 text-right">Stock</th>
+                        <th className="px-3 py-2 text-left">Statut</th>
+                        <th className="px-3 py-2 text-center">Promo</th>
                         <th className="px-3 py-2 text-right">Délai</th>
+                        <th className="px-3 py-2 text-left">Dernière MAJ</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -465,11 +571,21 @@ export default function VendorMarketIntel() {
                           <td className="px-3 py-2 text-right tabular-nums font-medium">
                             {fmt(o.price_excl_vat)}
                           </td>
-                          <td className="px-3 py-2 text-right tabular-nums">
-                            {o.stock_quantity ?? "—"}
+                          <td className="px-3 py-2">
+                            <StockBadge qty={o.stock_quantity} status={o.stock_status} />
+                          </td>
+                          <td className="px-3 py-2 text-center">
+                            {o.is_promo ? (
+                              <PromoBadge discount={o.promo_discount} />
+                            ) : (
+                              <span className="text-[10px] text-muted-foreground">—</span>
+                            )}
                           </td>
                           <td className="px-3 py-2 text-right tabular-nums">
                             {o.delivery_days != null ? `${o.delivery_days} j` : "—"}
+                          </td>
+                          <td className="px-3 py-2">
+                            <FreshnessLabel date={o.updated_at} />
                           </td>
                         </tr>
                       ))}
@@ -496,6 +612,8 @@ export default function VendorMarketIntel() {
                           <th className="px-3 py-2 text-right">Grossiste</th>
                           <th className="px-3 py-2 text-right">Pharmacien</th>
                           <th className="px-3 py-2 text-right">Public</th>
+                          <th className="px-3 py-2 text-left">Stock</th>
+                          <th className="px-3 py-2 text-left">Importé</th>
                           <th className="px-3 py-2 text-center">Lien</th>
                         </tr>
                       </thead>
@@ -511,6 +629,12 @@ export default function VendorMarketIntel() {
                             </td>
                             <td className="px-3 py-2 text-right tabular-nums">
                               {fmt(e.prix_public)}
+                            </td>
+                            <td className="px-3 py-2 text-[11px] text-muted-foreground">
+                              {e.stock_source || "—"}
+                            </td>
+                            <td className="px-3 py-2">
+                              <FreshnessLabel date={e.imported_at} />
                             </td>
                             <td className="px-3 py-2 text-center">
                               {e.product_url ? (

@@ -76,6 +76,7 @@ const translations: Record<Lang, Record<string, string>> = {
     catalog: "Catalogue",
     myOffers: "Mes Offres",
     opportunities: "Opportunités",
+    positioning: "Positionnement",
     tenders: "Appels d'offres",
     health: "Santé du compte",
     academy: "Academy",

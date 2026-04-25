@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -7,7 +7,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
-import { Loader2, Upload, X, Image as ImageIcon, ImagePlus } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Loader2, Upload, X, Image as ImageIcon, ImagePlus, AlertTriangle, ShieldCheck } from "lucide-react";
 
 const MAX_FILE_SIZE = 8 * 1024 * 1024; // 8MB per file
 const ACCEPTED = ["image/jpeg", "image/png", "image/webp", "image/avif"];

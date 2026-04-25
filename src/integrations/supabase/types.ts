@@ -6714,8 +6714,13 @@ export type Database = {
           country_code: string
           external_offers: Json
           external_sources_count: number
+          gap_vs_best_amount: number
+          gap_vs_best_percentage: number
+          gap_vs_median_amount: number
+          gap_vs_median_percentage: number
           gtin: string
           medikong_competitors_count: number
+          medikong_median_price: number
           medikong_offers: Json
           medikong_total_offers: number
           my_offer_id: string

@@ -174,7 +174,7 @@ export default function VendorSettings() {
       )}
 
       {activeTab === "addresses" && vendorId && (
-        <AddressesTab vendorId={vendorId} shippingMode={shippingMode} />
+        <AddressesTab vendorId={vendorId} shippingMode={shippingMode} vendor={vendor} />
       )}
 
       {activeTab === "shipping_mode" && vendor && (
@@ -193,11 +193,12 @@ export default function VendorSettings() {
 }
 
 /* ─── Addresses Tab ─── */
-function AddressesTab({ vendorId, shippingMode }: { vendorId: string; shippingMode: string }) {
+function AddressesTab({ vendorId, shippingMode, vendor }: { vendorId: string; shippingMode: string; vendor?: any }) {
   const qc = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [addrForm, setAddrForm] = useState({ label: "Principal", address_line1: "", house_number: "", postal_code: "", city: "", country: "BE", phone: "", is_default: false });
+  const [seedAttempted, setSeedAttempted] = useState(false);
 
   const { data: addresses = [], isLoading } = useQuery({
     queryKey: ["vendor-addresses", vendorId],
@@ -207,6 +208,31 @@ function AddressesTab({ vendorId, shippingMode }: { vendorId: string; shippingMo
       return data ?? [];
     },
   });
+
+  // Auto-seed: si aucune adresse mais le vendor a une adresse encodée à l'inscription, on l'insère comme adresse principale.
+  useEffect(() => {
+    if (isLoading || seedAttempted) return;
+    if (addresses.length > 0) return;
+    if (!vendor?.address_line1 || !vendor?.city || !vendor?.postal_code) return;
+    setSeedAttempted(true);
+    (async () => {
+      const payload = {
+        vendor_id: vendorId,
+        label: "Principal",
+        address_line1: vendor.address_line1,
+        house_number: vendor.address_line2 || "",
+        postal_code: vendor.postal_code,
+        city: vendor.city,
+        country: vendor.country_code || "BE",
+        phone: vendor.phone || "",
+        is_default: true,
+      };
+      const { error } = await supabase.from("vendor_addresses").insert(payload as any);
+      if (!error) {
+        qc.invalidateQueries({ queryKey: ["vendor-addresses", vendorId] });
+      }
+    })();
+  }, [isLoading, addresses.length, vendor, vendorId, seedAttempted, qc]);
 
   const upsertAddr = useMutation({
     mutationFn: async () => {

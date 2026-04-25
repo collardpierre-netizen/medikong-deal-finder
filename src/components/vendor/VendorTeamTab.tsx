@@ -188,6 +188,32 @@ export default function VendorTeamTab({ vendor }: Props) {
     return Array.from(set).sort();
   }, [form.country_codes]);
 
+  // Régions disponibles dans le filtre (selon pays sélectionné)
+  const filterAvailableRegions = useMemo(() => {
+    if (filterCountry) return REGIONS_BY_COUNTRY[filterCountry] || [];
+    return Array.from(new Set(delegates.flatMap(d => d.regions || []))).sort();
+  }, [filterCountry, delegates]);
+
+  const filteredDelegates = useMemo(() => {
+    const q = filterSearch.trim().toLowerCase();
+    return delegates.filter(d => {
+      if (q) {
+        const hay = `${d.first_name} ${d.last_name} ${d.job_title || ""} ${d.email || ""} ${d.phone || ""}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      if (filterCountry && !d.country_codes.includes(filterCountry)) return false;
+      if (filterRegion && !d.regions.includes(filterRegion)) return false;
+      if (filterProfile && !d.target_profiles.includes(filterProfile)) return false;
+      if (filterLanguage && !d.languages.includes(filterLanguage)) return false;
+      return true;
+    });
+  }, [delegates, filterSearch, filterCountry, filterRegion, filterProfile, filterLanguage]);
+
+  const hasActiveFilters = filterSearch || filterCountry || filterRegion || filterProfile || filterLanguage;
+  const clearFilters = () => {
+    setFilterSearch(""); setFilterCountry(""); setFilterRegion(""); setFilterProfile(""); setFilterLanguage("");
+  };
+
   if (isLoading) {
     return <div className="flex justify-center py-12"><Loader2 className="animate-spin text-[#1B5BDA]" /></div>;
   }

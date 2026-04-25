@@ -361,6 +361,19 @@ export default function VendorTeamTab({ vendor }: Props) {
               </Field>
             )}
 
+            {/* Codes postaux */}
+            <Field label="Codes postaux ciblés (optionnel)">
+              <input
+                value={form.postal_codes.join(", ")}
+                onChange={e => setForm(f => ({ ...f, postal_codes: e.target.value.split(/[,;\s]+/).map(s => s.trim()).filter(Boolean) }))}
+                className={inputCls}
+                placeholder="Ex. 1000, 1040, 8000-8999, 1180"
+              />
+              <p className="text-[10px] text-[#8B95A5] mt-1">
+                Séparés par virgule. Plages possibles (ex. 8000-8999). Laisse vide pour cibler toute la région.
+              </p>
+            </Field>
+
             {/* Cibles */}
             <Field label="Profils d'acheteurs ciblés">
               <div className="flex flex-wrap gap-1.5">

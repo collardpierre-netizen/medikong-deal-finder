@@ -2,7 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCountry } from "@/contexts/CountryContext";
-import { Mail, Phone, CalendarDays, User as UserIcon } from "lucide-react";
+import { Mail, Phone, CalendarDays, User as UserIcon, ExternalLink } from "lucide-react";
+import { Link } from "react-router-dom";
 
 interface Props {
   vendorId: string;

@@ -297,33 +297,6 @@ export default function CategoryKeywordDisableDialog({
             )}
           </Button>
         </DialogFooter>
-          </Button>
-          <Button
-            variant="destructive"
-            disabled={allCategoryIdsToDisable.length === 0 || disableMutation.isPending}
-            onClick={() => {
-              if (
-                confirm(
-                  `Confirmer la désactivation de ${rootsToDisable.length} racine(s) et ${allCategoryIdsToDisable.length} catégorie(s) au total ? Les produits associés seront également masqués.`,
-                )
-              ) {
-                disableMutation.mutate();
-              }
-            }}
-          >
-            {disableMutation.isPending ? (
-              <>
-                <Loader2 size={14} className="mr-1 animate-spin" />
-                Désactivation…
-              </>
-            ) : (
-              <>
-                <ShieldOff size={14} className="mr-1" />
-                Désactiver maintenant
-              </>
-            )}
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

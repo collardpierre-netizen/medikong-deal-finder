@@ -29,6 +29,7 @@ interface Delegate {
   regions: string[];
   postal_codes: string[];
   target_profiles: string[];
+  primary_target_profiles: string[];
   is_active: boolean;
   display_order: number;
 }
@@ -71,7 +72,7 @@ const TARGET_PROFILES = [
 
 const empty: Omit<Delegate, "id" | "vendor_id"> = {
   first_name: "", last_name: "", job_title: "", email: "", phone: "", booking_url: "", photo_url: "", bio: "",
-  languages: [], country_codes: [], regions: [], postal_codes: [], target_profiles: [], is_active: true, display_order: 0,
+  languages: [], country_codes: [], regions: [], postal_codes: [], target_profiles: [], primary_target_profiles: [], is_active: true, display_order: 0,
 };
 
 export default function VendorTeamTab({ vendor }: Props) {

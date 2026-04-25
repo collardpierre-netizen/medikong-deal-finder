@@ -174,7 +174,7 @@ export default function VendorSettings() {
       )}
 
       {activeTab === "addresses" && vendorId && (
-        <AddressesTab vendorId={vendorId} shippingMode={shippingMode} />
+        <AddressesTab vendorId={vendorId} shippingMode={shippingMode} vendor={vendor} />
       )}
 
       {activeTab === "shipping_mode" && vendor && (

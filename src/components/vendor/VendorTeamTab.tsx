@@ -27,13 +27,17 @@ interface Delegate {
   languages: string[];
   country_codes: string[];
   regions: string[];
+  postal_codes: string[];
   target_profiles: string[];
   is_active: boolean;
   display_order: number;
 }
 
-const LANGUAGES = ["fr", "nl", "en", "de", "lu"];
-const LANGUAGE_LABELS: Record<string, string> = { fr: "Français", nl: "Nederlands", en: "English", de: "Deutsch", lu: "Lëtzebuergesch" };
+const LANGUAGES = ["fr", "nl", "en", "de", "lu", "es", "it", "pt", "ar", "tr", "pl", "ro"];
+const LANGUAGE_LABELS: Record<string, string> = {
+  fr: "Français", nl: "Nederlands", en: "English", de: "Deutsch", lu: "Lëtzebuergesch",
+  es: "Español", it: "Italiano", pt: "Português", ar: "العربية", tr: "Türkçe", pl: "Polski", ro: "Română",
+};
 
 const COUNTRIES = ["BE", "FR", "NL", "LU", "DE"];
 const COUNTRY_LABELS: Record<string, string> = { BE: "Belgique", FR: "France", NL: "Pays-Bas", LU: "Luxembourg", DE: "Allemagne" };
@@ -48,18 +52,26 @@ const REGIONS_BY_COUNTRY: Record<string, string[]> = {
 
 const TARGET_PROFILES = [
   { value: "pharmacy", label: "Pharmacies" },
+  { value: "parapharmacy", label: "Parapharmacies" },
   { value: "wholesaler", label: "Grossistes" },
-  { value: "hospital", label: "Hôpitaux" },
+  { value: "hospital", label: "Hôpitaux / Cliniques" },
   { value: "dentist", label: "Dentistes" },
   { value: "veterinary", label: "Vétérinaires" },
   { value: "ehpad", label: "EHPAD / Maisons de repos" },
   { value: "medical_practice", label: "Cabinets médicaux" },
-  { value: "parapharmacy", label: "Parapharmacies" },
+  { value: "optician", label: "Opticiens" },
+  { value: "physiotherapist", label: "Kinésithérapeutes" },
+  { value: "midwife", label: "Sages-femmes" },
+  { value: "laboratory", label: "Laboratoires" },
+  { value: "school", label: "Écoles / Crèches" },
+  { value: "community", label: "Collectivités" },
+  { value: "beauty_salon", label: "Instituts de beauté / Spas" },
+  { value: "sports_club", label: "Clubs sportifs" },
 ];
 
 const empty: Omit<Delegate, "id" | "vendor_id"> = {
   first_name: "", last_name: "", job_title: "", email: "", phone: "", booking_url: "", photo_url: "", bio: "",
-  languages: [], country_codes: [], regions: [], target_profiles: [], is_active: true, display_order: 0,
+  languages: [], country_codes: [], regions: [], postal_codes: [], target_profiles: [], is_active: true, display_order: 0,
 };
 
 export default function VendorTeamTab({ vendor }: Props) {

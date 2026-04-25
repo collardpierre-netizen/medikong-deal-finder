@@ -89,6 +89,9 @@ export default function VendorTeamTab({ vendor }: Props) {
   const [filterRegion, setFilterRegion] = useState<string>("");
   const [filterProfile, setFilterProfile] = useState<string>("");
   const [filterLanguage, setFilterLanguage] = useState<string>("");
+  const [filterPrimaryOnly, setFilterPrimaryOnly] = useState<boolean>(false);
+  type SortKey = "order" | "name" | "zone_size" | "profiles_count" | "primary_first";
+  const [sortKey, setSortKey] = useState<SortKey>("order");
 
   const { data: delegates = [], isLoading } = useQuery<Delegate[]>({
     queryKey: ["vendor-delegates", vendor.id],

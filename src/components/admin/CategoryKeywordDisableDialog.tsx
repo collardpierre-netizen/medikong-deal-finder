@@ -5,10 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Loader2, Search, AlertTriangle, X, ShieldOff } from "lucide-react";
+import { Loader2, Search, AlertTriangle, X, ShieldOff, ShieldCheck } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+
+type Action = "disable" | "enable";
 
 type Category = {
   id: string;
@@ -32,6 +35,7 @@ export default function CategoryKeywordDisableDialog({
   defaultKeywords = ["parfum", "fragrance", "perfume", "cologne", "eau de toilette", "eau de parfum"],
 }: Props) {
   const qc = useQueryClient();
+  const [action, setAction] = useState<Action>("disable");
   const [keywordInput, setKeywordInput] = useState("");
   const [keywords, setKeywords] = useState<string[]>(defaultKeywords);
 
@@ -101,37 +105,43 @@ export default function CategoryKeywordDisableDialog({
     setKeywordInput("");
   };
 
-  const disableMutation = useMutation({
+  const newActive = action === "enable";
+
+  const runMutation = useMutation({
     mutationFn: async () => {
-      if (allCategoryIdsToDisable.length === 0) throw new Error("Aucune catégorie à désactiver");
+      if (allCategoryIdsToDisable.length === 0) {
+        throw new Error(`Aucune catégorie à ${newActive ? "réactiver" : "désactiver"}`);
+      }
 
       // Update categories in chunks (avoid URL length limits)
       const chunk = 500;
       let catCount = 0;
       for (let i = 0; i < allCategoryIdsToDisable.length; i += chunk) {
         const slice = allCategoryIdsToDisable.slice(i, i + chunk);
-        const { error } = await supabase.from("categories").update({ is_active: false }).in("id", slice);
+        const { error } = await supabase.from("categories").update({ is_active: newActive }).in("id", slice);
         if (error) throw error;
         catCount += slice.length;
       }
 
-      // Cascade: deactivate associated products
+      // Cascade to associated products
       let prodCount = 0;
       for (let i = 0; i < allCategoryIdsToDisable.length; i += chunk) {
         const slice = allCategoryIdsToDisable.slice(i, i + chunk);
         const { error, count } = await supabase
           .from("products")
-          .update({ is_active: false }, { count: "exact" })
+          .update({ is_active: newActive }, { count: "exact" })
           .in("category_id", slice);
         if (error) throw error;
         prodCount += count ?? 0;
       }
 
-      return { catCount, prodCount, rootCount: rootsToDisable.length };
+      return { catCount, prodCount, rootCount: rootsToDisable.length, newActive };
     },
     onSuccess: (r) => {
+      const verb = r.newActive ? "réactivée(s)" : "désactivée(s)";
+      const verbProd = r.newActive ? "réactivé(s)" : "désactivé(s)";
       toast.success(
-        `${r.rootCount} racine(s) ciblée(s) — ${r.catCount} catégorie(s) et ${r.prodCount} produit(s) désactivé(s)`,
+        `${r.rootCount} racine(s) ciblée(s) — ${r.catCount} catégorie(s) ${verb} et ${r.prodCount} produit(s) ${verbProd}`,
       );
       qc.invalidateQueries({ queryKey: ["admin-categories"] });
       qc.invalidateQueries({ queryKey: ["admin-products"] });
@@ -139,7 +149,7 @@ export default function CategoryKeywordDisableDialog({
       qc.invalidateQueries({ queryKey: ["homepage-stats"] });
       onOpenChange(false);
     },
-    onError: (e: any) => toast.error(e.message ?? "Erreur lors de la désactivation"),
+    onError: (e: any) => toast.error(e.message ?? "Erreur lors de l'opération"),
   });
 
   return (
@@ -147,15 +157,31 @@ export default function CategoryKeywordDisableDialog({
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <ShieldOff size={18} className="text-destructive" />
-            Désactivation par mots-clés
+            {newActive ? (
+              <ShieldCheck size={18} className="text-emerald-600" />
+            ) : (
+              <ShieldOff size={18} className="text-destructive" />
+            )}
+            {newActive ? "Réactivation" : "Désactivation"} par mots-clés
           </DialogTitle>
           <DialogDescription>
             Saisissez des mots-clés (ex. <em>parfum</em>, <em>fragrance</em>). Toutes les catégories qui les contiennent
-            seront identifiées, puis leurs <strong>racines</strong> et tous les <strong>descendants</strong> seront
-            désactivés. Les produits associés seront également masqués du catalogue.
+            seront identifiées, puis leurs <strong>racines</strong> et tous les <strong>descendants</strong> seront{" "}
+            {newActive ? "réactivés" : "désactivés"}. Les produits associés seront également{" "}
+            {newActive ? "rendus visibles" : "masqués"} du catalogue.
           </DialogDescription>
         </DialogHeader>
+
+        <Tabs value={action} onValueChange={(v) => setAction(v as Action)} className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="disable" className="gap-1.5">
+              <ShieldOff size={14} /> Désactiver
+            </TabsTrigger>
+            <TabsTrigger value="enable" className="gap-1.5">
+              <ShieldCheck size={14} /> Réactiver
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
 
         <div className="space-y-4">
           {/* Keyword input */}
@@ -210,7 +236,7 @@ export default function CategoryKeywordDisableDialog({
             {rootsToDisable.length > 0 && (
               <div>
                 <div className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1">
-                  Racines qui seront désactivées
+                  Racines qui seront {newActive ? "réactivées" : "désactivées"}
                 </div>
                 <ScrollArea className="h-24 rounded border bg-background p-2">
                   <ul className="text-xs space-y-1">
@@ -227,40 +253,46 @@ export default function CategoryKeywordDisableDialog({
               </div>
             )}
 
-            {keywords.length > 0 && rootsToDisable.length === 0 && (
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <AlertTriangle size={14} /> Aucune catégorie ne correspond à ces mots-clés.
+            {!newActive && rootsToDisable.some((r) => !r.is_active) && (
+              <div className="flex items-center gap-2 text-xs text-amber-700 bg-amber-50 px-2 py-1 rounded">
+                <AlertTriangle size={14} /> Certaines racines sont déjà inactives — l'opération les laissera inchangées.
+              </div>
+            )}
+            {newActive && rootsToDisable.some((r) => r.is_active) && (
+              <div className="flex items-center gap-2 text-xs text-emerald-700 bg-emerald-50 px-2 py-1 rounded">
+                <ShieldCheck size={14} /> Certaines racines sont déjà actives — l'opération les laissera inchangées.
               </div>
             )}
           </div>
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={disableMutation.isPending}>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={runMutation.isPending}>
             Annuler
           </Button>
           <Button
-            variant="destructive"
-            disabled={allCategoryIdsToDisable.length === 0 || disableMutation.isPending}
+            variant={newActive ? "default" : "destructive"}
+            disabled={allCategoryIdsToDisable.length === 0 || runMutation.isPending}
             onClick={() => {
+              const verb = newActive ? "réactivation" : "désactivation";
               if (
                 confirm(
-                  `Confirmer la désactivation de ${rootsToDisable.length} racine(s) et ${allCategoryIdsToDisable.length} catégorie(s) au total ? Les produits associés seront également masqués.`,
+                  `Confirmer la ${verb} de ${rootsToDisable.length} racine(s) et ${allCategoryIdsToDisable.length} catégorie(s) au total ? Les produits associés seront également ${newActive ? "rendus visibles" : "masqués"}.`,
                 )
               ) {
-                disableMutation.mutate();
+                runMutation.mutate();
               }
             }}
           >
-            {disableMutation.isPending ? (
+            {runMutation.isPending ? (
               <>
                 <Loader2 size={14} className="mr-1 animate-spin" />
-                Désactivation…
+                {newActive ? "Réactivation…" : "Désactivation…"}
               </>
             ) : (
               <>
-                <ShieldOff size={14} className="mr-1" />
-                Désactiver maintenant
+                {newActive ? <ShieldCheck size={14} className="mr-1" /> : <ShieldOff size={14} className="mr-1" />}
+                {newActive ? "Réactiver maintenant" : "Désactiver maintenant"}
               </>
             )}
           </Button>

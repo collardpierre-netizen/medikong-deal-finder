@@ -175,6 +175,10 @@ export default function VendorSettings() {
         </div>
       )}
 
+      {activeTab === "branding" && vendor && (
+        <VendorBrandingTab vendor={vendor} />
+      )}
+
       {activeTab === "addresses" && vendorId && (
         <AddressesTab vendorId={vendorId} shippingMode={shippingMode} vendor={vendor} />
       )}

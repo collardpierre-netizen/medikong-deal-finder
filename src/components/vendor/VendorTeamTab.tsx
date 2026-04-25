@@ -238,8 +238,74 @@ export default function VendorTeamTab({ vendor }: Props) {
           </div>
         </VCard>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {delegates.map(d => (
+        <>
+          {/* Barre de filtres */}
+          <VCard>
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="relative flex-1 min-w-[200px]">
+                <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#8B95A5]" />
+                <input
+                  value={filterSearch}
+                  onChange={(e) => setFilterSearch(e.target.value)}
+                  placeholder="Rechercher (nom, email, téléphone…)"
+                  className="w-full rounded-lg border border-[#E2E8F0] bg-white pl-8 pr-3 py-1.5 text-[12px] text-[#1D2530] focus:outline-none focus:border-[#1B5BDA]"
+                />
+              </div>
+              <select
+                value={filterCountry}
+                onChange={(e) => { setFilterCountry(e.target.value); setFilterRegion(""); }}
+                className="rounded-lg border border-[#E2E8F0] bg-white px-2 py-1.5 text-[12px] text-[#1D2530] focus:outline-none focus:border-[#1B5BDA]"
+              >
+                <option value="">Tous pays</option>
+                {COUNTRIES.map(c => <option key={c} value={c}>{COUNTRY_LABELS[c]}</option>)}
+              </select>
+              <select
+                value={filterRegion}
+                onChange={(e) => setFilterRegion(e.target.value)}
+                className="rounded-lg border border-[#E2E8F0] bg-white px-2 py-1.5 text-[12px] text-[#1D2530] focus:outline-none focus:border-[#1B5BDA] max-w-[180px]"
+              >
+                <option value="">Toutes régions</option>
+                {filterAvailableRegions.map(r => <option key={r} value={r}>{r}</option>)}
+              </select>
+              <select
+                value={filterProfile}
+                onChange={(e) => setFilterProfile(e.target.value)}
+                className="rounded-lg border border-[#E2E8F0] bg-white px-2 py-1.5 text-[12px] text-[#1D2530] focus:outline-none focus:border-[#1B5BDA]"
+              >
+                <option value="">Toutes cibles</option>
+                {TARGET_PROFILES.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
+              </select>
+              <select
+                value={filterLanguage}
+                onChange={(e) => setFilterLanguage(e.target.value)}
+                className="rounded-lg border border-[#E2E8F0] bg-white px-2 py-1.5 text-[12px] text-[#1D2530] focus:outline-none focus:border-[#1B5BDA]"
+              >
+                <option value="">Toutes langues</option>
+                {LANGUAGES.map(l => <option key={l} value={l}>{LANGUAGE_LABELS[l]}</option>)}
+              </select>
+              {hasActiveFilters && (
+                <button
+                  onClick={clearFilters}
+                  className="inline-flex items-center gap-1 text-[11px] text-[#EF4343] hover:underline px-2 py-1"
+                >
+                  <X size={11} /> Effacer
+                </button>
+              )}
+            </div>
+            <div className="text-[11px] text-[#8B95A5] mt-2">
+              {filteredDelegates.length} / {delegates.length} délégué{delegates.length > 1 ? "s" : ""}
+            </div>
+          </VCard>
+
+          {filteredDelegates.length === 0 ? (
+            <VCard>
+              <div className="text-center py-8">
+                <p className="text-[13px] text-[#8B95A5]">Aucun délégué ne correspond aux filtres.</p>
+              </div>
+            </VCard>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {filteredDelegates.map(d => (
             <VCard key={d.id} className={!d.is_active ? "opacity-60" : ""}>
               <div className="flex gap-3">
                 <div className="w-16 h-16 rounded-full bg-[#F1F5F9] border border-[#E2E8F0] flex items-center justify-center overflow-hidden flex-shrink-0">

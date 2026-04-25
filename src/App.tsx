@@ -51,6 +51,7 @@ const ForgotPasswordPage = lazyWithRetry(() => import("./pages/ForgotPasswordPag
 const ResetPasswordPage = lazyWithRetry(() => import("./pages/ResetPasswordPage"), "ResetPasswordPage");
 const VendorPublicPage = lazyWithRetry(() => import("./pages/VendorPublicPage"), "VendorPublicPage");
 const DelegatePublicPage = lazyWithRetry(() => import("./pages/DelegatePublicPage"), "DelegatePublicPage");
+const DelegateDesignDemoPage = lazyWithRetry(() => import("./pages/DelegateDesignDemoPage"), "DelegateDesignDemoPage");
 const ProfessionnelsPage = lazyWithRetry(() => import("./pages/ProfessionnelsPage"), "ProfessionnelsPage");
 const SourcingPage = lazyWithRetry(() => import("./pages/SourcingPage"), "SourcingPage");
 const CategoriesPage = lazyWithRetry(() => import("./pages/CategoriesPage"), "CategoriesPage");
@@ -238,6 +239,7 @@ const App = () => (
             <Route path="/fabricant/:slug" element={<LP><ManufacturerPage /></LP>} />
             <Route path="/vendeur/:slug" element={<LP><VendorPublicPage /></LP>} />
             <Route path="/delegue/:delegateId" element={<LP><DelegatePublicPage /></LP>} />
+            <Route path="/demo/delegues" element={<LP><DelegateDesignDemoPage /></LP>} />
             <Route path="/panier" element={<LP><CartPage /></LP>} />
             <Route path="/compte" element={<LP><AccountPage /></LP>} />
             <Route path="/compte/mes-categories" element={<LP><MesCategoriesPage /></LP>} />

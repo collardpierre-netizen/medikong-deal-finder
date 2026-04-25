@@ -396,6 +396,59 @@ export default function ProductPhotoUploader({
               </div>
             )}
 
+            {/* Normalization options */}
+            <div className="rounded-md border p-3 space-y-3 bg-muted/20">
+              <div className="flex items-start justify-between gap-3">
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-1.5 text-xs font-semibold">
+                    <Sparkles size={13} className="text-primary" />
+                    Normaliser pour une galerie homogène
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    Recadre toutes les photos en {NORMALIZE_SIZE}×{NORMALIZE_SIZE} (carré),
+                    ajoute un fond blanc et exporte en WebP.
+                  </p>
+                </div>
+                <Switch checked={normalize} onCheckedChange={setNormalize} />
+              </div>
+
+              {normalize && (
+                <div className="space-y-1.5 pt-1 border-t">
+                  <Label className="text-[11px] text-muted-foreground">Mode de cadrage</Label>
+                  <RadioGroup
+                    value={fit}
+                    onValueChange={(v) => setFit(v as FitMode)}
+                    className="grid grid-cols-2 gap-2"
+                  >
+                    <Label
+                      htmlFor="fit-contain"
+                      className={`flex items-start gap-2 rounded-md border p-2 cursor-pointer ${fit === "contain" ? "border-primary bg-primary/5" : ""}`}
+                    >
+                      <RadioGroupItem value="contain" id="fit-contain" className="mt-0.5" />
+                      <div>
+                        <div className="text-[11px] font-semibold">Adapter (recommandé)</div>
+                        <div className="text-[10px] text-muted-foreground">
+                          Photo entière visible, fond blanc autour.
+                        </div>
+                      </div>
+                    </Label>
+                    <Label
+                      htmlFor="fit-cover"
+                      className={`flex items-start gap-2 rounded-md border p-2 cursor-pointer ${fit === "cover" ? "border-primary bg-primary/5" : ""}`}
+                    >
+                      <RadioGroupItem value="cover" id="fit-cover" className="mt-0.5" />
+                      <div>
+                        <div className="text-[11px] font-semibold">Remplir (recadrage)</div>
+                        <div className="text-[10px] text-muted-foreground">
+                          Recadre au centre, peut couper les bords.
+                        </div>
+                      </div>
+                    </Label>
+                  </RadioGroup>
+                </div>
+              )}
+            </div>
+
             {/* Mode */}
             <div className="space-y-2">
               <Label className="text-xs">Comportement</Label>

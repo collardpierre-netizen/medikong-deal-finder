@@ -410,15 +410,24 @@ export default function VendorTeamTab({ vendor }: Props) {
             </VCard>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {filteredDelegates.map(d => (
+              {filteredDelegates.map(d => {
+                const av = AVAILABILITY_BY_VALUE[d.availability_status] || AVAILABILITY_BY_VALUE.available;
+                return (
             <VCard key={d.id} className={!d.is_active ? "opacity-60" : ""}>
               <div className="flex gap-3">
-                <div className="w-16 h-16 rounded-full bg-[#F1F5F9] border border-[#E2E8F0] flex items-center justify-center overflow-hidden flex-shrink-0">
-                  {d.photo_url ? (
-                    <img src={d.photo_url} alt={`${d.first_name} ${d.last_name}`} className="w-full h-full object-cover" />
-                  ) : (
-                    <UserIcon size={24} className="text-[#CBD5E1]" />
-                  )}
+                <div className="relative w-16 h-16 flex-shrink-0">
+                  <div className="w-16 h-16 rounded-full bg-[#F1F5F9] border border-[#E2E8F0] flex items-center justify-center overflow-hidden">
+                    {d.photo_url ? (
+                      <img src={d.photo_url} alt={`${d.first_name} ${d.last_name}`} className="w-full h-full object-cover" />
+                    ) : (
+                      <UserIcon size={24} className="text-[#CBD5E1]" />
+                    )}
+                  </div>
+                  <span
+                    title={av.label}
+                    className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full border-2 border-white"
+                    style={{ backgroundColor: av.dot }}
+                  />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2">
@@ -427,6 +436,23 @@ export default function VendorTeamTab({ vendor }: Props) {
                         {d.first_name} {d.last_name}
                       </h3>
                       {d.job_title && <p className="text-[11px] text-[#8B95A5] truncate">{d.job_title}</p>}
+                      <div
+                        className="mt-1 inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded"
+                        style={{ backgroundColor: av.bg, color: av.text }}
+                      >
+                        <av.Icon size={10} />
+                        {av.label}
+                        {d.availability_until && (
+                          <span className="font-normal opacity-80">
+                            · jusqu'au {new Date(d.availability_until).toLocaleDateString("fr-BE", { day: "2-digit", month: "short" })}
+                          </span>
+                        )}
+                      </div>
+                      {d.availability_message && (
+                        <p className="mt-0.5 text-[10px] italic text-[#616B7C] truncate" title={d.availability_message}>
+                          « {d.availability_message} »
+                        </p>
+                      )}
                     </div>
                     <div className="flex gap-1 flex-shrink-0">
                       <button onClick={() => openEdit(d)} className="p-1.5 rounded hover:bg-[#F1F5F9] text-[#8B95A5] hover:text-[#1B5BDA]"><Edit2 size={13} /></button>

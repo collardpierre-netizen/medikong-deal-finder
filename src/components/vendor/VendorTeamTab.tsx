@@ -82,6 +82,13 @@ export default function VendorTeamTab({ vendor }: Props) {
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
+  // Filtres liste
+  const [filterSearch, setFilterSearch] = useState("");
+  const [filterCountry, setFilterCountry] = useState<string>("");
+  const [filterRegion, setFilterRegion] = useState<string>("");
+  const [filterProfile, setFilterProfile] = useState<string>("");
+  const [filterLanguage, setFilterLanguage] = useState<string>("");
+
   const { data: delegates = [], isLoading } = useQuery<Delegate[]>({
     queryKey: ["vendor-delegates", vendor.id],
     queryFn: async () => {

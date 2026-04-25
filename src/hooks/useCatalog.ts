@@ -270,6 +270,7 @@ export function useCatalogProducts(filters: CatalogFilters) {
         resolvedBrandIds,
         manufacturerIds: mfIds,
         effectiveSearch,
+        inactiveCategoryIds,
       };
 
       const buildProductQuery = () =>

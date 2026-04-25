@@ -318,7 +318,7 @@ export default function VendorMarketIntel() {
       return sortDir === "asc" ? sa.localeCompare(sb) : sb.localeCompare(sa);
     });
     return sorted;
-  }, [rows, search, sortKey, sortDir]);
+  }, [rows, search, eanFilter, statusFilter, sortKey, sortDir]);
 
   const toggleSort = (k: SortKey) => {
     if (sortKey === k) setSortDir(sortDir === "asc" ? "desc" : "asc");

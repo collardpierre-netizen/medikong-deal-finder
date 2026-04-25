@@ -157,6 +157,7 @@ const VendorOrders = lazyWithRetry(() => import("./pages/vendor/VendorOrders"), 
 const VendorOpportunities = lazyWithRetry(() => import("./pages/vendor/VendorOpportunities"), "VendorOpportunities");
 const VendorAlerts = lazyWithRetry(() => import("./pages/vendor/VendorPriceAlerts"), "VendorPriceAlerts");
 const VendorPositioning = lazyWithRetry(() => import("./pages/vendor/VendorPositioning"), "VendorPositioning");
+const VendorMarketIntel = lazyWithRetry(() => import("./pages/vendor/VendorMarketIntel"), "VendorMarketIntel");
 const VendorTenders = lazyWithRetry(() => import("./pages/vendor/VendorTenders"), "VendorTenders");
 const VendorAnalytics = lazyWithRetry(() => import("./pages/vendor/VendorAnalytics"), "VendorAnalytics");
 const VendorFinance = lazyWithRetry(() => import("./pages/vendor/VendorFinance"), "VendorFinance");

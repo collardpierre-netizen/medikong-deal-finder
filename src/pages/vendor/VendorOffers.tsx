@@ -4,7 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { VCard } from "@/components/vendor/ui/VCard";
 import { VBtn } from "@/components/vendor/ui/VBtn";
 import { VBadge } from "@/components/vendor/ui/VBadge";
-import { Tag, Plus, Pencil, Trash2, X, Loader2, Package, Search, Download, Upload, FileSpreadsheet, ChevronDown, Users, ChevronRight, TrendingDown, TrendingUp, BarChart3, Eye } from "lucide-react";
+import { Tag, Plus, Pencil, Trash2, X, Loader2, Package, Search, Download, Upload, FileSpreadsheet, ChevronDown, Users, ChevronRight, TrendingDown, TrendingUp, BarChart3, Eye, ImagePlus } from "lucide-react";
+import ProductPhotoUploader from "@/components/admin/ProductPhotoUploader";
 import { toast } from "sonner";
 import { useCurrentVendor } from "@/hooks/useCurrentVendor";
 import * as XLSX from "xlsx";
@@ -1349,6 +1350,19 @@ export default function VendorOffers() {
                       </td>
                       <td className="py-2.5 px-3 text-right">
                         <div className="flex items-center justify-end gap-1">
+                          {offer.product_id && (
+                            <ProductPhotoUploader
+                              productId={offer.product_id}
+                              productSlug={prod?.slug}
+                              currentImages={prod?.image_urls ?? []}
+                              invalidateKeys={[["vendor-offers"]]}
+                              trigger={
+                                <button className="p-1.5 hover:bg-[#F5F3FF] rounded" title="Ajouter des photos">
+                                  <ImagePlus size={14} style={{ color: "#7C3AED" }} />
+                                </button>
+                              }
+                            />
+                          )}
                           <button onClick={() => openEdit(offer)} className="p-1.5 hover:bg-[#EFF6FF] rounded" title="Modifier">
                             <Pencil size={14} style={{ color: "#1B5BDA" }} />
                           </button>

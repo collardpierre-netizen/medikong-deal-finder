@@ -7,6 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, ShoppingCart, Package, ImageOff, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import ProductPhotoUploader from "@/components/admin/ProductPhotoUploader";
 
 const AdminProduitDetail = () => {
   const { id } = useParams();
@@ -87,9 +88,19 @@ const AdminProduitDetail = () => {
       {activeTab === "resume" && (
         <div className="space-y-4">
           {/* Images gallery */}
-          {product.image_urls && product.image_urls.length > 0 && (
-            <div className="p-5 rounded-[10px]" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
-              <h3 className="text-[14px] font-bold mb-3" style={{ color: "#1D2530" }}>Photos ({product.image_urls.length})</h3>
+          <div className="p-5 rounded-[10px]" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-[14px] font-bold" style={{ color: "#1D2530" }}>
+                Photos ({product.image_urls?.length ?? 0})
+              </h3>
+              <ProductPhotoUploader
+                productId={product.id}
+                productSlug={product.slug}
+                currentImages={product.image_urls ?? []}
+                invalidateKeys={[["product-detail", product.id]]}
+              />
+            </div>
+            {product.image_urls && product.image_urls.length > 0 ? (
               <div className="flex gap-3 overflow-x-auto pb-2">
                 {product.image_urls.map((url: string, i: number) => (
                   <div key={i} className="w-24 h-24 rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center" style={{ backgroundColor: "#F8FAFC", border: "1px solid #E2E8F0" }}>
@@ -97,8 +108,10 @@ const AdminProduitDetail = () => {
                   </div>
                 ))}
               </div>
-            </div>
-          )}
+            ) : (
+              <p className="text-[12px]" style={{ color: "#8B95A5" }}>Aucune photo pour ce produit.</p>
+            )}
+          </div>
 
           <div className="grid grid-cols-3 gap-4">
             <KpiCard icon={ShoppingCart} label="Offres" value={String(offers.length)} iconColor="#1B5BDA" iconBg="#EFF6FF" />

@@ -191,6 +191,9 @@ export default function VendorTeamTab({ vendor }: Props) {
       regions: d.regions || [], postal_codes: d.postal_codes || [], target_profiles: d.target_profiles || [],
       primary_target_profiles: d.primary_target_profiles || [],
       is_active: d.is_active, display_order: d.display_order,
+      availability_status: (d.availability_status || "available") as AvailabilityStatus,
+      availability_message: d.availability_message || "",
+      availability_until: d.availability_until || null,
     });
     setDialogOpen(true);
   };

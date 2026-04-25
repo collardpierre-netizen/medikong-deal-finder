@@ -1,7 +1,10 @@
+import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Link } from "react-router-dom";
-import { ExternalLink, Package, Truck, Tag, Building2 } from "lucide-react";
+import { ExternalLink, Package, Truck, Tag, Building2, UserRound } from "lucide-react";
 import VendorDelegateCompact from "@/components/vendor/VendorDelegateCompact";
+import VendorDelegateDetailDialog from "@/components/vendor/VendorDelegateDetailDialog";
+import { Button } from "@/components/ui/button";
 import { MEDIKONG_PLACEHOLDER, isValidProductImage } from "@/lib/image-utils";
 
 interface QuickViewProduct {

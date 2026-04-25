@@ -448,6 +448,33 @@ export default function VendorMarketIntel() {
                       <td className="px-4 py-3 text-center">
                         <RankBadge rank={r.my_rank} total={r.medikong_total_offers} />
                       </td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-col gap-0.5">
+                          <StockBadge qty={r.my_stock} status={r.my_stock_status} />
+                          <FreshnessLabel date={r.my_updated_at} />
+                          {(r.product_discount_percentage ?? 0) > 0 && (
+                            <PromoBadge discount={r.product_discount_percentage} />
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-col gap-0.5 text-[11px]">
+                          <span
+                            className={`inline-flex items-center gap-1 ${
+                              r.competitors_in_stock > 0
+                                ? "text-emerald-600 font-medium"
+                                : "text-muted-foreground"
+                            }`}
+                          >
+                            <CheckCircle2 size={11} /> {r.competitors_in_stock} en stock
+                          </span>
+                          {r.competitors_on_promo > 0 && (
+                            <span className="inline-flex items-center gap-1 text-pink-700 font-medium">
+                              <Tag size={11} /> {r.competitors_on_promo} en promo
+                            </span>
+                          )}
+                        </div>
+                      </td>
                       <td className="px-4 py-3 text-right tabular-nums">
                         {r.medikong_competitors_count}
                       </td>

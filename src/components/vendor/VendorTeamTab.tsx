@@ -216,7 +216,21 @@ export default function VendorTeamTab({ vendor }: Props) {
     setFilterSearch(""); setFilterCountry(""); setFilterRegion(""); setFilterProfile(""); setFilterLanguage("");
   };
 
-  if (isLoading) {
+  // Mapping segment → responsables (référent principal en premier, puis contacts secondaires)
+  const responsibilitiesBySegment = useMemo(() => {
+    const map = new Map<string, { primary: Delegate[]; secondary: Delegate[] }>();
+    const active = delegates.filter(d => d.is_active);
+    TARGET_PROFILES.forEach(({ value }) => {
+      const primary = active.filter(d => (d.primary_target_profiles || []).includes(value));
+      const secondary = active.filter(
+        d => d.target_profiles.includes(value) && !(d.primary_target_profiles || []).includes(value)
+      );
+      if (primary.length > 0 || secondary.length > 0) {
+        map.set(value, { primary, secondary });
+      }
+    });
+    return map;
+  }, [delegates]);
     return <div className="flex justify-center py-12"><Loader2 className="animate-spin text-[#1B5BDA]" /></div>;
   }
 

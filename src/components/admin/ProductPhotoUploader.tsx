@@ -85,6 +85,8 @@ export default function ProductPhotoUploader({
   const [progress, setProgress] = useState(0);
   const [hashing, setHashing] = useState(false);
   const [existingHashes, setExistingHashes] = useState<Set<string>>(new Set());
+  const [normalize, setNormalize] = useState(true);
+  const [fit, setFit] = useState<FitMode>("contain");
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Pre-hash existing product images once the dialog opens

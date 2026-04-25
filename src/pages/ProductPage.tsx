@@ -829,6 +829,17 @@ export default function ProductPage() {
     : isValidProductImage(product.imageUrl) ? [product.imageUrl!] : [];
   const images: string[] = rawImages.map((u) => getProductImageSrc(u));
   const hasImages = images.length > 0;
+  const galleryImages = images.slice(0, 6);
+
+  // Auto-rotate gallery photos every 3s when more than 1 image, paused on hover
+  useEffect(() => {
+    if (!autoplayEnabled || isGalleryHover || galleryImages.length <= 1) return;
+    const id = window.setInterval(() => {
+      setSelectedImageIdx((i) => (i + 1) % galleryImages.length);
+    }, 3000);
+    return () => window.clearInterval(id);
+  }, [autoplayEnabled, isGalleryHover, galleryImages.length]);
+
   const description = productDetails?.description || (productDetails as any)?.label || product.descriptionShort || "";
 
   const clientPrice = bestOffer ? (isTVAC ? bestOffer.unitPriceInclVat : bestOffer.unitPriceEur) : 0;

@@ -481,12 +481,50 @@ export default function VendorTeamTab({ vendor }: Props) {
             <Field label="Profils d'acheteurs ciblés">
               <div className="flex flex-wrap gap-1.5">
                 {TARGET_PROFILES.map(p => (
-                  <Chip key={p.value} active={form.target_profiles.includes(p.value)} onClick={() => setForm(f => ({ ...f, target_profiles: toggle(f.target_profiles, p.value) }))}>
+                  <Chip key={p.value} active={form.target_profiles.includes(p.value)} onClick={() => setForm(f => ({
+                    ...f,
+                    target_profiles: toggle(f.target_profiles, p.value),
+                    // Si on désélectionne la cible, retire aussi le statut "référent"
+                    primary_target_profiles: f.target_profiles.includes(p.value)
+                      ? f.primary_target_profiles.filter(v => v !== p.value)
+                      : f.primary_target_profiles,
+                  }))}>
                     {p.label}
                   </Chip>
                 ))}
               </div>
             </Field>
+
+            {/* Référent principal */}
+            {form.target_profiles.length > 0 && (
+              <Field label="Référent principal pour ces segments">
+                <p className="text-[10px] text-[#8B95A5] mb-1.5">
+                  Ce délégué sera affiché en priorité aux acheteurs de ces segments.
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {form.target_profiles.map(value => {
+                    const p = TARGET_PROFILES.find(tp => tp.value === value);
+                    if (!p) return null;
+                    const isPrimary = form.primary_target_profiles.includes(value);
+                    return (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => setForm(f => ({ ...f, primary_target_profiles: toggle(f.primary_target_profiles, value) }))}
+                        className={`text-[11px] px-2.5 py-1 rounded-full border transition-colors inline-flex items-center gap-1 ${
+                          isPrimary
+                            ? "bg-[#F59E0B] text-white border-[#F59E0B]"
+                            : "bg-white text-[#616B7C] border-[#E2E8F0] hover:border-[#F59E0B] hover:text-[#F59E0B]"
+                        }`}
+                      >
+                        <Star size={10} className={isPrimary ? "fill-white" : ""} />
+                        {p.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </Field>
+            )}
 
             {/* Bio */}
             <Field label="Bio courte (optionnel)">

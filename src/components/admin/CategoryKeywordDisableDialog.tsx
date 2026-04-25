@@ -105,37 +105,43 @@ export default function CategoryKeywordDisableDialog({
     setKeywordInput("");
   };
 
-  const disableMutation = useMutation({
+  const newActive = action === "enable";
+
+  const runMutation = useMutation({
     mutationFn: async () => {
-      if (allCategoryIdsToDisable.length === 0) throw new Error("Aucune catégorie à désactiver");
+      if (allCategoryIdsToDisable.length === 0) {
+        throw new Error(`Aucune catégorie à ${newActive ? "réactiver" : "désactiver"}`);
+      }
 
       // Update categories in chunks (avoid URL length limits)
       const chunk = 500;
       let catCount = 0;
       for (let i = 0; i < allCategoryIdsToDisable.length; i += chunk) {
         const slice = allCategoryIdsToDisable.slice(i, i + chunk);
-        const { error } = await supabase.from("categories").update({ is_active: false }).in("id", slice);
+        const { error } = await supabase.from("categories").update({ is_active: newActive }).in("id", slice);
         if (error) throw error;
         catCount += slice.length;
       }
 
-      // Cascade: deactivate associated products
+      // Cascade to associated products
       let prodCount = 0;
       for (let i = 0; i < allCategoryIdsToDisable.length; i += chunk) {
         const slice = allCategoryIdsToDisable.slice(i, i + chunk);
         const { error, count } = await supabase
           .from("products")
-          .update({ is_active: false }, { count: "exact" })
+          .update({ is_active: newActive }, { count: "exact" })
           .in("category_id", slice);
         if (error) throw error;
         prodCount += count ?? 0;
       }
 
-      return { catCount, prodCount, rootCount: rootsToDisable.length };
+      return { catCount, prodCount, rootCount: rootsToDisable.length, newActive };
     },
     onSuccess: (r) => {
+      const verb = r.newActive ? "réactivée(s)" : "désactivée(s)";
+      const verbProd = r.newActive ? "réactivé(s)" : "désactivé(s)";
       toast.success(
-        `${r.rootCount} racine(s) ciblée(s) — ${r.catCount} catégorie(s) et ${r.prodCount} produit(s) désactivé(s)`,
+        `${r.rootCount} racine(s) ciblée(s) — ${r.catCount} catégorie(s) ${verb} et ${r.prodCount} produit(s) ${verbProd}`,
       );
       qc.invalidateQueries({ queryKey: ["admin-categories"] });
       qc.invalidateQueries({ queryKey: ["admin-products"] });
@@ -143,7 +149,7 @@ export default function CategoryKeywordDisableDialog({
       qc.invalidateQueries({ queryKey: ["homepage-stats"] });
       onOpenChange(false);
     },
-    onError: (e: any) => toast.error(e.message ?? "Erreur lors de la désactivation"),
+    onError: (e: any) => toast.error(e.message ?? "Erreur lors de l'opération"),
   });
 
   return (

@@ -22,7 +22,14 @@ import {
   ExternalLink,
   Globe,
   Store,
+  CheckCircle2,
+  XCircle,
+  AlertCircle,
+  Tag,
+  Clock,
 } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
+import { fr } from "date-fns/locale";
 
 interface MedikongOffer {
   offer_id: string;
@@ -30,7 +37,11 @@ interface MedikongOffer {
   vendor_name: string;
   price_excl_vat: number;
   stock_quantity: number;
+  stock_status: string | null;
+  is_promo: boolean;
+  promo_discount: number | null;
   delivery_days: number | null;
+  updated_at: string | null;
   is_mine: boolean;
 }
 
@@ -42,6 +53,7 @@ interface ExternalOffer {
   prix_public: number | null;
   tva_rate: number | null;
   product_url: string | null;
+  stock_source: string | null;
   imported_at: string | null;
 }
 
@@ -53,17 +65,27 @@ interface IntelRow {
   cnk_code: string | null;
   brand_name: string | null;
   country_code: string;
+  product_discount_percentage: number | null;
   my_offer_id: string;
   my_price_excl_vat: number;
   my_stock: number;
+  my_stock_status: string | null;
+  my_updated_at: string | null;
   my_rank: number;
   medikong_competitors_count: number;
   medikong_total_offers: number;
   best_medikong_competitor_price: number | null;
   best_medikong_competitor_vendor: string | null;
+  medikong_median_price: number | null;
+  gap_vs_best_amount: number | null;
+  gap_vs_best_percentage: number | null;
+  gap_vs_median_amount: number | null;
+  gap_vs_median_percentage: number | null;
   external_sources_count: number;
   best_external_price: number | null;
   best_external_source: string | null;
+  competitors_in_stock: number;
+  competitors_on_promo: number;
   medikong_offers: MedikongOffer[];
   external_offers: ExternalOffer[];
 }

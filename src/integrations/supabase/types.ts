@@ -5460,6 +5460,9 @@ export type Database = {
       }
       vendor_delegates: {
         Row: {
+          availability_message: string | null
+          availability_status: Database["public"]["Enums"]["delegate_availability"]
+          availability_until: string | null
           bio: string | null
           booking_url: string | null
           country_codes: string[]
@@ -5482,6 +5485,9 @@ export type Database = {
           vendor_id: string
         }
         Insert: {
+          availability_message?: string | null
+          availability_status?: Database["public"]["Enums"]["delegate_availability"]
+          availability_until?: string | null
           bio?: string | null
           booking_url?: string | null
           country_codes?: string[]
@@ -5504,6 +5510,9 @@ export type Database = {
           vendor_id: string
         }
         Update: {
+          availability_message?: string | null
+          availability_status?: Database["public"]["Enums"]["delegate_availability"]
+          availability_until?: string | null
           bio?: string | null
           booking_url?: string | null
           country_codes?: string[]
@@ -6731,6 +6740,12 @@ export type Database = {
       alert_type: "market_price" | "external_offer"
       commission_model_enum: "flat_percentage" | "margin_split" | "fixed_amount"
       customer_type: "pharmacy" | "hospital" | "clinic" | "lab" | "other"
+      delegate_availability:
+        | "available"
+        | "busy"
+        | "in_meeting"
+        | "on_leave"
+        | "unavailable"
       delegate_entity_type: "brand" | "manufacturer" | "vendor"
       delegate_type: "commercial" | "contact_referent"
       email_frequency: "immediate" | "daily_digest" | "weekly_digest"
@@ -6955,6 +6970,13 @@ export const Constants = {
         "fixed_amount",
       ],
       customer_type: ["pharmacy", "hospital", "clinic", "lab", "other"],
+      delegate_availability: [
+        "available",
+        "busy",
+        "in_meeting",
+        "on_leave",
+        "unavailable",
+      ],
       delegate_entity_type: ["brand", "manufacturer", "vendor"],
       delegate_type: ["commercial", "contact_referent"],
       email_frequency: ["immediate", "daily_digest", "weekly_digest"],

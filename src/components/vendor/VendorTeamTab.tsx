@@ -7,11 +7,13 @@ import { VBadge } from "@/components/vendor/ui/VBadge";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Loader2, Plus, Edit2, Trash2, Upload, Mail, Phone, CalendarDays, MapPin, Users, Globe, User as UserIcon, Search, X, Star } from "lucide-react";
+import { Loader2, Plus, Edit2, Trash2, Upload, Mail, Phone, CalendarDays, MapPin, Users, Globe, User as UserIcon, Search, X, Star, Clock, CheckCircle2, Plane, AlertOctagon, CalendarClock } from "lucide-react";
 
 interface Props {
   vendor: any;
 }
+
+type AvailabilityStatus = "available" | "busy" | "in_meeting" | "on_leave" | "unavailable";
 
 interface Delegate {
   id: string;
@@ -32,7 +34,30 @@ interface Delegate {
   primary_target_profiles: string[];
   is_active: boolean;
   display_order: number;
+  availability_status: AvailabilityStatus;
+  availability_message: string | null;
+  availability_until: string | null;
 }
+
+const AVAILABILITY_OPTIONS: {
+  value: AvailabilityStatus;
+  label: string;
+  short: string;
+  dot: string;
+  bg: string;
+  text: string;
+  border: string;
+  Icon: typeof CheckCircle2;
+}[] = [
+  { value: "available",   label: "Disponible",        short: "Dispo",      dot: "#10B981", bg: "#D1FAE5", text: "#065F46", border: "#10B981", Icon: CheckCircle2 },
+  { value: "busy",        label: "Occupé·e",          short: "Occupé",     dot: "#F59E0B", bg: "#FEF3C7", text: "#92400E", border: "#F59E0B", Icon: Clock },
+  { value: "in_meeting",  label: "En rendez-vous",    short: "En RDV",     dot: "#6366F1", bg: "#E0E7FF", text: "#3730A3", border: "#6366F1", Icon: CalendarClock },
+  { value: "on_leave",    label: "En congé",          short: "En congé",   dot: "#0EA5E9", bg: "#E0F2FE", text: "#075985", border: "#0EA5E9", Icon: Plane },
+  { value: "unavailable", label: "Indisponible",      short: "Indispo",    dot: "#EF4343", bg: "#FEE2E2", text: "#991B1B", border: "#EF4343", Icon: AlertOctagon },
+];
+
+const AVAILABILITY_BY_VALUE: Record<AvailabilityStatus, typeof AVAILABILITY_OPTIONS[number]> =
+  AVAILABILITY_OPTIONS.reduce((acc, o) => ({ ...acc, [o.value]: o }), {} as any);
 
 const LANGUAGES = ["fr", "nl", "en", "de", "lu", "es", "it", "pt", "ar", "tr", "pl", "ro"];
 const LANGUAGE_LABELS: Record<string, string> = {
@@ -73,6 +98,7 @@ const TARGET_PROFILES = [
 const empty: Omit<Delegate, "id" | "vendor_id"> = {
   first_name: "", last_name: "", job_title: "", email: "", phone: "", booking_url: "", photo_url: "", bio: "",
   languages: [], country_codes: [], regions: [], postal_codes: [], target_profiles: [], primary_target_profiles: [], is_active: true, display_order: 0,
+  availability_status: "available", availability_message: "", availability_until: null,
 };
 
 export default function VendorTeamTab({ vendor }: Props) {
@@ -89,9 +115,7 @@ export default function VendorTeamTab({ vendor }: Props) {
   const [filterRegion, setFilterRegion] = useState<string>("");
   const [filterProfile, setFilterProfile] = useState<string>("");
   const [filterLanguage, setFilterLanguage] = useState<string>("");
-  const [filterPrimaryOnly, setFilterPrimaryOnly] = useState<boolean>(false);
-  type SortKey = "order" | "name" | "zone_size" | "profiles_count" | "primary_first";
-  const [sortKey, setSortKey] = useState<SortKey>("order");
+  const [filterAvailability, setFilterAvailability] = useState<string>("");
 
   const { data: delegates = [], isLoading } = useQuery<Delegate[]>({
     queryKey: ["vendor-delegates", vendor.id],
@@ -168,6 +192,9 @@ export default function VendorTeamTab({ vendor }: Props) {
       regions: d.regions || [], postal_codes: d.postal_codes || [], target_profiles: d.target_profiles || [],
       primary_target_profiles: d.primary_target_profiles || [],
       is_active: d.is_active, display_order: d.display_order,
+      availability_status: (d.availability_status || "available") as AvailabilityStatus,
+      availability_message: d.availability_message || "",
+      availability_until: d.availability_until || null,
     });
     setDialogOpen(true);
   };
@@ -212,53 +239,23 @@ export default function VendorTeamTab({ vendor }: Props) {
 
   const filteredDelegates = useMemo(() => {
     const q = filterSearch.trim().toLowerCase();
-    const list = delegates.filter(d => {
+    return delegates.filter(d => {
       if (q) {
         const hay = `${d.first_name} ${d.last_name} ${d.job_title || ""} ${d.email || ""} ${d.phone || ""}`.toLowerCase();
         if (!hay.includes(q)) return false;
       }
       if (filterCountry && !d.country_codes.includes(filterCountry)) return false;
       if (filterRegion && !d.regions.includes(filterRegion)) return false;
-      if (filterProfile) {
-        if (filterPrimaryOnly) {
-          if (!(d.primary_target_profiles || []).includes(filterProfile)) return false;
-        } else {
-          if (!d.target_profiles.includes(filterProfile)) return false;
-        }
-      } else if (filterPrimaryOnly && (d.primary_target_profiles || []).length === 0) {
-        return false;
-      }
+      if (filterProfile && !d.target_profiles.includes(filterProfile)) return false;
       if (filterLanguage && !d.languages.includes(filterLanguage)) return false;
+      if (filterAvailability && d.availability_status !== filterAvailability) return false;
       return true;
     });
-    const zoneSize = (d: Delegate) =>
-      (d.country_codes?.length || 0) * 100 + (d.regions?.length || 0) * 5 + (d.postal_codes?.length || 0);
-    const sorted = [...list].sort((a, b) => {
-      switch (sortKey) {
-        case "name":
-          return `${a.last_name} ${a.first_name}`.localeCompare(`${b.last_name} ${b.first_name}`, "fr");
-        case "zone_size":
-          return zoneSize(b) - zoneSize(a);
-        case "profiles_count":
-          return (b.target_profiles?.length || 0) - (a.target_profiles?.length || 0);
-        case "primary_first": {
-          const ap = (a.primary_target_profiles?.length || 0) > 0 ? 1 : 0;
-          const bp = (b.primary_target_profiles?.length || 0) > 0 ? 1 : 0;
-          if (ap !== bp) return bp - ap;
-          return (a.display_order || 0) - (b.display_order || 0);
-        }
-        case "order":
-        default:
-          return (a.display_order || 0) - (b.display_order || 0);
-      }
-    });
-    return sorted;
-  }, [delegates, filterSearch, filterCountry, filterRegion, filterProfile, filterLanguage, filterPrimaryOnly, sortKey]);
+  }, [delegates, filterSearch, filterCountry, filterRegion, filterProfile, filterLanguage, filterAvailability]);
 
-  const hasActiveFilters = filterSearch || filterCountry || filterRegion || filterProfile || filterLanguage || filterPrimaryOnly || sortKey !== "order";
+  const hasActiveFilters = filterSearch || filterCountry || filterRegion || filterProfile || filterLanguage || filterAvailability;
   const clearFilters = () => {
-    setFilterSearch(""); setFilterCountry(""); setFilterRegion(""); setFilterProfile(""); setFilterLanguage("");
-    setFilterPrimaryOnly(false); setSortKey("order");
+    setFilterSearch(""); setFilterCountry(""); setFilterRegion(""); setFilterProfile(""); setFilterLanguage(""); setFilterAvailability("");
   };
 
   // Mapping segment → responsables (référent principal en premier, puis contacts secondaires)
@@ -393,30 +390,14 @@ export default function VendorTeamTab({ vendor }: Props) {
                 <option value="">Toutes langues</option>
                 {LANGUAGES.map(l => <option key={l} value={l}>{LANGUAGE_LABELS[l]}</option>)}
               </select>
-              <label className="inline-flex items-center gap-1.5 text-[11px] text-[#1D2530] px-2 py-1.5 rounded-lg border border-[#E2E8F0] bg-white cursor-pointer hover:border-[#1B5BDA]">
-                <input
-                  type="checkbox"
-                  checked={filterPrimaryOnly}
-                  onChange={(e) => setFilterPrimaryOnly(e.target.checked)}
-                  className="accent-[#F59E0B]"
-                />
-                <Star size={11} className="text-[#F59E0B] fill-[#F59E0B]" />
-                Référents uniquement
-              </label>
-              <div className="inline-flex items-center gap-1 text-[11px] text-[#8B95A5]">
-                <span>Trier&nbsp;:</span>
-                <select
-                  value={sortKey}
-                  onChange={(e) => setSortKey(e.target.value as typeof sortKey)}
-                  className="rounded-lg border border-[#E2E8F0] bg-white px-2 py-1.5 text-[12px] text-[#1D2530] focus:outline-none focus:border-[#1B5BDA]"
-                >
-                  <option value="order">Ordre d'affichage</option>
-                  <option value="name">Nom (A→Z)</option>
-                  <option value="zone_size">Taille de zone (large → restreinte)</option>
-                  <option value="profiles_count">Nombre de cibles couvertes</option>
-                  <option value="primary_first">Référents en premier</option>
-                </select>
-              </div>
+              <select
+                value={filterAvailability}
+                onChange={(e) => setFilterAvailability(e.target.value)}
+                className="rounded-lg border border-[#E2E8F0] bg-white px-2 py-1.5 text-[12px] text-[#1D2530] focus:outline-none focus:border-[#1B5BDA]"
+              >
+                <option value="">Toutes dispos</option>
+                {AVAILABILITY_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
               {hasActiveFilters && (
                 <button
                   onClick={clearFilters}
@@ -439,15 +420,24 @@ export default function VendorTeamTab({ vendor }: Props) {
             </VCard>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {filteredDelegates.map(d => (
+              {filteredDelegates.map(d => {
+                const av = AVAILABILITY_BY_VALUE[d.availability_status] || AVAILABILITY_BY_VALUE.available;
+                return (
             <VCard key={d.id} className={!d.is_active ? "opacity-60" : ""}>
               <div className="flex gap-3">
-                <div className="w-16 h-16 rounded-full bg-[#F1F5F9] border border-[#E2E8F0] flex items-center justify-center overflow-hidden flex-shrink-0">
-                  {d.photo_url ? (
-                    <img src={d.photo_url} alt={`${d.first_name} ${d.last_name}`} className="w-full h-full object-cover" />
-                  ) : (
-                    <UserIcon size={24} className="text-[#CBD5E1]" />
-                  )}
+                <div className="relative w-16 h-16 flex-shrink-0">
+                  <div className="w-16 h-16 rounded-full bg-[#F1F5F9] border border-[#E2E8F0] flex items-center justify-center overflow-hidden">
+                    {d.photo_url ? (
+                      <img src={d.photo_url} alt={`${d.first_name} ${d.last_name}`} className="w-full h-full object-cover" />
+                    ) : (
+                      <UserIcon size={24} className="text-[#CBD5E1]" />
+                    )}
+                  </div>
+                  <span
+                    title={av.label}
+                    className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full border-2 border-white"
+                    style={{ backgroundColor: av.dot }}
+                  />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2">
@@ -456,6 +446,23 @@ export default function VendorTeamTab({ vendor }: Props) {
                         {d.first_name} {d.last_name}
                       </h3>
                       {d.job_title && <p className="text-[11px] text-[#8B95A5] truncate">{d.job_title}</p>}
+                      <div
+                        className="mt-1 inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded"
+                        style={{ backgroundColor: av.bg, color: av.text }}
+                      >
+                        <av.Icon size={10} />
+                        {av.label}
+                        {d.availability_until && (
+                          <span className="font-normal opacity-80">
+                            · jusqu'au {new Date(d.availability_until).toLocaleDateString("fr-BE", { day: "2-digit", month: "short" })}
+                          </span>
+                        )}
+                      </div>
+                      {d.availability_message && (
+                        <p className="mt-0.5 text-[10px] italic text-[#616B7C] truncate" title={d.availability_message}>
+                          « {d.availability_message} »
+                        </p>
+                      )}
                     </div>
                     <div className="flex gap-1 flex-shrink-0">
                       <button onClick={() => openEdit(d)} className="p-1.5 rounded hover:bg-[#F1F5F9] text-[#8B95A5] hover:text-[#1B5BDA]"><Edit2 size={13} /></button>
@@ -512,7 +519,8 @@ export default function VendorTeamTab({ vendor }: Props) {
                 </div>
               </div>
             </VCard>
-          ))}
+          );
+              })}
         </div>
           )}
         </>
@@ -696,6 +704,51 @@ export default function VendorTeamTab({ vendor }: Props) {
             <Field label="Bio courte (optionnel)">
               <textarea value={form.bio || ""} onChange={e => setForm(f => ({ ...f, bio: e.target.value }))} rows={2} maxLength={280} className={inputCls} placeholder="Spécialiste depuis 10 ans en…" />
             </Field>
+
+            {/* Disponibilité */}
+            <Field label="Disponibilité actuelle">
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
+                {AVAILABILITY_OPTIONS.map(o => {
+                  const active = form.availability_status === o.value;
+                  return (
+                    <button
+                      key={o.value}
+                      type="button"
+                      onClick={() => setForm(f => ({ ...f, availability_status: o.value }))}
+                      className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg border text-[11px] font-semibold transition-colors"
+                      style={
+                        active
+                          ? { backgroundColor: o.bg, color: o.text, borderColor: o.border }
+                          : { backgroundColor: "white", color: "#616B7C", borderColor: "#E2E8F0" }
+                      }
+                    >
+                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: o.dot }} />
+                      <o.Icon size={11} />
+                      {o.short}
+                    </button>
+                  );
+                })}
+              </div>
+            </Field>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Message court (optionnel)">
+                <input
+                  value={form.availability_message || ""}
+                  onChange={e => setForm(f => ({ ...f, availability_message: e.target.value }))}
+                  className={inputCls}
+                  maxLength={120}
+                  placeholder="De retour lundi à 9h"
+                />
+              </Field>
+              <Field label="Jusqu'au (optionnel)">
+                <input
+                  type="datetime-local"
+                  value={form.availability_until ? form.availability_until.slice(0, 16) : ""}
+                  onChange={e => setForm(f => ({ ...f, availability_until: e.target.value ? new Date(e.target.value).toISOString() : null }))}
+                  className={inputCls}
+                />
+              </Field>
+            </div>
 
             {/* Statut */}
             <div className="flex items-center justify-between rounded-lg border border-[#E2E8F0] px-3 py-2">

@@ -158,11 +158,11 @@ export default function VendorDelegatesPublic({ vendorId }: Props) {
                   <a
                     href={d.booking_url}
                     target="_blank"
-                    rel="noreferrer"
+                    rel="noopener noreferrer"
                     className="inline-flex items-center gap-1.5 mt-1 px-2.5 py-1 rounded-md bg-primary text-primary-foreground hover:opacity-90 text-[11px] font-semibold"
                   >
                     <CalendarDays size={11} />
-                    Prendre RDV
+                    Prendre rendez-vous
                   </a>
                 )}
               </div>

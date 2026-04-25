@@ -109,7 +109,18 @@ export default function VendorTeamTab({ vendor }: Props) {
       if (!form.first_name.trim() || !form.last_name.trim()) {
         throw new Error("Prénom et nom obligatoires");
       }
-      const payload = { ...form, vendor_id: vendor.id };
+      // Normalise l'URL d'agenda : ajoute https:// si manquant, valide format
+      let bookingUrl = (form.booking_url || "").trim();
+      if (bookingUrl) {
+        if (!/^https?:\/\//i.test(bookingUrl)) bookingUrl = "https://" + bookingUrl;
+        try {
+          const u = new URL(bookingUrl);
+          if (!/^https?:$/.test(u.protocol)) throw new Error("invalid");
+        } catch {
+          throw new Error("Lien d'agenda invalide. Utilise une URL complète (https://…)");
+        }
+      }
+      const payload = { ...form, booking_url: bookingUrl || null, vendor_id: vendor.id };
       if (editing) {
         const { error } = await supabase.from("vendor_delegates" as any).update(payload as any).eq("id", editing.id);
         if (error) throw error;
@@ -398,8 +409,8 @@ export default function VendorTeamTab({ vendor }: Props) {
                     {d.email && <div className="flex items-center gap-1.5"><Mail size={11} />{d.email}</div>}
                     {d.phone && <div className="flex items-center gap-1.5"><Phone size={11} />{d.phone}</div>}
                     {d.booking_url && (
-                      <a href={d.booking_url} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-[#1B5BDA] hover:underline truncate">
-                        <CalendarDays size={11} />Prendre RDV
+                      <a href={d.booking_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-[#1B5BDA] hover:underline truncate">
+                        <CalendarDays size={11} />Prendre rendez-vous
                       </a>
                     )}
                   </div>
@@ -503,8 +514,29 @@ export default function VendorTeamTab({ vendor }: Props) {
                 <input value={form.phone || ""} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} className={inputCls} placeholder="+32 ..." />
               </Field>
             </div>
-            <Field label="Lien de prise de rendez-vous (Calendly, Bookings…)">
-              <input type="url" value={form.booking_url || ""} onChange={e => setForm(f => ({ ...f, booking_url: e.target.value }))} className={inputCls} placeholder="https://calendly.com/laure-durant" />
+            <Field label="Lien de prise de rendez-vous (Calendly, Bookings, Zcal…)">
+              <input
+                type="url"
+                value={form.booking_url || ""}
+                onChange={e => setForm(f => ({ ...f, booking_url: e.target.value }))}
+                className={inputCls}
+                placeholder="https://calendly.com/laure-durant"
+              />
+              <div className="flex items-center justify-between mt-1">
+                <p className="text-[10px] text-[#8B95A5]">
+                  URL complète. Ce bouton « Prendre rendez-vous » s'affichera sur la fiche vue par les acheteurs.
+                </p>
+                {form.booking_url && (
+                  <a
+                    href={/^https?:\/\//i.test(form.booking_url) ? form.booking_url : `https://${form.booking_url}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#1B5BDA] hover:underline"
+                  >
+                    <CalendarDays size={11} /> Tester le lien
+                  </a>
+                )}
+              </div>
             </Field>
 
             {/* Langues */}

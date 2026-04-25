@@ -257,6 +257,53 @@ export default function VendorTeamTab({ vendor }: Props) {
         </VCard>
       ) : (
         <>
+          {/* Vue Responsables par segment */}
+          {responsibilitiesBySegment.size > 0 && (
+            <VCard>
+              <div className="flex items-center gap-2 mb-3">
+                <Star size={14} className="text-[#F59E0B] fill-[#F59E0B]" />
+                <h3 className="text-[13px] font-bold text-[#1D2530]">Responsables par segment</h3>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2">
+                {Array.from(responsibilitiesBySegment.entries()).map(([segment, { primary, secondary }]) => {
+                  const lbl = TARGET_PROFILES.find(tp => tp.value === segment)?.label || segment;
+                  return (
+                    <div key={segment} className="flex items-start gap-2 py-1 border-b border-[#F1F5F9] last:border-0">
+                      <div className="text-[12px] font-semibold text-[#1D2530] min-w-[100px] flex-shrink-0">
+                        {lbl}
+                      </div>
+                      <div className="flex-1 text-[11px] text-[#616B7C]">
+                        {primary.length > 0 ? (
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            {primary.map(d => (
+                              <span key={d.id} className="inline-flex items-center gap-1 font-semibold text-[#92400E]">
+                                <Star size={9} className="fill-[#F59E0B] text-[#F59E0B]" />
+                                {d.first_name} {d.last_name}
+                              </span>
+                            ))}
+                            {secondary.length > 0 && (
+                              <span className="text-[#8B95A5]">
+                                + {secondary.map(d => `${d.first_name} ${d.last_name}`).join(", ")}
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="italic text-[#8B95A5]">
+                            Aucun référent — {secondary.map(d => `${d.first_name} ${d.last_name}`).join(", ")}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="text-[10px] text-[#8B95A5] mt-3">
+                <Star size={9} className="inline fill-[#F59E0B] text-[#F59E0B] mr-1" />
+                = référent principal (affiché en priorité aux acheteurs du segment).
+              </p>
+            </VCard>
+          )}
+
           {/* Barre de filtres */}
           <VCard>
             <div className="flex flex-wrap items-center gap-2">

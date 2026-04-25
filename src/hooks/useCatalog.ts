@@ -24,6 +24,11 @@ async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message = 
   }
 }
 
+async function fetchInactiveCategoryIds(): Promise<string[]> {
+  const { data } = await supabase.from("categories").select("id").eq("is_active", false);
+  return (data || []).map((c: any) => c.id);
+}
+
 function applyCatalogProductFilters(
   query: any,
   filters: CatalogFilters,
@@ -32,6 +37,7 @@ function applyCatalogProductFilters(
     resolvedBrandIds: string[] | null;
     manufacturerIds: string[] | null;
     effectiveSearch?: string;
+    inactiveCategoryIds?: string[];
   }
 ) {
   let next = query;
@@ -39,6 +45,11 @@ function applyCatalogProductFilters(
   if (options.categoryIds?.length) next = next.in("category_id", options.categoryIds);
   if (options.resolvedBrandIds?.length) next = next.in("brand_id", options.resolvedBrandIds);
   if (options.manufacturerIds?.length) next = next.in("manufacturer_id", options.manufacturerIds);
+
+  // Exclude products belonging to inactive categories (admin-disabled)
+  if (options.inactiveCategoryIds?.length) {
+    next = next.not("category_id", "in", `(${options.inactiveCategoryIds.join(",")})`);
+  }
 
   if (filters.priceMin !== undefined) next = next.gte("best_price_excl_vat", filters.priceMin);
   if (filters.priceMax !== undefined) next = next.lte("best_price_excl_vat", filters.priceMax);
@@ -204,7 +215,7 @@ export function useCatalogProducts(filters: CatalogFilters) {
   return useQuery({
     queryKey: ["catalog-products", filters, country],
     queryFn: async () => {
-      const [categoryIds, explicitBrandIds, mfIds] = await Promise.all([
+      const [categoryIds, explicitBrandIds, mfIds, inactiveCategoryIds] = await Promise.all([
         filters.category
           ? supabase.from("categories").select("id").eq("slug", filters.category).maybeSingle().then(({ data: cat }) => {
               if (!cat) return null;
@@ -219,6 +230,7 @@ export function useCatalogProducts(filters: CatalogFilters) {
         filters.manufacturers && filters.manufacturers.length > 0
           ? supabase.from("manufacturers").select("id").in("slug", filters.manufacturers).then(({ data }) => data?.map(m => m.id) || null)
           : Promise.resolve(null),
+        fetchInactiveCategoryIds(),
       ]);
 
       let resolvedBrandIds = explicitBrandIds;
@@ -258,6 +270,7 @@ export function useCatalogProducts(filters: CatalogFilters) {
         resolvedBrandIds,
         manufacturerIds: mfIds,
         effectiveSearch,
+        inactiveCategoryIds,
       };
 
       const buildProductQuery = () =>

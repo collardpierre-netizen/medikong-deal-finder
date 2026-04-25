@@ -806,6 +806,22 @@ export default function ProductPage() {
   // Combined external offer items (from external_offers table)
   const externalOfferItems = externalOffers;
 
+  // Compute gallery images BEFORE the useEffect — must run unconditionally on every render
+  // (Rules of Hooks: do not place useEffect after early returns)
+  const _productImageUrls = product?.imageUrls?.filter((u: string) => isValidProductImage(u)) || [];
+  const _rawImages: string[] = _productImageUrls.length > 0
+    ? _productImageUrls
+    : (product && isValidProductImage(product.imageUrl) ? [product.imageUrl!] : []);
+  const _galleryLen = Math.min(_rawImages.length, 6);
+
+  // Auto-rotate gallery photos every 3s when more than 1 image, paused on hover
+  useEffect(() => {
+    if (!autoplayEnabled || isGalleryHover || _galleryLen <= 1) return;
+    const id = window.setInterval(() => {
+      setSelectedImageIdx((i) => (i + 1) % _galleryLen);
+    }, 3000);
+    return () => window.clearInterval(id);
+  }, [autoplayEnabled, isGalleryHover, _galleryLen]);
 
   if (isLoading) {
     return (

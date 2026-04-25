@@ -151,7 +151,7 @@ const AdminReconciliation = lazyWithRetry(() => import("./pages/admin/AdminRecon
 const VendorLoginPage = lazyWithRetry(() => import("./pages/vendor/VendorLoginPage"), "VendorLoginPage");
 const VendorLayout = lazyWithRetry(() => import("./components/vendor/VendorLayout"), "VendorLayout");
 const VendorDashboard = lazyWithRetry(() => import("./pages/vendor/VendorDashboard"), "VendorDashboard");
-const VendorCatalog = lazyWithRetry(() => import("./pages/vendor/VendorCatalog"), "VendorCatalog");
+
 const VendorOffers = lazyWithRetry(() => import("./pages/vendor/VendorOffers"), "VendorOffers");
 const VendorOrders = lazyWithRetry(() => import("./pages/vendor/VendorOrders"), "VendorOrders");
 const VendorOpportunities = lazyWithRetry(() => import("./pages/vendor/VendorOpportunities"), "VendorOpportunities");

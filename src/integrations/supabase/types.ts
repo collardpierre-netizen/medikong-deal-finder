@@ -5354,6 +5354,84 @@ export type Database = {
           },
         ]
       }
+      vendor_delegates: {
+        Row: {
+          bio: string | null
+          booking_url: string | null
+          country_codes: string[]
+          created_at: string
+          display_order: number
+          email: string | null
+          first_name: string
+          id: string
+          is_active: boolean
+          job_title: string | null
+          languages: string[]
+          last_name: string
+          phone: string | null
+          photo_url: string | null
+          regions: string[]
+          target_profiles: string[]
+          updated_at: string
+          vendor_id: string
+        }
+        Insert: {
+          bio?: string | null
+          booking_url?: string | null
+          country_codes?: string[]
+          created_at?: string
+          display_order?: number
+          email?: string | null
+          first_name: string
+          id?: string
+          is_active?: boolean
+          job_title?: string | null
+          languages?: string[]
+          last_name: string
+          phone?: string | null
+          photo_url?: string | null
+          regions?: string[]
+          target_profiles?: string[]
+          updated_at?: string
+          vendor_id: string
+        }
+        Update: {
+          bio?: string | null
+          booking_url?: string | null
+          country_codes?: string[]
+          created_at?: string
+          display_order?: number
+          email?: string | null
+          first_name?: string
+          id?: string
+          is_active?: boolean
+          job_title?: string | null
+          languages?: string[]
+          last_name?: string
+          phone?: string | null
+          photo_url?: string | null
+          regions?: string[]
+          target_profiles?: string[]
+          updated_at?: string
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_delegates_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_delegates_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vendor_invoices: {
         Row: {
           base_cost_cents: number

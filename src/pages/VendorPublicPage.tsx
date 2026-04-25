@@ -8,7 +8,7 @@ import { useCart } from "@/hooks/useCart";
 import {
   Store, MapPin, Phone, Mail, Shield, Clock,
   Star, Package, Truck, Grid, List,
-  CheckCircle2, Building2, Search, X, Plus, Minus, ShoppingCart,
+  CheckCircle2, Building2, Search, X, Plus, Minus, ShoppingCart, Eye,
 } from "lucide-react";
 import { useState, useMemo, useCallback } from "react";
 import { getVendorPublicName, resolveVendorVisibility } from "@/lib/vendor-display";
@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useCountry } from "@/contexts/CountryContext";
 import VendorDelegatesPublic from "@/components/vendor/VendorDelegatesPublic";
+import VendorProductQuickView from "@/components/vendor/VendorProductQuickView";
 
 /* ───── helpers ───── */
 function slugify(t: string) {
@@ -37,7 +38,7 @@ const EMPTY_FILTERS: VendorFilters = { brands: [], categories: [], search: "" };
 import { MEDIKONG_PLACEHOLDER, isValidProductImage, isQogitaPlaceholder } from "@/lib/image-utils";
 
 /* ───── Vendor-specific product card (grid) ───── */
-function VendorProductCard({ product: p, index, addToCart, openDrawer }: { product: any; index: number; addToCart: any; openDrawer: () => void }) {
+function VendorProductCard({ product: p, index, addToCart, openDrawer, onQuickView }: { product: any; index: number; addToCart: any; openDrawer: () => void; onQuickView: (p: any) => void }) {
   const [qty, setQty] = useState(1);
   const maxQty = p.stockQty || 999;
   const handleAdd = () => {
@@ -92,13 +93,21 @@ function VendorProductCard({ product: p, index, addToCart, openDrawer }: { produ
         >
           Ajouter
         </motion.button>
+        <button
+          type="button"
+          onClick={() => onQuickView(p)}
+          title="Aperçu rapide"
+          className="p-1.5 rounded border border-border text-muted-foreground hover:text-primary hover:border-primary"
+        >
+          <Eye size={13} />
+        </button>
       </div>
     </motion.div>
   );
 }
 
 /* ───── Vendor-specific product row (list) ───── */
-function VendorProductListRow({ product: p, addToCart, openDrawer }: { product: any; addToCart: any; openDrawer: () => void }) {
+function VendorProductListRow({ product: p, addToCart, openDrawer, onQuickView }: { product: any; addToCart: any; openDrawer: () => void; onQuickView: (p: any) => void }) {
   const [qty, setQty] = useState(1);
   const maxQty = p.stockQty || 999;
   const handleAdd = () => {
@@ -145,6 +154,14 @@ function VendorProductListRow({ product: p, addToCart, openDrawer }: { product: 
         >
           <ShoppingCart size={14} />
         </button>
+        <button
+          type="button"
+          onClick={() => onQuickView(p)}
+          title="Aperçu rapide"
+          className="p-1.5 rounded border border-border text-muted-foreground hover:text-primary hover:border-primary"
+        >
+          <Eye size={12} />
+        </button>
       </div>
     </div>
   );
@@ -161,6 +178,7 @@ export default function VendorPublicPage() {
   });
   const { currentCountry } = useCountry();
   const { items: cartItems, addToCart, openDrawer } = useCart();
+  const [quickViewProduct, setQuickViewProduct] = useState<any | null>(null);
 
   const { data: vendor, isLoading } = useQuery({
     queryKey: ["vendor-public", slug],
@@ -512,13 +530,13 @@ export default function VendorPublicPage() {
               view === "grid" ? (
                 <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
                   {filteredProducts.map((p: any, i: number) => (
-                    <VendorProductCard key={p.id} product={p} index={i} addToCart={addToCart} openDrawer={openDrawer} />
+                    <VendorProductCard key={p.id} product={p} index={i} addToCart={addToCart} openDrawer={openDrawer} onQuickView={setQuickViewProduct} />
                   ))}
                 </div>
               ) : (
                 <div className="border border-border rounded-xl overflow-hidden divide-y divide-border">
                   {filteredProducts.map((p: any) => (
-                    <VendorProductListRow key={p.id} product={p} addToCart={addToCart} openDrawer={openDrawer} />
+                    <VendorProductListRow key={p.id} product={p} addToCart={addToCart} openDrawer={openDrawer} onQuickView={setQuickViewProduct} />
                   ))}
                 </div>
               )
@@ -592,6 +610,33 @@ export default function VendorPublicPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* QuickView produit (popup) — montre détails + délégué dédié */}
+      <VendorProductQuickView
+        product={
+          quickViewProduct
+            ? {
+                id: quickViewProduct.id,
+                name: quickViewProduct.name,
+                slug: quickViewProduct.slug,
+                brand: quickViewProduct.brand,
+                imageUrl: quickViewProduct.imageUrl,
+                price: quickViewProduct.price,
+                priceInclVat: quickViewProduct.priceInclVat,
+                stock: quickViewProduct.stock,
+                stockQty: quickViewProduct.stockQty,
+                deliveryDays: quickViewProduct.deliveryDays,
+                description: quickViewProduct.description,
+                gtin: quickViewProduct.gtin,
+                vendorId: quickViewProduct.vendorId || vendor?.id,
+                vendorName: getVendorPublicName(vendor),
+                vendorSlug: vendor?.slug,
+              }
+            : null
+        }
+        open={!!quickViewProduct}
+        onOpenChange={(o) => !o && setQuickViewProduct(null)}
+      />
     </Layout>
   );
 }

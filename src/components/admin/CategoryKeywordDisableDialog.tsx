@@ -253,17 +253,50 @@ export default function CategoryKeywordDisableDialog({
               </div>
             )}
 
-            {keywords.length > 0 && rootsToDisable.length === 0 && (
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <AlertTriangle size={14} /> Aucune catégorie ne correspond à ces mots-clés.
+            {!newActive && rootsToDisable.some((r) => !r.is_active) && (
+              <div className="flex items-center gap-2 text-xs text-amber-700 bg-amber-50 px-2 py-1 rounded">
+                <AlertTriangle size={14} /> Certaines racines sont déjà inactives — l'opération les laissera inchangées.
+              </div>
+            )}
+            {newActive && rootsToDisable.some((r) => r.is_active) && (
+              <div className="flex items-center gap-2 text-xs text-emerald-700 bg-emerald-50 px-2 py-1 rounded">
+                <ShieldCheck size={14} /> Certaines racines sont déjà actives — l'opération les laissera inchangées.
               </div>
             )}
           </div>
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={disableMutation.isPending}>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={runMutation.isPending}>
             Annuler
+          </Button>
+          <Button
+            variant={newActive ? "default" : "destructive"}
+            disabled={allCategoryIdsToDisable.length === 0 || runMutation.isPending}
+            onClick={() => {
+              const verb = newActive ? "réactivation" : "désactivation";
+              if (
+                confirm(
+                  `Confirmer la ${verb} de ${rootsToDisable.length} racine(s) et ${allCategoryIdsToDisable.length} catégorie(s) au total ? Les produits associés seront également ${newActive ? "rendus visibles" : "masqués"}.`,
+                )
+              ) {
+                runMutation.mutate();
+              }
+            }}
+          >
+            {runMutation.isPending ? (
+              <>
+                <Loader2 size={14} className="mr-1 animate-spin" />
+                {newActive ? "Réactivation…" : "Désactivation…"}
+              </>
+            ) : (
+              <>
+                {newActive ? <ShieldCheck size={14} className="mr-1" /> : <ShieldOff size={14} className="mr-1" />}
+                {newActive ? "Réactiver maintenant" : "Désactiver maintenant"}
+              </>
+            )}
+          </Button>
+        </DialogFooter>
           </Button>
           <Button
             variant="destructive"

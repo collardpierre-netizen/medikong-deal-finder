@@ -212,22 +212,53 @@ export default function VendorTeamTab({ vendor }: Props) {
 
   const filteredDelegates = useMemo(() => {
     const q = filterSearch.trim().toLowerCase();
-    return delegates.filter(d => {
+    const list = delegates.filter(d => {
       if (q) {
         const hay = `${d.first_name} ${d.last_name} ${d.job_title || ""} ${d.email || ""} ${d.phone || ""}`.toLowerCase();
         if (!hay.includes(q)) return false;
       }
       if (filterCountry && !d.country_codes.includes(filterCountry)) return false;
       if (filterRegion && !d.regions.includes(filterRegion)) return false;
-      if (filterProfile && !d.target_profiles.includes(filterProfile)) return false;
+      if (filterProfile) {
+        if (filterPrimaryOnly) {
+          if (!(d.primary_target_profiles || []).includes(filterProfile)) return false;
+        } else {
+          if (!d.target_profiles.includes(filterProfile)) return false;
+        }
+      } else if (filterPrimaryOnly && (d.primary_target_profiles || []).length === 0) {
+        return false;
+      }
       if (filterLanguage && !d.languages.includes(filterLanguage)) return false;
       return true;
     });
-  }, [delegates, filterSearch, filterCountry, filterRegion, filterProfile, filterLanguage]);
+    const zoneSize = (d: Delegate) =>
+      (d.country_codes?.length || 0) * 100 + (d.regions?.length || 0) * 5 + (d.postal_codes?.length || 0);
+    const sorted = [...list].sort((a, b) => {
+      switch (sortKey) {
+        case "name":
+          return `${a.last_name} ${a.first_name}`.localeCompare(`${b.last_name} ${b.first_name}`, "fr");
+        case "zone_size":
+          return zoneSize(b) - zoneSize(a);
+        case "profiles_count":
+          return (b.target_profiles?.length || 0) - (a.target_profiles?.length || 0);
+        case "primary_first": {
+          const ap = (a.primary_target_profiles?.length || 0) > 0 ? 1 : 0;
+          const bp = (b.primary_target_profiles?.length || 0) > 0 ? 1 : 0;
+          if (ap !== bp) return bp - ap;
+          return (a.display_order || 0) - (b.display_order || 0);
+        }
+        case "order":
+        default:
+          return (a.display_order || 0) - (b.display_order || 0);
+      }
+    });
+    return sorted;
+  }, [delegates, filterSearch, filterCountry, filterRegion, filterProfile, filterLanguage, filterPrimaryOnly, sortKey]);
 
-  const hasActiveFilters = filterSearch || filterCountry || filterRegion || filterProfile || filterLanguage;
+  const hasActiveFilters = filterSearch || filterCountry || filterRegion || filterProfile || filterLanguage || filterPrimaryOnly || sortKey !== "order";
   const clearFilters = () => {
     setFilterSearch(""); setFilterCountry(""); setFilterRegion(""); setFilterProfile(""); setFilterLanguage("");
+    setFilterPrimaryOnly(false); setSortKey("order");
   };
 
   // Mapping segment → responsables (référent principal en premier, puis contacts secondaires)

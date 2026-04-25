@@ -967,6 +967,110 @@ export type Database = {
           },
         ]
       }
+      external_offers_import_logs: {
+        Row: {
+          api_key_id: string | null
+          created_at: string
+          errors: Json | null
+          external_vendor_id: string
+          id: string
+          rows_failed: number
+          rows_matched: number
+          rows_received: number
+          rows_unmatched: number
+          rows_upserted: number
+          source: string
+          unmatched_gtins: Json | null
+        }
+        Insert: {
+          api_key_id?: string | null
+          created_at?: string
+          errors?: Json | null
+          external_vendor_id: string
+          id?: string
+          rows_failed?: number
+          rows_matched?: number
+          rows_received?: number
+          rows_unmatched?: number
+          rows_upserted?: number
+          source?: string
+          unmatched_gtins?: Json | null
+        }
+        Update: {
+          api_key_id?: string | null
+          created_at?: string
+          errors?: Json | null
+          external_vendor_id?: string
+          id?: string
+          rows_failed?: number
+          rows_matched?: number
+          rows_received?: number
+          rows_unmatched?: number
+          rows_upserted?: number
+          source?: string
+          unmatched_gtins?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "external_offers_import_logs_api_key_id_fkey"
+            columns: ["api_key_id"]
+            isOneToOne: false
+            referencedRelation: "external_vendor_api_keys"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "external_offers_import_logs_external_vendor_id_fkey"
+            columns: ["external_vendor_id"]
+            isOneToOne: false
+            referencedRelation: "external_vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      external_vendor_api_keys: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          external_vendor_id: string
+          id: string
+          is_active: boolean
+          key_hash: string
+          key_prefix: string
+          label: string | null
+          last_used_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          external_vendor_id: string
+          id?: string
+          is_active?: boolean
+          key_hash: string
+          key_prefix: string
+          label?: string | null
+          last_used_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          external_vendor_id?: string
+          id?: string
+          is_active?: boolean
+          key_hash?: string
+          key_prefix?: string
+          label?: string | null
+          last_used_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "external_vendor_api_keys_external_vendor_id_fkey"
+            columns: ["external_vendor_id"]
+            isOneToOne: false
+            referencedRelation: "external_vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       external_vendors: {
         Row: {
           contact_email: string | null

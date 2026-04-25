@@ -31,3 +31,5 @@ project_id = "iokwqxhhpblcbkrxgcje"
     verify_jwt = false
   [functions.contract-pdf-healthcheck]
     verify_jwt = false
+  [functions.import-external-offers]
+    verify_jwt = false

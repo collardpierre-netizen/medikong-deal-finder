@@ -204,13 +204,59 @@ function SortHeader({
   );
 }
 
+type StatusFilter = "all" | "winning" | "losing_mk" | "losing_ext";
+
+const FILTER_STORAGE_KEY = "mk_vendor_market_intel_filters_v1";
+
+interface PersistedFilters {
+  search: string;
+  ean: string;
+  status: StatusFilter;
+}
+
+function loadFilters(): PersistedFilters {
+  if (typeof window === "undefined")
+    return { search: "", ean: "", status: "all" };
+  try {
+    const raw = window.localStorage.getItem(FILTER_STORAGE_KEY);
+    if (!raw) return { search: "", ean: "", status: "all" };
+    const p = JSON.parse(raw) as Partial<PersistedFilters>;
+    return {
+      search: typeof p.search === "string" ? p.search : "",
+      ean: typeof p.ean === "string" ? p.ean : "",
+      status: (["all", "winning", "losing_mk", "losing_ext"] as StatusFilter[]).includes(
+        p.status as StatusFilter,
+      )
+        ? (p.status as StatusFilter)
+        : "all",
+    };
+  } catch {
+    return { search: "", ean: "", status: "all" };
+  }
+}
+
 export default function VendorMarketIntel() {
   const { data: vendor } = useCurrentVendor();
   const vendorId = (vendor as any)?.id;
-  const [search, setSearch] = useState("");
+  const initial = useMemo(loadFilters, []);
+  const [search, setSearch] = useState(initial.search);
+  const [eanFilter, setEanFilter] = useState(initial.ean);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>(initial.status);
   const [sortKey, setSortKey] = useState<SortKey>("medikong_competitors_count");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [openRow, setOpenRow] = useState<IntelRow | null>(null);
+
+  // Persist filters
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(
+        FILTER_STORAGE_KEY,
+        JSON.stringify({ search, ean: eanFilter, status: statusFilter }),
+      );
+    } catch {
+      // noop
+    }
+  }, [search, eanFilter, statusFilter]);
 
   const { data: rows = [], isLoading } = useQuery({
     queryKey: ["vendor-market-intel", vendorId],
@@ -227,6 +273,7 @@ export default function VendorMarketIntel() {
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
+    const ean = eanFilter.trim().toLowerCase();
     let arr = rows;
     if (q) {
       arr = arr.filter(
@@ -236,6 +283,26 @@ export default function VendorMarketIntel() {
           r.cnk_code?.toLowerCase().includes(q) ||
           r.brand_name?.toLowerCase().includes(q),
       );
+    }
+    if (ean) {
+      arr = arr.filter(
+        (r) =>
+          r.gtin?.toLowerCase().includes(ean) ||
+          r.cnk_code?.toLowerCase().includes(ean),
+      );
+    }
+    if (statusFilter !== "all") {
+      arr = arr.filter((r) => {
+        if (statusFilter === "winning") return r.my_rank === 1;
+        if (statusFilter === "losing_mk")
+          return r.my_rank > 1 && (r.medikong_competitors_count ?? 0) > 0;
+        if (statusFilter === "losing_ext")
+          return (
+            r.best_external_price != null &&
+            r.best_external_price < r.my_price_excl_vat
+          );
+        return true;
+      });
     }
     const sorted = [...arr].sort((a, b) => {
       const va = a[sortKey];

@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getVendorPublicName } from "@/lib/vendor-display";
 import { useVendorMov } from "@/hooks/useVendorMov";
 import { getProductImageSrc, MEDIKONG_PLACEHOLDER, isQogitaPlaceholder } from "@/lib/image-utils";
+import VendorDelegateCompact from "@/components/vendor/VendorDelegateCompact";
 
 interface SupplierGroup {
   vendorId: string;
@@ -290,6 +291,10 @@ export default function CartPage() {
                         >
                           Voir inventaire fournisseur
                         </Link>
+                      </div>
+
+                      <div className="mt-3">
+                        <VendorDelegateCompact vendorId={group.vendorId} />
                       </div>
 
                       {/* Expanded products */}

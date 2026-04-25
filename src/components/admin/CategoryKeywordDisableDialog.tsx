@@ -236,7 +236,7 @@ export default function CategoryKeywordDisableDialog({
             {rootsToDisable.length > 0 && (
               <div>
                 <div className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1">
-                  Racines qui seront désactivées
+                  Racines qui seront {newActive ? "réactivées" : "désactivées"}
                 </div>
                 <ScrollArea className="h-24 rounded border bg-background p-2">
                   <ul className="text-xs space-y-1">

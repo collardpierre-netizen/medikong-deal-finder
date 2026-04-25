@@ -542,8 +542,10 @@ export default function VendorMarketIntel() {
                       <tr>
                         <th className="px-3 py-2 text-left">Vendeur</th>
                         <th className="px-3 py-2 text-right">Prix HTVA</th>
-                        <th className="px-3 py-2 text-right">Stock</th>
+                        <th className="px-3 py-2 text-left">Statut</th>
+                        <th className="px-3 py-2 text-center">Promo</th>
                         <th className="px-3 py-2 text-right">Délai</th>
+                        <th className="px-3 py-2 text-left">Dernière MAJ</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -569,11 +571,21 @@ export default function VendorMarketIntel() {
                           <td className="px-3 py-2 text-right tabular-nums font-medium">
                             {fmt(o.price_excl_vat)}
                           </td>
-                          <td className="px-3 py-2 text-right tabular-nums">
-                            {o.stock_quantity ?? "—"}
+                          <td className="px-3 py-2">
+                            <StockBadge qty={o.stock_quantity} status={o.stock_status} />
+                          </td>
+                          <td className="px-3 py-2 text-center">
+                            {o.is_promo ? (
+                              <PromoBadge discount={o.promo_discount} />
+                            ) : (
+                              <span className="text-[10px] text-muted-foreground">—</span>
+                            )}
                           </td>
                           <td className="px-3 py-2 text-right tabular-nums">
                             {o.delivery_days != null ? `${o.delivery_days} j` : "—"}
+                          </td>
+                          <td className="px-3 py-2">
+                            <FreshnessLabel date={o.updated_at} />
                           </td>
                         </tr>
                       ))}

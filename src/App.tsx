@@ -157,6 +157,7 @@ const VendorOrders = lazyWithRetry(() => import("./pages/vendor/VendorOrders"), 
 const VendorOpportunities = lazyWithRetry(() => import("./pages/vendor/VendorOpportunities"), "VendorOpportunities");
 const VendorAlerts = lazyWithRetry(() => import("./pages/vendor/VendorPriceAlerts"), "VendorPriceAlerts");
 const VendorPositioning = lazyWithRetry(() => import("./pages/vendor/VendorPositioning"), "VendorPositioning");
+const VendorMarketIntel = lazyWithRetry(() => import("./pages/vendor/VendorMarketIntel"), "VendorMarketIntel");
 const VendorTenders = lazyWithRetry(() => import("./pages/vendor/VendorTenders"), "VendorTenders");
 const VendorAnalytics = lazyWithRetry(() => import("./pages/vendor/VendorAnalytics"), "VendorAnalytics");
 const VendorFinance = lazyWithRetry(() => import("./pages/vendor/VendorFinance"), "VendorFinance");
@@ -377,6 +378,7 @@ const App = () => (
               <Route path="opportunities" element={<LP><VendorOpportunities /></LP>} />
               <Route path="alerts" element={<LP><VendorAlerts /></LP>} />
               <Route path="positioning" element={<LP><VendorPositioning /></LP>} />
+              <Route path="market-intel" element={<LP><VendorMarketIntel /></LP>} />
               <Route path="tenders" element={<LP><VendorTenders /></LP>} />
               <Route path="analytics" element={<LP><VendorAnalytics /></LP>} />
               <Route path="finance" element={<LP><VendorFinance /></LP>} />

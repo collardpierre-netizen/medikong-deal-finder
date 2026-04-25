@@ -6702,6 +6702,36 @@ export type Database = {
           total_offers: number
         }[]
       }
+      get_vendor_market_intelligence: {
+        Args: { _vendor_id: string }
+        Returns: {
+          best_external_price: number
+          best_external_source: string
+          best_medikong_competitor_price: number
+          best_medikong_competitor_vendor: string
+          brand_name: string
+          cnk_code: string
+          country_code: string
+          external_offers: Json
+          external_sources_count: number
+          gap_vs_best_amount: number
+          gap_vs_best_percentage: number
+          gap_vs_median_amount: number
+          gap_vs_median_percentage: number
+          gtin: string
+          medikong_competitors_count: number
+          medikong_median_price: number
+          medikong_offers: Json
+          medikong_total_offers: number
+          my_offer_id: string
+          my_price_excl_vat: number
+          my_rank: number
+          my_stock: number
+          product_id: string
+          product_image: string
+          product_name: string
+        }[]
+      }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       match_import_lines: {

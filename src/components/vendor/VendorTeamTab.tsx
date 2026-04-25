@@ -705,6 +705,51 @@ export default function VendorTeamTab({ vendor }: Props) {
               <textarea value={form.bio || ""} onChange={e => setForm(f => ({ ...f, bio: e.target.value }))} rows={2} maxLength={280} className={inputCls} placeholder="Spécialiste depuis 10 ans en…" />
             </Field>
 
+            {/* Disponibilité */}
+            <Field label="Disponibilité actuelle">
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
+                {AVAILABILITY_OPTIONS.map(o => {
+                  const active = form.availability_status === o.value;
+                  return (
+                    <button
+                      key={o.value}
+                      type="button"
+                      onClick={() => setForm(f => ({ ...f, availability_status: o.value }))}
+                      className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg border text-[11px] font-semibold transition-colors"
+                      style={
+                        active
+                          ? { backgroundColor: o.bg, color: o.text, borderColor: o.border }
+                          : { backgroundColor: "white", color: "#616B7C", borderColor: "#E2E8F0" }
+                      }
+                    >
+                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: o.dot }} />
+                      <o.Icon size={11} />
+                      {o.short}
+                    </button>
+                  );
+                })}
+              </div>
+            </Field>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Message court (optionnel)">
+                <input
+                  value={form.availability_message || ""}
+                  onChange={e => setForm(f => ({ ...f, availability_message: e.target.value }))}
+                  className={inputCls}
+                  maxLength={120}
+                  placeholder="De retour lundi à 9h"
+                />
+              </Field>
+              <Field label="Jusqu'au (optionnel)">
+                <input
+                  type="datetime-local"
+                  value={form.availability_until ? form.availability_until.slice(0, 16) : ""}
+                  onChange={e => setForm(f => ({ ...f, availability_until: e.target.value ? new Date(e.target.value).toISOString() : null }))}
+                  className={inputCls}
+                />
+              </Field>
+            </div>
+
             {/* Statut */}
             <div className="flex items-center justify-between rounded-lg border border-[#E2E8F0] px-3 py-2">
               <div>

@@ -530,7 +530,14 @@ export default function VendorMarketIntel() {
                       onClick={() => toggleSort("my_rank")}
                     />
                   </th>
-                  <th className="px-4 py-3 text-left">Mon statut</th>
+                  <th className="px-4 py-3 text-left">
+                    <SortHeader
+                      label="Mon statut"
+                      active={sortKey === "availability"}
+                      dir={sortDir}
+                      onClick={() => toggleSort("availability")}
+                    />
+                  </th>
                   <th className="px-4 py-3 text-left">Concurrents</th>
                   <th className="px-4 py-3 text-right">
                     <SortHeader

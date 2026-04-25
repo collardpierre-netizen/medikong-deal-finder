@@ -171,6 +171,7 @@ const translations: Record<Lang, Record<string, string>> = {
     myOffers: "Mijn Aanbiedingen",
     opportunities: "Kansen",
     positioning: "Positionering",
+    marketIntel: "Marktbewaking",
     tenders: "Aanbestedingen",
     health: "Accountgezondheid",
     academy: "Academy",

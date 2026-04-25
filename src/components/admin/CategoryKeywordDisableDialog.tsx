@@ -157,15 +157,31 @@ export default function CategoryKeywordDisableDialog({
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <ShieldOff size={18} className="text-destructive" />
-            Désactivation par mots-clés
+            {newActive ? (
+              <ShieldCheck size={18} className="text-emerald-600" />
+            ) : (
+              <ShieldOff size={18} className="text-destructive" />
+            )}
+            {newActive ? "Réactivation" : "Désactivation"} par mots-clés
           </DialogTitle>
           <DialogDescription>
             Saisissez des mots-clés (ex. <em>parfum</em>, <em>fragrance</em>). Toutes les catégories qui les contiennent
-            seront identifiées, puis leurs <strong>racines</strong> et tous les <strong>descendants</strong> seront
-            désactivés. Les produits associés seront également masqués du catalogue.
+            seront identifiées, puis leurs <strong>racines</strong> et tous les <strong>descendants</strong> seront{" "}
+            {newActive ? "réactivés" : "désactivés"}. Les produits associés seront également{" "}
+            {newActive ? "rendus visibles" : "masqués"} du catalogue.
           </DialogDescription>
         </DialogHeader>
+
+        <Tabs value={action} onValueChange={(v) => setAction(v as Action)} className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="disable" className="gap-1.5">
+              <ShieldOff size={14} /> Désactiver
+            </TabsTrigger>
+            <TabsTrigger value="enable" className="gap-1.5">
+              <ShieldCheck size={14} /> Réactiver
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
 
         <div className="space-y-4">
           {/* Keyword input */}

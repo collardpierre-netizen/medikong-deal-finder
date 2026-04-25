@@ -5458,6 +5458,122 @@ export type Database = {
           },
         ]
       }
+      vendor_competitor_alerts: {
+        Row: {
+          competitor_price: number
+          competitor_vendor_id: string | null
+          country_code: string
+          created_at: string
+          current_rank: number
+          gap_amount: number
+          gap_percentage: number
+          id: string
+          my_offer_id: string | null
+          my_price: number
+          previous_rank: number | null
+          product_id: string
+          read_at: string | null
+          resolved_at: string | null
+          status: string
+          suggested_price: number | null
+          total_competitors: number
+          updated_at: string
+          vendor_id: string
+        }
+        Insert: {
+          competitor_price: number
+          competitor_vendor_id?: string | null
+          country_code?: string
+          created_at?: string
+          current_rank: number
+          gap_amount?: number
+          gap_percentage?: number
+          id?: string
+          my_offer_id?: string | null
+          my_price: number
+          previous_rank?: number | null
+          product_id: string
+          read_at?: string | null
+          resolved_at?: string | null
+          status?: string
+          suggested_price?: number | null
+          total_competitors?: number
+          updated_at?: string
+          vendor_id: string
+        }
+        Update: {
+          competitor_price?: number
+          competitor_vendor_id?: string | null
+          country_code?: string
+          created_at?: string
+          current_rank?: number
+          gap_amount?: number
+          gap_percentage?: number
+          id?: string
+          my_offer_id?: string | null
+          my_price?: number
+          previous_rank?: number | null
+          product_id?: string
+          read_at?: string | null
+          resolved_at?: string | null
+          status?: string
+          suggested_price?: number | null
+          total_competitors?: number
+          updated_at?: string
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_competitor_alerts_competitor_vendor_id_fkey"
+            columns: ["competitor_vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_competitor_alerts_competitor_vendor_id_fkey"
+            columns: ["competitor_vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_competitor_alerts_my_offer_id_fkey"
+            columns: ["my_offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_competitor_alerts_my_offer_id_fkey"
+            columns: ["my_offer_id"]
+            isOneToOne: false
+            referencedRelation: "public_offers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_competitor_alerts_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_competitor_alerts_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_competitor_alerts_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vendor_delegates: {
         Row: {
           availability_message: string | null
@@ -6671,6 +6787,7 @@ export type Database = {
         Args: { _th_crit?: number; _th_info?: number; _th_warn?: number }
         Returns: Json
       }
+      detect_vendor_competitor_alerts: { Args: never; Returns: Json }
       enqueue_email: {
         Args: { payload: Json; queue_name: string }
         Returns: number

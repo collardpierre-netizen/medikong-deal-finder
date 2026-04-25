@@ -46,6 +46,7 @@ const OnboardingPage = lazyWithRetry(() => import("./pages/OnboardingPage"), "On
 const BuyerCompletionPage = lazyWithRetry(() => import("./pages/BuyerCompletionPage"), "BuyerCompletionPage");
 const NotFound = lazyWithRetry(() => import("./pages/NotFound"), "NotFound");
 const SellerTrustBadgeDemo = lazyWithRetry(() => import("./pages/SellerTrustBadgeDemo"), "SellerTrustBadgeDemo");
+const DelegateDesignDemoPage = lazyWithRetry(() => import("./pages/DelegateDesignDemoPage"), "DelegateDesignDemoPage");
 const InvestPage = lazyWithRetry(() => import("./pages/InvestPage"), "InvestPage");
 const ForgotPasswordPage = lazyWithRetry(() => import("./pages/ForgotPasswordPage"), "ForgotPasswordPage");
 const ResetPasswordPage = lazyWithRetry(() => import("./pages/ResetPasswordPage"), "ResetPasswordPage");
@@ -430,6 +431,7 @@ const App = () => (
             </Route>
 
             <Route path="/demo/seller-trust-badge" element={<Suspense fallback={<PageLoader />}><SellerTrustBadgeDemo /></Suspense>} />
+            <Route path="/demo/delegues" element={<Suspense fallback={<PageLoader />}><DelegateDesignDemoPage /></Suspense>} />
             <Route path="*" element={<LP><NotFound /></LP>} />
           </Routes>
           </Suspense>

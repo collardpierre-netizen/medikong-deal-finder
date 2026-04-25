@@ -409,8 +409,8 @@ export default function VendorTeamTab({ vendor }: Props) {
                     {d.email && <div className="flex items-center gap-1.5"><Mail size={11} />{d.email}</div>}
                     {d.phone && <div className="flex items-center gap-1.5"><Phone size={11} />{d.phone}</div>}
                     {d.booking_url && (
-                      <a href={d.booking_url} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-[#1B5BDA] hover:underline truncate">
-                        <CalendarDays size={11} />Prendre RDV
+                      <a href={d.booking_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-[#1B5BDA] hover:underline truncate">
+                        <CalendarDays size={11} />Prendre rendez-vous
                       </a>
                     )}
                   </div>

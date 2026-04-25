@@ -364,6 +364,8 @@ export default function VendorMarketIntel() {
                       onClick={() => toggleSort("my_rank")}
                     />
                   </th>
+                  <th className="px-4 py-3 text-left">Mon statut</th>
+                  <th className="px-4 py-3 text-left">Concurrents</th>
                   <th className="px-4 py-3 text-right">
                     <SortHeader
                       label="Concurrents MK"

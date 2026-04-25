@@ -389,8 +389,14 @@ export default function VendorTeamTab({ vendor }: Props) {
               >
                 <option value="">Toutes langues</option>
                 {LANGUAGES.map(l => <option key={l} value={l}>{LANGUAGE_LABELS[l]}</option>)}
+              <select
+                value={filterAvailability}
+                onChange={(e) => setFilterAvailability(e.target.value)}
+                className="rounded-lg border border-[#E2E8F0] bg-white px-2 py-1.5 text-[12px] text-[#1D2530] focus:outline-none focus:border-[#1B5BDA]"
+              >
+                <option value="">Toutes dispos</option>
+                {AVAILABILITY_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
-              {hasActiveFilters && (
                 <button
                   onClick={clearFilters}
                   className="inline-flex items-center gap-1 text-[11px] text-[#EF4343] hover:underline px-2 py-1"

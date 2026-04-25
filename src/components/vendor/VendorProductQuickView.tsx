@@ -38,6 +38,7 @@ interface Props {
  * (filtré par profil + pays de l'acheteur, visible uniquement si vérifié).
  */
 export default function VendorProductQuickView({ product, open, onOpenChange }: Props) {
+  const [delegateOpen, setDelegateOpen] = useState(false);
   if (!product) return null;
   const img = isValidProductImage(product.imageUrl) ? product.imageUrl! : MEDIKONG_PLACEHOLDER;
 

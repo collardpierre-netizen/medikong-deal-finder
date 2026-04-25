@@ -431,6 +431,7 @@ const App = () => (
             </Route>
 
             <Route path="/demo/seller-trust-badge" element={<Suspense fallback={<PageLoader />}><SellerTrustBadgeDemo /></Suspense>} />
+            <Route path="/demo/delegues" element={<Suspense fallback={<PageLoader />}><DelegateDesignDemoPage /></Suspense>} />
             <Route path="*" element={<LP><NotFound /></LP>} />
           </Routes>
           </Suspense>

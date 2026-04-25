@@ -192,7 +192,24 @@ export default function ProductPhotoUploader({
       let done = 0;
 
       for (const entry of toUpload) {
-        const file = entry.file;
+        // Normalize the image (square canvas, white letterbox, WebP) when enabled.
+        // Falls back gracefully to the original on any failure.
+        let file = entry.file;
+        if (normalize) {
+          try {
+            file = await normalizeImageFile(entry.file, {
+              size: NORMALIZE_SIZE,
+              mime: "image/webp",
+              quality: 0.88,
+              crop: fit === "cover",
+              background: "#ffffff",
+            });
+          } catch {
+            // Keep original if browser cannot decode/encode
+            file = entry.file;
+          }
+        }
+
         const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
         const ts = Date.now();
         const rand = Math.random().toString(36).slice(2, 8);
@@ -205,7 +222,7 @@ export default function ProductPhotoUploader({
             upsert: false,
             contentType: file.type,
           });
-        if (upErr) throw new Error(`Upload "${file.name}" : ${upErr.message}`);
+        if (upErr) throw new Error(`Upload "${entry.file.name}" : ${upErr.message}`);
 
         const { data: pub } = supabase.storage.from("product-images").getPublicUrl(path);
         uploaded.push(pub.publicUrl);

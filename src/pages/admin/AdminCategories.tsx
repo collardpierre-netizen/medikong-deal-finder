@@ -342,6 +342,9 @@ const AdminCategories = () => {
                 }}
               />
             </div>
+            <Button variant="outline" size="sm" onClick={() => setShowKeywordDisable(true)} className="text-destructive hover:text-destructive">
+              <ShieldOff size={14} className="mr-1" />Désactiver par mot-clé
+            </Button>
             <Button variant="outline" size="sm" onClick={() => setShowNewCat(true)}><Plus size={14} className="mr-1" />Nouvelle</Button>
             <Button variant="outline" size="sm" onClick={() => handleAutoTranslate("fr")} disabled={!!translating}>
               <Wand2 size={14} className={`mr-1 ${translating === "fr" ? "animate-spin" : ""}`} />{translating === "fr" ? "Traduction..." : "Auto FR"}

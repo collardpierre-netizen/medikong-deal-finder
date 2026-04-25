@@ -591,6 +591,8 @@ function WatchListDialog({ product, user, bestPrice, isTVAC }: { product: any; u
 
 export default function ProductPage() {
   const [selectedImageIdx, setSelectedImageIdx] = useState(0);
+  const [isGalleryHover, setIsGalleryHover] = useState(false);
+  const [autoplayEnabled, setAutoplayEnabled] = useState(true);
   const [copied, setCopied] = useState(false);
   const [movFilter, setMovFilter] = useState<number | null>(null);
   const [delayFilter, setDelayFilter] = useState<number | null>(null);

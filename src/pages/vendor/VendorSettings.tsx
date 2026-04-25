@@ -181,6 +181,10 @@ export default function VendorSettings() {
         <VendorBrandingTab vendor={vendor} />
       )}
 
+      {activeTab === "team" && vendor && (
+        <VendorTeamTab vendor={vendor} />
+      )}
+
       {activeTab === "addresses" && vendorId && (
         <AddressesTab vendorId={vendorId} shippingMode={shippingMode} vendor={vendor} />
       )}

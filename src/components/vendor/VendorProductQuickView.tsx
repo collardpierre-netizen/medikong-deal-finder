@@ -1,7 +1,10 @@
+import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Link } from "react-router-dom";
-import { ExternalLink, Package, Truck, Tag, Building2 } from "lucide-react";
+import { ExternalLink, Package, Truck, Tag, Building2, UserRound } from "lucide-react";
 import VendorDelegateCompact from "@/components/vendor/VendorDelegateCompact";
+import VendorDelegateDetailDialog from "@/components/vendor/VendorDelegateDetailDialog";
+import { Button } from "@/components/ui/button";
 import { MEDIKONG_PLACEHOLDER, isValidProductImage } from "@/lib/image-utils";
 
 interface QuickViewProduct {
@@ -35,6 +38,7 @@ interface Props {
  * (filtré par profil + pays de l'acheteur, visible uniquement si vérifié).
  */
 export default function VendorProductQuickView({ product, open, onOpenChange }: Props) {
+  const [delegateOpen, setDelegateOpen] = useState(false);
   if (!product) return null;
   const img = isValidProductImage(product.imageUrl) ? product.imageUrl! : MEDIKONG_PLACEHOLDER;
 
@@ -132,10 +136,25 @@ export default function VendorProductQuickView({ product, open, onOpenChange }: 
         </div>
 
         {/* Délégué dédié — filtré par profil acheteur, masqué si non vérifié */}
-        <div className="mt-4 pt-4 border-t border-border">
+        <div className="mt-4 pt-4 border-t border-border space-y-2">
           <VendorDelegateCompact vendorId={product.vendorId} variant="card" />
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full h-8 text-xs"
+            onClick={() => setDelegateOpen(true)}
+          >
+            <UserRound size={12} className="mr-1.5" />
+            Voir délégué
+          </Button>
         </div>
       </DialogContent>
+
+      <VendorDelegateDetailDialog
+        vendorId={product.vendorId}
+        open={delegateOpen}
+        onOpenChange={setDelegateOpen}
+      />
     </Dialog>
   );
 }

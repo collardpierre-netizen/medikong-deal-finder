@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useCountry } from "@/contexts/CountryContext";
 import VendorDelegatesPublic from "@/components/vendor/VendorDelegatesPublic";
+import VendorDelegateDetailDialog from "@/components/vendor/VendorDelegateDetailDialog";
 import VendorProductQuickView from "@/components/vendor/VendorProductQuickView";
 
 /* ───── helpers ───── */
@@ -179,6 +180,7 @@ export default function VendorPublicPage() {
   const { currentCountry } = useCountry();
   const { items: cartItems, addToCart, openDrawer } = useCart();
   const [quickViewProduct, setQuickViewProduct] = useState<any | null>(null);
+  const [delegateDialogOpen, setDelegateDialogOpen] = useState(false);
 
   const { data: vendor, isLoading } = useQuery({
     queryKey: ["vendor-public", slug],
@@ -404,6 +406,15 @@ export default function VendorPublicPage() {
           <aside className="hidden lg:block w-[240px] shrink-0 space-y-5">
             {/* Délégué commercial (acheteurs vérifiés) */}
             <VendorDelegatesPublic vendorId={vendor.id} />
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full h-8 text-xs"
+              onClick={() => setDelegateDialogOpen(true)}
+            >
+              <Eye size={12} className="mr-1.5" />
+              Voir délégué
+            </Button>
 
             {/* Delivery */}
             <div>
@@ -636,6 +647,13 @@ export default function VendorPublicPage() {
         }
         open={!!quickViewProduct}
         onOpenChange={(o) => !o && setQuickViewProduct(null)}
+      />
+
+      {/* Popup détaillée délégué (depuis le bouton "Voir délégué" en sidebar) */}
+      <VendorDelegateDetailDialog
+        vendorId={vendor.id}
+        open={delegateDialogOpen}
+        onOpenChange={setDelegateDialogOpen}
       />
     </Layout>
   );

@@ -215,7 +215,7 @@ export function useCatalogProducts(filters: CatalogFilters) {
   return useQuery({
     queryKey: ["catalog-products", filters, country],
     queryFn: async () => {
-      const [categoryIds, explicitBrandIds, mfIds] = await Promise.all([
+      const [categoryIds, explicitBrandIds, mfIds, inactiveCategoryIds] = await Promise.all([
         filters.category
           ? supabase.from("categories").select("id").eq("slug", filters.category).maybeSingle().then(({ data: cat }) => {
               if (!cat) return null;
@@ -230,6 +230,7 @@ export function useCatalogProducts(filters: CatalogFilters) {
         filters.manufacturers && filters.manufacturers.length > 0
           ? supabase.from("manufacturers").select("id").in("slug", filters.manufacturers).then(({ data }) => data?.map(m => m.id) || null)
           : Promise.resolve(null),
+        fetchInactiveCategoryIds(),
       ]);
 
       let resolvedBrandIds = explicitBrandIds;

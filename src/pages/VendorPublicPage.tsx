@@ -648,6 +648,13 @@ export default function VendorPublicPage() {
         open={!!quickViewProduct}
         onOpenChange={(o) => !o && setQuickViewProduct(null)}
       />
+
+      {/* Popup détaillée délégué (depuis le bouton "Voir délégué" en sidebar) */}
+      <VendorDelegateDetailDialog
+        vendorId={vendor.id}
+        open={delegateDialogOpen}
+        onOpenChange={setDelegateDialogOpen}
+      />
     </Layout>
   );
 }

@@ -112,9 +112,13 @@ export default function VendorDelegateCompact({ vendorId, variant = "card" }: Pr
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="text-xs font-semibold text-foreground truncate">
+          <Link
+            to={`/delegue/${d.id}`}
+            className="text-xs font-semibold text-foreground hover:text-primary truncate inline-flex items-center gap-1"
+          >
             {d.first_name} {d.last_name}
-          </div>
+            <ExternalLink size={10} className="opacity-60" />
+          </Link>
           {d.job_title && (
             <div className="text-[10px] text-muted-foreground truncate">{d.job_title}</div>
           )}

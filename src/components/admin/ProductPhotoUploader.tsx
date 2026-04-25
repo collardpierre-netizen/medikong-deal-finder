@@ -223,7 +223,8 @@ export default function ProductPhotoUploader({
       return { count: uploaded.length, total: finalImages.length, skipped: skippedExistingCount };
     },
     onSuccess: (res) => {
-      toast.success(`${res.count} photo(s) ajoutée(s) — ${res.total} au total`);
+      const skipMsg = res.skipped > 0 ? ` (${res.skipped} doublon(s) ignoré(s))` : "";
+      toast.success(`${res.count} photo(s) ajoutée(s) — ${res.total} au total${skipMsg}`);
       invalidateKeys.forEach((k) => {
         qc.invalidateQueries({ queryKey: Array.isArray(k) ? k : [k] });
       });

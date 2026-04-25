@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { VCard } from "@/components/vendor/ui/VCard";
@@ -204,13 +204,59 @@ function SortHeader({
   );
 }
 
+type StatusFilter = "all" | "winning" | "losing_mk" | "losing_ext";
+
+const FILTER_STORAGE_KEY = "mk_vendor_market_intel_filters_v1";
+
+interface PersistedFilters {
+  search: string;
+  ean: string;
+  status: StatusFilter;
+}
+
+function loadFilters(): PersistedFilters {
+  if (typeof window === "undefined")
+    return { search: "", ean: "", status: "all" };
+  try {
+    const raw = window.localStorage.getItem(FILTER_STORAGE_KEY);
+    if (!raw) return { search: "", ean: "", status: "all" };
+    const p = JSON.parse(raw) as Partial<PersistedFilters>;
+    return {
+      search: typeof p.search === "string" ? p.search : "",
+      ean: typeof p.ean === "string" ? p.ean : "",
+      status: (["all", "winning", "losing_mk", "losing_ext"] as StatusFilter[]).includes(
+        p.status as StatusFilter,
+      )
+        ? (p.status as StatusFilter)
+        : "all",
+    };
+  } catch {
+    return { search: "", ean: "", status: "all" };
+  }
+}
+
 export default function VendorMarketIntel() {
   const { data: vendor } = useCurrentVendor();
   const vendorId = (vendor as any)?.id;
-  const [search, setSearch] = useState("");
+  const initial = useMemo(loadFilters, []);
+  const [search, setSearch] = useState(initial.search);
+  const [eanFilter, setEanFilter] = useState(initial.ean);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>(initial.status);
   const [sortKey, setSortKey] = useState<SortKey>("medikong_competitors_count");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [openRow, setOpenRow] = useState<IntelRow | null>(null);
+
+  // Persist filters
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(
+        FILTER_STORAGE_KEY,
+        JSON.stringify({ search, ean: eanFilter, status: statusFilter }),
+      );
+    } catch {
+      // noop
+    }
+  }, [search, eanFilter, statusFilter]);
 
   const { data: rows = [], isLoading } = useQuery({
     queryKey: ["vendor-market-intel", vendorId],
@@ -227,6 +273,7 @@ export default function VendorMarketIntel() {
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
+    const ean = eanFilter.trim().toLowerCase();
     let arr = rows;
     if (q) {
       arr = arr.filter(
@@ -236,6 +283,26 @@ export default function VendorMarketIntel() {
           r.cnk_code?.toLowerCase().includes(q) ||
           r.brand_name?.toLowerCase().includes(q),
       );
+    }
+    if (ean) {
+      arr = arr.filter(
+        (r) =>
+          r.gtin?.toLowerCase().includes(ean) ||
+          r.cnk_code?.toLowerCase().includes(ean),
+      );
+    }
+    if (statusFilter !== "all") {
+      arr = arr.filter((r) => {
+        if (statusFilter === "winning") return r.my_rank === 1;
+        if (statusFilter === "losing_mk")
+          return r.my_rank > 1 && (r.medikong_competitors_count ?? 0) > 0;
+        if (statusFilter === "losing_ext")
+          return (
+            r.best_external_price != null &&
+            r.best_external_price < r.my_price_excl_vat
+          );
+        return true;
+      });
     }
     const sorted = [...arr].sort((a, b) => {
       const va = a[sortKey];
@@ -251,7 +318,7 @@ export default function VendorMarketIntel() {
       return sortDir === "asc" ? sa.localeCompare(sb) : sb.localeCompare(sa);
     });
     return sorted;
-  }, [rows, search, sortKey, sortDir]);
+  }, [rows, search, eanFilter, statusFilter, sortKey, sortDir]);
 
   const toggleSort = (k: SortKey) => {
     if (sortKey === k) setSortDir(sortDir === "asc" ? "desc" : "asc");
@@ -308,19 +375,90 @@ export default function VendorMarketIntel() {
         </VCard>
       </div>
 
-      {/* Filtre */}
-      <VCard className="p-4">
-        <div className="relative max-w-md">
-          <Search
-            size={16}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-          />
-          <Input
-            placeholder="Rechercher (nom, EAN, CNK, marque)…"
-            className="pl-9"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+      {/* Filtres */}
+      <VCard className="p-4 space-y-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="relative">
+            <Search
+              size={16}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+            />
+            <Input
+              placeholder="Rechercher (nom, EAN, CNK, marque)…"
+              className="pl-9"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          <div className="relative">
+            <Tag
+              size={14}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+            />
+            <Input
+              placeholder="Filtrer par EAN ou CNK exact…"
+              className="pl-9 pr-9 font-mono text-[12px]"
+              value={eanFilter}
+              onChange={(e) => setEanFilter(e.target.value)}
+              inputMode="numeric"
+            />
+            {eanFilter && (
+              <button
+                onClick={() => setEanFilter("")}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-muted text-muted-foreground"
+                aria-label="Effacer le filtre EAN"
+                type="button"
+              >
+                <XCircle size={14} />
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold">
+            Statut :
+          </span>
+          {([
+            { k: "all", label: `Tous (${rows.length})` },
+            { k: "winning", label: "En #1" },
+            { k: "losing_mk", label: "Battu (MediKong)" },
+            { k: "losing_ext", label: "Battu (externe)" },
+          ] as { k: StatusFilter; label: string }[]).map((opt) => (
+            <button
+              key={opt.k}
+              onClick={() => setStatusFilter(opt.k)}
+              type="button"
+              className={`text-[11px] px-2.5 py-1 rounded-full border transition-colors ${
+                statusFilter === opt.k
+                  ? "bg-foreground text-background border-foreground"
+                  : "bg-background text-muted-foreground border-border hover:text-foreground"
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+          {(search || eanFilter || statusFilter !== "all") && (
+            <button
+              type="button"
+              onClick={() => {
+                setSearch("");
+                setEanFilter("");
+                setStatusFilter("all");
+              }}
+              className="ml-auto text-[11px] text-muted-foreground hover:text-foreground underline"
+            >
+              Réinitialiser
+            </button>
+          )}
+        </div>
+
+        <div className="text-[11px] text-muted-foreground">
+          {filtered.length} ligne{filtered.length > 1 ? "s" : ""} affichée
+          {filtered.length > 1 ? "s" : ""} sur {rows.length}
+          {(search || eanFilter || statusFilter !== "all") && (
+            <span className="ml-2 italic">· filtre mémorisé</span>
+          )}
         </div>
       </VCard>
 

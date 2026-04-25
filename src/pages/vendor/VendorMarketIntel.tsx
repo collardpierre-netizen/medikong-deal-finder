@@ -124,6 +124,59 @@ function RankBadge({ rank, total }: { rank: number; total: number }) {
   );
 }
 
+function StockBadge({
+  qty,
+  status,
+}: {
+  qty: number | null | undefined;
+  status: string | null | undefined;
+}) {
+  const q = qty ?? 0;
+  const s = (status || "").toLowerCase();
+  if (q <= 0 || s === "out_of_stock") {
+    return (
+      <span className="inline-flex items-center gap-1 text-[11px] font-medium text-red-600">
+        <XCircle size={11} /> Rupture
+      </span>
+    );
+  }
+  if (s === "low_stock" || (q > 0 && q < 10)) {
+    return (
+      <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-600">
+        <AlertCircle size={11} /> Stock bas ({q})
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600">
+      <CheckCircle2 size={11} /> En stock ({q})
+    </span>
+  );
+}
+
+function PromoBadge({ discount }: { discount: number | null | undefined }) {
+  if (!discount || discount <= 0) return null;
+  return (
+    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-pink-100 text-pink-700">
+      <Tag size={9} /> -{Math.round(discount)}%
+    </span>
+  );
+}
+
+function FreshnessLabel({ date }: { date: string | null | undefined }) {
+  if (!date) return <span className="text-[10px] text-muted-foreground">—</span>;
+  const d = new Date(date);
+  const ageDays = (Date.now() - d.getTime()) / 86400000;
+  const colorClass =
+    ageDays <= 2 ? "text-emerald-600" : ageDays <= 14 ? "text-amber-600" : "text-red-600";
+  return (
+    <span className={`inline-flex items-center gap-1 text-[10px] font-medium ${colorClass}`}>
+      <Clock size={9} />
+      {formatDistanceToNow(d, { addSuffix: true, locale: fr })}
+    </span>
+  );
+}
+
 function SortHeader({
   label,
   active,

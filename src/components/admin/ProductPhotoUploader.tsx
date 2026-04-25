@@ -385,7 +385,7 @@ export default function ProductPhotoUploader({
                   <div>
                     <div className="text-xs font-semibold">Ajouter aux existantes</div>
                     <div className="text-[11px] text-muted-foreground">
-                      {currentImages.length} déjà en place — total après : {currentImages.length + files.length}
+                      {currentImages.length} déjà en place — total après : {currentImages.length + uploadablesCount}
                     </div>
                   </div>
                 </Label>

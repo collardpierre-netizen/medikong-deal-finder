@@ -7,6 +7,7 @@ import { VBadge } from "@/components/vendor/ui/VBadge";
 import { VBtn } from "@/components/vendor/ui/VBtn";
 import VendorShippingSettings from "@/components/vendor/VendorShippingSettings";
 import VendorBrandingTab from "@/components/vendor/VendorBrandingTab";
+import VendorTeamTab from "@/components/vendor/VendorTeamTab";
 import {
   Check, Save, Loader2, Plus, Trash2, Star, MapPin, Bell, BellOff,
 } from "lucide-react";
@@ -62,6 +63,7 @@ export default function VendorSettings() {
   const tabs = [
     { id: "profile", label: "Profil" },
     { id: "branding", label: "Branding" },
+    { id: "team", label: "Équipe" },
     { id: "addresses", label: "Adresses" },
     { id: "shipping_mode", label: "Mode expédition" },
     { id: "notifications", label: "Notifications" },
@@ -177,6 +179,10 @@ export default function VendorSettings() {
 
       {activeTab === "branding" && vendor && (
         <VendorBrandingTab vendor={vendor} />
+      )}
+
+      {activeTab === "team" && vendor && (
+        <VendorTeamTab vendor={vendor} />
       )}
 
       {activeTab === "addresses" && vendorId && (

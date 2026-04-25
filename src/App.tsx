@@ -371,7 +371,7 @@ const App = () => (
             <Route path="/vendor/stripe-onboarding/refresh" element={<LP><VendorStripeRefreshPage /></LP>} />
             <Route path="/vendor" element={<LP><VendorLayout /></LP>}>
               <Route index element={<LP><VendorDashboard /></LP>} />
-              <Route path="catalog" element={<LP><VendorCatalog /></LP>} />
+              <Route path="catalog" element={<Navigate to="/vendor/offers" replace />} />
               <Route path="offers" element={<LP><VendorOffers /></LP>} />
               <Route path="orders" element={<LP><VendorOrders /></LP>} />
               <Route path="opportunities" element={<LP><VendorOpportunities /></LP>} />

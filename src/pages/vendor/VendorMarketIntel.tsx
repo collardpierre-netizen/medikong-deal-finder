@@ -708,11 +708,30 @@ export default function VendorMarketIntel() {
       <Dialog open={openRow !== null} onOpenChange={(v) => !v && setOpenRow(null)}>
         <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-base">
-              {openRow?.product_name}
-              <div className="text-xs font-normal text-muted-foreground mt-1">
-                EAN {openRow?.gtin || "—"} · {openRow?.country_code}
+            <DialogTitle className="text-base flex items-center justify-between gap-3">
+              <div>
+                {openRow?.product_name}
+                <div className="text-xs font-normal text-muted-foreground mt-1">
+                  EAN {openRow?.gtin || "—"} · {openRow?.country_code}
+                </div>
               </div>
+              {openRow && (
+                <button
+                  onClick={() =>
+                    setAdjustCtx({
+                      offerId: openRow.my_offer_id,
+                      productName: openRow.product_name,
+                      gtin: openRow.gtin,
+                      myPrice: openRow.my_price_excl_vat,
+                      bestMkPrice: openRow.best_medikong_competitor_price,
+                      bestExtPrice: openRow.best_external_price,
+                    })
+                  }
+                  className="shrink-0 inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                >
+                  <Wand2 size={12} /> Ajuster mon prix
+                </button>
+              )}
             </DialogTitle>
           </DialogHeader>
           {openRow && (

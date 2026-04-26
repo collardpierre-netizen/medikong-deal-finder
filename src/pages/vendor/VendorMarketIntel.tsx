@@ -866,6 +866,13 @@ export default function VendorMarketIntel() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Adjust price modal */}
+      <AdjustPriceModal
+        open={adjustCtx !== null}
+        onOpenChange={(v) => !v && setAdjustCtx(null)}
+        ctx={adjustCtx}
+      />
     </div>
   );
 }

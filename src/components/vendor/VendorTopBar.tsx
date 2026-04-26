@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useI18n, type Lang } from "@/contexts/I18nContext";
 import { useCurrentVendor } from "@/hooks/useCurrentVendor";
 import { useCompetitorAlertsCount } from "@/hooks/useVendorCompetitorAlerts";
+import { usePriceAlertEventsCount } from "@/hooks/useVendorPriceAlertRules";
 import { commissionRates } from "@/lib/vendor-tokens";
 
 const langs: Lang[] = ["fr", "nl", "de"];
@@ -20,6 +21,8 @@ export function VendorTopBar({ onMenuClick }: VendorTopBarProps) {
   const { data: vendor } = useCurrentVendor();
   const navigate = useNavigate();
   const { data: alertsCount = 0 } = useCompetitorAlertsCount(vendor?.id);
+  const { data: thresholdCount = 0 } = usePriceAlertEventsCount(vendor?.id);
+  const totalAlerts = alertsCount + thresholdCount;
 
   const name = vendor?.company_name || vendor?.name || "Vendeur";
   const score = (vendor as any)?.score ?? 0;
@@ -58,14 +61,15 @@ export function VendorTopBar({ onMenuClick }: VendorTopBarProps) {
         </div>
 
         <button
-          onClick={() => navigate("/vendor/competitor-alerts")}
-          aria-label={t("competitorAlerts") || "Alertes concurrents"}
+          onClick={() => navigate(thresholdCount > 0 ? "/vendor/price-alert-rules" : "/vendor/competitor-alerts")}
+          aria-label={t("competitorAlerts") || "Alertes"}
+          title={`${alertsCount} alertes concurrents · ${thresholdCount} dépassements de seuil`}
           className="relative p-2 rounded-md hover:bg-[#F1F5F9] transition-colors"
         >
           <Bell size={18} className="text-[#616B7C]" />
-          {alertsCount > 0 && (
+          {totalAlerts > 0 && (
             <span className="absolute top-0 right-0 min-w-[16px] h-[16px] px-1 rounded-full bg-[#EF4343] text-white text-[9px] font-bold flex items-center justify-center">
-              {alertsCount > 9 ? "9+" : alertsCount}
+              {totalAlerts > 9 ? "9+" : totalAlerts}
             </span>
           )}
         </button>

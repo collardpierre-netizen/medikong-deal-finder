@@ -379,6 +379,7 @@ const App = () => (
               <Route path="competitor-alerts" element={<LP><VendorMarketIntelHub /></LP>} />
               <Route path="positioning" element={<LP><VendorMarketIntelHub /></LP>} />
               <Route path="market-intel" element={<LP><VendorMarketIntelHub /></LP>} />
+              <Route path="price-alert-rules" element={<LP><VendorMarketIntelHub /></LP>} />
               <Route path="tenders" element={<LP><VendorTenders /></LP>} />
               <Route path="analytics" element={<LP><VendorAnalytics /></LP>} />
               <Route path="finance" element={<LP><VendorFinance /></LP>} />

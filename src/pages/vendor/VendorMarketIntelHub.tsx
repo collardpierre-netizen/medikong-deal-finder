@@ -1,23 +1,27 @@
 import { useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Trophy, BarChart3, AlertOctagon } from "lucide-react";
+import { Trophy, BarChart3, AlertOctagon, BellRing } from "lucide-react";
 import VendorPositioning from "./VendorPositioning";
 import VendorMarketIntel from "./VendorMarketIntel";
 import VendorCompetitorAlerts from "./VendorCompetitorAlerts";
+import VendorPriceAlertRulesPage from "./VendorPriceAlertRulesPage";
 import { useCurrentVendor } from "@/hooks/useCurrentVendor";
 import { useCompetitorAlertsCount } from "@/hooks/useVendorCompetitorAlerts";
+import { usePriceAlertEventsCount } from "@/hooks/useVendorPriceAlertRules";
 
 const TAB_BY_PATH: Record<string, string> = {
   "/vendor/positioning": "ranking",
   "/vendor/market-intel": "compare",
   "/vendor/competitor-alerts": "alerts",
+  "/vendor/price-alert-rules": "thresholds",
 };
 
 const PATH_BY_TAB: Record<string, string> = {
   ranking: "/vendor/positioning",
   compare: "/vendor/market-intel",
   alerts: "/vendor/competitor-alerts",
+  thresholds: "/vendor/price-alert-rules",
 };
 
 export default function VendorMarketIntelHub() {
@@ -25,6 +29,7 @@ export default function VendorMarketIntelHub() {
   const navigate = useNavigate();
   const { data: vendor } = useCurrentVendor();
   const { data: alertsCount = 0 } = useCompetitorAlertsCount(vendor?.id);
+  const { data: thresholdCount = 0 } = usePriceAlertEventsCount(vendor?.id);
 
   const active = useMemo(
     () => TAB_BY_PATH[location.pathname] ?? "ranking",
@@ -63,6 +68,15 @@ export default function VendorMarketIntelHub() {
               </span>
             )}
           </TabsTrigger>
+          <TabsTrigger value="thresholds" className="gap-2 data-[state=active]:bg-white">
+            <BellRing size={14} />
+            <span>Mes seuils</span>
+            {thresholdCount > 0 && (
+              <span className="ml-1 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-[#D97706] text-white text-[10px] font-bold">
+                {thresholdCount > 9 ? "9+" : thresholdCount}
+              </span>
+            )}
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="ranking" className="mt-4">
@@ -73,6 +87,9 @@ export default function VendorMarketIntelHub() {
         </TabsContent>
         <TabsContent value="alerts" className="mt-4">
           <VendorCompetitorAlerts />
+        </TabsContent>
+        <TabsContent value="thresholds" className="mt-4">
+          <VendorPriceAlertRulesPage />
         </TabsContent>
       </Tabs>
     </div>

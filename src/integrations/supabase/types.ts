@@ -5929,6 +5929,166 @@ export type Database = {
           },
         ]
       }
+      vendor_price_alert_events: {
+        Row: {
+          best_price: number | null
+          country_code: string
+          created_at: string
+          id: string
+          median_price: number | null
+          metric: string
+          my_price: number
+          observed_pct: number
+          product_id: string
+          read_at: string | null
+          resolved_at: string | null
+          rule_id: string | null
+          status: string
+          threshold_pct: number
+          updated_at: string
+          vendor_id: string
+        }
+        Insert: {
+          best_price?: number | null
+          country_code?: string
+          created_at?: string
+          id?: string
+          median_price?: number | null
+          metric: string
+          my_price: number
+          observed_pct: number
+          product_id: string
+          read_at?: string | null
+          resolved_at?: string | null
+          rule_id?: string | null
+          status?: string
+          threshold_pct: number
+          updated_at?: string
+          vendor_id: string
+        }
+        Update: {
+          best_price?: number | null
+          country_code?: string
+          created_at?: string
+          id?: string
+          median_price?: number | null
+          metric?: string
+          my_price?: number
+          observed_pct?: number
+          product_id?: string
+          read_at?: string | null
+          resolved_at?: string | null
+          rule_id?: string | null
+          status?: string
+          threshold_pct?: number
+          updated_at?: string
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_price_alert_events_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_price_alert_events_rule_id_fkey"
+            columns: ["rule_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_price_alert_rules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_price_alert_events_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_price_alert_events_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vendor_price_alert_rules: {
+        Row: {
+          brand_id: string | null
+          category_id: string | null
+          created_at: string
+          ean: string | null
+          id: string
+          is_active: boolean
+          label: string | null
+          metric: string
+          scope: string
+          threshold_median_pct: number
+          updated_at: string
+          vendor_id: string
+        }
+        Insert: {
+          brand_id?: string | null
+          category_id?: string | null
+          created_at?: string
+          ean?: string | null
+          id?: string
+          is_active?: boolean
+          label?: string | null
+          metric?: string
+          scope: string
+          threshold_median_pct?: number
+          updated_at?: string
+          vendor_id: string
+        }
+        Update: {
+          brand_id?: string | null
+          category_id?: string | null
+          created_at?: string
+          ean?: string | null
+          id?: string
+          is_active?: boolean
+          label?: string | null
+          metric?: string
+          scope?: string
+          threshold_median_pct?: number
+          updated_at?: string
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_price_alert_rules_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brands"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_price_alert_rules_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_price_alert_rules_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_price_alert_rules_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vendor_profile_defaults: {
         Row: {
           country_code: string
@@ -6791,6 +6951,10 @@ export type Database = {
       enqueue_email: {
         Args: { payload: Json; queue_name: string }
         Returns: number
+      }
+      evaluate_vendor_price_alerts: {
+        Args: { _vendor_id: string }
+        Returns: Json
       }
       get_admin_role: {
         Args: { _user_id: string }

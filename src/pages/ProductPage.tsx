@@ -127,6 +127,8 @@ function OfferRow({
   const offerPriceTiers = offer.offerPriceTiers || [];
   const hasOfferPriceTiers = offerPriceTiers.length > 1;
   const displayCode = offer.displayCode || offer.sellerId.slice(0, 6).toUpperCase();
+  // sellerName already encapsulates the anonymization rules (real name vs "Fournisseur XXXXXX")
+  const sellerLabel = offer.sellerName || `Fournisseur ${displayCode}`;
   const displayPrice = isTVAC ? offer.unitPriceInclVat : offer.unitPriceEur;
   const priceLabel = isTVAC ? "TVAC" : "HTVA";
 
@@ -208,12 +210,12 @@ function OfferRow({
       {/* Desktop grid */}
       <div className="hidden md:grid grid-cols-[1.5fr_2fr_0.8fr_1.5fr] gap-3 items-start">
         <div className="flex flex-col gap-1.5">
-          <span className="font-bold text-sm text-foreground">{displayCode}</span>
+          <span className="font-bold text-sm text-foreground">{sellerLabel}</span>
           {offer.sellerSlug && (
             <Link
               to={`/vendeur/${offer.sellerSlug}`}
               className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline w-fit"
-              title={`Voir la boutique de ${offer.sellerName || displayCode}`}
+              title={`Voir la boutique de ${sellerLabel}`}
             >
               <Store size={11} /> Voir la boutique
             </Link>
@@ -305,7 +307,7 @@ function OfferRow({
       <div className="md:hidden space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex flex-col gap-0.5">
-            <span className="font-bold text-sm">{displayCode}</span>
+            <span className="font-bold text-sm">{sellerLabel}</span>
             {offer.sellerSlug && (
               <Link
                 to={`/vendeur/${offer.sellerSlug}`}

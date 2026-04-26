@@ -59,6 +59,7 @@ export default function VendorPriceAlertRulesPage() {
   const [draft, setDraft] = useState<{ scope: RuleScope; ean: string; brand_id: string; category_id: string; threshold: string; metric: RuleMetric; label: string }>({
     scope: "ean", ean: "", brand_id: "", category_id: "", threshold: "10", metric: "gap_vs_median", label: "",
   });
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   if (!vendor) return <div className="text-sm text-muted-foreground">Chargement…</div>;
 

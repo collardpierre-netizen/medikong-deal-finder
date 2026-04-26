@@ -655,11 +655,6 @@ export default function VendorMarketIntel() {
                         <span className={beatenByMK ? "text-red-600 font-medium" : ""}>
                           {fmt(r.best_medikong_competitor_price)}
                         </span>
-                        {r.best_medikong_competitor_vendor && (
-                          <div className="text-[10px] text-muted-foreground truncate max-w-[140px] ml-auto">
-                            {r.best_medikong_competitor_vendor}
-                          </div>
-                        )}
                       </td>
                       <td className="px-4 py-3 text-right tabular-nums">
                         {r.external_sources_count}
@@ -668,11 +663,6 @@ export default function VendorMarketIntel() {
                         <span className={beatenByExt ? "text-red-600 font-medium" : ""}>
                           {fmt(r.best_external_price)}
                         </span>
-                        {r.best_external_source && (
-                          <div className="text-[10px] text-muted-foreground truncate max-w-[140px] ml-auto">
-                            {r.best_external_source}
-                          </div>
-                        )}
                       </td>
                       <td className="px-4 py-3 text-center">
                         <button

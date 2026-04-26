@@ -4,6 +4,7 @@ import { useI18n, type Lang } from "@/contexts/I18nContext";
 import { useCurrentVendor } from "@/hooks/useCurrentVendor";
 import { useCompetitorAlertsCount } from "@/hooks/useVendorCompetitorAlerts";
 import { usePriceAlertEventsCount } from "@/hooks/useVendorPriceAlertRules";
+import { useVendorPriceAlertRealtime } from "@/hooks/useVendorPriceAlertRealtime";
 import { commissionRates } from "@/lib/vendor-tokens";
 
 const langs: Lang[] = ["fr", "nl", "de"];
@@ -22,6 +23,7 @@ export function VendorTopBar({ onMenuClick }: VendorTopBarProps) {
   const navigate = useNavigate();
   const { data: alertsCount = 0 } = useCompetitorAlertsCount(vendor?.id);
   const { data: thresholdCount = 0 } = usePriceAlertEventsCount(vendor?.id);
+  useVendorPriceAlertRealtime(vendor?.id);
   const totalAlerts = alertsCount + thresholdCount;
 
   const name = vendor?.company_name || vendor?.name || "Vendeur";

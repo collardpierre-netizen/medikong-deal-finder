@@ -668,12 +668,32 @@ export default function VendorMarketIntel() {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-center">
-                        <button
-                          onClick={() => setOpenRow(r)}
-                          className="text-xs font-medium text-primary hover:underline"
-                        >
-                          Voir
-                        </button>
+                        <div className="flex flex-col items-center gap-1">
+                          {(beatenByMK || beatenByExt) && (
+                            <button
+                              onClick={() =>
+                                setAdjustCtx({
+                                  offerId: r.my_offer_id,
+                                  productName: r.product_name,
+                                  gtin: r.gtin,
+                                  myPrice: r.my_price_excl_vat,
+                                  bestMkPrice: r.best_medikong_competitor_price,
+                                  bestExtPrice: r.best_external_price,
+                                })
+                              }
+                              className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                              title="Ajuster mon prix face à la concurrence"
+                            >
+                              <Wand2 size={10} /> Ajuster
+                            </button>
+                          )}
+                          <button
+                            onClick={() => setOpenRow(r)}
+                            className="text-xs font-medium text-primary hover:underline"
+                          >
+                            Voir
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );

@@ -27,7 +27,9 @@ import {
   AlertCircle,
   Tag,
   Clock,
+  Wand2,
 } from "lucide-react";
+import { AdjustPriceModal, type AdjustPriceContext } from "@/components/vendor/AdjustPriceModal";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -267,6 +269,7 @@ export default function VendorMarketIntel() {
   const [sortKey, setSortKey] = useState<SortKey>("medikong_competitors_count");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [openRow, setOpenRow] = useState<IntelRow | null>(null);
+  const [adjustCtx, setAdjustCtx] = useState<AdjustPriceContext | null>(null);
 
   // Persist filters
   useEffect(() => {

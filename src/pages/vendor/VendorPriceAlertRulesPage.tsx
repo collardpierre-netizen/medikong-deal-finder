@@ -17,7 +17,8 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, Plus, BellRing, CheckCircle2, RefreshCw } from "lucide-react";
+import { Trash2, Plus, BellRing, CheckCircle2, RefreshCw, ChevronDown, ChevronUp } from "lucide-react";
+import { AlertHistoryChart } from "@/components/vendor/AlertHistoryChart";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -58,6 +59,7 @@ export default function VendorPriceAlertRulesPage() {
   const [draft, setDraft] = useState<{ scope: RuleScope; ean: string; brand_id: string; category_id: string; threshold: string; metric: RuleMetric; label: string }>({
     scope: "ean", ean: "", brand_id: "", category_id: "", threshold: "10", metric: "gap_vs_median", label: "",
   });
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   if (!vendor) return <div className="text-sm text-muted-foreground">Chargement…</div>;
 
@@ -250,28 +252,51 @@ export default function VendorPriceAlertRulesPage() {
           </div>
         ) : (
           <div className="divide-y">
-            {events.map((ev) => (
-              <div key={ev.id} className="px-5 py-3 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3 min-w-0">
-                  {ev.product?.image_url && <img src={ev.product.image_url} alt="" className="w-10 h-10 rounded object-contain bg-white border" />}
-                  <div className="min-w-0">
-                    <p className="text-[13px] font-medium text-[#1D2530] truncate">{ev.product?.name || ev.product_id}</p>
-                    <p className="text-[11px] text-[#8B95A5]">
-                      EAN {ev.product?.gtin || "—"} · Mon prix <strong>{ev.my_price.toFixed(2)} €</strong>
-                      {ev.median_price ? <> · Médian <strong>{Number(ev.median_price).toFixed(2)} €</strong></> : null}
-                    </p>
+            {events.map((ev) => {
+              const isOpen = expandedId === ev.id;
+              return (
+                <div key={ev.id} className="px-5 py-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      {ev.product?.image_url && <img src={ev.product.image_url} alt="" className="w-10 h-10 rounded object-contain bg-white border" />}
+                      <div className="min-w-0">
+                        <p className="text-[13px] font-medium text-[#1D2530] truncate">{ev.product?.name || ev.product_id}</p>
+                        <p className="text-[11px] text-[#8B95A5]">
+                          EAN {ev.product?.gtin || "—"} · Mon prix <strong>{ev.my_price.toFixed(2)} €</strong>
+                          {ev.median_price ? <> · Médian <strong>{Number(ev.median_price).toFixed(2)} €</strong></> : null}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge className="bg-[#FEE2E2] text-[#B91C1C] hover:bg-[#FEE2E2]">
+                        +{Number(ev.observed_pct).toFixed(1)}% (seuil {ev.threshold_pct}%)
+                      </Badge>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="gap-1"
+                        onClick={() => setExpandedId(isOpen ? null : ev.id)}
+                      >
+                        {isOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                        Détail
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => mark.mutate({ id: ev.id, status: "resolved" })}>
+                        Résoudre
+                      </Button>
+                    </div>
                   </div>
+                  {isOpen && (
+                    <div className="mt-4 pt-4 border-t bg-[#FAFBFC] -mx-5 px-5 pb-2">
+                      <AlertHistoryChart
+                        vendorId={vendor.id}
+                        productId={ev.product_id}
+                        countryCode={ev.country_code || "BE"}
+                      />
+                    </div>
+                  )}
                 </div>
-                <div className="flex items-center gap-3">
-                  <Badge className="bg-[#FEE2E2] text-[#B91C1C] hover:bg-[#FEE2E2]">
-                    +{Number(ev.observed_pct).toFixed(1)}% (seuil {ev.threshold_pct}%)
-                  </Badge>
-                  <Button size="sm" variant="outline" onClick={() => mark.mutate({ id: ev.id, status: "resolved" })}>
-                    Résoudre
-                  </Button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </Card>

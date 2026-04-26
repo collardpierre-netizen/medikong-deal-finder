@@ -5929,6 +5929,70 @@ export type Database = {
           },
         ]
       }
+      vendor_offer_history: {
+        Row: {
+          best_price: number | null
+          country_code: string
+          created_at: string
+          id: string
+          median_price: number | null
+          my_price: number | null
+          my_rank: number | null
+          product_id: string
+          snapshot_date: string
+          total_offers: number | null
+          vendor_id: string
+        }
+        Insert: {
+          best_price?: number | null
+          country_code?: string
+          created_at?: string
+          id?: string
+          median_price?: number | null
+          my_price?: number | null
+          my_rank?: number | null
+          product_id: string
+          snapshot_date?: string
+          total_offers?: number | null
+          vendor_id: string
+        }
+        Update: {
+          best_price?: number | null
+          country_code?: string
+          created_at?: string
+          id?: string
+          median_price?: number | null
+          my_price?: number | null
+          my_rank?: number | null
+          product_id?: string
+          snapshot_date?: string
+          total_offers?: number | null
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_offer_history_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_offer_history_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_offer_history_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vendor_price_alert_events: {
         Row: {
           best_price: number | null
@@ -7018,6 +7082,21 @@ export type Database = {
           product_name: string
         }[]
       }
+      get_vendor_offer_history_30d: {
+        Args: {
+          _country_code?: string
+          _product_id: string
+          _vendor_id: string
+        }
+        Returns: {
+          best_price: number
+          median_price: number
+          my_price: number
+          my_rank: number
+          snapshot_date: string
+          total_offers: number
+        }[]
+      }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       match_import_lines: {
@@ -7057,6 +7136,7 @@ export type Database = {
       }
       resolve_product_brands: { Args: never; Returns: undefined }
       resolve_product_categories: { Args: never; Returns: undefined }
+      snapshot_vendor_offer_history: { Args: never; Returns: Json }
       update_brand_product_counts: { Args: never; Returns: undefined }
       update_manufacturer_product_counts: { Args: never; Returns: undefined }
       upsert_market_prices: { Args: { rows: Json }; Returns: number }

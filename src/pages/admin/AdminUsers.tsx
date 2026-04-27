@@ -124,14 +124,18 @@ export default function AdminUsers() {
       const { data: customer } = await supabase
         .from("customers")
         .select("*")
-        .eq("auth_user_id", u.userId)
+        .eq("id", u.id)
         .maybeSingle();
 
-      const { data: profile } = await supabase
-        .from("profiles" as any)
-        .select("full_name, sector, country, price_level_code, preferred_language")
-        .eq("user_id", u.userId)
-        .maybeSingle();
+      let profile = null;
+      if (u.userId) {
+        const { data: p } = await supabase
+          .from("profiles" as any)
+          .select("full_name, sector, country, price_level_code, preferred_language")
+          .eq("user_id", u.userId)
+          .maybeSingle();
+        profile = p;
+      }
 
       if (customer) {
         setBuyerDetail({ ...customer, profile: profile || undefined } as any);
@@ -140,6 +144,24 @@ export default function AdminUsers() {
     } else {
       setBuyerDetail(null);
     }
+  }
+
+  async function handleCreateAccess(u: UserRow) {
+    if (u.linked) return;
+    const fnName = u.type === "vendor" ? "create-vendor-account" : "create-buyer-account";
+    const body = u.type === "vendor" ? { vendor_id: u.id } : { customer_id: u.id, email: u.email };
+    const { data, error } = await supabase.functions.invoke(fnName, { body });
+    if (error || data?.error) {
+      toast.error(`Erreur : ${error?.message || data?.error}`);
+      return;
+    }
+    toast.success("Accès créé", {
+      description: data?.temp_password
+        ? `Mot de passe temporaire : ${data.temp_password}`
+        : "Compte auth existant rattaché.",
+      duration: 15000,
+    });
+    loadUsers();
   }
 
   function closeDetail() {

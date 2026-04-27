@@ -1108,6 +1108,18 @@ export default function VendorOffers() {
     onError: (err: any) => toast.error(err.message),
   });
 
+  const toggleOfferActive = useMutation({
+    mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
+      const { error } = await supabase.from("offers").update({ is_active }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: (_d, vars) => {
+      toast.success(vars.is_active ? "Offre activée" : "Offre désactivée");
+      qc.invalidateQueries({ queryKey: ["vendor-offers"] });
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
   // Unique brands from current offers for filter
   const offerBrands = useMemo(() => {
     const set = new Set<string>();

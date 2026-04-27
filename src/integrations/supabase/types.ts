@@ -1889,6 +1889,7 @@ export type Database = {
           price_tiers: Json | null
           product_id: string
           purchase_price: number | null
+          purchase_price_excl_vat: number | null
           qogita_base_delay_days: number | null
           qogita_base_price: number | null
           qogita_offer_qid: string | null
@@ -1927,6 +1928,7 @@ export type Database = {
           price_tiers?: Json | null
           product_id: string
           purchase_price?: number | null
+          purchase_price_excl_vat?: number | null
           qogita_base_delay_days?: number | null
           qogita_base_price?: number | null
           qogita_offer_qid?: string | null
@@ -1965,6 +1967,7 @@ export type Database = {
           price_tiers?: Json | null
           product_id?: string
           purchase_price?: number | null
+          purchase_price_excl_vat?: number | null
           qogita_base_delay_days?: number | null
           qogita_base_price?: number | null
           qogita_offer_qid?: string | null
@@ -6234,6 +6237,61 @@ export type Database = {
           },
           {
             foreignKeyName: "vendor_price_alert_rules_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vendor_product_costs: {
+        Row: {
+          created_at: string
+          currency: string
+          default_purchase_price_excl_vat: number
+          id: string
+          notes: string | null
+          product_id: string
+          updated_at: string
+          vendor_id: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          default_purchase_price_excl_vat: number
+          id?: string
+          notes?: string | null
+          product_id: string
+          updated_at?: string
+          vendor_id: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          default_purchase_price_excl_vat?: number
+          id?: string
+          notes?: string | null
+          product_id?: string
+          updated_at?: string
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_product_costs_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_product_costs_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_product_costs_vendor_id_fkey"
             columns: ["vendor_id"]
             isOneToOne: false
             referencedRelation: "vendors"

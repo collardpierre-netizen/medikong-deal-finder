@@ -855,6 +855,10 @@ async function processSingleProduct(
           const offersUrl = `${baseUrl}/variants/${variant.fid}/${variant.slug}/offers/`;
           const offersRes = await fetchWithRetry(offersUrl, token);
 
+          if (!offersRes.ok && recordEndpointError) {
+            await recordEndpointError(`/variants/{fid}/{slug}/offers/`, offersRes.status, `gtin=${product.gtin} fid=${variant.fid}`);
+          }
+
           if (offersRes.ok) {
             const offersData = await offersRes.json();
             const offersArr = offersData?.offers || (Array.isArray(offersData) ? offersData : []);

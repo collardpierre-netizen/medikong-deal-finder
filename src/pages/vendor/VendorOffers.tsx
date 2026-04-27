@@ -9,6 +9,7 @@ import { Tag, Plus, Pencil, Trash2, X, Loader2, Package, Search, Download, Uploa
 import ProductPhotoUploader from "@/components/admin/ProductPhotoUploader";
 import { CategoryTreeSelector } from "@/components/vendor/CategoryTreeSelector";
 import { MarginInsightCard } from "@/components/vendor/MarginInsightCard";
+import { MarginBreakdownDetails } from "@/components/vendor/MarginBreakdownDetails";
 import { useVendorCommissionConfig } from "@/hooks/useVendorCommissionConfig";
 import { computeMargin } from "@/lib/vendorMargin";
 import { toast } from "sonner";
@@ -1374,14 +1375,28 @@ export default function VendorOffers() {
                 {parseFloat(form.mov_amount) > 0 && <span className="ml-3">MOV : <strong style={{ color: "#1D2530" }}>{parseFloat(form.mov_amount).toFixed(0)} €</strong></span>}
               </div>
               {commissionConfig && (
-                <MarginInsightCard
-                  breakdown={computeMargin(
-                    parseFloat(form.price_excl_vat) || 0,
-                    form.purchase_price_excl_vat ? parseFloat(form.purchase_price_excl_vat) : null,
-                    commissionConfig,
-                  )}
-                  commissionModel={commissionConfig.commission_model}
-                />
+                <>
+                  <MarginInsightCard
+                    breakdown={computeMargin(
+                      parseFloat(form.price_excl_vat) || 0,
+                      form.purchase_price_excl_vat ? parseFloat(form.purchase_price_excl_vat) : null,
+                      commissionConfig,
+                    )}
+                    commissionModel={commissionConfig.commission_model}
+                  />
+                  <MarginBreakdownDetails
+                    breakdown={computeMargin(
+                      parseFloat(form.price_excl_vat) || 0,
+                      form.purchase_price_excl_vat ? parseFloat(form.purchase_price_excl_vat) : null,
+                      commissionConfig,
+                    )}
+                    commissionModel={commissionConfig.commission_model}
+                    commissionRate={commissionConfig.commission_rate}
+                    marginSplitPct={commissionConfig.margin_split_pct}
+                    fixedCommissionAmount={commissionConfig.fixed_commission_amount}
+                    offerId={editingId}
+                  />
+                </>
               )}
             </div>
           )}

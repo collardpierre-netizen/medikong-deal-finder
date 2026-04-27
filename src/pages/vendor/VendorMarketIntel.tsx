@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import { AdjustPriceModal, type AdjustPriceContext } from "@/components/vendor/AdjustPriceModal";
 import { MarginInsightCard } from "@/components/vendor/MarginInsightCard";
+import { MarginBreakdownDetails } from "@/components/vendor/MarginBreakdownDetails";
 import { useVendorCommissionConfig } from "@/hooks/useVendorCommissionConfig";
 import { computeMargin, fmtEur } from "@/lib/vendorMargin";
 import { formatDistanceToNow } from "date-fns";
@@ -791,6 +792,20 @@ export default function VendorMarketIntel() {
                     )}
                     commissionModel={commissionConfig.commission_model}
                   />
+                  <div className="mt-2">
+                    <MarginBreakdownDetails
+                      breakdown={computeMargin(
+                        openRow.my_price_excl_vat,
+                        openRowPurchasePrice ?? null,
+                        commissionConfig,
+                      )}
+                      commissionModel={commissionConfig.commission_model}
+                      commissionRate={commissionConfig.commission_rate}
+                      marginSplitPct={commissionConfig.margin_split_pct}
+                      fixedCommissionAmount={commissionConfig.fixed_commission_amount}
+                      offerId={openRow.my_offer_id}
+                    />
+                  </div>
                   {openRowPurchasePrice == null && (
                     <p className="text-[11px] text-muted-foreground mt-1.5">
                       Astuce : renseignez votre prix d'achat sur la fiche offre pour voir aussi votre marge nette.

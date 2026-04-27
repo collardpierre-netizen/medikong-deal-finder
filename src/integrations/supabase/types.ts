@@ -1862,6 +1862,112 @@ export type Database = {
           },
         ]
       }
+      offer_margin_snapshots: {
+        Row: {
+          commission_amount: number
+          commission_model: string
+          commission_pct: number | null
+          commission_rate: number | null
+          computed_at: string
+          fixed_commission_amount: number | null
+          gross_margin: number | null
+          id: string
+          margin_split_pct: number | null
+          net_margin: number | null
+          net_margin_pct: number | null
+          net_revenue: number
+          offer_id: string
+          product_id: string
+          purchase_price_excl_vat: number | null
+          sell_price_excl_vat: number
+          trigger_source: string
+          vendor_id: string
+        }
+        Insert: {
+          commission_amount: number
+          commission_model: string
+          commission_pct?: number | null
+          commission_rate?: number | null
+          computed_at?: string
+          fixed_commission_amount?: number | null
+          gross_margin?: number | null
+          id?: string
+          margin_split_pct?: number | null
+          net_margin?: number | null
+          net_margin_pct?: number | null
+          net_revenue: number
+          offer_id: string
+          product_id: string
+          purchase_price_excl_vat?: number | null
+          sell_price_excl_vat: number
+          trigger_source?: string
+          vendor_id: string
+        }
+        Update: {
+          commission_amount?: number
+          commission_model?: string
+          commission_pct?: number | null
+          commission_rate?: number | null
+          computed_at?: string
+          fixed_commission_amount?: number | null
+          gross_margin?: number | null
+          id?: string
+          margin_split_pct?: number | null
+          net_margin?: number | null
+          net_margin_pct?: number | null
+          net_revenue?: number
+          offer_id?: string
+          product_id?: string
+          purchase_price_excl_vat?: number | null
+          sell_price_excl_vat?: number
+          trigger_source?: string
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "offer_margin_snapshots_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offer_margin_snapshots_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "public_offers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offer_margin_snapshots_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offer_margin_snapshots_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offer_margin_snapshots_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offer_margin_snapshots_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       offer_price_tiers: {
         Row: {
           created_at: string | null

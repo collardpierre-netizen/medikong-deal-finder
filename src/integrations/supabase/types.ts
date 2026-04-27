@@ -350,6 +350,51 @@ export type Database = {
           },
         ]
       }
+      client_error_logs: {
+        Row: {
+          component: string | null
+          created_at: string
+          fingerprint: string | null
+          id: string
+          level: string
+          message: string
+          metadata: Json | null
+          route: string | null
+          source: string
+          stack: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          component?: string | null
+          created_at?: string
+          fingerprint?: string | null
+          id?: string
+          level?: string
+          message: string
+          metadata?: Json | null
+          route?: string | null
+          source?: string
+          stack?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          component?: string | null
+          created_at?: string
+          fingerprint?: string | null
+          id?: string
+          level?: string
+          message?: string
+          metadata?: Json | null
+          route?: string | null
+          source?: string
+          stack?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       cms_featured_categories: {
         Row: {
           category_id: string

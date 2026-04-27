@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { getProductImageSrc, MEDIKONG_PLACEHOLDER, isQogitaPlaceholder } from "@/lib/image-utils";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Plus, Minus, Package, Loader2, Lock, Layers } from "lucide-react";
+import { Plus, Minus, Package, Loader2, Lock, Layers, AlertTriangle } from "lucide-react";
 import { motion } from "framer-motion";
 import { formatPrice } from "@/data/mock";
 import { useCart } from "@/contexts/CartContext";
@@ -11,6 +11,7 @@ import { useCountry } from "@/contexts/CountryContext";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { getLocalizedName } from "@/lib/localization";
+import { reportOfferDataIssue } from "@/lib/data-quality";
 import type { CatalogProduct } from "@/hooks/useCatalog";
 
 interface Props {
@@ -84,10 +85,30 @@ export function CatalogProductCard({ product, index = 0, view = "grid", searchQu
   const fromState = { from: location.pathname + location.search };
   const price = product.best_price_excl_vat || 0;
   const priceIncl = product.best_price_incl_vat || 0;
-  const bundleSize = product.best_bundle_size && product.best_bundle_size > 1 ? product.best_bundle_size : null;
+  const rawMoq = product.best_bundle_size;
+  const hasOffers = product.offer_count > 0;
+  const bundleSize = rawMoq && rawMoq > 1 ? rawMoq : null;
+  // MOQ is considered "missing" only if the product has at least one offer but
+  // the denormalized field is null/0 (1 means "vente à l'unité" — pas d'anomalie).
+  const moqMissing = hasOffers && (rawMoq === null || rawMoq === undefined || rawMoq === 0);
   const isLoggedIn = !!user;
   const canSeePrices = isLoggedIn && (isVerifiedBuyer || verificationLoading);
   const displayName = getLocalizedName(product, i18n.language);
+
+  useEffect(() => {
+    if (moqMissing) {
+      reportOfferDataIssue({
+        productId: product.id,
+        issue: "missing_moq",
+        details: {
+          slug: product.slug,
+          gtin: product.gtin,
+          offer_count: product.offer_count,
+          country,
+        },
+      });
+    }
+  }, [moqMissing, product.id, product.slug, product.gtin, product.offer_count, country]);
 
   const handleAddToCart = async () => {
     // If multiple offers, open product page to let user choose
@@ -192,6 +213,14 @@ export function CatalogProductCard({ product, index = 0, view = "grid", searchQu
                 <Layers size={10} /> Lots de {bundleSize}
               </span>
             )}
+            {moqMissing && (
+              <span
+                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200"
+                title="La taille de lot (MOQ) de cette offre n'a pas pu être déterminée. Une alerte a été envoyée à l'équipe pour correction."
+              >
+                <AlertTriangle size={10} /> MOQ non disponible
+              </span>
+            )}
           </div>
         </div>
         <div className="text-right shrink-0 space-y-1">
@@ -277,6 +306,14 @@ export function CatalogProductCard({ product, index = 0, view = "grid", searchQu
                     title={`Quantité minimum de commande : ${bundleSize}. Toute quantité doit être un multiple de ${bundleSize}.`}
                   >
                     <Layers size={10} /> Lots de {bundleSize}
+                  </span>
+                )}
+                {moqMissing && (
+                  <span
+                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200 shrink-0"
+                    title="La taille de lot (MOQ) de cette offre n'a pas pu être déterminée. Une alerte a été envoyée à l'équipe pour correction."
+                  >
+                    <AlertTriangle size={10} /> MOQ non disponible
                   </span>
                 )}
               </div>

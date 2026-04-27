@@ -280,15 +280,55 @@ const AdminVendeurs = () => {
                       <span className="text-[13px] font-semibold" style={{ color: "#1D2530" }}>{getVendorAdminName(s)}</span>
                       <p className="text-[11px]" style={{ color: "#8B95A5" }}>{s.email || "—"}</p>
                     </td>
-                    <td className="px-3 py-3" onClick={() => navigate(`/admin/vendeurs/${s.id}`)}>
-                      <span className="px-2 py-1 rounded text-[11px] font-mono" style={{ backgroundColor: "#F1F5F9", color: "#616B7C" }}>{s.display_code || "—"}</span>
+                    <td className="px-3 py-3">
+                      <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                        <span
+                          className="px-2 py-1 rounded text-[11px] font-mono cursor-pointer"
+                          style={{ backgroundColor: "#F1F5F9", color: "#616B7C" }}
+                          onClick={() => navigate(`/admin/vendeurs/${s.id}`)}
+                          title={s.display_code || ""}
+                        >
+                          {s.display_code || "—"}
+                        </span>
+                        {s.display_code && (
+                          <button
+                            onClick={() => copyToClipboard(s.display_code!, `mk:${s.id}`, "ID MediKong")}
+                            className="p-1 rounded hover:bg-slate-100 transition-colors"
+                            title="Copier l'ID MediKong"
+                          >
+                            {copiedKey === `mk:${s.id}`
+                              ? <Check size={11} style={{ color: "#059669" }} />
+                              : <Copy size={11} style={{ color: "#8B95A5" }} />}
+                          </button>
+                        )}
+                      </div>
                     </td>
-                    <td className="px-3 py-3" onClick={() => navigate(`/admin/vendeurs/${s.id}`)}>
-                      {(s as any).qogita_seller_alias ? (
-                        <span className="px-2 py-1 rounded text-[11px] font-mono" style={{ backgroundColor: "#EFF6FF", color: "#1B5BDA" }}>{(s as any).qogita_seller_alias}</span>
-                      ) : (
-                        <span className="text-[11px]" style={{ color: "#CBD5E1" }}>—</span>
-                      )}
+                    <td className="px-3 py-3">
+                      <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                        {(s as any).qogita_seller_alias ? (
+                          <>
+                            <span
+                              className="px-2 py-1 rounded text-[11px] font-mono cursor-pointer"
+                              style={{ backgroundColor: "#EFF6FF", color: "#1B5BDA" }}
+                              onClick={() => navigate(`/admin/vendeurs/${s.id}`)}
+                              title={(s as any).qogita_seller_alias}
+                            >
+                              {(s as any).qogita_seller_alias}
+                            </span>
+                            <button
+                              onClick={() => copyToClipboard((s as any).qogita_seller_alias, `qg:${s.id}`, "ID Qogita")}
+                              className="p-1 rounded hover:bg-blue-50 transition-colors"
+                              title="Copier l'ID Qogita"
+                            >
+                              {copiedKey === `qg:${s.id}`
+                                ? <Check size={11} style={{ color: "#059669" }} />
+                                : <Copy size={11} style={{ color: "#1B5BDA" }} />}
+                            </button>
+                          </>
+                        ) : (
+                          <span className="text-[11px]" style={{ color: "#CBD5E1" }}>—</span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-3 py-3" onClick={() => navigate(`/admin/vendeurs/${s.id}`)}>
                       <span className="px-2 py-1 rounded-full text-[10px] font-bold" style={{ backgroundColor: "#F1F5F9", color: "#616B7C" }}>{s.type}</span>

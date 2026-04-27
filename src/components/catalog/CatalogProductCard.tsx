@@ -269,7 +269,17 @@ export function CatalogProductCard({ product, index = 0, view = "grid", searchQu
                 <StockBadge product={product} />
                 <span className="text-xs text-muted-foreground">{product.offer_count > 1 ? t("catalog.offersPlural", { count: product.offer_count }) : t("catalog.offers", { count: product.offer_count })}</span>
               </div>
-              <p className="text-[10px] text-muted-foreground mb-2 truncate">EAN: {product.gtin || "—"}</p>
+              <div className="flex items-center justify-between gap-1.5 mb-2">
+                <p className="text-[10px] text-muted-foreground truncate">EAN: {product.gtin || "—"}</p>
+                {bundleSize && (
+                  <span
+                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-primary/10 text-primary border border-primary/20 shrink-0"
+                    title={`Quantité minimum de commande : ${bundleSize}. Toute quantité doit être un multiple de ${bundleSize}.`}
+                  >
+                    <Layers size={10} /> Lots de {bundleSize}
+                  </span>
+                )}
+              </div>
               <div className="flex items-center gap-1.5">
                 {product.offer_count <= 1 && (
                   <div className="flex items-center border border-border rounded-md">

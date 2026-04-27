@@ -19,14 +19,22 @@ interface VendorContractReminderProps {
   contractUrl?: string
 }
 
-const LEVEL_COPY: Record<ReminderLevel, {
+type LevelCopy = {
   emoji: string
   title: string
   intro: string
   urgency: string
   cta: string
-  toneStyle: typeof urgencyBoxInfo
-}> = {
+  toneStyle: React.CSSProperties
+}
+
+const urgencyBoxBase = {
+  borderRadius: '6px',
+  padding: '12px 14px',
+  margin: '14px 0',
+} as const
+
+const LEVEL_COPY: Record<ReminderLevel, LevelCopy> = {
   1: {
     emoji: '👋',
     title: 'Petit rappel — votre convention vous attend',
@@ -35,7 +43,7 @@ const LEVEL_COPY: Record<ReminderLevel, {
     urgency:
       'Cela ne prend que quelques minutes. La majorité des vendeurs signent en moins de 2 minutes depuis leur portail.',
     cta: 'Signer maintenant',
-    toneStyle: urgencyBoxInfo,
+    toneStyle: { ...urgencyBoxBase, backgroundColor: '#eff6ff', borderLeft: '3px solid #3b82f6' },
   },
   2: {
     emoji: '⏰',
@@ -45,7 +53,7 @@ const LEVEL_COPY: Record<ReminderLevel, {
     urgency:
       "C'est une exigence légale (article 53 §2 du Code TVA belge), pas une formalité {SITE_NAME}. Tous les vendeurs doivent la signer pour vendre sur la marketplace.",
     cta: 'Débloquer mon compte vendeur',
-    toneStyle: urgencyBoxWarn,
+    toneStyle: { ...urgencyBoxBase, backgroundColor: '#fffbeb', borderLeft: '3px solid #f59e0b' },
   },
   3: {
     emoji: '🚨',
@@ -55,7 +63,7 @@ const LEVEL_COPY: Record<ReminderLevel, {
     urgency:
       "Si vous rencontrez une difficulté pour signer (profil incomplet, question juridique, problème technique), répondez simplement à cet email — l'équipe vendeurs vous accompagne.",
     cta: 'Signer pour conserver mon compte',
-    toneStyle: urgencyBoxAlert,
+    toneStyle: { ...urgencyBoxBase, backgroundColor: '#fef2f2', borderLeft: '3px solid #dc2626' },
   },
 }
 

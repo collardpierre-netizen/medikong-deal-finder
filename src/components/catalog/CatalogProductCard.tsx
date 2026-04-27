@@ -84,6 +84,7 @@ export function CatalogProductCard({ product, index = 0, view = "grid", searchQu
   const fromState = { from: location.pathname + location.search };
   const price = product.best_price_excl_vat || 0;
   const priceIncl = product.best_price_incl_vat || 0;
+  const bundleSize = product.best_bundle_size && product.best_bundle_size > 1 ? product.best_bundle_size : null;
   const isLoggedIn = !!user;
   const canSeePrices = isLoggedIn && (isVerifiedBuyer || verificationLoading);
   const displayName = getLocalizedName(product, i18n.language);

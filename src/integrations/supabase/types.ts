@@ -3297,6 +3297,7 @@ export type Database = {
       }
       products: {
         Row: {
+          best_bundle_size: number | null
           best_price_excl_vat: number | null
           best_price_incl_vat: number | null
           brand: string | null
@@ -3365,6 +3366,7 @@ export type Database = {
           width: number | null
         }
         Insert: {
+          best_bundle_size?: number | null
           best_price_excl_vat?: number | null
           best_price_incl_vat?: number | null
           brand?: string | null
@@ -3433,6 +3435,7 @@ export type Database = {
           width?: number | null
         }
         Update: {
+          best_bundle_size?: number | null
           best_price_excl_vat?: number | null
           best_price_incl_vat?: number | null
           brand?: string | null

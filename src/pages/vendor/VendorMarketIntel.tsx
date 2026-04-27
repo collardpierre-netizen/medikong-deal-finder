@@ -303,6 +303,16 @@ export default function VendorMarketIntel() {
     const t = setTimeout(() => setLivePulse(false), 900);
     return () => clearTimeout(t);
   }, [livePrice]);
+
+  /**
+   * Dernière sauvegarde de prix réussie depuis le modal "Ajuster mon prix",
+   * indexée par `offer_id`. Permet d'afficher le comparatif Avant / Après
+   * de "Net après commission" dans le panneau "Mon offre" tant que la session
+   * de la veille marché reste ouverte.
+   */
+  const [lastSaves, setLastSaves] = useState<
+    Record<string, { oldPrice: number; newPrice: number; savedAt: number }>
+  >({});
   // Tri & filtre du tableau "Offres MediKong" dans le détail
   const [mkSortKey, setMkSortKey] = useState<"net" | "price" | null>(null);
   const [mkSortDir, setMkSortDir] = useState<"asc" | "desc">("desc");

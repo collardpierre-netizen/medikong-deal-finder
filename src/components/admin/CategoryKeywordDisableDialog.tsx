@@ -367,6 +367,105 @@ export default function CategoryKeywordDisableDialog({
               </div>
             )}
           </div>
+
+          {/* Simulation impact réel en base */}
+          <div className="rounded-md border bg-card p-3 space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-medium flex items-center gap-1.5">
+                <Calculator size={13} className="text-primary" />
+                Simulation d'impact ({newActive ? "réactivation" : "désactivation"})
+              </span>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={runSimulation}
+                disabled={simLoading || keywords.length === 0 || allCategoryIdsToDisable.length === 0}
+              >
+                {simLoading ? (
+                  <><Loader2 size={12} className="mr-1 animate-spin" /> Calcul…</>
+                ) : sim && !simStale ? (
+                  <>↻ Recalculer</>
+                ) : (
+                  <>Lancer la simulation</>
+                )}
+              </Button>
+            </div>
+
+            {simError && (
+              <div className="text-xs text-destructive bg-destructive/10 px-2 py-1 rounded">
+                {simError}
+              </div>
+            )}
+
+            {!sim && !simLoading && (
+              <p className="text-xs text-muted-foreground">
+                Aucune simulation lancée. Le bouton ci-dessous est <strong>bloqué</strong> tant
+                qu'aucune simulation à jour ne confirme l'impact réel sur les produits et offres.
+              </p>
+            )}
+
+            {sim && (
+              <>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="rounded border p-2">
+                    <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Catégories</div>
+                    <div className="text-base font-semibold tabular-nums">
+                      {sim.categoriesActiveTotal + sim.categoriesInactiveTotal}
+                    </div>
+                    <div className="text-[10px] text-muted-foreground">
+                      {newActive
+                        ? `${sim.categoriesInactiveTotal} à réactiver · ${sim.categoriesActiveTotal} déjà actives`
+                        : `${sim.categoriesActiveTotal} à désactiver · ${sim.categoriesInactiveTotal} déjà inactives`}
+                    </div>
+                  </div>
+                  <div className="rounded border p-2">
+                    <div className="text-[10px] uppercase tracking-wide text-muted-foreground flex items-center gap-1">
+                      <Package size={10} /> Produits
+                    </div>
+                    <div className={`text-base font-semibold tabular-nums ${!newActive && sim.productsToFlip > 1000 ? "text-destructive" : ""}`}>
+                      {sim.productsToFlip.toLocaleString("fr-FR")}
+                    </div>
+                    <div className="text-[10px] text-muted-foreground">
+                      {newActive ? "à rendre visibles" : "à masquer"}
+                      {sim.productsAlreadyInState > 0 && ` · ${sim.productsAlreadyInState.toLocaleString("fr-FR")} déjà ${newActive ? "actifs" : "inactifs"}`}
+                    </div>
+                  </div>
+                  <div className="rounded border p-2">
+                    <div className="text-[10px] uppercase tracking-wide text-muted-foreground flex items-center gap-1">
+                      <Tag size={10} /> Offres actives
+                    </div>
+                    <div className={`text-base font-semibold tabular-nums ${!newActive && sim.activeOffersImpacted > 5000 ? "text-destructive" : ""}`}>
+                      {sim.activeOffersImpacted.toLocaleString("fr-FR")}
+                    </div>
+                    <div className="text-[10px] text-muted-foreground">
+                      {newActive ? "redeviendront visibles" : "ne s'afficheront plus"}
+                    </div>
+                  </div>
+                </div>
+
+                {!newActive && sim.productsToFlip > 1000 && (
+                  <div className="flex items-start gap-2 text-xs text-destructive bg-destructive/10 px-2 py-1.5 rounded">
+                    <AlertTriangle size={14} className="mt-0.5 shrink-0" />
+                    <span>
+                      <strong>Impact massif</strong> : plus de 1 000 produits seront masqués.
+                      Vérifie tes mots-clés (ex : « eau » matche « eau de toilette » mais aussi
+                      « eau thermale »).
+                    </span>
+                  </div>
+                )}
+
+                {simStale && (
+                  <div className="text-[11px] text-amber-700 bg-amber-50 dark:bg-amber-950/20 px-2 py-1 rounded flex items-center gap-1">
+                    <AlertTriangle size={11} /> Mots-clés modifiés depuis la simulation — relance le calcul.
+                  </div>
+                )}
+
+                <div className="text-[10px] text-muted-foreground text-right">
+                  Calculé à {new Date(sim.computedAt).toLocaleTimeString("fr-FR")}
+                </div>
+              </>
+            )}
+          </div>
         </div>
 
         <DialogFooter>

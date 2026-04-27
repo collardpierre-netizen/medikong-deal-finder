@@ -222,31 +222,38 @@ export function CatalogSidebar({ filters, setFilter, clearAll, resultCategoryIds
               if (parentCategory) setFilter("category", parentCategory.slug);
               else setFilter("category", undefined);
             }}
-            className="text-sm text-mk-blue hover:underline flex items-center gap-1 mb-2"
+            className="text-sm text-mk-blue hover:underline flex items-center gap-1 mb-2 text-left"
           >
              <ChevronLeft size={14} />
-             {parentCategory ? parentCategory.name : t("catalog.categories")}
+             <span className="truncate">
+               {parentCategory ? cleanCategoryLabel(parentCategory.name, i18n.language).short : t("catalog.categories")}
+             </span>
           </button>
         )}
         <div className="relative">
           <div className="max-h-[220px] overflow-y-auto pr-2">
             <div className="space-y-0.5">
-              {displayCategories.map((cat: any) => (
-                <button
-                  key={cat.id}
-                  onClick={() => setFilter("category", cat.slug)}
-                  className={`flex w-full items-center justify-between text-sm py-1.5 px-2 rounded transition-colors ${
-                    filters.category === cat.slug
-                      ? "bg-primary/10 text-primary font-medium"
-                      : "text-foreground hover:bg-muted"
-                  }`}
-                >
-                  <span>{cat.name}</span>
-                  {cat.product_count > 0 && (
-                    <span className="text-xs text-muted-foreground">({cat.product_count.toLocaleString("fr-FR")})</span>
-                  )}
-                </button>
-              ))}
+              {displayCategories.map((cat: any) => {
+                const { short, full } = cleanCategoryLabel(cat.name, i18n.language);
+                const showTooltip = full && full !== short;
+                return (
+                  <button
+                    key={cat.id}
+                    onClick={() => setFilter("category", cat.slug)}
+                    title={showTooltip ? full : undefined}
+                    className={`flex w-full items-center justify-between gap-2 text-sm py-1.5 px-2 rounded text-left transition-colors ${
+                      filters.category === cat.slug
+                        ? "bg-primary/10 text-primary font-medium"
+                        : "text-foreground hover:bg-muted"
+                    }`}
+                  >
+                    <span className="truncate min-w-0 flex-1">{short}</span>
+                    {cat.product_count > 0 && (
+                      <span className="text-xs text-muted-foreground shrink-0">({cat.product_count.toLocaleString("fr-FR")})</span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </div>
           {displayCategories.length > 8 && (

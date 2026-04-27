@@ -141,23 +141,50 @@ Deno.serve(async (req) => {
       .is("brand_id", null)
       .not("brand_name", "is", null);
 
+    let linkedCount = 0;
+    let linkErrors = 0;
+    const unmatchedSamples: string[] = [];
     if (unlinked && unlinked.length > 0) {
       for (let i = 0; i < unlinked.length; i += 200) {
         const chunk = unlinked.slice(i, i + 200);
         for (const p of chunk) {
           const brandId = (p.brand_qid && brandByQid.get(p.brand_qid)) || brandByName.get(p.brand_name);
           if (brandId) {
-            await supabase.from("products").update({ brand_id: brandId }).eq("id", p.id);
+            const { error: linkErr } = await supabase.from("products").update({ brand_id: brandId }).eq("id", p.id);
+            if (linkErr) {
+              linkErrors++;
+              console.error(formatDbError("qogita.brands.link", linkErr, {
+                product_id: p.id, brand_name: p.brand_name, brand_qid: p.brand_qid, resolved_brand_id: brandId,
+              }));
+            } else {
+              linkedCount++;
+            }
+          } else if (unmatchedSamples.length < 10) {
+            unmatchedSamples.push(`${p.brand_name}${p.brand_qid ? ` (qid=${p.brand_qid})` : ""}`);
           }
         }
       }
     }
+    if (unmatchedSamples.length > 0) {
+      console.warn(
+        `[qogita.brands.link] ${(unlinked?.length || 0) - linkedCount} produits sans brand_id. ` +
+        `Exemples (max 10): ${unmatchedSamples.join(" | ")}`,
+      );
+    }
 
-    const stats = { brands_total: total, products_linked: unlinked?.length || 0, source_products: products?.length || 0 };
+    const stats = {
+      brands_total: total,
+      brands_invalid: invalidBrands.length,
+      brands_duplicates: skippedDuplicate,
+      upsert_errors: upsertErrors,
+      products_linked: linkedCount,
+      link_errors: linkErrors,
+      source_products: products?.length || 0,
+    };
     await supabase.from("sync_logs").update({
       status: "completed", completed_at: new Date().toISOString(), stats,
       progress_current: total, progress_total: total,
-      progress_message: `Terminé — ${total} marques depuis ${products?.length || 0} produits`,
+      progress_message: `Terminé — ${total} marques (${upsertErrors} erreurs upsert) — ${linkedCount} produits liés (${linkErrors} erreurs liaison)`,
     }).eq("id", syncLogId);
 
     return new Response(JSON.stringify({ success: true, stats }), {

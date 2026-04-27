@@ -777,6 +777,28 @@ export default function VendorMarketIntel() {
           </DialogHeader>
           {openRow && (
             <div className="space-y-6">
+              {/* Marge & commission sur l'offre actuelle du vendeur */}
+              {commissionConfig && (
+                <section>
+                  <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
+                    <Wand2 size={14} /> Mon offre — marge & commission MediKong
+                  </h3>
+                  <MarginInsightCard
+                    breakdown={computeMargin(
+                      openRow.my_price_excl_vat,
+                      openRowPurchasePrice ?? null,
+                      commissionConfig,
+                    )}
+                    commissionModel={commissionConfig.commission_model}
+                  />
+                  {openRowPurchasePrice == null && (
+                    <p className="text-[11px] text-muted-foreground mt-1.5">
+                      Astuce : renseignez votre prix d'achat sur la fiche offre pour voir aussi votre marge nette.
+                    </p>
+                  )}
+                </section>
+              )}
+
               {/* Offres MediKong */}
               <section>
                 <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">

@@ -28,6 +28,7 @@ import { applyMargin, formatPriceEur } from "@/lib/pricing";
 import { useMarketPrices } from "@/hooks/useMarketPrices";
 import { RestockSecondChance } from "@/components/product/RestockSecondChance";
 import { MyEncodedPriceBanner } from "@/components/product/MyEncodedPriceBanner";
+import { SafeBoundary } from "@/components/SafeBoundary";
 import VendorDelegateCompact from "@/components/vendor/VendorDelegateCompact";
 
 function formatEur(n: number | null | undefined): string {

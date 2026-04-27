@@ -1269,49 +1269,103 @@ export default function VendorOffers() {
         </VCard>
       )}
 
-      {/* Filters bar */}
-      {offers.length > 0 && (
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className="relative flex-1 max-w-xs">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "#8B95A5" }} />
-            <input className="w-full pl-9 pr-3 py-2 text-[13px] border rounded-lg focus:border-[#1B5BDA] focus:outline-none"
-              style={{ borderColor: "#E2E8F0" }} placeholder="Rechercher (nom, EAN, CNK)…" value={search} onChange={e => setSearch(e.target.value)} />
-          </div>
-          {offerBrands.length > 1 && (
-            <select value={filterBrand} onChange={e => setFilterBrand(e.target.value)}
-              className="text-[12px] px-3 py-2 rounded-lg border bg-white" style={{ borderColor: "#E2E8F0", color: "#616B7C" }}>
-              <option value="">Toutes marques</option>
-              {offerBrands.map(b => <option key={b} value={b}>{b}</option>)}
-            </select>
-          )}
-          <select value={filterCountry} onChange={e => setFilterCountry(e.target.value)}
-            className="text-[12px] px-3 py-2 rounded-lg border bg-white" style={{ borderColor: "#E2E8F0", color: "#616B7C" }}>
-            <option value="">Tous pays</option>
-            <option value="BE">Belgique</option><option value="FR">France</option>
-            <option value="NL">Pays-Bas</option><option value="LU">Luxembourg</option><option value="DE">Allemagne</option>
-          </select>
-          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value as OfferStatusFilter)}
-            className="text-[12px] px-3 py-2 rounded-lg border bg-white" style={{ borderColor: "#E2E8F0", color: "#616B7C" }}>
-            <option value="active">Offres actives</option>
-            <option value="inactive">Offres inactives</option>
-            <option value="all">Toutes les offres</option>
-          </select>
-          <span className="text-[11px] font-medium" style={{ color: "#8B95A5" }}>{filteredOffers.length} résultat{filteredOffers.length !== 1 ? "s" : ""}</span>
+      {/* Filters bar — always visible so the vendor can switch status filter */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <div className="relative flex-1 max-w-xs">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "#8B95A5" }} />
+          <input className="w-full pl-9 pr-3 py-2 text-[13px] border rounded-lg focus:border-[#1B5BDA] focus:outline-none disabled:opacity-50"
+            style={{ borderColor: "#E2E8F0" }} placeholder="Rechercher (nom, EAN, CNK)…" value={search} onChange={e => setSearch(e.target.value)} disabled={isLoading} />
         </div>
-      )}
+        {offerBrands.length > 1 && (
+          <select value={filterBrand} onChange={e => setFilterBrand(e.target.value)}
+            className="text-[12px] px-3 py-2 rounded-lg border bg-white" style={{ borderColor: "#E2E8F0", color: "#616B7C" }}>
+            <option value="">Toutes marques</option>
+            {offerBrands.map(b => <option key={b} value={b}>{b}</option>)}
+          </select>
+        )}
+        <select value={filterCountry} onChange={e => setFilterCountry(e.target.value)}
+          className="text-[12px] px-3 py-2 rounded-lg border bg-white" style={{ borderColor: "#E2E8F0", color: "#616B7C" }}>
+          <option value="">Tous pays</option>
+          <option value="BE">Belgique</option><option value="FR">France</option>
+          <option value="NL">Pays-Bas</option><option value="LU">Luxembourg</option><option value="DE">Allemagne</option>
+        </select>
+
+        {/* Status segmented control — always visible & highlighted */}
+        <div className="inline-flex rounded-lg border overflow-hidden" style={{ borderColor: "#E2E8F0" }}>
+          {([
+            { key: "active", label: "Actives uniquement", color: "#059669", bg: "#ECFDF5" },
+            { key: "inactive", label: "Inactives", color: "#8B95A5", bg: "#F1F5F9" },
+            { key: "all", label: "Toutes", color: "#1B5BDA", bg: "#EFF6FF" },
+          ] as const).map(opt => {
+            const selected = statusFilter === opt.key;
+            return (
+              <button
+                key={opt.key}
+                type="button"
+                onClick={() => setStatusFilter(opt.key)}
+                className="text-[12px] px-3 py-2 font-medium transition-colors"
+                style={{
+                  backgroundColor: selected ? opt.bg : "white",
+                  color: selected ? opt.color : "#616B7C",
+                  borderRight: opt.key !== "all" ? "1px solid #E2E8F0" : undefined,
+                }}
+                aria-pressed={selected}
+              >
+                {opt.label}
+              </button>
+            );
+          })}
+        </div>
+
+        <span className="text-[11px] font-medium ml-auto" style={{ color: "#8B95A5" }}>
+          {isLoading ? "Chargement…" : `${filteredOffers.length} résultat${filteredOffers.length !== 1 ? "s" : ""}`}
+        </span>
+      </div>
 
       {/* Offers table */}
       {isLoading ? (
-        <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin" style={{ color: "#1B5BDA" }} /></div>
+        <VCard>
+          <div className="flex flex-col items-center justify-center py-16 text-center gap-3">
+            <Loader2 className="w-8 h-8 animate-spin" style={{ color: "#1B5BDA" }} />
+            <div>
+              <p className="text-[13px] font-medium" style={{ color: "#1D2530" }}>Chargement de vos offres…</p>
+              <p className="text-[11px] mt-1" style={{ color: "#8B95A5" }}>
+                Filtre actif : {statusFilter === "active" ? "Actives uniquement" : statusFilter === "inactive" ? "Inactives" : "Toutes"}
+              </p>
+            </div>
+            {/* Skeleton rows */}
+            <div className="w-full max-w-2xl mt-4 space-y-2">
+              {[0, 1, 2, 3].map(i => (
+                <div key={i} className="h-10 rounded-lg animate-pulse" style={{ backgroundColor: "#F1F5F9" }} />
+              ))}
+            </div>
+          </div>
+        </VCard>
       ) : filteredOffers.length === 0 ? (
         <VCard>
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <Package size={48} style={{ color: "#CBD5E1" }} className="mb-4" />
             <h3 className="text-[15px] font-bold mb-2" style={{ color: "#1D2530" }}>Aucune offre</h3>
             <p className="text-[13px] max-w-md mb-4" style={{ color: "#8B95A5" }}>
-              {search || filterBrand || filterCountry ? "Aucune offre ne correspond à vos filtres." : "Créez vos offres manuellement ou importez-les via XLSX."}
+              {search || filterBrand || filterCountry
+                ? "Aucune offre ne correspond à vos filtres."
+                : statusFilter === "active"
+                  ? "Aucune offre active. Vous avez peut-être des offres inactives — essayez de changer le filtre ci-dessus."
+                  : statusFilter === "inactive"
+                    ? "Aucune offre inactive."
+                    : "Créez vos offres manuellement ou importez-les via XLSX."}
             </p>
-            {!search && !filterBrand && !filterCountry && (
+            {statusFilter === "active" && !search && !filterBrand && !filterCountry && (
+              <button
+                type="button"
+                onClick={() => setStatusFilter("all")}
+                className="text-[12px] font-medium px-3 py-1.5 rounded-lg mb-3 hover:bg-[#EFF6FF]"
+                style={{ color: "#1B5BDA", border: "1px solid #1B5BDA" }}
+              >
+                Voir toutes mes offres (actives + inactives)
+              </button>
+            )}
+            {!search && !filterBrand && !filterCountry && statusFilter !== "inactive" && (
               <div className="flex gap-2">
                 <VBtn primary icon="Plus" onClick={openCreate}>Créer une offre</VBtn>
                 <label className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[13px] font-bold cursor-pointer border transition-colors hover:bg-[#F8FAFC]"

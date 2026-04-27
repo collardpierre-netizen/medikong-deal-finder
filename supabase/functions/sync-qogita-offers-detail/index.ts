@@ -380,13 +380,34 @@ Deno.serve(async (req) => {
 
   let targetCountry = "";
   let fetchMultiVendor = false;
+  let resyncLogId: string | null = null;
   try {
     const body = await req.json();
     if (body?.country) targetCountry = body.country;
     if (body?.multi_vendor) fetchMultiVendor = true;
+    if (body?.resync_log_id) resyncLogId = String(body.resync_log_id);
   } catch {
     // no-op
   }
+
+  // Helper closure: log endpoint errors to qogita_resync_logs (no-op if no resyncLogId)
+  const recordEndpointError = async (endpoint: string, status: number | null, message: string) => {
+    if (!resyncLogId) return;
+    try {
+      await sb.rpc("record_qogita_endpoint_error", {
+        _log_id: resyncLogId,
+        _endpoint: endpoint,
+        _status: status,
+        _error_message: message?.slice(0, 500) ?? null,
+      });
+    } catch (_) { /* swallow — never break sync because of logging */ }
+  };
+  const recordProgress = async (delta: Record<string, number>) => {
+    if (!resyncLogId) return;
+    try {
+      await sb.rpc("record_qogita_resync_progress", { _log_id: resyncLogId, _delta: delta });
+    } catch (_) { /* swallow */ }
+  };
 
   if (!targetCountry) {
     const { data: rows } = await sb.from("qogita_config").select("key, value").eq("key", "default_country");

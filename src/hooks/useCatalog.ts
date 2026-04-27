@@ -315,7 +315,9 @@ export function useCatalogProducts(filters: CatalogFilters) {
 
       const buildProductQuery = () =>
         applyCatalogProductFilters(
-          supabase.from("products").select(PRODUCT_SELECT_FIELDS).eq("is_active", true),
+          applyHiddenCategoryFilter(
+            supabase.from("products").select(PRODUCT_SELECT_FIELDS).eq("is_active", true)
+          ),
           filters,
           filterContext
         );
@@ -325,7 +327,9 @@ export function useCatalogProducts(filters: CatalogFilters) {
           // Use exact count when no heavy filters are applied so the catalogue header
           // shows the real total (~348k). Switch to estimated when filters narrow
           // the result set, for performance on combined OR/IN clauses.
-          supabase.from("products").select("id", { count: hasFilters ? "estimated" : "exact" }).eq("is_active", true),
+          applyHiddenCategoryFilter(
+            supabase.from("products").select("id", { count: hasFilters ? "estimated" : "exact" }).eq("is_active", true)
+          ),
           filters,
           filterContext
         );

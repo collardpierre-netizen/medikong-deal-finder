@@ -852,12 +852,15 @@ export default function VendorMarketIntel() {
               {/* Offres MediKong */}
               {(() => {
                 const allOffers = openRow.medikong_offers || [];
-                // Calcul net pour chaque offre (basé sur la commission du vendeur courant)
+                // Calcul net pour chaque offre (basé sur la commission du vendeur courant).
+                // Pour l'offre "is_mine", on utilise le prix live tapé dans le modal d'ajustement
+                // (s'il y en a un) afin de refléter immédiatement la nouvelle position concurrentielle.
                 const withNet = allOffers.map((o) => {
+                  const priceForCalc = o.is_mine ? effectiveMyPrice : o.price_excl_vat;
                   const net = commissionConfig
-                    ? computeMargin(o.price_excl_vat, openRowPurchasePrice ?? null, commissionConfig).netRevenue
+                    ? computeMargin(priceForCalc, openRowPurchasePrice ?? null, commissionConfig).netRevenue
                     : null;
-                  return { o, net };
+                  return { o, net, priceForCalc };
                 });
                 // Net de l'offre du vendeur courant (référence pour le filtre "mieux/pire")
                 const myNet = withNet.find(({ o }) => o.is_mine)?.net ?? null;

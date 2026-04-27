@@ -323,6 +323,41 @@ async function syncOfferTiers(
     });
   }
 
+  // --- VALIDATION : detect suspicious tier patterns ---
+  // Qogita parfois ne renvoie qu'un seul palier (ex: MOV 15 000 €) alors que
+  // l'offre devrait avoir plusieurs seuils dégressifs. On journalise pour alerter.
+  const degressiveCount = normalized.length;
+  const totalTierCount = tierRows.length;
+  const maxMovSeen = Math.max(movBase || 0, ...normalized.map((t) => t.mov));
+
+  if (totalTierCount <= 1 && maxMovSeen >= SINGLE_TIER_MOV_ALERT_THRESHOLD) {
+    // Seul palier présent + MOV élevé → probablement un payload tronqué
+    console.warn(
+      `[qogita.tiers.validation] SINGLE_TIER_HIGH_MOV ` +
+      `offer_id=${offerId} gtin=${ctx?.gtin ?? "?"} country=${ctx?.country ?? "?"} ` +
+      `vendor=${ctx?.vendor ?? "?"} mov_base=${movBase} raw_tiers_received=${rawTiers.length} ` +
+      `normalized_tiers=${degressiveCount} max_mov=${maxMovSeen}`,
+    );
+    if (ctx?.parentStats) {
+      ctx.parentStats.tier_validation_single_high_mov =
+        (ctx.parentStats.tier_validation_single_high_mov || 0) + 1;
+    }
+  } else if (degressiveCount === 0 && (movBase || 0) > 0) {
+    // Aucun palier dégressif renvoyé alors qu'un MOV de base existe → à signaler
+    console.warn(
+      `[qogita.tiers.validation] NO_DEGRESSIVE_TIERS ` +
+      `offer_id=${offerId} gtin=${ctx?.gtin ?? "?"} country=${ctx?.country ?? "?"} ` +
+      `vendor=${ctx?.vendor ?? "?"} mov_base=${movBase} raw_tiers_received=${rawTiers.length}`,
+    );
+    if (ctx?.parentStats) {
+      ctx.parentStats.tier_validation_no_degressive =
+        (ctx.parentStats.tier_validation_no_degressive || 0) + 1;
+    }
+  } else if (ctx?.parentStats && degressiveCount >= 2) {
+    ctx.parentStats.tier_validation_ok =
+      (ctx.parentStats.tier_validation_ok || 0) + 1;
+  }
+
   // Clean re-sync — wipe previous rows for this offer
   await sb.from("offer_price_tiers").delete().eq("offer_id", offerId);
 

@@ -1349,6 +1349,7 @@ export default function ProductPage() {
                               isTVAC={isTVAC}
                               categoryId={categoryData?.category?.id}
                               bestPrice={bestOffer ? (isTVAC ? bestOffer.unitPriceInclVat : bestOffer.unitPriceEur) : undefined}
+                              discountPercentage={Number((product as any)?.discount_percentage) || 0}
                             />
                           </SafeBoundary>
                         ))}

@@ -209,6 +209,7 @@ export function useProductOffers(productId: string | undefined) {
         .from("offers")
         .select("*")
         .eq("product_id", productId!)
+        .eq("is_active", true)
         .order("price_excl_vat", { ascending: true });
       if (error) throw error;
 

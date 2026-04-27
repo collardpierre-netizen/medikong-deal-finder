@@ -1289,6 +1289,7 @@ export default function ProductPage() {
                             isBest
                             isTVAC={isTVAC}
                             categoryId={categoryData?.category?.id}
+                            discountPercentage={Number((product as any)?.discount_percentage) || 0}
                           />
                         </SafeBoundary>
                       </div>

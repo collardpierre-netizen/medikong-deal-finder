@@ -328,15 +328,22 @@ function OfferRow({
         <span className="text-sm text-foreground whitespace-nowrap">{offer.stockQuantity.toLocaleString("fr-FR")}</span>
 
         {/* Actions */}
-        <div className="flex items-center justify-end gap-2">
-          <div className="flex items-center border border-border rounded-md">
-            <button onClick={() => setQty(Math.max(1, qty - step))} className="px-2.5 py-2 text-muted-foreground hover:text-foreground"><Minus size={14} /></button>
-            <span className="px-3 py-2 text-sm font-medium min-w-[40px] text-center">{qty}</span>
-            <button onClick={() => setQty(Math.min(maxQty, qty + step))} className="px-2.5 py-2 text-muted-foreground hover:text-foreground" disabled={qty >= maxQty}><Plus size={14} /></button>
+        <div className="flex flex-col items-end gap-1">
+          <div className="flex items-center justify-end gap-2">
+            <div className="flex items-center border border-border rounded-md">
+              <button onClick={() => setQty(Math.max(step, qty - step))} className="px-2.5 py-2 text-muted-foreground hover:text-foreground" disabled={qty <= step}><Minus size={14} /></button>
+              <span className="px-3 py-2 text-sm font-medium min-w-[40px] text-center">{qty}</span>
+              <button onClick={() => setQty(Math.min(maxQty, qty + step))} className="px-2.5 py-2 text-muted-foreground hover:text-foreground" disabled={qty >= maxQty}><Plus size={14} /></button>
+            </div>
+            <motion.button className="bg-primary text-primary-foreground p-2.5 rounded-md" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={handleAdd}>
+              <ShoppingCart size={16} />
+            </motion.button>
           </div>
-          <motion.button className="bg-primary text-primary-foreground p-2.5 rounded-md" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={handleAdd}>
-            <ShoppingCart size={16} />
-          </motion.button>
+          {step > 1 && (
+            <span className="text-[11px] text-muted-foreground tabular-nums" title={`Quantité minimum de commande : ${step}. Toute quantité doit être un multiple de ${step}.`}>
+              Lots de {step}
+            </span>
+          )}
         </div>
       </div>
 
@@ -356,16 +363,21 @@ function OfferRow({
           </div>
           <span className="text-base font-bold text-green-700">{formatEur(displayPrice)} € <span className="text-[10px] font-normal text-muted-foreground">{priceLabel}</span></span>
         </div>
-        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+        <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
           {offer.movEur > 0 && <span>MOV {formatEur(offer.movEur)} €</span>}
           <span>Stock {offer.stockQuantity.toLocaleString("fr-FR")}</span>
           <span>Livraison ~{offer.deliveryDays}j</span>
+          {step > 1 && (
+            <span className="font-medium text-foreground" title={`Quantité minimum de commande : ${step}. Toute quantité doit être un multiple de ${step}.`}>
+              Lots de {step}
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <div className="flex items-center border border-border rounded-md flex-1">
-            <button onClick={() => setQty(Math.max(1, qty - 1))} className="px-2.5 py-2 text-muted-foreground"><Minus size={14} /></button>
+            <button onClick={() => setQty(Math.max(step, qty - step))} className="px-2.5 py-2 text-muted-foreground" disabled={qty <= step}><Minus size={14} /></button>
             <span className="px-3 py-2 text-sm font-medium text-center flex-1">{qty}</span>
-            <button onClick={() => setQty(Math.min(maxQty, qty + 1))} className="px-2.5 py-2 text-muted-foreground" disabled={qty >= maxQty}><Plus size={14} /></button>
+            <button onClick={() => setQty(Math.min(maxQty, qty + step))} className="px-2.5 py-2 text-muted-foreground" disabled={qty >= maxQty}><Plus size={14} /></button>
           </div>
           <motion.button className="bg-primary text-primary-foreground px-4 py-2.5 rounded-md text-sm font-medium flex items-center gap-2" whileTap={{ scale: 0.95 }} onClick={handleAdd}>
             <ShoppingCart size={14} /> Ajouter

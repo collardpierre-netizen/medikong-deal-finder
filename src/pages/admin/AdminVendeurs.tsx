@@ -32,7 +32,19 @@ const AdminVendeurs = () => {
   const [statusFilter, setStatusFilter] = useState<VStatus>("all");
   const [activeFilter, setActiveFilter] = useState<ActiveFilter>("all");
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const queryClient = useQueryClient();
+
+  const copyToClipboard = async (value: string, key: string, label: string) => {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopiedKey(key);
+      toast.success(`${label} copié`, { description: value });
+      setTimeout(() => setCopiedKey((k) => (k === key ? null : k)), 1500);
+    } catch {
+      toast.error("Impossible de copier");
+    }
+  };
 
   const toggleShowRealName = async (vendorId: string, current: boolean) => {
     await supabase.from("vendors").update({ show_real_name: !current } as any).eq("id", vendorId);

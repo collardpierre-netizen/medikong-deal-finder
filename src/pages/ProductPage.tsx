@@ -30,12 +30,16 @@ import { RestockSecondChance } from "@/components/product/RestockSecondChance";
 import { MyEncodedPriceBanner } from "@/components/product/MyEncodedPriceBanner";
 import VendorDelegateCompact from "@/components/vendor/VendorDelegateCompact";
 
-function formatEur(n: number): string {
-  return n.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+function formatEur(n: number | null | undefined): string {
+  const v = Number(n);
+  if (!Number.isFinite(v)) return "—";
+  return v.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-function formatCount(n: number): string {
-  return n.toLocaleString("de-DE");
+function formatCount(n: number | null | undefined): string {
+  const v = Number(n);
+  if (!Number.isFinite(v)) return "0";
+  return v.toLocaleString("de-DE");
 }
 
 /* ── % Discount Calculator Sub-component ── */
@@ -342,17 +346,21 @@ function OfferRow({
         <span>Livraison estimée : {offer.deliveryDays ? (offer.deliveryDays <= 7 ? `${offer.deliveryDays} jours` : `${Math.ceil(offer.deliveryDays / 7)} semaines`) : "5-10 jours ouvrables"}</span>
       </div>
 
-      <VendorSuggestions
-        vendorId={offer.sellerId}
-        vendorSlug={offer.sellerSlug}
-        vendorName={offer.sellerName}
-        currentProductId={productId}
-        categoryId={categoryId}
-      />
+      {offer.sellerId && (
+        <VendorSuggestions
+          vendorId={offer.sellerId}
+          vendorSlug={offer.sellerSlug}
+          vendorName={offer.sellerName}
+          currentProductId={productId}
+          categoryId={categoryId}
+        />
+      )}
 
-      <div className="mt-3">
-        <VendorDelegateCompact vendorId={offer.sellerId} />
-      </div>
+      {offer.sellerId && (
+        <div className="mt-3">
+          <VendorDelegateCompact vendorId={offer.sellerId} />
+        </div>
+      )}
     </motion.div>
   );
 }

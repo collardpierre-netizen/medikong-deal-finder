@@ -908,6 +908,7 @@ async function processSingleProduct(
                   try {
                     const inserted = await syncOfferTiers(
                       sb, upsertedOffer.id, oExclVat, oMov, oMoq, vatMultiplier, rawTiers,
+                      { gtin: product.gtin, country, vendor: sellerCode, parentStats },
                     );
                     if (inserted > 0) {
                       parentStats.tiers_synced = (parentStats.tiers_synced || 0) + inserted;

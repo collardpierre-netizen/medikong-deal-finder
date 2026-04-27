@@ -133,13 +133,108 @@ export function AdjustPriceModal({ open, onOpenChange, ctx, invalidateKeys, onPr
         description: `Nouveau prix : ${newPrice.toFixed(2)} € HTVA`,
       });
       onPriceSaved?.(oldPrice, newPrice);
-      // Invalidate veille marché + offers caches
-      qc.invalidateQueries({ queryKey: ["vendor-market-intel"] });
-      qc.invalidateQueries({ queryKey: ["offers"] });
-      qc.invalidateQueries({ queryKey: ["vendor-offers"] });
+
+      // ── Patch chirurgical du cache ─────────────────────────────────────
+      // Plutôt que d'invalider TOUTES les queries (refetch coûteux d'un RPC
+      // qui agrège l'ensemble du catalogue vendeur), on met à jour localement
+      // uniquement la ligne dont l'offre vient de changer.
+      const vat = ctx?.vatRate ?? 0.06;
+      const priceIncl = round2(newPrice * (1 + vat));
+      const offerId = ctx?.offerId;
+      const vendorId = ctx?.vendorId;
+      const productId = ctx?.productId;
+
+      // 1) ["vendor-market-intel", vendorId] : patch in-place de la row
+      //    correspondante + de l'entrée "is_mine" dans medikong_offers
+      if (offerId && vendorId) {
+        qc.setQueriesData<any[]>({ queryKey: ["vendor-market-intel", vendorId] }, (old) => {
+          if (!Array.isArray(old)) return old;
+          let touched = false;
+          const next = old.map((row: any) => {
+            if (row?.my_offer_id !== offerId) return row;
+            touched = true;
+            const patchedOffers = Array.isArray(row.medikong_offers)
+              ? row.medikong_offers.map((o: any) =>
+                  o?.is_mine
+                    ? { ...o, price_excl_vat: newPrice, updated_at: new Date().toISOString() }
+                    : o,
+                )
+              : row.medikong_offers;
+            return {
+              ...row,
+              my_price_excl_vat: newPrice,
+              my_updated_at: new Date().toISOString(),
+              medikong_offers: patchedOffers,
+            };
+          });
+          return touched ? next : old;
+        });
+      }
+
+      // 2) ["offers", ...] / ["vendor-offers", ...] : patch des listes en cache
+      //    contenant cet offer.id (ou des objets de type { offers: [...] }).
+      const patchOfferList = (list: any[]): any[] =>
+        list.map((it: any) => {
+          if (!it) return it;
+          if (it.id === offerId) {
+            return {
+              ...it,
+              price_excl_vat: newPrice,
+              price_incl_vat: priceIncl,
+              updated_at: new Date().toISOString(),
+            };
+          }
+          if (Array.isArray(it.offers)) {
+            return { ...it, offers: patchOfferList(it.offers) };
+          }
+          return it;
+        });
+
+      ["offers", "vendor-offers"].forEach((key) => {
+        qc.setQueriesData<any>({ queryKey: [key] }, (old) => {
+          if (Array.isArray(old)) return patchOfferList(old);
+          if (old && typeof old === "object") {
+            // Objets paginés type { rows: [...] } ou { data: [...] }
+            if (Array.isArray((old as any).rows)) {
+              return { ...(old as any), rows: patchOfferList((old as any).rows) };
+            }
+            if (Array.isArray((old as any).data)) {
+              return { ...(old as any), data: patchOfferList((old as any).data) };
+            }
+            // Cas single-row : { id, ...offer }
+            if ((old as any).id === offerId) {
+              return {
+                ...(old as any),
+                price_excl_vat: newPrice,
+                price_incl_vat: priceIncl,
+                updated_at: new Date().toISOString(),
+              };
+            }
+          }
+          return old;
+        });
+      });
+
+      // 3) Invalidations *passives* : on marque "stale" sans refetch immédiat.
+      //    Elles seront re-fetchées naturellement au prochain mount/focus si
+      //    nécessaire — pas de surcharge réseau pour la session courante.
+      qc.invalidateQueries({ queryKey: ["vendor-market-intel"], refetchType: "none" });
+      qc.invalidateQueries({ queryKey: ["offers"], refetchType: "none" });
+      qc.invalidateQueries({ queryKey: ["vendor-offers"], refetchType: "none" });
+
+      // 4) Caches consommateurs (alertes, historique offres, etc.) déclarés
+      //    par l'appelant : on garde le comportement actif de refetch (le
+      //    parent sait quels caches ont vraiment besoin d'être resynchronisés).
+      if (productId) {
+        // Le snapshot d'audit (offer_margin_snapshots) est inséré côté DB
+        // par trigger : on rafraîchit uniquement la "dernière trace" affichée
+        // dans MarginBreakdownDetails pour cette offre précise.
+        qc.invalidateQueries({ queryKey: ["offer-margin-last-snapshot", offerId] });
+      }
       (invalidateKeys || []).forEach((k) => {
         qc.invalidateQueries({ queryKey: k.filter(Boolean) as string[] });
       });
+
       onOpenChange(false);
     },
     onError: (e: any) => {

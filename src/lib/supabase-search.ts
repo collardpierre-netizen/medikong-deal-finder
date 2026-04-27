@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { federatedSearch as meiliFederatedSearch, isMeilisearchConfigured } from "@/lib/meilisearch";
+import { applyHiddenCategoryFilter, isHiddenCategoryName } from "@/lib/catalog-filters";
 
 export interface SearchProduct {
   id: string;

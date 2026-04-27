@@ -240,6 +240,98 @@ async function resolveVendor(sb: any, sellerCode: string, country: string): Prom
   return inserted.id;
 }
 
+/**
+ * Extract raw price tiers array from a Qogita offer/variant payload.
+ * Tries every known field-name shape Qogita has shipped over time.
+ */
+function extractRawTiers(src: any): any[] {
+  if (!src) return [];
+  const candidates = [
+    src.tiers, src.priceTiers, src.price_tiers,
+    src.discountTiers, src.discount_tiers,
+    src.volumePricing, src.volume_pricing,
+    src.bulkPricing, src.bulk_pricing,
+  ];
+  for (const c of candidates) {
+    if (Array.isArray(c) && c.length > 0) return c;
+  }
+  return [];
+}
+
+/**
+ * Full re-sync of all degressive price tiers for one offer into offer_price_tiers.
+ * - Always inserts tier_index = 0 = base price (unitPriceBase / movBase / moq).
+ * - Then appends every Qogita-provided tier in ascending MOV order.
+ * - Wipes previous rows for that offer (clean re-sync, no orphans).
+ */
+async function syncOfferTiers(
+  sb: any,
+  offerId: string,
+  unitPriceBase: number,
+  movBase: number,
+  moqBase: number,
+  vatMultiplier: number,
+  rawTiers: any[],
+): Promise<number> {
+  if (!offerId || unitPriceBase <= 0) return 0;
+
+  // Normalize + dedupe Qogita tiers
+  const normalized = rawTiers
+    .map((t: any) => {
+      const unit = parseFloat(String(t.price ?? t.unitPrice ?? t.unit_price ?? t.unitPriceExclVat ?? "0")) || 0;
+      const mov = parseFloat(String(t.mov ?? t.threshold ?? t.minOrderValue ?? t.minimumOrderValue ?? "0")) || 0;
+      const minQty = parseInt(String(t.moq ?? t.minQuantity ?? t.minimumQuantity ?? "0"), 10) || 0;
+      return { unit, mov, minQty };
+    })
+    .filter((t) => t.unit > 0 && (t.mov > 0 || t.minQty > 0));
+
+  // Sort ascending by MOV (then by qty as fallback)
+  normalized.sort((a, b) => (a.mov - b.mov) || (a.minQty - b.minQty));
+
+  // Build full tier list: index 0 = base, then degressive tiers
+  const tierRows: any[] = [];
+
+  tierRows.push({
+    offer_id: offerId,
+    tier_index: 0,
+    mov_threshold: movBase > 0 ? movBase : 0,
+    mov_currency: "EUR",
+    qogita_unit_price: unitPriceBase,
+    price_excl_vat: unitPriceBase,
+    price_incl_vat: Math.round(unitPriceBase * vatMultiplier * 100) / 100,
+    is_active: true,
+  });
+
+  let nextIndex = 1;
+  for (const t of normalized) {
+    // Skip tier identical to base (avoid duplicates)
+    if (Math.abs(t.unit - unitPriceBase) < 0.01 && Math.abs(t.mov - (movBase || 0)) < 0.01) continue;
+    tierRows.push({
+      offer_id: offerId,
+      tier_index: nextIndex++,
+      mov_threshold: t.mov > 0 ? t.mov : 0,
+      mov_currency: "EUR",
+      qogita_unit_price: t.unit,
+      price_excl_vat: t.unit,
+      price_incl_vat: Math.round(t.unit * vatMultiplier * 100) / 100,
+      is_active: true,
+    });
+  }
+
+  // Clean re-sync — wipe previous rows for this offer
+  await sb.from("offer_price_tiers").delete().eq("offer_id", offerId);
+
+  if (tierRows.length === 0) return 0;
+  const { error } = await sb.from("offer_price_tiers").insert(tierRows);
+  if (error) {
+    console.error(formatDbError("qogita.offers_detail.tiers.insert", error, {
+      offer_id: offerId, tiers_count: tierRows.length,
+    }));
+    return 0;
+  }
+  return tierRows.length;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   const startTime = Date.now();
@@ -632,8 +724,17 @@ async function processSingleProduct(
       const delayDays = parseDeliveryDays(variant?.delay);
       const offerQid = variant?.qid ? `${variant.qid}-${country}` : `${product.gtin}-${country}`;
 
+      // MOQ / MOV / tiers from variant payload (best-price branch)
+      const bpBundleRaw =
+        variant?.bundleSize ?? variant?.bundle_size ??
+        variant?.minOrderQuantity ?? variant?.moq ??
+        variant?.minimumOrderQuantity ?? 1;
+      const bpMoq = Math.max(1, parseInt(String(bpBundleRaw), 10) || 1);
+      const bpMov = parseFloat(String(variant?.mov ?? variant?.minimumOrderValue ?? "0")) || 0;
+      const bpRawTiers = extractRawTiers(variant);
+
       if (priceExclVat > 0) {
-        const { error: offerErr } = await sb.from("offers").upsert(
+        const { data: bpUpserted, error: offerErr } = await sb.from("offers").upsert(
           {
             product_id: product.id,
             vendor_id: bestPriceVendorId,
@@ -645,8 +746,8 @@ async function processSingleProduct(
             price_excl_vat: priceExclVat,
             price_incl_vat: priceInclVat > 0 ? priceInclVat : Math.round(priceExclVat * vatMultiplier * 100) / 100,
             vat_rate: vatRate,
-            moq: 1,
-            mov: null,
+            moq: bpMoq,
+            mov: bpMov > 0 ? bpMov : null,
             stock_quantity: stockQty,
             stock_status: stockQty > 0 ? "in_stock" : "out_of_stock",
             delivery_days: delayDays,
@@ -656,7 +757,7 @@ async function processSingleProduct(
           },
           // Aligned with multi-vendor upsert — qogita_offer_qid is the canonical key.
           { onConflict: "qogita_offer_qid", ignoreDuplicates: false },
-        );
+        ).select("id").maybeSingle();
 
         if (offerErr) {
           localStats.errors++;
@@ -667,8 +768,19 @@ async function processSingleProduct(
           }));
         } else {
           localStats.offers_upserted++;
+
+          // --- Sync ALL price tiers (base + degressive thresholds) ---
+          if (bpUpserted?.id) {
+            const inserted = await syncOfferTiers(
+              sb, bpUpserted.id, priceExclVat, bpMov, bpMoq, vatMultiplier, bpRawTiers,
+            );
+            if (inserted > 0) {
+              parentStats.tiers_synced = (parentStats.tiers_synced || 0) + inserted;
+            }
+          }
         }
       }
+
 
       // --- Multi-vendor offers ---
       if (fetchMultiVendor && variant?.fid && variant?.slug) {
@@ -711,13 +823,7 @@ async function processSingleProduct(
               const oMoq = Math.max(1, parseInt(String(bundleRaw), 10) || 1);
 
               // --- Price tiers (degressive pricing by MOV threshold) ---
-              // Try multiple candidate field names: tiers, priceTiers, price_tiers, discounts
-              const rawTiers: any[] =
-                (Array.isArray(offer.tiers) && offer.tiers) ||
-                (Array.isArray(offer.priceTiers) && offer.priceTiers) ||
-                (Array.isArray(offer.price_tiers) && offer.price_tiers) ||
-                (Array.isArray(offer.discountTiers) && offer.discountTiers) ||
-                [];
+              const rawTiers: any[] = extractRawTiers(offer);
 
               const { data: upsertedOffer, error: mvErr } = await sb.from("offers").upsert(
                 {
@@ -756,39 +862,14 @@ async function processSingleProduct(
               } else {
                 localStats.multi_vendor_offers++;
 
-                // --- Sync price tiers if present ---
-                if (upsertedOffer?.id && rawTiers.length > 0) {
+                // --- Sync ALL price tiers (base + degressive thresholds) ---
+                if (upsertedOffer?.id) {
                   try {
-                    // Wipe previous tiers for this offer (clean re-sync)
-                    await sb.from("offer_price_tiers").delete().eq("offer_id", upsertedOffer.id);
-
-                    const tierRows = rawTiers
-                      .map((t: any, idx: number) => {
-                        const unitPrice = parseFloat(String(t.price ?? t.unitPrice ?? t.unit_price ?? "0")) || 0;
-                        const movThr = parseFloat(String(t.mov ?? t.threshold ?? t.minOrderValue ?? "0")) || 0;
-                        if (unitPrice <= 0) return null;
-                        return {
-                          offer_id: upsertedOffer.id,
-                          tier_index: idx,
-                          mov_threshold: movThr,
-                          mov_currency: "EUR",
-                          qogita_unit_price: unitPrice,
-                          price_excl_vat: unitPrice,
-                          price_incl_vat: Math.round(unitPrice * vatMultiplier * 100) / 100,
-                          is_active: true,
-                        };
-                      })
-                      .filter(Boolean);
-
-                    if (tierRows.length > 0) {
-                      const { error: tiersErr } = await sb.from("offer_price_tiers").insert(tierRows);
-                      if (tiersErr) {
-                        console.error(formatDbError("qogita.offers_detail.tiers.insert", tiersErr, {
-                          offer_id: upsertedOffer.id, tiers_count: tierRows.length,
-                        }));
-                      } else {
-                        parentStats.tiers_synced = (parentStats.tiers_synced || 0) + tierRows.length;
-                      }
+                    const inserted = await syncOfferTiers(
+                      sb, upsertedOffer.id, oExclVat, oMov, oMoq, vatMultiplier, rawTiers,
+                    );
+                    if (inserted > 0) {
+                      parentStats.tiers_synced = (parentStats.tiers_synced || 0) + inserted;
                     }
                   } catch (tErr: any) {
                     console.error(`[qogita.tiers] error offer=${upsertedOffer.id}: ${tErr.message}`);

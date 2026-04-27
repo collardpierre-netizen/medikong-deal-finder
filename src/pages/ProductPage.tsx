@@ -282,25 +282,33 @@ function OfferRow({
                 })}
             </div>
           ) : hasOfferPriceTiers ? (
-            <div className="relative pl-4">
-              <div className="absolute left-[3px] top-[7px] w-px border-l border-dashed border-muted-foreground/40" style={{ height: `calc(100% - 14px)` }} />
-              {offerPriceTiers
-                .sort((a, b) => a.tier_index - b.tier_index)
-                .map((tier, i) => {
-                  const basePrice = offerPriceTiers[0].price_excl_vat;
-                  const tierPrice = isTVAC ? tier.price_incl_vat : tier.price_excl_vat;
-                  const saving = i > 0 ? ((basePrice - tier.price_excl_vat) / basePrice * 100).toFixed(1) : null;
-                  return (
-                    <div key={tier.id} className="grid grid-cols-[5.5rem_9rem_3rem] items-center gap-x-2 relative whitespace-nowrap" style={{ marginTop: i > 0 ? 4 : 0 }}>
-                      <div className="absolute left-[-14px] w-[7px] h-[7px] rounded-full bg-primary" />
-                      <span className={`text-sm tabular-nums ${i === 0 ? "font-bold text-green-700" : "text-muted-foreground"}`}>
-                        {formatEur(tierPrice)}&nbsp;€
-                      </span>
-                      <span className="text-xs text-muted-foreground tabular-nums">MOV&nbsp;{formatEur(tier.mov_threshold)}&nbsp;€</span>
-                      <span className="text-xs text-green-600 font-medium tabular-nums text-right">{saving ? `-${saving}%` : ""}</span>
-                    </div>
-                  );
-                })}
+            <div>
+              <div className="flex items-center gap-1.5 text-[11px] font-semibold text-foreground mb-1.5">
+                <TrendingDown size={12} className="text-green-600" />
+                Prix dégressifs selon le montant commandé
+              </div>
+              <div className="relative pl-4">
+                <div className="absolute left-[3px] top-[7px] w-px border-l border-dashed border-muted-foreground/40" style={{ height: `calc(100% - 14px)` }} />
+                {offerPriceTiers
+                  .sort((a, b) => a.tier_index - b.tier_index)
+                  .map((tier, i) => {
+                    const basePrice = offerPriceTiers[0].price_excl_vat;
+                    const tierPrice = isTVAC ? tier.price_incl_vat : tier.price_excl_vat;
+                    const saving = i > 0 ? ((basePrice - tier.price_excl_vat) / basePrice * 100).toFixed(1) : null;
+                    return (
+                      <div key={tier.id} className="grid grid-cols-[5.5rem_9rem_3rem] items-center gap-x-2 relative whitespace-nowrap" style={{ marginTop: i > 0 ? 4 : 0 }}>
+                        <div className="absolute left-[-14px] w-[7px] h-[7px] rounded-full bg-primary" />
+                        <span className={`text-sm tabular-nums ${i === 0 ? "font-bold text-green-700" : "text-muted-foreground"}`}>
+                          {formatEur(tierPrice)}&nbsp;€
+                        </span>
+                        <span className="text-xs text-muted-foreground tabular-nums">
+                          {tier.mov_threshold > 0 ? <>≥ MOV&nbsp;{formatEur(tier.mov_threshold)}&nbsp;€</> : "Prix de base"}
+                        </span>
+                        <span className="text-xs text-green-600 font-medium tabular-nums text-right">{saving ? `-${saving}%` : ""}</span>
+                      </div>
+                    );
+                  })}
+              </div>
             </div>
           ) : hasLegacyTiers ? (
             <div className="relative pl-4">
@@ -363,8 +371,41 @@ function OfferRow({
           </div>
           <span className="text-base font-bold text-green-700">{formatEur(displayPrice)} € <span className="text-[10px] font-normal text-muted-foreground">{priceLabel}</span></span>
         </div>
+
+        {/* Mobile: degressive price tiers */}
+        {hasOfferPriceTiers && (
+          <div className="rounded-md border border-border bg-muted/30 p-2.5">
+            <div className="flex items-center gap-1.5 text-[11px] font-semibold text-foreground mb-1.5">
+              <TrendingDown size={12} className="text-green-600" />
+              Prix dégressifs selon le montant commandé
+            </div>
+            <div className="grid grid-cols-3 gap-1.5">
+              {offerPriceTiers
+                .sort((a, b) => a.tier_index - b.tier_index)
+                .map((tier, i) => {
+                  const basePrice = offerPriceTiers[0].price_excl_vat;
+                  const tierPrice = isTVAC ? tier.price_incl_vat : tier.price_excl_vat;
+                  const saving = i > 0 ? ((basePrice - tier.price_excl_vat) / basePrice * 100).toFixed(1) : null;
+                  return (
+                    <div key={tier.id} className="flex flex-col items-start gap-0.5 rounded-sm bg-background px-2 py-1.5 border border-border/60">
+                      <span className={`text-[12px] tabular-nums leading-tight ${i === 0 ? "font-bold text-green-700" : "font-semibold text-foreground"}`}>
+                        {formatEur(tierPrice)}&nbsp;€
+                      </span>
+                      <span className="text-[10px] text-muted-foreground tabular-nums leading-tight">
+                        {tier.mov_threshold > 0 ? <>≥ {formatEur(tier.mov_threshold)}&nbsp;€</> : "Base"}
+                      </span>
+                      {saving && (
+                        <span className="text-[10px] text-green-600 font-medium tabular-nums leading-tight">-{saving}%</span>
+                      )}
+                    </div>
+                  );
+                })}
+            </div>
+          </div>
+        )}
+
         <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
-          {offer.movEur > 0 && <span>MOV {formatEur(offer.movEur)} €</span>}
+          {!hasOfferPriceTiers && offer.movEur > 0 && <span>MOV {formatEur(offer.movEur)} €</span>}
           <span>Stock {offer.stockQuantity.toLocaleString("fr-FR")}</span>
           <span>Livraison ~{offer.deliveryDays}j</span>
           {step > 1 && (

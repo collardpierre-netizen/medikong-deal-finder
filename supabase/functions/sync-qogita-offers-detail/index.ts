@@ -993,12 +993,11 @@ async function processSingleProduct(
               const oQid = offer.qid || `${sellerCode}-${product.gtin}-${country}`;
 
               // --- MOQ / bundleSize mapping (Qogita "Bundles of N") ---
-              // Try multiple candidate field names for robustness
-              const bundleRaw =
-                offer.bundleSize ?? offer.bundle_size ??
-                offer.minOrderQuantity ?? offer.moq ??
-                offer.minimumOrderQuantity ?? 1;
-              const oMoq = Math.max(1, parseInt(String(bundleRaw), 10) || 1);
+              // Take MAX when both bundle* and moq fields are exposed (a buyer
+              // must satisfy both). Coherence check below logs the divergence.
+              const oBundleVal = parseInt(String(offer.bundleSize ?? offer.bundle_size ?? "0"), 10) || 0;
+              const oMoqVal = parseInt(String(offer.minOrderQuantity ?? offer.moq ?? offer.minimumOrderQuantity ?? "0"), 10) || 0;
+              const oMoq = Math.max(1, oBundleVal, oMoqVal);
 
               // --- Price tiers (degressive pricing by MOV threshold) ---
               const rawTiers: any[] = extractRawTiers(offer);

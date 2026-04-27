@@ -6,7 +6,7 @@ import { getLocalizedName } from "@/lib/localization";
 import { applyHiddenCategoryFilter } from "@/lib/catalog-filters";
 import { useCallback, useMemo } from "react";
 
-const PRODUCT_SELECT_FIELDS = "id, slug, name, name_fr, name_nl, name_de, brand_name, brand_id, category_id, category_name, gtin, cnk_code, image_url, image_urls, short_description, is_promotion, promotion_label, best_price_excl_vat, best_price_incl_vat, offer_count, total_stock, is_in_stock, created_at";
+const PRODUCT_SELECT_FIELDS = "id, slug, name, name_fr, name_nl, name_de, brand_name, brand_id, category_id, category_name, gtin, cnk_code, image_url, image_urls, short_description, is_promotion, promotion_label, best_price_excl_vat, best_price_incl_vat, best_bundle_size, offer_count, total_stock, is_in_stock, created_at";
 const CATALOG_QUERY_TIMEOUT_MS = 8000;
 const CATALOG_COUNT_TIMEOUT_MS = 4000;
 const CATEGORY_COUNT_TIMEOUT_MS = 3000;
@@ -155,6 +155,7 @@ export interface CatalogProduct {
   promotion_label: string | null;
   best_price_excl_vat: number | null;
   best_price_incl_vat: number | null;
+  best_bundle_size: number | null;
   offer_count: number;
   total_stock: number;
   is_in_stock: boolean;

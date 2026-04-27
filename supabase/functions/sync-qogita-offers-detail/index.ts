@@ -477,7 +477,7 @@ async function syncOffers(
       const chunk = chunks[chunkIndex];
       const currentChunkEnd = Math.min(batchStart + (chunkIndex + 1) * executionProfile.parallelConcurrency, batchEnd);
       const results = await Promise.allSettled(
-        chunk.map((p) =>
+        chunk.map((p: any) =>
           processSingleProduct(sb, p, baseUrl, token, country, vatRate, vatMultiplier, bestPriceVendorId, fetchMultiVendor, stats)
         )
       );

@@ -136,7 +136,7 @@ async function setupIndexes() {
 }
 
 // Bulk sync a table to an index
-async function bulkSync(supabase: ReturnType<typeof createClient>, table: string, indexUid: string, transform?: (row: any) => any, filter?: { column: string; value: any }) {
+async function bulkSync(supabase: any, table: string, indexUid: string, transform?: (row: any) => any, filter?: { column: string; value: any }) {
   const BATCH = 1000;
   let offset = 0;
   let total = 0;
@@ -333,7 +333,8 @@ serve(async (req) => {
     });
   } catch (error) {
     console.error("sync-meilisearch error:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    const message = error instanceof Error ? error.message : String(error);
+    return new Response(JSON.stringify({ error: message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

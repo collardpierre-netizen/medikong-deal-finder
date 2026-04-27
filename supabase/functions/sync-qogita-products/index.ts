@@ -23,6 +23,9 @@ const UPSERT_BATCH = 150;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
+type QueryRows<T> = { data: T[] | null; error: { message?: string } | null };
+type ProductLookupRow = { id: string; qogita_qid: string | null; gtin: string | null; slug: string | null };
+
 // Retry x3 avec backoff exponentiel (250ms, 750ms, 2.25s) — filet de sécurité
 // pour les vraies erreurs transientes (timeouts réseau, 502 sporadiques).
 async function withRetry<T>(
@@ -254,6 +257,7 @@ async function tusCreate(bucket: string, objectName: string, totalSize: number):
 }
 
 async function tusPatch(uploadUrl: string, offset: number, body: Uint8Array): Promise<number> {
+  const requestBody = body.buffer.slice(body.byteOffset, body.byteOffset + body.byteLength) as ArrayBuffer;
   const res = await fetch(uploadUrl, {
     method: "PATCH",
     headers: {
@@ -264,7 +268,7 @@ async function tusPatch(uploadUrl: string, offset: number, body: Uint8Array): Pr
       "Content-Type": "application/offset+octet-stream",
       "Content-Length": String(body.length),
     },
-    body,
+    body: requestBody,
   });
   if (!res.ok) {
     const t = await res.text().catch(() => "");
@@ -620,8 +624,8 @@ async function processBatch(
 
   if (parsedRows.length === 0) return 0;
 
-  const qids = parsedRows.map((row) => row.qid);
-  const gtins = parsedRows.map((row) => row.gtin).filter(Boolean);
+  const qids = parsedRows.map((row: any) => row.qid);
+  const gtins = parsedRows.map((row: any) => row.gtin).filter((gtin: string | null): gtin is string => Boolean(gtin));
 
   const [existingByQidRes, existingByGtinRes] = await Promise.all([
     qids.length > 0
@@ -632,13 +636,21 @@ async function processBatch(
       ? withRetry("select products by gtin", () =>
           sb.from("products").select("id, qogita_qid, gtin, slug").in("gtin", gtins))
       : Promise.resolve({ data: [], error: null }),
-  ]);
+  ]) as [QueryRows<ProductLookupRow>, QueryRows<ProductLookupRow>];
 
   if (existingByQidRes.error) throw existingByQidRes.error;
   if (existingByGtinRes.error) throw existingByGtinRes.error;
 
-  const existingByQid = new Map((existingByQidRes.data || []).map((row: any) => [row.qogita_qid, row]));
-  const existingByGtin = new Map((existingByGtinRes.data || []).map((row: any) => [row.gtin, row]));
+  const existingByQid = new Map<string, ProductLookupRow>(
+    (existingByQidRes.data || [])
+      .filter((row): row is ProductLookupRow & { qogita_qid: string } => Boolean(row.qogita_qid))
+      .map((row) => [row.qogita_qid, row]),
+  );
+  const existingByGtin = new Map<string, ProductLookupRow>(
+    (existingByGtinRes.data || [])
+      .filter((row): row is ProductLookupRow & { gtin: string } => Boolean(row.gtin))
+      .map((row) => [row.gtin, row]),
+  );
 
   for (const row of parsedRows) {
     const existingQidRow = existingByQid.get(row.qid);
@@ -689,8 +701,10 @@ async function processBatch(
     });
   }
 
-  const { data: prods } = await withRetry("select products by qid (post)", () =>
-    sb.from("products").select("id, qogita_qid").in("qogita_qid", qids));
+  const { data: prods } = await withRetry<QueryRows<{ id: string; qogita_qid: string | null }>>(
+    "select products by qid (post)",
+    () => sb.from("products").select("id, qogita_qid").in("qogita_qid", qids),
+  );
   const m = new Map((prods || []).map((p: any) => [p.qogita_qid, p.id]));
 
   const countryStats = csvData
@@ -739,9 +753,9 @@ async function linkBrandsAndCategories(sb: any, country: string, logId: string) 
   }).eq("id", logId);
 
   const { data: ab } = await sb.from("brands").select("id, name").limit(10000);
-  const bm = new Map((ab || []).map((b: any) => [b.name, b.id]));
+  const bm = new Map<string, string>(((ab || []) as Array<{ id: string; name: string }>).map((b) => [b.name, b.id]));
   const { data: ac } = await sb.from("categories").select("id, name").limit(10000);
-  const cm = new Map((ac || []).map((c: any) => [c.name, c.id]));
+  const cm = new Map<string, string>(((ac || []) as Array<{ id: string; name: string }>).map((c) => [c.name, c.id]));
 
   let linked = 0;
   while (true) {
@@ -749,7 +763,7 @@ async function linkBrandsAndCategories(sb: any, country: string, logId: string) 
       .eq("source", "qogita").is("brand_id", null).not("brand_name", "is", null).limit(1000);
     if (!nb?.length) break;
     const byB = new Map<string, string[]>();
-    for (const p of nb) {
+    for (const p of (nb || []) as Array<{ id: string; brand_name: string }>) {
       const bid = bm.get(p.brand_name);
       if (bid) { if (!byB.has(bid)) byB.set(bid, []); byB.get(bid)!.push(p.id); }
     }
@@ -768,7 +782,7 @@ async function linkBrandsAndCategories(sb: any, country: string, logId: string) 
       .eq("source", "qogita").is("category_id", null).not("category_name", "is", null).limit(1000);
     if (!nc?.length) break;
     const byC = new Map<string, string[]>();
-    for (const p of nc) {
+    for (const p of (nc || []) as Array<{ id: string; category_name: string }>) {
       const cid = cm.get(p.category_name);
       if (cid) { if (!byC.has(cid)) byC.set(cid, []); byC.get(cid)!.push(p.id); }
     }

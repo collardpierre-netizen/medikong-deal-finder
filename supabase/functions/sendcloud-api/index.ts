@@ -38,7 +38,7 @@ function sendcloudHeaders(): Record<string, string> {
   };
 }
 
-async function logApiCall(supabase: ReturnType<typeof createClient>, userId: string | null, operation: string, statusCode: number, durationMs: number, errorMessage?: string) {
+async function logApiCall(supabase: any, userId: string | null, operation: string, statusCode: number, durationMs: number, errorMessage?: string) {
   await supabase.from("restock_sendcloud_api_logs").insert({
     user_id: userId,
     operation,

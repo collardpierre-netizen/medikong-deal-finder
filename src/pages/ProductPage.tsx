@@ -328,15 +328,22 @@ function OfferRow({
         <span className="text-sm text-foreground whitespace-nowrap">{offer.stockQuantity.toLocaleString("fr-FR")}</span>
 
         {/* Actions */}
-        <div className="flex items-center justify-end gap-2">
-          <div className="flex items-center border border-border rounded-md">
-            <button onClick={() => setQty(Math.max(1, qty - step))} className="px-2.5 py-2 text-muted-foreground hover:text-foreground"><Minus size={14} /></button>
-            <span className="px-3 py-2 text-sm font-medium min-w-[40px] text-center">{qty}</span>
-            <button onClick={() => setQty(Math.min(maxQty, qty + step))} className="px-2.5 py-2 text-muted-foreground hover:text-foreground" disabled={qty >= maxQty}><Plus size={14} /></button>
+        <div className="flex flex-col items-end gap-1">
+          <div className="flex items-center justify-end gap-2">
+            <div className="flex items-center border border-border rounded-md">
+              <button onClick={() => setQty(Math.max(step, qty - step))} className="px-2.5 py-2 text-muted-foreground hover:text-foreground" disabled={qty <= step}><Minus size={14} /></button>
+              <span className="px-3 py-2 text-sm font-medium min-w-[40px] text-center">{qty}</span>
+              <button onClick={() => setQty(Math.min(maxQty, qty + step))} className="px-2.5 py-2 text-muted-foreground hover:text-foreground" disabled={qty >= maxQty}><Plus size={14} /></button>
+            </div>
+            <motion.button className="bg-primary text-primary-foreground p-2.5 rounded-md" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={handleAdd}>
+              <ShoppingCart size={16} />
+            </motion.button>
           </div>
-          <motion.button className="bg-primary text-primary-foreground p-2.5 rounded-md" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={handleAdd}>
-            <ShoppingCart size={16} />
-          </motion.button>
+          {step > 1 && (
+            <span className="text-[11px] text-muted-foreground tabular-nums" title={`Quantité minimum de commande : ${step}. Toute quantité doit être un multiple de ${step}.`}>
+              Lots de {step}
+            </span>
+          )}
         </div>
       </div>
 

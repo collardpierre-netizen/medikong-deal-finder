@@ -46,6 +46,32 @@ export function AdjustPriceModal({ open, onOpenChange, ctx, invalidateKeys }: Pr
   const qc = useQueryClient();
   const [newPrice, setNewPrice] = useState<string>("");
 
+  // Vendor commission config (used to compute net & margin breakdown live)
+  const { data: commissionConfig } = useVendorCommissionConfig(ctx?.vendorId ?? null);
+
+  // Vendor's purchase price for this product (offer override > vendor default)
+  const { data: purchasePrice } = useQuery({
+    enabled: !!ctx?.offerId && !!ctx?.vendorId && !!ctx?.productId,
+    queryKey: ["vendor-purchase-price", ctx?.offerId, ctx?.vendorId, ctx?.productId],
+    queryFn: async (): Promise<number | null> => {
+      if (!ctx?.offerId || !ctx?.vendorId || !ctx?.productId) return null;
+      const [{ data: offer }, { data: dflt }] = await Promise.all([
+        supabase.from("offers").select("purchase_price_excl_vat").eq("id", ctx.offerId).maybeSingle(),
+        supabase
+          .from("vendor_product_costs")
+          .select("default_purchase_price_excl_vat")
+          .eq("vendor_id", ctx.vendorId)
+          .eq("product_id", ctx.productId)
+          .maybeSingle(),
+      ]);
+      const o = (offer as any)?.purchase_price_excl_vat;
+      if (o != null) return Number(o);
+      const d = (dflt as any)?.default_purchase_price_excl_vat;
+      if (d != null) return Number(d);
+      return null;
+    },
+  });
+
   // Lowest competing price (across MK and external)
   const lowestCompetitor = useMemo(() => {
     if (!ctx) return null;

@@ -3,8 +3,9 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import {
   RefreshCw, AlertTriangle, CheckCircle2, ExternalLink, Search,
-  Filter, Package, FileQuestion,
+  Filter, Package, FileQuestion, Zap,
 } from "lucide-react";
+import { toast } from "sonner";
 
 type IssueCode = "missing_moq" | "bundle_moq_mismatch" | string;
 
@@ -137,6 +138,27 @@ export default function AdminOfferDataQuality() {
     }
   };
 
+  const [syncing, setSyncing] = useState(false);
+
+  const runBundleSync = async (onlyFlagged: boolean) => {
+    setSyncing(true);
+    try {
+      const { data, error } = await supabase.rpc("refresh_best_bundle_sizes", {
+        _only_flagged: onlyFlagged,
+      });
+      if (error) throw error;
+      const result = data as any;
+      toast.success(
+        `Sync « Lots de N » terminée — ${result?.products_updated ?? 0} produits mis à jour, ${result?.logs_resolved ?? 0} anomalies résolues.`
+      );
+      await load();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erreur lors de la synchronisation");
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -149,14 +171,34 @@ export default function AdminOfferDataQuality() {
             Offres signalées par le système de logs (MOQ manquant, incohérences post-sync, etc.).
           </p>
         </div>
-        <button
-          onClick={load}
-          disabled={loading}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-50"
-        >
-          <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
-          Actualiser
-        </button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={() => runBundleSync(true)}
+            disabled={syncing || loading}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50"
+            title="Recalcule la valeur « Lots de N » uniquement pour les produits actuellement signalés"
+          >
+            <Zap size={16} className={syncing ? "animate-pulse" : ""} />
+            {syncing ? "Sync en cours..." : "Sync maintenant (signalés)"}
+          </button>
+          <button
+            onClick={() => runBundleSync(false)}
+            disabled={syncing || loading}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-amber-600 text-amber-700 hover:bg-amber-50 disabled:opacity-50"
+            title="Recalcule la valeur « Lots de N » pour TOUS les produits actifs"
+          >
+            <Zap size={16} />
+            Sync global
+          </button>
+          <button
+            onClick={load}
+            disabled={loading}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-50"
+          >
+            <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
+            Actualiser
+          </button>
+        </div>
       </div>
 
       {/* Stats */}

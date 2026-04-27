@@ -22,6 +22,59 @@ function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
+/**
+ * Coherence check: Qogita exposes the same "minimum bundle" concept under
+ * several field names (`bundleSize`, `bundle_size`, `moq`, `minOrderQuantity`,
+ * `minimumOrderQuantity`). When two candidates exist on the same payload but
+ * disagree, the offer is ambiguous and must be flagged for manual review.
+ *
+ * Logs the mismatch (deduped by product/offer/issue) into
+ * `offer_data_quality_logs` via the `log_offer_data_issue` RPC. Failures are
+ * swallowed to never break a sync run.
+ */
+async function checkBundleMoqCoherence(
+  sb: any,
+  payload: any,
+  ctx: { product_id: string; offer_id?: string | null; gtin?: string | null; country: string; vendor: string },
+): Promise<void> {
+  if (!payload || typeof payload !== "object") return;
+
+  const parseInt1 = (v: any): number | null => {
+    if (v === null || v === undefined || v === "") return null;
+    const n = parseInt(String(v), 10);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  };
+
+  const bundle = parseInt1(payload.bundleSize) ?? parseInt1(payload.bundle_size);
+  const moq =
+    parseInt1(payload.minOrderQuantity) ??
+    parseInt1(payload.moq) ??
+    parseInt1(payload.minimumOrderQuantity);
+
+  if (bundle === null || moq === null) return; // need both to compare
+  if (bundle === moq) return;
+
+  try {
+    await sb.rpc("log_offer_data_issue", {
+      _product_id: ctx.product_id,
+      _offer_id: ctx.offer_id ?? null,
+      _issue_code: "bundle_moq_mismatch",
+      _details: {
+        gtin: ctx.gtin,
+        country: ctx.country,
+        vendor: ctx.vendor,
+        bundle_size: bundle,
+        moq,
+        kept: Math.max(bundle, moq),
+        source: "sync-qogita-offers-detail",
+      },
+    });
+  } catch (err) {
+    console.warn("[bundle_moq_mismatch] log RPC failed", { gtin: ctx.gtin, err: String(err) });
+  }
+}
+
+
 // --- Qogita rate limiter (token bucket en mémoire) ---
 // Lisse les appels à ~4 req/s globales pour cette instance d'edge function,
 // indépendamment de la concurrence interne. Évite les pics 429.

@@ -330,6 +330,11 @@ const AdminCategories = () => {
         .neq("is_active", newActive);
       const prodIds = (prods ?? []).map((r: any) => r.id);
 
+      // Mémorise pour un éventuel "force" si garde-fou bloque
+      if (!newActive) {
+        lastBulkBatchRef.current = { table: "categories", ids: allIds, cascadeProductIds: prodIds };
+      }
+
       // Update categories
       const { error: catError } = await supabase.from("categories").update({ is_active: newActive }).in("id", allIds);
       if (catError) throw catError;
@@ -356,8 +361,7 @@ const AdminCategories = () => {
       qc.invalidateQueries({ queryKey: ["admin-products"] });
       qc.invalidateQueries({ queryKey: ["category-bulk-actions"] });
     },
-    onError: (e: any) => toast.error(e.message),
-  });
+    onError: handleBulkError,
 
   const handleAutoTranslate = async (locale: "fr" | "nl" | "de") => {
     // Collect categories without translation

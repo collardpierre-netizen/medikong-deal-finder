@@ -800,17 +800,28 @@ export default function VendorMarketIntel() {
               )}
             </DialogTitle>
           </DialogHeader>
-          {openRow && (
+          {openRow && (() => {
+            // Prix utilisé pour les calculs : prix saisi en live dans le modal d'ajustement
+            // s'il est valide, sinon le prix de l'offre actuelle.
+            const effectiveMyPrice =
+              livePrice != null && livePrice > 0 ? livePrice : openRow.my_price_excl_vat;
+            const isLive = livePrice != null && livePrice > 0 && livePrice !== openRow.my_price_excl_vat;
+            return (
             <div className="space-y-6">
               {/* Marge & commission sur l'offre actuelle du vendeur */}
               {commissionConfig && (
                 <section>
                   <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
                     <Wand2 size={14} /> Mon offre — marge & commission MediKong
+                    {isLive && (
+                      <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800">
+                        Aperçu live · {effectiveMyPrice.toFixed(2)} €
+                      </span>
+                    )}
                   </h3>
                   <MarginInsightCard
                     breakdown={computeMargin(
-                      openRow.my_price_excl_vat,
+                      effectiveMyPrice,
                       openRowPurchasePrice ?? null,
                       commissionConfig,
                     )}
@@ -819,7 +830,7 @@ export default function VendorMarketIntel() {
                   <div className="mt-2">
                     <MarginBreakdownDetails
                       breakdown={computeMargin(
-                        openRow.my_price_excl_vat,
+                        effectiveMyPrice,
                         openRowPurchasePrice ?? null,
                         commissionConfig,
                       )}

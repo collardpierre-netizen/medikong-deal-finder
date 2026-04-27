@@ -24,6 +24,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Checkbox } from "@/components/ui/checkbox";
 import CategoryKeywordDisableDialog from "@/components/admin/CategoryKeywordDisableDialog";
 import CategoryReactivateDialog from "@/components/admin/CategoryReactivateDialog";
+import { useAdminAuth } from "@/hooks/useAdminAuth";
+import {
+  parseBulkGuardError,
+  showBulkGuardToast,
+  forceBulkDeactivate,
+} from "@/lib/bulk-guard";
 
 const LOCALES = ["fr", "nl", "de"] as const;
 
@@ -33,6 +39,44 @@ const AdminCategories = () => {
   const { data: totalCategoryCount = 0 } = useCategoryCount();
   const { data: translations = [] } = useEntityTranslations("category");
   const batchSave = useBatchSaveTranslations();
+  const { role: adminRole } = useAdminAuth();
+  const isSuperAdmin = adminRole === "super_admin";
+
+  // Mémorise le dernier batch tenté pour pouvoir le ré-essayer en force
+  const lastBulkBatchRef = useRef<{
+    table: "categories" | "products" | "offers";
+    ids: string[];
+    cascadeProductIds?: string[];
+  } | null>(null);
+
+  /** Intercepte les erreurs garde-fou et propose le bouton "Forcer" pour super_admin. */
+  const handleBulkError = (e: any) => {
+    const info = parseBulkGuardError(e);
+    if (info.isBulkGuard) {
+      showBulkGuardToast(info, {
+        isSuperAdmin,
+        onForce: async () => {
+          const batch = lastBulkBatchRef.current;
+          if (!batch) return;
+          try {
+            await forceBulkDeactivate(batch.table, batch.ids);
+            // Cascade produits si on avait capturé un set
+            if (batch.cascadeProductIds && batch.cascadeProductIds.length) {
+              await forceBulkDeactivate("products", batch.cascadeProductIds);
+            }
+            qc.invalidateQueries({ queryKey: ["admin-categories"] });
+            qc.invalidateQueries({ queryKey: ["admin-products"] });
+            qc.invalidateQueries({ queryKey: ["category-bulk-actions"] });
+          } catch {
+            /* toast déjà affiché par forceBulkDeactivate */
+          }
+        },
+      });
+      return;
+    }
+    toast.error(e?.message ?? String(e));
+  };
+
   const [expanded, setExpanded] = useState<string[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<any>(null);
@@ -233,6 +277,11 @@ const AdminCategories = () => {
         prodIds = (prods ?? []).map((r: any) => r.id);
       }
 
+      // Mémorise pour un éventuel "force" si garde-fou bloque
+      if (!newActive) {
+        lastBulkBatchRef.current = { table: "categories", ids: catIds, cascadeProductIds: [] };
+      }
+
       const { error } = await supabase
         .from("categories")
         .update({ is_active: newActive })
@@ -256,7 +305,7 @@ const AdminCategories = () => {
       qc.invalidateQueries({ queryKey: ["admin-categories"] });
       qc.invalidateQueries({ queryKey: ["category-bulk-actions"] });
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: handleBulkError,
   });
 
   // Toggle visibility of a category + its children + cascade to products (with audit log)
@@ -280,6 +329,11 @@ const AdminCategories = () => {
         .in("category_id", allIds)
         .neq("is_active", newActive);
       const prodIds = (prods ?? []).map((r: any) => r.id);
+
+      // Mémorise pour un éventuel "force" si garde-fou bloque
+      if (!newActive) {
+        lastBulkBatchRef.current = { table: "categories", ids: allIds, cascadeProductIds: prodIds };
+      }
 
       // Update categories
       const { error: catError } = await supabase.from("categories").update({ is_active: newActive }).in("id", allIds);
@@ -307,7 +361,7 @@ const AdminCategories = () => {
       qc.invalidateQueries({ queryKey: ["admin-products"] });
       qc.invalidateQueries({ queryKey: ["category-bulk-actions"] });
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: handleBulkError,
   });
 
   const handleAutoTranslate = async (locale: "fr" | "nl" | "de") => {

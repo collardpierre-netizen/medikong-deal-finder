@@ -227,7 +227,8 @@ const AdminVendeurDetail = () => {
           {!vendor.auth_user_id && (
             <button
               onClick={async () => {
-                if (!vendor.email) { toast.error("Email requis pour créer un compte"); return; }
+                if (!vendor.email) { toast.error("Renseignez d'abord un email sur la fiche vendeur."); return; }
+                if (!confirm(`Créer un accès portail pour ${vendor.email} ?\n\nUn compte sera créé (ou rattaché si l'email existe déjà). Vous obtiendrez un mot de passe temporaire à transmettre au vendeur.`)) return;
                 try {
                   const { data, error } = await supabase.functions.invoke("create-vendor-account", {
                     body: {
@@ -238,10 +239,16 @@ const AdminVendeurDetail = () => {
                   });
                   if (error) throw error;
                   if (data?.error) throw new Error(data.error);
-                  toast.success(`Compte créé ! Mot de passe temporaire : ${data.temp_password}`);
+                  if (data?.temp_password) {
+                    toast.success(`Accès créé ! Mot de passe temporaire : ${data.temp_password}`, { duration: 30000 });
+                  } else if (data?.reused_existing_user) {
+                    toast.success("Compte existant rattaché. Le vendeur peut se connecter avec son mot de passe actuel.");
+                  } else {
+                    toast.success("Accès créé avec succès.");
+                  }
                   queryClient.invalidateQueries({ queryKey: ["vendor-detail", id] });
                 } catch (e: any) {
-                  toast.error(e.message || "Erreur");
+                  toast.error(e.message || "Erreur lors de la création de l'accès");
                 }
               }}
               className="flex items-center gap-1.5 px-3 py-2 rounded-md text-[12px] font-bold transition-opacity hover:opacity-90"

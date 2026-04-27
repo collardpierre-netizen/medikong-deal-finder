@@ -115,12 +115,28 @@ function MarginCalcPctMode({
   );
 }
 
+function formatRelative(iso?: string | null): string | null {
+  if (!iso) return null;
+  const t = new Date(iso).getTime();
+  if (!Number.isFinite(t)) return null;
+  const diffMs = Date.now() - t;
+  if (diffMs < 0) return "à l'instant";
+  const m = Math.floor(diffMs / 60000);
+  if (m < 1) return "à l'instant";
+  if (m < 60) return `il y a ${m} min`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `il y a ${h} h`;
+  const d = Math.floor(h / 24);
+  if (d < 7) return `il y a ${d} j`;
+  return new Date(iso).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" });
+}
+
 /* ── Offer Row ─────────────────────────────────────────── */
 function OfferRow({
-  offer, productId, productName, productSlug, user, navigate, addToCart, isBest, delay = 0, isTVAC = false, categoryId, bestPrice,
+  offer, productId, productName, productSlug, user, navigate, addToCart, isBest, delay = 0, isTVAC = false, categoryId, bestPrice, discountPercentage = 0,
 }: {
   offer: Offer; productId: string; productName: string; productSlug: string;
-  user: any; navigate: any; addToCart: any; isBest?: boolean; delay?: number; isTVAC?: boolean; categoryId?: string; bestPrice?: number;
+  user: any; navigate: any; addToCart: any; isBest?: boolean; delay?: number; isTVAC?: boolean; categoryId?: string; bestPrice?: number; discountPercentage?: number;
 }) {
   const maxQty = offer.stockQuantity > 0 ? offer.stockQuantity : 999;
   const step = offer.bundleSize > 1 ? offer.bundleSize : 1;

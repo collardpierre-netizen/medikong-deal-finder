@@ -107,6 +107,109 @@ export default function CategoryKeywordDisableDialog({
 
   const newActive = action === "enable";
 
+  // ---- SIMULATION (impact réel en base) ------------------------------------
+  type SimResult = {
+    categoriesActiveTotal: number;
+    categoriesInactiveTotal: number;
+    productsToFlip: number;
+    productsAlreadyInState: number;
+    activeOffersImpacted: number;
+    sampleCategoryNames: string[];
+    computedAt: string;
+    keywordsHash: string;
+  };
+  const [sim, setSim] = useState<SimResult | null>(null);
+  const [simLoading, setSimLoading] = useState(false);
+  const [simError, setSimError] = useState<string | null>(null);
+
+  const keywordsHash = useMemo(
+    () => `${action}|${keywords.slice().sort().join("§")}|${allCategoryIdsToDisable.length}`,
+    [action, keywords, allCategoryIdsToDisable],
+  );
+  const simStale = !sim || sim.keywordsHash !== keywordsHash;
+
+  // Reset on dialog open / scope change
+  useEffect(() => {
+    setSim(null);
+    setSimError(null);
+  }, [open, action]);
+  useEffect(() => {
+    if (sim && sim.keywordsHash !== keywordsHash) setSim(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [keywordsHash]);
+
+  const runSimulation = async () => {
+    setSimError(null);
+    if (allCategoryIdsToDisable.length === 0) {
+      setSim({
+        categoriesActiveTotal: 0, categoriesInactiveTotal: 0,
+        productsToFlip: 0, productsAlreadyInState: 0, activeOffersImpacted: 0,
+        sampleCategoryNames: [], computedAt: new Date().toISOString(), keywordsHash,
+      });
+      return;
+    }
+    setSimLoading(true);
+    try {
+      const targetState = newActive;
+      const catsActive = allCategoryIdsToDisable
+        .map((id) => byId.get(id))
+        .filter((c): c is Category => !!c && c.is_active).length;
+      const catsInactive = allCategoryIdsToDisable.length - catsActive;
+
+      const CHUNK = 200;
+      let productsToFlip = 0;
+      let productsAlreadyInState = 0;
+      let activeOffersImpacted = 0;
+
+      for (let i = 0; i < allCategoryIdsToDisable.length; i += CHUNK) {
+        const slice = allCategoryIdsToDisable.slice(i, i + CHUNK);
+
+        const flipPromise = supabase
+          .from("products")
+          .select("id", { count: "exact", head: true })
+          .in("category_id", slice)
+          .eq("is_active", !targetState);
+
+        const samePromise = supabase
+          .from("products")
+          .select("id", { count: "exact", head: true })
+          .in("category_id", slice)
+          .eq("is_active", targetState);
+
+        // Active offers attached to products that will flip state
+        const offersPromise = supabase
+          .from("offers")
+          .select("id, products!inner(category_id, is_active)", { count: "exact", head: true })
+          .eq("is_active", true)
+          .in("products.category_id", slice)
+          .eq("products.is_active", !targetState);
+
+        const [flipRes, sameRes, offersRes] = await Promise.all([flipPromise, samePromise, offersPromise]);
+        if (flipRes.error) throw flipRes.error;
+        if (sameRes.error) throw sameRes.error;
+        if (offersRes.error) throw offersRes.error;
+        productsToFlip += flipRes.count ?? 0;
+        productsAlreadyInState += sameRes.count ?? 0;
+        activeOffersImpacted += offersRes.count ?? 0;
+      }
+
+      setSim({
+        categoriesActiveTotal: catsActive,
+        categoriesInactiveTotal: catsInactive,
+        productsToFlip,
+        productsAlreadyInState,
+        activeOffersImpacted,
+        sampleCategoryNames: rootsToDisable.slice(0, 6).map((r) => r.name),
+        computedAt: new Date().toISOString(),
+        keywordsHash,
+      });
+    } catch (e: any) {
+      setSimError(e?.message ?? "Erreur de simulation");
+    } finally {
+      setSimLoading(false);
+    }
+  };
+
   const runMutation = useMutation({
     mutationFn: async () => {
       if (allCategoryIdsToDisable.length === 0) {

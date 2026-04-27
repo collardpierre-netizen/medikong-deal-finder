@@ -976,24 +976,93 @@ export default function VendorMarketIntel() {
                                   {fmt(o.price_excl_vat)}
                                 </td>
                                 <td className="px-3 py-2 text-right tabular-nums">
-                                  {net != null && commissionConfig ? (
-                                    <span
-                                      className={o.is_mine ? "font-semibold text-primary" : "text-muted-foreground"}
-                                      title={`Commission MediKong : −${fmtEur(
-                                        computeMargin(
-                                          o.price_excl_vat,
-                                          openRowPurchasePrice ?? null,
-                                          commissionConfig,
-                                        ).commission,
-                                      )} (${computeMargin(
-                                        o.price_excl_vat,
-                                        openRowPurchasePrice ?? null,
-                                        commissionConfig,
-                                      ).commissionPct.toFixed(1)} %)`}
-                                    >
-                                      {fmtEur(net)}
-                                    </span>
-                                  ) : (
+                                  {net != null && commissionConfig ? (() => {
+                                    const m = computeMargin(
+                                      o.price_excl_vat,
+                                      openRowPurchasePrice ?? null,
+                                      commissionConfig,
+                                    );
+                                    const model = commissionConfig.commission_model;
+                                    const formulaLabel =
+                                      model === "flat_percentage"
+                                        ? `Commission = prix × ${commissionConfig.commission_rate ?? 0}%`
+                                        : model === "margin_split"
+                                          ? `Commission = max(0, prix − achat) × ${Math.max(
+                                              0,
+                                              100 - (commissionConfig.margin_split_pct ?? 0),
+                                            )}%`
+                                          : `Commission = ${fmtEur(
+                                              commissionConfig.fixed_commission_amount ?? 0,
+                                            )} (forfait)`;
+                                    const formulaCalc =
+                                      model === "flat_percentage"
+                                        ? `${fmtEur(m.sellPrice)} × ${commissionConfig.commission_rate ?? 0}% = ${fmtEur(m.commission)}`
+                                        : model === "margin_split"
+                                          ? `max(0, ${fmtEur(m.sellPrice)} − ${fmtEur(m.purchasePrice)}) × ${Math.max(
+                                              0,
+                                              100 - (commissionConfig.margin_split_pct ?? 0),
+                                            )}% = ${fmtEur(m.commission)}`
+                                          : `${fmtEur(m.commission)} (forfait)`;
+                                    return (
+                                      <TooltipProvider delayDuration={150}>
+                                        <Tooltip>
+                                          <TooltipTrigger asChild>
+                                            <span
+                                              className={`cursor-help underline decoration-dotted underline-offset-2 ${
+                                                o.is_mine
+                                                  ? "font-semibold text-primary"
+                                                  : "text-muted-foreground"
+                                              }`}
+                                            >
+                                              {fmtEur(net)}
+                                            </span>
+                                          </TooltipTrigger>
+                                          <TooltipContent
+                                            side="left"
+                                            className="max-w-[300px] text-[11px] space-y-1.5 p-3"
+                                          >
+                                            <div className="font-semibold text-xs border-b border-border pb-1 mb-1">
+                                              Net après commission MediKong
+                                            </div>
+                                            <div className="flex justify-between gap-4 tabular-nums">
+                                              <span className="text-muted-foreground">Prix HTVA</span>
+                                              <span>{fmtEur(m.sellPrice)}</span>
+                                            </div>
+                                            <div className="flex justify-between gap-4 tabular-nums text-destructive">
+                                              <span>Commission MediKong</span>
+                                              <span>
+                                                −{fmtEur(m.commission)} ({m.commissionPct.toFixed(1)} %)
+                                              </span>
+                                            </div>
+                                            <div className="flex justify-between gap-4 tabular-nums font-semibold border-t border-border pt-1 mt-1">
+                                              <span>Net en poche</span>
+                                              <span>{fmtEur(m.netRevenue)}</span>
+                                            </div>
+                                            <div className="border-t border-border pt-1.5 mt-1.5 space-y-0.5">
+                                              <div className="text-muted-foreground text-[10px] uppercase tracking-wide">
+                                                Formule (
+                                                {model === "flat_percentage"
+                                                  ? "% fixe"
+                                                  : model === "margin_split"
+                                                    ? "partage de marge"
+                                                    : "forfait"}
+                                                )
+                                              </div>
+                                              <div className="font-mono text-[10px]">{formulaLabel}</div>
+                                              <div className="font-mono text-[10px] text-foreground/80">
+                                                {formulaCalc}
+                                              </div>
+                                            </div>
+                                            {model === "margin_split" && !m.hasCost && (
+                                              <div className="text-[10px] text-amber-600 border-t border-border pt-1 mt-1">
+                                                ⚠ Prix d'achat inconnu : commission estimée à 0. Renseignez votre coût pour un calcul exact.
+                                              </div>
+                                            )}
+                                          </TooltipContent>
+                                        </Tooltip>
+                                      </TooltipProvider>
+                                    );
+                                  })() : (
                                     <span className="text-muted-foreground">—</span>
                                   )}
                                 </td>

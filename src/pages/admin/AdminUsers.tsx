@@ -18,13 +18,14 @@ const LANG_FLAGS: Record<string, string> = { fr: "🇫🇷 Français", nl: "🇳
 
 interface UserRow {
   id: string;
-  userId: string;
+  userId: string | null;
   email: string;
   type: "vendor" | "buyer";
   company: string;
   plan: string;
   status: string;
   lastLogin: string | null;
+  linked: boolean;
 }
 
 interface BuyerDetail {
@@ -80,14 +81,17 @@ export default function AdminUsers() {
       .order("company_name");
 
     vendors?.forEach(v => {
-      if (v.auth_user_id) {
-        rows.push({
-          id: v.id, userId: v.auth_user_id, email: v.email || "",
-          type: "vendor", company: v.company_name || v.id,
-          plan: v.type || "real", status: v.is_active ? "active" : "inactive",
-          lastLogin: null,
-        });
-      }
+      rows.push({
+        id: v.id,
+        userId: v.auth_user_id ?? null,
+        email: v.email || "",
+        type: "vendor",
+        company: v.company_name || v.id,
+        plan: v.type || "real",
+        status: v.is_active ? "active" : "inactive",
+        lastLogin: null,
+        linked: !!v.auth_user_id,
+      });
     });
 
     const { data: customers } = await supabase
@@ -96,15 +100,17 @@ export default function AdminUsers() {
       .order("company_name");
 
     customers?.forEach(b => {
-      if (b.auth_user_id) {
-        rows.push({
-          id: b.id, userId: b.auth_user_id, email: b.email || "",
-          type: "buyer", company: b.company_name,
-          plan: b.customer_type || "pharmacy",
-          status: b.is_verified ? "active" : "pending",
-          lastLogin: null,
-        });
-      }
+      rows.push({
+        id: b.id,
+        userId: b.auth_user_id ?? null,
+        email: b.email || "",
+        type: "buyer",
+        company: b.company_name,
+        plan: b.customer_type || "pharmacy",
+        status: b.is_verified ? "active" : "pending",
+        lastLogin: null,
+        linked: !!b.auth_user_id,
+      });
     });
 
     setUsers(rows);
@@ -118,14 +124,18 @@ export default function AdminUsers() {
       const { data: customer } = await supabase
         .from("customers")
         .select("*")
-        .eq("auth_user_id", u.userId)
+        .eq("id", u.id)
         .maybeSingle();
 
-      const { data: profile } = await supabase
-        .from("profiles" as any)
-        .select("full_name, sector, country, price_level_code, preferred_language")
-        .eq("user_id", u.userId)
-        .maybeSingle();
+      let profile = null;
+      if (u.userId) {
+        const { data: p } = await supabase
+          .from("profiles" as any)
+          .select("full_name, sector, country, price_level_code, preferred_language")
+          .eq("user_id", u.userId)
+          .maybeSingle();
+        profile = p;
+      }
 
       if (customer) {
         setBuyerDetail({ ...customer, profile: profile || undefined } as any);
@@ -136,12 +146,31 @@ export default function AdminUsers() {
     }
   }
 
+  async function handleCreateAccess(u: UserRow) {
+    if (u.linked) return;
+    const fnName = u.type === "vendor" ? "create-vendor-account" : "create-buyer-account";
+    const body = u.type === "vendor" ? { vendor_id: u.id } : { customer_id: u.id, email: u.email };
+    const { data, error } = await supabase.functions.invoke(fnName, { body });
+    if (error || data?.error) {
+      toast.error(`Erreur : ${error?.message || data?.error}`);
+      return;
+    }
+    toast.success("Accès créé", {
+      description: data?.temp_password
+        ? `Mot de passe temporaire : ${data.temp_password}`
+        : "Compte auth existant rattaché.",
+      duration: 15000,
+    });
+    loadUsers();
+  }
+
   function closeDetail() {
     setSelectedUser(null);
     setBuyerDetail(null);
   }
 
-  async function handleValidate(userId: string) {
+  async function handleValidate(userId: string | null) {
+    if (!userId) return;
     const { error } = await supabase
       .from("customers")
       .update({ is_verified: true } as any)
@@ -152,7 +181,8 @@ export default function AdminUsers() {
     if (buyerDetail) setBuyerDetail({ ...buyerDetail, is_verified: true });
   }
 
-  async function handleSuspend(userId: string) {
+  async function handleSuspend(userId: string | null) {
+    if (!userId) return;
     const { error } = await supabase
       .from("customers")
       .update({ is_verified: false } as any)
@@ -170,14 +200,13 @@ export default function AdminUsers() {
 
   async function confirmDelete() {
     if (!deleteModal) return;
-    if (deleteModal.type === "vendor") {
-      const { error } = await supabase.from("vendors").delete().eq("auth_user_id", deleteModal.userId);
-      if (error) { toast.error("Erreur: " + error.message); return; }
-    } else {
-      const { error } = await supabase.from("customers").delete().eq("auth_user_id", deleteModal.userId);
-      if (error) { toast.error("Erreur: " + error.message); return; }
-    }
-    // TODO: send rejection email with deleteReason
+    const table = deleteModal.type === "vendor" ? "vendors" : "customers";
+    // Si on a un auth_user_id, on supprime via celui-ci ; sinon via la PK de la fiche
+    const query = deleteModal.userId
+      ? supabase.from(table).delete().eq("auth_user_id", deleteModal.userId)
+      : supabase.from(table).delete().eq("id", deleteModal.id);
+    const { error } = await query;
+    if (error) { toast.error("Erreur: " + error.message); return; }
     toast.success("Utilisateur supprimé");
     setDeleteModal(null);
     closeDetail();
@@ -185,6 +214,10 @@ export default function AdminUsers() {
   }
 
   async function handleImpersonate(user: UserRow) {
+    if (!user.userId) {
+      toast.error("Impossible : ce compte n'a pas d'accès auth.");
+      return;
+    }
     await startImpersonation(user.userId, user.email, user.type, user.company);
     setConfirmModal(null);
     setConfirmed(false);
@@ -204,6 +237,7 @@ export default function AdminUsers() {
   const vendorCount = users.filter(u => u.type === "vendor" && u.status === "active").length;
   const buyerCount = users.filter(u => u.type === "buyer" && u.status === "active").length;
   const pendingCount = users.filter(u => u.status === "pending").length;
+  const unlinkedCount = users.filter(u => !u.linked).length;
 
   const DetailField = ({ icon: Icon, label, value }: { icon: any; label: string; value: string | null | undefined }) => (
     <div className="flex items-start gap-3 py-2.5">
@@ -277,10 +311,28 @@ export default function AdminUsers() {
                     </span>
                   </td>
                   <td className="px-4 py-3">
-                    <StatusBadge status={u.status === "active" ? "active" : u.status === "inactive" ? "cancelled" : "pending"} />
+                    <div className="flex items-center gap-2">
+                      <StatusBadge status={u.status === "active" ? "active" : u.status === "inactive" ? "cancelled" : "pending"} />
+                      {!u.linked && (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-50 text-rose-700 border border-rose-200">
+                          Compte non créé
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <ChevronRight size={16} className="inline text-muted-foreground" />
+                    {!u.linked ? (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="gap-1 text-[11px] h-7"
+                        onClick={(e) => { e.stopPropagation(); handleCreateAccess(u); }}
+                      >
+                        <UserCheck size={12} /> Créer l'accès
+                      </Button>
+                    ) : (
+                      <ChevronRight size={16} className="inline text-muted-foreground" />
+                    )}
                   </td>
                 </tr>
               ))}

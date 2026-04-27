@@ -7,6 +7,7 @@
 //           garde le résidu partiel pour le chunk suivant. Persiste byte_offset + line_residue.
 // 3. FINALIZE: upsert brands/cats, link, cleanup cache, marque completed.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+import { formatDbError, sampleValue } from "../_shared/sync-logger.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",

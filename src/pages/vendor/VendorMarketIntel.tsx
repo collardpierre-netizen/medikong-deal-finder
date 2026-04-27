@@ -303,6 +303,16 @@ export default function VendorMarketIntel() {
     const t = setTimeout(() => setLivePulse(false), 900);
     return () => clearTimeout(t);
   }, [livePrice]);
+
+  /**
+   * Dernière sauvegarde de prix réussie depuis le modal "Ajuster mon prix",
+   * indexée par `offer_id`. Permet d'afficher le comparatif Avant / Après
+   * de "Net après commission" dans le panneau "Mon offre" tant que la session
+   * de la veille marché reste ouverte.
+   */
+  const [lastSaves, setLastSaves] = useState<
+    Record<string, { oldPrice: number; newPrice: number; savedAt: number }>
+  >({});
   // Tri & filtre du tableau "Offres MediKong" dans le détail
   const [mkSortKey, setMkSortKey] = useState<"net" | "price" | null>(null);
   const [mkSortDir, setMkSortDir] = useState<"asc" | "desc">("desc");
@@ -869,6 +879,113 @@ export default function VendorMarketIntel() {
                     )}
                     commissionModel={commissionConfig.commission_model}
                   />
+                  {/* Avant / Après — affiché après chaque sauvegarde de prix réussie */}
+                  {(() => {
+                    const ls = lastSaves[openRow.my_offer_id];
+                    if (!ls || ls.oldPrice === ls.newPrice) return null;
+                    const before = computeMargin(
+                      ls.oldPrice,
+                      openRowPurchasePrice ?? null,
+                      commissionConfig,
+                    );
+                    const after = computeMargin(
+                      ls.newPrice,
+                      openRowPurchasePrice ?? null,
+                      commissionConfig,
+                    );
+                    const delta = after.netRevenue - before.netRevenue;
+                    const deltaPct =
+                      before.netRevenue > 0 ? (delta / before.netRevenue) * 100 : 0;
+                    const positive = delta >= 0;
+                    return (
+                      <div className="mt-2 rounded-lg border border-blue-200 bg-blue-50/50 p-3">
+                        <div className="flex items-center justify-between mb-2 gap-2">
+                          <div className="flex items-center gap-2 text-[11px] font-semibold text-blue-900">
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-blue-600 text-white text-[10px]">
+                              Avant / Après
+                            </span>
+                            <span className="text-blue-700/80 font-normal">
+                              Sauvegarde à{" "}
+                              {new Date(ls.savedAt).toLocaleTimeString("fr-BE", {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                                second: "2-digit",
+                              })}
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setLastSaves((prev) => {
+                                const { [openRow.my_offer_id]: _, ...rest } = prev;
+                                return rest;
+                              })
+                            }
+                            className="text-[10px] text-blue-700/70 hover:text-blue-900 hover:underline"
+                          >
+                            Masquer
+                          </button>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2 text-[11px] tabular-nums">
+                          <div className="rounded-md border border-blue-100 bg-white p-2">
+                            <div className="text-[9px] uppercase text-muted-foreground">
+                              Avant
+                            </div>
+                            <div className="text-muted-foreground">
+                              Prix {fmt(before.sellPrice)}
+                            </div>
+                            <div className="font-semibold text-foreground/80">
+                              Net {fmt(before.netRevenue)}
+                            </div>
+                            <div className="text-[10px] text-destructive">
+                              − {fmt(before.commission)} comm.
+                            </div>
+                          </div>
+                          <div className="rounded-md border border-blue-200 bg-white p-2 ring-1 ring-blue-300/40">
+                            <div className="text-[9px] uppercase text-blue-700">
+                              Après
+                            </div>
+                            <div className="text-muted-foreground">
+                              Prix {fmt(after.sellPrice)}
+                            </div>
+                            <div className="font-semibold text-blue-900">
+                              Net {fmt(after.netRevenue)}
+                            </div>
+                            <div className="text-[10px] text-destructive">
+                              − {fmt(after.commission)} comm.
+                            </div>
+                          </div>
+                          <div
+                            className={`rounded-md border p-2 flex flex-col justify-center items-start ${
+                              positive
+                                ? "border-emerald-200 bg-emerald-50"
+                                : "border-orange-200 bg-orange-50"
+                            }`}
+                          >
+                            <div className="text-[9px] uppercase text-muted-foreground">
+                              Δ Net
+                            </div>
+                            <div
+                              className={`font-bold text-sm ${
+                                positive ? "text-emerald-700" : "text-orange-700"
+                              }`}
+                            >
+                              {positive ? "▲ +" : "▼ "}
+                              {Math.abs(delta).toFixed(2)} €
+                            </div>
+                            <div
+                              className={`text-[10px] ${
+                                positive ? "text-emerald-600" : "text-orange-600"
+                              }`}
+                            >
+                              ({positive ? "+" : ""}
+                              {deltaPct.toFixed(1)} %)
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
                   <div className="mt-2">
                     <MarginBreakdownDetails
                       breakdown={computeMargin(
@@ -1245,6 +1362,13 @@ export default function VendorMarketIntel() {
         }}
         ctx={adjustCtx}
         onPriceChange={setLivePrice}
+        onPriceSaved={(oldPrice, newPrice) => {
+          if (!adjustCtx) return;
+          setLastSaves((prev) => ({
+            ...prev,
+            [adjustCtx.offerId]: { oldPrice, newPrice, savedAt: Date.now() },
+          }));
+        }}
       />
     </div>
   );

@@ -43,13 +43,18 @@ interface Props {
    * even before the user confirms the new price.
    */
   onPriceChange?: (newPriceExclVat: number | null) => void;
+  /**
+   * Called once the price has been successfully persisted, with the previous and the new
+   * HTVA prices. Used by the parent to render an "Avant / Après" comparison.
+   */
+  onPriceSaved?: (oldPriceExclVat: number, newPriceExclVat: number) => void;
 }
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 const fmt = (n: number | null | undefined) =>
   typeof n === "number" ? `${n.toFixed(2)} €` : "—";
 
-export function AdjustPriceModal({ open, onOpenChange, ctx, invalidateKeys, onPriceChange }: Props) {
+export function AdjustPriceModal({ open, onOpenChange, ctx, invalidateKeys, onPriceChange, onPriceSaved }: Props) {
   const qc = useQueryClient();
   const [newPrice, setNewPrice] = useState<string>("");
 
@@ -111,6 +116,7 @@ export function AdjustPriceModal({ open, onOpenChange, ctx, invalidateKeys, onPr
       if (!ctx) throw new Error("Aucune offre sélectionnée");
       const vat = ctx.vatRate ?? 0.06;
       const priceIncl = round2(priceExcl * (1 + vat));
+      const oldPrice = ctx.myPrice;
       const { error } = await supabase
         .from("offers")
         .update({
@@ -120,11 +126,13 @@ export function AdjustPriceModal({ open, onOpenChange, ctx, invalidateKeys, onPr
         })
         .eq("id", ctx.offerId);
       if (error) throw error;
+      return { oldPrice, newPrice: priceExcl };
     },
-    onSuccess: () => {
+    onSuccess: ({ oldPrice, newPrice }) => {
       toast.success("Prix mis à jour", {
-        description: `Nouveau prix : ${Number(newPrice).toFixed(2)} € HTVA`,
+        description: `Nouveau prix : ${newPrice.toFixed(2)} € HTVA`,
       });
+      onPriceSaved?.(oldPrice, newPrice);
       // Invalidate veille marché + offers caches
       qc.invalidateQueries({ queryKey: ["vendor-market-intel"] });
       qc.invalidateQueries({ queryKey: ["offers"] });

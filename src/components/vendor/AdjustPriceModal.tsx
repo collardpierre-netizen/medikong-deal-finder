@@ -37,13 +37,19 @@ interface Props {
   ctx: AdjustPriceContext | null;
   /** Optional list of query keys to invalidate after a successful update */
   invalidateKeys?: (string | undefined)[][];
+  /**
+   * Called whenever the user types a new price (parsed, HTVA in €, or null when invalid/empty).
+   * Lets the parent popup recompute "Mon offre — marge & commission MediKong" in real time
+   * even before the user confirms the new price.
+   */
+  onPriceChange?: (newPriceExclVat: number | null) => void;
 }
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 const fmt = (n: number | null | undefined) =>
   typeof n === "number" ? `${n.toFixed(2)} €` : "—";
 
-export function AdjustPriceModal({ open, onOpenChange, ctx, invalidateKeys }: Props) {
+export function AdjustPriceModal({ open, onOpenChange, ctx, invalidateKeys, onPriceChange }: Props) {
   const qc = useQueryClient();
   const [newPrice, setNewPrice] = useState<string>("");
 
@@ -86,6 +92,19 @@ export function AdjustPriceModal({ open, onOpenChange, ctx, invalidateKeys }: Pr
   useEffect(() => {
     if (open && ctx) setNewPrice(ctx.myPrice.toFixed(2));
   }, [open, ctx]);
+
+  // Push every typed price up to the parent so it can refresh its own
+  // "Mon offre — marge & commission MediKong" panel live, without waiting
+  // for the user to confirm.
+  useEffect(() => {
+    if (!onPriceChange) return;
+    if (!open) {
+      onPriceChange(null);
+      return;
+    }
+    const n = Number(newPrice);
+    onPriceChange(Number.isFinite(n) && n > 0 ? n : null);
+  }, [newPrice, open, onPriceChange]);
 
   const update = useMutation({
     mutationFn: async (priceExcl: number) => {

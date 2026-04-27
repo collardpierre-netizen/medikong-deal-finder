@@ -280,6 +280,14 @@ export default function VendorMarketIntel() {
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [openRow, setOpenRow] = useState<IntelRow | null>(null);
   const [adjustCtx, setAdjustCtx] = useState<AdjustPriceContext | null>(null);
+  /**
+   * Prix HTVA en cours de saisie dans le modal "Ajuster mon prix".
+   * Tant que le modal est ouvert et qu'une valeur valide est saisie,
+   * le panneau "Mon offre — marge & commission MediKong" et la ligne
+   * "(vous)" du tableau MediKong utilisent ce prix au lieu de
+   * `openRow.my_price_excl_vat` pour un recalcul instantané.
+   */
+  const [livePrice, setLivePrice] = useState<number | null>(null);
   // Tri & filtre du tableau "Offres MediKong" dans le détail
   const [mkSortKey, setMkSortKey] = useState<"net" | "price" | null>(null);
   const [mkSortDir, setMkSortDir] = useState<"asc" | "desc">("desc");
@@ -349,17 +357,6 @@ export default function VendorMarketIntel() {
     },
     enabled: Boolean(vendorId),
   });
-
-  // Live-synced version of openRow: when the underlying query refetches
-  // (e.g. after editing the price via AdjustPriceModal), the popup reflects
-  // the new my_price_excl_vat / medikong_offers without needing a manual reload.
-  const liveOpenRow = useMemo<IntelRow | null>(() => {
-    if (!openRow) return null;
-    const fresh = rows.find(
-      (r) => r.product_id === openRow.product_id && r.country_code === openRow.country_code,
-    );
-    return fresh ?? openRow;
-  }, [openRow, rows]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -777,23 +774,23 @@ export default function VendorMarketIntel() {
           <DialogHeader>
             <DialogTitle className="text-base flex items-center justify-between gap-3">
               <div>
-                {liveOpenRow?.product_name}
+                {openRow?.product_name}
                 <div className="text-xs font-normal text-muted-foreground mt-1">
-                  EAN {liveOpenRow?.gtin || "—"} · {liveOpenRow?.country_code}
+                  EAN {openRow?.gtin || "—"} · {openRow?.country_code}
                 </div>
               </div>
-              {liveOpenRow && (
+              {openRow && (
                 <button
                   onClick={() =>
                     setAdjustCtx({
-                      offerId: liveOpenRow.my_offer_id,
-                      productName: liveOpenRow.product_name,
-                      gtin: liveOpenRow.gtin,
-                      myPrice: liveOpenRow.my_price_excl_vat,
-                      bestMkPrice: liveOpenRow.best_medikong_competitor_price,
-                      bestExtPrice: liveOpenRow.best_external_price,
+                      offerId: openRow.my_offer_id,
+                      productName: openRow.product_name,
+                      gtin: openRow.gtin,
+                      myPrice: openRow.my_price_excl_vat,
+                      bestMkPrice: openRow.best_medikong_competitor_price,
+                      bestExtPrice: openRow.best_external_price,
                       vendorId,
-                      productId: liveOpenRow.product_id,
+                      productId: openRow.product_id,
                     })
                   }
                   className="shrink-0 inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
@@ -803,17 +800,28 @@ export default function VendorMarketIntel() {
               )}
             </DialogTitle>
           </DialogHeader>
-          {liveOpenRow && (
+          {openRow && (() => {
+            // Prix utilisé pour les calculs : prix saisi en live dans le modal d'ajustement
+            // s'il est valide, sinon le prix de l'offre actuelle.
+            const effectiveMyPrice =
+              livePrice != null && livePrice > 0 ? livePrice : openRow.my_price_excl_vat;
+            const isLive = livePrice != null && livePrice > 0 && livePrice !== openRow.my_price_excl_vat;
+            return (
             <div className="space-y-6">
               {/* Marge & commission sur l'offre actuelle du vendeur */}
               {commissionConfig && (
                 <section>
                   <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
                     <Wand2 size={14} /> Mon offre — marge & commission MediKong
+                    {isLive && (
+                      <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800">
+                        Aperçu live · {effectiveMyPrice.toFixed(2)} €
+                      </span>
+                    )}
                   </h3>
                   <MarginInsightCard
                     breakdown={computeMargin(
-                      liveOpenRow.my_price_excl_vat,
+                      effectiveMyPrice,
                       openRowPurchasePrice ?? null,
                       commissionConfig,
                     )}
@@ -822,7 +830,7 @@ export default function VendorMarketIntel() {
                   <div className="mt-2">
                     <MarginBreakdownDetails
                       breakdown={computeMargin(
-                        liveOpenRow.my_price_excl_vat,
+                        effectiveMyPrice,
                         openRowPurchasePrice ?? null,
                         commissionConfig,
                       )}
@@ -830,7 +838,7 @@ export default function VendorMarketIntel() {
                       commissionRate={commissionConfig.commission_rate}
                       marginSplitPct={commissionConfig.margin_split_pct}
                       fixedCommissionAmount={commissionConfig.fixed_commission_amount}
-                      offerId={liveOpenRow.my_offer_id}
+                      offerId={openRow.my_offer_id}
                     />
                   </div>
                   {openRowPurchasePrice == null && (
@@ -843,13 +851,16 @@ export default function VendorMarketIntel() {
 
               {/* Offres MediKong */}
               {(() => {
-                const allOffers = liveOpenRow.medikong_offers || [];
-                // Calcul net pour chaque offre (basé sur la commission du vendeur courant)
+                const allOffers = openRow.medikong_offers || [];
+                // Calcul net pour chaque offre (basé sur la commission du vendeur courant).
+                // Pour l'offre "is_mine", on utilise le prix live tapé dans le modal d'ajustement
+                // (s'il y en a un) afin de refléter immédiatement la nouvelle position concurrentielle.
                 const withNet = allOffers.map((o) => {
+                  const priceForCalc = o.is_mine ? effectiveMyPrice : o.price_excl_vat;
                   const net = commissionConfig
-                    ? computeMargin(o.price_excl_vat, openRowPurchasePrice ?? null, commissionConfig).netRevenue
+                    ? computeMargin(priceForCalc, openRowPurchasePrice ?? null, commissionConfig).netRevenue
                     : null;
-                  return { o, net };
+                  return { o, net, priceForCalc };
                 });
                 // Net de l'offre du vendeur courant (référence pour le filtre "mieux/pire")
                 const myNet = withNet.find(({ o }) => o.is_mine)?.net ?? null;
@@ -865,9 +876,9 @@ export default function VendorMarketIntel() {
                 const sorted = [...filtered].sort((a, b) => {
                   if (!mkSortKey) return 0;
                   const va =
-                    mkSortKey === "net" ? a.net ?? -Infinity : a.o.price_excl_vat;
+                    mkSortKey === "net" ? a.net ?? -Infinity : a.priceForCalc;
                   const vb =
-                    mkSortKey === "net" ? b.net ?? -Infinity : b.o.price_excl_vat;
+                    mkSortKey === "net" ? b.net ?? -Infinity : b.priceForCalc;
                   return mkSortDir === "asc" ? va - vb : vb - va;
                 });
                 const toggleSort = (key: "net" | "price") => {
@@ -964,7 +975,7 @@ export default function VendorMarketIntel() {
                               </td>
                             </tr>
                           ) : (
-                            sorted.map(({ o, net }, i) => (
+                            sorted.map(({ o, net, priceForCalc }, i) => (
                               <tr
                                 key={o.offer_id}
                                 className={`border-t ${o.is_mine ? "bg-primary/5" : ""}`}
@@ -979,17 +990,26 @@ export default function VendorMarketIntel() {
                                   {o.vendor_name}
                                   {o.is_mine && (
                                     <span className="ml-1 text-[10px] text-primary font-semibold">
-                                      (vous)
+                                      (vous{isLive ? " · live" : ""})
                                     </span>
                                   )}
                                 </td>
                                 <td className="px-3 py-2 text-right tabular-nums font-medium">
-                                  {fmt(o.price_excl_vat)}
+                                  {o.is_mine && isLive ? (
+                                    <span className="inline-flex items-center gap-1">
+                                      <span className="text-[10px] text-muted-foreground line-through">
+                                        {fmt(o.price_excl_vat)}
+                                      </span>
+                                      <span className="text-amber-700">{fmt(priceForCalc)}</span>
+                                    </span>
+                                  ) : (
+                                    fmt(priceForCalc)
+                                  )}
                                 </td>
                                 <td className="px-3 py-2 text-right tabular-nums">
                                   {net != null && commissionConfig ? (() => {
                                     const m = computeMargin(
-                                      o.price_excl_vat,
+                                      priceForCalc,
                                       openRowPurchasePrice ?? null,
                                       commissionConfig,
                                     );
@@ -1106,9 +1126,9 @@ export default function VendorMarketIntel() {
               {/* Offres externes */}
               <section>
                 <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
-                  <Globe size={14} /> Sources externes ({liveOpenRow.external_offers?.length || 0})
+                  <Globe size={14} /> Sources externes ({openRow.external_offers?.length || 0})
                 </h3>
-                {(liveOpenRow.external_offers?.length || 0) === 0 ? (
+                {(openRow.external_offers?.length || 0) === 0 ? (
                   <div className="text-xs text-muted-foreground border rounded-lg p-4 text-center">
                     Aucune source externe matchée pour cet EAN.
                   </div>
@@ -1127,7 +1147,7 @@ export default function VendorMarketIntel() {
                         </tr>
                       </thead>
                       <tbody>
-                        {liveOpenRow.external_offers.map((e, i) => (
+                        {openRow.external_offers.map((e, i) => (
                           <tr key={`${e.source_id}-${i}`} className="border-t">
                             <td className="px-3 py-2">{e.source_name}</td>
                             <td className="px-3 py-2 text-right tabular-nums">
@@ -1167,15 +1187,22 @@ export default function VendorMarketIntel() {
                 )}
               </section>
             </div>
-          )}
+            );
+          })()}
         </DialogContent>
       </Dialog>
 
       {/* Adjust price modal */}
       <AdjustPriceModal
         open={adjustCtx !== null}
-        onOpenChange={(v) => !v && setAdjustCtx(null)}
+        onOpenChange={(v) => {
+          if (!v) {
+            setAdjustCtx(null);
+            setLivePrice(null);
+          }
+        }}
         ctx={adjustCtx}
+        onPriceChange={setLivePrice}
       />
     </div>
   );

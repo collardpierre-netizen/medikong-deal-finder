@@ -280,6 +280,14 @@ export default function VendorMarketIntel() {
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [openRow, setOpenRow] = useState<IntelRow | null>(null);
   const [adjustCtx, setAdjustCtx] = useState<AdjustPriceContext | null>(null);
+  /**
+   * Prix HTVA en cours de saisie dans le modal "Ajuster mon prix".
+   * Tant que le modal est ouvert et qu'une valeur valide est saisie,
+   * le panneau "Mon offre — marge & commission MediKong" et la ligne
+   * "(vous)" du tableau MediKong utilisent ce prix au lieu de
+   * `openRow.my_price_excl_vat` pour un recalcul instantané.
+   */
+  const [livePrice, setLivePrice] = useState<number | null>(null);
   // Tri & filtre du tableau "Offres MediKong" dans le détail
   const [mkSortKey, setMkSortKey] = useState<"net" | "price" | null>(null);
   const [mkSortDir, setMkSortDir] = useState<"asc" | "desc">("desc");

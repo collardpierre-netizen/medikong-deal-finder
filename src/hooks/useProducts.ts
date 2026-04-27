@@ -190,6 +190,7 @@ export interface Offer {
   isActive: boolean;
   updatedAt?: string | null;
   syncedAt?: string | null;
+  isQogitaBacked?: boolean;
   sellerName?: string;
   sellerSlug?: string;
   isVerified?: boolean;
@@ -272,6 +273,7 @@ export function useProductOffers(productId: string | undefined) {
           isActive: o.is_active,
           updatedAt: o.updated_at ?? null,
           syncedAt: o.synced_at ?? null,
+          isQogitaBacked: !!o.is_qogita_backed,
           sellerName: (() => {
             const showReal = resolveVendorVisibility(
               { ...vendor, id: safeVendorId },

@@ -1277,6 +1277,12 @@ export default function VendorOffers() {
             <option value="BE">Belgique</option><option value="FR">France</option>
             <option value="NL">Pays-Bas</option><option value="LU">Luxembourg</option><option value="DE">Allemagne</option>
           </select>
+          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value as OfferStatusFilter)}
+            className="text-[12px] px-3 py-2 rounded-lg border bg-white" style={{ borderColor: "#E2E8F0", color: "#616B7C" }}>
+            <option value="active">Offres actives</option>
+            <option value="inactive">Offres inactives</option>
+            <option value="all">Toutes les offres</option>
+          </select>
           <span className="text-[11px] font-medium" style={{ color: "#8B95A5" }}>{filteredOffers.length} résultat{filteredOffers.length !== 1 ? "s" : ""}</span>
         </div>
       )}

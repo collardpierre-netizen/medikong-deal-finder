@@ -71,10 +71,12 @@ export function useSearchProducts(query: string, sort: SortOption = "relevance")
         const trimmed = query.trim();
         const { data, error } = await withSearchTimeout(
           (async () =>
-            await supabase
-              .from("products")
-              .select(SEARCH_PRODUCT_FIELDS)
-              .eq("is_active", true)
+            await applyHiddenCategoryFilter(
+              supabase
+                .from("products")
+                .select(SEARCH_PRODUCT_FIELDS)
+                .eq("is_active", true)
+            )
               .or(`name.ilike.%${trimmed}%,gtin.ilike.%${trimmed}%,cnk_code.ilike.%${trimmed}%,brand_name.ilike.%${trimmed}%`)
               .limit(60))()
         );

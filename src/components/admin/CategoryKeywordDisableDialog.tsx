@@ -474,12 +474,21 @@ export default function CategoryKeywordDisableDialog({
           </Button>
           <Button
             variant={newActive ? "default" : "destructive"}
-            disabled={allCategoryIdsToDisable.length === 0 || runMutation.isPending}
+            disabled={
+              allCategoryIdsToDisable.length === 0 ||
+              runMutation.isPending ||
+              !sim ||
+              simStale
+            }
+            title={!sim ? "Lance d'abord la simulation" : simStale ? "Mots-clés modifiés depuis la simulation — relance le calcul" : ""}
             onClick={() => {
               const verb = newActive ? "réactivation" : "désactivation";
+              const prodLine = sim
+                ? `\n\n• ${sim.productsToFlip.toLocaleString("fr-FR")} produit(s) ${newActive ? "à rendre visibles" : "à masquer"}\n• ${sim.activeOffersImpacted.toLocaleString("fr-FR")} offre(s) active(s) ${newActive ? "redeviendront visibles" : "ne s'afficheront plus"}`
+                : "";
               if (
                 confirm(
-                  `Confirmer la ${verb} de ${rootsToDisable.length} racine(s) et ${allCategoryIdsToDisable.length} catégorie(s) au total ? Les produits associés seront également ${newActive ? "rendus visibles" : "masqués"}.`,
+                  `Confirmer la ${verb} de ${rootsToDisable.length} racine(s) et ${allCategoryIdsToDisable.length} catégorie(s) au total ?${prodLine}`,
                 )
               ) {
                 runMutation.mutate();

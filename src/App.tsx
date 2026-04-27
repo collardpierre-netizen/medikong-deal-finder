@@ -128,6 +128,7 @@ const AdminUsers = lazyWithRetry(() => import("./pages/admin/AdminUsers"), "Admi
 const AdminAuditLog = lazyWithRetry(() => import("./pages/admin/AdminAuditLog"), "AdminAuditLog");
 const AdminContractAudit = lazyWithRetry(() => import("./pages/admin/AdminContractAudit"), "AdminContractAudit");
 const AdminCatalogDiagnostics = lazyWithRetry(() => import("./pages/admin/AdminCatalogDiagnostics"), "AdminCatalogDiagnostics");
+const AdminOfferDataQuality = lazyWithRetry(() => import("./pages/admin/AdminOfferDataQuality"), "AdminOfferDataQuality");
 const AdminCommissions = lazyWithRetry(() => import("./pages/admin/AdminCommissions"), "AdminCommissions");
 const AdminOnboardingCMS = lazyWithRetry(() => import("./pages/admin/AdminOnboardingCMS"), "AdminOnboardingCMS");
 const AdminSync = lazyWithRetry(() => import("./pages/admin/AdminSync"), "AdminSync");

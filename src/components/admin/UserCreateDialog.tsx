@@ -61,21 +61,27 @@ export default function UserCreateDialog({ open, onOpenChange, onCreated }: Prop
     }
     setSaving(true);
     try {
-      const { error } = await supabase.from("customers").insert({
-        company_name: buyer.company_name.trim(),
-        email: buyer.email.trim(),
-        phone: buyer.phone || null,
-        vat_number: buyer.vat_number || null,
-        address_line1: buyer.address_line1.trim(),
-        city: buyer.city.trim(),
-        postal_code: buyer.postal_code.trim(),
-        country_code: buyer.country_code,
-        customer_type: buyer.customer_type as any,
-        is_professional: true,
-        is_verified: true,
+      const { data, error } = await supabase.functions.invoke("create-buyer-account", {
+        body: {
+          company_name: buyer.company_name.trim(),
+          email: buyer.email.trim(),
+          phone: buyer.phone || null,
+          vat_number: buyer.vat_number || null,
+          address_line1: buyer.address_line1.trim(),
+          city: buyer.city.trim(),
+          postal_code: buyer.postal_code.trim(),
+          country_code: buyer.country_code,
+          customer_type: buyer.customer_type,
+        },
       });
       if (error) throw error;
-      toast.success(`Client "${buyer.company_name}" créé`);
+      if (data?.error) throw new Error(data.error);
+      toast.success(`Client "${buyer.company_name}" créé avec compte auth`, {
+        description: data?.temp_password
+          ? `Mot de passe temporaire : ${data.temp_password}`
+          : "Compte auth existant réutilisé.",
+        duration: 15000,
+      });
       setBuyer(initialBuyer);
       onCreated();
       onOpenChange(false);

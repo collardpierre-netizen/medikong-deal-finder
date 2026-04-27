@@ -103,6 +103,23 @@ const fetchBestOffers = async (productIds: string[]) => {
     }
   }
 
+  // Enrichit les meilleures offres avec le nom du vendeur via la vue publique (pas de PII)
+  const vendorIds = Array.from(new Set(
+    Array.from(bestOfferByProduct.values()).map((o: any) => o.vendor_id).filter(Boolean)
+  )) as string[];
+  if (vendorIds.length > 0) {
+    const { data: vendorsData } = await supabase
+      .from("vendors_public" as any)
+      .select("id, name, company_name, display_name")
+      .in("id", vendorIds);
+    const vendorMap = new Map<string, any>(
+      ((vendorsData || []) as any[]).map((v: any) => [v.id, v])
+    );
+    for (const offer of bestOfferByProduct.values()) {
+      offer.vendor_public = vendorMap.get(offer.vendor_id) || null;
+    }
+  }
+
   return bestOfferByProduct;
 };
 
@@ -155,7 +172,7 @@ const queryMatchImportLines = async (payload: ImportPayloadLine[]) => {
     const product = (ean ? productByEan.get(ean) : undefined) || (cnk ? productByCnk.get(cnk) : undefined);
     const offer = product ? bestOfferByProduct.get(product.id) : undefined;
     const mediPrice = offer?.price_excl_vat != null ? Number(offer.price_excl_vat) : undefined;
-    const vendor = offer?.vendors as { company_name?: string | null; name?: string | null } | null | undefined;
+    const vendor = offer?.vendor_public as { company_name?: string | null; name?: string | null; display_name?: string | null } | null | undefined;
 
     return {
       lineIndex: index,
@@ -169,7 +186,7 @@ const queryMatchImportLines = async (payload: ImportPayloadLine[]) => {
         productImage: product?.image_url ?? undefined,
         mediPrice,
         offerId: offer?.id ?? undefined,
-        vendorName: vendor?.company_name || vendor?.name || "—",
+        vendorName: vendor?.company_name || vendor?.name || vendor?.display_name || "—",
         status: product && offer ? "found" : "unavailable",
         saving: mediPrice != null && currentPrice > mediPrice ? Math.max(0, currentPrice - mediPrice) : 0,
       } satisfies MatchedLine,

@@ -700,8 +700,10 @@ async function processBatch(
     });
   }
 
-  const { data: prods } = await withRetry("select products by qid (post)", () =>
-    sb.from("products").select("id, qogita_qid").in("qogita_qid", qids));
+  const { data: prods } = await withRetry<QueryRows<{ id: string; qogita_qid: string | null }>>(
+    "select products by qid (post)",
+    () => sb.from("products").select("id, qogita_qid").in("qogita_qid", qids),
+  );
   const m = new Map((prods || []).map((p: any) => [p.qogita_qid, p.id]));
 
   const countryStats = csvData
@@ -750,9 +752,9 @@ async function linkBrandsAndCategories(sb: any, country: string, logId: string) 
   }).eq("id", logId);
 
   const { data: ab } = await sb.from("brands").select("id, name").limit(10000);
-  const bm = new Map((ab || []).map((b: any) => [b.name, b.id]));
+  const bm = new Map<string, string>(((ab || []) as Array<{ id: string; name: string }>).map((b) => [b.name, b.id]));
   const { data: ac } = await sb.from("categories").select("id, name").limit(10000);
-  const cm = new Map((ac || []).map((c: any) => [c.name, c.id]));
+  const cm = new Map<string, string>(((ac || []) as Array<{ id: string; name: string }>).map((c) => [c.name, c.id]));
 
   let linked = 0;
   while (true) {
@@ -760,7 +762,7 @@ async function linkBrandsAndCategories(sb: any, country: string, logId: string) 
       .eq("source", "qogita").is("brand_id", null).not("brand_name", "is", null).limit(1000);
     if (!nb?.length) break;
     const byB = new Map<string, string[]>();
-    for (const p of nb) {
+    for (const p of (nb || []) as Array<{ id: string; brand_name: string }>) {
       const bid = bm.get(p.brand_name);
       if (bid) { if (!byB.has(bid)) byB.set(bid, []); byB.get(bid)!.push(p.id); }
     }
@@ -779,7 +781,7 @@ async function linkBrandsAndCategories(sb: any, country: string, logId: string) 
       .eq("source", "qogita").is("category_id", null).not("category_name", "is", null).limit(1000);
     if (!nc?.length) break;
     const byC = new Map<string, string[]>();
-    for (const p of nc) {
+    for (const p of (nc || []) as Array<{ id: string; category_name: string }>) {
       const cid = cm.get(p.category_name);
       if (cid) { if (!byC.has(cid)) byC.set(cid, []); byC.get(cid)!.push(p.id); }
     }

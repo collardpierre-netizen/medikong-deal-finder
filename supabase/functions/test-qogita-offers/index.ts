@@ -62,7 +62,8 @@ serve(async (req) => {
       try {
         offersData = await offersRes.json();
       } catch (e) {
-        offersError = `Failed to parse JSON: ${e.message}`;
+        const message = e instanceof Error ? e.message : String(e);
+        offersError = `Failed to parse JSON: ${message}`;
         offersData = await offersRes.text();
       }
     } else {
@@ -120,7 +121,9 @@ serve(async (req) => {
     }, null, 2), { headers: corsHeaders });
 
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message, stack: error.stack }), {
+    const message = error instanceof Error ? error.message : String(error);
+    const stack = error instanceof Error ? error.stack : undefined;
+    return new Response(JSON.stringify({ error: message, stack }), {
       status: 500, headers: corsHeaders,
     });
   }

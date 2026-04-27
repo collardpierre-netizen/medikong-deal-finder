@@ -1648,6 +1648,49 @@ export type Database = {
           },
         ]
       }
+      offer_categories: {
+        Row: {
+          category_id: string
+          created_at: string
+          id: string
+          offer_id: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          id?: string
+          offer_id: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          id?: string
+          offer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "offer_categories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offer_categories_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offer_categories_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "public_offers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       offer_price_tiers: {
         Row: {
           created_at: string | null

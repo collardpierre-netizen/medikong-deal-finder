@@ -7,6 +7,7 @@ import { VBtn } from "@/components/vendor/ui/VBtn";
 import { VBadge } from "@/components/vendor/ui/VBadge";
 import { Tag, Plus, Pencil, Trash2, X, Loader2, Package, Search, Download, Upload, FileSpreadsheet, ChevronDown, Users, ChevronRight, TrendingDown, TrendingUp, BarChart3, Eye, ImagePlus } from "lucide-react";
 import ProductPhotoUploader from "@/components/admin/ProductPhotoUploader";
+import { CategoryTreeSelector } from "@/components/vendor/CategoryTreeSelector";
 import { toast } from "sonner";
 import { useCurrentVendor } from "@/hooks/useCurrentVendor";
 import * as XLSX from "xlsx";
@@ -95,10 +96,11 @@ interface OfferForm {
   mov_amount: string;
   delivery_days: string;
   country_code: string;
+  category_ids: string[];
 }
 
 const emptyForm: OfferForm = {
-  product_id: "", product_name: "", price_excl_vat: "", vat_rate: "21", stock_quantity: "", moq: "1", mov_amount: "0", delivery_days: "3", country_code: "BE",
+  product_id: "", product_name: "", price_excl_vat: "", vat_rate: "21", stock_quantity: "", moq: "1", mov_amount: "0", delivery_days: "3", country_code: "BE", category_ids: [],
 };
 
 /* ─── Competitive Intelligence Module ─── */
@@ -1058,7 +1060,12 @@ export default function VendorOffers() {
   const [filterCountry, setFilterCountry] = useState("");
 
   const openCreate = () => { setForm(emptyForm); setEditingId(null); setShowForm(true); };
-  const openEdit = (offer: any) => {
+  const openEdit = async (offer: any) => {
+    // Charger les catégories liées à l'offre
+    const { data: linkedCats } = await supabase
+      .from("offer_categories")
+      .select("category_id")
+      .eq("offer_id", offer.id);
     setForm({
       product_id: offer.product_id,
       product_name: (offer.products as any)?.name || "",
@@ -1069,6 +1076,7 @@ export default function VendorOffers() {
       mov_amount: String(offer.mov_amount || 0),
       delivery_days: String(offer.delivery_days),
       country_code: offer.country_code || "BE",
+      category_ids: (linkedCats || []).map((c: any) => c.category_id),
     });
     setEditingId(offer.id);
     setShowForm(true);
@@ -1081,6 +1089,9 @@ export default function VendorOffers() {
       const priceExcl = parseFloat(form.price_excl_vat);
       const vatRate = parseFloat(form.vat_rate);
       if (!form.product_id || isNaN(priceExcl) || priceExcl <= 0) throw new Error("Champs requis manquants");
+      if (!form.category_ids || form.category_ids.length === 0) {
+        throw new Error("Sélectionnez au moins une catégorie de visibilité.");
+      }
       const priceIncl = Math.round(priceExcl * (1 + vatRate / 100) * 100) / 100;
       const payload = {
         vendor_id: vendor.id, product_id: form.product_id,
@@ -1091,12 +1102,23 @@ export default function VendorOffers() {
         stock_status: parseInt(form.stock_quantity) > 0 ? "in_stock" as const : "out_of_stock" as const,
         is_active: true,
       };
+      let offerId = editingId;
       if (editingId) {
         const { error } = await supabase.from("offers").update(payload).eq("id", editingId);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("offers").insert(payload);
+        const { data: inserted, error } = await supabase.from("offers").insert(payload).select("id").single();
         if (error) throw error;
+        offerId = inserted.id;
+      }
+      // Sync des catégories liées (delete-all + insert)
+      if (offerId) {
+        await supabase.from("offer_categories").delete().eq("offer_id", offerId);
+        const rows = form.category_ids.map(cid => ({ offer_id: offerId!, category_id: cid }));
+        if (rows.length > 0) {
+          const { error: catErr } = await supabase.from("offer_categories").insert(rows);
+          if (catErr) throw catErr;
+        }
       }
     },
     onSuccess: () => { toast.success(editingId ? "Offre modifiée" : "Offre créée"); qc.invalidateQueries({ queryKey: ["vendor-offers"] }); closeForm(); },
@@ -1242,6 +1264,22 @@ export default function VendorOffers() {
               </select>
             </div>
           </div>
+
+          {/* ─── Catégories de visibilité (obligatoire) ─── */}
+          <div className="mt-4">
+            <label className="text-[11px] block mb-1.5 font-medium" style={{ color: "#1D2530" }}>
+              Catégories où activer l'offre <span style={{ color: "#EF4343" }}>*</span>
+            </label>
+            <p className="text-[11px] mb-2" style={{ color: "#8B95A5" }}>
+              Cochez les catégories MediKong dans lesquelles cette offre doit être visible. L'offre n'apparaîtra dans le catalogue que pour les catégories sélectionnées.
+            </p>
+            <CategoryTreeSelector
+              selectedIds={form.category_ids}
+              onChange={ids => setForm(p => ({ ...p, category_ids: ids }))}
+              required
+            />
+          </div>
+
           {form.price_excl_vat && (
             <div className="mt-3 p-3 rounded-lg text-[12px]" style={{ backgroundColor: "#F8FAFC", color: "#616B7C" }}>
               Prix TTC : <strong style={{ color: "#1D2530" }}>{(parseFloat(form.price_excl_vat) * (1 + parseFloat(form.vat_rate) / 100)).toFixed(2)} €</strong>

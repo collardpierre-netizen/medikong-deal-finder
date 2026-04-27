@@ -370,7 +370,7 @@ export default function VendorMarketIntel() {
     }
   }, [search, eanFilter, statusFilter]);
 
-  const { data: rows = [], isLoading } = useQuery({
+  const { data: rows = [], isLoading, isFetching: isFetchingIntel } = useQuery({
     queryKey: ["vendor-market-intel", vendorId],
     queryFn: async (): Promise<IntelRow[]> => {
       if (!vendorId) return [];

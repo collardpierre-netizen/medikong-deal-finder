@@ -1195,8 +1195,14 @@ export default function VendorMarketIntel() {
       {/* Adjust price modal */}
       <AdjustPriceModal
         open={adjustCtx !== null}
-        onOpenChange={(v) => !v && setAdjustCtx(null)}
+        onOpenChange={(v) => {
+          if (!v) {
+            setAdjustCtx(null);
+            setLivePrice(null);
+          }
+        }}
         ctx={adjustCtx}
+        onPriceChange={setLivePrice}
       />
     </div>
   );

@@ -813,6 +813,7 @@ async function processSingleProduct(
           if (bpUpserted?.id) {
             const inserted = await syncOfferTiers(
               sb, bpUpserted.id, priceExclVat, bpMov, bpMoq, vatMultiplier, bpRawTiers,
+              { gtin: product.gtin, country, vendor: "qogita-best-price", parentStats },
             );
             if (inserted > 0) {
               parentStats.tiers_synced = (parentStats.tiers_synced || 0) + inserted;

@@ -28,6 +28,7 @@ const AdminVendeurs = () => {
   const { data: vendors = [], isLoading } = useVendors();
   const [activeTab, setActiveTab] = useState<"all" | "medikong" | "qogita_virtual" | "real">("all");
   const [search, setSearch] = useState("");
+  const [qogitaSearch, setQogitaSearch] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [statusFilter, setStatusFilter] = useState<VStatus>("all");
   const [activeFilter, setActiveFilter] = useState<ActiveFilter>("all");

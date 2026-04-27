@@ -1368,9 +1368,21 @@ export default function VendorOffers() {
           </div>
 
           {form.price_excl_vat && (
-            <div className="mt-3 p-3 rounded-lg text-[12px]" style={{ backgroundColor: "#F8FAFC", color: "#616B7C" }}>
-              Prix TTC : <strong style={{ color: "#1D2530" }}>{(parseFloat(form.price_excl_vat) * (1 + parseFloat(form.vat_rate) / 100)).toFixed(2)} €</strong>
-              {parseFloat(form.mov_amount) > 0 && <span className="ml-3">MOV : <strong style={{ color: "#1D2530" }}>{parseFloat(form.mov_amount).toFixed(0)} €</strong></span>}
+            <div className="mt-3 space-y-2">
+              <div className="p-3 rounded-lg text-[12px]" style={{ backgroundColor: "#F8FAFC", color: "#616B7C" }}>
+                Prix TTC : <strong style={{ color: "#1D2530" }}>{(parseFloat(form.price_excl_vat) * (1 + parseFloat(form.vat_rate) / 100)).toFixed(2)} €</strong>
+                {parseFloat(form.mov_amount) > 0 && <span className="ml-3">MOV : <strong style={{ color: "#1D2530" }}>{parseFloat(form.mov_amount).toFixed(0)} €</strong></span>}
+              </div>
+              {commissionConfig && (
+                <MarginInsightCard
+                  breakdown={computeMargin(
+                    parseFloat(form.price_excl_vat) || 0,
+                    form.purchase_price_excl_vat ? parseFloat(form.purchase_price_excl_vat) : null,
+                    commissionConfig,
+                  )}
+                  commissionModel={commissionConfig.commission_model}
+                />
+              )}
             </div>
           )}
 

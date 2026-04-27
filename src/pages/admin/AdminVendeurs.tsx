@@ -324,6 +324,16 @@ const AdminVendeurs = () => {
                                 ? <Check size={11} style={{ color: "#059669" }} />
                                 : <Copy size={11} style={{ color: "#1B5BDA" }} />}
                             </button>
+                            <a
+                              href={`https://app.qogita.com/sellers/${encodeURIComponent((s as any).qogita_seller_alias)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="p-1 rounded hover:bg-blue-50 transition-colors inline-flex"
+                              title={`Ouvrir la fiche vendeur sur Qogita : ${(s as any).qogita_seller_alias}`}
+                            >
+                              <ExternalLink size={11} style={{ color: "#1B5BDA" }} />
+                            </a>
                           </>
                         ) : (
                           <span className="text-[11px]" style={{ color: "#CBD5E1" }}>—</span>

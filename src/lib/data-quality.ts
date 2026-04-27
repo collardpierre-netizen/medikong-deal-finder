@@ -12,7 +12,8 @@ const reportedKeys = new Set<string>();
 export type OfferDataIssue =
   | "missing_moq"
   | "missing_price"
-  | "missing_stock";
+  | "missing_stock"
+  | "bundle_moq_mismatch";
 
 export function reportOfferDataIssue(params: {
   productId?: string | null;

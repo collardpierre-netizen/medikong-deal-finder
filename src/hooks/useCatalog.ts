@@ -34,10 +34,11 @@ async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message = 
  * without requiring manual cleanup. We compute the cascade in JS from the full
  * categories tree so we keep a single round-trip and stay independent from RPC.
  */
-async function fetchInactiveCategoryIds(): Promise<string[]> {
+async function fetchInactiveCategoryIds(): Promise<Set<string>> {
   const { data } = await supabase
     .from("categories")
-    .select("id, parent_id, is_active");
+    .select("id, parent_id, is_active")
+    .range(0, 9999);
 
   const all = (data || []) as Array<{ id: string; parent_id: string | null; is_active: boolean }>;
 
@@ -66,7 +67,7 @@ async function fetchInactiveCategoryIds(): Promise<string[]> {
     }
   }
 
-  return Array.from(inactive);
+  return inactive;
 }
 
 function applyCatalogProductFilters(

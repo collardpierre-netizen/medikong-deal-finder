@@ -65,7 +65,7 @@ async function persist(payload: {
   metadata: Record<string, unknown>;
 }) {
   try {
-    await supabase.from("client_error_logs").insert(payload);
+    await (supabase.from("client_error_logs") as any).insert(payload);
   } catch {
     // never throw from the reporter
   }

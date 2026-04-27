@@ -255,7 +255,7 @@ export function useCatalogProducts(filters: CatalogFilters) {
   return useQuery({
     queryKey: ["catalog-products", filters, country],
     queryFn: async () => {
-      const [categoryIds, explicitBrandIds, mfIds, inactiveCategoryIds] = await Promise.all([
+      const [categoryIds, explicitBrandIds, mfIds, inactiveCategoryIdSet] = await Promise.all([
         filters.category
           ? supabase.from("categories").select("id").eq("slug", filters.category).maybeSingle().then(({ data: cat }) => {
               if (!cat) return null;
@@ -270,7 +270,7 @@ export function useCatalogProducts(filters: CatalogFilters) {
         filters.manufacturers && filters.manufacturers.length > 0
           ? supabase.from("manufacturers").select("id").in("slug", filters.manufacturers).then(({ data }) => data?.map(m => m.id) || null)
           : Promise.resolve(null),
-        fetchInactiveCategoryIds(),
+        fetchInactiveCategoryIds().catch(() => new Set<string>()),
       ]);
 
       let resolvedBrandIds = explicitBrandIds;
@@ -310,8 +310,14 @@ export function useCatalogProducts(filters: CatalogFilters) {
         resolvedBrandIds,
         manufacturerIds: mfIds,
         effectiveSearch,
-        inactiveCategoryIds,
       };
+
+      // Filtre client : exclure les produits dont la catégorie est admin-désactivée
+      // (cascade incluse). Évite de pousser 2k+ UUIDs dans l'URL PostgREST.
+      const dropInactive = <T extends { category_id?: string | null }>(rows: T[]): T[] =>
+        inactiveCategoryIdSet.size === 0
+          ? rows
+          : rows.filter((r) => !r.category_id || !inactiveCategoryIdSet.has(r.category_id));
 
       const buildProductQuery = () =>
         applyCatalogProductFilters(
@@ -356,7 +362,8 @@ export function useCatalogProducts(filters: CatalogFilters) {
           if (featured && featured.length > 0) {
             const featuredIds = new Set(featured.map((f) => f.category_id));
             const featuredOrder = featured.map((f) => f.category_id);
-            const fetchSize = Math.max(filters.perPage * 2, 48);
+            // Sur-fetch pour absorber le filtrage client des catégories inactives.
+            const fetchSize = Math.max(filters.perPage * 3, 72);
             const boostedQuery = applyCatalogSort(buildProductQuery(), filters.sort);
             const { data: rawData, error: rawError } = await withTimeout(
               (async () => await boostedQuery.range(0, fetchSize - 1))(),
@@ -365,7 +372,8 @@ export function useCatalogProducts(filters: CatalogFilters) {
             );
             if (rawError) throw rawError;
 
-            const boosted = [...(rawData || [])].sort((a: any, b: any) => {
+            const filtered = dropInactive(rawData || []);
+            const boosted = [...filtered].sort((a: any, b: any) => {
               const aFeatured = featuredIds.has(a.category_id);
               const bFeatured = featuredIds.has(b.category_id);
               if (aFeatured && !bFeatured) return -1;
@@ -388,18 +396,21 @@ export function useCatalogProducts(filters: CatalogFilters) {
         }
       }
 
+      // Sur-fetch côté serveur pour absorber le filtrage client (catégories désactivées).
+      const overFetch = filters.perPage + Math.min(filters.perPage, 24);
       const query = applyCatalogSort(buildProductQuery(), filters.sort);
       const { data, error } = await withTimeout(
-        (async () => await query.range(offset, offset + filters.perPage - 1))(),
+        (async () => await query.range(offset, offset + overFetch - 1))(),
         CATALOG_QUERY_TIMEOUT_MS,
         "Le chargement du catalogue est trop lent."
       );
       if (error) throw error;
 
+      const filteredRows = dropInactive(data || []).slice(0, filters.perPage);
       const countResult = await countPromise;
-      const total = countResult?.count ?? (data?.length === filters.perPage ? offset + data.length + 1 : offset + (data?.length || 0));
+      const total = countResult?.count ?? (filteredRows.length === filters.perPage ? offset + filteredRows.length + 1 : offset + filteredRows.length);
 
-      return { products: (data || []) as CatalogProduct[], total };
+      return { products: filteredRows as CatalogProduct[], total };
     },
     placeholderData: (previousData) => previousData,
     staleTime: 2 * 60 * 1000,

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
@@ -12,6 +12,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { TrendingDown, Equal, Sparkles, Loader2 } from "lucide-react";
+import { useVendorCommissionConfig } from "@/hooks/useVendorCommissionConfig";
+import { computeMargin } from "@/lib/vendorMargin";
+import { MarginInsightCard } from "@/components/vendor/MarginInsightCard";
 
 export interface AdjustPriceContext {
   offerId: string;
@@ -21,6 +24,10 @@ export interface AdjustPriceContext {
   bestMkPrice?: number | null;
   bestExtPrice?: number | null;
   vatRate?: number; // default 0.06 (BE meds) — used to refresh price_incl_vat
+  /** Required to compute net margin / commission breakdown */
+  vendorId?: string | null;
+  /** Required to load the vendor's purchase price (override + default) */
+  productId?: string | null;
 }
 
 interface Props {

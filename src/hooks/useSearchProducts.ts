@@ -99,11 +99,12 @@ export function useSearchProducts(query: string, sort: SortOption = "relevance")
             if (extraIds.length > 0) {
               const { data: extraProducts } = await withSearchTimeout(
                 (async () =>
-                  await supabase
-                    .from("products")
-                    .select(SEARCH_PRODUCT_FIELDS)
-                    .eq("is_active", true)
-                    .in("id", extraIds))(),
+                  await applyHiddenCategoryFilter(
+                    supabase
+                      .from("products")
+                      .select(SEARCH_PRODUCT_FIELDS)
+                      .eq("is_active", true)
+                  ).in("id", extraIds))(),
                 3000
               );
               if (extraProducts) productsData = [...productsData, ...extraProducts];

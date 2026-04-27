@@ -346,17 +346,21 @@ function OfferRow({
         <span>Livraison estimée : {offer.deliveryDays ? (offer.deliveryDays <= 7 ? `${offer.deliveryDays} jours` : `${Math.ceil(offer.deliveryDays / 7)} semaines`) : "5-10 jours ouvrables"}</span>
       </div>
 
-      <VendorSuggestions
-        vendorId={offer.sellerId}
-        vendorSlug={offer.sellerSlug}
-        vendorName={offer.sellerName}
-        currentProductId={productId}
-        categoryId={categoryId}
-      />
+      {offer.sellerId && (
+        <VendorSuggestions
+          vendorId={offer.sellerId}
+          vendorSlug={offer.sellerSlug}
+          vendorName={offer.sellerName}
+          currentProductId={productId}
+          categoryId={categoryId}
+        />
+      )}
 
-      <div className="mt-3">
-        <VendorDelegateCompact vendorId={offer.sellerId} />
-      </div>
+      {offer.sellerId && (
+        <div className="mt-3">
+          <VendorDelegateCompact vendorId={offer.sellerId} />
+        </div>
+      )}
     </motion.div>
   );
 }

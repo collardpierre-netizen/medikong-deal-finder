@@ -1060,7 +1060,12 @@ export default function VendorOffers() {
   const [filterCountry, setFilterCountry] = useState("");
 
   const openCreate = () => { setForm(emptyForm); setEditingId(null); setShowForm(true); };
-  const openEdit = (offer: any) => {
+  const openEdit = async (offer: any) => {
+    // Charger les catégories liées à l'offre
+    const { data: linkedCats } = await supabase
+      .from("offer_categories")
+      .select("category_id")
+      .eq("offer_id", offer.id);
     setForm({
       product_id: offer.product_id,
       product_name: (offer.products as any)?.name || "",
@@ -1071,6 +1076,7 @@ export default function VendorOffers() {
       mov_amount: String(offer.mov_amount || 0),
       delivery_days: String(offer.delivery_days),
       country_code: offer.country_code || "BE",
+      category_ids: (linkedCats || []).map((c: any) => c.category_id),
     });
     setEditingId(offer.id);
     setShowForm(true);

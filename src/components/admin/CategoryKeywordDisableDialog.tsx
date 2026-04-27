@@ -10,6 +10,8 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { useAdminAuth } from "@/hooks/useAdminAuth";
+import { parseBulkGuardError, showBulkGuardToast, forceBulkDeactivate } from "@/lib/bulk-guard";
 
 type Action = "disable" | "enable";
 
@@ -252,7 +254,25 @@ export default function CategoryKeywordDisableDialog({
       qc.invalidateQueries({ queryKey: ["homepage-stats"] });
       onOpenChange(false);
     },
-    onError: (e: any) => toast.error(e.message ?? "Erreur lors de l'opération"),
+    onError: (e: any) => {
+      const info = parseBulkGuardError(e);
+      if (info.isBulkGuard) {
+        showBulkGuardToast(info, {
+          isSuperAdmin,
+          onForce: async () => {
+            try {
+              await forceBulkDeactivate("categories", allCategoryIdsToDisable);
+              toast.success("Désactivation forcée appliquée (super_admin)");
+              qc.invalidateQueries({ queryKey: ["admin-categories"] });
+              qc.invalidateQueries({ queryKey: ["admin-products"] });
+              onOpenChange(false);
+            } catch { /* déjà loggé */ }
+          },
+        });
+        return;
+      }
+      toast.error(e.message ?? "Erreur lors de l'opération");
+    },
   });
 
   return (

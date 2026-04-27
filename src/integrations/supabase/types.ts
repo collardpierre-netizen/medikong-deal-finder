@@ -350,6 +350,71 @@ export type Database = {
           },
         ]
       }
+      category_bulk_actions: {
+        Row: {
+          action: string
+          cascade_products: boolean
+          category_count: number
+          category_ids: string[]
+          created_at: string
+          id: string
+          notes: string | null
+          performed_by: string | null
+          performed_by_email: string | null
+          product_count: number
+          product_ids: string[]
+          scope: string
+          scope_params: Json
+          undo_action_id: string | null
+          undone_at: string | null
+          undone_by: string | null
+        }
+        Insert: {
+          action: string
+          cascade_products?: boolean
+          category_count?: number
+          category_ids?: string[]
+          created_at?: string
+          id?: string
+          notes?: string | null
+          performed_by?: string | null
+          performed_by_email?: string | null
+          product_count?: number
+          product_ids?: string[]
+          scope: string
+          scope_params?: Json
+          undo_action_id?: string | null
+          undone_at?: string | null
+          undone_by?: string | null
+        }
+        Update: {
+          action?: string
+          cascade_products?: boolean
+          category_count?: number
+          category_ids?: string[]
+          created_at?: string
+          id?: string
+          notes?: string | null
+          performed_by?: string | null
+          performed_by_email?: string | null
+          product_count?: number
+          product_ids?: string[]
+          scope?: string
+          scope_params?: Json
+          undo_action_id?: string | null
+          undone_at?: string | null
+          undone_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "category_bulk_actions_undo_action_id_fkey"
+            columns: ["undo_action_id"]
+            isOneToOne: false
+            referencedRelation: "category_bulk_actions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_error_logs: {
         Row: {
           component: string | null

@@ -17,11 +17,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { exportCategories, importCategories } from "@/lib/xlsx-utils";
 import { toast } from "sonner";
 import { useImportJobs } from "@/contexts/ImportContext";
-import { Layers, Tag, Package, ChevronDown, ChevronRight, Download, Upload, Languages, X, Save, Wand2, Merge, ShieldOff } from "lucide-react";
+import { Layers, Tag, Package, ChevronDown, ChevronRight, Download, Upload, Languages, X, Save, Wand2, Merge, ShieldOff, ShieldCheck } from "lucide-react";
 import { Search, FolderTree, ArrowRight, Plus, Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import CategoryKeywordDisableDialog from "@/components/admin/CategoryKeywordDisableDialog";
+import CategoryReactivateDialog from "@/components/admin/CategoryReactivateDialog";
 
 const LOCALES = ["fr", "nl", "de"] as const;
 
@@ -131,6 +132,7 @@ const AdminCategories = () => {
   const [newCatName, setNewCatName] = useState("");
   const [newCatParent, setNewCatParent] = useState("none");
   const [showKeywordDisable, setShowKeywordDisable] = useState(false);
+  const [showReactivate, setShowReactivate] = useState(false);
 
   const searchLower = search.toLowerCase().trim();
   const matchesSearch = (cat: any) => {
@@ -175,25 +177,83 @@ const AdminCategories = () => {
     onError: (e: any) => toast.error(e.message),
   });
 
-  // Global toggle: activate or deactivate ALL categories
+  // Audit helper — logs a deactivation/reactivation batch so the Réactiver dialog can undo it
+  const logBulkAction = async (params: {
+    action: "deactivate" | "reactivate";
+    scope: "last_batch" | "all_inactive" | "manual_filter";
+    scopeParams: Record<string, any>;
+    categoryIds: string[];
+    productIds: string[];
+    cascadeProducts: boolean;
+  }) => {
+    try {
+      const { data: userRes } = await supabase.auth.getUser();
+      const uid = userRes?.user?.id;
+      if (!uid) return;
+      await supabase.from("category_bulk_actions").insert({
+        action: params.action,
+        scope: params.scope,
+        scope_params: params.scopeParams,
+        category_ids: params.categoryIds,
+        product_ids: params.productIds,
+        category_count: params.categoryIds.length,
+        product_count: params.productIds.length,
+        cascade_products: params.cascadeProducts,
+        performed_by: uid,
+        performed_by_email: userRes?.user?.email ?? null,
+      });
+    } catch {
+      // Logging must never break the UX
+    }
+  };
+
+  // Global toggle: activate or deactivate ALL categories (now with audit log)
   const toggleAllVisibility = useMutation({
     mutationFn: async (newActive: boolean) => {
-      const { error, count } = await supabase
+      // Capture impacted IDs BEFORE the update so we can log + undo
+      const { data: impacted } = await supabase
         .from("categories")
-        .update({ is_active: newActive }, { count: "exact" })
+        .select("id")
         .neq("is_active", newActive);
-      if (error) throw error;
-      return { count: count ?? 0, newActive };
+      const catIds = (impacted ?? []).map((r: any) => r.id);
+
+      let prodIds: string[] = [];
+      if (catIds.length > 0) {
+        const { data: prods } = await supabase
+          .from("products")
+          .select("id")
+          .in("category_id", catIds)
+          .neq("is_active", newActive);
+        prodIds = (prods ?? []).map((r: any) => r.id);
+      }
+
+      const { error } = await supabase
+        .from("categories")
+        .update({ is_active: newActive })
+        .in("id", catIds.length ? catIds : ["00000000-0000-0000-0000-000000000000"]);
+      if (error && catIds.length > 0) throw error;
+
+      await logBulkAction({
+        action: newActive ? "reactivate" : "deactivate",
+        scope: "manual_filter",
+        scopeParams: { source: "global_switch" },
+        categoryIds: catIds,
+        productIds: prodIds,
+        cascadeProducts: false,
+      });
+
+      return { count: catIds.length, newActive };
     },
     onSuccess: (result) => {
       const verb = result.newActive ? "activée(s)" : "désactivée(s)";
       toast.success(`${result.count} catégorie(s) ${verb} globalement`);
       qc.invalidateQueries({ queryKey: ["admin-categories"] });
+      qc.invalidateQueries({ queryKey: ["category-bulk-actions"] });
     },
     onError: (e: any) => toast.error(e.message),
   });
 
-  // Toggle visibility of a category + its children + cascade to products
+  // Toggle visibility of a category + its children + cascade to products (with audit log)
   const toggleVisibility = useMutation({
     mutationFn: async ({ id, newActive }: { id: string; newActive: boolean }) => {
       // Collect all category IDs to update (this cat + all descendants)
@@ -207,6 +267,14 @@ const AdminCategories = () => {
       };
       collectChildren(id);
 
+      // Capture products that will actually flip state (for undo)
+      const { data: prods } = await supabase
+        .from("products")
+        .select("id")
+        .in("category_id", allIds)
+        .neq("is_active", newActive);
+      const prodIds = (prods ?? []).map((r: any) => r.id);
+
       // Update categories
       const { error: catError } = await supabase.from("categories").update({ is_active: newActive }).in("id", allIds);
       if (catError) throw catError;
@@ -215,6 +283,15 @@ const AdminCategories = () => {
       const { error: prodError } = await supabase.from("products").update({ is_active: newActive }).in("category_id", allIds);
       if (prodError) throw prodError;
 
+      await logBulkAction({
+        action: newActive ? "reactivate" : "deactivate",
+        scope: "manual_filter",
+        scopeParams: { source: "tree_toggle", root_category_id: id },
+        categoryIds: allIds,
+        productIds: prodIds,
+        cascadeProducts: true,
+      });
+
       return { count: allIds.length, newActive };
     },
     onSuccess: (result) => {
@@ -222,6 +299,7 @@ const AdminCategories = () => {
       toast.success(`${result.count} catégorie(s) ${verb} + produits associés`);
       qc.invalidateQueries({ queryKey: ["admin-categories"] });
       qc.invalidateQueries({ queryKey: ["admin-products"] });
+      qc.invalidateQueries({ queryKey: ["category-bulk-actions"] });
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -342,6 +420,9 @@ const AdminCategories = () => {
                 }}
               />
             </div>
+            <Button variant="outline" size="sm" onClick={() => setShowReactivate(true)} className="text-emerald-700 hover:text-emerald-700 border-emerald-300">
+              <ShieldCheck size={14} className="mr-1" />Réactiver
+            </Button>
             <Button variant="outline" size="sm" onClick={() => setShowKeywordDisable(true)} className="text-destructive hover:text-destructive">
               <ShieldOff size={14} className="mr-1" />Désactiver par mot-clé
             </Button>
@@ -638,6 +719,12 @@ const AdminCategories = () => {
       <CategoryKeywordDisableDialog
         open={showKeywordDisable}
         onOpenChange={setShowKeywordDisable}
+        categories={categoriesData as any}
+      />
+
+      <CategoryReactivateDialog
+        open={showReactivate}
+        onOpenChange={setShowReactivate}
         categories={categoriesData as any}
       />
     </div>

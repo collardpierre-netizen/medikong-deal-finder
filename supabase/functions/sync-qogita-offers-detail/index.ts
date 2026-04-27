@@ -942,6 +942,15 @@ async function processSingleProduct(
             if (inserted > 0) {
               parentStats.tiers_synced = (parentStats.tiers_synced || 0) + inserted;
             }
+
+            // Coherence check: flag if Qogita payload exposes both bundleSize and moq with diverging values
+            await checkBundleMoqCoherence(sb, variant, {
+              product_id: product.id,
+              offer_id: bpUpserted.id,
+              gtin: product.gtin,
+              country,
+              vendor: "qogita-best-price",
+            });
           }
         }
       }

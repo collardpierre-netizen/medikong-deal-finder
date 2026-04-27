@@ -380,13 +380,34 @@ Deno.serve(async (req) => {
 
   let targetCountry = "";
   let fetchMultiVendor = false;
+  let resyncLogId: string | null = null;
   try {
     const body = await req.json();
     if (body?.country) targetCountry = body.country;
     if (body?.multi_vendor) fetchMultiVendor = true;
+    if (body?.resync_log_id) resyncLogId = String(body.resync_log_id);
   } catch {
     // no-op
   }
+
+  // Helper closure: log endpoint errors to qogita_resync_logs (no-op if no resyncLogId)
+  const recordEndpointError = async (endpoint: string, status: number | null, message: string) => {
+    if (!resyncLogId) return;
+    try {
+      await sb.rpc("record_qogita_endpoint_error", {
+        _log_id: resyncLogId,
+        _endpoint: endpoint,
+        _status: status,
+        _error_message: message?.slice(0, 500) ?? null,
+      });
+    } catch (_) { /* swallow — never break sync because of logging */ }
+  };
+  const recordProgress = async (delta: Record<string, number>) => {
+    if (!resyncLogId) return;
+    try {
+      await sb.rpc("record_qogita_resync_progress", { _log_id: resyncLogId, _delta: delta });
+    } catch (_) { /* swallow */ }
+  };
 
   if (!targetCountry) {
     const { data: rows } = await sb.from("qogita_config").select("key, value").eq("key", "default_country");
@@ -611,7 +632,7 @@ async function syncOffers(
       const currentChunkEnd = Math.min(batchStart + (chunkIndex + 1) * executionProfile.parallelConcurrency, batchEnd);
       const results = await Promise.allSettled(
         chunk.map((p: any) =>
-          processSingleProduct(sb, p, baseUrl, token, country, vatRate, vatMultiplier, bestPriceVendorId, fetchMultiVendor, stats)
+          processSingleProduct(sb, p, baseUrl, token, country, vatRate, vatMultiplier, bestPriceVendorId, fetchMultiVendor, stats, recordEndpointError, recordProgress)
         )
       );
 
@@ -685,8 +706,24 @@ async function syncOffers(
     })
     .eq("id", logId);
 
+  // Push aggregate counters & finalize the qogita_resync_logs row (if provided)
+  if (resyncLogId) {
+    try {
+      await sb.rpc("record_qogita_resync_progress", {
+        _log_id: resyncLogId,
+        _delta: {
+          products_processed: stats.products_enriched || 0,
+          offers_processed: stats.offers_upserted || 0,
+          offers_updated: stats.offers_upserted || 0,
+          tiers_synced: stats.tiers_synced || 0,
+        },
+      });
+    } catch (_) { /* never fail the sync because of logging */ }
+  }
+
   await sb.from("qogita_config").upsert({ key: "last_offers_sync_at", value: new Date().toISOString(), updated_at: new Date().toISOString() }, { onConflict: "key" });
   await sb.from("qogita_config").upsert({ key: "sync_status", value: "completed", updated_at: new Date().toISOString() }, { onConflict: "key" });
+
 
   return stats;
 }
@@ -703,6 +740,8 @@ async function processSingleProduct(
   bestPriceVendorId: string,
   fetchMultiVendor: boolean,
   parentStats: any,
+  recordEndpointError?: (endpoint: string, status: number | null, message: string) => Promise<void>,
+  recordProgress?: (delta: Record<string, number>) => Promise<void>,
 ) {
   const localStats = {
     products_enriched: 0,
@@ -720,6 +759,9 @@ async function processSingleProduct(
         if (res.status === 404) localStats.skipped++;
         else if (res.status === 429) { localStats.rate_limited++; localStats.errors++; }
         else localStats.errors++;
+        if (res.status !== 404 && recordEndpointError) {
+          await recordEndpointError(`/variants/?country=${country}`, res.status, `gtin=${product.gtin} qid=${product.qogita_qid ?? ""}`);
+        }
         await sleep(BATCH_DELAY_MS);
         return localStats;
       }
@@ -828,6 +870,10 @@ async function processSingleProduct(
         try {
           const offersUrl = `${baseUrl}/variants/${variant.fid}/${variant.slug}/offers/`;
           const offersRes = await fetchWithRetry(offersUrl, token);
+
+          if (!offersRes.ok && recordEndpointError) {
+            await recordEndpointError(`/variants/{fid}/{slug}/offers/`, offersRes.status, `gtin=${product.gtin} fid=${variant.fid}`);
+          }
 
           if (offersRes.ok) {
             const offersData = await offersRes.json();

@@ -37,6 +37,8 @@ export default function CategoryKeywordDisableDialog({
   defaultKeywords = ["parfum", "fragrance", "perfume", "cologne", "eau de toilette", "eau de parfum"],
 }: Props) {
   const qc = useQueryClient();
+  const { role: adminRole } = useAdminAuth();
+  const isSuperAdmin = adminRole === "super_admin";
   const [action, setAction] = useState<Action>("disable");
   const [keywordInput, setKeywordInput] = useState("");
   const [keywords, setKeywords] = useState<string[]>(defaultKeywords);

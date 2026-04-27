@@ -344,6 +344,9 @@ const AdminCategories = () => {
                 }}
               />
             </div>
+            <Button variant="outline" size="sm" onClick={() => setShowReactivate(true)} className="text-emerald-700 hover:text-emerald-700 border-emerald-300">
+              <ShieldCheck size={14} className="mr-1" />Réactiver
+            </Button>
             <Button variant="outline" size="sm" onClick={() => setShowKeywordDisable(true)} className="text-destructive hover:text-destructive">
               <ShieldOff size={14} className="mr-1" />Désactiver par mot-clé
             </Button>

@@ -1000,6 +1000,7 @@ function ProfileRulesEditor({ offerId, basePrice }: { offerId: string | null; ba
 /* ─── Main Page ─── */
 export default function VendorOffers() {
   const { data: vendor } = useCurrentVendor();
+  const { data: commissionConfig } = useVendorCommissionConfig(vendor?.id);
   const [statusFilter, setStatusFilter] = useState<OfferStatusFilter>("active");
   const { data: offers = [], isLoading } = useVendorOffers(vendor?.id, statusFilter);
   const qc = useQueryClient();

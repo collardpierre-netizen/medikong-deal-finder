@@ -45,10 +45,12 @@ async function postgresFederatedSearch(query: string): Promise<FederatedResults>
   const pattern = `%${query}%`;
 
   const [productsRes, brandsRes, categoriesRes] = await Promise.all([
-    supabase
-      .from("products")
-      .select("id, name, slug, brand_name, gtin, cnk_code, image_urls, image_url, best_price_excl_vat, best_price_incl_vat, offer_count, is_in_stock, category_name")
-      .eq("is_active", true)
+    applyHiddenCategoryFilter(
+      supabase
+        .from("products")
+        .select("id, name, slug, brand_name, gtin, cnk_code, image_urls, image_url, best_price_excl_vat, best_price_incl_vat, offer_count, is_in_stock, category_name")
+        .eq("is_active", true)
+    )
       .or(`name.ilike.${pattern},gtin.ilike.${pattern},cnk_code.ilike.${pattern},brand_name.ilike.${pattern}`)
       .order("offer_count", { ascending: false })
       .limit(6),

@@ -142,7 +142,7 @@ export function AdjustPriceModal({ open, onOpenChange, ctx, invalidateKeys }: Pr
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-base">Ajuster mon prix</DialogTitle>
           <DialogDescription className="text-xs">
@@ -185,6 +185,11 @@ export function AdjustPriceModal({ open, onOpenChange, ctx, invalidateKeys }: Pr
                   <span className="tabular-nums text-muted-foreground">
                     {lowestCompetitor.toFixed(2)} €
                   </span>
+                  {fmtNet(lowestCompetitor) && (
+                    <span className="text-[10px] tabular-nums text-blue-700 font-medium">
+                      {fmtNet(lowestCompetitor)}
+                    </span>
+                  )}
                 </button>
                 <button
                   type="button"
@@ -196,6 +201,11 @@ export function AdjustPriceModal({ open, onOpenChange, ctx, invalidateKeys }: Pr
                   <span className="tabular-nums text-muted-foreground">
                     {round2(lowestCompetitor * 0.99).toFixed(2)} €
                   </span>
+                  {fmtNet(round2(lowestCompetitor * 0.99)) && (
+                    <span className="text-[10px] tabular-nums text-blue-700 font-medium">
+                      {fmtNet(round2(lowestCompetitor * 0.99))}
+                    </span>
+                  )}
                 </button>
                 <button
                   type="button"
@@ -207,6 +217,11 @@ export function AdjustPriceModal({ open, onOpenChange, ctx, invalidateKeys }: Pr
                   <span className="tabular-nums text-muted-foreground">
                     {round2(lowestCompetitor * 0.97).toFixed(2)} €
                   </span>
+                  {fmtNet(round2(lowestCompetitor * 0.97)) && (
+                    <span className="text-[10px] tabular-nums text-blue-700 font-medium">
+                      {fmtNet(round2(lowestCompetitor * 0.97))}
+                    </span>
+                  )}
                 </button>
               </div>
             </div>
@@ -237,6 +252,15 @@ export function AdjustPriceModal({ open, onOpenChange, ctx, invalidateKeys }: Pr
               </div>
             )}
           </div>
+
+          {/* Margin & commission breakdown for the proposed price */}
+          {valid && commissionConfig && (
+            <MarginInsightCard
+              breakdown={computeMargin(parsed, purchasePrice ?? null, commissionConfig)}
+              commissionModel={commissionConfig.commission_model}
+              compact
+            />
+          )}
 
           <div className="flex items-center justify-end gap-2 pt-2">
             <button

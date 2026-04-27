@@ -39,6 +39,8 @@ const AdminCategories = () => {
   const { data: totalCategoryCount = 0 } = useCategoryCount();
   const { data: translations = [] } = useEntityTranslations("category");
   const batchSave = useBatchSaveTranslations();
+  const { role: adminRole } = useAdminAuth();
+  const isSuperAdmin = adminRole === "super_admin";
   const [expanded, setExpanded] = useState<string[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<any>(null);

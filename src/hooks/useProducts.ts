@@ -190,6 +190,7 @@ export interface Offer {
   isActive: boolean;
   updatedAt?: string | null;
   syncedAt?: string | null;
+  isQogitaBacked?: boolean;
   sellerName?: string;
   sellerSlug?: string;
   isVerified?: boolean;

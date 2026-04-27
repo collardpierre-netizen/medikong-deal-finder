@@ -875,11 +875,8 @@ async function processSingleProduct(
                     console.error(`[qogita.tiers] error offer=${upsertedOffer.id}: ${tErr.message}`);
                   }
                 }
-                  } catch (tErr: any) {
-                    console.error(`[qogita.tiers] error offer=${upsertedOffer.id}: ${tErr.message}`);
-                  }
-                }
               }
+            }
             }
           } else if (offersRes.status === 429) {
             localStats.rate_limited++;

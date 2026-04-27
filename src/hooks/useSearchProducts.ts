@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { isValidProductImage } from "@/lib/image-utils";
 import { useCountry } from "@/contexts/CountryContext";
+import { applyHiddenCategoryFilter, isHiddenCategoryName } from "@/lib/catalog-filters";
 import type { Product } from "./useProducts";
 
 const SEARCH_PRODUCT_FIELDS = "id, slug, name, brand_name, gtin, cnk_code, image_url, image_urls, short_description, description, category_name, offer_count, is_in_stock, best_price_excl_vat, best_price_incl_vat, unit_quantity";

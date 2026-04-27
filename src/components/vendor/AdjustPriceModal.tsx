@@ -43,6 +43,11 @@ interface Props {
    * even before the user confirms the new price.
    */
   onPriceChange?: (newPriceExclVat: number | null) => void;
+  /**
+   * Called once the price has been successfully persisted, with the previous and the new
+   * HTVA prices. Used by the parent to render an "Avant / Après" comparison.
+   */
+  onPriceSaved?: (oldPriceExclVat: number, newPriceExclVat: number) => void;
 }
 
 const round2 = (n: number) => Math.round(n * 100) / 100;

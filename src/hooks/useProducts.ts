@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { isValidProductImage } from "@/lib/image-utils";
 import { useCountry } from "@/contexts/CountryContext";
 import { resolveVendorVisibility, getVendorPublicName } from "@/lib/vendor-display";
+import { applyHiddenCategoryFilter } from "@/lib/catalog-filters";
 
 export interface Product {
   id: string;
@@ -94,10 +95,12 @@ export function useFeaturedProducts(limit = 10, options?: { promotion?: boolean;
   return useQuery({
     queryKey: ["featured-products", limit, country, options?.promotion, options?.brandSlug, options?.categoryName],
     queryFn: async () => {
-      let query = supabase
-        .from("products")
-        .select("id, slug, name, brand_name, brand_id, gtin, cnk_code, image_urls, short_description, is_promotion, promotion_label, best_price_excl_vat, best_price_incl_vat, offer_count, total_stock, is_in_stock, category_name, brands(slug)")
-        .eq("is_active", true);
+      let query = applyHiddenCategoryFilter(
+        supabase
+          .from("products")
+          .select("id, slug, name, brand_name, brand_id, gtin, cnk_code, image_urls, short_description, is_promotion, promotion_label, best_price_excl_vat, best_price_incl_vat, offer_count, total_stock, is_in_stock, category_name, brands(slug)")
+          .eq("is_active", true)
+      );
 
       // Only filter on offers/price when NOT browsing a specific brand
       if (!options?.brandSlug) {

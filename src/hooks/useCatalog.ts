@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useCountry } from "@/contexts/CountryContext";
 import { getLocalizedName } from "@/lib/localization";
+import { applyHiddenCategoryFilter } from "@/lib/catalog-filters";
 import { useCallback, useMemo } from "react";
 
 const PRODUCT_SELECT_FIELDS = "id, slug, name, name_fr, name_nl, name_de, brand_name, brand_id, category_id, category_name, gtin, cnk_code, image_url, image_urls, short_description, is_promotion, promotion_label, best_price_excl_vat, best_price_incl_vat, offer_count, total_stock, is_in_stock, created_at";
@@ -314,7 +315,9 @@ export function useCatalogProducts(filters: CatalogFilters) {
 
       const buildProductQuery = () =>
         applyCatalogProductFilters(
-          supabase.from("products").select(PRODUCT_SELECT_FIELDS).eq("is_active", true),
+          applyHiddenCategoryFilter(
+            supabase.from("products").select(PRODUCT_SELECT_FIELDS).eq("is_active", true)
+          ),
           filters,
           filterContext
         );
@@ -324,7 +327,9 @@ export function useCatalogProducts(filters: CatalogFilters) {
           // Use exact count when no heavy filters are applied so the catalogue header
           // shows the real total (~348k). Switch to estimated when filters narrow
           // the result set, for performance on combined OR/IN clauses.
-          supabase.from("products").select("id", { count: hasFilters ? "estimated" : "exact" }).eq("is_active", true),
+          applyHiddenCategoryFilter(
+            supabase.from("products").select("id", { count: hasFilters ? "estimated" : "exact" }).eq("is_active", true)
+          ),
           filters,
           filterContext
         );

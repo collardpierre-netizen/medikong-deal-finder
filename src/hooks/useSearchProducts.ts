@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { isValidProductImage } from "@/lib/image-utils";
 import { useCountry } from "@/contexts/CountryContext";
+import { applyHiddenCategoryFilter, isHiddenCategoryName } from "@/lib/catalog-filters";
 import type { Product } from "./useProducts";
 
 const SEARCH_PRODUCT_FIELDS = "id, slug, name, brand_name, gtin, cnk_code, image_url, image_urls, short_description, description, category_name, offer_count, is_in_stock, best_price_excl_vat, best_price_incl_vat, unit_quantity";
@@ -70,10 +71,12 @@ export function useSearchProducts(query: string, sort: SortOption = "relevance")
         const trimmed = query.trim();
         const { data, error } = await withSearchTimeout(
           (async () =>
-            await supabase
-              .from("products")
-              .select(SEARCH_PRODUCT_FIELDS)
-              .eq("is_active", true)
+            await applyHiddenCategoryFilter(
+              supabase
+                .from("products")
+                .select(SEARCH_PRODUCT_FIELDS)
+                .eq("is_active", true)
+            )
               .or(`name.ilike.%${trimmed}%,gtin.ilike.%${trimmed}%,cnk_code.ilike.%${trimmed}%,brand_name.ilike.%${trimmed}%`)
               .limit(60))()
         );
@@ -96,11 +99,12 @@ export function useSearchProducts(query: string, sort: SortOption = "relevance")
             if (extraIds.length > 0) {
               const { data: extraProducts } = await withSearchTimeout(
                 (async () =>
-                  await supabase
-                    .from("products")
-                    .select(SEARCH_PRODUCT_FIELDS)
-                    .eq("is_active", true)
-                    .in("id", extraIds))(),
+                  await applyHiddenCategoryFilter(
+                    supabase
+                      .from("products")
+                      .select(SEARCH_PRODUCT_FIELDS)
+                      .eq("is_active", true)
+                  ).in("id", extraIds))(),
                 3000
               );
               if (extraProducts) productsData = [...productsData, ...extraProducts];
@@ -110,16 +114,22 @@ export function useSearchProducts(query: string, sort: SortOption = "relevance")
       } else {
         const { data, error } = await withSearchTimeout(
           (async () =>
-            await supabase
-              .from("products")
-              .select(SEARCH_PRODUCT_FIELDS)
-              .eq("is_active", true)
+            await applyHiddenCategoryFilter(
+              supabase
+                .from("products")
+                .select(SEARCH_PRODUCT_FIELDS)
+                .eq("is_active", true)
+            )
               .order("created_at", { ascending: false })
               .limit(60))()
         );
         if (error) throw error;
         productsData = data || [];
       }
+
+      // Safety net : si une catégorie matche mais n'avait pas été filtrée
+      // côté DB (ex: id retrouvé via product_market_codes), on l'écarte ici.
+      productsData = productsData.filter((p: any) => !isHiddenCategoryName(p.category_name));
 
       const productIds = productsData.map((p: any) => p.id);
       let offersData: any[] = [];

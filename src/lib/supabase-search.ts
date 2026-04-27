@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { federatedSearch as meiliFederatedSearch, isMeilisearchConfigured } from "@/lib/meilisearch";
+import { applyHiddenCategoryFilter, isHiddenCategoryName } from "@/lib/catalog-filters";
 
 export interface SearchProduct {
   id: string;
@@ -44,10 +45,12 @@ async function postgresFederatedSearch(query: string): Promise<FederatedResults>
   const pattern = `%${query}%`;
 
   const [productsRes, brandsRes, categoriesRes] = await Promise.all([
-    supabase
-      .from("products")
-      .select("id, name, slug, brand_name, gtin, cnk_code, image_urls, image_url, best_price_excl_vat, best_price_incl_vat, offer_count, is_in_stock, category_name")
-      .eq("is_active", true)
+    applyHiddenCategoryFilter(
+      supabase
+        .from("products")
+        .select("id, name, slug, brand_name, gtin, cnk_code, image_urls, image_url, best_price_excl_vat, best_price_incl_vat, offer_count, is_in_stock, category_name")
+        .eq("is_active", true)
+    )
       .or(`name.ilike.${pattern},gtin.ilike.${pattern},cnk_code.ilike.${pattern},brand_name.ilike.${pattern}`)
       .order("offer_count", { ascending: false })
       .limit(6),
@@ -88,10 +91,13 @@ export async function federatedSearch(query: string): Promise<FederatedResults> 
       const searchTimeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000));
       const meiliRes = await Promise.race([searchPromise, searchTimeout]);
       if (meiliRes) {
-        const hasResults = meiliRes.products.length > 0 || meiliRes.brands.length > 0 || meiliRes.categories.length > 0;
+        const filteredProducts = meiliRes.products.filter(
+          (p: any) => !isHiddenCategoryName(p.category_name)
+        );
+        const hasResults = filteredProducts.length > 0 || meiliRes.brands.length > 0 || meiliRes.categories.length > 0;
         if (hasResults) {
           return {
-            products: meiliRes.products.map(p => ({
+            products: filteredProducts.map(p => ({
               ...p,
               image_urls: p.image_url ? [p.image_url] : [],
               image_url: p.image_url || null,

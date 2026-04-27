@@ -190,27 +190,13 @@ const infoBox = {
 }
 const infoLine = { fontSize: '13px', color: '#1D2530', margin: '4px 0', lineHeight: '1.5' }
 
-const urgencyBoxInfo = {
-  backgroundColor: '#eff6ff',
-  borderLeft: '3px solid #3b82f6',
-  borderRadius: '6px',
-  padding: '12px 14px',
-  margin: '14px 0',
-}
-const urgencyBoxWarn = {
-  backgroundColor: '#fffbeb',
-  borderLeft: '3px solid #f59e0b',
-  borderRadius: '6px',
-  padding: '12px 14px',
-  margin: '14px 0',
-}
-const urgencyBoxAlert = {
-  backgroundColor: '#fef2f2',
-  borderLeft: '3px solid #dc2626',
-  borderRadius: '6px',
-  padding: '12px 14px',
-  margin: '14px 0',
-}
+// NB: les variantes de "urgency box" (info/warn/alert) sont désormais
+// inlinées dans LEVEL_COPY[level].toneStyle à partir de `urgencyBoxBase`
+// (cf. lignes 31-35 et 46/56/66). On ne déclare plus de constantes
+// urgencyBoxInfo / urgencyBoxWarn / urgencyBoxAlert ici pour éviter
+// tout risque de référence TDZ depuis l'objet LEVEL_COPY évalué au
+// chargement du module.
+
 const urgencyText_ = { fontSize: '13px', color: '#1D2530', margin: '0', lineHeight: '1.6' }
 
 const button = {

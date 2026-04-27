@@ -1324,6 +1324,31 @@ export default function VendorOffers() {
                 <option value="LU">Luxembourg</option><option value="DE">Allemagne</option>
               </select>
             </div>
+            <div className="md:col-span-2">
+              <label className="text-[11px] block mb-1" style={{ color: "#8B95A5" }}>
+                Prix d'achat HTVA (€) <span className="text-[#8B95A5] font-normal">— optionnel, sert au calcul de marge nette</span>
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="Ex: 1.20"
+                className="w-full px-3 py-2 text-[13px] border rounded-lg focus:border-[#1B5BDA] focus:outline-none"
+                style={{ borderColor: "#E2E8F0" }}
+                value={form.purchase_price_excl_vat}
+                onChange={e => setForm(p => ({ ...p, purchase_price_excl_vat: e.target.value }))}
+              />
+              {form.product_id && form.purchase_price_excl_vat && (
+                <label className="flex items-center gap-2 mt-1.5 text-[11px] cursor-pointer" style={{ color: "#616B7C" }}>
+                  <input
+                    type="checkbox"
+                    checked={form.save_as_product_default}
+                    onChange={e => setForm(p => ({ ...p, save_as_product_default: e.target.checked }))}
+                  />
+                  Mémoriser comme prix d'achat par défaut pour ce produit (réutilisé sur vos autres offres / pays)
+                </label>
+              )}
+            </div>
           </div>
 
           {/* ─── Catégories de visibilité (obligatoire) ─── */}

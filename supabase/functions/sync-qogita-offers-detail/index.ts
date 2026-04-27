@@ -22,6 +22,33 @@ function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
+// --- Qogita rate limiter (token bucket en mémoire) ---
+// Lisse les appels à ~4 req/s globales pour cette instance d'edge function,
+// indépendamment de la concurrence interne. Évite les pics 429.
+const QOGITA_RATE_CAPACITY = 8;          // burst max
+const QOGITA_RATE_REFILL_PER_SEC = 4;    // débit soutenu
+let qogitaTokens = QOGITA_RATE_CAPACITY;
+let qogitaLastRefill = Date.now();
+
+async function acquireQogitaToken(): Promise<void> {
+  while (true) {
+    const now = Date.now();
+    const elapsedSec = (now - qogitaLastRefill) / 1000;
+    if (elapsedSec > 0) {
+      qogitaTokens = Math.min(QOGITA_RATE_CAPACITY, qogitaTokens + elapsedSec * QOGITA_RATE_REFILL_PER_SEC);
+      qogitaLastRefill = now;
+    }
+    if (qogitaTokens >= 1) {
+      qogitaTokens -= 1;
+      return;
+    }
+    // Pas de token : attendre le délai exact pour en regagner 1
+    const waitMs = Math.ceil(((1 - qogitaTokens) / QOGITA_RATE_REFILL_PER_SEC) * 1000);
+    await sleep(waitMs);
+  }
+}
+
+
 function getExecutionProfile(fetchMultiVendor: boolean) {
   if (fetchMultiVendor) {
     return {

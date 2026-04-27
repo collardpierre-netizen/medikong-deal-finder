@@ -88,9 +88,12 @@ export default function HomePage() {
 
       const [productsRes, offersRes, brandsRes, vendorsRes] = await Promise.all([
         productsQuery,
-        supabase.from("offers").select("id", { count: "estimated", head: true }).eq("country_code", country).eq("is_active", true),
+        // RPC publiques : les tables offers/vendors sont protégées par RLS
+        // (PII, marges, prix d'achat) et invisibles aux visiteurs anonymes.
+        // Les fonctions SECURITY DEFINER renvoient juste un compteur sûr.
+        supabase.rpc("public_active_offers_count", { _country_code: country }),
         supabase.from("brands").select("id", { count: "estimated", head: true }).eq("is_active", true).gt("product_count", 0),
-        supabase.from("vendors").select("id", { count: "estimated", head: true }).eq("is_active", true).eq("is_verified", true),
+        supabase.rpc("public_verified_vendors_count"),
       ]);
 
       const queryError = productsRes.error || offersRes.error || brandsRes.error || vendorsRes.error;
@@ -98,9 +101,9 @@ export default function HomePage() {
 
       return {
         products: productsRes.count || 0,
-        offers: offersRes.count || 0,
+        offers: Number(offersRes.data) || 0,
         brands: brandsRes.count || 0,
-        vendors: vendorsRes.count || 0,
+        vendors: Number(vendorsRes.data) || 0,
       };
     },
     staleTime: 5 * 60 * 1000,

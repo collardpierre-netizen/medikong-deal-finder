@@ -7214,6 +7214,11 @@ export type Database = {
         }
         Returns: number
       }
+      public_active_offers_count: {
+        Args: { _country_code?: string }
+        Returns: number
+      }
+      public_verified_vendors_count: { Args: never; Returns: number }
       read_email_batch: {
         Args: { batch_size: number; queue_name: string; vt: number }
         Returns: {

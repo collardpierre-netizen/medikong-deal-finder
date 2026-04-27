@@ -1,5 +1,6 @@
-import { Component, type ReactNode } from "react";
+import { Component, type ErrorInfo, type ReactNode } from "react";
 import { AlertTriangle } from "lucide-react";
+import { report as reportClientError } from "@/lib/errorReporter";
 
 interface SafeBoundaryProps {
   children: ReactNode;

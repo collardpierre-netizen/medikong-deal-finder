@@ -93,6 +93,19 @@ export function AdjustPriceModal({ open, onOpenChange, ctx, invalidateKeys, onPr
     if (open && ctx) setNewPrice(ctx.myPrice.toFixed(2));
   }, [open, ctx]);
 
+  // Push every typed price up to the parent so it can refresh its own
+  // "Mon offre — marge & commission MediKong" panel live, without waiting
+  // for the user to confirm.
+  useEffect(() => {
+    if (!onPriceChange) return;
+    if (!open) {
+      onPriceChange(null);
+      return;
+    }
+    const n = Number(newPrice);
+    onPriceChange(Number.isFinite(n) && n > 0 ? n : null);
+  }, [newPrice, open, onPriceChange]);
+
   const update = useMutation({
     mutationFn: async (priceExcl: number) => {
       if (!ctx) throw new Error("Aucune offre sélectionnée");

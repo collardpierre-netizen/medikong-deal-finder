@@ -15,6 +15,7 @@ import { useCountry } from "@/contexts/CountryContext";
 import { AnimatedCounter } from "@/components/entreprise/AnimatedCounter";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { applyHiddenCategoryFilter } from "@/lib/catalog-filters";
 import { InstantSearchBar } from "@/components/search/InstantSearchBar";
 
 const iconMap: Record<string, React.ReactNode> = {

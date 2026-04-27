@@ -810,6 +810,12 @@ export default function VendorMarketIntel() {
                       <tr>
                         <th className="px-3 py-2 text-left">Vendeur</th>
                         <th className="px-3 py-2 text-right">Prix HTVA</th>
+                        <th
+                          className="px-3 py-2 text-right"
+                          title="Net en poche estimé si vous vendiez à ce prix (prix − commission MediKong)"
+                        >
+                          Net après commission
+                        </th>
                         <th className="px-3 py-2 text-left">Statut</th>
                         <th className="px-3 py-2 text-center">Promo</th>
                         <th className="px-3 py-2 text-right">Délai</th>

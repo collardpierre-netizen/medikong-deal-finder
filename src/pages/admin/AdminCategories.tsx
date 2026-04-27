@@ -41,6 +41,42 @@ const AdminCategories = () => {
   const batchSave = useBatchSaveTranslations();
   const { role: adminRole } = useAdminAuth();
   const isSuperAdmin = adminRole === "super_admin";
+
+  // Mémorise le dernier batch tenté pour pouvoir le ré-essayer en force
+  const lastBulkBatchRef = useRef<{
+    table: "categories" | "products" | "offers";
+    ids: string[];
+    cascadeProductIds?: string[];
+  } | null>(null);
+
+  /** Intercepte les erreurs garde-fou et propose le bouton "Forcer" pour super_admin. */
+  const handleBulkError = (e: any) => {
+    const info = parseBulkGuardError(e);
+    if (info.isBulkGuard) {
+      showBulkGuardToast(info, {
+        isSuperAdmin,
+        onForce: async () => {
+          const batch = lastBulkBatchRef.current;
+          if (!batch) return;
+          try {
+            await forceBulkDeactivate(batch.table, batch.ids);
+            // Cascade produits si on avait capturé un set
+            if (batch.cascadeProductIds && batch.cascadeProductIds.length) {
+              await forceBulkDeactivate("products", batch.cascadeProductIds);
+            }
+            qc.invalidateQueries({ queryKey: ["admin-categories"] });
+            qc.invalidateQueries({ queryKey: ["admin-products"] });
+            qc.invalidateQueries({ queryKey: ["category-bulk-actions"] });
+          } catch {
+            /* toast déjà affiché par forceBulkDeactivate */
+          }
+        },
+      });
+      return;
+    }
+    toast.error(e?.message ?? String(e));
+  };
+
   const [expanded, setExpanded] = useState<string[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<any>(null);

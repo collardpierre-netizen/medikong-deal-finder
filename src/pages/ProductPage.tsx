@@ -257,6 +257,15 @@ function OfferRow({
               <Store size={11} /> Voir la boutique
             </Link>
           )}
+          {offer.syncedAt && (
+            <span
+              className="inline-flex items-center gap-1 text-[10px] text-muted-foreground w-fit"
+              title={`Source : ${offer.isQogitaBacked ? "Qogita" : "Vendeur"}\nDernière synchronisation : ${new Date(offer.syncedAt).toLocaleString("fr-FR")}`}
+            >
+              <Info size={10} />
+              {offer.isQogitaBacked ? "Qogita" : "Vendeur"} · synchro {formatRelative(offer.syncedAt)}
+            </span>
+          )}
         </div>
 
         {/* Price + MOV merged column */}

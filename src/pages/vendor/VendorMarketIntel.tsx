@@ -350,6 +350,17 @@ export default function VendorMarketIntel() {
     enabled: Boolean(vendorId),
   });
 
+  // Live-synced version of openRow: when the underlying query refetches
+  // (e.g. after editing the price via AdjustPriceModal), the popup reflects
+  // the new my_price_excl_vat / medikong_offers without needing a manual reload.
+  const liveOpenRow = useMemo<IntelRow | null>(() => {
+    if (!openRow) return null;
+    const fresh = rows.find(
+      (r) => r.product_id === openRow.product_id && r.country_code === openRow.country_code,
+    );
+    return fresh ?? openRow;
+  }, [openRow, rows]);
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     const ean = eanFilter.trim().toLowerCase();
@@ -766,23 +777,23 @@ export default function VendorMarketIntel() {
           <DialogHeader>
             <DialogTitle className="text-base flex items-center justify-between gap-3">
               <div>
-                {openRow?.product_name}
+                {liveOpenRow?.product_name}
                 <div className="text-xs font-normal text-muted-foreground mt-1">
-                  EAN {openRow?.gtin || "—"} · {openRow?.country_code}
+                  EAN {liveOpenRow?.gtin || "—"} · {liveOpenRow?.country_code}
                 </div>
               </div>
-              {openRow && (
+              {liveOpenRow && (
                 <button
                   onClick={() =>
                     setAdjustCtx({
-                      offerId: openRow.my_offer_id,
-                      productName: openRow.product_name,
-                      gtin: openRow.gtin,
-                      myPrice: openRow.my_price_excl_vat,
-                      bestMkPrice: openRow.best_medikong_competitor_price,
-                      bestExtPrice: openRow.best_external_price,
+                      offerId: liveOpenRow.my_offer_id,
+                      productName: liveOpenRow.product_name,
+                      gtin: liveOpenRow.gtin,
+                      myPrice: liveOpenRow.my_price_excl_vat,
+                      bestMkPrice: liveOpenRow.best_medikong_competitor_price,
+                      bestExtPrice: liveOpenRow.best_external_price,
                       vendorId,
-                      productId: openRow.product_id,
+                      productId: liveOpenRow.product_id,
                     })
                   }
                   className="shrink-0 inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
@@ -792,7 +803,7 @@ export default function VendorMarketIntel() {
               )}
             </DialogTitle>
           </DialogHeader>
-          {openRow && (
+          {liveOpenRow && (
             <div className="space-y-6">
               {/* Marge & commission sur l'offre actuelle du vendeur */}
               {commissionConfig && (
@@ -802,7 +813,7 @@ export default function VendorMarketIntel() {
                   </h3>
                   <MarginInsightCard
                     breakdown={computeMargin(
-                      openRow.my_price_excl_vat,
+                      liveOpenRow.my_price_excl_vat,
                       openRowPurchasePrice ?? null,
                       commissionConfig,
                     )}
@@ -811,7 +822,7 @@ export default function VendorMarketIntel() {
                   <div className="mt-2">
                     <MarginBreakdownDetails
                       breakdown={computeMargin(
-                        openRow.my_price_excl_vat,
+                        liveOpenRow.my_price_excl_vat,
                         openRowPurchasePrice ?? null,
                         commissionConfig,
                       )}
@@ -819,7 +830,7 @@ export default function VendorMarketIntel() {
                       commissionRate={commissionConfig.commission_rate}
                       marginSplitPct={commissionConfig.margin_split_pct}
                       fixedCommissionAmount={commissionConfig.fixed_commission_amount}
-                      offerId={openRow.my_offer_id}
+                      offerId={liveOpenRow.my_offer_id}
                     />
                   </div>
                   {openRowPurchasePrice == null && (
@@ -832,7 +843,7 @@ export default function VendorMarketIntel() {
 
               {/* Offres MediKong */}
               {(() => {
-                const allOffers = openRow.medikong_offers || [];
+                const allOffers = liveOpenRow.medikong_offers || [];
                 // Calcul net pour chaque offre (basé sur la commission du vendeur courant)
                 const withNet = allOffers.map((o) => {
                   const net = commissionConfig
@@ -1095,9 +1106,9 @@ export default function VendorMarketIntel() {
               {/* Offres externes */}
               <section>
                 <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
-                  <Globe size={14} /> Sources externes ({openRow.external_offers?.length || 0})
+                  <Globe size={14} /> Sources externes ({liveOpenRow.external_offers?.length || 0})
                 </h3>
-                {(openRow.external_offers?.length || 0) === 0 ? (
+                {(liveOpenRow.external_offers?.length || 0) === 0 ? (
                   <div className="text-xs text-muted-foreground border rounded-lg p-4 text-center">
                     Aucune source externe matchée pour cet EAN.
                   </div>
@@ -1116,7 +1127,7 @@ export default function VendorMarketIntel() {
                         </tr>
                       </thead>
                       <tbody>
-                        {openRow.external_offers.map((e, i) => (
+                        {liveOpenRow.external_offers.map((e, i) => (
                           <tr key={`${e.source_id}-${i}`} className="border-t">
                             <td className="px-3 py-2">{e.source_name}</td>
                             <td className="px-3 py-2 text-right tabular-nums">

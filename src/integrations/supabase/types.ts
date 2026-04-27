@@ -1862,6 +1862,64 @@ export type Database = {
           },
         ]
       }
+      offer_data_quality_logs: {
+        Row: {
+          details: Json | null
+          first_seen_at: string
+          id: string
+          issue_code: string
+          last_seen_at: string
+          occurrence_count: number
+          offer_id: string | null
+          product_id: string | null
+          resolved_at: string | null
+        }
+        Insert: {
+          details?: Json | null
+          first_seen_at?: string
+          id?: string
+          issue_code: string
+          last_seen_at?: string
+          occurrence_count?: number
+          offer_id?: string | null
+          product_id?: string | null
+          resolved_at?: string | null
+        }
+        Update: {
+          details?: Json | null
+          first_seen_at?: string
+          id?: string
+          issue_code?: string
+          last_seen_at?: string
+          occurrence_count?: number
+          offer_id?: string | null
+          product_id?: string | null
+          resolved_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "offer_data_quality_logs_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offer_data_quality_logs_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "public_offers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offer_data_quality_logs_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       offer_margin_snapshots: {
         Row: {
           commission_amount: number
@@ -3297,6 +3355,7 @@ export type Database = {
       }
       products: {
         Row: {
+          best_bundle_size: number | null
           best_price_excl_vat: number | null
           best_price_incl_vat: number | null
           brand: string | null
@@ -3365,6 +3424,7 @@ export type Database = {
           width: number | null
         }
         Insert: {
+          best_bundle_size?: number | null
           best_price_excl_vat?: number | null
           best_price_incl_vat?: number | null
           brand?: string | null
@@ -3433,6 +3493,7 @@ export type Database = {
           width?: number | null
         }
         Update: {
+          best_bundle_size?: number | null
           best_price_excl_vat?: number | null
           best_price_incl_vat?: number | null
           brand?: string | null
@@ -7925,6 +7986,15 @@ export type Database = {
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      log_offer_data_issue: {
+        Args: {
+          _details?: Json
+          _issue_code: string
+          _offer_id: string
+          _product_id: string
+        }
+        Returns: undefined
+      }
       match_import_lines: {
         Args: { _lines: Json }
         Returns: {

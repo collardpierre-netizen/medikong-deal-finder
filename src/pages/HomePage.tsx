@@ -45,9 +45,12 @@ export default function HomePage() {
       // Compute the cascade of inactive categories so the home counter matches
       // what the catalogue actually shows (admin-disabled families like Perfumes
       // must be excluded everywhere, not just on /catalogue).
+      // NB: lecture explicite jusqu'à 10 000 lignes — la limite par défaut
+      // Supabase est de 1 000, ce qui tronquait l'arbre des catégories.
       const { data: allCats } = await supabase
         .from("categories")
-        .select("id, parent_id, is_active");
+        .select("id, parent_id, is_active")
+        .range(0, 9999);
       const cats = (allCats || []) as Array<{ id: string; parent_id: string | null; is_active: boolean }>;
       const childrenByParent = new Map<string, string[]>();
       for (const c of cats) {
@@ -77,7 +80,9 @@ export default function HomePage() {
           .select("id", { count: "exact", head: true })
           .eq("is_active", true)
       );
-      if (inactiveIds.length > 0) {
+      // Garde-fou : au-delà de 500 UUIDs, l'URL PostgREST devient trop longue
+      // et renvoie HTTP 400. Le filtre mots-clés couvre déjà l'essentiel.
+      if (inactiveIds.length > 0 && inactiveIds.length <= 500) {
         productsQuery = productsQuery.not("category_id", "in", `(${inactiveIds.join(",")})`);
       }
 

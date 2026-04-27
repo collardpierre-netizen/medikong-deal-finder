@@ -311,10 +311,28 @@ export default function AdminUsers() {
                     </span>
                   </td>
                   <td className="px-4 py-3">
-                    <StatusBadge status={u.status === "active" ? "active" : u.status === "inactive" ? "cancelled" : "pending"} />
+                    <div className="flex items-center gap-2">
+                      <StatusBadge status={u.status === "active" ? "active" : u.status === "inactive" ? "cancelled" : "pending"} />
+                      {!u.linked && (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-50 text-rose-700 border border-rose-200">
+                          Compte non créé
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <ChevronRight size={16} className="inline text-muted-foreground" />
+                    {!u.linked ? (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="gap-1 text-[11px] h-7"
+                        onClick={(e) => { e.stopPropagation(); handleCreateAccess(u); }}
+                      >
+                        <UserCheck size={12} /> Créer l'accès
+                      </Button>
+                    ) : (
+                      <ChevronRight size={16} className="inline text-muted-foreground" />
+                    )}
                   </td>
                 </tr>
               ))}

@@ -223,7 +223,10 @@ async function bulkSync(supabase: any, table: string, indexUid: string, transfor
     if (!data || data.length === 0) break;
 
     const docs = transform ? data.map(transform) : data;
-    await meiliRequest(`/indexes/${indexUid}/documents`, "POST", docs);
+    const cleanDocs = validateDocsForIndex(indexUid, docs);
+    if (cleanDocs.length > 0) {
+      await meiliRequest(`/indexes/${indexUid}/documents`, "POST", cleanDocs);
+    }
     total += docs.length;
     offset += BATCH;
     if (data.length < BATCH) break;
@@ -294,11 +297,15 @@ serve(async (req) => {
         category_name: p.category_name || "",
       }));
 
-      await meiliRequest("/indexes/products/documents", "POST", docs);
+      const cleanProductDocs = validateDocsForIndex("products", docs);
+      if (cleanProductDocs.length > 0) {
+        await meiliRequest("/indexes/products/documents", "POST", cleanProductDocs);
+      }
 
-      return new Response(JSON.stringify({ 
-        success: true, 
-        indexed: docs.length, 
+      return new Response(JSON.stringify({
+        success: true,
+        indexed: cleanProductDocs.length,
+        skipped_invalid: docs.length - cleanProductDocs.length,
         next_offset: offset + docs.length,
         done: docs.length < batchSize,
       }), {
@@ -398,7 +405,12 @@ serve(async (req) => {
     if (type === "DELETE" && old_record?.id) {
       await meiliRequest(`/indexes/${indexUid}/documents/${old_record.id}`, "DELETE");
     } else if (record) {
-      await meiliRequest(`/indexes/${indexUid}/documents`, "POST", [record]);
+      const cleanWebhookDoc = validateDocsForIndex(indexUid, [record]);
+      if (cleanWebhookDoc.length > 0) {
+        await meiliRequest(`/indexes/${indexUid}/documents`, "POST", cleanWebhookDoc);
+      } else {
+        console.warn(`[meili.${indexUid}] webhook doc id=${(record as any)?.id ?? "<no-id>"} dropped (validation failed)`);
+      }
     }
 
     return new Response(JSON.stringify({ success: true }), {

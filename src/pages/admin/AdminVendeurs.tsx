@@ -60,6 +60,7 @@ const AdminVendeurs = () => {
       return (v.company_name || v.name).toLowerCase().includes(s) ||
         (v.city || "").toLowerCase().includes(s) ||
         (v.display_code || "").toLowerCase().includes(s) ||
+        ((v as any).qogita_seller_alias || "").toLowerCase().includes(s) ||
         (v.email || "").toLowerCase().includes(s);
     }), [vendors, activeTab, statusFilter, activeFilter, search]);
 

@@ -826,11 +826,38 @@ export default function VendorMarketIntel() {
               {/* Marge & commission sur l'offre actuelle du vendeur */}
               {commissionConfig && (
                 <section>
-                  <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
+                  <h3 className="text-sm font-semibold mb-2 flex items-center gap-2 flex-wrap">
                     <Wand2 size={14} /> Mon offre — marge & commission MediKong
                     {isLive && (
-                      <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800">
-                        Aperçu live · {effectiveMyPrice.toFixed(2)} €
+                      <span
+                        className={`inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 transition-transform ${
+                          livePulse ? "scale-105 ring-2 ring-emerald-300/60" : ""
+                        }`}
+                        title={
+                          liveRecalcAt
+                            ? `Recalculé à ${new Date(liveRecalcAt).toLocaleTimeString("fr-BE")}`
+                            : undefined
+                        }
+                        aria-live="polite"
+                      >
+                        <span
+                          className={`inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 ${
+                            livePulse ? "animate-ping" : ""
+                          }`}
+                        />
+                        En direct
+                        {liveRecalcAt && (
+                          <span className="text-emerald-600/80 tabular-nums">
+                            · {new Date(liveRecalcAt).toLocaleTimeString("fr-BE", {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                              second: "2-digit",
+                            })}
+                          </span>
+                        )}
+                        <span className="text-emerald-600/80">
+                          · {effectiveMyPrice.toFixed(2)} €
+                        </span>
                       </span>
                     )}
                   </h3>

@@ -169,7 +169,8 @@ export default function AdminUsers() {
     setBuyerDetail(null);
   }
 
-  async function handleValidate(userId: string) {
+  async function handleValidate(userId: string | null) {
+    if (!userId) return;
     const { error } = await supabase
       .from("customers")
       .update({ is_verified: true } as any)
@@ -180,7 +181,8 @@ export default function AdminUsers() {
     if (buyerDetail) setBuyerDetail({ ...buyerDetail, is_verified: true });
   }
 
-  async function handleSuspend(userId: string) {
+  async function handleSuspend(userId: string | null) {
+    if (!userId) return;
     const { error } = await supabase
       .from("customers")
       .update({ is_verified: false } as any)
@@ -198,14 +200,13 @@ export default function AdminUsers() {
 
   async function confirmDelete() {
     if (!deleteModal) return;
-    if (deleteModal.type === "vendor") {
-      const { error } = await supabase.from("vendors").delete().eq("auth_user_id", deleteModal.userId);
-      if (error) { toast.error("Erreur: " + error.message); return; }
-    } else {
-      const { error } = await supabase.from("customers").delete().eq("auth_user_id", deleteModal.userId);
-      if (error) { toast.error("Erreur: " + error.message); return; }
-    }
-    // TODO: send rejection email with deleteReason
+    const table = deleteModal.type === "vendor" ? "vendors" : "customers";
+    // Si on a un auth_user_id, on supprime via celui-ci ; sinon via la PK de la fiche
+    const query = deleteModal.userId
+      ? supabase.from(table).delete().eq("auth_user_id", deleteModal.userId)
+      : supabase.from(table).delete().eq("id", deleteModal.id);
+    const { error } = await query;
+    if (error) { toast.error("Erreur: " + error.message); return; }
     toast.success("Utilisateur supprimé");
     setDeleteModal(null);
     closeDetail();
@@ -213,6 +214,10 @@ export default function AdminUsers() {
   }
 
   async function handleImpersonate(user: UserRow) {
+    if (!user.userId) {
+      toast.error("Impossible : ce compte n'a pas d'accès auth.");
+      return;
+    }
     await startImpersonation(user.userId, user.email, user.type, user.company);
     setConfirmModal(null);
     setConfirmed(false);
@@ -232,6 +237,7 @@ export default function AdminUsers() {
   const vendorCount = users.filter(u => u.type === "vendor" && u.status === "active").length;
   const buyerCount = users.filter(u => u.type === "buyer" && u.status === "active").length;
   const pendingCount = users.filter(u => u.status === "pending").length;
+  const unlinkedCount = users.filter(u => !u.linked).length;
 
   const DetailField = ({ icon: Icon, label, value }: { icon: any; label: string; value: string | null | undefined }) => (
     <div className="flex items-start gap-3 py-2.5">

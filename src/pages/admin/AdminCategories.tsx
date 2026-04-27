@@ -1,5 +1,6 @@
 import React from "react";
-import { useState, useRef, useMemo } from "react";
+import { useState, useRef, useMemo, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import AdminTopBar from "@/components/admin/AdminTopBar";
 import KpiCard from "@/components/admin/KpiCard";
 import { Button } from "@/components/ui/button";
@@ -124,7 +125,12 @@ const AdminCategories = () => {
 
   // Auto-translate all categories for a locale using AI edge function
   const [translating, setTranslating] = useState<string | null>(null);
-  const [search, setSearch] = useState("");
+  const [searchParams] = useSearchParams();
+  const [search, setSearch] = useState(searchParams.get("search") ?? "");
+  useEffect(() => {
+    const q = searchParams.get("search");
+    if (q) setSearch(q);
+  }, [searchParams]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [showReassign, setShowReassign] = useState(false);
   const [reassignParent, setReassignParent] = useState("none");

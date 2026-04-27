@@ -246,16 +246,19 @@ export function useProductOffers(productId: string | undefined) {
 
       return (offers || []).map((o: any): Offer => {
         const vendor = vendorMap.get(o.vendor_id);
+        const safeVendorId: string = o.vendor_id || "";
+        const priceExcl = Number(o.price_excl_vat);
+        const priceIncl = Number(o.price_incl_vat);
         return {
           id: o.id,
           productId: o.product_id,
-          sellerId: o.vendor_id,
-          unitPriceEur: Number(o.price_excl_vat),
-          unitPriceInclVat: Number(o.price_incl_vat),
-          stockQuantity: o.stock_quantity,
+          sellerId: safeVendorId,
+          unitPriceEur: Number.isFinite(priceExcl) ? priceExcl : 0,
+          unitPriceInclVat: Number.isFinite(priceIncl) ? priceIncl : 0,
+          stockQuantity: Number(o.stock_quantity) || 0,
           movEur: Number(o.mov || o.mov_amount || 0),
-          bundleSize: o.moq || 1,
-          deliveryDays: o.delivery_days,
+          bundleSize: Number(o.moq) || 1,
+          deliveryDays: o.delivery_days ?? null,
           shipFromCountry: o.shipping_from_country || 'BE',
           priceTiers: o.price_tiers || null,
           discountTiers: tiersMap.get(o.id) || [],
@@ -263,7 +266,7 @@ export function useProductOffers(productId: string | undefined) {
           isActive: o.is_active,
           sellerName: (() => {
             const showReal = resolveVendorVisibility(
-              { ...vendor, id: o.vendor_id },
+              { ...vendor, id: safeVendorId },
               visRules,
               { country }
             );
@@ -273,7 +276,7 @@ export function useProductOffers(productId: string | undefined) {
           isVerified: vendor?.is_verified || false,
           isTopRated: (vendor?.rating || 0) >= 4.5,
           isTopSeller: vendor?.is_top_seller || false,
-          displayCode: vendor?.display_code || o.vendor_id.slice(0, 6).toUpperCase(),
+          displayCode: vendor?.display_code || (safeVendorId ? safeVendorId.slice(0, 6).toUpperCase() : "------"),
           isTraceable: o.is_traceable || false,
           hasExtendedDelivery: o.has_extended_delivery || false,
           minDeliveryDays: o.min_delivery_days || undefined,

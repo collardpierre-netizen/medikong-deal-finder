@@ -115,12 +115,28 @@ function MarginCalcPctMode({
   );
 }
 
+function formatRelative(iso?: string | null): string | null {
+  if (!iso) return null;
+  const t = new Date(iso).getTime();
+  if (!Number.isFinite(t)) return null;
+  const diffMs = Date.now() - t;
+  if (diffMs < 0) return "à l'instant";
+  const m = Math.floor(diffMs / 60000);
+  if (m < 1) return "à l'instant";
+  if (m < 60) return `il y a ${m} min`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `il y a ${h} h`;
+  const d = Math.floor(h / 24);
+  if (d < 7) return `il y a ${d} j`;
+  return new Date(iso).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" });
+}
+
 /* ── Offer Row ─────────────────────────────────────────── */
 function OfferRow({
-  offer, productId, productName, productSlug, user, navigate, addToCart, isBest, delay = 0, isTVAC = false, categoryId, bestPrice,
+  offer, productId, productName, productSlug, user, navigate, addToCart, isBest, delay = 0, isTVAC = false, categoryId, bestPrice, discountPercentage = 0,
 }: {
   offer: Offer; productId: string; productName: string; productSlug: string;
-  user: any; navigate: any; addToCart: any; isBest?: boolean; delay?: number; isTVAC?: boolean; categoryId?: string; bestPrice?: number;
+  user: any; navigate: any; addToCart: any; isBest?: boolean; delay?: number; isTVAC?: boolean; categoryId?: string; bestPrice?: number; discountPercentage?: number;
 }) {
   const maxQty = offer.stockQuantity > 0 ? offer.stockQuantity : 999;
   const step = offer.bundleSize > 1 ? offer.bundleSize : 1;
@@ -164,14 +180,19 @@ function OfferRow({
       transition={{ delay, duration: 0.3 }}
     >
       {/* Status badges */}
-      <div className="flex items-center gap-2 mb-3 flex-wrap">
+      <div className="flex items-center gap-2 mb-2 flex-wrap">
         {offer.stockQuantity > 0 ? (
           <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-green-700 bg-green-50 px-2.5 py-1 rounded-full">
             <Package size={12} /> En stock
           </span>
         ) : (
           <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-red-600 bg-red-50 px-2.5 py-1 rounded-full">
-            Rupture
+            <Package size={12} /> Rupture
+          </span>
+        )}
+        {discountPercentage > 0 && (
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-rose-700 bg-rose-50 px-2.5 py-1 rounded-full">
+            <Tag size={12} /> Promo -{Number(discountPercentage).toFixed(0)}%
           </span>
         )}
         {offer.isVerified && (
@@ -197,6 +218,17 @@ function OfferRow({
           </Tooltip>
         )}
       </div>
+
+      {/* Last update */}
+      {(() => {
+        const rel = formatRelative(offer.updatedAt || offer.syncedAt);
+        if (!rel) return null;
+        return (
+          <div className="text-[11px] text-muted-foreground mb-3">
+            Mis à jour {rel}
+          </div>
+        );
+      })()}
 
       {/* Delta vs best */}
       {(() => {
@@ -1257,6 +1289,7 @@ export default function ProductPage() {
                             isBest
                             isTVAC={isTVAC}
                             categoryId={categoryData?.category?.id}
+                            discountPercentage={Number((product as any)?.discount_percentage) || 0}
                           />
                         </SafeBoundary>
                       </div>
@@ -1316,6 +1349,7 @@ export default function ProductPage() {
                               isTVAC={isTVAC}
                               categoryId={categoryData?.category?.id}
                               bestPrice={bestOffer ? (isTVAC ? bestOffer.unitPriceInclVat : bestOffer.unitPriceEur) : undefined}
+                              discountPercentage={Number((product as any)?.discount_percentage) || 0}
                             />
                           </SafeBoundary>
                         ))}

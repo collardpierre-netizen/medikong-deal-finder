@@ -185,6 +185,8 @@ export interface Offer {
   discountTiers: DiscountTier[];
   offerPriceTiers: OfferPriceTier[];
   isActive: boolean;
+  updatedAt?: string | null;
+  syncedAt?: string | null;
   sellerName?: string;
   sellerSlug?: string;
   isVerified?: boolean;
@@ -207,6 +209,7 @@ export function useProductOffers(productId: string | undefined) {
         .from("offers")
         .select("*")
         .eq("product_id", productId!)
+        .eq("is_active", true)
         .order("price_excl_vat", { ascending: true });
       if (error) throw error;
 
@@ -264,6 +267,8 @@ export function useProductOffers(productId: string | undefined) {
           discountTiers: tiersMap.get(o.id) || [],
           offerPriceTiers: priceTiersMap.get(o.id) || [],
           isActive: o.is_active,
+          updatedAt: o.updated_at ?? null,
+          syncedAt: o.synced_at ?? null,
           sellerName: (() => {
             const showReal = resolveVendorVisibility(
               { ...vendor, id: safeVendorId },

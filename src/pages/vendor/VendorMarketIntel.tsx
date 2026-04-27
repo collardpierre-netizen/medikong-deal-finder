@@ -459,6 +459,53 @@ export default function VendorMarketIntel() {
     return { total, winning, losingMedikong, losingExternal };
   }, [rows]);
 
+  /**
+   * Garde-fou anti "prix obsolète" pour le popup détail.
+   *
+   * Lorsqu'on ferme et rouvre rapidement la même ligne pendant qu'un refetch
+   * de `vendor-market-intel` est en cours, le `openRow` capturé au clic peut
+   * porter une valeur de `my_price_excl_vat` antérieure à la dernière
+   * sauvegarde locale (le patch chirurgical du cache peut être écrasé par
+   * le résultat d'un refetch en vol et la RPC peut être éventuellement
+   * cohérente). On combine donc trois sources et on prend la plus récente :
+   *   1) le snapshot `openRow` du clic ;
+   *   2) la version la plus fraîche du cache live (`rows`) pour ce
+   *      `my_offer_id`, comparée via `my_updated_at` ;
+   *   3) la dernière sauvegarde réussie en session
+   *      (`lastSaves[my_offer_id]`).
+   */
+  const safeOpenRow = useMemo<IntelRow | null>(() => {
+    if (!openRow) return null;
+    let row: IntelRow = openRow;
+    const liveRow = rows.find(
+      (r) => r.my_offer_id && r.my_offer_id === openRow.my_offer_id,
+    );
+    if (liveRow) {
+      const liveTs = liveRow.my_updated_at ? Date.parse(liveRow.my_updated_at) : 0;
+      const snapTs = openRow.my_updated_at ? Date.parse(openRow.my_updated_at) : 0;
+      if (liveTs >= snapTs) row = liveRow;
+    }
+    const ls = openRow.my_offer_id ? lastSaves[openRow.my_offer_id] : undefined;
+    if (ls) {
+      const rowTs = row.my_updated_at ? Date.parse(row.my_updated_at) : 0;
+      if (ls.savedAt >= rowTs && row.my_price_excl_vat !== ls.newPrice) {
+        row = {
+          ...row,
+          my_price_excl_vat: ls.newPrice,
+          my_updated_at: new Date(ls.savedAt).toISOString(),
+        };
+      }
+    }
+    return row;
+  }, [openRow, rows, lastSaves]);
+
+  /** True quand le popup affiche un prix forcé par le garde-fou. */
+  const openRowGuarded = !!(
+    openRow &&
+    safeOpenRow &&
+    safeOpenRow.my_price_excl_vat !== openRow.my_price_excl_vat
+  );
+
   return (
     <div className="space-y-6">
       <header className="flex items-start justify-between gap-4 flex-wrap">

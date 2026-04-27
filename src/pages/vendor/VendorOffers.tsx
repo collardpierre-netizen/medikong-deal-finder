@@ -63,16 +63,21 @@ const useFilterOptions = () =>
     },
   });
 
-const useVendorOffers = (vendorId: string | undefined) =>
+type OfferStatusFilter = "active" | "inactive" | "all";
+
+const useVendorOffers = (vendorId: string | undefined, statusFilter: OfferStatusFilter = "active") =>
   useQuery({
-    queryKey: ["vendor-offers", vendorId],
+    queryKey: ["vendor-offers", vendorId, statusFilter],
     queryFn: async () => {
       if (!vendorId) return [];
-      const { data, error } = await supabase
+      let q = supabase
         .from("offers")
         .select("*, products(name, gtin, image_urls, slug, brand_name, category_name, cnk_code)")
         .eq("vendor_id", vendorId)
         .order("created_at", { ascending: false });
+      if (statusFilter === "active") q = q.eq("is_active", true);
+      else if (statusFilter === "inactive") q = q.eq("is_active", false);
+      const { data, error } = await q;
       if (error) throw error;
       return data || [];
     },
@@ -987,7 +992,8 @@ function ProfileRulesEditor({ offerId, basePrice }: { offerId: string | null; ba
 /* ─── Main Page ─── */
 export default function VendorOffers() {
   const { data: vendor } = useCurrentVendor();
-  const { data: offers = [], isLoading } = useVendorOffers(vendor?.id);
+  const [statusFilter, setStatusFilter] = useState<OfferStatusFilter>("active");
+  const { data: offers = [], isLoading } = useVendorOffers(vendor?.id, statusFilter);
   const qc = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
   const { importFile, importing } = useOfferImport(vendor?.id);
@@ -1099,6 +1105,18 @@ export default function VendorOffers() {
   const deleteOffer = useMutation({
     mutationFn: async (id: string) => { const { error } = await supabase.from("offers").delete().eq("id", id); if (error) throw error; },
     onSuccess: () => { toast.success("Offre supprimée"); qc.invalidateQueries({ queryKey: ["vendor-offers"] }); },
+    onError: (err: any) => toast.error(err.message),
+  });
+
+  const toggleOfferActive = useMutation({
+    mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
+      const { error } = await supabase.from("offers").update({ is_active }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: (_d, vars) => {
+      toast.success(vars.is_active ? "Offre activée" : "Offre désactivée");
+      qc.invalidateQueries({ queryKey: ["vendor-offers"] });
+    },
     onError: (err: any) => toast.error(err.message),
   });
 
@@ -1271,6 +1289,12 @@ export default function VendorOffers() {
             <option value="BE">Belgique</option><option value="FR">France</option>
             <option value="NL">Pays-Bas</option><option value="LU">Luxembourg</option><option value="DE">Allemagne</option>
           </select>
+          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value as OfferStatusFilter)}
+            className="text-[12px] px-3 py-2 rounded-lg border bg-white" style={{ borderColor: "#E2E8F0", color: "#616B7C" }}>
+            <option value="active">Offres actives</option>
+            <option value="inactive">Offres inactives</option>
+            <option value="all">Toutes les offres</option>
+          </select>
           <span className="text-[11px] font-medium" style={{ color: "#8B95A5" }}>{filteredOffers.length} résultat{filteredOffers.length !== 1 ? "s" : ""}</span>
         </div>
       )}
@@ -1346,7 +1370,14 @@ export default function VendorOffers() {
                       <td className="py-2.5 px-3 text-center">{offer.delivery_days}j</td>
                       <td className="py-2.5 px-3 text-center">{offer.country_code}</td>
                       <td className="py-2.5 px-3 text-center">
-                        <VBadge color={offer.is_active ? "#059669" : "#8B95A5"}>{offer.is_active ? "Active" : "Inactive"}</VBadge>
+                        <button
+                          type="button"
+                          onClick={() => toggleOfferActive.mutate({ id: offer.id, is_active: !offer.is_active })}
+                          title={offer.is_active ? "Cliquez pour désactiver" : "Cliquez pour activer"}
+                          className="cursor-pointer hover:opacity-80 transition-opacity"
+                        >
+                          <VBadge color={offer.is_active ? "#059669" : "#8B95A5"}>{offer.is_active ? "Active" : "Inactive"}</VBadge>
+                        </button>
                       </td>
                       <td className="py-2.5 px-3 text-right">
                         <div className="flex items-center justify-end gap-1">

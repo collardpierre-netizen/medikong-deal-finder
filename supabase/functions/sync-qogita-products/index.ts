@@ -7,6 +7,7 @@
 //           garde le résidu partiel pour le chunk suivant. Persiste byte_offset + line_residue.
 // 3. FINALIZE: upsert brands/cats, link, cleanup cache, marque completed.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+import { formatDbError, sampleValue } from "../_shared/sync-logger.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -477,6 +478,41 @@ async function processChunkStreaming(sb: any, logId: string, state: any) {
     preorder: findCol(headers, "pre-order"),
   };
 
+  // Surface CSV header gaps EARLY — most "0 produits importés" failures come from
+  // a Qogita CSV column rename. Log expected name + actual headers when missing.
+  const REQUIRED_COLS: Array<{ key: keyof typeof colMap; expected: string }> = [
+    { key: "gtin", expected: "GTIN" },
+    { key: "name", expected: "Name" },
+    { key: "price", expected: "Lowest price" },
+  ];
+  const OPTIONAL_COLS: Array<{ key: keyof typeof colMap; expected: string }> = [
+    { key: "brand", expected: "Brand" },
+    { key: "category", expected: "Category" },
+    { key: "inventory", expected: "Inventory" },
+    { key: "delivery", expected: "Delivery" },
+    { key: "url", expected: "Product URL" },
+    { key: "image", expected: "Image URL" },
+    { key: "offers", expected: "Number of offers" },
+    { key: "preorder", expected: "Pre-order" },
+  ];
+  const missingRequired = REQUIRED_COLS.filter(c => colMap[c.key] < 0);
+  const missingOptional = OPTIONAL_COLS.filter(c => colMap[c.key] < 0);
+  if (missingRequired.length > 0) {
+    const msg =
+      `[qogita.products.csv] Colonnes REQUISES manquantes: ` +
+      missingRequired.map(c => `"${c.expected}"`).join(", ") +
+      `. Headers reçus (${headers.length}): ${sampleValue(headers, 400)}`;
+    console.error(msg);
+    throw new Error(msg);
+  }
+  if (missingOptional.length > 0) {
+    console.warn(
+      `[qogita.products.csv] Colonnes optionnelles manquantes: ` +
+      missingOptional.map(c => `"${c.expected}" (clé=${c.key})`).join(", ") +
+      `. Headers reçus: ${sampleValue(headers, 300)}`,
+    );
+  }
+
   const qogitaVendorId = await ensureQogitaVendor(sb);
 
   let processed = 0;
@@ -691,13 +727,33 @@ async function processBatch(
   if (existingProducts.length > 0) {
     await withRetry("upsert existing products", async () => {
       const { error } = await sb.from("products").upsert(existingProducts, { onConflict: "id", ignoreDuplicates: false });
-      if (error) throw new Error(`Products upsert failed (existing): ${error.message}`);
+      if (error) {
+        const sample = existingProducts[0];
+        console.error(formatDbError("qogita.products.upsert.existing", error, {
+          batch_size: existingProducts.length,
+          first_row_id: sample?.id,
+          first_row_qid: sample?.qogita_qid,
+          first_row_gtin: sample?.gtin,
+          first_row_sample: sampleValue(sample, 300),
+        }));
+        throw new Error(`Products upsert failed (existing): ${error.message}`);
+      }
     });
   }
   if (newProducts.length > 0) {
     await withRetry("upsert new products", async () => {
       const { error } = await sb.from("products").upsert(newProducts, { onConflict: "qogita_qid", ignoreDuplicates: false });
-      if (error) throw new Error(`Products upsert failed (new): ${error.message}`);
+      if (error) {
+        const sample = newProducts[0];
+        console.error(formatDbError("qogita.products.upsert.new", error, {
+          batch_size: newProducts.length,
+          first_row_qid: sample?.qogita_qid,
+          first_row_gtin: sample?.gtin,
+          first_row_name: sample?.name,
+          first_row_sample: sampleValue(sample, 300),
+        }));
+        throw new Error(`Products upsert failed (new): ${error.message}`);
+      }
     });
   }
 
@@ -717,10 +773,18 @@ async function processBatch(
       offer_count: 1, min_delivery_days: s.delivery > 0 ? s.delivery : null,
     }));
   if (countryStats.length > 0) {
-    await withRetry("upsert product_country_stats", () =>
-      sb.from("product_country_stats").upsert(countryStats, {
+    await withRetry("upsert product_country_stats", async () => {
+      const { error } = await sb.from("product_country_stats").upsert(countryStats, {
         onConflict: "product_id,country_code", ignoreDuplicates: false,
-      }));
+      });
+      if (error) {
+        console.error(formatDbError("qogita.product_country_stats.upsert", error, {
+          country, batch_size: countryStats.length,
+          first_row_sample: sampleValue(countryStats[0], 300),
+        }));
+        throw new Error(`product_country_stats upsert failed: ${error.message}`);
+      }
+    });
   }
 
   const offers = csvData
@@ -740,7 +804,13 @@ async function processBatch(
       const { error } = await sb.from("offers").upsert(offers, {
         onConflict: "product_id,vendor_id,country_code", ignoreDuplicates: false,
       });
-      if (error) throw new Error(`Offer upsert failed: ${error.message}`);
+      if (error) {
+        console.error(formatDbError("qogita.offers.upsert", error, {
+          country, vendor_id: qogitaVendorId, batch_size: offers.length,
+          first_row_sample: sampleValue(offers[0], 300),
+        }));
+        throw new Error(`Offer upsert failed: ${error.message}`);
+      }
     });
   }
 

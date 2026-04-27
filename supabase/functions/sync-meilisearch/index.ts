@@ -1,5 +1,10 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import {
+  type FieldSpec,
+  partitionValidRecords,
+  sampleValue,
+} from "../_shared/sync-logger.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -11,6 +16,8 @@ const MEILI_ADMIN_KEY = Deno.env.get("MEILISEARCH_ADMIN_KEY")!;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
+// Meilisearch returns rich JSON errors: { message, code, type, link }.
+// Surface them so we know exactly which field/document was rejected.
 async function meiliRequest(path: string, method = "GET", body?: unknown, retries = 3): Promise<any> {
   for (let attempt = 0; attempt <= retries; attempt++) {
     const res = await fetch(`${MEILI_URL}${path}`, {
@@ -24,6 +31,9 @@ async function meiliRequest(path: string, method = "GET", body?: unknown, retrie
     if (res.ok) return res.json();
 
     const text = await res.text();
+    let parsed: any = null;
+    try { parsed = JSON.parse(text); } catch { /* not JSON */ }
+
     // Meilisearch creates indexes asynchronously via tasks. A 404 right after a POST
     // /indexes call usually means the index isn't materialized yet. Retry with backoff.
     const isRetryable = res.status === 404 || res.status === 409 || res.status >= 500;
@@ -31,9 +41,72 @@ async function meiliRequest(path: string, method = "GET", body?: unknown, retrie
       await new Promise((r) => setTimeout(r, 500 * (attempt + 1)));
       continue;
     }
-    throw new Error(`Meilisearch ${method} ${path} → ${res.status}: ${text}`);
+
+    // Decorate the error with the structured Meilisearch fields so root cause is visible
+    // immediately in logs (which field, which doc, which constraint).
+    const docCount = Array.isArray(body) ? body.length : (body && typeof body === "object" ? 1 : 0);
+    const sample = Array.isArray(body) && body.length > 0 ? sampleValue(body[0], 400) : "—";
+    const meiliCode = parsed?.code ?? "?";
+    const meiliType = parsed?.type ?? "?";
+    const meiliMsg = parsed?.message ?? text;
+    console.error(
+      `[meili ${method} ${path}] HTTP ${res.status} code=${meiliCode} type=${meiliType} ` +
+      `docs_in_payload=${docCount} first_doc_sample=${sample} message=${meiliMsg}`,
+    );
+    throw new Error(
+      `Meilisearch ${method} ${path} → ${res.status} code=${meiliCode} message=${meiliMsg}`,
+    );
   }
   throw new Error(`Meilisearch ${method} ${path} → failed after ${retries} retries`);
+}
+
+// Field specs per index — Meilisearch is pretty permissive but `id` (primary key) MUST
+// be a non-empty string/number. We also defend the most-search-critical fields.
+const PRODUCT_SPECS: FieldSpec[] = [
+  { field: "id", expected: "uuid", required: true, hint: "primary key for products index" },
+  { field: "name", expected: "non-empty string", required: true, hint: "core searchable attribute" },
+  { field: "slug", expected: "non-empty string", required: true, hint: "used for product URL" },
+  { field: "is_active", expected: "boolean", required: true, hint: "filterable attribute" },
+];
+const BRAND_SPECS: FieldSpec[] = [
+  { field: "id", expected: "uuid", required: true, hint: "primary key for brands index" },
+  { field: "name", expected: "non-empty string", required: true },
+  { field: "slug", expected: "non-empty string", required: true },
+];
+const CATEGORY_SPECS: FieldSpec[] = [
+  { field: "id", expected: "uuid", required: true, hint: "primary key for categories index" },
+  { field: "name", expected: "non-empty string", required: true },
+  { field: "slug", expected: "non-empty string", required: true },
+];
+
+function specsFor(indexUid: string): FieldSpec[] | null {
+  if (indexUid === "products") return PRODUCT_SPECS;
+  if (indexUid === "brands") return BRAND_SPECS;
+  if (indexUid === "categories") return CATEGORY_SPECS;
+  return null;
+}
+
+/**
+ * Validate documents BEFORE sending to Meilisearch so we can:
+ *   - log exactly which doc/field is broken (with expected vs received type)
+ *   - drop the bad ones instead of failing the whole batch
+ */
+function validateDocsForIndex<T extends Record<string, unknown>>(
+  indexUid: string,
+  docs: T[],
+): T[] {
+  const specs = specsFor(indexUid);
+  if (!specs) return docs;
+  const { valid, invalid } = partitionValidRecords(
+    `meili.${indexUid}`,
+    docs,
+    specs,
+    "id" as keyof T,
+  );
+  if (invalid.length > 0) {
+    console.warn(`[meili.${indexUid}] dropped ${invalid.length}/${docs.length} invalid docs before push`);
+  }
+  return valid;
 }
 
 // Wait until an index actually exists. Meilisearch creates indexes via async tasks,
@@ -150,7 +223,10 @@ async function bulkSync(supabase: any, table: string, indexUid: string, transfor
     if (!data || data.length === 0) break;
 
     const docs = transform ? data.map(transform) : data;
-    await meiliRequest(`/indexes/${indexUid}/documents`, "POST", docs);
+    const cleanDocs = validateDocsForIndex(indexUid, docs);
+    if (cleanDocs.length > 0) {
+      await meiliRequest(`/indexes/${indexUid}/documents`, "POST", cleanDocs);
+    }
     total += docs.length;
     offset += BATCH;
     if (data.length < BATCH) break;
@@ -221,11 +297,15 @@ serve(async (req) => {
         category_name: p.category_name || "",
       }));
 
-      await meiliRequest("/indexes/products/documents", "POST", docs);
+      const cleanProductDocs = validateDocsForIndex("products", docs);
+      if (cleanProductDocs.length > 0) {
+        await meiliRequest("/indexes/products/documents", "POST", cleanProductDocs);
+      }
 
-      return new Response(JSON.stringify({ 
-        success: true, 
-        indexed: docs.length, 
+      return new Response(JSON.stringify({
+        success: true,
+        indexed: cleanProductDocs.length,
+        skipped_invalid: docs.length - cleanProductDocs.length,
         next_offset: offset + docs.length,
         done: docs.length < batchSize,
       }), {
@@ -325,7 +405,12 @@ serve(async (req) => {
     if (type === "DELETE" && old_record?.id) {
       await meiliRequest(`/indexes/${indexUid}/documents/${old_record.id}`, "DELETE");
     } else if (record) {
-      await meiliRequest(`/indexes/${indexUid}/documents`, "POST", [record]);
+      const cleanWebhookDoc = validateDocsForIndex(indexUid, [record]);
+      if (cleanWebhookDoc.length > 0) {
+        await meiliRequest(`/indexes/${indexUid}/documents`, "POST", cleanWebhookDoc);
+      } else {
+        console.warn(`[meili.${indexUid}] webhook doc id=${(record as any)?.id ?? "<no-id>"} dropped (validation failed)`);
+      }
     }
 
     return new Response(JSON.stringify({ success: true }), {

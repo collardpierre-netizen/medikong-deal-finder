@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+import { formatDbError, sampleValue } from "../_shared/sync-logger.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -659,7 +660,11 @@ async function processSingleProduct(
 
         if (offerErr) {
           localStats.errors++;
-          console.error(`Offer upsert error for GTIN ${product.gtin}:`, offerErr.message);
+          console.error(formatDbError("qogita.offers_detail.best_price.upsert", offerErr, {
+            product_id: product.id, gtin: product.gtin, qid: variant?.qid,
+            country, vendor_id: bestPriceVendorId, offer_qid: offerQid,
+            price_excl_vat: priceExclVat, price_incl_vat: priceInclVat, stock: stockQty,
+          }));
         } else {
           localStats.offers_upserted++;
         }
@@ -719,16 +724,29 @@ async function processSingleProduct(
               );
 
               if (mvErr) {
-                console.error(`Multi-vendor offer error ${sellerCode}/${product.gtin}:`, mvErr.message);
+                console.error(formatDbError("qogita.offers_detail.multi_vendor.upsert", mvErr, {
+                  product_id: product.id, gtin: product.gtin, seller: sellerCode,
+                  country, vendor_id: vendorId, offer_qid: oQid,
+                  price_excl_vat: oExclVat, price_incl_vat: oInclVat, stock: oStock, mov: oMov,
+                  offer_sample: sampleValue(offer, 200),
+                }));
               } else {
                 localStats.multi_vendor_offers++;
               }
             }
           } else if (offersRes.status === 429) {
             localStats.rate_limited++;
+          } else if (!offersRes.ok) {
+            console.warn(
+              `[qogita.offers_detail.multi_vendor] HTTP ${offersRes.status} ` +
+              `gtin=${product.gtin} fid=${variant.fid} slug=${variant.slug}`,
+            );
           }
         } catch (mvError: any) {
-          console.error(`Multi-vendor fetch error for ${product.gtin}:`, mvError.message);
+          console.error(
+            `[qogita.offers_detail.multi_vendor] fetch error gtin=${product.gtin} ` +
+            `fid=${variant.fid}: ${mvError.message}`,
+          );
         }
       }
 

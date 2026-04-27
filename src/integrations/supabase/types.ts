@@ -7931,6 +7931,19 @@ export type Database = {
           read_ct: number
         }[]
       }
+      record_qogita_endpoint_error: {
+        Args: {
+          _endpoint: string
+          _error_message?: string
+          _log_id: string
+          _status?: number
+        }
+        Returns: undefined
+      }
+      record_qogita_resync_progress: {
+        Args: { _delta: Json; _log_id: string }
+        Returns: undefined
+      }
       resolve_product_brands: { Args: never; Returns: undefined }
       resolve_product_categories: { Args: never; Returns: undefined }
       snapshot_vendor_offer_history: { Args: never; Returns: Json }

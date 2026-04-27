@@ -3717,6 +3717,33 @@ export type Database = {
         }
         Relationships: []
       }
+      qogita_rate_limit: {
+        Row: {
+          available_tokens: number
+          capacity: number
+          key: string
+          last_refill_at: string
+          refill_per_minute: number
+          updated_at: string
+        }
+        Insert: {
+          available_tokens?: number
+          capacity?: number
+          key: string
+          last_refill_at?: string
+          refill_per_minute?: number
+          updated_at?: string
+        }
+        Update: {
+          available_tokens?: number
+          capacity?: number
+          key?: string
+          last_refill_at?: string
+          refill_per_minute?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       qogita_resync_logs: {
         Row: {
           completed_at: string | null
@@ -7763,6 +7790,7 @@ export type Database = {
     Functions: {
       bulk_override_requested: { Args: never; Returns: boolean }
       bulk_set_cnk_codes: { Args: { pairs: Json }; Returns: number }
+      consume_qogita_tokens: { Args: { _amount: number }; Returns: Json }
       count_products_per_category: {
         Args: never
         Returns: {
@@ -7794,6 +7822,13 @@ export type Database = {
       enqueue_email: {
         Args: { payload: Json; queue_name: string }
         Returns: number
+      }
+      enqueue_qogita_resync_batch: {
+        Args: {
+          _batch_size?: number
+          _mode?: Database["public"]["Enums"]["qogita_resync_mode"]
+        }
+        Returns: Json
       }
       evaluate_vendor_price_alerts: {
         Args: { _vendor_id: string }

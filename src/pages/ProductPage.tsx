@@ -363,8 +363,41 @@ function OfferRow({
           </div>
           <span className="text-base font-bold text-green-700">{formatEur(displayPrice)} € <span className="text-[10px] font-normal text-muted-foreground">{priceLabel}</span></span>
         </div>
+
+        {/* Mobile: degressive price tiers */}
+        {hasOfferPriceTiers && (
+          <div className="rounded-md border border-border bg-muted/30 p-2.5">
+            <div className="flex items-center gap-1.5 text-[11px] font-semibold text-foreground mb-1.5">
+              <TrendingDown size={12} className="text-green-600" />
+              Prix dégressifs selon le montant commandé
+            </div>
+            <div className="grid grid-cols-3 gap-1.5">
+              {offerPriceTiers
+                .sort((a, b) => a.tier_index - b.tier_index)
+                .map((tier, i) => {
+                  const basePrice = offerPriceTiers[0].price_excl_vat;
+                  const tierPrice = isTVAC ? tier.price_incl_vat : tier.price_excl_vat;
+                  const saving = i > 0 ? ((basePrice - tier.price_excl_vat) / basePrice * 100).toFixed(1) : null;
+                  return (
+                    <div key={tier.id} className="flex flex-col items-start gap-0.5 rounded-sm bg-background px-2 py-1.5 border border-border/60">
+                      <span className={`text-[12px] tabular-nums leading-tight ${i === 0 ? "font-bold text-green-700" : "font-semibold text-foreground"}`}>
+                        {formatEur(tierPrice)}&nbsp;€
+                      </span>
+                      <span className="text-[10px] text-muted-foreground tabular-nums leading-tight">
+                        {tier.mov_threshold > 0 ? <>≥ {formatEur(tier.mov_threshold)}&nbsp;€</> : "Base"}
+                      </span>
+                      {saving && (
+                        <span className="text-[10px] text-green-600 font-medium tabular-nums leading-tight">-{saving}%</span>
+                      )}
+                    </div>
+                  );
+                })}
+            </div>
+          </div>
+        )}
+
         <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
-          {offer.movEur > 0 && <span>MOV {formatEur(offer.movEur)} €</span>}
+          {!hasOfferPriceTiers && offer.movEur > 0 && <span>MOV {formatEur(offer.movEur)} €</span>}
           <span>Stock {offer.stockQuantity.toLocaleString("fr-FR")}</span>
           <span>Livraison ~{offer.deliveryDays}j</span>
           {step > 1 && (

@@ -1,9 +1,21 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+import {
+  type FieldSpec,
+  formatDbError,
+  partitionValidRecords,
+  sampleValue,
+} from "../_shared/sync-logger.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+const CATEGORY_SPECS: FieldSpec[] = [
+  { field: "name", expected: "non-empty string", required: true, hint: "leaf segment of products.category_name" },
+  { field: "slug", expected: "non-empty string", required: true, hint: "auto-derived from name" },
+  { field: "is_active", expected: "boolean", required: true },
+];
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });

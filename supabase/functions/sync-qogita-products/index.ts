@@ -23,6 +23,9 @@ const UPSERT_BATCH = 150;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
+type QueryRows<T> = { data: T[] | null; error: { message?: string } | null };
+type ProductLookupRow = { id: string; qogita_qid: string | null; gtin: string | null; slug: string | null };
+
 // Retry x3 avec backoff exponentiel (250ms, 750ms, 2.25s) — filet de sécurité
 // pour les vraies erreurs transientes (timeouts réseau, 502 sporadiques).
 async function withRetry<T>(
@@ -620,8 +623,8 @@ async function processBatch(
 
   if (parsedRows.length === 0) return 0;
 
-  const qids = parsedRows.map((row) => row.qid);
-  const gtins = parsedRows.map((row) => row.gtin).filter(Boolean);
+  const qids = parsedRows.map((row: any) => row.qid);
+  const gtins = parsedRows.map((row: any) => row.gtin).filter((gtin: string | null): gtin is string => Boolean(gtin));
 
   const [existingByQidRes, existingByGtinRes] = await Promise.all([
     qids.length > 0
@@ -632,13 +635,21 @@ async function processBatch(
       ? withRetry("select products by gtin", () =>
           sb.from("products").select("id, qogita_qid, gtin, slug").in("gtin", gtins))
       : Promise.resolve({ data: [], error: null }),
-  ]);
+  ]) as [QueryRows<ProductLookupRow>, QueryRows<ProductLookupRow>];
 
   if (existingByQidRes.error) throw existingByQidRes.error;
   if (existingByGtinRes.error) throw existingByGtinRes.error;
 
-  const existingByQid = new Map((existingByQidRes.data || []).map((row: any) => [row.qogita_qid, row]));
-  const existingByGtin = new Map((existingByGtinRes.data || []).map((row: any) => [row.gtin, row]));
+  const existingByQid = new Map<string, ProductLookupRow>(
+    (existingByQidRes.data || [])
+      .filter((row): row is ProductLookupRow & { qogita_qid: string } => Boolean(row.qogita_qid))
+      .map((row) => [row.qogita_qid, row]),
+  );
+  const existingByGtin = new Map<string, ProductLookupRow>(
+    (existingByGtinRes.data || [])
+      .filter((row): row is ProductLookupRow & { gtin: string } => Boolean(row.gtin))
+      .map((row) => [row.gtin, row]),
+  );
 
   for (const row of parsedRows) {
     const existingQidRow = existingByQid.get(row.qid);

@@ -213,6 +213,14 @@ export function CatalogProductCard({ product, index = 0, view = "grid", searchQu
                 <Layers size={10} /> Lots de {bundleSize}
               </span>
             )}
+            {moqMissing && (
+              <span
+                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200"
+                title="La taille de lot (MOQ) de cette offre n'a pas pu être déterminée. Une alerte a été envoyée à l'équipe pour correction."
+              >
+                <AlertTriangle size={10} /> MOQ non disponible
+              </span>
+            )}
           </div>
         </div>
         <div className="text-right shrink-0 space-y-1">

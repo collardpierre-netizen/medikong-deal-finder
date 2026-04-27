@@ -267,6 +267,8 @@ export function useProductOffers(productId: string | undefined) {
           discountTiers: tiersMap.get(o.id) || [],
           offerPriceTiers: priceTiersMap.get(o.id) || [],
           isActive: o.is_active,
+          updatedAt: o.updated_at ?? null,
+          syncedAt: o.synced_at ?? null,
           sellerName: (() => {
             const showReal = resolveVendorVisibility(
               { ...vendor, id: safeVendorId },

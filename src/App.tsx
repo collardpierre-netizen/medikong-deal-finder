@@ -128,6 +128,7 @@ const AdminUsers = lazyWithRetry(() => import("./pages/admin/AdminUsers"), "Admi
 const AdminAuditLog = lazyWithRetry(() => import("./pages/admin/AdminAuditLog"), "AdminAuditLog");
 const AdminContractAudit = lazyWithRetry(() => import("./pages/admin/AdminContractAudit"), "AdminContractAudit");
 const AdminCatalogDiagnostics = lazyWithRetry(() => import("./pages/admin/AdminCatalogDiagnostics"), "AdminCatalogDiagnostics");
+const AdminOfferDataQuality = lazyWithRetry(() => import("./pages/admin/AdminOfferDataQuality"), "AdminOfferDataQuality");
 const AdminCommissions = lazyWithRetry(() => import("./pages/admin/AdminCommissions"), "AdminCommissions");
 const AdminOnboardingCMS = lazyWithRetry(() => import("./pages/admin/AdminOnboardingCMS"), "AdminOnboardingCMS");
 const AdminSync = lazyWithRetry(() => import("./pages/admin/AdminSync"), "AdminSync");
@@ -346,6 +347,7 @@ const App = () => (
               <Route path="audit-log" element={<LP><AdminAuditLog /></LP>} />
               <Route path="contract-audit" element={<LP><AdminContractAudit /></LP>} />
               <Route path="catalog-diagnostics" element={<LP><AdminCatalogDiagnostics /></LP>} />
+              <Route path="offer-data-quality" element={<LP><AdminOfferDataQuality /></LP>} />
               <Route path="onboarding-cms" element={<LP><AdminOnboardingCMS /></LP>} />
               <Route path="commissions" element={<LP><AdminCommissions /></LP>} />
               <Route path="sync" element={<LP><AdminSync /></LP>} />

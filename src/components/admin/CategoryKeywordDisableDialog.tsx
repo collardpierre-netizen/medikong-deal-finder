@@ -1,11 +1,11 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Loader2, Search, AlertTriangle, X, ShieldOff, ShieldCheck } from "lucide-react";
+import { Loader2, Search, AlertTriangle, X, ShieldOff, ShieldCheck, Calculator, Package, Tag } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -106,6 +106,109 @@ export default function CategoryKeywordDisableDialog({
   };
 
   const newActive = action === "enable";
+
+  // ---- SIMULATION (impact réel en base) ------------------------------------
+  type SimResult = {
+    categoriesActiveTotal: number;
+    categoriesInactiveTotal: number;
+    productsToFlip: number;
+    productsAlreadyInState: number;
+    activeOffersImpacted: number;
+    sampleCategoryNames: string[];
+    computedAt: string;
+    keywordsHash: string;
+  };
+  const [sim, setSim] = useState<SimResult | null>(null);
+  const [simLoading, setSimLoading] = useState(false);
+  const [simError, setSimError] = useState<string | null>(null);
+
+  const keywordsHash = useMemo(
+    () => `${action}|${keywords.slice().sort().join("§")}|${allCategoryIdsToDisable.length}`,
+    [action, keywords, allCategoryIdsToDisable],
+  );
+  const simStale = !sim || sim.keywordsHash !== keywordsHash;
+
+  // Reset on dialog open / scope change
+  useEffect(() => {
+    setSim(null);
+    setSimError(null);
+  }, [open, action]);
+  useEffect(() => {
+    if (sim && sim.keywordsHash !== keywordsHash) setSim(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [keywordsHash]);
+
+  const runSimulation = async () => {
+    setSimError(null);
+    if (allCategoryIdsToDisable.length === 0) {
+      setSim({
+        categoriesActiveTotal: 0, categoriesInactiveTotal: 0,
+        productsToFlip: 0, productsAlreadyInState: 0, activeOffersImpacted: 0,
+        sampleCategoryNames: [], computedAt: new Date().toISOString(), keywordsHash,
+      });
+      return;
+    }
+    setSimLoading(true);
+    try {
+      const targetState = newActive;
+      const catsActive = allCategoryIdsToDisable
+        .map((id) => byId.get(id))
+        .filter((c): c is Category => !!c && c.is_active).length;
+      const catsInactive = allCategoryIdsToDisable.length - catsActive;
+
+      const CHUNK = 200;
+      let productsToFlip = 0;
+      let productsAlreadyInState = 0;
+      let activeOffersImpacted = 0;
+
+      for (let i = 0; i < allCategoryIdsToDisable.length; i += CHUNK) {
+        const slice = allCategoryIdsToDisable.slice(i, i + CHUNK);
+
+        const flipPromise = supabase
+          .from("products")
+          .select("id", { count: "exact", head: true })
+          .in("category_id", slice)
+          .eq("is_active", !targetState);
+
+        const samePromise = supabase
+          .from("products")
+          .select("id", { count: "exact", head: true })
+          .in("category_id", slice)
+          .eq("is_active", targetState);
+
+        // Active offers attached to products that will flip state
+        const offersPromise = supabase
+          .from("offers")
+          .select("id, products!inner(category_id, is_active)", { count: "exact", head: true })
+          .eq("is_active", true)
+          .in("products.category_id", slice)
+          .eq("products.is_active", !targetState);
+
+        const [flipRes, sameRes, offersRes] = await Promise.all([flipPromise, samePromise, offersPromise]);
+        if (flipRes.error) throw flipRes.error;
+        if (sameRes.error) throw sameRes.error;
+        if (offersRes.error) throw offersRes.error;
+        productsToFlip += flipRes.count ?? 0;
+        productsAlreadyInState += sameRes.count ?? 0;
+        activeOffersImpacted += offersRes.count ?? 0;
+      }
+
+      setSim({
+        categoriesActiveTotal: catsActive,
+        categoriesInactiveTotal: catsInactive,
+        productsToFlip,
+        productsAlreadyInState,
+        activeOffersImpacted,
+        sampleCategoryNames: rootsToDisable.slice(0, 6).map((r) => r.name),
+        computedAt: new Date().toISOString(),
+        keywordsHash,
+      });
+    } catch (e: any) {
+      setSimError(e?.message ?? "Erreur de simulation");
+    } finally {
+      setSimLoading(false);
+    }
+  };
 
   const runMutation = useMutation({
     mutationFn: async () => {
@@ -264,6 +367,105 @@ export default function CategoryKeywordDisableDialog({
               </div>
             )}
           </div>
+
+          {/* Simulation impact réel en base */}
+          <div className="rounded-md border bg-card p-3 space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-medium flex items-center gap-1.5">
+                <Calculator size={13} className="text-primary" />
+                Simulation d'impact ({newActive ? "réactivation" : "désactivation"})
+              </span>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={runSimulation}
+                disabled={simLoading || keywords.length === 0 || allCategoryIdsToDisable.length === 0}
+              >
+                {simLoading ? (
+                  <><Loader2 size={12} className="mr-1 animate-spin" /> Calcul…</>
+                ) : sim && !simStale ? (
+                  <>↻ Recalculer</>
+                ) : (
+                  <>Lancer la simulation</>
+                )}
+              </Button>
+            </div>
+
+            {simError && (
+              <div className="text-xs text-destructive bg-destructive/10 px-2 py-1 rounded">
+                {simError}
+              </div>
+            )}
+
+            {!sim && !simLoading && (
+              <p className="text-xs text-muted-foreground">
+                Aucune simulation lancée. Le bouton ci-dessous est <strong>bloqué</strong> tant
+                qu'aucune simulation à jour ne confirme l'impact réel sur les produits et offres.
+              </p>
+            )}
+
+            {sim && (
+              <>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="rounded border p-2">
+                    <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Catégories</div>
+                    <div className="text-base font-semibold tabular-nums">
+                      {sim.categoriesActiveTotal + sim.categoriesInactiveTotal}
+                    </div>
+                    <div className="text-[10px] text-muted-foreground">
+                      {newActive
+                        ? `${sim.categoriesInactiveTotal} à réactiver · ${sim.categoriesActiveTotal} déjà actives`
+                        : `${sim.categoriesActiveTotal} à désactiver · ${sim.categoriesInactiveTotal} déjà inactives`}
+                    </div>
+                  </div>
+                  <div className="rounded border p-2">
+                    <div className="text-[10px] uppercase tracking-wide text-muted-foreground flex items-center gap-1">
+                      <Package size={10} /> Produits
+                    </div>
+                    <div className={`text-base font-semibold tabular-nums ${!newActive && sim.productsToFlip > 1000 ? "text-destructive" : ""}`}>
+                      {sim.productsToFlip.toLocaleString("fr-FR")}
+                    </div>
+                    <div className="text-[10px] text-muted-foreground">
+                      {newActive ? "à rendre visibles" : "à masquer"}
+                      {sim.productsAlreadyInState > 0 && ` · ${sim.productsAlreadyInState.toLocaleString("fr-FR")} déjà ${newActive ? "actifs" : "inactifs"}`}
+                    </div>
+                  </div>
+                  <div className="rounded border p-2">
+                    <div className="text-[10px] uppercase tracking-wide text-muted-foreground flex items-center gap-1">
+                      <Tag size={10} /> Offres actives
+                    </div>
+                    <div className={`text-base font-semibold tabular-nums ${!newActive && sim.activeOffersImpacted > 5000 ? "text-destructive" : ""}`}>
+                      {sim.activeOffersImpacted.toLocaleString("fr-FR")}
+                    </div>
+                    <div className="text-[10px] text-muted-foreground">
+                      {newActive ? "redeviendront visibles" : "ne s'afficheront plus"}
+                    </div>
+                  </div>
+                </div>
+
+                {!newActive && sim.productsToFlip > 1000 && (
+                  <div className="flex items-start gap-2 text-xs text-destructive bg-destructive/10 px-2 py-1.5 rounded">
+                    <AlertTriangle size={14} className="mt-0.5 shrink-0" />
+                    <span>
+                      <strong>Impact massif</strong> : plus de 1 000 produits seront masqués.
+                      Vérifie tes mots-clés (ex : « eau » matche « eau de toilette » mais aussi
+                      « eau thermale »).
+                    </span>
+                  </div>
+                )}
+
+                {simStale && (
+                  <div className="text-[11px] text-amber-700 bg-amber-50 dark:bg-amber-950/20 px-2 py-1 rounded flex items-center gap-1">
+                    <AlertTriangle size={11} /> Mots-clés modifiés depuis la simulation — relance le calcul.
+                  </div>
+                )}
+
+                <div className="text-[10px] text-muted-foreground text-right">
+                  Calculé à {new Date(sim.computedAt).toLocaleTimeString("fr-FR")}
+                </div>
+              </>
+            )}
+          </div>
         </div>
 
         <DialogFooter>
@@ -272,12 +474,21 @@ export default function CategoryKeywordDisableDialog({
           </Button>
           <Button
             variant={newActive ? "default" : "destructive"}
-            disabled={allCategoryIdsToDisable.length === 0 || runMutation.isPending}
+            disabled={
+              allCategoryIdsToDisable.length === 0 ||
+              runMutation.isPending ||
+              !sim ||
+              simStale
+            }
+            title={!sim ? "Lance d'abord la simulation" : simStale ? "Mots-clés modifiés depuis la simulation — relance le calcul" : ""}
             onClick={() => {
               const verb = newActive ? "réactivation" : "désactivation";
+              const prodLine = sim
+                ? `\n\n• ${sim.productsToFlip.toLocaleString("fr-FR")} produit(s) ${newActive ? "à rendre visibles" : "à masquer"}\n• ${sim.activeOffersImpacted.toLocaleString("fr-FR")} offre(s) active(s) ${newActive ? "redeviendront visibles" : "ne s'afficheront plus"}`
+                : "";
               if (
                 confirm(
-                  `Confirmer la ${verb} de ${rootsToDisable.length} racine(s) et ${allCategoryIdsToDisable.length} catégorie(s) au total ? Les produits associés seront également ${newActive ? "rendus visibles" : "masqués"}.`,
+                  `Confirmer la ${verb} de ${rootsToDisable.length} racine(s) et ${allCategoryIdsToDisable.length} catégorie(s) au total ?${prodLine}`,
                 )
               ) {
                 runMutation.mutate();

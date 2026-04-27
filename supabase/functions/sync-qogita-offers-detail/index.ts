@@ -264,6 +264,10 @@ function extractRawTiers(src: any): any[] {
  * - Then appends every Qogita-provided tier in ascending MOV order.
  * - Wipes previous rows for that offer (clean re-sync, no orphans).
  */
+// Threshold above which a single-tier offer is considered suspicious
+// (i.e. Qogita likely returned only one MOV like 15 000 € without the lower steps)
+const SINGLE_TIER_MOV_ALERT_THRESHOLD = 1000; // EUR
+
 async function syncOfferTiers(
   sb: any,
   offerId: string,
@@ -272,6 +276,7 @@ async function syncOfferTiers(
   moqBase: number,
   vatMultiplier: number,
   rawTiers: any[],
+  ctx?: { gtin?: string; country?: string; vendor?: string; parentStats?: any },
 ): Promise<number> {
   if (!offerId || unitPriceBase <= 0) return 0;
 

@@ -60,6 +60,7 @@ const AdminVendeurs = () => {
       return (v.company_name || v.name).toLowerCase().includes(s) ||
         (v.city || "").toLowerCase().includes(s) ||
         (v.display_code || "").toLowerCase().includes(s) ||
+        ((v as any).qogita_seller_alias || "").toLowerCase().includes(s) ||
         (v.email || "").toLowerCase().includes(s);
     }), [vendors, activeTab, statusFilter, activeFilter, search]);
 
@@ -244,7 +245,7 @@ const AdminVendeurs = () => {
                   <input type="checkbox" checked={allSelected} onChange={toggleAll}
                     className="w-4 h-4 rounded cursor-pointer accent-[#1B5BDA]" />
                 </th>
-                {["Vendeur", "Code", "Type", "Ville", "Comm.", "Validation", "Statut", "Inscrit", ""].map((h) => (
+                {["Vendeur", "ID MediKong", "ID Qogita", "Type", "Ville", "Comm.", "Validation", "Statut", "Inscrit", ""].map((h) => (
                   <th key={h} className="px-3 py-3 text-[11px] font-semibold uppercase tracking-wider" style={{ color: "#8B95A5" }}>{h}</th>
                 ))}
               </tr>
@@ -269,6 +270,13 @@ const AdminVendeurs = () => {
                     </td>
                     <td className="px-3 py-3" onClick={() => navigate(`/admin/vendeurs/${s.id}`)}>
                       <span className="px-2 py-1 rounded text-[11px] font-mono" style={{ backgroundColor: "#F1F5F9", color: "#616B7C" }}>{s.display_code || "—"}</span>
+                    </td>
+                    <td className="px-3 py-3" onClick={() => navigate(`/admin/vendeurs/${s.id}`)}>
+                      {(s as any).qogita_seller_alias ? (
+                        <span className="px-2 py-1 rounded text-[11px] font-mono" style={{ backgroundColor: "#EFF6FF", color: "#1B5BDA" }}>{(s as any).qogita_seller_alias}</span>
+                      ) : (
+                        <span className="text-[11px]" style={{ color: "#CBD5E1" }}>—</span>
+                      )}
                     </td>
                     <td className="px-3 py-3" onClick={() => navigate(`/admin/vendeurs/${s.id}`)}>
                       <span className="px-2 py-1 rounded-full text-[10px] font-bold" style={{ backgroundColor: "#F1F5F9", color: "#616B7C" }}>{s.type}</span>

@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import { Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { VCard } from "@/components/vendor/ui/VCard";
@@ -1348,19 +1349,34 @@ export default function VendorOffers() {
                   return (
                     <tr key={offer.id} className="hover:bg-[#F8FAFC]" style={{ borderBottom: "1px solid #E2E8F0" }}>
                       <td className="py-2.5 px-3">
-                        <div className="flex items-center gap-2">
-                          {prod?.image_urls?.[0] ? (
-                            <img src={prod.image_urls[0]} alt="" className="w-8 h-8 rounded object-contain shrink-0" style={{ backgroundColor: "#F8FAFC" }} />
-                          ) : (
-                            <div className="w-8 h-8 rounded flex items-center justify-center shrink-0" style={{ backgroundColor: "#F1F5F9" }}>
-                              <Package size={14} style={{ color: "#CBD5E1" }} />
+                        {(() => {
+                          const inner = (
+                            <div className="flex items-center gap-2">
+                              {prod?.image_urls?.[0] ? (
+                                <img src={prod.image_urls[0]} alt="" className="w-8 h-8 rounded object-contain shrink-0" style={{ backgroundColor: "#F8FAFC" }} />
+                              ) : (
+                                <div className="w-8 h-8 rounded flex items-center justify-center shrink-0" style={{ backgroundColor: "#F1F5F9" }}>
+                                  <Package size={14} style={{ color: "#CBD5E1" }} />
+                                </div>
+                              )}
+                              <div className="min-w-0">
+                                <span className="font-medium line-clamp-1 max-w-[200px] block hover:underline" style={{ color: "#1D2530" }}>{prod?.name || "Produit inconnu"}</span>
+                                {prod?.gtin && <span className="text-[10px] block" style={{ color: "#8B95A5" }}>EAN: {prod.gtin}</span>}
+                              </div>
                             </div>
-                          )}
-                          <div className="min-w-0">
-                            <span className="font-medium line-clamp-1 max-w-[200px] block" style={{ color: "#1D2530" }}>{prod?.name || "Produit inconnu"}</span>
-                            {prod?.gtin && <span className="text-[10px] block" style={{ color: "#8B95A5" }}>EAN: {prod.gtin}</span>}
-                          </div>
-                        </div>
+                          );
+                          return prod?.slug ? (
+                            <Link
+                              to={`/produit/${prod.slug}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              title="Voir la fiche produit"
+                              className="block"
+                            >
+                              {inner}
+                            </Link>
+                          ) : inner;
+                        })()}
                       </td>
                       <td className="py-2.5 px-3 text-[12px]" style={{ color: "#616B7C" }}>{prod?.brand_name || "—"}</td>
                       <td className="py-2.5 px-3 text-right font-medium">{Number(offer.price_excl_vat).toFixed(2)} €</td>

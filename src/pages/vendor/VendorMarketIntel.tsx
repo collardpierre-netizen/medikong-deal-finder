@@ -288,6 +288,21 @@ export default function VendorMarketIntel() {
    * `openRow.my_price_excl_vat` pour un recalcul instantané.
    */
   const [livePrice, setLivePrice] = useState<number | null>(null);
+  /** Horodatage du dernier recalcul live (mis à jour à chaque saisie valide). */
+  const [liveRecalcAt, setLiveRecalcAt] = useState<number | null>(null);
+  /** Petit flag pour faire pulser le badge "En direct" quelques instants après chaque maj. */
+  const [livePulse, setLivePulse] = useState(false);
+  useEffect(() => {
+    if (livePrice == null) {
+      setLiveRecalcAt(null);
+      setLivePulse(false);
+      return;
+    }
+    setLiveRecalcAt(Date.now());
+    setLivePulse(true);
+    const t = setTimeout(() => setLivePulse(false), 900);
+    return () => clearTimeout(t);
+  }, [livePrice]);
   // Tri & filtre du tableau "Offres MediKong" dans le détail
   const [mkSortKey, setMkSortKey] = useState<"net" | "price" | null>(null);
   const [mkSortDir, setMkSortDir] = useState<"asc" | "desc">("desc");

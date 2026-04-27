@@ -877,7 +877,6 @@ async function processSingleProduct(
                 }
               }
             }
-            }
           } else if (offersRes.status === 429) {
             localStats.rate_limited++;
           } else if (!offersRes.ok) {

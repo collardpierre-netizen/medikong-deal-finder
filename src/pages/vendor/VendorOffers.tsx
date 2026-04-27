@@ -8,6 +8,9 @@ import { VBadge } from "@/components/vendor/ui/VBadge";
 import { Tag, Plus, Pencil, Trash2, X, Loader2, Package, Search, Download, Upload, FileSpreadsheet, ChevronDown, Users, ChevronRight, TrendingDown, TrendingUp, BarChart3, Eye, ImagePlus } from "lucide-react";
 import ProductPhotoUploader from "@/components/admin/ProductPhotoUploader";
 import { CategoryTreeSelector } from "@/components/vendor/CategoryTreeSelector";
+import { MarginInsightCard } from "@/components/vendor/MarginInsightCard";
+import { useVendorCommissionConfig } from "@/hooks/useVendorCommissionConfig";
+import { computeMargin } from "@/lib/vendorMargin";
 import { toast } from "sonner";
 import { useCurrentVendor } from "@/hooks/useCurrentVendor";
 import * as XLSX from "xlsx";
@@ -90,6 +93,8 @@ interface OfferForm {
   product_id: string;
   product_name: string;
   price_excl_vat: string;
+  purchase_price_excl_vat: string;
+  save_as_product_default: boolean;
   vat_rate: string;
   stock_quantity: string;
   moq: string;
@@ -100,7 +105,7 @@ interface OfferForm {
 }
 
 const emptyForm: OfferForm = {
-  product_id: "", product_name: "", price_excl_vat: "", vat_rate: "21", stock_quantity: "", moq: "1", mov_amount: "0", delivery_days: "3", country_code: "BE", category_ids: [],
+  product_id: "", product_name: "", price_excl_vat: "", purchase_price_excl_vat: "", save_as_product_default: false, vat_rate: "21", stock_quantity: "", moq: "1", mov_amount: "0", delivery_days: "3", country_code: "BE", category_ids: [],
 };
 
 /* ─── Competitive Intelligence Module ─── */

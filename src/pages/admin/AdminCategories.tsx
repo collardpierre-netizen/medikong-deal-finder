@@ -132,6 +132,7 @@ const AdminCategories = () => {
   const [newCatName, setNewCatName] = useState("");
   const [newCatParent, setNewCatParent] = useState("none");
   const [showKeywordDisable, setShowKeywordDisable] = useState(false);
+  const [showReactivate, setShowReactivate] = useState(false);
 
   const searchLower = search.toLowerCase().trim();
   const matchesSearch = (cat: any) => {

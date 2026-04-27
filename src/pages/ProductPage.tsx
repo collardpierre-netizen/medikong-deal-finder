@@ -1300,20 +1300,24 @@ export default function ProductPage() {
                         </div>
 
                         {otherOffers.map((offer, i) => (
-                          <OfferRow
+                          <SafeBoundary
                             key={offer.id}
-                            offer={offer}
-                            productId={product.id}
-                            productName={product.name}
-                            productSlug={product.slug}
-                            user={user}
-                            navigate={navigate}
-                            addToCart={addToCart}
-                            delay={i * 0.06}
-                            isTVAC={isTVAC}
-                            categoryId={categoryData?.category?.id}
-                            bestPrice={bestOffer ? (isTVAC ? bestOffer.unitPriceInclVat : bestOffer.unitPriceEur) : undefined}
-                          />
+                            label={`l'offre de ${offer.sellerName || "ce fournisseur"}`}
+                          >
+                            <OfferRow
+                              offer={offer}
+                              productId={product.id}
+                              productName={product.name}
+                              productSlug={product.slug}
+                              user={user}
+                              navigate={navigate}
+                              addToCart={addToCart}
+                              delay={i * 0.06}
+                              isTVAC={isTVAC}
+                              categoryId={categoryData?.category?.id}
+                              bestPrice={bestOffer ? (isTVAC ? bestOffer.unitPriceInclVat : bestOffer.unitPriceEur) : undefined}
+                            />
+                          </SafeBoundary>
                         ))}
                       </div>
                     )}

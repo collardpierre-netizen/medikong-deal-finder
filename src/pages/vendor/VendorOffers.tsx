@@ -1370,7 +1370,14 @@ export default function VendorOffers() {
                       <td className="py-2.5 px-3 text-center">{offer.delivery_days}j</td>
                       <td className="py-2.5 px-3 text-center">{offer.country_code}</td>
                       <td className="py-2.5 px-3 text-center">
-                        <VBadge color={offer.is_active ? "#059669" : "#8B95A5"}>{offer.is_active ? "Active" : "Inactive"}</VBadge>
+                        <button
+                          type="button"
+                          onClick={() => toggleOfferActive.mutate({ id: offer.id, is_active: !offer.is_active })}
+                          title={offer.is_active ? "Cliquez pour désactiver" : "Cliquez pour activer"}
+                          className="cursor-pointer hover:opacity-80 transition-opacity"
+                        >
+                          <VBadge color={offer.is_active ? "#059669" : "#8B95A5"}>{offer.is_active ? "Active" : "Inactive"}</VBadge>
+                        </button>
                       </td>
                       <td className="py-2.5 px-3 text-right">
                         <div className="flex items-center justify-end gap-1">

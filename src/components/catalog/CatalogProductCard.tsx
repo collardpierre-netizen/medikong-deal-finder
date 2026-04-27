@@ -85,10 +85,30 @@ export function CatalogProductCard({ product, index = 0, view = "grid", searchQu
   const fromState = { from: location.pathname + location.search };
   const price = product.best_price_excl_vat || 0;
   const priceIncl = product.best_price_incl_vat || 0;
-  const bundleSize = product.best_bundle_size && product.best_bundle_size > 1 ? product.best_bundle_size : null;
+  const rawMoq = product.best_bundle_size;
+  const hasOffers = product.offer_count > 0;
+  const bundleSize = rawMoq && rawMoq > 1 ? rawMoq : null;
+  // MOQ is considered "missing" only if the product has at least one offer but
+  // the denormalized field is null/0 (1 means "vente à l'unité" — pas d'anomalie).
+  const moqMissing = hasOffers && (rawMoq === null || rawMoq === undefined || rawMoq === 0);
   const isLoggedIn = !!user;
   const canSeePrices = isLoggedIn && (isVerifiedBuyer || verificationLoading);
   const displayName = getLocalizedName(product, i18n.language);
+
+  useEffect(() => {
+    if (moqMissing) {
+      reportOfferDataIssue({
+        productId: product.id,
+        issue: "missing_moq",
+        details: {
+          slug: product.slug,
+          gtin: product.gtin,
+          offer_count: product.offer_count,
+          country,
+        },
+      });
+    }
+  }, [moqMissing, product.id, product.slug, product.gtin, product.offer_count, country]);
 
   const handleAddToCart = async () => {
     // If multiple offers, open product page to let user choose

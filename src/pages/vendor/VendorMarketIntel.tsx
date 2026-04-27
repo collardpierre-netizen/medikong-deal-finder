@@ -361,6 +361,7 @@ export default function VendorMarketIntel() {
     return fresh ?? openRow;
   }, [openRow, rows]);
 
+  const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     const ean = eanFilter.trim().toLowerCase();
     let arr = rows;

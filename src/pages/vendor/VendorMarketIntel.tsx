@@ -975,7 +975,7 @@ export default function VendorMarketIntel() {
                               </td>
                             </tr>
                           ) : (
-                            sorted.map(({ o, net }, i) => (
+                            sorted.map(({ o, net, priceForCalc }, i) => (
                               <tr
                                 key={o.offer_id}
                                 className={`border-t ${o.is_mine ? "bg-primary/5" : ""}`}
@@ -990,12 +990,21 @@ export default function VendorMarketIntel() {
                                   {o.vendor_name}
                                   {o.is_mine && (
                                     <span className="ml-1 text-[10px] text-primary font-semibold">
-                                      (vous)
+                                      (vous{isLive ? " · live" : ""})
                                     </span>
                                   )}
                                 </td>
                                 <td className="px-3 py-2 text-right tabular-nums font-medium">
-                                  {fmt(o.price_excl_vat)}
+                                  {o.is_mine && isLive ? (
+                                    <span className="inline-flex items-center gap-1">
+                                      <span className="text-[10px] text-muted-foreground line-through">
+                                        {fmt(o.price_excl_vat)}
+                                      </span>
+                                      <span className="text-amber-700">{fmt(priceForCalc)}</span>
+                                    </span>
+                                  ) : (
+                                    fmt(priceForCalc)
+                                  )}
                                 </td>
                                 <td className="px-3 py-2 text-right tabular-nums">
                                   {net != null && commissionConfig ? (() => {

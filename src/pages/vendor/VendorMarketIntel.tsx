@@ -777,23 +777,23 @@ export default function VendorMarketIntel() {
           <DialogHeader>
             <DialogTitle className="text-base flex items-center justify-between gap-3">
               <div>
-                {openRow?.product_name}
+                {liveOpenRow?.product_name}
                 <div className="text-xs font-normal text-muted-foreground mt-1">
-                  EAN {openRow?.gtin || "—"} · {openRow?.country_code}
+                  EAN {liveOpenRow?.gtin || "—"} · {liveOpenRow?.country_code}
                 </div>
               </div>
-              {openRow && (
+              {liveOpenRow && (
                 <button
                   onClick={() =>
                     setAdjustCtx({
-                      offerId: openRow.my_offer_id,
-                      productName: openRow.product_name,
-                      gtin: openRow.gtin,
-                      myPrice: openRow.my_price_excl_vat,
-                      bestMkPrice: openRow.best_medikong_competitor_price,
-                      bestExtPrice: openRow.best_external_price,
+                      offerId: liveOpenRow.my_offer_id,
+                      productName: liveOpenRow.product_name,
+                      gtin: liveOpenRow.gtin,
+                      myPrice: liveOpenRow.my_price_excl_vat,
+                      bestMkPrice: liveOpenRow.best_medikong_competitor_price,
+                      bestExtPrice: liveOpenRow.best_external_price,
                       vendorId,
-                      productId: openRow.product_id,
+                      productId: liveOpenRow.product_id,
                     })
                   }
                   className="shrink-0 inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
@@ -803,7 +803,7 @@ export default function VendorMarketIntel() {
               )}
             </DialogTitle>
           </DialogHeader>
-          {openRow && (
+          {liveOpenRow && (
             <div className="space-y-6">
               {/* Marge & commission sur l'offre actuelle du vendeur */}
               {commissionConfig && (

@@ -272,6 +272,13 @@ const AdminVendeurs = () => {
                       <span className="px-2 py-1 rounded text-[11px] font-mono" style={{ backgroundColor: "#F1F5F9", color: "#616B7C" }}>{s.display_code || "—"}</span>
                     </td>
                     <td className="px-3 py-3" onClick={() => navigate(`/admin/vendeurs/${s.id}`)}>
+                      {(s as any).qogita_seller_alias ? (
+                        <span className="px-2 py-1 rounded text-[11px] font-mono" style={{ backgroundColor: "#EFF6FF", color: "#1B5BDA" }}>{(s as any).qogita_seller_alias}</span>
+                      ) : (
+                        <span className="text-[11px]" style={{ color: "#CBD5E1" }}>—</span>
+                      )}
+                    </td>
+                    <td className="px-3 py-3" onClick={() => navigate(`/admin/vendeurs/${s.id}`)}>
                       <span className="px-2 py-1 rounded-full text-[10px] font-bold" style={{ backgroundColor: "#F1F5F9", color: "#616B7C" }}>{s.type}</span>
                     </td>
                     <td className="px-3 py-3 text-[12px]" style={{ color: "#616B7C" }} onClick={() => navigate(`/admin/vendeurs/${s.id}`)}>{s.city || "—"}, {s.country_code}</td>

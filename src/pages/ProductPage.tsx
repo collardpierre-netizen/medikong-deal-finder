@@ -180,14 +180,19 @@ function OfferRow({
       transition={{ delay, duration: 0.3 }}
     >
       {/* Status badges */}
-      <div className="flex items-center gap-2 mb-3 flex-wrap">
+      <div className="flex items-center gap-2 mb-2 flex-wrap">
         {offer.stockQuantity > 0 ? (
           <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-green-700 bg-green-50 px-2.5 py-1 rounded-full">
             <Package size={12} /> En stock
           </span>
         ) : (
           <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-red-600 bg-red-50 px-2.5 py-1 rounded-full">
-            Rupture
+            <Package size={12} /> Rupture
+          </span>
+        )}
+        {discountPercentage > 0 && (
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-rose-700 bg-rose-50 px-2.5 py-1 rounded-full">
+            <Tag size={12} /> Promo -{Number(discountPercentage).toFixed(0)}%
           </span>
         )}
         {offer.isVerified && (
@@ -213,6 +218,17 @@ function OfferRow({
           </Tooltip>
         )}
       </div>
+
+      {/* Last update */}
+      {(() => {
+        const rel = formatRelative(offer.updatedAt || offer.syncedAt);
+        if (!rel) return null;
+        return (
+          <div className="text-[11px] text-muted-foreground mb-3">
+            Mis à jour {rel}
+          </div>
+        );
+      })()}
 
       {/* Delta vs best */}
       {(() => {

@@ -876,9 +876,9 @@ export default function VendorMarketIntel() {
                 const sorted = [...filtered].sort((a, b) => {
                   if (!mkSortKey) return 0;
                   const va =
-                    mkSortKey === "net" ? a.net ?? -Infinity : a.o.price_excl_vat;
+                    mkSortKey === "net" ? a.net ?? -Infinity : a.priceForCalc;
                   const vb =
-                    mkSortKey === "net" ? b.net ?? -Infinity : b.o.price_excl_vat;
+                    mkSortKey === "net" ? b.net ?? -Infinity : b.priceForCalc;
                   return mkSortDir === "asc" ? va - vb : vb - va;
                 });
                 const toggleSort = (key: "net" | "price") => {

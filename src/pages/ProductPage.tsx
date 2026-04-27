@@ -282,25 +282,33 @@ function OfferRow({
                 })}
             </div>
           ) : hasOfferPriceTiers ? (
-            <div className="relative pl-4">
-              <div className="absolute left-[3px] top-[7px] w-px border-l border-dashed border-muted-foreground/40" style={{ height: `calc(100% - 14px)` }} />
-              {offerPriceTiers
-                .sort((a, b) => a.tier_index - b.tier_index)
-                .map((tier, i) => {
-                  const basePrice = offerPriceTiers[0].price_excl_vat;
-                  const tierPrice = isTVAC ? tier.price_incl_vat : tier.price_excl_vat;
-                  const saving = i > 0 ? ((basePrice - tier.price_excl_vat) / basePrice * 100).toFixed(1) : null;
-                  return (
-                    <div key={tier.id} className="grid grid-cols-[5.5rem_9rem_3rem] items-center gap-x-2 relative whitespace-nowrap" style={{ marginTop: i > 0 ? 4 : 0 }}>
-                      <div className="absolute left-[-14px] w-[7px] h-[7px] rounded-full bg-primary" />
-                      <span className={`text-sm tabular-nums ${i === 0 ? "font-bold text-green-700" : "text-muted-foreground"}`}>
-                        {formatEur(tierPrice)}&nbsp;€
-                      </span>
-                      <span className="text-xs text-muted-foreground tabular-nums">MOV&nbsp;{formatEur(tier.mov_threshold)}&nbsp;€</span>
-                      <span className="text-xs text-green-600 font-medium tabular-nums text-right">{saving ? `-${saving}%` : ""}</span>
-                    </div>
-                  );
-                })}
+            <div>
+              <div className="flex items-center gap-1.5 text-[11px] font-semibold text-foreground mb-1.5">
+                <TrendingDown size={12} className="text-green-600" />
+                Prix dégressifs selon le montant commandé
+              </div>
+              <div className="relative pl-4">
+                <div className="absolute left-[3px] top-[7px] w-px border-l border-dashed border-muted-foreground/40" style={{ height: `calc(100% - 14px)` }} />
+                {offerPriceTiers
+                  .sort((a, b) => a.tier_index - b.tier_index)
+                  .map((tier, i) => {
+                    const basePrice = offerPriceTiers[0].price_excl_vat;
+                    const tierPrice = isTVAC ? tier.price_incl_vat : tier.price_excl_vat;
+                    const saving = i > 0 ? ((basePrice - tier.price_excl_vat) / basePrice * 100).toFixed(1) : null;
+                    return (
+                      <div key={tier.id} className="grid grid-cols-[5.5rem_9rem_3rem] items-center gap-x-2 relative whitespace-nowrap" style={{ marginTop: i > 0 ? 4 : 0 }}>
+                        <div className="absolute left-[-14px] w-[7px] h-[7px] rounded-full bg-primary" />
+                        <span className={`text-sm tabular-nums ${i === 0 ? "font-bold text-green-700" : "text-muted-foreground"}`}>
+                          {formatEur(tierPrice)}&nbsp;€
+                        </span>
+                        <span className="text-xs text-muted-foreground tabular-nums">
+                          {tier.mov_threshold > 0 ? <>≥ MOV&nbsp;{formatEur(tier.mov_threshold)}&nbsp;€</> : "Prix de base"}
+                        </span>
+                        <span className="text-xs text-green-600 font-medium tabular-nums text-right">{saving ? `-${saving}%` : ""}</span>
+                      </div>
+                    );
+                  })}
+              </div>
             </div>
           ) : hasLegacyTiers ? (
             <div className="relative pl-4">

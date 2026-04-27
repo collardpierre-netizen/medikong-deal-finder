@@ -1255,6 +1255,13 @@ export default function VendorMarketIntel() {
         }}
         ctx={adjustCtx}
         onPriceChange={setLivePrice}
+        onPriceSaved={(oldPrice, newPrice) => {
+          if (!adjustCtx) return;
+          setLastSaves((prev) => ({
+            ...prev,
+            [adjustCtx.offerId]: { oldPrice, newPrice, savedAt: Date.now() },
+          }));
+        }}
       />
     </div>
   );

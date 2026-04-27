@@ -8049,6 +8049,10 @@ export type Database = {
         Args: { _delta: Json; _log_id: string }
         Returns: undefined
       }
+      refresh_best_bundle_sizes: {
+        Args: { _only_flagged?: boolean }
+        Returns: Json
+      }
       resolve_product_brands: { Args: never; Returns: undefined }
       resolve_product_categories: { Args: never; Returns: undefined }
       snapshot_vendor_offer_history: { Args: never; Returns: Json }

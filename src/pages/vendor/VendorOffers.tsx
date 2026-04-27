@@ -1089,6 +1089,9 @@ export default function VendorOffers() {
       const priceExcl = parseFloat(form.price_excl_vat);
       const vatRate = parseFloat(form.vat_rate);
       if (!form.product_id || isNaN(priceExcl) || priceExcl <= 0) throw new Error("Champs requis manquants");
+      if (!form.category_ids || form.category_ids.length === 0) {
+        throw new Error("Sélectionnez au moins une catégorie de visibilité.");
+      }
       const priceIncl = Math.round(priceExcl * (1 + vatRate / 100) * 100) / 100;
       const payload = {
         vendor_id: vendor.id, product_id: form.product_id,
@@ -1099,12 +1102,23 @@ export default function VendorOffers() {
         stock_status: parseInt(form.stock_quantity) > 0 ? "in_stock" as const : "out_of_stock" as const,
         is_active: true,
       };
+      let offerId = editingId;
       if (editingId) {
         const { error } = await supabase.from("offers").update(payload).eq("id", editingId);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("offers").insert(payload);
+        const { data: inserted, error } = await supabase.from("offers").insert(payload).select("id").single();
         if (error) throw error;
+        offerId = inserted.id;
+      }
+      // Sync des catégories liées (delete-all + insert)
+      if (offerId) {
+        await supabase.from("offer_categories").delete().eq("offer_id", offerId);
+        const rows = form.category_ids.map(cid => ({ offer_id: offerId!, category_id: cid }));
+        if (rows.length > 0) {
+          const { error: catErr } = await supabase.from("offer_categories").insert(rows);
+          if (catErr) throw catErr;
+        }
       }
     },
     onSuccess: () => { toast.success(editingId ? "Offre modifiée" : "Offre créée"); qc.invalidateQueries({ queryKey: ["vendor-offers"] }); closeForm(); },

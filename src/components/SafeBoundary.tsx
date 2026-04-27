@@ -1,5 +1,6 @@
-import { Component, type ReactNode } from "react";
+import { Component, type ErrorInfo, type ReactNode } from "react";
 import { AlertTriangle } from "lucide-react";
+import { report as reportClientError } from "@/lib/errorReporter";
 
 interface SafeBoundaryProps {
   children: ReactNode;
@@ -27,12 +28,17 @@ export class SafeBoundary extends Component<SafeBoundaryProps, SafeBoundaryState
     return { error };
   }
 
-  componentDidCatch(error: Error) {
+  componentDidCatch(error: Error, info: ErrorInfo) {
     this.props.onError?.(error);
-    if (typeof window !== "undefined" && (window as any).console) {
-      // eslint-disable-next-line no-console
-      console.warn("[SafeBoundary] caught render error:", error);
-    }
+    // Centralised reporting (console + persisted to client_error_logs)
+    void reportClientError({
+      source: "boundary",
+      level: "error",
+      message: error.message || String(error),
+      stack: error.stack || info.componentStack || null,
+      component: this.props.label || null,
+      metadata: { componentStack: info.componentStack },
+    });
   }
 
   render() {

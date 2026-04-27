@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { isValidProductImage } from "@/lib/image-utils";
 import { useCountry } from "@/contexts/CountryContext";
 import { resolveVendorVisibility, getVendorPublicName } from "@/lib/vendor-display";
+import { applyHiddenCategoryFilter } from "@/lib/catalog-filters";
 
 export interface Product {
   id: string;

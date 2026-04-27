@@ -2,6 +2,7 @@ import { Layout } from "@/components/layout/Layout";
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { applyHiddenCategoryFilter } from "@/lib/catalog-filters";
 import { Shield, Check, Package, ExternalLink, Award, Globe, Factory, Tag } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 

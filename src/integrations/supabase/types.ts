@@ -236,6 +236,105 @@ export type Database = {
           },
         ]
       }
+      bulk_action_limits: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          max_deactivations_per_window: number
+          notes: string | null
+          table_name: string
+          updated_at: string
+          window_minutes: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          max_deactivations_per_window: number
+          notes?: string | null
+          table_name: string
+          updated_at?: string
+          window_minutes?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          max_deactivations_per_window?: number
+          notes?: string | null
+          table_name?: string
+          updated_at?: string
+          window_minutes?: number
+        }
+        Relationships: []
+      }
+      bulk_action_violations: {
+        Row: {
+          attempted_count: number
+          context: Json | null
+          created_at: string
+          id: string
+          table_name: string
+          threshold: number
+          user_email: string | null
+          user_id: string | null
+          was_blocked: boolean
+          was_forced: boolean
+          window_minutes: number
+        }
+        Insert: {
+          attempted_count: number
+          context?: Json | null
+          created_at?: string
+          id?: string
+          table_name: string
+          threshold: number
+          user_email?: string | null
+          user_id?: string | null
+          was_blocked?: boolean
+          was_forced?: boolean
+          window_minutes: number
+        }
+        Update: {
+          attempted_count?: number
+          context?: Json | null
+          created_at?: string
+          id?: string
+          table_name?: string
+          threshold?: number
+          user_email?: string | null
+          user_id?: string | null
+          was_blocked?: boolean
+          was_forced?: boolean
+          window_minutes?: number
+        }
+        Relationships: []
+      }
+      bulk_deactivation_events: {
+        Row: {
+          created_at: string
+          id: number
+          row_id: string
+          table_name: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          row_id: string
+          table_name: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          row_id?: string
+          table_name?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       cart_items: {
         Row: {
           created_at: string
@@ -7194,6 +7293,7 @@ export type Database = {
       }
     }
     Functions: {
+      bulk_override_requested: { Args: never; Returns: boolean }
       bulk_set_cnk_codes: { Args: { pairs: Json }; Returns: number }
       count_products_per_category: {
         Args: never
@@ -7342,6 +7442,7 @@ export type Database = {
         Returns: number
       }
       public_verified_vendors_count: { Args: never; Returns: number }
+      purge_bulk_deactivation_events: { Args: never; Returns: number }
       read_email_batch: {
         Args: { batch_size: number; queue_name: string; vt: number }
         Returns: {

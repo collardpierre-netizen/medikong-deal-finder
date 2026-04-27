@@ -37,6 +37,12 @@ interface Props {
   ctx: AdjustPriceContext | null;
   /** Optional list of query keys to invalidate after a successful update */
   invalidateKeys?: (string | undefined)[][];
+  /**
+   * Called whenever the user types a new price (parsed, HTVA in €, or null when invalid/empty).
+   * Lets the parent popup recompute "Mon offre — marge & commission MediKong" in real time
+   * even before the user confirms the new price.
+   */
+  onPriceChange?: (newPriceExclVat: number | null) => void;
 }
 
 const round2 = (n: number) => Math.round(n * 100) / 100;

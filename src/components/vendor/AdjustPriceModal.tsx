@@ -130,6 +130,16 @@ export function AdjustPriceModal({ open, onOpenChange, ctx, invalidateKeys }: Pr
   const beat1 = () => lowestCompetitor && setNewPrice(round2(lowestCompetitor * 0.99).toFixed(2));
   const beat3 = () => lowestCompetitor && setNewPrice(round2(lowestCompetitor * 0.97).toFixed(2));
 
+  // Helper: net en poche pour une suggestion (utilisé sur les boutons rapides)
+  const netForPrice = (p: number): number | null => {
+    if (!commissionConfig) return null;
+    return computeMargin(p, purchasePrice ?? null, commissionConfig).netRevenue;
+  };
+  const fmtNet = (p: number) => {
+    const n = netForPrice(p);
+    return n != null ? `Net ${n.toFixed(2)} €` : null;
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">

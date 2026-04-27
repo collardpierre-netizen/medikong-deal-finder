@@ -3717,6 +3717,78 @@ export type Database = {
         }
         Relationships: []
       }
+      qogita_resync_logs: {
+        Row: {
+          completed_at: string | null
+          country_code: string | null
+          created_at: string
+          duration_ms: number | null
+          error_message: string | null
+          errors_by_endpoint: Json
+          id: string
+          metadata: Json
+          mode: Database["public"]["Enums"]["qogita_resync_mode"]
+          mute_products_detected: number
+          offers_created: number
+          offers_deactivated: number
+          offers_processed: number
+          offers_updated: number
+          products_processed: number
+          products_targeted: number
+          started_at: string
+          status: Database["public"]["Enums"]["qogita_resync_status"]
+          tiers_synced: number
+          total_errors: number
+          triggered_by: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          country_code?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          errors_by_endpoint?: Json
+          id?: string
+          metadata?: Json
+          mode: Database["public"]["Enums"]["qogita_resync_mode"]
+          mute_products_detected?: number
+          offers_created?: number
+          offers_deactivated?: number
+          offers_processed?: number
+          offers_updated?: number
+          products_processed?: number
+          products_targeted?: number
+          started_at?: string
+          status?: Database["public"]["Enums"]["qogita_resync_status"]
+          tiers_synced?: number
+          total_errors?: number
+          triggered_by?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          country_code?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          errors_by_endpoint?: Json
+          id?: string
+          metadata?: Json
+          mode?: Database["public"]["Enums"]["qogita_resync_mode"]
+          mute_products_detected?: number
+          offers_created?: number
+          offers_deactivated?: number
+          offers_processed?: number
+          offers_updated?: number
+          products_processed?: number
+          products_targeted?: number
+          started_at?: string
+          status?: Database["public"]["Enums"]["qogita_resync_status"]
+          tiers_synced?: number
+          total_errors?: number
+          triggered_by?: string | null
+        }
+        Relationships: []
+      }
       recent_activity: {
         Row: {
           activity_type: string
@@ -7727,6 +7799,14 @@ export type Database = {
         Args: { _vendor_id: string }
         Returns: Json
       }
+      finalize_qogita_resync_log: {
+        Args: {
+          _id: string
+          _stats?: Json
+          _status: Database["public"]["Enums"]["qogita_resync_status"]
+        }
+        Returns: undefined
+      }
       force_bulk_deactivate: {
         Args: { _ids: string[]; _table_name: string }
         Returns: Json
@@ -7914,6 +7994,13 @@ export type Database = {
         | "vendor"
         | "medi-market"
         | "valerco"
+      qogita_resync_mode:
+        | "daily_stale_refresh"
+        | "mute_detection"
+        | "incremental"
+        | "full"
+        | "manual"
+      qogita_resync_status: "running" | "success" | "partial" | "failed"
       reshipment_status_enum:
         | "not_applicable"
         | "awaiting_reception"
@@ -8148,6 +8235,14 @@ export const Constants = {
         "medi-market",
         "valerco",
       ],
+      qogita_resync_mode: [
+        "daily_stale_refresh",
+        "mute_detection",
+        "incremental",
+        "full",
+        "manual",
+      ],
+      qogita_resync_status: ["running", "success", "partial", "failed"],
       reshipment_status_enum: [
         "not_applicable",
         "awaiting_reception",

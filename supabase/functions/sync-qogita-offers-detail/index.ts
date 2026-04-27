@@ -862,40 +862,19 @@ async function processSingleProduct(
               } else {
                 localStats.multi_vendor_offers++;
 
-                // --- Sync price tiers if present ---
-                if (upsertedOffer?.id && rawTiers.length > 0) {
+                // --- Sync ALL price tiers (base + degressive thresholds) ---
+                if (upsertedOffer?.id) {
                   try {
-                    // Wipe previous tiers for this offer (clean re-sync)
-                    await sb.from("offer_price_tiers").delete().eq("offer_id", upsertedOffer.id);
-
-                    const tierRows = rawTiers
-                      .map((t: any, idx: number) => {
-                        const unitPrice = parseFloat(String(t.price ?? t.unitPrice ?? t.unit_price ?? "0")) || 0;
-                        const movThr = parseFloat(String(t.mov ?? t.threshold ?? t.minOrderValue ?? "0")) || 0;
-                        if (unitPrice <= 0) return null;
-                        return {
-                          offer_id: upsertedOffer.id,
-                          tier_index: idx,
-                          mov_threshold: movThr,
-                          mov_currency: "EUR",
-                          qogita_unit_price: unitPrice,
-                          price_excl_vat: unitPrice,
-                          price_incl_vat: Math.round(unitPrice * vatMultiplier * 100) / 100,
-                          is_active: true,
-                        };
-                      })
-                      .filter(Boolean);
-
-                    if (tierRows.length > 0) {
-                      const { error: tiersErr } = await sb.from("offer_price_tiers").insert(tierRows);
-                      if (tiersErr) {
-                        console.error(formatDbError("qogita.offers_detail.tiers.insert", tiersErr, {
-                          offer_id: upsertedOffer.id, tiers_count: tierRows.length,
-                        }));
-                      } else {
-                        parentStats.tiers_synced = (parentStats.tiers_synced || 0) + tierRows.length;
-                      }
+                    const inserted = await syncOfferTiers(
+                      sb, upsertedOffer.id, oExclVat, oMov, oMoq, vatMultiplier, rawTiers,
+                    );
+                    if (inserted > 0) {
+                      parentStats.tiers_synced = (parentStats.tiers_synced || 0) + inserted;
                     }
+                  } catch (tErr: any) {
+                    console.error(`[qogita.tiers] error offer=${upsertedOffer.id}: ${tErr.message}`);
+                  }
+                }
                   } catch (tErr: any) {
                     console.error(`[qogita.tiers] error offer=${upsertedOffer.id}: ${tErr.message}`);
                   }

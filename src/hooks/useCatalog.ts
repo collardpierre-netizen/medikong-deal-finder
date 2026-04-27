@@ -77,7 +77,6 @@ function applyCatalogProductFilters(
     resolvedBrandIds: string[] | null;
     manufacturerIds: string[] | null;
     effectiveSearch?: string;
-    inactiveCategoryIds?: string[];
   }
 ) {
   let next = query;
@@ -86,10 +85,10 @@ function applyCatalogProductFilters(
   if (options.resolvedBrandIds?.length) next = next.in("brand_id", options.resolvedBrandIds);
   if (options.manufacturerIds?.length) next = next.in("manufacturer_id", options.manufacturerIds);
 
-  // Exclude products belonging to inactive categories (admin-disabled)
-  if (options.inactiveCategoryIds?.length) {
-    next = next.not("category_id", "in", `(${options.inactiveCategoryIds.join(",")})`);
-  }
+  // NB: Les catégories inactives (admin-désactivées) sont filtrées côté JS
+  // après le fetch — pousser 2k+ UUIDs dans `not.in()` produit une URL trop
+  // longue (~37 KB) qui casse PostgREST (HTTP 400). Les filtres mots-clés
+  // dans `applyHiddenCategoryFilter` couvrent déjà l'essentiel côté serveur.
 
   if (filters.priceMin !== undefined) next = next.gte("best_price_excl_vat", filters.priceMin);
   if (filters.priceMax !== undefined) next = next.lte("best_price_excl_vat", filters.priceMax);

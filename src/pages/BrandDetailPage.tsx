@@ -36,9 +36,10 @@ export default function BrandDetailPage() {
     queryKey: ["brand-sellers", brandData?.id],
     enabled: !!brandData?.id,
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Étape 1 : récupérer les vendor_id distincts pour cette marque (offres actives)
+      const { data: offerRows, error } = await supabase
         .from("offers")
-        .select("vendor_id, vendors(id, name, company_name, slug, is_verified, rating, total_sales, country_code, display_code, show_real_name), products!inner(brand_id)")
+        .select("vendor_id, products!inner(brand_id)")
         .eq("is_active", true)
         .eq("products.brand_id", brandData!.id)
         .limit(300);

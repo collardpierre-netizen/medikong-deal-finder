@@ -889,11 +889,11 @@ async function processSingleProduct(
       const offerQid = variant?.qid ? `${variant.qid}-${country}` : `${product.gtin}-${country}`;
 
       // MOQ / MOV / tiers from variant payload (best-price branch)
-      const bpBundleRaw =
-        variant?.bundleSize ?? variant?.bundle_size ??
-        variant?.minOrderQuantity ?? variant?.moq ??
-        variant?.minimumOrderQuantity ?? 1;
-      const bpMoq = Math.max(1, parseInt(String(bpBundleRaw), 10) || 1);
+      // When both `bundleSize` and `moq` are exposed, take the MAX (a buyer must
+      // satisfy both constraints). Coherence check below will log the divergence.
+      const bpBundleVal = parseInt(String(variant?.bundleSize ?? variant?.bundle_size ?? "0"), 10) || 0;
+      const bpMoqVal = parseInt(String(variant?.minOrderQuantity ?? variant?.moq ?? variant?.minimumOrderQuantity ?? "0"), 10) || 0;
+      const bpMoq = Math.max(1, bpBundleVal, bpMoqVal);
       const bpMov = parseFloat(String(variant?.mov ?? variant?.minimumOrderValue ?? "0")) || 0;
       const bpRawTiers = extractRawTiers(variant);
 

@@ -183,6 +183,23 @@ const AdminVendeurs = () => {
             className="flex-1 text-[13px] outline-none bg-transparent" style={{ color: "#1D2530" }} />
         </div>
 
+        <div className="flex items-center gap-2 px-3 py-2 rounded-md max-w-xs" style={{ backgroundColor: "#fff", border: `1px solid ${qogitaSearch ? "#1B5BDA" : "#E2E8F0"}` }} title="Filtre dédié sur l'identifiant Qogita (qogita_seller_alias)">
+          <Hash size={14} style={{ color: qogitaSearch ? "#1B5BDA" : "#8B95A5" }} />
+          <input
+            type="text"
+            placeholder="ID Qogita (ex: qogita-...)"
+            value={qogitaSearch}
+            onChange={(e) => setQogitaSearch(e.target.value)}
+            className="flex-1 text-[13px] outline-none bg-transparent font-mono"
+            style={{ color: "#1D2530", minWidth: 0, width: 180 }}
+          />
+          {qogitaSearch && (
+            <button onClick={() => setQogitaSearch("")} className="p-0.5 rounded hover:bg-slate-100" title="Effacer">
+              <X size={12} style={{ color: "#8B95A5" }} />
+            </button>
+          )}
+        </div>
+
         {/* Status filter */}
         <div className="relative">
           <select value={statusFilter} onChange={e => setStatusFilter(e.target.value as VStatus)}

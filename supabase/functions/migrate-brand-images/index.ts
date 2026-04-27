@@ -105,7 +105,8 @@ Deno.serve(async (req) => {
         else if (result.contentType.includes("webp")) ext = "webp";
 
         const filePath = `${product.id}/${i}.${ext}`;
-        const blob = new Blob([result.data], { type: result.contentType });
+        const blobPart = result.data.buffer.slice(result.data.byteOffset, result.data.byteOffset + result.data.byteLength) as ArrayBuffer;
+        const blob = new Blob([blobPart], { type: result.contentType });
 
         const { error: uploadErr } = await supabase.storage
           .from(BUCKET)

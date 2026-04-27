@@ -149,7 +149,8 @@ Deno.serve(async (req) => {
             if (!blob) {
               const result = await downloadWithCurl(url);
               if (result) {
-                blob = new Blob([result.data], { type: result.contentType });
+                const blobPart = result.data.buffer.slice(result.data.byteOffset, result.data.byteOffset + result.data.byteLength) as ArrayBuffer;
+                blob = new Blob([blobPart], { type: result.contentType });
                 contentType = result.contentType;
               }
             }

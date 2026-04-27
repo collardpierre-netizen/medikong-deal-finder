@@ -306,6 +306,9 @@ const AdminCategories = () => {
       qc.invalidateQueries({ queryKey: ["category-bulk-actions"] });
     },
     onError: handleBulkError,
+  });
+
+  // Toggle visibility of a category + its children + cascade to products (with audit log)
   const toggleVisibility = useMutation({
     mutationFn: async ({ id, newActive }: { id: string; newActive: boolean }) => {
       // Collect all category IDs to update (this cat + all descendants)

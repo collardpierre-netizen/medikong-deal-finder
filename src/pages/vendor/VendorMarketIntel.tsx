@@ -1175,7 +1175,8 @@ export default function VendorMarketIntel() {
                 )}
               </section>
             </div>
-          )}
+            );
+          })()}
         </DialogContent>
       </Dialog>
 

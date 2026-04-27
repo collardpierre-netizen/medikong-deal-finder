@@ -274,6 +274,16 @@ export default function VendorMarketIntel() {
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [openRow, setOpenRow] = useState<IntelRow | null>(null);
   const [adjustCtx, setAdjustCtx] = useState<AdjustPriceContext | null>(null);
+  // Tri & filtre du tableau "Offres MediKong" dans le détail
+  const [mkSortKey, setMkSortKey] = useState<"net" | "price" | null>(null);
+  const [mkSortDir, setMkSortDir] = useState<"asc" | "desc">("desc");
+  const [mkFilter, setMkFilter] = useState<"all" | "better" | "worse">("all");
+  // Reset tri/filtre quand on change de produit
+  useEffect(() => {
+    setMkSortKey(null);
+    setMkSortDir("desc");
+    setMkFilter("all");
+  }, [openRow?.product_id]);
 
   // Commission config + purchase price for the currently opened product
   // (used to display MediKong commission and net-in-pocket inside the detail popup)
@@ -815,92 +825,197 @@ export default function VendorMarketIntel() {
               )}
 
               {/* Offres MediKong */}
-              <section>
-                <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
-                  <Store size={14} /> Offres MediKong ({openRow.medikong_offers?.length || 0})
-                </h3>
-                <div className="border rounded-lg overflow-hidden">
-                  <table className="w-full text-xs">
-                    <thead className="bg-muted/40 text-[10px] uppercase text-muted-foreground">
-                      <tr>
-                        <th className="px-3 py-2 text-left">Vendeur</th>
-                        <th className="px-3 py-2 text-right">Prix HTVA</th>
-                        <th
-                          className="px-3 py-2 text-right"
-                          title="Net en poche estimé si vous vendiez à ce prix (prix − commission MediKong)"
-                        >
-                          Net après commission
-                        </th>
-                        <th className="px-3 py-2 text-left">Statut</th>
-                        <th className="px-3 py-2 text-center">Promo</th>
-                        <th className="px-3 py-2 text-right">Délai</th>
-                        <th className="px-3 py-2 text-left">Dernière MAJ</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {(openRow.medikong_offers || []).map((o, i) => (
-                        <tr
-                          key={o.offer_id}
-                          className={`border-t ${o.is_mine ? "bg-primary/5" : ""}`}
-                        >
-                          <td className="px-3 py-2">
-                            {i === 0 && (
-                              <Trophy
-                                size={11}
-                                className="inline -mt-0.5 mr-1 text-emerald-600"
-                              />
-                            )}
-                            {o.vendor_name}
-                            {o.is_mine && (
-                              <span className="ml-1 text-[10px] text-primary font-semibold">
-                                (vous)
-                              </span>
-                            )}
-                          </td>
-                          <td className="px-3 py-2 text-right tabular-nums font-medium">
-                            {fmt(o.price_excl_vat)}
-                          </td>
-                          <td className="px-3 py-2 text-right tabular-nums">
-                            {commissionConfig ? (() => {
-                              const m = computeMargin(
-                                o.price_excl_vat,
-                                openRowPurchasePrice ?? null,
-                                commissionConfig,
-                              );
-                              return (
-                                <span
-                                  className={o.is_mine ? "font-semibold text-primary" : "text-muted-foreground"}
-                                  title={`Commission MediKong : −${fmtEur(m.commission)} (${m.commissionPct.toFixed(1)} %)`}
-                                >
-                                  {fmtEur(m.netRevenue)}
-                                </span>
-                              );
-                            })() : (
-                              <span className="text-muted-foreground">—</span>
-                            )}
-                          </td>
-                          <td className="px-3 py-2">
-                            <StockBadge qty={o.stock_quantity} status={o.stock_status} />
-                          </td>
-                          <td className="px-3 py-2 text-center">
-                            {o.is_promo ? (
-                              <PromoBadge discount={o.promo_discount} />
-                            ) : (
-                              <span className="text-[10px] text-muted-foreground">—</span>
-                            )}
-                          </td>
-                          <td className="px-3 py-2 text-right tabular-nums">
-                            {o.delivery_days != null ? `${o.delivery_days} j` : "—"}
-                          </td>
-                          <td className="px-3 py-2">
-                            <FreshnessLabel date={o.updated_at} />
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </section>
+              {(() => {
+                const allOffers = openRow.medikong_offers || [];
+                // Calcul net pour chaque offre (basé sur la commission du vendeur courant)
+                const withNet = allOffers.map((o) => {
+                  const net = commissionConfig
+                    ? computeMargin(o.price_excl_vat, openRowPurchasePrice ?? null, commissionConfig).netRevenue
+                    : null;
+                  return { o, net };
+                });
+                // Net de l'offre du vendeur courant (référence pour le filtre "mieux/pire")
+                const myNet = withNet.find(({ o }) => o.is_mine)?.net ?? null;
+                // Filtre
+                let filtered = withNet;
+                if (mkFilter !== "all" && myNet != null) {
+                  filtered = withNet.filter(({ o, net }) => {
+                    if (o.is_mine || net == null) return false;
+                    return mkFilter === "better" ? net > myNet : net < myNet;
+                  });
+                }
+                // Tri
+                const sorted = [...filtered].sort((a, b) => {
+                  if (!mkSortKey) return 0;
+                  const va =
+                    mkSortKey === "net" ? a.net ?? -Infinity : a.o.price_excl_vat;
+                  const vb =
+                    mkSortKey === "net" ? b.net ?? -Infinity : b.o.price_excl_vat;
+                  return mkSortDir === "asc" ? va - vb : vb - va;
+                });
+                const toggleSort = (key: "net" | "price") => {
+                  if (mkSortKey !== key) {
+                    setMkSortKey(key);
+                    setMkSortDir(key === "net" ? "desc" : "asc");
+                  } else {
+                    setMkSortDir(mkSortDir === "asc" ? "desc" : "asc");
+                  }
+                };
+                const SortIcon = ({ k }: { k: "net" | "price" }) =>
+                  mkSortKey !== k ? (
+                    <ArrowUpDown size={10} className="inline ml-1 opacity-50" />
+                  ) : mkSortDir === "asc" ? (
+                    <ArrowUp size={10} className="inline ml-1" />
+                  ) : (
+                    <ArrowDown size={10} className="inline ml-1" />
+                  );
+                return (
+                  <section>
+                    <div className="flex items-center justify-between mb-2 gap-2 flex-wrap">
+                      <h3 className="text-sm font-semibold flex items-center gap-2">
+                        <Store size={14} /> Offres MediKong ({sorted.length}
+                        {sorted.length !== allOffers.length ? ` / ${allOffers.length}` : ""})
+                      </h3>
+                      {commissionConfig && allOffers.length > 1 && (
+                        <div className="flex items-center gap-1 text-[10px]">
+                          {([
+                            ["all", "Toutes"],
+                            ["better", "Net > le mien"],
+                            ["worse", "Net < le mien"],
+                          ] as const).map(([k, label]) => (
+                            <button
+                              key={k}
+                              type="button"
+                              onClick={() => setMkFilter(k)}
+                              disabled={k !== "all" && myNet == null}
+                              className={`px-2 py-1 rounded-md border transition-colors ${
+                                mkFilter === k
+                                  ? "bg-primary text-primary-foreground border-primary"
+                                  : "bg-background hover:bg-muted text-muted-foreground border-border"
+                              } disabled:opacity-40 disabled:cursor-not-allowed`}
+                              title={
+                                k !== "all" && myNet == null
+                                  ? "Indisponible : votre offre n'est pas dans la liste"
+                                  : undefined
+                              }
+                            >
+                              {label}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <div className="border rounded-lg overflow-hidden">
+                      <table className="w-full text-xs">
+                        <thead className="bg-muted/40 text-[10px] uppercase text-muted-foreground">
+                          <tr>
+                            <th className="px-3 py-2 text-left">Vendeur</th>
+                            <th className="px-3 py-2 text-right">
+                              <button
+                                type="button"
+                                onClick={() => toggleSort("price")}
+                                className="inline-flex items-center hover:text-foreground transition-colors uppercase"
+                              >
+                                Prix HTVA
+                                <SortIcon k="price" />
+                              </button>
+                            </th>
+                            <th
+                              className="px-3 py-2 text-right"
+                              title="Net en poche estimé si vous vendiez à ce prix (prix − commission MediKong)"
+                            >
+                              <button
+                                type="button"
+                                onClick={() => toggleSort("net")}
+                                className="inline-flex items-center hover:text-foreground transition-colors uppercase"
+                              >
+                                Net après commission
+                                <SortIcon k="net" />
+                              </button>
+                            </th>
+                            <th className="px-3 py-2 text-left">Statut</th>
+                            <th className="px-3 py-2 text-center">Promo</th>
+                            <th className="px-3 py-2 text-right">Délai</th>
+                            <th className="px-3 py-2 text-left">Dernière MAJ</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {sorted.length === 0 ? (
+                            <tr>
+                              <td colSpan={7} className="px-3 py-6 text-center text-muted-foreground">
+                                Aucune offre ne correspond à ce filtre.
+                              </td>
+                            </tr>
+                          ) : (
+                            sorted.map(({ o, net }, i) => (
+                              <tr
+                                key={o.offer_id}
+                                className={`border-t ${o.is_mine ? "bg-primary/5" : ""}`}
+                              >
+                                <td className="px-3 py-2">
+                                  {i === 0 && mkSortKey == null && mkFilter === "all" && (
+                                    <Trophy
+                                      size={11}
+                                      className="inline -mt-0.5 mr-1 text-emerald-600"
+                                    />
+                                  )}
+                                  {o.vendor_name}
+                                  {o.is_mine && (
+                                    <span className="ml-1 text-[10px] text-primary font-semibold">
+                                      (vous)
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="px-3 py-2 text-right tabular-nums font-medium">
+                                  {fmt(o.price_excl_vat)}
+                                </td>
+                                <td className="px-3 py-2 text-right tabular-nums">
+                                  {net != null && commissionConfig ? (
+                                    <span
+                                      className={o.is_mine ? "font-semibold text-primary" : "text-muted-foreground"}
+                                      title={`Commission MediKong : −${fmtEur(
+                                        computeMargin(
+                                          o.price_excl_vat,
+                                          openRowPurchasePrice ?? null,
+                                          commissionConfig,
+                                        ).commission,
+                                      )} (${computeMargin(
+                                        o.price_excl_vat,
+                                        openRowPurchasePrice ?? null,
+                                        commissionConfig,
+                                      ).commissionPct.toFixed(1)} %)`}
+                                    >
+                                      {fmtEur(net)}
+                                    </span>
+                                  ) : (
+                                    <span className="text-muted-foreground">—</span>
+                                  )}
+                                </td>
+                                <td className="px-3 py-2">
+                                  <StockBadge qty={o.stock_quantity} status={o.stock_status} />
+                                </td>
+                                <td className="px-3 py-2 text-center">
+                                  {o.is_promo ? (
+                                    <PromoBadge discount={o.promo_discount} />
+                                  ) : (
+                                    <span className="text-[10px] text-muted-foreground">—</span>
+                                  )}
+                                </td>
+                                <td className="px-3 py-2 text-right tabular-nums">
+                                  {o.delivery_days != null ? `${o.delivery_days} j` : "—"}
+                                </td>
+                                <td className="px-3 py-2">
+                                  <FreshnessLabel date={o.updated_at} />
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </section>
+                );
+              })()}
 
               {/* Offres externes */}
               <section>

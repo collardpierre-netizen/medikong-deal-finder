@@ -7331,6 +7331,10 @@ export type Database = {
         Args: { _vendor_id: string }
         Returns: Json
       }
+      force_bulk_deactivate: {
+        Args: { _ids: string[]; _table_name: string }
+        Returns: Json
+      }
       get_admin_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["admin_role"]

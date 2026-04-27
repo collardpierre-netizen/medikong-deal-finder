@@ -257,6 +257,7 @@ async function tusCreate(bucket: string, objectName: string, totalSize: number):
 }
 
 async function tusPatch(uploadUrl: string, offset: number, body: Uint8Array): Promise<number> {
+  const requestBody = body.buffer.slice(body.byteOffset, body.byteOffset + body.byteLength) as ArrayBuffer;
   const res = await fetch(uploadUrl, {
     method: "PATCH",
     headers: {
@@ -267,7 +268,7 @@ async function tusPatch(uploadUrl: string, offset: number, body: Uint8Array): Pr
       "Content-Type": "application/offset+octet-stream",
       "Content-Length": String(body.length),
     },
-    body,
+    body: requestBody,
   });
   if (!res.ok) {
     const t = await res.text().catch(() => "");

@@ -724,8 +724,17 @@ async function processSingleProduct(
       const delayDays = parseDeliveryDays(variant?.delay);
       const offerQid = variant?.qid ? `${variant.qid}-${country}` : `${product.gtin}-${country}`;
 
+      // MOQ / MOV / tiers from variant payload (best-price branch)
+      const bpBundleRaw =
+        variant?.bundleSize ?? variant?.bundle_size ??
+        variant?.minOrderQuantity ?? variant?.moq ??
+        variant?.minimumOrderQuantity ?? 1;
+      const bpMoq = Math.max(1, parseInt(String(bpBundleRaw), 10) || 1);
+      const bpMov = parseFloat(String(variant?.mov ?? variant?.minimumOrderValue ?? "0")) || 0;
+      const bpRawTiers = extractRawTiers(variant);
+
       if (priceExclVat > 0) {
-        const { error: offerErr } = await sb.from("offers").upsert(
+        const { data: bpUpserted, error: offerErr } = await sb.from("offers").upsert(
           {
             product_id: product.id,
             vendor_id: bestPriceVendorId,
@@ -737,8 +746,8 @@ async function processSingleProduct(
             price_excl_vat: priceExclVat,
             price_incl_vat: priceInclVat > 0 ? priceInclVat : Math.round(priceExclVat * vatMultiplier * 100) / 100,
             vat_rate: vatRate,
-            moq: 1,
-            mov: null,
+            moq: bpMoq,
+            mov: bpMov > 0 ? bpMov : null,
             stock_quantity: stockQty,
             stock_status: stockQty > 0 ? "in_stock" : "out_of_stock",
             delivery_days: delayDays,
@@ -748,7 +757,7 @@ async function processSingleProduct(
           },
           // Aligned with multi-vendor upsert — qogita_offer_qid is the canonical key.
           { onConflict: "qogita_offer_qid", ignoreDuplicates: false },
-        );
+        ).select("id").maybeSingle();
 
         if (offerErr) {
           localStats.errors++;
@@ -759,8 +768,19 @@ async function processSingleProduct(
           }));
         } else {
           localStats.offers_upserted++;
+
+          // --- Sync ALL price tiers (base + degressive thresholds) ---
+          if (bpUpserted?.id) {
+            const inserted = await syncOfferTiers(
+              sb, bpUpserted.id, priceExclVat, bpMov, bpMoq, vatMultiplier, bpRawTiers,
+            );
+            if (inserted > 0) {
+              parentStats.tiers_synced = (parentStats.tiers_synced || 0) + inserted;
+            }
+          }
         }
       }
+
 
       // --- Multi-vendor offers ---
       if (fetchMultiVendor && variant?.fid && variant?.slug) {

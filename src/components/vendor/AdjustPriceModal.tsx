@@ -255,11 +255,21 @@ export function AdjustPriceModal({ open, onOpenChange, ctx, invalidateKeys }: Pr
 
           {/* Margin & commission breakdown for the proposed price */}
           {valid && commissionConfig && (
-            <MarginInsightCard
-              breakdown={computeMargin(parsed, purchasePrice ?? null, commissionConfig)}
-              commissionModel={commissionConfig.commission_model}
-              compact
-            />
+            <>
+              <MarginInsightCard
+                breakdown={computeMargin(parsed, purchasePrice ?? null, commissionConfig)}
+                commissionModel={commissionConfig.commission_model}
+                compact
+              />
+              <MarginBreakdownDetails
+                breakdown={computeMargin(parsed, purchasePrice ?? null, commissionConfig)}
+                commissionModel={commissionConfig.commission_model}
+                commissionRate={commissionConfig.commission_rate}
+                marginSplitPct={commissionConfig.margin_split_pct}
+                fixedCommissionAmount={commissionConfig.fixed_commission_amount}
+                offerId={ctx.offerId}
+              />
+            </>
           )}
 
           <div className="flex items-center justify-end gap-2 pt-2">

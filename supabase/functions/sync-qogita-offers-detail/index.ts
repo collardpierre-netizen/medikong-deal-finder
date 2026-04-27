@@ -147,6 +147,7 @@ async function fetchWithRetry(
   token: string,
 ): Promise<Response> {
   for (let attempt = 0; attempt <= MAX_RETRIES_429; attempt++) {
+    await acquireQogitaToken();
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
     let res: Response;

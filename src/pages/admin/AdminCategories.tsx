@@ -645,6 +645,12 @@ const AdminCategories = () => {
         onOpenChange={setShowKeywordDisable}
         categories={categoriesData as any}
       />
+
+      <CategoryReactivateDialog
+        open={showReactivate}
+        onOpenChange={setShowReactivate}
+        categories={categoriesData as any}
+      />
     </div>
   );
 };

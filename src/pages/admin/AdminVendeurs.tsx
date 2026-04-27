@@ -6,7 +6,7 @@ import VendorFormDialog from "@/components/admin/VendorFormDialog";
 import { useI18n } from "@/contexts/I18nContext";
 import { useVendors } from "@/hooks/useAdminData";
 import { getVendorAdminName } from "@/lib/vendor-display";
-import { Search, Plus, ExternalLink, Eye, EyeOff, LogIn, AlertTriangle, CheckCircle2, XCircle, Clock, ChevronDown, Trash2, ToggleLeft, ToggleRight } from "lucide-react";
+import { Search, Plus, ExternalLink, Eye, EyeOff, LogIn, AlertTriangle, CheckCircle2, XCircle, Clock, ChevronDown, Trash2, ToggleLeft, ToggleRight, Hash, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -28,6 +28,7 @@ const AdminVendeurs = () => {
   const { data: vendors = [], isLoading } = useVendors();
   const [activeTab, setActiveTab] = useState<"all" | "medikong" | "qogita_virtual" | "real">("all");
   const [search, setSearch] = useState("");
+  const [qogitaSearch, setQogitaSearch] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [statusFilter, setStatusFilter] = useState<VStatus>("all");
   const [activeFilter, setActiveFilter] = useState<ActiveFilter>("all");
@@ -55,6 +56,11 @@ const AdminVendeurs = () => {
     .filter(v => statusFilter === "all" || (v as any).validation_status === statusFilter)
     .filter(v => activeFilter === "all" || (activeFilter === "active" ? v.is_active : !v.is_active))
     .filter(v => {
+      if (!qogitaSearch.trim()) return true;
+      const q = qogitaSearch.trim().toLowerCase();
+      return ((v as any).qogita_seller_alias || "").toLowerCase().includes(q);
+    })
+    .filter(v => {
       if (!search) return true;
       const s = search.toLowerCase();
       return (v.company_name || v.name).toLowerCase().includes(s) ||
@@ -62,7 +68,7 @@ const AdminVendeurs = () => {
         (v.display_code || "").toLowerCase().includes(s) ||
         ((v as any).qogita_seller_alias || "").toLowerCase().includes(s) ||
         (v.email || "").toLowerCase().includes(s);
-    }), [vendors, activeTab, statusFilter, activeFilter, search]);
+    }), [vendors, activeTab, statusFilter, activeFilter, search, qogitaSearch]);
 
   const allSelected = filtered.length > 0 && filtered.every(v => selected.has(v.id));
 
@@ -175,6 +181,23 @@ const AdminVendeurs = () => {
           <Search size={14} style={{ color: "#8B95A5" }} />
           <input type="text" placeholder="Rechercher un vendeur..." value={search} onChange={(e) => setSearch(e.target.value)}
             className="flex-1 text-[13px] outline-none bg-transparent" style={{ color: "#1D2530" }} />
+        </div>
+
+        <div className="flex items-center gap-2 px-3 py-2 rounded-md max-w-xs" style={{ backgroundColor: "#fff", border: `1px solid ${qogitaSearch ? "#1B5BDA" : "#E2E8F0"}` }} title="Filtre dédié sur l'identifiant Qogita (qogita_seller_alias)">
+          <Hash size={14} style={{ color: qogitaSearch ? "#1B5BDA" : "#8B95A5" }} />
+          <input
+            type="text"
+            placeholder="ID Qogita (ex: qogita-...)"
+            value={qogitaSearch}
+            onChange={(e) => setQogitaSearch(e.target.value)}
+            className="flex-1 text-[13px] outline-none bg-transparent font-mono"
+            style={{ color: "#1D2530", minWidth: 0, width: 180 }}
+          />
+          {qogitaSearch && (
+            <button onClick={() => setQogitaSearch("")} className="p-0.5 rounded hover:bg-slate-100" title="Effacer">
+              <X size={12} style={{ color: "#8B95A5" }} />
+            </button>
+          )}
         </div>
 
         {/* Status filter */}

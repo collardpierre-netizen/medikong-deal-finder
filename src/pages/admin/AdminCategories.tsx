@@ -24,6 +24,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Checkbox } from "@/components/ui/checkbox";
 import CategoryKeywordDisableDialog from "@/components/admin/CategoryKeywordDisableDialog";
 import CategoryReactivateDialog from "@/components/admin/CategoryReactivateDialog";
+import { useAdminAuth } from "@/hooks/useAdminAuth";
+import {
+  parseBulkGuardError,
+  showBulkGuardToast,
+  forceBulkDeactivate,
+} from "@/lib/bulk-guard";
 
 const LOCALES = ["fr", "nl", "de"] as const;
 

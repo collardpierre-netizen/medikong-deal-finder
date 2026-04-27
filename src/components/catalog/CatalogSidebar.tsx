@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useTranslation } from "react-i18next";
+import { cleanCategoryLabel } from "@/lib/category-label";
 
 interface Props {
   filters: CatalogFilters;

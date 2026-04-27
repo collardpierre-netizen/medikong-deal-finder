@@ -49,7 +49,7 @@ const round2 = (n: number) => Math.round(n * 100) / 100;
 const fmt = (n: number | null | undefined) =>
   typeof n === "number" ? `${n.toFixed(2)} €` : "—";
 
-export function AdjustPriceModal({ open, onOpenChange, ctx, invalidateKeys }: Props) {
+export function AdjustPriceModal({ open, onOpenChange, ctx, invalidateKeys, onPriceChange }: Props) {
   const qc = useQueryClient();
   const [newPrice, setNewPrice] = useState<string>("");
 

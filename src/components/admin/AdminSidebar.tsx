@@ -54,6 +54,7 @@ const sections: NavSection[] = [
       { labelKey: "priceAlerts", path: "/admin/price-alerts", icon: AlertTriangle },
       { labelKey: "leads", path: "/admin/leads", icon: Link },
       { labelKey: "analytics", path: "/admin/analytics", icon: BarChart3 },
+      { labelKey: "catalogDiagnostics", path: "/admin/catalog-diagnostics", icon: ShieldCheckAlt },
     ],
   },
   {

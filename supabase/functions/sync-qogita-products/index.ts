@@ -478,6 +478,41 @@ async function processChunkStreaming(sb: any, logId: string, state: any) {
     preorder: findCol(headers, "pre-order"),
   };
 
+  // Surface CSV header gaps EARLY — most "0 produits importés" failures come from
+  // a Qogita CSV column rename. Log expected name + actual headers when missing.
+  const REQUIRED_COLS: Array<{ key: keyof typeof colMap; expected: string }> = [
+    { key: "gtin", expected: "GTIN" },
+    { key: "name", expected: "Name" },
+    { key: "price", expected: "Lowest price" },
+  ];
+  const OPTIONAL_COLS: Array<{ key: keyof typeof colMap; expected: string }> = [
+    { key: "brand", expected: "Brand" },
+    { key: "category", expected: "Category" },
+    { key: "inventory", expected: "Inventory" },
+    { key: "delivery", expected: "Delivery" },
+    { key: "url", expected: "Product URL" },
+    { key: "image", expected: "Image URL" },
+    { key: "offers", expected: "Number of offers" },
+    { key: "preorder", expected: "Pre-order" },
+  ];
+  const missingRequired = REQUIRED_COLS.filter(c => colMap[c.key] < 0);
+  const missingOptional = OPTIONAL_COLS.filter(c => colMap[c.key] < 0);
+  if (missingRequired.length > 0) {
+    const msg =
+      `[qogita.products.csv] Colonnes REQUISES manquantes: ` +
+      missingRequired.map(c => `"${c.expected}"`).join(", ") +
+      `. Headers reçus (${headers.length}): ${sampleValue(headers, 400)}`;
+    console.error(msg);
+    throw new Error(msg);
+  }
+  if (missingOptional.length > 0) {
+    console.warn(
+      `[qogita.products.csv] Colonnes optionnelles manquantes: ` +
+      missingOptional.map(c => `"${c.expected}" (clé=${c.key})`).join(", ") +
+      `. Headers reçus: ${sampleValue(headers, 300)}`,
+    );
+  }
+
   const qogitaVendorId = await ensureQogitaVendor(sb);
 
   let processed = 0;

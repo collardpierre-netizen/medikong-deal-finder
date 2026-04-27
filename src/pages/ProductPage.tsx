@@ -1245,18 +1245,20 @@ export default function ProductPage() {
                           <span className="text-right">Commander</span>
                         </div>
 
-                        <OfferRow
-                          offer={bestOffer}
-                          productId={product.id}
-                          productName={product.name}
-                          productSlug={product.slug}
-                          user={user}
-                          navigate={navigate}
-                          addToCart={addToCart}
-                          isBest
-                          isTVAC={isTVAC}
-                          categoryId={categoryData?.category?.id}
-                        />
+                        <SafeBoundary label={`l'offre de ${bestOffer.sellerName || "ce fournisseur"}`}>
+                          <OfferRow
+                            offer={bestOffer}
+                            productId={product.id}
+                            productName={product.name}
+                            productSlug={product.slug}
+                            user={user}
+                            navigate={navigate}
+                            addToCart={addToCart}
+                            isBest
+                            isTVAC={isTVAC}
+                            categoryId={categoryData?.category?.id}
+                          />
+                        </SafeBoundary>
                       </div>
                     ) : (
                       <div className="border border-border rounded-xl p-8 text-center">

@@ -30,6 +30,9 @@ import {
   Wand2,
 } from "lucide-react";
 import { AdjustPriceModal, type AdjustPriceContext } from "@/components/vendor/AdjustPriceModal";
+import { MarginInsightCard } from "@/components/vendor/MarginInsightCard";
+import { useVendorCommissionConfig } from "@/hooks/useVendorCommissionConfig";
+import { computeMargin, fmtEur } from "@/lib/vendorMargin";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 

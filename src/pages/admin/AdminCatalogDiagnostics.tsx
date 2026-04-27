@@ -192,6 +192,107 @@ async function loadStats(): Promise<Stats> {
 
 const fmt = (n: number) => n.toLocaleString("fr-FR");
 
+const PAGE_SIZE = 50;
+
+/**
+ * Charge un échantillon (max 200) d'offres masquées pour la raison demandée.
+ * On limite volontairement la fenêtre — l'objectif est diagnostic, pas export.
+ */
+async function loadHiddenOffers(reason: HiddenReason): Promise<HiddenOffer[]> {
+  // Pré-charge la liste des catégories désactivées pour la raison "inactive_category"
+  let inactiveNames: string[] = [];
+  if (reason === "inactive_category") {
+    const { data: cats } = await supabase
+      .from("categories")
+      .select("name,is_active")
+      .eq("is_active", false);
+    inactiveNames = (cats ?? [])
+      .map((c) => (c.name ?? "").toLowerCase())
+      .filter(Boolean);
+    if (inactiveNames.length === 0) return [];
+  }
+
+  // Construit la requête base sur offers + product + vendor
+  const select =
+    "id, vendor:vendors(name), products!inner(id, name, category_name)";
+
+  const aggregate: HiddenOffer[] = [];
+  const cap = 200;
+
+  if (reason === "keyword") {
+    for (const kw of KEYWORDS) {
+      if (aggregate.length >= cap) break;
+      const { data, error } = await supabase
+        .from("offers")
+        .select(select)
+        .eq("is_active", true)
+        .ilike("products.category_name", `%${kw}%`)
+        .limit(Math.min(cap - aggregate.length, 60));
+      if (error) throw error;
+      for (const row of (data ?? []) as any[]) {
+        if (aggregate.length >= cap) break;
+        aggregate.push({
+          offerId: row.id,
+          productId: row.products?.id,
+          productName: row.products?.name ?? "—",
+          categoryName: row.products?.category_name ?? null,
+          vendorName: row.vendor?.name ?? null,
+          reason: "keyword",
+          matchedKeyword: kw,
+        });
+      }
+    }
+  } else if (reason === "inactive_category") {
+    const CHUNK = 50;
+    for (let i = 0; i < inactiveNames.length && aggregate.length < cap; i += CHUNK) {
+      const slice = inactiveNames.slice(i, i + CHUNK);
+      const { data, error } = await supabase
+        .from("offers")
+        .select(select)
+        .eq("is_active", true)
+        .in("products.category_name", slice)
+        .limit(Math.min(cap - aggregate.length, 100));
+      if (error) throw error;
+      for (const row of (data ?? []) as any[]) {
+        if (aggregate.length >= cap) break;
+        aggregate.push({
+          offerId: row.id,
+          productId: row.products?.id,
+          productName: row.products?.name ?? "—",
+          categoryName: row.products?.category_name ?? null,
+          vendorName: row.vendor?.name ?? null,
+          reason: "inactive_category",
+        });
+      }
+    }
+  } else if (reason === "no_category") {
+    const { data, error } = await supabase
+      .from("offers")
+      .select(select)
+      .eq("is_active", true)
+      .is("products.category_name", null)
+      .limit(cap);
+    if (error) throw error;
+    for (const row of (data ?? []) as any[]) {
+      aggregate.push({
+        offerId: row.id,
+        productId: row.products?.id,
+        productName: row.products?.name ?? "—",
+        categoryName: null,
+        vendorName: row.vendor?.name ?? null,
+        reason: "no_category",
+      });
+    }
+  }
+
+  // Dédup par offerId (au cas où plusieurs mots-clés matchent la même offre)
+  const seen = new Set<string>();
+  return aggregate.filter((o) => {
+    if (seen.has(o.offerId)) return false;
+    seen.add(o.offerId);
+    return true;
+  });
+}
 const StatCard = ({
   label,
   value,

@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { getProductImageSrc, MEDIKONG_PLACEHOLDER, isQogitaPlaceholder } from "@/lib/image-utils";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Plus, Minus, Package, Loader2, Lock, Layers } from "lucide-react";
+import { Plus, Minus, Package, Loader2, Lock, Layers, AlertTriangle } from "lucide-react";
 import { motion } from "framer-motion";
 import { formatPrice } from "@/data/mock";
 import { useCart } from "@/contexts/CartContext";
@@ -11,6 +11,7 @@ import { useCountry } from "@/contexts/CountryContext";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { getLocalizedName } from "@/lib/localization";
+import { reportOfferDataIssue } from "@/lib/data-quality";
 import type { CatalogProduct } from "@/hooks/useCatalog";
 
 interface Props {

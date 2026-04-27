@@ -28,6 +28,7 @@ import { applyMargin, formatPriceEur } from "@/lib/pricing";
 import { useMarketPrices } from "@/hooks/useMarketPrices";
 import { RestockSecondChance } from "@/components/product/RestockSecondChance";
 import { MyEncodedPriceBanner } from "@/components/product/MyEncodedPriceBanner";
+import { SafeBoundary } from "@/components/SafeBoundary";
 import VendorDelegateCompact from "@/components/vendor/VendorDelegateCompact";
 
 function formatEur(n: number | null | undefined): string {
@@ -1244,18 +1245,20 @@ export default function ProductPage() {
                           <span className="text-right">Commander</span>
                         </div>
 
-                        <OfferRow
-                          offer={bestOffer}
-                          productId={product.id}
-                          productName={product.name}
-                          productSlug={product.slug}
-                          user={user}
-                          navigate={navigate}
-                          addToCart={addToCart}
-                          isBest
-                          isTVAC={isTVAC}
-                          categoryId={categoryData?.category?.id}
-                        />
+                        <SafeBoundary label={`l'offre de ${bestOffer.sellerName || "ce fournisseur"}`}>
+                          <OfferRow
+                            offer={bestOffer}
+                            productId={product.id}
+                            productName={product.name}
+                            productSlug={product.slug}
+                            user={user}
+                            navigate={navigate}
+                            addToCart={addToCart}
+                            isBest
+                            isTVAC={isTVAC}
+                            categoryId={categoryData?.category?.id}
+                          />
+                        </SafeBoundary>
                       </div>
                     ) : (
                       <div className="border border-border rounded-xl p-8 text-center">
@@ -1297,20 +1300,24 @@ export default function ProductPage() {
                         </div>
 
                         {otherOffers.map((offer, i) => (
-                          <OfferRow
+                          <SafeBoundary
                             key={offer.id}
-                            offer={offer}
-                            productId={product.id}
-                            productName={product.name}
-                            productSlug={product.slug}
-                            user={user}
-                            navigate={navigate}
-                            addToCart={addToCart}
-                            delay={i * 0.06}
-                            isTVAC={isTVAC}
-                            categoryId={categoryData?.category?.id}
-                            bestPrice={bestOffer ? (isTVAC ? bestOffer.unitPriceInclVat : bestOffer.unitPriceEur) : undefined}
-                          />
+                            label={`l'offre de ${offer.sellerName || "ce fournisseur"}`}
+                          >
+                            <OfferRow
+                              offer={offer}
+                              productId={product.id}
+                              productName={product.name}
+                              productSlug={product.slug}
+                              user={user}
+                              navigate={navigate}
+                              addToCart={addToCart}
+                              delay={i * 0.06}
+                              isTVAC={isTVAC}
+                              categoryId={categoryData?.category?.id}
+                              bestPrice={bestOffer ? (isTVAC ? bestOffer.unitPriceInclVat : bestOffer.unitPriceEur) : undefined}
+                            />
+                          </SafeBoundary>
                         ))}
                       </div>
                     )}

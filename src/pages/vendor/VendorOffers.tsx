@@ -8,6 +8,9 @@ import { VBadge } from "@/components/vendor/ui/VBadge";
 import { Tag, Plus, Pencil, Trash2, X, Loader2, Package, Search, Download, Upload, FileSpreadsheet, ChevronDown, Users, ChevronRight, TrendingDown, TrendingUp, BarChart3, Eye, ImagePlus } from "lucide-react";
 import ProductPhotoUploader from "@/components/admin/ProductPhotoUploader";
 import { CategoryTreeSelector } from "@/components/vendor/CategoryTreeSelector";
+import { MarginInsightCard } from "@/components/vendor/MarginInsightCard";
+import { useVendorCommissionConfig } from "@/hooks/useVendorCommissionConfig";
+import { computeMargin } from "@/lib/vendorMargin";
 import { toast } from "sonner";
 import { useCurrentVendor } from "@/hooks/useCurrentVendor";
 import * as XLSX from "xlsx";
@@ -90,6 +93,8 @@ interface OfferForm {
   product_id: string;
   product_name: string;
   price_excl_vat: string;
+  purchase_price_excl_vat: string;
+  save_as_product_default: boolean;
   vat_rate: string;
   stock_quantity: string;
   moq: string;
@@ -100,7 +105,7 @@ interface OfferForm {
 }
 
 const emptyForm: OfferForm = {
-  product_id: "", product_name: "", price_excl_vat: "", vat_rate: "21", stock_quantity: "", moq: "1", mov_amount: "0", delivery_days: "3", country_code: "BE", category_ids: [],
+  product_id: "", product_name: "", price_excl_vat: "", purchase_price_excl_vat: "", save_as_product_default: false, vat_rate: "21", stock_quantity: "", moq: "1", mov_amount: "0", delivery_days: "3", country_code: "BE", category_ids: [],
 };
 
 /* ─── Competitive Intelligence Module ─── */
@@ -995,6 +1000,7 @@ function ProfileRulesEditor({ offerId, basePrice }: { offerId: string | null; ba
 /* ─── Main Page ─── */
 export default function VendorOffers() {
   const { data: vendor } = useCurrentVendor();
+  const { data: commissionConfig } = useVendorCommissionConfig(vendor?.id);
   const [statusFilter, setStatusFilter] = useState<OfferStatusFilter>("active");
   const { data: offers = [], isLoading } = useVendorOffers(vendor?.id, statusFilter);
   const qc = useQueryClient();
@@ -1061,15 +1067,34 @@ export default function VendorOffers() {
 
   const openCreate = () => { setForm(emptyForm); setEditingId(null); setShowForm(true); };
   const openEdit = async (offer: any) => {
-    // Charger les catégories liées à l'offre
-    const { data: linkedCats } = await supabase
-      .from("offer_categories")
-      .select("category_id")
-      .eq("offer_id", offer.id);
+    // Charger les catégories liées à l'offre + le coût par défaut produit/vendeur
+    const [{ data: linkedCats }, { data: defaultCost }] = await Promise.all([
+      supabase
+        .from("offer_categories")
+        .select("category_id")
+        .eq("offer_id", offer.id),
+      vendor
+        ? supabase
+            .from("vendor_product_costs")
+            .select("default_purchase_price_excl_vat")
+            .eq("vendor_id", vendor.id)
+            .eq("product_id", offer.product_id)
+            .maybeSingle()
+        : Promise.resolve({ data: null } as any),
+    ]);
+    // Source de vérité prix d'achat : override offre > défaut produit > vide
+    const purchase =
+      offer.purchase_price_excl_vat != null
+        ? String(offer.purchase_price_excl_vat)
+        : defaultCost?.default_purchase_price_excl_vat != null
+          ? String(defaultCost.default_purchase_price_excl_vat)
+          : "";
     setForm({
       product_id: offer.product_id,
       product_name: (offer.products as any)?.name || "",
       price_excl_vat: String(offer.price_excl_vat),
+      purchase_price_excl_vat: purchase,
+      save_as_product_default: false,
       vat_rate: String(offer.vat_rate),
       stock_quantity: String(offer.stock_quantity),
       moq: String(offer.moq),
@@ -1083,6 +1108,25 @@ export default function VendorOffers() {
   };
   const closeForm = () => { setShowForm(false); setEditingId(null); setForm(emptyForm); };
 
+  // Pré-remplit le prix d'achat avec le défaut produit en mode création quand on choisit un produit
+  useEffect(() => {
+    if (editingId || !vendor || !form.product_id) return;
+    if (form.purchase_price_excl_vat) return; // ne pas écraser une saisie utilisateur
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("vendor_product_costs")
+        .select("default_purchase_price_excl_vat")
+        .eq("vendor_id", vendor.id)
+        .eq("product_id", form.product_id)
+        .maybeSingle();
+      if (!cancelled && data?.default_purchase_price_excl_vat != null) {
+        setForm(p => ({ ...p, purchase_price_excl_vat: String(data.default_purchase_price_excl_vat) }));
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [form.product_id, vendor, editingId]);
+
   const saveOffer = useMutation({
     mutationFn: async () => {
       if (!vendor) throw new Error("No vendor");
@@ -1093,9 +1137,13 @@ export default function VendorOffers() {
         throw new Error("Sélectionnez au moins une catégorie de visibilité.");
       }
       const priceIncl = Math.round(priceExcl * (1 + vatRate / 100) * 100) / 100;
+      const purchaseRaw = form.purchase_price_excl_vat?.trim();
+      const purchase = purchaseRaw ? parseFloat(purchaseRaw) : null;
+      const purchaseValid = purchase != null && Number.isFinite(purchase) && purchase >= 0 ? purchase : null;
       const payload = {
         vendor_id: vendor.id, product_id: form.product_id,
         price_excl_vat: priceExcl, price_incl_vat: priceIncl, vat_rate: vatRate,
+        purchase_price_excl_vat: purchaseValid,
         stock_quantity: parseInt(form.stock_quantity) || 0, moq: parseInt(form.moq) || 1,
         mov_amount: parseFloat(form.mov_amount) || 0, mov_currency: "EUR",
         delivery_days: parseInt(form.delivery_days) || 3, country_code: form.country_code,
@@ -1119,6 +1167,20 @@ export default function VendorOffers() {
           const { error: catErr } = await supabase.from("offer_categories").insert(rows);
           if (catErr) throw catErr;
         }
+      }
+      // Optionnel : mémoriser le prix d'achat comme défaut produit pour ce vendeur
+      if (purchaseValid != null && form.save_as_product_default) {
+        const { error: costErr } = await supabase
+          .from("vendor_product_costs")
+          .upsert(
+            {
+              vendor_id: vendor.id,
+              product_id: form.product_id,
+              default_purchase_price_excl_vat: purchaseValid,
+            },
+            { onConflict: "vendor_id,product_id" },
+          );
+        if (costErr) throw costErr;
       }
     },
     onSuccess: () => { toast.success(editingId ? "Offre modifiée" : "Offre créée"); qc.invalidateQueries({ queryKey: ["vendor-offers"] }); closeForm(); },
@@ -1263,6 +1325,31 @@ export default function VendorOffers() {
                 <option value="LU">Luxembourg</option><option value="DE">Allemagne</option>
               </select>
             </div>
+            <div className="md:col-span-2">
+              <label className="text-[11px] block mb-1" style={{ color: "#8B95A5" }}>
+                Prix d'achat HTVA (€) <span className="text-[#8B95A5] font-normal">— optionnel, sert au calcul de marge nette</span>
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="Ex: 1.20"
+                className="w-full px-3 py-2 text-[13px] border rounded-lg focus:border-[#1B5BDA] focus:outline-none"
+                style={{ borderColor: "#E2E8F0" }}
+                value={form.purchase_price_excl_vat}
+                onChange={e => setForm(p => ({ ...p, purchase_price_excl_vat: e.target.value }))}
+              />
+              {form.product_id && form.purchase_price_excl_vat && (
+                <label className="flex items-center gap-2 mt-1.5 text-[11px] cursor-pointer" style={{ color: "#616B7C" }}>
+                  <input
+                    type="checkbox"
+                    checked={form.save_as_product_default}
+                    onChange={e => setForm(p => ({ ...p, save_as_product_default: e.target.checked }))}
+                  />
+                  Mémoriser comme prix d'achat par défaut pour ce produit (réutilisé sur vos autres offres / pays)
+                </label>
+              )}
+            </div>
           </div>
 
           {/* ─── Catégories de visibilité (obligatoire) ─── */}
@@ -1281,9 +1368,21 @@ export default function VendorOffers() {
           </div>
 
           {form.price_excl_vat && (
-            <div className="mt-3 p-3 rounded-lg text-[12px]" style={{ backgroundColor: "#F8FAFC", color: "#616B7C" }}>
-              Prix TTC : <strong style={{ color: "#1D2530" }}>{(parseFloat(form.price_excl_vat) * (1 + parseFloat(form.vat_rate) / 100)).toFixed(2)} €</strong>
-              {parseFloat(form.mov_amount) > 0 && <span className="ml-3">MOV : <strong style={{ color: "#1D2530" }}>{parseFloat(form.mov_amount).toFixed(0)} €</strong></span>}
+            <div className="mt-3 space-y-2">
+              <div className="p-3 rounded-lg text-[12px]" style={{ backgroundColor: "#F8FAFC", color: "#616B7C" }}>
+                Prix TTC : <strong style={{ color: "#1D2530" }}>{(parseFloat(form.price_excl_vat) * (1 + parseFloat(form.vat_rate) / 100)).toFixed(2)} €</strong>
+                {parseFloat(form.mov_amount) > 0 && <span className="ml-3">MOV : <strong style={{ color: "#1D2530" }}>{parseFloat(form.mov_amount).toFixed(0)} €</strong></span>}
+              </div>
+              {commissionConfig && (
+                <MarginInsightCard
+                  breakdown={computeMargin(
+                    parseFloat(form.price_excl_vat) || 0,
+                    form.purchase_price_excl_vat ? parseFloat(form.purchase_price_excl_vat) : null,
+                    commissionConfig,
+                  )}
+                  commissionModel={commissionConfig.commission_model}
+                />
+              )}
             </div>
           )}
 

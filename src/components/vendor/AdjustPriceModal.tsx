@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
@@ -12,6 +12,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { TrendingDown, Equal, Sparkles, Loader2 } from "lucide-react";
+import { useVendorCommissionConfig } from "@/hooks/useVendorCommissionConfig";
+import { computeMargin } from "@/lib/vendorMargin";
+import { MarginInsightCard } from "@/components/vendor/MarginInsightCard";
 
 export interface AdjustPriceContext {
   offerId: string;
@@ -21,6 +24,10 @@ export interface AdjustPriceContext {
   bestMkPrice?: number | null;
   bestExtPrice?: number | null;
   vatRate?: number; // default 0.06 (BE meds) — used to refresh price_incl_vat
+  /** Required to compute net margin / commission breakdown */
+  vendorId?: string | null;
+  /** Required to load the vendor's purchase price (override + default) */
+  productId?: string | null;
 }
 
 interface Props {
@@ -38,6 +45,32 @@ const fmt = (n: number | null | undefined) =>
 export function AdjustPriceModal({ open, onOpenChange, ctx, invalidateKeys }: Props) {
   const qc = useQueryClient();
   const [newPrice, setNewPrice] = useState<string>("");
+
+  // Vendor commission config (used to compute net & margin breakdown live)
+  const { data: commissionConfig } = useVendorCommissionConfig(ctx?.vendorId ?? null);
+
+  // Vendor's purchase price for this product (offer override > vendor default)
+  const { data: purchasePrice } = useQuery({
+    enabled: !!ctx?.offerId && !!ctx?.vendorId && !!ctx?.productId,
+    queryKey: ["vendor-purchase-price", ctx?.offerId, ctx?.vendorId, ctx?.productId],
+    queryFn: async (): Promise<number | null> => {
+      if (!ctx?.offerId || !ctx?.vendorId || !ctx?.productId) return null;
+      const [{ data: offer }, { data: dflt }] = await Promise.all([
+        supabase.from("offers").select("purchase_price_excl_vat").eq("id", ctx.offerId).maybeSingle(),
+        supabase
+          .from("vendor_product_costs")
+          .select("default_purchase_price_excl_vat")
+          .eq("vendor_id", ctx.vendorId)
+          .eq("product_id", ctx.productId)
+          .maybeSingle(),
+      ]);
+      const o = (offer as any)?.purchase_price_excl_vat;
+      if (o != null) return Number(o);
+      const d = (dflt as any)?.default_purchase_price_excl_vat;
+      if (d != null) return Number(d);
+      return null;
+    },
+  });
 
   // Lowest competing price (across MK and external)
   const lowestCompetitor = useMemo(() => {
@@ -97,9 +130,19 @@ export function AdjustPriceModal({ open, onOpenChange, ctx, invalidateKeys }: Pr
   const beat1 = () => lowestCompetitor && setNewPrice(round2(lowestCompetitor * 0.99).toFixed(2));
   const beat3 = () => lowestCompetitor && setNewPrice(round2(lowestCompetitor * 0.97).toFixed(2));
 
+  // Helper: net en poche pour une suggestion (utilisé sur les boutons rapides)
+  const netForPrice = (p: number): number | null => {
+    if (!commissionConfig) return null;
+    return computeMargin(p, purchasePrice ?? null, commissionConfig).netRevenue;
+  };
+  const fmtNet = (p: number) => {
+    const n = netForPrice(p);
+    return n != null ? `Net ${n.toFixed(2)} €` : null;
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-base">Ajuster mon prix</DialogTitle>
           <DialogDescription className="text-xs">
@@ -142,6 +185,11 @@ export function AdjustPriceModal({ open, onOpenChange, ctx, invalidateKeys }: Pr
                   <span className="tabular-nums text-muted-foreground">
                     {lowestCompetitor.toFixed(2)} €
                   </span>
+                  {fmtNet(lowestCompetitor) && (
+                    <span className="text-[10px] tabular-nums text-blue-700 font-medium">
+                      {fmtNet(lowestCompetitor)}
+                    </span>
+                  )}
                 </button>
                 <button
                   type="button"
@@ -153,6 +201,11 @@ export function AdjustPriceModal({ open, onOpenChange, ctx, invalidateKeys }: Pr
                   <span className="tabular-nums text-muted-foreground">
                     {round2(lowestCompetitor * 0.99).toFixed(2)} €
                   </span>
+                  {fmtNet(round2(lowestCompetitor * 0.99)) && (
+                    <span className="text-[10px] tabular-nums text-blue-700 font-medium">
+                      {fmtNet(round2(lowestCompetitor * 0.99))}
+                    </span>
+                  )}
                 </button>
                 <button
                   type="button"
@@ -164,6 +217,11 @@ export function AdjustPriceModal({ open, onOpenChange, ctx, invalidateKeys }: Pr
                   <span className="tabular-nums text-muted-foreground">
                     {round2(lowestCompetitor * 0.97).toFixed(2)} €
                   </span>
+                  {fmtNet(round2(lowestCompetitor * 0.97)) && (
+                    <span className="text-[10px] tabular-nums text-blue-700 font-medium">
+                      {fmtNet(round2(lowestCompetitor * 0.97))}
+                    </span>
+                  )}
                 </button>
               </div>
             </div>
@@ -194,6 +252,15 @@ export function AdjustPriceModal({ open, onOpenChange, ctx, invalidateKeys }: Pr
               </div>
             )}
           </div>
+
+          {/* Margin & commission breakdown for the proposed price */}
+          {valid && commissionConfig && (
+            <MarginInsightCard
+              breakdown={computeMargin(parsed, purchasePrice ?? null, commissionConfig)}
+              commissionModel={commissionConfig.commission_model}
+              compact
+            />
+          )}
 
           <div className="flex items-center justify-end gap-2 pt-2">
             <button

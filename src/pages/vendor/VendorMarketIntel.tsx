@@ -679,6 +679,8 @@ export default function VendorMarketIntel() {
                                   myPrice: r.my_price_excl_vat,
                                   bestMkPrice: r.best_medikong_competitor_price,
                                   bestExtPrice: r.best_external_price,
+                                  vendorId,
+                                  productId: r.product_id,
                                 })
                               }
                               className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
@@ -725,6 +727,8 @@ export default function VendorMarketIntel() {
                       myPrice: openRow.my_price_excl_vat,
                       bestMkPrice: openRow.best_medikong_competitor_price,
                       bestExtPrice: openRow.best_external_price,
+                      vendorId,
+                      productId: openRow.product_id,
                     })
                   }
                   className="shrink-0 inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"

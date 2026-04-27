@@ -48,24 +48,40 @@ Deno.serve(async (req) => {
 
     const slugSeen = new Set<string>();
     const nameSeen = new Set<string>();
-    const brandsData: any[] = [];
+    const brandsRaw: any[] = [];
+    let skippedDuplicate = 0;
     for (const [name, qid] of uniqueBrands.entries()) {
       const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-      // Skip if slug or name already seen (both have unique constraints)
-      if (slugSeen.has(slug) || nameSeen.has(name)) continue;
+      if (slugSeen.has(slug) || nameSeen.has(name)) {
+        skippedDuplicate++;
+        continue;
+      }
       slugSeen.add(slug);
       nameSeen.add(name);
-      brandsData.push({ name, qogita_qid: qid, slug, is_active: true, synced_at: new Date().toISOString() });
+      brandsRaw.push({ name, qogita_qid: qid, slug, is_active: true, synced_at: new Date().toISOString() });
+    }
+
+    // Drop rows that fail the spec (empty name, empty slug, etc.) so we can keep going
+    // and surface exactly which marque pose problème dans les logs.
+    const { valid: brandsData, invalid: invalidBrands } = partitionValidRecords(
+      "qogita.brands",
+      brandsRaw,
+      BRAND_SPECS,
+      "name",
+    );
+    if (invalidBrands.length > 0) {
+      console.warn(`[qogita.brands] ${invalidBrands.length} marques invalides ignorées (voir issues ci-dessus).`);
     }
 
     const total = brandsData.length;
     await supabase.from("sync_logs").update({
       progress_total: total,
-      progress_message: `${total} marques uniques trouvées dans ${products?.length || 0} produits`,
+      progress_message: `${total} marques valides (${invalidBrands.length} invalides, ${skippedDuplicate} doublons) trouvées dans ${products?.length || 0} produits`,
     }).eq("id", syncLogId);
 
     // Upsert one by one to handle dual unique constraints (name + slug)
     let upserted = 0;
+    let upsertErrors = 0;
     for (const brand of brandsData) {
       // Try upsert on slug first
       const { error } = await supabase.from("brands").upsert(brand, {
@@ -75,22 +91,37 @@ Deno.serve(async (req) => {
       if (error) {
         // If name conflict, update existing brand by name instead
         if (error.message?.includes("brands_name_unique")) {
-          await supabase.from("brands").update({
+          const { error: updErr } = await supabase.from("brands").update({
             qogita_qid: brand.qogita_qid,
             is_active: true,
             synced_at: brand.synced_at,
           }).eq("name", brand.name);
+          if (updErr) {
+            upsertErrors++;
+            console.error(formatDbError("qogita.brands.update", updErr, {
+              name: brand.name, slug: brand.slug, qogita_qid: brand.qogita_qid,
+            }));
+          }
         } else {
-          console.error(`Brand upsert error for ${brand.name}:`, error.message);
+          upsertErrors++;
+          console.error(formatDbError("qogita.brands.upsert", error, {
+            name: brand.name,
+            slug: brand.slug,
+            qogita_qid: brand.qogita_qid,
+            row_sample: sampleValue(brand, 200),
+          }));
         }
       }
       upserted++;
       if (upserted % 200 === 0) {
         await supabase.from("sync_logs").update({
           progress_current: upserted,
-          progress_message: `Upsert ${upserted}/${total} marques`,
+          progress_message: `Upsert ${upserted}/${total} marques (${upsertErrors} erreurs)`,
         }).eq("id", syncLogId);
       }
+    }
+    if (upsertErrors > 0) {
+      console.warn(`[qogita.brands] récap upsert: ${upsertErrors} erreurs sur ${total} marques`);
     }
 
     // Resolve brand_id on products

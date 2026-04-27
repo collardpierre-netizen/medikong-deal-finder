@@ -17,7 +17,7 @@ interface Props {
 }
 
 export function CatalogSidebar({ filters, setFilter, clearAll, resultCategoryIds }: Props) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { currentCountry } = useCountry();
   const { data: categories = [] } = useCatalogCategories();
   const { data: brands = [] } = useCatalogBrands(filters.category);

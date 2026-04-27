@@ -823,13 +823,7 @@ async function processSingleProduct(
               const oMoq = Math.max(1, parseInt(String(bundleRaw), 10) || 1);
 
               // --- Price tiers (degressive pricing by MOV threshold) ---
-              // Try multiple candidate field names: tiers, priceTiers, price_tiers, discounts
-              const rawTiers: any[] =
-                (Array.isArray(offer.tiers) && offer.tiers) ||
-                (Array.isArray(offer.priceTiers) && offer.priceTiers) ||
-                (Array.isArray(offer.price_tiers) && offer.price_tiers) ||
-                (Array.isArray(offer.discountTiers) && offer.discountTiers) ||
-                [];
+              const rawTiers: any[] = extractRawTiers(offer);
 
               const { data: upsertedOffer, error: mvErr } = await sb.from("offers").upsert(
                 {

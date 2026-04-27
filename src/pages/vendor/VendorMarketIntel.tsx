@@ -846,23 +846,42 @@ export default function VendorMarketIntel() {
           <DialogHeader>
             <DialogTitle className="text-base flex items-center justify-between gap-3">
               <div>
-                {openRow?.product_name}
-                <div className="text-xs font-normal text-muted-foreground mt-1">
-                  EAN {openRow?.gtin || "—"} · {openRow?.country_code}
+                {safeOpenRow?.product_name}
+                <div className="text-xs font-normal text-muted-foreground mt-1 flex items-center gap-2 flex-wrap">
+                  <span>
+                    EAN {safeOpenRow?.gtin || "—"} · {safeOpenRow?.country_code}
+                  </span>
+                  {openRowGuarded && (
+                    <span
+                      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-medium"
+                      title="Le serveur n'a pas encore répliqué votre dernière sauvegarde — affichage du prix le plus récent connu localement."
+                      aria-live="polite"
+                    >
+                      <Clock size={10} /> Prix synchronisé localement
+                    </span>
+                  )}
+                  {!openRowGuarded && isFetchingIntel && (
+                    <span
+                      className="inline-flex items-center gap-1 text-[10px] text-muted-foreground"
+                      aria-live="polite"
+                    >
+                      <Loader2 size={10} className="animate-spin" /> Mise à jour…
+                    </span>
+                  )}
                 </div>
               </div>
-              {openRow && (
+              {safeOpenRow && (
                 <button
                   onClick={() =>
                     setAdjustCtx({
-                      offerId: openRow.my_offer_id,
-                      productName: openRow.product_name,
-                      gtin: openRow.gtin,
-                      myPrice: openRow.my_price_excl_vat,
-                      bestMkPrice: openRow.best_medikong_competitor_price,
-                      bestExtPrice: openRow.best_external_price,
+                      offerId: safeOpenRow.my_offer_id,
+                      productName: safeOpenRow.product_name,
+                      gtin: safeOpenRow.gtin,
+                      myPrice: safeOpenRow.my_price_excl_vat,
+                      bestMkPrice: safeOpenRow.best_medikong_competitor_price,
+                      bestExtPrice: safeOpenRow.best_external_price,
                       vendorId,
-                      productId: openRow.product_id,
+                      productId: safeOpenRow.product_id,
                     })
                   }
                   className="shrink-0 inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
@@ -872,9 +891,14 @@ export default function VendorMarketIntel() {
               )}
             </DialogTitle>
           </DialogHeader>
-          {openRow && (() => {
+          {safeOpenRow && (() => {
+            // Alias local : tout le rendu du popup utilise la version
+            // garde-fou de la ligne (cf. `safeOpenRow`) pour ne jamais
+            // afficher un `my_price_excl_vat` antérieur à la dernière
+            // sauvegarde locale pendant un refetch en vol.
+            const openRow = safeOpenRow;
             // Prix utilisé pour les calculs : prix saisi en live dans le modal d'ajustement
-            // s'il est valide, sinon le prix de l'offre actuelle.
+            // s'il est valide, sinon le prix (garde-fou) de l'offre actuelle.
             const effectiveMyPrice =
               livePrice != null && livePrice > 0 ? livePrice : openRow.my_price_excl_vat;
             const isLive = livePrice != null && livePrice > 0 && livePrice !== openRow.my_price_excl_vat;

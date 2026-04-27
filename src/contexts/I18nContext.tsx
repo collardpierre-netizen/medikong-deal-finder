@@ -236,6 +236,7 @@ const translations: Record<Lang, Record<string, string>> = {
     auditLog: "Audit Log",
     contractAudit: "PDF-Verträge Audit",
     catalogDiagnostics: "Katalog-Diagnose",
+    offerDataQuality: "Angebots-Qualität",
     apiDocs: "API Doku",
     management: "VERWALTUNG",
     intelligence: "INTELLIGENZ",

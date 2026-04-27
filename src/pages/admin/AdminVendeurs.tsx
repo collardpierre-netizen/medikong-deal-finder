@@ -6,7 +6,7 @@ import VendorFormDialog from "@/components/admin/VendorFormDialog";
 import { useI18n } from "@/contexts/I18nContext";
 import { useVendors } from "@/hooks/useAdminData";
 import { getVendorAdminName } from "@/lib/vendor-display";
-import { Search, Plus, ExternalLink, Eye, EyeOff, LogIn, AlertTriangle, CheckCircle2, XCircle, Clock, ChevronDown, Trash2, ToggleLeft, ToggleRight } from "lucide-react";
+import { Search, Plus, ExternalLink, Eye, EyeOff, LogIn, AlertTriangle, CheckCircle2, XCircle, Clock, ChevronDown, Trash2, ToggleLeft, ToggleRight, Hash, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";

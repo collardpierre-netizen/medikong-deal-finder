@@ -182,7 +182,17 @@ export function CatalogProductCard({ product, index = 0, view = "grid", searchQu
             <p className="text-xs text-muted-foreground line-clamp-1">{product.short_description}</p>
           )}
           <p className="text-xs text-muted-foreground mt-1">EAN: {product.gtin || "—"}</p>
-          <StockBadge product={product} />
+          <div className="flex items-center gap-2 flex-wrap">
+            <StockBadge product={product} />
+            {bundleSize && (
+              <span
+                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-primary/10 text-primary border border-primary/20"
+                title={`Quantité minimum de commande : ${bundleSize}. Toute quantité doit être un multiple de ${bundleSize}.`}
+              >
+                <Layers size={10} /> Lots de {bundleSize}
+              </span>
+            )}
+          </div>
         </div>
         <div className="text-right shrink-0 space-y-1">
           {canSeePrices ? (

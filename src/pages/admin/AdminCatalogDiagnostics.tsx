@@ -1,10 +1,23 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { HIDDEN_CATEGORY_KEYWORDS } from "@/lib/catalog-filters";
 import {
   RefreshCw, Eye, EyeOff, Layers, Package, Tag, AlertCircle,
-  CheckCircle2, ShieldAlert, FolderX, FileQuestion,
+  CheckCircle2, ShieldAlert, FolderX, FileQuestion, ExternalLink, Search,
 } from "lucide-react";
+
+type HiddenReason = "keyword" | "inactive_category" | "no_category";
+
+type HiddenOffer = {
+  offerId: string;
+  productId: string;
+  productName: string;
+  categoryName: string | null;
+  vendorName: string | null;
+  reason: HiddenReason;
+  matchedKeyword?: string;
+};
 
 type Stats = {
   categories: {

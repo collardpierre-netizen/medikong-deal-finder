@@ -813,7 +813,7 @@ export default function VendorMarketIntel() {
                   </h3>
                   <MarginInsightCard
                     breakdown={computeMargin(
-                      openRow.my_price_excl_vat,
+                      liveOpenRow.my_price_excl_vat,
                       openRowPurchasePrice ?? null,
                       commissionConfig,
                     )}
@@ -822,7 +822,7 @@ export default function VendorMarketIntel() {
                   <div className="mt-2">
                     <MarginBreakdownDetails
                       breakdown={computeMargin(
-                        openRow.my_price_excl_vat,
+                        liveOpenRow.my_price_excl_vat,
                         openRowPurchasePrice ?? null,
                         commissionConfig,
                       )}
@@ -830,7 +830,7 @@ export default function VendorMarketIntel() {
                       commissionRate={commissionConfig.commission_rate}
                       marginSplitPct={commissionConfig.margin_split_pct}
                       fixedCommissionAmount={commissionConfig.fixed_commission_amount}
-                      offerId={openRow.my_offer_id}
+                      offerId={liveOpenRow.my_offer_id}
                     />
                   </div>
                   {openRowPurchasePrice == null && (
@@ -843,7 +843,7 @@ export default function VendorMarketIntel() {
 
               {/* Offres MediKong */}
               {(() => {
-                const allOffers = openRow.medikong_offers || [];
+                const allOffers = liveOpenRow.medikong_offers || [];
                 // Calcul net pour chaque offre (basé sur la commission du vendeur courant)
                 const withNet = allOffers.map((o) => {
                   const net = commissionConfig
@@ -1106,9 +1106,9 @@ export default function VendorMarketIntel() {
               {/* Offres externes */}
               <section>
                 <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
-                  <Globe size={14} /> Sources externes ({openRow.external_offers?.length || 0})
+                  <Globe size={14} /> Sources externes ({liveOpenRow.external_offers?.length || 0})
                 </h3>
-                {(openRow.external_offers?.length || 0) === 0 ? (
+                {(liveOpenRow.external_offers?.length || 0) === 0 ? (
                   <div className="text-xs text-muted-foreground border rounded-lg p-4 text-center">
                     Aucune source externe matchée pour cet EAN.
                   </div>
@@ -1127,7 +1127,7 @@ export default function VendorMarketIntel() {
                         </tr>
                       </thead>
                       <tbody>
-                        {openRow.external_offers.map((e, i) => (
+                        {liveOpenRow.external_offers.map((e, i) => (
                           <tr key={`${e.source_id}-${i}`} className="border-t">
                             <td className="px-3 py-2">{e.source_name}</td>
                             <td className="px-3 py-2 text-right tabular-nums">

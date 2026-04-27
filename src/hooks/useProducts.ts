@@ -222,7 +222,7 @@ export function useProductOffers(productId: string | undefined) {
       // Fetch vendors and discount tiers in parallel
       const [vendorsResult, tiersResult, visRulesResult, priceTiersResult] = await Promise.all([
         vendorIds.length > 0
-          ? supabase.from("vendors").select("id, name, company_name, slug, is_verified, rating, display_code, is_top_seller, type, show_real_name").in("id", vendorIds)
+          ? supabase.from("vendors_public" as any).select("id, name, company_name, display_name, slug, is_verified, rating, display_code, is_top_seller, type, show_real_name").in("id", vendorIds)
           : Promise.resolve({ data: [] }),
         offerIds.length > 0
           ? supabase.from("discount_tiers").select("*").in("offer_id", offerIds).order("mov_amount", { ascending: true })

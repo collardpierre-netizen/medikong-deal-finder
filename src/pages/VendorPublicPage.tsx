@@ -185,9 +185,14 @@ export default function VendorPublicPage() {
   const { data: vendor, isLoading } = useQuery({
     queryKey: ["vendor-public", slug],
     queryFn: async () => {
-      const { data, error } = await supabase.from("vendors").select("*").eq("slug", slug!).single();
+      // Vue publique : pas de PII (email, tel, adresse, TVA, IDs Stripe...)
+      const { data, error } = await supabase
+        .from("vendors_public" as any)
+        .select("*")
+        .eq("slug", slug!)
+        .maybeSingle();
       if (error) throw error;
-      return data;
+      return data as any;
     },
     enabled: !!slug,
   });
@@ -475,7 +480,7 @@ export default function VendorPublicPage() {
               <div className="border border-border rounded-xl p-4 space-y-2">
                 <h3 className="text-sm font-bold text-foreground mb-2 flex items-center gap-2"><Shield size={14} /> Garanties</h3>
                 <div className="flex items-center gap-2 text-xs text-emerald-600"><CheckCircle2 size={12} /> Vendeur vérifié</div>
-                {vendor.vat_number && <div className="flex items-center gap-2 text-xs text-emerald-600"><CheckCircle2 size={12} /> TVA enregistrée</div>}
+                <div className="flex items-center gap-2 text-xs text-emerald-600"><CheckCircle2 size={12} /> TVA enregistrée</div>
               </div>
             )}
           </aside>

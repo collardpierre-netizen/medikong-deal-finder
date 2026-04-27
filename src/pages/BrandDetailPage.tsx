@@ -36,13 +36,26 @@ export default function BrandDetailPage() {
     queryKey: ["brand-sellers", brandData?.id],
     enabled: !!brandData?.id,
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Étape 1 : récupérer les vendor_id distincts pour cette marque (offres actives)
+      const { data: offerRows, error } = await supabase
         .from("offers")
-        .select("vendor_id, vendors(id, name, company_name, slug, is_verified, rating, total_sales, country_code, display_code, show_real_name), products!inner(brand_id)")
+        .select("vendor_id, products!inner(brand_id)")
         .eq("is_active", true)
         .eq("products.brand_id", brandData!.id)
         .limit(300);
       if (error) throw error;
+
+      // Étape 2 : récupérer les infos vendeurs publiques (vue vendors_public, sans PII)
+      const vendorIds = Array.from(new Set(
+        (offerRows || []).map((r: any) => r.vendor_id).filter(Boolean)
+      ));
+      if (vendorIds.length === 0) return [];
+
+      const { data: vendorsData, error: vErr } = await supabase
+        .from("vendors_public" as any)
+        .select("id, name, company_name, display_name, slug, is_verified, rating, total_sales, country_code, display_code, show_real_name")
+        .in("id", vendorIds);
+      if (vErr) throw vErr;
 
       const dedup = new Map<string, {
         id: string;
@@ -55,8 +68,7 @@ export default function BrandDetailPage() {
         orders: number;
       }>();
 
-      for (const row of data || []) {
-        const v = row.vendors as any;
+      for (const v of (vendorsData || []) as any[]) {
         if (!v?.id || dedup.has(v.id)) continue;
         dedup.set(v.id, {
           id: v.id,

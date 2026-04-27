@@ -56,6 +56,11 @@ const AdminVendeurs = () => {
     .filter(v => statusFilter === "all" || (v as any).validation_status === statusFilter)
     .filter(v => activeFilter === "all" || (activeFilter === "active" ? v.is_active : !v.is_active))
     .filter(v => {
+      if (!qogitaSearch.trim()) return true;
+      const q = qogitaSearch.trim().toLowerCase();
+      return ((v as any).qogita_seller_alias || "").toLowerCase().includes(q);
+    })
+    .filter(v => {
       if (!search) return true;
       const s = search.toLowerCase();
       return (v.company_name || v.name).toLowerCase().includes(s) ||
@@ -63,7 +68,7 @@ const AdminVendeurs = () => {
         (v.display_code || "").toLowerCase().includes(s) ||
         ((v as any).qogita_seller_alias || "").toLowerCase().includes(s) ||
         (v.email || "").toLowerCase().includes(s);
-    }), [vendors, activeTab, statusFilter, activeFilter, search]);
+    }), [vendors, activeTab, statusFilter, activeFilter, search, qogitaSearch]);
 
   const allSelected = filtered.length > 0 && filtered.every(v => selected.has(v.id));
 

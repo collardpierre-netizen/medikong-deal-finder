@@ -17,11 +17,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { exportCategories, importCategories } from "@/lib/xlsx-utils";
 import { toast } from "sonner";
 import { useImportJobs } from "@/contexts/ImportContext";
-import { Layers, Tag, Package, ChevronDown, ChevronRight, Download, Upload, Languages, X, Save, Wand2, Merge, ShieldOff } from "lucide-react";
+import { Layers, Tag, Package, ChevronDown, ChevronRight, Download, Upload, Languages, X, Save, Wand2, Merge, ShieldOff, ShieldCheck } from "lucide-react";
 import { Search, FolderTree, ArrowRight, Plus, Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import CategoryKeywordDisableDialog from "@/components/admin/CategoryKeywordDisableDialog";
+import CategoryReactivateDialog from "@/components/admin/CategoryReactivateDialog";
 
 const LOCALES = ["fr", "nl", "de"] as const;
 

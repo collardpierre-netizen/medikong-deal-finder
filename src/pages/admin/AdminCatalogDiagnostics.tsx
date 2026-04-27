@@ -378,6 +378,27 @@ const AdminCatalogDiagnostics = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    fetchHidden(hiddenReason);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hiddenReason]);
+
+  const filteredHidden = useMemo(() => {
+    const term = hiddenSearch.trim().toLowerCase();
+    if (!term) return hiddenOffers;
+    return hiddenOffers.filter((o) =>
+      [o.productName, o.categoryName, o.vendorName, o.matchedKeyword]
+        .filter(Boolean)
+        .some((s) => (s as string).toLowerCase().includes(term)),
+    );
+  }, [hiddenOffers, hiddenSearch]);
+
+  const pageSlice = filteredHidden.slice(
+    hiddenPage * PAGE_SIZE,
+    (hiddenPage + 1) * PAGE_SIZE,
+  );
+  const totalPages = Math.max(1, Math.ceil(filteredHidden.length / PAGE_SIZE));
+
   const visibilityRatio = useMemo(() => {
     if (!stats || stats.products.totalActive === 0) return 0;
     return Math.round((stats.products.visiblePublic / stats.products.totalActive) * 100);

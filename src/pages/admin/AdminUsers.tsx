@@ -18,13 +18,14 @@ const LANG_FLAGS: Record<string, string> = { fr: "🇫🇷 Français", nl: "🇳
 
 interface UserRow {
   id: string;
-  userId: string;
+  userId: string | null;
   email: string;
   type: "vendor" | "buyer";
   company: string;
   plan: string;
   status: string;
   lastLogin: string | null;
+  linked: boolean;
 }
 
 interface BuyerDetail {

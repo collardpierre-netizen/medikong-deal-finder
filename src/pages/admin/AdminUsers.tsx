@@ -81,14 +81,17 @@ export default function AdminUsers() {
       .order("company_name");
 
     vendors?.forEach(v => {
-      if (v.auth_user_id) {
-        rows.push({
-          id: v.id, userId: v.auth_user_id, email: v.email || "",
-          type: "vendor", company: v.company_name || v.id,
-          plan: v.type || "real", status: v.is_active ? "active" : "inactive",
-          lastLogin: null,
-        });
-      }
+      rows.push({
+        id: v.id,
+        userId: v.auth_user_id ?? null,
+        email: v.email || "",
+        type: "vendor",
+        company: v.company_name || v.id,
+        plan: v.type || "real",
+        status: v.is_active ? "active" : "inactive",
+        lastLogin: null,
+        linked: !!v.auth_user_id,
+      });
     });
 
     const { data: customers } = await supabase
@@ -97,15 +100,17 @@ export default function AdminUsers() {
       .order("company_name");
 
     customers?.forEach(b => {
-      if (b.auth_user_id) {
-        rows.push({
-          id: b.id, userId: b.auth_user_id, email: b.email || "",
-          type: "buyer", company: b.company_name,
-          plan: b.customer_type || "pharmacy",
-          status: b.is_verified ? "active" : "pending",
-          lastLogin: null,
-        });
-      }
+      rows.push({
+        id: b.id,
+        userId: b.auth_user_id ?? null,
+        email: b.email || "",
+        type: "buyer",
+        company: b.company_name,
+        plan: b.customer_type || "pharmacy",
+        status: b.is_verified ? "active" : "pending",
+        lastLogin: null,
+        linked: !!b.auth_user_id,
+      });
     });
 
     setUsers(rows);

@@ -15,6 +15,7 @@ import { TrendingDown, Equal, Sparkles, Loader2 } from "lucide-react";
 import { useVendorCommissionConfig } from "@/hooks/useVendorCommissionConfig";
 import { computeMargin } from "@/lib/vendorMargin";
 import { MarginInsightCard } from "@/components/vendor/MarginInsightCard";
+import { MarginBreakdownDetails } from "@/components/vendor/MarginBreakdownDetails";
 
 export interface AdjustPriceContext {
   offerId: string;

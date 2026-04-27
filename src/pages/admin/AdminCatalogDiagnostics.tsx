@@ -337,6 +337,29 @@ const AdminCatalogDiagnostics = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Détail offres masquées
+  const [hiddenReason, setHiddenReason] = useState<HiddenReason>("keyword");
+  const [hiddenOffers, setHiddenOffers] = useState<HiddenOffer[]>([]);
+  const [hiddenLoading, setHiddenLoading] = useState(false);
+  const [hiddenError, setHiddenError] = useState<string | null>(null);
+  const [hiddenSearch, setHiddenSearch] = useState("");
+  const [hiddenPage, setHiddenPage] = useState(0);
+
+  const fetchHidden = async (reason: HiddenReason) => {
+    setHiddenLoading(true);
+    setHiddenError(null);
+    setHiddenPage(0);
+    try {
+      const list = await loadHiddenOffers(reason);
+      setHiddenOffers(list);
+    } catch (e: any) {
+      setHiddenError(e?.message ?? String(e));
+      setHiddenOffers([]);
+    } finally {
+      setHiddenLoading(false);
+    }
+  };
+
   const refresh = async () => {
     setLoading(true);
     setError(null);

@@ -114,16 +114,22 @@ export function useSearchProducts(query: string, sort: SortOption = "relevance")
       } else {
         const { data, error } = await withSearchTimeout(
           (async () =>
-            await supabase
-              .from("products")
-              .select(SEARCH_PRODUCT_FIELDS)
-              .eq("is_active", true)
+            await applyHiddenCategoryFilter(
+              supabase
+                .from("products")
+                .select(SEARCH_PRODUCT_FIELDS)
+                .eq("is_active", true)
+            )
               .order("created_at", { ascending: false })
               .limit(60))()
         );
         if (error) throw error;
         productsData = data || [];
       }
+
+      // Safety net : si une catégorie matche mais n'avait pas été filtrée
+      // côté DB (ex: id retrouvé via product_market_codes), on l'écarte ici.
+      productsData = productsData.filter((p: any) => !isHiddenCategoryName(p.category_name));
 
       const productIds = productsData.map((p: any) => p.id);
       let offersData: any[] = [];

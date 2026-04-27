@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { getProductImageSrc, MEDIKONG_PLACEHOLDER, isQogitaPlaceholder } from "@/lib/image-utils";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Plus, Minus, Package, Loader2, Lock } from "lucide-react";
+import { Plus, Minus, Package, Loader2, Lock, Layers } from "lucide-react";
 import { motion } from "framer-motion";
 import { formatPrice } from "@/data/mock";
 import { useCart } from "@/contexts/CartContext";
@@ -84,6 +84,7 @@ export function CatalogProductCard({ product, index = 0, view = "grid", searchQu
   const fromState = { from: location.pathname + location.search };
   const price = product.best_price_excl_vat || 0;
   const priceIncl = product.best_price_incl_vat || 0;
+  const bundleSize = product.best_bundle_size && product.best_bundle_size > 1 ? product.best_bundle_size : null;
   const isLoggedIn = !!user;
   const canSeePrices = isLoggedIn && (isVerifiedBuyer || verificationLoading);
   const displayName = getLocalizedName(product, i18n.language);
@@ -181,7 +182,17 @@ export function CatalogProductCard({ product, index = 0, view = "grid", searchQu
             <p className="text-xs text-muted-foreground line-clamp-1">{product.short_description}</p>
           )}
           <p className="text-xs text-muted-foreground mt-1">EAN: {product.gtin || "—"}</p>
-          <StockBadge product={product} />
+          <div className="flex items-center gap-2 flex-wrap">
+            <StockBadge product={product} />
+            {bundleSize && (
+              <span
+                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-primary/10 text-primary border border-primary/20"
+                title={`Quantité minimum de commande : ${bundleSize}. Toute quantité doit être un multiple de ${bundleSize}.`}
+              >
+                <Layers size={10} /> Lots de {bundleSize}
+              </span>
+            )}
+          </div>
         </div>
         <div className="text-right shrink-0 space-y-1">
           {canSeePrices ? (
@@ -258,7 +269,17 @@ export function CatalogProductCard({ product, index = 0, view = "grid", searchQu
                 <StockBadge product={product} />
                 <span className="text-xs text-muted-foreground">{product.offer_count > 1 ? t("catalog.offersPlural", { count: product.offer_count }) : t("catalog.offers", { count: product.offer_count })}</span>
               </div>
-              <p className="text-[10px] text-muted-foreground mb-2 truncate">EAN: {product.gtin || "—"}</p>
+              <div className="flex items-center justify-between gap-1.5 mb-2">
+                <p className="text-[10px] text-muted-foreground truncate">EAN: {product.gtin || "—"}</p>
+                {bundleSize && (
+                  <span
+                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-primary/10 text-primary border border-primary/20 shrink-0"
+                    title={`Quantité minimum de commande : ${bundleSize}. Toute quantité doit être un multiple de ${bundleSize}.`}
+                  >
+                    <Layers size={10} /> Lots de {bundleSize}
+                  </span>
+                )}
+              </div>
               <div className="flex items-center gap-1.5">
                 {product.offer_count <= 1 && (
                   <div className="flex items-center border border-border rounded-md">

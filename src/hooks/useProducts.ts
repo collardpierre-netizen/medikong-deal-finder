@@ -185,6 +185,8 @@ export interface Offer {
   discountTiers: DiscountTier[];
   offerPriceTiers: OfferPriceTier[];
   isActive: boolean;
+  updatedAt?: string | null;
+  syncedAt?: string | null;
   sellerName?: string;
   sellerSlug?: string;
   isVerified?: boolean;

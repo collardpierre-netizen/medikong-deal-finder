@@ -71,10 +71,12 @@ export default function HomePage() {
       }
       const inactiveIds = Array.from(inactiveSet);
 
-      let productsQuery = supabase
-        .from("products")
-        .select("id", { count: "exact", head: true })
-        .eq("is_active", true);
+      let productsQuery = applyHiddenCategoryFilter(
+        supabase
+          .from("products")
+          .select("id", { count: "exact", head: true })
+          .eq("is_active", true)
+      );
       if (inactiveIds.length > 0) {
         productsQuery = productsQuery.not("category_id", "in", `(${inactiveIds.join(",")})`);
       }

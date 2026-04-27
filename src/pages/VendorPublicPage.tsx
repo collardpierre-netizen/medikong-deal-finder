@@ -185,9 +185,14 @@ export default function VendorPublicPage() {
   const { data: vendor, isLoading } = useQuery({
     queryKey: ["vendor-public", slug],
     queryFn: async () => {
-      const { data, error } = await supabase.from("vendors").select("*").eq("slug", slug!).single();
+      // Vue publique : pas de PII (email, tel, adresse, TVA, IDs Stripe...)
+      const { data, error } = await supabase
+        .from("vendors_public" as any)
+        .select("*")
+        .eq("slug", slug!)
+        .maybeSingle();
       if (error) throw error;
-      return data;
+      return data as any;
     },
     enabled: !!slug,
   });

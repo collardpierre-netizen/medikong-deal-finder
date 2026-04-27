@@ -724,6 +724,8 @@ async function processSingleProduct(
   bestPriceVendorId: string,
   fetchMultiVendor: boolean,
   parentStats: any,
+  recordEndpointError?: (endpoint: string, status: number | null, message: string) => Promise<void>,
+  recordProgress?: (delta: Record<string, number>) => Promise<void>,
 ) {
   const localStats = {
     products_enriched: 0,
@@ -741,6 +743,9 @@ async function processSingleProduct(
         if (res.status === 404) localStats.skipped++;
         else if (res.status === 429) { localStats.rate_limited++; localStats.errors++; }
         else localStats.errors++;
+        if (res.status !== 404 && recordEndpointError) {
+          await recordEndpointError(`/variants/?country=${country}`, res.status, `gtin=${product.gtin} qid=${product.qogita_qid ?? ""}`);
+        }
         await sleep(BATCH_DELAY_MS);
         return localStats;
       }

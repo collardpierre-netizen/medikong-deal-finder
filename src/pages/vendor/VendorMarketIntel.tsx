@@ -1009,7 +1009,7 @@ export default function VendorMarketIntel() {
                                 <td className="px-3 py-2 text-right tabular-nums">
                                   {net != null && commissionConfig ? (() => {
                                     const m = computeMargin(
-                                      o.price_excl_vat,
+                                      priceForCalc,
                                       openRowPurchasePrice ?? null,
                                       commissionConfig,
                                     );

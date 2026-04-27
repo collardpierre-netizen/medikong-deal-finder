@@ -1,10 +1,23 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { HIDDEN_CATEGORY_KEYWORDS } from "@/lib/catalog-filters";
 import {
   RefreshCw, Eye, EyeOff, Layers, Package, Tag, AlertCircle,
-  CheckCircle2, ShieldAlert, FolderX, FileQuestion,
+  CheckCircle2, ShieldAlert, FolderX, FileQuestion, ExternalLink, Search,
 } from "lucide-react";
+
+type HiddenReason = "keyword" | "inactive_category" | "no_category";
+
+type HiddenOffer = {
+  offerId: string;
+  productId: string;
+  productName: string;
+  categoryName: string | null;
+  vendorName: string | null;
+  reason: HiddenReason;
+  matchedKeyword?: string;
+};
 
 type Stats = {
   categories: {
@@ -179,6 +192,107 @@ async function loadStats(): Promise<Stats> {
 
 const fmt = (n: number) => n.toLocaleString("fr-FR");
 
+const PAGE_SIZE = 50;
+
+/**
+ * Charge un échantillon (max 200) d'offres masquées pour la raison demandée.
+ * On limite volontairement la fenêtre — l'objectif est diagnostic, pas export.
+ */
+async function loadHiddenOffers(reason: HiddenReason): Promise<HiddenOffer[]> {
+  // Pré-charge la liste des catégories désactivées pour la raison "inactive_category"
+  let inactiveNames: string[] = [];
+  if (reason === "inactive_category") {
+    const { data: cats } = await supabase
+      .from("categories")
+      .select("name,is_active")
+      .eq("is_active", false);
+    inactiveNames = (cats ?? [])
+      .map((c) => (c.name ?? "").toLowerCase())
+      .filter(Boolean);
+    if (inactiveNames.length === 0) return [];
+  }
+
+  // Construit la requête base sur offers + product + vendor
+  const select =
+    "id, vendor:vendors(name), products!inner(id, name, category_name)";
+
+  const aggregate: HiddenOffer[] = [];
+  const cap = 200;
+
+  if (reason === "keyword") {
+    for (const kw of KEYWORDS) {
+      if (aggregate.length >= cap) break;
+      const { data, error } = await supabase
+        .from("offers")
+        .select(select)
+        .eq("is_active", true)
+        .ilike("products.category_name", `%${kw}%`)
+        .limit(Math.min(cap - aggregate.length, 60));
+      if (error) throw error;
+      for (const row of (data ?? []) as any[]) {
+        if (aggregate.length >= cap) break;
+        aggregate.push({
+          offerId: row.id,
+          productId: row.products?.id,
+          productName: row.products?.name ?? "—",
+          categoryName: row.products?.category_name ?? null,
+          vendorName: row.vendor?.name ?? null,
+          reason: "keyword",
+          matchedKeyword: kw,
+        });
+      }
+    }
+  } else if (reason === "inactive_category") {
+    const CHUNK = 50;
+    for (let i = 0; i < inactiveNames.length && aggregate.length < cap; i += CHUNK) {
+      const slice = inactiveNames.slice(i, i + CHUNK);
+      const { data, error } = await supabase
+        .from("offers")
+        .select(select)
+        .eq("is_active", true)
+        .in("products.category_name", slice)
+        .limit(Math.min(cap - aggregate.length, 100));
+      if (error) throw error;
+      for (const row of (data ?? []) as any[]) {
+        if (aggregate.length >= cap) break;
+        aggregate.push({
+          offerId: row.id,
+          productId: row.products?.id,
+          productName: row.products?.name ?? "—",
+          categoryName: row.products?.category_name ?? null,
+          vendorName: row.vendor?.name ?? null,
+          reason: "inactive_category",
+        });
+      }
+    }
+  } else if (reason === "no_category") {
+    const { data, error } = await supabase
+      .from("offers")
+      .select(select)
+      .eq("is_active", true)
+      .is("products.category_name", null)
+      .limit(cap);
+    if (error) throw error;
+    for (const row of (data ?? []) as any[]) {
+      aggregate.push({
+        offerId: row.id,
+        productId: row.products?.id,
+        productName: row.products?.name ?? "—",
+        categoryName: null,
+        vendorName: row.vendor?.name ?? null,
+        reason: "no_category",
+      });
+    }
+  }
+
+  // Dédup par offerId (au cas où plusieurs mots-clés matchent la même offre)
+  const seen = new Set<string>();
+  return aggregate.filter((o) => {
+    if (seen.has(o.offerId)) return false;
+    seen.add(o.offerId);
+    return true;
+  });
+}
 const StatCard = ({
   label,
   value,
@@ -223,6 +337,29 @@ const AdminCatalogDiagnostics = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Détail offres masquées
+  const [hiddenReason, setHiddenReason] = useState<HiddenReason>("keyword");
+  const [hiddenOffers, setHiddenOffers] = useState<HiddenOffer[]>([]);
+  const [hiddenLoading, setHiddenLoading] = useState(false);
+  const [hiddenError, setHiddenError] = useState<string | null>(null);
+  const [hiddenSearch, setHiddenSearch] = useState("");
+  const [hiddenPage, setHiddenPage] = useState(0);
+
+  const fetchHidden = async (reason: HiddenReason) => {
+    setHiddenLoading(true);
+    setHiddenError(null);
+    setHiddenPage(0);
+    try {
+      const list = await loadHiddenOffers(reason);
+      setHiddenOffers(list);
+    } catch (e: any) {
+      setHiddenError(e?.message ?? String(e));
+      setHiddenOffers([]);
+    } finally {
+      setHiddenLoading(false);
+    }
+  };
+
   const refresh = async () => {
     setLoading(true);
     setError(null);
@@ -240,6 +377,27 @@ const AdminCatalogDiagnostics = () => {
     refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    fetchHidden(hiddenReason);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hiddenReason]);
+
+  const filteredHidden = useMemo(() => {
+    const term = hiddenSearch.trim().toLowerCase();
+    if (!term) return hiddenOffers;
+    return hiddenOffers.filter((o) =>
+      [o.productName, o.categoryName, o.vendorName, o.matchedKeyword]
+        .filter(Boolean)
+        .some((s) => (s as string).toLowerCase().includes(term)),
+    );
+  }, [hiddenOffers, hiddenSearch]);
+
+  const pageSlice = filteredHidden.slice(
+    hiddenPage * PAGE_SIZE,
+    (hiddenPage + 1) * PAGE_SIZE,
+  );
+  const totalPages = Math.max(1, Math.ceil(filteredHidden.length / PAGE_SIZE));
 
   const visibilityRatio = useMemo(() => {
     if (!stats || stats.products.totalActive === 0) return 0;
@@ -468,6 +626,192 @@ const AdminCatalogDiagnostics = () => {
             </div>
           )}
         </div>
+      </section>
+
+      {/* ============ Détail offres masquées ============ */}
+      <section className="rounded-lg border border-border bg-card">
+        <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
+          <div>
+            <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+              <Tag size={16} /> Offres masquées — détail par offre
+            </h2>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Liste (max 200) des offres invisibles côté public, avec la raison exacte
+              et un lien direct pour corriger la source du problème.
+            </p>
+          </div>
+          <button
+            onClick={() => fetchHidden(hiddenReason)}
+            disabled={hiddenLoading}
+            className="inline-flex items-center gap-2 rounded-md border border-border bg-background px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted disabled:opacity-60"
+          >
+            <RefreshCw size={12} className={hiddenLoading ? "animate-spin" : ""} />
+            Recharger
+          </button>
+        </header>
+
+        <div className="flex flex-wrap items-center gap-2 border-b border-border bg-muted/30 px-4 py-2.5">
+          {([
+            { id: "keyword", label: "Mots-clés", icon: ShieldAlert, count: stats?.offers.hiddenByKeyword },
+            { id: "inactive_category", label: "Catégorie désactivée", icon: FolderX, count: stats?.offers.hiddenByInactiveCategory },
+            { id: "no_category", label: "Sans catégorie", icon: FileQuestion, count: stats?.offers.onProductsWithoutCategory },
+          ] as { id: HiddenReason; label: string; icon: React.ElementType; count?: number }[]).map((r) => {
+            const active = hiddenReason === r.id;
+            const Icon = r.icon;
+            return (
+              <button
+                key={r.id}
+                onClick={() => setHiddenReason(r.id)}
+                className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition ${
+                  active
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-background text-foreground hover:bg-muted border border-border"
+                }`}
+              >
+                <Icon size={12} />
+                {r.label}
+                {typeof r.count === "number" && (
+                  <span className={`ml-1 rounded px-1.5 py-0.5 tabular-nums text-[10px] ${
+                    active ? "bg-primary-foreground/20" : "bg-muted"
+                  }`}>
+                    {fmt(r.count)}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+
+          <div className="ml-auto flex items-center gap-2">
+            <div className="relative">
+              <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <input
+                type="search"
+                placeholder="Filtrer (produit, vendeur, catégorie…)"
+                value={hiddenSearch}
+                onChange={(e) => { setHiddenSearch(e.target.value); setHiddenPage(0); }}
+                className="rounded-md border border-border bg-background py-1.5 pl-7 pr-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+              />
+            </div>
+          </div>
+        </div>
+
+        {hiddenError && (
+          <div className="m-4 rounded-md border border-destructive/30 bg-destructive/10 p-2.5 text-xs text-destructive">
+            <AlertCircle size={12} className="mr-1.5 inline" />
+            {hiddenError}
+          </div>
+        )}
+
+        {hiddenLoading ? (
+          <div className="px-4 py-12 text-center text-sm text-muted-foreground">
+            <RefreshCw size={14} className="mr-2 inline animate-spin" />
+            Chargement des offres masquées…
+          </div>
+        ) : filteredHidden.length === 0 ? (
+          <div className="px-4 py-12 text-center text-sm text-muted-foreground">
+            {hiddenOffers.length === 0
+              ? "Aucune offre masquée pour cette raison 🎉"
+              : "Aucun résultat avec ce filtre."}
+          </div>
+        ) : (
+          <>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-border text-sm">
+                <thead className="bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
+                  <tr>
+                    <th className="px-4 py-2 font-medium">Produit</th>
+                    <th className="px-4 py-2 font-medium">Catégorie</th>
+                    <th className="px-4 py-2 font-medium">Vendeur</th>
+                    <th className="px-4 py-2 font-medium">Raison</th>
+                    <th className="px-4 py-2 font-medium text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {pageSlice.map((o) => (
+                    <tr key={o.offerId} className="hover:bg-muted/30">
+                      <td className="px-4 py-2">
+                        <Link
+                          to={`/admin/produits/${o.productId}`}
+                          className="font-medium text-foreground hover:text-primary"
+                          title="Ouvrir la fiche produit admin"
+                        >
+                          {o.productName}
+                        </Link>
+                      </td>
+                      <td className="px-4 py-2 text-muted-foreground">
+                        {o.categoryName ?? <em className="text-destructive">— aucune —</em>}
+                      </td>
+                      <td className="px-4 py-2 text-muted-foreground">{o.vendorName ?? "—"}</td>
+                      <td className="px-4 py-2">
+                        {o.reason === "keyword" && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-700 dark:bg-amber-950/40 dark:text-amber-400">
+                            <ShieldAlert size={10} />
+                            mot-clé : <span className="font-mono">{o.matchedKeyword}</span>
+                          </span>
+                        )}
+                        {o.reason === "inactive_category" && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-700 dark:bg-amber-950/40 dark:text-amber-400">
+                            <FolderX size={10} />
+                            catégorie désactivée
+                          </span>
+                        )}
+                        {o.reason === "no_category" && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-destructive/10 px-2 py-0.5 text-xs text-destructive">
+                            <FileQuestion size={10} />
+                            produit sans catégorie
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-2 text-right">
+                        {o.reason === "no_category" ? (
+                          <Link
+                            to={`/admin/produits/${o.productId}`}
+                            className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                          >
+                            Assigner une catégorie <ExternalLink size={11} />
+                          </Link>
+                        ) : (
+                          <Link
+                            to={`/admin/categories?search=${encodeURIComponent(o.categoryName ?? "")}`}
+                            className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                          >
+                            {o.reason === "keyword" ? "Renommer la catégorie" : "Réactiver la catégorie"}
+                            <ExternalLink size={11} />
+                          </Link>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="flex items-center justify-between border-t border-border px-4 py-2.5 text-xs text-muted-foreground">
+              <div>
+                {fmt(filteredHidden.length)} offre(s) — page {hiddenPage + 1}/{totalPages}
+                {hiddenOffers.length >= 200 && (
+                  <span className="ml-2 text-amber-600">(échantillon limité à 200)</span>
+                )}
+              </div>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setHiddenPage((p) => Math.max(0, p - 1))}
+                  disabled={hiddenPage === 0}
+                  className="rounded border border-border bg-background px-2 py-1 hover:bg-muted disabled:opacity-40"
+                >
+                  Préc.
+                </button>
+                <button
+                  onClick={() => setHiddenPage((p) => Math.min(totalPages - 1, p + 1))}
+                  disabled={hiddenPage >= totalPages - 1}
+                  className="rounded border border-border bg-background px-2 py-1 hover:bg-muted disabled:opacity-40"
+                >
+                  Suiv.
+                </button>
+              </div>
+            </div>
+          </>
+        )}
       </section>
 
       <p className="text-xs text-muted-foreground">

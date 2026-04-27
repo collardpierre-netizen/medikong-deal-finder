@@ -245,7 +245,7 @@ const AdminVendeurs = () => {
                   <input type="checkbox" checked={allSelected} onChange={toggleAll}
                     className="w-4 h-4 rounded cursor-pointer accent-[#1B5BDA]" />
                 </th>
-                {["Vendeur", "Code", "Type", "Ville", "Comm.", "Validation", "Statut", "Inscrit", ""].map((h) => (
+                {["Vendeur", "ID MediKong", "ID Qogita", "Type", "Ville", "Comm.", "Validation", "Statut", "Inscrit", ""].map((h) => (
                   <th key={h} className="px-3 py-3 text-[11px] font-semibold uppercase tracking-wider" style={{ color: "#8B95A5" }}>{h}</th>
                 ))}
               </tr>

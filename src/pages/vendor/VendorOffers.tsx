@@ -1526,6 +1526,8 @@ export default function VendorOffers() {
                   <th className="text-left py-2.5 px-3 font-medium" style={{ color: "#8B95A5" }}>Marque</th>
                   <th className="text-right py-2.5 px-3 font-medium" style={{ color: "#8B95A5" }}>Prix HT</th>
                   <th className="text-right py-2.5 px-3 font-medium" style={{ color: "#8B95A5" }}>Prix TTC</th>
+                  <th className="text-right py-2.5 px-3 font-medium" style={{ color: "#8B95A5" }} title="Coût d'achat HTVA saisi par le vendeur (utilisé pour calculer la marge nette).">Prix achat</th>
+                  <th className="text-right py-2.5 px-3 font-medium" style={{ color: "#8B95A5" }} title="Marge nette = Prix de vente HTVA − Prix d'achat HTVA − Commission MediKong.">Marge nette</th>
                   <th className="text-center py-2.5 px-3 font-medium" style={{ color: "#8B95A5" }}>Stock</th>
                   <th className="text-center py-2.5 px-3 font-medium" style={{ color: "#8B95A5" }}>MOQ</th>
                   <th className="text-center py-2.5 px-3 font-medium" style={{ color: "#8B95A5" }}>Délai</th>
@@ -1537,6 +1539,15 @@ export default function VendorOffers() {
               <tbody>
                 {filteredOffers.map((offer: any) => {
                   const prod = offer.products as any;
+                  const purchase: number | null =
+                    offer.purchase_price_excl_vat != null
+                      ? Number(offer.purchase_price_excl_vat)
+                      : offer.purchase_price != null
+                        ? Number(offer.purchase_price)
+                        : null;
+                  const margin = commissionConfig
+                    ? computeMargin(Number(offer.price_excl_vat) || 0, purchase, commissionConfig)
+                    : null;
                   return (
                     <tr key={offer.id} className="hover:bg-[#F8FAFC]" style={{ borderBottom: "1px solid #E2E8F0" }}>
                       <td className="py-2.5 px-3">
@@ -1572,6 +1583,36 @@ export default function VendorOffers() {
                       <td className="py-2.5 px-3 text-[12px]" style={{ color: "#616B7C" }}>{prod?.brand_name || "—"}</td>
                       <td className="py-2.5 px-3 text-right font-medium">{Number(offer.price_excl_vat).toFixed(2)} €</td>
                       <td className="py-2.5 px-3 text-right">{Number(offer.price_incl_vat).toFixed(2)} €</td>
+                      <td className="py-2.5 px-3 text-right" title={purchase == null ? "Aucun prix d'achat saisi : la marge nette ne peut pas être calculée. Modifiez l'offre pour le renseigner." : undefined}>
+                        {purchase != null ? (
+                          <span style={{ color: "#1D2530" }}>{purchase.toFixed(2)} €</span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => openEdit(offer)}
+                            className="text-[11px] underline decoration-dotted hover:text-[#1B5BDA]"
+                            style={{ color: "#8B95A5" }}
+                          >
+                            Saisir
+                          </button>
+                        )}
+                      </td>
+                      <td className="py-2.5 px-3 text-right">
+                        {margin && margin.hasCost ? (
+                          <span
+                            className="font-semibold tabular-nums"
+                            style={{ color: margin.netMargin >= 0 ? "#059669" : "#EF4343" }}
+                            title={`Vente ${Number(offer.price_excl_vat).toFixed(2)} € − Achat ${purchase!.toFixed(2)} € − Commission ${margin.commission.toFixed(2)} €`}
+                          >
+                            {margin.netMargin.toFixed(2)} €
+                            <span className="text-[10px] font-normal ml-1" style={{ color: "#8B95A5" }}>
+                              ({margin.netMarginPct >= 0 ? "+" : ""}{margin.netMarginPct.toFixed(1)}%)
+                            </span>
+                          </span>
+                        ) : (
+                          <span className="text-[11px]" style={{ color: "#CBD5E1" }}>—</span>
+                        )}
+                      </td>
                       <td className="py-2.5 px-3 text-center">{offer.stock_quantity}</td>
                       <td className="py-2.5 px-3 text-center">{offer.moq}</td>
                       <td className="py-2.5 px-3 text-center">{offer.delivery_days}j</td>

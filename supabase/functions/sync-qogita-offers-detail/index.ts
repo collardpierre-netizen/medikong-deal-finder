@@ -1053,6 +1053,15 @@ async function processSingleProduct(
                   } catch (tErr: any) {
                     console.error(`[qogita.tiers] error offer=${upsertedOffer.id}: ${tErr.message}`);
                   }
+
+                  // Coherence check: flag if Qogita payload exposes both bundleSize and moq with diverging values
+                  await checkBundleMoqCoherence(sb, offer, {
+                    product_id: product.id,
+                    offer_id: upsertedOffer.id,
+                    gtin: product.gtin,
+                    country,
+                    vendor: sellerCode,
+                  });
                 }
               }
             }

@@ -706,8 +706,24 @@ async function syncOffers(
     })
     .eq("id", logId);
 
+  // Push aggregate counters & finalize the qogita_resync_logs row (if provided)
+  if (resyncLogId) {
+    try {
+      await sb.rpc("record_qogita_resync_progress", {
+        _log_id: resyncLogId,
+        _delta: {
+          products_processed: stats.products_enriched || 0,
+          offers_processed: stats.offers_upserted || 0,
+          offers_updated: stats.offers_upserted || 0,
+          tiers_synced: stats.tiers_synced || 0,
+        },
+      });
+    } catch (_) { /* never fail the sync because of logging */ }
+  }
+
   await sb.from("qogita_config").upsert({ key: "last_offers_sync_at", value: new Date().toISOString(), updated_at: new Date().toISOString() }, { onConflict: "key" });
   await sb.from("qogita_config").upsert({ key: "sync_status", value: "completed", updated_at: new Date().toISOString() }, { onConflict: "key" });
+
 
   return stats;
 }

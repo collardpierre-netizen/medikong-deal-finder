@@ -63,16 +63,21 @@ const useFilterOptions = () =>
     },
   });
 
-const useVendorOffers = (vendorId: string | undefined) =>
+type OfferStatusFilter = "active" | "inactive" | "all";
+
+const useVendorOffers = (vendorId: string | undefined, statusFilter: OfferStatusFilter = "active") =>
   useQuery({
-    queryKey: ["vendor-offers", vendorId],
+    queryKey: ["vendor-offers", vendorId, statusFilter],
     queryFn: async () => {
       if (!vendorId) return [];
-      const { data, error } = await supabase
+      let q = supabase
         .from("offers")
         .select("*, products(name, gtin, image_urls, slug, brand_name, category_name, cnk_code)")
         .eq("vendor_id", vendorId)
         .order("created_at", { ascending: false });
+      if (statusFilter === "active") q = q.eq("is_active", true);
+      else if (statusFilter === "inactive") q = q.eq("is_active", false);
+      const { data, error } = await q;
       if (error) throw error;
       return data || [];
     },

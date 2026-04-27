@@ -6,7 +6,7 @@ import VendorFormDialog from "@/components/admin/VendorFormDialog";
 import { useI18n } from "@/contexts/I18nContext";
 import { useVendors } from "@/hooks/useAdminData";
 import { getVendorAdminName } from "@/lib/vendor-display";
-import { Search, Plus, ExternalLink, Eye, EyeOff, LogIn, AlertTriangle, CheckCircle2, XCircle, Clock, ChevronDown, Trash2, ToggleLeft, ToggleRight } from "lucide-react";
+import { Search, Plus, ExternalLink, Eye, EyeOff, LogIn, AlertTriangle, CheckCircle2, XCircle, Clock, ChevronDown, Trash2, ToggleLeft, ToggleRight, Copy, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -32,7 +32,19 @@ const AdminVendeurs = () => {
   const [statusFilter, setStatusFilter] = useState<VStatus>("all");
   const [activeFilter, setActiveFilter] = useState<ActiveFilter>("all");
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const queryClient = useQueryClient();
+
+  const copyToClipboard = async (value: string, key: string, label: string) => {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopiedKey(key);
+      toast.success(`${label} copié`, { description: value });
+      setTimeout(() => setCopiedKey((k) => (k === key ? null : k)), 1500);
+    } catch {
+      toast.error("Impossible de copier");
+    }
+  };
 
   const toggleShowRealName = async (vendorId: string, current: boolean) => {
     await supabase.from("vendors").update({ show_real_name: !current } as any).eq("id", vendorId);
@@ -268,15 +280,55 @@ const AdminVendeurs = () => {
                       <span className="text-[13px] font-semibold" style={{ color: "#1D2530" }}>{getVendorAdminName(s)}</span>
                       <p className="text-[11px]" style={{ color: "#8B95A5" }}>{s.email || "—"}</p>
                     </td>
-                    <td className="px-3 py-3" onClick={() => navigate(`/admin/vendeurs/${s.id}`)}>
-                      <span className="px-2 py-1 rounded text-[11px] font-mono" style={{ backgroundColor: "#F1F5F9", color: "#616B7C" }}>{s.display_code || "—"}</span>
+                    <td className="px-3 py-3">
+                      <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                        <span
+                          className="px-2 py-1 rounded text-[11px] font-mono cursor-pointer"
+                          style={{ backgroundColor: "#F1F5F9", color: "#616B7C" }}
+                          onClick={() => navigate(`/admin/vendeurs/${s.id}`)}
+                          title={s.display_code || ""}
+                        >
+                          {s.display_code || "—"}
+                        </span>
+                        {s.display_code && (
+                          <button
+                            onClick={() => copyToClipboard(s.display_code!, `mk:${s.id}`, "ID MediKong")}
+                            className="p-1 rounded hover:bg-slate-100 transition-colors"
+                            title="Copier l'ID MediKong"
+                          >
+                            {copiedKey === `mk:${s.id}`
+                              ? <Check size={11} style={{ color: "#059669" }} />
+                              : <Copy size={11} style={{ color: "#8B95A5" }} />}
+                          </button>
+                        )}
+                      </div>
                     </td>
-                    <td className="px-3 py-3" onClick={() => navigate(`/admin/vendeurs/${s.id}`)}>
-                      {(s as any).qogita_seller_alias ? (
-                        <span className="px-2 py-1 rounded text-[11px] font-mono" style={{ backgroundColor: "#EFF6FF", color: "#1B5BDA" }}>{(s as any).qogita_seller_alias}</span>
-                      ) : (
-                        <span className="text-[11px]" style={{ color: "#CBD5E1" }}>—</span>
-                      )}
+                    <td className="px-3 py-3">
+                      <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                        {(s as any).qogita_seller_alias ? (
+                          <>
+                            <span
+                              className="px-2 py-1 rounded text-[11px] font-mono cursor-pointer"
+                              style={{ backgroundColor: "#EFF6FF", color: "#1B5BDA" }}
+                              onClick={() => navigate(`/admin/vendeurs/${s.id}`)}
+                              title={(s as any).qogita_seller_alias}
+                            >
+                              {(s as any).qogita_seller_alias}
+                            </span>
+                            <button
+                              onClick={() => copyToClipboard((s as any).qogita_seller_alias, `qg:${s.id}`, "ID Qogita")}
+                              className="p-1 rounded hover:bg-blue-50 transition-colors"
+                              title="Copier l'ID Qogita"
+                            >
+                              {copiedKey === `qg:${s.id}`
+                                ? <Check size={11} style={{ color: "#059669" }} />
+                                : <Copy size={11} style={{ color: "#1B5BDA" }} />}
+                            </button>
+                          </>
+                        ) : (
+                          <span className="text-[11px]" style={{ color: "#CBD5E1" }}>—</span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-3 py-3" onClick={() => navigate(`/admin/vendeurs/${s.id}`)}>
                       <span className="px-2 py-1 rounded-full text-[10px] font-bold" style={{ backgroundColor: "#F1F5F9", color: "#616B7C" }}>{s.type}</span>

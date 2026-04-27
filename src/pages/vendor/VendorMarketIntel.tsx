@@ -274,6 +274,40 @@ export default function VendorMarketIntel() {
   const [openRow, setOpenRow] = useState<IntelRow | null>(null);
   const [adjustCtx, setAdjustCtx] = useState<AdjustPriceContext | null>(null);
 
+  // Commission config + purchase price for the currently opened product
+  // (used to display MediKong commission and net-in-pocket inside the detail popup)
+  const { data: commissionConfig } = useVendorCommissionConfig(vendorId ?? null);
+  const { data: openRowPurchasePrice } = useQuery({
+    enabled: !!openRow?.my_offer_id && !!vendorId && !!openRow?.product_id,
+    queryKey: [
+      "vendor-purchase-price",
+      openRow?.my_offer_id,
+      vendorId,
+      openRow?.product_id,
+    ],
+    queryFn: async (): Promise<number | null> => {
+      if (!openRow?.my_offer_id || !vendorId || !openRow?.product_id) return null;
+      const [{ data: offer }, { data: dflt }] = await Promise.all([
+        supabase
+          .from("offers")
+          .select("purchase_price_excl_vat")
+          .eq("id", openRow.my_offer_id)
+          .maybeSingle(),
+        supabase
+          .from("vendor_product_costs")
+          .select("default_purchase_price_excl_vat")
+          .eq("vendor_id", vendorId)
+          .eq("product_id", openRow.product_id)
+          .maybeSingle(),
+      ]);
+      const o = (offer as any)?.purchase_price_excl_vat;
+      if (o != null) return Number(o);
+      const d = (dflt as any)?.default_purchase_price_excl_vat;
+      if (d != null) return Number(d);
+      return null;
+    },
+  });
+
   // Persist filters
   useEffect(() => {
     try {

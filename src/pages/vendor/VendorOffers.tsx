@@ -96,10 +96,11 @@ interface OfferForm {
   mov_amount: string;
   delivery_days: string;
   country_code: string;
+  category_ids: string[];
 }
 
 const emptyForm: OfferForm = {
-  product_id: "", product_name: "", price_excl_vat: "", vat_rate: "21", stock_quantity: "", moq: "1", mov_amount: "0", delivery_days: "3", country_code: "BE",
+  product_id: "", product_name: "", price_excl_vat: "", vat_rate: "21", stock_quantity: "", moq: "1", mov_amount: "0", delivery_days: "3", country_code: "BE", category_ids: [],
 };
 
 /* ─── Competitive Intelligence Module ─── */

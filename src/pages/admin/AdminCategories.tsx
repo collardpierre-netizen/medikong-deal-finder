@@ -277,6 +277,11 @@ const AdminCategories = () => {
         prodIds = (prods ?? []).map((r: any) => r.id);
       }
 
+      // Mémorise pour un éventuel "force" si garde-fou bloque
+      if (!newActive) {
+        lastBulkBatchRef.current = { table: "categories", ids: catIds, cascadeProductIds: [] };
+      }
+
       const { error } = await supabase
         .from("categories")
         .update({ is_active: newActive })
@@ -300,10 +305,7 @@ const AdminCategories = () => {
       qc.invalidateQueries({ queryKey: ["admin-categories"] });
       qc.invalidateQueries({ queryKey: ["category-bulk-actions"] });
     },
-    onError: (e: any) => toast.error(e.message),
-  });
-
-  // Toggle visibility of a category + its children + cascade to products (with audit log)
+    onError: handleBulkError,
   const toggleVisibility = useMutation({
     mutationFn: async ({ id, newActive }: { id: string; newActive: boolean }) => {
       // Collect all category IDs to update (this cat + all descendants)

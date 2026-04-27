@@ -362,6 +362,7 @@ const AdminCategories = () => {
       qc.invalidateQueries({ queryKey: ["category-bulk-actions"] });
     },
     onError: handleBulkError,
+  });
 
   const handleAutoTranslate = async (locale: "fr" | "nl" | "de") => {
     // Collect categories without translation

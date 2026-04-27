@@ -845,6 +845,25 @@ export default function VendorMarketIntel() {
                           <td className="px-3 py-2 text-right tabular-nums font-medium">
                             {fmt(o.price_excl_vat)}
                           </td>
+                          <td className="px-3 py-2 text-right tabular-nums">
+                            {commissionConfig ? (() => {
+                              const m = computeMargin(
+                                o.price_excl_vat,
+                                openRowPurchasePrice ?? null,
+                                commissionConfig,
+                              );
+                              return (
+                                <span
+                                  className={o.is_mine ? "font-semibold text-primary" : "text-muted-foreground"}
+                                  title={`Commission MediKong : −${fmtEur(m.commission)} (${m.commissionPct.toFixed(1)} %)`}
+                                >
+                                  {fmtEur(m.netRevenue)}
+                                </span>
+                              );
+                            })() : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </td>
                           <td className="px-3 py-2">
                             <StockBadge qty={o.stock_quantity} status={o.stock_status} />
                           </td>

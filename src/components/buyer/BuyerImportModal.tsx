@@ -80,7 +80,7 @@ const fetchBestOffers = async (productIds: string[]) => {
   while (true) {
     const { data, error } = await supabase
       .from("offers")
-      .select("id, product_id, price_excl_vat, vendors(name, company_name)")
+      .select("id, product_id, price_excl_vat, vendor_id")
       .in("product_id", productIds)
       .eq("is_active", true)
       .order("product_id", { ascending: true })

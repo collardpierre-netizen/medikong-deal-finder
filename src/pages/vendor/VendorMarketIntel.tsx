@@ -350,7 +350,17 @@ export default function VendorMarketIntel() {
     enabled: Boolean(vendorId),
   });
 
-  const filtered = useMemo(() => {
+  // Live-synced version of openRow: when the underlying query refetches
+  // (e.g. after editing the price via AdjustPriceModal), the popup reflects
+  // the new my_price_excl_vat / medikong_offers without needing a manual reload.
+  const liveOpenRow = useMemo<IntelRow | null>(() => {
+    if (!openRow) return null;
+    const fresh = rows.find(
+      (r) => r.product_id === openRow.product_id && r.country_code === openRow.country_code,
+    );
+    return fresh ?? openRow;
+  }, [openRow, rows]);
+
     const q = search.trim().toLowerCase();
     const ean = eanFilter.trim().toLowerCase();
     let arr = rows;

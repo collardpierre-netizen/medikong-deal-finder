@@ -30,6 +30,9 @@ import {
   Wand2,
 } from "lucide-react";
 import { AdjustPriceModal, type AdjustPriceContext } from "@/components/vendor/AdjustPriceModal";
+import { MarginInsightCard } from "@/components/vendor/MarginInsightCard";
+import { useVendorCommissionConfig } from "@/hooks/useVendorCommissionConfig";
+import { computeMargin, fmtEur } from "@/lib/vendorMargin";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -270,6 +273,40 @@ export default function VendorMarketIntel() {
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [openRow, setOpenRow] = useState<IntelRow | null>(null);
   const [adjustCtx, setAdjustCtx] = useState<AdjustPriceContext | null>(null);
+
+  // Commission config + purchase price for the currently opened product
+  // (used to display MediKong commission and net-in-pocket inside the detail popup)
+  const { data: commissionConfig } = useVendorCommissionConfig(vendorId ?? null);
+  const { data: openRowPurchasePrice } = useQuery({
+    enabled: !!openRow?.my_offer_id && !!vendorId && !!openRow?.product_id,
+    queryKey: [
+      "vendor-purchase-price",
+      openRow?.my_offer_id,
+      vendorId,
+      openRow?.product_id,
+    ],
+    queryFn: async (): Promise<number | null> => {
+      if (!openRow?.my_offer_id || !vendorId || !openRow?.product_id) return null;
+      const [{ data: offer }, { data: dflt }] = await Promise.all([
+        supabase
+          .from("offers")
+          .select("purchase_price_excl_vat")
+          .eq("id", openRow.my_offer_id)
+          .maybeSingle(),
+        supabase
+          .from("vendor_product_costs")
+          .select("default_purchase_price_excl_vat")
+          .eq("vendor_id", vendorId)
+          .eq("product_id", openRow.product_id)
+          .maybeSingle(),
+      ]);
+      const o = (offer as any)?.purchase_price_excl_vat;
+      if (o != null) return Number(o);
+      const d = (dflt as any)?.default_purchase_price_excl_vat;
+      if (d != null) return Number(d);
+      return null;
+    },
+  });
 
   // Persist filters
   useEffect(() => {
@@ -740,6 +777,28 @@ export default function VendorMarketIntel() {
           </DialogHeader>
           {openRow && (
             <div className="space-y-6">
+              {/* Marge & commission sur l'offre actuelle du vendeur */}
+              {commissionConfig && (
+                <section>
+                  <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
+                    <Wand2 size={14} /> Mon offre — marge & commission MediKong
+                  </h3>
+                  <MarginInsightCard
+                    breakdown={computeMargin(
+                      openRow.my_price_excl_vat,
+                      openRowPurchasePrice ?? null,
+                      commissionConfig,
+                    )}
+                    commissionModel={commissionConfig.commission_model}
+                  />
+                  {openRowPurchasePrice == null && (
+                    <p className="text-[11px] text-muted-foreground mt-1.5">
+                      Astuce : renseignez votre prix d'achat sur la fiche offre pour voir aussi votre marge nette.
+                    </p>
+                  )}
+                </section>
+              )}
+
               {/* Offres MediKong */}
               <section>
                 <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
@@ -751,6 +810,12 @@ export default function VendorMarketIntel() {
                       <tr>
                         <th className="px-3 py-2 text-left">Vendeur</th>
                         <th className="px-3 py-2 text-right">Prix HTVA</th>
+                        <th
+                          className="px-3 py-2 text-right"
+                          title="Net en poche estimé si vous vendiez à ce prix (prix − commission MediKong)"
+                        >
+                          Net après commission
+                        </th>
                         <th className="px-3 py-2 text-left">Statut</th>
                         <th className="px-3 py-2 text-center">Promo</th>
                         <th className="px-3 py-2 text-right">Délai</th>
@@ -779,6 +844,25 @@ export default function VendorMarketIntel() {
                           </td>
                           <td className="px-3 py-2 text-right tabular-nums font-medium">
                             {fmt(o.price_excl_vat)}
+                          </td>
+                          <td className="px-3 py-2 text-right tabular-nums">
+                            {commissionConfig ? (() => {
+                              const m = computeMargin(
+                                o.price_excl_vat,
+                                openRowPurchasePrice ?? null,
+                                commissionConfig,
+                              );
+                              return (
+                                <span
+                                  className={o.is_mine ? "font-semibold text-primary" : "text-muted-foreground"}
+                                  title={`Commission MediKong : −${fmtEur(m.commission)} (${m.commissionPct.toFixed(1)} %)`}
+                                >
+                                  {fmtEur(m.netRevenue)}
+                                </span>
+                              );
+                            })() : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
                           </td>
                           <td className="px-3 py-2">
                             <StockBadge qty={o.stock_quantity} status={o.stock_status} />

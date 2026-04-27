@@ -1264,6 +1264,22 @@ export default function VendorOffers() {
               </select>
             </div>
           </div>
+
+          {/* ─── Catégories de visibilité (obligatoire) ─── */}
+          <div className="mt-4">
+            <label className="text-[11px] block mb-1.5 font-medium" style={{ color: "#1D2530" }}>
+              Catégories où activer l'offre <span style={{ color: "#EF4343" }}>*</span>
+            </label>
+            <p className="text-[11px] mb-2" style={{ color: "#8B95A5" }}>
+              Cochez les catégories MediKong dans lesquelles cette offre doit être visible. L'offre n'apparaîtra dans le catalogue que pour les catégories sélectionnées.
+            </p>
+            <CategoryTreeSelector
+              selectedIds={form.category_ids}
+              onChange={ids => setForm(p => ({ ...p, category_ids: ids }))}
+              required
+            />
+          </div>
+
           {form.price_excl_vat && (
             <div className="mt-3 p-3 rounded-lg text-[12px]" style={{ backgroundColor: "#F8FAFC", color: "#616B7C" }}>
               Prix TTC : <strong style={{ color: "#1D2530" }}>{(parseFloat(form.price_excl_vat) * (1 + parseFloat(form.vat_rate) / 100)).toFixed(2)} €</strong>

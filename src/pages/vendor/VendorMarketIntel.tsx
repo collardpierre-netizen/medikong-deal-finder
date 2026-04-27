@@ -274,6 +274,16 @@ export default function VendorMarketIntel() {
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [openRow, setOpenRow] = useState<IntelRow | null>(null);
   const [adjustCtx, setAdjustCtx] = useState<AdjustPriceContext | null>(null);
+  // Tri & filtre du tableau "Offres MediKong" dans le détail
+  const [mkSortKey, setMkSortKey] = useState<"net" | "price" | null>(null);
+  const [mkSortDir, setMkSortDir] = useState<"asc" | "desc">("desc");
+  const [mkFilter, setMkFilter] = useState<"all" | "better" | "worse">("all");
+  // Reset tri/filtre quand on change de produit
+  useEffect(() => {
+    setMkSortKey(null);
+    setMkSortDir("desc");
+    setMkFilter("all");
+  }, [openRow?.product_id]);
 
   // Commission config + purchase price for the currently opened product
   // (used to display MediKong commission and net-in-pocket inside the detail popup)

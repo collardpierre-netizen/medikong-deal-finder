@@ -22,6 +22,59 @@ function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
+/**
+ * Coherence check: Qogita exposes the same "minimum bundle" concept under
+ * several field names (`bundleSize`, `bundle_size`, `moq`, `minOrderQuantity`,
+ * `minimumOrderQuantity`). When two candidates exist on the same payload but
+ * disagree, the offer is ambiguous and must be flagged for manual review.
+ *
+ * Logs the mismatch (deduped by product/offer/issue) into
+ * `offer_data_quality_logs` via the `log_offer_data_issue` RPC. Failures are
+ * swallowed to never break a sync run.
+ */
+async function checkBundleMoqCoherence(
+  sb: any,
+  payload: any,
+  ctx: { product_id: string; offer_id?: string | null; gtin?: string | null; country: string; vendor: string },
+): Promise<void> {
+  if (!payload || typeof payload !== "object") return;
+
+  const parseInt1 = (v: any): number | null => {
+    if (v === null || v === undefined || v === "") return null;
+    const n = parseInt(String(v), 10);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  };
+
+  const bundle = parseInt1(payload.bundleSize) ?? parseInt1(payload.bundle_size);
+  const moq =
+    parseInt1(payload.minOrderQuantity) ??
+    parseInt1(payload.moq) ??
+    parseInt1(payload.minimumOrderQuantity);
+
+  if (bundle === null || moq === null) return; // need both to compare
+  if (bundle === moq) return;
+
+  try {
+    await sb.rpc("log_offer_data_issue", {
+      _product_id: ctx.product_id,
+      _offer_id: ctx.offer_id ?? null,
+      _issue_code: "bundle_moq_mismatch",
+      _details: {
+        gtin: ctx.gtin,
+        country: ctx.country,
+        vendor: ctx.vendor,
+        bundle_size: bundle,
+        moq,
+        kept: Math.max(bundle, moq),
+        source: "sync-qogita-offers-detail",
+      },
+    });
+  } catch (err) {
+    console.warn("[bundle_moq_mismatch] log RPC failed", { gtin: ctx.gtin, err: String(err) });
+  }
+}
+
+
 // --- Qogita rate limiter (token bucket en mémoire) ---
 // Lisse les appels à ~4 req/s globales pour cette instance d'edge function,
 // indépendamment de la concurrence interne. Évite les pics 429.
@@ -836,11 +889,11 @@ async function processSingleProduct(
       const offerQid = variant?.qid ? `${variant.qid}-${country}` : `${product.gtin}-${country}`;
 
       // MOQ / MOV / tiers from variant payload (best-price branch)
-      const bpBundleRaw =
-        variant?.bundleSize ?? variant?.bundle_size ??
-        variant?.minOrderQuantity ?? variant?.moq ??
-        variant?.minimumOrderQuantity ?? 1;
-      const bpMoq = Math.max(1, parseInt(String(bpBundleRaw), 10) || 1);
+      // When both `bundleSize` and `moq` are exposed, take the MAX (a buyer must
+      // satisfy both constraints). Coherence check below will log the divergence.
+      const bpBundleVal = parseInt(String(variant?.bundleSize ?? variant?.bundle_size ?? "0"), 10) || 0;
+      const bpMoqVal = parseInt(String(variant?.minOrderQuantity ?? variant?.moq ?? variant?.minimumOrderQuantity ?? "0"), 10) || 0;
+      const bpMoq = Math.max(1, bpBundleVal, bpMoqVal);
       const bpMov = parseFloat(String(variant?.mov ?? variant?.minimumOrderValue ?? "0")) || 0;
       const bpRawTiers = extractRawTiers(variant);
 
@@ -889,6 +942,15 @@ async function processSingleProduct(
             if (inserted > 0) {
               parentStats.tiers_synced = (parentStats.tiers_synced || 0) + inserted;
             }
+
+            // Coherence check: flag if Qogita payload exposes both bundleSize and moq with diverging values
+            await checkBundleMoqCoherence(sb, variant, {
+              product_id: product.id,
+              offer_id: bpUpserted.id,
+              gtin: product.gtin,
+              country,
+              vendor: "qogita-best-price",
+            });
           }
         }
       }
@@ -931,12 +993,11 @@ async function processSingleProduct(
               const oQid = offer.qid || `${sellerCode}-${product.gtin}-${country}`;
 
               // --- MOQ / bundleSize mapping (Qogita "Bundles of N") ---
-              // Try multiple candidate field names for robustness
-              const bundleRaw =
-                offer.bundleSize ?? offer.bundle_size ??
-                offer.minOrderQuantity ?? offer.moq ??
-                offer.minimumOrderQuantity ?? 1;
-              const oMoq = Math.max(1, parseInt(String(bundleRaw), 10) || 1);
+              // Take MAX when both bundle* and moq fields are exposed (a buyer
+              // must satisfy both). Coherence check below logs the divergence.
+              const oBundleVal = parseInt(String(offer.bundleSize ?? offer.bundle_size ?? "0"), 10) || 0;
+              const oMoqVal = parseInt(String(offer.minOrderQuantity ?? offer.moq ?? offer.minimumOrderQuantity ?? "0"), 10) || 0;
+              const oMoq = Math.max(1, oBundleVal, oMoqVal);
 
               // --- Price tiers (degressive pricing by MOV threshold) ---
               const rawTiers: any[] = extractRawTiers(offer);
@@ -991,6 +1052,15 @@ async function processSingleProduct(
                   } catch (tErr: any) {
                     console.error(`[qogita.tiers] error offer=${upsertedOffer.id}: ${tErr.message}`);
                   }
+
+                  // Coherence check: flag if Qogita payload exposes both bundleSize and moq with diverging values
+                  await checkBundleMoqCoherence(sb, offer, {
+                    product_id: product.id,
+                    offer_id: upsertedOffer.id,
+                    gtin: product.gtin,
+                    country,
+                    vendor: sellerCode,
+                  });
                 }
               }
             }

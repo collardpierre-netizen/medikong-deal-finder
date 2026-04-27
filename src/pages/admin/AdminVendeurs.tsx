@@ -308,11 +308,17 @@ const AdminVendeurs = () => {
                         {(s as any).qogita_seller_alias ? (
                           <>
                             <span
-                              className="px-2 py-1 rounded text-[11px] font-mono cursor-pointer"
-                              style={{ backgroundColor: "#EFF6FF", color: "#1B5BDA" }}
+                              className="inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-mono font-semibold cursor-pointer border"
+                              style={{ backgroundColor: "#1B5BDA", color: "#FFFFFF", borderColor: "#1748B0" }}
                               onClick={() => navigate(`/admin/vendeurs/${s.id}`)}
-                              title={(s as any).qogita_seller_alias}
+                              title={`ID Qogita : ${(s as any).qogita_seller_alias}`}
                             >
+                              <span
+                                className="inline-flex items-center justify-center rounded-sm text-[9px] font-bold leading-none px-1 py-[2px]"
+                                style={{ backgroundColor: "#FFFFFF", color: "#1B5BDA" }}
+                              >
+                                Q
+                              </span>
                               {(s as any).qogita_seller_alias}
                             </span>
                             <button

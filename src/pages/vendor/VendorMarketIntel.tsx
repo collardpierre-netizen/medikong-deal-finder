@@ -370,7 +370,7 @@ export default function VendorMarketIntel() {
     }
   }, [search, eanFilter, statusFilter]);
 
-  const { data: rows = [], isLoading } = useQuery({
+  const { data: rows = [], isLoading, isFetching: isFetchingIntel } = useQuery({
     queryKey: ["vendor-market-intel", vendorId],
     queryFn: async (): Promise<IntelRow[]> => {
       if (!vendorId) return [];
@@ -458,6 +458,53 @@ export default function VendorMarketIntel() {
     ).length;
     return { total, winning, losingMedikong, losingExternal };
   }, [rows]);
+
+  /**
+   * Garde-fou anti "prix obsolète" pour le popup détail.
+   *
+   * Lorsqu'on ferme et rouvre rapidement la même ligne pendant qu'un refetch
+   * de `vendor-market-intel` est en cours, le `openRow` capturé au clic peut
+   * porter une valeur de `my_price_excl_vat` antérieure à la dernière
+   * sauvegarde locale (le patch chirurgical du cache peut être écrasé par
+   * le résultat d'un refetch en vol et la RPC peut être éventuellement
+   * cohérente). On combine donc trois sources et on prend la plus récente :
+   *   1) le snapshot `openRow` du clic ;
+   *   2) la version la plus fraîche du cache live (`rows`) pour ce
+   *      `my_offer_id`, comparée via `my_updated_at` ;
+   *   3) la dernière sauvegarde réussie en session
+   *      (`lastSaves[my_offer_id]`).
+   */
+  const safeOpenRow = useMemo<IntelRow | null>(() => {
+    if (!openRow) return null;
+    let row: IntelRow = openRow;
+    const liveRow = rows.find(
+      (r) => r.my_offer_id && r.my_offer_id === openRow.my_offer_id,
+    );
+    if (liveRow) {
+      const liveTs = liveRow.my_updated_at ? Date.parse(liveRow.my_updated_at) : 0;
+      const snapTs = openRow.my_updated_at ? Date.parse(openRow.my_updated_at) : 0;
+      if (liveTs >= snapTs) row = liveRow;
+    }
+    const ls = openRow.my_offer_id ? lastSaves[openRow.my_offer_id] : undefined;
+    if (ls) {
+      const rowTs = row.my_updated_at ? Date.parse(row.my_updated_at) : 0;
+      if (ls.savedAt >= rowTs && row.my_price_excl_vat !== ls.newPrice) {
+        row = {
+          ...row,
+          my_price_excl_vat: ls.newPrice,
+          my_updated_at: new Date(ls.savedAt).toISOString(),
+        };
+      }
+    }
+    return row;
+  }, [openRow, rows, lastSaves]);
+
+  /** True quand le popup affiche un prix forcé par le garde-fou. */
+  const openRowGuarded = !!(
+    openRow &&
+    safeOpenRow &&
+    safeOpenRow.my_price_excl_vat !== openRow.my_price_excl_vat
+  );
 
   return (
     <div className="space-y-6">
@@ -799,23 +846,42 @@ export default function VendorMarketIntel() {
           <DialogHeader>
             <DialogTitle className="text-base flex items-center justify-between gap-3">
               <div>
-                {openRow?.product_name}
-                <div className="text-xs font-normal text-muted-foreground mt-1">
-                  EAN {openRow?.gtin || "—"} · {openRow?.country_code}
+                {safeOpenRow?.product_name}
+                <div className="text-xs font-normal text-muted-foreground mt-1 flex items-center gap-2 flex-wrap">
+                  <span>
+                    EAN {safeOpenRow?.gtin || "—"} · {safeOpenRow?.country_code}
+                  </span>
+                  {openRowGuarded && (
+                    <span
+                      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-medium"
+                      title="Le serveur n'a pas encore répliqué votre dernière sauvegarde — affichage du prix le plus récent connu localement."
+                      aria-live="polite"
+                    >
+                      <Clock size={10} /> Prix synchronisé localement
+                    </span>
+                  )}
+                  {!openRowGuarded && isFetchingIntel && (
+                    <span
+                      className="inline-flex items-center gap-1 text-[10px] text-muted-foreground"
+                      aria-live="polite"
+                    >
+                      <Loader2 size={10} className="animate-spin" /> Mise à jour…
+                    </span>
+                  )}
                 </div>
               </div>
-              {openRow && (
+              {safeOpenRow && (
                 <button
                   onClick={() =>
                     setAdjustCtx({
-                      offerId: openRow.my_offer_id,
-                      productName: openRow.product_name,
-                      gtin: openRow.gtin,
-                      myPrice: openRow.my_price_excl_vat,
-                      bestMkPrice: openRow.best_medikong_competitor_price,
-                      bestExtPrice: openRow.best_external_price,
+                      offerId: safeOpenRow.my_offer_id,
+                      productName: safeOpenRow.product_name,
+                      gtin: safeOpenRow.gtin,
+                      myPrice: safeOpenRow.my_price_excl_vat,
+                      bestMkPrice: safeOpenRow.best_medikong_competitor_price,
+                      bestExtPrice: safeOpenRow.best_external_price,
                       vendorId,
-                      productId: openRow.product_id,
+                      productId: safeOpenRow.product_id,
                     })
                   }
                   className="shrink-0 inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
@@ -825,9 +891,14 @@ export default function VendorMarketIntel() {
               )}
             </DialogTitle>
           </DialogHeader>
-          {openRow && (() => {
+          {safeOpenRow && (() => {
+            // Alias local : tout le rendu du popup utilise la version
+            // garde-fou de la ligne (cf. `safeOpenRow`) pour ne jamais
+            // afficher un `my_price_excl_vat` antérieur à la dernière
+            // sauvegarde locale pendant un refetch en vol.
+            const openRow = safeOpenRow;
             // Prix utilisé pour les calculs : prix saisi en live dans le modal d'ajustement
-            // s'il est valide, sinon le prix de l'offre actuelle.
+            // s'il est valide, sinon le prix (garde-fou) de l'offre actuelle.
             const effectiveMyPrice =
               livePrice != null && livePrice > 0 ? livePrice : openRow.my_price_excl_vat;
             const isLive = livePrice != null && livePrice > 0 && livePrice !== openRow.my_price_excl_vat;

@@ -992,7 +992,8 @@ function ProfileRulesEditor({ offerId, basePrice }: { offerId: string | null; ba
 /* ─── Main Page ─── */
 export default function VendorOffers() {
   const { data: vendor } = useCurrentVendor();
-  const { data: offers = [], isLoading } = useVendorOffers(vendor?.id);
+  const [statusFilter, setStatusFilter] = useState<OfferStatusFilter>("active");
+  const { data: offers = [], isLoading } = useVendorOffers(vendor?.id, statusFilter);
   const qc = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
   const { importFile, importing } = useOfferImport(vendor?.id);

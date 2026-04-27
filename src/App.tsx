@@ -15,6 +15,7 @@ import { CookieConsent } from "@/components/layout/CookieConsent";
 import { HelmetProvider } from "react-helmet-async";
 import { Loader2 } from "lucide-react";
 import { lazyWithRetry } from "@/lib/lazy-with-retry";
+import { SafeBoundary } from "@/components/SafeBoundary";
 
 // Page loader for lazy routes
 function PageLoader() {

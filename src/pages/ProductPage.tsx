@@ -731,7 +731,7 @@ export default function ProductPage() {
     queryFn: async () => {
       const { data: prod } = await supabase.from("products").select("category_id, category_name").eq("id", product!.id).single();
       if (!prod?.category_id) return null;
-      const { data: cat } = await supabase.from("categories").select("id, name, slug, parent_id").eq("id", prod.category_id).single();
+      const { data: cat } = await supabase.from("categories").select("id, name, slug, parent_id, vat_rate").eq("id", prod.category_id).single();
       if (!cat) return null;
       let parent = null;
       if (cat.parent_id) {
@@ -1409,6 +1409,8 @@ export default function ProductPage() {
                   </TabsContent>
 
                   {/* ── Tab: Offres externes ── */}
+                  {/* Note: les prix relevés chez les vendeurs externes (e-commerce B2B) sont TTC.
+                      On dérive le HTVA via le taux de TVA de la catégorie (fallback 21%). */}
                   <TabsContent value="external">
                     {externalOfferItems.length > 0 ? (
                       <div className="space-y-3">
@@ -1416,6 +1418,15 @@ export default function ProductPage() {
                           const vendor = eo.external_vendors;
                           const stockIcon = eo.stock_status === "in_stock" ? "🟢" : eo.stock_status === "limited" ? "🟡" : eo.stock_status === "out_of_stock" ? "🔴" : "⚪";
                           const stockLabel = eo.stock_status === "in_stock" ? "En stock" : eo.stock_status === "limited" ? "Stock limité" : eo.stock_status === "out_of_stock" ? "Rupture" : "Stock inconnu";
+
+                          // Prix source = TTC (relevés sur sites e-commerce). On dérive le HTVA.
+                          const tvaRate = Number((categoryData?.category as any)?.vat_rate ?? 21);
+                          const priceTTC = Number(eo.unit_price) || 0;
+                          const priceHTVA = priceTTC ? Math.round((priceTTC / (1 + tvaRate / 100)) * 100) / 100 : 0;
+                          const displayPrice = isTVAC ? priceTTC : priceHTVA;
+                          const secondaryPrice = isTVAC ? priceHTVA : priceTTC;
+                          const priceLabel = isTVAC ? "TVAC" : "HTVA";
+                          const secondaryLabel = isTVAC ? "HTVA" : "TVAC";
 
                           const handleClick = async () => {
                             // Track the lead
@@ -1436,7 +1447,13 @@ export default function ProductPage() {
                             <div key={eo.id} className="border border-border rounded-xl p-4 flex items-center justify-between gap-4">
                               <div className="flex items-center gap-3 min-w-0">
                                 {vendor?.logo_url ? (
-                                  <img src={vendor.logo_url} alt={vendor.name} className="w-10 h-10 rounded-lg object-contain border border-border" />
+                                  <img
+                                    src={vendor.logo_url}
+                                    alt={vendor.name}
+                                    referrerPolicy="no-referrer"
+                                    className="w-10 h-10 rounded-lg object-contain bg-white border border-border"
+                                    onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                                  />
                                 ) : (
                                   <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center text-sm font-bold text-muted-foreground">
                                     {vendor?.name?.charAt(0)?.toUpperCase() || "?"}
@@ -1452,7 +1469,13 @@ export default function ProductPage() {
                               </div>
                               <div className="flex items-center gap-4 shrink-0">
                                 <div className="text-right">
-                                  <span className="text-lg font-bold text-green-700">{Number(eo.unit_price).toFixed(2)} €</span>
+                                  <div className="flex items-baseline justify-end gap-1.5">
+                                    <span className="text-lg font-bold text-foreground tabular-nums">{formatEur(displayPrice)} €</span>
+                                    <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">{priceLabel}</span>
+                                  </div>
+                                  <p className="text-[11px] text-muted-foreground tabular-nums">
+                                    {formatEur(secondaryPrice)} € {secondaryLabel} <span className="opacity-60">· TVA {tvaRate}%</span>
+                                  </p>
                                   {Number(eo.mov_amount || 0) > 0 && (
                                     <p className="text-[11px] text-muted-foreground">MOV {Number(eo.mov_amount).toFixed(0)} €</p>
                                   )}
@@ -1460,8 +1483,7 @@ export default function ProductPage() {
                                 {eo.product_url && (
                                   <button
                                     onClick={handleClick}
-                                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-opacity hover:opacity-90"
-                                    style={{ backgroundColor: "#F97316", color: "white" }}
+                                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
                                   >
                                     Voir l'offre <ExternalLink size={14} />
                                   </button>
@@ -1470,6 +1492,9 @@ export default function ProductPage() {
                             </div>
                           );
                         })}
+                        <p className="text-[11px] text-muted-foreground italic px-1">
+                          ⓘ Prix relevés en TTC sur les sites des vendeurs externes. Le HTVA est calculé sur base du taux de TVA de la catégorie.
+                        </p>
                       </div>
                     ) : (
                       <div className="border border-border rounded-xl p-8 text-center">

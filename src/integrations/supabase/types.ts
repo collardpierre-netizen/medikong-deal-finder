@@ -180,51 +180,183 @@ export type Database = {
         }
         Relationships: []
       }
+      brand_reviews: {
+        Row: {
+          brand_id: string
+          brand_slug: string
+          comment: string | null
+          created_at: string
+          id: string
+          is_published: boolean
+          rating_delivery: number
+          rating_documentation: number
+          rating_margin: number
+          rating_quality: number
+          rating_support: number
+          reviewer_city: string | null
+          reviewer_initials: string
+          reviewer_user_id: string
+          updated_at: string
+          verified_buyer_orders_count: number
+        }
+        Insert: {
+          brand_id: string
+          brand_slug: string
+          comment?: string | null
+          created_at?: string
+          id?: string
+          is_published?: boolean
+          rating_delivery: number
+          rating_documentation: number
+          rating_margin: number
+          rating_quality: number
+          rating_support: number
+          reviewer_city?: string | null
+          reviewer_initials: string
+          reviewer_user_id: string
+          updated_at?: string
+          verified_buyer_orders_count?: number
+        }
+        Update: {
+          brand_id?: string
+          brand_slug?: string
+          comment?: string | null
+          created_at?: string
+          id?: string
+          is_published?: boolean
+          rating_delivery?: number
+          rating_documentation?: number
+          rating_margin?: number
+          rating_quality?: number
+          rating_support?: number
+          reviewer_city?: string | null
+          reviewer_initials?: string
+          reviewer_user_id?: string
+          updated_at?: string
+          verified_buyer_orders_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brand_reviews_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brand_logistics_stats"
+            referencedColumns: ["brand_id"]
+          },
+          {
+            foreignKeyName: "brand_reviews_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brands"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       brands: {
         Row: {
+          afmps_status: string | null
+          ce_marking: boolean | null
+          certifications: string[] | null
+          country_hq: string | null
           country_of_origin: string | null
+          created_at: string
           description: string | null
+          distribution_type: string | null
+          google_trends_12m: Json | null
+          google_trends_trend_pct: number | null
           id: string
+          inami_categories: Json | null
+          inami_reimbursement_pct: number | null
           is_active: boolean
           is_featured: boolean
+          is_top20: boolean
           logo_url: string | null
+          main_category: string | null
           manufacturer_id: string | null
+          manufacturing_countries: string[] | null
           name: string
+          officinal_coverage_pct: number | null
+          parent_company: string | null
+          press_mentions_12m: number | null
           product_count: number
           qogita_qid: string | null
           slug: string
+          sources_last_updated: string | null
+          subcategories: string[] | null
           synced_at: string | null
+          updated_at: string
           website_url: string | null
+          year_entered_be_market: number | null
         }
         Insert: {
+          afmps_status?: string | null
+          ce_marking?: boolean | null
+          certifications?: string[] | null
+          country_hq?: string | null
           country_of_origin?: string | null
+          created_at?: string
           description?: string | null
+          distribution_type?: string | null
+          google_trends_12m?: Json | null
+          google_trends_trend_pct?: number | null
           id?: string
+          inami_categories?: Json | null
+          inami_reimbursement_pct?: number | null
           is_active?: boolean
           is_featured?: boolean
+          is_top20?: boolean
           logo_url?: string | null
+          main_category?: string | null
           manufacturer_id?: string | null
+          manufacturing_countries?: string[] | null
           name: string
+          officinal_coverage_pct?: number | null
+          parent_company?: string | null
+          press_mentions_12m?: number | null
           product_count?: number
           qogita_qid?: string | null
           slug: string
+          sources_last_updated?: string | null
+          subcategories?: string[] | null
           synced_at?: string | null
+          updated_at?: string
           website_url?: string | null
+          year_entered_be_market?: number | null
         }
         Update: {
+          afmps_status?: string | null
+          ce_marking?: boolean | null
+          certifications?: string[] | null
+          country_hq?: string | null
           country_of_origin?: string | null
+          created_at?: string
           description?: string | null
+          distribution_type?: string | null
+          google_trends_12m?: Json | null
+          google_trends_trend_pct?: number | null
           id?: string
+          inami_categories?: Json | null
+          inami_reimbursement_pct?: number | null
           is_active?: boolean
           is_featured?: boolean
+          is_top20?: boolean
           logo_url?: string | null
+          main_category?: string | null
           manufacturer_id?: string | null
+          manufacturing_countries?: string[] | null
           name?: string
+          officinal_coverage_pct?: number | null
+          parent_company?: string | null
+          press_mentions_12m?: number | null
           product_count?: number
           qogita_qid?: string | null
           slug?: string
+          sources_last_updated?: string | null
+          subcategories?: string[] | null
           synced_at?: string | null
+          updated_at?: string
           website_url?: string | null
+          year_entered_be_market?: number | null
         }
         Relationships: [
           {
@@ -1629,6 +1761,13 @@ export type Database = {
           vendor_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "margin_rules_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brand_logistics_stats"
+            referencedColumns: ["brand_id"]
+          },
           {
             foreignKeyName: "margin_rules_brand_id_fkey"
             columns: ["brand_id"]
@@ -3562,6 +3701,13 @@ export type Database = {
           width?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "products_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brand_logistics_stats"
+            referencedColumns: ["brand_id"]
+          },
           {
             foreignKeyName: "products_brand_id_fkey"
             columns: ["brand_id"]
@@ -6795,6 +6941,13 @@ export type Database = {
             foreignKeyName: "vendor_price_alert_rules_brand_id_fkey"
             columns: ["brand_id"]
             isOneToOne: false
+            referencedRelation: "brand_logistics_stats"
+            referencedColumns: ["brand_id"]
+          },
+          {
+            foreignKeyName: "vendor_price_alert_rules_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
             referencedRelation: "brands"
             referencedColumns: ["id"]
           },
@@ -7355,6 +7508,17 @@ export type Database = {
       }
     }
     Views: {
+      brand_logistics_stats: {
+        Row: {
+          avg_delivery_days: number | null
+          avg_order_value: number | null
+          brand_id: string | null
+          brand_slug: string | null
+          order_count_90d: number | null
+          stock_availability_pct: number | null
+        }
+        Relationships: []
+      }
       customer_order_lines: {
         Row: {
           fulfillment_status:
@@ -8036,6 +8200,7 @@ export type Database = {
           read_ct: number
         }[]
       }
+      recompute_brand_top20: { Args: never; Returns: undefined }
       record_qogita_endpoint_error: {
         Args: {
           _endpoint: string
@@ -8059,6 +8224,10 @@ export type Database = {
       update_brand_product_counts: { Args: never; Returns: undefined }
       update_manufacturer_product_counts: { Args: never; Returns: undefined }
       upsert_market_prices: { Args: { rows: Json }; Returns: number }
+      user_has_ordered_brand: {
+        Args: { _brand_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       adjustment_trigger: "manual" | "quick_align" | "auto_align"

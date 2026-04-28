@@ -112,6 +112,43 @@ export async function exportProducts() {
   }
 }
 
+// Détecte si une erreur PostgREST/réseau mérite un retry (timeout DB, coupure réseau, 5xx, 429)
+function isTransientError(e: any): boolean {
+  if (!e) return false;
+  const code = String(e.code || "").toUpperCase();
+  const msg = String(e.message || "").toLowerCase();
+  // Postgres : statement_timeout, connection_failure, admin_shutdown, serialization_failure
+  if (["57014", "08006", "08000", "08003", "57P01", "40001", "53300"].includes(code)) return true;
+  // PostgREST / fetch : timeouts, network failure, abort, gateway errors
+  if (msg.includes("timeout") || msg.includes("statement timeout")) return true;
+  if (msg.includes("failed to fetch") || msg.includes("network") || msg.includes("aborted")) return true;
+  if (msg.includes("502") || msg.includes("503") || msg.includes("504") || msg.includes("429")) return true;
+  return false;
+}
+
+// Wrapper retry avec backoff exponentiel + jitter. Notifie via onAttempt pour UI.
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  opts: { label: string; maxAttempts?: number; baseDelayMs?: number; onAttempt?: (attempt: number, lastError: any) => void } = { label: "op" }
+): Promise<T> {
+  const maxAttempts = opts.maxAttempts ?? 4;
+  const base = opts.baseDelayMs ?? 800;
+  let lastErr: any;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await fn();
+    } catch (e) {
+      lastErr = e;
+      if (attempt >= maxAttempts || !isTransientError(e)) throw e;
+      const delay = base * Math.pow(2, attempt - 1) + Math.floor(Math.random() * 250);
+      opts.onAttempt?.(attempt, e);
+      console.warn(`[retry] ${opts.label} échec tentative ${attempt}/${maxAttempts}, retry dans ${delay}ms`, e);
+      await new Promise(r => setTimeout(r, delay));
+    }
+  }
+  throw lastErr;
+}
+
 export async function exportOffers(opts?: { activeOnly?: boolean }) {
   const activeOnly = opts?.activeOnly ?? true;
   const toastId = toast.loading("Export offres en cours...");
@@ -120,6 +157,7 @@ export async function exportOffers(opts?: { activeOnly?: boolean }) {
     pages: 0,
     offers_loaded: 0,
     last_id: null as string | null,
+    retries: 0,
     last_error: null as any,
   };
   try {
@@ -128,18 +166,29 @@ export async function exportOffers(opts?: { activeOnly?: boolean }) {
     const offers: any[] = [];
     let lastId: string | null = null;
     while (true) {
-      let q = supabase
-        .from("offers")
-        .select("id, product_id, vendor_id, country_code, price_excl_vat, price_incl_vat, vat_rate, stock_quantity, stock_status, moq, mov, mov_amount, mov_currency, delivery_days, is_active, purchase_price, qogita_base_price, applied_margin_percentage, margin_amount, is_qogita_backed")
-        .order("id", { ascending: true })
-        .limit(PAGE);
-      if (activeOnly) q = q.eq("is_active", true);
-      if (lastId) q = q.gt("id", lastId);
-      const { data, error } = await q;
-      if (error) {
-        diag.last_error = error;
-        throw error;
-      }
+      const pageNum = diag.pages + 1;
+      const { data, error } = await withRetry(
+        async () => {
+          let q = supabase
+            .from("offers")
+            .select("id, product_id, vendor_id, country_code, price_excl_vat, price_incl_vat, vat_rate, stock_quantity, stock_status, moq, mov, mov_amount, mov_currency, delivery_days, is_active, purchase_price, qogita_base_price, applied_margin_percentage, margin_amount, is_qogita_backed")
+            .order("id", { ascending: true })
+            .limit(PAGE);
+          if (activeOnly) q = q.eq("is_active", true);
+          if (lastId) q = q.gt("id", lastId);
+          const res = await q;
+          if (res.error) throw res.error;
+          return res;
+        },
+        {
+          label: `offers page ${pageNum}`,
+          onAttempt: (attempt) => {
+            diag.retries += 1;
+            toast.loading(`Réseau instable — nouvelle tentative (${attempt}) page ${pageNum}…`, { id: toastId });
+          },
+        }
+      );
+      if (error) { diag.last_error = error; throw error; }
       if (!data || data.length === 0) break;
       offers.push(...data);
       lastId = data[data.length - 1].id;
@@ -157,23 +206,48 @@ export async function exportOffers(opts?: { activeOnly?: boolean }) {
     const productMap = new Map<string, any>();
     for (let i = 0; i < productIds.length; i += 500) {
       const slice = productIds.slice(i, i + 500);
-      const { data, error } = await supabase
-        .from("products")
-        .select("id, gtin, name, cnk_code, brand_name, category_name")
-        .in("id", slice);
-      if (error) { diag.last_error = error; throw error; }
-      (data || []).forEach(p => productMap.set(p.id, p));
+      const batchNum = Math.floor(i / 500) + 1;
+      const data = await withRetry(
+        async () => {
+          const res = await supabase
+            .from("products")
+            .select("id, gtin, name, cnk_code, brand_name, category_name")
+            .in("id", slice);
+          if (res.error) throw res.error;
+          return res.data || [];
+        },
+        {
+          label: `products batch ${batchNum}`,
+          onAttempt: (attempt) => {
+            diag.retries += 1;
+            toast.loading(`Réseau instable — retry produits batch ${batchNum} (${attempt})…`, { id: toastId });
+          },
+        }
+      );
+      data.forEach(p => productMap.set(p.id, p));
       toast.loading(`Enrichissement produits... ${productMap.size.toLocaleString()}/${productIds.length.toLocaleString()}`, { id: toastId });
     }
 
     const vendorMap = new Map<string, any>();
     if (vendorIds.length > 0) {
-      const { data, error } = await supabase
-        .from("vendors")
-        .select("id, company_name, display_code, name")
-        .in("id", vendorIds);
-      if (error) { diag.last_error = error; throw error; }
-      (data || []).forEach(v => vendorMap.set(v.id, v));
+      const data = await withRetry(
+        async () => {
+          const res = await supabase
+            .from("vendors")
+            .select("id, company_name, display_code, name")
+            .in("id", vendorIds);
+          if (res.error) throw res.error;
+          return res.data || [];
+        },
+        {
+          label: "vendors",
+          onAttempt: (attempt) => {
+            diag.retries += 1;
+            toast.loading(`Réseau instable — retry vendeurs (${attempt})…`, { id: toastId });
+          },
+        }
+      );
+      data.forEach(v => vendorMap.set(v.id, v));
     }
 
     const rows = offers.map((o: any) => {
@@ -208,24 +282,32 @@ export async function exportOffers(opts?: { activeOnly?: boolean }) {
     toast.loading(`Génération XLSX (${rows.length.toLocaleString()} lignes)...`, { id: toastId });
     await new Promise(r => setTimeout(r, 50));
     exportToXlsx(rows, activeOnly ? "medikong-offres-actives" : "medikong-offres", "Offres");
-    toast.success(`${rows.length.toLocaleString()} offres exportées`, { id: toastId });
+    const retrySuffix = diag.retries > 0 ? ` (après ${diag.retries} reprise${diag.retries > 1 ? "s" : ""})` : "";
+    toast.success(`${rows.length.toLocaleString()} offres exportées${retrySuffix}`, { id: toastId });
   } catch (e: any) {
-    // Diagnostic complet : code Postgres + message + page atteinte
     const pgCode = e?.code || "—";
     const pgMsg = e?.message || String(e);
     const pgHint = e?.hint || e?.details || "";
+    const transient = isTransientError(e);
     console.error("[exportOffers] FAIL", { ...diag, error: e });
-    toast.error(
-      `Export offres échoué (${pgCode}) après ${diag.offers_loaded.toLocaleString()} lignes`,
-      {
-        id: toastId,
-        description: `${pgMsg}${pgHint ? ` — ${pgHint}` : ""}`,
-        duration: 15000,
-      }
-    );
-    if (pgCode === "57014") {
-      toast.message("Astuce : la base a timeout. Réessayez ou filtrez par vendeur/pays.", { duration: 10000 });
+
+    let title = `Export offres échoué (${pgCode}) après ${diag.offers_loaded.toLocaleString()} lignes`;
+    let description = `${pgMsg}${pgHint ? ` — ${pgHint}` : ""}`;
+    let hint: string | null = null;
+
+    if (pgCode === "57014" || pgMsg.toLowerCase().includes("timeout")) {
+      title = `Timeout base de données après ${diag.offers_loaded.toLocaleString()} lignes`;
+      hint = "La base est surchargée. Patientez 1 min puis relancez, ou filtrez par vendeur/pays pour réduire le volume.";
+    } else if (pgMsg.toLowerCase().includes("failed to fetch") || pgMsg.toLowerCase().includes("network")) {
+      title = "Connexion réseau interrompue";
+      description = `Impossible de joindre le serveur après ${diag.retries} tentatives.`;
+      hint = "Vérifiez votre connexion internet puis relancez l'export.";
+    } else if (transient) {
+      hint = `Erreur transitoire après ${diag.retries} reprises. Relancez l'export dans quelques instants.`;
     }
+
+    toast.error(title, { id: toastId, description, duration: 15000 });
+    if (hint) toast.message(hint, { duration: 12000 });
   }
 }
 

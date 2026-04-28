@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   Shield, Truck, TrendingUp, Users, CheckCircle2, AlertTriangle, Info,
-  XCircle, MinusCircle, Star,
+  XCircle, MinusCircle, Star, ExternalLink,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";

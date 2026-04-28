@@ -1,91 +1,89 @@
-# Sprint 1 — Fondations i18n anglaises
+# Option A — Write-through cache pour les traductions live
 
-Objectif : faire de l'anglais une **langue de 1ère classe** dans toute l'infrastructure (DB, helpers, contextes, sélecteur), sans encore traduire le contenu UI ni le catalogue. À la fin du sprint, basculer en EN affichera l'UI core en anglais et le catalogue en fallback (anglais d'origine Qogita ou FR si pas de traduction).
+## Diagnostic préalable (important)
 
-## Périmètre IN
-1. **Base de données** : ajouter colonnes `_en` partout où existent déjà `_fr/_nl/_de`, étendre l'auto-translate.
-2. **Code i18n** : unifier sur `i18next`, supprimer le legacy `I18nContext`, ajouter `en` partout.
-3. **Sélecteur de langue** : exposer EN dans le `LanguageSelector`.
-4. **SEO de base** : ajouter `hreflang="en"` dans la home et les pages catalogue (sitemap multilingue minimal).
-5. **Compléter `en.json`** des chaînes UI core (navigation, boutons, formulaires) — pas les pages contenu.
+En lisant le code, j'ai constaté deux choses qui changent la priorité :
 
-## Périmètre OUT (Sprints 2 & 3)
-- Traduction des pages contenu (legal, trust, segment, entreprise, ReStock landing)
-- Templates emails React-Email en EN
-- Batch d'auto-traduction de tout le catalogue
-- Revue juridique CGV/mentions EN
-- Traduction des FAQ ReStock & articles d'aide
+1. **`useAutoTranslate` appelle une edge function `translate` qui n'existe pas** dans `supabase/functions/` (il y a `auto-translate` et `batch-translate-products` mais pas `translate`). Donc actuellement, le fallback live **échoue silencieusement** et retourne le texte original — il n'y a en réalité **pas encore de coûts AI du switch de langue**, mais aussi pas de traduction visible.
 
----
+2. **`useAutoTranslate`/`TranslationBadge` ne sont en fait branchés nulle part** dans des pages produits (uniquement définis et auto-référencés). Les traductions visibles passent toutes par `getLocalizedName` / `getLocalizedDescription` qui lisent les colonnes `*_en` en base.
 
-## Détail technique
+Donc l'option A doit faire deux choses : (a) **réparer** le fallback en pointant vers la vraie edge function, et (b) ajouter le **write-through cache** pour qu'un texte traduit ne soit payé qu'une seule fois, jamais re-payé même par un autre utilisateur.
 
-### 1. Migration DB
-Ajouter colonnes (toutes nullable, pas de défaut) :
-- `products` : `name_en`, `description_en`, `short_description_en`
-- `categories` : `name_en`, `description_en`
-- `brands` : `description_en` (le `name` reste neutre)
-- `manufacturers` : `description_en`
-- `cms_hero_banners` : `title_en`, `subtitle_en`, `cta_label_en`
-- `cms_sections` : `title_en`, `body_en`
-- `restock_faq_items` : `question_en`, `answer_en`
+## Ce qu'on construit
 
-Snapshot `*_backup_20260428_en` des 3 plus grosses tables (products, categories, brands) **avant** l'`ALTER TABLE`, conformément à notre process de backup ciblé.
+### 1. Nouvelle edge function `translate-and-cache`
+Remplace l'appel cassé vers `translate`. Signature simple :
+- Input : `{ texts: string[], targetLang, sourceLang, productId?, field? }`
+- Étape 1 : si `productId` + `field` fournis → vérifier en DB que la colonne (`name_en`, `short_description_en`, `description_en`, etc.) est toujours `NULL`. Si déjà remplie → renvoyer la valeur DB, **zéro appel AI**.
+- Étape 2 : sinon, appeler Lovable AI Gateway (`google/gemini-2.5-flash-lite`).
+- Étape 3 : **écrire la traduction dans la colonne correspondante** du produit (write-through).
+- Étape 4 : retourner la traduction au client.
 
-### 2. Edge function `auto-translate-catalog`
-- Étendre l'array de langues cibles : `['fr','nl','de']` → `['fr','nl','de','en']`
-- Source = `name` (anglais d'origine Qogita) → si `lang === 'en'` et `name_en` vide, copie directe `name_en = name` (pas d'appel AI nécessaire pour Qogita)
-- Pour les produits non-Qogita, appel `google/gemini-2.5-flash-lite` via Lovable AI Gateway
+Bénéfices :
+- Payé 1 fois par produit × langue, jamais re-payé.
+- Visible immédiatement par tous les autres utilisateurs (aussi les anonymes via `getLocalizedName`).
+- Bon pour le SEO (la traduction finit par être servie en HTML directement).
+- Gère 429/402 et les renvoie proprement au client.
 
-### 3. Helpers de localisation
-**`src/lib/localization.ts`** :
-```ts
-if (currentLang === "en" && item.name_en) return item.name_en;
-// fallback existant inchangé
+### 2. Nouvelle table `translation_cache` (pour les textes hors produits)
+Pour les textes qui ne viennent pas d'une colonne `products` (ex. nom de catégorie côté breadcrumb si pas encore traduit, label dynamique d'une marque, etc.) :
 ```
-Idem `getLocalizedDescription`.
+translation_cache (
+  source_hash text PK,        -- sha256(sourceLang:targetLang:text)
+  source_lang text,
+  target_lang text,
+  source_text text,
+  translated_text text,
+  hits int default 1,
+  created_at timestamptz,
+  last_used_at timestamptz
+)
+```
+RLS : lecture publique (anon+authenticated), écriture service-role uniquement (via l'edge function).
+Garantit que **deux utilisateurs différents ne paient jamais 2× la même traduction**, même hors catalogue.
 
-### 4. Contexte i18n unifié
-- **Supprimer** `src/contexts/I18nContext.tsx` (legacy, ne supporte que fr/nl/de) → faire grep des usages, remplacer par `useTranslation()` de `react-i18next`
-- Migrer le dictionnaire interne du legacy vers `src/i18n/locales/{fr,nl,de,en}.json` (clés admin sidebar/topbar principalement)
-- `LANGUAGE_CONFIG` : `en` est déjà déclaré, vérifier le rendu du flag/label
+### 3. Refactor `useAutoTranslate`
+- Pointe vers `translate-and-cache` (au lieu de `translate` qui n'existe pas).
+- Accepte un paramètre optionnel `{ productId, field }` pour activer le write-through colonne produit.
+- Garde le cache mémoire navigateur pour éviter les allers-retours dans la même session.
+- Surface les erreurs 429/402 via toast (aujourd'hui silencieux).
 
-### 5. Sélecteur de langue
-`src/components/LanguageSelector.tsx` : confirmer que les 4 langues sont listées (déjà OK selon `SUPPORTED_LANGUAGES`).
+### 4. Mini compteur admin (bonus, 5 min)
+Dans `/admin/i18n-pilot`, ajouter une petite ligne :
+- Nombre de traductions live générées aujourd'hui (count sur `translation_cache.created_at`)
+- Top 10 textes les plus demandés (`hits desc`)
+→ permet de voir si tu dois lancer le batch complet pour des produits spécifiques.
 
-### 6. `translation-mappings.ts`
-Ajouter `EN_TO_EN` (identité, ou mieux : court-circuit dans `autoTranslate` si `locale === 'en'`).
+## Ce qu'on ne fait PAS dans cette étape
 
-### 7. Compléter `src/i18n/locales/en.json`
-Couvrir uniquement les **clés UI core** déjà présentes en FR :
-- Navigation principale + sidebars (admin, vendeur, ReStock)
-- Boutons globaux (save/cancel/delete/etc.)
-- Labels formulaires onboarding
-- Messages toast système
-Pas les pages contenu (legal, trust, etc. → Sprint 2).
+- Pas de désactivation du fallback (tu peux toujours afficher de l'EN pour des produits non encore traduits).
+- Pas de batch complet du catalogue (c'est l'option B, à faire ensuite).
+- Pas de modification des composants existants — on répare juste la mécanique sous-jacente.
 
-### 8. SEO minimal
-- Ajouter balises `<link rel="alternate" hreflang="en" href="..."/>` sur `HomePage`, `CataloguePage`, `BrandDetailPage`
-- Étendre l'edge function sitemap pour inclure `<xhtml:link rel="alternate" hreflang="en" .../>` par URL
+## Détails techniques
 
----
+**Migration SQL :**
+- Création de `public.translation_cache` + index sur `(target_lang, last_used_at desc)` + RLS.
 
-## Livrables
-- 1 migration DB (colonnes `_en` + snapshot backup)
-- 1 edge function modifiée (`auto-translate-catalog`)
-- ~5-8 fichiers code édités (helpers, contextes, sélecteur, sitemap)
-- `en.json` complété sur ~150-200 clés UI core
-- Note mémoire `mem://tech/i18n-catalog-schema` mise à jour pour ajouter EN
+**Edge function `translate-and-cache/index.ts` :**
+- CORS standard + JWT verify off (lecture publique).
+- Logique : product write-through prioritaire → cache lookup → AI call → cache write + product write si possible.
+- Retourne `{ translations: string[], fromCache: boolean[], cost: { aiCalls: number } }` pour transparence.
 
-## Tests / QA
-- Bascule manuelle FR→EN→NL→DE dans le sélecteur sans crash
-- Vérification visuelle : header, sidebar admin, sidebar vendeur, footer en EN
-- Vérification fallback : un produit sans `name_en` affiche bien `name` (anglais Qogita) ou `name_fr`
-- Test `audit_backup_tables_rls()` après création du snapshot pour confirmer RLS OK
+**Hook `src/hooks/useAutoTranslate.ts` :**
+- Renommer l'appel `supabase.functions.invoke("translate", …)` → `"translate-and-cache"`.
+- Ajouter signature étendue : `useAutoTranslate(text, opts?: { productId?, field? })`.
+- Toast d'erreur sur 402/429.
 
-## Coûts (ordre de grandeur)
-- **Crédits Lovable** : sprint **moyen** (1 migration, 1 edge function, ~10 fichiers code, dictionnaire à compléter). Pas de génération de contenu en masse.
-- **Lovable AI Gateway** : ~0 (la traduction du catalogue est repoussée au Sprint 3).
+**Aucun changement** sur `getLocalizedName` / `getLocalizedDescription` (déjà parfait).
 
-## Hors-périmètre confirmé pour ce sprint
-Pas de Sprint 2 (contenu) ni Sprint 3 (catalogue + SEO complet) — on valide d'abord les fondations en production avant d'engager le reste.
+## Risques
+
+- **Aucun coût supplémentaire** : la fonction `translate` n'existe pas, donc on ne casse rien qui marchait.
+- **Sécurité écriture DB** : seul le service-role écrit, depuis l'edge function, après vérif `productId` valide → pas d'injection.
+- **Volume table cache** : on garde un index sur `last_used_at` pour pouvoir purger les entrées non utilisées >180j si besoin (à voir plus tard).
+
+## Après ça
+
+Une fois A en prod, je recommande d'enchaîner B (batch complet) pour atteindre 100% de couverture EN en DB, puis de désactiver complètement le fallback live → coût AI traduction = 0 €/mois sur le switch.

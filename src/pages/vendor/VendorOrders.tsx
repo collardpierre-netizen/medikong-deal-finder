@@ -125,7 +125,7 @@ export default function VendorOrders() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["vendor-order-lines"] });
-      toast.success("Marqué comme transmis à Qogita");
+      toast.success("Marqué comme transmis au fournisseur");
     },
     onError: () => toast.error("Erreur lors de la mise à jour"),
   });
@@ -192,7 +192,7 @@ export default function VendorOrders() {
                       <span className="text-sm font-bold text-foreground">{order.order_number}</span>
                       {hasQogita && (
                         <VBadge color={allForwarded ? "success" : "warning"}>
-                          {allForwarded ? "Qogita transmis" : "Qogita à traiter"}
+                          {allForwarded ? "Fournisseur transmis" : "À transmettre au fournisseur"}
                         </VBadge>
                       )}
                     </div>
@@ -243,15 +243,15 @@ export default function VendorOrders() {
                               Qté: {line.quantity} · €{line.unit_price_excl_vat.toFixed(2)} HT/u · Total: €{line.line_total_excl_vat.toFixed(2)} HT
                             </div>
 
-                            {/* Qogita details - visible only for qogita lines */}
+                            {/* Centralized supplier details - visible only for centralized lines */}
                             {isQogita && (
                               <div className="mt-1.5 p-2 rounded bg-muted/30 text-[11px] space-y-0.5">
-                                <div className="font-semibold text-muted-foreground">Détails Qogita :</div>
+                                <div className="font-semibold text-muted-foreground">Détails fournisseur :</div>
                                 {line.qogita_seller_fid && (
                                   <div>Vendeur : <span className="font-mono text-foreground">{line.qogita_seller_fid}</span></div>
                                 )}
                                 {line.qogita_offer_qid && (
-                                  <div>Offre : <span className="font-mono text-foreground">{line.qogita_offer_qid}</span></div>
+                                  <div>Réf. offre : <span className="font-mono text-foreground">{line.qogita_offer_qid}</span></div>
                                 )}
                                 {line.cost_price != null && (
                                   <div>Prix d'achat : <span className="font-semibold text-foreground">€{line.cost_price.toFixed(2)}</span></div>
@@ -276,7 +276,7 @@ export default function VendorOrders() {
                                 ) : (
                                   <ExternalLink size={12} className="mr-1" />
                                 )}
-                                Transmis à Qogita
+                                Transmis au fournisseur
                               </Button>
                             )}
                           </div>

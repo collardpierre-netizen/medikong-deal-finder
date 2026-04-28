@@ -287,15 +287,21 @@ function VendorOffersPanel({ vendor }: { vendor: any }) {
   const importCsv = async () => {
     if (!csvPreview) return;
     setCsvImporting(true);
-    const payloads = csvPreview.map(r => ({
-      external_vendor_id: vendor.id,
-      product_id: r.product.id,
-      unit_price: parseFloat(r.unit_price) || 0,
-      mov_amount: parseFloat(r.mov) || 0,
-      product_url: r.product_url || "",
-      stock_status: r.stock_status || "unknown",
-      delivery_days: r.delivery_days ? parseInt(r.delivery_days) : null,
-    }));
+    const payloads = csvPreview.map(r => {
+      const importedAt = (r.imported_at || "").trim();
+      const parsedDate = importedAt ? new Date(importedAt) : null;
+      const isValidDate = parsedDate && !isNaN(parsedDate.getTime());
+      return {
+        external_vendor_id: vendor.id,
+        product_id: r.product.id,
+        unit_price: parseFloat(r.unit_price) || 0,
+        mov_amount: parseFloat(r.mov) || 0,
+        product_url: (r.product_url || "").trim(),
+        stock_status: r.stock_status || "unknown",
+        delivery_days: r.delivery_days ? parseInt(r.delivery_days) : null,
+        ...(isValidDate ? { created_at: parsedDate!.toISOString() } : {}),
+      };
+    });
     const { error } = await supabase.from("external_offers").insert(payloads);
     setCsvImporting(false);
     if (error) { toast.error(error.message); return; }
@@ -314,24 +320,25 @@ function VendorOffersPanel({ vendor }: { vendor: any }) {
             size="sm"
             variant="ghost"
             onClick={() => {
+              const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
               const csv = [
-                "gtin,unit_price,mov,product_url,stock_status,delivery_days",
-                "5400123456789,12.50,150,https://vendeur.com/produit-x,in_stock,3",
-                "3400934567812,8.90,100,https://vendeur.com/produit-y,limited,5",
-                "5012345678900,4.20,50,https://vendeur.com/produit-z,out_of_stock,",
+                "gtin,unit_price,mov,product_url,stock_status,delivery_days,imported_at",
+                `5400123456789,12.50,150,https://vendeur.com/produit-x,in_stock,3,${today}`,
+                `3400934567812,8.90,100,https://vendeur.com/produit-y,limited,5,${today}`,
+                `5012345678900,4.20,50,https://vendeur.com/produit-z,out_of_stock,,${today}`,
               ].join("\n");
               const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
               const url = URL.createObjectURL(blob);
               const a = document.createElement("a");
               a.href = url;
-              a.download = `modele-import-offres-externes.csv`;
+              a.download = `modele-import-offres-externes-${today}.csv`;
               document.body.appendChild(a);
               a.click();
               document.body.removeChild(a);
               URL.revokeObjectURL(url);
               toast.success("Modèle CSV téléchargé");
             }}
-            title="Télécharger un modèle CSV (gtin, unit_price, mov, product_url, stock_status, delivery_days)"
+            title="Télécharger un modèle CSV (gtin, unit_price, mov, product_url, stock_status, delivery_days, imported_at)"
           >
             <Download size={14} className="mr-1" /> Modèle CSV
           </Button>

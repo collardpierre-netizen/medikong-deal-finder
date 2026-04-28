@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import {
-  Plus, Pencil, Power, ExternalLink, Upload, Trash2, Search, Package
+  Plus, Pencil, Power, ExternalLink, Upload, Trash2, Search, Package, Download
 } from "lucide-react";
 
 /* ── Helpers ── */
@@ -310,6 +310,31 @@ function VendorOffersPanel({ vendor }: { vendor: any }) {
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-[15px] font-semibold" style={{ color: "#1D2530" }}>Offres de {vendor.name}</h3>
         <div className="flex gap-2">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              const csv = [
+                "gtin,unit_price,mov,product_url,stock_status,delivery_days",
+                "5400123456789,12.50,150,https://vendeur.com/produit-x,in_stock,3",
+                "3400934567812,8.90,100,https://vendeur.com/produit-y,limited,5",
+                "5012345678900,4.20,50,https://vendeur.com/produit-z,out_of_stock,",
+              ].join("\n");
+              const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = `modele-import-offres-externes.csv`;
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              URL.revokeObjectURL(url);
+              toast.success("Modèle CSV téléchargé");
+            }}
+            title="Télécharger un modèle CSV (gtin, unit_price, mov, product_url, stock_status, delivery_days)"
+          >
+            <Download size={14} className="mr-1" /> Modèle CSV
+          </Button>
           <Button size="sm" variant="outline" onClick={() => fileRef.current?.click()}>
             <Upload size={14} className="mr-1" /> Importer CSV
           </Button>

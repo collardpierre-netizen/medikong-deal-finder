@@ -8221,6 +8221,18 @@ export type Database = {
       resolve_product_brands: { Args: never; Returns: undefined }
       resolve_product_categories: { Args: never; Returns: undefined }
       snapshot_vendor_offer_history: { Args: never; Returns: Json }
+      submit_brand_review: {
+        Args: {
+          _brand_id: string
+          _comment?: string
+          _rating_delivery: number
+          _rating_documentation: number
+          _rating_margin: number
+          _rating_quality: number
+          _rating_support: number
+        }
+        Returns: string
+      }
       update_brand_product_counts: { Args: never; Returns: undefined }
       update_manufacturer_product_counts: { Args: never; Returns: undefined }
       upsert_market_prices: { Args: { rows: Json }; Returns: number }

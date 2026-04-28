@@ -10,6 +10,8 @@ import {
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState } from "react";
+import { BrandReviewModal } from "./BrandReviewModal";
+import { Button } from "@/components/ui/button";
 
 const FLAG: Record<string, string> = {
   BE: "🇧🇪", FR: "🇫🇷", DE: "🇩🇪", NL: "🇳🇱", LU: "🇱🇺",
@@ -160,6 +162,7 @@ function Sparkline({ values, w = 120, h = 32 }: { values: number[]; w?: number; 
 // ─── Fact Sheet component ──────────────────────────────────────────────────
 export function BrandFactSheet({ brand }: { brand: BrandRow }) {
   const { user } = useAuth();
+  const [reviewOpen, setReviewOpen] = useState(false);
 
   const { data: logistics } = useQuery({
     queryKey: ["brand-logistics-stats", brand.id],
@@ -368,7 +371,12 @@ export function BrandFactSheet({ brand }: { brand: BrandRow }) {
                 ({reviews.length} avis collecté{reviews.length > 1 ? "s" : ""}, minimum 5 requis).
                 {canReview && (
                   <div className="mt-2">
-                    <button className="text-xs font-semibold text-mk-blue hover:underline">+ Donner mon avis</button>
+                    <button
+                      onClick={() => setReviewOpen(true)}
+                      className="text-xs font-semibold text-mk-blue hover:underline"
+                    >
+                      + Donner mon avis
+                    </button>
                   </div>
                 )}
               </div>
@@ -405,6 +413,13 @@ export function BrandFactSheet({ brand }: { brand: BrandRow }) {
                   </div>
                 ))}
               </div>
+              {canReview && (
+                <div className="mt-3">
+                  <Button size="sm" variant="outline" onClick={() => setReviewOpen(true)}>
+                    + Donner mon avis
+                  </Button>
+                </div>
+              )}
             </>
           )}
           <Disclaimer>Avis liés à des acheteurs vérifiés ayant passé au moins une commande de la marque.</Disclaimer>
@@ -452,6 +467,12 @@ export function BrandFactSheet({ brand }: { brand: BrandRow }) {
           </Disclaimer>
         </Card>
       </div>
+      <BrandReviewModal
+        brandId={brand.id}
+        brandName={brand.name}
+        open={reviewOpen}
+        onOpenChange={setReviewOpen}
+      />
     </TooltipProvider>
   );
 }

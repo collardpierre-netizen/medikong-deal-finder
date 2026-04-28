@@ -287,15 +287,21 @@ function VendorOffersPanel({ vendor }: { vendor: any }) {
   const importCsv = async () => {
     if (!csvPreview) return;
     setCsvImporting(true);
-    const payloads = csvPreview.map(r => ({
-      external_vendor_id: vendor.id,
-      product_id: r.product.id,
-      unit_price: parseFloat(r.unit_price) || 0,
-      mov_amount: parseFloat(r.mov) || 0,
-      product_url: r.product_url || "",
-      stock_status: r.stock_status || "unknown",
-      delivery_days: r.delivery_days ? parseInt(r.delivery_days) : null,
-    }));
+    const payloads = csvPreview.map(r => {
+      const importedAt = (r.imported_at || "").trim();
+      const parsedDate = importedAt ? new Date(importedAt) : null;
+      const isValidDate = parsedDate && !isNaN(parsedDate.getTime());
+      return {
+        external_vendor_id: vendor.id,
+        product_id: r.product.id,
+        unit_price: parseFloat(r.unit_price) || 0,
+        mov_amount: parseFloat(r.mov) || 0,
+        product_url: (r.product_url || "").trim(),
+        stock_status: r.stock_status || "unknown",
+        delivery_days: r.delivery_days ? parseInt(r.delivery_days) : null,
+        ...(isValidDate ? { created_at: parsedDate!.toISOString() } : {}),
+      };
+    });
     const { error } = await supabase.from("external_offers").insert(payloads);
     setCsvImporting(false);
     if (error) { toast.error(error.message); return; }

@@ -467,6 +467,12 @@ export function BrandFactSheet({ brand }: { brand: BrandRow }) {
           </Disclaimer>
         </Card>
       </div>
+      <BrandReviewModal
+        brandId={brand.id}
+        brandName={brand.name}
+        open={reviewOpen}
+        onOpenChange={setReviewOpen}
+      />
     </TooltipProvider>
   );
 }

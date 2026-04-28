@@ -162,6 +162,7 @@ function Sparkline({ values, w = 120, h = 32 }: { values: number[]; w?: number; 
 // ─── Fact Sheet component ──────────────────────────────────────────────────
 export function BrandFactSheet({ brand }: { brand: BrandRow }) {
   const { user } = useAuth();
+  const [reviewOpen, setReviewOpen] = useState(false);
 
   const { data: logistics } = useQuery({
     queryKey: ["brand-logistics-stats", brand.id],

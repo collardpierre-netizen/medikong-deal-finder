@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   Shield, Truck, TrendingUp, Users, CheckCircle2, AlertTriangle, Info,
-  XCircle, MinusCircle, Star,
+  XCircle, MinusCircle, Star, ExternalLink,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -145,16 +145,69 @@ function CardHeader({ icon: Icon, color, title }: { icon: any; color: string; ti
   );
 }
 
-// ─── Sparkline (trends) ────────────────────────────────────────────────────
-function Sparkline({ values, w = 120, h = 32 }: { values: number[]; w?: number; h?: number }) {
+// ─── Trends chart (axes, mois, dernière valeur mise en avant) ─────────────
+const MONTH_LABELS_FR = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"];
+
+function TrendsChart({ values }: { values: number[] }) {
   if (!values?.length) return null;
-  const min = Math.min(...values), max = Math.max(...values);
+  const w = 320, h = 110, padL = 24, padR = 8, padT = 8, padB = 18;
+  const innerW = w - padL - padR;
+  const innerH = h - padT - padB;
+  const max = Math.max(...values, 1);
+  const min = 0;
   const range = max - min || 1;
-  const stepX = w / Math.max(values.length - 1, 1);
-  const pts = values.map((v, i) => `${(i * stepX).toFixed(1)},${(h - ((v - min) / range) * h).toFixed(1)}`).join(" ");
+  const stepX = innerW / Math.max(values.length - 1, 1);
+  const x = (i: number) => padL + i * stepX;
+  const y = (v: number) => padT + innerH - ((v - min) / range) * innerH;
+  const linePts = values.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
+  const areaPts = `${padL},${padT + innerH} ${linePts} ${padL + innerW},${padT + innerH}`;
+
+  // Mois (les N derniers mois jusqu'à aujourd'hui)
+  const now = new Date();
+  const monthsBack = values.length;
+  const monthLabels = Array.from({ length: monthsBack }, (_, i) => {
+    const d = new Date(now.getFullYear(), now.getMonth() - (monthsBack - 1 - i), 1);
+    return MONTH_LABELS_FR[d.getMonth()];
+  });
+
+  // Tick interval pour ne pas surcharger l'axe
+  const tickStep = monthsBack > 12 ? 3 : monthsBack > 6 ? 2 : 1;
+  const lastIdx = values.length - 1;
+
   return (
-    <svg width={w} height={h} className="text-mk-blue">
-      <polyline fill="none" stroke="currentColor" strokeWidth="1.5" points={pts} />
+    <svg width="100%" viewBox={`0 0 ${w} ${h}`} className="text-mk-blue" role="img" aria-label="Évolution des recherches Google sur 12 mois">
+      {/* Grille horizontale */}
+      {[0, 0.5, 1].map((t) => (
+        <line
+          key={t}
+          x1={padL} x2={padL + innerW}
+          y1={padT + innerH * t} y2={padT + innerH * t}
+          stroke="currentColor" strokeOpacity="0.08" strokeDasharray={t === 1 ? "0" : "2 2"}
+        />
+      ))}
+      {/* Aire */}
+      <polygon points={areaPts} fill="currentColor" fillOpacity="0.08" />
+      {/* Ligne */}
+      <polyline fill="none" stroke="currentColor" strokeWidth="1.75" points={linePts} />
+      {/* Points */}
+      {values.map((v, i) => (
+        <circle
+          key={i}
+          cx={x(i)} cy={y(v)}
+          r={i === lastIdx ? 3 : 1.5}
+          fill={i === lastIdx ? "currentColor" : "white"}
+          stroke="currentColor" strokeWidth="1.25"
+        />
+      ))}
+      {/* Labels axe Y */}
+      <text x={padL - 4} y={padT + 4} fontSize="9" textAnchor="end" fill="currentColor" fillOpacity="0.55">{Math.round(max)}</text>
+      <text x={padL - 4} y={padT + innerH + 3} fontSize="9" textAnchor="end" fill="currentColor" fillOpacity="0.55">0</text>
+      {/* Labels axe X (mois) */}
+      {monthLabels.map((m, i) => (
+        (i % tickStep === 0 || i === lastIdx) && (
+          <text key={i} x={x(i)} y={h - 4} fontSize="9" textAnchor="middle" fill="currentColor" fillOpacity="0.6">{m}</text>
+        )
+      ))}
     </svg>
   );
 }
@@ -329,24 +382,51 @@ export function BrandFactSheet({ brand }: { brand: BrandRow }) {
           <Disclaimer>Données calculées sur les 90 derniers jours. Mise à jour quotidienne.</Disclaimer>
         </Card>
 
-        {/* ─── Section 3 : Signaux marché externes ────────────────────── */}
+        {/* ─── Section 3 : Trends & signaux marché ────────────────────── */}
         <Card className="p-5">
-          <CardHeader icon={TrendingUp} color="bg-violet-50 text-violet-700" title="Signaux marché" />
-          <div className="space-y-1">
-            <div className="flex items-center justify-between gap-3 py-2 border-b border-mk-line">
-              <span className="text-xs text-mk-sec inline-flex items-center">
-                Recherches Google Belgique (12 mois)
-                <SourceTooltip label="Source : Google Trends Belgique. Mise à jour mensuelle." />
+          <div className="flex items-start justify-between gap-3 mb-3">
+            <CardHeader icon={TrendingUp} color="bg-violet-50 text-violet-700" title="Trends & signaux marché" />
+            {brand.sources_last_updated && (
+              <span className="text-[11px] text-mk-ter shrink-0 mt-1.5">
+                MAJ {fmtDate(brand.sources_last_updated)}
               </span>
-              <div className="flex items-center gap-2">
-                {brand.google_trends_12m?.length ? <Sparkline values={brand.google_trends_12m as number[]} /> : <span className="text-xs text-mk-ter">—</span>}
-                {brand.google_trends_trend_pct !== null && brand.google_trends_trend_pct !== undefined && (
-                  <span className={`text-xs font-medium ${brand.google_trends_trend_pct > 0 ? "text-emerald-600" : brand.google_trends_trend_pct < 0 ? "text-rose-600" : "text-mk-sec"}`}>
-                    {brand.google_trends_trend_pct > 0 ? "↗" : brand.google_trends_trend_pct < 0 ? "↘" : "→"} {brand.google_trends_trend_pct > 0 ? "+" : ""}{brand.google_trends_trend_pct.toFixed(0)}%
-                  </span>
-                )}
+            )}
+          </div>
+
+          {/* Graphe Google Trends explicite */}
+          <div className="rounded-md border border-mk-line p-3 bg-white">
+            <div className="flex items-center justify-between mb-1.5">
+              <div className="text-xs text-mk-sec inline-flex items-center">
+                Recherches Google Belgique — 12 mois
+                <SourceTooltip label="Source : Google Trends Belgique. Index normalisé 0–100. Mise à jour mensuelle." />
               </div>
+              {brand.google_trends_trend_pct !== null && brand.google_trends_trend_pct !== undefined && (
+                <span className={`text-xs font-semibold ${brand.google_trends_trend_pct > 0 ? "text-emerald-600" : brand.google_trends_trend_pct < 0 ? "text-rose-600" : "text-mk-sec"}`}>
+                  {brand.google_trends_trend_pct > 0 ? "↗" : brand.google_trends_trend_pct < 0 ? "↘" : "→"} {brand.google_trends_trend_pct > 0 ? "+" : ""}{brand.google_trends_trend_pct.toFixed(0)}% vs N-1
+                </span>
+              )}
             </div>
+            {brand.google_trends_12m?.length ? (
+              <>
+                <TrendsChart values={brand.google_trends_12m as number[]} />
+                <div className="flex items-center justify-between mt-1">
+                  <span className="text-[10px] text-mk-ter">Index Google Trends (0–100)</span>
+                  <a
+                    href={`https://trends.google.com/trends/explore?date=today%2012-m&geo=BE&q=${encodeURIComponent(brand.name)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[11px] text-mk-blue hover:underline inline-flex items-center gap-1"
+                  >
+                    Voir sur Google Trends <ExternalLink size={10} />
+                  </a>
+                </div>
+              </>
+            ) : (
+              <p className="text-xs text-mk-ter py-3">Donnée non disponible.</p>
+            )}
+          </div>
+
+          <div className="space-y-1 mt-2">
             <DataRow label="Référencement officinal estimé" tooltip="Part estimée des pharmacies belges référençant la marque. Sources : études partenaires.">
               {brand.officinal_coverage_pct !== null ? `${Math.round(brand.officinal_coverage_pct)}% des pharmacies BE` : <span className="text-xs text-mk-ter">Donnée non disponible</span>}
             </DataRow>
@@ -355,7 +435,8 @@ export function BrandFactSheet({ brand }: { brand: BrandRow }) {
             </DataRow>
           </div>
           <Disclaimer>
-            Google Trends BE, études partenaires, revue de presse Le Pharmacien & Journal du Pharmacien. Mise à jour mensuelle.
+            Google Trends BE, études partenaires, revue de presse Le Pharmacien & Journal du Pharmacien. Mise à jour mensuelle
+            {brand.sources_last_updated && ` — dernière MAJ ${fmtDate(brand.sources_last_updated)}`}.
           </Disclaimer>
         </Card>
 

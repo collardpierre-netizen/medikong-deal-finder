@@ -8,6 +8,7 @@ import { useCart } from "@/hooks/useCart";
 import { supabase } from "@/integrations/supabase/client";
 import { useTranslation } from "react-i18next";
 import { InstantSearchBar } from "@/components/search/InstantSearchBar";
+import { LanguageSelector } from "@/components/LanguageSelector";
 import logoHorizontal from "@/assets/logo-medikong.png";
 
 export function Navbar() {
@@ -121,6 +122,7 @@ export function Navbar() {
               <Users size={16} />
             </Link>
           )}
+          <LanguageSelector variant="light" />
         </div>
 
         {/* Mobile icons */}

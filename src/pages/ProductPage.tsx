@@ -257,15 +257,6 @@ function OfferRow({
               <Store size={11} /> Voir la boutique
             </Link>
           )}
-          {offer.syncedAt && (
-            <span
-              className="inline-flex items-center gap-1 text-[10px] text-muted-foreground w-fit"
-              title={`Dernière synchronisation : ${new Date(offer.syncedAt).toLocaleString("fr-FR")}`}
-            >
-              <Info size={10} />
-              Synchro {formatRelative(offer.syncedAt)}
-            </span>
-          )}
         </div>
 
         {/* Price + MOV merged column */}
@@ -420,14 +411,6 @@ function OfferRow({
           {step > 1 && (
             <span className="font-medium text-foreground" title={`Quantité minimum de commande : ${step}. Toute quantité doit être un multiple de ${step}.`}>
               Lots de {step}
-            </span>
-          )}
-          {offer.syncedAt && (
-            <span
-              className="text-[10px] text-muted-foreground"
-              title={`Dernière synchronisation : ${new Date(offer.syncedAt).toLocaleString("fr-FR")}`}
-            >
-              Synchro {formatRelative(offer.syncedAt)}
             </span>
           )}
         </div>

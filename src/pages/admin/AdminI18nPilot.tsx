@@ -75,6 +75,7 @@ export default function AdminI18nPilot() {
     }
   };
 
+  const handleRun = async () => {
     setRunning(true);
     setResult(null);
     try {

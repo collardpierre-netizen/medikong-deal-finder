@@ -8,7 +8,7 @@ interface AdminTopBarProps {
   actions?: React.ReactNode;
 }
 
-const langLabels: Record<Lang, string> = { fr: "FR", nl: "NL", de: "DE" };
+const langLabels: Record<Lang, string> = { fr: "FR", nl: "NL", de: "DE", en: "EN" };
 
 const segmentLabels: Record<string, string> = {
   admin: "Dashboard",

@@ -8160,6 +8160,18 @@ export type Database = {
       }
     }
     Functions: {
+      audit_backup_tables_rls: {
+        Args: never
+        Returns: {
+          anon_has_grants: boolean
+          authenticated_has_grants: boolean
+          issues: string[]
+          policy_count: number
+          rls_enabled: boolean
+          status: string
+          table_name: string
+        }[]
+      }
       bulk_override_requested: { Args: never; Returns: boolean }
       bulk_set_cnk_codes: { Args: { pairs: Json }; Returns: number }
       consume_qogita_tokens: { Args: { _amount: number }; Returns: Json }

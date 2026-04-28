@@ -134,6 +134,7 @@ const AdminLogs = lazyWithRetry(() => import("./pages/admin/AdminLogs"), "AdminL
 const AdminUsers = lazyWithRetry(() => import("./pages/admin/AdminUsers"), "AdminUsers");
 const AdminAuditLog = lazyWithRetry(() => import("./pages/admin/AdminAuditLog"), "AdminAuditLog");
 const AdminContractAudit = lazyWithRetry(() => import("./pages/admin/AdminContractAudit"), "AdminContractAudit");
+const AdminDbBackups = lazyWithRetry(() => import("./pages/admin/AdminDbBackups"), "AdminDbBackups");
 const AdminCatalogDiagnostics = lazyWithRetry(() => import("./pages/admin/AdminCatalogDiagnostics"), "AdminCatalogDiagnostics");
 const AdminOfferDataQuality = lazyWithRetry(() => import("./pages/admin/AdminOfferDataQuality"), "AdminOfferDataQuality");
 const AdminCommissions = lazyWithRetry(() => import("./pages/admin/AdminCommissions"), "AdminCommissions");
@@ -332,6 +333,7 @@ const App = () => (
               <Route path="marques" element={<LP><AdminMarques /></LP>} />
               <Route path="marques/:slug/edit" element={<LP><AdminBrandTransparenceEdit /></LP>} />
               <Route path="brands/:slug/edit" element={<LP><AdminBrandTransparenceEdit /></LP>} />
+              <Route path="db-backups" element={<LP><AdminDbBackups /></LP>} />
               <Route path="fabricants" element={<LP><AdminFabricants /></LP>} />
               <Route path="schemas-pim" element={<LP><AdminSchemasPIM /></LP>} />
               <Route path="commandes" element={<LP><AdminCommandes /></LP>} />

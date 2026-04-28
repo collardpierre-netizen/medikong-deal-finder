@@ -1080,6 +1080,45 @@ export type Database = {
         }
         Relationships: []
       }
+      db_backup_logs: {
+        Row: {
+          created_at: string
+          duration_ms: number | null
+          error_message: string | null
+          id: string
+          size_bytes: number
+          status: string
+          storage_path: string
+          tables_included: string[]
+          total_rows: number
+          triggered_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: string
+          size_bytes?: number
+          status?: string
+          storage_path: string
+          tables_included?: string[]
+          total_rows?: number
+          triggered_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: string
+          size_bytes?: number
+          status?: string
+          storage_path?: string
+          tables_included?: string[]
+          total_rows?: number
+          triggered_by?: string | null
+        }
+        Relationships: []
+      }
       delegate_assignments: {
         Row: {
           created_at: string
@@ -8166,6 +8205,12 @@ export type Database = {
       evaluate_vendor_price_alerts: {
         Args: { _vendor_id: string }
         Returns: Json
+      }
+      export_table_as_sql: {
+        Args: { _table_name: string }
+        Returns: {
+          sql_line: string
+        }[]
       }
       finalize_qogita_resync_log: {
         Args: {

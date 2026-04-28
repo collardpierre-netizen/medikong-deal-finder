@@ -238,7 +238,9 @@ const App = () => (
             <Route path="/recherche" element={<LP><SearchResultsPage /></LP>} />
             <Route path="/produit/:slug" element={<LP><SafeBoundary label="la fiche produit"><ProductPage /></SafeBoundary></LP>} />
             <Route path="/marques" element={<LP><BrandsPage /></LP>} />
-            <Route path="/marque/:slug" element={<LP><BrandDetailPage /></LP>} />
+            <Route path="/marques/:slug" element={<LP><BrandDetailPage /></LP>} />
+            {/* Redirection ancienne route singulier → pluriel */}
+            <Route path="/marque/:slug" element={<RedirectBrandSingular />} />
             <Route path="/fabricants" element={<LP><FabricantsPage /></LP>} />
             <Route path="/fabricant/:slug" element={<LP><ManufacturerPage /></LP>} />
             <Route path="/vendeur/:slug" element={<LP><VendorPublicPage /></LP>} />

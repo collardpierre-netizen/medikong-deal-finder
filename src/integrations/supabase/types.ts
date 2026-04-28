@@ -8374,6 +8374,10 @@ export type Database = {
       }
       resolve_product_brands: { Args: never; Returns: undefined }
       resolve_product_categories: { Args: never; Returns: undefined }
+      restore_brands_from_backup: {
+        Args: { _backup_table_name?: string }
+        Returns: Json
+      }
       snapshot_vendor_offer_history: { Args: never; Returns: Json }
       submit_brand_review: {
         Args: {

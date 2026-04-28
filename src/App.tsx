@@ -120,7 +120,7 @@ const AdminReglementaire = lazyWithRetry(() => import("./pages/admin/AdminReglem
 const AdminImportExport = lazyWithRetry(() => import("./pages/admin/AdminImportExport"), "AdminImportExport");
 const AdminCategories = lazyWithRetry(() => import("./pages/admin/AdminCategories"), "AdminCategories");
 const AdminMarques = lazyWithRetry(() => import("./pages/admin/AdminMarques"), "AdminMarques");
-const AdminBrandTransparencyEdit = lazyWithRetry(() => import("./pages/admin/AdminBrandTransparencyEdit"), "AdminBrandTransparencyEdit");
+const AdminBrandTransparenceEdit = lazyWithRetry(() => import("./pages/admin/AdminBrandTransparenceEdit"), "AdminBrandTransparenceEdit");
 const AdminCRM = lazyWithRetry(() => import("./pages/admin/AdminCRM"), "AdminCRM");
 const AdminCMS = lazyWithRetry(() => import("./pages/admin/AdminCMS"), "AdminCMS");
 const AdminProductPrices = lazyWithRetry(() => import("./pages/admin/AdminProductPrices"), "AdminProductPrices");
@@ -330,7 +330,8 @@ const App = () => (
               <Route path="produits/:id" element={<LP><AdminProduitDetail /></LP>} />
               <Route path="categories" element={<LP><AdminCategories /></LP>} />
               <Route path="marques" element={<LP><AdminMarques /></LP>} />
-              <Route path="brands/:slug/edit" element={<LP><AdminBrandTransparencyEdit /></LP>} />
+              <Route path="marques/:slug/edit" element={<LP><AdminBrandTransparenceEdit /></LP>} />
+              <Route path="brands/:slug/edit" element={<LP><AdminBrandTransparenceEdit /></LP>} />
               <Route path="fabricants" element={<LP><AdminFabricants /></LP>} />
               <Route path="schemas-pim" element={<LP><AdminSchemasPIM /></LP>} />
               <Route path="commandes" element={<LP><AdminCommandes /></LP>} />

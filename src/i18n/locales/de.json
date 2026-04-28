@@ -52,6 +52,9 @@
   },
   "hero": {
     "title": "Ihre medizinischen Produkte zum besten B2B-Preis",
+    "titleHighlight": "Alle Medizinprodukte",
+    "titleAfterHighlight": ", alle Preise,",
+    "titleLine2": "an einem Ort",
     "subtitle": "Vergleichen Sie Preise von Hunderten von Lieferanten. Kaufen Sie direkt oder finden Sie das beste externe Angebot.",
     "searchExamples": "Z.B.:",
     "exampleGloves": "Nitrilhandschuhe",

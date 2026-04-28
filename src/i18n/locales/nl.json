@@ -52,6 +52,9 @@
   },
   "hero": {
     "title": "Uw medische benodigdheden aan de beste B2B-prijs",
+    "titleHighlight": "Alle medische producten",
+    "titleAfterHighlight": ", alle prijzen,",
+    "titleLine2": "op één plek",
     "subtitle": "Vergelijk prijzen van honderden leveranciers. Koop rechtstreeks of vind de beste externe aanbieding.",
     "searchExamples": "Bv:",
     "exampleGloves": "Nitrilhandschoenen",

@@ -53,6 +53,9 @@
   },
   "hero": {
     "title": "Tout le médical, tous les prix,\nun seul endroit",
+    "titleHighlight": "Tout le médical",
+    "titleAfterHighlight": ", tous les prix,",
+    "titleLine2": "un seul endroit",
     "subtitle": "Le comparateur B2B qui met en concurrence des centaines de fournisseurs pour vous.",
     "searchExamples": "Ex:",
     "exampleGloves": "Gants nitrile",

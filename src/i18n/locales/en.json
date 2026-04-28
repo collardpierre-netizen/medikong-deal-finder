@@ -53,6 +53,9 @@
   },
   "hero": {
     "title": "Your medical supplies at the best B2B price",
+    "titleHighlight": "All medical supplies",
+    "titleAfterHighlight": ", all prices,",
+    "titleLine2": "in one place",
     "subtitle": "Compare prices from hundreds of suppliers. Buy directly or find the best external deal.",
     "searchExamples": "E.g.:",
     "exampleGloves": "Nitrile gloves",

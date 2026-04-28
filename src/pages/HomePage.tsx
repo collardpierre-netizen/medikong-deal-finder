@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { AnimatedSection, StaggerContainer, StaggerItem, HoverCard } from "@/components/shared/PageTransition";
 import { HeroImageGallery } from "@/components/home/HeroImageGallery";
 import { Helmet } from "react-helmet-async";
+import { HreflangTags } from "@/components/seo/HreflangTags";
 import { HomeTestimonials } from "@/components/home/HomeTestimonials";
 import { useTranslation } from "react-i18next";
 import { useCountry } from "@/contexts/CountryContext";
@@ -215,6 +216,7 @@ export default function HomePage() {
 
   return (
     <Layout title="MediKong — Fournitures médicales B2B en Belgique | Comparez & Commandez" description="MediKong.pro : marketplace B2B + comparateur de prix pour fournitures médicales en Belgique. Comparez, commandez, économisez.">
+      <HreflangTags />
       <Helmet>
         <script type="application/ld+json">{JSON.stringify(orgJsonLd)}</script>
         <script type="application/ld+json">{JSON.stringify(faqJsonLd)}</script>

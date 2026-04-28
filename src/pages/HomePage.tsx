@@ -232,12 +232,12 @@ export default function HomePage() {
             transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
           >
             <span className="relative inline-block pb-1">
-              Tout le médical
+              {t("hero.titleHighlight")}
               <span className="absolute left-0 right-0 bottom-0 h-[8px] bg-mk-blue/25 rounded-full" />
             </span>
-            , tous les prix,
+            {t("hero.titleAfterHighlight")}
             <br />
-            un seul endroit
+            {t("hero.titleLine2")}
           </motion.h1>
           <motion.p
             className="text-base md:text-lg text-mk-sec mb-8 max-w-xl mx-auto"
@@ -287,7 +287,7 @@ export default function HomePage() {
               <div className="text-xl md:text-2xl font-bold text-mk-navy">
                 {renderCountryStat(countryStats?.brands)}
               </div>
-              <div className="text-xs text-mk-sec mt-0.5">Marques</div>
+              <div className="text-xs text-mk-sec mt-0.5">{t("stats.brands")}</div>
             </div>
             <div className="px-4 md:px-6 text-center">
               <div className="text-xl md:text-2xl font-bold text-mk-navy">

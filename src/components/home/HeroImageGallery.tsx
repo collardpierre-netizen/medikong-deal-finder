@@ -3,6 +3,8 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { useAutoTranslate } from "@/hooks/useAutoTranslate";
 
 const fallbackImages: HeroImg[] = [
   { id: "1", image_url: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=900&q=80", alt_text: "Fournitures médicales", link_url: null, cta_text: null, title: null, subtitle: null },
@@ -58,6 +60,15 @@ export function HeroImageGallery() {
   const currentImage = images[current];
   const isInternal = currentImage?.link_url?.startsWith("/");
 
+  const { t } = useTranslation();
+  const fallbackTitle = t("hero.slideFallbackTitle");
+  const fallbackSubtitle = t("hero.slideFallbackSubtitle");
+
+  // Traductions auto write-through (cache global → 1 appel AI max par texte × langue).
+  const { translated: translatedTitle } = useAutoTranslate(currentImage?.title || null);
+  const { translated: translatedSubtitle } = useAutoTranslate(currentImage?.subtitle || null);
+  const { translated: translatedCta } = useAutoTranslate(currentImage?.cta_text || null);
+
   const slideContent = (
     <div className="relative w-full rounded-2xl overflow-hidden shadow-lg group" style={{ height: 340 }}>
       {images.map((img, i) => (
@@ -67,11 +78,11 @@ export function HeroImageGallery() {
       ))}
       <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-black/10 to-transparent" />
       <div className="absolute bottom-6 left-6 md:bottom-8 md:left-8 z-10 text-white">
-        <p className="text-xs font-medium uppercase tracking-wider opacity-80 mb-1">{currentImage?.subtitle || "MediKong.pro"}</p>
-        <h3 className="text-lg md:text-2xl font-bold leading-tight max-w-sm">{currentImage?.title || "Le marketplace médical de référence en Belgique"}</h3>
+        <p className="text-xs font-medium uppercase tracking-wider opacity-80 mb-1">{translatedSubtitle || fallbackSubtitle}</p>
+        <h3 className="text-lg md:text-2xl font-bold leading-tight max-w-sm">{translatedTitle || fallbackTitle}</h3>
         {currentImage?.cta_text && (
           <span className="inline-block mt-3 px-5 py-2 rounded-lg text-sm font-semibold bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-colors">
-            {currentImage.cta_text}
+            {translatedCta || currentImage.cta_text}
           </span>
         )}
       </div>

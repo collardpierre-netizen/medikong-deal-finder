@@ -1,6 +1,6 @@
 import { Suspense } from "react"; // v2
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Navigate, useParams } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -24,6 +24,12 @@ function PageLoader() {
       <Loader2 className="w-8 h-8 animate-spin text-mk-blue" />
     </div>
   );
+}
+
+// Redirige l'ancienne route singulier (/marque/:slug) vers la nouvelle (/marques/:slug)
+function RedirectBrandSingular() {
+  const { slug } = useParams();
+  return <Navigate to={`/marques/${slug ?? ""}`} replace />;
 }
 
 // Lazy load ALL pages
@@ -238,7 +244,9 @@ const App = () => (
             <Route path="/recherche" element={<LP><SearchResultsPage /></LP>} />
             <Route path="/produit/:slug" element={<LP><SafeBoundary label="la fiche produit"><ProductPage /></SafeBoundary></LP>} />
             <Route path="/marques" element={<LP><BrandsPage /></LP>} />
-            <Route path="/marque/:slug" element={<LP><BrandDetailPage /></LP>} />
+            <Route path="/marques/:slug" element={<LP><BrandDetailPage /></LP>} />
+            {/* Redirection ancienne route singulier → pluriel */}
+            <Route path="/marque/:slug" element={<RedirectBrandSingular />} />
             <Route path="/fabricants" element={<LP><FabricantsPage /></LP>} />
             <Route path="/fabricant/:slug" element={<LP><ManufacturerPage /></LP>} />
             <Route path="/vendeur/:slug" element={<LP><VendorPublicPage /></LP>} />

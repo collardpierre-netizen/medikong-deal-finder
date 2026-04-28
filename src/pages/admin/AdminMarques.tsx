@@ -104,7 +104,12 @@ const AdminMarques = () => {
                   <TableCell>
                     <div className="flex gap-1">
                       <Button variant="ghost" size="sm" className="text-[11px] h-7" onClick={(e) => { e.stopPropagation(); setEditBrand(b); setBrandDialogOpen(true); }}>Éditer</Button>
-                      <Button variant="ghost" size="sm" className="text-[11px] h-7 px-1.5" onClick={(e) => { e.stopPropagation(); window.open(`/marque/${b.slug}`, '_blank'); }} title="Page publique">
+                      <Button variant="ghost" size="sm" className="text-[11px] h-7 px-1.5" asChild title="Transparence">
+                        <Link to={`/admin/marques/${b.slug}/edit`} onClick={(e) => e.stopPropagation()}>
+                          <Shield size={12} className="text-emerald-600" />
+                        </Link>
+                      </Button>
+                      <Button variant="ghost" size="sm" className="text-[11px] h-7 px-1.5" onClick={(e) => { e.stopPropagation(); window.open(`/marques/${b.slug}`, '_blank'); }} title="Page publique">
                         <ExternalLink size={12} />
                       </Button>
                     </div>

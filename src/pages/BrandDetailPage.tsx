@@ -246,6 +246,8 @@ export default function BrandDetailPage() {
           </div>
         </div>
       )}
+
+      <div id="brand-products" className="mk-container py-6 md:py-8">
         {/* Sellers for this brand */}
         {brandSellers.length > 0 && (
           <div className="mb-6">

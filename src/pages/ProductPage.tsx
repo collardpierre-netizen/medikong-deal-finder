@@ -260,10 +260,10 @@ function OfferRow({
           {offer.syncedAt && (
             <span
               className="inline-flex items-center gap-1 text-[10px] text-muted-foreground w-fit"
-              title={`Source : ${offer.isQogitaBacked ? "Qogita" : "Vendeur"}\nDernière synchronisation : ${new Date(offer.syncedAt).toLocaleString("fr-FR")}`}
+              title={`Dernière synchronisation : ${new Date(offer.syncedAt).toLocaleString("fr-FR")}`}
             >
               <Info size={10} />
-              {offer.isQogitaBacked ? "Qogita" : "Vendeur"} · synchro {formatRelative(offer.syncedAt)}
+              Synchro {formatRelative(offer.syncedAt)}
             </span>
           )}
         </div>

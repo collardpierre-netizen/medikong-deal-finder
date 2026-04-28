@@ -193,6 +193,30 @@ export default function AdminExternalVendors() {
           <div className="space-y-3">
             <div><Label>Nom *</Label><Input value={vf.name} onChange={e => setVf(p => ({ ...p, name: e.target.value }))} placeholder="Nom du vendeur" /></div>
             <div><Label>Site web</Label><Input value={vf.website_url} onChange={e => setVf(p => ({ ...p, website_url: e.target.value }))} placeholder="https://..." /></div>
+            <div>
+              <Label>Logo (URL)</Label>
+              <div className="flex items-center gap-3">
+                {vf.logo_url ? (
+                  <img
+                    src={vf.logo_url}
+                    alt="Aperçu logo"
+                    referrerPolicy="no-referrer"
+                    className="w-12 h-12 rounded-lg object-contain bg-white border"
+                    style={{ borderColor: "#E2E8F0" }}
+                    onError={(e) => { (e.currentTarget as HTMLImageElement).style.opacity = "0.3"; }}
+                  />
+                ) : (
+                  <div className="w-12 h-12 rounded-lg bg-slate-100 flex items-center justify-center text-xs text-slate-400 border" style={{ borderColor: "#E2E8F0" }}>—</div>
+                )}
+                <Input
+                  className="flex-1"
+                  value={vf.logo_url}
+                  onChange={e => setVf(p => ({ ...p, logo_url: e.target.value }))}
+                  placeholder="https://.../logo.png"
+                />
+              </div>
+              <p className="text-[11px] mt-1" style={{ color: "#8B95A5" }}>URL d'image carrée (PNG/SVG). Affichée à côté de l'offre sur la fiche produit.</p>
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Email</Label><Input value={vf.contact_email} onChange={e => setVf(p => ({ ...p, contact_email: e.target.value }))} /></div>
               <div><Label>Téléphone</Label><Input value={vf.contact_phone} onChange={e => setVf(p => ({ ...p, contact_phone: e.target.value }))} /></div>

@@ -24,9 +24,19 @@ function useAdminPaginatedOffers(page: number, search: string, vendorFilter: str
   return useQuery({
     queryKey: ["admin-offers-paginated", page, search, vendorFilter, brandFilter, countryFilter, statusFilter],
     queryFn: async () => {
+      // Détecte si au moins un filtre restrictif est posé : count exact uniquement dans ce cas,
+      // sinon count estimé (planificateur Postgres) pour éviter le timeout sur 500k+ lignes.
+      const hasRestrictiveFilter =
+        !!search ||
+        vendorFilter !== "all" ||
+        brandFilter !== "all" ||
+        countryFilter !== "all";
+
+      const countMode: "exact" | "estimated" = hasRestrictiveFilter ? "exact" : "estimated";
+
       let query = supabase
         .from("offers")
-        .select("*, vendors(name, company_name), products(name, brand_name, gtin, cnk_code)", { count: "exact" });
+        .select("*, vendors(name, company_name), products(name, brand_name, gtin, cnk_code)", { count: countMode });
 
       if (statusFilter === "active") query = query.eq("is_active", true);
       else if (statusFilter === "inactive") query = query.eq("is_active", false);
@@ -63,12 +73,16 @@ function useAdminPaginatedOffers(page: number, search: string, vendorFilter: str
       query = query.range(offset, offset + OFFERS_PER_PAGE - 1);
 
       const { data, error, count } = await query;
-      if (error) throw error;
+      if (error) {
+        console.error("[admin-offers] query failed:", error);
+        throw error;
+      }
       return { offers: data || [], total: count || 0 };
     },
     staleTime: 30_000,
   });
 }
+
 
 function useAdminPaginatedProducts(page: number, search: string, brandFilter: string, manufacturerFilter: string) {
   return useQuery({

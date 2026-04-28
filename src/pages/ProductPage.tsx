@@ -413,14 +413,6 @@ function OfferRow({
               Lots de {step}
             </span>
           )}
-          {offer.syncedAt && (
-            <span
-              className="text-[10px] text-muted-foreground"
-              title={`Dernière synchronisation : ${new Date(offer.syncedAt).toLocaleString("fr-FR")}`}
-            >
-              Synchro {formatRelative(offer.syncedAt)}
-            </span>
-          )}
         </div>
         <div className="flex items-center gap-2">
           <div className="flex items-center border border-border rounded-md flex-1">

@@ -382,24 +382,51 @@ export function BrandFactSheet({ brand }: { brand: BrandRow }) {
           <Disclaimer>Données calculées sur les 90 derniers jours. Mise à jour quotidienne.</Disclaimer>
         </Card>
 
-        {/* ─── Section 3 : Signaux marché externes ────────────────────── */}
+        {/* ─── Section 3 : Trends & signaux marché ────────────────────── */}
         <Card className="p-5">
-          <CardHeader icon={TrendingUp} color="bg-violet-50 text-violet-700" title="Signaux marché" />
-          <div className="space-y-1">
-            <div className="flex items-center justify-between gap-3 py-2 border-b border-mk-line">
-              <span className="text-xs text-mk-sec inline-flex items-center">
-                Recherches Google Belgique (12 mois)
-                <SourceTooltip label="Source : Google Trends Belgique. Mise à jour mensuelle." />
+          <div className="flex items-start justify-between gap-3 mb-3">
+            <CardHeader icon={TrendingUp} color="bg-violet-50 text-violet-700" title="Trends & signaux marché" />
+            {brand.sources_last_updated && (
+              <span className="text-[11px] text-mk-ter shrink-0 mt-1.5">
+                MAJ {fmtDate(brand.sources_last_updated)}
               </span>
-              <div className="flex items-center gap-2">
-                {brand.google_trends_12m?.length ? <Sparkline values={brand.google_trends_12m as number[]} /> : <span className="text-xs text-mk-ter">—</span>}
-                {brand.google_trends_trend_pct !== null && brand.google_trends_trend_pct !== undefined && (
-                  <span className={`text-xs font-medium ${brand.google_trends_trend_pct > 0 ? "text-emerald-600" : brand.google_trends_trend_pct < 0 ? "text-rose-600" : "text-mk-sec"}`}>
-                    {brand.google_trends_trend_pct > 0 ? "↗" : brand.google_trends_trend_pct < 0 ? "↘" : "→"} {brand.google_trends_trend_pct > 0 ? "+" : ""}{brand.google_trends_trend_pct.toFixed(0)}%
-                  </span>
-                )}
+            )}
+          </div>
+
+          {/* Graphe Google Trends explicite */}
+          <div className="rounded-md border border-mk-line p-3 bg-white">
+            <div className="flex items-center justify-between mb-1.5">
+              <div className="text-xs text-mk-sec inline-flex items-center">
+                Recherches Google Belgique — 12 mois
+                <SourceTooltip label="Source : Google Trends Belgique. Index normalisé 0–100. Mise à jour mensuelle." />
               </div>
+              {brand.google_trends_trend_pct !== null && brand.google_trends_trend_pct !== undefined && (
+                <span className={`text-xs font-semibold ${brand.google_trends_trend_pct > 0 ? "text-emerald-600" : brand.google_trends_trend_pct < 0 ? "text-rose-600" : "text-mk-sec"}`}>
+                  {brand.google_trends_trend_pct > 0 ? "↗" : brand.google_trends_trend_pct < 0 ? "↘" : "→"} {brand.google_trends_trend_pct > 0 ? "+" : ""}{brand.google_trends_trend_pct.toFixed(0)}% vs N-1
+                </span>
+              )}
             </div>
+            {brand.google_trends_12m?.length ? (
+              <>
+                <TrendsChart values={brand.google_trends_12m as number[]} />
+                <div className="flex items-center justify-between mt-1">
+                  <span className="text-[10px] text-mk-ter">Index Google Trends (0–100)</span>
+                  <a
+                    href={`https://trends.google.com/trends/explore?date=today%2012-m&geo=BE&q=${encodeURIComponent(brand.name)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[11px] text-mk-blue hover:underline inline-flex items-center gap-1"
+                  >
+                    Voir sur Google Trends <ExternalLink size={10} />
+                  </a>
+                </div>
+              </>
+            ) : (
+              <p className="text-xs text-mk-ter py-3">Donnée non disponible.</p>
+            )}
+          </div>
+
+          <div className="space-y-1 mt-2">
             <DataRow label="Référencement officinal estimé" tooltip="Part estimée des pharmacies belges référençant la marque. Sources : études partenaires.">
               {brand.officinal_coverage_pct !== null ? `${Math.round(brand.officinal_coverage_pct)}% des pharmacies BE` : <span className="text-xs text-mk-ter">Donnée non disponible</span>}
             </DataRow>
@@ -408,7 +435,8 @@ export function BrandFactSheet({ brand }: { brand: BrandRow }) {
             </DataRow>
           </div>
           <Disclaimer>
-            Google Trends BE, études partenaires, revue de presse Le Pharmacien & Journal du Pharmacien. Mise à jour mensuelle.
+            Google Trends BE, études partenaires, revue de presse Le Pharmacien & Journal du Pharmacien. Mise à jour mensuelle
+            {brand.sources_last_updated && ` — dernière MAJ ${fmtDate(brand.sources_last_updated)}`}.
           </Disclaimer>
         </Card>
 

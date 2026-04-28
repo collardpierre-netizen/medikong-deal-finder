@@ -413,6 +413,13 @@ export function BrandFactSheet({ brand }: { brand: BrandRow }) {
                   </div>
                 ))}
               </div>
+              {canReview && (
+                <div className="mt-3">
+                  <Button size="sm" variant="outline" onClick={() => setReviewOpen(true)}>
+                    + Donner mon avis
+                  </Button>
+                </div>
+              )}
             </>
           )}
           <Disclaimer>Avis liés à des acheteurs vérifiés ayant passé au moins une commande de la marque.</Disclaimer>

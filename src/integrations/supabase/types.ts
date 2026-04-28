@@ -261,6 +261,7 @@ export type Database = {
           country_of_origin: string | null
           created_at: string
           description: string | null
+          description_en: string | null
           distribution_type: string | null
           google_trends_12m: Json | null
           google_trends_trend_pct: number | null
@@ -296,6 +297,7 @@ export type Database = {
           country_of_origin?: string | null
           created_at?: string
           description?: string | null
+          description_en?: string | null
           distribution_type?: string | null
           google_trends_12m?: Json | null
           google_trends_trend_pct?: number | null
@@ -331,6 +333,7 @@ export type Database = {
           country_of_origin?: string | null
           created_at?: string
           description?: string | null
+          description_en?: string | null
           distribution_type?: string | null
           google_trends_12m?: Json | null
           google_trends_trend_pct?: number | null
@@ -369,6 +372,114 @@ export type Database = {
         ]
       }
       brands_backup_20260428: {
+        Row: {
+          afmps_status: string | null
+          ce_marking: boolean | null
+          certifications: string[] | null
+          country_hq: string | null
+          country_of_origin: string | null
+          created_at: string | null
+          description: string | null
+          distribution_type: string | null
+          google_trends_12m: Json | null
+          google_trends_trend_pct: number | null
+          id: string | null
+          inami_categories: Json | null
+          inami_reimbursement_pct: number | null
+          is_active: boolean | null
+          is_featured: boolean | null
+          is_top20: boolean | null
+          logo_url: string | null
+          main_category: string | null
+          manufacturer_id: string | null
+          manufacturing_countries: string[] | null
+          name: string | null
+          officinal_coverage_pct: number | null
+          parent_company: string | null
+          press_mentions_12m: number | null
+          product_count: number | null
+          qogita_qid: string | null
+          slug: string | null
+          sources_last_updated: string | null
+          subcategories: string[] | null
+          synced_at: string | null
+          updated_at: string | null
+          website_url: string | null
+          year_entered_be_market: number | null
+        }
+        Insert: {
+          afmps_status?: string | null
+          ce_marking?: boolean | null
+          certifications?: string[] | null
+          country_hq?: string | null
+          country_of_origin?: string | null
+          created_at?: string | null
+          description?: string | null
+          distribution_type?: string | null
+          google_trends_12m?: Json | null
+          google_trends_trend_pct?: number | null
+          id?: string | null
+          inami_categories?: Json | null
+          inami_reimbursement_pct?: number | null
+          is_active?: boolean | null
+          is_featured?: boolean | null
+          is_top20?: boolean | null
+          logo_url?: string | null
+          main_category?: string | null
+          manufacturer_id?: string | null
+          manufacturing_countries?: string[] | null
+          name?: string | null
+          officinal_coverage_pct?: number | null
+          parent_company?: string | null
+          press_mentions_12m?: number | null
+          product_count?: number | null
+          qogita_qid?: string | null
+          slug?: string | null
+          sources_last_updated?: string | null
+          subcategories?: string[] | null
+          synced_at?: string | null
+          updated_at?: string | null
+          website_url?: string | null
+          year_entered_be_market?: number | null
+        }
+        Update: {
+          afmps_status?: string | null
+          ce_marking?: boolean | null
+          certifications?: string[] | null
+          country_hq?: string | null
+          country_of_origin?: string | null
+          created_at?: string | null
+          description?: string | null
+          distribution_type?: string | null
+          google_trends_12m?: Json | null
+          google_trends_trend_pct?: number | null
+          id?: string | null
+          inami_categories?: Json | null
+          inami_reimbursement_pct?: number | null
+          is_active?: boolean | null
+          is_featured?: boolean | null
+          is_top20?: boolean | null
+          logo_url?: string | null
+          main_category?: string | null
+          manufacturer_id?: string | null
+          manufacturing_countries?: string[] | null
+          name?: string | null
+          officinal_coverage_pct?: number | null
+          parent_company?: string | null
+          press_mentions_12m?: number | null
+          product_count?: number | null
+          qogita_qid?: string | null
+          slug?: string | null
+          sources_last_updated?: string | null
+          subcategories?: string[] | null
+          synced_at?: string | null
+          updated_at?: string | null
+          website_url?: string | null
+          year_entered_be_market?: number | null
+        }
+        Relationships: []
+      }
+      brands_backup_20260428_en: {
         Row: {
           afmps_status: string | null
           ce_marking: boolean | null
@@ -627,6 +738,7 @@ export type Database = {
       categories: {
         Row: {
           description: string | null
+          description_en: string | null
           display_order: number
           hs_code: string | null
           icon: string | null
@@ -635,6 +747,7 @@ export type Database = {
           is_active: boolean
           name: string
           name_de: string | null
+          name_en: string | null
           name_fr: string | null
           name_nl: string | null
           parent_id: string | null
@@ -645,6 +758,7 @@ export type Database = {
         }
         Insert: {
           description?: string | null
+          description_en?: string | null
           display_order?: number
           hs_code?: string | null
           icon?: string | null
@@ -653,6 +767,7 @@ export type Database = {
           is_active?: boolean
           name: string
           name_de?: string | null
+          name_en?: string | null
           name_fr?: string | null
           name_nl?: string | null
           parent_id?: string | null
@@ -663,6 +778,7 @@ export type Database = {
         }
         Update: {
           description?: string | null
+          description_en?: string | null
           display_order?: number
           hs_code?: string | null
           icon?: string | null
@@ -671,6 +787,7 @@ export type Database = {
           is_active?: boolean
           name?: string
           name_de?: string | null
+          name_en?: string | null
           name_fr?: string | null
           name_nl?: string | null
           parent_id?: string | null
@@ -688,6 +805,63 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      categories_backup_20260428_en: {
+        Row: {
+          description: string | null
+          display_order: number | null
+          hs_code: string | null
+          icon: string | null
+          id: string | null
+          image_url: string | null
+          is_active: boolean | null
+          name: string | null
+          name_de: string | null
+          name_fr: string | null
+          name_nl: string | null
+          parent_id: string | null
+          qogita_qid: string | null
+          slug: string | null
+          synced_at: string | null
+          vat_rate: number | null
+        }
+        Insert: {
+          description?: string | null
+          display_order?: number | null
+          hs_code?: string | null
+          icon?: string | null
+          id?: string | null
+          image_url?: string | null
+          is_active?: boolean | null
+          name?: string | null
+          name_de?: string | null
+          name_fr?: string | null
+          name_nl?: string | null
+          parent_id?: string | null
+          qogita_qid?: string | null
+          slug?: string | null
+          synced_at?: string | null
+          vat_rate?: number | null
+        }
+        Update: {
+          description?: string | null
+          display_order?: number | null
+          hs_code?: string | null
+          icon?: string | null
+          id?: string | null
+          image_url?: string | null
+          is_active?: boolean | null
+          name?: string | null
+          name_de?: string | null
+          name_fr?: string | null
+          name_nl?: string | null
+          parent_id?: string | null
+          qogita_qid?: string | null
+          slug?: string | null
+          synced_at?: string | null
+          vat_rate?: number | null
+        }
+        Relationships: []
       }
       category_bulk_actions: {
         Row: {
@@ -1802,6 +1976,7 @@ export type Database = {
           country_of_origin: string | null
           created_at: string | null
           description: string | null
+          description_en: string | null
           id: string
           is_active: boolean | null
           legal_name: string | null
@@ -1822,6 +1997,7 @@ export type Database = {
           country_of_origin?: string | null
           created_at?: string | null
           description?: string | null
+          description_en?: string | null
           id?: string
           is_active?: boolean | null
           legal_name?: string | null
@@ -1842,6 +2018,7 @@ export type Database = {
           country_of_origin?: string | null
           created_at?: string | null
           description?: string | null
+          description_en?: string | null
           id?: string
           is_active?: boolean | null
           legal_name?: string | null
@@ -3658,6 +3835,7 @@ export type Database = {
           depth: number | null
           description: string | null
           description_de: string | null
+          description_en: string | null
           description_fr: string | null
           description_nl: string | null
           dimension_unit: string | null
@@ -3681,6 +3859,7 @@ export type Database = {
           min_delivery_days: number | null
           name: string
           name_de: string | null
+          name_en: string | null
           name_fr: string | null
           name_nl: string | null
           offer_count: number
@@ -3696,6 +3875,7 @@ export type Database = {
           seller_count: number | null
           shipping_from: string[] | null
           short_description: string | null
+          short_description_en: string | null
           sku: string | null
           slug: string
           source: Database["public"]["Enums"]["product_source"]
@@ -3727,6 +3907,7 @@ export type Database = {
           depth?: number | null
           description?: string | null
           description_de?: string | null
+          description_en?: string | null
           description_fr?: string | null
           description_nl?: string | null
           dimension_unit?: string | null
@@ -3750,6 +3931,7 @@ export type Database = {
           min_delivery_days?: number | null
           name: string
           name_de?: string | null
+          name_en?: string | null
           name_fr?: string | null
           name_nl?: string | null
           offer_count?: number
@@ -3765,6 +3947,7 @@ export type Database = {
           seller_count?: number | null
           shipping_from?: string[] | null
           short_description?: string | null
+          short_description_en?: string | null
           sku?: string | null
           slug: string
           source?: Database["public"]["Enums"]["product_source"]
@@ -3796,6 +3979,7 @@ export type Database = {
           depth?: number | null
           description?: string | null
           description_de?: string | null
+          description_en?: string | null
           description_fr?: string | null
           description_nl?: string | null
           dimension_unit?: string | null
@@ -3819,6 +4003,7 @@ export type Database = {
           min_delivery_days?: number | null
           name?: string
           name_de?: string | null
+          name_en?: string | null
           name_fr?: string | null
           name_nl?: string | null
           offer_count?: number
@@ -3834,6 +4019,7 @@ export type Database = {
           seller_count?: number | null
           shipping_from?: string[] | null
           short_description?: string | null
+          short_description_en?: string | null
           sku?: string | null
           slug?: string
           source?: Database["public"]["Enums"]["product_source"]
@@ -3877,6 +4063,216 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      products_backup_20260428_en: {
+        Row: {
+          best_bundle_size: number | null
+          best_price_excl_vat: number | null
+          best_price_incl_vat: number | null
+          brand: string | null
+          brand_id: string | null
+          brand_name: string | null
+          brand_qid: string | null
+          category: string | null
+          category_id: string | null
+          category_name: string | null
+          category_qid: string | null
+          cnk_code: string | null
+          created_at: string | null
+          delay_days: number | null
+          depth: number | null
+          description: string | null
+          description_de: string | null
+          description_fr: string | null
+          description_nl: string | null
+          dimension_unit: string | null
+          dimensions: Json | null
+          discount_percentage: number | null
+          estimated_delivery_weeks: number | null
+          gtin: string | null
+          height: number | null
+          id: string | null
+          image_url: string | null
+          image_urls: string[] | null
+          is_active: boolean | null
+          is_in_stock: boolean | null
+          is_preorder: boolean | null
+          is_promotion: boolean | null
+          is_published: boolean | null
+          label: string | null
+          last_detail_sync: string | null
+          last_offers_sync: string | null
+          manufacturer_id: string | null
+          min_delivery_days: number | null
+          name: string | null
+          name_de: string | null
+          name_fr: string | null
+          name_nl: string | null
+          offer_count: number | null
+          origin_country: string | null
+          popularity: number | null
+          promotion_end_date: string | null
+          promotion_label: string | null
+          promotion_start_date: string | null
+          qogita_fid: string | null
+          qogita_qid: string | null
+          qogita_slug: string | null
+          reference_price: number | null
+          seller_count: number | null
+          shipping_from: string[] | null
+          short_description: string | null
+          sku: string | null
+          slug: string | null
+          source: Database["public"]["Enums"]["product_source"] | null
+          synced_at: string | null
+          total_stock: number | null
+          unit: string | null
+          unit_quantity: number | null
+          updated_at: string | null
+          vat_rate_be: number | null
+          weight: number | null
+          weight_unit: string | null
+          width: number | null
+        }
+        Insert: {
+          best_bundle_size?: number | null
+          best_price_excl_vat?: number | null
+          best_price_incl_vat?: number | null
+          brand?: string | null
+          brand_id?: string | null
+          brand_name?: string | null
+          brand_qid?: string | null
+          category?: string | null
+          category_id?: string | null
+          category_name?: string | null
+          category_qid?: string | null
+          cnk_code?: string | null
+          created_at?: string | null
+          delay_days?: number | null
+          depth?: number | null
+          description?: string | null
+          description_de?: string | null
+          description_fr?: string | null
+          description_nl?: string | null
+          dimension_unit?: string | null
+          dimensions?: Json | null
+          discount_percentage?: number | null
+          estimated_delivery_weeks?: number | null
+          gtin?: string | null
+          height?: number | null
+          id?: string | null
+          image_url?: string | null
+          image_urls?: string[] | null
+          is_active?: boolean | null
+          is_in_stock?: boolean | null
+          is_preorder?: boolean | null
+          is_promotion?: boolean | null
+          is_published?: boolean | null
+          label?: string | null
+          last_detail_sync?: string | null
+          last_offers_sync?: string | null
+          manufacturer_id?: string | null
+          min_delivery_days?: number | null
+          name?: string | null
+          name_de?: string | null
+          name_fr?: string | null
+          name_nl?: string | null
+          offer_count?: number | null
+          origin_country?: string | null
+          popularity?: number | null
+          promotion_end_date?: string | null
+          promotion_label?: string | null
+          promotion_start_date?: string | null
+          qogita_fid?: string | null
+          qogita_qid?: string | null
+          qogita_slug?: string | null
+          reference_price?: number | null
+          seller_count?: number | null
+          shipping_from?: string[] | null
+          short_description?: string | null
+          sku?: string | null
+          slug?: string | null
+          source?: Database["public"]["Enums"]["product_source"] | null
+          synced_at?: string | null
+          total_stock?: number | null
+          unit?: string | null
+          unit_quantity?: number | null
+          updated_at?: string | null
+          vat_rate_be?: number | null
+          weight?: number | null
+          weight_unit?: string | null
+          width?: number | null
+        }
+        Update: {
+          best_bundle_size?: number | null
+          best_price_excl_vat?: number | null
+          best_price_incl_vat?: number | null
+          brand?: string | null
+          brand_id?: string | null
+          brand_name?: string | null
+          brand_qid?: string | null
+          category?: string | null
+          category_id?: string | null
+          category_name?: string | null
+          category_qid?: string | null
+          cnk_code?: string | null
+          created_at?: string | null
+          delay_days?: number | null
+          depth?: number | null
+          description?: string | null
+          description_de?: string | null
+          description_fr?: string | null
+          description_nl?: string | null
+          dimension_unit?: string | null
+          dimensions?: Json | null
+          discount_percentage?: number | null
+          estimated_delivery_weeks?: number | null
+          gtin?: string | null
+          height?: number | null
+          id?: string | null
+          image_url?: string | null
+          image_urls?: string[] | null
+          is_active?: boolean | null
+          is_in_stock?: boolean | null
+          is_preorder?: boolean | null
+          is_promotion?: boolean | null
+          is_published?: boolean | null
+          label?: string | null
+          last_detail_sync?: string | null
+          last_offers_sync?: string | null
+          manufacturer_id?: string | null
+          min_delivery_days?: number | null
+          name?: string | null
+          name_de?: string | null
+          name_fr?: string | null
+          name_nl?: string | null
+          offer_count?: number | null
+          origin_country?: string | null
+          popularity?: number | null
+          promotion_end_date?: string | null
+          promotion_label?: string | null
+          promotion_start_date?: string | null
+          qogita_fid?: string | null
+          qogita_qid?: string | null
+          qogita_slug?: string | null
+          reference_price?: number | null
+          seller_count?: number | null
+          shipping_from?: string[] | null
+          short_description?: string | null
+          sku?: string | null
+          slug?: string | null
+          source?: Database["public"]["Enums"]["product_source"] | null
+          synced_at?: string | null
+          total_stock?: number | null
+          unit?: string | null
+          unit_quantity?: number | null
+          updated_at?: string | null
+          vat_rate_be?: number | null
+          weight?: number | null
+          weight_unit?: string | null
+          width?: number | null
+        }
+        Relationships: []
       }
       profession_types: {
         Row: {

@@ -26,7 +26,7 @@ export default function BrandDetailPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("brands")
-        .select("id, name, slug, description, logo_url, website_url, product_count, manufacturer_id, manufacturers(name, slug)")
+        .select("id, name, slug, description, logo_url, website_url, product_count, manufacturer_id, parent_company, country_hq, main_category, subcategories, year_entered_be_market, afmps_status, ce_marking, certifications, manufacturing_countries, inami_reimbursement_pct, inami_categories, google_trends_12m, google_trends_trend_pct, officinal_coverage_pct, press_mentions_12m, distribution_type, is_top20, sources_last_updated, manufacturers(name, slug)")
         .eq("slug", slug!)
         .maybeSingle();
       if (error) throw error;

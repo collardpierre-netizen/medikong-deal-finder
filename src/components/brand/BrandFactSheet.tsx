@@ -145,16 +145,69 @@ function CardHeader({ icon: Icon, color, title }: { icon: any; color: string; ti
   );
 }
 
-// ─── Sparkline (trends) ────────────────────────────────────────────────────
-function Sparkline({ values, w = 120, h = 32 }: { values: number[]; w?: number; h?: number }) {
+// ─── Trends chart (axes, mois, dernière valeur mise en avant) ─────────────
+const MONTH_LABELS_FR = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"];
+
+function TrendsChart({ values }: { values: number[] }) {
   if (!values?.length) return null;
-  const min = Math.min(...values), max = Math.max(...values);
+  const w = 320, h = 110, padL = 24, padR = 8, padT = 8, padB = 18;
+  const innerW = w - padL - padR;
+  const innerH = h - padT - padB;
+  const max = Math.max(...values, 1);
+  const min = 0;
   const range = max - min || 1;
-  const stepX = w / Math.max(values.length - 1, 1);
-  const pts = values.map((v, i) => `${(i * stepX).toFixed(1)},${(h - ((v - min) / range) * h).toFixed(1)}`).join(" ");
+  const stepX = innerW / Math.max(values.length - 1, 1);
+  const x = (i: number) => padL + i * stepX;
+  const y = (v: number) => padT + innerH - ((v - min) / range) * innerH;
+  const linePts = values.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
+  const areaPts = `${padL},${padT + innerH} ${linePts} ${padL + innerW},${padT + innerH}`;
+
+  // Mois (les N derniers mois jusqu'à aujourd'hui)
+  const now = new Date();
+  const monthsBack = values.length;
+  const monthLabels = Array.from({ length: monthsBack }, (_, i) => {
+    const d = new Date(now.getFullYear(), now.getMonth() - (monthsBack - 1 - i), 1);
+    return MONTH_LABELS_FR[d.getMonth()];
+  });
+
+  // Tick interval pour ne pas surcharger l'axe
+  const tickStep = monthsBack > 12 ? 3 : monthsBack > 6 ? 2 : 1;
+  const lastIdx = values.length - 1;
+
   return (
-    <svg width={w} height={h} className="text-mk-blue">
-      <polyline fill="none" stroke="currentColor" strokeWidth="1.5" points={pts} />
+    <svg width="100%" viewBox={`0 0 ${w} ${h}`} className="text-mk-blue" role="img" aria-label="Évolution des recherches Google sur 12 mois">
+      {/* Grille horizontale */}
+      {[0, 0.5, 1].map((t) => (
+        <line
+          key={t}
+          x1={padL} x2={padL + innerW}
+          y1={padT + innerH * t} y2={padT + innerH * t}
+          stroke="currentColor" strokeOpacity="0.08" strokeDasharray={t === 1 ? "0" : "2 2"}
+        />
+      ))}
+      {/* Aire */}
+      <polygon points={areaPts} fill="currentColor" fillOpacity="0.08" />
+      {/* Ligne */}
+      <polyline fill="none" stroke="currentColor" strokeWidth="1.75" points={linePts} />
+      {/* Points */}
+      {values.map((v, i) => (
+        <circle
+          key={i}
+          cx={x(i)} cy={y(v)}
+          r={i === lastIdx ? 3 : 1.5}
+          fill={i === lastIdx ? "currentColor" : "white"}
+          stroke="currentColor" strokeWidth="1.25"
+        />
+      ))}
+      {/* Labels axe Y */}
+      <text x={padL - 4} y={padT + 4} fontSize="9" textAnchor="end" fill="currentColor" fillOpacity="0.55">{Math.round(max)}</text>
+      <text x={padL - 4} y={padT + innerH + 3} fontSize="9" textAnchor="end" fill="currentColor" fillOpacity="0.55">0</text>
+      {/* Labels axe X (mois) */}
+      {monthLabels.map((m, i) => (
+        (i % tickStep === 0 || i === lastIdx) && (
+          <text key={i} x={x(i)} y={h - 4} fontSize="9" textAnchor="middle" fill="currentColor" fillOpacity="0.6">{m}</text>
+        )
+      ))}
     </svg>
   );
 }

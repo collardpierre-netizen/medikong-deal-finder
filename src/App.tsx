@@ -1,6 +1,6 @@
 import { Suspense } from "react"; // v2
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Navigate, useParams } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -24,6 +24,12 @@ function PageLoader() {
       <Loader2 className="w-8 h-8 animate-spin text-mk-blue" />
     </div>
   );
+}
+
+// Redirige l'ancienne route singulier (/marque/:slug) vers la nouvelle (/marques/:slug)
+function RedirectBrandSingular() {
+  const { slug } = useParams();
+  return <Navigate to={`/marques/${slug ?? ""}`} replace />;
 }
 
 // Lazy load ALL pages

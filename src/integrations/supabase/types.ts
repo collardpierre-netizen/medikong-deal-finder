@@ -368,6 +368,114 @@ export type Database = {
           },
         ]
       }
+      brands_backup_20260428: {
+        Row: {
+          afmps_status: string | null
+          ce_marking: boolean | null
+          certifications: string[] | null
+          country_hq: string | null
+          country_of_origin: string | null
+          created_at: string | null
+          description: string | null
+          distribution_type: string | null
+          google_trends_12m: Json | null
+          google_trends_trend_pct: number | null
+          id: string | null
+          inami_categories: Json | null
+          inami_reimbursement_pct: number | null
+          is_active: boolean | null
+          is_featured: boolean | null
+          is_top20: boolean | null
+          logo_url: string | null
+          main_category: string | null
+          manufacturer_id: string | null
+          manufacturing_countries: string[] | null
+          name: string | null
+          officinal_coverage_pct: number | null
+          parent_company: string | null
+          press_mentions_12m: number | null
+          product_count: number | null
+          qogita_qid: string | null
+          slug: string | null
+          sources_last_updated: string | null
+          subcategories: string[] | null
+          synced_at: string | null
+          updated_at: string | null
+          website_url: string | null
+          year_entered_be_market: number | null
+        }
+        Insert: {
+          afmps_status?: string | null
+          ce_marking?: boolean | null
+          certifications?: string[] | null
+          country_hq?: string | null
+          country_of_origin?: string | null
+          created_at?: string | null
+          description?: string | null
+          distribution_type?: string | null
+          google_trends_12m?: Json | null
+          google_trends_trend_pct?: number | null
+          id?: string | null
+          inami_categories?: Json | null
+          inami_reimbursement_pct?: number | null
+          is_active?: boolean | null
+          is_featured?: boolean | null
+          is_top20?: boolean | null
+          logo_url?: string | null
+          main_category?: string | null
+          manufacturer_id?: string | null
+          manufacturing_countries?: string[] | null
+          name?: string | null
+          officinal_coverage_pct?: number | null
+          parent_company?: string | null
+          press_mentions_12m?: number | null
+          product_count?: number | null
+          qogita_qid?: string | null
+          slug?: string | null
+          sources_last_updated?: string | null
+          subcategories?: string[] | null
+          synced_at?: string | null
+          updated_at?: string | null
+          website_url?: string | null
+          year_entered_be_market?: number | null
+        }
+        Update: {
+          afmps_status?: string | null
+          ce_marking?: boolean | null
+          certifications?: string[] | null
+          country_hq?: string | null
+          country_of_origin?: string | null
+          created_at?: string | null
+          description?: string | null
+          distribution_type?: string | null
+          google_trends_12m?: Json | null
+          google_trends_trend_pct?: number | null
+          id?: string | null
+          inami_categories?: Json | null
+          inami_reimbursement_pct?: number | null
+          is_active?: boolean | null
+          is_featured?: boolean | null
+          is_top20?: boolean | null
+          logo_url?: string | null
+          main_category?: string | null
+          manufacturer_id?: string | null
+          manufacturing_countries?: string[] | null
+          name?: string | null
+          officinal_coverage_pct?: number | null
+          parent_company?: string | null
+          press_mentions_12m?: number | null
+          product_count?: number | null
+          qogita_qid?: string | null
+          slug?: string | null
+          sources_last_updated?: string | null
+          subcategories?: string[] | null
+          synced_at?: string | null
+          updated_at?: string | null
+          website_url?: string | null
+          year_entered_be_market?: number | null
+        }
+        Relationships: []
+      }
       bulk_action_limits: {
         Row: {
           created_at: string

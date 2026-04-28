@@ -371,7 +371,12 @@ export function BrandFactSheet({ brand }: { brand: BrandRow }) {
                 ({reviews.length} avis collecté{reviews.length > 1 ? "s" : ""}, minimum 5 requis).
                 {canReview && (
                   <div className="mt-2">
-                    <button className="text-xs font-semibold text-mk-blue hover:underline">+ Donner mon avis</button>
+                    <button
+                      onClick={() => setReviewOpen(true)}
+                      className="text-xs font-semibold text-mk-blue hover:underline"
+                    >
+                      + Donner mon avis
+                    </button>
                   </div>
                 )}
               </div>

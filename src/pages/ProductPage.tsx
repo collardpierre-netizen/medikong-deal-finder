@@ -731,7 +731,7 @@ export default function ProductPage() {
     queryFn: async () => {
       const { data: prod } = await supabase.from("products").select("category_id, category_name").eq("id", product!.id).single();
       if (!prod?.category_id) return null;
-      const { data: cat } = await supabase.from("categories").select("id, name, slug, parent_id").eq("id", prod.category_id).single();
+      const { data: cat } = await supabase.from("categories").select("id, name, slug, parent_id, vat_rate").eq("id", prod.category_id).single();
       if (!cat) return null;
       let parent = null;
       if (cat.parent_id) {

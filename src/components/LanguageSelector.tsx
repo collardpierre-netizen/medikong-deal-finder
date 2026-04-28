@@ -5,7 +5,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Switch } from "@/components/ui/switch";
 import { LANGUAGE_CONFIG, SUPPORTED_LANGUAGES, type SupportedLanguage } from "@/i18n";
 
-export function LanguageSelector() {
+interface LanguageSelectorProps {
+  variant?: "dark" | "light";
+}
+
+export function LanguageSelector({ variant = "dark" }: LanguageSelectorProps = {}) {
   const { t, i18n } = useTranslation();
   const [open, setOpen] = useState(false);
   const [autoTranslate, setAutoTranslate] = useState(() => {
@@ -30,10 +34,19 @@ export function LanguageSelector() {
     localStorage.setItem("medikong_auto_translate", String(value));
   }
 
+  const triggerClass =
+    variant === "light"
+      ? "flex items-center gap-1.5 text-foreground text-xs font-semibold px-2.5 py-1.5 rounded-full border border-border hover:bg-muted transition-colors"
+      : "flex items-center gap-1.5 text-white text-xs font-semibold px-3 py-1.5 rounded-md hover:bg-white/15 transition-colors";
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <button className="flex items-center gap-1.5 text-white text-xs font-semibold px-3 py-1.5 rounded-md hover:bg-white/15 transition-colors" style={{ background: "rgba(255,255,255,0.10)" }}>
+        <button
+          className={triggerClass}
+          style={variant === "dark" ? { background: "rgba(255,255,255,0.10)" } : undefined}
+          aria-label={t("languageSelector.title", { defaultValue: "Language" })}
+        >
           <Globe size={14} />
           <span className="uppercase">{currentLang}</span>
         </button>

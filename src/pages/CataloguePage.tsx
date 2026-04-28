@@ -13,6 +13,7 @@ import { UniversePills } from "@/components/layout/UniversePills";
 import { useCatalogFilters, useCatalogProducts, useCatalogBrands } from "@/hooks/useCatalog";
 import { Loader2, SlidersHorizontal, X } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
+import { HreflangTags } from "@/components/seo/HreflangTags";
 
 export default function CataloguePage() {
   const { slug } = useParams();
@@ -45,6 +46,7 @@ export default function CataloguePage() {
 
   return (
     <Layout>
+      <HreflangTags />
       <UniversePills />
       <div className="mk-container py-4">
         <Breadcrumbs />

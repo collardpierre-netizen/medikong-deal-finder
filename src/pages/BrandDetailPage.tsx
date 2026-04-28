@@ -177,22 +177,35 @@ export default function BrandDetailPage() {
 
   return (
     <Layout>
-      {/* Hero */}
+      {/* Hero — sans étoiles, avec badge Top 20 conditionnel */}
       <div className="py-8 md:py-10" style={{ background: "linear-gradient(135deg, #EFF6FF, #F0FDF4)" }}>
         <div className="mk-container">
           <div className="flex flex-col sm:flex-row items-start gap-4 md:gap-6">
             <div className="w-[80px] h-[80px] md:w-[100px] md:h-[100px] border border-mk-line bg-white rounded-lg flex items-center justify-center text-xs text-mk-ter shrink-0 overflow-hidden">
               {brand.logoUrl ? <img src={brand.logoUrl} alt={brand.name} className="w-full h-full object-contain p-2" /> : "Logo"}
             </div>
-            <div>
-              <h1 className="text-2xl md:text-[28px] font-bold text-mk-navy mb-1">{brand.name}</h1>
-              <div className="flex items-center gap-3 mb-2">
-                <div className="flex items-center gap-1 text-yellow-500">
-                  {[1, 2, 3, 4].map(i => <Star key={i} size={14} fill="currentColor" />)}
-                  <Star size={14} />
-                </div>
-                <span className="text-xs text-mk-sec">Belgique</span>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap mb-1">
+                <h1 className="text-2xl md:text-[28px] font-bold text-mk-navy">{brand.name}</h1>
+                {(brandData as any)?.is_top20 && (
+                  <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100 inline-flex items-center gap-1">
+                    <Trophy size={12} /> Top 20 ventes
+                  </Badge>
+                )}
               </div>
+              {/* Société mère + pays HQ */}
+              {((brandData as any)?.parent_company || (brandData as any)?.country_hq) && (
+                <p className="text-xs text-mk-sec mb-1">
+                  {(brandData as any)?.parent_company}
+                  {(brandData as any)?.parent_company && (brandData as any)?.country_hq && " · "}
+                  {(brandData as any)?.country_hq}
+                </p>
+              )}
+              {/* Métadonnées en ligne */}
+              <p className="text-xs text-mk-sec mb-3">
+                {brand.count.toLocaleString("fr-BE")} référence{brand.count > 1 ? "s" : ""}
+                {(brandData as any)?.main_category && ` · ${(brandData as any).main_category}`}
+              </p>
               {/* Manufacturer link */}
               <div className="flex items-center gap-2 mb-3">
                 <Factory size={14} className="text-mk-sec" />
@@ -216,7 +229,7 @@ export default function BrandDetailPage() {
                   <ExternalLink size={13} /> Site officiel
                 </a>
                 <button onClick={() => document.getElementById("brand-products")?.scrollIntoView({ behavior: "smooth" })} className="bg-mk-blue text-white text-sm px-3 md:px-4 py-2 rounded-md flex items-center gap-1.5">
-                  <Download size={13} /> Catalogue
+                  <Download size={13} /> Voir les produits
                 </button>
                 <button className="border border-mk-line text-sm px-3 md:px-4 py-2 rounded-md flex items-center gap-1.5 text-mk-sec"><Heart size={13} /> Suivre</button>
               </div>
@@ -225,25 +238,14 @@ export default function BrandDetailPage() {
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="bg-mk-alt border-y border-mk-line py-4 overflow-x-auto">
-        <div className="mk-container flex justify-center gap-6 md:gap-12 min-w-max">
-          {[
-            [brand.count.toLocaleString("fr-BE"), "Produits"],
-            [String(catChips.length || 0), "Catégories"],
-            [products.length > 0 ? `${Math.round(products.reduce((s, p) => s + (p.pct || 0), 0) / products.length)}%` : "0%", "Économie moy."],
-            [brandSellers.length > 0 ? `${(brandSellers.reduce((s, v) => s + (v.rating || 0), 0) / brandSellers.length).toFixed(1)}/5` : "-", "Note"],
-            [String(brandSellers.length), "Vendeurs"],
-          ].map(([v, l]) => (
-            <div key={l} className="text-center">
-              <div className="text-lg font-bold text-mk-navy">{v}</div>
-              <div className="text-xs text-mk-sec">{l}</div>
-            </div>
-          ))}
+      {/* Fact sheet "Transparence" — 5 sections sourcées, sans note globale */}
+      {brandData && (
+        <div className="bg-white border-y border-mk-line py-6 md:py-8">
+          <div className="mk-container">
+            <BrandFactSheet brand={brandData as any} />
+          </div>
         </div>
-      </div>
-
-      <div id="brand-products" className="mk-container py-6 md:py-8">
+      )}
         {/* Sellers for this brand */}
         {brandSellers.length > 0 && (
           <div className="mb-6">

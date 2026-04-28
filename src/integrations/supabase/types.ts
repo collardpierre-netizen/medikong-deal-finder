@@ -8201,6 +8201,7 @@ export type Database = {
         }[]
       }
       recompute_brand_top20: { Args: never; Returns: undefined }
+      recompute_brand_top20_with_log: { Args: never; Returns: string }
       record_qogita_endpoint_error: {
         Args: {
           _endpoint: string

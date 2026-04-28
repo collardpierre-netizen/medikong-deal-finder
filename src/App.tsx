@@ -120,6 +120,7 @@ const AdminReglementaire = lazyWithRetry(() => import("./pages/admin/AdminReglem
 const AdminImportExport = lazyWithRetry(() => import("./pages/admin/AdminImportExport"), "AdminImportExport");
 const AdminCategories = lazyWithRetry(() => import("./pages/admin/AdminCategories"), "AdminCategories");
 const AdminMarques = lazyWithRetry(() => import("./pages/admin/AdminMarques"), "AdminMarques");
+const AdminBrandTransparencyEdit = lazyWithRetry(() => import("./pages/admin/AdminBrandTransparencyEdit"), "AdminBrandTransparencyEdit");
 const AdminCRM = lazyWithRetry(() => import("./pages/admin/AdminCRM"), "AdminCRM");
 const AdminCMS = lazyWithRetry(() => import("./pages/admin/AdminCMS"), "AdminCMS");
 const AdminProductPrices = lazyWithRetry(() => import("./pages/admin/AdminProductPrices"), "AdminProductPrices");

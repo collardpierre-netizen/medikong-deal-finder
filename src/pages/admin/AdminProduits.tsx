@@ -274,50 +274,52 @@ const AdminProduits = () => {
         ))}
       </div>
 
-      {/* Search + Filters */}
-      <div className="flex items-center gap-3 mb-4 flex-wrap">
-        <div className="flex items-center gap-2 px-3 py-2 rounded-md flex-1 max-w-md" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
-          <Search size={14} style={{ color: "#8B95A5" }} />
-          <input type="text" placeholder="Rechercher par nom, CNK, EAN, marque..." value={search} onChange={(e) => handleSearchChange(e.target.value)}
-            className="flex-1 text-[13px] outline-none bg-transparent" style={{ color: "#1D2530" }} />
+      {/* Search + Filters — Catalogue master uniquement */}
+      {activeTab === "catalog" && (
+        <div className="flex items-center gap-3 mb-4 flex-wrap">
+          <div className="flex items-center gap-2 px-3 py-2 rounded-md flex-1 max-w-md" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
+            <Search size={14} style={{ color: "#8B95A5" }} />
+            <input type="text" placeholder="Rechercher par nom, CNK, EAN, marque..." value={search} onChange={(e) => handleSearchChange(e.target.value)}
+              className="flex-1 text-[13px] outline-none bg-transparent" style={{ color: "#1D2530" }} />
+          </div>
+
+          <Select value={brandFilter} onValueChange={(v) => handleFilterChange("brand", v)}>
+            <SelectTrigger className="w-[200px] h-9 text-[13px]">
+              <SelectValue placeholder="Toutes les marques" />
+            </SelectTrigger>
+            <SelectContent className="max-h-60">
+              <SelectItem value="all">Toutes les marques</SelectItem>
+              {sortedBrands.map((b) => (
+                <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={manufacturerFilter} onValueChange={(v) => handleFilterChange("manufacturer", v)}>
+            <SelectTrigger className="w-[200px] h-9 text-[13px]">
+              <SelectValue placeholder="Tous les fabricants" />
+            </SelectTrigger>
+            <SelectContent className="max-h-60">
+              <SelectItem value="all">Tous les fabricants</SelectItem>
+              {sortedManufacturers.map((m) => (
+                <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {(brandFilter !== "all" || manufacturerFilter !== "all" || debouncedSearch) && (
+            <Button variant="ghost" size="sm" className="text-[12px] h-9" onClick={() => {
+              setBrandFilter("all");
+              setManufacturerFilter("all");
+              setSearch("");
+              setDebouncedSearch("");
+              setPage(1);
+            }}>
+              Réinitialiser
+            </Button>
+          )}
         </div>
-
-        <Select value={brandFilter} onValueChange={(v) => handleFilterChange("brand", v)}>
-          <SelectTrigger className="w-[200px] h-9 text-[13px]">
-            <SelectValue placeholder="Toutes les marques" />
-          </SelectTrigger>
-          <SelectContent className="max-h-60">
-            <SelectItem value="all">Toutes les marques</SelectItem>
-            {sortedBrands.map((b) => (
-              <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <Select value={manufacturerFilter} onValueChange={(v) => handleFilterChange("manufacturer", v)}>
-          <SelectTrigger className="w-[200px] h-9 text-[13px]">
-            <SelectValue placeholder="Tous les fabricants" />
-          </SelectTrigger>
-          <SelectContent className="max-h-60">
-            <SelectItem value="all">Tous les fabricants</SelectItem>
-            {sortedManufacturers.map((m) => (
-              <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        {(brandFilter !== "all" || manufacturerFilter !== "all" || debouncedSearch) && (
-          <Button variant="ghost" size="sm" className="text-[12px] h-9" onClick={() => {
-            setBrandFilter("all");
-            setManufacturerFilter("all");
-            setSearch("");
-            setDebouncedSearch("");
-            setPage(1);
-          }}>
-            Réinitialiser
-          </Button>
-        )}
-      </div>
+      )}
 
       {activeTab === "catalog" && (
         <>

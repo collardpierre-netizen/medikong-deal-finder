@@ -58,11 +58,14 @@
     "exampleGloves": "Nitrile gloves",
     "exampleBetadine": "Betadine",
     "exampleTena": "TENA",
-    "exampleMasks": "FFP2 masks"
+    "exampleMasks": "FFP2 masks",
+    "slideFallbackTitle": "The leading medical marketplace in Belgium",
+    "slideFallbackSubtitle": "MediKong.pro"
   },
   "stats": {
     "suppliers": "Verified suppliers",
     "products": "Products",
+    "brands": "Brands",
     "pharmacies": "Partner pharmacies"
   },
   "valueProps": {

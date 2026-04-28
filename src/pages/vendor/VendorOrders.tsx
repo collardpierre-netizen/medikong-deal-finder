@@ -45,7 +45,7 @@ interface OrderWithLines {
 const statusConfig: Record<string, { label: string; color: "info" | "success" | "warning" | "default" }> = {
   pending: { label: "En attente", color: "warning" },
   processing: { label: "En cours", color: "info" },
-  forwarded: { label: "Transmis Qogita", color: "success" },
+  forwarded: { label: "Transmis au fournisseur", color: "success" },
   shipped: { label: "Expédié", color: "info" },
   delivered: { label: "Livré", color: "success" },
   cancelled: { label: "Annulé", color: "default" },

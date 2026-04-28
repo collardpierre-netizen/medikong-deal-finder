@@ -89,13 +89,13 @@ export default function AdminExternalVendors() {
   const [tab, setTab] = useState("list");
 
   // Vendor form
-  const [vf, setVf] = useState({ name: "", website_url: "", contact_email: "", contact_phone: "", country_code: "BE", notes: "" });
+  const [vf, setVf] = useState({ name: "", website_url: "", logo_url: "", contact_email: "", contact_phone: "", country_code: "BE", notes: "" });
 
-  const resetVf = () => setVf({ name: "", website_url: "", contact_email: "", contact_phone: "", country_code: "BE", notes: "" });
+  const resetVf = () => setVf({ name: "", website_url: "", logo_url: "", contact_email: "", contact_phone: "", country_code: "BE", notes: "" });
 
   const openNewVendor = () => { resetVf(); setEditVendor(null); setVendorDialog(true); };
   const openEditVendor = (v: any) => {
-    setVf({ name: v.name, website_url: v.website_url || "", contact_email: v.contact_email || "", contact_phone: v.contact_phone || "", country_code: v.country_code || "BE", notes: v.notes || "" });
+    setVf({ name: v.name, website_url: v.website_url || "", logo_url: v.logo_url || "", contact_email: v.contact_email || "", contact_phone: v.contact_phone || "", country_code: v.country_code || "BE", notes: v.notes || "" });
     setEditVendor(v);
     setVendorDialog(true);
   };

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,9 +6,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, Languages, CheckCircle2, AlertTriangle } from "lucide-react";
+import { Loader2, Languages, CheckCircle2, AlertTriangle, Database } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+
+interface CacheStats {
+  total: number;
+  today: number;
+  byLang: Record<string, number>;
+  topHits: Array<{ source_text: string; target_lang: string; hits: number }>;
+}
 
 interface RunResult {
   ok?: boolean;

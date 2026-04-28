@@ -35,8 +35,10 @@ describe("ProductPage — libellé de mise à jour", () => {
     expect(matches.length).toBe(1);
   });
 
-  it("ne contient aucune occurrence du mot \"synchro\" (insensible à la casse)", () => {
-    const matches = source.match(/synchro/gi) ?? [];
+  it("ne contient aucun badge \"Synchro\" (libellé court interdit)", () => {
+    // On bloque uniquement la forme courte "Synchro" utilisée dans les badges,
+    // sans casser le mot "synchronisation(s)" qui peut figurer dans des textes longs.
+    const matches = source.match(/\bsynchro\b/gi) ?? [];
     expect(matches.length).toBe(0);
   });
 });

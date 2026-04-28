@@ -11,7 +11,7 @@ serve(async (req) => {
   try {
     const { texts, target_locales } = await req.json();
     // texts = { name: "...", description: "..." }
-    // target_locales = ["fr", "nl", "de"]
+    // target_locales = ["fr", "nl", "de", "en"]
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
@@ -21,10 +21,14 @@ serve(async (req) => {
       return new Response(JSON.stringify({ translations: {} }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const prompt = `Translate the following texts into these languages: ${target_locales.join(", ")}. 
+    const localesExample = target_locales
+      .map((loc: string) => `"${loc}": { ${fieldsToTranslate.map(([k]) => `"${k}": "..."`).join(", ")} }`)
+      .join(", ");
+
+    const prompt = `Translate the following texts into these languages: ${target_locales.join(", ")}.
 The source text may be in any language (English, French, or other). Auto-detect the source language.
 Return ONLY a valid JSON object with this structure:
-{ "fr": { ${fieldsToTranslate.map(([k]) => `"${k}": "..."`).join(", ")} }, "nl": { ... }, "de": { ... } }
+{ ${localesExample} }
 
 Texts to translate:
 ${fieldsToTranslate.map(([k, v]) => `${k}: "${v}"`).join("\n")}
@@ -34,7 +38,7 @@ Rules:
 - Keep the same tone and style
 - For each target locale, provide a proper translation in that language
 - If the source is already in a target language, return it as-is for that locale
-- For "fr", if the source is not French, translate it to French
+- For "en", produce natural professional English (B2B pharmaceutical tone)
 - Return ONLY the JSON, no markdown, no explanation`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {

@@ -1,89 +1,91 @@
+# Sprint 1 — Fondations i18n anglaises
 
-# MediKong — Plan de développement
+Objectif : faire de l'anglais une **langue de 1ère classe** dans toute l'infrastructure (DB, helpers, contextes, sélecteur), sans encore traduire le contenu UI ni le catalogue. À la fin du sprint, basculer en EN affichera l'UI core en anglais et le catalogue en fallback (anglais d'origine Qogita ou FR si pas de traduction).
 
-## ✅ Fonctionnalités livrées
+## Périmètre IN
+1. **Base de données** : ajouter colonnes `_en` partout où existent déjà `_fr/_nl/_de`, étendre l'auto-translate.
+2. **Code i18n** : unifier sur `i18next`, supprimer le legacy `I18nContext`, ajouter `en` partout.
+3. **Sélecteur de langue** : exposer EN dans le `LanguageSelector`.
+4. **SEO de base** : ajouter `hreflang="en"` dans la home et les pages catalogue (sitemap multilingue minimal).
+5. **Compléter `en.json`** des chaînes UI core (navigation, boutons, formulaires) — pas les pages contenu.
 
-### Marketplace B2B
-- Catalogue produits avec filtres, recherche, pagination
-- Fiches produit avec offres multi-vendeurs, prix par paliers, MOV
-- Panier multi-vendeurs, checkout Stripe Connect (split payments)
-- Commandes, factures, bons de livraison
-- Authentification acheteur/vendeur/admin avec RLS
-- Système de favoris et listes
-
-### Portail Vendeur
-- Dashboard KYC + stepper de validation
-- Gestion offres (CRUD, import/export XLSX avec prix d'achat + marge)
-- Paramètres entreprise (profil, logo, site web, contact)
-- Paramètres commerciaux (pays cibles, MOV, politique retours)
-- Commission configurable (%, partage marge 50/50, fixe)
-- Profil public /vendeur/:slug avec barre MOV sticky
-- Santé du compte + niveaux (Bronze → Platinum)
-
-### Administration
-- Dashboard super-admin avec KPI
-- Gestion vendeurs (CRUD, validation lifecycle, shadow mode/impersonation)
-- Onglets par vendeur : résumé, validation, visibilité, offres & marges, portefeuille, produits, délégués, activité
-- Gestion produits, catégories, marques, fabricants
-- Délégués commerciaux/techniques (assignables à vendeur/marque/fabricant)
-- Commandes, litiges, finances, commissions
-- Import/export, sync Qogita, CMS hero images
-- Alertes prix (admin + vendeur)
-- Veille prix marché, vendeurs externes (comparateur Trivago-style)
-- Codes marché par pays, gestion pays
-- Audit log, API keys, traductions
-
-### ReStock (marketplace déstockage)
-- Landing page, listing opportunités
-- Flux vendeur (création offre, contre-offres, ventes)
-- Flux acheteur (dashboard, checkout, swipe mobile)
-- Admin (offres, acheteurs, campagnes, FAQ, règles, prix de référence, payouts)
-
-### Pages institutionnelles
-- Entreprise (about, équipe, how it works, why MediKong)
-- Trust (devenir vendeur, aide, témoignages, logistique, qualité)
-- Pages légales (CGV, mentions, cookies, confidentialité)
-- Pages segment (pharmacies, EHPAD, hôpitaux, etc.)
-- Invest page
-
-### Technique
-- i18n FR/NL/DE, auto-traduction produits via IA
-- Auth email templates personnalisées (Resend)
-- Edge functions : Stripe, Sendcloud, Qogita sync, image proxy, sitemap dynamique
-- Impersonation cross-tab via localStorage (corrigé + URL fallback)
+## Périmètre OUT (Sprints 2 & 3)
+- Traduction des pages contenu (legal, trust, segment, entreprise, ReStock landing)
+- Templates emails React-Email en EN
+- Batch d'auto-traduction de tout le catalogue
+- Revue juridique CGV/mentions EN
+- Traduction des FAQ ReStock & articles d'aide
 
 ---
 
-## 🔧 Chantiers restants
+## Détail technique
 
-### Priorité haute
-1. **Sendcloud intégration** — En attente des clés API. L'edge function est prête, les webhooks aussi. À activer dès réception des secrets.
-2. **Escrow auto-release** — Cron/scheduled function pour libérer automatiquement les paiements vendeur après X jours si pas de litige. La logique Stripe Connect est en place.
-3. **Tests E2E ReStock** — Valider le flux complet acheteur→vendeur→livraison/enlèvement. Les pages existent, la logique de révélation d'adresse post-paiement est à vérifier.
+### 1. Migration DB
+Ajouter colonnes (toutes nullable, pas de défaut) :
+- `products` : `name_en`, `description_en`, `short_description_en`
+- `categories` : `name_en`, `description_en`
+- `brands` : `description_en` (le `name` reste neutre)
+- `manufacturers` : `description_en`
+- `cms_hero_banners` : `title_en`, `subtitle_en`, `cta_label_en`
+- `cms_sections` : `title_en`, `body_en`
+- `restock_faq_items` : `question_en`, `answer_en`
 
-### Priorité moyenne
-4. **Notifications temps réel** — Realtime Supabase pour alertes prix, commandes, messages. Les tables existent, le canal à brancher.
-5. **Analytics vendeur** — Dashboard vendeur avec vrais KPI (CA, commandes, taux buy box) basés sur les données réelles.
-6. **Emails transactionnels** — Templates prêtes (confirmation commande, vendeur approuvé/refusé, inscription acheteur). Process-email-queue edge function déployée.
+Snapshot `*_backup_20260428_en` des 3 plus grosses tables (products, categories, brands) **avant** l'`ALTER TABLE`, conformément à notre process de backup ciblé.
 
-### Priorité basse
-7. **Pages admin manquantes** — Certaines pages admin sont des stubs (AdminSync, AdminSchemasPIM). À étoffer selon besoin.
-8. **Stripe Connect onboarding vendeur** — Flow complet (redirect → success → refresh). Edge functions prêtes, UI existante.
-9. **Meilisearch** — Client configuré, sync edge function prête. À activer avec instance Meilisearch.
+### 2. Edge function `auto-translate-catalog`
+- Étendre l'array de langues cibles : `['fr','nl','de']` → `['fr','nl','de','en']`
+- Source = `name` (anglais d'origine Qogita) → si `lang === 'en'` et `name_en` vide, copie directe `name_en = name` (pas d'appel AI nécessaire pour Qogita)
+- Pour les produits non-Qogita, appel `google/gemini-2.5-flash-lite` via Lovable AI Gateway
+
+### 3. Helpers de localisation
+**`src/lib/localization.ts`** :
+```ts
+if (currentLang === "en" && item.name_en) return item.name_en;
+// fallback existant inchangé
+```
+Idem `getLocalizedDescription`.
+
+### 4. Contexte i18n unifié
+- **Supprimer** `src/contexts/I18nContext.tsx` (legacy, ne supporte que fr/nl/de) → faire grep des usages, remplacer par `useTranslation()` de `react-i18next`
+- Migrer le dictionnaire interne du legacy vers `src/i18n/locales/{fr,nl,de,en}.json` (clés admin sidebar/topbar principalement)
+- `LANGUAGE_CONFIG` : `en` est déjà déclaré, vérifier le rendu du flag/label
+
+### 5. Sélecteur de langue
+`src/components/LanguageSelector.tsx` : confirmer que les 4 langues sont listées (déjà OK selon `SUPPORTED_LANGUAGES`).
+
+### 6. `translation-mappings.ts`
+Ajouter `EN_TO_EN` (identité, ou mieux : court-circuit dans `autoTranslate` si `locale === 'en'`).
+
+### 7. Compléter `src/i18n/locales/en.json`
+Couvrir uniquement les **clés UI core** déjà présentes en FR :
+- Navigation principale + sidebars (admin, vendeur, ReStock)
+- Boutons globaux (save/cancel/delete/etc.)
+- Labels formulaires onboarding
+- Messages toast système
+Pas les pages contenu (legal, trust, etc. → Sprint 2).
+
+### 8. SEO minimal
+- Ajouter balises `<link rel="alternate" hreflang="en" href="..."/>` sur `HomePage`, `CataloguePage`, `BrandDetailPage`
+- Étendre l'edge function sitemap pour inclure `<xhtml:link rel="alternate" hreflang="en" .../>` par URL
 
 ---
 
-## Architecture clé
+## Livrables
+- 1 migration DB (colonnes `_en` + snapshot backup)
+- 1 edge function modifiée (`auto-translate-catalog`)
+- ~5-8 fichiers code édités (helpers, contextes, sélecteur, sitemap)
+- `en.json` complété sur ~150-200 clés UI core
+- Note mémoire `mem://tech/i18n-catalog-schema` mise à jour pour ajouter EN
 
-| Couche | Stack |
-|--------|-------|
-| Frontend | React 18 + Vite 5 + Tailwind + shadcn/ui |
-| State | TanStack Query + React Context |
-| Auth | Supabase Auth + RLS |
-| DB | PostgreSQL (Supabase) |
-| Payments | Stripe Connect (split) |
-| Shipping | Sendcloud (prêt, en attente) |
-| Search | Meilisearch (prêt, en attente) |
-| Emails | Resend via edge functions |
-| i18n | i18next (FR/NL/DE) |
-| Impersonation | localStorage + URL param fallback |
+## Tests / QA
+- Bascule manuelle FR→EN→NL→DE dans le sélecteur sans crash
+- Vérification visuelle : header, sidebar admin, sidebar vendeur, footer en EN
+- Vérification fallback : un produit sans `name_en` affiche bien `name` (anglais Qogita) ou `name_fr`
+- Test `audit_backup_tables_rls()` après création du snapshot pour confirmer RLS OK
+
+## Coûts (ordre de grandeur)
+- **Crédits Lovable** : sprint **moyen** (1 migration, 1 edge function, ~10 fichiers code, dictionnaire à compléter). Pas de génération de contenu en masse.
+- **Lovable AI Gateway** : ~0 (la traduction du catalogue est repoussée au Sprint 3).
+
+## Hors-périmètre confirmé pour ce sprint
+Pas de Sprint 2 (contenu) ni Sprint 3 (catalogue + SEO complet) — on valide d'abord les fondations en production avant d'engager le reste.

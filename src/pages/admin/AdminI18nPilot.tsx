@@ -33,8 +33,48 @@ export default function AdminI18nPilot() {
   const [dryRun, setDryRun] = useState(true);
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<RunResult | null>(null);
+  const [cacheStats, setCacheStats] = useState<CacheStats | null>(null);
 
-  const handleRun = async () => {
+  useEffect(() => {
+    void loadCacheStats();
+  }, []);
+
+  const loadCacheStats = async () => {
+    try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const [{ count: total }, { count: todayCount }, { data: rows }, { data: top }] =
+        await Promise.all([
+          supabase.from("translation_cache").select("*", { count: "exact", head: true }),
+          supabase
+            .from("translation_cache")
+            .select("*", { count: "exact", head: true })
+            .gte("created_at", today.toISOString()),
+          supabase.from("translation_cache").select("target_lang"),
+          supabase
+            .from("translation_cache")
+            .select("source_text, target_lang, hits")
+            .order("hits", { ascending: false })
+            .limit(10),
+        ]);
+
+      const byLang: Record<string, number> = {};
+      (rows || []).forEach((r: { target_lang: string }) => {
+        byLang[r.target_lang] = (byLang[r.target_lang] || 0) + 1;
+      });
+
+      setCacheStats({
+        total: total || 0,
+        today: todayCount || 0,
+        byLang,
+        topHits: (top || []) as CacheStats["topHits"],
+      });
+    } catch (err) {
+      console.error("loadCacheStats error", err);
+    }
+  };
+
     setRunning(true);
     setResult(null);
     try {

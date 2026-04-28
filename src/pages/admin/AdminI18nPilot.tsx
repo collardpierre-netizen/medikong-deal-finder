@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,9 +6,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, Languages, CheckCircle2, AlertTriangle } from "lucide-react";
+import { Loader2, Languages, CheckCircle2, AlertTriangle, Database } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+
+interface CacheStats {
+  total: number;
+  today: number;
+  byLang: Record<string, number>;
+  topHits: Array<{ source_text: string; target_lang: string; hits: number }>;
+}
 
 interface RunResult {
   ok?: boolean;
@@ -26,6 +33,47 @@ export default function AdminI18nPilot() {
   const [dryRun, setDryRun] = useState(true);
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<RunResult | null>(null);
+  const [cacheStats, setCacheStats] = useState<CacheStats | null>(null);
+
+  useEffect(() => {
+    void loadCacheStats();
+  }, []);
+
+  const loadCacheStats = async () => {
+    try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const [{ count: total }, { count: todayCount }, { data: rows }, { data: top }] =
+        await Promise.all([
+          supabase.from("translation_cache").select("*", { count: "exact", head: true }),
+          supabase
+            .from("translation_cache")
+            .select("*", { count: "exact", head: true })
+            .gte("created_at", today.toISOString()),
+          supabase.from("translation_cache").select("target_lang"),
+          supabase
+            .from("translation_cache")
+            .select("source_text, target_lang, hits")
+            .order("hits", { ascending: false })
+            .limit(10),
+        ]);
+
+      const byLang: Record<string, number> = {};
+      (rows || []).forEach((r: { target_lang: string }) => {
+        byLang[r.target_lang] = (byLang[r.target_lang] || 0) + 1;
+      });
+
+      setCacheStats({
+        total: total || 0,
+        today: todayCount || 0,
+        byLang,
+        topHits: (top || []) as CacheStats["topHits"],
+      });
+    } catch (err) {
+      console.error("loadCacheStats error", err);
+    }
+  };
 
   const handleRun = async () => {
     setRunning(true);
@@ -120,6 +168,50 @@ export default function AdminI18nPilot() {
             </Button>
           </CardContent>
         </Card>
+
+        {cacheStats && (
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Database className="h-4 w-4 text-muted-foreground" />
+                Cache de traductions live (write-through)
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <Stat label="Total entrées" value={cacheStats.total} />
+                <Stat label="Aujourd'hui" value={cacheStats.today} highlight />
+                {Object.entries(cacheStats.byLang).map(([lang, n]) => (
+                  <Stat key={lang} label={`Langue ${lang.toUpperCase()}`} value={n} />
+                ))}
+              </div>
+              {cacheStats.topHits.length > 0 && (
+                <div>
+                  <p className="text-xs font-semibold uppercase text-muted-foreground mb-2">
+                    Top 10 textes les plus demandés
+                  </p>
+                  <ul className="space-y-1.5">
+                    {cacheStats.topHits.map((h, i) => (
+                      <li
+                        key={i}
+                        className="text-xs flex items-center justify-between gap-3 border-b pb-1.5 last:border-0"
+                      >
+                        <span className="truncate flex-1">
+                          <span className="text-muted-foreground mr-1.5">[{h.target_lang}]</span>
+                          {h.source_text}
+                        </span>
+                        <span className="font-mono text-primary shrink-0">×{h.hits}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Chaque texte est payé <strong>1× maximum</strong>, puis servi à tous les utilisateurs depuis ce cache.
+              </p>
+            </CardContent>
+          </Card>
+        )}
 
         {result && (
           <Card className="mt-6">

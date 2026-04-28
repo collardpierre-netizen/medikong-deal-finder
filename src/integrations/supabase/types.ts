@@ -6438,6 +6438,39 @@ export type Database = {
         }
         Relationships: []
       }
+      translation_cache: {
+        Row: {
+          created_at: string
+          hits: number
+          last_used_at: string
+          source_hash: string
+          source_lang: string
+          source_text: string
+          target_lang: string
+          translated_text: string
+        }
+        Insert: {
+          created_at?: string
+          hits?: number
+          last_used_at?: string
+          source_hash: string
+          source_lang: string
+          source_text: string
+          target_lang: string
+          translated_text: string
+        }
+        Update: {
+          created_at?: string
+          hits?: number
+          last_used_at?: string
+          source_hash?: string
+          source_lang?: string
+          source_text?: string
+          target_lang?: string
+          translated_text?: string
+        }
+        Relationships: []
+      }
       translations: {
         Row: {
           created_at: string | null
@@ -8570,6 +8603,10 @@ export type Database = {
       }
       bulk_override_requested: { Args: never; Returns: boolean }
       bulk_set_cnk_codes: { Args: { pairs: Json }; Returns: number }
+      bump_translation_cache_hit: {
+        Args: { _source_hash: string }
+        Returns: undefined
+      }
       consume_qogita_tokens: { Args: { _amount: number }; Returns: Json }
       count_products_per_category: {
         Args: never

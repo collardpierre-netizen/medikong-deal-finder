@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Tag, Plus, Trash2, ChevronRight, Loader2 } from "lucide-react";
+import ResolvedProfilePricesPreview from "./ResolvedProfilePricesPreview";
 
 type PricingMode = "absolute" | "discount_pct";
 

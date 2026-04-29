@@ -1213,6 +1213,8 @@ export default function VendorOffers() {
       const next = new URLSearchParams(searchParams);
       next.delete("action");
       next.delete("product");
+      next.delete("brand");
+      next.delete("manufacturer");
       setSearchParams(next, { replace: true });
     })();
   }, [searchParams, setSearchParams]);

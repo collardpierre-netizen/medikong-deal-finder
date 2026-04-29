@@ -6,6 +6,7 @@ import { useCompetitorAlertsCount } from "@/hooks/useVendorCompetitorAlerts";
 import { usePriceAlertEventsCount } from "@/hooks/useVendorPriceAlertRules";
 import { useVendorPriceAlertRealtime } from "@/hooks/useVendorPriceAlertRealtime";
 import { commissionRates } from "@/lib/vendor-tokens";
+import { NotificationsBell } from "@/components/vendor/NotificationsBell";
 
 const langs: Lang[] = ["fr", "nl", "de"];
 
@@ -75,6 +76,8 @@ export function VendorTopBar({ onMenuClick }: VendorTopBarProps) {
             </span>
           )}
         </button>
+
+        <NotificationsBell />
 
         <button
           onClick={() => navigate("/vendor/messages")}

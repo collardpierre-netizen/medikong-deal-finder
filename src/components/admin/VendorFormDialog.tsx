@@ -72,8 +72,14 @@ export default function VendorFormDialog({ open, onOpenChange }: Props) {
     setForm({ company_name: "", email: "", phone: "", vat_number: "", address_line1: "", city: "", postal_code: "", country_code: "BE", commission_rate: "15", commission_model: "flat_percentage", margin_split_pct: "50", fixed_commission_amount: "2", description: "", type: "real", create_account: true });
     setResult(null);
     setCopied(false);
-    setDuplicate(null);
+    setErrorPresentation(null);
+    setErrorPayload(null);
     setAttaching(false);
+  };
+
+  const dismissError = () => {
+    setErrorPresentation(null);
+    setErrorPayload(null);
   };
 
   const handleSave = async () => {
@@ -86,9 +92,9 @@ export default function VendorFormDialog({ open, onOpenChange }: Props) {
       return;
     }
     setSaving(true);
+    dismissError();
     try {
       if (form.create_account && form.email.trim()) {
-        // Use edge function to create auth account + vendor record
         const { data, error } = await supabase.functions.invoke("create-vendor-account", {
           body: {
             company_name: form.company_name.trim(),
@@ -105,24 +111,18 @@ export default function VendorFormDialog({ open, onOpenChange }: Props) {
           },
         });
         if (error) throw error;
-        // Nouvelle convention edge: { ok: boolean, error?, code?, ... }
-        if (data?.ok === false || data?.error) {
-          // Doublon vendeur : proposer le rattachement
-          if (data?.code === "vendor_email_already_exists" && data?.existing_vendor) {
-            setDuplicate({
-              message: data.error,
-              existing_vendor: data.existing_vendor,
-              suggested_action: data.suggested_action ?? "attach_to_existing",
-            });
-            return;
-          }
-          throw new Error(data?.error || "Erreur inconnue");
+
+        // Convention edge: { ok: false, code, error, ... } pour toute erreur applicative
+        if (isVendorAccountError(data)) {
+          setErrorPayload(data);
+          setErrorPresentation(presentVendorAccountError(data));
+          return;
         }
 
         setResult({ vendor_id: data.vendor_id, temp_password: data.temp_password ?? null });
         toast.success("Vendeur créé avec compte d'accès !");
       } else {
-        // Direct DB insert without auth account
+        // Insert direct sans compte auth
         const slug = slugify(form.company_name);
         const { error } = await supabase.from("vendors").insert({
           name: form.company_name.trim(),
@@ -144,7 +144,20 @@ export default function VendorFormDialog({ open, onOpenChange }: Props) {
           is_active: true,
           can_manage_offers: true,
         });
-        if (error) throw error;
+        if (error) {
+          // Détection conflit unique côté DB (lower(email))
+          if ((error as any).code === "23505" && /vendors_email_unique_ci/i.test(error.message || "")) {
+            const synthetic: VendorAccountErrorPayload = {
+              ok: false,
+              code: "vendor_email_already_exists",
+              error: "Un vendeur avec cet email existe déjà.",
+            };
+            setErrorPayload(synthetic);
+            setErrorPresentation(presentVendorAccountError(synthetic));
+            return;
+          }
+          throw error;
+        }
         toast.success("Vendeur créé (sans compte d'accès)");
         onOpenChange(false);
         resetForm();
@@ -167,31 +180,68 @@ export default function VendorFormDialog({ open, onOpenChange }: Props) {
   };
 
   const handleAttach = async () => {
-    if (!duplicate) return;
+    const ev = errorPayload?.existing_vendor;
+    if (!ev) return;
     setAttaching(true);
     try {
       const { data, error } = await supabase.functions.invoke("create-vendor-account", {
         body: {
-          vendor_id: duplicate.existing_vendor.id,
-          company_name: duplicate.existing_vendor.company_name || duplicate.existing_vendor.name || form.company_name.trim(),
+          vendor_id: ev.id,
+          company_name: ev.company_name || ev.name || form.company_name.trim(),
           email: form.email.trim(),
         },
       });
       if (error) throw error;
-      if (data?.ok === false || data?.error) throw new Error(data?.error || "Erreur inconnue");
+      if (isVendorAccountError(data)) {
+        setErrorPayload(data);
+        setErrorPresentation(presentVendorAccountError(data));
+        return;
+      }
 
       setResult({
         vendor_id: data.vendor_id,
         temp_password: data.temp_password ?? null,
         reused: !!data.reused_existing_user,
       });
-      setDuplicate(null);
+      dismissError();
       queryClient.invalidateQueries({ queryKey: ["admin-vendors"] });
       toast.success("Accès rattaché au vendeur existant.");
     } catch (e: any) {
       toast.error(e.message || "Erreur lors du rattachement");
     } finally {
       setAttaching(false);
+    }
+  };
+
+  const handleErrorAction = (action: VendorAccountErrorAction) => {
+    switch (action.intent) {
+      case "attach":
+        void handleAttach();
+        return;
+      case "edit_email":
+        dismissError();
+        // Focus l'input email (déjà visible dans le form)
+        setTimeout(() => {
+          (document.querySelector('input[type="email"]') as HTMLInputElement | null)?.focus();
+        }, 50);
+        return;
+      case "retry":
+        dismissError();
+        if (action.href) {
+          window.location.assign(action.href);
+          return;
+        }
+        void handleSave();
+        return;
+      case "open_vendor":
+      case "open_user":
+        if (action.href) {
+          handleClose(false);
+          window.location.assign(action.href);
+        }
+        return;
+      default:
+        if (action.href) window.location.assign(action.href);
     }
   };
 

@@ -199,6 +199,12 @@ export default function VendorSettings() {
         />
       )}
 
+      {activeTab === "pricing_defaults" && vendorId && (
+        <VCard>
+          <VendorProfileDefaults vendorId={vendorId} />
+        </VCard>
+      )}
+
       {activeTab === "notifications" && vendorId && (
         <NotificationsTab vendorId={vendorId} />
       )}

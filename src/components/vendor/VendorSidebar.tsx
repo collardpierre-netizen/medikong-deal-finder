@@ -8,6 +8,7 @@ import {
 import { useI18n } from "@/contexts/I18nContext";
 import { useCurrentVendor } from "@/hooks/useCurrentVendor";
 import { useCompetitorAlertsCount } from "@/hooks/useVendorCompetitorAlerts";
+import { useVendorUnreadNotificationsCount } from "@/hooks/useVendorNotifications";
 import { cn } from "@/lib/utils";
 import logoLight from "@/assets/logo-horizontal.png";
 
@@ -50,6 +51,7 @@ const sidebarSections: { label: string | null; items: SidebarItem[] }[] = [
       { key: "shipments", icon: Truck, path: "/vendor/shipments" },
       { key: "health", icon: HeartPulse, path: "/vendor/health" },
       { key: "messages", icon: MessageSquare, path: "/vendor/messages", comingSoon: true },
+      { key: "notificationsCenter", icon: Bell, path: "/vendor/notifications" },
     ],
   },
   {
@@ -73,6 +75,7 @@ export function VendorSidebar({ onNavigate }: VendorSidebarProps) {
   const { data: vendor } = useCurrentVendor();
   const shippingMode = ((vendor as any)?.vendor_shipping_mode ?? "no_shipping") as ShippingMode;
   const { data: competitorAlertsCount = 0 } = useCompetitorAlertsCount(vendor?.id);
+  const { data: unreadNotifsCount = 0 } = useVendorUnreadNotificationsCount(vendor?.id);
 
   return (
     <aside
@@ -132,7 +135,8 @@ export function VendorSidebar({ onNavigate }: VendorSidebarProps) {
                   }
 
                   const badgeCount =
-                    item.key === "marketIntel" ? competitorAlertsCount : 0;
+                    item.key === "marketIntel" ? competitorAlertsCount :
+                    item.key === "notificationsCenter" ? unreadNotifsCount : 0;
 
                   return (
                     <NavLink

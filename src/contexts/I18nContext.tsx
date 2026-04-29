@@ -375,6 +375,7 @@ const translations: Record<Lang, Record<string, string>> = {
     comingSoon: "This section will be available soon.",
     catalog: "Catalog",
     myOffers: "My offers",
+    proposeProduct: "Propose a product",
     opportunities: "Opportunities",
     positioning: "Positioning",
     marketIntel: "Market intel",

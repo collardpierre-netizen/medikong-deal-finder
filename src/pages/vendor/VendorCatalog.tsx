@@ -204,7 +204,7 @@ export default function VendorCatalog() {
             {isLoading ? (
               <ListLoader />
             ) : data.length === 0 ? (
-              <EmptyState label="Aucune marque trouvée" />
+              <EmptyState label={t("vendorCatalogEmptyBrands")} />
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
                 {(data as any[]).map((b) => (

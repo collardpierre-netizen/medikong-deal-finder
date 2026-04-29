@@ -744,6 +744,39 @@ function VendorOffersPanel({ vendor }: { vendor: any }) {
               <Button className="w-full" onClick={importCsv} disabled={csvImporting}>
                 {csvImporting ? "Import en cours..." : `Importer ${csvPreview.length} offres`}
               </Button>
+              {csvProgress && (
+                <div className="space-y-2 rounded-md border p-3 bg-muted/30">
+                  <div className="flex items-center justify-between text-[12px] font-medium">
+                    <span>{csvProgress.phase}</span>
+                    <span className="text-muted-foreground">
+                      {csvProgress.phase === "Envoi vers la base"
+                        ? `${csvProgress.upserted} / ${csvProgress.total - csvProgress.merged}`
+                        : `${csvProgress.processed} / ${csvProgress.total}`}
+                    </span>
+                  </div>
+                  <Progress
+                    value={
+                      csvProgress.phase === "Envoi vers la base"
+                        ? Math.round((csvProgress.upserted / Math.max(1, csvProgress.total - csvProgress.merged)) * 100)
+                        : Math.round((csvProgress.processed / Math.max(1, csvProgress.total)) * 100)
+                    }
+                  />
+                  <div className="grid grid-cols-3 gap-2 text-[11px] pt-1">
+                    <div className="rounded bg-background px-2 py-1 border">
+                      <div className="text-muted-foreground">Traitées</div>
+                      <div className="font-semibold">{csvProgress.processed}</div>
+                    </div>
+                    <div className="rounded bg-background px-2 py-1 border">
+                      <div className="text-muted-foreground">Importées</div>
+                      <div className="font-semibold text-green-600">{csvProgress.upserted}</div>
+                    </div>
+                    <div className="rounded bg-background px-2 py-1 border">
+                      <div className="text-muted-foreground">Fusionnées</div>
+                      <div className="font-semibold text-amber-600">{csvProgress.merged}</div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </DialogContent>

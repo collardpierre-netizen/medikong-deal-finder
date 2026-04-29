@@ -230,9 +230,18 @@ export default function VendorCatalog() {
         </Tabs>
       </VCard>
 
-      <p className="text-[11px] text-muted-foreground">
-        Vous ne trouvez pas une référence ? Vous pourrez bientôt la proposer pour validation par notre équipe catalogue.
-      </p>
+      <VCard className="p-4">
+        <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
+          <div>
+            <h2 className="text-sm font-bold text-[#1D2530]">Mes propositions de produits</h2>
+            <p className="text-[12px] text-muted-foreground">
+              Suivez le statut des fiches que vous avez soumises à notre équipe catalogue.
+            </p>
+          </div>
+          <ProductSubmissionDialog />
+        </div>
+        <VendorSubmissionsList />
+      </VCard>
     </div>
   );
 }

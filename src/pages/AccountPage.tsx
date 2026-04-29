@@ -1,7 +1,7 @@
 import { Layout } from "@/components/layout/Layout";
 import { useNavigate } from "react-router-dom";
 import { ProductImage } from "@/components/shared/ProductCard";
-import { Users, MapPin, Package, AlertCircle, Heart, Zap, Download, Layers, Mail, Phone, Clock, List, Plus, Trash2, Eye, ShoppingCart, Search, TrendingDown, BarChart3, Upload, FileSpreadsheet, Recycle } from "lucide-react";
+import { Users, MapPin, Package, AlertCircle, Heart, Zap, Download, Layers, Mail, Phone, Clock, List, Plus, Trash2, Eye, ShoppingCart, Search, TrendingDown, BarChart3, Upload, FileSpreadsheet, Recycle, BellRing } from "lucide-react";
 import { BuyerImportModal } from "@/components/buyer/BuyerImportModal";
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
@@ -26,6 +26,7 @@ const tabs = [
   { key: "listes", label: "Mes listes", icon: List, disabled: false },
   { key: "activite", label: "Activité récente", icon: Clock, disabled: false },
   { key: "mesprix", label: "Mes prix", icon: BarChart3, disabled: false },
+  { key: "alertes", label: "Mes alertes prix", icon: BellRing, disabled: false, href: "/mes-alertes-prix" },
   { key: "categories", label: "Mes catégories", icon: Layers, disabled: false, href: "/compte/mes-categories" },
   { key: "portefeuille", label: "Portefeuille", icon: Zap, disabled: true },
   { key: "comparateur", label: "Comparateur", icon: FileSpreadsheet, disabled: false },

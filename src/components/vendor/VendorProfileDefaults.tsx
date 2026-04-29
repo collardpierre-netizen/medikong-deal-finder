@@ -185,6 +185,8 @@ export default function VendorProfileDefaults({ vendorId }: { vendorId: string }
                 <th className="text-left px-3 py-2 font-semibold" style={{ color: "#8B95A5" }}>Pays</th>
                 <th className="text-left px-3 py-2 font-semibold" style={{ color: "#8B95A5" }}>MOV (€)</th>
                 <th className="text-left px-3 py-2 font-semibold" style={{ color: "#8B95A5" }}>MOQ</th>
+                <th className="text-left px-3 py-2 font-semibold" style={{ color: "#8B95A5" }}>Prix défaut</th>
+                <th className="text-left px-3 py-2 font-semibold" style={{ color: "#8B95A5" }}>Valeur</th>
                 <th className="w-10"></th>
               </tr>
             </thead>

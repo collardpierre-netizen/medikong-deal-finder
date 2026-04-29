@@ -77,7 +77,7 @@ export async function exportProducts() {
     while (true) {
       const { data, error } = await supabase
         .from("products")
-        .select("id, gtin, name, name_fr, slug, cnk_code, sku, brand_name, category_name, description, description_fr, short_description, unit_quantity, origin_country, image_url, image_urls, source, is_active")
+        .select("id, gtin, name, name_fr, slug, cnk_code, sku, brand_name, category_name, description, description_fr, short_description, unit_quantity, origin_country, image_url, image_urls, source, is_active, pvp_ttc_cents, pvp_source, pvp_country_code")
         .order("name")
         .range(from, from + PAGE - 1);
       if (error) throw error;

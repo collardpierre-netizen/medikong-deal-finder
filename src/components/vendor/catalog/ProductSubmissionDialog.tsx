@@ -449,9 +449,14 @@ export function ProductSubmissionDialog({ children }: { children?: React.ReactNo
                 Colonnes acceptées : <span className="font-mono">{FIELD_HEADERS.join(", ")}</span>.
                 Limite {MAX_ROWS} lignes.
               </p>
-              <Button variant="outline" size="sm" className="gap-1" onClick={downloadTemplate}>
-                <Download className="h-3.5 w-3.5" /> Modèle CSV
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button variant="default" size="sm" className="gap-1" onClick={downloadXlsxTemplate}>
+                  <FileSpreadsheet className="h-3.5 w-3.5" /> Modèle XLSX
+                </Button>
+                <Button variant="outline" size="sm" className="gap-1" onClick={downloadTemplate}>
+                  <Download className="h-3.5 w-3.5" /> Modèle CSV
+                </Button>
+              </div>
             </div>
 
             <label

@@ -322,6 +322,7 @@ function VendorOffersPanel({ vendor }: { vendor: any }) {
         stock_status: of.stock_status,
         delivery_days: of.delivery_days ? parseInt(of.delivery_days) : null,
         notes: of.notes || null,
+        pack_size_override: of.pack_size_override ? parseInt(of.pack_size_override) : null,
       };
       const { error } = await supabase.from("external_offers").insert(payload);
       if (error) throw error;
@@ -330,7 +331,7 @@ function VendorOffersPanel({ vendor }: { vendor: any }) {
       qc.invalidateQueries({ queryKey: ["admin-external-offers", vendor.id] });
       setOfferDialog(false);
       setSelectedProduct(null);
-      setOf({ unit_price: "", mov_amount: "", product_url: "", stock_status: "unknown", delivery_days: "", notes: "" });
+      setOf({ unit_price: "", mov_amount: "", product_url: "", stock_status: "unknown", delivery_days: "", notes: "", pack_size_override: "" });
       toast.success("Offre créée");
     },
     onError: (e: any) => toast.error(e.message),

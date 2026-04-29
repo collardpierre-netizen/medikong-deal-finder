@@ -58,6 +58,8 @@ export default function UserCreateDialog({ open, onOpenChange, onCreated }: Prop
   const [vendor, setVendor] = useState(initialVendor);
   const [admin, setAdmin] = useState(initialAdmin);
 
+  const [vendorError, setVendorError] = useState<VendorAccountErrorPresentation | null>(null);
+
   const slugify = (s: string) =>
     s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 

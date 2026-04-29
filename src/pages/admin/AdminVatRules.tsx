@@ -154,6 +154,12 @@ export default function AdminVatRules() {
         <TabsList>
           <TabsTrigger value="cnk">Mapping CNK</TabsTrigger>
           <TabsTrigger value="overrides">Overrides produits</TabsTrigger>
+          <TabsTrigger value="categories">
+            Catégories
+            {catStats.auto > 0 && (
+              <Badge variant="destructive" className="ml-2 h-4 px-1.5 text-[10px]">{catStats.auto}</Badge>
+            )}
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="cnk" className="space-y-4">

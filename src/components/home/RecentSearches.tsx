@@ -84,7 +84,7 @@ export function RecentSearches() {
             {products.map((p) => (
               <Link
                 key={p.id}
-                to={`/produits/${p.slug}`}
+                to={`/produit/${p.slug}`}
                 className="shrink-0 snap-start w-[140px] bg-white rounded-xl border border-mk-line hover:border-mk-blue hover:shadow-sm transition-all overflow-hidden group"
               >
                 <div className="aspect-square bg-mk-bg flex items-center justify-center overflow-hidden">

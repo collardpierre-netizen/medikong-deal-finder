@@ -310,6 +310,17 @@ export default function ProfilePricesEditor({ offerId, basePrice }: Props) {
             </div>
           ))}
 
+          {/* Aperçu live : prix HTVA résolu pour CHAQUE profil (cascade officielle via RPC) */}
+          <div className="pt-2">
+            <ResolvedProfilePricesPreview
+              offerId={offerId}
+              basePrice={basePrice}
+              drafts={rows}
+              profiles={profiles as any}
+              isDirty={isDirty}
+            />
+          </div>
+
           <div className="flex items-center gap-2 pt-1">
             <button
               type="button"

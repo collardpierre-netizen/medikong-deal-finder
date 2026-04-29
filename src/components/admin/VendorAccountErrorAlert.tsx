@@ -61,8 +61,11 @@ export function VendorAccountErrorAlert({ presentation, onAction, onDismiss }: P
         </div>
       </div>
 
-      {(primaryAction || secondaryAction) && (
+      {(primaryAction || secondaryAction || tertiaryAction) && (
         <div className="flex flex-wrap gap-2 pt-1">
+          {tertiaryAction && (
+            <ActionButton action={tertiaryAction} onClick={handleClick} />
+          )}
           {secondaryAction && (
             <ActionButton action={secondaryAction} onClick={handleClick} />
           )}

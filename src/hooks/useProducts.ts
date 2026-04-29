@@ -223,63 +223,35 @@ export function useProductOffers(productId: string | undefined) {
       const offerIds = (offers || []).map((o: any) => o.id);
       const vendorIds = [...new Set((offers || []).map((o: any) => o.vendor_id))];
 
-      // Cascade prix utilisateur :
-      //   1. RPC resolve_offer_price_for_profile (offer_buyer_profile_prices + vendor_profile_defaults)
-      //   2. Fallback legacy product_prices × price_levels (au niveau produit, pas par offre)
-      //   3. Prix de base de l'offre (price_excl_vat brut)
+      // Cascade prix utilisateur (DB-driven) :
+      // Lecture unique de la vue `effective_offer_prices_v` qui applique côté
+      // serveur la cascade complète : offer_buyer_profile_prices >
+      // vendor_profile_defaults > product_prices (legacy) > prix de base offre.
+      // -> 1 round-trip au lieu de N appels RPC.
       const resolvedPriceMap = new Map<string, { price_excl_vat: number; source: string }>();
       if (buyerProfileId && offerIds.length > 0) {
-        const resolved = await Promise.all(
-          offerIds.map(async (oid: string) => {
-            const { data } = await supabase.rpc(
-              "resolve_offer_price_for_profile" as any,
-              { _offer_id: oid, _buyer_profile_id: buyerProfileId }
-            );
-            const row = Array.isArray(data) ? data[0] : data;
-            if (!row) return null;
-            const src = String((row as any).source ?? "offer_base");
-            // Ne mémorise que les vrais overrides : si la RPC retombe sur "offer_base"
-            // on laisse le fallback legacy product_prices avoir une chance.
-            if (src === "offer_base") return null;
-            return {
-              offer_id: oid,
-              price_excl_vat: Number((row as any).price_excl_vat),
-              source: src,
-            };
-          })
-        );
-        for (const r of resolved) {
-          if (r && Number.isFinite(r.price_excl_vat) && r.price_excl_vat > 0) {
-            resolvedPriceMap.set(r.offer_id, { price_excl_vat: r.price_excl_vat, source: r.source });
+        const { data: effRows } = await supabase
+          .from("effective_offer_prices_v" as any)
+          .select("offer_id, effective_price_excl_vat, price_source")
+          .in("offer_id", offerIds)
+          .eq("buyer_profile_id", buyerProfileId);
+        for (const row of (effRows || []) as any[]) {
+          const src = String(row.price_source ?? "offer_base");
+          // Ne mémorise que les vrais overrides (RPC ou legacy_level).
+          // Si la cascade DB retombe sur offer_base, on laisse le prix brut de l'offre s'afficher.
+          if (src === "offer_base") continue;
+          const price = Number(row.effective_price_excl_vat);
+          if (Number.isFinite(price) && price > 0) {
+            resolvedPriceMap.set(row.offer_id, { price_excl_vat: price, source: src });
           }
         }
       }
 
-      // Fallback legacy : product_prices × price_levels (prix par niveau RBAC, par produit).
-      // S'applique uniquement aux offres SANS override par profil.
-      let legacyLevelPrice: number | null = null;
-      if (productId && offerIds.length > 0 && resolvedPriceMap.size < offerIds.length) {
-        const { data: authData } = await supabase.auth.getUser();
-        const uid = authData?.user?.id;
-        if (uid) {
-          const { data: profileRow } = await supabase
-            .from("profiles")
-            .select("price_level_code")
-            .eq("user_id", uid)
-            .maybeSingle();
-          const levelCode = (profileRow as any)?.price_level_code || "pharmacien";
-          const { data: pricesRows } = await supabase
-            .from("product_prices")
-            .select("price, price_levels!inner(code)")
-            .eq("product_id", productId);
-          const match = (pricesRows || []).find(
-            (p: any) => p.price_levels?.code === levelCode
-          );
-          if (match && Number.isFinite(Number((match as any).price))) {
-            legacyLevelPrice = Number((match as any).price);
-          }
-        }
-      }
+      // legacyLevelPrice n'est plus calculé côté front : la cascade DB ci-dessus
+      // intègre déjà la résolution legacy product_prices. Conservé à null pour
+      // compat de signature avec resolvePriceCascade.
+      const legacyLevelPrice: number | null = null;
+
 
       // Fetch vendors and discount tiers in parallel
       const [vendorsResult, tiersResult, visRulesResult, priceTiersResult] = await Promise.all([

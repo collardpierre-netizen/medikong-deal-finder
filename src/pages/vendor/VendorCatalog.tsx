@@ -189,7 +189,7 @@ export default function VendorCatalog() {
                             />
                           )}
                           <Button size="sm" className="h-7 px-2 text-xs gap-1" onClick={() => startOffer(p.id)}>
-                            <Plus className="h-3 w-3" /> Créer une offre
+                            <Plus className="h-3 w-3" /> {t("vendorCatalogCreateOffer")}
                           </Button>
                         </div>
                       </div>

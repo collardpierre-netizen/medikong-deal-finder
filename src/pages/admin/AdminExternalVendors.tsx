@@ -776,11 +776,25 @@ function VendorOffersPanel({ vendor }: { vendor: any }) {
                   ) : (
                     <div className="max-h-60 overflow-y-auto border rounded-md">
                       <Table>
-                        <TableHeader><TableRow><TableHead className="text-[11px]">Produit</TableHead><TableHead className="text-[11px]">Prix</TableHead><TableHead className="text-[11px]">MOV</TableHead></TableRow></TableHeader>
+                        <TableHeader><TableRow>
+                          <TableHead className="text-[11px]">Produit</TableHead>
+                          <TableHead className="text-[11px]">Catégorie suggérée</TableHead>
+                          <TableHead className="text-[11px]">Prix</TableHead>
+                          <TableHead className="text-[11px]">MOV</TableHead>
+                        </TableRow></TableHeader>
                         <TableBody>
                           {csvPreview.slice(0, 20).map((r, i) => (
                             <TableRow key={i}>
                               <TableCell className="text-[11px]">{r.product.name}</TableCell>
+                              <TableCell className="text-[11px]">
+                                {r.product.categories?.name ? (
+                                  <span className="inline-flex items-center gap-1 rounded bg-primary/10 text-primary px-1.5 py-0.5 text-[10px]">
+                                    {r.product.categories.name}
+                                  </span>
+                                ) : (
+                                  <span className="text-muted-foreground">—</span>
+                                )}
+                              </TableCell>
                               <TableCell className="text-[11px]">{r.unit_price} €</TableCell>
                               <TableCell className="text-[11px]">{r.mov || "—"}</TableCell>
                             </TableRow>

@@ -183,7 +183,12 @@ export function InstantSearchBar({ className = "", placeholder, variant = "navba
               {results.products.map((p, i) => (
                 <button
                   key={p.id}
-                  onClick={() => { navigate(`/produit/${p.slug}`); setIsOpen(false); setQuery(""); }}
+                  onClick={() => {
+                    pushRecentProduct({ id: p.id, slug: p.slug, name: p.name, image: p.image_urls?.[0] || p.image_url || null });
+                    navigate(`/produit/${p.slug}`);
+                    setIsOpen(false);
+                    setQuery("");
+                  }}
                   className={`w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-accent/50 transition-colors ${selectedIndex === i ? "bg-accent/50" : ""}`}
                 >
                   <img

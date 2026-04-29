@@ -1,22 +1,250 @@
+import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { Search, Package, Building2, Tag, Plus, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { VCard } from "@/components/vendor/ui/VCard";
-import { Package } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+
+type EntityType = "products" | "brands" | "manufacturers";
+
+const PAGE_SIZE = 30;
+
+function useCatalogList(entity: EntityType, search: string) {
+  return useQuery({
+    queryKey: ["vendor-catalog", entity, search],
+    queryFn: async () => {
+      const term = search.trim();
+      if (entity === "products") {
+        let q = supabase
+          .from("products")
+          .select("id, name, slug, gtin, cnk_code, image_url, brand_name, category_name, best_price_excl_vat")
+          .eq("is_active", true)
+          .order("popularity", { ascending: false, nullsFirst: false })
+          .limit(PAGE_SIZE);
+        if (term) q = q.or(`name.ilike.%${term}%,gtin.ilike.%${term}%,cnk_code.ilike.%${term}%,brand_name.ilike.%${term}%`);
+        const { data, error } = await q;
+        if (error) throw error;
+        return data ?? [];
+      }
+      if (entity === "brands") {
+        let q = supabase
+          .from("brands")
+          .select("id, name, slug, logo_url, product_count, main_category")
+          .eq("is_active", true)
+          .order("product_count", { ascending: false, nullsFirst: false })
+          .limit(PAGE_SIZE);
+        if (term) q = q.ilike("name", `%${term}%`);
+        const { data, error } = await q;
+        if (error) throw error;
+        return data ?? [];
+      }
+      let q = supabase
+        .from("manufacturers")
+        .select("id, name, slug, logo_url, product_count, brand_count, country_of_origin")
+        .eq("is_active", true)
+        .order("product_count", { ascending: false, nullsFirst: false })
+        .limit(PAGE_SIZE);
+      if (term) q = q.ilike("name", `%${term}%`);
+      const { data, error } = await q;
+      if (error) throw error;
+      return data ?? [];
+    },
+    staleTime: 60_000,
+  });
+}
 
 export default function VendorCatalog() {
+  const navigate = useNavigate();
+  const [tab, setTab] = useState<EntityType>("products");
+  const [search, setSearch] = useState("");
+
+  const { data = [], isLoading } = useCatalogList(tab, search);
+
+  const startOffer = (productId?: string) => {
+    const target = productId
+      ? `/vendor/offers?action=create&product=${productId}`
+      : `/vendor/offers?action=create`;
+    navigate(target);
+  };
+
+  const browseBrand = (slug?: string | null) => {
+    if (!slug) return;
+    navigate(`/marques/${slug}`);
+  };
+
+  const placeholderText = useMemo(() => {
+    if (tab === "products") return "Rechercher un produit, GTIN, CNK ou marque…";
+    if (tab === "brands") return "Rechercher une marque…";
+    return "Rechercher un fabricant…";
+  }, [tab]);
+
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-xl font-bold text-[#1D2530]">Catalogue</h1>
-        <p className="text-[13px] text-[#616B7C] mt-0.5">Gestion de vos produits</p>
-      </div>
-      <VCard>
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <Package size={48} className="text-[#CBD5E1] mb-4" />
-          <h3 className="text-[15px] font-bold text-[#1D2530] mb-2">Catalogue vide</h3>
-          <p className="text-[13px] text-[#8B95A5] max-w-md">
-            Importez vos produits via CSV ou ajoutez-les manuellement pour constituer votre catalogue vendeur.
-          </p>
-        </div>
+      <header>
+        <h1 className="text-xl font-bold text-[#1D2530]">Catalogue MediKong</h1>
+        <p className="text-[13px] text-[#616B7C] mt-0.5">
+          Parcourez les marques, fabricants et produits déjà référencés et démarrez une offre en un clic.
+        </p>
+      </header>
+
+      <VCard className="p-4">
+        <Tabs value={tab} onValueChange={(v) => setTab(v as EntityType)} className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+            <TabsList>
+              <TabsTrigger value="products" className="gap-2">
+                <Package className="h-4 w-4" /> Produits
+              </TabsTrigger>
+              <TabsTrigger value="brands" className="gap-2">
+                <Tag className="h-4 w-4" /> Marques
+              </TabsTrigger>
+              <TabsTrigger value="manufacturers" className="gap-2">
+                <Building2 className="h-4 w-4" /> Fabricants
+              </TabsTrigger>
+            </TabsList>
+
+            <div className="relative w-full sm:w-80">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder={placeholderText}
+                className="pl-8 h-9"
+              />
+            </div>
+          </div>
+
+          <TabsContent value="products" className="m-0">
+            {isLoading ? (
+              <ListLoader />
+            ) : data.length === 0 ? (
+              <EmptyState label="Aucun produit trouvé" />
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+                {(data as any[]).map((p) => (
+                  <div key={p.id} className="border rounded-lg p-3 flex gap-3 items-start hover:border-primary/40 transition">
+                    <div className="w-14 h-14 rounded bg-muted/50 flex items-center justify-center overflow-hidden shrink-0">
+                      {p.image_url ? (
+                        <img src={p.image_url} alt={p.name} className="w-full h-full object-contain" loading="lazy" />
+                      ) : (
+                        <Package className="h-6 w-6 text-muted-foreground" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold line-clamp-2">{p.name}</p>
+                      <div className="text-[11px] text-muted-foreground mt-0.5 flex flex-wrap gap-x-2">
+                        {p.brand_name && <span>{p.brand_name}</span>}
+                        {p.cnk_code && <span>CNK {p.cnk_code}</span>}
+                        {p.gtin && <span>GTIN {p.gtin}</span>}
+                      </div>
+                      <div className="mt-2 flex items-center justify-between gap-2">
+                        {p.category_name && (
+                          <Badge variant="secondary" className="text-[10px] truncate max-w-[140px]">{p.category_name}</Badge>
+                        )}
+                        <Button size="sm" className="h-7 px-2 text-xs gap-1" onClick={() => startOffer(p.id)}>
+                          <Plus className="h-3 w-3" /> Créer une offre
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="brands" className="m-0">
+            {isLoading ? (
+              <ListLoader />
+            ) : data.length === 0 ? (
+              <EmptyState label="Aucune marque trouvée" />
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+                {(data as any[]).map((b) => (
+                  <div key={b.id} className="border rounded-lg p-3 flex gap-3 items-center hover:border-primary/40 transition">
+                    <div className="w-12 h-12 rounded bg-muted/50 flex items-center justify-center overflow-hidden shrink-0">
+                      {b.logo_url ? (
+                        <img src={b.logo_url} alt={b.name} className="w-full h-full object-contain" loading="lazy" />
+                      ) : (
+                        <Tag className="h-5 w-5 text-muted-foreground" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold truncate">{b.name}</p>
+                      <p className="text-[11px] text-muted-foreground">
+                        {b.product_count ?? 0} produits{b.main_category ? ` · ${b.main_category}` : ""}
+                      </p>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => browseBrand(b.slug)}>
+                        Voir
+                      </Button>
+                      <Button size="sm" className="h-7 px-2 text-xs gap-1" onClick={() => startOffer()}>
+                        <Plus className="h-3 w-3" /> Offre
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="manufacturers" className="m-0">
+            {isLoading ? (
+              <ListLoader />
+            ) : data.length === 0 ? (
+              <EmptyState label="Aucun fabricant trouvé" />
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+                {(data as any[]).map((m) => (
+                  <div key={m.id} className="border rounded-lg p-3 flex gap-3 items-center hover:border-primary/40 transition">
+                    <div className="w-12 h-12 rounded bg-muted/50 flex items-center justify-center overflow-hidden shrink-0">
+                      {m.logo_url ? (
+                        <img src={m.logo_url} alt={m.name} className="w-full h-full object-contain" loading="lazy" />
+                      ) : (
+                        <Building2 className="h-5 w-5 text-muted-foreground" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold truncate">{m.name}</p>
+                      <p className="text-[11px] text-muted-foreground">
+                        {m.brand_count ?? 0} marques · {m.product_count ?? 0} produits
+                        {m.country_of_origin ? ` · ${m.country_of_origin}` : ""}
+                      </p>
+                    </div>
+                    <Button size="sm" className="h-7 px-2 text-xs gap-1" onClick={() => startOffer()}>
+                      <Plus className="h-3 w-3" /> Offre
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </VCard>
+
+      <p className="text-[11px] text-muted-foreground">
+        Vous ne trouvez pas une référence ? Vous pourrez bientôt la proposer pour validation par notre équipe catalogue.
+      </p>
+    </div>
+  );
+}
+
+function ListLoader() {
+  return (
+    <div className="flex items-center justify-center py-12 text-muted-foreground">
+      <Loader2 className="h-5 w-5 animate-spin mr-2" /> Chargement…
+    </div>
+  );
+}
+
+function EmptyState({ label }: { label: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
+      <Package className="h-8 w-8 mb-2 opacity-60" />
+      <p className="text-sm">{label}</p>
     </div>
   );
 }

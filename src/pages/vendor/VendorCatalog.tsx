@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { ProductSubmissionDialog } from "@/components/vendor/catalog/ProductSubmissionDialog";
 import { VendorSubmissionsList } from "@/components/vendor/catalog/VendorSubmissionsList";
 import { VendorCatalogXlsxImport } from "@/components/vendor/catalog/VendorCatalogXlsxImport";
+import { VendorCatalogCodeLookup } from "@/components/vendor/catalog/VendorCatalogCodeLookup";
 import {
   VendorCatalogFilters,
   emptyCatalogFilters,
@@ -106,7 +107,8 @@ export default function VendorCatalog() {
             Parcourez les marques, fabricants et produits déjà référencés et démarrez une offre en un clic.
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          <VendorCatalogCodeLookup />
           <VendorCatalogXlsxImport />
           <ProductSubmissionDialog />
         </div>

@@ -8,6 +8,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { ProductSubmissionDialog } from "@/components/vendor/catalog/ProductSubmissionDialog";
+import { VendorSubmissionsList } from "@/components/vendor/catalog/VendorSubmissionsList";
 
 type EntityType = "products" | "brands" | "manufacturers";
 
@@ -84,11 +86,14 @@ export default function VendorCatalog() {
 
   return (
     <div className="space-y-5">
-      <header>
-        <h1 className="text-xl font-bold text-[#1D2530]">Catalogue MediKong</h1>
-        <p className="text-[13px] text-[#616B7C] mt-0.5">
-          Parcourez les marques, fabricants et produits déjà référencés et démarrez une offre en un clic.
-        </p>
+      <header className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="text-xl font-bold text-[#1D2530]">Catalogue MediKong</h1>
+          <p className="text-[13px] text-[#616B7C] mt-0.5">
+            Parcourez les marques, fabricants et produits déjà référencés et démarrez une offre en un clic.
+          </p>
+        </div>
+        <ProductSubmissionDialog />
       </header>
 
       <VCard className="p-4">

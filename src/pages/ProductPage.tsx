@@ -20,6 +20,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCountry } from "@/contexts/CountryContext";
 import { usePriceDisplay } from "@/contexts/PriceDisplayContext";
+import { useProductVatRate, vatSourceLabel } from "@/hooks/useProductVatRate";
 import { useProductPrice } from "@/hooks/useProductPriceLevel";
 import { Helmet } from "react-helmet-async";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -703,6 +704,7 @@ export default function ProductPage() {
   const { country } = useCountry();
   const { isTVAC } = usePriceDisplay();
   const { data: product, isLoading } = useProduct(slug);
+  const { data: resolvedVat } = useProductVatRate(product?.id, country || "BE");
   const { addToCart } = useCart();
   const { data: realOffers = [] } = useProductOffers(product?.id);
   const { isFavorite, toggleFavorite } = useFavorites();
@@ -1421,7 +1423,9 @@ export default function ProductPage() {
                           const stockLabel = eo.stock_status === "in_stock" ? "En stock" : eo.stock_status === "limited" ? "Stock limité" : eo.stock_status === "out_of_stock" ? "Rupture" : "Stock inconnu";
 
                           // Prix source = TTC (relevés sur sites e-commerce). On dérive le HTVA.
-                          const tvaRate = Number((categoryData?.category as any)?.vat_rate ?? 21);
+                          // Taux TVA résolu via priorité : override produit → CNK → catégorie → fallback 21%.
+                          const tvaRate = Number(resolvedVat?.vat_rate ?? (categoryData?.category as any)?.vat_rate ?? 21);
+                          const tvaSource = resolvedVat?.source ?? "category";
                           const priceTTC = Number(eo.unit_price) || 0;
                           const priceHTVA = priceTTC ? Math.round((priceTTC / (1 + tvaRate / 100)) * 100) / 100 : 0;
                           const displayPrice = isTVAC ? priceTTC : priceHTVA;
@@ -1481,7 +1485,7 @@ export default function ProductPage() {
                                     <span className="text-lg font-bold text-foreground tabular-nums">{formatEur(displayPrice)} €</span>
                                     <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">{priceLabel}</span>
                                   </div>
-                                  <p className="text-[11px] text-muted-foreground tabular-nums">
+                                  <p className="text-[11px] text-muted-foreground tabular-nums" title={`Source TVA : ${vatSourceLabel(tvaSource)}`}>
                                     {formatEur(secondaryPrice)} € {secondaryLabel} <span className="opacity-60">· TVA {tvaRate}%</span>
                                   </p>
                                   {Number(eo.mov_amount || 0) > 0 && (

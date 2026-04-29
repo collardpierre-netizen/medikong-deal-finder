@@ -1144,7 +1144,9 @@ export default function VendorOffers() {
   const navigate = useNavigate();
   // Contexte de retour vers /vendor/catalog (filtre marque/fabricant à restaurer)
   const [catalogReturn, setCatalogReturn] = useState<{ brandId?: string; manufacturerId?: string } | null>(null);
-  const closeForm = () => { setShowForm(false); setEditingId(null); setForm(emptyForm); setCatalogReturn(null); };
+  // File d'attente de produits à traiter en série
+  const [batchQueue, setBatchQueue] = useState<{ remaining: string[]; pos: number; total: number } | null>(null);
+  const closeForm = () => { setShowForm(false); setEditingId(null); setForm(emptyForm); setCatalogReturn(null); setBatchQueue(null); };
   const backToCatalog = () => {
     const params = new URLSearchParams();
     if (catalogReturn?.brandId) params.set("brand", catalogReturn.brandId);

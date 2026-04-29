@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Search, Package, Building2, Tag, Plus, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -257,14 +257,19 @@ export default function VendorCatalog() {
       </VCard>
 
       <VCard className="p-4">
-        <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
+        <div id="mes-propositions" className="flex items-center justify-between mb-3 gap-3 flex-wrap scroll-mt-20">
           <div>
             <h2 className="text-sm font-bold text-[#1D2530]">Mes propositions de produits</h2>
             <p className="text-[12px] text-muted-foreground">
               Suivez le statut des fiches que vous avez soumises à notre équipe catalogue.
             </p>
           </div>
-          <ProductSubmissionDialog />
+          <div className="flex items-center gap-2">
+            <Button asChild variant="outline" size="sm">
+              <Link to="/vendor/produits/proposer">Page dédiée</Link>
+            </Button>
+            <ProductSubmissionDialog />
+          </div>
         </div>
         <VendorSubmissionsList />
       </VCard>

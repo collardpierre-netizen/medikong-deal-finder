@@ -8,7 +8,7 @@ const DEFAULT_MOV = 500;
 /**
  * Resolves the effective MOV for each vendor in the cart.
  * Resolution order:
- *  1. offer_profile_rules (per-offer override) — not used here (would be per-item)
+ *  1. offer_buyer_profile_prices.min_order_value_cents (per-offer × profil override) — not used here (would be per-item)
  *  2. vendor_profile_defaults (vendor-level default for buyer's profile + country)
  *  3. Global fallback (DEFAULT_MOV)
  */

@@ -24,8 +24,8 @@ export type ResolvedOfferPriceRow = {
  *   - `best`: l'offre la moins chère pour le profil acheteur courant
  *   - `offers`: la liste complète triée par prix résolu croissant
  *
- * NOTE: la table `offer_profile_rules` ne contient PAS de prix — uniquement
- * MOQ/MOV. C'est `offer_buyer_profile_prices` qui porte les prix par profil.
+ * NOTE: `offer_buyer_profile_prices` est la source unique pour prix + MOQ + MOV
+ * par offre × profil acheteur (l'ancienne table `offer_profile_rules` a été fusionnée).
  */
 export function useBestOfferPrice(productId: string | null | undefined) {
   const buyerProfileId = useBuyerProfileId();

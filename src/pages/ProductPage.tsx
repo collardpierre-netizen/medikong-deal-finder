@@ -22,7 +22,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCountry } from "@/contexts/CountryContext";
 import { usePriceDisplay } from "@/contexts/PriceDisplayContext";
 import { useProductVatRate, vatSourceLabel } from "@/hooks/useProductVatRate";
-import { resolvePackSize, packSizeSourceLabel } from "@/lib/pack-size";
+import { resolvePackSize, packSizeSourceLabel, packSizeSourceBadge } from "@/lib/pack-size";
 import { useProductPrice } from "@/hooks/useProductPriceLevel";
 import { Helmet } from "react-helmet-async";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -1600,11 +1600,24 @@ export default function ProductPage() {
                                           </span>
                                         </div>
                                         <p
-                                          className="text-[11px] text-muted-foreground tabular-nums mt-0.5"
+                                          className="text-[11px] text-muted-foreground tabular-nums mt-0.5 flex items-center justify-end gap-1.5 flex-wrap"
                                           title={packSizeSourceLabel(pack.source)}
                                         >
-                                          Pack&nbsp;: {formatEur(displayPrice)} € {priceLabel}
-                                          {pack.packSize > 1 && <> · pack de {pack.packSize}</>}
+                                          <span>
+                                            Pack&nbsp;: {formatEur(displayPrice)} € {priceLabel}
+                                            {pack.packSize > 1 && <> · pack de {pack.packSize}</>}
+                                          </span>
+                                          {(() => {
+                                            const badge = packSizeSourceBadge(pack.source);
+                                            return (
+                                              <span
+                                                className={`inline-flex items-center px-1 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide border leading-none ${badge.className}`}
+                                                title={badge.title}
+                                              >
+                                                {badge.code}
+                                              </span>
+                                            );
+                                          })()}
                                         </p>
                                         <p className="text-[11px] text-muted-foreground tabular-nums" title={`Source TVA : ${vatSourceLabel(tvaSource)}`}>
                                           soit {formatEur(secondaryPrice)} € {secondaryLabel} <span className="opacity-60">· TVA {tvaRate}%</span>

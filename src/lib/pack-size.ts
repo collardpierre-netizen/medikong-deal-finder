@@ -150,3 +150,59 @@ export function packSizeSourceLabel(source: PackSizeSource): string {
       return "Conditionnement inconnu (1 unité supposée)";
   }
 }
+
+/**
+ * Badge court (sigle + couleur Tailwind) pour afficher la source du pack
+ * directement à côté du conditionnement, sans devoir survoler un tooltip.
+ *
+ * Codes :
+ *  - MAN  = manuel (override admin sur l'offre ou la fiche produit) — vert
+ *  - URL  = parsé depuis le slug de l'URL vendeur — bleu
+ *  - TIT  = parsé depuis le titre brut du vendeur — indigo
+ *  - NOM  = parsé depuis le nom MediKong — ambre (moins fiable)
+ *  - ?    = fallback, conditionnement inconnu — gris
+ */
+export function packSizeSourceBadge(source: PackSizeSource): {
+  code: string;
+  className: string;
+  title: string;
+} {
+  switch (source) {
+    case "offer_override":
+      return {
+        code: "MAN",
+        className: "bg-emerald-50 text-emerald-700 border-emerald-200",
+        title: "Conditionnement saisi manuellement sur l'offre (override admin)",
+      };
+    case "product":
+      return {
+        code: "MAN",
+        className: "bg-emerald-50 text-emerald-700 border-emerald-200",
+        title: "Conditionnement saisi manuellement sur la fiche produit",
+      };
+    case "offer_url_heuristic":
+      return {
+        code: "URL",
+        className: "bg-sky-50 text-sky-700 border-sky-200",
+        title: "Conditionnement déduit du slug de l'URL vendeur",
+      };
+    case "offer_title_heuristic":
+      return {
+        code: "TIT",
+        className: "bg-indigo-50 text-indigo-700 border-indigo-200",
+        title: "Conditionnement déduit du titre brut chez le vendeur",
+      };
+    case "name_heuristic":
+      return {
+        code: "NOM",
+        className: "bg-amber-50 text-amber-700 border-amber-200",
+        title: "Conditionnement déduit du nom du produit MediKong (à vérifier)",
+      };
+    case "fallback":
+      return {
+        code: "?",
+        className: "bg-muted text-muted-foreground border-border",
+        title: "Conditionnement inconnu — 1 unité supposée par défaut",
+      };
+  }
+}

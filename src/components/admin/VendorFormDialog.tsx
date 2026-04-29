@@ -43,12 +43,10 @@ export default function VendorFormDialog({ open, onOpenChange }: Props) {
   const [saving, setSaving] = useState(false);
   const [result, setResult] = useState<{ vendor_id: string; temp_password: string | null; reused?: boolean } | null>(null);
   const [copied, setCopied] = useState(false);
-  type DupConflict = {
-    message: string;
-    existing_vendor: { id: string; name?: string; company_name?: string; email?: string; auth_user_id?: string | null };
-    suggested_action: "attach_to_existing" | "open_existing";
-  };
-  const [duplicate, setDuplicate] = useState<DupConflict | null>(null);
+  // Erreur applicative normalisée renvoyée par l'edge function (any code)
+  const [errorPresentation, setErrorPresentation] = useState<VendorAccountErrorPresentation | null>(null);
+  // Payload original conservé pour pouvoir rejouer l'action (rattachement) avec son existing_vendor
+  const [errorPayload, setErrorPayload] = useState<VendorAccountErrorPayload | null>(null);
   const [attaching, setAttaching] = useState(false);
   const [form, setForm] = useState({
     company_name: "",

@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Search, Package, Building2, Tag, Plus, SearchX, FilterX } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";

@@ -329,9 +329,17 @@ function OfferRow({
               ))}
             </div>
           ) : (
-            <div className="flex items-baseline gap-6">
-              <span className="text-sm font-bold text-green-700 whitespace-nowrap">{formatEur(displayPrice)}&nbsp;€ <span className="text-[10px] font-normal text-muted-foreground">{priceLabel}</span></span>
-              <span className="text-sm text-foreground whitespace-nowrap">{offer.movEur > 0 ? <>{formatEur(offer.movEur)}&nbsp;€</> : "—"}</span>
+            <div className="flex flex-col gap-1">
+              <div className="flex items-baseline gap-6">
+                <span className="text-sm font-bold text-green-700 whitespace-nowrap">{formatEur(displayPrice)}&nbsp;€ <span className="text-[10px] font-normal text-muted-foreground">{priceLabel}</span></span>
+                <span className="text-sm text-foreground whitespace-nowrap">{offer.movEur > 0 ? <>{formatEur(offer.movEur)}&nbsp;€</> : "—"}</span>
+              </div>
+              <ProfileResolvedPriceBadge
+                offerId={offer.id}
+                basePrice={offer.unitPriceEur}
+                isTVAC={isTVAC}
+                vatRate={offer.unitPriceEur > 0 ? Math.round((offer.unitPriceInclVat / offer.unitPriceEur - 1) * 100) : 21}
+              />
             </div>
           )}
         </div>

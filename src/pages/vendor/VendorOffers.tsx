@@ -1467,7 +1467,10 @@ export default function VendorOffers() {
           {/* ─── Price Tiers ─── */}
           <PriceTiersEditor offerId={editingId} basePrice={parseFloat(form.price_excl_vat) || 0} vatRate={parseFloat(form.vat_rate) || 21} />
 
-          {/* ─── Profile Rules Section ─── */}
+          {/* ─── Prix HTVA par profil acheteur (référentiel buyer_profiles) ─── */}
+          <ProfilePricesEditor offerId={editingId} basePrice={parseFloat(form.price_excl_vat) || 0} />
+
+          {/* ─── MOQ/MOV par profil interne (offer_profile_rules) ─── */}
           <ProfileRulesEditor offerId={editingId} basePrice={parseFloat(form.price_excl_vat) || 0} />
 
           <div className="flex justify-end gap-2 mt-4">

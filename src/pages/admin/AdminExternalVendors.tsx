@@ -349,15 +349,30 @@ function VendorOffersPanel({ vendor }: { vendor: any }) {
   const [csvUnmatched, setCsvUnmatched] = useState<string[]>([]);
   const [csvImporting, setCsvImporting] = useState(false);
 
+  // Récap post-import : doublons (vendor+product_id) détectés dans le CSV
+  type DuplicateGroup = {
+    productId: string;
+    productName: string;
+    gtin: string;
+    kept: { lineIndex: number; unitPrice: number; mov: number; stockStatus: string };
+    discarded: { lineIndex: number; unitPrice: number; mov: number; stockStatus: string }[];
+  };
+  const [importRecap, setImportRecap] = useState<{
+    upserted: number;
+    totalRows: number;
+    duplicates: DuplicateGroup[];
+  } | null>(null);
+
   const handleCsvFile = async (file: File) => {
     const text = await file.text();
     const lines = text.trim().split("\n");
     const header = lines[0].toLowerCase().split(",").map(s => s.trim());
-    const rows = lines.slice(1).map(line => {
+    type CsvRow = { gtin: string; unit_price: string; mov: string; product_url: string; stock_status: string; delivery_days: string; imported_at: string; _row: number; [k: string]: string | number };
+    const rows: CsvRow[] = lines.slice(1).map((line, idx) => {
       const vals = line.split(",").map(s => s.trim());
       const row: Record<string, string> = {};
       header.forEach((h, i) => { row[h] = vals[i] || ""; });
-      return row;
+      return { ...(row as any), _row: idx + 2 } as CsvRow;
     });
 
     // Match GTINs
@@ -376,13 +391,16 @@ function VendorOffersPanel({ vendor }: { vendor: any }) {
   const importCsv = async () => {
     if (!csvPreview) return;
     setCsvImporting(true);
-    const payloads = csvPreview.map(r => {
+    const enriched = csvPreview.map(r => {
       const importedAt = (r.imported_at || "").trim();
       const parsedDate = importedAt ? new Date(importedAt) : null;
       const isValidDate = parsedDate && !isNaN(parsedDate.getTime());
       return {
         external_vendor_id: vendor.id,
         product_id: r.product.id,
+        _product_name: r.product.name as string,
+        _product_gtin: (r.product.gtin || "") as string,
+        _line_index: r._row as number,
         unit_price: parseFloat(r.unit_price) || 0,
         mov_amount: parseFloat(r.mov) || 0,
         product_url: (r.product_url || "").trim(),
@@ -391,35 +409,61 @@ function VendorOffersPanel({ vendor }: { vendor: any }) {
         ...(isValidDate ? { created_at: parsedDate!.toISOString() } : {}),
       };
     });
-    // Upsert pour mettre à jour les offres existantes (vendor + produit) au lieu de planter
-    // sur la contrainte unique external_offers_product_id_external_vendor_id_key
-    // Dédoublonnage : si le CSV contient plusieurs lignes pour le même produit,
-    // on garde la dernière occurrence (sinon Postgres lève "ON CONFLICT DO UPDATE
-    // command cannot affect row a second time").
-    const dedupMap = new Map<string, typeof payloads[number] & { is_active: boolean; updated_at: string }>();
-    payloads.forEach(p => {
-      dedupMap.set(`${p.external_vendor_id}::${p.product_id}`, {
-        ...p,
+
+    // Dédoublonnage : trace toutes les occurrences par (vendor, product_id).
+    // Règle : la DERNIÈRE ligne du CSV gagne (cohérent avec l'upsert Postgres).
+    const groups = new Map<string, typeof enriched>();
+    enriched.forEach(p => {
+      const key = `${p.external_vendor_id}::${p.product_id}`;
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key)!.push(p);
+    });
+
+    const duplicates: DuplicateGroup[] = [];
+    const finalPayloads: any[] = [];
+    groups.forEach(arr => {
+      const kept = arr[arr.length - 1];
+      const { _product_name, _product_gtin, _line_index, ...dbPayload } = kept;
+      finalPayloads.push({
+        ...dbPayload,
         is_active: true,
         updated_at: new Date().toISOString(),
       });
+      if (arr.length > 1) {
+        duplicates.push({
+          productId: kept.product_id,
+          productName: kept._product_name,
+          gtin: kept._product_gtin,
+          kept: {
+            lineIndex: kept._line_index,
+            unitPrice: kept.unit_price,
+            mov: kept.mov_amount,
+            stockStatus: kept.stock_status,
+          },
+          discarded: arr.slice(0, -1).map(d => ({
+            lineIndex: d._line_index,
+            unitPrice: d.unit_price,
+            mov: d.mov_amount,
+            stockStatus: d.stock_status,
+          })),
+        });
+      }
     });
-    const payloadsWithFlags = Array.from(dedupMap.values());
-    const duplicatesRemoved = payloads.length - payloadsWithFlags.length;
 
     const { error } = await supabase
       .from("external_offers")
-      .upsert(payloadsWithFlags, { onConflict: "external_vendor_id,product_id" });
+      .upsert(finalPayloads, { onConflict: "external_vendor_id,product_id" });
     setCsvImporting(false);
     if (error) { toast.error(error.message); return; }
     qc.invalidateQueries({ queryKey: ["admin-external-offers", vendor.id] });
     setCsvDialog(false);
     setCsvPreview(null);
-    toast.success(
-      duplicatesRemoved > 0
-        ? `${payloadsWithFlags.length} offres importées (${duplicatesRemoved} doublon(s) GTIN fusionné(s))`
-        : `${payloadsWithFlags.length} offres importées ou mises à jour`
-    );
+    setImportRecap({
+      upserted: finalPayloads.length,
+      totalRows: enriched.length,
+      duplicates,
+    });
+    toast.success(`${finalPayloads.length} offres importées ou mises à jour`);
   };
 
   return (
@@ -573,6 +617,124 @@ function VendorOffersPanel({ vendor }: { vendor: any }) {
               <Button className="w-full" onClick={importCsv} disabled={csvImporting}>
                 {csvImporting ? "Import en cours..." : `Importer ${csvPreview.length} offres`}
               </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Récap post-import : doublons (vendor + product_id) détectés ── */}
+      <Dialog open={!!importRecap} onOpenChange={(o) => !o && setImportRecap(null)}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Import terminé — Récapitulatif</DialogTitle>
+          </DialogHeader>
+          {importRecap && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-3 gap-3">
+                <div className="rounded-lg border p-3">
+                  <p className="text-[11px] text-muted-foreground uppercase">Lignes CSV</p>
+                  <p className="text-xl font-bold">{importRecap.totalRows}</p>
+                </div>
+                <div className="rounded-lg border p-3">
+                  <p className="text-[11px] text-muted-foreground uppercase">Offres en base</p>
+                  <p className="text-xl font-bold text-green-600">{importRecap.upserted}</p>
+                </div>
+                <div className="rounded-lg border p-3">
+                  <p className="text-[11px] text-muted-foreground uppercase">Doublons fusionnés</p>
+                  <p className="text-xl font-bold text-amber-600">{importRecap.duplicates.length}</p>
+                </div>
+              </div>
+
+              {importRecap.duplicates.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  Aucun doublon détecté. Chaque produit n'apparaissait qu'une fois dans le CSV.
+                </p>
+              ) : (
+                <>
+                  <p className="text-xs text-muted-foreground">
+                    Pour chaque produit présent plusieurs fois dans le CSV, c'est la <strong>dernière ligne</strong> qui a été conservée
+                    (les autres ont été ignorées). Vérifiez que c'est bien le comportement attendu.
+                  </p>
+                  <div className="max-h-[400px] overflow-y-auto border rounded-md">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="text-[11px]">Produit</TableHead>
+                          <TableHead className="text-[11px]">GTIN</TableHead>
+                          <TableHead className="text-[11px]">Conservée</TableHead>
+                          <TableHead className="text-[11px]">Ignorées</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {importRecap.duplicates.map((d) => (
+                          <TableRow key={d.productId}>
+                            <TableCell className="text-[11px] max-w-[220px] truncate" title={d.productName}>
+                              {d.productName}
+                            </TableCell>
+                            <TableCell className="text-[11px] font-mono">{d.gtin || "—"}</TableCell>
+                            <TableCell className="text-[11px]">
+                              <Badge variant="default" className="bg-green-600 hover:bg-green-600 text-white text-[10px] mr-1">
+                                Ligne {d.kept.lineIndex}
+                              </Badge>
+                              <span className="text-muted-foreground">
+                                {d.kept.unitPrice.toFixed(2)} € · {d.kept.stockStatus}
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-[11px]">
+                              <div className="flex flex-col gap-1">
+                                {d.discarded.map((x, i) => (
+                                  <div key={i} className="flex items-center gap-1">
+                                    <Badge variant="outline" className="text-[10px] line-through opacity-70">
+                                      Ligne {x.lineIndex}
+                                    </Badge>
+                                    <span className="text-muted-foreground line-through opacity-70">
+                                      {x.unitPrice.toFixed(2)} € · {x.stockStatus}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </>
+              )}
+
+              <div className="flex justify-end gap-2 pt-2">
+                {importRecap.duplicates.length > 0 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const csv = [
+                        "product_name,gtin,kept_line,kept_price,kept_stock,discarded_lines",
+                        ...importRecap.duplicates.map((d) =>
+                          [
+                            `"${d.productName.replace(/"/g, '""')}"`,
+                            d.gtin,
+                            d.kept.lineIndex,
+                            d.kept.unitPrice.toFixed(2),
+                            d.kept.stockStatus,
+                            `"${d.discarded.map((x) => `L${x.lineIndex}@${x.unitPrice.toFixed(2)}`).join(" | ")}"`,
+                          ].join(",")
+                        ),
+                      ].join("\n");
+                      const blob = new Blob([csv], { type: "text/csv" });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement("a");
+                      a.href = url;
+                      a.download = `import-doublons-${vendor.slug || "vendor"}-${new Date().toISOString().slice(0, 10)}.csv`;
+                      a.click();
+                      URL.revokeObjectURL(url);
+                    }}
+                  >
+                    <Download size={14} className="mr-1.5" /> Exporter les doublons
+                  </Button>
+                )}
+                <Button onClick={() => setImportRecap(null)}>Fermer</Button>
+              </div>
             </div>
           )}
         </DialogContent>

@@ -166,6 +166,21 @@ export default function VendorCatalog() {
     navigate(`/vendor/offers?${params.toString()}`);
   };
 
+  const startBatch = () => {
+    if (selectedIds.length === 0) return;
+    const [first, ...rest] = selectedIds;
+    const params = new URLSearchParams({ action: "create", product: first });
+    if (rest.length) {
+      params.set("queue", rest.join(","));
+      params.set("qpos", "1");
+      params.set("qtotal", String(selectedIds.length));
+    }
+    if (filters.brandId) params.set("brand", filters.brandId);
+    if (filters.manufacturerId) params.set("manufacturer", filters.manufacturerId);
+    exitSelectMode();
+    navigate(`/vendor/offers?${params.toString()}`);
+  };
+
   const filterByBrand = (brandId: string) => {
     setFilters({ ...emptyCatalogFilters, brandId });
     setSearch("");

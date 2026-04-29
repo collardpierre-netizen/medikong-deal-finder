@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.resolve_offer_price_for_profile(uuid, text) FROM anon;

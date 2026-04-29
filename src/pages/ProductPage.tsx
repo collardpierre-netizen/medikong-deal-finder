@@ -31,6 +31,7 @@ import { useMarketPrices } from "@/hooks/useMarketPrices";
 import { RestockSecondChance } from "@/components/product/RestockSecondChance";
 import { MyEncodedPriceBanner } from "@/components/product/MyEncodedPriceBanner";
 import { ExternalVendorLogo } from "@/components/product/ExternalVendorLogo";
+import ProfileResolvedPriceBadge from "@/components/product/ProfileResolvedPriceBadge";
 import { SafeBoundary } from "@/components/SafeBoundary";
 import VendorDelegateCompact from "@/components/vendor/VendorDelegateCompact";
 

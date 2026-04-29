@@ -367,7 +367,7 @@ function VendorOffersPanel({ vendor }: { vendor: any }) {
     const text = await file.text();
     const lines = text.trim().split("\n");
     const header = lines[0].toLowerCase().split(",").map(s => s.trim());
-    const rows = lines.slice(1).map((line, idx) => {
+    const rows: (Record<string, string> & { _row: number })[] = lines.slice(1).map((line, idx) => {
       const vals = line.split(",").map(s => s.trim());
       const row: Record<string, string> = {};
       header.forEach((h, i) => { row[h] = vals[i] || ""; });

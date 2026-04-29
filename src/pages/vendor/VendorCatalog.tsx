@@ -105,9 +105,9 @@ export default function VendorCatalog() {
     <div className="space-y-5">
       <header className="flex items-start justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-xl font-bold text-[#1D2530]">Catalogue MediKong</h1>
+          <h1 className="text-xl font-bold text-[#1D2530]">{t("vendorCatalogTitle")}</h1>
           <p className="text-[13px] text-[#616B7C] mt-0.5">
-            Parcourez les marques, fabricants et produits déjà référencés et démarrez une offre en un clic.
+            {t("vendorCatalogSubtitle")}
           </p>
         </div>
         <div className="flex gap-2 flex-wrap">
@@ -115,7 +115,7 @@ export default function VendorCatalog() {
           <VendorCatalogXlsxImport />
           <Button asChild size="sm" className="gap-1.5">
             <Link to="/vendor/produits/proposer">
-              <Plus className="h-4 w-4" /> Proposer un produit
+              <Plus className="h-4 w-4" /> {t("proposeProduct")}
             </Link>
           </Button>
         </div>

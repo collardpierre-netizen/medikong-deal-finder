@@ -1450,9 +1450,28 @@ export default function ProductPage() {
                                 <ExternalVendorLogo name={vendor?.name} logoUrl={vendor?.logo_url} size={40} />
                                 <div className="min-w-0">
                                   <p className="font-medium text-sm text-foreground">{vendor?.name || "Vendeur externe"}</p>
-                                  <div className="flex items-center gap-2 mt-0.5">
+                                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                                     <span className="text-xs text-muted-foreground">{stockIcon} {stockLabel}</span>
                                     {eo.delivery_days && <span className="text-xs text-muted-foreground">• {eo.delivery_days}j livraison</span>}
+                                    {(eo.updated_at || eo.created_at) && (
+                                      <span
+                                        className="text-[11px] text-muted-foreground"
+                                        title={formatUpdatedAtFull(eo.updated_at || eo.created_at)}
+                                      >
+                                        • Dernier relevé : {eo.product_url ? (
+                                          <a
+                                            href={eo.product_url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="underline decoration-dotted underline-offset-2 hover:text-foreground"
+                                          >
+                                            {formatUpdatedAt(eo.updated_at || eo.created_at)}
+                                          </a>
+                                        ) : (
+                                          formatUpdatedAt(eo.updated_at || eo.created_at)
+                                        )}
+                                      </span>
+                                    )}
                                   </div>
                                 </div>
                               </div>

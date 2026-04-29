@@ -251,6 +251,7 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [progress, setProgress] = useState({ current: 0, total: 0, startTime: 0 });
   const [filter, setFilter] = useState<ResultFilter>("all");
+  const [jobId, setJobId] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const { addToCart } = useCart();
   const { user } = useAuth();
@@ -264,6 +265,7 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
     setProgress({ current: 0, total: 0, startTime: 0 });
     setFilter("all");
     setSavedCount(null);
+    setJobId(null);
   }, []);
 
   const handleClose = (v: boolean) => {

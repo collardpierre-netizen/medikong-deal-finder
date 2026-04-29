@@ -351,6 +351,11 @@ function VendorOffersPanel({ vendor }: { vendor: any }) {
   type InvalidRow = { row: number; gtin: string; unit_price: string; mov: string; reason: string };
   const [csvInvalid, setCsvInvalid] = useState<InvalidRow[]>([]);
   const [csvTotalRows, setCsvTotalRows] = useState(0);
+  // Doublons internes au CSV (même GTIN apparaissant plusieurs fois) — bloquants
+  type CsvDuplicate = { gtin: string; productName: string; rows: number[] };
+  const [csvDupCsv, setCsvDupCsv] = useState<CsvDuplicate[]>([]);
+  // GTIN déjà présents en base pour ce vendeur — signalés (l'upsert mettra à jour)
+  const [csvExistingGtins, setCsvExistingGtins] = useState<Set<string>>(new Set());
   const [csvImporting, setCsvImporting] = useState(false);
   const [csvProgress, setCsvProgress] = useState<{ phase: string; processed: number; total: number; upserted: number; merged: number } | null>(null);
 

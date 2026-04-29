@@ -6,8 +6,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
-import { Copy, CheckCircle2, AlertTriangle, Link2 } from "lucide-react";
+import { Copy, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  isVendorAccountError,
+  presentVendorAccountError,
+  type VendorAccountErrorPresentation,
+  type VendorAccountErrorAction,
+  type VendorAccountErrorPayload,
+} from "@/lib/vendor-account-errors";
+import { VendorAccountErrorAlert } from "@/components/admin/VendorAccountErrorAlert";
 
 function slugify(text: string): string {
   return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");

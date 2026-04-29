@@ -9,6 +9,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 // ProductSubmissionDialog removed: vendors are routed to the dedicated /vendor/produits/proposer page
 import { VendorSubmissionsList } from "@/components/vendor/catalog/VendorSubmissionsList";
 import { VendorCatalogXlsxImport } from "@/components/vendor/catalog/VendorCatalogXlsxImport";
@@ -21,22 +22,37 @@ import {
 import { InterestToggleButton } from "@/components/vendor/catalog/InterestToggleButton";
 
 type EntityType = "products" | "brands" | "manufacturers";
+type ProductSort = "popularity" | "price_asc" | "price_desc" | "availability" | "newest";
 
 const PAGE_SIZE = 30;
 
-function useCatalogList(entity: EntityType, search: string, filters: CatalogFilters) {
+const PRODUCT_SORT_CONFIG: Record<ProductSort, { column: string; ascending: boolean }> = {
+  popularity: { column: "popularity", ascending: false },
+  price_asc: { column: "best_price_excl_vat", ascending: true },
+  price_desc: { column: "best_price_excl_vat", ascending: false },
+  availability: { column: "total_stock", ascending: false },
+  newest: { column: "created_at", ascending: false },
+};
+
+function useCatalogList(
+  entity: EntityType,
+  search: string,
+  filters: CatalogFilters,
+  productSort: ProductSort,
+) {
   return useQuery({
-    queryKey: ["vendor-catalog", entity, search, filters],
+    queryKey: ["vendor-catalog", entity, search, filters, productSort],
     queryFn: async () => {
       const term = search.trim();
       const effectiveCategoryId = filters.subCategoryId ?? filters.rootCategoryId;
 
       if (entity === "products") {
+        const sort = PRODUCT_SORT_CONFIG[productSort];
         let q = supabase
           .from("products")
-          .select("id, name, slug, gtin, cnk_code, image_url, brand_id, brand_name, category_id, category_name, best_price_excl_vat")
+          .select("id, name, slug, gtin, cnk_code, image_url, brand_id, brand_name, category_id, category_name, best_price_excl_vat, total_stock")
           .eq("is_active", true)
-          .order("popularity", { ascending: false, nullsFirst: false })
+          .order(sort.column, { ascending: sort.ascending, nullsFirst: false })
           .limit(PAGE_SIZE);
         if (term) q = q.or(`name.ilike.%${term}%,gtin.ilike.%${term}%,cnk_code.ilike.%${term}%,brand_name.ilike.%${term}%`);
         if (effectiveCategoryId) q = q.eq("category_id", effectiveCategoryId);
@@ -80,8 +96,9 @@ export default function VendorCatalog() {
   const [tab, setTab] = useState<EntityType>("products");
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState<CatalogFilters>(emptyCatalogFilters);
+  const [productSort, setProductSort] = useState<ProductSort>("popularity");
 
-  const { data = [], isLoading } = useCatalogList(tab, search, filters);
+  const { data = [], isLoading } = useCatalogList(tab, search, filters, productSort);
 
   const startOffer = (productId?: string) => {
     const target = productId
@@ -148,11 +165,27 @@ export default function VendorCatalog() {
           </div>
 
           {tab !== "manufacturers" && (
-            <VendorCatalogFilters
-              value={filters}
-              onChange={setFilters}
-              showProductFilters={tab === "products"}
-            />
+            <div className="flex flex-wrap items-center gap-2">
+              <VendorCatalogFilters
+                value={filters}
+                onChange={setFilters}
+                showProductFilters={tab === "products"}
+              />
+              {tab === "products" && (
+                <Select value={productSort} onValueChange={(v) => setProductSort(v as ProductSort)}>
+                  <SelectTrigger className="h-9 w-[200px] text-xs ml-auto">
+                    <SelectValue placeholder={t("vendorCatalogSortLabel")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="popularity">{t("vendorCatalogSortTrending")}</SelectItem>
+                    <SelectItem value="price_asc">{t("vendorCatalogSortPriceAsc")}</SelectItem>
+                    <SelectItem value="price_desc">{t("vendorCatalogSortPriceDesc")}</SelectItem>
+                    <SelectItem value="availability">{t("vendorCatalogSortAvailability")}</SelectItem>
+                    <SelectItem value="newest">{t("vendorCatalogSortNewest")}</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
           )}
 
           <TabsContent value="products" className="m-0">

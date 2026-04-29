@@ -29,6 +29,9 @@ interface DefaultRow {
   default_mov: number;
   default_mov_currency: string;
   default_moq: number;
+  default_pricing_mode: "" | "absolute" | "discount_pct";
+  default_price_excl_vat: string;
+  default_discount_pct: string;
 }
 
 export default function VendorProfileDefaults({ vendorId }: { vendorId: string }) {

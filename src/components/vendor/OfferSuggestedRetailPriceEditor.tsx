@@ -12,8 +12,6 @@ interface Props {
   offerId: string;
   vendorId: string;
   productId: string;
-  initialPriceCents?: number | null;
-  initialSource?: string | null;
 }
 
 /**
@@ -25,19 +23,30 @@ export default function OfferSuggestedRetailPriceEditor({
   offerId,
   vendorId,
   productId,
-  initialPriceCents,
-  initialSource,
 }: Props) {
   const qc = useQueryClient();
-  const [price, setPrice] = useState<string>(
-    initialPriceCents != null ? (initialPriceCents / 100).toFixed(2) : ""
-  );
-  const [source, setSource] = useState<string>(initialSource ?? "manufacturer");
+  const [price, setPrice] = useState<string>("");
+  const [source, setSource] = useState<string>("manufacturer");
+
+  const { data: offerPvp } = useQuery({
+    queryKey: ["offer-pvp", offerId],
+    enabled: !!offerId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("offers")
+        .select("suggested_retail_price_cents, suggested_retail_price_source")
+        .eq("id", offerId)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
 
   useEffect(() => {
-    setPrice(initialPriceCents != null ? (initialPriceCents / 100).toFixed(2) : "");
-    setSource(initialSource ?? "manufacturer");
-  }, [initialPriceCents, initialSource]);
+    if (!offerPvp) return;
+    setPrice(offerPvp.suggested_retail_price_cents != null ? (offerPvp.suggested_retail_price_cents / 100).toFixed(2) : "");
+    setSource(offerPvp.suggested_retail_price_source ?? "manufacturer");
+  }, [offerPvp]);
 
   const { data: canEdit, isLoading } = useQuery({
     queryKey: ["can-set-pvp", vendorId, productId],

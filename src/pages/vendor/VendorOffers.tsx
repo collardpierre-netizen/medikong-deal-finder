@@ -820,6 +820,8 @@ function exportOffers(offers: any[], profileRulesMap?: Map<string, any[]>, price
 }
 
 /* ─── Profile Rules Editor ─── */
+/* Note: gère uniquement MOQ/MOV par profil (table offer_profile_rules).
+   Les prix par profil acheteur sont gérés par ProfilePricesEditor (table offer_buyer_profile_prices). */
 interface ProfileRule {
   id?: string;
   profile_type: string;

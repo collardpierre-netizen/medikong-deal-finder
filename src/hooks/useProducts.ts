@@ -345,18 +345,6 @@ export function useProductOffers(productId: string | undefined) {
           updatedAt: o.updated_at ?? null,
           syncedAt: o.synced_at ?? null,
           isQogitaBacked: !!o.is_qogita_backed,
-          stockQuantity: Number(o.stock_quantity) || 0,
-          movEur: Number(o.mov || o.mov_amount || 0),
-          bundleSize: Number(o.moq) || 1,
-          deliveryDays: o.delivery_days ?? null,
-          shipFromCountry: o.shipping_from_country || 'BE',
-          priceTiers: o.price_tiers || null,
-          discountTiers: tiersMap.get(o.id) || [],
-          offerPriceTiers: priceTiersMap.get(o.id) || [],
-          isActive: o.is_active,
-          updatedAt: o.updated_at ?? null,
-          syncedAt: o.synced_at ?? null,
-          isQogitaBacked: !!o.is_qogita_backed,
           sellerName: (() => {
             const showReal = resolveVendorVisibility(
               { ...vendor, id: safeVendorId },

@@ -281,33 +281,38 @@ export function ProductSubmissionDialog({ children }: { children?: React.ReactNo
       if (!vendor?.id) throw new Error("Vendeur introuvable");
       const valid = importRows.filter((r) => r.errors.length === 0);
       if (valid.length === 0) throw new Error("Aucune ligne valide à importer");
-      const payloads = valid.map((r) => ({
-        vendor_id: vendor.id,
-        status: "submitted" as const,
-        proposed_payload: Object.fromEntries(
+
+      const jobRows = valid.map((r) => ({
+        index: r.index,
+        data: Object.fromEntries(
           Object.entries(r.data).filter(([, v]) => v && String(v).trim() !== "")
         ),
+        errors: [],
       }));
-      for (let i = 0; i < payloads.length; i += 100) {
-        const batch = payloads.slice(i, i + 100);
-        const { error } = await supabase.from("product_submissions").insert(batch as any);
-        if (error) throw error;
-      }
-      return valid.length;
-    },
-    onSuccess: (count) => {
-      toast({
-        title: `${count} référence${count > 1 ? "s" : ""} soumise${count > 1 ? "s" : ""}`,
-        description: "Suivez l'avancement dans « Mes propositions ».",
+
+      const newJobId = await startImportJob({
+        jobType: "product_submission",
+        fileName: fileName ?? undefined,
+        rows: jobRows,
+        metadata: { vendor_id: vendor.id },
       });
-      qc.invalidateQueries({ queryKey: ["vendor-submissions"] });
-      reset();
-      setOpen(false);
+      setImportJobId(newJobId);
+      return valid.length;
     },
     onError: (err: any) => {
       toast({ title: "Erreur d'import", description: err?.message ?? "Import impossible", variant: "destructive" });
     },
   });
+
+  const handleJobCompleted = () => {
+    toast({
+      title: "Import terminé",
+      description: "Suivez l'avancement dans « Mes propositions ».",
+    });
+    qc.invalidateQueries({ queryKey: ["vendor-submissions"] });
+    reset();
+    setOpen(false);
+  };
 
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm((f) => ({ ...f, [k]: e.target.value }));

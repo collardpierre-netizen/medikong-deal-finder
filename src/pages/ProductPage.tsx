@@ -1247,8 +1247,8 @@ export default function ProductPage() {
                 <div className="mb-6">
                   <PvpEconomyBadge
                     productId={product.id}
-                    buyerPriceTtc={Number(bestOffer.price_incl_vat) || Number(bestOffer.price_excl_vat) * 1.21}
-                    buyerPriceHtva={Number(bestOffer.price_excl_vat)}
+                    buyerPriceTtc={Number(bestOffer.unitPriceInclVat) || Number(bestOffer.unitPriceEur) * 1.21}
+                    buyerPriceHtva={Number(bestOffer.unitPriceEur)}
                     countryCode={(product as any).pvp_country_code || "BE"}
                     variant="card"
                   />

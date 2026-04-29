@@ -106,12 +106,33 @@ export default function AdminLeads() {
     return { ...v, leadCount: vLeads.length, lastAt };
   }).sort((a, b) => b.leadCount - a.leadCount);
 
-  // Export CSV
+  // Profile summary (this month) — par profession
+  const profileCounts: Record<string, number> = {};
+  leadsThisMonth.forEach((l: any) => {
+    const p = (profilesById as any)[l.user_id];
+    const label = p?.profession_types?.label || p?.buyer_profiles?.name || (l.user_id ? "Profil inconnu" : "Anonyme");
+    profileCounts[label] = (profileCounts[label] || 0) + 1;
+  });
+  const profileSummary = Object.entries(profileCounts).sort((a, b) => b[1] - a[1]);
+
+  // Export CSV (enriched with profile)
   const exportCsv = () => {
-    const header = "Date,Produit,GTIN,Vendeur,User ID\n";
-    const rows = leads.map(l =>
-      `${l.clicked_at?.slice(0,16)},${((l as any).products?.name || "").replace(/,/g," ")},${(l as any).products?.gtin || ""},${(l as any).external_vendors?.name || ""},${l.user_id || "Anonyme"}`
-    ).join("\n");
+    const header = "Date,Produit,GTIN,Vendeur,Utilisateur,Société,Profession,Profil acheteur,Pays\n";
+    const esc = (s: any) => String(s ?? "").replace(/[,;\n\r"]/g, " ").trim();
+    const rows = leads.map((l: any) => {
+      const p = (profilesById as any)[l.user_id] || {};
+      return [
+        l.clicked_at?.slice(0, 16) || "",
+        esc(l.products?.name),
+        esc(l.products?.gtin),
+        esc(l.external_vendors?.name),
+        esc(p.full_name || (l.user_id ? l.user_id.slice(0, 8) + "…" : "Anonyme")),
+        esc(p.company_name),
+        esc(p.profession_types?.label),
+        esc(p.buyer_profiles?.name),
+        esc(p.country),
+      ].join(",");
+    }).join("\n");
     const blob = new Blob([header + rows], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a"); a.href = url; a.download = "leads-export.csv"; a.click();

@@ -744,30 +744,110 @@ function VendorOffersPanel({ vendor }: { vendor: any }) {
 
       {/* CSV import preview dialog */}
       <Dialog open={csvDialog} onOpenChange={setCsvDialog}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle>Import CSV — Aperçu</DialogTitle></DialogHeader>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader><DialogTitle>Import CSV — Récapitulatif avant soumission</DialogTitle></DialogHeader>
           {csvPreview && (
-            <div className="space-y-3">
-              <p className="text-sm"><span className="font-semibold text-green-600">{csvPreview.length}</span> offres à créer</p>
-              {csvUnmatched.length > 0 && (
-                <p className="text-sm text-red-600"><span className="font-semibold">{csvUnmatched.length}</span> GTIN non trouvés : {csvUnmatched.slice(0, 5).join(", ")}{csvUnmatched.length > 5 ? "..." : ""}</p>
-              )}
-              <div className="max-h-60 overflow-y-auto border rounded-md">
-                <Table>
-                  <TableHeader><TableRow><TableHead className="text-[11px]">Produit</TableHead><TableHead className="text-[11px]">Prix</TableHead><TableHead className="text-[11px]">MOV</TableHead></TableRow></TableHeader>
-                  <TableBody>
-                    {csvPreview.slice(0, 20).map((r, i) => (
-                      <TableRow key={i}>
-                        <TableCell className="text-[11px]">{r.product.name}</TableCell>
-                        <TableCell className="text-[11px]">{r.unit_price} €</TableCell>
-                        <TableCell className="text-[11px]">{r.mov || "—"}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+            <div className="space-y-4">
+              {/* Summary cards */}
+              <div className="grid grid-cols-3 gap-2">
+                <div className="rounded-md border p-3">
+                  <div className="text-[11px] text-muted-foreground">Lignes lues</div>
+                  <div className="text-lg font-semibold">{csvTotalRows}</div>
+                </div>
+                <div className="rounded-md border p-3 border-green-200 bg-green-50/40">
+                  <div className="text-[11px] text-green-700">Valides</div>
+                  <div className="text-lg font-semibold text-green-700">{csvPreview.length}</div>
+                </div>
+                <div className="rounded-md border p-3 border-red-200 bg-red-50/40">
+                  <div className="text-[11px] text-red-700">Invalides</div>
+                  <div className="text-lg font-semibold text-red-700">{csvInvalid.length}</div>
+                </div>
               </div>
-              <Button className="w-full" onClick={importCsv} disabled={csvImporting}>
-                {csvImporting ? "Import en cours..." : `Importer ${csvPreview.length} offres`}
+
+              <Tabs defaultValue={csvInvalid.length > 0 ? "invalid" : "valid"}>
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="valid">Valides ({csvPreview.length})</TabsTrigger>
+                  <TabsTrigger value="invalid">Invalides ({csvInvalid.length})</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="valid">
+                  {csvPreview.length === 0 ? (
+                    <p className="text-sm text-muted-foreground p-4 text-center">Aucune ligne valide à importer.</p>
+                  ) : (
+                    <div className="max-h-60 overflow-y-auto border rounded-md">
+                      <Table>
+                        <TableHeader><TableRow><TableHead className="text-[11px]">Produit</TableHead><TableHead className="text-[11px]">Prix</TableHead><TableHead className="text-[11px]">MOV</TableHead></TableRow></TableHeader>
+                        <TableBody>
+                          {csvPreview.slice(0, 20).map((r, i) => (
+                            <TableRow key={i}>
+                              <TableCell className="text-[11px]">{r.product.name}</TableCell>
+                              <TableCell className="text-[11px]">{r.unit_price} €</TableCell>
+                              <TableCell className="text-[11px]">{r.mov || "—"}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                      {csvPreview.length > 20 && (
+                        <p className="text-[11px] text-muted-foreground p-2 text-center">… et {csvPreview.length - 20} autres lignes valides</p>
+                      )}
+                    </div>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="invalid">
+                  {csvInvalid.length === 0 ? (
+                    <p className="text-sm text-muted-foreground p-4 text-center">Aucune erreur détectée.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <p className="text-[11px] text-muted-foreground">{csvInvalid.length} ligne(s) seront ignorées à l'import.</p>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            const header = "row,gtin,unit_price,mov,reason";
+                            const escape = (v: string) => `"${(v ?? "").replace(/"/g, '""')}"`;
+                            const body = csvInvalid.map(r => [r.row, escape(r.gtin), escape(r.unit_price), escape(r.mov), escape(r.reason)].join(",")).join("\n");
+                            const blob = new Blob([header + "\n" + body], { type: "text/csv;charset=utf-8;" });
+                            const a = document.createElement("a");
+                            a.href = URL.createObjectURL(blob);
+                            a.download = `erreurs-import-${new Date().toISOString().slice(0, 10)}.csv`;
+                            a.click();
+                          }}
+                        >
+                          <Download size={12} className="mr-1" /> Télécharger erreurs CSV
+                        </Button>
+                      </div>
+                      <div className="max-h-60 overflow-y-auto border rounded-md">
+                        <Table>
+                          <TableHeader><TableRow>
+                            <TableHead className="text-[11px]">Ligne</TableHead>
+                            <TableHead className="text-[11px]">GTIN</TableHead>
+                            <TableHead className="text-[11px]">Prix</TableHead>
+                            <TableHead className="text-[11px]">Motif</TableHead>
+                          </TableRow></TableHeader>
+                          <TableBody>
+                            {csvInvalid.slice(0, 50).map((r, i) => (
+                              <TableRow key={i}>
+                                <TableCell className="text-[11px] font-mono">{r.row}</TableCell>
+                                <TableCell className="text-[11px] font-mono">{r.gtin || "—"}</TableCell>
+                                <TableCell className="text-[11px]">{r.unit_price || "—"}</TableCell>
+                                <TableCell className="text-[11px] text-red-600">{r.reason}</TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                        {csvInvalid.length > 50 && (
+                          <p className="text-[11px] text-muted-foreground p-2 text-center">… et {csvInvalid.length - 50} autres erreurs (visibles dans l'export CSV)</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </TabsContent>
+              </Tabs>
+
+              <Button className="w-full" onClick={importCsv} disabled={csvImporting || csvPreview.length === 0}>
+                {csvImporting ? "Import en cours..." : `Confirmer et importer ${csvPreview.length} offre(s)`}
               </Button>
               {csvProgress && (
                 <div className="space-y-2 rounded-md border p-3 bg-muted/30">

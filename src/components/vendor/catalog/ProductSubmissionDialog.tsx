@@ -143,13 +143,13 @@ function buildXlsxTemplate(): ArrayBuffer {
   const wb = XLSX.utils.book_new();
 
   // ===== Feuille "Modèle" =====
-  const headerRow = FIELD_HEADERS.map((h) => `${COLUMN_GUIDE[h].label}${COLUMN_GUIDE[h].required ? " *" : ""}`);
-  const technicalRow = FIELD_HEADERS.map((h) => h);
+  // Row 1 = clés techniques (lues par l'import). Les libellés FR sont en commentaires de cellule.
+  const headerRow = FIELD_HEADERS.map((h) => h);
   const example1 = FIELD_HEADERS.map((h) => COLUMN_GUIDE[h].example);
   const example2 = ["Nurofen 200mg 24cp", "Reckitt", "Reckitt Benckiser", "5000158078123", "1857423", "AINS", "Boîte 24 comprimés"];
   const blank = FIELD_HEADERS.map(() => "");
 
-  const aoa: any[][] = [headerRow, technicalRow, example1, example2, blank, blank, blank];
+  const aoa: any[][] = [headerRow, example1, example2, blank, blank, blank];
   const ws = XLSX.utils.aoa_to_sheet(aoa);
 
   // Forcer le format texte pour GTIN et CNK (évite la notation scientifique)
@@ -167,14 +167,14 @@ function buildXlsxTemplate(): ArrayBuffer {
     { wch: 38 }, { wch: 18 }, { wch: 22 }, { wch: 16 }, { wch: 12 }, { wch: 22 }, { wch: 30 },
   ];
 
-  // Commentaires (cell comments) sur l'en-tête, lisibles dans Excel
+  // Commentaires d'aide sur l'en-tête + libellé FR
   FIELD_HEADERS.forEach((h, idx) => {
     const ref = XLSX.utils.encode_cell({ r: 0, c: idx });
     const guide = COLUMN_GUIDE[h];
     if (ws[ref]) {
       (ws[ref] as any).c = [{
         a: "MediKong",
-        t: `${guide.required ? "OBLIGATOIRE — " : "Optionnel — "}${guide.help}\n\nExemple : ${guide.example}\nClé technique : ${h}`,
+        t: `${guide.label}${guide.required ? " (OBLIGATOIRE)" : " (optionnel)"}\n${guide.help}\n\nExemple : ${guide.example}`,
       }];
     }
   });
@@ -194,8 +194,8 @@ function buildXlsxTemplate(): ArrayBuffer {
     }),
     [],
     ["Notes générales :"],
-    ["• La 1re ligne (libellés) et la 2e ligne (clés techniques) sont lues par l'import."],
-    ["• Conservez l'ordre des colonnes ou laissez la 2e ligne intacte (les clés sont reconnues automatiquement)."],
+    ["• La 1re ligne du fichier doit contenir les clés techniques (product_name, gtin, etc.)."],
+    ["• L'ordre des colonnes peut varier — les clés sont reconnues automatiquement."],
     ["• Maximum 500 lignes par fichier, taille max 2 Mo."],
     ["• GTIN : 8, 12, 13 ou 14 chiffres avec clé de contrôle valide."],
     ["• CNK : 7 chiffres exactement."],
@@ -207,6 +207,7 @@ function buildXlsxTemplate(): ArrayBuffer {
 
   return XLSX.write(wb, { bookType: "xlsx", type: "array" }) as ArrayBuffer;
 }
+
 
 
 export function ProductSubmissionDialog({ children }: { children?: React.ReactNode }) {

@@ -138,6 +138,14 @@ export default function VendorCatalog() {
             </div>
           </div>
 
+          {tab !== "manufacturers" && (
+            <VendorCatalogFilters
+              value={filters}
+              onChange={setFilters}
+              showProductFilters={tab === "products"}
+            />
+          )}
+
           <TabsContent value="products" className="m-0">
             {isLoading ? (
               <ListLoader />

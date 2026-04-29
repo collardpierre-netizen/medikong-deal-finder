@@ -151,7 +151,7 @@ export default function AdminUsers() {
     const fnName = u.type === "vendor" ? "create-vendor-account" : "create-buyer-account";
     const body = u.type === "vendor" ? { vendor_id: u.id } : { customer_id: u.id, email: u.email };
     const { data, error } = await supabase.functions.invoke(fnName, { body });
-    if (error || data?.error) {
+    if (error || data?.ok === false || data?.error) {
       toast.error(`Erreur : ${error?.message || data?.error}`);
       return;
     }

@@ -238,7 +238,7 @@ const AdminVendeurDetail = () => {
                     },
                   });
                   if (error) throw error;
-                  if (data?.error) throw new Error(data.error);
+                  if (data?.ok === false || data?.error) throw new Error(data?.error || "Erreur inconnue");
                   if (data?.temp_password) {
                     toast.success(`Accès créé ! Mot de passe temporaire : ${data.temp_password}`, { duration: 30000 });
                   } else if (data?.reused_existing_user) {

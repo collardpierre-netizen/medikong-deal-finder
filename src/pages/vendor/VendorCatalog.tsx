@@ -217,6 +217,9 @@ export default function VendorCatalog() {
                       </p>
                     </div>
                     <div className="flex flex-col gap-1">
+                      <InterestToggleButton
+                        target={{ kind: "brand", id: b.id, label: b.name }}
+                      />
                       <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => browseBrand(b.slug)}>
                         Voir
                       </Button>
@@ -253,9 +256,14 @@ export default function VendorCatalog() {
                         {m.country_of_origin ? ` · ${m.country_of_origin}` : ""}
                       </p>
                     </div>
-                    <Button size="sm" className="h-7 px-2 text-xs gap-1" onClick={() => startOffer()}>
-                      <Plus className="h-3 w-3" /> Offre
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <InterestToggleButton
+                        target={{ kind: "manufacturer", id: m.id, label: m.name }}
+                      />
+                      <Button size="sm" className="h-7 px-2 text-xs gap-1" onClick={() => startOffer()}>
+                        <Plus className="h-3 w-3" /> Offre
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>

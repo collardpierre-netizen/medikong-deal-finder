@@ -36,7 +36,7 @@ const sections: NavSection[] = [
       { labelKey: "manufacturers", path: "/admin/fabricants", icon: Factory },
       { labelKey: "delegates", path: "/admin/delegues", icon: Users2 },
       { labelKey: "pimSchemas", path: "/admin/schemas-pim", icon: SlidersHorizontal },
-      { labelKey: "productPrices", path: "/admin/product-prices", icon: Tag },
+      // Entrée "productPrices" supprimée — édition prix par offre via /vendor/offers (offer_buyer_profile_prices)
       { labelKey: "orders", path: "/admin/commandes", icon: ShoppingCart },
       { labelKey: "disputes", path: "/admin/litiges", icon: AlertCircle },
       { labelKey: "finances", path: "/admin/finances", icon: DollarSign },

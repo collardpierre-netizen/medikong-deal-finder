@@ -280,10 +280,17 @@ export type Database = {
           parent_company: string | null
           press_mentions_12m: number | null
           product_count: number
+          proposed_by_vendor_id: string | null
           qogita_qid: string | null
           slug: string
           sources_last_updated: string | null
           subcategories: string[] | null
+          submission_approved_at: string | null
+          submission_approved_by: string | null
+          submission_rejected_reason: string | null
+          submission_status:
+            | Database["public"]["Enums"]["catalog_submission_status"]
+            | null
           synced_at: string | null
           updated_at: string
           website_url: string | null
@@ -316,10 +323,17 @@ export type Database = {
           parent_company?: string | null
           press_mentions_12m?: number | null
           product_count?: number
+          proposed_by_vendor_id?: string | null
           qogita_qid?: string | null
           slug: string
           sources_last_updated?: string | null
           subcategories?: string[] | null
+          submission_approved_at?: string | null
+          submission_approved_by?: string | null
+          submission_rejected_reason?: string | null
+          submission_status?:
+            | Database["public"]["Enums"]["catalog_submission_status"]
+            | null
           synced_at?: string | null
           updated_at?: string
           website_url?: string | null
@@ -352,10 +366,17 @@ export type Database = {
           parent_company?: string | null
           press_mentions_12m?: number | null
           product_count?: number
+          proposed_by_vendor_id?: string | null
           qogita_qid?: string | null
           slug?: string
           sources_last_updated?: string | null
           subcategories?: string[] | null
+          submission_approved_at?: string | null
+          submission_approved_by?: string | null
+          submission_rejected_reason?: string | null
+          submission_status?:
+            | Database["public"]["Enums"]["catalog_submission_status"]
+            | null
           synced_at?: string | null
           updated_at?: string
           website_url?: string | null
@@ -367,6 +388,27 @@ export type Database = {
             columns: ["manufacturer_id"]
             isOneToOne: false
             referencedRelation: "manufacturers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brands_proposed_by_vendor_id_fkey"
+            columns: ["proposed_by_vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brands_proposed_by_vendor_id_fkey"
+            columns: ["proposed_by_vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brands_proposed_by_vendor_id_fkey"
+            columns: ["proposed_by_vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors_public"
             referencedColumns: ["id"]
           },
         ]
@@ -683,6 +725,30 @@ export type Database = {
           row_id?: string
           table_name?: string
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      buyer_profiles: {
+        Row: {
+          created_at: string
+          description: string | null
+          display_order: number | null
+          id: string
+          label: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          display_order?: number | null
+          id: string
+          label: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          label?: string
         }
         Relationships: []
       }
@@ -1983,9 +2049,16 @@ export type Database = {
           logo_url: string | null
           name: string
           product_count: number | null
+          proposed_by_vendor_id: string | null
           qogita_qid: string | null
           slug: string
           specialties: string[] | null
+          submission_approved_at: string | null
+          submission_approved_by: string | null
+          submission_rejected_reason: string | null
+          submission_status:
+            | Database["public"]["Enums"]["catalog_submission_status"]
+            | null
           synced_at: string | null
           updated_at: string | null
           website_url: string | null
@@ -2004,9 +2077,16 @@ export type Database = {
           logo_url?: string | null
           name: string
           product_count?: number | null
+          proposed_by_vendor_id?: string | null
           qogita_qid?: string | null
           slug: string
           specialties?: string[] | null
+          submission_approved_at?: string | null
+          submission_approved_by?: string | null
+          submission_rejected_reason?: string | null
+          submission_status?:
+            | Database["public"]["Enums"]["catalog_submission_status"]
+            | null
           synced_at?: string | null
           updated_at?: string | null
           website_url?: string | null
@@ -2025,15 +2105,44 @@ export type Database = {
           logo_url?: string | null
           name?: string
           product_count?: number | null
+          proposed_by_vendor_id?: string | null
           qogita_qid?: string | null
           slug?: string
           specialties?: string[] | null
+          submission_approved_at?: string | null
+          submission_approved_by?: string | null
+          submission_rejected_reason?: string | null
+          submission_status?:
+            | Database["public"]["Enums"]["catalog_submission_status"]
+            | null
           synced_at?: string | null
           updated_at?: string | null
           website_url?: string | null
           year_founded?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "manufacturers_proposed_by_vendor_id_fkey"
+            columns: ["proposed_by_vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "manufacturers_proposed_by_vendor_id_fkey"
+            columns: ["proposed_by_vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "manufacturers_proposed_by_vendor_id_fkey"
+            columns: ["proposed_by_vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors_public"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       margin_rules: {
         Row: {
@@ -2278,6 +2387,55 @@ export type Database = {
             columns: ["source_id"]
             isOneToOne: false
             referencedRelation: "market_price_sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      offer_buyer_profile_prices: {
+        Row: {
+          buyer_profile_id: string
+          created_at: string
+          id: string
+          offer_id: string
+          price_excl_vat: number
+          updated_at: string
+        }
+        Insert: {
+          buyer_profile_id: string
+          created_at?: string
+          id?: string
+          offer_id: string
+          price_excl_vat: number
+          updated_at?: string
+        }
+        Update: {
+          buyer_profile_id?: string
+          created_at?: string
+          id?: string
+          offer_id?: string
+          price_excl_vat?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "offer_buyer_profile_prices_buyer_profile_id_fkey"
+            columns: ["buyer_profile_id"]
+            isOneToOne: false
+            referencedRelation: "buyer_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offer_buyer_profile_prices_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offer_buyer_profile_prices_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "public_offers"
             referencedColumns: ["id"]
           },
         ]
@@ -2664,6 +2822,7 @@ export type Database = {
         Row: {
           applied_margin_percentage: number | null
           applied_margin_rule_id: string | null
+          campaign_id: string | null
           country_code: string | null
           created_at: string
           delivery_days: number | null
@@ -2703,6 +2862,7 @@ export type Database = {
         Insert: {
           applied_margin_percentage?: number | null
           applied_margin_rule_id?: string | null
+          campaign_id?: string | null
           country_code?: string | null
           created_at?: string
           delivery_days?: number | null
@@ -2742,6 +2902,7 @@ export type Database = {
         Update: {
           applied_margin_percentage?: number | null
           applied_margin_rule_id?: string | null
+          campaign_id?: string | null
           country_code?: string | null
           created_at?: string
           delivery_days?: number | null
@@ -2784,6 +2945,13 @@ export type Database = {
             columns: ["applied_margin_rule_id"]
             isOneToOne: false
             referencedRelation: "margin_rules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offers_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_offer_campaigns"
             referencedColumns: ["id"]
           },
           {
@@ -3816,6 +3984,111 @@ export type Database = {
           },
         ]
       }
+      product_submissions: {
+        Row: {
+          campaign_id: string | null
+          created_at: string
+          id: string
+          proposed_payload: Json
+          resulting_brand_id: string | null
+          resulting_manufacturer_id: string | null
+          resulting_product_id: string | null
+          review_comment: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["product_submission_status"]
+          updated_at: string
+          vendor_id: string
+        }
+        Insert: {
+          campaign_id?: string | null
+          created_at?: string
+          id?: string
+          proposed_payload: Json
+          resulting_brand_id?: string | null
+          resulting_manufacturer_id?: string | null
+          resulting_product_id?: string | null
+          review_comment?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["product_submission_status"]
+          updated_at?: string
+          vendor_id: string
+        }
+        Update: {
+          campaign_id?: string | null
+          created_at?: string
+          id?: string
+          proposed_payload?: Json
+          resulting_brand_id?: string | null
+          resulting_manufacturer_id?: string | null
+          resulting_product_id?: string | null
+          review_comment?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["product_submission_status"]
+          updated_at?: string
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_submissions_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_offer_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_submissions_resulting_brand_id_fkey"
+            columns: ["resulting_brand_id"]
+            isOneToOne: false
+            referencedRelation: "brand_logistics_stats"
+            referencedColumns: ["brand_id"]
+          },
+          {
+            foreignKeyName: "product_submissions_resulting_brand_id_fkey"
+            columns: ["resulting_brand_id"]
+            isOneToOne: false
+            referencedRelation: "brands"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_submissions_resulting_manufacturer_id_fkey"
+            columns: ["resulting_manufacturer_id"]
+            isOneToOne: false
+            referencedRelation: "manufacturers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_submissions_resulting_product_id_fkey"
+            columns: ["resulting_product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_submissions_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_submissions_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_submissions_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           best_bundle_size: number | null
@@ -3868,6 +4141,7 @@ export type Database = {
           promotion_end_date: string | null
           promotion_label: string | null
           promotion_start_date: string | null
+          proposed_by_vendor_id: string | null
           qogita_fid: string | null
           qogita_qid: string | null
           qogita_slug: string | null
@@ -3879,6 +4153,12 @@ export type Database = {
           sku: string | null
           slug: string
           source: Database["public"]["Enums"]["product_source"]
+          submission_approved_at: string | null
+          submission_approved_by: string | null
+          submission_rejected_reason: string | null
+          submission_status:
+            | Database["public"]["Enums"]["catalog_submission_status"]
+            | null
           synced_at: string | null
           total_stock: number
           unit: string | null
@@ -3940,6 +4220,7 @@ export type Database = {
           promotion_end_date?: string | null
           promotion_label?: string | null
           promotion_start_date?: string | null
+          proposed_by_vendor_id?: string | null
           qogita_fid?: string | null
           qogita_qid?: string | null
           qogita_slug?: string | null
@@ -3951,6 +4232,12 @@ export type Database = {
           sku?: string | null
           slug: string
           source?: Database["public"]["Enums"]["product_source"]
+          submission_approved_at?: string | null
+          submission_approved_by?: string | null
+          submission_rejected_reason?: string | null
+          submission_status?:
+            | Database["public"]["Enums"]["catalog_submission_status"]
+            | null
           synced_at?: string | null
           total_stock?: number
           unit?: string | null
@@ -4012,6 +4299,7 @@ export type Database = {
           promotion_end_date?: string | null
           promotion_label?: string | null
           promotion_start_date?: string | null
+          proposed_by_vendor_id?: string | null
           qogita_fid?: string | null
           qogita_qid?: string | null
           qogita_slug?: string | null
@@ -4023,6 +4311,12 @@ export type Database = {
           sku?: string | null
           slug?: string
           source?: Database["public"]["Enums"]["product_source"]
+          submission_approved_at?: string | null
+          submission_approved_by?: string | null
+          submission_rejected_reason?: string | null
+          submission_status?:
+            | Database["public"]["Enums"]["catalog_submission_status"]
+            | null
           synced_at?: string | null
           total_stock?: number
           unit?: string | null
@@ -4060,6 +4354,27 @@ export type Database = {
             columns: ["manufacturer_id"]
             isOneToOne: false
             referencedRelation: "manufacturers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_proposed_by_vendor_id_fkey"
+            columns: ["proposed_by_vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_proposed_by_vendor_id_fkey"
+            columns: ["proposed_by_vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_proposed_by_vendor_id_fkey"
+            columns: ["proposed_by_vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors_public"
             referencedColumns: ["id"]
           },
         ]
@@ -6709,6 +7024,89 @@ export type Database = {
           },
         ]
       }
+      vendor_catalog_interests: {
+        Row: {
+          brand_id: string | null
+          category_id: string | null
+          created_at: string
+          id: string
+          manufacturer_id: string | null
+          notify_new_brand: boolean
+          notify_new_product: boolean
+          vendor_id: string
+        }
+        Insert: {
+          brand_id?: string | null
+          category_id?: string | null
+          created_at?: string
+          id?: string
+          manufacturer_id?: string | null
+          notify_new_brand?: boolean
+          notify_new_product?: boolean
+          vendor_id: string
+        }
+        Update: {
+          brand_id?: string | null
+          category_id?: string | null
+          created_at?: string
+          id?: string
+          manufacturer_id?: string | null
+          notify_new_brand?: boolean
+          notify_new_product?: boolean
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_catalog_interests_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brand_logistics_stats"
+            referencedColumns: ["brand_id"]
+          },
+          {
+            foreignKeyName: "vendor_catalog_interests_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brands"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_catalog_interests_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_catalog_interests_manufacturer_id_fkey"
+            columns: ["manufacturer_id"]
+            isOneToOne: false
+            referencedRelation: "manufacturers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_catalog_interests_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_catalog_interests_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_catalog_interests_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vendor_commercial_settings: {
         Row: {
           created_at: string
@@ -7300,6 +7698,149 @@ export type Database = {
             foreignKeyName: "vendor_notification_settings_vendor_id_fkey"
             columns: ["vendor_id"]
             isOneToOne: true
+            referencedRelation: "vendors_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vendor_notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          cta_url: string | null
+          email_sent_at: string | null
+          id: string
+          payload: Json | null
+          read_at: string | null
+          title: string
+          type: string
+          vendor_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          cta_url?: string | null
+          email_sent_at?: string | null
+          id?: string
+          payload?: Json | null
+          read_at?: string | null
+          title: string
+          type: string
+          vendor_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          cta_url?: string | null
+          email_sent_at?: string | null
+          id?: string
+          payload?: Json | null
+          read_at?: string | null
+          title?: string
+          type?: string
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_notifications_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_notifications_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_notifications_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vendor_offer_campaigns: {
+        Row: {
+          created_at: string
+          default_currency: string
+          default_lead_time_days: number | null
+          default_vat_rate: number | null
+          default_zones: string[] | null
+          global_mov_cents: number | null
+          id: string
+          imported_brand_ids: string[] | null
+          imported_manufacturer_ids: string[] | null
+          name: string
+          notes: string | null
+          published_at: string | null
+          source_mode: Database["public"]["Enums"]["vendor_offer_campaign_source"]
+          status: Database["public"]["Enums"]["vendor_offer_campaign_status"]
+          updated_at: string
+          vendor_id: string
+          xlsx_source_url: string | null
+        }
+        Insert: {
+          created_at?: string
+          default_currency?: string
+          default_lead_time_days?: number | null
+          default_vat_rate?: number | null
+          default_zones?: string[] | null
+          global_mov_cents?: number | null
+          id?: string
+          imported_brand_ids?: string[] | null
+          imported_manufacturer_ids?: string[] | null
+          name: string
+          notes?: string | null
+          published_at?: string | null
+          source_mode: Database["public"]["Enums"]["vendor_offer_campaign_source"]
+          status?: Database["public"]["Enums"]["vendor_offer_campaign_status"]
+          updated_at?: string
+          vendor_id: string
+          xlsx_source_url?: string | null
+        }
+        Update: {
+          created_at?: string
+          default_currency?: string
+          default_lead_time_days?: number | null
+          default_vat_rate?: number | null
+          default_zones?: string[] | null
+          global_mov_cents?: number | null
+          id?: string
+          imported_brand_ids?: string[] | null
+          imported_manufacturer_ids?: string[] | null
+          name?: string
+          notes?: string | null
+          published_at?: string | null
+          source_mode?: Database["public"]["Enums"]["vendor_offer_campaign_source"]
+          status?: Database["public"]["Enums"]["vendor_offer_campaign_status"]
+          updated_at?: string
+          vendor_id?: string
+          xlsx_source_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_offer_campaigns_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_offer_campaigns_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_offer_campaigns_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
             referencedRelation: "vendors_public"
             referencedColumns: ["id"]
           },
@@ -8626,6 +9167,7 @@ export type Database = {
         Args: { _country_code?: string }
         Returns: Json
       }
+      current_vendor_id: { Args: never; Returns: string }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
@@ -8860,6 +9402,11 @@ export type Database = {
         | "resolved"
         | "auto_resolved"
       alert_type: "market_price" | "external_offer"
+      catalog_submission_status:
+        | "active"
+        | "pending_review"
+        | "rejected"
+        | "archived"
       commission_model_enum: "flat_percentage" | "margin_split" | "fixed_amount"
       customer_type: "pharmacy" | "hospital" | "clinic" | "lab" | "other"
       delegate_availability:
@@ -8900,6 +9447,12 @@ export type Database = {
         | "vendor"
         | "medi-market"
         | "valerco"
+      product_submission_status:
+        | "submitted"
+        | "in_review"
+        | "approved"
+        | "rejected"
+        | "needs_changes"
       qogita_resync_mode:
         | "daily_stale_refresh"
         | "mute_detection"
@@ -8944,6 +9497,17 @@ export type Database = {
         | "manual"
         | "offers_multi_vendor"
       urgency_enum: "low" | "medium" | "high"
+      vendor_offer_campaign_source:
+        | "catalog_pick"
+        | "xlsx_upload"
+        | "manual"
+        | "mixed"
+      vendor_offer_campaign_status:
+        | "draft"
+        | "pending_validation"
+        | "active"
+        | "paused"
+        | "archived"
       vendor_shipping_mode:
         | "no_shipping"
         | "own_sendcloud"
@@ -9093,6 +9657,12 @@ export const Constants = {
       alert_severity: ["info", "warning", "critical"],
       alert_status: ["new", "seen", "in_progress", "resolved", "auto_resolved"],
       alert_type: ["market_price", "external_offer"],
+      catalog_submission_status: [
+        "active",
+        "pending_review",
+        "rejected",
+        "archived",
+      ],
       commission_model_enum: [
         "flat_percentage",
         "margin_split",
@@ -9140,6 +9710,13 @@ export const Constants = {
         "vendor",
         "medi-market",
         "valerco",
+      ],
+      product_submission_status: [
+        "submitted",
+        "in_review",
+        "approved",
+        "rejected",
+        "needs_changes",
       ],
       qogita_resync_mode: [
         "daily_stale_refresh",
@@ -9190,6 +9767,19 @@ export const Constants = {
         "offers_multi_vendor",
       ],
       urgency_enum: ["low", "medium", "high"],
+      vendor_offer_campaign_source: [
+        "catalog_pick",
+        "xlsx_upload",
+        "manual",
+        "mixed",
+      ],
+      vendor_offer_campaign_status: [
+        "draft",
+        "pending_validation",
+        "active",
+        "paused",
+        "archived",
+      ],
       vendor_shipping_mode: [
         "no_shipping",
         "own_sendcloud",

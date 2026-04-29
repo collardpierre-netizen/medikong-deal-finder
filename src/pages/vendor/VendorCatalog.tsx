@@ -111,7 +111,11 @@ export default function VendorCatalog() {
         <div className="flex gap-2 flex-wrap">
           <VendorCatalogCodeLookup />
           <VendorCatalogXlsxImport />
-          <ProductSubmissionDialog />
+          <Button asChild size="sm" className="gap-1.5">
+            <Link to="/vendor/produits/proposer">
+              <Plus className="h-4 w-4" /> Proposer un produit
+            </Link>
+          </Button>
         </div>
       </header>
 

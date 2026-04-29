@@ -144,50 +144,80 @@ const fetchBestOffers = async (productIds: string[]) => {
 const queryMatchImportLines = async (payload: ImportPayloadLine[]) => {
   const eans = [...new Set(payload.map((line) => line.ean).filter(Boolean))] as string[];
   const cnks = [...new Set(payload.map((line) => line.cnk).filter(Boolean))] as string[];
+  const skus = [...new Set(payload.map((line) => line.sku).filter(Boolean))] as string[];
 
-  const [productsByEanResult, productsByCnkResult] = await Promise.all([
+  const [productsByEanResult, productsByCnkResult, productsBySkuResult] = await Promise.all([
     eans.length > 0
       ? supabase
           .from("products")
-          .select("id, name, image_url, gtin, cnk_code")
+          .select("id, name, image_url, gtin, cnk_code, sku")
           .in("gtin", eans)
           .eq("is_active", true)
       : Promise.resolve({ data: [], error: null }),
     cnks.length > 0
       ? supabase
           .from("products")
-          .select("id, name, image_url, gtin, cnk_code")
+          .select("id, name, image_url, gtin, cnk_code, sku")
           .in("cnk_code", cnks)
+          .eq("is_active", true)
+      : Promise.resolve({ data: [], error: null }),
+    skus.length > 0
+      ? supabase
+          .from("products")
+          .select("id, name, image_url, gtin, cnk_code, sku")
+          .in("sku", skus)
           .eq("is_active", true)
       : Promise.resolve({ data: [], error: null }),
   ]);
 
   if (productsByEanResult.error) throw productsByEanResult.error;
   if (productsByCnkResult.error) throw productsByCnkResult.error;
+  if (productsBySkuResult.error) throw productsBySkuResult.error;
 
   const productByEan = new Map<string, any>();
   const productByCnk = new Map<string, any>();
+  const productBySku = new Map<string, any>();
 
-  for (const product of [...(productsByEanResult.data || []), ...(productsByCnkResult.data || [])]) {
+  for (const product of [
+    ...(productsByEanResult.data || []),
+    ...(productsByCnkResult.data || []),
+    ...(productsBySkuResult.data || []),
+  ]) {
     if (product.gtin && !productByEan.has(product.gtin)) productByEan.set(product.gtin, product);
     if (product.cnk_code && !productByCnk.has(product.cnk_code)) productByCnk.set(product.cnk_code, product);
+    if (product.sku && !productBySku.has(product.sku)) productBySku.set(product.sku, product);
   }
+
+  // Stratégie de fallback : GTIN > CNK > SKU
+  const resolveMatch = (line: { ean: string | null; cnk: string | null; sku: string | null }):
+    { product: any | undefined; matchedBy?: MatchField } => {
+    if (line.ean) {
+      const p = productByEan.get(line.ean);
+      if (p) return { product: p, matchedBy: "gtin" };
+    }
+    if (line.cnk) {
+      const p = productByCnk.get(line.cnk);
+      if (p) return { product: p, matchedBy: "cnk" };
+    }
+    if (line.sku) {
+      const p = productBySku.get(line.sku);
+      if (p) return { product: p, matchedBy: "sku" };
+    }
+    return { product: undefined };
+  };
 
   const productIds = [
     ...new Set(
       payload
-        .map((line) => {
-          const product = (line.ean ? productByEan.get(line.ean) : undefined) || (line.cnk ? productByCnk.get(line.cnk) : undefined);
-          return product?.id;
-        })
+        .map((line) => resolveMatch(line).product?.id)
         .filter(Boolean),
     ),
   ] as string[];
 
   const bestOfferByProduct = productIds.length > 0 ? await fetchBestOffers(productIds) : new Map<string, any>();
 
-  return payload.map(({ index, ean, cnk, quantity, currentPrice }) => {
-    const product = (ean ? productByEan.get(ean) : undefined) || (cnk ? productByCnk.get(cnk) : undefined);
+  return payload.map(({ index, ean, cnk, sku, quantity, currentPrice }) => {
+    const { product, matchedBy } = resolveMatch({ ean, cnk, sku });
     const offer = product ? bestOfferByProduct.get(product.id) : undefined;
     const mediPrice = offer?.price_excl_vat != null ? Number(offer.price_excl_vat) : undefined;
     const vendor = offer?.vendor_public as { company_name?: string | null; name?: string | null; display_name?: string | null } | null | undefined;
@@ -197,14 +227,17 @@ const queryMatchImportLines = async (payload: ImportPayloadLine[]) => {
       result: {
         ean: ean ?? undefined,
         cnk: cnk ?? undefined,
+        sku: sku ?? undefined,
         quantity,
         currentPrice,
         productId: product?.id,
         productName: product?.name ?? undefined,
         productImage: product?.image_url ?? undefined,
+        productSku: product?.sku ?? undefined,
         mediPrice,
         offerId: offer?.id ?? undefined,
         vendorName: vendor?.company_name || vendor?.name || vendor?.display_name || "—",
+        matchedBy,
         status: product && offer ? "found" : "unavailable",
         saving: mediPrice != null && currentPrice > mediPrice ? Math.max(0, currentPrice - mediPrice) : 0,
       } satisfies MatchedLine,

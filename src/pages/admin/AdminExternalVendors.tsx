@@ -348,6 +348,7 @@ function VendorOffersPanel({ vendor }: { vendor: any }) {
   const [csvPreview, setCsvPreview] = useState<any[] | null>(null);
   const [csvUnmatched, setCsvUnmatched] = useState<string[]>([]);
   const [csvImporting, setCsvImporting] = useState(false);
+  const [csvProgress, setCsvProgress] = useState<{ phase: string; processed: number; total: number; upserted: number; merged: number } | null>(null);
 
   // Récap post-import : doublons (vendor+product_id) détectés dans le CSV
   type DuplicateGroup = {

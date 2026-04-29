@@ -1693,16 +1693,44 @@ export default function ProductPage() {
                   {/* ── Tab: Prix du marché ── */}
                   <TabsContent value="market">
                     {marketPriceItems.length > 0 ? (
+                      <div className="space-y-3">
+                        {/* Même bascule de comparaison que pour les offres externes : on garde
+                            les valeurs telles qu'importées (au pack) par défaut, et l'utilisateur
+                            peut ramener à l'unité ou aux 100 unités d'un clic. */}
+                        <div className="flex items-center justify-between flex-wrap gap-2 px-1">
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <BarChart3 size={14} />
+                            <span>Comparer sur la base&nbsp;:</span>
+                          </div>
+                          <ToggleGroup
+                            type="single"
+                            value={externalCompareBasis}
+                            onValueChange={(v) => v && setExternalCompareBasis(v as 'pack' | 'unit' | 'hundred')}
+                            size="sm"
+                            variant="outline"
+                            className="gap-0.5"
+                          >
+                            <ToggleGroupItem value="pack" className="text-[11px] px-2.5 h-7 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">€/pack</ToggleGroupItem>
+                            <ToggleGroupItem value="unit" className="text-[11px] px-2.5 h-7 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">€/unité</ToggleGroupItem>
+                            <ToggleGroupItem value="hundred" className="text-[11px] px-2.5 h-7 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">€/100&nbsp;u.</ToggleGroupItem>
+                          </ToggleGroup>
+                        </div>
+                        {(() => {
+                          const basisSuffix =
+                            externalCompareBasis === 'pack' ? '/pack' :
+                            externalCompareBasis === 'hundred' ? '/100 u.' :
+                            '/u.';
+                          return (
                       <div className="rounded-xl border border-border overflow-hidden">
                         <table className="w-full text-sm">
                           <thead>
                             <tr className="bg-muted/50 border-b border-border text-left">
                               <th className="px-2 py-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Source</th>
                               <th className="px-2 py-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider text-center">Pack</th>
-                              {mpVisMap.show_pharmacist_price && <th className="px-2 py-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider text-right">Pharmacien /u.</th>}
-                              {mpVisMap.show_wholesale_price !== false && <th className="px-2 py-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider text-right">Grossiste /u.</th>}
-                              {mpVisMap.show_public_price && <th className="px-2 py-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider text-right">Pub. HTVA /u.</th>}
-                              <th className="px-2 py-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider text-right">Pub. TTC /u.</th>
+                              {mpVisMap.show_pharmacist_price && <th className="px-2 py-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider text-right">Pharmacien {basisSuffix}</th>}
+                              {mpVisMap.show_wholesale_price !== false && <th className="px-2 py-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider text-right">Grossiste {basisSuffix}</th>}
+                              {mpVisMap.show_public_price && <th className="px-2 py-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider text-right">Pub. HTVA {basisSuffix}</th>}
+                              <th className="px-2 py-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider text-right">Pub. TTC {basisSuffix}</th>
                               <th className="px-1 py-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider text-center">Stock</th>
                               <th className="px-2 py-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider text-right">Écart MK</th>
                               <th className="px-2 py-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider text-right">Relevé</th>
@@ -1727,6 +1755,7 @@ export default function ProductPage() {
                               });
                               const packDiv = mpPack.packSize > 0 ? mpPack.packSize : 1;
 
+                              // Valeurs unitaires (telles qu'utilisées pour l'écart MK).
                               const rawPharm = Number(mp.prix_pharmacien || 0) / packDiv;
                               const rawGrossiste = Number(mp.prix_grossiste || 0) / packDiv;
                               const rawPublic = Number(mp.prix_public || 0) / packDiv;
@@ -1755,6 +1784,17 @@ export default function ProductPage() {
                               const positive = deltaAbs !== null && deltaAbs > 0;
                               const packBadge = packSizeSourceBadge(mpPack.source);
 
+                              // Multiplicateur d'affichage selon la base sélectionnée.
+                              // Les valeurs ci-dessus sont à l'unité ; on multiplie pour pack ou /100u.
+                              const mult =
+                                externalCompareBasis === 'pack' ? packDiv :
+                                externalCompareBasis === 'hundred' ? 100 :
+                                1;
+                              const dispPharm = pharmHT * mult;
+                              const dispGrossiste = grossisteHT * mult;
+                              const dispPublicHTVA = publicHTVA * mult;
+                              const dispPublicTTC = publicTTC * mult;
+
                               return (
                                  <tr key={mp.id} className="hover:bg-muted/20 transition-colors">
                                   <td className="px-2 py-2">
@@ -1781,21 +1821,21 @@ export default function ProductPage() {
                                   </td>
                                   {mpVisMap.show_pharmacist_price && (
                                     <td className="px-2 py-2 text-right font-bold tabular-nums text-foreground text-[12px] whitespace-nowrap">
-                                      {pharmHT ? `${formatEur(pharmHT)} €` : <span className="text-muted-foreground font-normal">—</span>}
+                                      {dispPharm ? `${formatEur(dispPharm)} €` : <span className="text-muted-foreground font-normal">—</span>}
                                     </td>
                                   )}
                                   {mpVisMap.show_wholesale_price !== false && (
                                     <td className="px-2 py-2 text-right font-bold tabular-nums text-foreground text-[12px] whitespace-nowrap">
-                                      {grossisteHT ? `${formatEur(grossisteHT)} €` : <span className="text-muted-foreground font-normal">—</span>}
+                                      {dispGrossiste ? `${formatEur(dispGrossiste)} €` : <span className="text-muted-foreground font-normal">—</span>}
                                     </td>
                                   )}
                                   {mpVisMap.show_public_price && (
                                     <td className="px-2 py-2 text-right tabular-nums text-foreground text-[12px] whitespace-nowrap">
-                                      {publicHTVA ? `${formatEur(publicHTVA)} €` : <span className="text-muted-foreground font-normal">—</span>}
+                                      {dispPublicHTVA ? `${formatEur(dispPublicHTVA)} €` : <span className="text-muted-foreground font-normal">—</span>}
                                     </td>
                                   )}
                                   <td className="px-2 py-2 text-right tabular-nums text-foreground text-[12px] whitespace-nowrap">
-                                    {publicTTC ? `${formatEur(publicTTC)} €` : <span className="text-muted-foreground font-normal">—</span>}
+                                    {dispPublicTTC ? `${formatEur(dispPublicTTC)} €` : <span className="text-muted-foreground font-normal">—</span>}
                                   </td>
                                   <td className="px-1 py-2 text-center">
                                     {mp.stock_source ? (() => {
@@ -1829,6 +1869,12 @@ export default function ProductPage() {
                             })}
                           </tbody>
                         </table>
+                      </div>
+                          );
+                        })()}
+                        <p className="text-[11px] text-muted-foreground italic px-1">
+                          ⓘ L'écart MK reste calculé à l'unité, indépendamment de la base affichée.
+                        </p>
                       </div>
                     ) : (
                       <div className="border border-border rounded-xl p-8 text-center">

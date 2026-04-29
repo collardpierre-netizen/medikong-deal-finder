@@ -1570,30 +1570,48 @@ export default function ProductPage() {
                               </div>
                               <div className="flex items-center gap-4 shrink-0">
                                 <div className="text-right">
-                                  <div className="flex items-baseline justify-end gap-2">
-                                    <span className="text-lg font-bold text-foreground tabular-nums">{formatEur(displayPrice)} €</span>
-                                    <span
-                                      className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide border ${
-                                        isTVAC
-                                          ? "bg-amber-50 text-amber-700 border-amber-200"
-                                          : "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                      }`}
-                                      title={isTVAC ? "Prix toutes taxes comprises (avec TVA)" : "Prix hors TVA (HT)"}
-                                    >
-                                      {priceLabel}
-                                    </span>
-                                  </div>
-                                  <p className="text-[11px] text-muted-foreground tabular-nums mt-0.5" title={`Source TVA : ${vatSourceLabel(tvaSource)}`}>
-                                    soit {formatEur(secondaryPrice)} € {secondaryLabel} <span className="opacity-60">· TVA {tvaRate}%</span>
-                                  </p>
-                                  {showUnitPrice && (
-                                    <p
-                                      className="text-[11px] text-muted-foreground tabular-nums"
-                                      title={packSizeSourceLabel(pack.source)}
-                                    >
-                                      soit {formatEur(unitDisplayPrice)} €/unité <span className="opacity-60">· pack de {pack.packSize}</span>
-                                    </p>
-                                  )}
+                                  {(() => {
+                                    // Prix normalisé selon la base de comparaison choisie.
+                                    const perUnit = pack.packSize > 0 ? displayPrice / pack.packSize : displayPrice;
+                                    const headlinePrice =
+                                      externalCompareBasis === 'pack' ? displayPrice :
+                                      externalCompareBasis === 'hundred' ? perUnit * 100 :
+                                      perUnit;
+                                    const headlineSuffix =
+                                      externalCompareBasis === 'pack' ? `/pack${pack.packSize > 1 ? ` de ${pack.packSize}` : ''}` :
+                                      externalCompareBasis === 'hundred' ? '/100 u.' :
+                                      '/unité';
+                                    return (
+                                      <>
+                                        <div className="flex items-baseline justify-end gap-2">
+                                          <span className="text-lg font-bold text-foreground tabular-nums">
+                                            {formatEur(headlinePrice)} €
+                                            <span className="text-[11px] font-medium text-muted-foreground ml-0.5">{headlineSuffix}</span>
+                                          </span>
+                                          <span
+                                            className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide border ${
+                                              isTVAC
+                                                ? "bg-amber-50 text-amber-700 border-amber-200"
+                                                : "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                            }`}
+                                            title={isTVAC ? "Prix toutes taxes comprises (avec TVA)" : "Prix hors TVA (HT)"}
+                                          >
+                                            {priceLabel}
+                                          </span>
+                                        </div>
+                                        <p
+                                          className="text-[11px] text-muted-foreground tabular-nums mt-0.5"
+                                          title={packSizeSourceLabel(pack.source)}
+                                        >
+                                          Pack&nbsp;: {formatEur(displayPrice)} € {priceLabel}
+                                          {pack.packSize > 1 && <> · pack de {pack.packSize}</>}
+                                        </p>
+                                        <p className="text-[11px] text-muted-foreground tabular-nums" title={`Source TVA : ${vatSourceLabel(tvaSource)}`}>
+                                          soit {formatEur(secondaryPrice)} € {secondaryLabel} <span className="opacity-60">· TVA {tvaRate}%</span>
+                                        </p>
+                                      </>
+                                    );
+                                  })()}
                                   {Number(eo.mov_amount || 0) > 0 && (
                                     <p className="text-[11px] text-muted-foreground">MOV {Number(eo.mov_amount).toFixed(0)} €</p>
                                   )}

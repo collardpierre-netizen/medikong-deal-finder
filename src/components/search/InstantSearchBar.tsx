@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { federatedSearch } from "@/lib/supabase-search";
 import type { FederatedResults } from "@/lib/supabase-search";
+import { pushRecentTerm, pushRecentProduct, pushRecentTaxon } from "@/hooks/useRecentActivity";
 
 interface InstantSearchBarProps {
   className?: string;

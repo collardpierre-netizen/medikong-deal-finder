@@ -162,7 +162,12 @@ export function InstantSearchBar({ className = "", placeholder, variant = "navba
         >
           {/* Search all link */}
           <button
-            onClick={() => { navigate(`/catalogue?q=${encodeURIComponent(query)}`); setIsOpen(false); }}
+            onClick={() => {
+              const q = query.trim();
+              if (q) pushRecentTerm(q);
+              navigate(`/catalogue?q=${encodeURIComponent(query)}`);
+              setIsOpen(false);
+            }}
             className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-primary hover:bg-accent/50 border-b border-border"
           >
             <Search size={14} />

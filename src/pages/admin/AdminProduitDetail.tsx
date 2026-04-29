@@ -146,6 +146,14 @@ const AdminProduitDetail = () => {
             </div>
           </div>
 
+          <PvpEditor
+            productId={product.id}
+            initialPvpTtcCents={(product as any).pvp_ttc_cents}
+            initialSource={(product as any).pvp_source}
+            initialUpdatedAt={(product as any).pvp_updated_at}
+            initialCountryCode={(product as any).pvp_country_code}
+          />
+
           {product.description && (
             <div className="p-5 rounded-[10px]" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
               <h3 className="text-[14px] font-bold mb-2" style={{ color: "#1D2530" }}>Description</h3>

@@ -4,6 +4,7 @@ import { isValidProductImage } from "@/lib/image-utils";
 import { useCountry } from "@/contexts/CountryContext";
 import { resolveVendorVisibility, getVendorPublicName } from "@/lib/vendor-display";
 import { applyHiddenCategoryFilter } from "@/lib/catalog-filters";
+import { useBuyerProfileId } from "@/hooks/useResolvedOfferPrice";
 
 export interface Product {
   id: string;
@@ -206,8 +207,9 @@ export interface Offer {
 
 export function useProductOffers(productId: string | undefined) {
   const { country } = useCountry();
+  const buyerProfileId = useBuyerProfileId();
   return useQuery({
-    queryKey: ["offers", productId, country],
+    queryKey: ["offers", productId, country, buyerProfileId],
     queryFn: async () => {
       const { data: offers, error } = await supabase
         .from("offers")
@@ -219,6 +221,32 @@ export function useProductOffers(productId: string | undefined) {
 
       const offerIds = (offers || []).map((o: any) => o.id);
       const vendorIds = [...new Set((offers || []).map((o: any) => o.vendor_id))];
+
+      // Résolution prix par profil acheteur via RPC resolve_offer_price_for_profile.
+      // Retourne une Map offer_id -> { price_excl_vat, source } ; vide si pas de buyer_profile_id.
+      const resolvedPriceMap = new Map<string, { price_excl_vat: number; source: string }>();
+      if (buyerProfileId && offerIds.length > 0) {
+        const resolved = await Promise.all(
+          offerIds.map(async (oid: string) => {
+            const { data } = await supabase.rpc(
+              "resolve_offer_price_for_profile" as any,
+              { _offer_id: oid, _buyer_profile_id: buyerProfileId }
+            );
+            const row = Array.isArray(data) ? data[0] : data;
+            if (!row) return null;
+            return {
+              offer_id: oid,
+              price_excl_vat: Number((row as any).price_excl_vat),
+              source: String((row as any).source ?? "offer_base"),
+            };
+          })
+        );
+        for (const r of resolved) {
+          if (r && Number.isFinite(r.price_excl_vat) && r.price_excl_vat > 0) {
+            resolvedPriceMap.set(r.offer_id, { price_excl_vat: r.price_excl_vat, source: r.source });
+          }
+        }
+      }
 
       // Fetch vendors and discount tiers in parallel
       const [vendorsResult, tiersResult, visRulesResult, priceTiersResult] = await Promise.all([
@@ -251,17 +279,28 @@ export function useProductOffers(productId: string | undefined) {
         priceTiersMap.set(t.offer_id, arr);
       }
 
-      return (offers || []).map((o: any): Offer => {
+      const mapped = (offers || []).map((o: any): Offer => {
         const vendor = vendorMap.get(o.vendor_id);
         const safeVendorId: string = o.vendor_id || "";
-        const priceExcl = Number(o.price_excl_vat);
-        const priceIncl = Number(o.price_incl_vat);
+        const basePriceExcl = Number(o.price_excl_vat);
+        const basePriceIncl = Number(o.price_incl_vat);
+        // Ratio TVA déduit de l'offre (fallback 1 si invalide). Permet de
+        // recalculer le TTC quand on remplace le HTVA par le prix résolu par profil.
+        const vatRatio =
+          Number.isFinite(basePriceExcl) && basePriceExcl > 0 && Number.isFinite(basePriceIncl) && basePriceIncl > 0
+            ? basePriceIncl / basePriceExcl
+            : 1;
+        const resolved = resolvedPriceMap.get(o.id);
+        const effExcl = resolved ? resolved.price_excl_vat : (Number.isFinite(basePriceExcl) ? basePriceExcl : 0);
+        const effIncl = resolved
+          ? Math.round(resolved.price_excl_vat * vatRatio * 100) / 100
+          : (Number.isFinite(basePriceIncl) ? basePriceIncl : 0);
         return {
           id: o.id,
           productId: o.product_id,
           sellerId: safeVendorId,
-          unitPriceEur: Number.isFinite(priceExcl) ? priceExcl : 0,
-          unitPriceInclVat: Number.isFinite(priceIncl) ? priceIncl : 0,
+          unitPriceEur: effExcl,
+          unitPriceInclVat: effIncl,
           stockQuantity: Number(o.stock_quantity) || 0,
           movEur: Number(o.mov || o.mov_amount || 0),
           bundleSize: Number(o.moq) || 1,
@@ -294,6 +333,11 @@ export function useProductOffers(productId: string | undefined) {
           estimatedDeliveryDays: o.estimated_delivery_days || undefined,
         };
       });
+
+      // Re-tri après application des prix résolus par profil (les overrides
+      // peuvent modifier l'ordre best-offer).
+      mapped.sort((a, b) => (a.unitPriceEur || 0) - (b.unitPriceEur || 0));
+      return mapped;
     },
     enabled: !!productId,
     staleTime: 3 * 60 * 1000,

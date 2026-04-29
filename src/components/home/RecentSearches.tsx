@@ -2,6 +2,10 @@ import { Link } from "react-router-dom";
 import { Clock, X, Tag, FolderOpen, Package } from "lucide-react";
 import { useRecentSearches } from "@/hooks/useRecentSearches";
 import { motion } from "framer-motion";
+import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { getProductImageSrc, isQogitaPlaceholder, isValidProductImage, MEDIKONG_PLACEHOLDER } from "@/lib/image-utils";
 
 /**
  * Bloc "Reprenez là où vous en étiez" — inspiré de Trivago.
@@ -11,6 +15,29 @@ import { motion } from "framer-motion";
  */
 export function RecentSearches() {
   const { terms, products, taxons, isEmpty, clear } = useRecentSearches();
+  const productIds = useMemo(() => products.map((p) => p.id).filter(Boolean), [products]);
+
+  const { data: productImages = {} } = useQuery({
+    queryKey: ["recent-product-images", productIds.join("|")],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("products")
+        .select("id, image_urls, image_url")
+        .in("id", productIds);
+
+      return Object.fromEntries(
+        (data || []).map((row: any) => {
+          const imageUrls = Array.isArray(row.image_urls) ? row.image_urls : [];
+          const firstValid =
+            imageUrls.find((url: string) => isValidProductImage(url)) ??
+            (isValidProductImage(row.image_url) ? row.image_url : null);
+          return [row.id, firstValid ? getProductImageSrc(firstValid) : null];
+        })
+      ) as Record<string, string | null>;
+    },
+    enabled: productIds.length > 0,
+    staleTime: 5 * 60 * 1000,
+  });
 
   if (isEmpty) return null;
 
@@ -81,18 +108,27 @@ export function RecentSearches() {
             <span>Produits consultés récemment</span>
           </div>
           <div className="flex gap-3 overflow-x-auto pb-2 -mx-2 px-2 snap-x">
-            {products.map((p) => (
+            {products.map((p) => {
+              const imageSrc = productImages[p.id] || (isValidProductImage(p.image) ? p.image : null);
+              return (
               <Link
                 key={p.id}
                 to={`/produit/${p.slug}`}
                 className="shrink-0 snap-start w-[140px] bg-white rounded-xl border border-mk-line hover:border-mk-blue hover:shadow-sm transition-all overflow-hidden group"
               >
                 <div className="aspect-square bg-mk-bg flex items-center justify-center overflow-hidden">
-                  {p.image ? (
+                  {imageSrc ? (
                     <img
-                      src={p.image}
+                      src={imageSrc}
                       alt={p.name}
                       loading="lazy"
+                      referrerPolicy="no-referrer"
+                      onLoad={(e) => {
+                        if (isQogitaPlaceholder(e.currentTarget)) e.currentTarget.src = MEDIKONG_PLACEHOLDER;
+                      }}
+                      onError={(e) => {
+                        e.currentTarget.src = MEDIKONG_PLACEHOLDER;
+                      }}
                       className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform"
                     />
                   ) : (
@@ -105,7 +141,8 @@ export function RecentSearches() {
                   </p>
                 </div>
               </Link>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}

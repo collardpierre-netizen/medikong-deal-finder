@@ -1453,6 +1453,26 @@ export default function ProductPage() {
                   <TabsContent value="external">
                     {externalOfferItems.length > 0 ? (
                       <div className="space-y-3">
+                        {/* Sélecteur de base de comparaison : permet de ramener toutes les offres
+                            externes (vendues en pack de 4, 24, 46…) sur la même unité de référence. */}
+                        <div className="flex items-center justify-between flex-wrap gap-2 px-1">
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <BarChart3 size={14} />
+                            <span>Comparer sur la base&nbsp;:</span>
+                          </div>
+                          <ToggleGroup
+                            type="single"
+                            value={externalCompareBasis}
+                            onValueChange={(v) => v && setExternalCompareBasis(v as 'pack' | 'unit' | 'hundred')}
+                            size="sm"
+                            variant="outline"
+                            className="gap-0.5"
+                          >
+                            <ToggleGroupItem value="pack" className="text-[11px] px-2.5 h-7 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">€/pack</ToggleGroupItem>
+                            <ToggleGroupItem value="unit" className="text-[11px] px-2.5 h-7 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">€/unité</ToggleGroupItem>
+                            <ToggleGroupItem value="hundred" className="text-[11px] px-2.5 h-7 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">€/100&nbsp;u.</ToggleGroupItem>
+                          </ToggleGroup>
+                        </div>
                         {externalOfferItems.map((eo: any) => {
                           const vendor = eo.external_vendors;
                           const stockIcon = eo.stock_status === "in_stock" ? "🟢" : eo.stock_status === "limited" ? "🟡" : eo.stock_status === "out_of_stock" ? "🔴" : "⚪";

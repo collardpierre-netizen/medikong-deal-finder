@@ -26,7 +26,7 @@ type Props = {
 };
 
 export function VendorAccountErrorAlert({ presentation, onAction, onDismiss }: Props) {
-  const { severity, title, description, hint, code, primaryAction, secondaryAction } = presentation;
+  const { severity, title, description, hint, code, primaryAction, secondaryAction, tertiaryAction } = presentation;
   const style = SEVERITY_STYLE[severity];
   const Icon = style.Icon;
 

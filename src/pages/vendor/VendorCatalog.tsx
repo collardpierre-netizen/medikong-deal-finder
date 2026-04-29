@@ -17,6 +17,7 @@ import {
   emptyCatalogFilters,
   type CatalogFilters,
 } from "@/components/vendor/catalog/VendorCatalogFilters";
+import { InterestToggleButton } from "@/components/vendor/catalog/InterestToggleButton";
 
 type EntityType = "products" | "brands" | "manufacturers";
 

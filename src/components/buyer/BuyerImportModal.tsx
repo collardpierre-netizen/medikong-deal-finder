@@ -335,6 +335,7 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
         index,
         ean: line.ean ?? null,
         cnk: line.cnk ?? null,
+        sku: line.sku ?? null,
         quantity: line.quantity,
         currentPrice: line.currentPrice,
       }));

@@ -5,6 +5,7 @@ import { useCountry } from "@/contexts/CountryContext";
 import { resolveVendorVisibility, getVendorPublicName } from "@/lib/vendor-display";
 import { applyHiddenCategoryFilter } from "@/lib/catalog-filters";
 import { useBuyerProfileId } from "@/hooks/useResolvedOfferPrice";
+import { resolvePriceCascade, type PriceCascadeSource } from "@/lib/price-cascade";
 
 export interface Product {
   id: string;

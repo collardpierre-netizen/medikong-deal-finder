@@ -1473,7 +1473,28 @@ export default function ProductPage() {
                             <ToggleGroupItem value="hundred" className="text-[11px] px-2.5 h-7 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">€/100&nbsp;u.</ToggleGroupItem>
                           </ToggleGroup>
                         </div>
-                        {externalOfferItems.map((eo: any) => {
+                        {[...externalOfferItems]
+                          .map((eo: any) => {
+                            const _pack = resolvePackSize({
+                              offerOverride: eo.pack_size_override,
+                              productPackSize: (product as any)?.pack_size,
+                              productName: product?.name,
+                              offerTitle: eo.raw_title ?? eo.notes,
+                              offerUrl: eo.product_url,
+                            });
+                            const _ttc = Number(eo.unit_price) || 0;
+                            const _vat = Number(resolvedVat?.vat_rate ?? (categoryData?.category as any)?.vat_rate ?? 21);
+                            const _ht = _ttc ? _ttc / (1 + _vat / 100) : 0;
+                            const _basePrice = isTVAC ? _ttc : _ht;
+                            const perUnit = _pack.packSize > 0 ? _basePrice / _pack.packSize : _basePrice;
+                            const sortKey =
+                              externalCompareBasis === 'pack' ? _basePrice :
+                              externalCompareBasis === 'hundred' ? perUnit * 100 :
+                              perUnit;
+                            return { eo, sortKey };
+                          })
+                          .sort((a, b) => (a.sortKey || Infinity) - (b.sortKey || Infinity))
+                          .map(({ eo }: any) => {
                           const vendor = eo.external_vendors;
                           const stockIcon = eo.stock_status === "in_stock" ? "🟢" : eo.stock_status === "limited" ? "🟡" : eo.stock_status === "out_of_stock" ? "🔴" : "⚪";
                           const stockLabel = eo.stock_status === "in_stock" ? "En stock" : eo.stock_status === "limited" ? "Stock limité" : eo.stock_status === "out_of_stock" ? "Rupture" : "Stock inconnu";

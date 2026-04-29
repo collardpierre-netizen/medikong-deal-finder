@@ -33,7 +33,8 @@
     "administration": "Administratie",
     "signOut": "Uitloggen",
     "stripeConnect": "Stripe Connect",
-    "stripeRevenue": "Omzet & Marges"
+    "stripeRevenue": "Omzet & Marges",
+    "productSubmissions": "Ingediende producten"
   },
   "nav": {
     "shop": "Shop",

@@ -33,7 +33,8 @@
     "administration": "Administration",
     "signOut": "Déconnexion",
     "stripeConnect": "Stripe Connect",
-    "stripeRevenue": "Revenue & Marges"
+    "stripeRevenue": "Revenue & Marges",
+    "productSubmissions": "Produits soumis"
   },
   "nav": {
     "shop": "Shop",

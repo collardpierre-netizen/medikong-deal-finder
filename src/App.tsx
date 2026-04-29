@@ -341,6 +341,7 @@ const App = () => (
               <Route path="onboarding" element={<LP><AdminOnboarding /></LP>} />
               <Route path="produits" element={<LP><AdminProduits /></LP>} />
               <Route path="produits/mapping" element={<LP><AdminSourceMapping /></LP>} />
+              <Route path="produits-soumis" element={<LP><AdminProductSubmissions /></LP>} />
               <Route path="produits/:id" element={<LP><AdminProduitDetail /></LP>} />
               <Route path="categories" element={<LP><AdminCategories /></LP>} />
               <Route path="marques" element={<LP><AdminMarques /></LP>} />

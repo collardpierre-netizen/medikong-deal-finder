@@ -31,6 +31,7 @@ const sections: NavSection[] = [
       { labelKey: "externalVendors", path: "/admin/vendeurs-externes", icon: ExternalLink },
       { labelKey: "onboarding", path: "/admin/onboarding", icon: UserPlus },
       { labelKey: "products", path: "/admin/produits", icon: Package },
+      { labelKey: "productSubmissions", path: "/admin/produits-soumis", icon: ClipboardList },
       { labelKey: "categories", path: "/admin/categories", icon: Layers },
       { labelKey: "brands", path: "/admin/marques", icon: Tag },
       { labelKey: "manufacturers", path: "/admin/fabricants", icon: Factory },

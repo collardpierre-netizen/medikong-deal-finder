@@ -109,6 +109,13 @@ export default function VendorCatalog() {
   const [filters, setFilters] = useState<CatalogFilters>(emptyCatalogFilters);
   const [productSort, setProductSort] = useState<ProductSort>("popularity");
 
+  // Mode sélection multiple (onglet Produits) pour création d'offres en série
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const toggleSelected = (id: string) =>
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  const exitSelectMode = () => { setSelectMode(false); setSelectedIds([]); };
+
   // Debounce la recherche pour éviter une requête à chaque frappe
   useEffect(() => {
     const id = setTimeout(() => setDebouncedSearch(search), 250);

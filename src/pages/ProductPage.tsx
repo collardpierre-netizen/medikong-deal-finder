@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { PageTransition } from "@/components/shared/PageTransition";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -713,6 +714,9 @@ export default function ProductPage() {
   const [delayFilter, setDelayFilter] = useState<number | null>(null);
   const [showStickyBar, setShowStickyBar] = useState(false);
   const [stickyQty, setStickyQty] = useState(1);
+  // Base de comparaison pour les offres externes : ramène toutes les offres
+  // au même conditionnement pour comparer "des pommes à des pommes".
+  const [externalCompareBasis, setExternalCompareBasis] = useState<'pack' | 'unit' | 'hundred'>('unit');
   const offerSectionRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
 
@@ -1449,7 +1453,48 @@ export default function ProductPage() {
                   <TabsContent value="external">
                     {externalOfferItems.length > 0 ? (
                       <div className="space-y-3">
-                        {externalOfferItems.map((eo: any) => {
+                        {/* Sélecteur de base de comparaison : permet de ramener toutes les offres
+                            externes (vendues en pack de 4, 24, 46…) sur la même unité de référence. */}
+                        <div className="flex items-center justify-between flex-wrap gap-2 px-1">
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <BarChart3 size={14} />
+                            <span>Comparer sur la base&nbsp;:</span>
+                          </div>
+                          <ToggleGroup
+                            type="single"
+                            value={externalCompareBasis}
+                            onValueChange={(v) => v && setExternalCompareBasis(v as 'pack' | 'unit' | 'hundred')}
+                            size="sm"
+                            variant="outline"
+                            className="gap-0.5"
+                          >
+                            <ToggleGroupItem value="pack" className="text-[11px] px-2.5 h-7 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">€/pack</ToggleGroupItem>
+                            <ToggleGroupItem value="unit" className="text-[11px] px-2.5 h-7 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">€/unité</ToggleGroupItem>
+                            <ToggleGroupItem value="hundred" className="text-[11px] px-2.5 h-7 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">€/100&nbsp;u.</ToggleGroupItem>
+                          </ToggleGroup>
+                        </div>
+                        {[...externalOfferItems]
+                          .map((eo: any) => {
+                            const _pack = resolvePackSize({
+                              offerOverride: eo.pack_size_override,
+                              productPackSize: (product as any)?.pack_size,
+                              productName: product?.name,
+                              offerTitle: eo.raw_title ?? eo.notes,
+                              offerUrl: eo.product_url,
+                            });
+                            const _ttc = Number(eo.unit_price) || 0;
+                            const _vat = Number(resolvedVat?.vat_rate ?? (categoryData?.category as any)?.vat_rate ?? 21);
+                            const _ht = _ttc ? _ttc / (1 + _vat / 100) : 0;
+                            const _basePrice = isTVAC ? _ttc : _ht;
+                            const perUnit = _pack.packSize > 0 ? _basePrice / _pack.packSize : _basePrice;
+                            const sortKey =
+                              externalCompareBasis === 'pack' ? _basePrice :
+                              externalCompareBasis === 'hundred' ? perUnit * 100 :
+                              perUnit;
+                            return { eo, sortKey };
+                          })
+                          .sort((a, b) => (a.sortKey || Infinity) - (b.sortKey || Infinity))
+                          .map(({ eo }: any) => {
                           const vendor = eo.external_vendors;
                           const stockIcon = eo.stock_status === "in_stock" ? "🟢" : eo.stock_status === "limited" ? "🟡" : eo.stock_status === "out_of_stock" ? "🔴" : "⚪";
                           const stockLabel = eo.stock_status === "in_stock" ? "En stock" : eo.stock_status === "limited" ? "Stock limité" : eo.stock_status === "out_of_stock" ? "Rupture" : "Stock inconnu";
@@ -1525,30 +1570,48 @@ export default function ProductPage() {
                               </div>
                               <div className="flex items-center gap-4 shrink-0">
                                 <div className="text-right">
-                                  <div className="flex items-baseline justify-end gap-2">
-                                    <span className="text-lg font-bold text-foreground tabular-nums">{formatEur(displayPrice)} €</span>
-                                    <span
-                                      className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide border ${
-                                        isTVAC
-                                          ? "bg-amber-50 text-amber-700 border-amber-200"
-                                          : "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                      }`}
-                                      title={isTVAC ? "Prix toutes taxes comprises (avec TVA)" : "Prix hors TVA (HT)"}
-                                    >
-                                      {priceLabel}
-                                    </span>
-                                  </div>
-                                  <p className="text-[11px] text-muted-foreground tabular-nums mt-0.5" title={`Source TVA : ${vatSourceLabel(tvaSource)}`}>
-                                    soit {formatEur(secondaryPrice)} € {secondaryLabel} <span className="opacity-60">· TVA {tvaRate}%</span>
-                                  </p>
-                                  {showUnitPrice && (
-                                    <p
-                                      className="text-[11px] text-muted-foreground tabular-nums"
-                                      title={packSizeSourceLabel(pack.source)}
-                                    >
-                                      soit {formatEur(unitDisplayPrice)} €/unité <span className="opacity-60">· pack de {pack.packSize}</span>
-                                    </p>
-                                  )}
+                                  {(() => {
+                                    // Prix normalisé selon la base de comparaison choisie.
+                                    const perUnit = pack.packSize > 0 ? displayPrice / pack.packSize : displayPrice;
+                                    const headlinePrice =
+                                      externalCompareBasis === 'pack' ? displayPrice :
+                                      externalCompareBasis === 'hundred' ? perUnit * 100 :
+                                      perUnit;
+                                    const headlineSuffix =
+                                      externalCompareBasis === 'pack' ? `/pack${pack.packSize > 1 ? ` de ${pack.packSize}` : ''}` :
+                                      externalCompareBasis === 'hundred' ? '/100 u.' :
+                                      '/unité';
+                                    return (
+                                      <>
+                                        <div className="flex items-baseline justify-end gap-2">
+                                          <span className="text-lg font-bold text-foreground tabular-nums">
+                                            {formatEur(headlinePrice)} €
+                                            <span className="text-[11px] font-medium text-muted-foreground ml-0.5">{headlineSuffix}</span>
+                                          </span>
+                                          <span
+                                            className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide border ${
+                                              isTVAC
+                                                ? "bg-amber-50 text-amber-700 border-amber-200"
+                                                : "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                            }`}
+                                            title={isTVAC ? "Prix toutes taxes comprises (avec TVA)" : "Prix hors TVA (HT)"}
+                                          >
+                                            {priceLabel}
+                                          </span>
+                                        </div>
+                                        <p
+                                          className="text-[11px] text-muted-foreground tabular-nums mt-0.5"
+                                          title={packSizeSourceLabel(pack.source)}
+                                        >
+                                          Pack&nbsp;: {formatEur(displayPrice)} € {priceLabel}
+                                          {pack.packSize > 1 && <> · pack de {pack.packSize}</>}
+                                        </p>
+                                        <p className="text-[11px] text-muted-foreground tabular-nums" title={`Source TVA : ${vatSourceLabel(tvaSource)}`}>
+                                          soit {formatEur(secondaryPrice)} € {secondaryLabel} <span className="opacity-60">· TVA {tvaRate}%</span>
+                                        </p>
+                                      </>
+                                    );
+                                  })()}
                                   {Number(eo.mov_amount || 0) > 0 && (
                                     <p className="text-[11px] text-muted-foreground">MOV {Number(eo.mov_amount).toFixed(0)} €</p>
                                   )}

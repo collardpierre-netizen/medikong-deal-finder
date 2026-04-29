@@ -149,6 +149,7 @@ const AdminApiDocs = lazyWithRetry(() => import("./pages/admin/AdminApiDocs"), "
 const AdminCountries = lazyWithRetry(() => import("./pages/admin/AdminCountries"), "AdminCountries");
 const AdminMarketCodes = lazyWithRetry(() => import("./pages/admin/AdminMarketCodes"), "AdminMarketCodes");
 const AdminExternalVendors = lazyWithRetry(() => import("./pages/admin/AdminExternalVendors"), "AdminExternalVendors");
+const AdminExternalVatAudit = lazyWithRetry(() => import("./pages/admin/AdminExternalVatAudit"), "AdminExternalVatAudit");
 const AdminStripeCommissions = lazyWithRetry(() => import("./pages/admin/AdminStripeCommissions"), "AdminStripeCommissions");
 const AdminStripeRevenue = lazyWithRetry(() => import("./pages/admin/AdminStripeRevenue"), "AdminStripeRevenue");
 const AdminOrderRefund = lazyWithRetry(() => import("./pages/admin/AdminOrderRefund"), "AdminOrderRefund");
@@ -375,6 +376,7 @@ const App = () => (
               <Route path="pays" element={<LP><AdminCountries /></LP>} />
               <Route path="market-codes" element={<LP><AdminMarketCodes /></LP>} />
               <Route path="vendeurs-externes" element={<LP><AdminExternalVendors /></LP>} />
+              <Route path="vendeurs-externes/audit-tva" element={<LP><AdminExternalVatAudit /></LP>} />
               <Route path="stripe-commissions" element={<LP><AdminStripeCommissions /></LP>} />
               <Route path="stripe-revenue" element={<LP><AdminStripeRevenue /></LP>} />
               <Route path="commandes/:orderId/refund" element={<LP><AdminOrderRefund /></LP>} />

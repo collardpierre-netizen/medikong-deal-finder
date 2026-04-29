@@ -494,6 +494,8 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
       { wch: 38 },
       { wch: 18 },
       { wch: 14 },
+      { wch: 16 },
+      { wch: 14 },
       { wch: 8 },
       { wch: 16 },
       { wch: 18 },

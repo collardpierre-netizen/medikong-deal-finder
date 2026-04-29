@@ -13,9 +13,12 @@ import { useCart } from "@/hooks/useCart";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
+type MatchField = "gtin" | "cnk" | "sku";
+
 type ImportLine = {
   ean?: string;
   cnk?: string;
+  sku?: string;
   quantity: number;
   currentPrice: number;
 };
@@ -24,11 +27,25 @@ type MatchedLine = ImportLine & {
   productId?: string;
   productName?: string;
   productImage?: string;
+  productSku?: string;
   mediPrice?: number;
   offerId?: string;
   vendorName?: string;
+  matchedBy?: MatchField;
   status: "found" | "unavailable";
   saving?: number;
+};
+
+const MATCH_FIELD_LABEL: Record<MatchField, string> = {
+  gtin: "GTIN",
+  cnk: "CNK",
+  sku: "SKU",
+};
+
+const MATCH_FIELD_BADGE: Record<MatchField, string> = {
+  gtin: "bg-blue-100 text-blue-700 border-blue-200",
+  cnk: "bg-purple-100 text-purple-700 border-purple-200",
+  sku: "bg-amber-100 text-amber-700 border-amber-200",
 };
 
 type Props = {

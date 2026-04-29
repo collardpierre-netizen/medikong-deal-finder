@@ -155,6 +155,7 @@ export default function AdminLeads() {
             <TabsTrigger value="overview" className="text-[13px]">Graphique</TabsTrigger>
             <TabsTrigger value="leads" className="text-[13px]">Leads récents</TabsTrigger>
             <TabsTrigger value="vendors" className="text-[13px]">Par vendeur</TabsTrigger>
+            <TabsTrigger value="profiles" className="text-[13px]">Par profil</TabsTrigger>
           </TabsList>
           <Button size="sm" variant="outline" onClick={exportCsv}><Download size={14} className="mr-1" /> Export CSV</Button>
         </div>

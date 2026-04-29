@@ -1386,6 +1386,15 @@ export default function VendorOffers() {
       {/* Form */}
       {showForm && (
         <VCard>
+          {catalogReturn && (
+            <button
+              type="button"
+              onClick={backToCatalog}
+              className="inline-flex items-center gap-1.5 text-[12px] font-medium text-[#1B5BDA] hover:underline mb-3"
+            >
+              <ArrowLeft size={14} /> Retour au catalogue
+            </button>
+          )}
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold" style={{ color: "#1D2530" }}>{editingId ? "Modifier l'offre" : "Nouvelle offre"}</h3>
             <button onClick={closeForm} className="p-1 hover:bg-[#F1F5F9] rounded"><X size={16} style={{ color: "#8B95A5" }} /></button>

@@ -934,4 +934,111 @@ const EditMappingDialog = ({
   );
 };
 
+const ResolveManufacturersButton = ({ onDone }: { onDone: () => void }) => {
+  const [open, setOpen] = useState(false);
+  const [dryRun, setDryRun] = useState<any>(null);
+
+  const run = useMutation({
+    mutationFn: async (dry: boolean) => {
+      const { data, error } = await supabase.rpc("resolve_product_manufacturers", {
+        _dry_run: dry,
+        _limit: null,
+      });
+      if (error) throw error;
+      return data as any;
+    },
+    onSuccess: (data, dry) => {
+      if (dry) {
+        setDryRun(data);
+      } else {
+        toast.success(
+          `Fabricants résolus : ${data?.resolved_total ?? 0} (brand→mfr ${data?.via_brand_manufacturer ?? 0}, supplier ${data?.via_supplier_name ?? 0}, dict ${data?.via_brand_dictionary ?? 0})`
+        );
+        setOpen(false);
+        setDryRun(null);
+        onDone();
+      }
+    },
+    onError: (e: any) => toast.error(e.message || "Erreur"),
+  });
+
+  return (
+    <>
+      <Button
+        variant="default"
+        size="sm"
+        onClick={() => {
+          setOpen(true);
+          setDryRun(null);
+          run.mutate(true);
+        }}
+        className="bg-mk-blue hover:bg-mk-blue/90"
+      >
+        🏭 Résoudre fabricants
+      </Button>
+      <Dialog open={open} onOpenChange={(o) => !o && !run.isPending && setOpen(false)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Résoudre les fabricants manquants</DialogTitle>
+            <DialogDescription className="text-xs">
+              Complète <code>manufacturer_id</code> via 3 sources : (1) marque
+              déjà associée à un fabricant, (2) fournisseur APB/Febelco du
+              market_prices, (3) dictionnaire marque→fabricant. Les produits
+              validés manuellement sont ignorés.
+            </DialogDescription>
+          </DialogHeader>
+          {run.isPending && !dryRun && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Simulation en cours…
+            </div>
+          )}
+          {dryRun && (
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span>Produits sans fabricant (avant)</span>
+                <strong>{dryRun.null_before?.toLocaleString("fr-BE")}</strong>
+              </div>
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>via marque → fabricant</span>
+                <span>{dryRun.via_brand_manufacturer ?? 0}</span>
+              </div>
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>via supplier_name (APB/Febelco)</span>
+                <span>{dryRun.via_supplier_name ?? 0}</span>
+              </div>
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>via dictionnaire marque</span>
+                <span>{dryRun.via_brand_dictionary ?? 0}</span>
+              </div>
+              <div className="flex justify-between border-t pt-2">
+                <span>Total à résoudre</span>
+                <Badge variant="default">
+                  {(
+                    (dryRun.via_brand_manufacturer ?? 0) +
+                    (dryRun.via_supplier_name ?? 0) +
+                    (dryRun.via_brand_dictionary ?? 0)
+                  ).toLocaleString("fr-BE")}
+                </Badge>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpen(false)} disabled={run.isPending}>
+              Annuler
+            </Button>
+            <Button
+              disabled={!dryRun || run.isPending}
+              onClick={() => run.mutate(false)}
+            >
+              {run.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              Lancer le job
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+};
+
 export default AdminSourceMapping;

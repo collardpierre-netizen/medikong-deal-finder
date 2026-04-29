@@ -6,7 +6,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
-import { Copy, CheckCircle2 } from "lucide-react";
+import { Copy, CheckCircle2, AlertTriangle, Link2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 function slugify(text: string): string {
   return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
@@ -32,8 +33,15 @@ const COMMISSION_MODELS = [
 export default function VendorFormDialog({ open, onOpenChange }: Props) {
   const queryClient = useQueryClient();
   const [saving, setSaving] = useState(false);
-  const [result, setResult] = useState<{ vendor_id: string; temp_password: string } | null>(null);
+  const [result, setResult] = useState<{ vendor_id: string; temp_password: string | null; reused?: boolean } | null>(null);
   const [copied, setCopied] = useState(false);
+  type DupConflict = {
+    message: string;
+    existing_vendor: { id: string; name?: string; company_name?: string; email?: string; auth_user_id?: string | null };
+    suggested_action: "attach_to_existing" | "open_existing";
+  };
+  const [duplicate, setDuplicate] = useState<DupConflict | null>(null);
+  const [attaching, setAttaching] = useState(false);
   const [form, setForm] = useState({
     company_name: "",
     email: "",

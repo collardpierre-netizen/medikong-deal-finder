@@ -21,6 +21,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCountry } from "@/contexts/CountryContext";
 import { usePriceDisplay } from "@/contexts/PriceDisplayContext";
 import { useProductVatRate, vatSourceLabel } from "@/hooks/useProductVatRate";
+import { resolvePackSize, packSizeSourceLabel } from "@/lib/pack-size";
 import { useProductPrice } from "@/hooks/useProductPriceLevel";
 import { Helmet } from "react-helmet-async";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";

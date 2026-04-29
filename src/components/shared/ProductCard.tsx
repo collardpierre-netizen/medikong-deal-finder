@@ -1,4 +1,5 @@
-import { Bell, Plus, Minus } from "lucide-react";
+import { Plus, Minus } from "lucide-react";
+import { PriceAlertBellButton } from "@/components/product/PriceAlertBellButton";
 import { Link } from "react-router-dom";
 import { type Product, formatPrice, productColors, productIconMap } from "@/data/mock";
 import { useState } from "react";
@@ -87,9 +88,13 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
     >
       <div className="relative mb-3">
         {/* Discount badge masqué — à réactiver quand basé sur un vrai prix de référence */}
-        <button className="absolute top-2 right-2 w-7 h-7 rounded-full border border-mk-line bg-white flex items-center justify-center hover:border-mk-blue z-10 transition-colors" aria-label="Alerte prix">
-          <Bell size={13} className="text-mk-sec" />
-        </button>
+        <div className="absolute top-2 right-2 z-10">
+          <PriceAlertBellButton
+            productId={product.id}
+            productName={product.name}
+            defaultPrice={product.price}
+          />
+        </div>
         <Link to={`/produit/${product.slug}`}>
           <ProductImage product={product} />
         </Link>

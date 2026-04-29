@@ -8,7 +8,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ProductSubmissionDialog } from "@/components/vendor/catalog/ProductSubmissionDialog";
+// ProductSubmissionDialog removed: vendors are routed to the dedicated /vendor/produits/proposer page
 import { VendorSubmissionsList } from "@/components/vendor/catalog/VendorSubmissionsList";
 import { VendorCatalogXlsxImport } from "@/components/vendor/catalog/VendorCatalogXlsxImport";
 import { VendorCatalogCodeLookup } from "@/components/vendor/catalog/VendorCatalogCodeLookup";
@@ -111,7 +111,11 @@ export default function VendorCatalog() {
         <div className="flex gap-2 flex-wrap">
           <VendorCatalogCodeLookup />
           <VendorCatalogXlsxImport />
-          <ProductSubmissionDialog />
+          <Button asChild size="sm" className="gap-1.5">
+            <Link to="/vendor/produits/proposer">
+              <Plus className="h-4 w-4" /> Proposer un produit
+            </Link>
+          </Button>
         </div>
       </header>
 
@@ -280,12 +284,11 @@ export default function VendorCatalog() {
               Suivez le statut des fiches que vous avez soumises à notre équipe catalogue.
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <Button asChild variant="outline" size="sm">
-              <Link to="/vendor/produits/proposer">Page dédiée</Link>
-            </Button>
-            <ProductSubmissionDialog />
-          </div>
+          <Button asChild size="sm" className="gap-1.5">
+            <Link to="/vendor/produits/proposer">
+              <Plus className="h-4 w-4" /> Proposer un produit
+            </Link>
+          </Button>
         </div>
         <VendorSubmissionsList />
       </VCard>

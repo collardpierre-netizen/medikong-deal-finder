@@ -232,7 +232,31 @@ Deno.serve(async (req) => {
     }).select("id").single();
 
     if (vendorError) {
+      // Rollback du user auth créé juste avant
       await supabaseAdmin.auth.admin.deleteUser(userId);
+
+      // Conflit unique (race entre 2 admins) → l'index unique CI sur lower(email) garantit l'atomicité.
+      // Postgres renvoie le code 23505 (unique_violation).
+      const isUniqueViolation =
+        (vendorError as any).code === "23505" ||
+        /vendors_email_unique_ci|duplicate key value/i.test(vendorError.message || "");
+
+      if (isUniqueViolation) {
+        // Re-lookup pour proposer la bonne action (rattacher / ouvrir)
+        const racedVendor = await findVendorByEmail(normalizedEmail);
+        return jsonErr(
+          racedVendor
+            ? `Un vendeur avec cet email vient d'être créé : ${racedVendor.company_name || racedVendor.name}`
+            : "Un vendeur avec cet email existe déjà.",
+          "vendor_email_already_exists",
+          {
+            existing_vendor: racedVendor,
+            suggested_action: racedVendor?.auth_user_id ? "open_existing" : "attach_to_existing",
+            race_detected: true,
+          },
+        );
+      }
+
       return jsonErr(`Erreur vendeur: ${vendorError.message}`, "vendor_insert_failed");
     }
 

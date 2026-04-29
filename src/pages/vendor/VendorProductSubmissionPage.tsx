@@ -95,9 +95,14 @@ export default function VendorProductSubmissionPage() {
   return (
     <div className="max-w-3xl mx-auto p-4 md:p-6 space-y-4">
       <div>
-        <Button variant="ghost" size="sm" asChild className="mb-2">
+        <Button variant="ghost" size="sm" asChild className="mb-2 -ml-2">
           <Link to="/vendor/catalog"><ArrowLeft className="h-4 w-4 mr-1" /> Retour au catalogue</Link>
         </Button>
+        <nav aria-label="Fil d'ariane" className="flex items-center gap-1.5 text-[12px] text-[#616B7C] mb-1">
+          <Link to="/vendor/catalog" className="hover:text-[#1B5BDA] hover:underline">Catalogue</Link>
+          <span aria-hidden>/</span>
+          <span className="text-[#1D2530] font-medium">Proposer un produit</span>
+        </nav>
         <h1 className="text-xl font-bold text-[#1D2530]">Proposer un produit au catalogue</h1>
         <p className="text-sm text-muted-foreground mt-1">
           Soumettez une fiche produit qui n'existe pas encore sur MediKong. Notre équipe la valide

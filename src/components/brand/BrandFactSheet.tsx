@@ -357,8 +357,10 @@ export function BrandFactSheet({ brand }: { brand: BrandRow }) {
 
           <Disclaimer>Données calculées sur les 90 derniers jours. Mise à jour quotidienne.</Disclaimer>
         </Card>
+        )}
 
         {/* ─── Section 3 : Signaux marché externes ────────────────────── */}
+        {hasMarketSignals && (
         <Card className="p-5">
           <CardHeader icon={TrendingUp} color="bg-violet-50 text-violet-700" title="Signaux marché" />
           <div className="space-y-1">

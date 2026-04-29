@@ -109,14 +109,26 @@ export default function VendorProfileDefaults({ vendorId }: { vendorId: string }
         .eq("vendor_id", vendorId);
 
       if (rows.length > 0) {
-        const payload = rows.map(r => ({
-          vendor_id: vendorId,
-          profile_type: r.profile_type,
-          country_code: r.country_code,
-          default_mov: r.default_mov,
-          default_mov_currency: r.default_mov_currency,
-          default_moq: r.default_moq,
-        }));
+        const payload = rows.map(r => {
+          const mode = r.default_pricing_mode || null;
+          return {
+            vendor_id: vendorId,
+            profile_type: r.profile_type,
+            country_code: r.country_code,
+            default_mov: r.default_mov,
+            default_mov_currency: r.default_mov_currency,
+            default_moq: r.default_moq,
+            default_pricing_mode: mode,
+            default_price_excl_vat:
+              mode === "absolute" && r.default_price_excl_vat !== ""
+                ? Number(r.default_price_excl_vat)
+                : null,
+            default_discount_pct:
+              mode === "discount_pct" && r.default_discount_pct !== ""
+                ? Number(r.default_discount_pct)
+                : null,
+          };
+        });
         const { error } = await supabase
           .from("vendor_profile_defaults" as any)
           .insert(payload as any);

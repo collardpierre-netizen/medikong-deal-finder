@@ -1472,6 +1472,15 @@ export default function VendorOffers() {
           {/* ─── Prix HTVA par profil acheteur (référentiel buyer_profiles) ─── */}
           <ProfilePricesEditor offerId={editingId} basePrice={parseFloat(form.price_excl_vat) || 0} />
 
+          {/* ─── PVP indicatif (réservé fabricants & distributeurs officiels) ─── */}
+          {editingId && form.product_id && vendor?.id && (
+            <OfferSuggestedRetailPriceEditor
+              offerId={editingId}
+              vendorId={vendor.id}
+              productId={form.product_id}
+            />
+          )}
+
           {/* ─── MOQ/MOV par profil interne (offer_profile_rules) ─── */}
           <ProfileRulesEditor offerId={editingId} basePrice={parseFloat(form.price_excl_vat) || 0} />
 

@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { VCard } from "@/components/vendor/ui/VCard";
 import { VBtn } from "@/components/vendor/ui/VBtn";
 import { VBadge } from "@/components/vendor/ui/VBadge";
-import { Tag, Plus, Pencil, Trash2, X, Loader2, Package, Search, Download, Upload, FileSpreadsheet, ChevronDown, Users, ChevronRight, TrendingDown, TrendingUp, BarChart3, Eye, ImagePlus } from "lucide-react";
+import { Tag, Plus, Pencil, Trash2, X, Loader2, Package, Search, Download, Upload, FileSpreadsheet, ChevronDown, Users, ChevronRight, TrendingDown, TrendingUp, BarChart3, Eye, ImagePlus, ArrowLeft } from "lucide-react";
 import ProductPhotoUploader from "@/components/admin/ProductPhotoUploader";
 import { CategoryTreeSelector } from "@/components/vendor/CategoryTreeSelector";
 import { MarginInsightCard } from "@/components/vendor/MarginInsightCard";

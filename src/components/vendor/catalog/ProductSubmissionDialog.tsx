@@ -239,6 +239,7 @@ export function ProductSubmissionDialog({ children }: { children?: React.ReactNo
     setForm({ product_name: "", brand_name: "", manufacturer_name: "", gtin: "", cnk_code: "", category_hint: "", notes: "" });
     setErrors({});
     setFileName(null); setImportRows([]); setFileIssue(null); setShowRejectedOnly(true);
+    setImportJobId(null);
     setTab("form");
   };
 

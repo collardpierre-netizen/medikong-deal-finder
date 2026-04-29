@@ -501,10 +501,39 @@ function VendorOffersPanel({ vendor }: { vendor: any }) {
     }
     const unmatched = invalid.filter(i => i.reason.startsWith("GTIN introuvable")).map(i => i.gtin);
 
+    // Détection doublons internes au CSV (même product_id ⇒ même GTIN canonique)
+    const dupMap = new Map<string, { productName: string; rows: number[] }>();
+    matched.forEach((m: any) => {
+      const key = m.product.id as string;
+      if (!dupMap.has(key)) dupMap.set(key, { productName: m.product.name, rows: [] });
+      dupMap.get(key)!.rows.push(m._row);
+    });
+    const dupCsv: CsvDuplicate[] = [];
+    dupMap.forEach((v, productId) => {
+      if (v.rows.length > 1) {
+        const gtin = matched.find((m: any) => m.product.id === productId)?.product.gtin || "";
+        dupCsv.push({ gtin, productName: v.productName, rows: v.rows });
+      }
+    });
+
+    // Doublons en base : GTIN déjà présents pour ce vendeur (upsert ⇒ écrasement)
+    const existingSet = new Set<string>();
+    const productIds = Array.from(new Set(matched.map((m: any) => m.product.id as string)));
+    if (productIds.length > 0) {
+      const { data: existing } = await supabase
+        .from("external_offers")
+        .select("product_id")
+        .eq("external_vendor_id", vendor.id)
+        .in("product_id", productIds);
+      (existing || []).forEach((e: any) => existingSet.add(e.product_id));
+    }
+
     setCsvPreview(matched);
     setCsvUnmatched(unmatched);
     setCsvInvalid(invalid);
     setCsvTotalRows(rows.length);
+    setCsvDupCsv(dupCsv);
+    setCsvExistingGtins(existingSet);
     setCsvDialog(true);
   };
 

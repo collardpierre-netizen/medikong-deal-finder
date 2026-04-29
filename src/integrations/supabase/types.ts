@@ -9656,6 +9656,10 @@ export type Database = {
         }
         Returns: Json
       }
+      admin_redispatch_catalog_notifications: {
+        Args: { _source_id: string; _source_type: string }
+        Returns: number
+      }
       audit_backup_tables_rls: {
         Args: never
         Returns: {
@@ -9712,6 +9716,14 @@ export type Database = {
         Returns: Json
       }
       detect_vendor_competitor_alerts: { Args: never; Returns: Json }
+      dispatch_brand_activation_notifications: {
+        Args: { _brand_id: string }
+        Returns: number
+      }
+      dispatch_product_activation_notifications: {
+        Args: { _product_id: string }
+        Returns: number
+      }
       enqueue_email: {
         Args: { payload: Json; queue_name: string }
         Returns: number

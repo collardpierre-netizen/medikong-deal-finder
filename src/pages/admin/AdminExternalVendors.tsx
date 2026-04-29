@@ -308,7 +308,7 @@ function VendorOffersPanel({ vendor }: { vendor: any }) {
   const [searchTerm, setSearchTerm] = useState("");
   const { data: searchResults = [] } = useProductSearch(searchTerm);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
-  const [of, setOf] = useState({ unit_price: "", mov_amount: "", product_url: "", stock_status: "unknown", delivery_days: "", notes: "" });
+  const [of, setOf] = useState({ unit_price: "", mov_amount: "", product_url: "", stock_status: "unknown", delivery_days: "", notes: "", pack_size_override: "" });
 
   const saveOffer = useMutation({
     mutationFn: async () => {

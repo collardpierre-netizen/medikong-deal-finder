@@ -272,49 +272,6 @@ export default function VendorCatalog() {
             </div>
             )}
 
-            {/* Toolbar sélection multiple */}
-            <div className="flex items-center gap-2 flex-wrap">
-              {!selectMode ? (
-                <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5" onClick={() => setSelectMode(true)}>
-                  <CheckSquare className="h-3.5 w-3.5" /> Sélectionner
-                </Button>
-              ) : (
-                <>
-                  <Badge variant="secondary" className="text-[11px]">
-                    {selectedIds.length} sélectionné{selectedIds.length > 1 ? "s" : ""}
-                  </Badge>
-                  {(data as any[]).length > 0 && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 text-xs"
-                      onClick={() => {
-                        const allIds = (data as any[]).map((p) => p.id);
-                        const allSelected = allIds.every((id) => selectedIds.includes(id));
-                        setSelectedIds(allSelected ? selectedIds.filter((id) => !allIds.includes(id)) : Array.from(new Set([...selectedIds, ...allIds])));
-                      }}
-                    >
-                      {(data as any[]).every((p) => selectedIds.includes(p.id)) ? "Tout désélectionner" : "Tout sélectionner (page)"}
-                    </Button>
-                  )}
-                  <div className="ml-auto flex gap-2">
-                    <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={exitSelectMode}>
-                      Annuler
-                    </Button>
-                    <Button
-                      size="sm"
-                      className="h-8 text-xs gap-1.5"
-                      disabled={selectedIds.length === 0}
-                      onClick={startBatch}
-                    >
-                      <ListPlus className="h-3.5 w-3.5" />
-                      Créer {selectedIds.length} offre{selectedIds.length > 1 ? "s" : ""} en série
-                    </Button>
-                  </div>
-                </>
-              )}
-            </div>
-
           <TabsContent value="products" className="m-0 space-y-3">
             {activeScopeLabel && (
               <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-[#EFF4FE] border border-[#C9DAFB] text-[12px] text-[#1B5BDA]">

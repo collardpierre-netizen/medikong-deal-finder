@@ -33,7 +33,7 @@ function useCatalogList(entity: EntityType, search: string, filters: CatalogFilt
       if (entity === "products") {
         let q = supabase
           .from("products")
-          .select("id, name, slug, gtin, cnk_code, image_url, brand_name, category_name, best_price_excl_vat")
+          .select("id, name, slug, gtin, cnk_code, image_url, brand_id, brand_name, category_id, category_name, best_price_excl_vat")
           .eq("is_active", true)
           .order("popularity", { ascending: false, nullsFirst: false })
           .limit(PAGE_SIZE);
@@ -176,9 +176,16 @@ export default function VendorCatalog() {
                         {p.category_name && (
                           <Badge variant="secondary" className="text-[10px] truncate max-w-[140px]">{p.category_name}</Badge>
                         )}
-                        <Button size="sm" className="h-7 px-2 text-xs gap-1" onClick={() => startOffer(p.id)}>
-                          <Plus className="h-3 w-3" /> Créer une offre
-                        </Button>
+                        <div className="flex items-center gap-1">
+                          {p.brand_id && (
+                            <InterestToggleButton
+                              target={{ kind: "brand", id: p.brand_id, label: p.brand_name }}
+                            />
+                          )}
+                          <Button size="sm" className="h-7 px-2 text-xs gap-1" onClick={() => startOffer(p.id)}>
+                            <Plus className="h-3 w-3" /> Créer une offre
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </div>

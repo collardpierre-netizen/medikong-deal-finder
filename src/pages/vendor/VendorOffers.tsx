@@ -1144,7 +1144,9 @@ export default function VendorOffers() {
   const navigate = useNavigate();
   // Contexte de retour vers /vendor/catalog (filtre marque/fabricant à restaurer)
   const [catalogReturn, setCatalogReturn] = useState<{ brandId?: string; manufacturerId?: string } | null>(null);
-  const closeForm = () => { setShowForm(false); setEditingId(null); setForm(emptyForm); setCatalogReturn(null); };
+  // File d'attente de produits à traiter en série
+  const [batchQueue, setBatchQueue] = useState<{ remaining: string[]; pos: number; total: number } | null>(null);
+  const closeForm = () => { setShowForm(false); setEditingId(null); setForm(emptyForm); setCatalogReturn(null); setBatchQueue(null); };
   const backToCatalog = () => {
     const params = new URLSearchParams();
     if (catalogReturn?.brandId) params.set("brand", catalogReturn.brandId);
@@ -1156,12 +1158,44 @@ export default function VendorOffers() {
   // Deep-link depuis le catalogue : /vendor/offers?action=create&product=<id>&brand=<id>&manufacturer=<id>
   const [searchParams, setSearchParams] = useSearchParams();
   const deepLinkHandledRef = useRef(false);
+  // Helper : pré-remplit le formulaire à partir d'un product_id
+  const loadProductIntoForm = useCallback(async (productId: string) => {
+    const { data: prod } = await supabase
+      .from("products")
+      .select("id, name, category_id, brand_id, brand_name, manufacturer_id, category_name")
+      .eq("id", productId)
+      .maybeSingle();
+    let categoryIds: string[] = [];
+    let vatRate = "21";
+    if (prod?.category_id) {
+      categoryIds = [prod.category_id];
+      const { data: cat } = await supabase
+        .from("categories")
+        .select("vat_rate")
+        .eq("id", prod.category_id)
+        .maybeSingle();
+      if (cat?.vat_rate != null) vatRate = String(cat.vat_rate);
+    }
+    setForm({
+      ...emptyForm,
+      product_id: productId,
+      product_name: prod?.name ?? "",
+      category_ids: categoryIds,
+      vat_rate: vatRate,
+    });
+    setEditingId(null);
+    setShowForm(true);
+  }, []);
+
   useEffect(() => {
     if (deepLinkHandledRef.current) return;
     const action = searchParams.get("action");
     const productId = searchParams.get("product");
     const brandFromUrl = searchParams.get("brand");
     const manufacturerFromUrl = searchParams.get("manufacturer");
+    const queueRaw = searchParams.get("queue");
+    const qpos = searchParams.get("qpos");
+    const qtotal = searchParams.get("qtotal");
     if (action !== "create" || !productId) return;
     deepLinkHandledRef.current = true;
     if (brandFromUrl || manufacturerFromUrl) {
@@ -1170,54 +1204,16 @@ export default function VendorOffers() {
         manufacturerId: manufacturerFromUrl ?? undefined,
       });
     }
-    (async () => {
-      const { data: prod } = await supabase
-        .from("products")
-        .select("id, name, category_id, brand_id, brand_name, manufacturer_id, category_name")
-        .eq("id", productId)
-        .maybeSingle();
-
-      // Préremplir la catégorie de l'offre + déduire la TVA depuis la catégorie
-      let categoryIds: string[] = [];
-      let vatRate = "21";
-      if (prod?.category_id) {
-        categoryIds = [prod.category_id];
-        const { data: cat } = await supabase
-          .from("categories")
-          .select("vat_rate")
-          .eq("id", prod.category_id)
-          .maybeSingle();
-        if (cat?.vat_rate != null) vatRate = String(cat.vat_rate);
-      }
-
-      setForm({
-        ...emptyForm,
-        product_id: productId,
-        product_name: prod?.name ?? "",
-        category_ids: categoryIds,
-        vat_rate: vatRate,
-      });
-      setEditingId(null);
-      setShowForm(true);
-      // Mémo console pour debug
-      if (prod?.brand_name) {
-        console.info("[VendorOffers] Préremplissage offre depuis produit", {
-          productId,
-          brand: prod.brand_name,
-          brandId: prod.brand_id,
-          manufacturerId: prod.manufacturer_id,
-          category: prod.category_name,
-        });
-      }
-      // nettoie l'URL pour éviter de rouvrir la modale
-      const next = new URLSearchParams(searchParams);
-      next.delete("action");
-      next.delete("product");
-      next.delete("brand");
-      next.delete("manufacturer");
-      setSearchParams(next, { replace: true });
-    })();
-  }, [searchParams, setSearchParams]);
+    if (queueRaw && qtotal) {
+      const remaining = queueRaw.split(",").filter(Boolean);
+      setBatchQueue({ remaining, pos: Number(qpos) || 1, total: Number(qtotal) });
+    }
+    loadProductIntoForm(productId);
+    // nettoie l'URL pour éviter de rouvrir la modale
+    const next = new URLSearchParams(searchParams);
+    ["action", "product", "brand", "manufacturer", "queue", "qpos", "qtotal"].forEach((k) => next.delete(k));
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams, loadProductIntoForm]);
 
   // Pré-remplit le prix d'achat avec le défaut produit en mode création quand on choisit un produit
   useEffect(() => {
@@ -1294,7 +1290,21 @@ export default function VendorOffers() {
         if (costErr) throw costErr;
       }
     },
-    onSuccess: () => { toast.success(editingId ? "Offre modifiée" : "Offre créée"); qc.invalidateQueries({ queryKey: ["vendor-offers"] }); closeForm(); },
+    onSuccess: () => {
+      toast.success(editingId ? "Offre modifiée" : "Offre créée");
+      qc.invalidateQueries({ queryKey: ["vendor-offers"] });
+      // Avancer dans la file batch s'il en reste
+      if (batchQueue && batchQueue.remaining.length > 0) {
+        const [nextId, ...rest] = batchQueue.remaining;
+        const newPos = batchQueue.pos + 1;
+        setBatchQueue({ remaining: rest, pos: newPos, total: batchQueue.total });
+        loadProductIntoForm(nextId);
+        toast.message(`Offre ${newPos}/${batchQueue.total} — produit suivant chargé`);
+        return;
+      }
+      if (batchQueue) toast.success(`Série terminée (${batchQueue.total} offres)`);
+      closeForm();
+    },
     onError: (err: any) => toast.error(err.message),
   });
 

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Search, Package, Building2, Tag, Plus, SearchX, FilterX, X } from "lucide-react";
+import { Search, Package, Building2, Tag, Plus, SearchX, FilterX, X, CheckSquare, ListPlus } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/contexts/I18nContext";
@@ -10,6 +10,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 // ProductSubmissionDialog removed: vendors are routed to the dedicated /vendor/produits/proposer page
 import { VendorSubmissionsList } from "@/components/vendor/catalog/VendorSubmissionsList";
@@ -108,6 +109,13 @@ export default function VendorCatalog() {
   const [filters, setFilters] = useState<CatalogFilters>(emptyCatalogFilters);
   const [productSort, setProductSort] = useState<ProductSort>("popularity");
 
+  // Mode sélection multiple (onglet Produits) pour création d'offres en série
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const toggleSelected = (id: string) =>
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  const exitSelectMode = () => { setSelectMode(false); setSelectedIds([]); };
+
   // Debounce la recherche pour éviter une requête à chaque frappe
   useEffect(() => {
     const id = setTimeout(() => setDebouncedSearch(search), 250);
@@ -155,6 +163,21 @@ export default function VendorCatalog() {
     if (productId) params.set("product", productId);
     if (filters.brandId) params.set("brand", filters.brandId);
     if (filters.manufacturerId) params.set("manufacturer", filters.manufacturerId);
+    navigate(`/vendor/offers?${params.toString()}`);
+  };
+
+  const startBatch = () => {
+    if (selectedIds.length === 0) return;
+    const [first, ...rest] = selectedIds;
+    const params = new URLSearchParams({ action: "create", product: first });
+    if (rest.length) {
+      params.set("queue", rest.join(","));
+      params.set("qpos", "1");
+      params.set("qtotal", String(selectedIds.length));
+    }
+    if (filters.brandId) params.set("brand", filters.brandId);
+    if (filters.manufacturerId) params.set("manufacturer", filters.manufacturerId);
+    exitSelectMode();
     navigate(`/vendor/offers?${params.toString()}`);
   };
 
@@ -247,7 +270,7 @@ export default function VendorCatalog() {
                 </Select>
               )}
             </div>
-          )}
+            )}
 
           <TabsContent value="products" className="m-0 space-y-3">
             {activeScopeLabel && (
@@ -268,6 +291,55 @@ export default function VendorCatalog() {
                 </Button>
               </div>
             )}
+
+            {/* Toolbar sélection multiple */}
+            <div className="flex items-center gap-2 flex-wrap">
+              {!selectMode ? (
+                <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5" onClick={() => setSelectMode(true)}>
+                  <CheckSquare className="h-3.5 w-3.5" /> Sélectionner
+                </Button>
+              ) : (
+                <>
+                  <Badge variant="secondary" className="text-[11px]">
+                    {selectedIds.length} sélectionné{selectedIds.length > 1 ? "s" : ""}
+                  </Badge>
+                  {(data as any[]).length > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 text-xs"
+                      onClick={() => {
+                        const allIds = (data as any[]).map((p) => p.id);
+                        const allSelected = allIds.every((id) => selectedIds.includes(id));
+                        setSelectedIds(
+                          allSelected
+                            ? selectedIds.filter((id) => !allIds.includes(id))
+                            : Array.from(new Set([...selectedIds, ...allIds])),
+                        );
+                      }}
+                    >
+                      {(data as any[]).every((p) => selectedIds.includes(p.id))
+                        ? "Tout désélectionner"
+                        : "Tout sélectionner (page)"}
+                    </Button>
+                  )}
+                  <div className="ml-auto flex gap-2">
+                    <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={exitSelectMode}>
+                      Annuler
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="h-8 text-xs gap-1.5"
+                      disabled={selectedIds.length === 0}
+                      onClick={startBatch}
+                    >
+                      <ListPlus className="h-3.5 w-3.5" />
+                      Créer {selectedIds.length} offre{selectedIds.length > 1 ? "s" : ""} en série
+                    </Button>
+                  </div>
+                </>
+              )}
+            </div>
             {isLoading ? (
               <ListLoader variant="product" />
             ) : data.length === 0 ? (
@@ -280,8 +352,24 @@ export default function VendorCatalog() {
               />
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-                {(data as any[]).map((p) => (
-                  <div key={p.id} className="border rounded-lg p-3 flex gap-3 items-start hover:border-primary/40 transition">
+                {(data as any[]).map((p) => {
+                  const isSelected = selectedIds.includes(p.id);
+                  return (
+                  <div
+                    key={p.id}
+                    className={`border rounded-lg p-3 flex gap-3 items-start transition cursor-${selectMode ? "pointer" : "default"} ${
+                      isSelected ? "border-primary bg-[#EFF4FE]" : "hover:border-primary/40"
+                    }`}
+                    onClick={selectMode ? () => toggleSelected(p.id) : undefined}
+                  >
+                    {selectMode && (
+                      <Checkbox
+                        checked={isSelected}
+                        onCheckedChange={() => toggleSelected(p.id)}
+                        onClick={(e) => e.stopPropagation()}
+                        className="mt-1 shrink-0"
+                      />
+                    )}
                     <div className="w-14 h-14 rounded bg-muted/50 flex items-center justify-center overflow-hidden shrink-0">
                       {p.image_url ? (
                         <img src={p.image_url} alt={p.name} className="w-full h-full object-contain" loading="lazy" />
@@ -306,14 +394,17 @@ export default function VendorCatalog() {
                               target={{ kind: "brand", id: p.brand_id, label: p.brand_name }}
                             />
                           )}
-                          <Button size="sm" className="h-7 px-2 text-xs gap-1" onClick={() => startOffer(p.id)}>
-                            <Plus className="h-3 w-3" /> {t("vendorCatalogCreateOffer")}
-                          </Button>
+                          {!selectMode && (
+                            <Button size="sm" className="h-7 px-2 text-xs gap-1" onClick={() => startOffer(p.id)}>
+                              <Plus className="h-3 w-3" /> {t("vendorCatalogCreateOffer")}
+                            </Button>
+                          )}
                         </div>
                       </div>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </TabsContent>

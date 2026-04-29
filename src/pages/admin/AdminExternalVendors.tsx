@@ -459,7 +459,7 @@ function VendorOffersPanel({ vendor }: { vendor: any }) {
     const gtinList = Array.from(allLookups);
 
     const { data: products } = gtinList.length
-      ? await supabase.from("products").select("id, gtin, name").in("gtin", gtinList)
+      ? await supabase.from("products").select("id, gtin, name, category_id, categories(name)").in("gtin", gtinList)
       : { data: [] as any[] };
 
     const gtinMap: Record<string, any> = {};

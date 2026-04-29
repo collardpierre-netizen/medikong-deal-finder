@@ -1736,6 +1736,18 @@ export default function ProductPage() {
                                       )}
                                     </span>
                                   </td>
+                                  <td className="px-2 py-2 text-center text-[11px] whitespace-nowrap" title={`${packBadge.title} — libellé source : ${mp.product_name_source ?? '—'}`}>
+                                    {mpPack.packSize > 1 ? (
+                                      <span className="inline-flex items-center gap-1">
+                                        <span className="font-semibold text-foreground tabular-nums">×{mpPack.packSize}</span>
+                                        <span className={`inline-flex items-center px-1 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide border leading-none ${packBadge.className}`}>
+                                          {packBadge.code}
+                                        </span>
+                                      </span>
+                                    ) : (
+                                      <span className="text-muted-foreground">×1</span>
+                                    )}
+                                  </td>
                                   {mpVisMap.show_pharmacist_price && (
                                     <td className="px-2 py-2 text-right font-bold tabular-nums text-foreground text-[12px] whitespace-nowrap">
                                       {pharmHT ? `${formatEur(pharmHT)} €` : <span className="text-muted-foreground font-normal">—</span>}

@@ -391,6 +391,7 @@ const App = () => (
             </Route>
 
             {/* Vendor Dashboard */}
+            <Route path="/espace-vendeur/catalogue" element={<Navigate to="/vendor/catalog" replace />} />
             <Route path="/vendor/login" element={<LP><VendorLoginPage /></LP>} />
             <Route path="/vendor/onboarding" element={<LP><VendorOnboardingWizard /></LP>} />
             <Route path="/vendor/stripe-onboarding" element={<LP><VendorStripeOnboardingPage /></LP>} />

@@ -1601,29 +1601,58 @@ export default function ProductPage() {
                                             {priceLabel}
                                           </span>
                                         </div>
-                                        <p
-                                          className="text-[11px] text-muted-foreground tabular-nums mt-0.5 flex items-center justify-end gap-1.5 flex-wrap"
-                                          title={packSizeSourceLabel(pack.source)}
-                                        >
-                                          <span>
-                                            Pack&nbsp;: {formatEur(displayPrice)} € {priceLabel}
-                                            {pack.packSize > 1 && <> · pack de {pack.packSize}</>}
-                                          </span>
-                                          {(() => {
-                                            const badge = packSizeSourceBadge(pack.source);
-                                            return (
-                                              <span
-                                                className={`inline-flex items-center px-1 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide border leading-none ${badge.className}`}
-                                                title={badge.title}
+                                        {externalCompareBasis === 'pack' ? (
+                                          <>
+                                            {pack.packSize > 1 && (
+                                              <p
+                                                className="text-[11px] text-muted-foreground tabular-nums mt-0.5 flex items-center justify-end gap-1.5 flex-wrap"
+                                                title={packSizeSourceLabel(pack.source)}
                                               >
-                                                {badge.code}
+                                                <span>soit {formatEur(perUnit)} €/unité · pack de {pack.packSize}</span>
+                                                {(() => {
+                                                  const badge = packSizeSourceBadge(pack.source);
+                                                  return (
+                                                    <span
+                                                      className={`inline-flex items-center px-1 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide border leading-none ${badge.className}`}
+                                                      title={badge.title}
+                                                    >
+                                                      {badge.code}
+                                                    </span>
+                                                  );
+                                                })()}
+                                              </p>
+                                            )}
+                                            <p className="text-[11px] text-muted-foreground tabular-nums" title={`Source TVA : ${vatSourceLabel(tvaSource)}`}>
+                                              soit {formatEur(secondaryPrice)} € {secondaryLabel} <span className="opacity-60">· TVA {tvaRate}%</span>
+                                            </p>
+                                          </>
+                                        ) : (
+                                          <>
+                                            <p
+                                              className="text-[11px] text-muted-foreground tabular-nums mt-0.5 flex items-center justify-end gap-1.5 flex-wrap"
+                                              title={packSizeSourceLabel(pack.source)}
+                                            >
+                                              <span>
+                                                Pack&nbsp;: {formatEur(displayPrice)} € {priceLabel}
+                                                {pack.packSize > 1 && <> · pack de {pack.packSize}</>}
                                               </span>
-                                            );
-                                          })()}
-                                        </p>
-                                        <p className="text-[11px] text-muted-foreground tabular-nums" title={`Source TVA : ${vatSourceLabel(tvaSource)}`}>
-                                          soit {formatEur(secondaryPrice)} € {secondaryLabel} <span className="opacity-60">· TVA {tvaRate}%</span>
-                                        </p>
+                                              {(() => {
+                                                const badge = packSizeSourceBadge(pack.source);
+                                                return (
+                                                  <span
+                                                    className={`inline-flex items-center px-1 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide border leading-none ${badge.className}`}
+                                                    title={badge.title}
+                                                  >
+                                                    {badge.code}
+                                                  </span>
+                                                );
+                                              })()}
+                                            </p>
+                                            <p className="text-[11px] text-muted-foreground tabular-nums" title={`Source TVA : ${vatSourceLabel(tvaSource)}`}>
+                                              soit {formatEur(secondaryPrice)} € {secondaryLabel} <span className="opacity-60">· TVA {tvaRate}%</span>
+                                            </p>
+                                          </>
+                                        )}
                                       </>
                                     );
                                   })()}

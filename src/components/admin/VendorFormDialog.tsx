@@ -66,6 +66,8 @@ export default function VendorFormDialog({ open, onOpenChange }: Props) {
     setForm({ company_name: "", email: "", phone: "", vat_number: "", address_line1: "", city: "", postal_code: "", country_code: "BE", commission_rate: "15", commission_model: "flat_percentage", margin_split_pct: "50", fixed_commission_amount: "2", description: "", type: "real", create_account: true });
     setResult(null);
     setCopied(false);
+    setDuplicate(null);
+    setAttaching(false);
   };
 
   const handleSave = async () => {
@@ -97,9 +99,21 @@ export default function VendorFormDialog({ open, onOpenChange }: Props) {
           },
         });
         if (error) throw error;
-        if (data?.error) throw new Error(data.error);
-        
-        setResult({ vendor_id: data.vendor_id, temp_password: data.temp_password });
+        // Nouvelle convention edge: { ok: boolean, error?, code?, ... }
+        if (data?.ok === false || data?.error) {
+          // Doublon vendeur : proposer le rattachement
+          if (data?.code === "vendor_email_already_exists" && data?.existing_vendor) {
+            setDuplicate({
+              message: data.error,
+              existing_vendor: data.existing_vendor,
+              suggested_action: data.suggested_action ?? "attach_to_existing",
+            });
+            return;
+          }
+          throw new Error(data?.error || "Erreur inconnue");
+        }
+
+        setResult({ vendor_id: data.vendor_id, temp_password: data.temp_password ?? null });
         toast.success("Vendeur créé avec compte d'accès !");
       } else {
         // Direct DB insert without auth account

@@ -290,7 +290,6 @@ export default function VendorCatalog() {
             </Link>
           </Button>
         </div>
-        </div>
         <VendorSubmissionsList />
       </VCard>
     </div>

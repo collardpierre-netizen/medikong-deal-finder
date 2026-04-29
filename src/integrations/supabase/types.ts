@@ -4943,6 +4943,7 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          buyer_profile_id: string | null
           category_preferences: Json | null
           company_name: string | null
           country: string | null
@@ -4962,6 +4963,7 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          buyer_profile_id?: string | null
           category_preferences?: Json | null
           company_name?: string | null
           country?: string | null
@@ -4981,6 +4983,7 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          buyer_profile_id?: string | null
           category_preferences?: Json | null
           company_name?: string | null
           country?: string | null
@@ -4999,6 +5002,13 @@ export type Database = {
           vat_number?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "profiles_buyer_profile_id_fkey"
+            columns: ["buyer_profile_id"]
+            isOneToOne: false
+            referencedRelation: "buyer_profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "profiles_profession_type_id_fkey"
             columns: ["profession_type_id"]

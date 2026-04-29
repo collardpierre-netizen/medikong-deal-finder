@@ -230,11 +230,10 @@ const AdminVendeurDetail = () => {
                 if (!vendor.email) { toast.error("Renseignez d'abord un email sur la fiche vendeur."); return; }
                 if (!confirm(`Créer un accès portail pour ${vendor.email} ?\n\nUn compte sera créé (ou rattaché si l'email existe déjà). Vous obtiendrez un mot de passe temporaire à transmettre au vendeur.`)) return;
                 try {
-                  const { data, error } = await supabase.functions.invoke("create-vendor-account", {
+                  const { data, error } = await supabase.functions.invoke("attach-user-to-vendor", {
                     body: {
-                      company_name: vendor.company_name || vendor.name,
-                      email: vendor.email,
                       vendor_id: vendor.id,
+                      email: vendor.email,
                     },
                   });
                   if (error) throw error;

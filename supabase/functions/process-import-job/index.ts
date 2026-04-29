@@ -217,11 +217,9 @@ async function processProductSubmission(
 
     if (valid.length) {
       const inserts = valid.map((r) => ({
-        submitted_by: userId,
         vendor_id: vendorId,
-        status: "pending",
-        payload: r.data,
-        source: "xlsx_import",
+        status: "pending" as const,
+        proposed_payload: { ...r.data, _source: "xlsx_import", _submitted_by: userId },
       }));
       const { error: insErr, data: insData } = await sb
         .from("product_submissions").insert(inserts).select("id");

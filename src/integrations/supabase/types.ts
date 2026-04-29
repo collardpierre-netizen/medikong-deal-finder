@@ -1137,6 +1137,42 @@ export type Database = {
         }
         Relationships: []
       }
+      cnk_vat_mapping: {
+        Row: {
+          cnk_code: string | null
+          cnk_prefix: string | null
+          country_code: string
+          created_at: string
+          id: string
+          is_active: boolean
+          note: string | null
+          updated_at: string
+          vat_rate: number
+        }
+        Insert: {
+          cnk_code?: string | null
+          cnk_prefix?: string | null
+          country_code?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          note?: string | null
+          updated_at?: string
+          vat_rate: number
+        }
+        Update: {
+          cnk_code?: string | null
+          cnk_prefix?: string | null
+          country_code?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          note?: string | null
+          updated_at?: string
+          vat_rate?: number
+        }
+        Relationships: []
+      }
       countries: {
         Row: {
           code: string
@@ -4266,6 +4302,7 @@ export type Database = {
           unit_quantity: number
           updated_at: string
           vat_rate_be: number | null
+          vat_rate_override: number | null
           weight: number | null
           weight_unit: string | null
           width: number | null
@@ -4345,6 +4382,7 @@ export type Database = {
           unit_quantity?: number
           updated_at?: string
           vat_rate_be?: number | null
+          vat_rate_override?: number | null
           weight?: number | null
           weight_unit?: string | null
           width?: number | null
@@ -4424,6 +4462,7 @@ export type Database = {
           unit_quantity?: number
           updated_at?: string
           vat_rate_be?: number | null
+          vat_rate_override?: number | null
           weight?: number | null
           weight_unit?: string | null
           width?: number | null
@@ -9528,6 +9567,13 @@ export type Database = {
       }
       resolve_product_brands: { Args: never; Returns: undefined }
       resolve_product_categories: { Args: never; Returns: undefined }
+      resolve_product_vat_rate: {
+        Args: { _country_code?: string; _product_id: string }
+        Returns: {
+          source: string
+          vat_rate: number
+        }[]
+      }
       restore_brands_from_backup: {
         Args: { _backup_table_name?: string }
         Returns: Json

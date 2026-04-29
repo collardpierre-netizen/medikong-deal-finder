@@ -1,11 +1,11 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { VCard } from "@/components/vendor/ui/VCard";
 import { VBtn } from "@/components/vendor/ui/VBtn";
 import { VBadge } from "@/components/vendor/ui/VBadge";
-import { Tag, Plus, Pencil, Trash2, X, Loader2, Package, Search, Download, Upload, FileSpreadsheet, ChevronDown, Users, ChevronRight, TrendingDown, TrendingUp, BarChart3, Eye, ImagePlus } from "lucide-react";
+import { Tag, Plus, Pencil, Trash2, X, Loader2, Package, Search, Download, Upload, FileSpreadsheet, ChevronDown, Users, ChevronRight, TrendingDown, TrendingUp, BarChart3, Eye, ImagePlus, ArrowLeft } from "lucide-react";
 import ProductPhotoUploader from "@/components/admin/ProductPhotoUploader";
 import { CategoryTreeSelector } from "@/components/vendor/CategoryTreeSelector";
 import { MarginInsightCard } from "@/components/vendor/MarginInsightCard";
@@ -1141,17 +1141,35 @@ export default function VendorOffers() {
     setEditingId(offer.id);
     setShowForm(true);
   };
-  const closeForm = () => { setShowForm(false); setEditingId(null); setForm(emptyForm); };
+  const navigate = useNavigate();
+  // Contexte de retour vers /vendor/catalog (filtre marque/fabricant à restaurer)
+  const [catalogReturn, setCatalogReturn] = useState<{ brandId?: string; manufacturerId?: string } | null>(null);
+  const closeForm = () => { setShowForm(false); setEditingId(null); setForm(emptyForm); setCatalogReturn(null); };
+  const backToCatalog = () => {
+    const params = new URLSearchParams();
+    if (catalogReturn?.brandId) params.set("brand", catalogReturn.brandId);
+    if (catalogReturn?.manufacturerId) params.set("manufacturer", catalogReturn.manufacturerId);
+    closeForm();
+    navigate(`/vendor/catalog${params.toString() ? `?${params.toString()}` : ""}`);
+  };
 
-  // Deep-link depuis le catalogue : /vendor/offers?action=create&product=<id>
+  // Deep-link depuis le catalogue : /vendor/offers?action=create&product=<id>&brand=<id>&manufacturer=<id>
   const [searchParams, setSearchParams] = useSearchParams();
   const deepLinkHandledRef = useRef(false);
   useEffect(() => {
     if (deepLinkHandledRef.current) return;
     const action = searchParams.get("action");
     const productId = searchParams.get("product");
+    const brandFromUrl = searchParams.get("brand");
+    const manufacturerFromUrl = searchParams.get("manufacturer");
     if (action !== "create" || !productId) return;
     deepLinkHandledRef.current = true;
+    if (brandFromUrl || manufacturerFromUrl) {
+      setCatalogReturn({
+        brandId: brandFromUrl ?? undefined,
+        manufacturerId: manufacturerFromUrl ?? undefined,
+      });
+    }
     (async () => {
       const { data: prod } = await supabase
         .from("products")
@@ -1195,6 +1213,8 @@ export default function VendorOffers() {
       const next = new URLSearchParams(searchParams);
       next.delete("action");
       next.delete("product");
+      next.delete("brand");
+      next.delete("manufacturer");
       setSearchParams(next, { replace: true });
     })();
   }, [searchParams, setSearchParams]);
@@ -1366,6 +1386,15 @@ export default function VendorOffers() {
       {/* Form */}
       {showForm && (
         <VCard>
+          {catalogReturn && (
+            <button
+              type="button"
+              onClick={backToCatalog}
+              className="inline-flex items-center gap-1.5 text-[12px] font-medium text-[#1B5BDA] hover:underline mb-3"
+            >
+              <ArrowLeft size={14} /> Retour au catalogue
+            </button>
+          )}
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold" style={{ color: "#1D2530" }}>{editingId ? "Modifier l'offre" : "Nouvelle offre"}</h3>
             <button onClick={closeForm} className="p-1 hover:bg-[#F1F5F9] rounded"><X size={16} style={{ color: "#8B95A5" }} /></button>

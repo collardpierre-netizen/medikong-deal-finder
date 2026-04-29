@@ -716,7 +716,9 @@ export default function ProductPage() {
   const [stickyQty, setStickyQty] = useState(1);
   // Base de comparaison pour les offres externes : ramène toutes les offres
   // au même conditionnement pour comparer "des pommes à des pommes".
-  const [externalCompareBasis, setExternalCompareBasis] = useState<'pack' | 'unit' | 'hundred'>('unit');
+  // Défaut: 'pack' = prix exactement tel qu'importé chez le vendeur (le plus fidèle).
+  // Le toggle permet de ramener à l'unité ou aux 100 unités pour comparer.
+  const [externalCompareBasis, setExternalCompareBasis] = useState<'pack' | 'unit' | 'hundred'>('pack');
   const offerSectionRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
 

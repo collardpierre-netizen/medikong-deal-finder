@@ -340,6 +340,7 @@ const App = () => (
               <Route path="onboarding" element={<LP><AdminOnboarding /></LP>} />
               <Route path="produits" element={<LP><AdminProduits /></LP>} />
               <Route path="produits/:id" element={<LP><AdminProduitDetail /></LP>} />
+              <Route path="produits/mapping" element={<LP><AdminSourceMapping /></LP>} />
               <Route path="categories" element={<LP><AdminCategories /></LP>} />
               <Route path="marques" element={<LP><AdminMarques /></LP>} />
               <Route path="marques/doublons" element={<LP><AdminBrandDuplicates /></LP>} />

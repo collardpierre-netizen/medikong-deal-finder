@@ -438,6 +438,8 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
         Produit: r.productName || "Non trouvé",
         EAN: r.ean || "",
         CNK: r.cnk || "",
+        SKU: r.sku || r.productSku || "",
+        "Identifié par": r.matchedBy ? MATCH_FIELD_LABEL[r.matchedBy] : "—",
         "Qté": r.quantity,
         "Votre prix HT": r.currentPrice > 0 ? Number(r.currentPrice.toFixed(2)) : null,
         "Prix MediKong HT": r.mediPrice != null ? Number(r.mediPrice.toFixed(2)) : null,

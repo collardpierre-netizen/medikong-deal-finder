@@ -250,6 +250,38 @@ export default function AdminLeads() {
             </Table>
           </div>
         </TabsContent>
+
+        <TabsContent value="profiles">
+          <div className="bg-white rounded-lg border overflow-hidden" style={{ borderColor: "#E2E8F0" }}>
+            <div className="px-5 py-3 border-b flex items-center gap-2" style={{ borderColor: "#E2E8F0" }}>
+              <Briefcase size={14} style={{ color: "#8B95A5" }} />
+              <h3 className="text-[13px] font-semibold" style={{ color: "#1D2530" }}>Répartition des leads de ce mois par profil professionnel</h3>
+            </div>
+            <Table>
+              <TableHeader>
+                <TableRow style={{ backgroundColor: "#F8FAFC" }}>
+                  {["Profil", "Nombre de leads", "Part"].map(h => (
+                    <TableHead key={h} className="text-[11px] font-semibold" style={{ color: "#8B95A5" }}>{h}</TableHead>
+                  ))}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {profileSummary.length === 0 ? (
+                  <TableRow><TableCell colSpan={3} className="text-center py-8 text-[13px]" style={{ color: "#8B95A5" }}>Aucune donnée ce mois</TableCell></TableRow>
+                ) : profileSummary.map(([label, count]) => {
+                  const pct = leadsThisMonth.length > 0 ? Math.round((count / leadsThisMonth.length) * 100) : 0;
+                  return (
+                    <TableRow key={label}>
+                      <TableCell className="text-[13px] font-medium" style={{ color: "#1D2530" }}>{label}</TableCell>
+                      <TableCell className="text-[13px] font-semibold" style={{ color: "#1B5BDA" }}>{count}</TableCell>
+                      <TableCell className="text-[12px]" style={{ color: "#616B7C" }}>{pct}%</TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        </TabsContent>
       </Tabs>
     </div>
   );

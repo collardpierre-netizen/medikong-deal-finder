@@ -530,7 +530,7 @@ Deno.serve(async (req) => {
   let productsEnriched = 0;
   let offersUpserted = 0;
   try {
-    const result = await syncOffers(sb, targetCountry, vatRate, vatMultiplier, syncLogId, lastOffset, startTime, fetchMultiVendor);
+    const result = await syncOffers(sb, targetCountry, vatRate, vatMultiplier, syncLogId, lastOffset, startTime, fetchMultiVendor, recordEndpointError, recordProgress);
     productsEnriched = result?.products_enriched || 0;
     offersUpserted = result?.offers_upserted || 0;
   } catch (e: any) {
@@ -575,6 +575,8 @@ async function syncOffers(
   startOffset: number,
   startTime: number,
   fetchMultiVendor: boolean,
+  recordEndpointError: (endpoint: string, status: number | null, message: string) => Promise<void>,
+  recordProgress: (delta: Record<string, number>) => Promise<void>,
 ) {
   const executionProfile = getExecutionProfile(fetchMultiVendor);
   const { token, baseUrl } = await getQogitaToken(sb);

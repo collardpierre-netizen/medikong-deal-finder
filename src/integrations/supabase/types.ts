@@ -2266,6 +2266,7 @@ export type Database = {
       }
       manufacturers: {
         Row: {
+          aliases: string[] | null
           brand_count: number | null
           certifications: string[] | null
           country_of_origin: string | null
@@ -2277,6 +2278,7 @@ export type Database = {
           legal_name: string | null
           logo_url: string | null
           name: string
+          norm_key: string | null
           product_count: number | null
           proposed_by_vendor_id: string | null
           qogita_qid: string | null
@@ -2294,6 +2296,7 @@ export type Database = {
           year_founded: number | null
         }
         Insert: {
+          aliases?: string[] | null
           brand_count?: number | null
           certifications?: string[] | null
           country_of_origin?: string | null
@@ -2305,6 +2308,7 @@ export type Database = {
           legal_name?: string | null
           logo_url?: string | null
           name: string
+          norm_key?: string | null
           product_count?: number | null
           proposed_by_vendor_id?: string | null
           qogita_qid?: string | null
@@ -2322,6 +2326,7 @@ export type Database = {
           year_founded?: number | null
         }
         Update: {
+          aliases?: string[] | null
           brand_count?: number | null
           certifications?: string[] | null
           country_of_origin?: string | null
@@ -2333,6 +2338,7 @@ export type Database = {
           legal_name?: string | null
           logo_url?: string | null
           name?: string
+          norm_key?: string | null
           product_count?: number | null
           proposed_by_vendor_id?: string | null
           qogita_qid?: string | null
@@ -9850,6 +9856,10 @@ export type Database = {
       }
       resolve_product_brands: { Args: never; Returns: undefined }
       resolve_product_categories: { Args: never; Returns: undefined }
+      resolve_product_manufacturers: {
+        Args: { _dry_run?: boolean; _limit?: number }
+        Returns: Json
+      }
       resolve_product_pvp: {
         Args: { _country_code?: string; _product_id: string }
         Returns: {

@@ -308,7 +308,7 @@ function VendorOffersPanel({ vendor }: { vendor: any }) {
   const [searchTerm, setSearchTerm] = useState("");
   const { data: searchResults = [] } = useProductSearch(searchTerm);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
-  const [of, setOf] = useState({ unit_price: "", mov_amount: "", product_url: "", stock_status: "unknown", delivery_days: "", notes: "" });
+  const [of, setOf] = useState({ unit_price: "", mov_amount: "", product_url: "", stock_status: "unknown", delivery_days: "", notes: "", pack_size_override: "" });
 
   const saveOffer = useMutation({
     mutationFn: async () => {
@@ -322,6 +322,7 @@ function VendorOffersPanel({ vendor }: { vendor: any }) {
         stock_status: of.stock_status,
         delivery_days: of.delivery_days ? parseInt(of.delivery_days) : null,
         notes: of.notes || null,
+        pack_size_override: of.pack_size_override ? parseInt(of.pack_size_override) : null,
       };
       const { error } = await supabase.from("external_offers").insert(payload);
       if (error) throw error;
@@ -330,7 +331,7 @@ function VendorOffersPanel({ vendor }: { vendor: any }) {
       qc.invalidateQueries({ queryKey: ["admin-external-offers", vendor.id] });
       setOfferDialog(false);
       setSelectedProduct(null);
-      setOf({ unit_price: "", mov_amount: "", product_url: "", stock_status: "unknown", delivery_days: "", notes: "" });
+      setOf({ unit_price: "", mov_amount: "", product_url: "", stock_status: "unknown", delivery_days: "", notes: "", pack_size_override: "" });
       toast.success("Offre créée");
     },
     onError: (e: any) => toast.error(e.message),
@@ -768,7 +769,23 @@ function VendorOffersPanel({ vendor }: { vendor: any }) {
               </div>
               <div><Label>Délai (jours)</Label><Input type="number" value={of.delivery_days} onChange={e => setOf(p => ({ ...p, delivery_days: e.target.value }))} /></div>
             </div>
-            <div><Label>Notes</Label><Input value={of.notes} onChange={e => setOf(p => ({ ...p, notes: e.target.value }))} /></div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Conditionnement (unités/pack)</Label>
+                <Input
+                  type="number"
+                  min="1"
+                  step="1"
+                  placeholder="auto"
+                  value={of.pack_size_override}
+                  onChange={e => setOf(p => ({ ...p, pack_size_override: e.target.value }))}
+                />
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  Laisser vide = utilise le pack du produit ou le déduit du nom (ex: 4 pour « 4×125 ml »).
+                </p>
+              </div>
+              <div><Label>Notes</Label><Input value={of.notes} onChange={e => setOf(p => ({ ...p, notes: e.target.value }))} /></div>
+            </div>
             <Button className="w-full" onClick={() => saveOffer.mutate()} disabled={!selectedProduct || !of.unit_price || !of.product_url || saveOffer.isPending}>
               {saveOffer.isPending ? "Enregistrement..." : "Créer l'offre"}
             </Button>

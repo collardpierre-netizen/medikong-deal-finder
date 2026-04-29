@@ -21,6 +21,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCountry } from "@/contexts/CountryContext";
 import { usePriceDisplay } from "@/contexts/PriceDisplayContext";
 import { useProductVatRate, vatSourceLabel } from "@/hooks/useProductVatRate";
+import { resolvePackSize, packSizeSourceLabel } from "@/lib/pack-size";
 import { useProductPrice } from "@/hooks/useProductPriceLevel";
 import { Helmet } from "react-helmet-async";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -1433,6 +1434,16 @@ export default function ProductPage() {
                           const priceLabel = isTVAC ? "TVAC" : "HTVA";
                           const secondaryLabel = isTVAC ? "HTVA" : "TVAC";
 
+                          // Conditionnement : combien d'unités contient le pack vendu ?
+                          // Priorité : override sur l'offre > pack du produit > extraction depuis le nom > 1.
+                          const pack = resolvePackSize({
+                            offerOverride: (eo as any).pack_size_override,
+                            productPackSize: (product as any)?.pack_size,
+                            productName: product?.name,
+                          });
+                          const showUnitPrice = pack.packSize > 1;
+                          const unitDisplayPrice = showUnitPrice ? displayPrice / pack.packSize : 0;
+
                           const handleClick = async () => {
                             // Track the lead
                             try {
@@ -1488,6 +1499,14 @@ export default function ProductPage() {
                                   <p className="text-[11px] text-muted-foreground tabular-nums" title={`Source TVA : ${vatSourceLabel(tvaSource)}`}>
                                     {formatEur(secondaryPrice)} € {secondaryLabel} <span className="opacity-60">· TVA {tvaRate}%</span>
                                   </p>
+                                  {showUnitPrice && (
+                                    <p
+                                      className="text-[11px] text-muted-foreground tabular-nums"
+                                      title={packSizeSourceLabel(pack.source)}
+                                    >
+                                      soit {formatEur(unitDisplayPrice)} €/unité <span className="opacity-60">· pack de {pack.packSize}</span>
+                                    </p>
+                                  )}
                                   {Number(eo.mov_amount || 0) > 0 && (
                                     <p className="text-[11px] text-muted-foreground">MOV {Number(eo.mov_amount).toFixed(0)} €</p>
                                   )}

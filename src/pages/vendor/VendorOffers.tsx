@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { VCard } from "@/components/vendor/ui/VCard";

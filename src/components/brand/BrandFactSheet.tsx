@@ -389,8 +389,10 @@ export function BrandFactSheet({ brand }: { brand: BrandRow }) {
             Google Trends BE, études partenaires, revue de presse Le Pharmacien & Journal du Pharmacien. Mise à jour mensuelle.
           </Disclaimer>
         </Card>
+        )}
 
         {/* ─── Section 4 : Avis pharmaciens vérifiés ──────────────────── */}
+        {hasReviews && (
         <Card className="p-5">
           <CardHeader icon={Users} color="bg-orange-50 text-orange-700" title="Avis pharmaciens vérifiés" />
 

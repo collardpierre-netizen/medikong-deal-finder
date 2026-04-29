@@ -184,10 +184,9 @@ export default function VendorFormDialog({ open, onOpenChange }: Props) {
     if (!ev) return;
     setAttaching(true);
     try {
-      const { data, error } = await supabase.functions.invoke("create-vendor-account", {
+      const { data, error } = await supabase.functions.invoke("attach-user-to-vendor", {
         body: {
           vendor_id: ev.id,
-          company_name: ev.company_name || ev.name || form.company_name.trim(),
           email: form.email.trim(),
         },
       });

@@ -1,3 +1,5 @@
+import { useEffect, useRef } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Clock, CheckCircle2, XCircle, Archive, Loader2, Inbox } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -60,7 +62,11 @@ export function VendorSubmissionsList() {
         const Icon = meta.icon;
         const payload = (it.proposed_payload ?? {}) as Record<string, any>;
         return (
-          <div key={it.id} className="border rounded-lg p-3">
+          <div
+            key={it.id}
+            ref={highlightId === it.id ? highlightRef : undefined}
+            className={`border rounded-lg p-3 transition-colors ${highlightId === it.id ? "ring-2 ring-primary/40 bg-primary/5" : ""}`}
+          >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-sm font-semibold truncate">

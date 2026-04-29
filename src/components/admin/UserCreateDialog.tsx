@@ -53,6 +53,7 @@ const initialAdmin = {
 };
 
 export default function UserCreateDialog({ open, onOpenChange, onCreated }: Props) {
+  const navigate = useNavigate();
   const [tab, setTab] = useState("buyer");
   const [saving, setSaving] = useState(false);
   const [buyer, setBuyer] = useState(initialBuyer);

@@ -634,13 +634,29 @@ export function ProductSubmissionDialog({ children }: { children?: React.ReactNo
               </div>
             )}
 
+            {importJobId && (
+              <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-2">
+                <div className="flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                  <h3 className="text-sm font-semibold">Soumission en cours côté serveur</h3>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Vous pouvez fermer cette fenêtre — le traitement continue en arrière-plan.
+                  Suivi complet dans <a href="/mes-imports" className="underline">Mes imports</a>.
+                </p>
+                <ImportJobProgress jobId={importJobId} onCompleted={handleJobCompleted} />
+              </div>
+            )}
+
             <DialogFooter>
-              <Button variant="ghost" onClick={() => setOpen(false)} disabled={importMutation.isPending}>Annuler</Button>
+              <Button variant="ghost" onClick={() => setOpen(false)} disabled={importMutation.isPending || !!importJobId}>
+                {importJobId ? "Fermer" : "Annuler"}
+              </Button>
               <Button
                 onClick={() => importMutation.mutate()}
-                disabled={importMutation.isPending || validCount === 0 || !vendor?.id}
+                disabled={importMutation.isPending || !!importJobId || validCount === 0 || !vendor?.id}
               >
-                {importMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                {(importMutation.isPending || !!importJobId) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                 Soumettre {validCount > 0 ? `${validCount} référence${validCount > 1 ? "s" : ""}` : ""}
               </Button>
             </DialogFooter>

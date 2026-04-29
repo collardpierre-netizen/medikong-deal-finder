@@ -9656,9 +9656,35 @@ export type Database = {
         }
         Returns: Json
       }
+      admin_claim_product_submission: {
+        Args: { _submission_id: string }
+        Returns: undefined
+      }
+      admin_find_submission_duplicates: {
+        Args: { _submission_id: string }
+        Returns: {
+          brand_name: string
+          is_active: boolean
+          manufacturer_name: string
+          match_reason: string
+          product_id: string
+          product_name: string
+          product_slug: string
+          similarity: number
+        }[]
+      }
       admin_redispatch_catalog_notifications: {
         Args: { _source_id: string; _source_type: string }
         Returns: number
+      }
+      admin_review_product_submission: {
+        Args: {
+          _comment?: string
+          _decision: string
+          _merge_into_product_id?: string
+          _submission_id: string
+        }
+        Returns: Json
       }
       audit_backup_tables_rls: {
         Args: never

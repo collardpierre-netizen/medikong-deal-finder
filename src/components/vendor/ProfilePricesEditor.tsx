@@ -164,6 +164,7 @@ export default function ProfilePricesEditor({ offerId, basePrice }: Props) {
         if (error) throw error;
       }
       qc.invalidateQueries({ queryKey: ["offer-buyer-profile-prices", offerId] });
+      qc.invalidateQueries({ queryKey: ["resolve-offer-price-by-profile", offerId] });
       toast.success("Prix par profil enregistrés");
     } catch (err: any) {
       toast.error(err.message || "Erreur lors de l'enregistrement");

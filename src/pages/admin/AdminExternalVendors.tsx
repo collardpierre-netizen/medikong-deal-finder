@@ -393,11 +393,20 @@ function VendorOffersPanel({ vendor }: { vendor: any }) {
     });
     // Upsert pour mettre à jour les offres existantes (vendor + produit) au lieu de planter
     // sur la contrainte unique external_offers_product_id_external_vendor_id_key
-    const payloadsWithFlags = payloads.map(p => ({
-      ...p,
-      is_active: true,
-      updated_at: new Date().toISOString(),
-    }));
+    // Dédoublonnage : si le CSV contient plusieurs lignes pour le même produit,
+    // on garde la dernière occurrence (sinon Postgres lève "ON CONFLICT DO UPDATE
+    // command cannot affect row a second time").
+    const dedupMap = new Map<string, typeof payloads[number] & { is_active: boolean; updated_at: string }>();
+    payloads.forEach(p => {
+      dedupMap.set(`${p.external_vendor_id}::${p.product_id}`, {
+        ...p,
+        is_active: true,
+        updated_at: new Date().toISOString(),
+      });
+    });
+    const payloadsWithFlags = Array.from(dedupMap.values());
+    const duplicatesRemoved = payloads.length - payloadsWithFlags.length;
+
     const { error } = await supabase
       .from("external_offers")
       .upsert(payloadsWithFlags, { onConflict: "external_vendor_id,product_id" });
@@ -406,7 +415,11 @@ function VendorOffersPanel({ vendor }: { vendor: any }) {
     qc.invalidateQueries({ queryKey: ["admin-external-offers", vendor.id] });
     setCsvDialog(false);
     setCsvPreview(null);
-    toast.success(`${payloadsWithFlags.length} offres importées ou mises à jour`);
+    toast.success(
+      duplicatesRemoved > 0
+        ? `${payloadsWithFlags.length} offres importées (${duplicatesRemoved} doublon(s) GTIN fusionné(s))`
+        : `${payloadsWithFlags.length} offres importées ou mises à jour`
+    );
   };
 
   return (

@@ -391,13 +391,22 @@ function VendorOffersPanel({ vendor }: { vendor: any }) {
         ...(isValidDate ? { created_at: parsedDate!.toISOString() } : {}),
       };
     });
-    const { error } = await supabase.from("external_offers").insert(payloads);
+    // Upsert pour mettre à jour les offres existantes (vendor + produit) au lieu de planter
+    // sur la contrainte unique external_offers_product_id_external_vendor_id_key
+    const payloadsWithFlags = payloads.map(p => ({
+      ...p,
+      is_active: true,
+      updated_at: new Date().toISOString(),
+    }));
+    const { error } = await supabase
+      .from("external_offers")
+      .upsert(payloadsWithFlags, { onConflict: "external_vendor_id,product_id" });
     setCsvImporting(false);
     if (error) { toast.error(error.message); return; }
     qc.invalidateQueries({ queryKey: ["admin-external-offers", vendor.id] });
     setCsvDialog(false);
     setCsvPreview(null);
-    toast.success(`${payloads.length} offres importées`);
+    toast.success(`${payloadsWithFlags.length} offres importées ou mises à jour`);
   };
 
   return (

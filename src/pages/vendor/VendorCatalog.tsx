@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ProductSubmissionDialog } from "@/components/vendor/catalog/ProductSubmissionDialog";
 import { VendorSubmissionsList } from "@/components/vendor/catalog/VendorSubmissionsList";
+import { VendorCatalogXlsxImport } from "@/components/vendor/catalog/VendorCatalogXlsxImport";
 
 type EntityType = "products" | "brands" | "manufacturers";
 
@@ -93,8 +94,10 @@ export default function VendorCatalog() {
             Parcourez les marques, fabricants et produits déjà référencés et démarrez une offre en un clic.
           </p>
         </div>
-        <ProductSubmissionDialog />
-      </header>
+        <div className="flex gap-2">
+          <VendorCatalogXlsxImport />
+          <ProductSubmissionDialog />
+        </div>
 
       <VCard className="p-4">
         <Tabs value={tab} onValueChange={(v) => setTab(v as EntityType)} className="space-y-4">

@@ -307,8 +307,9 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
       };
 
       const lines: ImportLine[] = rows.map((r: any) => ({
-        ean: cleanCode(r["EAN (ou CNK)"] ?? r["EAN"] ?? r["ean"]),
+        ean: cleanCode(r["EAN (ou CNK)"] ?? r["EAN"] ?? r["ean"] ?? r["GTIN"] ?? r["gtin"]),
         cnk: cleanCode(r["CNK (optionnel)"] ?? r["CNK"] ?? r["cnk"]),
+        sku: cleanCode(r["SKU"] ?? r["sku"] ?? r["Référence"] ?? r["Reference"] ?? r["Ref"] ?? r["ref"]),
         quantity: Number(r["Quantité"] || r["Quantite"] || r["quantity"] || r["Qty"] || 1),
         currentPrice: parsePrice(
           r["Prix actuel HTVA (€)"] ??
@@ -319,7 +320,7 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
           r["Prix"] ??
           r["price"]
         ),
-      })).filter(l => l.ean || l.cnk);
+      })).filter(l => l.ean || l.cnk || l.sku);
 
       if (lines.length === 0) {
         toast.error("Aucune ligne valide trouvée dans le fichier");

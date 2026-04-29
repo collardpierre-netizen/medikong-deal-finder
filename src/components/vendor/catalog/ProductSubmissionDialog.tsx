@@ -22,6 +22,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { isValidGtin, isValidCnk, normalizeDigits } from "@/lib/product-codes";
 import { useCategorySuggestion } from "@/hooks/useCategorySuggestion";
 import { Sparkles } from "lucide-react";
+import { startImportJob } from "@/hooks/useImportJob";
+import { ImportJobProgress } from "@/components/imports/ImportJobProgress";
 
 const submissionSchema = z.object({
   product_name: z.string().trim().min(2, "Nom requis (min 2 caractères)").max(200, "Max 200 caractères"),
@@ -229,6 +231,7 @@ export function ProductSubmissionDialog({ children }: { children?: React.ReactNo
   const [importRows, setImportRows] = useState<ImportRow[]>([]);
   const [fileIssue, setFileIssue] = useState<string | null>(null);
   const [showRejectedOnly, setShowRejectedOnly] = useState(true);
+  const [importJobId, setImportJobId] = useState<string | null>(null);
 
   const { suggestion: catSuggestion, loading: catSuggestionLoading } = useCategorySuggestion(form.gtin, form.cnk_code);
 
@@ -236,6 +239,7 @@ export function ProductSubmissionDialog({ children }: { children?: React.ReactNo
     setForm({ product_name: "", brand_name: "", manufacturer_name: "", gtin: "", cnk_code: "", category_hint: "", notes: "" });
     setErrors({});
     setFileName(null); setImportRows([]); setFileIssue(null); setShowRejectedOnly(true);
+    setImportJobId(null);
     setTab("form");
   };
 
@@ -277,33 +281,38 @@ export function ProductSubmissionDialog({ children }: { children?: React.ReactNo
       if (!vendor?.id) throw new Error("Vendeur introuvable");
       const valid = importRows.filter((r) => r.errors.length === 0);
       if (valid.length === 0) throw new Error("Aucune ligne valide à importer");
-      const payloads = valid.map((r) => ({
-        vendor_id: vendor.id,
-        status: "submitted" as const,
-        proposed_payload: Object.fromEntries(
+
+      const jobRows = valid.map((r) => ({
+        index: r.index,
+        data: Object.fromEntries(
           Object.entries(r.data).filter(([, v]) => v && String(v).trim() !== "")
         ),
+        errors: [],
       }));
-      for (let i = 0; i < payloads.length; i += 100) {
-        const batch = payloads.slice(i, i + 100);
-        const { error } = await supabase.from("product_submissions").insert(batch as any);
-        if (error) throw error;
-      }
-      return valid.length;
-    },
-    onSuccess: (count) => {
-      toast({
-        title: `${count} référence${count > 1 ? "s" : ""} soumise${count > 1 ? "s" : ""}`,
-        description: "Suivez l'avancement dans « Mes propositions ».",
+
+      const newJobId = await startImportJob({
+        jobType: "product_submission",
+        fileName: fileName ?? undefined,
+        rows: jobRows,
+        metadata: { vendor_id: vendor.id },
       });
-      qc.invalidateQueries({ queryKey: ["vendor-submissions"] });
-      reset();
-      setOpen(false);
+      setImportJobId(newJobId);
+      return valid.length;
     },
     onError: (err: any) => {
       toast({ title: "Erreur d'import", description: err?.message ?? "Import impossible", variant: "destructive" });
     },
   });
+
+  const handleJobCompleted = () => {
+    toast({
+      title: "Import terminé",
+      description: "Suivez l'avancement dans « Mes propositions ».",
+    });
+    qc.invalidateQueries({ queryKey: ["vendor-submissions"] });
+    reset();
+    setOpen(false);
+  };
 
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm((f) => ({ ...f, [k]: e.target.value }));
@@ -625,13 +634,29 @@ export function ProductSubmissionDialog({ children }: { children?: React.ReactNo
               </div>
             )}
 
+            {importJobId && (
+              <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-2">
+                <div className="flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                  <h3 className="text-sm font-semibold">Soumission en cours côté serveur</h3>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Vous pouvez fermer cette fenêtre — le traitement continue en arrière-plan.
+                  Suivi complet dans <a href="/mes-imports" className="underline">Mes imports</a>.
+                </p>
+                <ImportJobProgress jobId={importJobId} onCompleted={handleJobCompleted} />
+              </div>
+            )}
+
             <DialogFooter>
-              <Button variant="ghost" onClick={() => setOpen(false)} disabled={importMutation.isPending}>Annuler</Button>
+              <Button variant="ghost" onClick={() => setOpen(false)} disabled={importMutation.isPending || !!importJobId}>
+                {importJobId ? "Fermer" : "Annuler"}
+              </Button>
               <Button
                 onClick={() => importMutation.mutate()}
-                disabled={importMutation.isPending || validCount === 0 || !vendor?.id}
+                disabled={importMutation.isPending || !!importJobId || validCount === 0 || !vendor?.id}
               >
-                {importMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                {(importMutation.isPending || !!importJobId) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                 Soumettre {validCount > 0 ? `${validCount} référence${validCount > 1 ? "s" : ""}` : ""}
               </Button>
             </DialogFooter>

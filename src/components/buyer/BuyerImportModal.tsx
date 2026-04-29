@@ -788,20 +788,39 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
                                 />
                               )}
                             </td>
-                            <td className="p-2 max-w-[200px]">
+                            <td className="p-2 max-w-[220px]">
                               {r.status === "found" ? (
-                                <div>
+                                <div className="space-y-1">
                                   <p className="font-medium text-foreground text-xs line-clamp-1">{r.productName}</p>
                                   <p className="text-[10px] text-muted-foreground truncate">
-                                    {r.ean && `EAN: ${r.ean}`}{r.ean && r.cnk && " · "}{r.cnk && `CNK: ${r.cnk}`}
+                                    {[
+                                      r.ean && `EAN: ${r.ean}`,
+                                      r.cnk && `CNK: ${r.cnk}`,
+                                      r.sku && `SKU: ${r.sku}`,
+                                    ].filter(Boolean).join(" · ")}
                                   </p>
+                                  {r.matchedBy && (
+                                    <span
+                                      className={`inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[9px] font-medium ${MATCH_FIELD_BADGE[r.matchedBy]}`}
+                                      title={`Produit identifié via ${MATCH_FIELD_LABEL[r.matchedBy]}`}
+                                    >
+                                      ✓ {MATCH_FIELD_LABEL[r.matchedBy]}
+                                    </span>
+                                  )}
                                 </div>
                               ) : (
-                                <div>
+                                <div className="space-y-1">
                                   <p className="font-medium text-destructive text-xs">Non trouvé</p>
                                   <p className="text-[10px] text-destructive/70 truncate">
-                                    {r.ean && `EAN: ${r.ean}`}{r.ean && r.cnk && " · "}{r.cnk && `CNK: ${r.cnk}`}
+                                    {[
+                                      r.ean && `EAN: ${r.ean}`,
+                                      r.cnk && `CNK: ${r.cnk}`,
+                                      r.sku && `SKU: ${r.sku}`,
+                                    ].filter(Boolean).join(" · ")}
                                   </p>
+                                  <span className="inline-flex items-center gap-1 rounded-full border border-destructive/30 bg-destructive/5 px-1.5 py-0.5 text-[9px] font-medium text-destructive">
+                                    Aucun match (GTIN/CNK/SKU)
+                                  </span>
                                 </div>
                               )}
                             </td>

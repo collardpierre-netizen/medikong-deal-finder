@@ -176,6 +176,7 @@ const translations: Record<Lang, Record<string, string>> = {
     comingSoon: "Deze sectie is binnenkort beschikbaar.",
     catalog: "Catalogus",
     myOffers: "Mijn Aanbiedingen",
+    proposeProduct: "Product voorstellen",
     opportunities: "Kansen",
     positioning: "Positionering",
     marketIntel: "Marktbewaking",

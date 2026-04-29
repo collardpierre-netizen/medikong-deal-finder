@@ -342,65 +342,20 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
         currentPrice: line.currentPrice,
       }));
 
-      const matchedByIndex: MatchedLine[] = new Array(lines.length);
-
-      if (lines.length <= CHUNK_SIZE) {
-        const data = await queryMatchImportLines(payload);
-        data.forEach((row) => {
-          matchedByIndex[row.lineIndex] = row.result;
+      // Création du job asynchrone — le worker serveur traite par batch et stream la progression via Realtime
+      try {
+        const newJobId = await startImportJob({
+          jobType: "buyer_comparator",
+          fileName: file.name,
+          fileSizeBytes: file.size,
+          rows: payload,
+          metadata: { save_to_account: saveToAccount && !!user },
         });
-        setProgress((p) => ({ ...p, current: lines.length }));
-      } else {
-        const chunks = [] as typeof payload[];
-        for (let start = 0; start < payload.length; start += CHUNK_SIZE) {
-          chunks.push(payload.slice(start, start + CHUNK_SIZE));
-        }
-
-        let processedLines = 0;
-
-        for (const chunk of chunks) {
-          const data = await queryMatchImportLines(chunk);
-          data.forEach((row) => {
-              matchedByIndex[row.lineIndex] = row.result;
-          });
-          processedLines += chunk.length;
-          setProgress((p) => ({ ...p, current: Math.min(processedLines, lines.length) }));
-          await waitForUiPaint();
-        }
-      }
-
-      const finalResults = matchedByIndex.filter(Boolean);
-      setResults(finalResults);
-      // Auto-select all found items with savings
-      const autoSelected = new Set<number>();
-      finalResults.forEach((r, i) => {
-        if (r.status === "found" && (r.saving || 0) > 0) autoSelected.add(i);
-      });
-      setSelected(autoSelected);
-      setPhase("results");
-
-      // Persist matched lines to user account (upsert: update price, never delete others)
-      if (saveToAccount && user) {
-        const toUpsert = finalResults
-          .filter((r) => r.status === "found" && r.productId && r.currentPrice > 0)
-          .map((r) => ({
-            user_id: user.id,
-            product_id: r.productId!,
-            my_purchase_price: r.currentPrice,
-            updated_at: new Date().toISOString(),
-          }));
-        if (toUpsert.length > 0) {
-          const { error } = await supabase
-            .from("user_prices")
-            .upsert(toUpsert, { onConflict: "user_id,product_id" });
-          if (error) {
-            console.error("Save to account failed:", error);
-            toast.error("Impossible d'enregistrer dans votre compte");
-          } else {
-            setSavedCount(toUpsert.length);
-            toast.success(`${toUpsert.length} prix enregistré(s) dans Mes Prix`);
-          }
-        }
+        setJobId(newJobId);
+      } catch (err: any) {
+        console.error(err);
+        toast.error(err?.message ?? "Impossible de démarrer l'import");
+        setPhase("instructions");
       }
     } catch (err) {
       console.error(err);

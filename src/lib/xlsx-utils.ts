@@ -12,7 +12,7 @@ export function exportToXlsx(data: any[], filename: string, sheetName = "Data") 
 
 export function downloadProductTemplate() {
   const headers = [
-    { gtin: "5412345678901", name: "Exemple Produit Médical", slug: "", cnk_code: "1234567", sku: "", brand_name: "Marque Exemple", category_name: "Catégorie Exemple", description: "Description du produit", short_description: "Description courte", unit_quantity: 1, origin_country: "BE", image_urls: "https://example.com/img1.jpg;https://example.com/img2.jpg", source: "medikong", is_active: true },
+    { gtin: "5412345678901", name: "Exemple Produit Médical", slug: "", cnk_code: "1234567", sku: "", brand_name: "Marque Exemple", category_name: "Catégorie Exemple", description: "Description du produit", short_description: "Description courte", unit_quantity: 1, origin_country: "BE", image_urls: "https://example.com/img1.jpg;https://example.com/img2.jpg", source: "medikong", is_active: true, pvp_ttc: 24.90, pvp_source: "apb", pvp_country_code: "BE" },
   ];
   const ws = XLSX.utils.json_to_sheet(headers);
   // Set column widths
@@ -20,6 +20,7 @@ export function downloadProductTemplate() {
     { wch: 16 }, { wch: 35 }, { wch: 25 }, { wch: 12 }, { wch: 12 },
     { wch: 20 }, { wch: 20 }, { wch: 40 }, { wch: 30 }, { wch: 8 },
     { wch: 8 }, { wch: 50 }, { wch: 12 }, { wch: 8 },
+    { wch: 10 }, { wch: 14 }, { wch: 10 },
   ];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Produits");

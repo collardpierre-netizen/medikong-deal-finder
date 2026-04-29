@@ -104,8 +104,15 @@ export default function VendorCatalog() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [tab, setTab] = useState<EntityType>("products");
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [filters, setFilters] = useState<CatalogFilters>(emptyCatalogFilters);
   const [productSort, setProductSort] = useState<ProductSort>("popularity");
+
+  // Debounce la recherche pour éviter une requête à chaque frappe
+  useEffect(() => {
+    const id = setTimeout(() => setDebouncedSearch(search), 250);
+    return () => clearTimeout(id);
+  }, [search]);
 
   // Restaure le filtre marque/fabricant via querystring (retour depuis /vendor/offers)
   const restoredRef = useRef(false);
@@ -123,7 +130,25 @@ export default function VendorCatalog() {
     setSearchParams(next, { replace: true });
   }, [searchParams, setSearchParams]);
 
-  const { data = [], isLoading } = useCatalogList(tab, search, filters, productSort);
+  const { data = [], isLoading } = useCatalogList(tab, debouncedSearch, filters, productSort);
+
+  // Récupère le label de la marque / fabricant actif pour le bandeau de scope
+  const { data: activeScopeLabel } = useQuery({
+    queryKey: ["vendor-catalog-scope-label", filters.brandId, filters.manufacturerId],
+    enabled: !!(filters.brandId || filters.manufacturerId),
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      if (filters.brandId) {
+        const { data } = await supabase.from("brands").select("name").eq("id", filters.brandId).maybeSingle();
+        return data?.name ? { kind: "brand" as const, name: data.name } : null;
+      }
+      if (filters.manufacturerId) {
+        const { data } = await supabase.from("manufacturers").select("name").eq("id", filters.manufacturerId).maybeSingle();
+        return data?.name ? { kind: "manufacturer" as const, name: data.name } : null;
+      }
+      return null;
+    },
+  });
 
   const startOffer = (productId?: string) => {
     const params = new URLSearchParams({ action: "create" });

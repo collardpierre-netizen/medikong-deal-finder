@@ -867,6 +867,13 @@ export type Database = {
             foreignKeyName: "categories_parent_id_fkey"
             columns: ["parent_id"]
             isOneToOne: false
+            referencedRelation: "admin_category_vat_audit"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
             referencedRelation: "categories"
             referencedColumns: ["id"]
           },
@@ -1062,6 +1069,13 @@ export type Database = {
           sort_order?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "cms_featured_categories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: true
+            referencedRelation: "admin_category_vat_audit"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "cms_featured_categories_category_id_fkey"
             columns: ["category_id"]
@@ -2352,6 +2366,13 @@ export type Database = {
             foreignKeyName: "margin_rules_category_id_fkey"
             columns: ["category_id"]
             isOneToOne: false
+            referencedRelation: "admin_category_vat_audit"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "margin_rules_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
             referencedRelation: "categories"
             referencedColumns: ["id"]
           },
@@ -2600,6 +2621,13 @@ export type Database = {
           offer_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "offer_categories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "admin_category_vat_audit"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "offer_categories_category_id_fkey"
             columns: ["category_id"]
@@ -4486,6 +4514,13 @@ export type Database = {
             columns: ["brand_id"]
             isOneToOne: false
             referencedRelation: "brands"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "admin_category_vat_audit"
             referencedColumns: ["id"]
           },
           {
@@ -7220,6 +7255,13 @@ export type Database = {
             foreignKeyName: "vendor_catalog_interests_category_id_fkey"
             columns: ["category_id"]
             isOneToOne: false
+            referencedRelation: "admin_category_vat_audit"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_catalog_interests_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
             referencedRelation: "categories"
             referencedColumns: ["id"]
           },
@@ -8284,6 +8326,13 @@ export type Database = {
             foreignKeyName: "vendor_price_alert_rules_category_id_fkey"
             columns: ["category_id"]
             isOneToOne: false
+            referencedRelation: "admin_category_vat_audit"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_price_alert_rules_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
             referencedRelation: "categories"
             referencedColumns: ["id"]
           },
@@ -8837,6 +8886,33 @@ export type Database = {
       }
     }
     Views: {
+      admin_category_vat_audit: {
+        Row: {
+          id: string | null
+          name: string | null
+          parent_id: string | null
+          product_count: number | null
+          slug: string | null
+          vat_rate: number | null
+          was_auto_defaulted: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "admin_category_vat_audit"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       brand_logistics_stats: {
         Row: {
           avg_delivery_days: number | null

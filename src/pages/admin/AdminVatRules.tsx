@@ -20,7 +20,54 @@ import { Trash2, Plus, ExternalLink, Info } from "lucide-react";
  */
 export default function AdminVatRules() {
   const qc = useQueryClient();
-  const [tab, setTab] = useState<"cnk" | "overrides">("cnk");
+  const [tab, setTab] = useState<"cnk" | "overrides" | "categories">("cnk");
+  const [catSearch, setCatSearch] = useState("");
+
+  // ── Audit catégories TVA
+  const { data: catAudit = [], isLoading: loadingCat } = useQuery({
+    queryKey: ["admin-category-vat-audit"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("admin_category_vat_audit" as any)
+        .select("*")
+        .order("was_auto_defaulted", { ascending: false })
+        .order("product_count", { ascending: false })
+        .limit(500);
+      if (error) throw error;
+      return (data as any[]) || [];
+    },
+  });
+
+  const updateCatVat = useMutation({
+    mutationFn: async ({ id, rate }: { id: string; rate: number }) => {
+      const { error } = await supabase
+        .from("categories")
+        .update({ vat_rate: rate })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-category-vat-audit"] });
+      toast.success("Taux mis à jour");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const filteredCat = useMemo(() => {
+    const q = catSearch.trim().toLowerCase();
+    if (!q) return catAudit;
+    return catAudit.filter((c: any) =>
+      (c.name || "").toLowerCase().includes(q) || (c.slug || "").toLowerCase().includes(q),
+    );
+  }, [catAudit, catSearch]);
+
+  const catStats = useMemo(() => {
+    const total = catAudit.length;
+    const auto = catAudit.filter((c: any) => c.was_auto_defaulted).length;
+    const at6 = catAudit.filter((c: any) => Number(c.vat_rate) === 6).length;
+    const at21 = catAudit.filter((c: any) => Number(c.vat_rate) === 21).length;
+    return { total, auto, at6, at21 };
+  }, [catAudit]);
 
   // ── CNK mapping
   const { data: mappings = [], isLoading: loadingM } = useQuery({
@@ -107,6 +154,12 @@ export default function AdminVatRules() {
         <TabsList>
           <TabsTrigger value="cnk">Mapping CNK</TabsTrigger>
           <TabsTrigger value="overrides">Overrides produits</TabsTrigger>
+          <TabsTrigger value="categories">
+            Catégories
+            {catStats.auto > 0 && (
+              <Badge variant="destructive" className="ml-2 h-4 px-1.5 text-[10px]">{catStats.auto}</Badge>
+            )}
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="cnk" className="space-y-4">
@@ -238,6 +291,93 @@ export default function AdminVatRules() {
                         </TableCell>
                         <TableCell>
                           <a href={`/admin/produits/${p.id}`} className="text-muted-foreground hover:text-foreground"><ExternalLink className="w-3.5 h-3.5" /></a>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="categories" className="space-y-4">
+          <Card>
+            <CardContent className="pt-4 space-y-3">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="rounded-lg border p-3">
+                  <div className="text-xs text-muted-foreground">Total catégories</div>
+                  <div className="text-2xl font-semibold tabular-nums">{catStats.total}</div>
+                </div>
+                <div className="rounded-lg border p-3">
+                  <div className="text-xs text-muted-foreground">Taux 6%</div>
+                  <div className="text-2xl font-semibold tabular-nums text-emerald-600">{catStats.at6}</div>
+                </div>
+                <div className="rounded-lg border p-3">
+                  <div className="text-xs text-muted-foreground">Taux 21%</div>
+                  <div className="text-2xl font-semibold tabular-nums">{catStats.at21}</div>
+                </div>
+                <div className="rounded-lg border p-3">
+                  <div className="text-xs text-muted-foreground">Auto-appliqué (à revoir)</div>
+                  <div className={`text-2xl font-semibold tabular-nums ${catStats.auto > 0 ? "text-amber-600" : "text-emerald-600"}`}>{catStats.auto}</div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Input
+                  placeholder="Rechercher une catégorie…"
+                  value={catSearch}
+                  onChange={(e) => setCatSearch(e.target.value)}
+                  className="max-w-sm"
+                />
+                <span className="text-xs text-muted-foreground">
+                  {filteredCat.length} résultat{filteredCat.length > 1 ? "s" : ""} (max 500 catégories les plus impactantes)
+                </span>
+              </div>
+
+              {loadingCat ? (
+                <p className="text-sm text-muted-foreground py-8 text-center">Chargement…</p>
+              ) : filteredCat.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-8 text-center">Aucune catégorie trouvée.</p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Catégorie</TableHead>
+                      <TableHead className="text-right">Produits actifs</TableHead>
+                      <TableHead>Statut</TableHead>
+                      <TableHead className="text-right">TVA</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredCat.slice(0, 200).map((c: any) => (
+                      <TableRow key={c.id}>
+                        <TableCell className="max-w-[420px]">
+                          <div className="truncate" title={c.name}>{c.name}</div>
+                          <div className="text-xs text-muted-foreground font-mono">{c.slug}</div>
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">{c.product_count}</TableCell>
+                        <TableCell>
+                          {c.was_auto_defaulted ? (
+                            <Badge variant="outline" className="border-amber-300 text-amber-700 bg-amber-50">
+                              <Info className="w-3 h-3 mr-1" /> Auto 21% — à confirmer
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="border-emerald-300 text-emerald-700 bg-emerald-50">
+                              Validé
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <select
+                            className="h-8 rounded-md border border-input bg-background px-2 text-sm"
+                            value={String(c.vat_rate ?? "21")}
+                            onChange={(e) => updateCatVat.mutate({ id: c.id, rate: Number(e.target.value) })}
+                          >
+                            <option value="6">6%</option>
+                            <option value="12">12%</option>
+                            <option value="21">21%</option>
+                          </select>
                         </TableCell>
                       </TableRow>
                     ))}

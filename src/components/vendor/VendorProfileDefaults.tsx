@@ -236,6 +236,41 @@ export default function VendorProfileDefaults({ vendorId }: { vendorId: string }
                     />
                   </td>
                   <td className="px-3 py-2">
+                    <select
+                      className="w-full px-2 py-1.5 rounded-lg text-[12px] border focus:border-[#1B5BDA] focus:outline-none"
+                      style={{ borderColor: "#E2E8F0" }}
+                      value={row.default_pricing_mode}
+                      onChange={e => updateRow(idx, "default_pricing_mode", e.target.value as any)}
+                    >
+                      <option value="">— Aucun —</option>
+                      <option value="absolute">Prix HTVA (€)</option>
+                      <option value="discount_pct">Remise % vs base</option>
+                    </select>
+                  </td>
+                  <td className="px-3 py-2">
+                    {row.default_pricing_mode === "absolute" ? (
+                      <input
+                        type="number" min={0} step="0.01"
+                        className="w-full px-2 py-1.5 rounded-lg text-[12px] border focus:border-[#1B5BDA] focus:outline-none"
+                        style={{ borderColor: "#E2E8F0" }}
+                        value={row.default_price_excl_vat}
+                        onChange={e => updateRow(idx, "default_price_excl_vat", e.target.value)}
+                        placeholder="ex: 12.50"
+                      />
+                    ) : row.default_pricing_mode === "discount_pct" ? (
+                      <input
+                        type="number" min={-100} max={100} step="0.5"
+                        className="w-full px-2 py-1.5 rounded-lg text-[12px] border focus:border-[#1B5BDA] focus:outline-none"
+                        style={{ borderColor: "#E2E8F0" }}
+                        value={row.default_discount_pct}
+                        onChange={e => updateRow(idx, "default_discount_pct", e.target.value)}
+                        placeholder="ex: -5"
+                      />
+                    ) : (
+                      <span className="text-[11px]" style={{ color: "#8B95A5" }}>—</span>
+                    )}
+                  </td>
+                  <td className="px-3 py-2">
                     <button onClick={() => removeRow(idx)} className="p-1 rounded hover:bg-red-50 text-red-400 hover:text-red-600 transition-colors">
                       <Trash2 size={14} />
                     </button>

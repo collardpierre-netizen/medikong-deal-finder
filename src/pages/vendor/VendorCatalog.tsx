@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Search, Package, Building2, Tag, Plus, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useI18n } from "@/contexts/I18nContext";
 import { VCard } from "@/components/vendor/ui/VCard";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -75,6 +76,7 @@ function useCatalogList(entity: EntityType, search: string, filters: CatalogFilt
 
 export default function VendorCatalog() {
   const navigate = useNavigate();
+  const { t } = useI18n();
   const [tab, setTab] = useState<EntityType>("products");
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState<CatalogFilters>(emptyCatalogFilters);
@@ -94,18 +96,18 @@ export default function VendorCatalog() {
   };
 
   const placeholderText = useMemo(() => {
-    if (tab === "products") return "Rechercher un produit, GTIN, CNK ou marque…";
-    if (tab === "brands") return "Rechercher une marque…";
-    return "Rechercher un fabricant…";
-  }, [tab]);
+    if (tab === "products") return t("vendorCatalogSearchProducts");
+    if (tab === "brands") return t("vendorCatalogSearchBrands");
+    return t("vendorCatalogSearchManufacturers");
+  }, [tab, t]);
 
   return (
     <div className="space-y-5">
       <header className="flex items-start justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-xl font-bold text-[#1D2530]">Catalogue MediKong</h1>
+          <h1 className="text-xl font-bold text-[#1D2530]">{t("vendorCatalogTitle")}</h1>
           <p className="text-[13px] text-[#616B7C] mt-0.5">
-            Parcourez les marques, fabricants et produits déjà référencés et démarrez une offre en un clic.
+            {t("vendorCatalogSubtitle")}
           </p>
         </div>
         <div className="flex gap-2 flex-wrap">
@@ -113,7 +115,7 @@ export default function VendorCatalog() {
           <VendorCatalogXlsxImport />
           <Button asChild size="sm" className="gap-1.5">
             <Link to="/vendor/produits/proposer">
-              <Plus className="h-4 w-4" /> Proposer un produit
+              <Plus className="h-4 w-4" /> {t("proposeProduct")}
             </Link>
           </Button>
         </div>
@@ -124,13 +126,13 @@ export default function VendorCatalog() {
           <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
             <TabsList>
               <TabsTrigger value="products" className="gap-2">
-                <Package className="h-4 w-4" /> Produits
+                <Package className="h-4 w-4" /> {t("vendorCatalogTabProducts")}
               </TabsTrigger>
               <TabsTrigger value="brands" className="gap-2">
-                <Tag className="h-4 w-4" /> Marques
+                <Tag className="h-4 w-4" /> {t("vendorCatalogTabBrands")}
               </TabsTrigger>
               <TabsTrigger value="manufacturers" className="gap-2">
-                <Building2 className="h-4 w-4" /> Fabricants
+                <Building2 className="h-4 w-4" /> {t("vendorCatalogTabManufacturers")}
               </TabsTrigger>
             </TabsList>
 
@@ -157,7 +159,7 @@ export default function VendorCatalog() {
             {isLoading ? (
               <ListLoader />
             ) : data.length === 0 ? (
-              <EmptyState label="Aucun produit trouvé" />
+              <EmptyState label={t("vendorCatalogEmptyProducts")} />
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
                 {(data as any[]).map((p) => (
@@ -187,7 +189,7 @@ export default function VendorCatalog() {
                             />
                           )}
                           <Button size="sm" className="h-7 px-2 text-xs gap-1" onClick={() => startOffer(p.id)}>
-                            <Plus className="h-3 w-3" /> Créer une offre
+                            <Plus className="h-3 w-3" /> {t("vendorCatalogCreateOffer")}
                           </Button>
                         </div>
                       </div>
@@ -202,7 +204,7 @@ export default function VendorCatalog() {
             {isLoading ? (
               <ListLoader />
             ) : data.length === 0 ? (
-              <EmptyState label="Aucune marque trouvée" />
+              <EmptyState label={t("vendorCatalogEmptyBrands")} />
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
                 {(data as any[]).map((b) => (
@@ -217,7 +219,7 @@ export default function VendorCatalog() {
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold truncate">{b.name}</p>
                       <p className="text-[11px] text-muted-foreground">
-                        {b.product_count ?? 0} produits{b.main_category ? ` · ${b.main_category}` : ""}
+                        {b.product_count ?? 0} {t("vendorCatalogProductsCount")}{b.main_category ? ` · ${b.main_category}` : ""}
                       </p>
                     </div>
                     <div className="flex flex-col gap-1">
@@ -225,10 +227,10 @@ export default function VendorCatalog() {
                         target={{ kind: "brand", id: b.id, label: b.name }}
                       />
                       <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => browseBrand(b.slug)}>
-                        Voir
+                        {t("vendorCatalogView")}
                       </Button>
                       <Button size="sm" className="h-7 px-2 text-xs gap-1" onClick={() => startOffer()}>
-                        <Plus className="h-3 w-3" /> Offre
+                        <Plus className="h-3 w-3" /> {t("vendorCatalogShortOffer")}
                       </Button>
                     </div>
                   </div>
@@ -241,7 +243,7 @@ export default function VendorCatalog() {
             {isLoading ? (
               <ListLoader />
             ) : data.length === 0 ? (
-              <EmptyState label="Aucun fabricant trouvé" />
+              <EmptyState label={t("vendorCatalogEmptyManufacturers")} />
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
                 {(data as any[]).map((m) => (
@@ -256,7 +258,7 @@ export default function VendorCatalog() {
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold truncate">{m.name}</p>
                       <p className="text-[11px] text-muted-foreground">
-                        {m.brand_count ?? 0} marques · {m.product_count ?? 0} produits
+                        {m.brand_count ?? 0} {t("vendorCatalogBrandsCount")} · {m.product_count ?? 0} {t("vendorCatalogProductsCount")}
                         {m.country_of_origin ? ` · ${m.country_of_origin}` : ""}
                       </p>
                     </div>
@@ -265,7 +267,7 @@ export default function VendorCatalog() {
                         target={{ kind: "manufacturer", id: m.id, label: m.name }}
                       />
                       <Button size="sm" className="h-7 px-2 text-xs gap-1" onClick={() => startOffer()}>
-                        <Plus className="h-3 w-3" /> Offre
+                        <Plus className="h-3 w-3" /> {t("vendorCatalogShortOffer")}
                       </Button>
                     </div>
                   </div>
@@ -279,14 +281,14 @@ export default function VendorCatalog() {
       <VCard className="p-4">
         <div id="mes-propositions" className="flex items-center justify-between mb-3 gap-3 flex-wrap scroll-mt-20">
           <div>
-            <h2 className="text-sm font-bold text-[#1D2530]">Mes propositions de produits</h2>
+            <h2 className="text-sm font-bold text-[#1D2530]">{t("vendorCatalogMySubmissionsTitle")}</h2>
             <p className="text-[12px] text-muted-foreground">
-              Suivez le statut des fiches que vous avez soumises à notre équipe catalogue.
+              {t("vendorCatalogMySubmissionsSubtitle")}
             </p>
           </div>
           <Button asChild size="sm" className="gap-1.5">
             <Link to="/vendor/produits/proposer">
-              <Plus className="h-4 w-4" /> Proposer un produit
+              <Plus className="h-4 w-4" /> {t("proposeProduct")}
             </Link>
           </Button>
         </div>
@@ -297,9 +299,10 @@ export default function VendorCatalog() {
 }
 
 function ListLoader() {
+  const { t } = useI18n();
   return (
     <div className="flex items-center justify-center py-12 text-muted-foreground">
-      <Loader2 className="h-5 w-5 animate-spin mr-2" /> Chargement…
+      <Loader2 className="h-5 w-5 animate-spin mr-2" /> {t("vendorCatalogLoading")}
     </div>
   );
 }

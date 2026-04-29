@@ -123,6 +123,7 @@ const AdminCategories = lazyWithRetry(() => import("./pages/admin/AdminCategorie
 const AdminMarques = lazyWithRetry(() => import("./pages/admin/AdminMarques"), "AdminMarques");
 const AdminBrandTransparenceEdit = lazyWithRetry(() => import("./pages/admin/AdminBrandTransparenceEdit"), "AdminBrandTransparenceEdit");
 const AdminBrandDuplicates = lazyWithRetry(() => import("./pages/admin/AdminBrandDuplicates"), "AdminBrandDuplicates");
+const AdminSourceMapping = lazyWithRetry(() => import("./pages/admin/AdminSourceMapping"), "AdminSourceMapping");
 const AdminCRM = lazyWithRetry(() => import("./pages/admin/AdminCRM"), "AdminCRM");
 const AdminCMS = lazyWithRetry(() => import("./pages/admin/AdminCMS"), "AdminCMS");
 const AdminProductPrices = lazyWithRetry(() => import("./pages/admin/AdminProductPrices"), "AdminProductPrices");

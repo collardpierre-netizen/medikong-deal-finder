@@ -143,6 +143,7 @@ const AdminAnnouncementBar = lazyWithRetry(() => import("./pages/admin/AdminAnno
 const AdminI18nPilot = lazyWithRetry(() => import("./pages/admin/AdminI18nPilot"), "AdminI18nPilot");
 const AdminCatalogDiagnostics = lazyWithRetry(() => import("./pages/admin/AdminCatalogDiagnostics"), "AdminCatalogDiagnostics");
 const AdminOfferDataQuality = lazyWithRetry(() => import("./pages/admin/AdminOfferDataQuality"), "AdminOfferDataQuality");
+const AdminProductSubmissions = lazyWithRetry(() => import("./pages/admin/AdminProductSubmissions"), "AdminProductSubmissions");
 const AdminCommissions = lazyWithRetry(() => import("./pages/admin/AdminCommissions"), "AdminCommissions");
 const AdminOnboardingCMS = lazyWithRetry(() => import("./pages/admin/AdminOnboardingCMS"), "AdminOnboardingCMS");
 const AdminSync = lazyWithRetry(() => import("./pages/admin/AdminSync"), "AdminSync");

@@ -91,7 +91,7 @@ export function clearRecentActivity() {
 
 /* ────────────── React hook (lecture réactive) ────────────── */
 
-export function useRecentActivity() {
+export function useRecentSearches() {
   const [terms, setTerms] = useState<RecentTerm[]>(() => safeRead(KEYS.terms));
   const [products, setProducts] = useState<RecentProduct[]>(() => safeRead(KEYS.products));
   const [taxons, setTaxons] = useState<RecentTaxon[]>(() => safeRead(KEYS.taxons));

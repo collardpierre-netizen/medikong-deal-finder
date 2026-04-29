@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Clock, X, Tag, FolderOpen, Package } from "lucide-react";
-import { useRecentActivity } from "@/hooks/useRecentActivity";
+import { useRecentSearches } from "@/hooks/useRecentSearches";
 import { motion } from "framer-motion";
 
 /**
@@ -10,7 +10,7 @@ import { motion } from "framer-motion";
  * pour le 1er visit).
  */
 export function RecentSearches() {
-  const { terms, products, taxons, isEmpty, clear } = useRecentActivity();
+  const { terms, products, taxons, isEmpty, clear } = useRecentSearches();
 
   if (isEmpty) return null;
 

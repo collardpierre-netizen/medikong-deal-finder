@@ -38,6 +38,12 @@ export function VendorSubmissionsList() {
     },
   });
 
+  useEffect(() => {
+    if (highlightId && highlightRef.current) {
+      highlightRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [highlightId, items]);
+
   if (!vendor?.id) return null;
 
   if (isLoading) {

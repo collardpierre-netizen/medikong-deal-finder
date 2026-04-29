@@ -49,6 +49,8 @@ export type VendorAccountErrorPresentation = {
   hint?: string;
   primaryAction?: VendorAccountErrorAction;
   secondaryAction?: VendorAccountErrorAction;
+  /** Action complémentaire optionnelle (ex: ouvrir la fiche existante en parallèle d'un rattachement) */
+  tertiaryAction?: VendorAccountErrorAction;
   /** Code original conservé pour analytics */
   code: VendorAccountErrorCode;
 };

@@ -323,9 +323,18 @@ export function useProductOffers(productId: string | undefined) {
             ? basePriceIncl / basePriceExcl
             : 1;
         const resolved = resolvedPriceMap.get(o.id);
-        const effExcl = resolved ? resolved.price_excl_vat : (Number.isFinite(basePriceExcl) ? basePriceExcl : 0);
-        const effIncl = resolved
-          ? Math.round(resolved.price_excl_vat * vatRatio * 100) / 100
+        // Cascade : RPC override > legacy product_prices × price_levels > prix de base offre.
+        let effExcl: number;
+        if (resolved) {
+          effExcl = resolved.price_excl_vat;
+        } else if (legacyLevelPrice !== null && legacyLevelPrice > 0) {
+          effExcl = legacyLevelPrice;
+        } else {
+          effExcl = Number.isFinite(basePriceExcl) ? basePriceExcl : 0;
+        }
+        const usedOverride = resolved !== undefined || legacyLevelPrice !== null;
+        const effIncl = usedOverride
+          ? Math.round(effExcl * vatRatio * 100) / 100
           : (Number.isFinite(basePriceIncl) ? basePriceIncl : 0);
         return {
           id: o.id,

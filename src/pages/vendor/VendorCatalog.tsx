@@ -8,7 +8,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ProductSubmissionDialog } from "@/components/vendor/catalog/ProductSubmissionDialog";
+// ProductSubmissionDialog removed: vendors are routed to the dedicated /vendor/produits/proposer page
 import { VendorSubmissionsList } from "@/components/vendor/catalog/VendorSubmissionsList";
 import { VendorCatalogXlsxImport } from "@/components/vendor/catalog/VendorCatalogXlsxImport";
 import { VendorCatalogCodeLookup } from "@/components/vendor/catalog/VendorCatalogCodeLookup";

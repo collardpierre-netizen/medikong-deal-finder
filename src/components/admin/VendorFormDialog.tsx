@@ -160,10 +160,111 @@ export default function VendorFormDialog({ open, onOpenChange }: Props) {
     }
   };
 
+  const handleAttach = async () => {
+    if (!duplicate) return;
+    setAttaching(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-vendor-account", {
+        body: {
+          vendor_id: duplicate.existing_vendor.id,
+          company_name: duplicate.existing_vendor.company_name || duplicate.existing_vendor.name || form.company_name.trim(),
+          email: form.email.trim(),
+        },
+      });
+      if (error) throw error;
+      if (data?.ok === false || data?.error) throw new Error(data?.error || "Erreur inconnue");
+
+      setResult({
+        vendor_id: data.vendor_id,
+        temp_password: data.temp_password ?? null,
+        reused: !!data.reused_existing_user,
+      });
+      setDuplicate(null);
+      queryClient.invalidateQueries({ queryKey: ["admin-vendors"] });
+      toast.success("Accès rattaché au vendeur existant.");
+    } catch (e: any) {
+      toast.error(e.message || "Erreur lors du rattachement");
+    } finally {
+      setAttaching(false);
+    }
+  };
+
   const handleClose = (open: boolean) => {
     if (!open) resetForm();
     onOpenChange(open);
   };
+
+  // Conflict screen — vendeur existant détecté
+  if (duplicate) {
+    const ev = duplicate.existing_vendor;
+    const canAttach = !ev.auth_user_id && duplicate.suggested_action === "attach_to_existing";
+    return (
+      <Dialog open={open} onOpenChange={handleClose}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle size={20} className="text-amber-600" /> Vendeur déjà existant
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
+            <p className="text-sm text-muted-foreground">{duplicate.message}</p>
+
+            <div className="rounded-lg p-4 space-y-2" style={{ backgroundColor: "#FFFBEB", border: "1px solid #FDE68A" }}>
+              <div>
+                <span className="text-[11px] font-semibold uppercase text-amber-900">Vendeur existant</span>
+                <p className="text-sm font-medium">{ev.company_name || ev.name}</p>
+              </div>
+              <div>
+                <span className="text-[11px] font-semibold uppercase text-amber-900">Email</span>
+                <p className="text-sm font-mono">{ev.email}</p>
+              </div>
+              <div>
+                <span className="text-[11px] font-semibold uppercase text-amber-900">Accès portail</span>
+                <p className="text-sm">{ev.auth_user_id ? "Déjà configuré" : "Aucun accès — rattachement possible"}</p>
+              </div>
+            </div>
+
+            {canAttach ? (
+              <>
+                <p className="text-xs text-muted-foreground">
+                  Plutôt que de créer un doublon, vous pouvez rattacher cet email comme accès portail au vendeur existant.
+                </p>
+                <div className="flex gap-2">
+                  <Button variant="outline" className="flex-1" onClick={() => setDuplicate(null)} disabled={attaching}>
+                    Modifier l'email
+                  </Button>
+                  <Button className="flex-1 gap-2" onClick={handleAttach} disabled={attaching}>
+                    <Link2 size={14} />
+                    {attaching ? "Rattachement…" : "Rattacher au vendeur existant"}
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="text-xs text-muted-foreground">
+                  Ce vendeur a déjà un accès portail. Modifiez l'email pour créer un autre vendeur, ou ouvrez la fiche existante.
+                </p>
+                <div className="flex gap-2">
+                  <Button variant="outline" className="flex-1" onClick={() => setDuplicate(null)}>
+                    Modifier l'email
+                  </Button>
+                  <Button
+                    className="flex-1 gap-2"
+                    onClick={() => {
+                      handleClose(false);
+                      window.location.assign(`/admin/vendeurs/${ev.id}`);
+                    }}
+                  >
+                    Ouvrir la fiche
+                  </Button>
+                </div>
+              </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   // Success screen
   if (result) {

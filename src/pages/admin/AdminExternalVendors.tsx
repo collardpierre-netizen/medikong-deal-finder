@@ -367,12 +367,12 @@ function VendorOffersPanel({ vendor }: { vendor: any }) {
     const text = await file.text();
     const lines = text.trim().split("\n");
     const header = lines[0].toLowerCase().split(",").map(s => s.trim());
-    const rows: (Record<string, string> & { _row: number })[] = lines.slice(1).map((line, idx) => {
+    type CsvRow = { gtin: string; unit_price: string; mov: string; product_url: string; stock_status: string; delivery_days: string; imported_at: string; _row: number; [k: string]: string | number };
+    const rows: CsvRow[] = lines.slice(1).map((line, idx) => {
       const vals = line.split(",").map(s => s.trim());
       const row: Record<string, string> = {};
       header.forEach((h, i) => { row[h] = vals[i] || ""; });
-      // _row : numéro de ligne dans le CSV (1-based, en-tête = ligne 1, donc data start = 2)
-      return { ...row, _row: idx + 2 };
+      return { ...(row as any), _row: idx + 2 } as CsvRow;
     });
 
     // Match GTINs

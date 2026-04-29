@@ -31,6 +31,8 @@ const sidebarSections: { label: string | null; items: SidebarItem[] }[] = [
   {
     label: "VENTES",
     items: [
+      { key: "catalog", icon: BookOpen, path: "/vendor/catalog" },
+      { key: "proposeProduct", icon: PlusSquare, path: "/vendor/produits/proposer" },
       { key: "myOffers", icon: Tag, path: "/vendor/offers" },
       { key: "orders", icon: ShoppingCart, path: "/vendor/orders" },
     ],

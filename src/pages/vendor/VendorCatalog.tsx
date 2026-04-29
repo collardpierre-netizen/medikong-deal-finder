@@ -332,20 +332,69 @@ export default function VendorCatalog() {
   );
 }
 
-function ListLoader() {
-  const { t } = useI18n();
+function ListLoader({ variant = "product" }: { variant?: "product" | "compact" }) {
+  const count = 6;
   return (
-    <div className="flex items-center justify-center py-12 text-muted-foreground">
-      <Loader2 className="h-5 w-5 animate-spin mr-2" /> {t("vendorCatalogLoading")}
+    <div
+      className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3"
+      role="status"
+      aria-busy="true"
+      aria-live="polite"
+    >
+      {Array.from({ length: count }).map((_, i) => (
+        <div key={i} className="border rounded-lg p-3 flex gap-3 items-start">
+          <Skeleton className={variant === "product" ? "w-14 h-14 rounded shrink-0" : "w-12 h-12 rounded shrink-0"} />
+          <div className="flex-1 min-w-0 space-y-2">
+            <Skeleton className="h-4 w-4/5" />
+            <Skeleton className="h-3 w-2/3" />
+            <div className="flex items-center justify-between gap-2 pt-1">
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-7 w-24" />
+            </div>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
 
-function EmptyState({ label }: { label: string }) {
+function EmptyState({
+  label,
+  hasSearch,
+  hasFilters,
+  onClearSearch,
+  onClearFilters,
+}: {
+  label: string;
+  hasSearch?: boolean;
+  hasFilters?: boolean;
+  onClearSearch?: () => void;
+  onClearFilters?: () => void;
+}) {
+  const { t } = useI18n();
+  const hint = hasSearch
+    ? t("vendorCatalogEmptyHintSearch")
+    : hasFilters
+      ? t("vendorCatalogEmptyHintFilters")
+      : t("vendorCatalogEmptyHintGeneric");
+  const Icon = hasSearch ? SearchX : hasFilters ? FilterX : Package;
   return (
-    <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
-      <Package className="h-8 w-8 mb-2 opacity-60" />
-      <p className="text-sm">{label}</p>
+    <div className="flex flex-col items-center justify-center py-14 text-center text-muted-foreground border border-dashed rounded-lg">
+      <Icon className="h-9 w-9 mb-3 opacity-60" />
+      <p className="text-sm font-medium text-[#1D2530]">{label}</p>
+      <p className="text-[12px] mt-1 max-w-xs">{hint}</p>
+      <div className="flex flex-wrap items-center gap-2 mt-4">
+        {hasSearch && onClearSearch && (
+          <Button variant="outline" size="sm" className="h-8 text-xs" onClick={onClearSearch}>
+            {t("vendorCatalogEmptyClearSearch")}
+          </Button>
+        )}
+        {hasFilters && onClearFilters && (
+          <Button variant="outline" size="sm" className="h-8 text-xs" onClick={onClearFilters}>
+            {t("vendorCatalogEmptyClearFilters")}
+          </Button>
+        )}
+      </div>
     </div>
   );
 }

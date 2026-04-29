@@ -653,8 +653,21 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
             </div>
           )}
 
-          {/* Loading */}
-          {phase === "loading" && <LoadingBar progress={progress} />}
+          {/* Loading — job asynchrone serveur avec progression Realtime */}
+          {phase === "loading" && jobId && (
+            <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <Loader2 size={16} className="animate-spin text-primary" />
+                <h3 className="text-sm font-semibold">Analyse en cours côté serveur</h3>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Vous pouvez fermer cette fenêtre et revenir plus tard — l'import continue en arrière-plan.
+                Vos jobs sont consultables dans <a href="/mes-imports" className="underline">Mes imports</a>.
+              </p>
+              <ImportJobProgress jobId={jobId} />
+            </div>
+          )}
+          {phase === "loading" && !jobId && <LoadingBar progress={progress} />}
 
           {/* Results */}
           {phase === "results" && (

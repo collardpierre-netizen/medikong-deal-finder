@@ -349,15 +349,30 @@ function VendorOffersPanel({ vendor }: { vendor: any }) {
   const [csvUnmatched, setCsvUnmatched] = useState<string[]>([]);
   const [csvImporting, setCsvImporting] = useState(false);
 
+  // Récap post-import : doublons (vendor+product_id) détectés dans le CSV
+  type DuplicateGroup = {
+    productId: string;
+    productName: string;
+    gtin: string;
+    kept: { lineIndex: number; unitPrice: number; mov: number; stockStatus: string };
+    discarded: { lineIndex: number; unitPrice: number; mov: number; stockStatus: string }[];
+  };
+  const [importRecap, setImportRecap] = useState<{
+    upserted: number;
+    totalRows: number;
+    duplicates: DuplicateGroup[];
+  } | null>(null);
+
   const handleCsvFile = async (file: File) => {
     const text = await file.text();
     const lines = text.trim().split("\n");
     const header = lines[0].toLowerCase().split(",").map(s => s.trim());
-    const rows = lines.slice(1).map(line => {
+    const rows = lines.slice(1).map((line, idx) => {
       const vals = line.split(",").map(s => s.trim());
       const row: Record<string, string> = {};
       header.forEach((h, i) => { row[h] = vals[i] || ""; });
-      return row;
+      // _row : numéro de ligne dans le CSV (1-based, en-tête = ligne 1, donc data start = 2)
+      return { ...row, _row: idx + 2 };
     });
 
     // Match GTINs
@@ -376,13 +391,16 @@ function VendorOffersPanel({ vendor }: { vendor: any }) {
   const importCsv = async () => {
     if (!csvPreview) return;
     setCsvImporting(true);
-    const payloads = csvPreview.map(r => {
+    const enriched = csvPreview.map(r => {
       const importedAt = (r.imported_at || "").trim();
       const parsedDate = importedAt ? new Date(importedAt) : null;
       const isValidDate = parsedDate && !isNaN(parsedDate.getTime());
       return {
         external_vendor_id: vendor.id,
         product_id: r.product.id,
+        _product_name: r.product.name as string,
+        _product_gtin: (r.product.gtin || "") as string,
+        _line_index: r._row as number,
         unit_price: parseFloat(r.unit_price) || 0,
         mov_amount: parseFloat(r.mov) || 0,
         product_url: (r.product_url || "").trim(),
@@ -391,35 +409,61 @@ function VendorOffersPanel({ vendor }: { vendor: any }) {
         ...(isValidDate ? { created_at: parsedDate!.toISOString() } : {}),
       };
     });
-    // Upsert pour mettre à jour les offres existantes (vendor + produit) au lieu de planter
-    // sur la contrainte unique external_offers_product_id_external_vendor_id_key
-    // Dédoublonnage : si le CSV contient plusieurs lignes pour le même produit,
-    // on garde la dernière occurrence (sinon Postgres lève "ON CONFLICT DO UPDATE
-    // command cannot affect row a second time").
-    const dedupMap = new Map<string, typeof payloads[number] & { is_active: boolean; updated_at: string }>();
-    payloads.forEach(p => {
-      dedupMap.set(`${p.external_vendor_id}::${p.product_id}`, {
-        ...p,
+
+    // Dédoublonnage : trace toutes les occurrences par (vendor, product_id).
+    // Règle : la DERNIÈRE ligne du CSV gagne (cohérent avec l'upsert Postgres).
+    const groups = new Map<string, typeof enriched>();
+    enriched.forEach(p => {
+      const key = `${p.external_vendor_id}::${p.product_id}`;
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key)!.push(p);
+    });
+
+    const duplicates: DuplicateGroup[] = [];
+    const finalPayloads: any[] = [];
+    groups.forEach(arr => {
+      const kept = arr[arr.length - 1];
+      const { _product_name, _product_gtin, _line_index, ...dbPayload } = kept;
+      finalPayloads.push({
+        ...dbPayload,
         is_active: true,
         updated_at: new Date().toISOString(),
       });
+      if (arr.length > 1) {
+        duplicates.push({
+          productId: kept.product_id,
+          productName: kept._product_name,
+          gtin: kept._product_gtin,
+          kept: {
+            lineIndex: kept._line_index,
+            unitPrice: kept.unit_price,
+            mov: kept.mov_amount,
+            stockStatus: kept.stock_status,
+          },
+          discarded: arr.slice(0, -1).map(d => ({
+            lineIndex: d._line_index,
+            unitPrice: d.unit_price,
+            mov: d.mov_amount,
+            stockStatus: d.stock_status,
+          })),
+        });
+      }
     });
-    const payloadsWithFlags = Array.from(dedupMap.values());
-    const duplicatesRemoved = payloads.length - payloadsWithFlags.length;
 
     const { error } = await supabase
       .from("external_offers")
-      .upsert(payloadsWithFlags, { onConflict: "external_vendor_id,product_id" });
+      .upsert(finalPayloads, { onConflict: "external_vendor_id,product_id" });
     setCsvImporting(false);
     if (error) { toast.error(error.message); return; }
     qc.invalidateQueries({ queryKey: ["admin-external-offers", vendor.id] });
     setCsvDialog(false);
     setCsvPreview(null);
-    toast.success(
-      duplicatesRemoved > 0
-        ? `${payloadsWithFlags.length} offres importées (${duplicatesRemoved} doublon(s) GTIN fusionné(s))`
-        : `${payloadsWithFlags.length} offres importées ou mises à jour`
-    );
+    setImportRecap({
+      upserted: finalPayloads.length,
+      totalRows: enriched.length,
+      duplicates,
+    });
+    toast.success(`${finalPayloads.length} offres importées ou mises à jour`);
   };
 
   return (

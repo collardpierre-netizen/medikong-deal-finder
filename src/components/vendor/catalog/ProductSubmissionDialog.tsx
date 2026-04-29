@@ -22,6 +22,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { isValidGtin, isValidCnk, normalizeDigits } from "@/lib/product-codes";
 import { useCategorySuggestion } from "@/hooks/useCategorySuggestion";
 import { Sparkles } from "lucide-react";
+import { startImportJob } from "@/hooks/useImportJob";
+import { ImportJobProgress } from "@/components/imports/ImportJobProgress";
 
 const submissionSchema = z.object({
   product_name: z.string().trim().min(2, "Nom requis (min 2 caractères)").max(200, "Max 200 caractères"),

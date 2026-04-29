@@ -6,8 +6,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
-import { Copy, CheckCircle2, AlertTriangle, Link2 } from "lucide-react";
+import { Copy, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  isVendorAccountError,
+  presentVendorAccountError,
+  type VendorAccountErrorPresentation,
+  type VendorAccountErrorAction,
+  type VendorAccountErrorPayload,
+} from "@/lib/vendor-account-errors";
+import { VendorAccountErrorAlert } from "@/components/admin/VendorAccountErrorAlert";
 
 function slugify(text: string): string {
   return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
@@ -35,12 +43,10 @@ export default function VendorFormDialog({ open, onOpenChange }: Props) {
   const [saving, setSaving] = useState(false);
   const [result, setResult] = useState<{ vendor_id: string; temp_password: string | null; reused?: boolean } | null>(null);
   const [copied, setCopied] = useState(false);
-  type DupConflict = {
-    message: string;
-    existing_vendor: { id: string; name?: string; company_name?: string; email?: string; auth_user_id?: string | null };
-    suggested_action: "attach_to_existing" | "open_existing";
-  };
-  const [duplicate, setDuplicate] = useState<DupConflict | null>(null);
+  // Erreur applicative normalisée renvoyée par l'edge function (any code)
+  const [errorPresentation, setErrorPresentation] = useState<VendorAccountErrorPresentation | null>(null);
+  // Payload original conservé pour pouvoir rejouer l'action (rattachement) avec son existing_vendor
+  const [errorPayload, setErrorPayload] = useState<VendorAccountErrorPayload | null>(null);
   const [attaching, setAttaching] = useState(false);
   const [form, setForm] = useState({
     company_name: "",
@@ -66,8 +72,14 @@ export default function VendorFormDialog({ open, onOpenChange }: Props) {
     setForm({ company_name: "", email: "", phone: "", vat_number: "", address_line1: "", city: "", postal_code: "", country_code: "BE", commission_rate: "15", commission_model: "flat_percentage", margin_split_pct: "50", fixed_commission_amount: "2", description: "", type: "real", create_account: true });
     setResult(null);
     setCopied(false);
-    setDuplicate(null);
+    setErrorPresentation(null);
+    setErrorPayload(null);
     setAttaching(false);
+  };
+
+  const dismissError = () => {
+    setErrorPresentation(null);
+    setErrorPayload(null);
   };
 
   const handleSave = async () => {
@@ -80,9 +92,9 @@ export default function VendorFormDialog({ open, onOpenChange }: Props) {
       return;
     }
     setSaving(true);
+    dismissError();
     try {
       if (form.create_account && form.email.trim()) {
-        // Use edge function to create auth account + vendor record
         const { data, error } = await supabase.functions.invoke("create-vendor-account", {
           body: {
             company_name: form.company_name.trim(),
@@ -99,24 +111,18 @@ export default function VendorFormDialog({ open, onOpenChange }: Props) {
           },
         });
         if (error) throw error;
-        // Nouvelle convention edge: { ok: boolean, error?, code?, ... }
-        if (data?.ok === false || data?.error) {
-          // Doublon vendeur : proposer le rattachement
-          if (data?.code === "vendor_email_already_exists" && data?.existing_vendor) {
-            setDuplicate({
-              message: data.error,
-              existing_vendor: data.existing_vendor,
-              suggested_action: data.suggested_action ?? "attach_to_existing",
-            });
-            return;
-          }
-          throw new Error(data?.error || "Erreur inconnue");
+
+        // Convention edge: { ok: false, code, error, ... } pour toute erreur applicative
+        if (isVendorAccountError(data)) {
+          setErrorPayload(data);
+          setErrorPresentation(presentVendorAccountError(data));
+          return;
         }
 
         setResult({ vendor_id: data.vendor_id, temp_password: data.temp_password ?? null });
         toast.success("Vendeur créé avec compte d'accès !");
       } else {
-        // Direct DB insert without auth account
+        // Insert direct sans compte auth
         const slug = slugify(form.company_name);
         const { error } = await supabase.from("vendors").insert({
           name: form.company_name.trim(),
@@ -138,7 +144,20 @@ export default function VendorFormDialog({ open, onOpenChange }: Props) {
           is_active: true,
           can_manage_offers: true,
         });
-        if (error) throw error;
+        if (error) {
+          // Détection conflit unique côté DB (lower(email))
+          if ((error as any).code === "23505" && /vendors_email_unique_ci/i.test(error.message || "")) {
+            const synthetic: VendorAccountErrorPayload = {
+              ok: false,
+              code: "vendor_email_already_exists",
+              error: "Un vendeur avec cet email existe déjà.",
+            };
+            setErrorPayload(synthetic);
+            setErrorPresentation(presentVendorAccountError(synthetic));
+            return;
+          }
+          throw error;
+        }
         toast.success("Vendeur créé (sans compte d'accès)");
         onOpenChange(false);
         resetForm();
@@ -161,25 +180,30 @@ export default function VendorFormDialog({ open, onOpenChange }: Props) {
   };
 
   const handleAttach = async () => {
-    if (!duplicate) return;
+    const ev = errorPayload?.existing_vendor;
+    if (!ev) return;
     setAttaching(true);
     try {
       const { data, error } = await supabase.functions.invoke("create-vendor-account", {
         body: {
-          vendor_id: duplicate.existing_vendor.id,
-          company_name: duplicate.existing_vendor.company_name || duplicate.existing_vendor.name || form.company_name.trim(),
+          vendor_id: ev.id,
+          company_name: ev.company_name || ev.name || form.company_name.trim(),
           email: form.email.trim(),
         },
       });
       if (error) throw error;
-      if (data?.ok === false || data?.error) throw new Error(data?.error || "Erreur inconnue");
+      if (isVendorAccountError(data)) {
+        setErrorPayload(data);
+        setErrorPresentation(presentVendorAccountError(data));
+        return;
+      }
 
       setResult({
         vendor_id: data.vendor_id,
         temp_password: data.temp_password ?? null,
         reused: !!data.reused_existing_user,
       });
-      setDuplicate(null);
+      dismissError();
       queryClient.invalidateQueries({ queryKey: ["admin-vendors"] });
       toast.success("Accès rattaché au vendeur existant.");
     } catch (e: any) {
@@ -189,82 +213,45 @@ export default function VendorFormDialog({ open, onOpenChange }: Props) {
     }
   };
 
+  const handleErrorAction = (action: VendorAccountErrorAction) => {
+    switch (action.intent) {
+      case "attach":
+        void handleAttach();
+        return;
+      case "edit_email":
+        dismissError();
+        // Focus l'input email (déjà visible dans le form)
+        setTimeout(() => {
+          (document.querySelector('input[type="email"]') as HTMLInputElement | null)?.focus();
+        }, 50);
+        return;
+      case "retry":
+        dismissError();
+        if (action.href) {
+          window.location.assign(action.href);
+          return;
+        }
+        void handleSave();
+        return;
+      case "open_vendor":
+      case "open_user":
+        if (action.href) {
+          handleClose(false);
+          window.location.assign(action.href);
+        }
+        return;
+      default:
+        if (action.href) window.location.assign(action.href);
+    }
+  };
+
   const handleClose = (open: boolean) => {
     if (!open) resetForm();
     onOpenChange(open);
   };
 
-  // Conflict screen — vendeur existant détecté
-  if (duplicate) {
-    const ev = duplicate.existing_vendor;
-    const canAttach = !ev.auth_user_id && duplicate.suggested_action === "attach_to_existing";
-    return (
-      <Dialog open={open} onOpenChange={handleClose}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <AlertTriangle size={20} className="text-amber-600" /> Vendeur déjà existant
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 mt-2">
-            <p className="text-sm text-muted-foreground">{duplicate.message}</p>
-
-            <div className="rounded-lg p-4 space-y-2" style={{ backgroundColor: "#FFFBEB", border: "1px solid #FDE68A" }}>
-              <div>
-                <span className="text-[11px] font-semibold uppercase text-amber-900">Vendeur existant</span>
-                <p className="text-sm font-medium">{ev.company_name || ev.name}</p>
-              </div>
-              <div>
-                <span className="text-[11px] font-semibold uppercase text-amber-900">Email</span>
-                <p className="text-sm font-mono">{ev.email}</p>
-              </div>
-              <div>
-                <span className="text-[11px] font-semibold uppercase text-amber-900">Accès portail</span>
-                <p className="text-sm">{ev.auth_user_id ? "Déjà configuré" : "Aucun accès — rattachement possible"}</p>
-              </div>
-            </div>
-
-            {canAttach ? (
-              <>
-                <p className="text-xs text-muted-foreground">
-                  Plutôt que de créer un doublon, vous pouvez rattacher cet email comme accès portail au vendeur existant.
-                </p>
-                <div className="flex gap-2">
-                  <Button variant="outline" className="flex-1" onClick={() => setDuplicate(null)} disabled={attaching}>
-                    Modifier l'email
-                  </Button>
-                  <Button className="flex-1 gap-2" onClick={handleAttach} disabled={attaching}>
-                    <Link2 size={14} />
-                    {attaching ? "Rattachement…" : "Rattacher au vendeur existant"}
-                  </Button>
-                </div>
-              </>
-            ) : (
-              <>
-                <p className="text-xs text-muted-foreground">
-                  Ce vendeur a déjà un accès portail. Modifiez l'email pour créer un autre vendeur, ou ouvrez la fiche existante.
-                </p>
-                <div className="flex gap-2">
-                  <Button variant="outline" className="flex-1" onClick={() => setDuplicate(null)}>
-                    Modifier l'email
-                  </Button>
-                  <Button
-                    className="flex-1 gap-2"
-                    onClick={() => {
-                      handleClose(false);
-                      window.location.assign(`/admin/vendeurs/${ev.id}`);
-                    }}
-                  >
-                    Ouvrir la fiche
-                  </Button>
-                </div>
-              </>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
-    );
-  }
+  // L'erreur applicative (doublon, accès déjà configuré, etc.) est désormais
+  // affichée inline dans le formulaire via <VendorAccountErrorAlert />.
 
   // Success screen
   if (result) {
@@ -323,6 +310,13 @@ export default function VendorFormDialog({ open, onOpenChange }: Props) {
           <DialogTitle>Ajouter un vendeur</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 mt-2">
+          {errorPresentation && (
+            <VendorAccountErrorAlert
+              presentation={errorPresentation}
+              onAction={handleErrorAction}
+              onDismiss={dismissError}
+            />
+          )}
           <div>
             <Label>Type de vendeur *</Label>
             <Select value={form.type} onValueChange={(v) => set("type", v)}>

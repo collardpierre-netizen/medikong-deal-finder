@@ -8,6 +8,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Users, Store, ShoppingBag, Shield } from "lucide-react";
+import {
+  isVendorAccountError,
+  presentVendorAccountError,
+  type VendorAccountErrorPresentation,
+  type VendorAccountErrorAction,
+} from "@/lib/vendor-account-errors";
+import { VendorAccountErrorAlert } from "@/components/admin/VendorAccountErrorAlert";
 
 interface Props {
   open: boolean;
@@ -50,6 +57,8 @@ export default function UserCreateDialog({ open, onOpenChange, onCreated }: Prop
   const [buyer, setBuyer] = useState(initialBuyer);
   const [vendor, setVendor] = useState(initialVendor);
   const [admin, setAdmin] = useState(initialAdmin);
+
+  const [vendorError, setVendorError] = useState<VendorAccountErrorPresentation | null>(null);
 
   const slugify = (s: string) =>
     s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
@@ -98,6 +107,7 @@ export default function UserCreateDialog({ open, onOpenChange, onCreated }: Prop
       return;
     }
     setSaving(true);
+    setVendorError(null);
     try {
       const { data, error } = await supabase.functions.invoke("create-vendor-account", {
         body: {
@@ -111,16 +121,13 @@ export default function UserCreateDialog({ open, onOpenChange, onCreated }: Prop
         },
       });
       if (error) throw error;
-      if (data?.ok === false || data?.error) {
-        if (data?.code === "vendor_email_already_exists" && data?.existing_vendor) {
-          toast.error(data.error, {
-            description: "Ouvrez la fiche du vendeur existant pour rattacher l'accès.",
-            duration: 12000,
-          });
-          return;
-        }
-        throw new Error(data?.error || "Erreur inconnue");
+
+      // Affichage actionnable de toute erreur applicative normalisée
+      if (isVendorAccountError(data)) {
+        setVendorError(presentVendorAccountError(data));
+        return;
       }
+
       toast.success(`Vendeur "${vendor.company_name}" créé avec compte auth`, {
         description: data?.temp_password ? `Mot de passe temporaire: ${data.temp_password}` : undefined,
         duration: 15000,
@@ -251,6 +258,30 @@ export default function UserCreateDialog({ open, onOpenChange, onCreated }: Prop
 
           {/* --- VENDOR --- */}
           <TabsContent value="vendor" className="space-y-3 mt-4">
+            {vendorError && (
+              <VendorAccountErrorAlert
+                presentation={vendorError}
+                onAction={(a: VendorAccountErrorAction) => {
+                  if (a.intent === "edit_email") {
+                    setVendorError(null);
+                    setTimeout(() => {
+                      (document.querySelector('input[type="email"]') as HTMLInputElement | null)?.focus();
+                    }, 50);
+                    return;
+                  }
+                  if (a.intent === "retry") {
+                    setVendorError(null);
+                    void handleCreateVendor();
+                    return;
+                  }
+                  if ((a.intent === "open_vendor" || a.intent === "open_user") && a.href) {
+                    onOpenChange(false);
+                    window.location.assign(a.href);
+                  }
+                }}
+                onDismiss={() => setVendorError(null)}
+              />
+            )}
             <div className="grid grid-cols-2 gap-3">
               <div className="col-span-2">
                 <Label className="text-xs">Nom de l'entreprise *</Label>

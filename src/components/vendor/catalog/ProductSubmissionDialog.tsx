@@ -117,9 +117,20 @@ function buildRows(headers: string[], rawRows: string[][]): { rows: ImportRow[];
 const CSV_TEMPLATE =
   FIELD_HEADERS.join(",") +
   "\n" +
-  `"Doliprane 1000mg comprimés","Sanofi","Sanofi Aventis","3400930000000","1234567","Antalgiques","16 comprimés"\n`;
+  `"Doliprane 1000mg comprimés","Sanofi","Sanofi Aventis","3400930000000","1234567","Antalgiques","16 comprimés"\n` +
+  `"Nurofen 200mg 24cp","Reckitt","Reckitt Benckiser","5000158078123","1857423","AINS","Boîte 24 comprimés"\n`;
 
-function downloadBlob(filename: string, content: string, mime: string) {
+const COLUMN_GUIDE: Record<(typeof FIELD_HEADERS)[number], { label: string; required: boolean; help: string; example: string }> = {
+  product_name:      { label: "Nom du produit",   required: true,  help: "2 à 200 caractères. Indiquez le dosage et le conditionnement.", example: "Doliprane 1000mg comprimés" },
+  brand_name:        { label: "Marque",           required: false, help: "Marque commerciale (max 120 caractères).",                     example: "Sanofi" },
+  manufacturer_name: { label: "Fabricant",        required: false, help: "Laboratoire / fabricant officiel (max 120 caractères).",      example: "Sanofi Aventis" },
+  gtin:              { label: "GTIN / EAN",       required: false, help: "8, 12, 13 ou 14 chiffres. Clé de contrôle vérifiée.",         example: "3400930000000" },
+  cnk_code:          { label: "CNK (Belgique)",   required: false, help: "7 chiffres exactement (code APB belge).",                     example: "1234567" },
+  category_hint:     { label: "Catégorie",        required: false, help: "Suggestion libre, l'équipe catalogue valide le rattachement.", example: "Antalgiques" },
+  notes:             { label: "Notes internes",   required: false, help: "Conditionnement, lien fournisseur, infos utiles (max 1000).",  example: "16 comprimés" },
+};
+
+function downloadBlob(filename: string, content: BlobPart, mime: string) {
   const blob = new Blob([content], { type: `${mime};charset=utf-8` });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -127,6 +138,76 @@ function downloadBlob(filename: string, content: string, mime: string) {
   a.click();
   URL.revokeObjectURL(url);
 }
+
+function buildXlsxTemplate(): ArrayBuffer {
+  const wb = XLSX.utils.book_new();
+
+  // ===== Feuille "Modèle" =====
+  const headerRow = FIELD_HEADERS.map((h) => `${COLUMN_GUIDE[h].label}${COLUMN_GUIDE[h].required ? " *" : ""}`);
+  const technicalRow = FIELD_HEADERS.map((h) => h);
+  const example1 = FIELD_HEADERS.map((h) => COLUMN_GUIDE[h].example);
+  const example2 = ["Nurofen 200mg 24cp", "Reckitt", "Reckitt Benckiser", "5000158078123", "1857423", "AINS", "Boîte 24 comprimés"];
+  const blank = FIELD_HEADERS.map(() => "");
+
+  const aoa: any[][] = [headerRow, technicalRow, example1, example2, blank, blank, blank];
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+
+  // Forcer le format texte pour GTIN et CNK (évite la notation scientifique)
+  const gtinCol = FIELD_HEADERS.indexOf("gtin");
+  const cnkCol = FIELD_HEADERS.indexOf("cnk_code");
+  for (let r = 1; r < aoa.length; r++) {
+    [gtinCol, cnkCol].forEach((c) => {
+      const ref = XLSX.utils.encode_cell({ r, c });
+      if (ws[ref]) { ws[ref].t = "s"; ws[ref].z = "@"; }
+    });
+  }
+
+  // Largeurs de colonnes
+  ws["!cols"] = [
+    { wch: 38 }, { wch: 18 }, { wch: 22 }, { wch: 16 }, { wch: 12 }, { wch: 22 }, { wch: 30 },
+  ];
+
+  // Commentaires (cell comments) sur l'en-tête, lisibles dans Excel
+  FIELD_HEADERS.forEach((h, idx) => {
+    const ref = XLSX.utils.encode_cell({ r: 0, c: idx });
+    const guide = COLUMN_GUIDE[h];
+    if (ws[ref]) {
+      (ws[ref] as any).c = [{
+        a: "MediKong",
+        t: `${guide.required ? "OBLIGATOIRE — " : "Optionnel — "}${guide.help}\n\nExemple : ${guide.example}\nClé technique : ${h}`,
+      }];
+    }
+  });
+
+  // Geler la 1re ligne (en-têtes)
+  (ws as any)["!freeze"] = { xSplit: 0, ySplit: 1 };
+  ws["!ref"] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: aoa.length - 1, c: FIELD_HEADERS.length - 1 } });
+
+  XLSX.utils.book_append_sheet(wb, ws, "Modèle");
+
+  // ===== Feuille "Guide" =====
+  const guideAoa: any[][] = [
+    ["Champ", "Clé technique", "Obligatoire", "Règles", "Exemple"],
+    ...FIELD_HEADERS.map((h) => {
+      const g = COLUMN_GUIDE[h];
+      return [g.label, h, g.required ? "Oui" : "Non", g.help, g.example];
+    }),
+    [],
+    ["Notes générales :"],
+    ["• La 1re ligne (libellés) et la 2e ligne (clés techniques) sont lues par l'import."],
+    ["• Conservez l'ordre des colonnes ou laissez la 2e ligne intacte (les clés sont reconnues automatiquement)."],
+    ["• Maximum 500 lignes par fichier, taille max 2 Mo."],
+    ["• GTIN : 8, 12, 13 ou 14 chiffres avec clé de contrôle valide."],
+    ["• CNK : 7 chiffres exactement."],
+    ["• Les lignes en erreur sont affichées dans l'aperçu et peuvent être réexportées en CSV."],
+  ];
+  const wsGuide = XLSX.utils.aoa_to_sheet(guideAoa);
+  wsGuide["!cols"] = [{ wch: 22 }, { wch: 20 }, { wch: 12 }, { wch: 60 }, { wch: 30 }];
+  XLSX.utils.book_append_sheet(wb, wsGuide, "Guide");
+
+  return XLSX.write(wb, { bookType: "xlsx", type: "array" }) as ArrayBuffer;
+}
+
 
 export function ProductSubmissionDialog({ children }: { children?: React.ReactNode }) {
   const { data: vendor } = useCurrentVendor();

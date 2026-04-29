@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { getLocalizedName } from "@/lib/localization";
 import type { CatalogProduct } from "@/hooks/useCatalog";
+import { PvpEconomyBadge } from "@/components/product/PvpEconomyBadge";
 
 interface Props {
   product: CatalogProduct;

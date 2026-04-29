@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Search, X, Package, Tag, FolderOpen, Loader2 } from "lucide-react";
-import { getProductImageSrc, MEDIKONG_PLACEHOLDER, isQogitaPlaceholder } from "@/lib/image-utils";
+import { getProductImageSrc, MEDIKONG_PLACEHOLDER, isQogitaPlaceholder, isValidProductImage } from "@/lib/image-utils";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { federatedSearch } from "@/lib/supabase-search";
@@ -69,6 +69,14 @@ export function InstantSearchBar({ className = "", placeholder, variant = "navba
     setIsOpen(false);
   };
 
+  const resolveRecentProductImage = (p: { image_urls?: string[] | null; image_url?: string | null }) => {
+    const imageUrls = Array.isArray(p.image_urls) ? p.image_urls : [];
+    const firstValid =
+      imageUrls.find((url) => isValidProductImage(url)) ??
+      (isValidProductImage(p.image_url) ? p.image_url : null);
+    return firstValid ? getProductImageSrc(firstValid) : null;
+  };
+
   const allItems = [
     ...results.products.map((p) => ({ type: "product" as const, item: p })),
     ...results.brands.map((b) => ({ type: "brand" as const, item: b })),
@@ -87,7 +95,7 @@ export function InstantSearchBar({ className = "", placeholder, variant = "navba
       const sel = allItems[selectedIndex];
       const it: any = sel.item;
       if (sel.type === "product") {
-        pushRecentProduct({ id: it.id, slug: it.slug, name: it.name, image: it.image_url ?? null });
+        pushRecentProduct({ id: it.id, slug: it.slug, name: it.name, image: resolveRecentProductImage(it) });
         navigate(`/produit/${it.slug}`);
       } else if (sel.type === "brand") {
         pushRecentTaxon({ type: "brand", slug: it.slug, name: it.name });
@@ -184,7 +192,7 @@ export function InstantSearchBar({ className = "", placeholder, variant = "navba
                 <button
                   key={p.id}
                   onClick={() => {
-                    pushRecentProduct({ id: p.id, slug: p.slug, name: p.name, image: p.image_urls?.[0] || p.image_url || null });
+                    pushRecentProduct({ id: p.id, slug: p.slug, name: p.name, image: resolveRecentProductImage(p) });
                     navigate(`/produit/${p.slug}`);
                     setIsOpen(false);
                     setQuery("");

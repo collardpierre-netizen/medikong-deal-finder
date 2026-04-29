@@ -56,26 +56,36 @@ const offersFixture = [
   },
 ];
 
-/** Map des prix retournés par la RPC selon (offer_id, buyer_profile_id). */
-const rpcPriceMatrix: Record<string, Record<string, { price_excl_vat: number; source: string }>> = {
+/** Map des prix retournés par la vue effective_offer_prices_v selon (offer_id, buyer_profile_id). */
+const effectivePricesMatrix: Record<string, Record<string, { effective_price_excl_vat: number; price_source: string }>> = {
   "offer-A": {
-    pharmacien: { price_excl_vat: 9.5, source: "offer_absolute" },
-    grossiste: { price_excl_vat: 8.0, source: "offer_absolute" },
-    autre: { price_excl_vat: 10, source: "offer_base" }, // pas d'override
+    pharmacien: { effective_price_excl_vat: 9.5, price_source: "offer_absolute" },
+    grossiste: { effective_price_excl_vat: 8.0, price_source: "offer_absolute" },
+    autre: { effective_price_excl_vat: 10, price_source: "offer_base" }, // pas d'override
   },
   "offer-B": {
-    pharmacien: { price_excl_vat: 14.0, source: "offer_absolute" },
-    grossiste: { price_excl_vat: 12.5, source: "offer_absolute" },
-    autre: { price_excl_vat: 15, source: "offer_base" },
+    pharmacien: { effective_price_excl_vat: 14.0, price_source: "offer_absolute" },
+    grossiste: { effective_price_excl_vat: 12.5, price_source: "offer_absolute" },
+    autre: { effective_price_excl_vat: 15, price_source: "offer_base" },
   },
 };
 
 vi.mock("@/integrations/supabase/client", () => {
   const fromHandler = (table: string) => {
+    // Capture le buyer_profile_id passé à .eq("buyer_profile_id", X) pour la vue
+    let capturedBuyerProfile: string | null = null;
+    let capturedOfferIds: string[] = [];
+
     const chain: any = {
       select: () => chain,
-      eq: () => chain,
-      in: () => chain,
+      eq: (col: string, val: any) => {
+        if (col === "buyer_profile_id") capturedBuyerProfile = val;
+        return chain;
+      },
+      in: (col: string, vals: any[]) => {
+        if (col === "offer_id") capturedOfferIds = vals;
+        return chain;
+      },
       order: () => {
         if (table === "offers") return Promise.resolve({ data: offersFixture, error: null });
         return Promise.resolve({ data: [], error: null });
@@ -83,10 +93,35 @@ vi.mock("@/integrations/supabase/client", () => {
       maybeSingle: () => Promise.resolve({ data: null, error: null }),
       then: undefined,
     };
-    if (table === "offers") {
-      // .from('offers').select('*').eq().eq().order() — order termine la chaine
-      return chain;
+
+    if (table === "offers") return chain;
+
+    if (table === "effective_offer_prices_v") {
+      // Le hook fait .from(view).select(...).in("offer_id", ids).eq("buyer_profile_id", bpid)
+      // → la chaine se résout en awaitant directement le résultat (pas de .order final).
+      // On retourne donc une thenable après .eq().
+      const result = {
+        select: () => result,
+        in: (col: string, vals: any[]) => {
+          if (col === "offer_id") capturedOfferIds = vals;
+          return result;
+        },
+        eq: (col: string, val: any) => {
+          if (col === "buyer_profile_id") capturedBuyerProfile = val;
+          return result;
+        },
+        then: (resolve: any) => {
+          const rows = capturedOfferIds.map((oid) => {
+            const r = effectivePricesMatrix[oid]?.[capturedBuyerProfile || ""];
+            if (!r) return null;
+            return { offer_id: oid, ...r };
+          }).filter(Boolean);
+          return Promise.resolve({ data: rows, error: null }).then(resolve);
+        },
+      };
+      return result;
     }
+
     if (table === "vendors_public") {
       chain.in = () =>
         Promise.resolve({
@@ -98,19 +133,9 @@ vi.mock("@/integrations/supabase/client", () => {
       return chain;
     }
     if (table === "discount_tiers" || table === "vendor_visibility_rules" || table === "offer_price_tiers") {
-      chain.in = () => ({ order: () => Promise.resolve({ data: [] }) });
-      // Cas sans .order après .in (vendor_visibility_rules)
       const inResult: any = Promise.resolve({ data: [] });
       inResult.order = () => Promise.resolve({ data: [] });
       chain.in = () => inResult;
-      return chain;
-    }
-    if (table === "profiles") {
-      chain.maybeSingle = () => Promise.resolve({ data: null, error: null });
-      return chain;
-    }
-    if (table === "product_prices") {
-      // Pas de prix legacy par défaut
       return chain;
     }
     return chain;
@@ -119,21 +144,14 @@ vi.mock("@/integrations/supabase/client", () => {
   return {
     supabase: {
       from: fromHandler,
-      rpc: vi.fn((name: string, args: any) => {
-        if (name === "resolve_offer_price_for_profile") {
-          const oid = args._offer_id as string;
-          const bpid = args._buyer_profile_id as string;
-          const row = rpcPriceMatrix[oid]?.[bpid];
-          return Promise.resolve({ data: row ? [row] : null, error: null });
-        }
-        return Promise.resolve({ data: null, error: null });
-      }),
+      rpc: vi.fn(() => Promise.resolve({ data: null, error: null })),
       auth: {
         getUser: () => Promise.resolve({ data: { user: null } }),
       },
     },
   };
 });
+
 
 // Import APRÈS les mocks
 import { useProductOffers } from "./useProducts";

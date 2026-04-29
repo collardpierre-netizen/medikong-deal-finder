@@ -3,81 +3,62 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { applyMargin } from "@/lib/pricing";
 import { useBestOfferPrice } from "./useBestOfferPrice";
+import { useBuyerProfileId } from "./useResolvedOfferPrice";
 
 /**
- * Returns the user's price level code and the resolved price for a product.
- * Falls back to MediKong price (Qogita + margin) if no custom price exists.
+ * Code de niveau de prix de l'utilisateur connecté (legacy, conservé pour
+ * compatibilité d'affichage). Utilise désormais buyer_profile_id comme code
+ * canonique afin d'être cohérent avec la nouvelle cascade marketplace.
  */
 export function useUserPriceLevel() {
   const { user } = useAuth();
+  const buyerProfileId = useBuyerProfileId();
 
   const { data: levelCode } = useQuery({
-    queryKey: ["user-price-level", user?.id],
+    queryKey: ["user-price-level", user?.id, buyerProfileId],
     queryFn: async () => {
       if (!user) return "public";
-      const { data } = await supabase
-        .from("profiles")
-        .select("price_level_code")
-        .eq("user_id", user.id)
-        .maybeSingle();
-      return (data as any)?.price_level_code || "pharmacien";
+      // Source unique : buyer_profile_id résolu (profession → buyer_profile).
+      // Plus de lecture de profiles.price_level_code (legacy product_prices).
+      return buyerProfileId || "autre";
     },
-    enabled: true,
+    enabled: !!user,
     staleTime: 5 * 60 * 1000,
   });
 
-  return levelCode || (user ? "pharmacien" : "public");
+  return levelCode || (user ? "autre" : "public");
 }
 
 /**
  * Résout le prix affiché à l'acheteur pour un produit.
  *
- * Cascade (du plus spécifique au plus général) :
- *   1. **Prix par profil acheteur** sur la meilleure offre active
- *      (table `offer_buyer_profile_prices` via RPC `resolve_offer_price_for_profile`).
- *      C'est la nouvelle source de vérité marketplace.
- *   2. **Prix RBAC niveau** (table `product_prices` × `price_levels`) — legacy,
- *      conservé pour compat (clients sans système d'offres).
- *   3. **Prix MediKong** = `bestPriceExclVat` (Qogita) + marge par défaut.
+ * Cascade (alignée sur la vue DB `effective_offer_prices_v`) :
+ *   1. **Prix marketplace par profil** sur la meilleure offre active
+ *      (RPC `resolve_offer_price_for_profile` → `offer_buyer_profile_prices`
+ *      + `vendor_profile_defaults`).
+ *   2. **Prix MediKong** = `bestPriceExclVat` (Qogita) + marge par défaut.
+ *
+ * NOTE: La lecture directe de `product_prices` × `price_levels` a été retirée.
+ * La table `product_prices` est conservée DEPRECATED en DB et reste prise en
+ * compte via la cascade serveur (vue `effective_offer_prices_v`) pour ne pas
+ * casser un éventuel client qui dépendrait encore d'un prix legacy.
  */
 export function useProductPrice(
   productId: string | undefined,
   bestPriceExclVat: number | null | undefined
 ) {
   const levelCode = useUserPriceLevel();
-  const { user } = useAuth();
 
   // 1. Prix marketplace par profil acheteur (priorité la plus haute)
   const { data: marketplace } = useBestOfferPrice(productId);
 
-  // 2. Legacy: prix par niveau RBAC
-  const { data: customPrice } = useQuery({
-    queryKey: ["product-level-price", productId, levelCode],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("product_prices")
-        .select("price, price_level_id, price_levels!inner(code, label_fr)")
-        .eq("product_id", productId!)
-        .order("price_levels(sort_order)");
-      return data || [];
-    },
-    enabled: !!productId && !!user,
-  });
-
-  const userLevelPrice = customPrice?.find(
-    (p: any) => (p as any).price_levels?.code === levelCode
-  );
-
   // Cascade de résolution
   let resolvedPrice: number;
-  let priceSource: "marketplace_profile" | "rbac_level" | "medikong_margin";
+  let priceSource: "marketplace_profile" | "medikong_margin";
 
   if (marketplace?.best && marketplace.best.resolved_price_excl_vat > 0) {
     resolvedPrice = marketplace.best.resolved_price_excl_vat;
     priceSource = "marketplace_profile";
-  } else if (userLevelPrice) {
-    resolvedPrice = Number(userLevelPrice.price);
-    priceSource = "rbac_level";
   } else {
     resolvedPrice = applyMargin(bestPriceExclVat || 0);
     priceSource = "medikong_margin";
@@ -86,8 +67,10 @@ export function useProductPrice(
   return {
     levelCode,
     resolvedPrice,
-    hasCustomPrice: !!userLevelPrice || !!marketplace?.best,
-    allPrices: customPrice || [],
+    hasCustomPrice: !!marketplace?.best,
+    // allPrices vide : l'écran "Comparaison des prix par profil" basé sur
+    // product_prices ne s'affiche plus (la longueur reste à 0).
+    allPrices: [] as Array<never>,
     levelLabel: getLevelLabel(levelCode),
     // Marketplace details
     marketplaceBest: marketplace?.best ?? null,
@@ -104,7 +87,7 @@ function getLevelLabel(code: string): string {
     grossiste: "Prix grossiste",
     hopital: "Prix hospitalier",
     medikong: "Prix MediKong",
+    autre: "Prix",
   };
   return labels[code] || "Prix";
 }
-

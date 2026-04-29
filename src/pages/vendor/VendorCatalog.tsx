@@ -284,12 +284,12 @@ export default function VendorCatalog() {
               Suivez le statut des fiches que vous avez soumises à notre équipe catalogue.
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <Button asChild variant="outline" size="sm">
-              <Link to="/vendor/produits/proposer">Page dédiée</Link>
-            </Button>
-            <ProductSubmissionDialog />
-          </div>
+          <Button asChild size="sm" className="gap-1.5">
+            <Link to="/vendor/produits/proposer">
+              <Plus className="h-4 w-4" /> Proposer un produit
+            </Link>
+          </Button>
+        </div>
         </div>
         <VendorSubmissionsList />
       </VCard>

@@ -108,9 +108,16 @@ export default function VendorCatalog() {
     navigate(target);
   };
 
-  const browseBrand = (slug?: string | null) => {
-    if (!slug) return;
-    navigate(`/marques/${slug}`);
+  const filterByBrand = (brandId: string) => {
+    setFilters({ ...emptyCatalogFilters, brandId });
+    setSearch("");
+    setTab("products");
+  };
+
+  const filterByManufacturer = (manufacturerId: string) => {
+    setFilters({ ...emptyCatalogFilters, manufacturerId });
+    setSearch("");
+    setTab("products");
   };
 
   const placeholderText = useMemo(() => {

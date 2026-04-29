@@ -249,11 +249,16 @@ export function CatalogProductCard({ product, index = 0, view = "grid", searchQu
         <>
           {price > 0 ? (
             <>
-              <div className="flex items-baseline gap-1.5 mb-1">
+              <div className="flex items-baseline gap-1.5 mb-1 flex-wrap">
                 <span className="text-base font-bold text-primary">{formatPrice(price)} €</span>
                 {priceIncl > price && (
                   <span className="text-[11px] text-muted-foreground">{formatPrice(priceIncl)} € TTC</span>
                 )}
+                <PvpEconomyBadge
+                  productId={product.id}
+                  buyerPriceTtc={priceIncl > 0 ? priceIncl : price * 1.21}
+                  variant="inline"
+                />
               </div>
               <div className="flex items-center justify-between mb-2">
                 <StockBadge product={product} />

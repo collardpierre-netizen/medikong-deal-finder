@@ -64,6 +64,7 @@ const SourcingPage = lazyWithRetry(() => import("./pages/SourcingPage"), "Sourci
 const CategoriesPage = lazyWithRetry(() => import("./pages/CategoriesPage"), "CategoriesPage");
 const MyPricesPage = lazyWithRetry(() => import("./pages/MyPricesPage"), "MyPricesPage");
 const MesCategoriesPage = lazyWithRetry(() => import("./pages/MesCategoriesPage"), "MesCategoriesPage");
+const ImportHistoryPage = lazyWithRetry(() => import("./pages/ImportHistoryPage"), "ImportHistoryPage");
 
 // Segment landing pages
 const PharmaciesPage = lazyWithRetry(() => import("./pages/segment/PharmaciesPage"), "PharmaciesPage");
@@ -262,6 +263,7 @@ const App = () => (
             <Route path="/panier" element={<LP><CartPage /></LP>} />
             <Route path="/compte" element={<LP><AccountPage /></LP>} />
             <Route path="/compte/mes-categories" element={<LP><MesCategoriesPage /></LP>} />
+            <Route path="/compte/imports" element={<LP><ImportHistoryPage /></LP>} />
             <Route path="/checkout" element={<LP><CheckoutPage /></LP>} />
             <Route path="/confirmation" element={<LP><ConfirmationPage /></LP>} />
             <Route path="/commande/:id" element={<LP><OrderDetailPage /></LP>} />

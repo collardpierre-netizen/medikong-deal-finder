@@ -9662,6 +9662,10 @@ export type Database = {
         Args: { _only_flagged?: boolean }
         Returns: Json
       }
+      resolve_buyer_profile_for_user: {
+        Args: { _user_id: string }
+        Returns: string
+      }
       resolve_effective_pack_size: {
         Args: { _external_offer_id: string }
         Returns: {

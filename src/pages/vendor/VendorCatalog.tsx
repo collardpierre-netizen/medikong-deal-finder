@@ -96,8 +96,9 @@ export default function VendorCatalog() {
   const [tab, setTab] = useState<EntityType>("products");
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState<CatalogFilters>(emptyCatalogFilters);
+  const [productSort, setProductSort] = useState<ProductSort>("popularity");
 
-  const { data = [], isLoading } = useCatalogList(tab, search, filters);
+  const { data = [], isLoading } = useCatalogList(tab, search, filters, productSort);
 
   const startOffer = (productId?: string) => {
     const target = productId

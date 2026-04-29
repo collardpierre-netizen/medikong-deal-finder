@@ -249,7 +249,25 @@ export default function VendorCatalog() {
             </div>
           )}
 
-          <TabsContent value="products" className="m-0">
+          <TabsContent value="products" className="m-0 space-y-3">
+            {activeScopeLabel && (
+              <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-[#EFF4FE] border border-[#C9DAFB] text-[12px] text-[#1B5BDA]">
+                <span>
+                  Recherche limitée à{" "}
+                  {activeScopeLabel.kind === "brand" ? "la marque" : "le fabricant"}{" "}
+                  <strong>{activeScopeLabel.name}</strong>
+                  {debouncedSearch.trim() ? <> · « {debouncedSearch.trim()} »</> : null}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 px-2 ml-auto text-[11px] text-[#1B5BDA] hover:bg-[#DDE7FB]"
+                  onClick={() => setFilters(emptyCatalogFilters)}
+                >
+                  <X className="h-3 w-3 mr-1" /> Retirer le filtre
+                </Button>
+              </div>
+            )}
             {isLoading ? (
               <ListLoader variant="product" />
             ) : data.length === 0 ? (

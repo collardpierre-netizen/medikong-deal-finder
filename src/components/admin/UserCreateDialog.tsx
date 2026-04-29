@@ -258,6 +258,30 @@ export default function UserCreateDialog({ open, onOpenChange, onCreated }: Prop
 
           {/* --- VENDOR --- */}
           <TabsContent value="vendor" className="space-y-3 mt-4">
+            {vendorError && (
+              <VendorAccountErrorAlert
+                presentation={vendorError}
+                onAction={(a: VendorAccountErrorAction) => {
+                  if (a.intent === "edit_email") {
+                    setVendorError(null);
+                    setTimeout(() => {
+                      (document.querySelector('input[type="email"]') as HTMLInputElement | null)?.focus();
+                    }, 50);
+                    return;
+                  }
+                  if (a.intent === "retry") {
+                    setVendorError(null);
+                    void handleCreateVendor();
+                    return;
+                  }
+                  if ((a.intent === "open_vendor" || a.intent === "open_user") && a.href) {
+                    onOpenChange(false);
+                    window.location.assign(a.href);
+                  }
+                }}
+                onDismiss={() => setVendorError(null)}
+              />
+            )}
             <div className="grid grid-cols-2 gap-3">
               <div className="col-span-2">
                 <Label className="text-xs">Nom de l'entreprise *</Label>

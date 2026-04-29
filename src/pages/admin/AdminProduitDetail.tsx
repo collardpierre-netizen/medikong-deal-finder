@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, ShoppingCart, Package, ImageOff, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ProductPhotoUploader from "@/components/admin/ProductPhotoUploader";
+import PvpEditor from "@/components/admin/PvpEditor";
 
 const AdminProduitDetail = () => {
   const { id } = useParams();
@@ -144,6 +145,14 @@ const AdminProduitDetail = () => {
               ))}
             </div>
           </div>
+
+          <PvpEditor
+            productId={product.id}
+            initialPvpTtcCents={(product as any).pvp_ttc_cents}
+            initialSource={(product as any).pvp_source}
+            initialUpdatedAt={(product as any).pvp_updated_at}
+            initialCountryCode={(product as any).pvp_country_code}
+          />
 
           {product.description && (
             <div className="p-5 rounded-[10px]" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>

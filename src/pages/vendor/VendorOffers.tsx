@@ -15,6 +15,7 @@ import { computeMargin } from "@/lib/vendorMargin";
 import { toast } from "sonner";
 import { useCurrentVendor } from "@/hooks/useCurrentVendor";
 import ProfilePricesEditor from "@/components/vendor/ProfilePricesEditor";
+import OfferSuggestedRetailPriceEditor from "@/components/vendor/OfferSuggestedRetailPriceEditor";
 import * as XLSX from "xlsx";
 
 const PROFILE_TYPES = [
@@ -1470,6 +1471,15 @@ export default function VendorOffers() {
 
           {/* ─── Prix HTVA par profil acheteur (référentiel buyer_profiles) ─── */}
           <ProfilePricesEditor offerId={editingId} basePrice={parseFloat(form.price_excl_vat) || 0} />
+
+          {/* ─── PVP indicatif (réservé fabricants & distributeurs officiels) ─── */}
+          {editingId && form.product_id && vendor?.id && (
+            <OfferSuggestedRetailPriceEditor
+              offerId={editingId}
+              vendorId={vendor.id}
+              productId={form.product_id}
+            />
+          )}
 
           {/* ─── MOQ/MOV par profil interne (offer_profile_rules) ─── */}
           <ProfileRulesEditor offerId={editingId} basePrice={parseFloat(form.price_excl_vat) || 0} />

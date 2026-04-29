@@ -180,6 +180,78 @@ export type Database = {
         }
         Relationships: []
       }
+      brand_official_distributors: {
+        Row: {
+          brand_id: string
+          created_at: string
+          id: string
+          is_active: boolean
+          notes: string | null
+          updated_at: string
+          validated_at: string | null
+          validated_by: string | null
+          vendor_id: string
+        }
+        Insert: {
+          brand_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          updated_at?: string
+          validated_at?: string | null
+          validated_by?: string | null
+          vendor_id: string
+        }
+        Update: {
+          brand_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          updated_at?: string
+          validated_at?: string | null
+          validated_by?: string | null
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brand_official_distributors_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brand_logistics_stats"
+            referencedColumns: ["brand_id"]
+          },
+          {
+            foreignKeyName: "brand_official_distributors_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brands"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brand_official_distributors_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brand_official_distributors_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brand_official_distributors_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       brand_reviews: {
         Row: {
           brand_id: string
@@ -3028,6 +3100,10 @@ export type Database = {
           shipping_from_country: string | null
           stock_quantity: number
           stock_status: Database["public"]["Enums"]["stock_status_enum"]
+          suggested_retail_price_cents: number | null
+          suggested_retail_price_source:
+            | Database["public"]["Enums"]["pvp_source_enum"]
+            | null
           synced_at: string | null
           updated_at: string
           vat_rate: number
@@ -3068,6 +3144,10 @@ export type Database = {
           shipping_from_country?: string | null
           stock_quantity?: number
           stock_status?: Database["public"]["Enums"]["stock_status_enum"]
+          suggested_retail_price_cents?: number | null
+          suggested_retail_price_source?:
+            | Database["public"]["Enums"]["pvp_source_enum"]
+            | null
           synced_at?: string | null
           updated_at?: string
           vat_rate?: number
@@ -3108,6 +3188,10 @@ export type Database = {
           shipping_from_country?: string | null
           stock_quantity?: number
           stock_status?: Database["public"]["Enums"]["stock_status_enum"]
+          suggested_retail_price_cents?: number | null
+          suggested_retail_price_source?:
+            | Database["public"]["Enums"]["pvp_source_enum"]
+            | null
           synced_at?: string | null
           updated_at?: string
           vat_rate?: number
@@ -4317,6 +4401,10 @@ export type Database = {
           promotion_label: string | null
           promotion_start_date: string | null
           proposed_by_vendor_id: string | null
+          pvp_country_code: string | null
+          pvp_source: Database["public"]["Enums"]["pvp_source_enum"] | null
+          pvp_ttc_cents: number | null
+          pvp_updated_at: string | null
           qogita_fid: string | null
           qogita_qid: string | null
           qogita_slug: string | null
@@ -4398,6 +4486,10 @@ export type Database = {
           promotion_label?: string | null
           promotion_start_date?: string | null
           proposed_by_vendor_id?: string | null
+          pvp_country_code?: string | null
+          pvp_source?: Database["public"]["Enums"]["pvp_source_enum"] | null
+          pvp_ttc_cents?: number | null
+          pvp_updated_at?: string | null
           qogita_fid?: string | null
           qogita_qid?: string | null
           qogita_slug?: string | null
@@ -4479,6 +4571,10 @@ export type Database = {
           promotion_label?: string | null
           promotion_start_date?: string | null
           proposed_by_vendor_id?: string | null
+          pvp_country_code?: string | null
+          pvp_source?: Database["public"]["Enums"]["pvp_source_enum"] | null
+          pvp_ttc_cents?: number | null
+          pvp_updated_at?: string | null
           qogita_fid?: string | null
           qogita_qid?: string | null
           qogita_slug?: string | null
@@ -8703,6 +8799,7 @@ export type Database = {
           id: string
           instagram_url: string | null
           is_active: boolean
+          is_manufacturer: boolean
           is_top_seller: boolean | null
           is_verified: boolean
           linkedin_url: string | null
@@ -8776,6 +8873,7 @@ export type Database = {
           id?: string
           instagram_url?: string | null
           is_active?: boolean
+          is_manufacturer?: boolean
           is_top_seller?: boolean | null
           is_verified?: boolean
           linkedin_url?: string | null
@@ -8849,6 +8947,7 @@ export type Database = {
           id?: string
           instagram_url?: string | null
           is_active?: boolean
+          is_manufacturer?: boolean
           is_top_seller?: boolean | null
           is_verified?: boolean
           linkedin_url?: string | null
@@ -9451,6 +9550,10 @@ export type Database = {
         Args: { _source_hash: string }
         Returns: undefined
       }
+      can_vendor_set_suggested_price: {
+        Args: { _product_id: string; _vendor_id: string }
+        Returns: boolean
+      }
       consume_qogita_tokens: { Args: { _amount: number }; Returns: Json }
       count_products_per_category: {
         Args: never
@@ -9682,6 +9785,17 @@ export type Database = {
       }
       resolve_product_brands: { Args: never; Returns: undefined }
       resolve_product_categories: { Args: never; Returns: undefined }
+      resolve_product_pvp: {
+        Args: { _country_code?: string; _product_id: string }
+        Returns: {
+          pvp_ttc_cents: number
+          source: Database["public"]["Enums"]["pvp_source_enum"]
+          source_label: string
+          updated_at: string
+          vendor_id: string
+          vendor_name: string
+        }[]
+      }
       resolve_product_vat_rate: {
         Args: { _country_code?: string; _product_id: string }
         Returns: {
@@ -9788,6 +9902,7 @@ export type Database = {
         | "approved"
         | "rejected"
         | "needs_changes"
+      pvp_source_enum: "apb" | "pmr" | "manufacturer" | "distributor" | "manual"
       qogita_resync_mode:
         | "daily_stale_refresh"
         | "mute_detection"
@@ -10061,6 +10176,7 @@ export const Constants = {
         "rejected",
         "needs_changes",
       ],
+      pvp_source_enum: ["apb", "pmr", "manufacturer", "distributor", "manual"],
       qogita_resync_mode: [
         "daily_stale_refresh",
         "mute_detection",

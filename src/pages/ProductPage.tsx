@@ -34,6 +34,7 @@ import { ExternalVendorLogo } from "@/components/product/ExternalVendorLogo";
 import ProfileResolvedPriceBadge from "@/components/product/ProfileResolvedPriceBadge";
 import { SafeBoundary } from "@/components/SafeBoundary";
 import VendorDelegateCompact from "@/components/vendor/VendorDelegateCompact";
+import { PvpEconomyBadge } from "@/components/product/PvpEconomyBadge";
 
 function formatEur(n: number | null | undefined): string {
   const v = Number(n);
@@ -1238,6 +1239,19 @@ export default function ProductPage() {
                     Les prix et les offres seront visibles après validation de votre profil par notre équipe.
                   </p>
                   <p className="text-xs text-muted-foreground">Cela prend généralement moins de 24h.</p>
+                </div>
+              )}
+
+              {/* ── Bloc Économie / Marge potentielle (PVP officiel) ── */}
+              {user && isVerifiedBuyer && bestOffer && (
+                <div className="mb-6">
+                  <PvpEconomyBadge
+                    productId={product.id}
+                    buyerPriceTtc={Number(bestOffer.unitPriceInclVat) || Number(bestOffer.unitPriceEur) * 1.21}
+                    buyerPriceHtva={Number(bestOffer.unitPriceEur)}
+                    countryCode={(product as any).pvp_country_code || "BE"}
+                    variant="card"
+                  />
                 </div>
               )}
 

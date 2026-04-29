@@ -13,9 +13,12 @@ import { useCart } from "@/hooks/useCart";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
+type MatchField = "gtin" | "cnk" | "sku";
+
 type ImportLine = {
   ean?: string;
   cnk?: string;
+  sku?: string;
   quantity: number;
   currentPrice: number;
 };
@@ -24,11 +27,25 @@ type MatchedLine = ImportLine & {
   productId?: string;
   productName?: string;
   productImage?: string;
+  productSku?: string;
   mediPrice?: number;
   offerId?: string;
   vendorName?: string;
+  matchedBy?: MatchField;
   status: "found" | "unavailable";
   saving?: number;
+};
+
+const MATCH_FIELD_LABEL: Record<MatchField, string> = {
+  gtin: "GTIN",
+  cnk: "CNK",
+  sku: "SKU",
+};
+
+const MATCH_FIELD_BADGE: Record<MatchField, string> = {
+  gtin: "bg-blue-100 text-blue-700 border-blue-200",
+  cnk: "bg-purple-100 text-purple-700 border-purple-200",
+  sku: "bg-amber-100 text-amber-700 border-amber-200",
 };
 
 type Props = {
@@ -42,6 +59,7 @@ type ImportPayloadLine = {
   index: number;
   ean: string | null;
   cnk: string | null;
+  sku: string | null;
   quantity: number;
   currentPrice: number;
 };
@@ -126,50 +144,80 @@ const fetchBestOffers = async (productIds: string[]) => {
 const queryMatchImportLines = async (payload: ImportPayloadLine[]) => {
   const eans = [...new Set(payload.map((line) => line.ean).filter(Boolean))] as string[];
   const cnks = [...new Set(payload.map((line) => line.cnk).filter(Boolean))] as string[];
+  const skus = [...new Set(payload.map((line) => line.sku).filter(Boolean))] as string[];
 
-  const [productsByEanResult, productsByCnkResult] = await Promise.all([
+  const [productsByEanResult, productsByCnkResult, productsBySkuResult] = await Promise.all([
     eans.length > 0
       ? supabase
           .from("products")
-          .select("id, name, image_url, gtin, cnk_code")
+          .select("id, name, image_url, gtin, cnk_code, sku")
           .in("gtin", eans)
           .eq("is_active", true)
       : Promise.resolve({ data: [], error: null }),
     cnks.length > 0
       ? supabase
           .from("products")
-          .select("id, name, image_url, gtin, cnk_code")
+          .select("id, name, image_url, gtin, cnk_code, sku")
           .in("cnk_code", cnks)
+          .eq("is_active", true)
+      : Promise.resolve({ data: [], error: null }),
+    skus.length > 0
+      ? supabase
+          .from("products")
+          .select("id, name, image_url, gtin, cnk_code, sku")
+          .in("sku", skus)
           .eq("is_active", true)
       : Promise.resolve({ data: [], error: null }),
   ]);
 
   if (productsByEanResult.error) throw productsByEanResult.error;
   if (productsByCnkResult.error) throw productsByCnkResult.error;
+  if (productsBySkuResult.error) throw productsBySkuResult.error;
 
   const productByEan = new Map<string, any>();
   const productByCnk = new Map<string, any>();
+  const productBySku = new Map<string, any>();
 
-  for (const product of [...(productsByEanResult.data || []), ...(productsByCnkResult.data || [])]) {
+  for (const product of [
+    ...(productsByEanResult.data || []),
+    ...(productsByCnkResult.data || []),
+    ...(productsBySkuResult.data || []),
+  ]) {
     if (product.gtin && !productByEan.has(product.gtin)) productByEan.set(product.gtin, product);
     if (product.cnk_code && !productByCnk.has(product.cnk_code)) productByCnk.set(product.cnk_code, product);
+    if (product.sku && !productBySku.has(product.sku)) productBySku.set(product.sku, product);
   }
+
+  // Stratégie de fallback : GTIN > CNK > SKU
+  const resolveMatch = (line: { ean: string | null; cnk: string | null; sku: string | null }):
+    { product: any | undefined; matchedBy?: MatchField } => {
+    if (line.ean) {
+      const p = productByEan.get(line.ean);
+      if (p) return { product: p, matchedBy: "gtin" };
+    }
+    if (line.cnk) {
+      const p = productByCnk.get(line.cnk);
+      if (p) return { product: p, matchedBy: "cnk" };
+    }
+    if (line.sku) {
+      const p = productBySku.get(line.sku);
+      if (p) return { product: p, matchedBy: "sku" };
+    }
+    return { product: undefined };
+  };
 
   const productIds = [
     ...new Set(
       payload
-        .map((line) => {
-          const product = (line.ean ? productByEan.get(line.ean) : undefined) || (line.cnk ? productByCnk.get(line.cnk) : undefined);
-          return product?.id;
-        })
+        .map((line) => resolveMatch(line).product?.id)
         .filter(Boolean),
     ),
   ] as string[];
 
   const bestOfferByProduct = productIds.length > 0 ? await fetchBestOffers(productIds) : new Map<string, any>();
 
-  return payload.map(({ index, ean, cnk, quantity, currentPrice }) => {
-    const product = (ean ? productByEan.get(ean) : undefined) || (cnk ? productByCnk.get(cnk) : undefined);
+  return payload.map(({ index, ean, cnk, sku, quantity, currentPrice }) => {
+    const { product, matchedBy } = resolveMatch({ ean, cnk, sku });
     const offer = product ? bestOfferByProduct.get(product.id) : undefined;
     const mediPrice = offer?.price_excl_vat != null ? Number(offer.price_excl_vat) : undefined;
     const vendor = offer?.vendor_public as { company_name?: string | null; name?: string | null; display_name?: string | null } | null | undefined;
@@ -179,14 +227,17 @@ const queryMatchImportLines = async (payload: ImportPayloadLine[]) => {
       result: {
         ean: ean ?? undefined,
         cnk: cnk ?? undefined,
+        sku: sku ?? undefined,
         quantity,
         currentPrice,
         productId: product?.id,
         productName: product?.name ?? undefined,
         productImage: product?.image_url ?? undefined,
+        productSku: product?.sku ?? undefined,
         mediPrice,
         offerId: offer?.id ?? undefined,
         vendorName: vendor?.company_name || vendor?.name || vendor?.display_name || "—",
+        matchedBy,
         status: product && offer ? "found" : "unavailable",
         saving: mediPrice != null && currentPrice > mediPrice ? Math.max(0, currentPrice - mediPrice) : 0,
       } satisfies MatchedLine,
@@ -256,8 +307,9 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
       };
 
       const lines: ImportLine[] = rows.map((r: any) => ({
-        ean: cleanCode(r["EAN (ou CNK)"] ?? r["EAN"] ?? r["ean"]),
+        ean: cleanCode(r["EAN (ou CNK)"] ?? r["EAN"] ?? r["ean"] ?? r["GTIN"] ?? r["gtin"]),
         cnk: cleanCode(r["CNK (optionnel)"] ?? r["CNK"] ?? r["cnk"]),
+        sku: cleanCode(r["SKU"] ?? r["sku"] ?? r["Référence"] ?? r["Reference"] ?? r["Ref"] ?? r["ref"]),
         quantity: Number(r["Quantité"] || r["Quantite"] || r["quantity"] || r["Qty"] || 1),
         currentPrice: parsePrice(
           r["Prix actuel HTVA (€)"] ??
@@ -268,7 +320,7 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
           r["Prix"] ??
           r["price"]
         ),
-      })).filter(l => l.ean || l.cnk);
+      })).filter(l => l.ean || l.cnk || l.sku);
 
       if (lines.length === 0) {
         toast.error("Aucune ligne valide trouvée dans le fichier");
@@ -283,6 +335,7 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
         index,
         ean: line.ean ?? null,
         cnk: line.cnk ?? null,
+        sku: line.sku ?? null,
         quantity: line.quantity,
         currentPrice: line.currentPrice,
       }));
@@ -385,6 +438,8 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
         Produit: r.productName || "Non trouvé",
         EAN: r.ean || "",
         CNK: r.cnk || "",
+        SKU: r.sku || r.productSku || "",
+        "Identifié par": r.matchedBy ? MATCH_FIELD_LABEL[r.matchedBy] : "—",
         "Qté": r.quantity,
         "Votre prix HT": r.currentPrice > 0 ? Number(r.currentPrice.toFixed(2)) : null,
         "Prix MediKong HT": r.mediPrice != null ? Number(r.mediPrice.toFixed(2)) : null,
@@ -439,6 +494,8 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
       { wch: 38 },
       { wch: 18 },
       { wch: 14 },
+      { wch: 16 },
+      { wch: 14 },
       { wch: 8 },
       { wch: 16 },
       { wch: 18 },
@@ -478,14 +535,19 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
 
     autoTable(doc, {
       startY: 96,
-      head: [["Produit", "EAN/CNK", "Qté", "Votre prix", "Prix MediKong", "Δ €", "Δ %", "Statut"]],
+      head: [["Produit", "Codes", "Identifié par", "Qté", "Votre prix", "Prix MediKong", "Δ €", "Δ %", "Statut"]],
       body: filteredResults.map((r) => {
         const deltaPct = calcDeltaPct(r.currentPrice, r.mediPrice);
         const deltaAmount = getDeltaAmount(r);
 
         return [
           r.productName || "Non trouvé",
-          [r.ean ? `EAN: ${r.ean}` : null, r.cnk ? `CNK: ${r.cnk}` : null].filter(Boolean).join(" · ") || "—",
+          [
+            r.ean ? `EAN: ${r.ean}` : null,
+            r.cnk ? `CNK: ${r.cnk}` : null,
+            r.sku ? `SKU: ${r.sku}` : null,
+          ].filter(Boolean).join(" · ") || "—",
+          r.matchedBy ? MATCH_FIELD_LABEL[r.matchedBy] : "—",
           String(r.quantity),
           r.currentPrice > 0 ? formatPrice(r.currentPrice) : "—",
           r.mediPrice != null ? formatPrice(r.mediPrice) : "—",
@@ -497,14 +559,15 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
       styles: { fontSize: 9, cellPadding: 6, textColor: [31, 41, 55] },
       headStyles: { fillColor: [37, 99, 235], textColor: [255, 255, 255] },
       columnStyles: {
-        0: { cellWidth: 210 },
+        0: { cellWidth: 180 },
         1: { cellWidth: 110 },
-        2: { halign: "center", cellWidth: 40 },
-        3: { halign: "right", cellWidth: 70 },
-        4: { halign: "right", cellWidth: 85 },
-        5: { halign: "right", cellWidth: 55 },
-        6: { halign: "right", cellWidth: 55 },
-        7: { cellWidth: 90 },
+        2: { halign: "center", cellWidth: 60 },
+        3: { halign: "center", cellWidth: 32 },
+        4: { halign: "right", cellWidth: 60 },
+        5: { halign: "right", cellWidth: 75 },
+        6: { halign: "right", cellWidth: 50 },
+        7: { halign: "right", cellWidth: 50 },
+        8: { cellWidth: 80 },
       },
       didParseCell: (hookData) => {
         if (hookData.section !== "body") return;
@@ -731,20 +794,39 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
                                 />
                               )}
                             </td>
-                            <td className="p-2 max-w-[200px]">
+                            <td className="p-2 max-w-[220px]">
                               {r.status === "found" ? (
-                                <div>
+                                <div className="space-y-1">
                                   <p className="font-medium text-foreground text-xs line-clamp-1">{r.productName}</p>
                                   <p className="text-[10px] text-muted-foreground truncate">
-                                    {r.ean && `EAN: ${r.ean}`}{r.ean && r.cnk && " · "}{r.cnk && `CNK: ${r.cnk}`}
+                                    {[
+                                      r.ean && `EAN: ${r.ean}`,
+                                      r.cnk && `CNK: ${r.cnk}`,
+                                      r.sku && `SKU: ${r.sku}`,
+                                    ].filter(Boolean).join(" · ")}
                                   </p>
+                                  {r.matchedBy && (
+                                    <span
+                                      className={`inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[9px] font-medium ${MATCH_FIELD_BADGE[r.matchedBy]}`}
+                                      title={`Produit identifié via ${MATCH_FIELD_LABEL[r.matchedBy]}`}
+                                    >
+                                      ✓ {MATCH_FIELD_LABEL[r.matchedBy]}
+                                    </span>
+                                  )}
                                 </div>
                               ) : (
-                                <div>
+                                <div className="space-y-1">
                                   <p className="font-medium text-destructive text-xs">Non trouvé</p>
                                   <p className="text-[10px] text-destructive/70 truncate">
-                                    {r.ean && `EAN: ${r.ean}`}{r.ean && r.cnk && " · "}{r.cnk && `CNK: ${r.cnk}`}
+                                    {[
+                                      r.ean && `EAN: ${r.ean}`,
+                                      r.cnk && `CNK: ${r.cnk}`,
+                                      r.sku && `SKU: ${r.sku}`,
+                                    ].filter(Boolean).join(" · ")}
                                   </p>
+                                  <span className="inline-flex items-center gap-1 rounded-full border border-destructive/30 bg-destructive/5 px-1.5 py-0.5 text-[9px] font-medium text-destructive">
+                                    Aucun match (GTIN/CNK/SKU)
+                                  </span>
                                 </div>
                               )}
                             </td>

@@ -253,6 +253,7 @@ export function BrandFactSheet({ brand }: { brand: BrandRow }) {
     <TooltipProvider delayDuration={150}>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* ─── Section 1 : Conformité ──────────────────────────────────── */}
+        {hasComplianceData && (
         <Card className="p-5">
           <CardHeader icon={Shield} color="bg-emerald-50 text-emerald-700" title="Conformité réglementaire & qualité" />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5">

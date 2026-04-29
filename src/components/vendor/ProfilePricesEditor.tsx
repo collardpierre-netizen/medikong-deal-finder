@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Tag, Plus, Trash2, ChevronRight, Loader2 } from "lucide-react";
+import ResolvedProfilePricesPreview from "./ResolvedProfilePricesPreview";
 
 type PricingMode = "absolute" | "discount_pct";
 
@@ -86,6 +87,29 @@ export default function ProfilePricesEditor({ offerId, basePrice }: Props) {
     return basePrice > 0 ? Math.round(basePrice * (1 - d / 100) * 100) / 100 : 0;
   };
 
+  // Détecte les modifications non sauvegardées (pour badge "Brouillon" du preview)
+  const isDirty = useMemo(() => {
+    const dbRows = (existing || []) as any[];
+    const norm = (r: any) => ({
+      buyer_profile_id: r.buyer_profile_id,
+      pricing_mode: r.pricing_mode,
+      price_excl_vat: r.price_excl_vat != null ? Number(r.price_excl_vat) : null,
+      discount_pct: r.discount_pct != null ? Number(r.discount_pct) : null,
+    });
+    const normDraft = (r: ProfilePriceRow) => ({
+      buyer_profile_id: r.buyer_profile_id,
+      pricing_mode: r.pricing_mode,
+      price_excl_vat: r.pricing_mode === "absolute" ? Number(r.price_excl_vat) || 0 : null,
+      discount_pct: r.pricing_mode === "discount_pct" ? Number(r.discount_pct) || 0 : null,
+    });
+    const a = dbRows.map(norm).sort((x, y) => x.buyer_profile_id.localeCompare(y.buyer_profile_id));
+    const b = rows
+      .filter((r) => r.buyer_profile_id)
+      .map(normDraft)
+      .sort((x, y) => x.buyer_profile_id.localeCompare(y.buyer_profile_id));
+    return JSON.stringify(a) !== JSON.stringify(b);
+  }, [rows, existing]);
+
   const save = async () => {
     if (!offerId) {
       toast.info("Sauvegardez l'offre d'abord, puis modifiez-la pour ajouter les prix par profil.");
@@ -140,6 +164,7 @@ export default function ProfilePricesEditor({ offerId, basePrice }: Props) {
         if (error) throw error;
       }
       qc.invalidateQueries({ queryKey: ["offer-buyer-profile-prices", offerId] });
+      qc.invalidateQueries({ queryKey: ["resolve-offer-price-by-profile", offerId] });
       toast.success("Prix par profil enregistrés");
     } catch (err: any) {
       toast.error(err.message || "Erreur lors de l'enregistrement");
@@ -284,6 +309,17 @@ export default function ProfilePricesEditor({ offerId, basePrice }: Props) {
               </button>
             </div>
           ))}
+
+          {/* Aperçu live : prix HTVA résolu pour CHAQUE profil (cascade officielle via RPC) */}
+          <div className="pt-2">
+            <ResolvedProfilePricesPreview
+              offerId={offerId}
+              basePrice={basePrice}
+              drafts={rows}
+              profiles={profiles as any}
+              isDirty={isDirty}
+            />
+          </div>
 
           <div className="flex items-center gap-2 pt-1">
             <button

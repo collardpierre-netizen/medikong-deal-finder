@@ -104,6 +104,9 @@ export async function exportProducts() {
       image_urls: Array.isArray(p.image_urls) ? p.image_urls.join(";") : (p.image_url || ""),
       source: p.source || "",
       is_active: p.is_active,
+      pvp_ttc: p.pvp_ttc_cents != null ? Number((p.pvp_ttc_cents / 100).toFixed(2)) : "",
+      pvp_source: p.pvp_source || "",
+      pvp_country_code: p.pvp_country_code || "",
     }));
     toast.loading(`Génération du fichier XLSX (${rows.length.toLocaleString()} lignes)...`, { id: toastId });
     // Use setTimeout to let the UI update before heavy XLSX generation

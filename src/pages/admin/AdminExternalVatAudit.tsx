@@ -21,39 +21,68 @@ const FALLBACK_VAT = 21;
 const EXPECTED_RATES = [6, 21];
 
 export default function AdminExternalVatAudit() {
-  const { data, isLoading } = useQuery({
+  const { data: offers, isLoading } = useQuery({
     queryKey: ["admin-external-vat-audit"],
     queryFn: async () => {
-      const { data: offers, error } = await supabase
+      const { data, error } = await supabase
         .from("external_offers")
         .select(`
           id, unit_price, product_url, updated_at,
           external_vendors:external_vendor_id ( id, name ),
           products:product_id (
-            id, name, gtin, cnk_code,
+            id, name, gtin, cnk_code, vat_rate_override,
             categories:category_id ( id, name, vat_rate )
           )
         `)
         .eq("is_active", true)
         .limit(5000);
       if (error) throw error;
-      return offers || [];
+      return data || [];
     },
   });
 
+  // Batch-résolution du taux TVA effectif via RPC pour chaque produit unique
+  const productIds = useMemo(() => {
+    const ids = new Set<string>();
+    (offers || []).forEach((eo: any) => { if (eo.products?.id) ids.add(eo.products.id); });
+    return Array.from(ids);
+  }, [offers]);
+
+  const { data: vatMap = {} } = useQuery({
+    queryKey: ["admin-vat-resolved", productIds],
+    queryFn: async () => {
+      const out: Record<string, { vat_rate: number; source: string }> = {};
+      // Limite à ~200 appels parallèles pour éviter de saturer
+      const chunks: string[][] = [];
+      for (let i = 0; i < productIds.length; i += 50) chunks.push(productIds.slice(i, i + 50));
+      for (const chunk of chunks) {
+        await Promise.all(chunk.map(async (pid) => {
+          const { data } = await supabase.rpc("resolve_product_vat_rate" as any, { _product_id: pid, _country_code: "BE" });
+          const row = Array.isArray(data) ? data[0] : data;
+          if (row) out[pid] = { vat_rate: Number((row as any).vat_rate ?? 21), source: String((row as any).source ?? "fallback") };
+        }));
+      }
+      return out;
+    },
+    enabled: productIds.length > 0,
+  });
+
   const rows = useMemo(() => {
-    return (data || []).map((eo: any) => {
+    return (offers || []).map((eo: any) => {
       const cat = eo.products?.categories;
       const rawRate = cat?.vat_rate != null ? Number(cat.vat_rate) : null;
-      const usedRate = rawRate != null ? rawRate : FALLBACK_VAT;
+      const resolved = eo.products?.id ? vatMap[eo.products.id] : null;
+      const usedRate = resolved?.vat_rate ?? (rawRate != null ? rawRate : FALLBACK_VAT);
+      const source = resolved?.source ?? (rawRate != null ? "category" : "fallback");
       const ttc = Number(eo.unit_price) || 0;
       const htva = ttc > 0 ? Math.round((ttc / (1 + usedRate / 100)) * 100) / 100 : 0;
 
-      let status: "ok" | "fallback" | "missing_category" | "unexpected_rate" = "ok";
+      let status: "ok" | "fallback" | "missing_category" | "unexpected_rate" | "override" | "cnk" = "ok";
       if (!eo.products) status = "missing_category";
-      else if (!cat) status = "missing_category";
-      else if (rawRate == null) status = "fallback";
-      else if (!EXPECTED_RATES.includes(rawRate)) status = "unexpected_rate";
+      else if (source === "product_override") status = "override";
+      else if (source === "cnk_exact" || source.startsWith("cnk_prefix")) status = "cnk";
+      else if (source === "fallback") status = "fallback";
+      else if (!EXPECTED_RATES.includes(usedRate)) status = "unexpected_rate";
 
       return {
         id: eo.id,
@@ -64,13 +93,14 @@ export default function AdminExternalVatAudit() {
         categoryName: cat?.name || "—",
         rawRate,
         usedRate,
+        source,
         ttc,
         htva,
         productUrl: eo.product_url,
         status,
       };
     });
-  }, [data]);
+  }, [offers, vatMap]);
 
   const stats = useMemo(() => {
     const total = rows.length;

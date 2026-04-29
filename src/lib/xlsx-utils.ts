@@ -41,6 +41,9 @@ export function downloadProductTemplate() {
     ["image_urls", "Non", "URLs des images séparées par des points-virgules (;)"],
     ["source", "Non", "Source du produit (défaut: medikong)"],
     ["is_active", "Non", "true ou false (défaut: true)"],
+    ["pvp_ttc", "Non", "Prix Public Conseillé TTC en euros (ex: 24.90). Sert au calcul de marge potentielle pour l'acheteur."],
+    ["pvp_source", "Non", "Source du PVP : apb (Belgique officiel), pmr (cosmétique), manufacturer, distributor, manual. Défaut: apb si pvp_ttc présent."],
+    ["pvp_country_code", "Non", "Pays du PVP : BE, FR ou LU. Défaut: BE."],
   ];
   const wsGuide = XLSX.utils.aoa_to_sheet(guide);
   wsGuide["!cols"] = [{ wch: 18 }, { wch: 14 }, { wch: 70 }];

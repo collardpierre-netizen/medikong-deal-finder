@@ -7159,6 +7159,42 @@ export type Database = {
         }
         Relationships: []
       }
+      user_price_watch_history: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          notes: string | null
+          previous_price_excl_vat: number | null
+          price_excl_vat: number | null
+          product_id: string
+          user_id: string
+          watch_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          previous_price_excl_vat?: number | null
+          price_excl_vat?: number | null
+          product_id: string
+          user_id: string
+          watch_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          previous_price_excl_vat?: number | null
+          price_excl_vat?: number | null
+          product_id?: string
+          user_id?: string
+          watch_id?: string | null
+        }
+        Relationships: []
+      }
       user_price_watches: {
         Row: {
           created_at: string

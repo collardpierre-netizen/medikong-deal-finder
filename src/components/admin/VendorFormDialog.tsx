@@ -310,6 +310,13 @@ export default function VendorFormDialog({ open, onOpenChange }: Props) {
           <DialogTitle>Ajouter un vendeur</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 mt-2">
+          {errorPresentation && (
+            <VendorAccountErrorAlert
+              presentation={errorPresentation}
+              onAction={handleErrorAction}
+              onDismiss={dismissError}
+            />
+          )}
           <div>
             <Label>Type de vendeur *</Label>
             <Select value={form.type} onValueChange={(v) => set("type", v)}>

@@ -273,27 +273,32 @@ export default function VendorFormDialog({ open, onOpenChange }: Props) {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <CheckCircle2 size={20} className="text-green-600" /> Vendeur créé !
+              <CheckCircle2 size={20} className="text-green-600" />
+              {result.reused ? "Accès rattaché !" : "Vendeur créé !"}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 mt-2">
             <p className="text-sm text-muted-foreground">
-              Le compte a été créé. Communiquez ces identifiants au vendeur :
+              {result.reused
+                ? "Le compte utilisateur existant a été rattaché au vendeur. Le vendeur conserve son mot de passe actuel."
+                : "Le compte a été créé. Communiquez ces identifiants au vendeur :"}
             </p>
             <div className="rounded-lg p-4 space-y-3" style={{ backgroundColor: "#F8FAFC", border: "1px solid #E2E8F0" }}>
               <div>
                 <span className="text-[11px] font-semibold uppercase text-muted-foreground">Email</span>
                 <p className="text-sm font-mono">{form.email}</p>
               </div>
-              <div>
-                <span className="text-[11px] font-semibold uppercase text-muted-foreground">Mot de passe temporaire</span>
-                <div className="flex items-center gap-2">
-                  <p className="text-sm font-mono font-bold">{result.temp_password}</p>
-                  <button onClick={copyPassword} className="p-1 rounded hover:bg-muted transition-colors">
-                    {copied ? <CheckCircle2 size={14} className="text-green-600" /> : <Copy size={14} className="text-muted-foreground" />}
-                  </button>
+              {result.temp_password && (
+                <div>
+                  <span className="text-[11px] font-semibold uppercase text-muted-foreground">Mot de passe temporaire</span>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-mono font-bold">{result.temp_password}</p>
+                    <button onClick={copyPassword} className="p-1 rounded hover:bg-muted transition-colors">
+                      {copied ? <CheckCircle2 size={14} className="text-green-600" /> : <Copy size={14} className="text-muted-foreground" />}
+                    </button>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
             <p className="text-xs text-muted-foreground">
               Le vendeur pourra se connecter sur <strong>/vendor/login</strong> et compléter son profil depuis les paramètres.

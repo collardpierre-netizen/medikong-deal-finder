@@ -769,7 +769,23 @@ function VendorOffersPanel({ vendor }: { vendor: any }) {
               </div>
               <div><Label>Délai (jours)</Label><Input type="number" value={of.delivery_days} onChange={e => setOf(p => ({ ...p, delivery_days: e.target.value }))} /></div>
             </div>
-            <div><Label>Notes</Label><Input value={of.notes} onChange={e => setOf(p => ({ ...p, notes: e.target.value }))} /></div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Conditionnement (unités/pack)</Label>
+                <Input
+                  type="number"
+                  min="1"
+                  step="1"
+                  placeholder="auto"
+                  value={of.pack_size_override}
+                  onChange={e => setOf(p => ({ ...p, pack_size_override: e.target.value }))}
+                />
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  Laisser vide = utilise le pack du produit ou le déduit du nom (ex: 4 pour « 4×125 ml »).
+                </p>
+              </div>
+              <div><Label>Notes</Label><Input value={of.notes} onChange={e => setOf(p => ({ ...p, notes: e.target.value }))} /></div>
+            </div>
             <Button className="w-full" onClick={() => saveOffer.mutate()} disabled={!selectedProduct || !of.unit_price || !of.product_url || saveOffer.isPending}>
               {saveOffer.isPending ? "Enregistrement..." : "Créer l'offre"}
             </Button>

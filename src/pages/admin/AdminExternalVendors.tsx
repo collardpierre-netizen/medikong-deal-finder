@@ -471,13 +471,35 @@ function VendorOffersPanel({ vendor }: { vendor: any }) {
       return null;
     };
 
-    const matched = rows
-      .map(r => ({ ...r, product: resolveProduct(r.gtin) }))
-      .filter(r => !!r.product);
-    const unmatched = rows.filter(r => !resolveProduct(r.gtin)).map(r => r.gtin || "(vide)");
+    const matched: any[] = [];
+    const invalid: InvalidRow[] = [];
+    for (const r of rows) {
+      const priceNum = normNumber(r.unit_price);
+      if (!r.gtin) {
+        invalid.push({ row: r._row, gtin: "", unit_price: String(r.unit_price ?? ""), mov: String(r.mov ?? ""), reason: "GTIN manquant" });
+        continue;
+      }
+      if (!/^\d{8,14}$/.test(r.gtin)) {
+        invalid.push({ row: r._row, gtin: r.gtin, unit_price: String(r.unit_price ?? ""), mov: String(r.mov ?? ""), reason: "GTIN invalide (8 à 14 chiffres attendus)" });
+        continue;
+      }
+      if (!priceNum || priceNum <= 0) {
+        invalid.push({ row: r._row, gtin: r.gtin, unit_price: String(r.unit_price ?? ""), mov: String(r.mov ?? ""), reason: "Prix unitaire invalide ou nul" });
+        continue;
+      }
+      const product = resolveProduct(r.gtin);
+      if (!product) {
+        invalid.push({ row: r._row, gtin: r.gtin, unit_price: String(r.unit_price ?? ""), mov: String(r.mov ?? ""), reason: "GTIN introuvable dans le catalogue MediKong" });
+        continue;
+      }
+      matched.push({ ...r, product });
+    }
+    const unmatched = invalid.filter(i => i.reason.startsWith("GTIN introuvable")).map(i => i.gtin);
 
     setCsvPreview(matched);
     setCsvUnmatched(unmatched);
+    setCsvInvalid(invalid);
+    setCsvTotalRows(rows.length);
     setCsvDialog(true);
   };
 

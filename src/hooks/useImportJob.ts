@@ -85,6 +85,8 @@ export async function startImportJob(input: CreateJobInput): Promise<string> {
 export function useImportJob(jobId: string | null) {
   const [job, setJob] = useState<ImportJob | null>(null);
   const [loading, setLoading] = useState(false);
+  const [realtimeConnected, setRealtimeConnected] = useState(false);
+  const lastUpdateRef = useRef<number>(Date.now());
 
   const refetch = useCallback(async () => {
     if (!jobId) return;
@@ -93,12 +95,16 @@ export function useImportJob(jobId: string | null) {
       .select("*")
       .eq("id", jobId)
       .maybeSingle();
-    if (data) setJob(data as any);
+    if (data) {
+      setJob(data as any);
+      lastUpdateRef.current = Date.now();
+    }
   }, [jobId]);
 
   useEffect(() => {
     if (!jobId) {
       setJob(null);
+      setRealtimeConnected(false);
       return;
     }
     setLoading(true);
@@ -109,13 +115,45 @@ export function useImportJob(jobId: string | null) {
       .on(
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "import_jobs", filter: `id=eq.${jobId}` },
-        (payload) => setJob(payload.new as any),
+        (payload) => {
+          setJob(payload.new as any);
+          lastUpdateRef.current = Date.now();
+        },
       )
-      .subscribe();
+      .subscribe((status) => {
+        setRealtimeConnected(status === "SUBSCRIBED");
+      });
 
     return () => {
       supabase.removeChannel(channel);
+      setRealtimeConnected(false);
     };
+  }, [jobId, refetch]);
+
+  // Polling de secours :
+  // - rapide (2s) si realtime non connecté ou pas d'update depuis 5s sur job actif
+  // - 1 refetch final 1s après "completed/failed/cancelled" pour cohérence (results/errors écrits APRÈS le UPDATE)
+  useEffect(() => {
+    if (!jobId) return;
+    const isActive = !job || job.status === "pending" || job.status === "processing";
+    if (!isActive) {
+      const t = setTimeout(() => { refetch(); }, 1000);
+      return () => clearTimeout(t);
+    }
+    const intervalMs = realtimeConnected ? 5000 : 2000;
+    const id = setInterval(() => {
+      const stale = Date.now() - lastUpdateRef.current > intervalMs;
+      if (!realtimeConnected || stale) refetch();
+    }, intervalMs);
+    return () => clearInterval(id);
+  }, [jobId, job?.status, realtimeConnected, refetch]);
+
+  // Refresh à chaque retour d'onglet
+  useEffect(() => {
+    if (!jobId) return;
+    const onVisible = () => { if (document.visibilityState === "visible") refetch(); };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
   }, [jobId, refetch]);
 
   const cancel = useCallback(async () => {
@@ -127,7 +165,7 @@ export function useImportJob(jobId: string | null) {
     await refetch();
   }, [jobId, refetch]);
 
-  return { job, loading, refetch, cancel };
+  return { job, loading, refetch, cancel, realtimeConnected };
 }
 
 export async function fetchJobResults(jobId: string) {

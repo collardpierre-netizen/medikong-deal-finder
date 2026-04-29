@@ -1242,6 +1242,19 @@ export default function ProductPage() {
                 </div>
               )}
 
+              {/* ── Bloc Économie / Marge potentielle (PVP officiel) ── */}
+              {user && isVerifiedBuyer && bestOffer && (
+                <div className="mb-6">
+                  <PvpEconomyBadge
+                    productId={product.id}
+                    buyerPriceTtc={Number(bestOffer.price_incl_vat) || Number(bestOffer.price_excl_vat) * 1.21}
+                    buyerPriceHtva={Number(bestOffer.price_excl_vat)}
+                    countryCode={(product as any).pvp_country_code || "BE"}
+                    variant="card"
+                  />
+                </div>
+              )}
+
               {/* ── Offers Tabs (only for verified buyers) ── */}
               {user && (isVerifiedBuyer || verificationLoading) && (
               <div ref={offerSectionRef}>

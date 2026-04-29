@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { VCard } from "@/components/vendor/ui/VCard";
@@ -1108,6 +1108,32 @@ export default function VendorOffers() {
     setShowForm(true);
   };
   const closeForm = () => { setShowForm(false); setEditingId(null); setForm(emptyForm); };
+
+  // Deep-link depuis le catalogue : /vendor/offers?action=create&product=<id>
+  const [searchParams, setSearchParams] = useSearchParams();
+  const deepLinkHandledRef = useRef(false);
+  useEffect(() => {
+    if (deepLinkHandledRef.current) return;
+    const action = searchParams.get("action");
+    const productId = searchParams.get("product");
+    if (action !== "create" || !productId) return;
+    deepLinkHandledRef.current = true;
+    (async () => {
+      const { data: prod } = await supabase
+        .from("products")
+        .select("id, name")
+        .eq("id", productId)
+        .maybeSingle();
+      setForm({ ...emptyForm, product_id: productId, product_name: prod?.name ?? "" });
+      setEditingId(null);
+      setShowForm(true);
+      // nettoie l'URL pour éviter de rouvrir la modale
+      const next = new URLSearchParams(searchParams);
+      next.delete("action");
+      next.delete("product");
+      setSearchParams(next, { replace: true });
+    })();
+  }, [searchParams, setSearchParams]);
 
   // Pré-remplit le prix d'achat avec le défaut produit en mode création quand on choisit un produit
   useEffect(() => {

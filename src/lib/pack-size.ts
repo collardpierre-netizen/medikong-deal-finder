@@ -1,21 +1,26 @@
 /**
  * Helpers pour deviner le conditionnement (nombre d'unites par pack) d'un produit
- * a partir de son nom commercial.
+ * a partir de son nom commercial OU des metadonnees de l'offre externe.
  *
  * Priorite cote front pour resoudre le pack effectif d'une offre externe :
  *   1. external_offers.pack_size_override (saisi en admin)
  *   2. products.pack_size (override admin sur le produit)
- *   3. extractPackSizeFromName(product.name) (heuristique regex)
- *   4. 1 (fallback)
+ *   3. extractPackSizeFromName(offer.raw_title) (titre brut chez le vendeur)
+ *   4. extractPackSizeFromUrl(offer.product_url)  (URL de l'offre)
+ *   5. extractPackSizeFromName(product.name) (heuristique sur le nom MediKong)
+ *   6. 1 (fallback)
  *
- * Le RPC SQL `resolve_effective_pack_size` couvre les 3 premiers niveaux cote DB,
- * mais on garde l'extraction depuis le nom cote front pour eviter un round-trip
- * et pour les produits jamais saisis en admin.
+ * Important : le pack vendu chez le vendeur externe (ex: carton de 24 cups)
+ * est souvent different du pack de reference de la fiche produit (1 cup).
+ * On donne donc la priorite aux infos provenant du vendeur (titre/URL) avant
+ * de retomber sur le nom du produit MediKong.
  */
 
 export type PackSizeSource =
   | "offer_override"
   | "product"
+  | "offer_title_heuristic"
+  | "offer_url_heuristic"
   | "name_heuristic"
   | "fallback";
 
@@ -74,6 +79,25 @@ export function extractPackSizeFromName(name: string | null | undefined): number
 }
 
 /**
+ * Tente d'extraire le pack depuis l'URL d'une offre externe.
+ *
+ * Patterns reconnus (slugs e-commerce typiques) :
+ *   - ".../fresubin-vanille-24-x-cup-125-gr_1"   -> 24
+ *   - ".../diben-15-x-500-ml-easy-bag"            -> 15
+ *   - ".../tena-comfort-46-pcs"                   -> 46
+ *   - ".../boite-de-30"                           -> 30
+ */
+export function extractPackSizeFromUrl(url: string | null | undefined): number | null {
+  if (!url || typeof url !== "string") return null;
+  // Normalise : on remplace les separateurs URL par des espaces pour reutiliser la regex du nom
+  const normalized = url
+    .replace(/^https?:\/\/[^/]+/i, "")
+    .replace(/[/_]+/g, " ")
+    .replace(/-/g, " ");
+  return extractPackSizeFromName(normalized);
+}
+
+/**
  * Resout le pack effectif a appliquer sur une offre externe pour calculer
  * le prix unitaire affichable cote front.
  */
@@ -81,8 +105,10 @@ export function resolvePackSize(args: {
   offerOverride?: number | null;
   productPackSize?: number | null;
   productName?: string | null;
+  offerTitle?: string | null;
+  offerUrl?: string | null;
 }): ResolvedPackSize {
-  const { offerOverride, productPackSize, productName } = args;
+  const { offerOverride, productPackSize, productName, offerTitle, offerUrl } = args;
 
   if (offerOverride && offerOverride > 0) {
     return { packSize: offerOverride, source: "offer_override" };
@@ -90,6 +116,17 @@ export function resolvePackSize(args: {
   if (productPackSize && productPackSize > 0) {
     return { packSize: productPackSize, source: "product" };
   }
+  // On regarde d'abord le titre brut chez le vendeur (souvent "Fresubin ... 24 x cup 125g")
+  const fromTitle = extractPackSizeFromName(offerTitle);
+  if (fromTitle && fromTitle > 0) {
+    return { packSize: fromTitle, source: "offer_title_heuristic" };
+  }
+  // Puis l'URL de l'offre (slug e-commerce)
+  const fromUrl = extractPackSizeFromUrl(offerUrl);
+  if (fromUrl && fromUrl > 0) {
+    return { packSize: fromUrl, source: "offer_url_heuristic" };
+  }
+  // En dernier recours, le nom MediKong (souvent c'est le produit unitaire)
   const heur = extractPackSizeFromName(productName);
   if (heur && heur > 0) {
     return { packSize: heur, source: "name_heuristic" };
@@ -103,6 +140,10 @@ export function packSizeSourceLabel(source: PackSizeSource): string {
       return "Conditionnement renseigné sur l'offre";
     case "product":
       return "Conditionnement renseigné sur la fiche produit";
+    case "offer_title_heuristic":
+      return "Conditionnement déduit du titre du vendeur";
+    case "offer_url_heuristic":
+      return "Conditionnement déduit de l'URL de l'offre";
     case "name_heuristic":
       return "Conditionnement déduit du nom du produit";
     case "fallback":

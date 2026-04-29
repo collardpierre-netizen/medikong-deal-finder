@@ -1471,6 +1471,8 @@ export default function ProductPage() {
                             offerOverride: (eo as any).pack_size_override,
                             productPackSize: (product as any)?.pack_size,
                             productName: product?.name,
+                            offerTitle: (eo as any).raw_title ?? (eo as any).notes,
+                            offerUrl: eo.product_url,
                           });
                           const showUnitPrice = pack.packSize > 1;
                           const unitDisplayPrice = showUnitPrice ? displayPrice / pack.packSize : 0;

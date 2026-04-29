@@ -107,6 +107,7 @@ export default function UserCreateDialog({ open, onOpenChange, onCreated }: Prop
       return;
     }
     setSaving(true);
+    setVendorError(null);
     try {
       const { data, error } = await supabase.functions.invoke("create-vendor-account", {
         body: {
@@ -120,16 +121,13 @@ export default function UserCreateDialog({ open, onOpenChange, onCreated }: Prop
         },
       });
       if (error) throw error;
-      if (data?.ok === false || data?.error) {
-        if (data?.code === "vendor_email_already_exists" && data?.existing_vendor) {
-          toast.error(data.error, {
-            description: "Ouvrez la fiche du vendeur existant pour rattacher l'accès.",
-            duration: 12000,
-          });
-          return;
-        }
-        throw new Error(data?.error || "Erreur inconnue");
+
+      // Affichage actionnable de toute erreur applicative normalisée
+      if (isVendorAccountError(data)) {
+        setVendorError(presentVendorAccountError(data));
+        return;
       }
+
       toast.success(`Vendeur "${vendor.company_name}" créé avec compte auth`, {
         description: data?.temp_password ? `Mot de passe temporaire: ${data.temp_password}` : undefined,
         duration: 15000,

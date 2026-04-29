@@ -20,7 +20,54 @@ import { Trash2, Plus, ExternalLink, Info } from "lucide-react";
  */
 export default function AdminVatRules() {
   const qc = useQueryClient();
-  const [tab, setTab] = useState<"cnk" | "overrides">("cnk");
+  const [tab, setTab] = useState<"cnk" | "overrides" | "categories">("cnk");
+  const [catSearch, setCatSearch] = useState("");
+
+  // ── Audit catégories TVA
+  const { data: catAudit = [], isLoading: loadingCat } = useQuery({
+    queryKey: ["admin-category-vat-audit"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("admin_category_vat_audit" as any)
+        .select("*")
+        .order("was_auto_defaulted", { ascending: false })
+        .order("product_count", { ascending: false })
+        .limit(500);
+      if (error) throw error;
+      return (data as any[]) || [];
+    },
+  });
+
+  const updateCatVat = useMutation({
+    mutationFn: async ({ id, rate }: { id: string; rate: number }) => {
+      const { error } = await supabase
+        .from("categories")
+        .update({ vat_rate: rate })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-category-vat-audit"] });
+      toast.success("Taux mis à jour");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const filteredCat = useMemo(() => {
+    const q = catSearch.trim().toLowerCase();
+    if (!q) return catAudit;
+    return catAudit.filter((c: any) =>
+      (c.name || "").toLowerCase().includes(q) || (c.slug || "").toLowerCase().includes(q),
+    );
+  }, [catAudit, catSearch]);
+
+  const catStats = useMemo(() => {
+    const total = catAudit.length;
+    const auto = catAudit.filter((c: any) => c.was_auto_defaulted).length;
+    const at6 = catAudit.filter((c: any) => Number(c.vat_rate) === 6).length;
+    const at21 = catAudit.filter((c: any) => Number(c.vat_rate) === 21).length;
+    return { total, auto, at6, at21 };
+  }, [catAudit]);
 
   // ── CNK mapping
   const { data: mappings = [], isLoading: loadingM } = useQuery({

@@ -116,8 +116,18 @@ export function VendorSidebar({ onNavigate }: VendorSidebarProps) {
               )}
               <div className="space-y-0.5">
                 {visibleItems.map((item) => {
-                  const isActive = location.pathname === item.path || (item.path !== "/vendor" && location.pathname.startsWith(item.path));
+                  const pathname = location.pathname;
+                  const exactMatch = pathname === item.path;
+                  const childMatch = item.path !== "/vendor" && pathname.startsWith(item.path + "/");
+                  const alsoMatch = item.alsoActiveOn?.some((p) => pathname === p || pathname.startsWith(p + "/")) ?? false;
+                  // If another sibling owns this path more specifically, don't claim it
+                  const isOwnedByChild = visibleItems.some(
+                    (other) => other.key !== item.key && (pathname === other.path || pathname.startsWith(other.path + "/"))
+                  );
+                  const isActive = exactMatch || (childMatch && !isOwnedByChild);
+                  const isParentActive = !isActive && alsoMatch;
                   const isDisabled = item.comingSoon;
+                  const isChildItem = !!item.parentPath;
 
                   if (isDisabled) {
                     return (
@@ -126,10 +136,11 @@ export function VendorSidebar({ onNavigate }: VendorSidebarProps) {
                         className={cn(
                           "flex items-center gap-3 rounded-md text-[13px] font-medium cursor-not-allowed select-none",
                           collapsed ? "justify-center px-2 py-2.5" : "px-3 py-2",
+                          !collapsed && isChildItem && "ml-4",
                           "text-white/25"
                         )}
                       >
-                        <item.icon size={18} className="shrink-0" />
+                        <item.icon size={isChildItem ? 16 : 18} className="shrink-0" />
                         {!collapsed && <span className="flex-1 truncate">{t(item.key)}</span>}
                         {!collapsed && (
                           <span className="text-[9px] font-semibold uppercase tracking-wide text-white/20 bg-white/5 rounded px-1.5 py-0.5 shrink-0">
@@ -149,15 +160,20 @@ export function VendorSidebar({ onNavigate }: VendorSidebarProps) {
                       key={item.key}
                       to={{ pathname: item.path, search: preservedSearch }}
                       onClick={onNavigate}
+                      aria-current={isActive ? "page" : undefined}
                       className={cn(
                         "flex items-center gap-3 rounded-md text-[13px] font-medium transition-colors relative",
                         collapsed ? "justify-center px-2 py-2.5" : "px-3 py-2",
+                        !collapsed && isChildItem && "ml-4 text-[12px]",
                         isActive
                           ? "bg-white/10 text-white"
-                          : "text-white/55 hover:text-white hover:bg-white/5"
+                          : isParentActive
+                            ? "text-white/80 bg-white/[0.03]"
+                            : "text-white/55 hover:text-white hover:bg-white/5"
                       )}
                     >
                       {isActive && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full" style={{ backgroundColor: "#E70866" }} />}
+                      {isParentActive && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-white/20" />}
                       <div className="relative shrink-0">
                         <item.icon size={18} />
                         {collapsed && badgeCount > 0 && (

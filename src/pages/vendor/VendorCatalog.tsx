@@ -287,9 +287,13 @@ export default function VendorCatalog() {
 
           <TabsContent value="manufacturers" className="m-0">
             {isLoading ? (
-              <ListLoader />
+              <ListLoader variant="compact" />
             ) : data.length === 0 ? (
-              <EmptyState label={t("vendorCatalogEmptyManufacturers")} />
+              <EmptyState
+                label={t("vendorCatalogEmptyManufacturers")}
+                hasSearch={!!search.trim()}
+                onClearSearch={() => setSearch("")}
+              />
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
                 {(data as any[]).map((m) => (

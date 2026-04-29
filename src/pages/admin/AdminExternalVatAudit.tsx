@@ -107,13 +107,15 @@ export default function AdminExternalVatAudit() {
     const fallback = rows.filter(r => r.status === "fallback").length;
     const missing = rows.filter(r => r.status === "missing_category").length;
     const unexpected = rows.filter(r => r.status === "unexpected_rate").length;
-    const ok = total - fallback - missing - unexpected;
-    return { total, fallback, missing, unexpected, ok };
+    const cnk = rows.filter(r => r.status === "cnk").length;
+    const override_ = rows.filter(r => r.status === "override").length;
+    const ok = total - fallback - missing - unexpected - cnk - override_;
+    return { total, fallback, missing, unexpected, cnk, override: override_, ok };
   }, [rows]);
 
-  // Anomalies en tête (fallback + missing + unexpected)
+  // Anomalies en tête
   const sortedRows = useMemo(() => {
-    const order: Record<string, number> = { missing_category: 0, fallback: 1, unexpected_rate: 2, ok: 3 };
+    const order: Record<string, number> = { missing_category: 0, fallback: 1, unexpected_rate: 2, ok: 3, cnk: 4, override: 5 };
     return [...rows].sort((a, b) => order[a.status] - order[b.status]);
   }, [rows]);
 
@@ -121,15 +123,23 @@ export default function AdminExternalVatAudit() {
     <div className="container mx-auto p-6 space-y-4">
       <AdminTopBar title="Audit TVA — Offres externes" />
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="flex justify-end">
+        <Link to="/admin/tva-regles">
+          <Button variant="outline" size="sm"><Settings className="w-3.5 h-3.5 mr-1.5" /> Gérer les règles TVA (CNK & overrides)</Button>
+        </Link>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         <Card><CardHeader className="pb-2"><CardTitle className="text-xs text-muted-foreground">Total offres actives</CardTitle></CardHeader>
           <CardContent className="pt-0"><div className="text-2xl font-bold">{stats.total}</div></CardContent></Card>
-        <Card><CardHeader className="pb-2"><CardTitle className="text-xs text-emerald-700">Conformes</CardTitle></CardHeader>
+        <Card><CardHeader className="pb-2"><CardTitle className="text-xs text-emerald-700">Catégorie OK</CardTitle></CardHeader>
           <CardContent className="pt-0"><div className="text-2xl font-bold text-emerald-700">{stats.ok}</div></CardContent></Card>
-        <Card><CardHeader className="pb-2"><CardTitle className="text-xs text-amber-700">Fallback 21% (vat_rate manquant)</CardTitle></CardHeader>
+        <Card><CardHeader className="pb-2"><CardTitle className="text-xs text-blue-700">Résolus via CNK</CardTitle></CardHeader>
+          <CardContent className="pt-0"><div className="text-2xl font-bold text-blue-700">{stats.cnk}</div></CardContent></Card>
+        <Card><CardHeader className="pb-2"><CardTitle className="text-xs text-amber-700">Fallback 21%</CardTitle></CardHeader>
           <CardContent className="pt-0"><div className="text-2xl font-bold text-amber-700">{stats.fallback}</div></CardContent></Card>
-        <Card><CardHeader className="pb-2"><CardTitle className="text-xs text-red-700">Sans catégorie / inattendu</CardTitle></CardHeader>
-          <CardContent className="pt-0"><div className="text-2xl font-bold text-red-700">{stats.missing + stats.unexpected}</div></CardContent></Card>
+        <Card><CardHeader className="pb-2"><CardTitle className="text-xs text-purple-700">Override produit</CardTitle></CardHeader>
+          <CardContent className="pt-0"><div className="text-2xl font-bold text-purple-700">{stats.override}</div></CardContent></Card>
       </div>
 
       <Card>
@@ -137,10 +147,12 @@ export default function AdminExternalVatAudit() {
           <div className="flex items-start gap-2 text-xs text-muted-foreground mb-3">
             <Info className="w-4 h-4 mt-0.5 shrink-0" />
             <p>
-              Les prix relevés sur les sites externes sont en <strong>TTC</strong>. Le HTVA affiché côté fiche produit
-              est calculé via <code>ttc / (1 + vat_rate / 100)</code> en utilisant le <code>vat_rate</code> de la catégorie
-              du produit. Si la catégorie n'a pas de <code>vat_rate</code>, un fallback de <strong>{FALLBACK_VAT}%</strong> est appliqué.
-              Les taux attendus en Belgique sont <strong>6%</strong> (médicaments) ou <strong>21%</strong> (OTC/parapharmacie).
+              Les prix relevés sur les sites externes sont en <strong>TTC</strong>. Le HTVA est calculé via{" "}
+              <code>ttc / (1 + vat_rate / 100)</code>. Le taux est résolu par la fonction{" "}
+              <code>resolve_product_vat_rate()</code> dans cet ordre : <strong>override produit</strong> →{" "}
+              <strong>mapping CNK</strong> → <strong>vat_rate catégorie</strong> → fallback{" "}
+              <strong>{FALLBACK_VAT}%</strong>. Configurer les règles dans{" "}
+              <Link to="/admin/tva-regles" className="underline">TVA — Règles CNK & overrides</Link>.
             </p>
           </div>
 
@@ -157,7 +169,7 @@ export default function AdminExternalVatAudit() {
                     <TableHead>Produit</TableHead>
                     <TableHead>Vendeur</TableHead>
                     <TableHead>Catégorie</TableHead>
-                    <TableHead className="text-right">vat_rate</TableHead>
+                    <TableHead>Source TVA</TableHead>
                     <TableHead className="text-right">Taux utilisé</TableHead>
                     <TableHead className="text-right">TTC</TableHead>
                     <TableHead className="text-right">HTVA</TableHead>
@@ -168,7 +180,9 @@ export default function AdminExternalVatAudit() {
                   {sortedRows.slice(0, 500).map(r => (
                     <TableRow key={r.id}>
                       <TableCell>
-                        {r.status === "ok" && <Badge variant="outline" className="border-emerald-300 text-emerald-700"><CheckCircle2 className="w-3 h-3 mr-1" />OK</Badge>}
+                        {r.status === "ok" && <Badge variant="outline" className="border-emerald-300 text-emerald-700"><CheckCircle2 className="w-3 h-3 mr-1" />Catégorie</Badge>}
+                        {r.status === "cnk" && <Badge variant="outline" className="border-blue-300 text-blue-700"><CheckCircle2 className="w-3 h-3 mr-1" />CNK</Badge>}
+                        {r.status === "override" && <Badge variant="outline" className="border-purple-300 text-purple-700"><CheckCircle2 className="w-3 h-3 mr-1" />Override</Badge>}
                         {r.status === "fallback" && <Badge variant="outline" className="border-amber-300 text-amber-700"><AlertTriangle className="w-3 h-3 mr-1" />Fallback</Badge>}
                         {r.status === "missing_category" && <Badge variant="outline" className="border-red-300 text-red-700"><AlertTriangle className="w-3 h-3 mr-1" />Sans cat.</Badge>}
                         {r.status === "unexpected_rate" && <Badge variant="outline" className="border-orange-300 text-orange-700"><AlertTriangle className="w-3 h-3 mr-1" />Hors plage</Badge>}
@@ -178,18 +192,14 @@ export default function AdminExternalVatAudit() {
                         <div className="text-[11px] text-muted-foreground tabular-nums">{r.gtin}</div>
                       </TableCell>
                       <TableCell className="text-sm">{r.vendorName}</TableCell>
-                      <TableCell className="text-sm">{r.categoryName}</TableCell>
-                      <TableCell className="text-right tabular-nums text-sm">
-                        {r.rawRate != null ? `${r.rawRate}%` : <span className="text-muted-foreground">—</span>}
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums text-sm font-medium">
-                        {r.usedRate}% {r.rawRate == null && <span className="text-amber-600 text-[10px]">(fallback)</span>}
-                      </TableCell>
+                      <TableCell className="text-sm">{r.categoryName} {r.rawRate != null && <span className="text-[10px] text-muted-foreground">({r.rawRate}%)</span>}</TableCell>
+                      <TableCell className="text-[11px] text-muted-foreground font-mono">{r.source}</TableCell>
+                      <TableCell className="text-right tabular-nums text-sm font-medium">{r.usedRate}%</TableCell>
                       <TableCell className="text-right tabular-nums text-sm">{r.ttc.toFixed(2)} €</TableCell>
                       <TableCell className="text-right tabular-nums text-sm">{r.htva.toFixed(2)} €</TableCell>
                       <TableCell>
                         {r.productId && (
-                          <Link to={`/admin/categories`} title="Gérer les catégories" className="text-muted-foreground hover:text-foreground">
+                          <Link to={`/admin/tva-regles`} title="Gérer les règles TVA" className="text-muted-foreground hover:text-foreground">
                             <ExternalLink className="w-3.5 h-3.5" />
                           </Link>
                         )}

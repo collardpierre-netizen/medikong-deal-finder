@@ -90,6 +90,8 @@ export default function AdminExternalVendors() {
 
   // Vendor form
   const [vf, setVf] = useState({ name: "", website_url: "", logo_url: "", contact_email: "", contact_phone: "", country_code: "BE", notes: "" });
+  const logoInputRef = useRef<HTMLInputElement | null>(null);
+  const [logoUploading, setLogoUploading] = useState(false);
 
   const resetVf = () => setVf({ name: "", website_url: "", logo_url: "", contact_email: "", contact_phone: "", country_code: "BE", notes: "" });
 
@@ -194,28 +196,86 @@ export default function AdminExternalVendors() {
             <div><Label>Nom *</Label><Input value={vf.name} onChange={e => setVf(p => ({ ...p, name: e.target.value }))} placeholder="Nom du vendeur" /></div>
             <div><Label>Site web</Label><Input value={vf.website_url} onChange={e => setVf(p => ({ ...p, website_url: e.target.value }))} placeholder="https://..." /></div>
             <div>
-              <Label>Logo (URL)</Label>
+              <Label>Logo</Label>
               <div className="flex items-center gap-3">
                 {vf.logo_url ? (
                   <img
                     src={vf.logo_url}
                     alt="Aperçu logo"
                     referrerPolicy="no-referrer"
-                    className="w-12 h-12 rounded-lg object-contain bg-white border"
+                    className="w-14 h-14 rounded-lg object-contain bg-white border"
                     style={{ borderColor: "#E2E8F0" }}
                     onError={(e) => { (e.currentTarget as HTMLImageElement).style.opacity = "0.3"; }}
                   />
                 ) : (
-                  <div className="w-12 h-12 rounded-lg bg-slate-100 flex items-center justify-center text-xs text-slate-400 border" style={{ borderColor: "#E2E8F0" }}>—</div>
+                  <div className="w-14 h-14 rounded-lg bg-slate-100 flex items-center justify-center text-xs text-slate-400 border" style={{ borderColor: "#E2E8F0" }}>—</div>
                 )}
-                <Input
-                  className="flex-1"
-                  value={vf.logo_url}
-                  onChange={e => setVf(p => ({ ...p, logo_url: e.target.value }))}
-                  placeholder="https://.../logo.png"
-                />
+                <div className="flex-1 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <input
+                      ref={logoInputRef}
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                      className="hidden"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        if (file.size > 2 * 1024 * 1024) {
+                          toast.error("Logo trop lourd (max 2 Mo)");
+                          return;
+                        }
+                        try {
+                          setLogoUploading(true);
+                          const ext = (file.name.split(".").pop() || "png").toLowerCase();
+                          const slug = slugify(vf.name || "vendor") || "vendor";
+                          const path = `external-vendors/${slug}-${Date.now()}.${ext}`;
+                          const { error: upErr } = await supabase.storage
+                            .from("vendor-branding")
+                            .upload(path, file, { upsert: true, contentType: file.type });
+                          if (upErr) throw upErr;
+                          const { data } = supabase.storage.from("vendor-branding").getPublicUrl(path);
+                          setVf(p => ({ ...p, logo_url: data.publicUrl }));
+                          toast.success("Logo téléversé");
+                        } catch (err: any) {
+                          toast.error("Échec upload : " + (err.message || "erreur inconnue"));
+                        } finally {
+                          setLogoUploading(false);
+                          if (logoInputRef.current) logoInputRef.current.value = "";
+                        }
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => logoInputRef.current?.click()}
+                      disabled={logoUploading}
+                    >
+                      <Upload className="w-3.5 h-3.5 mr-1.5" />
+                      {logoUploading ? "Envoi..." : (vf.logo_url ? "Remplacer" : "Téléverser")}
+                    </Button>
+                    {vf.logo_url && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setVf(p => ({ ...p, logo_url: "" }))}
+                        disabled={logoUploading}
+                      >
+                        <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+                        Retirer
+                      </Button>
+                    )}
+                  </div>
+                  <Input
+                    value={vf.logo_url}
+                    onChange={e => setVf(p => ({ ...p, logo_url: e.target.value }))}
+                    placeholder="ou collez une URL https://.../logo.png"
+                    className="text-xs"
+                  />
+                </div>
               </div>
-              <p className="text-[11px] mt-1" style={{ color: "#8B95A5" }}>URL d'image carrée (PNG/SVG). Affichée à côté de l'offre sur la fiche produit.</p>
+              <p className="text-[11px] mt-1" style={{ color: "#8B95A5" }}>PNG/JPG/WebP/SVG carré, ≤ 2 Mo. Affiché à côté de l'offre sur la fiche produit.</p>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Email</Label><Input value={vf.contact_email} onChange={e => setVf(p => ({ ...p, contact_email: e.target.value }))} /></div>

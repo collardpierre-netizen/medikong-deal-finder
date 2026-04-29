@@ -231,6 +231,7 @@ export function ProductSubmissionDialog({ children }: { children?: React.ReactNo
   const [importRows, setImportRows] = useState<ImportRow[]>([]);
   const [fileIssue, setFileIssue] = useState<string | null>(null);
   const [showRejectedOnly, setShowRejectedOnly] = useState(true);
+  const [importJobId, setImportJobId] = useState<string | null>(null);
 
   const { suggestion: catSuggestion, loading: catSuggestionLoading } = useCategorySuggestion(form.gtin, form.cnk_code);
 

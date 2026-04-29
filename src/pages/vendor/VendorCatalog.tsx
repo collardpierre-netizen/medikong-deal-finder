@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Search, Package, Building2, Tag, Plus, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";

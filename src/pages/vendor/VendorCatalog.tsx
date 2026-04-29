@@ -258,7 +258,7 @@ export default function VendorCatalog() {
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold truncate">{m.name}</p>
                       <p className="text-[11px] text-muted-foreground">
-                        {m.brand_count ?? 0} marques · {m.product_count ?? 0} produits
+                        {m.brand_count ?? 0} {t("vendorCatalogBrandsCount")} · {m.product_count ?? 0} {t("vendorCatalogProductsCount")}
                         {m.country_of_origin ? ` · ${m.country_of_origin}` : ""}
                       </p>
                     </div>
@@ -267,7 +267,7 @@ export default function VendorCatalog() {
                         target={{ kind: "manufacturer", id: m.id, label: m.name }}
                       />
                       <Button size="sm" className="h-7 px-2 text-xs gap-1" onClick={() => startOffer()}>
-                        <Plus className="h-3 w-3" /> Offre
+                        <Plus className="h-3 w-3" /> {t("vendorCatalogShortOffer")}
                       </Button>
                     </div>
                   </div>

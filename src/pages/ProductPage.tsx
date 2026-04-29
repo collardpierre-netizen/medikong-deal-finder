@@ -20,6 +20,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCountry } from "@/contexts/CountryContext";
 import { usePriceDisplay } from "@/contexts/PriceDisplayContext";
+import { useProductVatRate, vatSourceLabel } from "@/hooks/useProductVatRate";
 import { useProductPrice } from "@/hooks/useProductPriceLevel";
 import { Helmet } from "react-helmet-async";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -703,6 +704,7 @@ export default function ProductPage() {
   const { country } = useCountry();
   const { isTVAC } = usePriceDisplay();
   const { data: product, isLoading } = useProduct(slug);
+  const { data: resolvedVat } = useProductVatRate(product?.id, country?.code || "BE");
   const { addToCart } = useCart();
   const { data: realOffers = [] } = useProductOffers(product?.id);
   const { isFavorite, toggleFavorite } = useFavorites();

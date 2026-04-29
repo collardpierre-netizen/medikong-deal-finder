@@ -1499,6 +1499,14 @@ export default function ProductPage() {
                                   <p className="text-[11px] text-muted-foreground tabular-nums" title={`Source TVA : ${vatSourceLabel(tvaSource)}`}>
                                     {formatEur(secondaryPrice)} € {secondaryLabel} <span className="opacity-60">· TVA {tvaRate}%</span>
                                   </p>
+                                  {showUnitPrice && (
+                                    <p
+                                      className="text-[11px] text-muted-foreground tabular-nums"
+                                      title={packSizeSourceLabel(pack.source)}
+                                    >
+                                      soit {formatEur(unitDisplayPrice)} €/unité <span className="opacity-60">· pack de {pack.packSize}</span>
+                                    </p>
+                                  )}
                                   {Number(eo.mov_amount || 0) > 0 && (
                                     <p className="text-[11px] text-muted-foreground">MOV {Number(eo.mov_amount).toFixed(0)} €</p>
                                   )}

@@ -136,7 +136,12 @@ export default function AdminExternalVendors() {
             {selectedVendor && <TabsTrigger value="offers" className="text-[13px]">Offres — {selectedVendor.name}</TabsTrigger>}
           </TabsList>
           {tab === "list" && (
-            <Button size="sm" onClick={openNewVendor}><Plus size={14} className="mr-1" /> Ajouter un vendeur</Button>
+            <div className="flex items-center gap-2">
+              <Button asChild size="sm" variant="outline">
+                <a href="/admin/vendeurs-externes/audit-tva">Audit TVA</a>
+              </Button>
+              <Button size="sm" onClick={openNewVendor}><Plus size={14} className="mr-1" /> Ajouter un vendeur</Button>
+            </div>
           )}
         </div>
 

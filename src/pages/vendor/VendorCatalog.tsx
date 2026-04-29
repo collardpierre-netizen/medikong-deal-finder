@@ -165,11 +165,27 @@ export default function VendorCatalog() {
           </div>
 
           {tab !== "manufacturers" && (
-            <VendorCatalogFilters
-              value={filters}
-              onChange={setFilters}
-              showProductFilters={tab === "products"}
-            />
+            <div className="flex flex-wrap items-center gap-2">
+              <VendorCatalogFilters
+                value={filters}
+                onChange={setFilters}
+                showProductFilters={tab === "products"}
+              />
+              {tab === "products" && (
+                <Select value={productSort} onValueChange={(v) => setProductSort(v as ProductSort)}>
+                  <SelectTrigger className="h-9 w-[200px] text-xs ml-auto">
+                    <SelectValue placeholder={t("vendorCatalogSortLabel")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="popularity">{t("vendorCatalogSortTrending")}</SelectItem>
+                    <SelectItem value="price_asc">{t("vendorCatalogSortPriceAsc")}</SelectItem>
+                    <SelectItem value="price_desc">{t("vendorCatalogSortPriceDesc")}</SelectItem>
+                    <SelectItem value="availability">{t("vendorCatalogSortAvailability")}</SelectItem>
+                    <SelectItem value="newest">{t("vendorCatalogSortNewest")}</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
           )}
 
           <TabsContent value="products" className="m-0">

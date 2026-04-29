@@ -214,7 +214,7 @@ const AdminSourceMapping = () => {
 
   return (
     <div className="min-h-screen bg-mk-cream">
-      <AdminTopBar />
+      <AdminTopBar title="Mapping source → catalogue" />
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         <div className="flex items-center gap-3 mb-6">
           <Link to="/admin/produits">

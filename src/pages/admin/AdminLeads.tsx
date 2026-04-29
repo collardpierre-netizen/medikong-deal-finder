@@ -40,6 +40,23 @@ export default function AdminLeads() {
     },
   });
 
+  // Profiles for users present in leads (separate query — no FK between external_leads and profiles)
+  const userIds = Array.from(new Set(leads.map((l: any) => l.user_id).filter(Boolean)));
+  const { data: profilesById = {} } = useQuery({
+    queryKey: ["admin-leads-profiles", userIds.sort().join(",")],
+    enabled: userIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("user_id, full_name, company_name, country, sector, profession_type_id, buyer_profile_id, profession_types(label), buyer_profiles(name)")
+        .in("user_id", userIds as string[]);
+      if (error) throw error;
+      const map: Record<string, any> = {};
+      (data || []).forEach((p: any) => { map[p.user_id] = p; });
+      return map;
+    },
+  });
+
   // External vendors for summary
   const { data: vendors = [] } = useQuery({
     queryKey: ["admin-ext-vendors-leads"],

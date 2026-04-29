@@ -1290,7 +1290,21 @@ export default function VendorOffers() {
         if (costErr) throw costErr;
       }
     },
-    onSuccess: () => { toast.success(editingId ? "Offre modifiée" : "Offre créée"); qc.invalidateQueries({ queryKey: ["vendor-offers"] }); closeForm(); },
+    onSuccess: () => {
+      toast.success(editingId ? "Offre modifiée" : "Offre créée");
+      qc.invalidateQueries({ queryKey: ["vendor-offers"] });
+      // Avancer dans la file batch s'il en reste
+      if (batchQueue && batchQueue.remaining.length > 0) {
+        const [nextId, ...rest] = batchQueue.remaining;
+        const newPos = batchQueue.pos + 1;
+        setBatchQueue({ remaining: rest, pos: newPos, total: batchQueue.total });
+        loadProductIntoForm(nextId);
+        toast.message(`Offre ${newPos}/${batchQueue.total} — produit suivant chargé`);
+        return;
+      }
+      if (batchQueue) toast.success(`Série terminée (${batchQueue.total} offres)`);
+      closeForm();
+    },
     onError: (err: any) => toast.error(err.message),
   });
 

@@ -67,6 +67,7 @@ export default function VendorSettings() {
     { id: "team", label: "Équipe" },
     { id: "addresses", label: "Adresses" },
     { id: "shipping_mode", label: "Mode expédition" },
+    { id: "pricing_defaults", label: "Prix & MOV par profil" },
     { id: "notifications", label: "Notifications" },
   ];
 

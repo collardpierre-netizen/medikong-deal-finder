@@ -341,6 +341,7 @@ const App = () => (
               <Route path="produits/:id" element={<LP><AdminProduitDetail /></LP>} />
               <Route path="categories" element={<LP><AdminCategories /></LP>} />
               <Route path="marques" element={<LP><AdminMarques /></LP>} />
+              <Route path="marques/doublons" element={<LP><AdminBrandDuplicates /></LP>} />
               <Route path="marques/:slug/edit" element={<LP><AdminBrandTransparenceEdit /></LP>} />
               <Route path="brands/:slug/edit" element={<LP><AdminBrandTransparenceEdit /></LP>} />
               <Route path="db-backups" element={<LP><AdminDbBackups /></LP>} />

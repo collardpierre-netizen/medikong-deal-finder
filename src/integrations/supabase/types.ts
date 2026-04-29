@@ -2556,25 +2556,31 @@ export type Database = {
         Row: {
           buyer_profile_id: string
           created_at: string
+          discount_pct: number | null
           id: string
           offer_id: string
-          price_excl_vat: number
+          price_excl_vat: number | null
+          pricing_mode: string
           updated_at: string
         }
         Insert: {
           buyer_profile_id: string
           created_at?: string
+          discount_pct?: number | null
           id?: string
           offer_id: string
-          price_excl_vat: number
+          price_excl_vat?: number | null
+          pricing_mode?: string
           updated_at?: string
         }
         Update: {
           buyer_profile_id?: string
           created_at?: string
+          discount_pct?: number | null
           id?: string
           offer_id?: string
-          price_excl_vat?: number
+          price_excl_vat?: number | null
+          pricing_mode?: string
           updated_at?: string
         }
         Relationships: [
@@ -8425,9 +8431,12 @@ export type Database = {
         Row: {
           country_code: string
           created_at: string
+          default_discount_pct: number | null
           default_moq: number
           default_mov: number
           default_mov_currency: string
+          default_price_excl_vat: number | null
+          default_pricing_mode: string | null
           id: string
           profile_type: string
           updated_at: string
@@ -8436,9 +8445,12 @@ export type Database = {
         Insert: {
           country_code?: string
           created_at?: string
+          default_discount_pct?: number | null
           default_moq?: number
           default_mov?: number
           default_mov_currency?: string
+          default_price_excl_vat?: number | null
+          default_pricing_mode?: string | null
           id?: string
           profile_type: string
           updated_at?: string
@@ -8447,9 +8459,12 @@ export type Database = {
         Update: {
           country_code?: string
           created_at?: string
+          default_discount_pct?: number | null
           default_moq?: number
           default_mov?: number
           default_mov_currency?: string
+          default_price_excl_vat?: number | null
+          default_pricing_mode?: string | null
           id?: string
           profile_type?: string
           updated_at?: string
@@ -9651,6 +9666,13 @@ export type Database = {
         Args: { _external_offer_id: string }
         Returns: {
           pack_size: number
+          source: string
+        }[]
+      }
+      resolve_offer_price_for_profile: {
+        Args: { _buyer_profile_id: string; _offer_id: string }
+        Returns: {
+          price_excl_vat: number
           source: string
         }[]
       }

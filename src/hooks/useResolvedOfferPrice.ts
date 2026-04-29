@@ -3,8 +3,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
 /**
- * Résout le buyer_profile_id (référentiel) de l'utilisateur connecté
- * en fonction de sa profession déclarée. Retourne 'autre' par défaut.
+ * Résout le buyer_profile_id de l'utilisateur connecté.
+ * Priorité :
+ *   1. profiles.buyer_profile_id (champ explicite renseigné par l'utilisateur)
+ *   2. RPC resolve_buyer_profile_for_user (mapping profession → buyer_profile)
+ *   3. 'autre' (fallback)
  */
 export function useBuyerProfileId(): string | null {
   const { user } = useAuth();
@@ -13,6 +16,17 @@ export function useBuyerProfileId(): string | null {
     queryKey: ["resolve-buyer-profile-for-user", user?.id],
     queryFn: async () => {
       if (!user) return "autre";
+
+      // 1. Champ explicite sur profiles
+      const { data: profileRow } = await supabase
+        .from("profiles")
+        .select("buyer_profile_id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      const explicit = (profileRow as any)?.buyer_profile_id as string | null | undefined;
+      if (explicit) return explicit;
+
+      // 2. Fallback RPC profession → buyer_profile
       const { data, error } = await supabase.rpc(
         "resolve_buyer_profile_for_user" as any,
         { _user_id: user.id }

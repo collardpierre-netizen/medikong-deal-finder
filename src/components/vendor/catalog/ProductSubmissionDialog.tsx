@@ -230,6 +230,8 @@ export function ProductSubmissionDialog({ children }: { children?: React.ReactNo
   const [fileIssue, setFileIssue] = useState<string | null>(null);
   const [showRejectedOnly, setShowRejectedOnly] = useState(true);
 
+  const { suggestion: catSuggestion, loading: catSuggestionLoading } = useCategorySuggestion(form.gtin, form.cnk_code);
+
   const reset = () => {
     setForm({ product_name: "", brand_name: "", manufacturer_name: "", gtin: "", cnk_code: "", category_hint: "", notes: "" });
     setErrors({});

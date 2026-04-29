@@ -621,6 +621,124 @@ function VendorOffersPanel({ vendor }: { vendor: any }) {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* ── Récap post-import : doublons (vendor + product_id) détectés ── */}
+      <Dialog open={!!importRecap} onOpenChange={(o) => !o && setImportRecap(null)}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Import terminé — Récapitulatif</DialogTitle>
+          </DialogHeader>
+          {importRecap && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-3 gap-3">
+                <div className="rounded-lg border p-3">
+                  <p className="text-[11px] text-muted-foreground uppercase">Lignes CSV</p>
+                  <p className="text-xl font-bold">{importRecap.totalRows}</p>
+                </div>
+                <div className="rounded-lg border p-3">
+                  <p className="text-[11px] text-muted-foreground uppercase">Offres en base</p>
+                  <p className="text-xl font-bold text-green-600">{importRecap.upserted}</p>
+                </div>
+                <div className="rounded-lg border p-3">
+                  <p className="text-[11px] text-muted-foreground uppercase">Doublons fusionnés</p>
+                  <p className="text-xl font-bold text-amber-600">{importRecap.duplicates.length}</p>
+                </div>
+              </div>
+
+              {importRecap.duplicates.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  Aucun doublon détecté. Chaque produit n'apparaissait qu'une fois dans le CSV.
+                </p>
+              ) : (
+                <>
+                  <p className="text-xs text-muted-foreground">
+                    Pour chaque produit présent plusieurs fois dans le CSV, c'est la <strong>dernière ligne</strong> qui a été conservée
+                    (les autres ont été ignorées). Vérifiez que c'est bien le comportement attendu.
+                  </p>
+                  <div className="max-h-[400px] overflow-y-auto border rounded-md">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="text-[11px]">Produit</TableHead>
+                          <TableHead className="text-[11px]">GTIN</TableHead>
+                          <TableHead className="text-[11px]">Conservée</TableHead>
+                          <TableHead className="text-[11px]">Ignorées</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {importRecap.duplicates.map((d) => (
+                          <TableRow key={d.productId}>
+                            <TableCell className="text-[11px] max-w-[220px] truncate" title={d.productName}>
+                              {d.productName}
+                            </TableCell>
+                            <TableCell className="text-[11px] font-mono">{d.gtin || "—"}</TableCell>
+                            <TableCell className="text-[11px]">
+                              <Badge variant="default" className="bg-green-600 hover:bg-green-600 text-white text-[10px] mr-1">
+                                Ligne {d.kept.lineIndex}
+                              </Badge>
+                              <span className="text-muted-foreground">
+                                {d.kept.unitPrice.toFixed(2)} € · {d.kept.stockStatus}
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-[11px]">
+                              <div className="flex flex-col gap-1">
+                                {d.discarded.map((x, i) => (
+                                  <div key={i} className="flex items-center gap-1">
+                                    <Badge variant="outline" className="text-[10px] line-through opacity-70">
+                                      Ligne {x.lineIndex}
+                                    </Badge>
+                                    <span className="text-muted-foreground line-through opacity-70">
+                                      {x.unitPrice.toFixed(2)} € · {x.stockStatus}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </>
+              )}
+
+              <div className="flex justify-end gap-2 pt-2">
+                {importRecap.duplicates.length > 0 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const csv = [
+                        "product_name,gtin,kept_line,kept_price,kept_stock,discarded_lines",
+                        ...importRecap.duplicates.map((d) =>
+                          [
+                            `"${d.productName.replace(/"/g, '""')}"`,
+                            d.gtin,
+                            d.kept.lineIndex,
+                            d.kept.unitPrice.toFixed(2),
+                            d.kept.stockStatus,
+                            `"${d.discarded.map((x) => `L${x.lineIndex}@${x.unitPrice.toFixed(2)}`).join(" | ")}"`,
+                          ].join(",")
+                        ),
+                      ].join("\n");
+                      const blob = new Blob([csv], { type: "text/csv" });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement("a");
+                      a.href = url;
+                      a.download = `import-doublons-${vendor.slug || "vendor"}-${new Date().toISOString().slice(0, 10)}.csv`;
+                      a.click();
+                      URL.revokeObjectURL(url);
+                    }}
+                  >
+                    <Download size={14} className="mr-1.5" /> Exporter les doublons
+                  </Button>
+                )}
+                <Button onClick={() => setImportRecap(null)}>Fermer</Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

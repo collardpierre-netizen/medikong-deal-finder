@@ -22,22 +22,37 @@ import {
 import { InterestToggleButton } from "@/components/vendor/catalog/InterestToggleButton";
 
 type EntityType = "products" | "brands" | "manufacturers";
+type ProductSort = "popularity" | "price_asc" | "price_desc" | "availability" | "newest";
 
 const PAGE_SIZE = 30;
 
-function useCatalogList(entity: EntityType, search: string, filters: CatalogFilters) {
+const PRODUCT_SORT_CONFIG: Record<ProductSort, { column: string; ascending: boolean }> = {
+  popularity: { column: "popularity", ascending: false },
+  price_asc: { column: "best_price_excl_vat", ascending: true },
+  price_desc: { column: "best_price_excl_vat", ascending: false },
+  availability: { column: "total_stock", ascending: false },
+  newest: { column: "created_at", ascending: false },
+};
+
+function useCatalogList(
+  entity: EntityType,
+  search: string,
+  filters: CatalogFilters,
+  productSort: ProductSort,
+) {
   return useQuery({
-    queryKey: ["vendor-catalog", entity, search, filters],
+    queryKey: ["vendor-catalog", entity, search, filters, productSort],
     queryFn: async () => {
       const term = search.trim();
       const effectiveCategoryId = filters.subCategoryId ?? filters.rootCategoryId;
 
       if (entity === "products") {
+        const sort = PRODUCT_SORT_CONFIG[productSort];
         let q = supabase
           .from("products")
-          .select("id, name, slug, gtin, cnk_code, image_url, brand_id, brand_name, category_id, category_name, best_price_excl_vat")
+          .select("id, name, slug, gtin, cnk_code, image_url, brand_id, brand_name, category_id, category_name, best_price_excl_vat, total_stock")
           .eq("is_active", true)
-          .order("popularity", { ascending: false, nullsFirst: false })
+          .order(sort.column, { ascending: sort.ascending, nullsFirst: false })
           .limit(PAGE_SIZE);
         if (term) q = q.or(`name.ilike.%${term}%,gtin.ilike.%${term}%,cnk_code.ilike.%${term}%,brand_name.ilike.%${term}%`);
         if (effectiveCategoryId) q = q.eq("category_id", effectiveCategoryId);

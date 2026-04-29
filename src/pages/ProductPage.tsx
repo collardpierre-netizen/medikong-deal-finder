@@ -825,6 +825,17 @@ export default function ProductPage() {
     if (product?.id && user) {
       trackActivity.mutate({ activityType: "view_product", productId: product.id });
     }
+    // Historique récent (Trivago-like) : anonyme + connecté, localStorage.
+    if (product?.id && product?.slug && product?.name) {
+      import("@/hooks/useRecentSearches").then(({ pushRecentProduct }) => {
+        pushRecentProduct({
+          id: product.id,
+          slug: product.slug,
+          name: product.name,
+          image: (product as any).image_url ?? (product as any).image_urls?.[0] ?? null,
+        });
+      });
+    }
   }, [product?.id, user?.id]);
 
   // Sticky bar observer

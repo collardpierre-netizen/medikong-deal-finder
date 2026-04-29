@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { federatedSearch } from "@/lib/supabase-search";
 import type { FederatedResults } from "@/lib/supabase-search";
+import { pushRecentTerm, pushRecentProduct, pushRecentTaxon } from "@/hooks/useRecentSearches";
 
 interface InstantSearchBarProps {
   className?: string;
@@ -55,9 +56,12 @@ export function InstantSearchBar({ className = "", placeholder, variant = "navba
     e.preventDefault();
     const q = query.trim();
     if (!q) { navigate("/catalogue"); setIsOpen(false); return; }
+    // Trace l'historique côté client (pour reprise type Trivago).
+    pushRecentTerm(q);
     // If search matches a brand from instant results, go directly to brand filter
     const matchedBrand = results.brands.find(b => b.name.toLowerCase() === q.toLowerCase());
     if (matchedBrand) {
+      pushRecentTaxon({ type: "brand", slug: matchedBrand.slug, name: matchedBrand.name });
       navigate(`/catalogue?brand=${encodeURIComponent(matchedBrand.slug)}`);
     } else {
       navigate(`/catalogue?q=${encodeURIComponent(q)}`);
@@ -81,9 +85,17 @@ export function InstantSearchBar({ className = "", placeholder, variant = "navba
     } else if (e.key === "Enter" && selectedIndex >= 0) {
       e.preventDefault();
       const sel = allItems[selectedIndex];
-      if (sel.type === "product") navigate(`/produit/${(sel.item as any).slug}`);
-      else if (sel.type === "brand") navigate(`/marque/${(sel.item as any).slug}`);
-      else navigate(`/categorie/${(sel.item as any).slug}`);
+      const it: any = sel.item;
+      if (sel.type === "product") {
+        pushRecentProduct({ id: it.id, slug: it.slug, name: it.name, image: it.image_url ?? null });
+        navigate(`/produit/${it.slug}`);
+      } else if (sel.type === "brand") {
+        pushRecentTaxon({ type: "brand", slug: it.slug, name: it.name });
+        navigate(`/marques/${it.slug}`);
+      } else {
+        pushRecentTaxon({ type: "category", slug: it.slug, name: it.name });
+        navigate(`/categorie/${it.slug}`);
+      }
       setIsOpen(false);
       setQuery("");
     } else if (e.key === "Escape") {
@@ -150,7 +162,12 @@ export function InstantSearchBar({ className = "", placeholder, variant = "navba
         >
           {/* Search all link */}
           <button
-            onClick={() => { navigate(`/catalogue?q=${encodeURIComponent(query)}`); setIsOpen(false); }}
+            onClick={() => {
+              const q = query.trim();
+              if (q) pushRecentTerm(q);
+              navigate(`/catalogue?q=${encodeURIComponent(query)}`);
+              setIsOpen(false);
+            }}
             className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-primary hover:bg-accent/50 border-b border-border"
           >
             <Search size={14} />
@@ -166,7 +183,12 @@ export function InstantSearchBar({ className = "", placeholder, variant = "navba
               {results.products.map((p, i) => (
                 <button
                   key={p.id}
-                  onClick={() => { navigate(`/produit/${p.slug}`); setIsOpen(false); setQuery(""); }}
+                  onClick={() => {
+                    pushRecentProduct({ id: p.id, slug: p.slug, name: p.name, image: p.image_urls?.[0] || p.image_url || null });
+                    navigate(`/produit/${p.slug}`);
+                    setIsOpen(false);
+                    setQuery("");
+                  }}
                   className={`w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-accent/50 transition-colors ${selectedIndex === i ? "bg-accent/50" : ""}`}
                 >
                   <img
@@ -203,7 +225,12 @@ export function InstantSearchBar({ className = "", placeholder, variant = "navba
                 return (
                   <button
                     key={b.id}
-                    onClick={() => { navigate(`/marque/${b.slug}`); setIsOpen(false); setQuery(""); }}
+                    onClick={() => {
+                      pushRecentTaxon({ type: "brand", slug: b.slug, name: b.name });
+                      navigate(`/marques/${b.slug}`);
+                      setIsOpen(false);
+                      setQuery("");
+                    }}
                     className={`w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-accent/50 transition-colors ${selectedIndex === idx ? "bg-accent/50" : ""}`}
                   >
                     {b.logo_url ? (
@@ -236,7 +263,12 @@ export function InstantSearchBar({ className = "", placeholder, variant = "navba
                 return (
                   <button
                     key={c.id}
-                    onClick={() => { navigate(`/categorie/${c.slug}`); setIsOpen(false); setQuery(""); }}
+                    onClick={() => {
+                      pushRecentTaxon({ type: "category", slug: c.slug, name: c.name });
+                      navigate(`/categorie/${c.slug}`);
+                      setIsOpen(false);
+                      setQuery("");
+                    }}
                     className={`w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-accent/50 transition-colors ${selectedIndex === idx ? "bg-accent/50" : ""}`}
                   >
                     <div className="w-8 h-8 rounded bg-muted/20 flex items-center justify-center shrink-0">

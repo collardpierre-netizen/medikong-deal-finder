@@ -26,7 +26,7 @@ type Props = {
 };
 
 export function VendorAccountErrorAlert({ presentation, onAction, onDismiss }: Props) {
-  const { severity, title, description, hint, code, primaryAction, secondaryAction } = presentation;
+  const { severity, title, description, hint, code, primaryAction, secondaryAction, tertiaryAction } = presentation;
   const style = SEVERITY_STYLE[severity];
   const Icon = style.Icon;
 
@@ -61,8 +61,11 @@ export function VendorAccountErrorAlert({ presentation, onAction, onDismiss }: P
         </div>
       </div>
 
-      {(primaryAction || secondaryAction) && (
+      {(primaryAction || secondaryAction || tertiaryAction) && (
         <div className="flex flex-wrap gap-2 pt-1">
+          {tertiaryAction && (
+            <ActionButton action={tertiaryAction} onClick={handleClick} />
+          )}
           {secondaryAction && (
             <ActionButton action={secondaryAction} onClick={handleClick} />
           )}

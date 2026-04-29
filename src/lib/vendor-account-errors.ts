@@ -49,6 +49,8 @@ export type VendorAccountErrorPresentation = {
   hint?: string;
   primaryAction?: VendorAccountErrorAction;
   secondaryAction?: VendorAccountErrorAction;
+  /** Action complémentaire optionnelle (ex: ouvrir la fiche existante en parallèle d'un rattachement) */
+  tertiaryAction?: VendorAccountErrorAction;
   /** Code original conservé pour analytics */
   code: VendorAccountErrorCode;
 };
@@ -73,6 +75,9 @@ export function presentVendorAccountError(
     case "vendor_email_already_exists": {
       const hasAccess = !!ev?.auth_user_id;
       const raced = payload.race_detected;
+      const openVendorAction: VendorAccountErrorAction | undefined = ev?.id
+        ? { label: "Ouvrir la fiche vendeur existant", intent: "open_vendor", href: `/admin/vendeurs/${ev.id}`, variant: "outline" }
+        : undefined;
       return {
         severity: "warning",
         code,
@@ -86,9 +91,11 @@ export function presentVendorAccountError(
           ? "Ouvrez sa fiche pour réinitialiser son mot de passe ou modifier ses infos."
           : "Le rattachement réutilise le compte existant ; aucun doublon n'est créé.",
         primaryAction: hasAccess
-          ? { label: "Ouvrir la fiche vendeur", intent: "open_vendor", href: ev?.id ? `/admin/vendeurs/${ev.id}` : undefined }
+          ? openVendorAction
           : { label: "Rattacher au vendeur existant", intent: "attach" },
         secondaryAction: { label: "Modifier l'email", intent: "edit_email", variant: "outline" },
+        // Si pas d'accès, on offre quand même un raccourci direct vers la fiche en action tertiaire
+        tertiaryAction: hasAccess ? undefined : openVendorAction,
       };
     }
 

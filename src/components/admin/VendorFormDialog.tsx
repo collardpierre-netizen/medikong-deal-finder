@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -40,6 +41,7 @@ const COMMISSION_MODELS = [
 
 export default function VendorFormDialog({ open, onOpenChange }: Props) {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [saving, setSaving] = useState(false);
   const [result, setResult] = useState<{ vendor_id: string; temp_password: string | null; reused?: boolean } | null>(null);
   const [copied, setCopied] = useState(false);
@@ -227,7 +229,9 @@ export default function VendorFormDialog({ open, onOpenChange }: Props) {
       case "retry":
         dismissError();
         if (action.href) {
-          window.location.assign(action.href);
+          // Routes admin internes → SPA. Sinon fallback hard nav (ex: /admin/login).
+          if (action.href.startsWith("/")) navigate(action.href);
+          else window.location.assign(action.href);
           return;
         }
         void handleSave();
@@ -236,11 +240,16 @@ export default function VendorFormDialog({ open, onOpenChange }: Props) {
       case "open_user":
         if (action.href) {
           handleClose(false);
-          window.location.assign(action.href);
+          // Navigation SPA (sans rechargement) vers la fiche vendeur/utilisateur existant
+          if (action.href.startsWith("/")) navigate(action.href);
+          else window.location.assign(action.href);
         }
         return;
       default:
-        if (action.href) window.location.assign(action.href);
+        if (action.href) {
+          if (action.href.startsWith("/")) navigate(action.href);
+          else window.location.assign(action.href);
+        }
     }
   };
 

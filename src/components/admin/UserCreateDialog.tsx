@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -52,6 +53,7 @@ const initialAdmin = {
 };
 
 export default function UserCreateDialog({ open, onOpenChange, onCreated }: Props) {
+  const navigate = useNavigate();
   const [tab, setTab] = useState("buyer");
   const [saving, setSaving] = useState(false);
   const [buyer, setBuyer] = useState(initialBuyer);
@@ -276,7 +278,9 @@ export default function UserCreateDialog({ open, onOpenChange, onCreated }: Prop
                   }
                   if ((a.intent === "open_vendor" || a.intent === "open_user") && a.href) {
                     onOpenChange(false);
-                    window.location.assign(a.href);
+                    // Navigation SPA sans rechargement
+                    if (a.href.startsWith("/")) navigate(a.href);
+                    else window.location.assign(a.href);
                   }
                 }}
                 onDismiss={() => setVendorError(null)}

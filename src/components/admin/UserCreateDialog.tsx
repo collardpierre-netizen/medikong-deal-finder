@@ -278,7 +278,9 @@ export default function UserCreateDialog({ open, onOpenChange, onCreated }: Prop
                   }
                   if ((a.intent === "open_vendor" || a.intent === "open_user") && a.href) {
                     onOpenChange(false);
-                    window.location.assign(a.href);
+                    // Navigation SPA sans rechargement
+                    if (a.href.startsWith("/")) navigate(a.href);
+                    else window.location.assign(a.href);
                   }
                 }}
                 onDismiss={() => setVendorError(null)}

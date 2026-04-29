@@ -15,6 +15,7 @@ import { computeMargin } from "@/lib/vendorMargin";
 import { toast } from "sonner";
 import { useCurrentVendor } from "@/hooks/useCurrentVendor";
 import ProfilePricesEditor from "@/components/vendor/ProfilePricesEditor";
+import OfferSuggestedRetailPriceEditor from "@/components/vendor/OfferSuggestedRetailPriceEditor";
 import * as XLSX from "xlsx";
 
 const PROFILE_TYPES = [

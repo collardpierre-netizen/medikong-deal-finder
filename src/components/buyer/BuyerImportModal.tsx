@@ -382,6 +382,49 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
         return;
       }
 
+      // Détection doublons GTIN/CNK dans le fichier — bloquant
+      const seenEan = new Map<string, number[]>();
+      const seenCnk = new Map<string, number[]>();
+      lines.forEach((l, idx) => {
+        const rowNum = idx + 2; // +1 header, +1 base 1
+        if (l.ean) {
+          if (!seenEan.has(l.ean)) seenEan.set(l.ean, []);
+          seenEan.get(l.ean)!.push(rowNum);
+        }
+        if (l.cnk) {
+          if (!seenCnk.has(l.cnk)) seenCnk.set(l.cnk, []);
+          seenCnk.get(l.cnk)!.push(rowNum);
+        }
+      });
+      const dupEan = Array.from(seenEan.entries()).filter(([, rows]) => rows.length > 1);
+      const dupCnk = Array.from(seenCnk.entries()).filter(([, rows]) => rows.length > 1);
+      const dupCount = dupEan.length + dupCnk.length;
+
+      if (dupCount > 0) {
+        // Construit un CSV à télécharger
+        const header = "type,code,duplicate_rows";
+        const escape = (v: string) => `"${(v ?? "").replace(/"/g, '""')}"`;
+        const body = [
+          ...dupEan.map(([code, rows]) => ["EAN", escape(code), escape(rows.join("|"))].join(",")),
+          ...dupCnk.map(([code, rows]) => ["CNK", escape(code), escape(rows.join("|"))].join(",")),
+        ].join("\n");
+        const blob = new Blob([header + "\n" + body], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `doublons-import-${new Date().toISOString().slice(0, 10)}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+
+        toast.error(
+          `Import bloqué : ${dupCount} code(s) en double détecté(s) (${dupEan.length} EAN, ${dupCnk.length} CNK). Un fichier CSV listant les doublons a été téléchargé.`,
+          { duration: 8000 }
+        );
+        setPhase("instructions");
+        setProgress(null);
+        return;
+      }
+
       setProgress({ current: 0, total: lines.length, startTime: Date.now() });
       await waitForUiPaint();
 

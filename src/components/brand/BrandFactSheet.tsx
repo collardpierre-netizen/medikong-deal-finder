@@ -457,8 +457,10 @@ export function BrandFactSheet({ brand }: { brand: BrandRow }) {
           )}
           <Disclaimer>Avis liés à des acheteurs vérifiés ayant passé au moins une commande de la marque.</Disclaimer>
         </Card>
+        )}
 
         {/* ─── Section 5 : Synthèse ───────────────────────────────────── */}
+        {hasSynthesis && (
         <Card className="p-5 md:col-span-2">
           <h3 className="text-base font-bold text-mk-navy mb-3">Synthèse — points forts & à noter</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

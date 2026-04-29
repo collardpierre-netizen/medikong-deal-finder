@@ -915,9 +915,14 @@ export default function AccountPage() {
                         <FileSpreadsheet size={40} className="mx-auto mb-3 text-primary" />
                         <p className="text-sm font-semibold text-foreground mb-1">Analysez vos achats en un clic</p>
                         <p className="text-xs text-muted-foreground mb-4">Glissez votre fichier XLSX ou cliquez pour importer</p>
-                        <Button onClick={() => setImportOpen(true)} className="gap-2">
-                          <Upload size={14} /> Importer ma liste
-                        </Button>
+                        <div className="flex items-center justify-center gap-2 flex-wrap">
+                          <Button onClick={() => setImportOpen(true)} className="gap-2">
+                            <Upload size={14} /> Importer ma liste
+                          </Button>
+                          <Button asChild variant="outline" className="gap-2">
+                            <a href="/compte/imports">Historique des imports</a>
+                          </Button>
+                        </div>
                       </div>
                       <div className="mt-6 grid grid-cols-3 gap-3">
                         <div className="border rounded-lg p-4 text-center">

@@ -276,6 +276,55 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
     onOpenChange(v);
   };
 
+  // Suit le job actif et bascule en "results" quand le worker a terminé
+  const { job: activeJob } = useImportJob(jobId);
+  useEffect(() => {
+    if (!activeJob || activeJob.status !== "completed") return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const payload = await fetchJobResults(activeJob.id);
+        if (cancelled) return;
+        const finalResults = ((payload?.results ?? []) as MatchedLine[]).filter(Boolean);
+        setResults(finalResults);
+        const auto = new Set<number>();
+        finalResults.forEach((r, i) => {
+          if (r.status === "found" && (r.saving || 0) > 0) auto.add(i);
+        });
+        setSelected(auto);
+        setPhase("results");
+
+        if (activeJob.metadata?.save_to_account && user) {
+          const toUpsert = finalResults
+            .filter((r) => r.status === "found" && r.productId && r.currentPrice > 0)
+            .map((r) => ({
+              user_id: user.id,
+              product_id: r.productId!,
+              my_purchase_price: r.currentPrice,
+              updated_at: new Date().toISOString(),
+            }));
+          if (toUpsert.length > 0) {
+            const { error } = await supabase.from("user_prices")
+              .upsert(toUpsert, { onConflict: "user_id,product_id" });
+            if (!error) {
+              setSavedCount(toUpsert.length);
+              toast.success(`${toUpsert.length} prix enregistré(s) dans Mes Prix`);
+            }
+          }
+        }
+      } catch (e: any) {
+        toast.error(e?.message ?? "Impossible de charger les résultats");
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [activeJob, user]);
+
+  useEffect(() => {
+    if (activeJob?.status === "failed") {
+      toast.error(activeJob.error_message ?? "L'import a échoué");
+    }
+  }, [activeJob?.status, activeJob?.error_message]);
+
   const downloadTemplate = () => {
     const link = document.createElement("a");
     link.href = "/medikong_template_import.xlsx";

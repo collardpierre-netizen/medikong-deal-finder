@@ -348,6 +348,9 @@ function VendorOffersPanel({ vendor }: { vendor: any }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [csvPreview, setCsvPreview] = useState<any[] | null>(null);
   const [csvUnmatched, setCsvUnmatched] = useState<string[]>([]);
+  type InvalidRow = { row: number; gtin: string; unit_price: string; mov: string; reason: string };
+  const [csvInvalid, setCsvInvalid] = useState<InvalidRow[]>([]);
+  const [csvTotalRows, setCsvTotalRows] = useState(0);
   const [csvImporting, setCsvImporting] = useState(false);
   const [csvProgress, setCsvProgress] = useState<{ phase: string; processed: number; total: number; upserted: number; merged: number } | null>(null);
 

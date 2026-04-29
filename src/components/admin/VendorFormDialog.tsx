@@ -41,6 +41,7 @@ const COMMISSION_MODELS = [
 
 export default function VendorFormDialog({ open, onOpenChange }: Props) {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [saving, setSaving] = useState(false);
   const [result, setResult] = useState<{ vendor_id: string; temp_password: string | null; reused?: boolean } | null>(null);
   const [copied, setCopied] = useState(false);

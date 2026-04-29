@@ -7590,6 +7590,72 @@ export type Database = {
           },
         ]
       }
+      vendor_notification_dispatch_log: {
+        Row: {
+          dispatched_at: string
+          id: string
+          interest_id: string | null
+          notification_id: string | null
+          source_id: string
+          source_type: string
+          vendor_id: string
+        }
+        Insert: {
+          dispatched_at?: string
+          id?: string
+          interest_id?: string | null
+          notification_id?: string | null
+          source_id: string
+          source_type: string
+          vendor_id: string
+        }
+        Update: {
+          dispatched_at?: string
+          id?: string
+          interest_id?: string | null
+          notification_id?: string | null
+          source_id?: string
+          source_type?: string
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_notification_dispatch_log_interest_id_fkey"
+            columns: ["interest_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_catalog_interests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_notification_dispatch_log_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_notifications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_notification_dispatch_log_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_notification_dispatch_log_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_notification_dispatch_log_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vendor_notification_preferences: {
         Row: {
           auto_align_enabled: boolean

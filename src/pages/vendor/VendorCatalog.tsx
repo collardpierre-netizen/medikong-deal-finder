@@ -323,7 +323,10 @@ export default function VendorCatalog() {
                       <InterestToggleButton
                         target={{ kind: "manufacturer", id: m.id, label: m.name }}
                       />
-                      <Button size="sm" className="h-7 px-2 text-xs gap-1" onClick={() => startOffer()}>
+                      <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => filterByManufacturer(m.id)}>
+                        {t("vendorCatalogView")}
+                      </Button>
+                      <Button size="sm" className="h-7 px-2 text-xs gap-1" onClick={() => filterByManufacturer(m.id)}>
                         <Plus className="h-3 w-3" /> {t("vendorCatalogShortOffer")}
                       </Button>
                     </div>

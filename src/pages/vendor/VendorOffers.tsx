@@ -1141,9 +1141,19 @@ export default function VendorOffers() {
     setEditingId(offer.id);
     setShowForm(true);
   };
-  const closeForm = () => { setShowForm(false); setEditingId(null); setForm(emptyForm); };
+  const navigate = useNavigate();
+  // Contexte de retour vers /vendor/catalog (filtre marque/fabricant à restaurer)
+  const [catalogReturn, setCatalogReturn] = useState<{ brandId?: string; manufacturerId?: string } | null>(null);
+  const closeForm = () => { setShowForm(false); setEditingId(null); setForm(emptyForm); setCatalogReturn(null); };
+  const backToCatalog = () => {
+    const params = new URLSearchParams();
+    if (catalogReturn?.brandId) params.set("brand", catalogReturn.brandId);
+    if (catalogReturn?.manufacturerId) params.set("manufacturer", catalogReturn.manufacturerId);
+    closeForm();
+    navigate(`/vendor/catalog${params.toString() ? `?${params.toString()}` : ""}`);
+  };
 
-  // Deep-link depuis le catalogue : /vendor/offers?action=create&product=<id>
+  // Deep-link depuis le catalogue : /vendor/offers?action=create&product=<id>&brand=<id>&manufacturer=<id>
   const [searchParams, setSearchParams] = useSearchParams();
   const deepLinkHandledRef = useRef(false);
   useEffect(() => {

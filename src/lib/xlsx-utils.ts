@@ -12,7 +12,7 @@ export function exportToXlsx(data: any[], filename: string, sheetName = "Data") 
 
 export function downloadProductTemplate() {
   const headers = [
-    { gtin: "5412345678901", name: "Exemple Produit Médical", slug: "", cnk_code: "1234567", sku: "", brand_name: "Marque Exemple", category_name: "Catégorie Exemple", description: "Description du produit", short_description: "Description courte", unit_quantity: 1, origin_country: "BE", image_urls: "https://example.com/img1.jpg;https://example.com/img2.jpg", source: "medikong", is_active: true },
+    { gtin: "5412345678901", name: "Exemple Produit Médical", slug: "", cnk_code: "1234567", sku: "", brand_name: "Marque Exemple", category_name: "Catégorie Exemple", description: "Description du produit", short_description: "Description courte", unit_quantity: 1, origin_country: "BE", image_urls: "https://example.com/img1.jpg;https://example.com/img2.jpg", source: "medikong", is_active: true, pvp_ttc: 24.90, pvp_source: "apb", pvp_country_code: "BE" },
   ];
   const ws = XLSX.utils.json_to_sheet(headers);
   // Set column widths
@@ -20,6 +20,7 @@ export function downloadProductTemplate() {
     { wch: 16 }, { wch: 35 }, { wch: 25 }, { wch: 12 }, { wch: 12 },
     { wch: 20 }, { wch: 20 }, { wch: 40 }, { wch: 30 }, { wch: 8 },
     { wch: 8 }, { wch: 50 }, { wch: 12 }, { wch: 8 },
+    { wch: 10 }, { wch: 14 }, { wch: 10 },
   ];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Produits");
@@ -40,6 +41,9 @@ export function downloadProductTemplate() {
     ["image_urls", "Non", "URLs des images séparées par des points-virgules (;)"],
     ["source", "Non", "Source du produit (défaut: medikong)"],
     ["is_active", "Non", "true ou false (défaut: true)"],
+    ["pvp_ttc", "Non", "Prix Public Conseillé TTC en euros (ex: 24.90). Sert au calcul de marge potentielle pour l'acheteur."],
+    ["pvp_source", "Non", "Source du PVP : apb (Belgique officiel), pmr (cosmétique), manufacturer, distributor, manual. Défaut: apb si pvp_ttc présent."],
+    ["pvp_country_code", "Non", "Pays du PVP : BE, FR ou LU. Défaut: BE."],
   ];
   const wsGuide = XLSX.utils.aoa_to_sheet(guide);
   wsGuide["!cols"] = [{ wch: 18 }, { wch: 14 }, { wch: 70 }];
@@ -73,7 +77,7 @@ export async function exportProducts() {
     while (true) {
       const { data, error } = await supabase
         .from("products")
-        .select("id, gtin, name, name_fr, slug, cnk_code, sku, brand_name, category_name, description, description_fr, short_description, unit_quantity, origin_country, image_url, image_urls, source, is_active")
+        .select("id, gtin, name, name_fr, slug, cnk_code, sku, brand_name, category_name, description, description_fr, short_description, unit_quantity, origin_country, image_url, image_urls, source, is_active, pvp_ttc_cents, pvp_source, pvp_country_code")
         .order("name")
         .range(from, from + PAGE - 1);
       if (error) throw error;
@@ -100,6 +104,9 @@ export async function exportProducts() {
       image_urls: Array.isArray(p.image_urls) ? p.image_urls.join(";") : (p.image_url || ""),
       source: p.source || "",
       is_active: p.is_active,
+      pvp_ttc: p.pvp_ttc_cents != null ? Number((p.pvp_ttc_cents / 100).toFixed(2)) : "",
+      pvp_source: p.pvp_source || "",
+      pvp_country_code: p.pvp_country_code || "",
     }));
     toast.loading(`Génération du fichier XLSX (${rows.length.toLocaleString()} lignes)...`, { id: toastId });
     // Use setTimeout to let the UI update before heavy XLSX generation
@@ -499,6 +506,28 @@ export async function importProducts(file: File, onProgress?: (p: ImportProgress
     if (imageUrls.length > 0) {
       payload.image_urls = imageUrls;
       payload.image_url = imageUrls[0];
+    }
+
+    // PVP TTC + source (optionnel). Si pvp_ttc présent → on met source/country/timestamp.
+    const rawPvp = r.pvp_ttc ?? r.pvp_ttc_cents ?? r["PVP TTC"];
+    if (rawPvp !== undefined && rawPvp !== null && String(rawPvp).trim() !== "") {
+      const pvpNum = typeof rawPvp === "number"
+        ? rawPvp
+        : parseFloat(String(rawPvp).replace(",", "."));
+      if (Number.isFinite(pvpNum) && pvpNum > 0) {
+        // Si valeur > 1000, on suppose qu'elle est déjà en cents
+        const cents = pvpNum > 1000 && Number.isInteger(pvpNum) ? Math.round(pvpNum) : Math.round(pvpNum * 100);
+        const validSources = ["apb", "pmr", "manufacturer", "distributor", "manual"];
+        const rawSrc = r.pvp_source ? String(r.pvp_source).toLowerCase().trim() : "apb";
+        const validCountries = ["BE", "FR", "LU"];
+        const rawCountry = r.pvp_country_code ? String(r.pvp_country_code).toUpperCase().trim() : "BE";
+        payload.pvp_ttc_cents = cents;
+        payload.pvp_source = validSources.includes(rawSrc) ? rawSrc : "apb";
+        payload.pvp_country_code = validCountries.includes(rawCountry) ? rawCountry : "BE";
+        payload.pvp_updated_at = new Date().toISOString();
+      }
+    } else if (rawPvp === "" || rawPvp === null) {
+      // Cellule explicitement vidée → on n'écrase PAS (préserve la valeur existante)
     }
 
     let error: any = null;

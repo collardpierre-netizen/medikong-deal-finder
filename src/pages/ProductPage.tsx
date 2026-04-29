@@ -1667,10 +1667,11 @@ export default function ProductPage() {
                           <thead>
                             <tr className="bg-muted/50 border-b border-border text-left">
                               <th className="px-2 py-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Source</th>
-                              {mpVisMap.show_pharmacist_price && <th className="px-2 py-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider text-right">Pharmacien</th>}
-                              {mpVisMap.show_wholesale_price !== false && <th className="px-2 py-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider text-right">Grossiste</th>}
-                              {mpVisMap.show_public_price && <th className="px-2 py-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider text-right">Pub. HTVA</th>}
-                              <th className="px-2 py-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider text-right">Pub. TTC</th>
+                              <th className="px-2 py-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider text-center">Pack</th>
+                              {mpVisMap.show_pharmacist_price && <th className="px-2 py-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider text-right">Pharmacien /u.</th>}
+                              {mpVisMap.show_wholesale_price !== false && <th className="px-2 py-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider text-right">Grossiste /u.</th>}
+                              {mpVisMap.show_public_price && <th className="px-2 py-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider text-right">Pub. HTVA /u.</th>}
+                              <th className="px-2 py-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider text-right">Pub. TTC /u.</th>
                               <th className="px-1 py-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider text-center">Stock</th>
                               <th className="px-2 py-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider text-right">Écart MK</th>
                               <th className="px-2 py-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider text-right">Relevé</th>
@@ -1682,9 +1683,22 @@ export default function ProductPage() {
                               const isOnline = mp.market_price_sources?.source_type === "online";
                               const tvaRate = Number(mp.tva_rate || 21);
 
-                              const rawPharm = Number(mp.prix_pharmacien || 0);
-                              const rawGrossiste = Number(mp.prix_grossiste || 0);
-                              const rawPublic = Number(mp.prix_public || 0);
+                              // ⚠️ Conditionnement : les grossistes (CERP, Febelco) cotent souvent
+                              // au pack vendeur (ex: "FRESUBIN PROT NRJ TROPI 4X200" → pack de 4).
+                              // On résout le pack à partir du libellé brut puis de l'URL, et on
+                              // divise tous les prix par ce pack pour comparer "des pommes à des pommes".
+                              const mpPack = resolvePackSize({
+                                offerOverride: null,
+                                productPackSize: (product as any)?.pack_size,
+                                productName: product?.name,
+                                offerTitle: mp.product_name_source,
+                                offerUrl: mp.product_url,
+                              });
+                              const packDiv = mpPack.packSize > 0 ? mpPack.packSize : 1;
+
+                              const rawPharm = Number(mp.prix_pharmacien || 0) / packDiv;
+                              const rawGrossiste = Number(mp.prix_grossiste || 0) / packDiv;
+                              const rawPublic = Number(mp.prix_public || 0) / packDiv;
 
                               // Pharmacien HTVA: only for non-online sources
                               const pharmHT = isOnline ? 0 : rawPharm;
@@ -1696,11 +1710,9 @@ export default function ProductPage() {
                               let publicHTVA: number;
                               let publicTTC: number;
                               if (isOnline) {
-                                // Online: rawPublic or rawPharm is TTC
                                 publicTTC = rawPublic || rawPharm;
                                 publicHTVA = publicTTC ? Math.round(publicTTC / (1 + tvaRate / 100) * 100) / 100 : 0;
                               } else {
-                                // Wholesaler: rawPublic is HTVA
                                 publicHTVA = rawPublic;
                                 publicTTC = publicHTVA ? Math.round(publicHTVA * (1 + tvaRate / 100) * 100) / 100 : 0;
                               }
@@ -1710,6 +1722,7 @@ export default function ProductPage() {
                               const deltaAbs = refPrice && mkHT ? refPrice - mkHT : null;
                               const deltaPct = deltaAbs && refPrice ? Math.round((deltaAbs / refPrice) * 100) : null;
                               const positive = deltaAbs !== null && deltaAbs > 0;
+                              const packBadge = packSizeSourceBadge(mpPack.source);
 
                               return (
                                  <tr key={mp.id} className="hover:bg-muted/20 transition-colors">
@@ -1722,6 +1735,18 @@ export default function ProductPage() {
                                         </a>
                                       )}
                                     </span>
+                                  </td>
+                                  <td className="px-2 py-2 text-center text-[11px] whitespace-nowrap" title={`${packBadge.title} — libellé source : ${mp.product_name_source ?? '—'}`}>
+                                    {mpPack.packSize > 1 ? (
+                                      <span className="inline-flex items-center gap-1">
+                                        <span className="font-semibold text-foreground tabular-nums">×{mpPack.packSize}</span>
+                                        <span className={`inline-flex items-center px-1 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide border leading-none ${packBadge.className}`}>
+                                          {packBadge.code}
+                                        </span>
+                                      </span>
+                                    ) : (
+                                      <span className="text-muted-foreground">×1</span>
+                                    )}
                                   </td>
                                   {mpVisMap.show_pharmacist_price && (
                                     <td className="px-2 py-2 text-right font-bold tabular-nums text-foreground text-[12px] whitespace-nowrap">

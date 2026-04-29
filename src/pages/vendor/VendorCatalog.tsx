@@ -94,18 +94,36 @@ function useCatalogList(
 export default function VendorCatalog() {
   const navigate = useNavigate();
   const { t } = useI18n();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [tab, setTab] = useState<EntityType>("products");
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState<CatalogFilters>(emptyCatalogFilters);
   const [productSort, setProductSort] = useState<ProductSort>("popularity");
 
+  // Restaure le filtre marque/fabricant via querystring (retour depuis /vendor/offers)
+  const restoredRef = useRef(false);
+  useEffect(() => {
+    if (restoredRef.current) return;
+    const brandId = searchParams.get("brand");
+    const manufacturerId = searchParams.get("manufacturer");
+    if (!brandId && !manufacturerId) return;
+    restoredRef.current = true;
+    setFilters({ ...emptyCatalogFilters, brandId: brandId ?? null, manufacturerId: manufacturerId ?? null });
+    setTab("products");
+    const next = new URLSearchParams(searchParams);
+    next.delete("brand");
+    next.delete("manufacturer");
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams]);
+
   const { data = [], isLoading } = useCatalogList(tab, search, filters, productSort);
 
   const startOffer = (productId?: string) => {
-    const target = productId
-      ? `/vendor/offers?action=create&product=${productId}`
-      : `/vendor/offers?action=create`;
-    navigate(target);
+    const params = new URLSearchParams({ action: "create" });
+    if (productId) params.set("product", productId);
+    if (filters.brandId) params.set("brand", filters.brandId);
+    if (filters.manufacturerId) params.set("manufacturer", filters.manufacturerId);
+    navigate(`/vendor/offers?${params.toString()}`);
   };
 
   const filterByBrand = (brandId: string) => {

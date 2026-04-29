@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Search, Package, Building2, Tag, Plus, SearchX, FilterX } from "lucide-react";
+import { Search, Package, Building2, Tag, Plus, SearchX, FilterX, X } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/contexts/I18nContext";
@@ -55,7 +55,14 @@ function useCatalogList(
           .eq("is_active", true)
           .order(sort.column, { ascending: sort.ascending, nullsFirst: false })
           .limit(PAGE_SIZE);
-        if (term) q = q.or(`name.ilike.%${term}%,gtin.ilike.%${term}%,cnk_code.ilike.%${term}%,brand_name.ilike.%${term}%`);
+        if (term) {
+          // Quand un filtre marque/fabricant est actif, on resserre la recherche
+          // sur le nom/GTIN/CNK du produit (brand_name est déjà imposé par le filtre).
+          const scoped = filters.brandId || filters.manufacturerId;
+          q = scoped
+            ? q.or(`name.ilike.%${term}%,gtin.ilike.%${term}%,cnk_code.ilike.%${term}%`)
+            : q.or(`name.ilike.%${term}%,gtin.ilike.%${term}%,cnk_code.ilike.%${term}%,brand_name.ilike.%${term}%`);
+        }
         if (effectiveCategoryId) q = q.eq("category_id", effectiveCategoryId);
         if (filters.brandId) q = q.eq("brand_id", filters.brandId);
         if (filters.manufacturerId) q = q.eq("manufacturer_id", filters.manufacturerId);
@@ -97,8 +104,15 @@ export default function VendorCatalog() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [tab, setTab] = useState<EntityType>("products");
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [filters, setFilters] = useState<CatalogFilters>(emptyCatalogFilters);
   const [productSort, setProductSort] = useState<ProductSort>("popularity");
+
+  // Debounce la recherche pour éviter une requête à chaque frappe
+  useEffect(() => {
+    const id = setTimeout(() => setDebouncedSearch(search), 250);
+    return () => clearTimeout(id);
+  }, [search]);
 
   // Restaure le filtre marque/fabricant via querystring (retour depuis /vendor/offers)
   const restoredRef = useRef(false);
@@ -116,7 +130,25 @@ export default function VendorCatalog() {
     setSearchParams(next, { replace: true });
   }, [searchParams, setSearchParams]);
 
-  const { data = [], isLoading } = useCatalogList(tab, search, filters, productSort);
+  const { data = [], isLoading } = useCatalogList(tab, debouncedSearch, filters, productSort);
+
+  // Récupère le label de la marque / fabricant actif pour le bandeau de scope
+  const { data: activeScopeLabel } = useQuery({
+    queryKey: ["vendor-catalog-scope-label", filters.brandId, filters.manufacturerId],
+    enabled: !!(filters.brandId || filters.manufacturerId),
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      if (filters.brandId) {
+        const { data } = await supabase.from("brands").select("name").eq("id", filters.brandId).maybeSingle();
+        return data?.name ? { kind: "brand" as const, name: data.name } : null;
+      }
+      if (filters.manufacturerId) {
+        const { data } = await supabase.from("manufacturers").select("name").eq("id", filters.manufacturerId).maybeSingle();
+        return data?.name ? { kind: "manufacturer" as const, name: data.name } : null;
+      }
+      return null;
+    },
+  });
 
   const startOffer = (productId?: string) => {
     const params = new URLSearchParams({ action: "create" });
@@ -139,10 +171,13 @@ export default function VendorCatalog() {
   };
 
   const placeholderText = useMemo(() => {
-    if (tab === "products") return t("vendorCatalogSearchProducts");
+    if (tab === "products") {
+      if (activeScopeLabel) return `Rechercher dans ${activeScopeLabel.name}…`;
+      return t("vendorCatalogSearchProducts");
+    }
     if (tab === "brands") return t("vendorCatalogSearchBrands");
     return t("vendorCatalogSearchManufacturers");
-  }, [tab, t]);
+  }, [tab, t, activeScopeLabel]);
 
   return (
     <div className="space-y-5">
@@ -214,7 +249,25 @@ export default function VendorCatalog() {
             </div>
           )}
 
-          <TabsContent value="products" className="m-0">
+          <TabsContent value="products" className="m-0 space-y-3">
+            {activeScopeLabel && (
+              <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-[#EFF4FE] border border-[#C9DAFB] text-[12px] text-[#1B5BDA]">
+                <span>
+                  Recherche limitée à{" "}
+                  {activeScopeLabel.kind === "brand" ? "la marque" : "le fabricant"}{" "}
+                  <strong>{activeScopeLabel.name}</strong>
+                  {debouncedSearch.trim() ? <> · « {debouncedSearch.trim()} »</> : null}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 px-2 ml-auto text-[11px] text-[#1B5BDA] hover:bg-[#DDE7FB]"
+                  onClick={() => setFilters(emptyCatalogFilters)}
+                >
+                  <X className="h-3 w-3 mr-1" /> Retirer le filtre
+                </Button>
+              </div>
+            )}
             {isLoading ? (
               <ListLoader variant="product" />
             ) : data.length === 0 ? (

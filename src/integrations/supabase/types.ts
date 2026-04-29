@@ -2627,9 +2627,13 @@ export type Database = {
       offer_buyer_profile_prices: {
         Row: {
           buyer_profile_id: string
+          country_code: string | null
           created_at: string
           discount_pct: number | null
           id: string
+          is_active: boolean
+          min_order_quantity: number | null
+          min_order_value_cents: number | null
           offer_id: string
           price_excl_vat: number | null
           pricing_mode: string
@@ -2637,9 +2641,13 @@ export type Database = {
         }
         Insert: {
           buyer_profile_id: string
+          country_code?: string | null
           created_at?: string
           discount_pct?: number | null
           id?: string
+          is_active?: boolean
+          min_order_quantity?: number | null
+          min_order_value_cents?: number | null
           offer_id: string
           price_excl_vat?: number | null
           pricing_mode?: string
@@ -2647,9 +2655,13 @@ export type Database = {
         }
         Update: {
           buyer_profile_id?: string
+          country_code?: string | null
           created_at?: string
           discount_pct?: number | null
           id?: string
+          is_active?: boolean
+          min_order_quantity?: number | null
+          min_order_value_cents?: number | null
           offer_id?: string
           price_excl_vat?: number | null
           pricing_mode?: string
@@ -3003,66 +3015,6 @@ export type Database = {
           tier_index?: number
         }
         Relationships: []
-      }
-      offer_profile_rules: {
-        Row: {
-          country_code: string | null
-          created_at: string | null
-          custom_price_excl_vat: number | null
-          discount_percentage: number | null
-          id: string
-          is_active: boolean | null
-          moq: number | null
-          mov_amount: number | null
-          mov_currency: string | null
-          offer_id: string
-          profile_type: string
-          updated_at: string | null
-        }
-        Insert: {
-          country_code?: string | null
-          created_at?: string | null
-          custom_price_excl_vat?: number | null
-          discount_percentage?: number | null
-          id?: string
-          is_active?: boolean | null
-          moq?: number | null
-          mov_amount?: number | null
-          mov_currency?: string | null
-          offer_id: string
-          profile_type: string
-          updated_at?: string | null
-        }
-        Update: {
-          country_code?: string | null
-          created_at?: string | null
-          custom_price_excl_vat?: number | null
-          discount_percentage?: number | null
-          id?: string
-          is_active?: boolean | null
-          moq?: number | null
-          mov_amount?: number | null
-          mov_currency?: string | null
-          offer_id?: string
-          profile_type?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "offer_profile_rules_offer_id_fkey"
-            columns: ["offer_id"]
-            isOneToOne: false
-            referencedRelation: "offers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "offer_profile_rules_offer_id_fkey"
-            columns: ["offer_id"]
-            isOneToOne: false
-            referencedRelation: "public_offers"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       offers: {
         Row: {

@@ -225,7 +225,12 @@ export function InstantSearchBar({ className = "", placeholder, variant = "navba
                 return (
                   <button
                     key={b.id}
-                    onClick={() => { navigate(`/marque/${b.slug}`); setIsOpen(false); setQuery(""); }}
+                    onClick={() => {
+                      pushRecentTaxon({ type: "brand", slug: b.slug, name: b.name });
+                      navigate(`/marques/${b.slug}`);
+                      setIsOpen(false);
+                      setQuery("");
+                    }}
                     className={`w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-accent/50 transition-colors ${selectedIndex === idx ? "bg-accent/50" : ""}`}
                   >
                     {b.logo_url ? (
@@ -258,7 +263,12 @@ export function InstantSearchBar({ className = "", placeholder, variant = "navba
                 return (
                   <button
                     key={c.id}
-                    onClick={() => { navigate(`/categorie/${c.slug}`); setIsOpen(false); setQuery(""); }}
+                    onClick={() => {
+                      pushRecentTaxon({ type: "category", slug: c.slug, name: c.name });
+                      navigate(`/categorie/${c.slug}`);
+                      setIsOpen(false);
+                      setQuery("");
+                    }}
                     className={`w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-accent/50 transition-colors ${selectedIndex === idx ? "bg-accent/50" : ""}`}
                   >
                     <div className="w-8 h-8 rounded bg-muted/20 flex items-center justify-center shrink-0">

@@ -216,16 +216,23 @@ const AdminSourceMapping = () => {
     <div className="min-h-screen bg-mk-cream">
       <AdminTopBar title="Mapping source → catalogue" />
       <div className="container mx-auto px-4 py-8 max-w-7xl">
-        <div className="flex items-center gap-3 mb-6">
+        <div className="flex items-center gap-3 mb-6 flex-wrap">
           <Link to="/admin/produits">
             <Button variant="ghost" size="sm">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Retour
             </Button>
           </Link>
-          <h1 className="text-2xl font-bold text-mk-navy">
+          <h1 className="text-2xl font-bold text-mk-navy flex-1">
             Mapping source → marque / fabricant / catégorie
           </h1>
+          <ResolveManufacturersButton
+            onDone={() => {
+              qc.invalidateQueries({ queryKey: ["source-mapping-overview"] });
+              qc.invalidateQueries({ queryKey: ["source-mapping-products"] });
+              qc.invalidateQueries({ queryKey: ["source-mapping-import-runs"] });
+            }}
+          />
         </div>
 
         {/* KPIs par source */}

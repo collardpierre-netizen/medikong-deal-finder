@@ -315,34 +315,36 @@ export function useProductOffers(productId: string | undefined) {
       const mapped = (offers || []).map((o: any): Offer => {
         const vendor = vendorMap.get(o.vendor_id);
         const safeVendorId: string = o.vendor_id || "";
-        const basePriceExcl = Number(o.price_excl_vat);
-        const basePriceIncl = Number(o.price_incl_vat);
-        // Ratio TVA déduit de l'offre (fallback 1 si invalide). Permet de
-        // recalculer le TTC quand on remplace le HTVA par le prix résolu par profil.
-        const vatRatio =
-          Number.isFinite(basePriceExcl) && basePriceExcl > 0 && Number.isFinite(basePriceIncl) && basePriceIncl > 0
-            ? basePriceIncl / basePriceExcl
-            : 1;
         const resolved = resolvedPriceMap.get(o.id);
-        // Cascade : RPC override > legacy product_prices × price_levels > prix de base offre.
-        let effExcl: number;
-        if (resolved) {
-          effExcl = resolved.price_excl_vat;
-        } else if (legacyLevelPrice !== null && legacyLevelPrice > 0) {
-          effExcl = legacyLevelPrice;
-        } else {
-          effExcl = Number.isFinite(basePriceExcl) ? basePriceExcl : 0;
-        }
-        const usedOverride = resolved !== undefined || legacyLevelPrice !== null;
-        const effIncl = usedOverride
-          ? Math.round(effExcl * vatRatio * 100) / 100
-          : (Number.isFinite(basePriceIncl) ? basePriceIncl : 0);
+        const cascade = resolvePriceCascade({
+          basePriceExclVat: o.price_excl_vat,
+          basePriceInclVat: o.price_incl_vat,
+          profileOverride: resolved
+            ? {
+                price_excl_vat: resolved.price_excl_vat,
+                source: resolved.source as PriceCascadeSource,
+              }
+            : null,
+          legacyLevelPrice: legacyLevelPrice,
+        });
         return {
           id: o.id,
           productId: o.product_id,
           sellerId: safeVendorId,
-          unitPriceEur: effExcl,
-          unitPriceInclVat: effIncl,
+          unitPriceEur: cascade.unitPriceEur,
+          unitPriceInclVat: cascade.unitPriceInclVat,
+          stockQuantity: Number(o.stock_quantity) || 0,
+          movEur: Number(o.mov || o.mov_amount || 0),
+          bundleSize: Number(o.moq) || 1,
+          deliveryDays: o.delivery_days ?? null,
+          shipFromCountry: o.shipping_from_country || 'BE',
+          priceTiers: o.price_tiers || null,
+          discountTiers: tiersMap.get(o.id) || [],
+          offerPriceTiers: priceTiersMap.get(o.id) || [],
+          isActive: o.is_active,
+          updatedAt: o.updated_at ?? null,
+          syncedAt: o.synced_at ?? null,
+          isQogitaBacked: !!o.is_qogita_backed,
           stockQuantity: Number(o.stock_quantity) || 0,
           movEur: Number(o.mov || o.mov_amount || 0),
           bundleSize: Number(o.moq) || 1,

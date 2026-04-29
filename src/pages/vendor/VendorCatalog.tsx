@@ -8,6 +8,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { ProductSubmissionDialog } from "@/components/vendor/catalog/ProductSubmissionDialog";
+import { VendorSubmissionsList } from "@/components/vendor/catalog/VendorSubmissionsList";
 
 type EntityType = "products" | "brands" | "manufacturers";
 
@@ -84,11 +86,14 @@ export default function VendorCatalog() {
 
   return (
     <div className="space-y-5">
-      <header>
-        <h1 className="text-xl font-bold text-[#1D2530]">Catalogue MediKong</h1>
-        <p className="text-[13px] text-[#616B7C] mt-0.5">
-          Parcourez les marques, fabricants et produits déjà référencés et démarrez une offre en un clic.
-        </p>
+      <header className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="text-xl font-bold text-[#1D2530]">Catalogue MediKong</h1>
+          <p className="text-[13px] text-[#616B7C] mt-0.5">
+            Parcourez les marques, fabricants et produits déjà référencés et démarrez une offre en un clic.
+          </p>
+        </div>
+        <ProductSubmissionDialog />
       </header>
 
       <VCard className="p-4">
@@ -225,9 +230,18 @@ export default function VendorCatalog() {
         </Tabs>
       </VCard>
 
-      <p className="text-[11px] text-muted-foreground">
-        Vous ne trouvez pas une référence ? Vous pourrez bientôt la proposer pour validation par notre équipe catalogue.
-      </p>
+      <VCard className="p-4">
+        <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
+          <div>
+            <h2 className="text-sm font-bold text-[#1D2530]">Mes propositions de produits</h2>
+            <p className="text-[12px] text-muted-foreground">
+              Suivez le statut des fiches que vous avez soumises à notre équipe catalogue.
+            </p>
+          </div>
+          <ProductSubmissionDialog />
+        </div>
+        <VendorSubmissionsList />
+      </VCard>
     </div>
   );
 }

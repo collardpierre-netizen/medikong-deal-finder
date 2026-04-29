@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  Link, MousePointerClick, TrendingUp, Users, Download
+  Link, MousePointerClick, TrendingUp, Users, Download, Briefcase
 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
@@ -37,6 +37,23 @@ export default function AdminLeads() {
         .limit(500);
       if (error) throw error;
       return data || [];
+    },
+  });
+
+  // Profiles for users present in leads (separate query — no FK between external_leads and profiles)
+  const userIds = Array.from(new Set(leads.map((l: any) => l.user_id).filter(Boolean)));
+  const { data: profilesById = {} } = useQuery({
+    queryKey: ["admin-leads-profiles", userIds.sort().join(",")],
+    enabled: userIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("user_id, full_name, company_name, country, sector, profession_type_id, buyer_profile_id, profession_types(label), buyer_profiles(name)")
+        .in("user_id", userIds as string[]);
+      if (error) throw error;
+      const map: Record<string, any> = {};
+      (data || []).forEach((p: any) => { map[p.user_id] = p; });
+      return map;
     },
   });
 
@@ -89,12 +106,33 @@ export default function AdminLeads() {
     return { ...v, leadCount: vLeads.length, lastAt };
   }).sort((a, b) => b.leadCount - a.leadCount);
 
-  // Export CSV
+  // Profile summary (this month) — par profession
+  const profileCounts: Record<string, number> = {};
+  leadsThisMonth.forEach((l: any) => {
+    const p = (profilesById as any)[l.user_id];
+    const label = p?.profession_types?.label || p?.buyer_profiles?.name || (l.user_id ? "Profil inconnu" : "Anonyme");
+    profileCounts[label] = (profileCounts[label] || 0) + 1;
+  });
+  const profileSummary = Object.entries(profileCounts).sort((a, b) => b[1] - a[1]);
+
+  // Export CSV (enriched with profile)
   const exportCsv = () => {
-    const header = "Date,Produit,GTIN,Vendeur,User ID\n";
-    const rows = leads.map(l =>
-      `${l.clicked_at?.slice(0,16)},${((l as any).products?.name || "").replace(/,/g," ")},${(l as any).products?.gtin || ""},${(l as any).external_vendors?.name || ""},${l.user_id || "Anonyme"}`
-    ).join("\n");
+    const header = "Date,Produit,GTIN,Vendeur,Utilisateur,Société,Profession,Profil acheteur,Pays\n";
+    const esc = (s: any) => String(s ?? "").replace(/[,;\n\r"]/g, " ").trim();
+    const rows = leads.map((l: any) => {
+      const p = (profilesById as any)[l.user_id] || {};
+      return [
+        l.clicked_at?.slice(0, 16) || "",
+        esc(l.products?.name),
+        esc(l.products?.gtin),
+        esc(l.external_vendors?.name),
+        esc(p.full_name || (l.user_id ? l.user_id.slice(0, 8) + "…" : "Anonyme")),
+        esc(p.company_name),
+        esc(p.profession_types?.label),
+        esc(p.buyer_profiles?.name),
+        esc(p.country),
+      ].join(",");
+    }).join("\n");
     const blob = new Blob([header + rows], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a"); a.href = url; a.download = "leads-export.csv"; a.click();
@@ -117,6 +155,7 @@ export default function AdminLeads() {
             <TabsTrigger value="overview" className="text-[13px]">Graphique</TabsTrigger>
             <TabsTrigger value="leads" className="text-[13px]">Leads récents</TabsTrigger>
             <TabsTrigger value="vendors" className="text-[13px]">Par vendeur</TabsTrigger>
+            <TabsTrigger value="profiles" className="text-[13px]">Par profil</TabsTrigger>
           </TabsList>
           <Button size="sm" variant="outline" onClick={exportCsv}><Download size={14} className="mr-1" /> Export CSV</Button>
         </div>
@@ -149,25 +188,39 @@ export default function AdminLeads() {
             <Table>
               <TableHeader>
                 <TableRow style={{ backgroundColor: "#F8FAFC" }}>
-                  {["Date/Heure", "Produit", "GTIN", "Vendeur externe", "Utilisateur"].map(h => (
+                  {["Date/Heure", "Produit", "GTIN", "Vendeur externe", "Utilisateur", "Société", "Profession", "Pays"].map(h => (
                     <TableHead key={h} className="text-[11px] font-semibold" style={{ color: "#8B95A5" }}>{h}</TableHead>
                   ))}
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading ? (
-                  <TableRow><TableCell colSpan={5} className="text-center py-8 text-[13px]" style={{ color: "#8B95A5" }}>Chargement...</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={8} className="text-center py-8 text-[13px]" style={{ color: "#8B95A5" }}>Chargement...</TableCell></TableRow>
                 ) : leads.length === 0 ? (
-                  <TableRow><TableCell colSpan={5} className="text-center py-8 text-[13px]" style={{ color: "#8B95A5" }}>Aucun lead</TableCell></TableRow>
-                ) : leads.slice(0, 100).map((l: any) => (
-                  <TableRow key={l.id}>
-                    <TableCell className="text-[12px]" style={{ color: "#616B7C" }}>{l.clicked_at ? new Date(l.clicked_at).toLocaleString("fr-BE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "—"}</TableCell>
-                    <TableCell className="text-[12px] font-medium max-w-[200px] truncate" style={{ color: "#1D2530" }}>{l.products?.name || "—"}</TableCell>
-                    <TableCell className="text-[11px] font-mono" style={{ color: "#616B7C" }}>{l.products?.gtin || "—"}</TableCell>
-                    <TableCell className="text-[12px]" style={{ color: "#1B5BDA" }}>{l.external_vendors?.name || "—"}</TableCell>
-                    <TableCell className="text-[12px]" style={{ color: "#616B7C" }}>{l.user_id ? l.user_id.slice(0, 8) + "…" : "Anonyme"}</TableCell>
-                  </TableRow>
-                ))}
+                  <TableRow><TableCell colSpan={8} className="text-center py-8 text-[13px]" style={{ color: "#8B95A5" }}>Aucun lead</TableCell></TableRow>
+                ) : leads.slice(0, 100).map((l: any) => {
+                  const p = (profilesById as any)[l.user_id] || {};
+                  return (
+                    <TableRow key={l.id}>
+                      <TableCell className="text-[12px]" style={{ color: "#616B7C" }}>{l.clicked_at ? new Date(l.clicked_at).toLocaleString("fr-BE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "—"}</TableCell>
+                      <TableCell className="text-[12px] font-medium max-w-[200px] truncate" style={{ color: "#1D2530" }}>{l.products?.name || "—"}</TableCell>
+                      <TableCell className="text-[11px] font-mono" style={{ color: "#616B7C" }}>{l.products?.gtin || "—"}</TableCell>
+                      <TableCell className="text-[12px]" style={{ color: "#1B5BDA" }}>{l.external_vendors?.name || "—"}</TableCell>
+                      <TableCell className="text-[12px]" style={{ color: "#1D2530" }}>
+                        {p.full_name || (l.user_id ? <span className="font-mono text-[11px]" style={{ color: "#8B95A5" }}>{l.user_id.slice(0, 8)}…</span> : <span style={{ color: "#8B95A5" }}>Anonyme</span>)}
+                      </TableCell>
+                      <TableCell className="text-[12px]" style={{ color: "#616B7C" }}>{p.company_name || "—"}</TableCell>
+                      <TableCell className="text-[12px]">
+                        {p.profession_types?.label ? (
+                          <Badge variant="outline" className="text-[11px] font-normal" style={{ borderColor: "#BFDBFE", color: "#1B5BDA", backgroundColor: "#EFF6FF" }}>
+                            {p.profession_types.label}
+                          </Badge>
+                        ) : <span style={{ color: "#8B95A5" }}>—</span>}
+                      </TableCell>
+                      <TableCell className="text-[12px]" style={{ color: "#616B7C" }}>{p.country || "—"}</TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </div>
@@ -193,6 +246,38 @@ export default function AdminLeads() {
                     </TableCell>
                   </TableRow>
                 ))}
+              </TableBody>
+            </Table>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="profiles">
+          <div className="bg-white rounded-lg border overflow-hidden" style={{ borderColor: "#E2E8F0" }}>
+            <div className="px-5 py-3 border-b flex items-center gap-2" style={{ borderColor: "#E2E8F0" }}>
+              <Briefcase size={14} style={{ color: "#8B95A5" }} />
+              <h3 className="text-[13px] font-semibold" style={{ color: "#1D2530" }}>Répartition des leads de ce mois par profil professionnel</h3>
+            </div>
+            <Table>
+              <TableHeader>
+                <TableRow style={{ backgroundColor: "#F8FAFC" }}>
+                  {["Profil", "Nombre de leads", "Part"].map(h => (
+                    <TableHead key={h} className="text-[11px] font-semibold" style={{ color: "#8B95A5" }}>{h}</TableHead>
+                  ))}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {profileSummary.length === 0 ? (
+                  <TableRow><TableCell colSpan={3} className="text-center py-8 text-[13px]" style={{ color: "#8B95A5" }}>Aucune donnée ce mois</TableCell></TableRow>
+                ) : profileSummary.map(([label, count]) => {
+                  const pct = leadsThisMonth.length > 0 ? Math.round((count / leadsThisMonth.length) * 100) : 0;
+                  return (
+                    <TableRow key={label}>
+                      <TableCell className="text-[13px] font-medium" style={{ color: "#1D2530" }}>{label}</TableCell>
+                      <TableCell className="text-[13px] font-semibold" style={{ color: "#1B5BDA" }}>{count}</TableCell>
+                      <TableCell className="text-[12px]" style={{ color: "#616B7C" }}>{pct}%</TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </div>

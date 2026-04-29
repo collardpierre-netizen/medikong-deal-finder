@@ -206,8 +206,9 @@ export interface Offer {
 
 export function useProductOffers(productId: string | undefined) {
   const { country } = useCountry();
+  const buyerProfileId = useBuyerProfileId();
   return useQuery({
-    queryKey: ["offers", productId, country],
+    queryKey: ["offers", productId, country, buyerProfileId],
     queryFn: async () => {
       const { data: offers, error } = await supabase
         .from("offers")
@@ -219,6 +220,32 @@ export function useProductOffers(productId: string | undefined) {
 
       const offerIds = (offers || []).map((o: any) => o.id);
       const vendorIds = [...new Set((offers || []).map((o: any) => o.vendor_id))];
+
+      // Résolution prix par profil acheteur via RPC resolve_offer_price_for_profile.
+      // Retourne une Map offer_id -> { price_excl_vat, source } ; vide si pas de buyer_profile_id.
+      const resolvedPriceMap = new Map<string, { price_excl_vat: number; source: string }>();
+      if (buyerProfileId && offerIds.length > 0) {
+        const resolved = await Promise.all(
+          offerIds.map(async (oid: string) => {
+            const { data } = await supabase.rpc(
+              "resolve_offer_price_for_profile" as any,
+              { _offer_id: oid, _buyer_profile_id: buyerProfileId }
+            );
+            const row = Array.isArray(data) ? data[0] : data;
+            if (!row) return null;
+            return {
+              offer_id: oid,
+              price_excl_vat: Number((row as any).price_excl_vat),
+              source: String((row as any).source ?? "offer_base"),
+            };
+          })
+        );
+        for (const r of resolved) {
+          if (r && Number.isFinite(r.price_excl_vat) && r.price_excl_vat > 0) {
+            resolvedPriceMap.set(r.offer_id, { price_excl_vat: r.price_excl_vat, source: r.source });
+          }
+        }
+      }
 
       // Fetch vendors and discount tiers in parallel
       const [vendorsResult, tiersResult, visRulesResult, priceTiersResult] = await Promise.all([

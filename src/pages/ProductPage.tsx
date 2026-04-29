@@ -379,7 +379,15 @@ function OfferRow({
               </Link>
             )}
           </div>
-          <span className="text-base font-bold text-green-700">{formatEur(displayPrice)} € <span className="text-[10px] font-normal text-muted-foreground">{priceLabel}</span></span>
+          <div className="flex flex-col items-end gap-0.5">
+            <span className="text-base font-bold text-green-700">{formatEur(displayPrice)} € <span className="text-[10px] font-normal text-muted-foreground">{priceLabel}</span></span>
+            <ProfileResolvedPriceBadge
+              offerId={offer.id}
+              basePrice={offer.unitPriceEur}
+              isTVAC={isTVAC}
+              vatRate={offer.unitPriceEur > 0 ? Math.round((offer.unitPriceInclVat / offer.unitPriceEur - 1) * 100) : 21}
+            />
+          </div>
         </div>
 
         {/* Mobile: degressive price tiers */}

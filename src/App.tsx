@@ -168,6 +168,7 @@ const VendorLayout = lazyWithRetry(() => import("./components/vendor/VendorLayou
 const VendorDashboard = lazyWithRetry(() => import("./pages/vendor/VendorDashboard"), "VendorDashboard");
 
 const VendorOffers = lazyWithRetry(() => import("./pages/vendor/VendorOffers"), "VendorOffers");
+const VendorCatalog = lazyWithRetry(() => import("./pages/vendor/VendorCatalog"), "VendorCatalog");
 const VendorOrders = lazyWithRetry(() => import("./pages/vendor/VendorOrders"), "VendorOrders");
 const VendorOpportunities = lazyWithRetry(() => import("./pages/vendor/VendorOpportunities"), "VendorOpportunities");
 const VendorCompetitorAlerts = lazyWithRetry(() => import("./pages/vendor/VendorCompetitorAlerts"), "VendorCompetitorAlerts");
@@ -390,6 +391,7 @@ const App = () => (
             </Route>
 
             {/* Vendor Dashboard */}
+            <Route path="/espace-vendeur/catalogue" element={<Navigate to="/vendor/catalog" replace />} />
             <Route path="/vendor/login" element={<LP><VendorLoginPage /></LP>} />
             <Route path="/vendor/onboarding" element={<LP><VendorOnboardingWizard /></LP>} />
             <Route path="/vendor/stripe-onboarding" element={<LP><VendorStripeOnboardingPage /></LP>} />
@@ -397,7 +399,7 @@ const App = () => (
             <Route path="/vendor/stripe-onboarding/refresh" element={<LP><VendorStripeRefreshPage /></LP>} />
             <Route path="/vendor" element={<LP><VendorLayout /></LP>}>
               <Route index element={<LP><VendorDashboard /></LP>} />
-              <Route path="catalog" element={<Navigate to="/vendor/offers" replace />} />
+              <Route path="catalog" element={<LP><VendorCatalog /></LP>} />
               <Route path="offers" element={<LP><VendorOffers /></LP>} />
               <Route path="orders" element={<LP><VendorOrders /></LP>} />
               <Route path="opportunities" element={<LP><VendorOpportunities /></LP>} />

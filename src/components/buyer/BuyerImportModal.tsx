@@ -535,14 +535,19 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
 
     autoTable(doc, {
       startY: 96,
-      head: [["Produit", "EAN/CNK", "Qté", "Votre prix", "Prix MediKong", "Δ €", "Δ %", "Statut"]],
+      head: [["Produit", "Codes", "Identifié par", "Qté", "Votre prix", "Prix MediKong", "Δ €", "Δ %", "Statut"]],
       body: filteredResults.map((r) => {
         const deltaPct = calcDeltaPct(r.currentPrice, r.mediPrice);
         const deltaAmount = getDeltaAmount(r);
 
         return [
           r.productName || "Non trouvé",
-          [r.ean ? `EAN: ${r.ean}` : null, r.cnk ? `CNK: ${r.cnk}` : null].filter(Boolean).join(" · ") || "—",
+          [
+            r.ean ? `EAN: ${r.ean}` : null,
+            r.cnk ? `CNK: ${r.cnk}` : null,
+            r.sku ? `SKU: ${r.sku}` : null,
+          ].filter(Boolean).join(" · ") || "—",
+          r.matchedBy ? MATCH_FIELD_LABEL[r.matchedBy] : "—",
           String(r.quantity),
           r.currentPrice > 0 ? formatPrice(r.currentPrice) : "—",
           r.mediPrice != null ? formatPrice(r.mediPrice) : "—",
@@ -554,14 +559,15 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
       styles: { fontSize: 9, cellPadding: 6, textColor: [31, 41, 55] },
       headStyles: { fillColor: [37, 99, 235], textColor: [255, 255, 255] },
       columnStyles: {
-        0: { cellWidth: 210 },
+        0: { cellWidth: 180 },
         1: { cellWidth: 110 },
-        2: { halign: "center", cellWidth: 40 },
-        3: { halign: "right", cellWidth: 70 },
-        4: { halign: "right", cellWidth: 85 },
-        5: { halign: "right", cellWidth: 55 },
-        6: { halign: "right", cellWidth: 55 },
-        7: { cellWidth: 90 },
+        2: { halign: "center", cellWidth: 60 },
+        3: { halign: "center", cellWidth: 32 },
+        4: { halign: "right", cellWidth: 60 },
+        5: { halign: "right", cellWidth: 75 },
+        6: { halign: "right", cellWidth: 50 },
+        7: { halign: "right", cellWidth: 50 },
+        8: { cellWidth: 80 },
       },
       didParseCell: (hookData) => {
         if (hookData.section !== "body") return;

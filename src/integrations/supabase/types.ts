@@ -864,6 +864,13 @@ export type Database = {
             foreignKeyName: "cart_items_offer_id_fkey"
             columns: ["offer_id"]
             isOneToOne: false
+            referencedRelation: "effective_offer_prices_v"
+            referencedColumns: ["offer_id"]
+          },
+          {
+            foreignKeyName: "cart_items_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
             referencedRelation: "offers"
             referencedColumns: ["id"]
           },
@@ -1599,6 +1606,13 @@ export type Database = {
           unit_price?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "discount_tiers_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "effective_offer_prices_v"
+            referencedColumns: ["offer_id"]
+          },
           {
             foreignKeyName: "discount_tiers_offer_id_fkey"
             columns: ["offer_id"]
@@ -2685,6 +2699,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "offer_buyer_profile_prices_buyer_profile_id_fkey"
+            columns: ["buyer_profile_id"]
+            isOneToOne: false
+            referencedRelation: "effective_offer_prices_v"
+            referencedColumns: ["buyer_profile_id"]
+          },
+          {
+            foreignKeyName: "offer_buyer_profile_prices_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "effective_offer_prices_v"
+            referencedColumns: ["offer_id"]
+          },
+          {
             foreignKeyName: "offer_buyer_profile_prices_offer_id_fkey"
             columns: ["offer_id"]
             isOneToOne: false
@@ -2738,6 +2766,13 @@ export type Database = {
             foreignKeyName: "offer_categories_offer_id_fkey"
             columns: ["offer_id"]
             isOneToOne: false
+            referencedRelation: "effective_offer_prices_v"
+            referencedColumns: ["offer_id"]
+          },
+          {
+            foreignKeyName: "offer_categories_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
             referencedRelation: "offers"
             referencedColumns: ["id"]
           },
@@ -2785,6 +2820,13 @@ export type Database = {
           resolved_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "offer_data_quality_logs_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "effective_offer_prices_v"
+            referencedColumns: ["offer_id"]
+          },
           {
             foreignKeyName: "offer_data_quality_logs_offer_id_fkey"
             columns: ["offer_id"]
@@ -2874,6 +2916,13 @@ export type Database = {
             foreignKeyName: "offer_margin_snapshots_offer_id_fkey"
             columns: ["offer_id"]
             isOneToOne: false
+            referencedRelation: "effective_offer_prices_v"
+            referencedColumns: ["offer_id"]
+          },
+          {
+            foreignKeyName: "offer_margin_snapshots_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
             referencedRelation: "offers"
             referencedColumns: ["id"]
           },
@@ -2958,6 +3007,13 @@ export type Database = {
           tier_index?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "offer_price_tiers_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "effective_offer_prices_v"
+            referencedColumns: ["offer_id"]
+          },
           {
             foreignKeyName: "offer_price_tiers_offer_id_fkey"
             columns: ["offer_id"]
@@ -3302,6 +3358,13 @@ export type Database = {
             foreignKeyName: "order_items_offer_id_fkey"
             columns: ["offer_id"]
             isOneToOne: false
+            referencedRelation: "effective_offer_prices_v"
+            referencedColumns: ["offer_id"]
+          },
+          {
+            foreignKeyName: "order_items_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
             referencedRelation: "offers"
             referencedColumns: ["id"]
           },
@@ -3436,6 +3499,13 @@ export type Database = {
           vendor_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "order_lines_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "effective_offer_prices_v"
+            referencedColumns: ["offer_id"]
+          },
           {
             foreignKeyName: "order_lines_offer_id_fkey"
             columns: ["offer_id"]
@@ -4978,6 +5048,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "buyer_profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_buyer_profile_id_fkey"
+            columns: ["buyer_profile_id"]
+            isOneToOne: false
+            referencedRelation: "effective_offer_prices_v"
+            referencedColumns: ["buyer_profile_id"]
           },
           {
             foreignKeyName: "profiles_profession_type_id_fkey"
@@ -7543,6 +7620,13 @@ export type Database = {
             foreignKeyName: "vendor_competitor_alerts_my_offer_id_fkey"
             columns: ["my_offer_id"]
             isOneToOne: false
+            referencedRelation: "effective_offer_prices_v"
+            referencedColumns: ["offer_id"]
+          },
+          {
+            foreignKeyName: "vendor_competitor_alerts_my_offer_id_fkey"
+            columns: ["my_offer_id"]
+            isOneToOne: false
             referencedRelation: "offers"
             referencedColumns: ["id"]
           },
@@ -9090,6 +9174,13 @@ export type Database = {
             foreignKeyName: "order_lines_offer_id_fkey"
             columns: ["offer_id"]
             isOneToOne: false
+            referencedRelation: "effective_offer_prices_v"
+            referencedColumns: ["offer_id"]
+          },
+          {
+            foreignKeyName: "order_lines_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
             referencedRelation: "offers"
             referencedColumns: ["id"]
           },
@@ -9130,6 +9221,49 @@ export type Database = {
           },
           {
             foreignKeyName: "order_lines_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      effective_offer_prices_v: {
+        Row: {
+          base_price_excl_vat: number | null
+          base_price_incl_vat: number | null
+          buyer_profile_id: string | null
+          effective_price_excl_vat: number | null
+          effective_price_incl_vat: number | null
+          offer_id: string | null
+          price_source: string | null
+          product_id: string | null
+          vendor_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "offers_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offers_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offers_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offers_vendor_id_fkey"
             columns: ["vendor_id"]
             isOneToOne: false
             referencedRelation: "vendors_public"
@@ -9624,6 +9758,20 @@ export type Database = {
       get_admin_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["admin_role"]
+      }
+      get_effective_offer_price: {
+        Args: { _buyer_profile_id: string; _offer_id: string }
+        Returns: {
+          base_price_excl_vat: number
+          base_price_incl_vat: number
+          buyer_profile_id: string
+          effective_price_excl_vat: number
+          effective_price_incl_vat: number
+          offer_id: string
+          price_source: string
+          product_id: string
+          vendor_id: string
+        }[]
       }
       get_recent_import_runs: {
         Args: { _limit?: number }

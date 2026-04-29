@@ -1434,6 +1434,16 @@ export default function ProductPage() {
                           const priceLabel = isTVAC ? "TVAC" : "HTVA";
                           const secondaryLabel = isTVAC ? "HTVA" : "TVAC";
 
+                          // Conditionnement : combien d'unités contient le pack vendu ?
+                          // Priorité : override sur l'offre > pack du produit > extraction depuis le nom > 1.
+                          const pack = resolvePackSize({
+                            offerOverride: (eo as any).pack_size_override,
+                            productPackSize: (product as any)?.pack_size,
+                            productName: product?.name,
+                          });
+                          const showUnitPrice = pack.packSize > 1;
+                          const unitDisplayPrice = showUnitPrice ? displayPrice / pack.packSize : 0;
+
                           const handleClick = async () => {
                             // Track the lead
                             try {

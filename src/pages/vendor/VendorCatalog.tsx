@@ -98,6 +98,7 @@ export default function VendorCatalog() {
           <VendorCatalogXlsxImport />
           <ProductSubmissionDialog />
         </div>
+      </header>
 
       <VCard className="p-4">
         <Tabs value={tab} onValueChange={(v) => setTab(v as EntityType)} className="space-y-4">

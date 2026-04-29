@@ -76,6 +76,7 @@ function useCatalogList(entity: EntityType, search: string, filters: CatalogFilt
 
 export default function VendorCatalog() {
   const navigate = useNavigate();
+  const { t } = useI18n();
   const [tab, setTab] = useState<EntityType>("products");
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState<CatalogFilters>(emptyCatalogFilters);
@@ -95,10 +96,10 @@ export default function VendorCatalog() {
   };
 
   const placeholderText = useMemo(() => {
-    if (tab === "products") return "Rechercher un produit, GTIN, CNK ou marque…";
-    if (tab === "brands") return "Rechercher une marque…";
-    return "Rechercher un fabricant…";
-  }, [tab]);
+    if (tab === "products") return t("vendorCatalogSearchProducts");
+    if (tab === "brands") return t("vendorCatalogSearchBrands");
+    return t("vendorCatalogSearchManufacturers");
+  }, [tab, t]);
 
   return (
     <div className="space-y-5">

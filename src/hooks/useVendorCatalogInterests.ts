@@ -19,6 +19,9 @@ export type InterestRow = {
   notify_new_brand: boolean;
   notify_new_product: boolean;
   created_at?: string;
+  // Computed (front-side enrichment)
+  scope?: InterestScope;
+  label?: string;
 };
 
 const KEY = (vendorId?: string) => ["vendor-catalog-interests", vendorId];
@@ -40,13 +43,36 @@ export function useVendorCatalogInterests(vendorIdArg?: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("vendor_catalog_interests")
-        .select(
-          "id, vendor_id, brand_id, manufacturer_id, category_id, notify_new_brand, notify_new_product, created_at",
-        )
+        .select(`
+          id, vendor_id, brand_id, manufacturer_id, category_id,
+          notify_new_brand, notify_new_product, created_at,
+          brand:brands(name),
+          manufacturer:manufacturers(name),
+          category:categories(name)
+        `)
         .eq("vendor_id", vendorId!)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return (data ?? []) as InterestRow[];
+      return ((data ?? []) as any[]).map((r): InterestRow => {
+        const scope: InterestScope = r.brand_id ? "brand" : r.manufacturer_id ? "manufacturer" : "category";
+        const label: string =
+          (scope === "brand" && r.brand?.name) ||
+          (scope === "manufacturer" && r.manufacturer?.name) ||
+          (scope === "category" && r.category?.name) ||
+          "—";
+        return {
+          id: r.id,
+          vendor_id: r.vendor_id,
+          brand_id: r.brand_id,
+          manufacturer_id: r.manufacturer_id,
+          category_id: r.category_id,
+          notify_new_brand: r.notify_new_brand,
+          notify_new_product: r.notify_new_product,
+          created_at: r.created_at,
+          scope,
+          label,
+        };
+      });
     },
     staleTime: 60_000,
   });

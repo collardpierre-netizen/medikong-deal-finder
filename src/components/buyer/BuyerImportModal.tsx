@@ -12,6 +12,9 @@ import { formatPrice } from "@/data/mock";
 import { useCart } from "@/hooks/useCart";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { startImportJob, useImportJob, fetchJobResults } from "@/hooks/useImportJob";
+import { ImportJobProgress } from "@/components/imports/ImportJobProgress";
+import { useEffect } from "react";
 
 type MatchField = "gtin" | "cnk" | "sku";
 

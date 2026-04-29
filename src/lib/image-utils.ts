@@ -13,6 +13,15 @@ const BLOCKED_URL_PATTERNS = [
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const IMAGE_PROXY_PATH = "/functions/v1/image-proxy?url=";
 
+// Hosts that serve images directly with permissive CORS / valid certs.
+// We bypass the proxy and let the browser load them directly (CSP must allow them).
+const PROXY_BYPASS_HOSTS = new Set<string>([
+  "www.fresubin.be",
+  "fresubin.be",
+  "www.delical.fr",
+  "delical.fr",
+]);
+
 export function isValidProductImage(url: string | undefined | null): boolean {
   if (!url || url.trim() === "") return false;
   if (/no.?image/i.test(url)) return false;
@@ -30,6 +39,12 @@ function shouldProxyImage(url: string): boolean {
   if (isProxyUrl(url)) return false;
   if (url.includes("/storage/v1/object/public/product-images/")) return false;
   if (SUPABASE_URL && url.startsWith(SUPABASE_URL)) return false;
+  try {
+    const host = new URL(url).hostname.toLowerCase();
+    if (PROXY_BYPASS_HOSTS.has(host)) return false;
+  } catch {
+    // ignore parse errors, fall through to proxy
+  }
   return true;
 }
 

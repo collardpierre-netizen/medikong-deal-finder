@@ -77,6 +77,8 @@ export function VendorTopBar({ onMenuClick }: VendorTopBarProps) {
           )}
         </button>
 
+        <NotificationsBell />
+
         <button
           onClick={() => navigate("/vendor/messages")}
           aria-label={t("messages") || "Messages"}

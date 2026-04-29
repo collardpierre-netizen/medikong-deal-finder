@@ -827,12 +827,20 @@ export default function ProductPage() {
     }
     // Historique récent (Trivago-like) : anonyme + connecté, localStorage.
     if (product?.id && product?.slug && product?.name) {
+      // Le produit expose imageUrls/imageUrl (camelCase). On prend la 1re image
+      // valide (filtre placeholders Qogita) puis on la passe par getProductImageSrc
+      // pour que la card homepage affiche exactement la même photo que la fiche.
+      const candidates: string[] = Array.isArray(product.imageUrls) ? product.imageUrls : [];
+      const firstValid =
+        candidates.find((u: string) => isValidProductImage(u)) ??
+        (isValidProductImage(product.imageUrl) ? product.imageUrl! : null);
+      const resolvedImage = firstValid ? getProductImageSrc(firstValid) : null;
       import("@/hooks/useRecentSearches").then(({ pushRecentProduct }) => {
         pushRecentProduct({
           id: product.id,
           slug: product.slug,
           name: product.name,
-          image: (product as any).image_url ?? (product as any).image_urls?.[0] ?? null,
+          image: resolvedImage,
         });
       });
     }

@@ -20,6 +20,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { isValidGtin, isValidCnk, normalizeDigits } from "@/lib/product-codes";
+import { useCategorySuggestion } from "@/hooks/useCategorySuggestion";
+import { Sparkles } from "lucide-react";
 
 const submissionSchema = z.object({
   product_name: z.string().trim().min(2, "Nom requis (min 2 caractères)").max(200, "Max 200 caractères"),
@@ -228,6 +230,8 @@ export function ProductSubmissionDialog({ children }: { children?: React.ReactNo
   const [fileIssue, setFileIssue] = useState<string | null>(null);
   const [showRejectedOnly, setShowRejectedOnly] = useState(true);
 
+  const { suggestion: catSuggestion, loading: catSuggestionLoading } = useCategorySuggestion(form.gtin, form.cnk_code);
+
   const reset = () => {
     setForm({ product_name: "", brand_name: "", manufacturer_name: "", gtin: "", cnk_code: "", category_hint: "", notes: "" });
     setErrors({});
@@ -427,6 +431,29 @@ export function ProductSubmissionDialog({ children }: { children?: React.ReactNo
               </div>
               <Field label="Catégorie suggérée" error={errors.category_hint}>
                 <Input value={form.category_hint} onChange={set("category_hint")} maxLength={120} placeholder="Ex : Antalgiques" />
+                {catSuggestion && catSuggestion.category_name.toLowerCase() !== form.category_hint.trim().toLowerCase() && (
+                  <div className="mt-2 flex items-start gap-2 rounded-md border border-primary/30 bg-primary/5 p-2 text-xs">
+                    <Sparkles className="h-3.5 w-3.5 text-primary mt-0.5 shrink-0" />
+                    <div className="flex-1">
+                      <div className="font-medium">Catégorie détectée : {catSuggestion.category_name}</div>
+                      <div className="text-muted-foreground">
+                        D'après {catSuggestion.matched_by === "gtin" ? "le GTIN" : "le CNK"} (produit déjà au catalogue : {catSuggestion.product_name})
+                      </div>
+                    </div>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="h-6 text-[11px]"
+                      onClick={() => setForm(f => ({ ...f, category_hint: catSuggestion.category_name }))}
+                    >
+                      Utiliser
+                    </Button>
+                  </div>
+                )}
+                {catSuggestionLoading && !catSuggestion && (form.gtin || form.cnk_code) && (
+                  <p className="mt-1 text-[11px] text-muted-foreground">Recherche de catégorie…</p>
+                )}
               </Field>
               <Field label="Notes pour notre équipe" error={errors.notes}>
                 <Textarea value={form.notes} onChange={set("notes")} maxLength={1000} rows={3}

@@ -222,8 +222,10 @@ export function useProductOffers(productId: string | undefined) {
       const offerIds = (offers || []).map((o: any) => o.id);
       const vendorIds = [...new Set((offers || []).map((o: any) => o.vendor_id))];
 
-      // Résolution prix par profil acheteur via RPC resolve_offer_price_for_profile.
-      // Retourne une Map offer_id -> { price_excl_vat, source } ; vide si pas de buyer_profile_id.
+      // Cascade prix utilisateur :
+      //   1. RPC resolve_offer_price_for_profile (offer_buyer_profile_prices + vendor_profile_defaults)
+      //   2. Fallback legacy product_prices × price_levels (au niveau produit, pas par offre)
+      //   3. Prix de base de l'offre (price_excl_vat brut)
       const resolvedPriceMap = new Map<string, { price_excl_vat: number; source: string }>();
       if (buyerProfileId && offerIds.length > 0) {
         const resolved = await Promise.all(
@@ -234,16 +236,46 @@ export function useProductOffers(productId: string | undefined) {
             );
             const row = Array.isArray(data) ? data[0] : data;
             if (!row) return null;
+            const src = String((row as any).source ?? "offer_base");
+            // Ne mémorise que les vrais overrides : si la RPC retombe sur "offer_base"
+            // on laisse le fallback legacy product_prices avoir une chance.
+            if (src === "offer_base") return null;
             return {
               offer_id: oid,
               price_excl_vat: Number((row as any).price_excl_vat),
-              source: String((row as any).source ?? "offer_base"),
+              source: src,
             };
           })
         );
         for (const r of resolved) {
           if (r && Number.isFinite(r.price_excl_vat) && r.price_excl_vat > 0) {
             resolvedPriceMap.set(r.offer_id, { price_excl_vat: r.price_excl_vat, source: r.source });
+          }
+        }
+      }
+
+      // Fallback legacy : product_prices × price_levels (prix par niveau RBAC, par produit).
+      // S'applique uniquement aux offres SANS override par profil.
+      let legacyLevelPrice: number | null = null;
+      if (productId && offerIds.length > 0 && resolvedPriceMap.size < offerIds.length) {
+        const { data: authData } = await supabase.auth.getUser();
+        const uid = authData?.user?.id;
+        if (uid) {
+          const { data: profileRow } = await supabase
+            .from("profiles")
+            .select("price_level_code")
+            .eq("user_id", uid)
+            .maybeSingle();
+          const levelCode = (profileRow as any)?.price_level_code || "pharmacien";
+          const { data: pricesRows } = await supabase
+            .from("product_prices")
+            .select("price, price_levels!inner(code)")
+            .eq("product_id", productId);
+          const match = (pricesRows || []).find(
+            (p: any) => p.price_levels?.code === levelCode
+          );
+          if (match && Number.isFinite(Number((match as any).price))) {
+            legacyLevelPrice = Number((match as any).price);
           }
         }
       }
@@ -291,9 +323,18 @@ export function useProductOffers(productId: string | undefined) {
             ? basePriceIncl / basePriceExcl
             : 1;
         const resolved = resolvedPriceMap.get(o.id);
-        const effExcl = resolved ? resolved.price_excl_vat : (Number.isFinite(basePriceExcl) ? basePriceExcl : 0);
-        const effIncl = resolved
-          ? Math.round(resolved.price_excl_vat * vatRatio * 100) / 100
+        // Cascade : RPC override > legacy product_prices × price_levels > prix de base offre.
+        let effExcl: number;
+        if (resolved) {
+          effExcl = resolved.price_excl_vat;
+        } else if (legacyLevelPrice !== null && legacyLevelPrice > 0) {
+          effExcl = legacyLevelPrice;
+        } else {
+          effExcl = Number.isFinite(basePriceExcl) ? basePriceExcl : 0;
+        }
+        const usedOverride = resolved !== undefined || legacyLevelPrice !== null;
+        const effIncl = usedOverride
+          ? Math.round(effExcl * vatRatio * 100) / 100
           : (Number.isFinite(basePriceIncl) ? basePriceIncl : 0);
         return {
           id: o.id,

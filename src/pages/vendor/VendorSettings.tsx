@@ -8,6 +8,7 @@ import { VBtn } from "@/components/vendor/ui/VBtn";
 import VendorShippingSettings from "@/components/vendor/VendorShippingSettings";
 import VendorBrandingTab from "@/components/vendor/VendorBrandingTab";
 import VendorTeamTab from "@/components/vendor/VendorTeamTab";
+import VendorProfileDefaults from "@/components/vendor/VendorProfileDefaults";
 import {
   Check, Save, Loader2, Plus, Trash2, Star, MapPin, Bell, BellOff,
 } from "lucide-react";

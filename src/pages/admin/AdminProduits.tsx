@@ -255,6 +255,9 @@ const AdminProduits = () => {
       <AdminTopBar title={t("products")} subtitle="Catalogue PIM centralisé"
         actions={
           <div className="flex gap-2">
+            <Button variant="outline" size="sm" asChild title="Mapping source → marque/catégorie">
+              <a href="/admin/produits/mapping">🔗 Mapping</a>
+            </Button>
             <Button variant="outline" size="sm" onClick={() => downloadProductTemplate()} title="Télécharger le template d'import"><FileSpreadsheet size={14} className="mr-1" />Template</Button>
             <Button variant="outline" size="sm" onClick={() => activeTab === "offers" ? exportOffers() : exportProducts()}><Download size={14} className="mr-1" />{activeTab === "offers" ? "Export Offres" : "Export XLSX"}</Button>
             <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()}><Upload size={14} className="mr-1" />Import XLSX</Button>

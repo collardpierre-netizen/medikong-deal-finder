@@ -4341,6 +4341,9 @@ export type Database = {
           label: string | null
           last_detail_sync: string | null
           last_offers_sync: string | null
+          manual_mapping_validated: boolean
+          manual_mapping_validated_at: string | null
+          manual_mapping_validated_by: string | null
           manufacturer_id: string | null
           min_delivery_days: number | null
           name: string
@@ -4426,6 +4429,9 @@ export type Database = {
           label?: string | null
           last_detail_sync?: string | null
           last_offers_sync?: string | null
+          manual_mapping_validated?: boolean
+          manual_mapping_validated_at?: string | null
+          manual_mapping_validated_by?: string | null
           manufacturer_id?: string | null
           min_delivery_days?: number | null
           name: string
@@ -4511,6 +4517,9 @@ export type Database = {
           label?: string | null
           last_detail_sync?: string | null
           last_offers_sync?: string | null
+          manual_mapping_validated?: boolean
+          manual_mapping_validated_at?: string | null
+          manual_mapping_validated_by?: string | null
           manufacturer_id?: string | null
           min_delivery_days?: number | null
           name?: string
@@ -9497,6 +9506,16 @@ export type Database = {
       }
     }
     Functions: {
+      admin_apply_product_mapping: {
+        Args: {
+          _brand_id?: string
+          _category_id?: string
+          _manufacturer_id?: string
+          _mark_validated?: boolean
+          _product_ids: string[]
+        }
+        Returns: Json
+      }
       audit_backup_tables_rls: {
         Args: never
         Returns: {
@@ -9599,6 +9618,71 @@ export type Database = {
       get_admin_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["admin_role"]
+      }
+      get_recent_import_runs: {
+        Args: { _limit?: number }
+        Returns: {
+          completed_at: string
+          duration_ms: number
+          message: string
+          metadata: Json
+          rows_created: number
+          rows_failed: number
+          rows_processed: number
+          rows_updated: number
+          run_type: string
+          source: string
+          started_at: string
+          status: string
+        }[]
+      }
+      get_source_mapping_issues: {
+        Args: { _kind?: string; _limit?: number; _source: string }
+        Returns: {
+          example_product_id: string
+          example_product_name: string
+          product_count: number
+          raw_value: string
+        }[]
+      }
+      get_source_mapping_overview: {
+        Args: never
+        Returns: {
+          manually_validated: number
+          source: string
+          total_products: number
+          unresolved_brand_values: number
+          unresolved_category_values: number
+          without_brand: number
+          without_category: number
+          without_manufacturer: number
+        }[]
+      }
+      get_source_mapping_products: {
+        Args: {
+          _filter?: string
+          _limit?: number
+          _offset?: number
+          _search?: string
+          _source: string
+        }
+        Returns: {
+          brand_id: string
+          brand_name_raw: string
+          brand_name_resolved: string
+          category_id: string
+          category_name_raw: string
+          category_name_resolved: string
+          manual_mapping_validated: boolean
+          manual_mapping_validated_at: string
+          manufacturer_id: string
+          manufacturer_name: string
+          product_id: string
+          product_image: string
+          product_name: string
+          source: string
+          total_count: number
+        }[]
       }
       get_vendor_competitive_position: {
         Args: { _vendor_id: string }

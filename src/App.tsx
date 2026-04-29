@@ -123,6 +123,7 @@ const AdminCategories = lazyWithRetry(() => import("./pages/admin/AdminCategorie
 const AdminMarques = lazyWithRetry(() => import("./pages/admin/AdminMarques"), "AdminMarques");
 const AdminBrandTransparenceEdit = lazyWithRetry(() => import("./pages/admin/AdminBrandTransparenceEdit"), "AdminBrandTransparenceEdit");
 const AdminBrandDuplicates = lazyWithRetry(() => import("./pages/admin/AdminBrandDuplicates"), "AdminBrandDuplicates");
+const AdminSourceMapping = lazyWithRetry(() => import("./pages/admin/AdminSourceMapping"), "AdminSourceMapping");
 const AdminCRM = lazyWithRetry(() => import("./pages/admin/AdminCRM"), "AdminCRM");
 const AdminCMS = lazyWithRetry(() => import("./pages/admin/AdminCMS"), "AdminCMS");
 const AdminProductPrices = lazyWithRetry(() => import("./pages/admin/AdminProductPrices"), "AdminProductPrices");
@@ -338,6 +339,7 @@ const App = () => (
               <Route path="vendeurs/:id" element={<LP><AdminVendeurDetail /></LP>} />
               <Route path="onboarding" element={<LP><AdminOnboarding /></LP>} />
               <Route path="produits" element={<LP><AdminProduits /></LP>} />
+              <Route path="produits/mapping" element={<LP><AdminSourceMapping /></LP>} />
               <Route path="produits/:id" element={<LP><AdminProduitDetail /></LP>} />
               <Route path="categories" element={<LP><AdminCategories /></LP>} />
               <Route path="marques" element={<LP><AdminMarques /></LP>} />

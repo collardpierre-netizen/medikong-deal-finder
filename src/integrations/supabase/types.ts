@@ -2035,6 +2035,107 @@ export type Database = {
           },
         ]
       }
+      import_job_payload: {
+        Row: {
+          created_at: string
+          errors: Json
+          job_id: string
+          results: Json
+          rows: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          errors?: Json
+          job_id: string
+          results?: Json
+          rows?: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          errors?: Json
+          job_id?: string
+          results?: Json
+          rows?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "import_job_payload_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: true
+            referencedRelation: "import_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      import_jobs: {
+        Row: {
+          created_at: string
+          created_count: number
+          error_message: string | null
+          file_name: string | null
+          file_size_bytes: number | null
+          finished_at: string | null
+          found_count: number
+          id: string
+          job_type: Database["public"]["Enums"]["import_job_type"]
+          metadata: Json
+          processed_rows: number
+          rejected_count: number
+          result_summary: Json
+          started_at: string | null
+          status: Database["public"]["Enums"]["import_job_status"]
+          total_rows: number
+          unavailable_count: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_count?: number
+          error_message?: string | null
+          file_name?: string | null
+          file_size_bytes?: number | null
+          finished_at?: string | null
+          found_count?: number
+          id?: string
+          job_type: Database["public"]["Enums"]["import_job_type"]
+          metadata?: Json
+          processed_rows?: number
+          rejected_count?: number
+          result_summary?: Json
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["import_job_status"]
+          total_rows?: number
+          unavailable_count?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          created_count?: number
+          error_message?: string | null
+          file_name?: string | null
+          file_size_bytes?: number | null
+          finished_at?: string | null
+          found_count?: number
+          id?: string
+          job_type?: Database["public"]["Enums"]["import_job_type"]
+          metadata?: Json
+          processed_rows?: number
+          rejected_count?: number
+          result_summary?: Json
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["import_job_status"]
+          total_rows?: number
+          unavailable_count?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       manufacturers: {
         Row: {
           brand_count: number | null
@@ -9492,6 +9593,13 @@ export type Database = {
         | "delivered"
         | "cancelled"
       fulfillment_type: "qogita" | "medikong_direct" | "vendor_direct"
+      import_job_status:
+        | "pending"
+        | "processing"
+        | "completed"
+        | "failed"
+        | "cancelled"
+      import_job_type: "buyer_comparator" | "product_submission"
       notification_channel: "in_app" | "email" | "push"
       notification_sender: "system" | "superadmin"
       order_source: "web" | "api"
@@ -9754,6 +9862,14 @@ export const Constants = {
         "cancelled",
       ],
       fulfillment_type: ["qogita", "medikong_direct", "vendor_direct"],
+      import_job_status: [
+        "pending",
+        "processing",
+        "completed",
+        "failed",
+        "cancelled",
+      ],
+      import_job_type: ["buyer_comparator", "product_submission"],
       notification_channel: ["in_app", "email", "push"],
       notification_sender: ["system", "superadmin"],
       order_source: ["web", "api"],

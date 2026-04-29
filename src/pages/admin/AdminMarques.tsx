@@ -46,6 +46,7 @@ const AdminMarques = () => {
       <AdminTopBar title="Marques" subtitle="Gestion du portefeuille marques"
         actions={
           <div className="flex gap-2">
+            <Button asChild variant="outline" size="sm"><Link to="/admin/marques/doublons"><GitMerge size={14} className="mr-1" />Doublons</Link></Button>
             <Button variant="outline" size="sm" onClick={() => exportBrands()}><Download size={14} className="mr-1" />Export XLSX</Button>
             <Button variant="outline" size="sm" onClick={() => brandFileRef.current?.click()}><Upload size={14} className="mr-1" />Import XLSX</Button>
             <input ref={brandFileRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={e => { if (e.target.files?.[0]) handleImport(e.target.files[0]); e.target.value = ""; }} />

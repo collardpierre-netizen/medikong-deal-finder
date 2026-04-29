@@ -28,6 +28,7 @@ import { applyMargin, formatPriceEur } from "@/lib/pricing";
 import { useMarketPrices } from "@/hooks/useMarketPrices";
 import { RestockSecondChance } from "@/components/product/RestockSecondChance";
 import { MyEncodedPriceBanner } from "@/components/product/MyEncodedPriceBanner";
+import { ExternalVendorLogo } from "@/components/product/ExternalVendorLogo";
 import { SafeBoundary } from "@/components/SafeBoundary";
 import VendorDelegateCompact from "@/components/vendor/VendorDelegateCompact";
 
@@ -1446,19 +1447,7 @@ export default function ProductPage() {
                           return (
                             <div key={eo.id} className="border border-border rounded-xl p-4 flex items-center justify-between gap-4">
                               <div className="flex items-center gap-3 min-w-0">
-                                {vendor?.logo_url ? (
-                                  <img
-                                    src={vendor.logo_url}
-                                    alt={vendor.name}
-                                    referrerPolicy="no-referrer"
-                                    className="w-10 h-10 rounded-lg object-contain bg-white border border-border"
-                                    onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
-                                  />
-                                ) : (
-                                  <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center text-sm font-bold text-muted-foreground">
-                                    {vendor?.name?.charAt(0)?.toUpperCase() || "?"}
-                                  </div>
-                                )}
+                                <ExternalVendorLogo name={vendor?.name} logoUrl={vendor?.logo_url} size={40} />
                                 <div className="min-w-0">
                                   <p className="font-medium text-sm text-foreground">{vendor?.name || "Vendeur externe"}</p>
                                   <div className="flex items-center gap-2 mt-0.5">

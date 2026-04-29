@@ -1678,6 +1678,7 @@ export type Database = {
           is_active: boolean | null
           mov_amount: number | null
           notes: string | null
+          pack_size_override: number | null
           product_id: string
           product_url: string
           stock_status: string | null
@@ -1693,6 +1694,7 @@ export type Database = {
           is_active?: boolean | null
           mov_amount?: number | null
           notes?: string | null
+          pack_size_override?: number | null
           product_id: string
           product_url: string
           stock_status?: string | null
@@ -1708,6 +1710,7 @@ export type Database = {
           is_active?: boolean | null
           mov_amount?: number | null
           notes?: string | null
+          pack_size_override?: number | null
           product_id?: string
           product_url?: string
           stock_status?: string | null
@@ -4274,6 +4277,7 @@ export type Database = {
           name_nl: string | null
           offer_count: number
           origin_country: string | null
+          pack_size: number | null
           popularity: number | null
           promotion_end_date: string | null
           promotion_label: string | null
@@ -4354,6 +4358,7 @@ export type Database = {
           name_nl?: string | null
           offer_count?: number
           origin_country?: string | null
+          pack_size?: number | null
           popularity?: number | null
           promotion_end_date?: string | null
           promotion_label?: string | null
@@ -4434,6 +4439,7 @@ export type Database = {
           name_nl?: string | null
           offer_count?: number
           origin_country?: string | null
+          pack_size?: number | null
           popularity?: number | null
           promotion_end_date?: string | null
           promotion_label?: string | null
@@ -9564,6 +9570,13 @@ export type Database = {
       refresh_best_bundle_sizes: {
         Args: { _only_flagged?: boolean }
         Returns: Json
+      }
+      resolve_effective_pack_size: {
+        Args: { _external_offer_id: string }
+        Returns: {
+          pack_size: number
+          source: string
+        }[]
       }
       resolve_product_brands: { Args: never; Returns: undefined }
       resolve_product_categories: { Args: never; Returns: undefined }

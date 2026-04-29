@@ -85,9 +85,17 @@ export function InstantSearchBar({ className = "", placeholder, variant = "navba
     } else if (e.key === "Enter" && selectedIndex >= 0) {
       e.preventDefault();
       const sel = allItems[selectedIndex];
-      if (sel.type === "product") navigate(`/produit/${(sel.item as any).slug}`);
-      else if (sel.type === "brand") navigate(`/marque/${(sel.item as any).slug}`);
-      else navigate(`/categorie/${(sel.item as any).slug}`);
+      const it: any = sel.item;
+      if (sel.type === "product") {
+        pushRecentProduct({ id: it.id, slug: it.slug, name: it.name, image: it.image_url ?? null });
+        navigate(`/produit/${it.slug}`);
+      } else if (sel.type === "brand") {
+        pushRecentTaxon({ type: "brand", slug: it.slug, name: it.name });
+        navigate(`/marques/${it.slug}`);
+      } else {
+        pushRecentTaxon({ type: "category", slug: it.slug, name: it.name });
+        navigate(`/categorie/${it.slug}`);
+      }
       setIsOpen(false);
       setQuery("");
     } else if (e.key === "Escape") {

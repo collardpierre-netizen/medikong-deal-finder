@@ -508,6 +508,28 @@ export async function importProducts(file: File, onProgress?: (p: ImportProgress
       payload.image_url = imageUrls[0];
     }
 
+    // PVP TTC + source (optionnel). Si pvp_ttc présent → on met source/country/timestamp.
+    const rawPvp = r.pvp_ttc ?? r.pvp_ttc_cents ?? r["PVP TTC"];
+    if (rawPvp !== undefined && rawPvp !== null && String(rawPvp).trim() !== "") {
+      const pvpNum = typeof rawPvp === "number"
+        ? rawPvp
+        : parseFloat(String(rawPvp).replace(",", "."));
+      if (Number.isFinite(pvpNum) && pvpNum > 0) {
+        // Si valeur > 1000, on suppose qu'elle est déjà en cents
+        const cents = pvpNum > 1000 && Number.isInteger(pvpNum) ? Math.round(pvpNum) : Math.round(pvpNum * 100);
+        const validSources = ["apb", "pmr", "manufacturer", "distributor", "manual"];
+        const rawSrc = r.pvp_source ? String(r.pvp_source).toLowerCase().trim() : "apb";
+        const validCountries = ["BE", "FR", "LU"];
+        const rawCountry = r.pvp_country_code ? String(r.pvp_country_code).toUpperCase().trim() : "BE";
+        payload.pvp_ttc_cents = cents;
+        payload.pvp_source = validSources.includes(rawSrc) ? rawSrc : "apb";
+        payload.pvp_country_code = validCountries.includes(rawCountry) ? rawCountry : "BE";
+        payload.pvp_updated_at = new Date().toISOString();
+      }
+    } else if (rawPvp === "" || rawPvp === null) {
+      // Cellule explicitement vidée → on n'écrase PAS (préserve la valeur existante)
+    }
+
     let error: any = null;
     if (existingId) {
       // Update by ID to ensure we hit the right product (GTIN match)

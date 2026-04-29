@@ -324,8 +324,10 @@ export function BrandFactSheet({ brand }: { brand: BrandRow }) {
             {brand.sources_last_updated && ` — dernière mise à jour ${fmtDate(brand.sources_last_updated)}`}.
           </Disclaimer>
         </Card>
+        )}
 
         {/* ─── Section 2 : Logistique MediKong ─────────────────────────── */}
+        {hasLogisticsData && (
         <Card className="p-5">
           <CardHeader icon={Truck} color="bg-blue-50 text-mk-blue" title="Logistique MediKong" />
           {(logistics?.order_count_90d ?? 0) < 10 ? (

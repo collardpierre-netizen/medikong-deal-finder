@@ -61,6 +61,9 @@ export default function VendorProfileDefaults({ vendorId }: { vendorId: string }
         default_mov: d.default_mov,
         default_mov_currency: d.default_mov_currency,
         default_moq: d.default_moq,
+        default_pricing_mode: (d.default_pricing_mode as any) || "",
+        default_price_excl_vat: d.default_price_excl_vat != null ? String(d.default_price_excl_vat) : "",
+        default_discount_pct: d.default_discount_pct != null ? String(d.default_discount_pct) : "",
       })));
     }
   }, [data]);
@@ -85,6 +88,9 @@ export default function VendorProfileDefaults({ vendorId }: { vendorId: string }
       default_mov: 0,
       default_mov_currency: "EUR",
       default_moq: 1,
+      default_pricing_mode: "",
+      default_price_excl_vat: "",
+      default_discount_pct: "",
     }]);
   };
 

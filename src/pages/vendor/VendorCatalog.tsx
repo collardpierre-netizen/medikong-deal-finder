@@ -11,16 +11,23 @@ import { Badge } from "@/components/ui/badge";
 import { ProductSubmissionDialog } from "@/components/vendor/catalog/ProductSubmissionDialog";
 import { VendorSubmissionsList } from "@/components/vendor/catalog/VendorSubmissionsList";
 import { VendorCatalogXlsxImport } from "@/components/vendor/catalog/VendorCatalogXlsxImport";
+import {
+  VendorCatalogFilters,
+  emptyCatalogFilters,
+  type CatalogFilters,
+} from "@/components/vendor/catalog/VendorCatalogFilters";
 
 type EntityType = "products" | "brands" | "manufacturers";
 
 const PAGE_SIZE = 30;
 
-function useCatalogList(entity: EntityType, search: string) {
+function useCatalogList(entity: EntityType, search: string, filters: CatalogFilters) {
   return useQuery({
-    queryKey: ["vendor-catalog", entity, search],
+    queryKey: ["vendor-catalog", entity, search, filters],
     queryFn: async () => {
       const term = search.trim();
+      const effectiveCategoryId = filters.subCategoryId ?? filters.rootCategoryId;
+
       if (entity === "products") {
         let q = supabase
           .from("products")
@@ -29,6 +36,9 @@ function useCatalogList(entity: EntityType, search: string) {
           .order("popularity", { ascending: false, nullsFirst: false })
           .limit(PAGE_SIZE);
         if (term) q = q.or(`name.ilike.%${term}%,gtin.ilike.%${term}%,cnk_code.ilike.%${term}%,brand_name.ilike.%${term}%`);
+        if (effectiveCategoryId) q = q.eq("category_id", effectiveCategoryId);
+        if (filters.brandId) q = q.eq("brand_id", filters.brandId);
+        if (filters.manufacturerId) q = q.eq("manufacturer_id", filters.manufacturerId);
         const { data, error } = await q;
         if (error) throw error;
         return data ?? [];
@@ -36,11 +46,12 @@ function useCatalogList(entity: EntityType, search: string) {
       if (entity === "brands") {
         let q = supabase
           .from("brands")
-          .select("id, name, slug, logo_url, product_count, main_category")
+          .select("id, name, slug, logo_url, product_count, main_category, manufacturer_id")
           .eq("is_active", true)
           .order("product_count", { ascending: false, nullsFirst: false })
           .limit(PAGE_SIZE);
         if (term) q = q.ilike("name", `%${term}%`);
+        if (filters.manufacturerId) q = q.eq("manufacturer_id", filters.manufacturerId);
         const { data, error } = await q;
         if (error) throw error;
         return data ?? [];
@@ -64,8 +75,9 @@ export default function VendorCatalog() {
   const navigate = useNavigate();
   const [tab, setTab] = useState<EntityType>("products");
   const [search, setSearch] = useState("");
+  const [filters, setFilters] = useState<CatalogFilters>(emptyCatalogFilters);
 
-  const { data = [], isLoading } = useCatalogList(tab, search);
+  const { data = [], isLoading } = useCatalogList(tab, search, filters);
 
   const startOffer = (productId?: string) => {
     const target = productId
@@ -125,6 +137,14 @@ export default function VendorCatalog() {
               />
             </div>
           </div>
+
+          {tab !== "manufacturers" && (
+            <VendorCatalogFilters
+              value={filters}
+              onChange={setFilters}
+              showProductFilters={tab === "products"}
+            />
+          )}
 
           <TabsContent value="products" className="m-0">
             {isLoading ? (

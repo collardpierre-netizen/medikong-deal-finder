@@ -223,10 +223,37 @@ export function BrandFactSheet({ brand }: { brand: BrandRow }) {
   const avg = (key: keyof ReviewRow) =>
     enoughReviews ? (reviews.reduce((s, r) => s + (r[key] as number), 0) / reviews.length).toFixed(1) : "—";
 
+  // ── Visibilité des cards : masquer si aucune donnée saisie ──────────────
+  const hasComplianceData =
+    !!brand.afmps_status ||
+    brand.ce_marking !== null ||
+    !!brand.year_entered_be_market ||
+    !!brand.manufacturing_countries?.length ||
+    !!brand.certifications?.length ||
+    brand.inami_reimbursement_pct !== null;
+
+  const hasLogisticsData =
+    (logistics?.order_count_90d ?? 0) >= 10 || !!brand.distribution_type;
+
+  const hasMarketSignals =
+    !!brand.google_trends_12m?.length ||
+    brand.google_trends_trend_pct !== null ||
+    brand.officinal_coverage_pct !== null ||
+    (brand.press_mentions_12m !== null && brand.press_mentions_12m > 0);
+
+  const hasReviews = reviews.length > 0;
+  const hasSynthesis = positives.length > 0 || watch.length > 0;
+
+  // Si absolument rien à montrer, on n'affiche pas la fact sheet
+  if (!hasComplianceData && !hasLogisticsData && !hasMarketSignals && !hasReviews && !hasSynthesis) {
+    return null;
+  }
+
   return (
     <TooltipProvider delayDuration={150}>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* ─── Section 1 : Conformité ──────────────────────────────────── */}
+        {hasComplianceData && (
         <Card className="p-5">
           <CardHeader icon={Shield} color="bg-emerald-50 text-emerald-700" title="Conformité réglementaire & qualité" />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5">
@@ -297,8 +324,10 @@ export function BrandFactSheet({ brand }: { brand: BrandRow }) {
             {brand.sources_last_updated && ` — dernière mise à jour ${fmtDate(brand.sources_last_updated)}`}.
           </Disclaimer>
         </Card>
+        )}
 
         {/* ─── Section 2 : Logistique MediKong ─────────────────────────── */}
+        {hasLogisticsData && (
         <Card className="p-5">
           <CardHeader icon={Truck} color="bg-blue-50 text-mk-blue" title="Logistique MediKong" />
           {(logistics?.order_count_90d ?? 0) < 10 ? (
@@ -328,8 +357,10 @@ export function BrandFactSheet({ brand }: { brand: BrandRow }) {
 
           <Disclaimer>Données calculées sur les 90 derniers jours. Mise à jour quotidienne.</Disclaimer>
         </Card>
+        )}
 
         {/* ─── Section 3 : Signaux marché externes ────────────────────── */}
+        {hasMarketSignals && (
         <Card className="p-5">
           <CardHeader icon={TrendingUp} color="bg-violet-50 text-violet-700" title="Signaux marché" />
           <div className="space-y-1">
@@ -358,8 +389,10 @@ export function BrandFactSheet({ brand }: { brand: BrandRow }) {
             Google Trends BE, études partenaires, revue de presse Le Pharmacien & Journal du Pharmacien. Mise à jour mensuelle.
           </Disclaimer>
         </Card>
+        )}
 
         {/* ─── Section 4 : Avis pharmaciens vérifiés ──────────────────── */}
+        {hasReviews && (
         <Card className="p-5">
           <CardHeader icon={Users} color="bg-orange-50 text-orange-700" title="Avis pharmaciens vérifiés" />
 
@@ -424,8 +457,10 @@ export function BrandFactSheet({ brand }: { brand: BrandRow }) {
           )}
           <Disclaimer>Avis liés à des acheteurs vérifiés ayant passé au moins une commande de la marque.</Disclaimer>
         </Card>
+        )}
 
         {/* ─── Section 5 : Synthèse ───────────────────────────────────── */}
+        {hasSynthesis && (
         <Card className="p-5 md:col-span-2">
           <h3 className="text-base font-bold text-mk-navy mb-3">Synthèse — points forts & à noter</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -466,6 +501,7 @@ export function BrandFactSheet({ brand }: { brand: BrandRow }) {
             Bullets calculés automatiquement à partir des données factuelles ci-dessus — aucune saisie manuelle.
           </Disclaimer>
         </Card>
+        )}
       </div>
       <BrandReviewModal
         brandId={brand.id}

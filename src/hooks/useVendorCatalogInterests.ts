@@ -91,7 +91,7 @@ export function useAddVendorCatalogInterest(vendorId?: string) {
       if (params.scope === "brand") row.brand_id = params.target_id;
       if (params.scope === "category") row.category_id = params.target_id;
 
-      const { error } = await supabase.from("vendor_catalog_interests").insert(row);
+      const { error } = await supabase.from("vendor_catalog_interests").insert(row as any);
       if (error) throw error;
     },
     onSuccess: () => {

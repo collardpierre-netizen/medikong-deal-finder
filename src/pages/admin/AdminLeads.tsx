@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  Link, MousePointerClick, TrendingUp, Users, Download
+  Link, MousePointerClick, TrendingUp, Users, Download, Briefcase
 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 

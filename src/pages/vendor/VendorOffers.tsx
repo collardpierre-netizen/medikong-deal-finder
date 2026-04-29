@@ -14,6 +14,7 @@ import { useVendorCommissionConfig } from "@/hooks/useVendorCommissionConfig";
 import { computeMargin } from "@/lib/vendorMargin";
 import { toast } from "sonner";
 import { useCurrentVendor } from "@/hooks/useCurrentVendor";
+import ProfilePricesEditor from "@/components/vendor/ProfilePricesEditor";
 import * as XLSX from "xlsx";
 
 const PROFILE_TYPES = [
@@ -820,6 +821,8 @@ function exportOffers(offers: any[], profileRulesMap?: Map<string, any[]>, price
 }
 
 /* ─── Profile Rules Editor ─── */
+/* Note: gère uniquement MOQ/MOV par profil (table offer_profile_rules).
+   Les prix par profil acheteur sont gérés par ProfilePricesEditor (table offer_buyer_profile_prices). */
 interface ProfileRule {
   id?: string;
   profile_type: string;
@@ -1465,7 +1468,10 @@ export default function VendorOffers() {
           {/* ─── Price Tiers ─── */}
           <PriceTiersEditor offerId={editingId} basePrice={parseFloat(form.price_excl_vat) || 0} vatRate={parseFloat(form.vat_rate) || 21} />
 
-          {/* ─── Profile Rules Section ─── */}
+          {/* ─── Prix HTVA par profil acheteur (référentiel buyer_profiles) ─── */}
+          <ProfilePricesEditor offerId={editingId} basePrice={parseFloat(form.price_excl_vat) || 0} />
+
+          {/* ─── MOQ/MOV par profil interne (offer_profile_rules) ─── */}
           <ProfileRulesEditor offerId={editingId} basePrice={parseFloat(form.price_excl_vat) || 0} />
 
           <div className="flex justify-end gap-2 mt-4">

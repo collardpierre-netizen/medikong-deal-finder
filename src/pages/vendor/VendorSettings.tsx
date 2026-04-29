@@ -8,6 +8,7 @@ import { VBtn } from "@/components/vendor/ui/VBtn";
 import VendorShippingSettings from "@/components/vendor/VendorShippingSettings";
 import VendorBrandingTab from "@/components/vendor/VendorBrandingTab";
 import VendorTeamTab from "@/components/vendor/VendorTeamTab";
+import VendorProfileDefaults from "@/components/vendor/VendorProfileDefaults";
 import {
   Check, Save, Loader2, Plus, Trash2, Star, MapPin, Bell, BellOff,
 } from "lucide-react";
@@ -66,6 +67,7 @@ export default function VendorSettings() {
     { id: "team", label: "Équipe" },
     { id: "addresses", label: "Adresses" },
     { id: "shipping_mode", label: "Mode expédition" },
+    { id: "pricing_defaults", label: "Prix & MOV par profil" },
     { id: "notifications", label: "Notifications" },
   ];
 
@@ -195,6 +197,12 @@ export default function VendorSettings() {
           currentMode={shippingMode}
           marginPercentage={(vendor as any).shipping_margin_percentage || 15}
         />
+      )}
+
+      {activeTab === "pricing_defaults" && vendorId && (
+        <VCard>
+          <VendorProfileDefaults vendorId={vendorId} />
+        </VCard>
       )}
 
       {activeTab === "notifications" && vendorId && (

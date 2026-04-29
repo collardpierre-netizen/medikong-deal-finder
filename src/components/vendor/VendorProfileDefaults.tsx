@@ -29,6 +29,9 @@ interface DefaultRow {
   default_mov: number;
   default_mov_currency: string;
   default_moq: number;
+  default_pricing_mode: "" | "absolute" | "discount_pct";
+  default_price_excl_vat: string;
+  default_discount_pct: string;
 }
 
 export default function VendorProfileDefaults({ vendorId }: { vendorId: string }) {
@@ -58,6 +61,9 @@ export default function VendorProfileDefaults({ vendorId }: { vendorId: string }
         default_mov: d.default_mov,
         default_mov_currency: d.default_mov_currency,
         default_moq: d.default_moq,
+        default_pricing_mode: (d.default_pricing_mode as any) || "",
+        default_price_excl_vat: d.default_price_excl_vat != null ? String(d.default_price_excl_vat) : "",
+        default_discount_pct: d.default_discount_pct != null ? String(d.default_discount_pct) : "",
       })));
     }
   }, [data]);
@@ -82,6 +88,9 @@ export default function VendorProfileDefaults({ vendorId }: { vendorId: string }
       default_mov: 0,
       default_mov_currency: "EUR",
       default_moq: 1,
+      default_pricing_mode: "",
+      default_price_excl_vat: "",
+      default_discount_pct: "",
     }]);
   };
 
@@ -100,14 +109,26 @@ export default function VendorProfileDefaults({ vendorId }: { vendorId: string }
         .eq("vendor_id", vendorId);
 
       if (rows.length > 0) {
-        const payload = rows.map(r => ({
-          vendor_id: vendorId,
-          profile_type: r.profile_type,
-          country_code: r.country_code,
-          default_mov: r.default_mov,
-          default_mov_currency: r.default_mov_currency,
-          default_moq: r.default_moq,
-        }));
+        const payload = rows.map(r => {
+          const mode = r.default_pricing_mode || null;
+          return {
+            vendor_id: vendorId,
+            profile_type: r.profile_type,
+            country_code: r.country_code,
+            default_mov: r.default_mov,
+            default_mov_currency: r.default_mov_currency,
+            default_moq: r.default_moq,
+            default_pricing_mode: mode,
+            default_price_excl_vat:
+              mode === "absolute" && r.default_price_excl_vat !== ""
+                ? Number(r.default_price_excl_vat)
+                : null,
+            default_discount_pct:
+              mode === "discount_pct" && r.default_discount_pct !== ""
+                ? Number(r.default_discount_pct)
+                : null,
+          };
+        });
         const { error } = await supabase
           .from("vendor_profile_defaults" as any)
           .insert(payload as any);
@@ -164,6 +185,8 @@ export default function VendorProfileDefaults({ vendorId }: { vendorId: string }
                 <th className="text-left px-3 py-2 font-semibold" style={{ color: "#8B95A5" }}>Pays</th>
                 <th className="text-left px-3 py-2 font-semibold" style={{ color: "#8B95A5" }}>MOV (€)</th>
                 <th className="text-left px-3 py-2 font-semibold" style={{ color: "#8B95A5" }}>MOQ</th>
+                <th className="text-left px-3 py-2 font-semibold" style={{ color: "#8B95A5" }}>Prix défaut</th>
+                <th className="text-left px-3 py-2 font-semibold" style={{ color: "#8B95A5" }}>Valeur</th>
                 <th className="w-10"></th>
               </tr>
             </thead>
@@ -211,6 +234,41 @@ export default function VendorProfileDefaults({ vendorId }: { vendorId: string }
                       value={row.default_moq}
                       onChange={e => updateRow(idx, "default_moq", Number(e.target.value) || 1)}
                     />
+                  </td>
+                  <td className="px-3 py-2">
+                    <select
+                      className="w-full px-2 py-1.5 rounded-lg text-[12px] border focus:border-[#1B5BDA] focus:outline-none"
+                      style={{ borderColor: "#E2E8F0" }}
+                      value={row.default_pricing_mode}
+                      onChange={e => updateRow(idx, "default_pricing_mode", e.target.value as any)}
+                    >
+                      <option value="">— Aucun —</option>
+                      <option value="absolute">Prix HTVA (€)</option>
+                      <option value="discount_pct">Remise % vs base</option>
+                    </select>
+                  </td>
+                  <td className="px-3 py-2">
+                    {row.default_pricing_mode === "absolute" ? (
+                      <input
+                        type="number" min={0} step="0.01"
+                        className="w-full px-2 py-1.5 rounded-lg text-[12px] border focus:border-[#1B5BDA] focus:outline-none"
+                        style={{ borderColor: "#E2E8F0" }}
+                        value={row.default_price_excl_vat}
+                        onChange={e => updateRow(idx, "default_price_excl_vat", e.target.value)}
+                        placeholder="ex: 12.50"
+                      />
+                    ) : row.default_pricing_mode === "discount_pct" ? (
+                      <input
+                        type="number" min={-100} max={100} step="0.5"
+                        className="w-full px-2 py-1.5 rounded-lg text-[12px] border focus:border-[#1B5BDA] focus:outline-none"
+                        style={{ borderColor: "#E2E8F0" }}
+                        value={row.default_discount_pct}
+                        onChange={e => updateRow(idx, "default_discount_pct", e.target.value)}
+                        placeholder="ex: -5"
+                      />
+                    ) : (
+                      <span className="text-[11px]" style={{ color: "#8B95A5" }}>—</span>
+                    )}
                   </td>
                   <td className="px-3 py-2">
                     <button onClick={() => removeRow(idx)} className="p-1 rounded hover:bg-red-50 text-red-400 hover:text-red-600 transition-colors">

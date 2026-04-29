@@ -19,6 +19,9 @@ const STATUS_META: Record<Status, { label: string; icon: any; className: string 
 
 export function VendorSubmissionsList() {
   const { data: vendor } = useCurrentVendor();
+  const [searchParams] = useSearchParams();
+  const highlightId = searchParams.get("submission");
+  const highlightRef = useRef<HTMLDivElement | null>(null);
 
   const { data: items = [], isLoading } = useQuery({
     queryKey: ["vendor-submissions", vendor?.id],

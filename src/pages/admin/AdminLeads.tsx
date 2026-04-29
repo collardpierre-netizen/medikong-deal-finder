@@ -188,25 +188,39 @@ export default function AdminLeads() {
             <Table>
               <TableHeader>
                 <TableRow style={{ backgroundColor: "#F8FAFC" }}>
-                  {["Date/Heure", "Produit", "GTIN", "Vendeur externe", "Utilisateur"].map(h => (
+                  {["Date/Heure", "Produit", "GTIN", "Vendeur externe", "Utilisateur", "Société", "Profession", "Pays"].map(h => (
                     <TableHead key={h} className="text-[11px] font-semibold" style={{ color: "#8B95A5" }}>{h}</TableHead>
                   ))}
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading ? (
-                  <TableRow><TableCell colSpan={5} className="text-center py-8 text-[13px]" style={{ color: "#8B95A5" }}>Chargement...</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={8} className="text-center py-8 text-[13px]" style={{ color: "#8B95A5" }}>Chargement...</TableCell></TableRow>
                 ) : leads.length === 0 ? (
-                  <TableRow><TableCell colSpan={5} className="text-center py-8 text-[13px]" style={{ color: "#8B95A5" }}>Aucun lead</TableCell></TableRow>
-                ) : leads.slice(0, 100).map((l: any) => (
-                  <TableRow key={l.id}>
-                    <TableCell className="text-[12px]" style={{ color: "#616B7C" }}>{l.clicked_at ? new Date(l.clicked_at).toLocaleString("fr-BE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "—"}</TableCell>
-                    <TableCell className="text-[12px] font-medium max-w-[200px] truncate" style={{ color: "#1D2530" }}>{l.products?.name || "—"}</TableCell>
-                    <TableCell className="text-[11px] font-mono" style={{ color: "#616B7C" }}>{l.products?.gtin || "—"}</TableCell>
-                    <TableCell className="text-[12px]" style={{ color: "#1B5BDA" }}>{l.external_vendors?.name || "—"}</TableCell>
-                    <TableCell className="text-[12px]" style={{ color: "#616B7C" }}>{l.user_id ? l.user_id.slice(0, 8) + "…" : "Anonyme"}</TableCell>
-                  </TableRow>
-                ))}
+                  <TableRow><TableCell colSpan={8} className="text-center py-8 text-[13px]" style={{ color: "#8B95A5" }}>Aucun lead</TableCell></TableRow>
+                ) : leads.slice(0, 100).map((l: any) => {
+                  const p = (profilesById as any)[l.user_id] || {};
+                  return (
+                    <TableRow key={l.id}>
+                      <TableCell className="text-[12px]" style={{ color: "#616B7C" }}>{l.clicked_at ? new Date(l.clicked_at).toLocaleString("fr-BE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "—"}</TableCell>
+                      <TableCell className="text-[12px] font-medium max-w-[200px] truncate" style={{ color: "#1D2530" }}>{l.products?.name || "—"}</TableCell>
+                      <TableCell className="text-[11px] font-mono" style={{ color: "#616B7C" }}>{l.products?.gtin || "—"}</TableCell>
+                      <TableCell className="text-[12px]" style={{ color: "#1B5BDA" }}>{l.external_vendors?.name || "—"}</TableCell>
+                      <TableCell className="text-[12px]" style={{ color: "#1D2530" }}>
+                        {p.full_name || (l.user_id ? <span className="font-mono text-[11px]" style={{ color: "#8B95A5" }}>{l.user_id.slice(0, 8)}…</span> : <span style={{ color: "#8B95A5" }}>Anonyme</span>)}
+                      </TableCell>
+                      <TableCell className="text-[12px]" style={{ color: "#616B7C" }}>{p.company_name || "—"}</TableCell>
+                      <TableCell className="text-[12px]">
+                        {p.profession_types?.label ? (
+                          <Badge variant="outline" className="text-[11px] font-normal" style={{ borderColor: "#BFDBFE", color: "#1B5BDA", backgroundColor: "#EFF6FF" }}>
+                            {p.profession_types.label}
+                          </Badge>
+                        ) : <span style={{ color: "#8B95A5" }}>—</span>}
+                      </TableCell>
+                      <TableCell className="text-[12px]" style={{ color: "#616B7C" }}>{p.country || "—"}</TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </div>

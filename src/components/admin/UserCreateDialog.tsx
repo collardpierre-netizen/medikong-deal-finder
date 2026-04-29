@@ -8,6 +8,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Users, Store, ShoppingBag, Shield } from "lucide-react";
+import {
+  isVendorAccountError,
+  presentVendorAccountError,
+  type VendorAccountErrorPresentation,
+  type VendorAccountErrorAction,
+} from "@/lib/vendor-account-errors";
+import { VendorAccountErrorAlert } from "@/components/admin/VendorAccountErrorAlert";
 
 interface Props {
   open: boolean;

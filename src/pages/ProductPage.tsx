@@ -34,6 +34,7 @@ import { ExternalVendorLogo } from "@/components/product/ExternalVendorLogo";
 import ProfileResolvedPriceBadge from "@/components/product/ProfileResolvedPriceBadge";
 import { SafeBoundary } from "@/components/SafeBoundary";
 import VendorDelegateCompact from "@/components/vendor/VendorDelegateCompact";
+import { PvpEconomyBadge } from "@/components/product/PvpEconomyBadge";
 
 function formatEur(n: number | null | undefined): string {
   const v = Number(n);

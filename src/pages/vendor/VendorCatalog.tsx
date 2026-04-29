@@ -126,13 +126,13 @@ export default function VendorCatalog() {
           <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
             <TabsList>
               <TabsTrigger value="products" className="gap-2">
-                <Package className="h-4 w-4" /> Produits
+                <Package className="h-4 w-4" /> {t("vendorCatalogTabProducts")}
               </TabsTrigger>
               <TabsTrigger value="brands" className="gap-2">
-                <Tag className="h-4 w-4" /> Marques
+                <Tag className="h-4 w-4" /> {t("vendorCatalogTabBrands")}
               </TabsTrigger>
               <TabsTrigger value="manufacturers" className="gap-2">
-                <Building2 className="h-4 w-4" /> Fabricants
+                <Building2 className="h-4 w-4" /> {t("vendorCatalogTabManufacturers")}
               </TabsTrigger>
             </TabsList>
 

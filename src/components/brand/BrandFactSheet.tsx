@@ -223,6 +223,32 @@ export function BrandFactSheet({ brand }: { brand: BrandRow }) {
   const avg = (key: keyof ReviewRow) =>
     enoughReviews ? (reviews.reduce((s, r) => s + (r[key] as number), 0) / reviews.length).toFixed(1) : "—";
 
+  // ── Visibilité des cards : masquer si aucune donnée saisie ──────────────
+  const hasComplianceData =
+    !!brand.afmps_status ||
+    brand.ce_marking !== null ||
+    !!brand.year_entered_be_market ||
+    !!brand.manufacturing_countries?.length ||
+    !!brand.certifications?.length ||
+    brand.inami_reimbursement_pct !== null;
+
+  const hasLogisticsData =
+    (logistics?.order_count_90d ?? 0) >= 10 || !!brand.distribution_type;
+
+  const hasMarketSignals =
+    !!brand.google_trends_12m?.length ||
+    brand.google_trends_trend_pct !== null ||
+    brand.officinal_coverage_pct !== null ||
+    (brand.press_mentions_12m !== null && brand.press_mentions_12m > 0);
+
+  const hasReviews = reviews.length > 0;
+  const hasSynthesis = positives.length > 0 || watch.length > 0;
+
+  // Si absolument rien à montrer, on n'affiche pas la fact sheet
+  if (!hasComplianceData && !hasLogisticsData && !hasMarketSignals && !hasReviews && !hasSynthesis) {
+    return null;
+  }
+
   return (
     <TooltipProvider delayDuration={150}>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

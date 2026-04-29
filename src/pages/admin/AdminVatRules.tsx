@@ -300,6 +300,93 @@ export default function AdminVatRules() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="categories" className="space-y-4">
+          <Card>
+            <CardContent className="pt-4 space-y-3">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="rounded-lg border p-3">
+                  <div className="text-xs text-muted-foreground">Total catégories</div>
+                  <div className="text-2xl font-semibold tabular-nums">{catStats.total}</div>
+                </div>
+                <div className="rounded-lg border p-3">
+                  <div className="text-xs text-muted-foreground">Taux 6%</div>
+                  <div className="text-2xl font-semibold tabular-nums text-emerald-600">{catStats.at6}</div>
+                </div>
+                <div className="rounded-lg border p-3">
+                  <div className="text-xs text-muted-foreground">Taux 21%</div>
+                  <div className="text-2xl font-semibold tabular-nums">{catStats.at21}</div>
+                </div>
+                <div className="rounded-lg border p-3">
+                  <div className="text-xs text-muted-foreground">Auto-appliqué (à revoir)</div>
+                  <div className={`text-2xl font-semibold tabular-nums ${catStats.auto > 0 ? "text-amber-600" : "text-emerald-600"}`}>{catStats.auto}</div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Input
+                  placeholder="Rechercher une catégorie…"
+                  value={catSearch}
+                  onChange={(e) => setCatSearch(e.target.value)}
+                  className="max-w-sm"
+                />
+                <span className="text-xs text-muted-foreground">
+                  {filteredCat.length} résultat{filteredCat.length > 1 ? "s" : ""} (max 500 catégories les plus impactantes)
+                </span>
+              </div>
+
+              {loadingCat ? (
+                <p className="text-sm text-muted-foreground py-8 text-center">Chargement…</p>
+              ) : filteredCat.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-8 text-center">Aucune catégorie trouvée.</p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Catégorie</TableHead>
+                      <TableHead className="text-right">Produits actifs</TableHead>
+                      <TableHead>Statut</TableHead>
+                      <TableHead className="text-right">TVA</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredCat.slice(0, 200).map((c: any) => (
+                      <TableRow key={c.id}>
+                        <TableCell className="max-w-[420px]">
+                          <div className="truncate" title={c.name}>{c.name}</div>
+                          <div className="text-xs text-muted-foreground font-mono">{c.slug}</div>
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">{c.product_count}</TableCell>
+                        <TableCell>
+                          {c.was_auto_defaulted ? (
+                            <Badge variant="outline" className="border-amber-300 text-amber-700 bg-amber-50">
+                              <Info className="w-3 h-3 mr-1" /> Auto 21% — à confirmer
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="border-emerald-300 text-emerald-700 bg-emerald-50">
+                              Validé
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <select
+                            className="h-8 rounded-md border border-input bg-background px-2 text-sm"
+                            value={String(c.vat_rate ?? "21")}
+                            onChange={(e) => updateCatVat.mutate({ id: c.id, rate: Number(e.target.value) })}
+                          >
+                            <option value="6">6%</option>
+                            <option value="12">12%</option>
+                            <option value="21">21%</option>
+                          </select>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
     </div>
   );

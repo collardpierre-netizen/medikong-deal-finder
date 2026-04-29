@@ -872,24 +872,38 @@ function VendorOffersPanel({ vendor }: { vendor: any }) {
                           <TableHead className="text-[11px]">Catégorie suggérée</TableHead>
                           <TableHead className="text-[11px]">Prix</TableHead>
                           <TableHead className="text-[11px]">MOV</TableHead>
+                          <TableHead className="text-[11px]">État</TableHead>
                         </TableRow></TableHeader>
                         <TableBody>
-                          {csvPreview.slice(0, 20).map((r, i) => (
-                            <TableRow key={i}>
-                              <TableCell className="text-[11px]">{r.product.name}</TableCell>
-                              <TableCell className="text-[11px]">
-                                {r.product.categories?.name ? (
-                                  <span className="inline-flex items-center gap-1 rounded bg-primary/10 text-primary px-1.5 py-0.5 text-[10px]">
-                                    {r.product.categories.name}
-                                  </span>
-                                ) : (
-                                  <span className="text-muted-foreground">—</span>
-                                )}
-                              </TableCell>
-                              <TableCell className="text-[11px]">{r.unit_price} €</TableCell>
-                              <TableCell className="text-[11px]">{r.mov || "—"}</TableCell>
-                            </TableRow>
-                          ))}
+                          {csvPreview.slice(0, 20).map((r, i) => {
+                            const dupInCsv = csvDupCsv.some(d => d.gtin === r.product.gtin);
+                            const existsInDb = csvExistingGtins.has(r.product.id);
+                            return (
+                              <TableRow key={i} className={dupInCsv ? "bg-red-50/60" : ""}>
+                                <TableCell className="text-[11px]">{r.product.name}</TableCell>
+                                <TableCell className="text-[11px]">
+                                  {r.product.categories?.name ? (
+                                    <span className="inline-flex items-center gap-1 rounded bg-primary/10 text-primary px-1.5 py-0.5 text-[10px]">
+                                      {r.product.categories.name}
+                                    </span>
+                                  ) : (
+                                    <span className="text-muted-foreground">—</span>
+                                  )}
+                                </TableCell>
+                                <TableCell className="text-[11px]">{r.unit_price} €</TableCell>
+                                <TableCell className="text-[11px]">{r.mov || "—"}</TableCell>
+                                <TableCell className="text-[11px]">
+                                  {dupInCsv ? (
+                                    <span className="inline-flex items-center rounded bg-red-100 text-red-700 px-1.5 py-0.5 text-[10px] font-medium">Doublon CSV</span>
+                                  ) : existsInDb ? (
+                                    <span className="inline-flex items-center rounded bg-amber-100 text-amber-800 px-1.5 py-0.5 text-[10px] font-medium">Existe déjà</span>
+                                  ) : (
+                                    <span className="inline-flex items-center rounded bg-green-100 text-green-700 px-1.5 py-0.5 text-[10px] font-medium">Nouveau</span>
+                                  )}
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
                         </TableBody>
                       </Table>
                       {csvPreview.length > 20 && (

@@ -501,6 +501,7 @@ export function BrandFactSheet({ brand }: { brand: BrandRow }) {
             Bullets calculés automatiquement à partir des données factuelles ci-dessus — aucune saisie manuelle.
           </Disclaimer>
         </Card>
+        )}
       </div>
       <BrandReviewModal
         brandId={brand.id}

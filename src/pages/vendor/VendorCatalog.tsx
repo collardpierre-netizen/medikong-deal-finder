@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Search, Package, Building2, Tag, Plus, Loader2 } from "lucide-react";
+import { Search, Package, Building2, Tag, Plus, SearchX, FilterX } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/contexts/I18nContext";
 import { VCard } from "@/components/vendor/ui/VCard";

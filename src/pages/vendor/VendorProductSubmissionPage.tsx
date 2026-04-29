@@ -190,9 +190,9 @@ export default function VendorProductSubmissionPage() {
             placeholder="Ex : Antalgiques, Hygiène buccale…"
             maxLength={120}
           />
-          {catSuggestion?.name && (
+          {catSuggestion?.category_name && (
             <p className="text-xs text-muted-foreground inline-flex items-center gap-1">
-              <Sparkles className="h-3 w-3" /> Suggestion auto : {catSuggestion.name}
+              <Sparkles className="h-3 w-3" /> Suggestion auto : {catSuggestion.category_name}
             </p>
           )}
           {errors.category_hint && <p className="text-xs text-destructive">{errors.category_hint}</p>}

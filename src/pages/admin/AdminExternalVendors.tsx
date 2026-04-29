@@ -90,6 +90,8 @@ export default function AdminExternalVendors() {
 
   // Vendor form
   const [vf, setVf] = useState({ name: "", website_url: "", logo_url: "", contact_email: "", contact_phone: "", country_code: "BE", notes: "" });
+  const logoInputRef = useRef<HTMLInputElement | null>(null);
+  const [logoUploading, setLogoUploading] = useState(false);
 
   const resetVf = () => setVf({ name: "", website_url: "", logo_url: "", contact_email: "", contact_phone: "", country_code: "BE", notes: "" });
 

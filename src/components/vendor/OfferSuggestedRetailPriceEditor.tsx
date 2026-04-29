@@ -76,6 +76,7 @@ export default function OfferSuggestedRetailPriceEditor({
     onSuccess: () => {
       toast.success("PVP suggéré enregistré");
       qc.invalidateQueries({ queryKey: ["vendor-offers"] });
+      qc.invalidateQueries({ queryKey: ["offer-pvp", offerId] });
       qc.invalidateQueries({ queryKey: ["resolved-pvp", productId] });
     },
     onError: (e: any) => toast.error(e.message ?? "Erreur"),

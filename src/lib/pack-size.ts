@@ -1,21 +1,26 @@
 /**
  * Helpers pour deviner le conditionnement (nombre d'unites par pack) d'un produit
- * a partir de son nom commercial.
+ * a partir de son nom commercial OU des metadonnees de l'offre externe.
  *
  * Priorite cote front pour resoudre le pack effectif d'une offre externe :
  *   1. external_offers.pack_size_override (saisi en admin)
  *   2. products.pack_size (override admin sur le produit)
- *   3. extractPackSizeFromName(product.name) (heuristique regex)
- *   4. 1 (fallback)
+ *   3. extractPackSizeFromName(offer.raw_title) (titre brut chez le vendeur)
+ *   4. extractPackSizeFromUrl(offer.product_url)  (URL de l'offre)
+ *   5. extractPackSizeFromName(product.name) (heuristique sur le nom MediKong)
+ *   6. 1 (fallback)
  *
- * Le RPC SQL `resolve_effective_pack_size` couvre les 3 premiers niveaux cote DB,
- * mais on garde l'extraction depuis le nom cote front pour eviter un round-trip
- * et pour les produits jamais saisis en admin.
+ * Important : le pack vendu chez le vendeur externe (ex: carton de 24 cups)
+ * est souvent different du pack de reference de la fiche produit (1 cup).
+ * On donne donc la priorite aux infos provenant du vendeur (titre/URL) avant
+ * de retomber sur le nom du produit MediKong.
  */
 
 export type PackSizeSource =
   | "offer_override"
   | "product"
+  | "offer_title_heuristic"
+  | "offer_url_heuristic"
   | "name_heuristic"
   | "fallback";
 

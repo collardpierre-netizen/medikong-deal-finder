@@ -798,6 +798,63 @@ function VendorOffersPanel({ vendor }: { vendor: any }) {
                 </div>
               </div>
 
+              {/* Bandeau doublons internes au CSV — bloquant */}
+              {csvDupCsv.length > 0 && (
+                <div className="rounded-md border border-red-300 bg-red-50 p-3 space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-[12px] font-semibold text-red-800">
+                      ⛔ {csvDupCsv.length} GTIN dupliqué(s) dans le fichier — import bloqué
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const header = "gtin,product_name,duplicate_rows";
+                        const escape = (v: string) => `"${(v ?? "").replace(/"/g, '""')}"`;
+                        const body = csvDupCsv.map(d => [escape(d.gtin), escape(d.productName), escape(d.rows.join("|"))].join(",")).join("\n");
+                        const blob = new Blob([header + "\n" + body], { type: "text/csv;charset=utf-8;" });
+                        const a = document.createElement("a");
+                        a.href = URL.createObjectURL(blob);
+                        a.download = `doublons-import-${new Date().toISOString().slice(0, 10)}.csv`;
+                        a.click();
+                      }}
+                    >
+                      <Download size={12} className="mr-1" /> Export
+                    </Button>
+                  </div>
+                  <p className="text-[11px] text-red-700">
+                    Corrigez votre fichier (une seule ligne par GTIN) avant de réessayer.
+                  </p>
+                  <div className="max-h-32 overflow-y-auto border border-red-200 rounded bg-white">
+                    <Table>
+                      <TableHeader><TableRow>
+                        <TableHead className="text-[11px]">GTIN</TableHead>
+                        <TableHead className="text-[11px]">Produit</TableHead>
+                        <TableHead className="text-[11px]">Lignes</TableHead>
+                      </TableRow></TableHeader>
+                      <TableBody>
+                        {csvDupCsv.slice(0, 20).map((d, i) => (
+                          <TableRow key={i}>
+                            <TableCell className="text-[11px] font-mono">{d.gtin}</TableCell>
+                            <TableCell className="text-[11px]">{d.productName}</TableCell>
+                            <TableCell className="text-[11px] font-mono">{d.rows.join(", ")}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+              )}
+
+              {/* Bandeau GTIN déjà en base — informatif */}
+              {csvExistingGtins.size > 0 && csvDupCsv.length === 0 && (
+                <div className="rounded-md border border-amber-300 bg-amber-50 p-3">
+                  <p className="text-[12px] font-medium text-amber-900">
+                    ⚠ {csvExistingGtins.size} GTIN déjà présent(s) en base — ces offres seront mises à jour (écrasées) à l'import.
+                  </p>
+                </div>
+              )}
+
               <Tabs defaultValue={csvInvalid.length > 0 ? "invalid" : "valid"}>
                 <TabsList className="grid w-full grid-cols-2">
                   <TabsTrigger value="valid">Valides ({csvPreview.length})</TabsTrigger>

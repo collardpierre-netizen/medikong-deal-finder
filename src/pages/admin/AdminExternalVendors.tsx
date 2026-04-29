@@ -363,26 +363,114 @@ function VendorOffersPanel({ vendor }: { vendor: any }) {
     duplicates: DuplicateGroup[];
   } | null>(null);
 
+  // ── Helpers de normalisation CSV ──
+  // Trim + suppression caractères invisibles + cast string
+  const normStr = (v: unknown) =>
+    String(v ?? "")
+      .replace(/^\uFEFF/, "")          // BOM UTF-8
+      .replace(/[\u200B-\u200D]/g, "") // zero-width
+      .trim();
+
+  // GTIN : ne garde que les chiffres (vire espaces, tirets, points, apostrophes)
+  // Ne supprime PAS les zéros initiaux (un GTIN officiel peut commencer par 0).
+  // Renvoie "" si le résultat n'est pas un nombre 8/12/13/14 chiffres plausible.
+  const normGtin = (v: unknown) => {
+    const digits = normStr(v).replace(/\D/g, "");
+    if (!digits) return "";
+    return digits;
+  };
+
+  // Variantes plausibles d'un GTIN pour rattraper du formatage incohérent en base
+  // (ex: produits stockés en EAN-13 "0123456789012" alors que CSV envoie UPC-12 "123456789012")
+  const gtinVariants = (g: string): string[] => {
+    if (!g) return [];
+    const out = new Set<string>([g]);
+    // Padding à 13 ou 14
+    if (g.length < 14) out.add(g.padStart(14, "0"));
+    if (g.length < 13) out.add(g.padStart(13, "0"));
+    if (g.length < 12) out.add(g.padStart(12, "0"));
+    // Strip zéros initiaux (sans descendre sous 8)
+    const stripped = g.replace(/^0+/, "");
+    if (stripped.length >= 8) out.add(stripped);
+    return Array.from(out);
+  };
+
+  // Numérique : accepte virgule décimale, espaces, devise. NaN → 0.
+  const normNumber = (v: unknown) => {
+    const s = normStr(v).replace(/[€$\s]/g, "").replace(",", ".");
+    if (!s) return 0;
+    const n = Number(s);
+    return Number.isFinite(n) ? n : 0;
+  };
+
+  const normInt = (v: unknown): number | null => {
+    const s = normStr(v).replace(/[^\d-]/g, "");
+    if (!s) return null;
+    const n = parseInt(s, 10);
+    return Number.isFinite(n) ? n : null;
+  };
+
+  const ALLOWED_STOCK = new Set(["in_stock", "low_stock", "out_of_stock", "on_request", "limited", "unknown"]);
+  const normStockStatus = (v: unknown) => {
+    const s = normStr(v).toLowerCase().replace(/[\s-]/g, "_");
+    return ALLOWED_STOCK.has(s) ? s : "unknown";
+  };
+
   const handleCsvFile = async (file: File) => {
     const text = await file.text();
-    const lines = text.trim().split("\n");
-    const header = lines[0].toLowerCase().split(",").map(s => s.trim());
-    type CsvRow = { gtin: string; unit_price: string; mov: string; product_url: string; stock_status: string; delivery_days: string; imported_at: string; _row: number; [k: string]: string | number };
+    // Strip BOM + supporte CRLF/CR/LF
+    const cleaned = text.replace(/^\uFEFF/, "").replace(/\r\n?/g, "\n");
+    const lines = cleaned.trim().split("\n").filter(l => l.trim().length > 0);
+    if (lines.length === 0) { toast.error("CSV vide"); return; }
+    const header = lines[0].toLowerCase().split(",").map(s => normStr(s));
+
+    type CsvRow = {
+      gtin: string;
+      unit_price: string;
+      mov: string;
+      product_url: string;
+      stock_status: string;
+      delivery_days: string;
+      imported_at: string;
+      _row: number;
+      [k: string]: string | number;
+    };
+
     const rows: CsvRow[] = lines.slice(1).map((line, idx) => {
-      const vals = line.split(",").map(s => s.trim());
+      const vals = line.split(",").map(s => normStr(s));
       const row: Record<string, string> = {};
       header.forEach((h, i) => { row[h] = vals[i] || ""; });
-      return { ...(row as any), _row: idx + 2 } as CsvRow;
+      // Normalisation au plus tôt → la clé `gtin` utilisée pour matching et dédoublonnage est canonique
+      return {
+        ...(row as any),
+        gtin: normGtin(row.gtin),
+        _row: idx + 2,
+      } as CsvRow;
     });
 
-    // Match GTINs
-    const gtins = rows.map(r => r.gtin).filter(Boolean);
-    const { data: products } = await supabase.from("products").select("id, gtin, name").in("gtin", gtins);
+    // Match GTINs avec variantes (rattrape padding/strip zéros)
+    const allLookups = new Set<string>();
+    rows.forEach(r => gtinVariants(r.gtin).forEach(g => allLookups.add(g)));
+    const gtinList = Array.from(allLookups);
+
+    const { data: products } = gtinList.length
+      ? await supabase.from("products").select("id, gtin, name").in("gtin", gtinList)
+      : { data: [] as any[] };
+
     const gtinMap: Record<string, any> = {};
     (products || []).forEach(p => { if (p.gtin) gtinMap[p.gtin] = p; });
 
-    const matched = rows.filter(r => gtinMap[r.gtin]).map(r => ({ ...r, product: gtinMap[r.gtin] }));
-    const unmatched = rows.filter(r => !gtinMap[r.gtin]).map(r => r.gtin);
+    // Pour chaque ligne, trouve la 1re variante qui matche en base
+    const resolveProduct = (g: string) => {
+      for (const v of gtinVariants(g)) if (gtinMap[v]) return gtinMap[v];
+      return null;
+    };
+
+    const matched = rows
+      .map(r => ({ ...r, product: resolveProduct(r.gtin) }))
+      .filter(r => !!r.product);
+    const unmatched = rows.filter(r => !resolveProduct(r.gtin)).map(r => r.gtin || "(vide)");
+
     setCsvPreview(matched);
     setCsvUnmatched(unmatched);
     setCsvDialog(true);
@@ -392,20 +480,20 @@ function VendorOffersPanel({ vendor }: { vendor: any }) {
     if (!csvPreview) return;
     setCsvImporting(true);
     const enriched = csvPreview.map(r => {
-      const importedAt = (r.imported_at || "").trim();
+      const importedAt = normStr(r.imported_at);
       const parsedDate = importedAt ? new Date(importedAt) : null;
       const isValidDate = parsedDate && !isNaN(parsedDate.getTime());
       return {
         external_vendor_id: vendor.id,
-        product_id: r.product.id,
+        product_id: r.product.id,                 // ← UUID DB, déjà canonique
         _product_name: r.product.name as string,
         _product_gtin: (r.product.gtin || "") as string,
         _line_index: r._row as number,
-        unit_price: parseFloat(r.unit_price) || 0,
-        mov_amount: parseFloat(r.mov) || 0,
-        product_url: (r.product_url || "").trim(),
-        stock_status: r.stock_status || "unknown",
-        delivery_days: r.delivery_days ? parseInt(r.delivery_days) : null,
+        unit_price: normNumber(r.unit_price),
+        mov_amount: normNumber(r.mov),
+        product_url: normStr(r.product_url),
+        stock_status: normStockStatus(r.stock_status),
+        delivery_days: normInt(r.delivery_days),
         ...(isValidDate ? { created_at: parsedDate!.toISOString() } : {}),
       };
     });

@@ -599,20 +599,32 @@ function useOfferImport(vendorId: string | undefined) {
         }
       }
 
-      // Insert profile rules
+      // Insert profile rules → offer_buyer_profile_prices (table fusionnée)
       if (profileRulesQueue.length > 0) {
         const profileInserts = profileRulesQueue
           .map(({ ean, cnk, rule }) => {
             const offerId = offerIdsByKey[ean] || offerIdsByKey[cnk];
             if (!offerId) return null;
-            return { offer_id: offerId, ...rule };
+            const hasCustom = rule.custom_price_excl_vat != null;
+            const disc = Number(rule.discount_percentage) || 0;
+            return {
+              offer_id: offerId,
+              buyer_profile_id: rule.profile_type,
+              pricing_mode: hasCustom ? "absolute" : (disc > 0 ? "discount_pct" : "absolute"),
+              price_excl_vat: hasCustom ? rule.custom_price_excl_vat : null,
+              discount_pct: disc > 0 ? disc : null,
+              min_order_quantity: rule.moq ?? 1,
+              min_order_value_cents: rule.mov_amount != null ? Math.round(Number(rule.mov_amount) * 100) : null,
+              country_code: rule.country_code ?? null,
+              is_active: true,
+            };
           })
           .filter(Boolean);
 
         if (profileInserts.length > 0) {
           for (let i = 0; i < profileInserts.length; i += 100) {
             const batch = profileInserts.slice(i, i + 100);
-            await supabase.from("offer_profile_rules").insert(batch);
+            await supabase.from("offer_buyer_profile_prices" as any).insert(batch as any);
           }
         }
       }
@@ -822,8 +834,8 @@ function exportOffers(offers: any[], profileRulesMap?: Map<string, any[]>, price
 }
 
 /* ─── Profile Rules Editor ─── */
-/* Note: gère uniquement MOQ/MOV par profil (table offer_profile_rules).
-   Les prix par profil acheteur sont gérés par ProfilePricesEditor (table offer_buyer_profile_prices). */
+/* Source unique : table `offer_buyer_profile_prices` (prix + MOQ + MOV par offre × profil).
+   L'ancienne table `offer_profile_rules` a été fusionnée et supprimée le 2026-04-29. */
 interface ProfileRule {
   id?: string;
   profile_type: string;
@@ -849,11 +861,11 @@ function ProfileRulesEditor({ offerId, basePrice }: { offerId: string | null; ba
     queryFn: async () => {
       if (!offerId) return [];
       const { data } = await supabase
-        .from("offer_profile_rules")
+        .from("offer_buyer_profile_prices" as any)
         .select("*")
         .eq("offer_id", offerId)
-        .order("profile_type");
-      return data || [];
+        .order("buyer_profile_id");
+      return (data as any[]) || [];
     },
     enabled: !!offerId,
   });
@@ -862,12 +874,12 @@ function ProfileRulesEditor({ offerId, basePrice }: { offerId: string | null; ba
     if (existingRules && existingRules.length > 0) {
       setRules(existingRules.map((r: any) => ({
         id: r.id,
-        profile_type: r.profile_type,
+        profile_type: r.buyer_profile_id,
         country_code: r.country_code || "",
-        custom_price_excl_vat: r.custom_price_excl_vat ? String(r.custom_price_excl_vat) : "",
-        discount_percentage: String(r.discount_percentage || 0),
-        moq: String(r.moq || 1),
-        mov_amount: String(r.mov_amount || 0),
+        custom_price_excl_vat: r.price_excl_vat ? String(r.price_excl_vat) : "",
+        discount_percentage: String(r.discount_pct || 0),
+        moq: String(r.min_order_quantity || 1),
+        mov_amount: r.min_order_value_cents != null ? String(r.min_order_value_cents / 100) : "0",
       })));
       setExpanded(true);
     }
@@ -882,16 +894,25 @@ function ProfileRulesEditor({ offerId, basePrice }: { offerId: string | null; ba
     if (!offerId) { toast.info("Sauvegardez l'offre d'abord, puis modifiez-la pour ajouter les règles par profil."); return; }
     setSaving(true);
     try {
-      await supabase.from("offer_profile_rules").delete().eq("offer_id", offerId);
+      await supabase.from("offer_buyer_profile_prices" as any).delete().eq("offer_id", offerId);
       if (rules.length > 0) {
-        const payload = rules.filter(r => r.profile_type).map(r => ({
-          offer_id: offerId, profile_type: r.profile_type, country_code: r.country_code || null,
-          custom_price_excl_vat: r.custom_price_excl_vat ? parseFloat(r.custom_price_excl_vat) : null,
-          discount_percentage: parseFloat(r.discount_percentage) || 0,
-          moq: parseInt(r.moq) || 1, mov_amount: parseFloat(r.mov_amount) || 0,
-        }));
+        const payload = rules.filter(r => r.profile_type).map(r => {
+          const hasCustom = !!r.custom_price_excl_vat;
+          const disc = parseFloat(r.discount_percentage) || 0;
+          return {
+            offer_id: offerId,
+            buyer_profile_id: r.profile_type,
+            country_code: r.country_code || null,
+            pricing_mode: hasCustom ? "absolute" : (disc > 0 ? "discount_pct" : "absolute"),
+            price_excl_vat: hasCustom ? parseFloat(r.custom_price_excl_vat) : null,
+            discount_pct: disc > 0 ? disc : null,
+            min_order_quantity: parseInt(r.moq) || 1,
+            min_order_value_cents: Math.round((parseFloat(r.mov_amount) || 0) * 100),
+            is_active: true,
+          };
+        });
         if (payload.length > 0) {
-          const { error } = await supabase.from("offer_profile_rules").insert(payload);
+          const { error } = await supabase.from("offer_buyer_profile_prices" as any).insert(payload as any);
           if (error) throw error;
         }
       }
@@ -1012,17 +1033,26 @@ export default function VendorOffers() {
   const fileRef = useRef<HTMLInputElement>(null);
   const { importFile, importing } = useOfferImport(vendor?.id);
 
-  // Fetch all profile rules for export
+  // Fetch all profile rules for export (depuis offer_buyer_profile_prices, table fusionnée)
   const { data: allProfileRules = [] } = useQuery({
     queryKey: ["all-offer-profile-rules", vendor?.id],
     queryFn: async () => {
       const offerIds = offers.map((o: any) => o.id);
       if (offerIds.length === 0) return [];
       const { data } = await supabase
-        .from("offer_profile_rules")
+        .from("offer_buyer_profile_prices" as any)
         .select("*")
         .in("offer_id", offerIds);
-      return data || [];
+      // Re-mappe vers l'ancien shape attendu par l'export XLSX
+      return ((data as any[]) || []).map((r: any) => ({
+        offer_id: r.offer_id,
+        profile_type: r.buyer_profile_id,
+        country_code: r.country_code,
+        custom_price_excl_vat: r.price_excl_vat,
+        discount_percentage: r.discount_pct,
+        moq: r.min_order_quantity,
+        mov_amount: r.min_order_value_cents != null ? r.min_order_value_cents / 100 : null,
+      }));
     },
     enabled: !!vendor?.id && offers.length > 0,
   });
@@ -1481,7 +1511,7 @@ export default function VendorOffers() {
             />
           )}
 
-          {/* ─── MOQ/MOV par profil interne (offer_profile_rules) ─── */}
+          {/* ─── Prix + MOQ/MOV par profil (offer_buyer_profile_prices, table fusionnée) ─── */}
           <ProfileRulesEditor offerId={editingId} basePrice={parseFloat(form.price_excl_vat) || 0} />
 
           <div className="flex justify-end gap-2 mt-4">

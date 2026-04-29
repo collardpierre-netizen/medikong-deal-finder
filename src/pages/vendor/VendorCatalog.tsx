@@ -171,10 +171,13 @@ export default function VendorCatalog() {
   };
 
   const placeholderText = useMemo(() => {
-    if (tab === "products") return t("vendorCatalogSearchProducts");
+    if (tab === "products") {
+      if (activeScopeLabel) return `Rechercher dans ${activeScopeLabel.name}…`;
+      return t("vendorCatalogSearchProducts");
+    }
     if (tab === "brands") return t("vendorCatalogSearchBrands");
     return t("vendorCatalogSearchManufacturers");
-  }, [tab, t]);
+  }, [tab, t, activeScopeLabel]);
 
   return (
     <div className="space-y-5">

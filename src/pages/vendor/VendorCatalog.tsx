@@ -281,14 +281,14 @@ export default function VendorCatalog() {
       <VCard className="p-4">
         <div id="mes-propositions" className="flex items-center justify-between mb-3 gap-3 flex-wrap scroll-mt-20">
           <div>
-            <h2 className="text-sm font-bold text-[#1D2530]">Mes propositions de produits</h2>
+            <h2 className="text-sm font-bold text-[#1D2530]">{t("vendorCatalogMySubmissionsTitle")}</h2>
             <p className="text-[12px] text-muted-foreground">
-              Suivez le statut des fiches que vous avez soumises à notre équipe catalogue.
+              {t("vendorCatalogMySubmissionsSubtitle")}
             </p>
           </div>
           <Button asChild size="sm" className="gap-1.5">
             <Link to="/vendor/produits/proposer">
-              <Plus className="h-4 w-4" /> Proposer un produit
+              <Plus className="h-4 w-4" /> {t("proposeProduct")}
             </Link>
           </Button>
         </div>

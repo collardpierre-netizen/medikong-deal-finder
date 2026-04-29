@@ -149,6 +149,7 @@ const AdminApiDocs = lazyWithRetry(() => import("./pages/admin/AdminApiDocs"), "
 const AdminCountries = lazyWithRetry(() => import("./pages/admin/AdminCountries"), "AdminCountries");
 const AdminMarketCodes = lazyWithRetry(() => import("./pages/admin/AdminMarketCodes"), "AdminMarketCodes");
 const AdminExternalVendors = lazyWithRetry(() => import("./pages/admin/AdminExternalVendors"), "AdminExternalVendors");
+const AdminExternalVatAudit = lazyWithRetry(() => import("./pages/admin/AdminExternalVatAudit"), "AdminExternalVatAudit");
 const AdminStripeCommissions = lazyWithRetry(() => import("./pages/admin/AdminStripeCommissions"), "AdminStripeCommissions");
 const AdminStripeRevenue = lazyWithRetry(() => import("./pages/admin/AdminStripeRevenue"), "AdminStripeRevenue");
 const AdminOrderRefund = lazyWithRetry(() => import("./pages/admin/AdminOrderRefund"), "AdminOrderRefund");

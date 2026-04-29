@@ -348,6 +348,7 @@ export type Database = {
           manufacturer_id: string | null
           manufacturing_countries: string[] | null
           name: string
+          norm_key: string | null
           officinal_coverage_pct: number | null
           parent_company: string | null
           press_mentions_12m: number | null
@@ -391,6 +392,7 @@ export type Database = {
           manufacturer_id?: string | null
           manufacturing_countries?: string[] | null
           name: string
+          norm_key?: string | null
           officinal_coverage_pct?: number | null
           parent_company?: string | null
           press_mentions_12m?: number | null
@@ -434,6 +436,7 @@ export type Database = {
           manufacturer_id?: string | null
           manufacturing_countries?: string[] | null
           name?: string
+          norm_key?: string | null
           officinal_coverage_pct?: number | null
           parent_company?: string | null
           press_mentions_12m?: number | null
@@ -9506,6 +9509,10 @@ export type Database = {
           table_name: string
         }[]
       }
+      auto_merge_brand_duplicates: {
+        Args: { _dry_run?: boolean }
+        Returns: Json
+      }
       bulk_override_requested: { Args: never; Returns: boolean }
       bulk_set_cnk_codes: { Args: { pairs: Json }; Returns: number }
       bump_translation_cache_hit: {
@@ -9574,6 +9581,16 @@ export type Database = {
           _status: Database["public"]["Enums"]["qogita_resync_status"]
         }
         Returns: undefined
+      }
+      find_brand_duplicates: {
+        Args: never
+        Returns: {
+          brand_ids: string[]
+          brand_names: string[]
+          norm_key: string
+          product_counts: number[]
+          variant_count: number
+        }[]
       }
       force_bulk_deactivate: {
         Args: { _ids: string[]; _table_name: string }
@@ -9685,6 +9702,7 @@ export type Database = {
           vendor_name: string
         }[]
       }
+      merge_brands: { Args: { _drop: string; _keep: string }; Returns: Json }
       move_to_dlq: {
         Args: {
           dlq_name: string
@@ -9694,6 +9712,7 @@ export type Database = {
         }
         Returns: number
       }
+      normalize_brand_name: { Args: { _name: string }; Returns: string }
       public_active_offers_count: {
         Args: { _country_code?: string }
         Returns: number
@@ -9782,6 +9801,7 @@ export type Database = {
         }
         Returns: string
       }
+      unaccent: { Args: { "": string }; Returns: string }
       update_brand_product_counts: { Args: never; Returns: undefined }
       update_manufacturer_product_counts: { Args: never; Returns: undefined }
       upsert_market_prices: { Args: { rows: Json }; Returns: number }

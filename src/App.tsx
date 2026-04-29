@@ -122,6 +122,7 @@ const AdminImportExport = lazyWithRetry(() => import("./pages/admin/AdminImportE
 const AdminCategories = lazyWithRetry(() => import("./pages/admin/AdminCategories"), "AdminCategories");
 const AdminMarques = lazyWithRetry(() => import("./pages/admin/AdminMarques"), "AdminMarques");
 const AdminBrandTransparenceEdit = lazyWithRetry(() => import("./pages/admin/AdminBrandTransparenceEdit"), "AdminBrandTransparenceEdit");
+const AdminBrandDuplicates = lazyWithRetry(() => import("./pages/admin/AdminBrandDuplicates"), "AdminBrandDuplicates");
 const AdminCRM = lazyWithRetry(() => import("./pages/admin/AdminCRM"), "AdminCRM");
 const AdminCMS = lazyWithRetry(() => import("./pages/admin/AdminCMS"), "AdminCMS");
 const AdminProductPrices = lazyWithRetry(() => import("./pages/admin/AdminProductPrices"), "AdminProductPrices");
@@ -340,6 +341,7 @@ const App = () => (
               <Route path="produits/:id" element={<LP><AdminProduitDetail /></LP>} />
               <Route path="categories" element={<LP><AdminCategories /></LP>} />
               <Route path="marques" element={<LP><AdminMarques /></LP>} />
+              <Route path="marques/doublons" element={<LP><AdminBrandDuplicates /></LP>} />
               <Route path="marques/:slug/edit" element={<LP><AdminBrandTransparenceEdit /></LP>} />
               <Route path="brands/:slug/edit" element={<LP><AdminBrandTransparenceEdit /></LP>} />
               <Route path="db-backups" element={<LP><AdminDbBackups /></LP>} />

@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import {
   Plus, Pencil, Power, ExternalLink, Upload, Trash2, Search, Package, Download
@@ -348,6 +349,7 @@ function VendorOffersPanel({ vendor }: { vendor: any }) {
   const [csvPreview, setCsvPreview] = useState<any[] | null>(null);
   const [csvUnmatched, setCsvUnmatched] = useState<string[]>([]);
   const [csvImporting, setCsvImporting] = useState(false);
+  const [csvProgress, setCsvProgress] = useState<{ phase: string; processed: number; total: number; upserted: number; merged: number } | null>(null);
 
   // Récap post-import : doublons (vendor+product_id) détectés dans le CSV
   type DuplicateGroup = {
@@ -479,13 +481,20 @@ function VendorOffersPanel({ vendor }: { vendor: any }) {
   const importCsv = async () => {
     if (!csvPreview) return;
     setCsvImporting(true);
-    const enriched = csvPreview.map(r => {
+    const totalRows = csvPreview.length;
+    setCsvProgress({ phase: "Préparation des lignes", processed: 0, total: totalRows, upserted: 0, merged: 0 });
+    // Yield to UI
+    await new Promise(r => setTimeout(r, 30));
+
+    const enriched: any[] = [];
+    for (let i = 0; i < csvPreview.length; i++) {
+      const r = csvPreview[i];
       const importedAt = normStr(r.imported_at);
       const parsedDate = importedAt ? new Date(importedAt) : null;
       const isValidDate = parsedDate && !isNaN(parsedDate.getTime());
-      return {
+      enriched.push({
         external_vendor_id: vendor.id,
-        product_id: r.product.id,                 // ← UUID DB, déjà canonique
+        product_id: r.product.id,
         _product_name: r.product.name as string,
         _product_gtin: (r.product.gtin || "") as string,
         _line_index: r._row as number,
@@ -495,11 +504,16 @@ function VendorOffersPanel({ vendor }: { vendor: any }) {
         stock_status: normStockStatus(r.stock_status),
         delivery_days: normInt(r.delivery_days),
         ...(isValidDate ? { created_at: parsedDate!.toISOString() } : {}),
-      };
-    });
+      });
+      // Update every 100 rows for smooth feedback without blocking
+      if (i % 100 === 0) {
+        setCsvProgress(p => p ? { ...p, processed: i + 1 } : p);
+        await new Promise(r => setTimeout(r, 0));
+      }
+    }
+    setCsvProgress(p => p ? { ...p, processed: totalRows } : p);
 
-    // Dédoublonnage : trace toutes les occurrences par (vendor, product_id).
-    // Règle : la DERNIÈRE ligne du CSV gagne (cohérent avec l'upsert Postgres).
+    // Dédoublonnage
     const groups = new Map<string, typeof enriched>();
     enriched.forEach(p => {
       const key = `${p.external_vendor_id}::${p.product_id}`;
@@ -538,11 +552,36 @@ function VendorOffersPanel({ vendor }: { vendor: any }) {
       }
     });
 
-    const { error } = await supabase
-      .from("external_offers")
-      .upsert(finalPayloads, { onConflict: "external_vendor_id,product_id" });
+    const mergedCount = duplicates.reduce((acc, d) => acc + d.discarded.length, 0);
+    setCsvProgress({
+      phase: "Envoi vers la base",
+      processed: totalRows,
+      total: totalRows,
+      upserted: 0,
+      merged: mergedCount,
+    });
+
+    // Chunked upsert pour permettre une vraie barre de progression
+    const CHUNK = 200;
+    let upsertedSoFar = 0;
+    for (let i = 0; i < finalPayloads.length; i += CHUNK) {
+      const slice = finalPayloads.slice(i, i + CHUNK);
+      const { error } = await supabase
+        .from("external_offers")
+        .upsert(slice, { onConflict: "external_vendor_id,product_id" });
+      if (error) {
+        setCsvImporting(false);
+        setCsvProgress(null);
+        toast.error(error.message);
+        return;
+      }
+      upsertedSoFar += slice.length;
+      setCsvProgress(p => p ? { ...p, upserted: upsertedSoFar } : p);
+      await new Promise(r => setTimeout(r, 0));
+    }
+
     setCsvImporting(false);
-    if (error) { toast.error(error.message); return; }
+    setCsvProgress(null);
     qc.invalidateQueries({ queryKey: ["admin-external-offers", vendor.id] });
     setCsvDialog(false);
     setCsvPreview(null);
@@ -551,7 +590,7 @@ function VendorOffersPanel({ vendor }: { vendor: any }) {
       totalRows: enriched.length,
       duplicates,
     });
-    toast.success(`${finalPayloads.length} offres importées ou mises à jour`);
+    toast.success(`${finalPayloads.length} offres importées${mergedCount ? ` (${mergedCount} doublons fusionnés)` : ""}`);
   };
 
   return (
@@ -705,6 +744,39 @@ function VendorOffersPanel({ vendor }: { vendor: any }) {
               <Button className="w-full" onClick={importCsv} disabled={csvImporting}>
                 {csvImporting ? "Import en cours..." : `Importer ${csvPreview.length} offres`}
               </Button>
+              {csvProgress && (
+                <div className="space-y-2 rounded-md border p-3 bg-muted/30">
+                  <div className="flex items-center justify-between text-[12px] font-medium">
+                    <span>{csvProgress.phase}</span>
+                    <span className="text-muted-foreground">
+                      {csvProgress.phase === "Envoi vers la base"
+                        ? `${csvProgress.upserted} / ${csvProgress.total - csvProgress.merged}`
+                        : `${csvProgress.processed} / ${csvProgress.total}`}
+                    </span>
+                  </div>
+                  <Progress
+                    value={
+                      csvProgress.phase === "Envoi vers la base"
+                        ? Math.round((csvProgress.upserted / Math.max(1, csvProgress.total - csvProgress.merged)) * 100)
+                        : Math.round((csvProgress.processed / Math.max(1, csvProgress.total)) * 100)
+                    }
+                  />
+                  <div className="grid grid-cols-3 gap-2 text-[11px] pt-1">
+                    <div className="rounded bg-background px-2 py-1 border">
+                      <div className="text-muted-foreground">Traitées</div>
+                      <div className="font-semibold">{csvProgress.processed}</div>
+                    </div>
+                    <div className="rounded bg-background px-2 py-1 border">
+                      <div className="text-muted-foreground">Importées</div>
+                      <div className="font-semibold text-green-600">{csvProgress.upserted}</div>
+                    </div>
+                    <div className="rounded bg-background px-2 py-1 border">
+                      <div className="text-muted-foreground">Fusionnées</div>
+                      <div className="font-semibold text-amber-600">{csvProgress.merged}</div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </DialogContent>

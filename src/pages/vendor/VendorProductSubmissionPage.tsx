@@ -39,7 +39,7 @@ export default function VendorProductSubmissionPage() {
   const [form, setForm] = useState<FormState>(EMPTY);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const { data: catSuggestion } = useCategorySuggestion(form.product_name, form.category_hint);
+  const { suggestion: catSuggestion } = useCategorySuggestion(form.gtin || undefined, form.cnk_code || undefined);
 
   const update = (key: keyof FormState, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }));

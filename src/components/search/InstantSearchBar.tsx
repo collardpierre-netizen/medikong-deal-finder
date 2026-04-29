@@ -56,9 +56,12 @@ export function InstantSearchBar({ className = "", placeholder, variant = "navba
     e.preventDefault();
     const q = query.trim();
     if (!q) { navigate("/catalogue"); setIsOpen(false); return; }
+    // Trace l'historique côté client (pour reprise type Trivago).
+    pushRecentTerm(q);
     // If search matches a brand from instant results, go directly to brand filter
     const matchedBrand = results.brands.find(b => b.name.toLowerCase() === q.toLowerCase());
     if (matchedBrand) {
+      pushRecentTaxon({ type: "brand", slug: matchedBrand.slug, name: matchedBrand.name });
       navigate(`/catalogue?brand=${encodeURIComponent(matchedBrand.slug)}`);
     } else {
       navigate(`/catalogue?q=${encodeURIComponent(q)}`);

@@ -965,8 +965,16 @@ function VendorOffersPanel({ vendor }: { vendor: any }) {
                 </TabsContent>
               </Tabs>
 
-              <Button className="w-full" onClick={importCsv} disabled={csvImporting || csvPreview.length === 0}>
-                {csvImporting ? "Import en cours..." : `Confirmer et importer ${csvPreview.length} offre(s)`}
+              <Button
+                className="w-full"
+                onClick={importCsv}
+                disabled={csvImporting || csvPreview.length === 0 || csvDupCsv.length > 0}
+              >
+                {csvImporting
+                  ? "Import en cours..."
+                  : csvDupCsv.length > 0
+                  ? `Bloqué — ${csvDupCsv.length} doublon(s) GTIN à corriger`
+                  : `Confirmer et importer ${csvPreview.length} offre(s)`}
               </Button>
               {csvProgress && (
                 <div className="space-y-2 rounded-md border p-3 bg-muted/30">

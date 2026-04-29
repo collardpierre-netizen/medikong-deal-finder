@@ -63,6 +63,7 @@ const ProfessionnelsPage = lazyWithRetry(() => import("./pages/ProfessionnelsPag
 const SourcingPage = lazyWithRetry(() => import("./pages/SourcingPage"), "SourcingPage");
 const CategoriesPage = lazyWithRetry(() => import("./pages/CategoriesPage"), "CategoriesPage");
 const MyPricesPage = lazyWithRetry(() => import("./pages/MyPricesPage"), "MyPricesPage");
+const MyPriceAlertsPage = lazyWithRetry(() => import("./pages/MyPriceAlertsPage"), "MyPriceAlertsPage");
 const MesCategoriesPage = lazyWithRetry(() => import("./pages/MesCategoriesPage"), "MesCategoriesPage");
 const ImportHistoryPage = lazyWithRetry(() => import("./pages/ImportHistoryPage"), "ImportHistoryPage");
 
@@ -311,6 +312,7 @@ const App = () => (
             <Route path="/sourcing" element={<LP><SourcingPage /></LP>} />
             <Route path="/categories" element={<LP><CategoriesPage /></LP>} />
             <Route path="/mes-prix" element={<LP><MyPricesPage /></LP>} />
+            <Route path="/mes-alertes-prix" element={<LP><MyPriceAlertsPage /></LP>} />
 
             {/* Trust & Process */}
             <Route path="/verification-fournisseurs" element={<LP><SupplierVerificationPage /></LP>} />

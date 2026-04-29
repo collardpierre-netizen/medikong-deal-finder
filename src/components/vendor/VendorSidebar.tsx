@@ -21,6 +21,10 @@ interface SidebarItem {
   comingSoon?: boolean;
   /** Show only for these shipping modes. undefined = always show */
   modes?: ShippingMode[];
+  /** Mark this item as a child of another route (visually indented + parent stays highlighted). */
+  parentPath?: string;
+  /** Extra paths that should also activate this item. */
+  alsoActiveOn?: string[];
 }
 
 const sidebarSections: { label: string | null; items: SidebarItem[] }[] = [

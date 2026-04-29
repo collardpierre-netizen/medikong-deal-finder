@@ -55,8 +55,8 @@ export function ProductSubmissionDialog({ children }: { children?: React.ReactNo
       );
       const { error } = await supabase.from("product_submissions").insert({
         vendor_id: vendor.id,
-        proposed_payload: payload,
-        status: "pending_review",
+        proposed_payload: payload as any,
+        status: "submitted",
       });
       if (error) throw error;
     },

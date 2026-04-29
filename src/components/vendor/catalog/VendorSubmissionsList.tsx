@@ -5,13 +5,14 @@ import { useCurrentVendor } from "@/hooks/useCurrentVendor";
 import { Badge } from "@/components/ui/badge";
 import { formatUpdatedAt } from "@/lib/format-date";
 
-type Status = "pending_review" | "active" | "rejected" | "archived";
+type Status = "submitted" | "in_review" | "approved" | "rejected" | "needs_changes";
 
 const STATUS_META: Record<Status, { label: string; icon: any; className: string }> = {
-  pending_review: { label: "En cours d'examen", icon: Clock, className: "bg-amber-100 text-amber-800 border-amber-200" },
-  active: { label: "Validé / Publié", icon: CheckCircle2, className: "bg-emerald-100 text-emerald-800 border-emerald-200" },
+  submitted: { label: "En attente d'examen", icon: Clock, className: "bg-amber-100 text-amber-800 border-amber-200" },
+  in_review: { label: "En cours d'examen", icon: Clock, className: "bg-blue-100 text-blue-800 border-blue-200" },
+  approved: { label: "Validé / Publié", icon: CheckCircle2, className: "bg-emerald-100 text-emerald-800 border-emerald-200" },
   rejected: { label: "Refusé", icon: XCircle, className: "bg-rose-100 text-rose-800 border-rose-200" },
-  archived: { label: "Archivé", icon: Archive, className: "bg-muted text-muted-foreground border-border" },
+  needs_changes: { label: "Modifications demandées", icon: Archive, className: "bg-orange-100 text-orange-800 border-orange-200" },
 };
 
 export function VendorSubmissionsList() {
@@ -54,8 +55,8 @@ export function VendorSubmissionsList() {
   return (
     <div className="space-y-2">
       {items.map((it: any) => {
-        const status = (it.status as Status) ?? "pending_review";
-        const meta = STATUS_META[status] ?? STATUS_META.pending_review;
+        const status = (it.status as Status) ?? "submitted";
+        const meta = STATUS_META[status] ?? STATUS_META.submitted;
         const Icon = meta.icon;
         const payload = (it.proposed_payload ?? {}) as Record<string, any>;
         return (
@@ -82,7 +83,12 @@ export function VendorSubmissionsList() {
                 <span className="font-semibold">Motif du refus : </span>{it.review_comment}
               </div>
             )}
-            {status === "active" && it.review_comment && (
+            {status === "needs_changes" && it.review_comment && (
+              <div className="mt-2 text-[12px] bg-orange-50 border border-orange-200 text-orange-900 rounded p-2">
+                <span className="font-semibold">Modifications demandées : </span>{it.review_comment}
+              </div>
+            )}
+            {status === "approved" && it.review_comment && (
               <div className="mt-2 text-[12px] bg-emerald-50 border border-emerald-200 text-emerald-900 rounded p-2">
                 {it.review_comment}
               </div>

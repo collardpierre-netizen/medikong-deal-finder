@@ -346,6 +346,15 @@ export function ProductSubmissionDialog({ children }: { children?: React.ReactNo
     downloadBlob("modele-propositions-produits.csv", CSV_TEMPLATE, "text/csv");
   };
 
+  const downloadXlsxTemplate = () => {
+    const buffer = buildXlsxTemplate();
+    downloadBlob(
+      "modele-propositions-produits.xlsx",
+      buffer,
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+  };
+
   const validCount = importRows.filter((r) => r.errors.length === 0).length;
   const rejected = useMemo(() => importRows.filter((r) => r.errors.length > 0), [importRows]);
   const errorCount = rejected.length;

@@ -1160,8 +1160,16 @@ export default function VendorOffers() {
     if (deepLinkHandledRef.current) return;
     const action = searchParams.get("action");
     const productId = searchParams.get("product");
+    const brandFromUrl = searchParams.get("brand");
+    const manufacturerFromUrl = searchParams.get("manufacturer");
     if (action !== "create" || !productId) return;
     deepLinkHandledRef.current = true;
+    if (brandFromUrl || manufacturerFromUrl) {
+      setCatalogReturn({
+        brandId: brandFromUrl ?? undefined,
+        manufacturerId: manufacturerFromUrl ?? undefined,
+      });
+    }
     (async () => {
       const { data: prod } = await supabase
         .from("products")

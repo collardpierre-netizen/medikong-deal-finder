@@ -87,6 +87,29 @@ export default function ProfilePricesEditor({ offerId, basePrice }: Props) {
     return basePrice > 0 ? Math.round(basePrice * (1 - d / 100) * 100) / 100 : 0;
   };
 
+  // Détecte les modifications non sauvegardées (pour badge "Brouillon" du preview)
+  const isDirty = useMemo(() => {
+    const dbRows = (existing || []) as any[];
+    const norm = (r: any) => ({
+      buyer_profile_id: r.buyer_profile_id,
+      pricing_mode: r.pricing_mode,
+      price_excl_vat: r.price_excl_vat != null ? Number(r.price_excl_vat) : null,
+      discount_pct: r.discount_pct != null ? Number(r.discount_pct) : null,
+    });
+    const normDraft = (r: ProfilePriceRow) => ({
+      buyer_profile_id: r.buyer_profile_id,
+      pricing_mode: r.pricing_mode,
+      price_excl_vat: r.pricing_mode === "absolute" ? Number(r.price_excl_vat) || 0 : null,
+      discount_pct: r.pricing_mode === "discount_pct" ? Number(r.discount_pct) || 0 : null,
+    });
+    const a = dbRows.map(norm).sort((x, y) => x.buyer_profile_id.localeCompare(y.buyer_profile_id));
+    const b = rows
+      .filter((r) => r.buyer_profile_id)
+      .map(normDraft)
+      .sort((x, y) => x.buyer_profile_id.localeCompare(y.buyer_profile_id));
+    return JSON.stringify(a) !== JSON.stringify(b);
+  }, [rows, existing]);
+
   const save = async () => {
     if (!offerId) {
       toast.info("Sauvegardez l'offre d'abord, puis modifiez-la pour ajouter les prix par profil.");

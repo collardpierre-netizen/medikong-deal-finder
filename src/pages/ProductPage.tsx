@@ -1492,12 +1492,21 @@ export default function ProductPage() {
                               </div>
                               <div className="flex items-center gap-4 shrink-0">
                                 <div className="text-right">
-                                  <div className="flex items-baseline justify-end gap-1.5">
+                                  <div className="flex items-baseline justify-end gap-2">
                                     <span className="text-lg font-bold text-foreground tabular-nums">{formatEur(displayPrice)} €</span>
-                                    <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">{priceLabel}</span>
+                                    <span
+                                      className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide border ${
+                                        isTVAC
+                                          ? "bg-amber-50 text-amber-700 border-amber-200"
+                                          : "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                      }`}
+                                      title={isTVAC ? "Prix toutes taxes comprises (avec TVA)" : "Prix hors TVA (HT)"}
+                                    >
+                                      {priceLabel}
+                                    </span>
                                   </div>
-                                  <p className="text-[11px] text-muted-foreground tabular-nums" title={`Source TVA : ${vatSourceLabel(tvaSource)}`}>
-                                    {formatEur(secondaryPrice)} € {secondaryLabel} <span className="opacity-60">· TVA {tvaRate}%</span>
+                                  <p className="text-[11px] text-muted-foreground tabular-nums mt-0.5" title={`Source TVA : ${vatSourceLabel(tvaSource)}`}>
+                                    soit {formatEur(secondaryPrice)} € {secondaryLabel} <span className="opacity-60">· TVA {tvaRate}%</span>
                                   </p>
                                   {showUnitPrice && (
                                     <p

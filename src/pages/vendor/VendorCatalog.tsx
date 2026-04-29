@@ -55,7 +55,14 @@ function useCatalogList(
           .eq("is_active", true)
           .order(sort.column, { ascending: sort.ascending, nullsFirst: false })
           .limit(PAGE_SIZE);
-        if (term) q = q.or(`name.ilike.%${term}%,gtin.ilike.%${term}%,cnk_code.ilike.%${term}%,brand_name.ilike.%${term}%`);
+        if (term) {
+          // Quand un filtre marque/fabricant est actif, on resserre la recherche
+          // sur le nom/GTIN/CNK du produit (brand_name est déjà imposé par le filtre).
+          const scoped = filters.brandId || filters.manufacturerId;
+          q = scoped
+            ? q.or(`name.ilike.%${term}%,gtin.ilike.%${term}%,cnk_code.ilike.%${term}%`)
+            : q.or(`name.ilike.%${term}%,gtin.ilike.%${term}%,cnk_code.ilike.%${term}%,brand_name.ilike.%${term}%`);
+        }
         if (effectiveCategoryId) q = q.eq("category_id", effectiveCategoryId);
         if (filters.brandId) q = q.eq("brand_id", filters.brandId);
         if (filters.manufacturerId) q = q.eq("manufacturer_id", filters.manufacturerId);

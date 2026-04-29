@@ -1121,12 +1121,42 @@ export default function VendorOffers() {
     (async () => {
       const { data: prod } = await supabase
         .from("products")
-        .select("id, name")
+        .select("id, name, category_id, brand_id, brand_name, manufacturer_id, category_name")
         .eq("id", productId)
         .maybeSingle();
-      setForm({ ...emptyForm, product_id: productId, product_name: prod?.name ?? "" });
+
+      // Préremplir la catégorie de l'offre + déduire la TVA depuis la catégorie
+      let categoryIds: string[] = [];
+      let vatRate = "21";
+      if (prod?.category_id) {
+        categoryIds = [prod.category_id];
+        const { data: cat } = await supabase
+          .from("categories")
+          .select("vat_rate")
+          .eq("id", prod.category_id)
+          .maybeSingle();
+        if (cat?.vat_rate != null) vatRate = String(cat.vat_rate);
+      }
+
+      setForm({
+        ...emptyForm,
+        product_id: productId,
+        product_name: prod?.name ?? "",
+        category_ids: categoryIds,
+        vat_rate: vatRate,
+      });
       setEditingId(null);
       setShowForm(true);
+      // Mémo console pour debug
+      if (prod?.brand_name) {
+        console.info("[VendorOffers] Préremplissage offre depuis produit", {
+          productId,
+          brand: prod.brand_name,
+          brandId: prod.brand_id,
+          manufacturerId: prod.manufacturer_id,
+          category: prod.category_name,
+        });
+      }
       // nettoie l'URL pour éviter de rouvrir la modale
       const next = new URLSearchParams(searchParams);
       next.delete("action");

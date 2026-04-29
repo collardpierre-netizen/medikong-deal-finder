@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, ShoppingCart, Package, ImageOff, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ProductPhotoUploader from "@/components/admin/ProductPhotoUploader";
+import PvpEditor from "@/components/admin/PvpEditor";
 
 const AdminProduitDetail = () => {
   const { id } = useParams();

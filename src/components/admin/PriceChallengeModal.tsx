@@ -1,11 +1,25 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, Send, Zap } from "lucide-react";
+import { Loader2, Send, Zap, ShieldAlert } from "lucide-react";
+
+interface CooldownInfo {
+  allowed: boolean;
+  block_reason: string | null;
+  last_sent_at: string | null;
+  next_allowed_at: string | null;
+  sent_today: number;
+}
+
+const REASON_LABEL: Record<string, string> = {
+  cooldown_active: "Cooldown actif sur ce produit/vendeur",
+  daily_quota_reached: "Quota quotidien de challenges atteint pour ce vendeur",
+};
 
 export interface ChallengeContext {
   vendorId: string;

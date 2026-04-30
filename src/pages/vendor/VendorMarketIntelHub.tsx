@@ -95,5 +95,6 @@ export default function VendorMarketIntelHub() {
         </TabsContent>
       </Tabs>
     </div>
+    </VendorMarketIntelGate>
   );
 }

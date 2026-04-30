@@ -1214,6 +1214,8 @@ export default function VendorOffers() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<OfferForm>(emptyForm);
+  // Snapshot capturé à l'ouverture en édition pour afficher "avant → après" (prix HT + pack effectif)
+  const [initialSnapshot, setInitialSnapshot] = useState<{ priceExcl: number; effectivePack: number } | null>(null);
   const [search, setSearch] = useState("");
   const [filterBrand, setFilterBrand] = useState("");
   const [filterCountry, setFilterCountry] = useState("");
@@ -1221,7 +1223,7 @@ export default function VendorOffers() {
   const [filterCategory, setFilterCategory] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-  const openCreate = () => { setForm(emptyForm); setEditingId(null); setShowForm(true); };
+  const openCreate = () => { setForm(emptyForm); setInitialSnapshot(null); setEditingId(null); setShowForm(true); };
   const openEdit = async (offer: any) => {
     // Charger les catégories liées à l'offre + le coût par défaut produit/vendeur
     const [{ data: linkedCats }, { data: defaultCost }] = await Promise.all([
@@ -1261,6 +1263,19 @@ export default function VendorOffers() {
       pack_size_override: offer.pack_size_override != null ? String(offer.pack_size_override) : "",
       product_pack_size_fallback: (offer.products as any)?.pack_size ?? null,
     });
+    // Snapshot "avant" : prix HT + pack effectif au moment de l'ouverture
+    const initialOverride = offer.pack_size_override;
+    const initialFallback = (offer.products as any)?.pack_size;
+    const initialEffectivePack =
+      initialOverride && initialOverride > 0
+        ? Number(initialOverride)
+        : initialFallback && initialFallback > 0
+          ? Number(initialFallback)
+          : 1;
+    setInitialSnapshot({
+      priceExcl: Number(offer.price_excl_vat) || 0,
+      effectivePack: initialEffectivePack,
+    });
     setEditingId(offer.id);
     setShowForm(true);
   };
@@ -1269,7 +1284,7 @@ export default function VendorOffers() {
   const [catalogReturn, setCatalogReturn] = useState<{ brandId?: string; manufacturerId?: string } | null>(null);
   // File d'attente de produits à traiter en série
   const [batchQueue, setBatchQueue] = useState<{ remaining: string[]; pos: number; total: number } | null>(null);
-  const closeForm = () => { setShowForm(false); setEditingId(null); setForm(emptyForm); setCatalogReturn(null); setBatchQueue(null); };
+  const closeForm = () => { setShowForm(false); setEditingId(null); setForm(emptyForm); setInitialSnapshot(null); setCatalogReturn(null); setBatchQueue(null); };
   const backToCatalog = () => {
     const params = new URLSearchParams();
     if (catalogReturn?.brandId) params.set("brand", catalogReturn.brandId);
@@ -1692,36 +1707,103 @@ export default function VendorOffers() {
                 style={{ borderColor: "#E2E8F0" }} value={form.delivery_days} onChange={e => setForm(p => ({ ...p, delivery_days: e.target.value }))} />
             </div>
             <div className="md:col-span-2">
-              <label className="text-[11px] block mb-1 flex items-center justify-between" style={{ color: "#8B95A5" }}>
-                <span>Conditionnement <span className="font-normal">— nb d'unités par pack vendu (ex: 24)</span></span>
-                {form.pack_size_override?.trim() ? (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded border bg-emerald-50 text-emerald-700 border-emerald-200" title="Conditionnement spécifique à votre offre — prioritaire sur la fiche produit MediKong.">
-                    Override offre
-                  </span>
-                ) : form.product_pack_size_fallback ? (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded border bg-sky-50 text-sky-700 border-sky-200" title={`Le conditionnement de la fiche produit MediKong sera utilisé : pack de ${form.product_pack_size_fallback} unités.`}>
-                    Fallback fiche : {form.product_pack_size_fallback}
-                  </span>
-                ) : (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded border bg-amber-50 text-amber-700 border-amber-200" title="Aucun conditionnement défini — sera déduit du nom du produit ou supposé = 1.">
-                    Aucun (déduit auto)
-                  </span>
-                )}
-              </label>
-              <input
-                type="number"
-                step="1"
-                min="1"
-                max="10000"
-                placeholder={form.product_pack_size_fallback ? `Vide = ${form.product_pack_size_fallback} (fiche produit)` : "Vide = déduit du nom"}
-                className="w-full px-3 py-2 text-[13px] border rounded-lg focus:border-[#1B5BDA] focus:outline-none"
-                style={{ borderColor: "#E2E8F0" }}
-                value={form.pack_size_override}
-                onChange={e => setForm(p => ({ ...p, pack_size_override: e.target.value }))}
-              />
-              <p className="text-[10px] mt-1" style={{ color: "#8B95A5" }}>
-                Saisissez ce champ uniquement si vous vendez un pack différent de la fiche produit MediKong (ex: carton de 24 alors que la fiche est unitaire). Sert au calcul du prix unitaire affiché à l'acheteur.
-              </p>
+              {(() => {
+                const overrideRaw = form.pack_size_override?.trim();
+                const overrideNum = overrideRaw ? Number(overrideRaw) : NaN;
+                const fallback = form.product_pack_size_fallback;
+                const effectivePack =
+                  Number.isFinite(overrideNum) && overrideNum > 0
+                    ? overrideNum
+                    : fallback && fallback > 0
+                      ? fallback
+                      : 1;
+                const priceExcl = parseFloat(form.price_excl_vat);
+                const unitPrice = Number.isFinite(priceExcl) && priceExcl > 0 ? priceExcl / effectivePack : null;
+                const initial = initialSnapshot;
+                const initialUnit = initial && initial.priceExcl > 0 ? initial.priceExcl / initial.effectivePack : null;
+                const packChanged = initial && initial.effectivePack !== effectivePack;
+                const priceChanged = initial && Math.abs(initial.priceExcl - (priceExcl || 0)) > 0.0001;
+                const unitChanged =
+                  initial && initialUnit != null && unitPrice != null && Math.abs(initialUnit - unitPrice) > 0.0001;
+                const fmtUnit = (v: number) => `${v.toFixed(v < 1 ? 4 : 2)} €`;
+
+                return (
+                  <>
+                    <label className="text-[11px] block mb-1 flex items-center justify-between gap-2 flex-wrap" style={{ color: "#8B95A5" }}>
+                      <span>Conditionnement <span className="font-normal">— nb d'unités par pack vendu (ex: 24)</span></span>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {/* Badge source */}
+                        {overrideRaw ? (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded border bg-emerald-50 text-emerald-700 border-emerald-200" title="Conditionnement spécifique à votre offre — prioritaire sur la fiche produit MediKong.">
+                            Override offre
+                          </span>
+                        ) : fallback ? (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded border bg-sky-50 text-sky-700 border-sky-200" title={`Le conditionnement de la fiche produit MediKong sera utilisé : pack de ${fallback} unités.`}>
+                            Fallback fiche : {fallback}
+                          </span>
+                        ) : (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded border bg-amber-50 text-amber-700 border-amber-200" title="Aucun conditionnement défini — sera déduit du nom du produit ou supposé = 1.">
+                            Aucun (déduit auto)
+                          </span>
+                        )}
+                        {/* Prix unitaire calculé live */}
+                        {unitPrice != null && (
+                          <span
+                            className="text-[10px] px-1.5 py-0.5 rounded border bg-[#F5F8FF] text-[#1B5BDA] border-[#CFE0FF] font-medium tabular-nums"
+                            title={`Prix HT (${(priceExcl).toFixed(2)} €) divisé par le conditionnement effectif (×${effectivePack}).`}
+                          >
+                            Pack ×{effectivePack} · {fmtUnit(unitPrice)}/u.
+                          </span>
+                        )}
+                      </div>
+                    </label>
+
+                    {/* Indicateur avant/après — visible uniquement en édition si quelque chose a bougé */}
+                    {initial && (packChanged || priceChanged || unitChanged) && (
+                      <div className="mb-2 px-2 py-1.5 rounded-md border bg-amber-50 border-amber-200 text-[11px] text-amber-900 flex flex-wrap items-center gap-x-3 gap-y-1">
+                        <span className="font-medium">Modifications :</span>
+                        {packChanged && (
+                          <span className="tabular-nums">
+                            Pack <span className="line-through text-amber-700">×{initial.effectivePack}</span> →{" "}
+                            <strong>×{effectivePack}</strong>
+                          </span>
+                        )}
+                        {priceChanged && (
+                          <span className="tabular-nums">
+                            Prix HT <span className="line-through text-amber-700">{initial.priceExcl.toFixed(2)} €</span>{" "}
+                            → <strong>{(priceExcl || 0).toFixed(2)} €</strong>
+                          </span>
+                        )}
+                        {unitChanged && initialUnit != null && unitPrice != null && (
+                          <span className="tabular-nums">
+                            Prix unité <span className="line-through text-amber-700">{fmtUnit(initialUnit)}</span> →{" "}
+                            <strong>{fmtUnit(unitPrice)}</strong>{" "}
+                            <span className={unitPrice < initialUnit ? "text-emerald-700" : "text-rose-700"}>
+                              ({unitPrice < initialUnit ? "−" : "+"}
+                              {Math.abs(((unitPrice - initialUnit) / initialUnit) * 100).toFixed(1)}%)
+                            </span>
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    <input
+                      type="number"
+                      step="1"
+                      min="1"
+                      max="10000"
+                      placeholder={fallback ? `Vide = ${fallback} (fiche produit)` : "Vide = déduit du nom"}
+                      className="w-full px-3 py-2 text-[13px] border rounded-lg focus:border-[#1B5BDA] focus:outline-none"
+                      style={{ borderColor: "#E2E8F0" }}
+                      value={form.pack_size_override}
+                      onChange={e => setForm(p => ({ ...p, pack_size_override: e.target.value }))}
+                    />
+                    <p className="text-[10px] mt-1" style={{ color: "#8B95A5" }}>
+                      Saisissez ce champ uniquement si vous vendez un pack différent de la fiche produit MediKong (ex: carton de 24 alors que la fiche est unitaire). Sert au calcul du prix unitaire affiché à l'acheteur.
+                    </p>
+                  </>
+                );
+              })()}
             </div>
             <div>
               <label className="text-[11px] block mb-1" style={{ color: "#8B95A5" }}>Pays</label>

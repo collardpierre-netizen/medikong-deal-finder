@@ -6433,6 +6433,122 @@ export type Database = {
           },
         ]
       }
+      rfq_buyer_balances: {
+        Row: {
+          active_plan_id: string | null
+          created_at: string
+          current_period_start: string
+          is_unlimited: boolean
+          monthly_quota: number
+          monthly_used: number
+          permanent_credits: number
+          plan_expires_at: string | null
+          plan_started_at: string | null
+          rfq_unlimited_override: boolean
+          total_consumed: number
+          total_purchased: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active_plan_id?: string | null
+          created_at?: string
+          current_period_start?: string
+          is_unlimited?: boolean
+          monthly_quota?: number
+          monthly_used?: number
+          permanent_credits?: number
+          plan_expires_at?: string | null
+          plan_started_at?: string | null
+          rfq_unlimited_override?: boolean
+          total_consumed?: number
+          total_purchased?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active_plan_id?: string | null
+          created_at?: string
+          current_period_start?: string
+          is_unlimited?: boolean
+          monthly_quota?: number
+          monthly_used?: number
+          permanent_credits?: number
+          plan_expires_at?: string | null
+          plan_started_at?: string | null
+          rfq_unlimited_override?: boolean
+          total_consumed?: number
+          total_purchased?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rfq_buyer_balances_active_plan_id_fkey"
+            columns: ["active_plan_id"]
+            isOneToOne: false
+            referencedRelation: "rfq_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rfq_credit_ledger: {
+        Row: {
+          created_at: string
+          delta_permanent: number
+          delta_quota: number
+          id: string
+          kind: Database["public"]["Enums"]["rfq_ledger_kind"]
+          metadata: Json
+          performed_by_user_id: string | null
+          plan_id: string | null
+          reason: string | null
+          rfq_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          delta_permanent?: number
+          delta_quota?: number
+          id?: string
+          kind: Database["public"]["Enums"]["rfq_ledger_kind"]
+          metadata?: Json
+          performed_by_user_id?: string | null
+          plan_id?: string | null
+          reason?: string | null
+          rfq_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          delta_permanent?: number
+          delta_quota?: number
+          id?: string
+          kind?: Database["public"]["Enums"]["rfq_ledger_kind"]
+          metadata?: Json
+          performed_by_user_id?: string | null
+          plan_id?: string | null
+          reason?: string | null
+          rfq_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rfq_credit_ledger_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "rfq_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rfq_credit_ledger_rfq_id_fkey"
+            columns: ["rfq_id"]
+            isOneToOne: false
+            referencedRelation: "rfqs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rfq_dispatch_log: {
         Row: {
           created_at: string
@@ -6534,6 +6650,63 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      rfq_plans: {
+        Row: {
+          code: string
+          created_at: string
+          credits_included: number
+          currency: string
+          description: string | null
+          duration_days: number | null
+          id: string
+          is_active: boolean
+          is_unlimited: boolean
+          label: string
+          monthly_quota: number
+          plan_type: Database["public"]["Enums"]["rfq_plan_type"]
+          price_cents: number
+          sort_order: number
+          stripe_price_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          credits_included?: number
+          currency?: string
+          description?: string | null
+          duration_days?: number | null
+          id?: string
+          is_active?: boolean
+          is_unlimited?: boolean
+          label: string
+          monthly_quota?: number
+          plan_type: Database["public"]["Enums"]["rfq_plan_type"]
+          price_cents?: number
+          sort_order?: number
+          stripe_price_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          credits_included?: number
+          currency?: string
+          description?: string | null
+          duration_days?: number | null
+          id?: string
+          is_active?: boolean
+          is_unlimited?: boolean
+          label?: string
+          monthly_quota?: number
+          plan_type?: Database["public"]["Enums"]["rfq_plan_type"]
+          price_cents?: number
+          sort_order?: number
+          stripe_price_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       rfq_responses: {
         Row: {
@@ -10483,7 +10656,12 @@ export type Database = {
         Args: { _backup_table_name?: string }
         Returns: Json
       }
+      rfq_check_quota: { Args: { _user_id?: string }; Returns: Json }
       rfq_close_expired: { Args: never; Returns: number }
+      rfq_consume_credit: {
+        Args: { _rfq_id: string; _user_id: string }
+        Returns: Json
+      }
       rfq_dispatch: {
         Args: { _rfq_id: string }
         Returns: {
@@ -10492,6 +10670,41 @@ export type Database = {
           was_new: boolean
         }[]
       }
+      rfq_ensure_buyer_balance: {
+        Args: { _user_id: string }
+        Returns: {
+          active_plan_id: string | null
+          created_at: string
+          current_period_start: string
+          is_unlimited: boolean
+          monthly_quota: number
+          monthly_used: number
+          permanent_credits: number
+          plan_expires_at: string | null
+          plan_started_at: string | null
+          rfq_unlimited_override: boolean
+          total_consumed: number
+          total_purchased: number
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "rfq_buyer_balances"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      rfq_grant_credits: {
+        Args: {
+          _extra_credits?: number
+          _plan_code?: string
+          _reason?: string
+          _user_id: string
+        }
+        Returns: Json
+      }
+      rfq_monthly_reset_quotas: { Args: never; Returns: number }
       rfq_recompute_response_scores: {
         Args: { _rfq_id: string }
         Returns: undefined
@@ -10625,6 +10838,19 @@ export type Database = {
         | "responded"
         | "declined"
         | "expired"
+      rfq_ledger_kind:
+        | "consume"
+        | "grant_admin"
+        | "purchase_pack"
+        | "subscribe_plan"
+        | "monthly_reset"
+        | "refund"
+        | "expire_plan"
+      rfq_plan_type:
+        | "free_quota"
+        | "credit_pack"
+        | "monthly_plan"
+        | "unlimited_plan"
       rfq_status: "open" | "closed" | "awarded" | "cancelled"
       rfq_target_reason:
         | "product_offer"
@@ -10916,6 +11142,21 @@ export const Constants = {
         "responded",
         "declined",
         "expired",
+      ],
+      rfq_ledger_kind: [
+        "consume",
+        "grant_admin",
+        "purchase_pack",
+        "subscribe_plan",
+        "monthly_reset",
+        "refund",
+        "expire_plan",
+      ],
+      rfq_plan_type: [
+        "free_quota",
+        "credit_pack",
+        "monthly_plan",
+        "unlimited_plan",
       ],
       rfq_status: ["open", "closed", "awarded", "cancelled"],
       rfq_target_reason: [

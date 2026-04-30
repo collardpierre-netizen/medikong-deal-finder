@@ -1,7 +1,7 @@
 import { Layout } from "@/components/layout/Layout";
 import { useNavigate } from "react-router-dom";
 import { ProductImage } from "@/components/shared/ProductCard";
-import { Users, MapPin, Package, AlertCircle, Heart, Zap, Download, Layers, Mail, Phone, Clock, List, Plus, Trash2, Eye, ShoppingCart, Search, TrendingDown, BarChart3, Upload, FileSpreadsheet, Recycle, BellRing, Tag } from "lucide-react";
+import { Users, MapPin, Package, AlertCircle, Heart, Zap, Download, Layers, Mail, Phone, Clock, List, Plus, Trash2, Eye, ShoppingCart, Search, TrendingDown, BarChart3, Upload, FileSpreadsheet, Recycle, BellRing, Tag, Coins } from "lucide-react";
 import { BuyerImportModal } from "@/components/buyer/BuyerImportModal";
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
@@ -28,6 +28,7 @@ const tabs = [
   { key: "mesprix", label: "Mes prix", icon: BarChart3, disabled: false },
   { key: "alertes", label: "Mes alertes prix", icon: BellRing, disabled: false, href: "/mes-alertes-prix" },
   { key: "rfq", label: "Mes demandes de prix", icon: Tag, disabled: false, href: "/compte/mes-rfq" },
+  { key: "rfq-credits", label: "Crédits RFQ", icon: Coins, disabled: false, href: "/compte/rfq-credits" },
   { key: "categories", label: "Mes catégories", icon: Layers, disabled: false, href: "/compte/mes-categories" },
   { key: "portefeuille", label: "Portefeuille", icon: Zap, disabled: true },
   { key: "comparateur", label: "Comparateur", icon: FileSpreadsheet, disabled: false },

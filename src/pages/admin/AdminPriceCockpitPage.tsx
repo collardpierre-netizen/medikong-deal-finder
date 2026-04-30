@@ -62,10 +62,13 @@ interface GapRow {
 const fmt = (v: number | null | undefined) =>
   v == null ? "—" : `${v.toFixed(2)} €`;
 
+type SortKey = "action_score" | "delta_external" | "delta_internal";
+
 export default function AdminPriceCockpitPage() {
   const [country, setCountry] = useState<string>("BE");
   const [minDelta, setMinDelta] = useState<string>("0");
   const [search, setSearch] = useState("");
+  const [sortBy, setSortBy] = useState<SortKey>("action_score");
   const [challenge, setChallenge] = useState<ChallengeContext | null>(null);
   const [quickSend, setQuickSend] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
@@ -114,15 +117,25 @@ export default function AdminPriceCockpitPage() {
   const filteredRows = useMemo(() => {
     if (!rowsQ.data) return [];
     const s = search.trim().toLowerCase();
-    if (!s) return rowsQ.data;
-    return rowsQ.data.filter(
-      (r) =>
-        r.product_name?.toLowerCase().includes(s) ||
-        r.brand_name?.toLowerCase().includes(s) ||
-        r.cnk?.toLowerCase().includes(s) ||
-        r.mk_best_vendor_name?.toLowerCase().includes(s),
-    );
-  }, [rowsQ.data, search]);
+    const base = !s
+      ? rowsQ.data
+      : rowsQ.data.filter(
+          (r) =>
+            r.product_name?.toLowerCase().includes(s) ||
+            r.brand_name?.toLowerCase().includes(s) ||
+            r.cnk?.toLowerCase().includes(s) ||
+            r.mk_best_vendor_name?.toLowerCase().includes(s),
+        );
+    const sortFn = (a: CockpitRow, b: CockpitRow) => {
+      const get = (r: CockpitRow) => {
+        if (sortBy === "delta_external") return r.delta_vs_external_pct ?? -Infinity;
+        if (sortBy === "delta_internal") return r.delta_vs_internal_pct ?? -Infinity;
+        return r.worst_action_score ?? -Infinity;
+      };
+      return get(b) - get(a);
+    };
+    return [...base].sort(sortFn);
+  }, [rowsQ.data, search, sortBy]);
 
   function openChallenge(row: CockpitRow, mode: "quick" | "edit") {
     if (!row.mk_best_vendor_id || !row.mk_best_ht) return;

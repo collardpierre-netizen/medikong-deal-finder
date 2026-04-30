@@ -427,7 +427,24 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
+function formatBytes(b: number) {
+  if (b < 1024) return `${b} o`;
+  if (b < 1024 * 1024) return `${(b / 1024).toFixed(0)} ko`;
+  return `${(b / (1024 * 1024)).toFixed(1)} Mo`;
+}
+
+function AttachmentIcon({ mime }: { mime: string }) {
+  if (mime?.startsWith("image/")) return <ImageIcon className="h-3.5 w-3.5" />;
+  if (mime === "application/pdf") return <FileText className="h-3.5 w-3.5" />;
+  if (mime?.includes("sheet") || mime?.includes("excel") || mime === "text/csv")
+    return <FileSpreadsheet className="h-3.5 w-3.5" />;
+  if (mime?.includes("word")) return <FileText className="h-3.5 w-3.5" />;
+  return <FileIcon className="h-3.5 w-3.5" />;
+}
+
 function RfqAttachmentsList({ rfqId }: { rfqId: string }) {
+  const [preview, setPreview] = useState<{ url: string; name: string; kind: "image" | "pdf" } | null>(null);
+
   const { data, isLoading } = useQuery({
     queryKey: ["rfq-attachments-vendor", rfqId],
     queryFn: async () => {
@@ -443,28 +460,98 @@ function RfqAttachmentsList({ rfqId }: { rfqId: string }) {
 
   if (isLoading || (data || []).length === 0) return null;
 
-  const download = async (path: string, name: string) => {
+  const getSignedUrl = async (path: string) => {
     const { data, error } = await supabase.storage.from("rfq-attachments").createSignedUrl(path, 60);
-    if (error || !data?.signedUrl) return;
-    const a = document.createElement("a");
-    a.href = data.signedUrl;
-    a.download = name;
-    a.click();
+    if (error || !data?.signedUrl) {
+      throw new Error(error?.message || "URL signée indisponible");
+    }
+    return data.signedUrl;
+  };
+
+  const download = async (path: string, name: string) => {
+    try {
+      const url = await getSignedUrl(path);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = name;
+      a.click();
+    } catch (e: any) {
+      console.error("download error", e);
+    }
+  };
+
+  const openPreview = async (a: { storage_path: string; file_name: string; mime_type: string }) => {
+    const isImg = a.mime_type?.startsWith("image/");
+    const isPdf = a.mime_type === "application/pdf";
+    if (!isImg && !isPdf) return;
+    try {
+      const url = await getSignedUrl(a.storage_path);
+      setPreview({ url, name: a.file_name, kind: isImg ? "image" : "pdf" });
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   return (
-    <VCard>
-      <p className="text-[12px] font-semibold text-[#1D2530] mb-2">Pièces jointes de l'acheteur</p>
-      <ul className="space-y-1">
-        {data!.map((a) => (
-          <li key={a.id} className="flex items-center justify-between text-[12px] bg-[#F8FAFC] px-2 py-1.5 rounded">
-            <span className="truncate">{a.file_name} <span className="text-[#8B95A5]">({Math.round(a.size_bytes / 1024)} ko)</span></span>
-            <button onClick={() => download(a.storage_path, a.file_name)} className="text-[#1C58D9] hover:underline inline-flex items-center gap-1">
-              <FileDown size={12} /> Télécharger
-            </button>
-          </li>
-        ))}
-      </ul>
-    </VCard>
+    <>
+      <VCard>
+        <p className="text-[12px] font-semibold text-[#1D2530] mb-2">
+          Pièces jointes de l'acheteur ({data!.length})
+        </p>
+        <ul className="space-y-1">
+          {data!.map((a) => {
+            const previewable = a.mime_type?.startsWith("image/") || a.mime_type === "application/pdf";
+            return (
+              <li key={a.id} className="flex items-center gap-2 text-[12px] bg-[#F8FAFC] px-2 py-1.5 rounded">
+                <span className="text-[#475569] shrink-0"><AttachmentIcon mime={a.mime_type} /></span>
+                <span className="truncate flex-1">
+                  {a.file_name}{" "}
+                  <span className="text-[#8B95A5]">({formatBytes(a.size_bytes)})</span>
+                </span>
+                {previewable && (
+                  <button
+                    onClick={() => openPreview(a)}
+                    className="text-[#1C58D9] hover:underline inline-flex items-center gap-1"
+                    title="Aperçu"
+                  >
+                    <Eye size={12} /> Aperçu
+                  </button>
+                )}
+                <button
+                  onClick={() => download(a.storage_path, a.file_name)}
+                  className="text-[#1C58D9] hover:underline inline-flex items-center gap-1"
+                >
+                  <FileDown size={12} /> Télécharger
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      </VCard>
+
+      {preview && (
+        <div
+          className="fixed inset-0 z-[100] bg-black/70 flex items-center justify-center p-4"
+          onClick={() => setPreview(null)}
+        >
+          <div
+            className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-4 py-2 border-b">
+              <p className="text-sm font-semibold truncate">{preview.name}</p>
+              <button onClick={() => setPreview(null)} className="p-1 rounded hover:bg-gray-100">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            {preview.kind === "image" ? (
+              <img src={preview.url} alt={preview.name} className="object-contain max-h-[80vh] mx-auto" />
+            ) : (
+              <iframe src={preview.url} title={preview.name} className="w-full h-[80vh]" />
+            )}
+          </div>
+        </div>
+      )}
+    </>
   );
 }

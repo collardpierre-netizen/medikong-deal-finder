@@ -360,6 +360,7 @@ const App = () => (
               <Route path="db-backups" element={<LP><AdminDbBackups /></LP>} />
               <Route path="backup-rls-audit" element={<LP><AdminBackupRlsAudit /></LP>} />
               <Route path="rfq-credits" element={<LP><AdminRfqCreditsPage /></LP>} />
+              <Route path="rfq-reminders" element={<LP><AdminRfqRemindersPage /></LP>} />
               <Route path="announcement-bar" element={<LP><AdminAnnouncementBar /></LP>} />
               <Route path="i18n-pilot" element={<LP><AdminI18nPilot /></LP>} />
               <Route path="fabricants" element={<LP><AdminFabricants /></LP>} />

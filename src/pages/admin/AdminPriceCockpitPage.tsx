@@ -264,6 +264,7 @@ export default function AdminPriceCockpitPage() {
         <TabsList>
           <TabsTrigger value="overpriced">Offres à challenger</TabsTrigger>
           <TabsTrigger value="gaps">Trous catalogue ({gapsQ.data?.length ?? 0})</TabsTrigger>
+          <TabsTrigger value="metrics">Métriques challenges</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overpriced" className="space-y-3">

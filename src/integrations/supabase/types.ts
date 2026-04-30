@@ -10991,7 +10991,7 @@ export type Database = {
         }
         Insert: {
           city?: string | null
-          company_name?: never
+          company_name?: string | null
           country_code?: string | null
           cover_image_url?: string | null
           created_at?: string | null
@@ -11005,7 +11005,7 @@ export type Database = {
           is_verified?: boolean | null
           linkedin_url?: string | null
           logo_url?: string | null
-          name?: never
+          name?: string | null
           preferred_language?: string | null
           rating?: number | null
           show_real_name?: boolean | null
@@ -11019,7 +11019,7 @@ export type Database = {
         }
         Update: {
           city?: string | null
-          company_name?: never
+          company_name?: string | null
           country_code?: string | null
           cover_image_url?: string | null
           created_at?: string | null
@@ -11033,7 +11033,7 @@ export type Database = {
           is_verified?: boolean | null
           linkedin_url?: string | null
           logo_url?: string | null
-          name?: never
+          name?: string | null
           preferred_language?: string | null
           rating?: number | null
           show_real_name?: boolean | null

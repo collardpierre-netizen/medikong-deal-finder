@@ -218,6 +218,7 @@ export default function MesRfqPage() {
                       <p className="text-xs text-muted-foreground">Offres reçues</p>
                       <p className="text-2xl font-bold leading-none">{c?.count ?? 0}</p>
                       {c?.best != null && <p className="text-xs text-emerald-700 font-semibold mt-1">dès {formatPrice(c.best)}/u.</p>}
+                      {c?.topScore != null && <p className="text-[10px] text-muted-foreground mt-0.5">Top score {c.topScore.toFixed(0)}/100</p>}
                     </div>
                   </div>
                 </CardHeader>

@@ -1817,9 +1817,13 @@ export default function ProductPage() {
 
                               // Reference price for écart: use pharmacien HT > grossiste > public HTVA
                               const refPrice = pharmHT || grossisteHT || publicHTVA;
-                              const deltaAbs = refPrice && mkHT ? refPrice - mkHT : null;
-                              const deltaPct = deltaAbs && refPrice ? Math.round((deltaAbs / refPrice) * 100) : null;
-                              const positive = deltaAbs !== null && deltaAbs > 0;
+                              // Convention: deltaAbs = MK − concurrent.
+                              //   < 0  → MK est moins cher (bonne nouvelle, vert)
+                              //   > 0  → MK est plus cher (rouge)
+                              // Le % est rapporté au prix MK (référence acheteur).
+                              const deltaAbs = refPrice && mkHT ? mkHT - refPrice : null;
+                              const deltaPct = deltaAbs !== null && mkHT ? Math.round((deltaAbs / mkHT) * 100) : null;
+                              const mkCheaper = deltaAbs !== null && deltaAbs < 0;
                               const packBadge = packSizeSourceBadge(mpPack.source);
 
                               // Multiplicateur d'affichage selon la base sélectionnée.

@@ -1356,6 +1356,21 @@ export default function VendorOffers() {
       const purchaseRaw = form.purchase_price_excl_vat?.trim();
       const purchase = purchaseRaw ? parseFloat(purchaseRaw) : null;
       const purchaseValid = purchase != null && Number.isFinite(purchase) && purchase >= 0 ? purchase : null;
+
+      // ----- Validation conditionnement (override offre, optionnel) -----
+      const packRaw = form.pack_size_override?.trim();
+      let packOverride: number | null = null;
+      if (packRaw) {
+        const packNum = Number(packRaw.replace(",", "."));
+        if (!Number.isFinite(packNum) || !Number.isInteger(packNum)) {
+          throw new Error("Conditionnement : indiquez un entier (ex: 24) ou laissez vide pour utiliser le conditionnement de la fiche produit.");
+        }
+        if (packNum < 1 || packNum > 10000) {
+          throw new Error("Conditionnement : valeur entre 1 et 10 000 — laissez vide pour utiliser le conditionnement de la fiche produit.");
+        }
+        packOverride = packNum;
+      }
+
       const payload = {
         vendor_id: vendor.id, product_id: form.product_id,
         price_excl_vat: priceExcl, price_incl_vat: priceIncl, vat_rate: vatRate,
@@ -1364,6 +1379,7 @@ export default function VendorOffers() {
         mov_amount: parseFloat(form.mov_amount) || 0, mov_currency: "EUR",
         delivery_days: parseInt(form.delivery_days) || 3, country_code: form.country_code,
         stock_status: parseInt(form.stock_quantity) > 0 ? "in_stock" as const : "out_of_stock" as const,
+        pack_size_override: packOverride,
         is_active: true,
       };
       let offerId = editingId;

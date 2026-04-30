@@ -7190,6 +7190,100 @@ export type Database = {
           },
         ]
       }
+      rfq_routing_audit_log: {
+        Row: {
+          cap_applied: number | null
+          created_at: string
+          decision: Database["public"]["Enums"]["rfq_routing_decision"]
+          details: Json | null
+          id: string
+          matched_reason:
+            | Database["public"]["Enums"]["rfq_target_reason"]
+            | null
+          rank_position: number | null
+          reason_code: string
+          reason_label: string | null
+          rfq_id: string
+          score: number | null
+          vendor_id: string
+        }
+        Insert: {
+          cap_applied?: number | null
+          created_at?: string
+          decision: Database["public"]["Enums"]["rfq_routing_decision"]
+          details?: Json | null
+          id?: string
+          matched_reason?:
+            | Database["public"]["Enums"]["rfq_target_reason"]
+            | null
+          rank_position?: number | null
+          reason_code: string
+          reason_label?: string | null
+          rfq_id: string
+          score?: number | null
+          vendor_id: string
+        }
+        Update: {
+          cap_applied?: number | null
+          created_at?: string
+          decision?: Database["public"]["Enums"]["rfq_routing_decision"]
+          details?: Json | null
+          id?: string
+          matched_reason?:
+            | Database["public"]["Enums"]["rfq_target_reason"]
+            | null
+          rank_position?: number | null
+          reason_code?: string
+          reason_label?: string | null
+          rfq_id?: string
+          score?: number | null
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rfq_routing_audit_log_rfq_id_fkey"
+            columns: ["rfq_id"]
+            isOneToOne: false
+            referencedRelation: "rfqs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rfq_routing_audit_log_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rfq_routing_audit_log_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_market_intel_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "rfq_routing_audit_log_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "rfq_routing_audit_log_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rfq_routing_audit_log_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rfq_routing_settings: {
         Row: {
           description: string | null
@@ -11217,6 +11311,99 @@ export type Database = {
           },
         ]
       }
+      rfq_routing_audit_v: {
+        Row: {
+          brand_id: string | null
+          cap_applied: number | null
+          created_at: string | null
+          currency_code: string | null
+          decision: Database["public"]["Enums"]["rfq_routing_decision"] | null
+          destination_country_code: string | null
+          details: Json | null
+          id: string | null
+          matched_reason:
+            | Database["public"]["Enums"]["rfq_target_reason"]
+            | null
+          product_id: string | null
+          quantity: number | null
+          rank_position: number | null
+          reason_code: string | null
+          reason_label: string | null
+          rfq_created_at: string | null
+          rfq_id: string | null
+          rfq_status: Database["public"]["Enums"]["rfq_status"] | null
+          score: number | null
+          vendor_company: string | null
+          vendor_country: string | null
+          vendor_id: string | null
+          vendor_name: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rfq_routing_audit_log_rfq_id_fkey"
+            columns: ["rfq_id"]
+            isOneToOne: false
+            referencedRelation: "rfqs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rfq_routing_audit_log_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rfq_routing_audit_log_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_market_intel_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "rfq_routing_audit_log_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "rfq_routing_audit_log_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rfq_routing_audit_log_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rfqs_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brand_logistics_stats"
+            referencedColumns: ["brand_id"]
+          },
+          {
+            foreignKeyName: "rfqs_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brands"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rfqs_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rfq_vendor_status_v: {
         Row: {
           awarded: boolean | null
@@ -11991,6 +12178,7 @@ export type Database = {
         Args: { _notes?: string; _rfq_id: string; _user_id: string }
         Returns: undefined
       }
+      rfq_audit_routing: { Args: { _rfq_id: string }; Returns: number }
       rfq_buyer_can_view_results: {
         Args: { _rfq_id: string; _user_id: string }
         Returns: boolean
@@ -12388,6 +12576,7 @@ export type Database = {
         | "credit_pack"
         | "monthly_plan"
         | "unlimited_plan"
+      rfq_routing_decision: "selected" | "excluded" | "over_cap"
       rfq_status:
         | "draft"
         | "open"
@@ -12713,6 +12902,7 @@ export const Constants = {
         "monthly_plan",
         "unlimited_plan",
       ],
+      rfq_routing_decision: ["selected", "excluded", "over_cap"],
       rfq_status: [
         "draft",
         "open",

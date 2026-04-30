@@ -6715,6 +6715,108 @@ export type Database = {
         }
         Relationships: []
       }
+      rfq_reminder_log: {
+        Row: {
+          email_message_id: string | null
+          error: string | null
+          id: string
+          rfq_id: string
+          sent_at: string
+          template_id: string | null
+          vendor_id: string
+          wave_number: number
+        }
+        Insert: {
+          email_message_id?: string | null
+          error?: string | null
+          id?: string
+          rfq_id: string
+          sent_at?: string
+          template_id?: string | null
+          vendor_id: string
+          wave_number: number
+        }
+        Update: {
+          email_message_id?: string | null
+          error?: string | null
+          id?: string
+          rfq_id?: string
+          sent_at?: string
+          template_id?: string | null
+          vendor_id?: string
+          wave_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rfq_reminder_log_rfq_id_fkey"
+            columns: ["rfq_id"]
+            isOneToOne: false
+            referencedRelation: "rfqs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rfq_reminder_log_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "rfq_reminder_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rfq_reminder_log_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rfq_reminder_log_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rfq_reminder_log_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rfq_reminder_templates: {
+        Row: {
+          body_fr: string
+          created_at: string
+          delay_hours: number
+          id: string
+          is_active: boolean
+          subject_fr: string
+          updated_at: string
+          wave_number: number
+        }
+        Insert: {
+          body_fr: string
+          created_at?: string
+          delay_hours: number
+          id?: string
+          is_active?: boolean
+          subject_fr: string
+          updated_at?: string
+          wave_number: number
+        }
+        Update: {
+          body_fr?: string
+          created_at?: string
+          delay_hours?: number
+          id?: string
+          is_active?: boolean
+          subject_fr?: string
+          updated_at?: string
+          wave_number?: number
+        }
+        Relationships: []
+      }
       rfq_responses: {
         Row: {
           admin_override_visible: boolean
@@ -10824,11 +10926,41 @@ export type Database = {
         Args: { _rfq_id: string }
         Returns: undefined
       }
+      rfq_record_reminder_sent: {
+        Args: {
+          _email_message_id?: string
+          _error?: string
+          _rfq_id: string
+          _template_id: string
+          _vendor_id: string
+          _wave: number
+        }
+        Returns: string
+      }
       rfq_resolve_target_vendors: {
         Args: { _rfq_id: string }
         Returns: {
           reason: Database["public"]["Enums"]["rfq_target_reason"]
           vendor_id: string
+        }[]
+      }
+      rfq_select_reminder_targets: {
+        Args: { _max_per_run?: number }
+        Returns: {
+          body_fr: string
+          deadline_in_hours: number
+          dispatch_id: string
+          next_wave: number
+          product_name: string
+          quantity: number
+          responses_deadline: string
+          rfq_id: string
+          subject_fr: string
+          template_id: string
+          tracking_token: string
+          vendor_email: string
+          vendor_id: string
+          vendor_name: string
         }[]
       }
       rfq_send_now: {

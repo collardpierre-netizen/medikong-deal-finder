@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tag, Download, ChevronRight, Award, Loader2, Clock, Inbox } from "lucide-react";
 import { formatUpdatedAt } from "@/lib/format-date";
+import { BuyerRfqTracker } from "@/components/rfq/BuyerRfqTracker";
 
 type RfqRow = {
   id: string;
@@ -235,7 +236,21 @@ export default function MesRfqPage() {
                     )}
                   </div>
 
-                  {isOpen && <RfqResponsesPanel rfqId={rfq.id} />}
+                  {isOpen && (
+                    <>
+                      <div className="mt-4">
+                        <h4 className="text-sm font-semibold mb-1 flex items-center gap-1.5">
+                          <Clock className="h-3.5 w-3.5 text-muted-foreground" /> Suivi des fournisseurs ciblés
+                        </h4>
+                        <p className="text-xs text-muted-foreground">Statut, dates de réponse et raisons d'échec ou de déclin par vendeur.</p>
+                        <BuyerRfqTracker rfqId={rfq.id} />
+                      </div>
+                      <div className="mt-6">
+                        <h4 className="text-sm font-semibold mb-2">Offres reçues</h4>
+                        <RfqResponsesPanel rfqId={rfq.id} />
+                      </div>
+                    </>
+                  )}
                 </CardContent>
               </Card>
             );

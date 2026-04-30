@@ -8,12 +8,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tag, Loader2, Upload, X } from "lucide-react";
+import { Tag, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRfqQuota } from "@/hooks/useRfqQuota";
 import RfqQuotaBadge from "@/components/rfq/RfqQuotaBadge";
 import RfqPaywallDialog from "@/components/rfq/RfqPaywallDialog";
+import RfqAttachmentPicker, { RFQ_MAX_TOTAL_SIZE } from "@/components/rfq/RfqAttachmentPicker";
 
 const COUNTRIES = [
   { code: "BE", label: "Belgique" }, { code: "FR", label: "France" },

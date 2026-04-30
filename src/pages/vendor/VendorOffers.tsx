@@ -80,7 +80,7 @@ const useVendorOffers = (vendorId: string | undefined, statusFilter: OfferStatus
       if (!vendorId) return [];
       let q = supabase
         .from("offers")
-        .select("*, products(name, gtin, image_urls, slug, brand_name, category_name, cnk_code)")
+        .select("*, products(name, gtin, image_urls, slug, brand_name, category_name, cnk_code, pack_size)")
         .eq("vendor_id", vendorId)
         .order("created_at", { ascending: false });
       if (statusFilter === "active") q = q.eq("is_active", true);
@@ -105,10 +105,15 @@ interface OfferForm {
   delivery_days: string;
   country_code: string;
   category_ids: string[];
+  /** Conditionnement override saisi par le vendeur sur l'offre (vide = fallback fiche produit). */
+  pack_size_override: string;
+  /** Conditionnement de la fiche produit MediKong (lecture seule, sert au fallback). */
+  product_pack_size_fallback: number | null;
 }
 
 const emptyForm: OfferForm = {
   product_id: "", product_name: "", price_excl_vat: "", purchase_price_excl_vat: "", save_as_product_default: false, vat_rate: "21", stock_quantity: "", moq: "1", mov_amount: "0", delivery_days: "3", country_code: "BE", category_ids: [],
+  pack_size_override: "", product_pack_size_fallback: null,
 };
 
 /* ─── Competitive Intelligence Module ─── */
@@ -828,7 +833,7 @@ function downloadTemplate() {
     ["MOV", "Montant minimum de commande en € (par défaut : 0)"],
     ["Délai", "Délai de livraison en jours (par défaut : 3)"],
     ["Pays", "Code pays (BE, FR, NL, LU, DE) — une ligne par pays pour des configs différentes"],
-    ["Conditionnement", "Nombre d'unités par pack vendu (ex: 24 pour un carton de 24). Optionnel — sert au calcul du prix unitaire côté acheteur. Prioritaire sur le pack de la fiche produit."],
+    ["Conditionnement", "Nombre d'unités par pack vendu (ex: 24 pour un carton de 24). Entier 1..10 000 ou vide. Vide = utilise le pack de la fiche produit MediKong en fallback. L'export ajoute une colonne 'Conditionnement_Source' (Override offre / Fiche produit / Aucun) pour tracer d'où vient le pack appliqué."],
     [""],
     ["=== Colonnes profil (optionnelles, pour prix différenciés) ==="],
     ["Profil", "Type de profil : pharmacy, hospital, dentist, nursing, veterinary, ehpad, wholesale"],
@@ -887,6 +892,11 @@ function exportOffers(offers: any[], profileRulesMap?: Map<string, any[]>, price
       "Délai": o.delivery_days,
       "Pays": o.country_code,
       "Conditionnement": o.pack_size_override ?? (o.products as any)?.pack_size ?? "",
+      "Conditionnement_Source": o.pack_size_override != null
+        ? "Override offre"
+        : (o.products as any)?.pack_size != null
+          ? "Fiche produit MediKong"
+          : "Aucun (déduit auto du nom)",
       "Statut": o.is_active ? "Active" : "Inactive",
       "Profil": "",
       "Profil_Pays": "",
@@ -901,7 +911,7 @@ function exportOffers(offers: any[], profileRulesMap?: Map<string, any[]>, price
       rows.push({
         "Produit": "", "EAN": (o.products as any)?.gtin || "", "CNK": (o.products as any)?.cnk_code || "",
         "Marque": "", "Catégorie": "", "Prix HT": "", "Prix_Achat_HT": "", "Marge €": "", "Marge %": "",
-        "Prix TTC": "", "TVA": "", "Stock": "", "MOQ": "", "MOV": "", "Délai": "", "Pays": "", "Statut": "",
+        "Prix TTC": "", "TVA": "", "Stock": "", "MOQ": "", "MOV": "", "Délai": "", "Pays": "", "Conditionnement": "", "Conditionnement_Source": "", "Statut": "",
         "Profil": r.profile_type, "Profil_Pays": r.country_code || "",
         "Prix_Profil_HT": r.custom_price_excl_vat ?? "", "Remise_%": r.discount_percentage ?? "",
         "MOQ_Profil": r.moq ?? "", "MOV_Profil": r.mov_amount ?? "",
@@ -1239,6 +1249,8 @@ export default function VendorOffers() {
       delivery_days: String(offer.delivery_days),
       country_code: offer.country_code || "BE",
       category_ids: (linkedCats || []).map((c: any) => c.category_id),
+      pack_size_override: offer.pack_size_override != null ? String(offer.pack_size_override) : "",
+      product_pack_size_fallback: (offer.products as any)?.pack_size ?? null,
     });
     setEditingId(offer.id);
     setShowForm(true);
@@ -1349,6 +1361,21 @@ export default function VendorOffers() {
       const purchaseRaw = form.purchase_price_excl_vat?.trim();
       const purchase = purchaseRaw ? parseFloat(purchaseRaw) : null;
       const purchaseValid = purchase != null && Number.isFinite(purchase) && purchase >= 0 ? purchase : null;
+
+      // ----- Validation conditionnement (override offre, optionnel) -----
+      const packRaw = form.pack_size_override?.trim();
+      let packOverride: number | null = null;
+      if (packRaw) {
+        const packNum = Number(packRaw.replace(",", "."));
+        if (!Number.isFinite(packNum) || !Number.isInteger(packNum)) {
+          throw new Error("Conditionnement : indiquez un entier (ex: 24) ou laissez vide pour utiliser le conditionnement de la fiche produit.");
+        }
+        if (packNum < 1 || packNum > 10000) {
+          throw new Error("Conditionnement : valeur entre 1 et 10 000 — laissez vide pour utiliser le conditionnement de la fiche produit.");
+        }
+        packOverride = packNum;
+      }
+
       const payload = {
         vendor_id: vendor.id, product_id: form.product_id,
         price_excl_vat: priceExcl, price_incl_vat: priceIncl, vat_rate: vatRate,
@@ -1357,6 +1384,7 @@ export default function VendorOffers() {
         mov_amount: parseFloat(form.mov_amount) || 0, mov_currency: "EUR",
         delivery_days: parseInt(form.delivery_days) || 3, country_code: form.country_code,
         stock_status: parseInt(form.stock_quantity) > 0 ? "in_stock" as const : "out_of_stock" as const,
+        pack_size_override: packOverride,
         is_active: true,
       };
       let offerId = editingId;
@@ -1548,6 +1576,38 @@ export default function VendorOffers() {
               <label className="text-[11px] block mb-1" style={{ color: "#8B95A5" }}>Délai livraison (jours)</label>
               <input type="number" min="1" className="w-full px-3 py-2 text-[13px] border rounded-lg focus:border-[#1B5BDA] focus:outline-none"
                 style={{ borderColor: "#E2E8F0" }} value={form.delivery_days} onChange={e => setForm(p => ({ ...p, delivery_days: e.target.value }))} />
+            </div>
+            <div className="md:col-span-2">
+              <label className="text-[11px] block mb-1 flex items-center justify-between" style={{ color: "#8B95A5" }}>
+                <span>Conditionnement <span className="font-normal">— nb d'unités par pack vendu (ex: 24)</span></span>
+                {form.pack_size_override?.trim() ? (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded border bg-emerald-50 text-emerald-700 border-emerald-200" title="Conditionnement spécifique à votre offre — prioritaire sur la fiche produit MediKong.">
+                    Override offre
+                  </span>
+                ) : form.product_pack_size_fallback ? (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded border bg-sky-50 text-sky-700 border-sky-200" title={`Le conditionnement de la fiche produit MediKong sera utilisé : pack de ${form.product_pack_size_fallback} unités.`}>
+                    Fallback fiche : {form.product_pack_size_fallback}
+                  </span>
+                ) : (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded border bg-amber-50 text-amber-700 border-amber-200" title="Aucun conditionnement défini — sera déduit du nom du produit ou supposé = 1.">
+                    Aucun (déduit auto)
+                  </span>
+                )}
+              </label>
+              <input
+                type="number"
+                step="1"
+                min="1"
+                max="10000"
+                placeholder={form.product_pack_size_fallback ? `Vide = ${form.product_pack_size_fallback} (fiche produit)` : "Vide = déduit du nom"}
+                className="w-full px-3 py-2 text-[13px] border rounded-lg focus:border-[#1B5BDA] focus:outline-none"
+                style={{ borderColor: "#E2E8F0" }}
+                value={form.pack_size_override}
+                onChange={e => setForm(p => ({ ...p, pack_size_override: e.target.value }))}
+              />
+              <p className="text-[10px] mt-1" style={{ color: "#8B95A5" }}>
+                Saisissez ce champ uniquement si vous vendez un pack différent de la fiche produit MediKong (ex: carton de 24 alors que la fiche est unitaire). Sert au calcul du prix unitaire affiché à l'acheteur.
+              </p>
             </div>
             <div>
               <label className="text-[11px] block mb-1" style={{ color: "#8B95A5" }}>Pays</label>

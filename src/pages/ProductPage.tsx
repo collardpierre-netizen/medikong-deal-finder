@@ -346,9 +346,17 @@ function OfferRow({
           ) : (
             <div className="flex flex-col gap-1">
               <div className="flex items-baseline gap-6">
-                <span className="text-sm font-bold text-green-700 whitespace-nowrap">{formatEur(displayPrice)}&nbsp;€ <span className="text-[10px] font-normal text-muted-foreground">{priceLabel}</span></span>
+                <span className="text-sm font-bold text-green-700 whitespace-nowrap">
+                  {formatEur(displayPrice)}&nbsp;€
+                  <span className="text-[10px] font-normal text-muted-foreground">{basisSuffix} · {priceLabel}</span>
+                </span>
                 <span className="text-sm text-foreground whitespace-nowrap">{offer.movEur > 0 ? <>{formatEur(offer.movEur)}&nbsp;€</> : "—"}</span>
               </div>
+              {compareBasis !== 'pack' && packSize > 1 && (
+                <span className="text-[10px] text-muted-foreground">
+                  Pack vendeur : {formatEur(basePackPrice)}&nbsp;€ /pack de {packSize}
+                </span>
+              )}
               <ProfileResolvedPriceBadge
                 offerId={offer.id}
                 basePrice={offer.unitPriceEur}

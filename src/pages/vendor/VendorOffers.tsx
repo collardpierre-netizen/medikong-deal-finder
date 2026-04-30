@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { VCard } from "@/components/vendor/ui/VCard";
 import { VBtn } from "@/components/vendor/ui/VBtn";
 import { VBadge } from "@/components/vendor/ui/VBadge";
-import { Tag, Plus, Pencil, Trash2, X, Loader2, Package, Search, Download, Upload, FileSpreadsheet, ChevronDown, Users, ChevronRight, TrendingDown, TrendingUp, BarChart3, Eye, ImagePlus, ArrowLeft } from "lucide-react";
+import { Tag, Plus, Pencil, Trash2, X, Loader2, Package, Search, Download, Upload, FileSpreadsheet, ChevronDown, Users, ChevronRight, TrendingDown, TrendingUp, BarChart3, Eye, ImagePlus, ArrowLeft, Copy, PowerOff, Power } from "lucide-react";
 import ProductPhotoUploader from "@/components/admin/ProductPhotoUploader";
 import { CategoryTreeSelector } from "@/components/vendor/CategoryTreeSelector";
 import { MarginInsightCard } from "@/components/vendor/MarginInsightCard";
@@ -80,7 +80,7 @@ const useVendorOffers = (vendorId: string | undefined, statusFilter: OfferStatus
       if (!vendorId) return [];
       let q = supabase
         .from("offers")
-        .select("*, products(name, gtin, image_urls, slug, brand_name, category_name, cnk_code, pack_size)")
+        .select("*, products(name, gtin, image_urls, slug, brand_name, category_name, cnk_code, pack_size, manufacturer_id, manufacturers(name))")
         .eq("vendor_id", vendorId)
         .order("created_at", { ascending: false });
       if (statusFilter === "active") q = q.eq("is_active", true);
@@ -1217,6 +1217,9 @@ export default function VendorOffers() {
   const [search, setSearch] = useState("");
   const [filterBrand, setFilterBrand] = useState("");
   const [filterCountry, setFilterCountry] = useState("");
+  const [filterManufacturer, setFilterManufacturer] = useState("");
+  const [filterCategory, setFilterCategory] = useState("");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const openCreate = () => { setForm(emptyForm); setEditingId(null); setShowForm(true); };
   const openEdit = async (offer: any) => {
@@ -1466,10 +1469,25 @@ export default function VendorOffers() {
     onError: (err: any) => toast.error(err.message),
   });
 
-  // Unique brands from current offers for filter
+  // Listes uniques pour filtres (marque / fabricant / catégorie) — dérivées des offres chargées
   const offerBrands = useMemo(() => {
     const set = new Set<string>();
     offers.forEach((o: any) => { const b = (o.products as any)?.brand_name; if (b) set.add(b); });
+    return Array.from(set).sort();
+  }, [offers]);
+
+  const offerManufacturers = useMemo(() => {
+    const set = new Set<string>();
+    offers.forEach((o: any) => {
+      const m = (o.products as any)?.manufacturers?.name;
+      if (m) set.add(m);
+    });
+    return Array.from(set).sort();
+  }, [offers]);
+
+  const offerCategories = useMemo(() => {
+    const set = new Set<string>();
+    offers.forEach((o: any) => { const c = (o.products as any)?.category_name; if (c) set.add(c); });
     return Array.from(set).sort();
   }, [offers]);
 
@@ -1483,9 +1501,95 @@ export default function VendorOffers() {
       if (s && !name.toLowerCase().includes(s) && !gtin.includes(s) && !cnk.includes(s)) return false;
       if (filterBrand && prod?.brand_name !== filterBrand) return false;
       if (filterCountry && o.country_code !== filterCountry) return false;
+      if (filterManufacturer && prod?.manufacturers?.name !== filterManufacturer) return false;
+      if (filterCategory && prod?.category_name !== filterCategory) return false;
       return true;
     });
-  }, [offers, search, filterBrand, filterCountry]);
+  }, [offers, search, filterBrand, filterCountry, filterManufacturer, filterCategory]);
+
+  // Nettoie la sélection si les ids ne sont plus dans la liste filtrée
+  useEffect(() => {
+    if (selectedIds.size === 0) return;
+    const visible = new Set(filteredOffers.map((o: any) => o.id));
+    const next = new Set([...selectedIds].filter(id => visible.has(id)));
+    if (next.size !== selectedIds.size) setSelectedIds(next);
+  }, [filteredOffers]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const allVisibleSelected = filteredOffers.length > 0 && filteredOffers.every((o: any) => selectedIds.has(o.id));
+  const someVisibleSelected = filteredOffers.some((o: any) => selectedIds.has(o.id));
+
+  const toggleSelectAll = () => {
+    if (allVisibleSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredOffers.map((o: any) => o.id)));
+    }
+  };
+
+  const toggleSelectOne = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  // Bulk actions
+  const bulkSetActive = useMutation({
+    mutationFn: async ({ ids, is_active }: { ids: string[]; is_active: boolean }) => {
+      const { error } = await supabase.from("offers").update({ is_active }).in("id", ids);
+      if (error) throw error;
+    },
+    onSuccess: (_d, vars) => {
+      toast.success(`${vars.ids.length} offre(s) ${vars.is_active ? "activée(s)" : "désactivée(s)"}`);
+      qc.invalidateQueries({ queryKey: ["vendor-offers"] });
+      qc.invalidateQueries({ queryKey: ["product"] });
+      qc.invalidateQueries({ queryKey: ["offers"] });
+      setSelectedIds(new Set());
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
+  const bulkDuplicate = useMutation({
+    mutationFn: async (ids: string[]) => {
+      const { data: src, error } = await supabase
+        .from("offers")
+        .select("*")
+        .in("id", ids);
+      if (error) throw error;
+      if (!src || src.length === 0) return 0;
+      const clones = src.map((o: any) => {
+        // Strip tous les champs gérés par la DB / non duplicables
+        const { id, created_at, updated_at, ...rest } = o;
+        return { ...rest, is_active: false }; // dupliqués en inactif pour relecture
+      });
+      const { error: insErr } = await supabase.from("offers").insert(clones);
+      if (insErr) throw insErr;
+      return clones.length;
+    },
+    onSuccess: (n) => {
+      toast.success(`${n} offre(s) dupliquée(s) (créées en Inactif pour relecture)`);
+      qc.invalidateQueries({ queryKey: ["vendor-offers"] });
+      setSelectedIds(new Set());
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
+  const bulkDelete = useMutation({
+    mutationFn: async (ids: string[]) => {
+      const { error } = await supabase.from("offers").delete().in("id", ids);
+      if (error) throw error;
+      return ids.length;
+    },
+    onSuccess: (n) => {
+      toast.success(`${n} offre(s) supprimée(s)`);
+      qc.invalidateQueries({ queryKey: ["vendor-offers"] });
+      qc.invalidateQueries({ queryKey: ["product"] });
+      qc.invalidateQueries({ queryKey: ["offers"] });
+      setSelectedIds(new Set());
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
 
   if (!vendor) {
     return (
@@ -1748,6 +1852,20 @@ export default function VendorOffers() {
             {offerBrands.map(b => <option key={b} value={b}>{b}</option>)}
           </select>
         )}
+        {offerManufacturers.length > 1 && (
+          <select value={filterManufacturer} onChange={e => setFilterManufacturer(e.target.value)}
+            className="text-[12px] px-3 py-2 rounded-lg border bg-white" style={{ borderColor: "#E2E8F0", color: "#616B7C" }}>
+            <option value="">Tous fabricants</option>
+            {offerManufacturers.map(m => <option key={m} value={m}>{m}</option>)}
+          </select>
+        )}
+        {offerCategories.length > 1 && (
+          <select value={filterCategory} onChange={e => setFilterCategory(e.target.value)}
+            className="text-[12px] px-3 py-2 rounded-lg border bg-white" style={{ borderColor: "#E2E8F0", color: "#616B7C" }}>
+            <option value="">Toutes catégories</option>
+            {offerCategories.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+        )}
         <select value={filterCountry} onChange={e => setFilterCountry(e.target.value)}
           className="text-[12px] px-3 py-2 rounded-lg border bg-white" style={{ borderColor: "#E2E8F0", color: "#616B7C" }}>
           <option value="">Tous pays</option>
@@ -1786,6 +1904,68 @@ export default function VendorOffers() {
           {isLoading ? "Chargement…" : `${filteredOffers.length} résultat${filteredOffers.length !== 1 ? "s" : ""}`}
         </span>
       </div>
+
+      {/* Bulk actions bar — visible dès qu'au moins une offre est sélectionnée */}
+      {selectedIds.size > 0 && (
+        <div
+          className="flex items-center gap-3 flex-wrap px-4 py-2.5 rounded-lg border"
+          style={{ backgroundColor: "#EFF6FF", borderColor: "#BFDBFE" }}
+        >
+          <span className="text-[12px] font-semibold" style={{ color: "#1B5BDA" }}>
+            {selectedIds.size} offre{selectedIds.size > 1 ? "s" : ""} sélectionnée{selectedIds.size > 1 ? "s" : ""}
+          </span>
+          <div className="h-4 w-px" style={{ backgroundColor: "#BFDBFE" }} />
+          <button
+            type="button"
+            onClick={() => bulkSetActive.mutate({ ids: [...selectedIds], is_active: true })}
+            disabled={bulkSetActive.isPending}
+            className="inline-flex items-center gap-1.5 text-[12px] font-medium px-3 py-1.5 rounded-md bg-white border hover:bg-emerald-50 disabled:opacity-50"
+            style={{ borderColor: "#A7F3D0", color: "#059669" }}
+          >
+            <Power size={13} /> Activer
+          </button>
+          <button
+            type="button"
+            onClick={() => bulkSetActive.mutate({ ids: [...selectedIds], is_active: false })}
+            disabled={bulkSetActive.isPending}
+            className="inline-flex items-center gap-1.5 text-[12px] font-medium px-3 py-1.5 rounded-md bg-white border hover:bg-slate-50 disabled:opacity-50"
+            style={{ borderColor: "#CBD5E1", color: "#475569" }}
+          >
+            <PowerOff size={13} /> Désactiver
+          </button>
+          <button
+            type="button"
+            onClick={() => bulkDuplicate.mutate([...selectedIds])}
+            disabled={bulkDuplicate.isPending}
+            className="inline-flex items-center gap-1.5 text-[12px] font-medium px-3 py-1.5 rounded-md bg-white border hover:bg-violet-50 disabled:opacity-50"
+            style={{ borderColor: "#DDD6FE", color: "#7C3AED" }}
+            title="Crée des copies en statut Inactif pour relecture avant publication"
+          >
+            <Copy size={13} /> Dupliquer
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (confirm(`Supprimer définitivement ${selectedIds.size} offre(s) ? Cette action est irréversible.`)) {
+                bulkDelete.mutate([...selectedIds]);
+              }
+            }}
+            disabled={bulkDelete.isPending}
+            className="inline-flex items-center gap-1.5 text-[12px] font-medium px-3 py-1.5 rounded-md bg-white border hover:bg-red-50 disabled:opacity-50"
+            style={{ borderColor: "#FECACA", color: "#EF4343" }}
+          >
+            <Trash2 size={13} /> Supprimer
+          </button>
+          <button
+            type="button"
+            onClick={() => setSelectedIds(new Set())}
+            className="ml-auto text-[11px] font-medium underline decoration-dotted hover:text-[#1B5BDA]"
+            style={{ color: "#8B95A5" }}
+          >
+            Effacer la sélection
+          </button>
+        </div>
+      )}
 
       {/* Offers table */}
       {isLoading ? (
@@ -1850,6 +2030,19 @@ export default function VendorOffers() {
               <thead>
                 <tr style={{ backgroundColor: "#F8FAFC", borderBottom: "1px solid #E2E8F0" }}
                   className="text-[11px] uppercase tracking-wide" >
+                  <th className="py-2.5 pl-3 pr-1 w-8">
+                    <input
+                      type="checkbox"
+                      checked={allVisibleSelected}
+                      ref={(el) => {
+                        if (el) el.indeterminate = !allVisibleSelected && someVisibleSelected;
+                      }}
+                      onChange={toggleSelectAll}
+                      className="cursor-pointer accent-[#1B5BDA]"
+                      aria-label="Tout sélectionner"
+                      title={allVisibleSelected ? "Tout désélectionner" : "Tout sélectionner"}
+                    />
+                  </th>
                   <th className="text-left py-2.5 px-3 font-medium" style={{ color: "#8B95A5" }}>Produit</th>
                   <th className="text-left py-2.5 px-3 font-medium" style={{ color: "#8B95A5" }}>Marque</th>
                   <th className="text-right py-2.5 px-3 font-medium" style={{ color: "#8B95A5" }}>Prix HT</th>
@@ -1877,7 +2070,23 @@ export default function VendorOffers() {
                     ? computeMargin(Number(offer.price_excl_vat) || 0, purchase, commissionConfig)
                     : null;
                   return (
-                    <tr key={offer.id} className="hover:bg-[#F8FAFC]" style={{ borderBottom: "1px solid #E2E8F0" }}>
+                    <tr
+                      key={offer.id}
+                      className="hover:bg-[#F8FAFC]"
+                      style={{
+                        borderBottom: "1px solid #E2E8F0",
+                        backgroundColor: selectedIds.has(offer.id) ? "#EFF6FF" : undefined,
+                      }}
+                    >
+                      <td className="py-2.5 pl-3 pr-1">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.has(offer.id)}
+                          onChange={() => toggleSelectOne(offer.id)}
+                          className="cursor-pointer accent-[#1B5BDA]"
+                          aria-label={`Sélectionner ${(offer.products as any)?.name || "offre"}`}
+                        />
+                      </td>
                       <td className="py-2.5 px-3">
                         {(() => {
                           const inner = (

@@ -7,7 +7,8 @@ import { VCard } from "@/components/vendor/ui/VCard";
 import { VBtn } from "@/components/vendor/ui/VBtn";
 import {
   Inbox, Tag, Loader2, Clock, Package, MapPin, Calendar,
-  CheckCircle2, XCircle, AlertCircle, Bell, FileDown,
+  CheckCircle2, XCircle, AlertCircle, Bell, FileDown, Eye, FileText,
+  Image as ImageIcon, FileSpreadsheet, File as FileIcon, X,
 } from "lucide-react";
 import { formatUpdatedAt, formatUpdatedAtFull } from "@/lib/format-date";
 import { VendorRfqResponseForm } from "@/components/vendor/VendorRfqResponseForm";

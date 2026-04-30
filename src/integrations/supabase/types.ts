@@ -10125,6 +10125,7 @@ export type Database = {
       vendors: {
         Row: {
           accepted_currencies: string[]
+          accepts_rfq: boolean
           address_line1: string | null
           auth_user_id: string | null
           auto_forward_to_qogita: boolean
@@ -10155,6 +10156,7 @@ export type Database = {
           linkedin_url: string | null
           logo_url: string | null
           margin_split_pct: number
+          max_open_rfqs: number | null
           name: string
           phone: string | null
           postal_code: string | null
@@ -10201,6 +10203,7 @@ export type Database = {
         }
         Insert: {
           accepted_currencies?: string[]
+          accepts_rfq?: boolean
           address_line1?: string | null
           auth_user_id?: string | null
           auto_forward_to_qogita?: boolean
@@ -10231,6 +10234,7 @@ export type Database = {
           linkedin_url?: string | null
           logo_url?: string | null
           margin_split_pct?: number
+          max_open_rfqs?: number | null
           name: string
           phone?: string | null
           postal_code?: string | null
@@ -10277,6 +10281,7 @@ export type Database = {
         }
         Update: {
           accepted_currencies?: string[]
+          accepts_rfq?: boolean
           address_line1?: string | null
           auth_user_id?: string | null
           auto_forward_to_qogita?: boolean
@@ -10307,6 +10312,7 @@ export type Database = {
           linkedin_url?: string | null
           logo_url?: string | null
           margin_split_pct?: number
+          max_open_rfqs?: number | null
           name?: string
           phone?: string | null
           postal_code?: string | null
@@ -11829,6 +11835,7 @@ export type Database = {
         Args: { _event: string; _token: string }
         Returns: boolean
       }
+      rfq_vendor_open_count: { Args: { _vendor_id: string }; Returns: number }
       rfq_vendor_state_label: {
         Args: { _status: Database["public"]["Enums"]["rfq_dispatch_status"] }
         Returns: string

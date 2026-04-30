@@ -30,9 +30,15 @@ export default function AdminRfqRoutingTestPage() {
     setError(null);
     setResult(null);
     try {
-      const { data, error } = await supabase.functions.invoke("rfq-routing-self-test");
+      const { data, error } = await supabase.rpc("rfq_routing_self_test_admin");
       if (error) throw error;
-      setResult(data as Result);
+      const rows = (data || []) as Row[];
+      const passed = rows.filter((r) => r.ok).length;
+      setResult({
+        summary: { total: rows.length, passed, failed: rows.length - passed, all_passed: passed === rows.length },
+        scenarios: rows,
+        ran_at: new Date().toISOString(),
+      });
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {

@@ -60,6 +60,10 @@ export function VendorRfqResponseForm({
 
   const submit = useMutation({
     mutationFn: async () => {
+      const totalSize = files.reduce((s, f) => s + f.size, 0);
+      if (totalSize > RFQ_MAX_TOTAL_SIZE) {
+        throw new Error("Taille totale des pièces jointes dépassée. Retirez un fichier.");
+      }
       const parsed = Schema.safeParse({
         unit_price_eur: Number(form.unit_price_eur),
         moq: Number(form.moq),

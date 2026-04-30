@@ -108,6 +108,143 @@ function formatEur(cents: number) {
   return (cents / 100).toLocaleString("fr-FR", { style: "currency", currency: "EUR" });
 }
 
+/**
+ * Valide la cohérence d'un plan RFQ selon son `plan_type`.
+ * Retourne un dictionnaire `champ → message` (vide = valide).
+ *
+ * Règles métier :
+ *  - `code` & `label` requis ; `code` slug `[a-z0-9_]+`.
+ *  - `price_cents` ≥ 0 ; `free_quota` doit avoir prix = 0 (gratuit).
+ *  - `credits_included > 0` UNIQUEMENT pour `credit_pack` ; doit être > 0 si credit_pack.
+ *  - `monthly_quota > 0` UNIQUEMENT pour `free_quota` ou `monthly_plan` ; doit être > 0 si l'un des deux.
+ *  - `duration_days` UNIQUEMENT pour `monthly_plan` / `unlimited_plan` (1..3650) ; interdit ailleurs.
+ *  - `is_unlimited = true` UNIQUEMENT pour `unlimited_plan` ; auto-coché pour ce type.
+ *  - `unlimited_plan` doit avoir un prix > 0 (sinon = forfait gratuit illimité, suspect).
+ *  - `credit_pack` doit avoir un prix > 0 (un pack à vie gratuit doublonnerait `free_quota`).
+ *  - `sort_order` ≥ 0 ; `currency` ISO 3 lettres.
+ */
+export function validatePlan(p: Omit<RfqPlan, "id"> | RfqPlan): Record<string, string> {
+  const errors: Record<string, string> = {};
+
+  // — Identifiants
+  const code = (p.code ?? "").trim();
+  if (!code) {
+    errors.code = "Le code est requis.";
+  } else if (!/^[a-z0-9_]{2,40}$/.test(code)) {
+    errors.code = "Slug invalide : minuscules, chiffres ou _ (2 à 40 caractères).";
+  }
+  if (!(p.label ?? "").trim()) {
+    errors.label = "Le libellé est requis.";
+  }
+
+  // — Prix & devise
+  if (!Number.isFinite(p.price_cents) || p.price_cents < 0) {
+    errors.price_cents = "Le prix doit être ≥ 0.";
+  }
+  if (!/^[A-Z]{3}$/.test((p.currency ?? "").trim())) {
+    errors.currency = "Devise ISO sur 3 lettres (ex. EUR).";
+  }
+  if (!Number.isFinite(p.sort_order) || p.sort_order < 0) {
+    errors.sort_order = "L'ordre d'affichage doit être ≥ 0.";
+  }
+
+  // — Règles spécifiques par mode
+  switch (p.plan_type) {
+    case "free_quota": {
+      if (p.price_cents !== 0) {
+        errors.price_cents =
+          "Un quota gratuit doit avoir un prix de 0 € (sinon utiliser un forfait mensuel).";
+      }
+      if (!Number.isFinite(p.monthly_quota) || p.monthly_quota <= 0) {
+        errors.monthly_quota = "Le quota mensuel doit être > 0 pour un paywall.";
+      }
+      if (p.credits_included && p.credits_included !== 0) {
+        errors.credits_included =
+          "Crédits inclus interdits hors mode « Crédits par demande ».";
+      }
+      if (p.duration_days != null) {
+        errors.duration_days =
+          "Durée interdite : un quota gratuit se réinitialise mensuellement automatiquement.";
+      }
+      if (p.is_unlimited) {
+        errors.is_unlimited = "« Illimité » est réservé au forfait illimité.";
+      }
+      break;
+    }
+
+    case "credit_pack": {
+      if (!Number.isFinite(p.credits_included) || p.credits_included <= 0) {
+        errors.credits_included =
+          "Un pack de crédits doit inclure au moins 1 crédit.";
+      }
+      if (p.price_cents <= 0) {
+        errors.price_cents =
+          "Un pack de crédits doit avoir un prix > 0 € (sinon utiliser un quota gratuit).";
+      }
+      if (p.monthly_quota && p.monthly_quota !== 0) {
+        errors.monthly_quota =
+          "Quota mensuel interdit pour un pack à vie (utiliser un forfait mensuel).";
+      }
+      if (p.duration_days != null) {
+        errors.duration_days =
+          "Durée interdite : les crédits d'un pack n'expirent pas.";
+      }
+      if (p.is_unlimited) {
+        errors.is_unlimited = "« Illimité » est réservé au forfait illimité.";
+      }
+      break;
+    }
+
+    case "monthly_plan": {
+      if (!Number.isFinite(p.monthly_quota) || p.monthly_quota <= 0) {
+        errors.monthly_quota =
+          "Un forfait mensuel doit définir un quota > 0 (sinon choisir « Forfait illimité »).";
+      }
+      if (p.price_cents <= 0) {
+        errors.price_cents = "Un forfait mensuel doit avoir un prix > 0 €.";
+      }
+      if (p.credits_included && p.credits_included !== 0) {
+        errors.credits_included =
+          "Crédits inclus interdits hors mode « Crédits par demande ».";
+      }
+      if (p.duration_days == null || !Number.isFinite(p.duration_days) || p.duration_days < 1) {
+        errors.duration_days = "La durée (jours) est requise pour un forfait mensuel.";
+      } else if (p.duration_days > 3650) {
+        errors.duration_days = "Durée trop longue (max 3650 jours).";
+      }
+      if (p.is_unlimited) {
+        errors.is_unlimited =
+          "« Illimité » est incompatible avec un quota — utiliser « Forfait illimité ».";
+      }
+      break;
+    }
+
+    case "unlimited_plan": {
+      if (p.price_cents <= 0) {
+        errors.price_cents =
+          "Un forfait illimité doit avoir un prix > 0 € (un illimité gratuit doublonnerait).";
+      }
+      if (p.monthly_quota && p.monthly_quota !== 0) {
+        errors.monthly_quota =
+          "Quota mensuel interdit pour un forfait illimité.";
+      }
+      if (p.credits_included && p.credits_included !== 0) {
+        errors.credits_included =
+          "Crédits inclus interdits hors mode « Crédits par demande ».";
+      }
+      if (p.duration_days == null || !Number.isFinite(p.duration_days) || p.duration_days < 1) {
+        errors.duration_days = "La durée (jours) est requise pour un forfait illimité.";
+      } else if (p.duration_days > 3650) {
+        errors.duration_days = "Durée trop longue (max 3650 jours).";
+      }
+      // is_unlimited sera forcé à true côté mutation, pas d'erreur ici.
+      break;
+    }
+  }
+
+  return errors;
+}
+
 export default function AdminRfqPlansPage() {
   const qc = useQueryClient();
   const [editing, setEditing] = useState<RfqPlan | null>(null);
@@ -128,13 +265,15 @@ export default function AdminRfqPlansPage() {
 
   const upsertMutation = useMutation({
     mutationFn: async (plan: RfqPlan | Omit<RfqPlan, "id">) => {
-      // Garde-fous métier
-      if (!plan.code.trim() || !plan.label.trim()) {
-        throw new Error("Le code et le libellé sont requis.");
+      // Validation métier serveur-side (filet de sécurité même si UI bloque déjà)
+      const errors = validatePlan(plan);
+      const errorList = Object.values(errors);
+      if (errorList.length > 0) {
+        throw new Error(errorList.join(" • "));
       }
       const payload = {
         ...plan,
-        // Coercitions par type pour cohérence métier
+        // Coercitions par type pour cohérence métier (cas extrême : champ caché reste à 0)
         is_unlimited: plan.plan_type === "unlimited_plan" ? true : plan.is_unlimited,
         credits_included:
           plan.plan_type === "credit_pack" ? plan.credits_included : 0,
@@ -363,11 +502,46 @@ function PlanFormDialog({
   onSubmit: (p: Omit<RfqPlan, "id"> | RfqPlan) => void;
 }) {
   const [form, setForm] = useState<Omit<RfqPlan, "id"> | RfqPlan>(initial);
+  const [submitAttempted, setSubmitAttempted] = useState(false);
 
   const update = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
 
+  // Quand l'admin change de mode, on remet à zéro les champs interdits par le nouveau type
+  // pour éviter d'afficher des valeurs orphelines (et déclencher de fausses erreurs).
+  const updatePlanType = (newType: PlanType) => {
+    setForm((f) => ({
+      ...f,
+      plan_type: newType,
+      credits_included: newType === "credit_pack" ? f.credits_included : 0,
+      monthly_quota:
+        newType === "free_quota" || newType === "monthly_plan" ? f.monthly_quota : 0,
+      duration_days:
+        newType === "monthly_plan" || newType === "unlimited_plan"
+          ? f.duration_days ?? 30
+          : null,
+      is_unlimited: newType === "unlimited_plan",
+      // free_quota = gratuit obligatoire
+      price_cents: newType === "free_quota" ? 0 : f.price_cents,
+    }));
+  };
+
   const meta = PLAN_TYPE_META[form.plan_type];
+  const errors = validatePlan(form);
+  const errorCount = Object.keys(errors).length;
+  const showErr = (field: string) => submitAttempted && errors[field];
+
+  const handleSubmit = () => {
+    setSubmitAttempted(true);
+    if (errorCount > 0) {
+      toast.error(`${errorCount} erreur(s) à corriger avant d'enregistrer.`);
+      return;
+    }
+    onSubmit(form);
+  };
+
+  const errClass = (field: string) =>
+    showErr(field) ? "border-destructive focus-visible:ring-destructive" : "";
 
   return (
     <DialogContent className="max-w-2xl">
@@ -386,7 +560,12 @@ function PlanFormDialog({
               onChange={(e) => update("code", e.target.value)}
               placeholder="pack_25"
               disabled={isEdit}
+              aria-invalid={!!showErr("code")}
+              className={errClass("code")}
             />
+            {showErr("code") && (
+              <p className="text-xs text-destructive mt-1">{errors.code}</p>
+            )}
           </div>
           <div>
             <Label htmlFor="label">Libellé</Label>
@@ -395,13 +574,18 @@ function PlanFormDialog({
               value={form.label}
               onChange={(e) => update("label", e.target.value)}
               placeholder="Pack 25 crédits"
+              aria-invalid={!!showErr("label")}
+              className={errClass("label")}
             />
+            {showErr("label") && (
+              <p className="text-xs text-destructive mt-1">{errors.label}</p>
+            )}
           </div>
         </div>
 
         <div>
           <Label htmlFor="plan_type">Mode de monétisation</Label>
-          <Select value={form.plan_type} onValueChange={(v) => update("plan_type", v as PlanType)}>
+          <Select value={form.plan_type} onValueChange={(v) => updatePlanType(v as PlanType)}>
             <SelectTrigger id="plan_type">
               <SelectValue />
             </SelectTrigger>
@@ -433,7 +617,11 @@ function PlanFormDialog({
 
         <div className="grid grid-cols-3 gap-3">
           <div>
-            <Label htmlFor="price">Prix (€)</Label>
+            <Label htmlFor="price">
+              Prix (€){form.plan_type === "free_quota" && (
+                <span className="text-xs text-muted-foreground ml-1">— doit être 0</span>
+              )}
+            </Label>
             <Input
               id="price"
               type="number"
@@ -443,7 +631,13 @@ function PlanFormDialog({
               onChange={(e) =>
                 update("price_cents", Math.round(parseFloat(e.target.value || "0") * 100))
               }
+              disabled={form.plan_type === "free_quota"}
+              aria-invalid={!!showErr("price_cents")}
+              className={errClass("price_cents")}
             />
+            {showErr("price_cents") && (
+              <p className="text-xs text-destructive mt-1">{errors.price_cents}</p>
+            )}
           </div>
 
           {form.plan_type === "credit_pack" && (
@@ -452,10 +646,15 @@ function PlanFormDialog({
               <Input
                 id="credits"
                 type="number"
-                min="0"
+                min="1"
                 value={form.credits_included}
                 onChange={(e) => update("credits_included", parseInt(e.target.value || "0", 10))}
+                aria-invalid={!!showErr("credits_included")}
+                className={errClass("credits_included")}
               />
+              {showErr("credits_included") && (
+                <p className="text-xs text-destructive mt-1">{errors.credits_included}</p>
+              )}
             </div>
           )}
 
@@ -465,10 +664,15 @@ function PlanFormDialog({
               <Input
                 id="quota"
                 type="number"
-                min="0"
+                min="1"
                 value={form.monthly_quota}
                 onChange={(e) => update("monthly_quota", parseInt(e.target.value || "0", 10))}
+                aria-invalid={!!showErr("monthly_quota")}
+                className={errClass("monthly_quota")}
               />
+              {showErr("monthly_quota") && (
+                <p className="text-xs text-destructive mt-1">{errors.monthly_quota}</p>
+              )}
             </div>
           )}
 
@@ -479,9 +683,15 @@ function PlanFormDialog({
                 id="duration"
                 type="number"
                 min="1"
+                max="3650"
                 value={form.duration_days ?? 30}
                 onChange={(e) => update("duration_days", parseInt(e.target.value || "30", 10))}
+                aria-invalid={!!showErr("duration_days")}
+                className={errClass("duration_days")}
               />
+              {showErr("duration_days") && (
+                <p className="text-xs text-destructive mt-1">{errors.duration_days}</p>
+              )}
             </div>
           )}
 
@@ -490,9 +700,15 @@ function PlanFormDialog({
             <Input
               id="sort_order"
               type="number"
+              min="0"
               value={form.sort_order}
               onChange={(e) => update("sort_order", parseInt(e.target.value || "0", 10))}
+              aria-invalid={!!showErr("sort_order")}
+              className={errClass("sort_order")}
             />
+            {showErr("sort_order") && (
+              <p className="text-xs text-destructive mt-1">{errors.sort_order}</p>
+            )}
           </div>
         </div>
 
@@ -517,10 +733,27 @@ function PlanFormDialog({
             </div>
           </div>
         </div>
+
+        {/* Bandeau récap des erreurs après tentative de soumission */}
+        {submitAttempted && errorCount > 0 && (
+          <div
+            role="alert"
+            className="rounded-md border border-destructive/30 bg-destructive/5 p-3"
+          >
+            <p className="text-sm font-medium text-destructive mb-1">
+              {errorCount} {errorCount > 1 ? "incohérences détectées" : "incohérence détectée"} :
+            </p>
+            <ul className="list-disc ml-5 space-y-0.5 text-xs text-destructive/90">
+              {Object.entries(errors).map(([field, msg]) => (
+                <li key={field}>{msg}</li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
 
       <DialogFooter>
-        <Button onClick={() => onSubmit(form)} disabled={saving}>
+        <Button onClick={handleSubmit} disabled={saving}>
           {saving && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
           {isEdit ? "Enregistrer" : "Créer le plan"}
         </Button>
@@ -528,3 +761,4 @@ function PlanFormDialog({
     </DialogContent>
   );
 }
+

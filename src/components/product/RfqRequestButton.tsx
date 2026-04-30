@@ -214,25 +214,8 @@ export default function RfqRequestButton({ productId, brandId, productName, bran
           </div>
 
           <div className="col-span-2">
-            <Label>Pièces jointes (max 20 Mo / fichier)</Label>
-            <label className="flex items-center gap-2 cursor-pointer text-xs text-primary hover:underline">
-              <Upload className="h-3.5 w-3.5" /> Ajouter un fichier
-              <input type="file" className="hidden" multiple
-                accept=".pdf,.png,.jpg,.jpeg,.webp,.xlsx,.xls,.docx,.doc,.csv,.txt"
-                onChange={e => { if (e.target.files) setFiles(prev => [...prev, ...Array.from(e.target.files!)]); e.target.value = ""; }} />
-            </label>
-            {files.length > 0 && (
-              <ul className="mt-2 space-y-1">
-                {files.map((f, i) => (
-                  <li key={i} className="flex items-center justify-between text-xs bg-muted/40 px-2 py-1 rounded">
-                    <span className="truncate">{f.name} ({Math.round(f.size / 1024)} ko)</span>
-                    <button onClick={() => setFiles(prev => prev.filter((_, j) => j !== i))} className="text-muted-foreground hover:text-destructive">
-                      <X className="h-3 w-3" />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
+            <Label>Pièces jointes</Label>
+            <RfqAttachmentPicker files={files} onChange={setFiles} />
           </div>
         </div>
 

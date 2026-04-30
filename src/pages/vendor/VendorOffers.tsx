@@ -694,15 +694,15 @@ function useOfferImport(vendorId: string | undefined) {
 function downloadTemplate() {
   const ws = XLSX.utils.aoa_to_sheet([
     [
-      "EAN", "CNK", "Prix HT", "Prix_Achat_HT", "TVA", "Stock", "MOQ", "MOV", "Délai", "Pays",
+      "EAN", "CNK", "Prix HT", "Prix_Achat_HT", "TVA", "Stock", "MOQ", "MOV", "Délai", "Pays", "Conditionnement",
       "Profil", "Profil_Pays", "Prix_Profil_HT", "Remise_%", "MOQ_Profil", "MOV_Profil",
     ],
-    ["3401560100013", "1234567", "12.50", "8.00", "21", "100", "1", "150", "3", "BE", "", "", "", "", "", ""],
-    ["3401560100013", "", "13.00", "8.50", "20", "", "1", "200", "5", "FR", "", "", "", "", "", ""],
-    ["3401560100013", "", "", "", "", "", "", "", "", "", "pharmacy", "BE", "11.00", "", "5", "150"],
-    ["3401560100013", "", "", "", "", "", "", "", "", "", "hospital", "", "", "10", "10", "500"],
+    ["3401560100013", "1234567", "12.50", "8.00", "21", "100", "1", "150", "3", "BE", "24", "", "", "", "", "", ""],
+    ["3401560100013", "", "13.00", "8.50", "20", "", "1", "200", "5", "FR", "24", "", "", "", "", "", ""],
+    ["3401560100013", "", "", "", "", "", "", "", "", "", "", "pharmacy", "BE", "11.00", "", "5", "150"],
+    ["3401560100013", "", "", "", "", "", "", "", "", "", "", "hospital", "", "", "10", "10", "500"],
   ]);
-  ws["!cols"] = Array(16).fill(null).map(() => ({ wch: 16 }));
+  ws["!cols"] = Array(17).fill(null).map(() => ({ wch: 16 }));
 
   // Price tiers sheet
   const wsTiers = XLSX.utils.aoa_to_sheet([

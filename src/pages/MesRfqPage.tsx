@@ -55,13 +55,15 @@ type ResponseRow = {
 
 const STATUS_LABEL: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
   draft: { label: "Brouillon", variant: "outline" },
+  open: { label: "En collecte", variant: "default" },
   dispatched: { label: "Envoyée", variant: "secondary" },
-  collecting: { label: "En collecte", variant: "default" },
-  curated: { label: "Offres prêtes", variant: "default" },
+  in_followup: { label: "En relance", variant: "default" },
+  closed: { label: "Clôturée", variant: "outline" },
   awarded: { label: "Attribuée", variant: "default" },
-  expired: { label: "Expirée", variant: "outline" },
   cancelled: { label: "Annulée", variant: "destructive" },
 };
+
+const ACTIVE_STATUSES = new Set(["draft", "open", "dispatched", "in_followup"]);
 
 function formatPrice(cents: number | null | undefined) {
   if (cents == null) return "—";
@@ -192,7 +194,7 @@ export default function MesRfqPage() {
                       <div className="flex items-center gap-2 flex-wrap">
                         <Badge variant={status.variant}>{status.label}</Badge>
                         {c?.awarded && <Badge variant="default" className="bg-emerald-600"><Award className="h-3 w-3 mr-1" /> Attribuée</Badge>}
-                        {rfq.responses_deadline && rfq.status === "collecting" && (
+                        {rfq.responses_deadline && ACTIVE_STATUSES.has(rfq.status) && (
                           <span className="text-xs text-muted-foreground inline-flex items-center gap-1">
                             <Clock className="h-3 w-3" /> Clôture {formatUpdatedAt(rfq.responses_deadline)}
                           </span>

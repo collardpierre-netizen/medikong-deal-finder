@@ -133,9 +133,11 @@ function formatRelative(iso?: string | null): string | null {
 /* ── Offer Row ─────────────────────────────────────────── */
 function OfferRow({
   offer, productId, productName, productSlug, user, navigate, addToCart, isBest, delay = 0, isTVAC = false, categoryId, bestPrice, discountPercentage = 0,
+  compareBasis = 'pack', packSize: packSizeProp,
 }: {
   offer: Offer; productId: string; productName: string; productSlug: string;
   user: any; navigate: any; addToCart: any; isBest?: boolean; delay?: number; isTVAC?: boolean; categoryId?: string; bestPrice?: number; discountPercentage?: number;
+  compareBasis?: 'pack' | 'unit' | 'hundred'; packSize?: number;
 }) {
   const maxQty = offer.stockQuantity > 0 ? offer.stockQuantity : 999;
   const step = offer.bundleSize > 1 ? offer.bundleSize : 1;
@@ -149,7 +151,17 @@ function OfferRow({
   const displayCode = offer.displayCode || offer.sellerId.slice(0, 6).toUpperCase();
   // sellerName already encapsulates the anonymization rules (real name vs "Fournisseur XXXXXX")
   const sellerLabel = offer.sellerName || `Fournisseur ${displayCode}`;
-  const displayPrice = isTVAC ? offer.unitPriceInclVat : offer.unitPriceEur;
+  // Prix vendeur "au pack" tel qu'importé. Bascule sur unité ou /100u via compareBasis.
+  const packSize = Math.max(1, packSizeProp ?? 1);
+  const basePackPrice = isTVAC ? offer.unitPriceInclVat : offer.unitPriceEur;
+  const perUnitPrice = packSize > 0 ? basePackPrice / packSize : basePackPrice;
+  const displayPrice =
+    compareBasis === 'pack' ? basePackPrice :
+    compareBasis === 'unit' ? perUnitPrice :
+    perUnitPrice * 100;
+  const basisSuffix =
+    compareBasis === 'pack' ? (packSize > 1 ? ` /pack de ${packSize}` : ' /pack') :
+    compareBasis === 'unit' ? ' /u.' : ' /100 u.';
   const priceLabel = isTVAC ? "TVAC" : "HTVA";
 
   const handleAdd = () => {
@@ -334,9 +346,17 @@ function OfferRow({
           ) : (
             <div className="flex flex-col gap-1">
               <div className="flex items-baseline gap-6">
-                <span className="text-sm font-bold text-green-700 whitespace-nowrap">{formatEur(displayPrice)}&nbsp;€ <span className="text-[10px] font-normal text-muted-foreground">{priceLabel}</span></span>
+                <span className="text-sm font-bold text-green-700 whitespace-nowrap">
+                  {formatEur(displayPrice)}&nbsp;€
+                  <span className="text-[10px] font-normal text-muted-foreground">{basisSuffix} · {priceLabel}</span>
+                </span>
                 <span className="text-sm text-foreground whitespace-nowrap">{offer.movEur > 0 ? <>{formatEur(offer.movEur)}&nbsp;€</> : "—"}</span>
               </div>
+              {compareBasis !== 'pack' && packSize > 1 && (
+                <span className="text-[10px] text-muted-foreground">
+                  Pack vendeur : {formatEur(basePackPrice)}&nbsp;€ /pack de {packSize}
+                </span>
+              )}
               <ProfileResolvedPriceBadge
                 offerId={offer.id}
                 basePrice={offer.unitPriceEur}
@@ -383,7 +403,7 @@ function OfferRow({
             )}
           </div>
           <div className="flex flex-col items-end gap-0.5">
-            <span className="text-base font-bold text-green-700">{formatEur(displayPrice)} € <span className="text-[10px] font-normal text-muted-foreground">{priceLabel}</span></span>
+            <span className="text-base font-bold text-green-700">{formatEur(displayPrice)} € <span className="text-[10px] font-normal text-muted-foreground">{basisSuffix} · {priceLabel}</span></span>
             <ProfileResolvedPriceBadge
               offerId={offer.id}
               basePrice={offer.unitPriceEur}
@@ -1379,15 +1399,44 @@ export default function ProductPage() {
                       }}
                     />
 
-                    {/* RFQ — Demande de prix */}
-                    <div className="flex items-center justify-end mb-3">
-                      <RfqRequestButton
-                        productId={product.id}
-                        brandId={brandData?.id || product.brandId || null}
-                        productName={product.name}
-                        brandName={brandData?.name || product.brand || null}
-                      />
-                    </div>
+                    {/* RFQ + base de comparaison (€/pack · €/u. · €/100u.) */}
+                    {(() => {
+                      const _mkPack = resolvePackSize({
+                        offerOverride: (bestOffer as any)?.packSizeOverride,
+                        productPackSize: (product as any)?.pack_size,
+                        productName: product.name,
+                      });
+                      const showBasisToggle = !!bestOffer && _mkPack.packSize > 1;
+                      return (
+                        <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
+                          {showBasisToggle ? (
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                <BarChart3 size={14} />
+                                <span>Comparer sur la base&nbsp;:</span>
+                              </div>
+                              <ToggleGroup
+                                type="single"
+                                value={externalCompareBasis}
+                                onValueChange={(v) => v && setExternalCompareBasis(v as 'pack' | 'unit' | 'hundred')}
+                                className="bg-muted/40 rounded-lg p-0.5"
+                                size="sm"
+                              >
+                                <ToggleGroupItem value="pack" className="text-[11px] px-2.5 h-7 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">€/pack</ToggleGroupItem>
+                                <ToggleGroupItem value="unit" className="text-[11px] px-2.5 h-7 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">€/unité</ToggleGroupItem>
+                                <ToggleGroupItem value="hundred" className="text-[11px] px-2.5 h-7 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">€/100 u.</ToggleGroupItem>
+                              </ToggleGroup>
+                            </div>
+                          ) : <div />}
+                          <RfqRequestButton
+                            productId={product.id}
+                            brandId={brandData?.id || product.brandId || null}
+                            productName={product.name}
+                            brandName={brandData?.name || product.brand || null}
+                          />
+                        </div>
+                      );
+                    })()}
 
                     {/* Best Offer */}
                     {bestOffer ? (
@@ -1420,6 +1469,12 @@ export default function ProductPage() {
                             isTVAC={isTVAC}
                             categoryId={categoryData?.category?.id}
                             discountPercentage={Number((product as any)?.discount_percentage) || 0}
+                            compareBasis={externalCompareBasis}
+                            packSize={resolvePackSize({
+                              offerOverride: (bestOffer as any)?.packSizeOverride,
+                              productPackSize: (product as any)?.pack_size,
+                              productName: product.name,
+                            }).packSize}
                           />
                         </SafeBoundary>
                       </div>
@@ -1480,6 +1535,12 @@ export default function ProductPage() {
                               categoryId={categoryData?.category?.id}
                               bestPrice={bestOffer ? (isTVAC ? bestOffer.unitPriceInclVat : bestOffer.unitPriceEur) : undefined}
                               discountPercentage={Number((product as any)?.discount_percentage) || 0}
+                              compareBasis={externalCompareBasis}
+                              packSize={resolvePackSize({
+                                offerOverride: (offer as any)?.packSizeOverride,
+                                productPackSize: (product as any)?.pack_size,
+                                productName: product.name,
+                              }).packSize}
                             />
                           </SafeBoundary>
                         ))}

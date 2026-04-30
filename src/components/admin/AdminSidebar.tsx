@@ -51,6 +51,7 @@ const sections: NavSection[] = [
   {
     labelKey: "intelligence",
     items: [
+      { labelKey: "priceCockpit", path: "/admin/prix-cockpit", icon: TrendingDown },
       { labelKey: "priceWatch", path: "/admin/veille-prix", icon: Eye },
       { labelKey: "priceAlerts", path: "/admin/price-alerts", icon: AlertTriangle },
       { labelKey: "leads", path: "/admin/leads", icon: Link },

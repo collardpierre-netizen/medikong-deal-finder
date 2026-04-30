@@ -116,15 +116,16 @@ export default function MesRfqPage() {
     queryFn: async () => {
       const { data } = await supabase
         .from("rfq_responses")
-        .select("rfq_id, unit_price_excl_vat_cents, is_visible_to_buyer, awarded")
+        .select("rfq_id, unit_price_excl_vat_cents, is_visible_to_buyer, awarded, score, is_top_pick")
         .in("rfq_id", rfqs!.map(r => r.id))
         .eq("is_visible_to_buyer", true);
-      const map: Record<string, { count: number; best: number | null; awarded: boolean }> = {};
+      const map: Record<string, { count: number; best: number | null; awarded: boolean; topScore: number | null }> = {};
       for (const r of (data || []) as any[]) {
-        const c = map[r.rfq_id] ||= { count: 0, best: null, awarded: false };
+        const c = map[r.rfq_id] ||= { count: 0, best: null, awarded: false, topScore: null };
         c.count += 1;
         if (c.best == null || r.unit_price_excl_vat_cents < c.best) c.best = r.unit_price_excl_vat_cents;
         if (r.awarded) c.awarded = true;
+        if (r.is_top_pick && r.score != null) c.topScore = r.score;
       }
       return map;
     },

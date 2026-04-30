@@ -1223,7 +1223,7 @@ export default function VendorOffers() {
   const [filterCategory, setFilterCategory] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-  const openCreate = () => { setForm(emptyForm); setEditingId(null); setShowForm(true); };
+  const openCreate = () => { setForm(emptyForm); setInitialSnapshot(null); setEditingId(null); setShowForm(true); };
   const openEdit = async (offer: any) => {
     // Charger les catégories liées à l'offre + le coût par défaut produit/vendeur
     const [{ data: linkedCats }, { data: defaultCost }] = await Promise.all([

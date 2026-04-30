@@ -1905,6 +1905,68 @@ export default function VendorOffers() {
         </span>
       </div>
 
+      {/* Bulk actions bar — visible dès qu'au moins une offre est sélectionnée */}
+      {selectedIds.size > 0 && (
+        <div
+          className="flex items-center gap-3 flex-wrap px-4 py-2.5 rounded-lg border"
+          style={{ backgroundColor: "#EFF6FF", borderColor: "#BFDBFE" }}
+        >
+          <span className="text-[12px] font-semibold" style={{ color: "#1B5BDA" }}>
+            {selectedIds.size} offre{selectedIds.size > 1 ? "s" : ""} sélectionnée{selectedIds.size > 1 ? "s" : ""}
+          </span>
+          <div className="h-4 w-px" style={{ backgroundColor: "#BFDBFE" }} />
+          <button
+            type="button"
+            onClick={() => bulkSetActive.mutate({ ids: [...selectedIds], is_active: true })}
+            disabled={bulkSetActive.isPending}
+            className="inline-flex items-center gap-1.5 text-[12px] font-medium px-3 py-1.5 rounded-md bg-white border hover:bg-emerald-50 disabled:opacity-50"
+            style={{ borderColor: "#A7F3D0", color: "#059669" }}
+          >
+            <Power size={13} /> Activer
+          </button>
+          <button
+            type="button"
+            onClick={() => bulkSetActive.mutate({ ids: [...selectedIds], is_active: false })}
+            disabled={bulkSetActive.isPending}
+            className="inline-flex items-center gap-1.5 text-[12px] font-medium px-3 py-1.5 rounded-md bg-white border hover:bg-slate-50 disabled:opacity-50"
+            style={{ borderColor: "#CBD5E1", color: "#475569" }}
+          >
+            <PowerOff size={13} /> Désactiver
+          </button>
+          <button
+            type="button"
+            onClick={() => bulkDuplicate.mutate([...selectedIds])}
+            disabled={bulkDuplicate.isPending}
+            className="inline-flex items-center gap-1.5 text-[12px] font-medium px-3 py-1.5 rounded-md bg-white border hover:bg-violet-50 disabled:opacity-50"
+            style={{ borderColor: "#DDD6FE", color: "#7C3AED" }}
+            title="Crée des copies en statut Inactif pour relecture avant publication"
+          >
+            <Copy size={13} /> Dupliquer
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (confirm(`Supprimer définitivement ${selectedIds.size} offre(s) ? Cette action est irréversible.`)) {
+                bulkDelete.mutate([...selectedIds]);
+              }
+            }}
+            disabled={bulkDelete.isPending}
+            className="inline-flex items-center gap-1.5 text-[12px] font-medium px-3 py-1.5 rounded-md bg-white border hover:bg-red-50 disabled:opacity-50"
+            style={{ borderColor: "#FECACA", color: "#EF4343" }}
+          >
+            <Trash2 size={13} /> Supprimer
+          </button>
+          <button
+            type="button"
+            onClick={() => setSelectedIds(new Set())}
+            className="ml-auto text-[11px] font-medium underline decoration-dotted hover:text-[#1B5BDA]"
+            style={{ color: "#8B95A5" }}
+          >
+            Effacer la sélection
+          </button>
+        </div>
+      )}
+
       {/* Offers table */}
       {isLoading ? (
         <VCard>

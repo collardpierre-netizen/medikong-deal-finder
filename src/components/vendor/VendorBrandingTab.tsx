@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { VCard } from "@/components/vendor/ui/VCard";
 import { VBtn } from "@/components/vendor/ui/VBtn";
-import { Loader2, Upload, Trash2, Globe, Linkedin, Facebook, Instagram, Twitter, Youtube, User, Image as ImageIcon } from "lucide-react";
+import { Loader2, Upload, Trash2, Globe, Linkedin, Facebook, Instagram, Twitter, Youtube, User, Image as ImageIcon, Link2, Check } from "lucide-react";
 import { toast } from "sonner";
 
 type Vendor = any;
@@ -33,6 +33,10 @@ export default function VendorBrandingTab({ vendor }: Props) {
   const coverInputRef = useRef<HTMLInputElement>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
+  const [logoUrlInput, setLogoUrlInput] = useState("");
+  const [coverUrlInput, setCoverUrlInput] = useState("");
+  const [savingLogoUrl, setSavingLogoUrl] = useState(false);
+  const [savingCoverUrl, setSavingCoverUrl] = useState(false);
 
   const [form, setForm] = useState({
     tagline: "",
@@ -130,6 +134,39 @@ export default function VendorBrandingTab({ vendor }: Props) {
     qc.invalidateQueries({ queryKey: ["current-vendor"] });
   };
 
+  const setAssetFromUrl = async (rawUrl: string, kind: "logo" | "cover") => {
+    const url = rawUrl.trim();
+    if (!url) return;
+    try {
+      const parsed = new URL(url);
+      if (!/^https?:$/.test(parsed.protocol)) {
+        toast.error("L'URL doit commencer par http:// ou https://");
+        return;
+      }
+    } catch {
+      toast.error("URL invalide");
+      return;
+    }
+    const setLoading = kind === "logo" ? setSavingLogoUrl : setSavingCoverUrl;
+    const updateField = kind === "logo" ? "logo_url" : "cover_image_url";
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from("vendors")
+        .update({ [updateField]: url } as any)
+        .eq("id", vendor.id);
+      if (error) throw error;
+      toast.success(kind === "logo" ? "Logo mis à jour depuis l'URL" : "Bannière mise à jour depuis l'URL");
+      qc.invalidateQueries({ queryKey: ["current-vendor"] });
+      if (kind === "logo") setLogoUrlInput("");
+      else setCoverUrlInput("");
+    } catch (err: any) {
+      toast.error(err.message || "Erreur lors de l'enregistrement de l'URL");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const logoUrl = vendor?.logo_url as string | undefined;
   const coverUrl = vendor?.cover_image_url as string | undefined;
 
@@ -179,6 +216,23 @@ export default function VendorBrandingTab({ vendor }: Props) {
               )}
             </div>
           </div>
+          <div className="mt-3 pt-3 border-t border-dashed border-[#E2E8F0]">
+            <label className="text-[11px] font-semibold text-[#8B95A5] mb-1 flex items-center gap-1.5">
+              <Link2 size={12} /> Ou utiliser une URL web
+            </label>
+            <div className="flex items-center gap-2">
+              <input
+                type="url"
+                value={logoUrlInput}
+                onChange={(e) => setLogoUrlInput(e.target.value)}
+                placeholder="https://exemple.com/logo.png"
+                className="flex-1 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-[12px] text-[#1D2530] focus:outline-none focus:border-[#1B5BDA]"
+              />
+              <VBtn small primary onClick={() => setAssetFromUrl(logoUrlInput, "logo")} disabled={savingLogoUrl || !logoUrlInput.trim()}>
+                {savingLogoUrl ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
+              </VBtn>
+            </div>
+          </div>
         </VCard>
 
         {/* Cover */}
@@ -219,6 +273,23 @@ export default function VendorBrandingTab({ vendor }: Props) {
                   <Trash2 size={12} /> Supprimer
                 </button>
               )}
+            </div>
+            <div className="pt-3 border-t border-dashed border-[#E2E8F0]">
+              <label className="text-[11px] font-semibold text-[#8B95A5] mb-1 flex items-center gap-1.5">
+                <Link2 size={12} /> Ou utiliser une URL web
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="url"
+                  value={coverUrlInput}
+                  onChange={(e) => setCoverUrlInput(e.target.value)}
+                  placeholder="https://exemple.com/banniere.jpg"
+                  className="flex-1 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-[12px] text-[#1D2530] focus:outline-none focus:border-[#1B5BDA]"
+                />
+                <VBtn small primary onClick={() => setAssetFromUrl(coverUrlInput, "cover")} disabled={savingCoverUrl || !coverUrlInput.trim()}>
+                  {savingCoverUrl ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
+                </VBtn>
+              </div>
             </div>
           </div>
         </VCard>

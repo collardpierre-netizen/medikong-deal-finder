@@ -1314,6 +1314,21 @@ export type Database = {
         }
         Relationships: []
       }
+      country_neighbors: {
+        Row: {
+          country_code: string
+          neighbor_code: string
+        }
+        Insert: {
+          country_code: string
+          neighbor_code: string
+        }
+        Update: {
+          country_code?: string
+          neighbor_code?: string
+        }
+        Relationships: []
+      }
       crm_campaigns: {
         Row: {
           clicked_count: number
@@ -10849,6 +10864,12 @@ export type Database = {
         }[]
       }
       rfq_dispatch_auto_pending_review: { Args: never; Returns: number }
+      rfq_eligible_vendor_countries: {
+        Args: { _buyer_country: string }
+        Returns: {
+          country_code: string
+        }[]
+      }
       rfq_ensure_buyer_balance: {
         Args: { _user_id: string }
         Returns: {
@@ -10942,6 +10963,26 @@ export type Database = {
         Returns: {
           reason: Database["public"]["Enums"]["rfq_target_reason"]
           vendor_id: string
+        }[]
+      }
+      rfq_routing_self_test: {
+        Args: never
+        Returns: {
+          actual: number
+          details: string
+          expected: number
+          ok: boolean
+          scenario: string
+        }[]
+      }
+      rfq_routing_self_test_admin: {
+        Args: never
+        Returns: {
+          actual: number
+          details: string
+          expected: number
+          ok: boolean
+          scenario: string
         }[]
       }
       rfq_select_reminder_targets: {
@@ -11157,6 +11198,7 @@ export type Database = {
         | "manufacturer_interest"
         | "product_interest"
         | "manual"
+        | "category_interest"
       rfq_target_scope: "product_only" | "brand_only" | "product_and_brand"
       shipment_status:
         | "pending"
@@ -11475,6 +11517,7 @@ export const Constants = {
         "manufacturer_interest",
         "product_interest",
         "manual",
+        "category_interest",
       ],
       rfq_target_scope: ["product_only", "brand_only", "product_and_brand"],
       shipment_status: [

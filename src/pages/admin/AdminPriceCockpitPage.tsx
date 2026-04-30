@@ -81,6 +81,12 @@ export default function AdminPriceCockpitPage() {
   const [quickSend, setQuickSend] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
 
+  // Gaps tab filters
+  const [gapSearch, setGapSearch] = useState("");
+  const [gapMinRfq, setGapMinRfq] = useState<string>("0");
+  const [gapOnlyDemand, setGapOnlyDemand] = useState<boolean>(true);
+  const [gapSortBy, setGapSortBy] = useState<GapSortKey>("priority");
+
   const kpisQ = useQuery({
     queryKey: ["price-cockpit-kpis", country],
     queryFn: async () => {

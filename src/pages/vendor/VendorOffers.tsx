@@ -813,6 +813,7 @@ function exportOffers(offers: any[], profileRulesMap?: Map<string, any[]>, price
       "MOV": o.mov_amount ?? "",
       "Délai": o.delivery_days,
       "Pays": o.country_code,
+      "Conditionnement": o.pack_size_override ?? (o.products as any)?.pack_size ?? "",
       "Statut": o.is_active ? "Active" : "Inactive",
       "Profil": "",
       "Profil_Pays": "",

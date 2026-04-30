@@ -288,10 +288,10 @@ export default function AdminPriceCockpitPage() {
                 </TableHeader>
                 <TableBody>
                   {rowsQ.isLoading && (
-                    <TableRow><TableCell colSpan={8} className="text-center py-8"><Loader2 className="w-5 h-5 animate-spin inline" /></TableCell></TableRow>
+                    <TableRow><TableCell colSpan={9} className="text-center py-8"><Loader2 className="w-5 h-5 animate-spin inline" /></TableCell></TableRow>
                   )}
                   {!rowsQ.isLoading && filteredRows.length === 0 && (
-                    <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Aucune offre à challenger 🎉</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">Aucune offre à challenger 🎉</TableCell></TableRow>
                   )}
                   {filteredRows.map((r) => (
                     <TableRow key={r.product_id}>
@@ -302,6 +302,20 @@ export default function AdminPriceCockpitPage() {
                         <div className="text-xs text-muted-foreground">
                           {r.brand_name ?? "—"} {r.cnk ? `· CNK ${r.cnk}` : ""} · {r.mk_offers_count} offre{r.mk_offers_count > 1 ? "s" : ""}
                         </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {r.worst_action_score != null ? (
+                          <Badge
+                            variant={
+                              r.worst_action_score >= 50 ? "destructive"
+                                : r.worst_action_score >= 20 ? "secondary"
+                                : "outline"
+                            }
+                            title="Potentiel d'action : combine écart externe, écart interne et activité du produit"
+                          >
+                            {Math.round(r.worst_action_score)}
+                          </Badge>
+                        ) : <span className="text-muted-foreground">—</span>}
                       </TableCell>
                       <TableCell className="text-right font-mono">{fmt(r.mk_best_ht)}</TableCell>
                       <TableCell className="text-right">

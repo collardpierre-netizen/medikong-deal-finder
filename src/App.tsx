@@ -144,6 +144,7 @@ const AdminDbBackups = lazyWithRetry(() => import("./pages/admin/AdminDbBackups"
 const AdminBackupRlsAudit = lazyWithRetry(() => import("./pages/admin/AdminBackupRlsAudit"), "AdminBackupRlsAudit");
 const AdminRfqCreditsPage = lazyWithRetry(() => import("./pages/admin/AdminRfqCreditsPage"), "AdminRfqCreditsPage");
 const AdminRfqRemindersPage = lazyWithRetry(() => import("./pages/admin/AdminRfqRemindersPage"), "AdminRfqRemindersPage");
+const AdminRfqRoutingTestPage = lazyWithRetry(() => import("./pages/admin/AdminRfqRoutingTestPage"), "AdminRfqRoutingTestPage");
 const AdminAnnouncementBar = lazyWithRetry(() => import("./pages/admin/AdminAnnouncementBar"), "AdminAnnouncementBar");
 const AdminI18nPilot = lazyWithRetry(() => import("./pages/admin/AdminI18nPilot"), "AdminI18nPilot");
 const AdminCatalogDiagnostics = lazyWithRetry(() => import("./pages/admin/AdminCatalogDiagnostics"), "AdminCatalogDiagnostics");

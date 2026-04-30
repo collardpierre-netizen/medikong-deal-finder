@@ -63,6 +63,13 @@ const RfqVendorInvitationEmail = ({
             Bonjour{vendorName ? ` ${vendorName}` : ''}, un acheteur vérifié vous sollicite pour <strong>{productLabel}</strong>{brandName && productName ? ` (${brandName})` : ''}.
           </Text>
 
+          {targetReasonLabel && (
+            <Section style={reasonBox}>
+              <Text style={reasonLabel}>Pourquoi vous recevez cette demande</Text>
+              <Text style={reasonText}>{targetReasonLabel}.</Text>
+            </Section>
+          )}
+
           <Section style={card}>
             <Heading as="h2" style={h2}>Récapitulatif de la demande</Heading>
             <Row style={kvRow}>

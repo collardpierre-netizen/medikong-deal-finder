@@ -1,11 +1,11 @@
-// Dispatcher de RFQ (demandes de prix)
+// RFQ Dispatcher (Lot 2 — routing engine)
 // - Appelée par le client APRES l'INSERT d'une rfq par l'acheteur
-// - Identifie les vendeurs cibles via la fonction SQL get_rfq_target_vendor_ids
-// - Crée vendor_notifications (type='rfq_received') idempotentes
-// - Renvoie le nombre de vendeurs notifiés (sans exposer leurs identités)
+// - Délègue à la RPC SQL `rfq_dispatch` qui résout les vendeurs (offres
+//   produit + intérêts marque/fabricant/produit), insère idempotemment dans
+//   rfq_dispatch_log et crée les vendor_notifications.
+// - Renvoie un récap (vendors_targeted, new, duplicates).
 //
 // Auth : token utilisateur acheteur OU service_role (admin/cron).
-// Validation Zod stricte sur le body.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { z } from "https://esm.sh/zod@3.23.8";
@@ -18,6 +18,7 @@ const corsHeaders = {
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 
 const BodySchema = z.object({
   rfq_id: z.string().uuid(),
@@ -26,9 +27,8 @@ const BodySchema = z.object({
 interface DispatchResult {
   rfq_id: string;
   vendors_targeted: number;
-  notifications_created: number;
+  new_dispatches: number;
   duplicates_skipped: number;
-  errors: string[];
 }
 
 Deno.serve(async (req) => {
@@ -41,32 +41,19 @@ Deno.serve(async (req) => {
     });
   }
 
-  const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
+  const authHeader = req.headers.get("Authorization") ?? "";
+  const isServiceRole = authHeader.includes(SERVICE_ROLE_KEY);
+
+  // For RPC we want to call as the buyer (so the SECURITY DEFINER auth.uid()
+  // check inside rfq_dispatch validates ownership). Use the user JWT.
+  const userClient = createClient(SUPABASE_URL, ANON_KEY, {
+    global: { headers: { Authorization: authHeader } },
+    auth: { persistSession: false },
+  });
+  const adminClient = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
     auth: { persistSession: false },
   });
 
-  // --- AUTH ---
-  const authHeader = req.headers.get("Authorization") ?? "";
-  const isServiceRole = authHeader.includes(SERVICE_ROLE_KEY);
-  let callerUserId: string | null = null;
-
-  if (!isServiceRole) {
-    const token = authHeader.replace(/^Bearer\s+/i, "");
-    if (!token) {
-      return new Response(JSON.stringify({ error: "Missing auth" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-    const { data: userResp, error: userErr } = await supabase.auth.getUser(token);
-    if (userErr || !userResp.user) {
-      return new Response(JSON.stringify({ error: "Invalid token" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-    callerUserId = userResp.user.id;
-  }
-
-  // --- VALIDATION ---
   let body: unknown;
   try { body = await req.json(); } catch {
     return new Response(JSON.stringify({ error: "Invalid JSON" }), {
@@ -75,18 +62,16 @@ Deno.serve(async (req) => {
   }
   const parsed = BodySchema.safeParse(body);
   if (!parsed.success) {
-    return new Response(JSON.stringify({
-      error: parsed.error.flatten().fieldErrors,
-    }), {
+    return new Response(JSON.stringify({ error: parsed.error.flatten().fieldErrors }), {
       status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
   const { rfq_id } = parsed.data;
 
-  // --- LOAD RFQ ---
-  const { data: rfq, error: rfqErr } = await supabase
+  // Pre-check (and load some metadata for the response email)
+  const { data: rfq, error: rfqErr } = await adminClient
     .from("rfqs")
-    .select("id, buyer_user_id, product_id, brand_id, target_scope, quantity, destination_country_code, responses_deadline, status")
+    .select("id, buyer_user_id, product_id, brand_id, quantity, destination_country_code, responses_deadline, status")
     .eq("id", rfq_id)
     .maybeSingle();
 
@@ -96,109 +81,76 @@ Deno.serve(async (req) => {
     });
   }
 
-  // Caller doit être le buyer ou admin (service_role)
-  if (!isServiceRole && callerUserId !== rfq.buyer_user_id) {
-    return new Response(JSON.stringify({ error: "Forbidden — only the RFQ buyer can dispatch" }), {
-      status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
+  // Call the dispatch RPC (uses auth.uid() for ownership check; service_role bypasses).
+  const dispatchClient = isServiceRole ? adminClient : userClient;
+  const { data: dispatchRows, error: dispErr } = await dispatchClient
+    .rpc("rfq_dispatch", { _rfq_id: rfq_id });
 
-  if (rfq.status !== "open") {
-    return new Response(JSON.stringify({ error: `RFQ status is '${rfq.status}', cannot dispatch` }), {
-      status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
-
-  // --- TARGET VENDORS ---
-  const { data: targets, error: targetsErr } = await supabase
-    .rpc("get_rfq_target_vendor_ids", { _rfq_id: rfq_id });
-
-  if (targetsErr) {
-    return new Response(JSON.stringify({ error: targetsErr.message }), {
+  if (dispErr) {
+    return new Response(JSON.stringify({ error: dispErr.message }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 
-  const vendorIds: string[] = (targets || []).map((t: any) => t.vendor_id);
-
+  const rows = (dispatchRows as Array<{ vendor_id: string; reason: string; was_new: boolean }>) || [];
   const result: DispatchResult = {
     rfq_id,
-    vendors_targeted: vendorIds.length,
-    notifications_created: 0,
-    duplicates_skipped: 0,
-    errors: [],
+    vendors_targeted: rows.length,
+    new_dispatches: rows.filter(r => r.was_new).length,
+    duplicates_skipped: rows.filter(r => !r.was_new).length,
   };
 
-  if (vendorIds.length === 0) {
-    return new Response(JSON.stringify(result), {
-      status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
+  // --- Send recap email to each newly-dispatched vendor (best-effort) ---
+  if (result.new_dispatches > 0) {
+    // Load product/brand names + vendor emails + tracking tokens
+    const newVendorIds = rows.filter(r => r.was_new).map(r => r.vendor_id);
 
-  // --- LOAD PRODUCT/BRAND METADATA pour le titre & corps ---
-  let productName: string | null = null;
-  let brandName: string | null = null;
-  if (rfq.product_id) {
-    const { data: p } = await supabase.from("products").select("name").eq("id", rfq.product_id).maybeSingle();
-    productName = p?.name ?? null;
-  }
-  if (rfq.brand_id) {
-    const { data: b } = await supabase.from("brands").select("name").eq("id", rfq.brand_id).maybeSingle();
-    brandName = b?.name ?? null;
-  }
+    const [{ data: vendors }, { data: dispatchLog }, { data: product }, { data: brand }] = await Promise.all([
+      adminClient.from("vendors").select("id, name, contact_email, auth_user_id").in("id", newVendorIds),
+      adminClient.from("rfq_dispatch_log").select("vendor_id, tracking_token").eq("rfq_id", rfq_id).in("vendor_id", newVendorIds),
+      rfq.product_id
+        ? adminClient.from("products").select("name").eq("id", rfq.product_id).maybeSingle()
+        : Promise.resolve({ data: null }),
+      rfq.brand_id
+        ? adminClient.from("brands").select("name").eq("id", rfq.brand_id).maybeSingle()
+        : Promise.resolve({ data: null }),
+    ]);
 
-  const subject = productName
-    ? `Demande de prix : ${productName} (×${rfq.quantity})`
-    : `Demande de prix marque ${brandName ?? "—"} (×${rfq.quantity})`;
-  const bodyText = `Un acheteur vérifié a publié une demande de prix ciblant votre catalogue.
-Quantité : ${rfq.quantity}
-Pays livraison : ${rfq.destination_country_code}
-Réponse attendue avant : ${new Date(rfq.responses_deadline).toLocaleDateString("fr-FR")}
-Connectez-vous à votre portail vendeur pour répondre.`;
-  const ctaUrl = `/vendor/rfq/${rfq_id}`;
+    const productName = (product as any)?.name ?? null;
+    const brandName = (brand as any)?.name ?? null;
+    const tokenByVendor = new Map((dispatchLog ?? []).map((d: any) => [d.vendor_id, d.tracking_token]));
 
-  // --- INSERT NOTIFICATIONS (idempotent : skip si déjà notifié) ---
-  // On vérifie d'abord les vendor_id déjà notifiés pour cette RFQ
-  const { data: existing } = await supabase
-    .from("vendor_notifications")
-    .select("vendor_id")
-    .eq("type", "rfq_received")
-    .contains("payload", { rfq_id });
-
-  const alreadyNotified = new Set((existing ?? []).map((r: any) => r.vendor_id));
-  const newRows = vendorIds
-    .filter(vid => !alreadyNotified.has(vid))
-    .map(vid => ({
-      vendor_id: vid,
-      type: "rfq_received",
-      title: subject,
-      body: bodyText,
-      payload: {
-        rfq_id,
-        product_id: rfq.product_id,
-        brand_id: rfq.brand_id,
-        quantity: rfq.quantity,
-        country: rfq.destination_country_code,
-        deadline: rfq.responses_deadline,
-      },
-      cta_url: ctaUrl,
+    // Fire-and-forget email sends
+    await Promise.all((vendors ?? []).map(async (v: any) => {
+      const email = v.contact_email;
+      if (!email) return;
+      const token = tokenByVendor.get(v.id);
+      try {
+        await adminClient.functions.invoke("send-transactional-email", {
+          body: {
+            templateName: "rfq-vendor-invitation",
+            recipientEmail: email,
+            idempotencyKey: `rfq-invite-${rfq_id}-${v.id}`,
+            templateData: {
+              vendorName: v.name ?? "",
+              productName,
+              brandName,
+              quantity: rfq.quantity,
+              countryCode: rfq.destination_country_code,
+              deadline: rfq.responses_deadline,
+              rfqUrl: `https://medikong-deal-finder.lovable.app/vendor/rfq/${rfq_id}?t=${token}`,
+              trackingPixelUrl: `${SUPABASE_URL}/functions/v1/rfq-track?t=${token}&e=email_opened`,
+            },
+          },
+        });
+      } catch (e) {
+        // best-effort, do not fail the dispatch
+        console.error(`email failed for vendor ${v.id}`, e);
+      }
     }));
-
-  result.duplicates_skipped = vendorIds.length - newRows.length;
-
-  if (newRows.length > 0) {
-    const { error: insErr, count } = await supabase
-      .from("vendor_notifications")
-      .insert(newRows, { count: "exact" });
-    if (insErr) {
-      result.errors.push(`insert vendor_notifications: ${insErr.message}`);
-    } else {
-      result.notifications_created = count ?? newRows.length;
-    }
   }
 
   return new Response(JSON.stringify(result), {
-    status: 200,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 });

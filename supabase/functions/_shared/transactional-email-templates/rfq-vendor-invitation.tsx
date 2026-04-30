@@ -19,6 +19,8 @@ interface RfqVendorInvitationProps {
   paymentTerms?: string | null
   offerValidityDays?: number | null
   comment?: string | null
+  targetReason?: string | null
+  targetReasonLabel?: string | null
   rfqUrl?: string
   trackingPixelUrl?: string
 }
@@ -40,6 +42,7 @@ const COUNTRY_NAMES: Record<string, string> = { BE: 'Belgique', FR: 'France', LU
 const RfqVendorInvitationEmail = ({
   vendorName, productName, brandName, quantity, targetPriceCents,
   countryCode, deadline, desiredDeliveryDate, paymentTerms, offerValidityDays, comment,
+  targetReasonLabel,
   rfqUrl, trackingPixelUrl,
 }: RfqVendorInvitationProps) => {
   const productLabel = productName ?? brandName ?? 'un produit de votre catalogue'
@@ -59,6 +62,13 @@ const RfqVendorInvitationEmail = ({
           <Text style={text}>
             Bonjour{vendorName ? ` ${vendorName}` : ''}, un acheteur vérifié vous sollicite pour <strong>{productLabel}</strong>{brandName && productName ? ` (${brandName})` : ''}.
           </Text>
+
+          {targetReasonLabel && (
+            <Section style={reasonBox}>
+              <Text style={reasonLabel}>Pourquoi vous recevez cette demande</Text>
+              <Text style={reasonText}>{targetReasonLabel}.</Text>
+            </Section>
+          )}
 
           <Section style={card}>
             <Heading as="h2" style={h2}>Récapitulatif de la demande</Heading>
@@ -160,6 +170,7 @@ export const template = {
     paymentTerms: '30 jours fin de mois',
     offerValidityDays: 14,
     comment: 'Commande récurrente possible si prix compétitif.',
+    targetReasonLabel: 'Vous suivez cette marque',
     rfqUrl: 'https://medikong-deal-finder.lovable.app/vendor/rfq/abc?t=xyz',
   },
 } satisfies TemplateEntry
@@ -181,3 +192,6 @@ const smallLink = { fontSize: '12px', color: '#6b7280', margin: '0 0 16px', line
 const divider = { borderColor: '#E2E8F0', margin: '24px 0 16px' }
 const footerText = { fontSize: '13px', color: '#6b7280', margin: '0 0 8px', lineHeight: '1.5' }
 const footer = { fontSize: '11px', color: '#9ca3af', margin: '0' }
+const reasonBox = { backgroundColor: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: '8px', padding: '12px 16px', margin: '0 0 20px' }
+const reasonLabel = { fontSize: '11px', color: '#1C58D9', fontWeight: 600 as const, margin: '0 0 4px', textTransform: 'uppercase' as const, letterSpacing: '0.04em' }
+const reasonText = { fontSize: '14px', color: '#1E3A8A', margin: 0, lineHeight: '1.5' }

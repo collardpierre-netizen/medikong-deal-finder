@@ -1852,6 +1852,20 @@ export default function VendorOffers() {
             {offerBrands.map(b => <option key={b} value={b}>{b}</option>)}
           </select>
         )}
+        {offerManufacturers.length > 1 && (
+          <select value={filterManufacturer} onChange={e => setFilterManufacturer(e.target.value)}
+            className="text-[12px] px-3 py-2 rounded-lg border bg-white" style={{ borderColor: "#E2E8F0", color: "#616B7C" }}>
+            <option value="">Tous fabricants</option>
+            {offerManufacturers.map(m => <option key={m} value={m}>{m}</option>)}
+          </select>
+        )}
+        {offerCategories.length > 1 && (
+          <select value={filterCategory} onChange={e => setFilterCategory(e.target.value)}
+            className="text-[12px] px-3 py-2 rounded-lg border bg-white" style={{ borderColor: "#E2E8F0", color: "#616B7C" }}>
+            <option value="">Toutes catégories</option>
+            {offerCategories.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+        )}
         <select value={filterCountry} onChange={e => setFilterCountry(e.target.value)}
           className="text-[12px] px-3 py-2 rounded-lg border bg-white" style={{ borderColor: "#E2E8F0", color: "#616B7C" }}>
           <option value="">Tous pays</option>

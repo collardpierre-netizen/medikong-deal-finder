@@ -43,6 +43,13 @@ type ResponseRow = {
   is_visible_to_buyer: boolean;
   awarded: boolean;
   created_at: string;
+  score: number | null;
+  score_price: number | null;
+  score_delivery: number | null;
+  score_compliance: number | null;
+  score_availability: number | null;
+  is_top_pick: boolean;
+  compliance_flags: { moq_ok?: boolean; validity_ok?: boolean; beats_target_price?: boolean; admin_curated?: boolean } | null;
   vendor?: { id: string; name: string | null; slug: string | null } | null;
 };
 

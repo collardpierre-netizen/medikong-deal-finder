@@ -116,17 +116,34 @@ export default function AdminPriceCockpitPage() {
   });
 
   const gapsQ = useQuery({
-    queryKey: ["price-cockpit-gaps", country],
+    queryKey: ["price-cockpit-gaps-v2", country, gapSearch, gapMinRfq, gapOnlyDemand],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("admin_price_cockpit_gaps", {
+      const { data, error } = await supabase.rpc("admin_price_cockpit_gaps_v2", {
         _country: country || null,
         _brand_id: null,
+        _search: gapSearch.trim() || null,
+        _min_rfq_count: gapMinRfq ? Number(gapMinRfq) : 0,
+        _only_with_demand: gapOnlyDemand,
         _limit: 300,
       });
       if (error) throw error;
       return (data ?? []) as GapRow[];
     },
   });
+
+  const sortedGaps = useMemo(() => {
+    const rows = gapsQ.data ?? [];
+    const get = (r: GapRow) => {
+      if (gapSortBy === "rfq_count") return r.rfq_count_90d ?? 0;
+      if (gapSortBy === "popularity") return r.popularity ?? 0;
+      if (gapSortBy === "name") return 0;
+      return r.priority_score ?? 0;
+    };
+    if (gapSortBy === "name") {
+      return [...rows].sort((a, b) => (a.product_name ?? "").localeCompare(b.product_name ?? ""));
+    }
+    return [...rows].sort((a, b) => get(b) - get(a));
+  }, [gapsQ.data, gapSortBy]);
 
   const filteredRows = useMemo(() => {
     if (!rowsQ.data) return [];

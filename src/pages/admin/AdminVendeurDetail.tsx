@@ -1231,7 +1231,7 @@ function VendorEditDialog({ open, onOpenChange, vendor, onSaved }: { open: boole
     margin_split_pct: String((vendor as any).margin_split_pct ?? 50),
     description: vendor.description || "",
     logo_url: vendor.logo_url || "",
-    website_url: vendor.website_url || "",
+    website_url: (vendor as any).website || (vendor as any).website_url || "",
     contact_name: vendor.contact_name || "",
   });
 

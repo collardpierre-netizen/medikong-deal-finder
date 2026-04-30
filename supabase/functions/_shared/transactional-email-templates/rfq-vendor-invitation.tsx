@@ -19,6 +19,8 @@ interface RfqVendorInvitationProps {
   paymentTerms?: string | null
   offerValidityDays?: number | null
   comment?: string | null
+  targetReason?: string | null
+  targetReasonLabel?: string | null
   rfqUrl?: string
   trackingPixelUrl?: string
 }

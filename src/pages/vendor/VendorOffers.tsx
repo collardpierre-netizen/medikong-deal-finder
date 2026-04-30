@@ -833,7 +833,7 @@ function downloadTemplate() {
     ["MOV", "Montant minimum de commande en € (par défaut : 0)"],
     ["Délai", "Délai de livraison en jours (par défaut : 3)"],
     ["Pays", "Code pays (BE, FR, NL, LU, DE) — une ligne par pays pour des configs différentes"],
-    ["Conditionnement", "Nombre d'unités par pack vendu (ex: 24 pour un carton de 24). Optionnel — sert au calcul du prix unitaire côté acheteur. Prioritaire sur le pack de la fiche produit."],
+    ["Conditionnement", "Nombre d'unités par pack vendu (ex: 24 pour un carton de 24). Entier 1..10 000 ou vide. Vide = utilise le pack de la fiche produit MediKong en fallback. L'export ajoute une colonne 'Conditionnement_Source' (Override offre / Fiche produit / Aucun) pour tracer d'où vient le pack appliqué."],
     [""],
     ["=== Colonnes profil (optionnelles, pour prix différenciés) ==="],
     ["Profil", "Type de profil : pharmacy, hospital, dentist, nursing, veterinary, ehpad, wholesale"],

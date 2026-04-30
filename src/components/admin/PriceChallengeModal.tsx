@@ -126,6 +126,7 @@ export default function PriceChallengeModal({ open, onOpenChange, ctx, quickSend
         _delta_pct: ctx.deltaPct,
         _message: finalMessage,
         _notification_id: notif?.id ?? null,
+        _force: forceOverride,
       });
       if (lerr) throw lerr;
 

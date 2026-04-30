@@ -1535,6 +1535,12 @@ export default function ProductPage() {
                               categoryId={categoryData?.category?.id}
                               bestPrice={bestOffer ? (isTVAC ? bestOffer.unitPriceInclVat : bestOffer.unitPriceEur) : undefined}
                               discountPercentage={Number((product as any)?.discount_percentage) || 0}
+                              compareBasis={externalCompareBasis}
+                              packSize={resolvePackSize({
+                                offerOverride: (offer as any)?.packSizeOverride,
+                                productPackSize: (product as any)?.pack_size,
+                                productName: product.name,
+                              }).packSize}
                             />
                           </SafeBoundary>
                         ))}

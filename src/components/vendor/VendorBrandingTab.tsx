@@ -134,6 +134,39 @@ export default function VendorBrandingTab({ vendor }: Props) {
     qc.invalidateQueries({ queryKey: ["current-vendor"] });
   };
 
+  const setAssetFromUrl = async (rawUrl: string, kind: "logo" | "cover") => {
+    const url = rawUrl.trim();
+    if (!url) return;
+    try {
+      const parsed = new URL(url);
+      if (!/^https?:$/.test(parsed.protocol)) {
+        toast.error("L'URL doit commencer par http:// ou https://");
+        return;
+      }
+    } catch {
+      toast.error("URL invalide");
+      return;
+    }
+    const setLoading = kind === "logo" ? setSavingLogoUrl : setSavingCoverUrl;
+    const updateField = kind === "logo" ? "logo_url" : "cover_image_url";
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from("vendors")
+        .update({ [updateField]: url } as any)
+        .eq("id", vendor.id);
+      if (error) throw error;
+      toast.success(kind === "logo" ? "Logo mis à jour depuis l'URL" : "Bannière mise à jour depuis l'URL");
+      qc.invalidateQueries({ queryKey: ["current-vendor"] });
+      if (kind === "logo") setLogoUrlInput("");
+      else setCoverUrlInput("");
+    } catch (err: any) {
+      toast.error(err.message || "Erreur lors de l'enregistrement de l'URL");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const logoUrl = vendor?.logo_url as string | undefined;
   const coverUrl = vendor?.cover_image_url as string | undefined;
 

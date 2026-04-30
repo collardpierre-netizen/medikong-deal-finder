@@ -553,6 +553,11 @@ function useOfferImport(vendorId: string | undefined) {
 
         const purchasePrice = parseFloat(String(row["Prix_Achat_HT"] || row["prix_achat_ht"] || row["purchase_price"] || "0")) || null;
         const movAmount = parseFloat(String(row["MOV"] || row["mov"] || row["mov_amount"] || "0")) || 0;
+        const rawPack = row["Conditionnement"] ?? row["conditionnement"] ?? row["pack_size"] ?? row["Pack"];
+        const packParsed = rawPack !== undefined && rawPack !== null && String(rawPack).trim() !== ""
+          ? parseInt(String(rawPack))
+          : NaN;
+        const packSizeOverride = Number.isFinite(packParsed) && packParsed > 0 ? packParsed : null;
 
         offers.push({
           vendor_id: vendorId,
@@ -567,9 +572,11 @@ function useOfferImport(vendorId: string | undefined) {
           delivery_days: parseInt(row["Délai"] || row["delai"] || row["delivery_days"] || "3") || 3,
           country_code: row["Pays"] || row["pays"] || row["country_code"] || "BE",
           stock_status: stock > 0 ? "in_stock" : "out_of_stock",
+          pack_size_override: packSizeOverride,
           is_active: true,
           _ean: ean,
           _cnk: cnk,
+          _packForProduct: packSizeOverride,
         });
         created++;
       }
@@ -583,10 +590,11 @@ function useOfferImport(vendorId: string | undefined) {
 
       // Upsert offers and collect IDs
       const offerIdsByKey: Record<string, string> = {};
+      const productPackFallbacks = new Map<string, number>(); // product_id -> pack
       if (uniqueOffers.length > 0) {
         for (let i = 0; i < uniqueOffers.length; i += 100) {
           const batchSource = uniqueOffers.slice(i, i + 100);
-          const batch = batchSource.map(({ _ean, _cnk, ...rest }) => rest);
+          const batch = batchSource.map(({ _ean, _cnk, _packForProduct, ...rest }) => rest);
           const { data: inserted, error } = await supabase.from("offers").upsert(batch, { onConflict: "product_id,vendor_id,country_code", ignoreDuplicates: false }).select("id, product_id");
           if (error) throw error;
           if (inserted) {
@@ -594,7 +602,26 @@ function useOfferImport(vendorId: string | undefined) {
               const src = batchSource[idx];
               if (src._ean) offerIdsByKey[src._ean] = ins.id;
               if (src._cnk) offerIdsByKey[src._cnk] = ins.id;
+              if (src._packForProduct && ins.product_id && !productPackFallbacks.has(ins.product_id)) {
+                productPackFallbacks.set(ins.product_id, src._packForProduct);
+              }
             });
+          }
+        }
+      }
+
+      // Fallback : si products.pack_size est vide, le remplir avec le pack vendeur
+      if (productPackFallbacks.size > 0) {
+        const ids = Array.from(productPackFallbacks.keys());
+        const { data: existingProducts } = await supabase
+          .from("products")
+          .select("id, pack_size")
+          .in("id", ids);
+        const toUpdate = (existingProducts || []).filter((p: any) => p.pack_size == null);
+        for (const p of toUpdate) {
+          const pack = productPackFallbacks.get(p.id);
+          if (pack) {
+            await supabase.from("products").update({ pack_size: pack }).eq("id", p.id);
           }
         }
       }
@@ -694,15 +721,15 @@ function useOfferImport(vendorId: string | undefined) {
 function downloadTemplate() {
   const ws = XLSX.utils.aoa_to_sheet([
     [
-      "EAN", "CNK", "Prix HT", "Prix_Achat_HT", "TVA", "Stock", "MOQ", "MOV", "Délai", "Pays",
+      "EAN", "CNK", "Prix HT", "Prix_Achat_HT", "TVA", "Stock", "MOQ", "MOV", "Délai", "Pays", "Conditionnement",
       "Profil", "Profil_Pays", "Prix_Profil_HT", "Remise_%", "MOQ_Profil", "MOV_Profil",
     ],
-    ["3401560100013", "1234567", "12.50", "8.00", "21", "100", "1", "150", "3", "BE", "", "", "", "", "", ""],
-    ["3401560100013", "", "13.00", "8.50", "20", "", "1", "200", "5", "FR", "", "", "", "", "", ""],
-    ["3401560100013", "", "", "", "", "", "", "", "", "", "pharmacy", "BE", "11.00", "", "5", "150"],
-    ["3401560100013", "", "", "", "", "", "", "", "", "", "hospital", "", "", "10", "10", "500"],
+    ["3401560100013", "1234567", "12.50", "8.00", "21", "100", "1", "150", "3", "BE", "24", "", "", "", "", "", ""],
+    ["3401560100013", "", "13.00", "8.50", "20", "", "1", "200", "5", "FR", "24", "", "", "", "", "", ""],
+    ["3401560100013", "", "", "", "", "", "", "", "", "", "", "pharmacy", "BE", "11.00", "", "5", "150"],
+    ["3401560100013", "", "", "", "", "", "", "", "", "", "", "hospital", "", "", "10", "10", "500"],
   ]);
-  ws["!cols"] = Array(16).fill(null).map(() => ({ wch: 16 }));
+  ws["!cols"] = Array(17).fill(null).map(() => ({ wch: 16 }));
 
   // Price tiers sheet
   const wsTiers = XLSX.utils.aoa_to_sheet([
@@ -728,6 +755,7 @@ function downloadTemplate() {
     ["MOV", "Montant minimum de commande en € (par défaut : 0)"],
     ["Délai", "Délai de livraison en jours (par défaut : 3)"],
     ["Pays", "Code pays (BE, FR, NL, LU, DE) — une ligne par pays pour des configs différentes"],
+    ["Conditionnement", "Nombre d'unités par pack vendu (ex: 24 pour un carton de 24). Optionnel — sert au calcul du prix unitaire côté acheteur. Prioritaire sur le pack de la fiche produit."],
     [""],
     ["=== Colonnes profil (optionnelles, pour prix différenciés) ==="],
     ["Profil", "Type de profil : pharmacy, hospital, dentist, nursing, veterinary, ehpad, wholesale"],
@@ -785,6 +813,7 @@ function exportOffers(offers: any[], profileRulesMap?: Map<string, any[]>, price
       "MOV": o.mov_amount ?? "",
       "Délai": o.delivery_days,
       "Pays": o.country_code,
+      "Conditionnement": o.pack_size_override ?? (o.products as any)?.pack_size ?? "",
       "Statut": o.is_active ? "Active" : "Inactive",
       "Profil": "",
       "Profil_Pays": "",

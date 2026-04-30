@@ -3104,6 +3104,7 @@ export type Database = {
           mov: number | null
           mov_amount: number | null
           mov_currency: string | null
+          pack_size_override: number | null
           price_excl_vat: number
           price_incl_vat: number
           price_tiers: Json | null
@@ -3148,6 +3149,7 @@ export type Database = {
           mov?: number | null
           mov_amount?: number | null
           mov_currency?: string | null
+          pack_size_override?: number | null
           price_excl_vat: number
           price_incl_vat: number
           price_tiers?: Json | null
@@ -3192,6 +3194,7 @@ export type Database = {
           mov?: number | null
           mov_amount?: number | null
           mov_currency?: string | null
+          pack_size_override?: number | null
           price_excl_vat?: number
           price_incl_vat?: number
           price_tiers?: Json | null

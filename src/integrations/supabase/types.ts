@@ -10975,6 +10975,16 @@ export type Database = {
           scenario: string
         }[]
       }
+      rfq_routing_self_test_admin: {
+        Args: never
+        Returns: {
+          actual: number
+          details: string
+          expected: number
+          ok: boolean
+          scenario: string
+        }[]
+      }
       rfq_select_reminder_targets: {
         Args: { _max_per_run?: number }
         Returns: {

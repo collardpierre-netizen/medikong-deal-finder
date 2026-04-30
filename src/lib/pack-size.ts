@@ -156,7 +156,8 @@ export function packSizeSourceLabel(source: PackSizeSource): string {
  * directement à côté du conditionnement, sans devoir survoler un tooltip.
  *
  * Codes :
- *  - MAN  = manuel (override admin sur l'offre ou la fiche produit) — vert
+ *  - OFR  = override manuel saisi sur l'offre — vert foncé (source la plus fiable)
+ *  - PRD  = fallback sur la fiche produit MediKong — vert clair
  *  - URL  = parsé depuis le slug de l'URL vendeur — bleu
  *  - TIT  = parsé depuis le titre brut du vendeur — indigo
  *  - NOM  = parsé depuis le nom MediKong — ambre (moins fiable)
@@ -170,15 +171,15 @@ export function packSizeSourceBadge(source: PackSizeSource): {
   switch (source) {
     case "offer_override":
       return {
-        code: "MAN",
-        className: "bg-emerald-50 text-emerald-700 border-emerald-200",
-        title: "Conditionnement saisi manuellement sur l'offre (override admin)",
+        code: "OFR",
+        className: "bg-emerald-100 text-emerald-800 border-emerald-300",
+        title: "Conditionnement override saisi sur l'offre (priorité maximale)",
       };
     case "product":
       return {
-        code: "MAN",
+        code: "PRD",
         className: "bg-emerald-50 text-emerald-700 border-emerald-200",
-        title: "Conditionnement saisi manuellement sur la fiche produit",
+        title: "Conditionnement hérité de la fiche produit MediKong (fallback)",
       };
     case "offer_url_heuristic":
       return {

@@ -373,15 +373,22 @@ function ExportRecapButton({ rfqId, rfqLabel }: { rfqId: string; rfqLabel: strin
     try {
       const { data, error } = await supabase
         .from("rfq_responses")
-        .select("unit_price_excl_vat_cents, moq, delivery_days, offer_validity_days, payment_terms, comment, rank_position, awarded, created_at, vendor:vendors!inner(name)")
+        .select("unit_price_excl_vat_cents, moq, delivery_days, offer_validity_days, payment_terms, comment, rank_position, awarded, created_at, score, score_price, score_delivery, score_compliance, score_availability, is_top_pick, vendor:vendors!inner(name)")
         .eq("rfq_id", rfqId)
         .eq("is_visible_to_buyer", true)
+        .order("score", { ascending: false, nullsFirst: false })
         .order("rank_position", { ascending: true, nullsFirst: false });
       if (error) throw error;
 
-      const headers = ["Rang", "Fournisseur", "Prix HTVA (EUR/u.)", "MOQ", "Délai (j)", "Validité (j)", "Conditions paiement", "Commentaire", "Attribuée", "Reçue le"];
+      const headers = ["Rang", "Top pick", "Score global", "Score prix", "Score délai", "Score conformité", "Score dispo.", "Fournisseur", "Prix HTVA (EUR/u.)", "MOQ", "Délai (j)", "Validité (j)", "Conditions paiement", "Commentaire", "Attribuée", "Reçue le"];
       const rows = (data || []).map((r: any, i: number) => [
         r.awarded ? "ATTRIBUÉE" : (r.rank_position ?? i + 1),
+        r.is_top_pick ? "oui" : "",
+        r.score != null ? r.score.toFixed(1).replace(".", ",") : "",
+        r.score_price != null ? r.score_price.toFixed(1).replace(".", ",") : "",
+        r.score_delivery != null ? r.score_delivery.toFixed(1).replace(".", ",") : "",
+        r.score_compliance != null ? r.score_compliance.toFixed(1).replace(".", ",") : "",
+        r.score_availability != null ? r.score_availability.toFixed(1).replace(".", ",") : "",
         r.vendor?.name || "",
         (r.unit_price_excl_vat_cents / 100).toFixed(2).replace(".", ","),
         r.moq ?? "",

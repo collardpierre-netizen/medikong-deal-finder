@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Tag, Download, ChevronRight, Award, Loader2, Clock, Inbox } from "lucide-react";
 import { formatUpdatedAt } from "@/lib/format-date";
 import { BuyerRfqTracker } from "@/components/rfq/BuyerRfqTracker";
+import { RfqActivityHistory } from "@/components/rfq/RfqActivityHistory";
 
 type RfqRow = {
   id: string;

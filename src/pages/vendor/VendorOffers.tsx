@@ -911,7 +911,7 @@ function exportOffers(offers: any[], profileRulesMap?: Map<string, any[]>, price
       rows.push({
         "Produit": "", "EAN": (o.products as any)?.gtin || "", "CNK": (o.products as any)?.cnk_code || "",
         "Marque": "", "Catégorie": "", "Prix HT": "", "Prix_Achat_HT": "", "Marge €": "", "Marge %": "",
-        "Prix TTC": "", "TVA": "", "Stock": "", "MOQ": "", "MOV": "", "Délai": "", "Pays": "", "Statut": "",
+        "Prix TTC": "", "TVA": "", "Stock": "", "MOQ": "", "MOV": "", "Délai": "", "Pays": "", "Conditionnement": "", "Conditionnement_Source": "", "Statut": "",
         "Profil": r.profile_type, "Profil_Pays": r.country_code || "",
         "Prix_Profil_HT": r.custom_price_excl_vat ?? "", "Remise_%": r.discount_percentage ?? "",
         "MOQ_Profil": r.moq ?? "", "MOV_Profil": r.mov_amount ?? "",

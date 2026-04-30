@@ -55,13 +55,15 @@ type ResponseRow = {
 
 const STATUS_LABEL: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
   draft: { label: "Brouillon", variant: "outline" },
+  open: { label: "En collecte", variant: "default" },
   dispatched: { label: "Envoyée", variant: "secondary" },
-  collecting: { label: "En collecte", variant: "default" },
-  curated: { label: "Offres prêtes", variant: "default" },
+  in_followup: { label: "En relance", variant: "default" },
+  closed: { label: "Clôturée", variant: "outline" },
   awarded: { label: "Attribuée", variant: "default" },
-  expired: { label: "Expirée", variant: "outline" },
   cancelled: { label: "Annulée", variant: "destructive" },
 };
+
+const ACTIVE_STATUSES = new Set(["draft", "open", "dispatched", "in_followup"]);
 
 function formatPrice(cents: number | null | undefined) {
   if (cents == null) return "—";

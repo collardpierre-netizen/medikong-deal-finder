@@ -1263,6 +1263,19 @@ export default function VendorOffers() {
       pack_size_override: offer.pack_size_override != null ? String(offer.pack_size_override) : "",
       product_pack_size_fallback: (offer.products as any)?.pack_size ?? null,
     });
+    // Snapshot "avant" : prix HT + pack effectif au moment de l'ouverture
+    const initialOverride = offer.pack_size_override;
+    const initialFallback = (offer.products as any)?.pack_size;
+    const initialEffectivePack =
+      initialOverride && initialOverride > 0
+        ? Number(initialOverride)
+        : initialFallback && initialFallback > 0
+          ? Number(initialFallback)
+          : 1;
+    setInitialSnapshot({
+      priceExcl: Number(offer.price_excl_vat) || 0,
+      effectivePack: initialEffectivePack,
+    });
     setEditingId(offer.id);
     setShowForm(true);
   };

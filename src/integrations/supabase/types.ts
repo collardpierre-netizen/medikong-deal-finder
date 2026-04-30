@@ -10834,10 +10834,13 @@ export type Database = {
       rfq_dispatch_status:
         | "dispatched"
         | "viewed"
+        | "pending_review"
         | "reminded"
         | "responded"
         | "declined"
         | "expired"
+        | "awarded"
+        | "lost"
       rfq_ledger_kind:
         | "consume"
         | "grant_admin"
@@ -10851,7 +10854,14 @@ export type Database = {
         | "credit_pack"
         | "monthly_plan"
         | "unlimited_plan"
-      rfq_status: "open" | "closed" | "awarded" | "cancelled"
+      rfq_status:
+        | "draft"
+        | "open"
+        | "dispatched"
+        | "in_followup"
+        | "closed"
+        | "awarded"
+        | "cancelled"
       rfq_target_reason:
         | "product_offer"
         | "brand_interest"
@@ -11138,10 +11148,13 @@ export const Constants = {
       rfq_dispatch_status: [
         "dispatched",
         "viewed",
+        "pending_review",
         "reminded",
         "responded",
         "declined",
         "expired",
+        "awarded",
+        "lost",
       ],
       rfq_ledger_kind: [
         "consume",
@@ -11158,7 +11171,15 @@ export const Constants = {
         "monthly_plan",
         "unlimited_plan",
       ],
-      rfq_status: ["open", "closed", "awarded", "cancelled"],
+      rfq_status: [
+        "draft",
+        "open",
+        "dispatched",
+        "in_followup",
+        "closed",
+        "awarded",
+        "cancelled",
+      ],
       rfq_target_reason: [
         "product_offer",
         "brand_interest",

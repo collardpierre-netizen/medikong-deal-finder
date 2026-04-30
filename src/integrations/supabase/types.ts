@@ -6379,6 +6379,231 @@ export type Database = {
           },
         ]
       }
+      rfq_attachments: {
+        Row: {
+          created_at: string
+          file_name: string
+          id: string
+          mime_type: string
+          rfq_id: string
+          rfq_response_id: string | null
+          size_bytes: number
+          storage_path: string
+          uploaded_by_user_id: string
+          uploader_role: string
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          id?: string
+          mime_type: string
+          rfq_id: string
+          rfq_response_id?: string | null
+          size_bytes: number
+          storage_path: string
+          uploaded_by_user_id: string
+          uploader_role: string
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          id?: string
+          mime_type?: string
+          rfq_id?: string
+          rfq_response_id?: string | null
+          size_bytes?: number
+          storage_path?: string
+          uploaded_by_user_id?: string
+          uploader_role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rfq_attachments_rfq_id_fkey"
+            columns: ["rfq_id"]
+            isOneToOne: false
+            referencedRelation: "rfqs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rfq_attachments_rfq_response_id_fkey"
+            columns: ["rfq_response_id"]
+            isOneToOne: false
+            referencedRelation: "rfq_responses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rfq_responses: {
+        Row: {
+          admin_override_visible: boolean
+          awarded: boolean
+          comment: string | null
+          created_at: string
+          delivery_days: number
+          id: string
+          is_visible_to_buyer: boolean
+          moq: number
+          offer_validity_days: number | null
+          payment_terms: string | null
+          rank_position: number | null
+          rfq_id: string
+          unit_price_excl_vat_cents: number
+          updated_at: string
+          vendor_id: string
+        }
+        Insert: {
+          admin_override_visible?: boolean
+          awarded?: boolean
+          comment?: string | null
+          created_at?: string
+          delivery_days: number
+          id?: string
+          is_visible_to_buyer?: boolean
+          moq?: number
+          offer_validity_days?: number | null
+          payment_terms?: string | null
+          rank_position?: number | null
+          rfq_id: string
+          unit_price_excl_vat_cents: number
+          updated_at?: string
+          vendor_id: string
+        }
+        Update: {
+          admin_override_visible?: boolean
+          awarded?: boolean
+          comment?: string | null
+          created_at?: string
+          delivery_days?: number
+          id?: string
+          is_visible_to_buyer?: boolean
+          moq?: number
+          offer_validity_days?: number | null
+          payment_terms?: string | null
+          rank_position?: number | null
+          rfq_id?: string
+          unit_price_excl_vat_cents?: number
+          updated_at?: string
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rfq_responses_rfq_id_fkey"
+            columns: ["rfq_id"]
+            isOneToOne: false
+            referencedRelation: "rfqs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rfq_responses_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rfq_responses_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rfq_responses_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rfqs: {
+        Row: {
+          admin_curated: boolean
+          brand_id: string | null
+          buyer_user_id: string
+          comment: string | null
+          created_at: string
+          delivery_address: Json | null
+          desired_delivery_date: string | null
+          destination_country_code: string
+          id: string
+          is_paid_feature: boolean
+          payment_terms: string | null
+          product_id: string | null
+          quantity: number
+          required_offer_validity_days: number | null
+          responses_deadline: string
+          status: Database["public"]["Enums"]["rfq_status"]
+          target_price_excl_vat_cents: number | null
+          target_scope: Database["public"]["Enums"]["rfq_target_scope"]
+          updated_at: string
+        }
+        Insert: {
+          admin_curated?: boolean
+          brand_id?: string | null
+          buyer_user_id: string
+          comment?: string | null
+          created_at?: string
+          delivery_address?: Json | null
+          desired_delivery_date?: string | null
+          destination_country_code: string
+          id?: string
+          is_paid_feature?: boolean
+          payment_terms?: string | null
+          product_id?: string | null
+          quantity: number
+          required_offer_validity_days?: number | null
+          responses_deadline?: string
+          status?: Database["public"]["Enums"]["rfq_status"]
+          target_price_excl_vat_cents?: number | null
+          target_scope?: Database["public"]["Enums"]["rfq_target_scope"]
+          updated_at?: string
+        }
+        Update: {
+          admin_curated?: boolean
+          brand_id?: string | null
+          buyer_user_id?: string
+          comment?: string | null
+          created_at?: string
+          delivery_address?: Json | null
+          desired_delivery_date?: string | null
+          destination_country_code?: string
+          id?: string
+          is_paid_feature?: boolean
+          payment_terms?: string | null
+          product_id?: string | null
+          quantity?: number
+          required_offer_validity_days?: number | null
+          responses_deadline?: string
+          status?: Database["public"]["Enums"]["rfq_status"]
+          target_price_excl_vat_cents?: number | null
+          target_scope?: Database["public"]["Enums"]["rfq_target_scope"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rfqs_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brand_logistics_stats"
+            referencedColumns: ["brand_id"]
+          },
+          {
+            foreignKeyName: "rfqs_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brands"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rfqs_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       seller_contracts: {
         Row: {
           contract_type: string
@@ -9867,6 +10092,12 @@ export type Database = {
           status: string
         }[]
       }
+      get_rfq_target_vendor_ids: {
+        Args: { _rfq_id: string }
+        Returns: {
+          vendor_id: string
+        }[]
+      }
       get_source_mapping_issues: {
         Args: { _kind?: string; _limit?: number; _source: string }
         Returns: {
@@ -10044,6 +10275,10 @@ export type Database = {
       }
       recompute_brand_top20: { Args: never; Returns: undefined }
       recompute_brand_top20_with_log: { Args: never; Returns: string }
+      recompute_rfq_response_ranks: {
+        Args: { _rfq_id: string }
+        Returns: undefined
+      }
       record_qogita_endpoint_error: {
         Args: {
           _endpoint: string
@@ -10217,6 +10452,8 @@ export type Database = {
         | "received_at_warehouse"
         | "repackaging"
         | "reshipped"
+      rfq_status: "open" | "closed" | "awarded" | "cancelled"
+      rfq_target_scope: "product_only" | "brand_only" | "product_and_brand"
       shipment_status:
         | "pending"
         | "created"
@@ -10493,6 +10730,8 @@ export const Constants = {
         "repackaging",
         "reshipped",
       ],
+      rfq_status: ["open", "closed", "awarded", "cancelled"],
+      rfq_target_scope: ["product_only", "brand_only", "product_and_brand"],
       shipment_status: [
         "pending",
         "created",

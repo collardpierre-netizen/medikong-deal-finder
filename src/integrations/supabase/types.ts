@@ -247,6 +247,13 @@ export type Database = {
             foreignKeyName: "brand_official_distributors_vendor_id_fkey"
             columns: ["vendor_id"]
             isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "brand_official_distributors_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
             referencedRelation: "vendors"
             referencedColumns: ["id"]
           },
@@ -484,6 +491,13 @@ export type Database = {
             columns: ["proposed_by_vendor_id"]
             isOneToOne: false
             referencedRelation: "vendor_market_intel_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "brands_proposed_by_vendor_id_fkey"
+            columns: ["proposed_by_vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
             referencedColumns: ["vendor_id"]
           },
           {
@@ -2417,6 +2431,13 @@ export type Database = {
             foreignKeyName: "manufacturers_proposed_by_vendor_id_fkey"
             columns: ["proposed_by_vendor_id"]
             isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "manufacturers_proposed_by_vendor_id_fkey"
+            columns: ["proposed_by_vendor_id"]
+            isOneToOne: false
             referencedRelation: "vendors"
             referencedColumns: ["id"]
           },
@@ -2519,6 +2540,13 @@ export type Database = {
             columns: ["vendor_id"]
             isOneToOne: false
             referencedRelation: "vendor_market_intel_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "margin_rules_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
             referencedColumns: ["vendor_id"]
           },
           {
@@ -3001,6 +3029,13 @@ export type Database = {
             foreignKeyName: "offer_margin_snapshots_vendor_id_fkey"
             columns: ["vendor_id"]
             isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "offer_margin_snapshots_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
             referencedRelation: "vendors"
             referencedColumns: ["id"]
           },
@@ -3301,6 +3336,13 @@ export type Database = {
             columns: ["vendor_id"]
             isOneToOne: false
             referencedRelation: "vendor_market_intel_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "offers_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
             referencedColumns: ["vendor_id"]
           },
           {
@@ -3612,6 +3654,13 @@ export type Database = {
             foreignKeyName: "order_lines_vendor_id_fkey"
             columns: ["vendor_id"]
             isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "order_lines_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
             referencedRelation: "vendors"
             referencedColumns: ["id"]
           },
@@ -3678,6 +3727,13 @@ export type Database = {
             columns: ["vendor_id"]
             isOneToOne: false
             referencedRelation: "vendor_market_intel_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "order_transfers_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
             referencedColumns: ["vendor_id"]
           },
           {
@@ -3850,6 +3906,13 @@ export type Database = {
             foreignKeyName: "price_adjustment_log_vendor_id_fkey"
             columns: ["vendor_id"]
             isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "price_adjustment_log_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
             referencedRelation: "vendors"
             referencedColumns: ["id"]
           },
@@ -3993,6 +4056,13 @@ export type Database = {
             columns: ["vendor_id"]
             isOneToOne: false
             referencedRelation: "vendor_market_intel_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "price_alert_vendors_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
             referencedColumns: ["vendor_id"]
           },
           {
@@ -4461,6 +4531,13 @@ export type Database = {
             foreignKeyName: "product_submissions_vendor_id_fkey"
             columns: ["vendor_id"]
             isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "product_submissions_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
             referencedRelation: "vendors"
             referencedColumns: ["id"]
           },
@@ -4786,6 +4863,13 @@ export type Database = {
             columns: ["proposed_by_vendor_id"]
             isOneToOne: false
             referencedRelation: "vendor_market_intel_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "products_proposed_by_vendor_id_fkey"
+            columns: ["proposed_by_vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
             referencedColumns: ["vendor_id"]
           },
           {
@@ -6793,6 +6877,13 @@ export type Database = {
             foreignKeyName: "rfq_dispatch_log_vendor_id_fkey"
             columns: ["vendor_id"]
             isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "rfq_dispatch_log_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
             referencedRelation: "vendors"
             referencedColumns: ["id"]
           },
@@ -6920,6 +7011,13 @@ export type Database = {
             columns: ["vendor_id"]
             isOneToOne: false
             referencedRelation: "vendor_market_intel_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "rfq_reminder_log_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
             referencedColumns: ["vendor_id"]
           },
           {
@@ -7073,6 +7171,13 @@ export type Database = {
             foreignKeyName: "rfq_responses_vendor_id_fkey"
             columns: ["vendor_id"]
             isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "rfq_responses_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
             referencedRelation: "vendors"
             referencedColumns: ["id"]
           },
@@ -7084,6 +7189,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      rfq_routing_settings: {
+        Row: {
+          description: string | null
+          key: string
+          updated_at: string
+          value_int: number | null
+          value_text: string | null
+        }
+        Insert: {
+          description?: string | null
+          key: string
+          updated_at?: string
+          value_int?: number | null
+          value_text?: string | null
+        }
+        Update: {
+          description?: string | null
+          key?: string
+          updated_at?: string
+          value_int?: number | null
+          value_text?: string | null
+        }
+        Relationships: []
       }
       rfqs: {
         Row: {
@@ -7103,6 +7232,7 @@ export type Database = {
           id: string
           is_paid_feature: boolean
           last_reminded_at: string | null
+          max_target_vendors: number | null
           payment_terms: string | null
           product_id: string | null
           quantity: number
@@ -7133,6 +7263,7 @@ export type Database = {
           id?: string
           is_paid_feature?: boolean
           last_reminded_at?: string | null
+          max_target_vendors?: number | null
           payment_terms?: string | null
           product_id?: string | null
           quantity: number
@@ -7163,6 +7294,7 @@ export type Database = {
           id?: string
           is_paid_feature?: boolean
           last_reminded_at?: string | null
+          max_target_vendors?: number | null
           payment_terms?: string | null
           product_id?: string | null
           quantity?: number
@@ -7268,6 +7400,13 @@ export type Database = {
             columns: ["vendor_id"]
             isOneToOne: false
             referencedRelation: "vendor_market_intel_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "seller_contracts_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
             referencedColumns: ["vendor_id"]
           },
           {
@@ -7416,6 +7555,13 @@ export type Database = {
             foreignKeyName: "shipments_vendor_id_fkey"
             columns: ["vendor_id"]
             isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "shipments_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
             referencedRelation: "vendors"
             referencedColumns: ["id"]
           },
@@ -7484,6 +7630,13 @@ export type Database = {
             columns: ["vendor_id"]
             isOneToOne: false
             referencedRelation: "vendor_market_intel_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "shipping_invoices_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
             referencedColumns: ["vendor_id"]
           },
           {
@@ -7819,6 +7972,13 @@ export type Database = {
             columns: ["vendor_id"]
             isOneToOne: false
             referencedRelation: "vendor_market_intel_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "sub_orders_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
             referencedColumns: ["vendor_id"]
           },
           {
@@ -8247,6 +8407,13 @@ export type Database = {
             foreignKeyName: "vendor_addresses_vendor_id_fkey"
             columns: ["vendor_id"]
             isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_addresses_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
             referencedRelation: "vendors"
             referencedColumns: ["id"]
           },
@@ -8344,6 +8511,13 @@ export type Database = {
             foreignKeyName: "vendor_catalog_interests_vendor_id_fkey"
             columns: ["vendor_id"]
             isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_catalog_interests_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
             referencedRelation: "vendors"
             referencedColumns: ["id"]
           },
@@ -8421,6 +8595,13 @@ export type Database = {
             columns: ["vendor_id"]
             isOneToOne: true
             referencedRelation: "vendor_market_intel_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_commercial_settings_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: true
+            referencedRelation: "vendor_rfq_kpis_v"
             referencedColumns: ["vendor_id"]
           },
           {
@@ -8522,6 +8703,13 @@ export type Database = {
             foreignKeyName: "vendor_competitor_alerts_competitor_vendor_id_fkey"
             columns: ["competitor_vendor_id"]
             isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_competitor_alerts_competitor_vendor_id_fkey"
+            columns: ["competitor_vendor_id"]
+            isOneToOne: false
             referencedRelation: "vendors"
             referencedColumns: ["id"]
           },
@@ -8572,6 +8760,13 @@ export type Database = {
             columns: ["vendor_id"]
             isOneToOne: false
             referencedRelation: "vendor_market_intel_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_competitor_alerts_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
             referencedColumns: ["vendor_id"]
           },
           {
@@ -8685,6 +8880,13 @@ export type Database = {
             foreignKeyName: "vendor_delegates_vendor_id_fkey"
             columns: ["vendor_id"]
             isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_delegates_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
             referencedRelation: "vendors"
             referencedColumns: ["id"]
           },
@@ -8753,6 +8955,13 @@ export type Database = {
             columns: ["vendor_id"]
             isOneToOne: false
             referencedRelation: "vendor_market_intel_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_invoices_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
             referencedColumns: ["vendor_id"]
           },
           {
@@ -8876,6 +9085,13 @@ export type Database = {
             foreignKeyName: "vendor_kyc_submissions_vendor_id_fkey"
             columns: ["vendor_id"]
             isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_kyc_submissions_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
             referencedRelation: "vendors"
             referencedColumns: ["id"]
           },
@@ -8960,6 +9176,13 @@ export type Database = {
             columns: ["vendor_id"]
             isOneToOne: true
             referencedRelation: "vendor_market_intel_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_market_intel_entitlements_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: true
+            referencedRelation: "vendor_rfq_kpis_v"
             referencedColumns: ["vendor_id"]
           },
           {
@@ -9084,6 +9307,13 @@ export type Database = {
             foreignKeyName: "vendor_notification_dispatch_log_vendor_id_fkey"
             columns: ["vendor_id"]
             isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_notification_dispatch_log_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
             referencedRelation: "vendors"
             referencedColumns: ["id"]
           },
@@ -9143,6 +9373,13 @@ export type Database = {
             columns: ["vendor_id"]
             isOneToOne: true
             referencedRelation: "vendor_market_intel_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_notification_preferences_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: true
+            referencedRelation: "vendor_rfq_kpis_v"
             referencedColumns: ["vendor_id"]
           },
           {
@@ -9211,6 +9448,13 @@ export type Database = {
             foreignKeyName: "vendor_notification_settings_vendor_id_fkey"
             columns: ["vendor_id"]
             isOneToOne: true
+            referencedRelation: "vendor_rfq_kpis_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_notification_settings_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: true
             referencedRelation: "vendors"
             referencedColumns: ["id"]
           },
@@ -9273,6 +9517,13 @@ export type Database = {
             columns: ["vendor_id"]
             isOneToOne: false
             referencedRelation: "vendor_market_intel_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_notifications_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
             referencedColumns: ["vendor_id"]
           },
           {
@@ -9368,6 +9619,13 @@ export type Database = {
             foreignKeyName: "vendor_offer_campaigns_vendor_id_fkey"
             columns: ["vendor_id"]
             isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_offer_campaigns_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
             referencedRelation: "vendors"
             referencedColumns: ["id"]
           },
@@ -9440,6 +9698,13 @@ export type Database = {
             columns: ["vendor_id"]
             isOneToOne: false
             referencedRelation: "vendor_market_intel_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_offer_history_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
             referencedColumns: ["vendor_id"]
           },
           {
@@ -9546,6 +9811,13 @@ export type Database = {
             foreignKeyName: "vendor_price_alert_events_vendor_id_fkey"
             columns: ["vendor_id"]
             isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_price_alert_events_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
             referencedRelation: "vendors"
             referencedColumns: ["id"]
           },
@@ -9642,6 +9914,13 @@ export type Database = {
             columns: ["vendor_id"]
             isOneToOne: false
             referencedRelation: "vendor_market_intel_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_price_alert_rules_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
             referencedColumns: ["vendor_id"]
           },
           {
@@ -9763,6 +10042,13 @@ export type Database = {
             foreignKeyName: "vendor_price_challenges_vendor_id_fkey"
             columns: ["vendor_id"]
             isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_price_challenges_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
             referencedRelation: "vendors"
             referencedColumns: ["id"]
           },
@@ -9826,6 +10112,13 @@ export type Database = {
             columns: ["vendor_id"]
             isOneToOne: false
             referencedRelation: "vendor_market_intel_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_product_costs_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
             referencedColumns: ["vendor_id"]
           },
           {
@@ -9906,6 +10199,13 @@ export type Database = {
             foreignKeyName: "vendor_profile_defaults_vendor_id_fkey"
             columns: ["vendor_id"]
             isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_profile_defaults_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
             referencedRelation: "vendors"
             referencedColumns: ["id"]
           },
@@ -9959,6 +10259,13 @@ export type Database = {
             columns: ["vendor_id"]
             isOneToOne: true
             referencedRelation: "vendor_market_intel_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_sendcloud_credentials_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: true
+            referencedRelation: "vendor_rfq_kpis_v"
             referencedColumns: ["vendor_id"]
           },
           {
@@ -10048,6 +10355,13 @@ export type Database = {
             foreignKeyName: "vendor_shipping_addresses_vendor_id_fkey"
             columns: ["vendor_id"]
             isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_shipping_addresses_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
             referencedRelation: "vendors"
             referencedColumns: ["id"]
           },
@@ -10104,6 +10418,13 @@ export type Database = {
             columns: ["vendor_id"]
             isOneToOne: false
             referencedRelation: "vendor_market_intel_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_visibility_rules_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
             referencedColumns: ["vendor_id"]
           },
           {
@@ -10520,6 +10841,13 @@ export type Database = {
             foreignKeyName: "order_lines_vendor_id_fkey"
             columns: ["vendor_id"]
             isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "order_lines_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
             referencedRelation: "vendors"
             referencedColumns: ["id"]
           },
@@ -10564,6 +10892,13 @@ export type Database = {
             columns: ["vendor_id"]
             isOneToOne: false
             referencedRelation: "vendor_market_intel_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "offers_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
             referencedColumns: ["vendor_id"]
           },
           {
@@ -10681,6 +11016,13 @@ export type Database = {
             columns: ["vendor_id"]
             isOneToOne: false
             referencedRelation: "vendor_market_intel_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "offers_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
             referencedColumns: ["vendor_id"]
           },
           {
@@ -10930,6 +11272,13 @@ export type Database = {
             foreignKeyName: "rfq_dispatch_log_vendor_id_fkey"
             columns: ["vendor_id"]
             isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "rfq_dispatch_log_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
             referencedRelation: "vendors"
             referencedColumns: ["id"]
           },
@@ -10974,6 +11323,17 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      vendor_rfq_kpis_v: {
+        Row: {
+          avg_response_minutes: number | null
+          declined_count: number | null
+          dispatched_count: number | null
+          responded_count: number | null
+          response_rate: number | null
+          vendor_id: string | null
+        }
+        Relationships: []
       }
       vendors_public: {
         Row: {
@@ -11709,6 +12069,7 @@ export type Database = {
           id: string
           is_paid_feature: boolean
           last_reminded_at: string | null
+          max_target_vendors: number | null
           payment_terms: string | null
           product_id: string | null
           quantity: number
@@ -11772,6 +12133,20 @@ export type Database = {
           scenario: string
         }[]
       }
+      rfq_score_target_vendors: {
+        Args: { _rfq_id: string }
+        Returns: {
+          reason: Database["public"]["Enums"]["rfq_target_reason"]
+          score: number
+          score_availability: number
+          score_latency: number
+          score_price: number
+          score_rating: number
+          score_reason: number
+          score_response: number
+          vendor_id: string
+        }[]
+      }
       rfq_select_reminder_targets: {
         Args: { _max_per_run?: number }
         Returns: {
@@ -11789,6 +12164,15 @@ export type Database = {
           vendor_email: string
           vendor_id: string
           vendor_name: string
+        }[]
+      }
+      rfq_select_top_vendors: {
+        Args: { _rfq_id: string }
+        Returns: {
+          rank_pos: number
+          reason: Database["public"]["Enums"]["rfq_target_reason"]
+          score: number
+          vendor_id: string
         }[]
       }
       rfq_send_now: {
@@ -11810,6 +12194,7 @@ export type Database = {
           id: string
           is_paid_feature: boolean
           last_reminded_at: string | null
+          max_target_vendors: number | null
           payment_terms: string | null
           product_id: string | null
           quantity: number

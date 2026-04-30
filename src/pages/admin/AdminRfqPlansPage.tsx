@@ -265,13 +265,15 @@ export default function AdminRfqPlansPage() {
 
   const upsertMutation = useMutation({
     mutationFn: async (plan: RfqPlan | Omit<RfqPlan, "id">) => {
-      // Garde-fous métier
-      if (!plan.code.trim() || !plan.label.trim()) {
-        throw new Error("Le code et le libellé sont requis.");
+      // Validation métier serveur-side (filet de sécurité même si UI bloque déjà)
+      const errors = validatePlan(plan);
+      const errorList = Object.values(errors);
+      if (errorList.length > 0) {
+        throw new Error(errorList.join(" • "));
       }
       const payload = {
         ...plan,
-        // Coercitions par type pour cohérence métier
+        // Coercitions par type pour cohérence métier (cas extrême : champ caché reste à 0)
         is_unlimited: plan.plan_type === "unlimited_plan" ? true : plan.is_unlimited,
         credits_included:
           plan.plan_type === "credit_pack" ? plan.credits_included : 0,

@@ -9616,6 +9616,121 @@ export type Database = {
           },
         ]
       }
+      vendor_price_challenges: {
+        Row: {
+          created_at: string
+          delta_pct: number | null
+          id: string
+          message: string | null
+          mk_price_ht: number | null
+          notification_id: string | null
+          offer_id: string | null
+          product_id: string
+          reason: string
+          ref_price_ht: number | null
+          responded_at: string | null
+          responded_delta_pct: number | null
+          sent_by: string | null
+          vendor_id: string
+        }
+        Insert: {
+          created_at?: string
+          delta_pct?: number | null
+          id?: string
+          message?: string | null
+          mk_price_ht?: number | null
+          notification_id?: string | null
+          offer_id?: string | null
+          product_id: string
+          reason: string
+          ref_price_ht?: number | null
+          responded_at?: string | null
+          responded_delta_pct?: number | null
+          sent_by?: string | null
+          vendor_id: string
+        }
+        Update: {
+          created_at?: string
+          delta_pct?: number | null
+          id?: string
+          message?: string | null
+          mk_price_ht?: number | null
+          notification_id?: string | null
+          offer_id?: string | null
+          product_id?: string
+          reason?: string
+          ref_price_ht?: number | null
+          responded_at?: string | null
+          responded_delta_pct?: number | null
+          sent_by?: string | null
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_price_challenges_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_notifications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_price_challenges_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "effective_offer_prices_v"
+            referencedColumns: ["offer_id"]
+          },
+          {
+            foreignKeyName: "vendor_price_challenges_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_price_challenges_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "public_offers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_price_challenges_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_price_challenges_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_price_challenges_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_market_intel_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_price_challenges_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_price_challenges_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vendor_product_costs: {
         Row: {
           created_at: string
@@ -10950,6 +11065,68 @@ export type Database = {
           product_name: string
           product_slug: string
           similarity: number
+        }[]
+      }
+      admin_log_price_challenge: {
+        Args: {
+          _delta_pct: number
+          _message: string
+          _mk_price_ht: number
+          _notification_id?: string
+          _offer_id: string
+          _product_id: string
+          _reason: string
+          _ref_price_ht: number
+          _vendor_id: string
+        }
+        Returns: string
+      }
+      admin_price_cockpit_gaps: {
+        Args: { _brand_id?: string; _country?: string; _limit?: number }
+        Returns: {
+          brand_id: string
+          brand_name: string
+          cnk: string
+          external_best_ht: number
+          product_id: string
+          product_name: string
+          pvp_ttc: number
+        }[]
+      }
+      admin_price_cockpit_kpis: { Args: { _country?: string }; Returns: Json }
+      admin_price_cockpit_rows: {
+        Args: {
+          _brand_id?: string
+          _category_id?: string
+          _country?: string
+          _limit?: number
+          _min_delta_pct?: number
+          _offset?: number
+          _only_mk_higher?: boolean
+        }
+        Returns: {
+          brand_id: string
+          brand_name: string
+          category_id: string
+          cnk: string
+          delta_vs_external_pct: number
+          delta_vs_internal_pct: number
+          external_best_ht: number
+          external_best_source: string
+          external_best_url: string
+          market_grossiste_ht: number
+          market_pharm_ht: number
+          market_public_ht: number
+          mk_2nd_ht: number
+          mk_best_ht: number
+          mk_best_offer_id: string
+          mk_best_vendor_id: string
+          mk_best_vendor_name: string
+          mk_offers_count: number
+          product_id: string
+          product_name: string
+          pvp_ttc: number
+          worst_action_score: number
         }[]
       }
       admin_redispatch_catalog_notifications: {

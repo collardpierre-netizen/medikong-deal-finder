@@ -71,7 +71,7 @@ Deno.serve(async (req) => {
   // Pre-check (and load some metadata for the response email)
   const { data: rfq, error: rfqErr } = await adminClient
     .from("rfqs")
-    .select("id, buyer_user_id, product_id, brand_id, quantity, destination_country_code, responses_deadline, status")
+    .select("id, buyer_user_id, product_id, brand_id, quantity, target_price_excl_vat_cents, destination_country_code, responses_deadline, desired_delivery_date, payment_terms, required_offer_validity_days, comment, status")
     .eq("id", rfq_id)
     .maybeSingle();
 
@@ -136,8 +136,13 @@ Deno.serve(async (req) => {
               productName,
               brandName,
               quantity: rfq.quantity,
+              targetPriceCents: rfq.target_price_excl_vat_cents,
               countryCode: rfq.destination_country_code,
               deadline: rfq.responses_deadline,
+              desiredDeliveryDate: rfq.desired_delivery_date,
+              paymentTerms: rfq.payment_terms,
+              offerValidityDays: rfq.required_offer_validity_days,
+              comment: rfq.comment,
               rfqUrl: `https://medikong-deal-finder.lovable.app/vendor/rfq/${rfq_id}?t=${token}`,
               trackingPixelUrl: `${SUPABASE_URL}/functions/v1/rfq-track?t=${token}&e=email_opened`,
             },

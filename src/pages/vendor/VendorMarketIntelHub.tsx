@@ -9,6 +9,7 @@ import VendorPriceAlertRulesPage from "./VendorPriceAlertRulesPage";
 import { useCurrentVendor } from "@/hooks/useCurrentVendor";
 import { useCompetitorAlertsCount } from "@/hooks/useVendorCompetitorAlerts";
 import { usePriceAlertEventsCount } from "@/hooks/useVendorPriceAlertRules";
+import { VendorMarketIntelGate } from "@/components/vendor/VendorMarketIntelGate";
 
 const TAB_BY_PATH: Record<string, string> = {
   "/vendor/positioning": "ranking",

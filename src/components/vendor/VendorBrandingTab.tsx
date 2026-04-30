@@ -33,6 +33,10 @@ export default function VendorBrandingTab({ vendor }: Props) {
   const coverInputRef = useRef<HTMLInputElement>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
+  const [logoUrlInput, setLogoUrlInput] = useState("");
+  const [coverUrlInput, setCoverUrlInput] = useState("");
+  const [savingLogoUrl, setSavingLogoUrl] = useState(false);
+  const [savingCoverUrl, setSavingCoverUrl] = useState(false);
 
   const [form, setForm] = useState({
     tagline: "",

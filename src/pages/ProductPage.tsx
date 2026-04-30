@@ -36,6 +36,7 @@ import ProfileResolvedPriceBadge from "@/components/product/ProfileResolvedPrice
 import { SafeBoundary } from "@/components/SafeBoundary";
 import VendorDelegateCompact from "@/components/vendor/VendorDelegateCompact";
 import { PvpEconomyBadge } from "@/components/product/PvpEconomyBadge";
+import RfqRequestButton from "@/components/product/RfqRequestButton";
 
 function formatEur(n: number | null | undefined): string {
   const v = Number(n);
@@ -1369,6 +1370,16 @@ export default function ProductPage() {
                         });
                       }}
                     />
+
+                    {/* RFQ — Demande de prix */}
+                    <div className="flex items-center justify-end mb-3">
+                      <RfqRequestButton
+                        productId={product.id}
+                        brandId={brandData?.id || product.brandId || null}
+                        productName={product.name}
+                        brandName={brandData?.name || product.brand || null}
+                      />
+                    </div>
 
                     {/* Best Offer */}
                     {bestOffer ? (

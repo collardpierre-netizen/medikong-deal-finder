@@ -516,12 +516,19 @@ function useOfferImport(vendorId: string | undefined) {
       let created = 0, skipped = 0;
       const offers: any[] = [];
       const profileRulesQueue: { ean: string; cnk: string; rule: any }[] = [];
+      // Collecte d'erreurs détaillées (numéro de ligne XLSX = index + 2 car ligne 1 = entêtes)
+      const importErrors: { line: number; ean: string; cnk: string; reason: string }[] = [];
 
-      for (const row of rows) {
+      for (let rowIdx = 0; rowIdx < rows.length; rowIdx++) {
+        const row = rows[rowIdx];
+        const lineNo = rowIdx + 2;
         const ean = String(row["EAN"] || row["ean"] || row["GTIN"] || row["gtin"] || "");
         const cnk = String(row["CNK"] || row["cnk"] || "");
         const productId = allIds[ean] || allIds[cnk];
-        if (!productId) { skipped++; continue; }
+        if (!productId) {
+          importErrors.push({ line: lineNo, ean, cnk, reason: "Produit introuvable (EAN/CNK inconnu)" });
+          skipped++; continue;
+        }
 
         const profileType = String(row["Profil"] || row["profil"] || row["profile_type"] || "").trim();
 

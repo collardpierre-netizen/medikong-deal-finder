@@ -6540,15 +6540,23 @@ export type Database = {
           admin_override_visible: boolean
           awarded: boolean
           comment: string | null
+          compliance_flags: Json
           created_at: string
           delivery_days: number
           id: string
+          is_top_pick: boolean
           is_visible_to_buyer: boolean
           moq: number
           offer_validity_days: number | null
           payment_terms: string | null
           rank_position: number | null
           rfq_id: string
+          score: number | null
+          score_availability: number | null
+          score_compliance: number | null
+          score_delivery: number | null
+          score_price: number | null
+          scored_at: string | null
           unit_price_excl_vat_cents: number
           updated_at: string
           vendor_id: string
@@ -6557,15 +6565,23 @@ export type Database = {
           admin_override_visible?: boolean
           awarded?: boolean
           comment?: string | null
+          compliance_flags?: Json
           created_at?: string
           delivery_days: number
           id?: string
+          is_top_pick?: boolean
           is_visible_to_buyer?: boolean
           moq?: number
           offer_validity_days?: number | null
           payment_terms?: string | null
           rank_position?: number | null
           rfq_id: string
+          score?: number | null
+          score_availability?: number | null
+          score_compliance?: number | null
+          score_delivery?: number | null
+          score_price?: number | null
+          scored_at?: string | null
           unit_price_excl_vat_cents: number
           updated_at?: string
           vendor_id: string
@@ -6574,15 +6590,23 @@ export type Database = {
           admin_override_visible?: boolean
           awarded?: boolean
           comment?: string | null
+          compliance_flags?: Json
           created_at?: string
           delivery_days?: number
           id?: string
+          is_top_pick?: boolean
           is_visible_to_buyer?: boolean
           moq?: number
           offer_validity_days?: number | null
           payment_terms?: string | null
           rank_position?: number | null
           rfq_id?: string
+          score?: number | null
+          score_availability?: number | null
+          score_compliance?: number | null
+          score_delivery?: number | null
+          score_price?: number | null
+          scored_at?: string | null
           unit_price_excl_vat_cents?: number
           updated_at?: string
           vendor_id?: string
@@ -10467,6 +10491,10 @@ export type Database = {
           vendor_id: string
           was_new: boolean
         }[]
+      }
+      rfq_recompute_response_scores: {
+        Args: { _rfq_id: string }
+        Returns: undefined
       }
       rfq_resolve_target_vendors: {
         Args: { _rfq_id: string }

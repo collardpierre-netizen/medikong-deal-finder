@@ -43,6 +43,13 @@ type ResponseRow = {
   is_visible_to_buyer: boolean;
   awarded: boolean;
   created_at: string;
+  score: number | null;
+  score_price: number | null;
+  score_delivery: number | null;
+  score_compliance: number | null;
+  score_availability: number | null;
+  is_top_pick: boolean;
+  compliance_flags: { moq_ok?: boolean; validity_ok?: boolean; beats_target_price?: boolean; admin_curated?: boolean } | null;
   vendor?: { id: string; name: string | null; slug: string | null } | null;
 };
 
@@ -109,15 +116,16 @@ export default function MesRfqPage() {
     queryFn: async () => {
       const { data } = await supabase
         .from("rfq_responses")
-        .select("rfq_id, unit_price_excl_vat_cents, is_visible_to_buyer, awarded")
+        .select("rfq_id, unit_price_excl_vat_cents, is_visible_to_buyer, awarded, score, is_top_pick")
         .in("rfq_id", rfqs!.map(r => r.id))
         .eq("is_visible_to_buyer", true);
-      const map: Record<string, { count: number; best: number | null; awarded: boolean }> = {};
+      const map: Record<string, { count: number; best: number | null; awarded: boolean; topScore: number | null }> = {};
       for (const r of (data || []) as any[]) {
-        const c = map[r.rfq_id] ||= { count: 0, best: null, awarded: false };
+        const c = map[r.rfq_id] ||= { count: 0, best: null, awarded: false, topScore: null };
         c.count += 1;
         if (c.best == null || r.unit_price_excl_vat_cents < c.best) c.best = r.unit_price_excl_vat_cents;
         if (r.awarded) c.awarded = true;
+        if (r.is_top_pick && r.score != null) c.topScore = r.score;
       }
       return map;
     },
@@ -210,6 +218,7 @@ export default function MesRfqPage() {
                       <p className="text-xs text-muted-foreground">Offres reçues</p>
                       <p className="text-2xl font-bold leading-none">{c?.count ?? 0}</p>
                       {c?.best != null && <p className="text-xs text-emerald-700 font-semibold mt-1">dès {formatPrice(c.best)}/u.</p>}
+                      {c?.topScore != null && <p className="text-[10px] text-muted-foreground mt-0.5">Top score {c.topScore.toFixed(0)}/100</p>}
                     </div>
                   </div>
                 </CardHeader>
@@ -235,15 +244,28 @@ export default function MesRfqPage() {
   );
 }
 
+function ScoreBar({ value, label }: { value: number | null; label: string }) {
+  const v = value == null ? 0 : Math.max(0, Math.min(100, value));
+  return (
+    <div className="flex items-center gap-1.5 min-w-[90px]" title={`${label} : ${v.toFixed(0)}/100`}>
+      <span className="text-[10px] text-muted-foreground w-12 shrink-0">{label}</span>
+      <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+        <div className="h-full bg-primary" style={{ width: `${v}%` }} />
+      </div>
+    </div>
+  );
+}
+
 function RfqResponsesPanel({ rfqId }: { rfqId: string }) {
   const { data, isLoading } = useQuery({
     queryKey: ["rfq-responses", rfqId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("rfq_responses")
-        .select("id, rfq_id, vendor_id, unit_price_excl_vat_cents, moq, delivery_days, offer_validity_days, payment_terms, comment, rank_position, is_visible_to_buyer, awarded, created_at, vendor:vendors!inner(id, name, slug)")
+        .select("id, rfq_id, vendor_id, unit_price_excl_vat_cents, moq, delivery_days, offer_validity_days, payment_terms, comment, rank_position, is_visible_to_buyer, awarded, created_at, score, score_price, score_delivery, score_compliance, score_availability, is_top_pick, compliance_flags, vendor:vendors!inner(id, name, slug)")
         .eq("rfq_id", rfqId)
         .eq("is_visible_to_buyer", true)
+        .order("score", { ascending: false, nullsFirst: false })
         .order("rank_position", { ascending: true, nullsFirst: false })
         .order("unit_price_excl_vat_cents", { ascending: true });
       if (error) throw error;
@@ -254,40 +276,91 @@ function RfqResponsesPanel({ rfqId }: { rfqId: string }) {
   if (isLoading) return <div className="mt-3 text-sm text-muted-foreground flex items-center gap-2"><Loader2 className="h-3 w-3 animate-spin" /> Chargement des offres…</div>;
   if (!data || data.length === 0) return <p className="mt-3 text-sm text-muted-foreground italic">Aucune offre reçue pour le moment. Relances et clôture automatiques.</p>;
 
+  const top = data.find(r => r.is_top_pick) || data[0];
+
   return (
-    <div className="mt-3 border rounded-lg overflow-hidden">
-      <table className="w-full text-sm">
-        <thead className="bg-muted/40 text-xs">
-          <tr>
-            <th className="px-3 py-2 text-left">Rang</th>
-            <th className="px-3 py-2 text-left">Fournisseur</th>
-            <th className="px-3 py-2 text-right">Prix HTVA</th>
-            <th className="px-3 py-2 text-right">MOQ</th>
-            <th className="px-3 py-2 text-right">Délai</th>
-            <th className="px-3 py-2 text-left">Conditions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.map((r, i) => (
-            <tr key={r.id} className={`border-t ${i === 0 ? "bg-emerald-50/40" : ""}`}>
-              <td className="px-3 py-2">
-                {r.awarded ? <Badge className="bg-emerald-600"><Award className="h-3 w-3 mr-1" />Choisie</Badge> : <span className="font-semibold">#{r.rank_position ?? i + 1}</span>}
-              </td>
-              <td className="px-3 py-2">
-                {r.vendor?.slug ? <Link to={`/vendeur/${r.vendor.slug}`} className="hover:underline">{r.vendor.name}</Link> : (r.vendor?.name || "—")}
-              </td>
-              <td className="px-3 py-2 text-right font-semibold">{formatPrice(r.unit_price_excl_vat_cents)}/u.</td>
-              <td className="px-3 py-2 text-right">{r.moq ?? "—"}</td>
-              <td className="px-3 py-2 text-right">{r.delivery_days ? `${r.delivery_days} j` : "—"}</td>
-              <td className="px-3 py-2 text-xs text-muted-foreground">
-                {r.payment_terms && <span>{r.payment_terms}</span>}
-                {r.offer_validity_days && <span className="ml-2">· valide {r.offer_validity_days} j</span>}
-                {r.comment && <p className="mt-1 italic">{r.comment}</p>}
-              </td>
+    <div className="mt-3 space-y-3">
+      {top && (
+        <div className="border-2 border-emerald-300 bg-emerald-50/60 rounded-xl p-4">
+          <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
+            <div className="flex items-center gap-2">
+              <Award className="h-4 w-4 text-emerald-700" />
+              <span className="font-semibold text-emerald-800">Meilleure offre recommandée</span>
+              {top.score != null && <Badge className="bg-emerald-600">Score {top.score.toFixed(0)}/100</Badge>}
+            </div>
+            <span className="text-sm font-bold">{formatPrice(top.unit_price_excl_vat_cents)}/u.</span>
+          </div>
+          <p className="text-sm">
+            {top.vendor?.slug ? <Link to={`/vendeur/${top.vendor.slug}`} className="font-semibold hover:underline">{top.vendor.name}</Link> : top.vendor?.name}
+            {top.delivery_days && <span className="text-muted-foreground"> · livraison {top.delivery_days} j</span>}
+            {top.moq && <span className="text-muted-foreground"> · MOQ {top.moq}</span>}
+            {top.offer_validity_days && <span className="text-muted-foreground"> · validité {top.offer_validity_days} j</span>}
+          </p>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-3">
+            <ScoreBar value={top.score_price} label="Prix" />
+            <ScoreBar value={top.score_delivery != null ? top.score_delivery * 4 : null} label="Délai" />
+            <ScoreBar value={top.score_compliance != null ? (top.score_compliance / 15) * 100 : null} label="Conform." />
+            <ScoreBar value={top.score_availability != null ? top.score_availability * 10 : null} label="Dispo." />
+          </div>
+          {top.compliance_flags && (
+            <div className="flex flex-wrap gap-1 mt-2 text-[10px]">
+              {top.compliance_flags.beats_target_price && <Badge variant="outline" className="border-emerald-400 text-emerald-700">≤ prix cible</Badge>}
+              {top.compliance_flags.moq_ok === false && <Badge variant="destructive">MOQ &gt; quantité</Badge>}
+              {top.compliance_flags.validity_ok === false && <Badge variant="outline" className="border-amber-400 text-amber-700">Validité insuffisante</Badge>}
+              {top.compliance_flags.admin_curated && <Badge variant="outline">Curé MediKong</Badge>}
+            </div>
+          )}
+        </div>
+      )}
+
+      <div className="border rounded-lg overflow-hidden">
+        <table className="w-full text-sm">
+          <thead className="bg-muted/40 text-xs">
+            <tr>
+              <th className="px-3 py-2 text-left">Rang</th>
+              <th className="px-3 py-2 text-left">Score</th>
+              <th className="px-3 py-2 text-left">Fournisseur</th>
+              <th className="px-3 py-2 text-right">Prix HTVA</th>
+              <th className="px-3 py-2 text-right">MOQ</th>
+              <th className="px-3 py-2 text-right">Délai</th>
+              <th className="px-3 py-2 text-left">Conditions</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {data.map((r, i) => (
+              <tr key={r.id} className={`border-t ${r.is_top_pick ? "bg-emerald-50/40" : ""}`}>
+                <td className="px-3 py-2">
+                  {r.awarded ? <Badge className="bg-emerald-600"><Award className="h-3 w-3 mr-1" />Choisie</Badge> : <span className="font-semibold">#{r.rank_position ?? i + 1}</span>}
+                </td>
+                <td className="px-3 py-2">
+                  {r.score != null ? (
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold tabular-nums">{r.score.toFixed(0)}</span>
+                      <div className="w-16 h-1.5 bg-muted rounded-full overflow-hidden">
+                        <div className="h-full bg-primary" style={{ width: `${r.score}%` }} />
+                      </div>
+                    </div>
+                  ) : "—"}
+                </td>
+                <td className="px-3 py-2">
+                  {r.vendor?.slug ? <Link to={`/vendeur/${r.vendor.slug}`} className="hover:underline">{r.vendor.name}</Link> : (r.vendor?.name || "—")}
+                </td>
+                <td className="px-3 py-2 text-right font-semibold">{formatPrice(r.unit_price_excl_vat_cents)}/u.</td>
+                <td className="px-3 py-2 text-right">
+                  {r.moq ?? "—"}
+                  {r.compliance_flags?.moq_ok === false && <span className="ml-1 text-destructive" title="MOQ supérieur à la quantité demandée">⚠</span>}
+                </td>
+                <td className="px-3 py-2 text-right">{r.delivery_days ? `${r.delivery_days} j` : "—"}</td>
+                <td className="px-3 py-2 text-xs text-muted-foreground">
+                  {r.payment_terms && <span>{r.payment_terms}</span>}
+                  {r.offer_validity_days && <span className="ml-2">· valide {r.offer_validity_days} j</span>}
+                  {r.comment && <p className="mt-1 italic">{r.comment}</p>}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
@@ -300,15 +373,22 @@ function ExportRecapButton({ rfqId, rfqLabel }: { rfqId: string; rfqLabel: strin
     try {
       const { data, error } = await supabase
         .from("rfq_responses")
-        .select("unit_price_excl_vat_cents, moq, delivery_days, offer_validity_days, payment_terms, comment, rank_position, awarded, created_at, vendor:vendors!inner(name)")
+        .select("unit_price_excl_vat_cents, moq, delivery_days, offer_validity_days, payment_terms, comment, rank_position, awarded, created_at, score, score_price, score_delivery, score_compliance, score_availability, is_top_pick, vendor:vendors!inner(name)")
         .eq("rfq_id", rfqId)
         .eq("is_visible_to_buyer", true)
+        .order("score", { ascending: false, nullsFirst: false })
         .order("rank_position", { ascending: true, nullsFirst: false });
       if (error) throw error;
 
-      const headers = ["Rang", "Fournisseur", "Prix HTVA (EUR/u.)", "MOQ", "Délai (j)", "Validité (j)", "Conditions paiement", "Commentaire", "Attribuée", "Reçue le"];
+      const headers = ["Rang", "Top pick", "Score global", "Score prix", "Score délai", "Score conformité", "Score dispo.", "Fournisseur", "Prix HTVA (EUR/u.)", "MOQ", "Délai (j)", "Validité (j)", "Conditions paiement", "Commentaire", "Attribuée", "Reçue le"];
       const rows = (data || []).map((r: any, i: number) => [
         r.awarded ? "ATTRIBUÉE" : (r.rank_position ?? i + 1),
+        r.is_top_pick ? "oui" : "",
+        r.score != null ? r.score.toFixed(1).replace(".", ",") : "",
+        r.score_price != null ? r.score_price.toFixed(1).replace(".", ",") : "",
+        r.score_delivery != null ? r.score_delivery.toFixed(1).replace(".", ",") : "",
+        r.score_compliance != null ? r.score_compliance.toFixed(1).replace(".", ",") : "",
+        r.score_availability != null ? r.score_availability.toFixed(1).replace(".", ",") : "",
         r.vendor?.name || "",
         (r.unit_price_excl_vat_cents / 100).toFixed(2).replace(".", ","),
         r.moq ?? "",

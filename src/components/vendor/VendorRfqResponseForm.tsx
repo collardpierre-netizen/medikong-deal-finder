@@ -44,7 +44,6 @@ export function VendorRfqResponseForm({
   targetPriceCents, requiredValidityDays, quantity,
   alreadyDeclined, onAfter,
 }: Props) {
-  const fileRef = useRef<HTMLInputElement>(null);
   const [files, setFiles] = useState<File[]>([]);
   const [showDecline, setShowDecline] = useState(false);
   const [declineReason, setDeclineReason] = useState("price_not_competitive");

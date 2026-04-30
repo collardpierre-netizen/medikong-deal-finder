@@ -9,6 +9,7 @@ import VendorPriceAlertRulesPage from "./VendorPriceAlertRulesPage";
 import { useCurrentVendor } from "@/hooks/useCurrentVendor";
 import { useCompetitorAlertsCount } from "@/hooks/useVendorCompetitorAlerts";
 import { usePriceAlertEventsCount } from "@/hooks/useVendorPriceAlertRules";
+import { VendorMarketIntelGate } from "@/components/vendor/VendorMarketIntelGate";
 
 const TAB_BY_PATH: Record<string, string> = {
   "/vendor/positioning": "ranking",
@@ -37,6 +38,7 @@ export default function VendorMarketIntelHub() {
   );
 
   return (
+    <VendorMarketIntelGate>
     <div className="space-y-5">
       <div>
         <h1 className="text-xl font-bold text-[#1D2530]">Veille marché</h1>
@@ -93,5 +95,6 @@ export default function VendorMarketIntelHub() {
         </TabsContent>
       </Tabs>
     </div>
+    </VendorMarketIntelGate>
   );
 }

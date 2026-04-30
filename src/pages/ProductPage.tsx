@@ -1469,6 +1469,12 @@ export default function ProductPage() {
                             isTVAC={isTVAC}
                             categoryId={categoryData?.category?.id}
                             discountPercentage={Number((product as any)?.discount_percentage) || 0}
+                            compareBasis={externalCompareBasis}
+                            packSize={resolvePackSize({
+                              offerOverride: (bestOffer as any)?.packSizeOverride,
+                              productPackSize: (product as any)?.pack_size,
+                              productName: product.name,
+                            }).packSize}
                           />
                         </SafeBoundary>
                       </div>

@@ -1,11 +1,12 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { VCard } from "@/components/vendor/ui/VCard";
 import { VBtn } from "@/components/vendor/ui/VBtn";
-import { Loader2, Send, X, Upload, Info } from "lucide-react";
+import { Loader2, Send, Info } from "lucide-react";
 import { toast } from "sonner";
+import RfqAttachmentPicker, { RFQ_MAX_TOTAL_SIZE } from "@/components/rfq/RfqAttachmentPicker";
 
 interface Props {
   rfqId: string;
@@ -43,7 +44,6 @@ export function VendorRfqResponseForm({
   targetPriceCents, requiredValidityDays, quantity,
   alreadyDeclined, onAfter,
 }: Props) {
-  const fileRef = useRef<HTMLInputElement>(null);
   const [files, setFiles] = useState<File[]>([]);
   const [showDecline, setShowDecline] = useState(false);
   const [declineReason, setDeclineReason] = useState("price_not_competitive");
@@ -60,6 +60,10 @@ export function VendorRfqResponseForm({
 
   const submit = useMutation({
     mutationFn: async () => {
+      const totalSize = files.reduce((s, f) => s + f.size, 0);
+      if (totalSize > RFQ_MAX_TOTAL_SIZE) {
+        throw new Error("Taille totale des pièces jointes dépassée. Retirez un fichier.");
+      }
       const parsed = Schema.safeParse({
         unit_price_eur: Number(form.unit_price_eur),
         moq: Number(form.moq),
@@ -299,38 +303,7 @@ export function VendorRfqResponseForm({
 
         <div className="col-span-2">
           <label className="text-[11px] font-semibold text-[#8B95A5] block mb-1">Pièces jointes (devis PDF, fiche technique…)</label>
-          <input
-            ref={fileRef}
-            type="file"
-            multiple
-            accept=".pdf,.png,.jpg,.jpeg,.webp,.xlsx,.xls,.docx,.doc,.csv,.txt"
-            className="hidden"
-            onChange={(e) => {
-              if (e.target.files) setFiles((prev) => [...prev, ...Array.from(e.target.files!)]);
-              e.target.value = "";
-            }}
-          />
-          <button
-            onClick={() => fileRef.current?.click()}
-            className="inline-flex items-center gap-1.5 text-[12px] text-[#1C58D9] hover:underline"
-          >
-            <Upload size={12} /> Ajouter un fichier
-          </button>
-          {files.length > 0 && (
-            <ul className="mt-2 space-y-1">
-              {files.map((f, i) => (
-                <li key={i} className="flex items-center justify-between text-[11px] bg-[#F8FAFC] px-2 py-1 rounded">
-                  <span className="truncate">{f.name} ({Math.round(f.size / 1024)} ko)</span>
-                  <button
-                    onClick={() => setFiles((prev) => prev.filter((_, j) => j !== i))}
-                    className="text-[#8B95A5] hover:text-[#EF4343]"
-                  >
-                    <X size={12} />
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
+          <RfqAttachmentPicker files={files} onChange={setFiles} compact />
         </div>
       </div>
 

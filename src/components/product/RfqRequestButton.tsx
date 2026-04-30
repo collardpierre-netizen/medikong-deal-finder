@@ -8,12 +8,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tag, Loader2, Upload, X } from "lucide-react";
+import { Tag, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRfqQuota } from "@/hooks/useRfqQuota";
 import RfqQuotaBadge from "@/components/rfq/RfqQuotaBadge";
 import RfqPaywallDialog from "@/components/rfq/RfqPaywallDialog";
+import RfqAttachmentPicker, { RFQ_MAX_TOTAL_SIZE } from "@/components/rfq/RfqAttachmentPicker";
 
 const COUNTRIES = [
   { code: "BE", label: "Belgique" }, { code: "FR", label: "France" },
@@ -61,6 +62,10 @@ export default function RfqRequestButton({ productId, brandId, productName, bran
 
   const submit = useMutation({
     mutationFn: async () => {
+      const totalSize = files.reduce((s, f) => s + f.size, 0);
+      if (totalSize > RFQ_MAX_TOTAL_SIZE) {
+        throw new Error("Taille totale des pièces jointes dépassée. Retirez un fichier.");
+      }
       // Validation
       const parsed = Schema.safeParse({
         quantity: Number(form.quantity),
@@ -99,11 +104,12 @@ export default function RfqRequestButton({ productId, brandId, productName, bran
       // Upload PJ
       for (const f of files) {
         const path = `rfq/${rfq.id}/${crypto.randomUUID()}-${f.name}`;
-        const { error: upErr } = await supabase.storage.from("rfq-attachments").upload(path, f, { contentType: f.type });
+        const mime = f.type || "application/octet-stream";
+        const { error: upErr } = await supabase.storage.from("rfq-attachments").upload(path, f, { contentType: mime });
         if (upErr) { toast.warning(`Pièce jointe '${f.name}' non envoyée : ${upErr.message}`); continue; }
         await supabase.from("rfq_attachments").insert({
           rfq_id: rfq.id, uploaded_by_user_id: user!.id, uploader_role: "buyer",
-          storage_path: path, file_name: f.name, mime_type: f.type || "application/octet-stream",
+          storage_path: path, file_name: f.name, mime_type: mime,
           size_bytes: f.size,
         });
       }
@@ -209,25 +215,8 @@ export default function RfqRequestButton({ productId, brandId, productName, bran
           </div>
 
           <div className="col-span-2">
-            <Label>Pièces jointes (max 20 Mo / fichier)</Label>
-            <label className="flex items-center gap-2 cursor-pointer text-xs text-primary hover:underline">
-              <Upload className="h-3.5 w-3.5" /> Ajouter un fichier
-              <input type="file" className="hidden" multiple
-                accept=".pdf,.png,.jpg,.jpeg,.webp,.xlsx,.xls,.docx,.doc,.csv,.txt"
-                onChange={e => { if (e.target.files) setFiles(prev => [...prev, ...Array.from(e.target.files!)]); e.target.value = ""; }} />
-            </label>
-            {files.length > 0 && (
-              <ul className="mt-2 space-y-1">
-                {files.map((f, i) => (
-                  <li key={i} className="flex items-center justify-between text-xs bg-muted/40 px-2 py-1 rounded">
-                    <span className="truncate">{f.name} ({Math.round(f.size / 1024)} ko)</span>
-                    <button onClick={() => setFiles(prev => prev.filter((_, j) => j !== i))} className="text-muted-foreground hover:text-destructive">
-                      <X className="h-3 w-3" />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
+            <Label>Pièces jointes</Label>
+            <RfqAttachmentPicker files={files} onChange={setFiles} />
           </div>
         </div>
 

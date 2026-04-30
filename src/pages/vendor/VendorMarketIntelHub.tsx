@@ -38,6 +38,7 @@ export default function VendorMarketIntelHub() {
   );
 
   return (
+    <VendorMarketIntelGate>
     <div className="space-y-5">
       <div>
         <h1 className="text-xl font-bold text-[#1D2530]">Veille marché</h1>

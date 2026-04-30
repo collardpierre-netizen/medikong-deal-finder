@@ -108,6 +108,143 @@ function formatEur(cents: number) {
   return (cents / 100).toLocaleString("fr-FR", { style: "currency", currency: "EUR" });
 }
 
+/**
+ * Valide la cohérence d'un plan RFQ selon son `plan_type`.
+ * Retourne un dictionnaire `champ → message` (vide = valide).
+ *
+ * Règles métier :
+ *  - `code` & `label` requis ; `code` slug `[a-z0-9_]+`.
+ *  - `price_cents` ≥ 0 ; `free_quota` doit avoir prix = 0 (gratuit).
+ *  - `credits_included > 0` UNIQUEMENT pour `credit_pack` ; doit être > 0 si credit_pack.
+ *  - `monthly_quota > 0` UNIQUEMENT pour `free_quota` ou `monthly_plan` ; doit être > 0 si l'un des deux.
+ *  - `duration_days` UNIQUEMENT pour `monthly_plan` / `unlimited_plan` (1..3650) ; interdit ailleurs.
+ *  - `is_unlimited = true` UNIQUEMENT pour `unlimited_plan` ; auto-coché pour ce type.
+ *  - `unlimited_plan` doit avoir un prix > 0 (sinon = forfait gratuit illimité, suspect).
+ *  - `credit_pack` doit avoir un prix > 0 (un pack à vie gratuit doublonnerait `free_quota`).
+ *  - `sort_order` ≥ 0 ; `currency` ISO 3 lettres.
+ */
+export function validatePlan(p: Omit<RfqPlan, "id"> | RfqPlan): Record<string, string> {
+  const errors: Record<string, string> = {};
+
+  // — Identifiants
+  const code = (p.code ?? "").trim();
+  if (!code) {
+    errors.code = "Le code est requis.";
+  } else if (!/^[a-z0-9_]{2,40}$/.test(code)) {
+    errors.code = "Slug invalide : minuscules, chiffres ou _ (2 à 40 caractères).";
+  }
+  if (!(p.label ?? "").trim()) {
+    errors.label = "Le libellé est requis.";
+  }
+
+  // — Prix & devise
+  if (!Number.isFinite(p.price_cents) || p.price_cents < 0) {
+    errors.price_cents = "Le prix doit être ≥ 0.";
+  }
+  if (!/^[A-Z]{3}$/.test((p.currency ?? "").trim())) {
+    errors.currency = "Devise ISO sur 3 lettres (ex. EUR).";
+  }
+  if (!Number.isFinite(p.sort_order) || p.sort_order < 0) {
+    errors.sort_order = "L'ordre d'affichage doit être ≥ 0.";
+  }
+
+  // — Règles spécifiques par mode
+  switch (p.plan_type) {
+    case "free_quota": {
+      if (p.price_cents !== 0) {
+        errors.price_cents =
+          "Un quota gratuit doit avoir un prix de 0 € (sinon utiliser un forfait mensuel).";
+      }
+      if (!Number.isFinite(p.monthly_quota) || p.monthly_quota <= 0) {
+        errors.monthly_quota = "Le quota mensuel doit être > 0 pour un paywall.";
+      }
+      if (p.credits_included && p.credits_included !== 0) {
+        errors.credits_included =
+          "Crédits inclus interdits hors mode « Crédits par demande ».";
+      }
+      if (p.duration_days != null) {
+        errors.duration_days =
+          "Durée interdite : un quota gratuit se réinitialise mensuellement automatiquement.";
+      }
+      if (p.is_unlimited) {
+        errors.is_unlimited = "« Illimité » est réservé au forfait illimité.";
+      }
+      break;
+    }
+
+    case "credit_pack": {
+      if (!Number.isFinite(p.credits_included) || p.credits_included <= 0) {
+        errors.credits_included =
+          "Un pack de crédits doit inclure au moins 1 crédit.";
+      }
+      if (p.price_cents <= 0) {
+        errors.price_cents =
+          "Un pack de crédits doit avoir un prix > 0 € (sinon utiliser un quota gratuit).";
+      }
+      if (p.monthly_quota && p.monthly_quota !== 0) {
+        errors.monthly_quota =
+          "Quota mensuel interdit pour un pack à vie (utiliser un forfait mensuel).";
+      }
+      if (p.duration_days != null) {
+        errors.duration_days =
+          "Durée interdite : les crédits d'un pack n'expirent pas.";
+      }
+      if (p.is_unlimited) {
+        errors.is_unlimited = "« Illimité » est réservé au forfait illimité.";
+      }
+      break;
+    }
+
+    case "monthly_plan": {
+      if (!Number.isFinite(p.monthly_quota) || p.monthly_quota <= 0) {
+        errors.monthly_quota =
+          "Un forfait mensuel doit définir un quota > 0 (sinon choisir « Forfait illimité »).";
+      }
+      if (p.price_cents <= 0) {
+        errors.price_cents = "Un forfait mensuel doit avoir un prix > 0 €.";
+      }
+      if (p.credits_included && p.credits_included !== 0) {
+        errors.credits_included =
+          "Crédits inclus interdits hors mode « Crédits par demande ».";
+      }
+      if (p.duration_days == null || !Number.isFinite(p.duration_days) || p.duration_days < 1) {
+        errors.duration_days = "La durée (jours) est requise pour un forfait mensuel.";
+      } else if (p.duration_days > 3650) {
+        errors.duration_days = "Durée trop longue (max 3650 jours).";
+      }
+      if (p.is_unlimited) {
+        errors.is_unlimited =
+          "« Illimité » est incompatible avec un quota — utiliser « Forfait illimité ».";
+      }
+      break;
+    }
+
+    case "unlimited_plan": {
+      if (p.price_cents <= 0) {
+        errors.price_cents =
+          "Un forfait illimité doit avoir un prix > 0 € (un illimité gratuit doublonnerait).";
+      }
+      if (p.monthly_quota && p.monthly_quota !== 0) {
+        errors.monthly_quota =
+          "Quota mensuel interdit pour un forfait illimité.";
+      }
+      if (p.credits_included && p.credits_included !== 0) {
+        errors.credits_included =
+          "Crédits inclus interdits hors mode « Crédits par demande ».";
+      }
+      if (p.duration_days == null || !Number.isFinite(p.duration_days) || p.duration_days < 1) {
+        errors.duration_days = "La durée (jours) est requise pour un forfait illimité.";
+      } else if (p.duration_days > 3650) {
+        errors.duration_days = "Durée trop longue (max 3650 jours).";
+      }
+      // is_unlimited sera forcé à true côté mutation, pas d'erreur ici.
+      break;
+    }
+  }
+
+  return errors;
+}
+
 export default function AdminRfqPlansPage() {
   const qc = useQueryClient();
   const [editing, setEditing] = useState<RfqPlan | null>(null);

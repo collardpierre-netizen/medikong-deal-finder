@@ -216,6 +216,23 @@ export default function VendorBrandingTab({ vendor }: Props) {
               )}
             </div>
           </div>
+          <div className="mt-3 pt-3 border-t border-dashed border-[#E2E8F0]">
+            <label className="text-[11px] font-semibold text-[#8B95A5] mb-1 flex items-center gap-1.5">
+              <Link2 size={12} /> Ou utiliser une URL web
+            </label>
+            <div className="flex items-center gap-2">
+              <input
+                type="url"
+                value={logoUrlInput}
+                onChange={(e) => setLogoUrlInput(e.target.value)}
+                placeholder="https://exemple.com/logo.png"
+                className="flex-1 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-[12px] text-[#1D2530] focus:outline-none focus:border-[#1B5BDA]"
+              />
+              <VBtn small primary onClick={() => setAssetFromUrl(logoUrlInput, "logo")} disabled={savingLogoUrl || !logoUrlInput.trim()}>
+                {savingLogoUrl ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
+              </VBtn>
+            </div>
+          </div>
         </VCard>
 
         {/* Cover */}

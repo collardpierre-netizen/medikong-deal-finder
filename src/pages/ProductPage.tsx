@@ -1371,6 +1371,16 @@ export default function ProductPage() {
                       }}
                     />
 
+                    {/* RFQ — Demande de prix */}
+                    <div className="flex items-center justify-end mb-3">
+                      <RfqRequestButton
+                        productId={product.id}
+                        brandId={brandData?.id || product.brandId || null}
+                        productName={product.name}
+                        brandName={brandData?.name || product.brand || null}
+                      />
+                    </div>
+
                     {/* Best Offer */}
                     {bestOffer ? (
                       <div className="border-2 border-emerald-300 bg-emerald-50/60 rounded-xl p-4 md:p-6 mb-4">

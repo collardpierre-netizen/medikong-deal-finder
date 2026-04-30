@@ -740,9 +740,49 @@ function useOfferImport(vendorId: string | undefined) {
 
       qc.invalidateQueries({ queryKey: ["vendor-offers"] });
       const tiersMsg = tiersSheetName ? " + paliers dégressifs" : "";
-      toast.success(`Import terminé : ${created} offres créées, ${skipped} ignorées${tiersMsg}`);
+
+      if (importErrors.length > 0) {
+        // Toast détaillé + rapport téléchargeable
+        const preview = importErrors.slice(0, 5)
+          .map(e => `Ligne ${e.line} (${e.ean || e.cnk || "?"}) : ${e.reason}`)
+          .join("\n");
+        const more = importErrors.length > 5 ? `\n…et ${importErrors.length - 5} autre(s) ligne(s).` : "";
+        toast.warning(
+          `Import terminé : ${created} offre(s) créée(s), ${skipped} ignorée(s)${tiersMsg}.\n\n` +
+          `${importErrors.length} erreur(s) :\n${preview}${more}`,
+          {
+            duration: 15000,
+            action: {
+              label: "Télécharger le rapport",
+              onClick: () => {
+                const ws = XLSX.utils.json_to_sheet(
+                  importErrors.map(e => ({
+                    Ligne: e.line,
+                    EAN: e.ean,
+                    CNK: e.cnk,
+                    Erreur: e.reason,
+                  }))
+                );
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Erreurs");
+                XLSX.writeFile(wb, `import-erreurs-${Date.now()}.xlsx`);
+              },
+            },
+          }
+        );
+      } else {
+        toast.success(`Import terminé : ${created} offres créées, ${skipped} ignorées${tiersMsg}`);
+      }
     } catch (err: any) {
-      toast.error(err.message || "Erreur d'import");
+      // Erreur DB (ex: contrainte CHECK pack_size_override) — message clair
+      const raw = String(err?.message || "");
+      if (raw.includes("offers_pack_size_override_sane") || raw.includes("products_pack_size_sane")) {
+        toast.error(
+          "Conditionnement refusé par la base : doit être un entier entre 1 et 10 000. Vérifiez la colonne « Conditionnement » de votre fichier."
+        );
+      } else {
+        toast.error(raw || "Erreur d'import");
+      }
     } finally {
       setImporting(false);
     }

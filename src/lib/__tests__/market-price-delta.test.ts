@@ -58,8 +58,8 @@ describe("computeMarketDelta — MK moins cher (signe −, vert)", () => {
     const r = computeMarketDelta({ mkHT: 9.99, pharmHT: 10 });
     expect(r.mkCheaper).toBe(true);
     expect(r.sign).toBe("−");
-    // -0.01 / 9.99 ≈ -0.1% → arrondi 0 (cas limite : reste mkCheaper)
-    expect(r.deltaPct).toBe(0);
+    // -0.01 / 9.99 ≈ -0.1% → arrondi 0 (peut être -0 en flottant ; l'UI l'affiche via Math.abs)
+    expect(Math.abs(r.deltaPct!)).toBe(0);
   });
 });
 

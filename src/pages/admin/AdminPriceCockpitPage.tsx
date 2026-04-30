@@ -56,8 +56,16 @@ interface GapRow {
   brand_name: string | null;
   brand_id: string | null;
   external_best_ht: number | null;
+  external_offers_count: number;
   pvp_ttc: number | null;
+  popularity: number | null;
+  rfq_count_90d: number;
+  rfq_total_qty_90d: number;
+  last_rfq_at: string | null;
+  priority_score: number | null;
 }
+
+type GapSortKey = "priority" | "rfq_count" | "popularity" | "name";
 
 const fmt = (v: number | null | undefined) =>
   v == null ? "—" : `${v.toFixed(2)} €`;

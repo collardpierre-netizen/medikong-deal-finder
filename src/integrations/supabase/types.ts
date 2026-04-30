@@ -6431,6 +6431,13 @@ export type Database = {
             referencedRelation: "rfq_responses"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "rfq_attachments_rfq_response_id_fkey"
+            columns: ["rfq_response_id"]
+            isOneToOne: false
+            referencedRelation: "rfq_vendor_status_v"
+            referencedColumns: ["response_id"]
+          },
         ]
       }
       rfq_buyer_balances: {
@@ -6818,11 +6825,13 @@ export type Database = {
       rfqs: {
         Row: {
           admin_curated: boolean
+          awarded_at: string | null
           brand_id: string | null
           buyer_user_id: string
           closed_at: string | null
           comment: string | null
           created_at: string
+          current_wave: number
           delivery_address: Json | null
           desired_delivery_date: string | null
           destination_country_code: string
@@ -6841,14 +6850,17 @@ export type Database = {
           total_responded: number
           total_targeted: number
           updated_at: string
+          wave_started_at: string | null
         }
         Insert: {
           admin_curated?: boolean
+          awarded_at?: string | null
           brand_id?: string | null
           buyer_user_id: string
           closed_at?: string | null
           comment?: string | null
           created_at?: string
+          current_wave?: number
           delivery_address?: Json | null
           desired_delivery_date?: string | null
           destination_country_code: string
@@ -6867,14 +6879,17 @@ export type Database = {
           total_responded?: number
           total_targeted?: number
           updated_at?: string
+          wave_started_at?: string | null
         }
         Update: {
           admin_curated?: boolean
+          awarded_at?: string | null
           brand_id?: string | null
           buyer_user_id?: string
           closed_at?: string | null
           comment?: string | null
           created_at?: string
+          current_wave?: number
           delivery_address?: Json | null
           desired_delivery_date?: string | null
           destination_country_code?: string
@@ -6893,6 +6908,7 @@ export type Database = {
           total_responded?: number
           total_targeted?: number
           updated_at?: string
+          wave_started_at?: string | null
         }
         Relationships: [
           {
@@ -10135,6 +10151,66 @@ export type Database = {
           },
         ]
       }
+      rfq_vendor_status_v: {
+        Row: {
+          awarded: boolean | null
+          decline_reason: string | null
+          declined_at: string | null
+          delivery_days: number | null
+          dispatch_id: string | null
+          dispatched_at: string | null
+          email_opened_at: string | null
+          expired_at: string | null
+          is_visible_to_buyer: boolean | null
+          last_transition_at: string | null
+          rank_position: number | null
+          reminded_at: string | null
+          responded_at: string | null
+          response_id: string | null
+          rfq_id: string | null
+          score: number | null
+          target_reason: Database["public"]["Enums"]["rfq_target_reason"] | null
+          unit_price_excl_vat_cents: number | null
+          vendor_display_code: string | null
+          vendor_id: string | null
+          vendor_name: string | null
+          vendor_status:
+            | Database["public"]["Enums"]["rfq_dispatch_status"]
+            | null
+          vendor_status_label: string | null
+          viewed_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rfq_dispatch_log_rfq_id_fkey"
+            columns: ["rfq_id"]
+            isOneToOne: false
+            referencedRelation: "rfqs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rfq_dispatch_log_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rfq_dispatch_log_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rfq_dispatch_log_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vendors_public: {
         Row: {
           city: string | null
@@ -10670,6 +10746,7 @@ export type Database = {
           was_new: boolean
         }[]
       }
+      rfq_dispatch_auto_pending_review: { Args: never; Returns: number }
       rfq_ensure_buyer_balance: {
         Args: { _user_id: string }
         Returns: {
@@ -10704,6 +10781,44 @@ export type Database = {
         }
         Returns: Json
       }
+      rfq_mark_followup: {
+        Args: { _rfq_id: string; _wave?: number }
+        Returns: {
+          admin_curated: boolean
+          awarded_at: string | null
+          brand_id: string | null
+          buyer_user_id: string
+          closed_at: string | null
+          comment: string | null
+          created_at: string
+          current_wave: number
+          delivery_address: Json | null
+          desired_delivery_date: string | null
+          destination_country_code: string
+          dispatched_at: string | null
+          id: string
+          is_paid_feature: boolean
+          last_reminded_at: string | null
+          payment_terms: string | null
+          product_id: string | null
+          quantity: number
+          required_offer_validity_days: number | null
+          responses_deadline: string
+          status: Database["public"]["Enums"]["rfq_status"]
+          target_price_excl_vat_cents: number | null
+          target_scope: Database["public"]["Enums"]["rfq_target_scope"]
+          total_responded: number
+          total_targeted: number
+          updated_at: string
+          wave_started_at: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "rfqs"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       rfq_monthly_reset_quotas: { Args: never; Returns: number }
       rfq_recompute_response_scores: {
         Args: { _rfq_id: string }
@@ -10716,10 +10831,52 @@ export type Database = {
           vendor_id: string
         }[]
       }
+      rfq_send_now: {
+        Args: { _rfq_id: string }
+        Returns: {
+          admin_curated: boolean
+          awarded_at: string | null
+          brand_id: string | null
+          buyer_user_id: string
+          closed_at: string | null
+          comment: string | null
+          created_at: string
+          current_wave: number
+          delivery_address: Json | null
+          desired_delivery_date: string | null
+          destination_country_code: string
+          dispatched_at: string | null
+          id: string
+          is_paid_feature: boolean
+          last_reminded_at: string | null
+          payment_terms: string | null
+          product_id: string | null
+          quantity: number
+          required_offer_validity_days: number | null
+          responses_deadline: string
+          status: Database["public"]["Enums"]["rfq_status"]
+          target_price_excl_vat_cents: number | null
+          target_scope: Database["public"]["Enums"]["rfq_target_scope"]
+          total_responded: number
+          total_targeted: number
+          updated_at: string
+          wave_started_at: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "rfqs"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       rfq_send_reminders: { Args: never; Returns: number }
       rfq_track_event: {
         Args: { _event: string; _token: string }
         Returns: boolean
+      }
+      rfq_vendor_state_label: {
+        Args: { _status: Database["public"]["Enums"]["rfq_dispatch_status"] }
+        Returns: string
       }
       snapshot_vendor_offer_history: { Args: never; Returns: Json }
       submit_brand_review: {

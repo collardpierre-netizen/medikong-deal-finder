@@ -129,12 +129,22 @@ export default function RfqRequestButton({ productId, brandId, productName, bran
     onError: (e: any) => {
       const msg = String(e?.message || "");
       const hint = String(e?.hint || (e?.context?.hint ?? ""));
-      if (hint === "rfq_no_credits" || msg.toLowerCase().includes("crédits insuffisants")) {
+      const code = String(e?.code || (e?.context?.code ?? ""));
+      const isQuotaError =
+        hint === "rfq_no_credits" ||
+        code === "P0001" && msg.toLowerCase().includes("crédits insuffisants") ||
+        msg.toLowerCase().includes("crédits insuffisants") ||
+        msg.toLowerCase().includes("rfq_no_credits");
+      if (isQuotaError) {
         setOpen(false);
         setPaywallOpen(true);
+        toast.warning("Quota de demandes de prix atteint", {
+          description: "Rechargez votre compte ou activez un forfait pour envoyer une nouvelle demande.",
+        });
+        qc.invalidateQueries({ queryKey: ["rfq-quota"] });
         return;
       }
-      toast.error(msg || "Erreur lors de l'envoi");
+      toast.error(msg || "Erreur lors de l'envoi de la demande de prix");
     },
   });
 

@@ -145,7 +145,7 @@ export default function VendorRfqInbox() {
     const rows = data || [];
     const allowed = TAB_FILTERS.find((t) => t.key === tab)?.statuses || [];
     if (allowed.length === 0) return rows;
-    return rows.filter((r) => allowed.includes(r.status));
+    return rows.filter((r) => (allowed as readonly string[]).includes(r.status));
   }, [data, tab]);
 
   const counters = useMemo(() => {

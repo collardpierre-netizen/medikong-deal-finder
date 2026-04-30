@@ -516,12 +516,19 @@ function useOfferImport(vendorId: string | undefined) {
       let created = 0, skipped = 0;
       const offers: any[] = [];
       const profileRulesQueue: { ean: string; cnk: string; rule: any }[] = [];
+      // Collecte d'erreurs détaillées (numéro de ligne XLSX = index + 2 car ligne 1 = entêtes)
+      const importErrors: { line: number; ean: string; cnk: string; reason: string }[] = [];
 
-      for (const row of rows) {
+      for (let rowIdx = 0; rowIdx < rows.length; rowIdx++) {
+        const row = rows[rowIdx];
+        const lineNo = rowIdx + 2;
         const ean = String(row["EAN"] || row["ean"] || row["GTIN"] || row["gtin"] || "");
         const cnk = String(row["CNK"] || row["cnk"] || "");
         const productId = allIds[ean] || allIds[cnk];
-        if (!productId) { skipped++; continue; }
+        if (!productId) {
+          importErrors.push({ line: lineNo, ean, cnk, reason: "Produit introuvable (EAN/CNK inconnu)" });
+          skipped++; continue;
+        }
 
         const profileType = String(row["Profil"] || row["profil"] || row["profile_type"] || "").trim();
 
@@ -543,7 +550,10 @@ function useOfferImport(vendorId: string | undefined) {
 
         const priceExcl = parseFloat(row["Prix HT"] || row["prix_ht"] || row["price_excl_vat"] || "0");
         const vatRate = parseFloat(row["TVA"] || row["tva"] || row["vat_rate"] || "21");
-        if (!priceExcl || priceExcl <= 0) { skipped++; continue; }
+        if (!priceExcl || priceExcl <= 0) {
+          importErrors.push({ line: lineNo, ean, cnk, reason: "Prix HT manquant ou ≤ 0" });
+          skipped++; continue;
+        }
 
         const priceIncl = Math.round(priceExcl * (1 + vatRate / 100) * 100) / 100;
         // Stock: empty/undefined = in stock (99999), 0 = out of stock, number = exact qty
@@ -553,11 +563,34 @@ function useOfferImport(vendorId: string | undefined) {
 
         const purchasePrice = parseFloat(String(row["Prix_Achat_HT"] || row["prix_achat_ht"] || row["purchase_price"] || "0")) || null;
         const movAmount = parseFloat(String(row["MOV"] || row["mov"] || row["mov_amount"] || "0")) || 0;
+
+        // ----- Validation conditionnement (pack_size_override) -----
+        // Règles : optionnel (vide = OK, fallback fiche produit), sinon entier 1..10000.
+        // Refuse : décimales (4.5), zéro, négatif, non-numérique, > 10000.
         const rawPack = row["Conditionnement"] ?? row["conditionnement"] ?? row["pack_size"] ?? row["Pack"];
-        const packParsed = rawPack !== undefined && rawPack !== null && String(rawPack).trim() !== ""
-          ? parseInt(String(rawPack))
-          : NaN;
-        const packSizeOverride = Number.isFinite(packParsed) && packParsed > 0 ? packParsed : null;
+        const packStr = rawPack === undefined || rawPack === null ? "" : String(rawPack).trim();
+        let packSizeOverride: number | null = null;
+        if (packStr !== "") {
+          const packNum = Number(packStr.replace(",", "."));
+          if (!Number.isFinite(packNum)) {
+            importErrors.push({ line: lineNo, ean, cnk, reason: `Conditionnement invalide ("${packStr}") — attendu un entier ≥ 1` });
+            skipped++; continue;
+          }
+          if (!Number.isInteger(packNum)) {
+            importErrors.push({ line: lineNo, ean, cnk, reason: `Conditionnement décimal non autorisé ("${packStr}") — utilisez un entier (ex: 24)` });
+            skipped++; continue;
+          }
+          if (packNum < 1) {
+            importErrors.push({ line: lineNo, ean, cnk, reason: `Conditionnement ≤ 0 ("${packStr}") — laissez vide ou indiquez ≥ 1` });
+            skipped++; continue;
+          }
+          if (packNum > 10000) {
+            importErrors.push({ line: lineNo, ean, cnk, reason: `Conditionnement > 10 000 ("${packStr}") — valeur trop élevée, vérifiez` });
+            skipped++; continue;
+          }
+          packSizeOverride = packNum;
+        }
+        // ----- Fin validation -----
 
         offers.push({
           vendor_id: vendorId,
@@ -707,9 +740,49 @@ function useOfferImport(vendorId: string | undefined) {
 
       qc.invalidateQueries({ queryKey: ["vendor-offers"] });
       const tiersMsg = tiersSheetName ? " + paliers dégressifs" : "";
-      toast.success(`Import terminé : ${created} offres créées, ${skipped} ignorées${tiersMsg}`);
+
+      if (importErrors.length > 0) {
+        // Toast détaillé + rapport téléchargeable
+        const preview = importErrors.slice(0, 5)
+          .map(e => `Ligne ${e.line} (${e.ean || e.cnk || "?"}) : ${e.reason}`)
+          .join("\n");
+        const more = importErrors.length > 5 ? `\n…et ${importErrors.length - 5} autre(s) ligne(s).` : "";
+        toast.warning(
+          `Import terminé : ${created} offre(s) créée(s), ${skipped} ignorée(s)${tiersMsg}.\n\n` +
+          `${importErrors.length} erreur(s) :\n${preview}${more}`,
+          {
+            duration: 15000,
+            action: {
+              label: "Télécharger le rapport",
+              onClick: () => {
+                const ws = XLSX.utils.json_to_sheet(
+                  importErrors.map(e => ({
+                    Ligne: e.line,
+                    EAN: e.ean,
+                    CNK: e.cnk,
+                    Erreur: e.reason,
+                  }))
+                );
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Erreurs");
+                XLSX.writeFile(wb, `import-erreurs-${Date.now()}.xlsx`);
+              },
+            },
+          }
+        );
+      } else {
+        toast.success(`Import terminé : ${created} offres créées, ${skipped} ignorées${tiersMsg}`);
+      }
     } catch (err: any) {
-      toast.error(err.message || "Erreur d'import");
+      // Erreur DB (ex: contrainte CHECK pack_size_override) — message clair
+      const raw = String(err?.message || "");
+      if (raw.includes("offers_pack_size_override_sane") || raw.includes("products_pack_size_sane")) {
+        toast.error(
+          "Conditionnement refusé par la base : doit être un entier entre 1 et 10 000. Vérifiez la colonne « Conditionnement » de votre fichier."
+        );
+      } else {
+        toast.error(raw || "Erreur d'import");
+      }
     } finally {
       setImporting(false);
     }

@@ -147,6 +147,7 @@ const AdminRfqPlansPage = lazyWithRetry(() => import("./pages/admin/AdminRfqPlan
 const AdminPriceCockpitPage = lazyWithRetry(() => import("./pages/admin/AdminPriceCockpitPage"), "AdminPriceCockpitPage");
 const AdminRfqRemindersPage = lazyWithRetry(() => import("./pages/admin/AdminRfqRemindersPage"), "AdminRfqRemindersPage");
 const AdminRfqRoutingTestPage = lazyWithRetry(() => import("./pages/admin/AdminRfqRoutingTestPage"), "AdminRfqRoutingTestPage");
+const AdminRfqRoutingAuditPage = lazyWithRetry(() => import("./pages/admin/AdminRfqRoutingAuditPage"), "AdminRfqRoutingAuditPage");
 const AdminVendorMarketIntelPage = lazyWithRetry(() => import("./pages/admin/AdminVendorMarketIntelPage"), "AdminVendorMarketIntelPage");
 const AdminAnnouncementBar = lazyWithRetry(() => import("./pages/admin/AdminAnnouncementBar"), "AdminAnnouncementBar");
 const AdminI18nPilot = lazyWithRetry(() => import("./pages/admin/AdminI18nPilot"), "AdminI18nPilot");

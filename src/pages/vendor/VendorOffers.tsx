@@ -1572,6 +1572,38 @@ export default function VendorOffers() {
               <input type="number" min="1" className="w-full px-3 py-2 text-[13px] border rounded-lg focus:border-[#1B5BDA] focus:outline-none"
                 style={{ borderColor: "#E2E8F0" }} value={form.delivery_days} onChange={e => setForm(p => ({ ...p, delivery_days: e.target.value }))} />
             </div>
+            <div className="md:col-span-2">
+              <label className="text-[11px] block mb-1 flex items-center justify-between" style={{ color: "#8B95A5" }}>
+                <span>Conditionnement <span className="font-normal">— nb d'unités par pack vendu (ex: 24)</span></span>
+                {form.pack_size_override?.trim() ? (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded border bg-emerald-50 text-emerald-700 border-emerald-200" title="Conditionnement spécifique à votre offre — prioritaire sur la fiche produit MediKong.">
+                    Override offre
+                  </span>
+                ) : form.product_pack_size_fallback ? (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded border bg-sky-50 text-sky-700 border-sky-200" title={`Le conditionnement de la fiche produit MediKong sera utilisé : pack de ${form.product_pack_size_fallback} unités.`}>
+                    Fallback fiche : {form.product_pack_size_fallback}
+                  </span>
+                ) : (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded border bg-amber-50 text-amber-700 border-amber-200" title="Aucun conditionnement défini — sera déduit du nom du produit ou supposé = 1.">
+                    Aucun (déduit auto)
+                  </span>
+                )}
+              </label>
+              <input
+                type="number"
+                step="1"
+                min="1"
+                max="10000"
+                placeholder={form.product_pack_size_fallback ? `Vide = ${form.product_pack_size_fallback} (fiche produit)` : "Vide = déduit du nom"}
+                className="w-full px-3 py-2 text-[13px] border rounded-lg focus:border-[#1B5BDA] focus:outline-none"
+                style={{ borderColor: "#E2E8F0" }}
+                value={form.pack_size_override}
+                onChange={e => setForm(p => ({ ...p, pack_size_override: e.target.value }))}
+              />
+              <p className="text-[10px] mt-1" style={{ color: "#8B95A5" }}>
+                Saisissez ce champ uniquement si vous vendez un pack différent de la fiche produit MediKong (ex: carton de 24 alors que la fiche est unitaire). Sert au calcul du prix unitaire affiché à l'acheteur.
+              </p>
+            </div>
             <div>
               <label className="text-[11px] block mb-1" style={{ color: "#8B95A5" }}>Pays</label>
               <select className="w-full px-3 py-2 text-[13px] border rounded-lg focus:border-[#1B5BDA] focus:outline-none"

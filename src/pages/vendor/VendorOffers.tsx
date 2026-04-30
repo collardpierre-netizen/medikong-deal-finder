@@ -2030,6 +2030,19 @@ export default function VendorOffers() {
               <thead>
                 <tr style={{ backgroundColor: "#F8FAFC", borderBottom: "1px solid #E2E8F0" }}
                   className="text-[11px] uppercase tracking-wide" >
+                  <th className="py-2.5 pl-3 pr-1 w-8">
+                    <input
+                      type="checkbox"
+                      checked={allVisibleSelected}
+                      ref={(el) => {
+                        if (el) el.indeterminate = !allVisibleSelected && someVisibleSelected;
+                      }}
+                      onChange={toggleSelectAll}
+                      className="cursor-pointer accent-[#1B5BDA]"
+                      aria-label="Tout sélectionner"
+                      title={allVisibleSelected ? "Tout désélectionner" : "Tout sélectionner"}
+                    />
+                  </th>
                   <th className="text-left py-2.5 px-3 font-medium" style={{ color: "#8B95A5" }}>Produit</th>
                   <th className="text-left py-2.5 px-3 font-medium" style={{ color: "#8B95A5" }}>Marque</th>
                   <th className="text-right py-2.5 px-3 font-medium" style={{ color: "#8B95A5" }}>Prix HT</th>
@@ -2057,7 +2070,23 @@ export default function VendorOffers() {
                     ? computeMargin(Number(offer.price_excl_vat) || 0, purchase, commissionConfig)
                     : null;
                   return (
-                    <tr key={offer.id} className="hover:bg-[#F8FAFC]" style={{ borderBottom: "1px solid #E2E8F0" }}>
+                    <tr
+                      key={offer.id}
+                      className="hover:bg-[#F8FAFC]"
+                      style={{
+                        borderBottom: "1px solid #E2E8F0",
+                        backgroundColor: selectedIds.has(offer.id) ? "#EFF6FF" : undefined,
+                      }}
+                    >
+                      <td className="py-2.5 pl-3 pr-1">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.has(offer.id)}
+                          onChange={() => toggleSelectOne(offer.id)}
+                          className="cursor-pointer accent-[#1B5BDA]"
+                          aria-label={`Sélectionner ${(offer.products as any)?.name || "offre"}`}
+                        />
+                      </td>
                       <td className="py-2.5 px-3">
                         {(() => {
                           const inner = (

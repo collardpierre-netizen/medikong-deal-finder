@@ -760,7 +760,57 @@ function useOfferImport(vendorId: string | undefined) {
         }
       }
 
+      // ─── Création auto de product_submissions pour les EAN/CNK inconnus ───
+      if (submissionsMap.size > 0) {
+        // Récupérer les soumissions existantes (en attente) pour ce vendeur afin d'éviter les doublons
+        const { data: existingSubs } = await supabase
+          .from("product_submissions")
+          .select("id, proposed_payload, status")
+          .eq("vendor_id", vendorId)
+          .in("status", ["submitted", "needs_changes"] as any);
+
+        const existingKeys = new Set<string>();
+        (existingSubs || []).forEach((s: any) => {
+          const payload = s.proposed_payload || {};
+          if (payload.gtin) existingKeys.add(String(payload.gtin));
+          if (payload.cnk_code) existingKeys.add(String(payload.cnk_code));
+        });
+
+        const submissionInserts = Array.from(submissionsMap.entries())
+          .filter(([key]) => !existingKeys.has(key))
+          .map(([_key, info]) => {
+            const row = info.sample_row || {};
+            return {
+              vendor_id: vendorId,
+              proposed_payload: {
+                gtin: info.ean || null,
+                cnk_code: info.cnk || null,
+                source: "vendor_offer_import",
+                proposed_name: row["Nom"] || row["nom"] || row["Designation"] || row["designation"] || null,
+                proposed_brand: row["Marque"] || row["marque"] || row["Brand"] || row["brand"] || null,
+                pack_size_hint: row["Conditionnement"] || row["conditionnement"] || row["Pack"] || null,
+                vat_rate_hint: row["TVA"] || row["tva"] || null,
+                country_code: row["Pays"] || row["pays"] || "BE",
+                lines_in_file: info.lines.slice(0, 20),
+                imported_at: new Date().toISOString(),
+              },
+              status: "submitted" as const,
+            };
+          });
+
+        if (submissionInserts.length > 0) {
+          for (let i = 0; i < submissionInserts.length; i += 100) {
+            const batch = submissionInserts.slice(i, i + 100);
+            const { error: subErr } = await supabase
+              .from("product_submissions")
+              .insert(batch as any);
+            if (!subErr) submitted += batch.length;
+          }
+        }
+      }
+
       qc.invalidateQueries({ queryKey: ["vendor-offers"] });
+      qc.invalidateQueries({ queryKey: ["product-submissions"] });
       // Le pack_size (override ou fallback produit) a pu changer → invalider tous les caches
       // qui dérivent du prix unitaire normalisé (fiche produit, offres marketplace, veille marché).
       qc.invalidateQueries({ queryKey: ["product"] });

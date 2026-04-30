@@ -4134,6 +4134,30 @@ export type Database = {
           },
         ]
       }
+      price_challenge_settings: {
+        Row: {
+          cooldown_days: number
+          id: boolean
+          max_per_vendor_per_day: number
+          min_delta_pct: number
+          updated_at: string
+        }
+        Insert: {
+          cooldown_days?: number
+          id?: boolean
+          max_per_vendor_per_day?: number
+          min_delta_pct?: number
+          updated_at?: string
+        }
+        Update: {
+          cooldown_days?: number
+          id?: boolean
+          max_per_vendor_per_day?: number
+          min_delta_pct?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       price_history: {
         Row: {
           country_code: string
@@ -11511,6 +11535,58 @@ export type Database = {
           },
         ]
       }
+      vendor_price_challenge_metrics_v: {
+        Row: {
+          avg_response_days: number | null
+          avg_response_delta_pct: number | null
+          last_open_challenge_at: string | null
+          last_sent_at: string | null
+          responded_30d: number | null
+          responded_count: number | null
+          response_rate_pct: number | null
+          sent_30d: number | null
+          total_challenges: number | null
+          vendor_id: string | null
+          vendor_name: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_price_challenges_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_price_challenges_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_market_intel_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_price_challenges_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_price_challenges_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_price_challenges_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vendor_rfq_kpis_v: {
         Row: {
           avg_response_minutes: number | null
@@ -11670,20 +11746,36 @@ export type Database = {
           similarity: number
         }[]
       }
-      admin_log_price_challenge: {
-        Args: {
-          _delta_pct: number
-          _message: string
-          _mk_price_ht: number
-          _notification_id?: string
-          _offer_id: string
-          _product_id: string
-          _reason: string
-          _ref_price_ht: number
-          _vendor_id: string
-        }
-        Returns: string
-      }
+      admin_log_price_challenge:
+        | {
+            Args: {
+              _delta_pct: number
+              _message: string
+              _mk_price_ht: number
+              _notification_id?: string
+              _offer_id: string
+              _product_id: string
+              _reason: string
+              _ref_price_ht: number
+              _vendor_id: string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              _delta_pct: number
+              _force?: boolean
+              _message: string
+              _mk_price_ht: number
+              _notification_id?: string
+              _offer_id: string
+              _product_id: string
+              _reason: string
+              _ref_price_ht: number
+              _vendor_id: string
+            }
+            Returns: string
+          }
       admin_price_cockpit_gaps: {
         Args: { _brand_id?: string; _country?: string; _limit?: number }
         Returns: {
@@ -11821,6 +11913,16 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      check_price_challenge_cooldown: {
+        Args: { _product_id: string; _vendor_id: string }
+        Returns: {
+          allowed: boolean
+          block_reason: string
+          last_sent_at: string
+          next_allowed_at: string
+          sent_today: number
+        }[]
       }
       consume_qogita_tokens: { Args: { _amount: number }; Returns: Json }
       count_products_per_category: {

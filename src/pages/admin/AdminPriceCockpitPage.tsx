@@ -131,6 +131,31 @@ export default function AdminPriceCockpitPage() {
     },
   });
 
+  const metricsQ = useQuery({
+    queryKey: ["price-challenge-metrics"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("vendor_price_challenge_metrics_v")
+        .select("*")
+        .order("total_challenges", { ascending: false })
+        .limit(200);
+      if (error) throw error;
+      return (data ?? []) as Array<{
+        vendor_id: string;
+        vendor_name: string | null;
+        total_challenges: number;
+        responded_count: number;
+        response_rate_pct: number | null;
+        avg_response_delta_pct: number | null;
+        avg_response_days: number | null;
+        last_sent_at: string | null;
+        last_open_challenge_at: string | null;
+        sent_30d: number;
+        responded_30d: number;
+      }>;
+    },
+  });
+
   const sortedGaps = useMemo(() => {
     const rows = gapsQ.data ?? [];
     const get = (r: GapRow) => {
@@ -264,6 +289,7 @@ export default function AdminPriceCockpitPage() {
         <TabsList>
           <TabsTrigger value="overpriced">Offres à challenger</TabsTrigger>
           <TabsTrigger value="gaps">Trous catalogue ({gapsQ.data?.length ?? 0})</TabsTrigger>
+          <TabsTrigger value="metrics">Métriques challenges</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overpriced" className="space-y-3">
@@ -503,6 +529,79 @@ export default function AdminPriceCockpitPage() {
                         <TableCell className="text-right font-mono">{g.external_offers_count || "—"}</TableCell>
                         <TableCell className="text-right font-mono">{fmt(g.external_best_ht)}</TableCell>
                         <TableCell className="text-right font-mono">{fmt(g.pvp_ttc)}</TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="metrics" className="space-y-3">
+          <Card>
+            <CardContent className="pt-4 text-sm text-muted-foreground">
+              Métriques par vendeur basées sur l'historique des challenges. Un challenge est considéré « répondu »
+              quand le vendeur baisse son prix HTVA dans les 30 jours suivants.
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-0 overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Vendeur</TableHead>
+                    <TableHead className="text-right">Total</TableHead>
+                    <TableHead className="text-right">Répondus</TableHead>
+                    <TableHead className="text-right">Taux réponse</TableHead>
+                    <TableHead className="text-right">Δ moyen réponse</TableHead>
+                    <TableHead className="text-right">Délai moyen</TableHead>
+                    <TableHead className="text-right">30j (env / rép)</TableHead>
+                    <TableHead className="text-right">Dernier envoi</TableHead>
+                    <TableHead className="text-right">Dernier ouvert</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {metricsQ.isLoading && (
+                    <TableRow><TableCell colSpan={9} className="text-center py-8"><Loader2 className="w-5 h-5 animate-spin inline" /></TableCell></TableRow>
+                  )}
+                  {!metricsQ.isLoading && (metricsQ.data ?? []).length === 0 && (
+                    <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">Aucun challenge envoyé pour l'instant.</TableCell></TableRow>
+                  )}
+                  {(metricsQ.data ?? []).map((m) => {
+                    const rate = m.response_rate_pct ?? 0;
+                    return (
+                      <TableRow key={m.vendor_id}>
+                        <TableCell>
+                          <Link to={`/admin/vendeurs/${m.vendor_id}`} className="font-medium text-mk-blue hover:underline">
+                            {m.vendor_name ?? "—"}
+                          </Link>
+                        </TableCell>
+                        <TableCell className="text-right font-mono">{m.total_challenges}</TableCell>
+                        <TableCell className="text-right font-mono">{m.responded_count}</TableCell>
+                        <TableCell className="text-right">
+                          <Badge
+                            variant={rate >= 50 ? "default" : rate >= 20 ? "secondary" : "outline"}
+                            title="% de challenges suivis d'une baisse de prix dans les 30j"
+                          >
+                            {m.response_rate_pct != null ? `${m.response_rate_pct}%` : "—"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right font-mono">
+                          {m.avg_response_delta_pct != null ? `${m.avg_response_delta_pct}%` : "—"}
+                        </TableCell>
+                        <TableCell className="text-right font-mono">
+                          {m.avg_response_days != null ? `${m.avg_response_days}j` : "—"}
+                        </TableCell>
+                        <TableCell className="text-right font-mono text-xs">
+                          {m.sent_30d} / {m.responded_30d}
+                        </TableCell>
+                        <TableCell className="text-right text-xs text-muted-foreground">
+                          {m.last_sent_at ? new Date(m.last_sent_at).toLocaleDateString("fr-BE", { day: "2-digit", month: "short" }) : "—"}
+                        </TableCell>
+                        <TableCell className="text-right text-xs text-muted-foreground">
+                          {m.last_open_challenge_at ? new Date(m.last_open_challenge_at).toLocaleDateString("fr-BE", { day: "2-digit", month: "short" }) : "—"}
+                        </TableCell>
                       </TableRow>
                     );
                   })}

@@ -56,6 +56,9 @@ export default function PriceChallengeModal({ open, onOpenChange, ctx, quickSend
     if (!ctx) return;
     setSending(true);
     try {
+      const { suggestedPriceHt } = buildMessage(ctx);
+      const ctaUrl = `${window.location.origin}/vendor/offers?product=${ctx.productId}`;
+
       // 1. Créer la notification vendeur
       const { data: notif, error: nerr } = await supabase
         .from("vendor_notifications")
@@ -72,6 +75,8 @@ export default function PriceChallengeModal({ open, onOpenChange, ctx, quickSend
             ref_price_ht: ctx.refPriceHt,
             mk_price_ht: ctx.mkPriceHt,
             delta_pct: ctx.deltaPct,
+            ref_label: ctx.refLabel,
+            suggested_price_ht: suggestedPriceHt,
           },
         })
         .select("id")
@@ -92,7 +97,59 @@ export default function PriceChallengeModal({ open, onOpenChange, ctx, quickSend
       });
       if (lerr) throw lerr;
 
-      toast.success(`Challenge envoyé à ${ctx.vendorName}`);
+      // 3. Envoyer l'email transactionnel au vendeur (best-effort)
+      let emailStatus: "sent" | "skipped" | "failed" = "skipped";
+      try {
+        const { data: vendor } = await supabase
+          .from("vendors")
+          .select("email, name, company_name")
+          .eq("id", ctx.vendorId)
+          .maybeSingle();
+        const recipientEmail = vendor?.email ?? null;
+        if (recipientEmail) {
+          // CNK best-effort
+          const { data: prod } = await supabase
+            .from("products")
+            .select("cnk_code")
+            .eq("id", ctx.productId)
+            .maybeSingle();
+
+          const { error: eerr } = await supabase.functions.invoke(
+            "send-transactional-email",
+            {
+              body: {
+                templateName: "vendor-price-challenge",
+                recipientEmail,
+                idempotencyKey: `price-challenge-${notif?.id ?? `${ctx.vendorId}-${ctx.productId}-${Date.now()}`}`,
+                templateData: {
+                  vendorName: vendor?.company_name || vendor?.name || ctx.vendorName,
+                  productName: ctx.productName,
+                  cnk: (prod as any)?.cnk_code ?? null,
+                  mkPriceHt: ctx.mkPriceHt,
+                  refPriceHt: ctx.refPriceHt,
+                  refLabel: ctx.refLabel,
+                  deltaPct: ctx.deltaPct,
+                  suggestedPriceHt,
+                  reason: ctx.reason,
+                  message: finalMessage,
+                  ctaUrl,
+                },
+              },
+            },
+          );
+          emailStatus = eerr ? "failed" : "sent";
+        }
+      } catch {
+        emailStatus = "failed";
+      }
+
+      if (emailStatus === "sent") {
+        toast.success(`Challenge envoyé à ${ctx.vendorName} (notification + email)`);
+      } else if (emailStatus === "failed") {
+        toast.warning(`Notification créée pour ${ctx.vendorName}, mais l'email n'a pas pu être envoyé.`);
+      } else {
+        toast.success(`Challenge envoyé à ${ctx.vendorName} (notification — email vendeur non renseigné)`);
+      }
       onOpenChange(false);
       setMessage("");
       onSent?.();

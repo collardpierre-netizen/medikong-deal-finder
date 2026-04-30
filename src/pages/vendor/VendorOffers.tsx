@@ -80,7 +80,7 @@ const useVendorOffers = (vendorId: string | undefined, statusFilter: OfferStatus
       if (!vendorId) return [];
       let q = supabase
         .from("offers")
-        .select("*, products(name, gtin, image_urls, slug, brand_name, category_name, cnk_code)")
+        .select("*, products(name, gtin, image_urls, slug, brand_name, category_name, cnk_code, pack_size)")
         .eq("vendor_id", vendorId)
         .order("created_at", { ascending: false });
       if (statusFilter === "active") q = q.eq("is_active", true);

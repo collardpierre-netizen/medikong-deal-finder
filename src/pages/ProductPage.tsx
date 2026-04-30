@@ -133,9 +133,11 @@ function formatRelative(iso?: string | null): string | null {
 /* ── Offer Row ─────────────────────────────────────────── */
 function OfferRow({
   offer, productId, productName, productSlug, user, navigate, addToCart, isBest, delay = 0, isTVAC = false, categoryId, bestPrice, discountPercentage = 0,
+  compareBasis = 'pack', packSize: packSizeProp,
 }: {
   offer: Offer; productId: string; productName: string; productSlug: string;
   user: any; navigate: any; addToCart: any; isBest?: boolean; delay?: number; isTVAC?: boolean; categoryId?: string; bestPrice?: number; discountPercentage?: number;
+  compareBasis?: 'pack' | 'unit' | 'hundred'; packSize?: number;
 }) {
   const maxQty = offer.stockQuantity > 0 ? offer.stockQuantity : 999;
   const step = offer.bundleSize > 1 ? offer.bundleSize : 1;
@@ -149,7 +151,17 @@ function OfferRow({
   const displayCode = offer.displayCode || offer.sellerId.slice(0, 6).toUpperCase();
   // sellerName already encapsulates the anonymization rules (real name vs "Fournisseur XXXXXX")
   const sellerLabel = offer.sellerName || `Fournisseur ${displayCode}`;
-  const displayPrice = isTVAC ? offer.unitPriceInclVat : offer.unitPriceEur;
+  // Prix vendeur "au pack" tel qu'importé. Bascule sur unité ou /100u via compareBasis.
+  const packSize = Math.max(1, packSizeProp ?? 1);
+  const basePackPrice = isTVAC ? offer.unitPriceInclVat : offer.unitPriceEur;
+  const perUnitPrice = packSize > 0 ? basePackPrice / packSize : basePackPrice;
+  const displayPrice =
+    compareBasis === 'pack' ? basePackPrice :
+    compareBasis === 'unit' ? perUnitPrice :
+    perUnitPrice * 100;
+  const basisSuffix =
+    compareBasis === 'pack' ? (packSize > 1 ? ` /pack de ${packSize}` : ' /pack') :
+    compareBasis === 'unit' ? ' /u.' : ' /100 u.';
   const priceLabel = isTVAC ? "TVAC" : "HTVA";
 
   const handleAdd = () => {

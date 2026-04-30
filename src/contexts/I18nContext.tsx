@@ -26,6 +26,7 @@ const translations: Record<Lang, Record<string, string>> = {
     finances: "Finances",
     commissions: "Commissions",
     syncQogita: "Sync Qogita",
+    priceCockpit: "Cockpit prix",
     priceWatch: "Veille prix",
     leads: "Leads & Affiliation",
     analytics: "Analytics",

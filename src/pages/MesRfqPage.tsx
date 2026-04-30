@@ -241,6 +241,19 @@ export default function MesRfqPage() {
                     <>
                       <div className="mt-4">
                         <h4 className="text-sm font-semibold mb-1 flex items-center gap-1.5">
+                          <Clock className="h-3.5 w-3.5 text-muted-foreground" /> Historique de la demande
+                        </h4>
+                        <p className="text-xs text-muted-foreground">Chronologie : envoi, consultations, relances, réponses et clôture.</p>
+                        <RfqActivityHistory
+                          rfqId={rfq.id}
+                          rfqCreatedAt={rfq.created_at}
+                          rfqDispatchedAt={rfq.dispatched_at}
+                          rfqClosedAt={rfq.closed_at}
+                          rfqStatus={rfq.status}
+                        />
+                      </div>
+                      <div className="mt-6">
+                        <h4 className="text-sm font-semibold mb-1 flex items-center gap-1.5">
                           <Clock className="h-3.5 w-3.5 text-muted-foreground" /> Suivi des fournisseurs ciblés
                         </h4>
                         <p className="text-xs text-muted-foreground">Statut, dates de réponse et raisons d'échec ou de déclin par vendeur.</p>

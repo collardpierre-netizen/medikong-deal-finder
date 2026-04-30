@@ -892,6 +892,11 @@ function exportOffers(offers: any[], profileRulesMap?: Map<string, any[]>, price
       "Délai": o.delivery_days,
       "Pays": o.country_code,
       "Conditionnement": o.pack_size_override ?? (o.products as any)?.pack_size ?? "",
+      "Conditionnement_Source": o.pack_size_override != null
+        ? "Override offre"
+        : (o.products as any)?.pack_size != null
+          ? "Fiche produit MediKong"
+          : "Aucun (déduit auto du nom)",
       "Statut": o.is_active ? "Active" : "Inactive",
       "Profil": "",
       "Profil_Pays": "",

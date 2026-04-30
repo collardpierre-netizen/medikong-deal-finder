@@ -119,12 +119,21 @@ Deno.serve(async (req) => {
     const productName = (product as any)?.name ?? null;
     const brandName = (brand as any)?.name ?? null;
     const tokenByVendor = new Map((dispatchLog ?? []).map((d: any) => [d.vendor_id, d.tracking_token]));
+    const reasonByVendor = new Map(rows.map(r => [r.vendor_id, r.reason]));
+    const REASON_LABEL_FR: Record<string, string> = {
+      product_offer: "Vous avez déjà une offre active sur ce produit",
+      product_interest: "Vous suivez ce produit",
+      brand_interest: "Vous suivez cette marque",
+      manufacturer_interest: "Vous suivez ce fabricant",
+      category_interest: "Vous suivez cette catégorie",
+    };
 
     // Fire-and-forget email sends
     await Promise.all((vendors ?? []).map(async (v: any) => {
       const email = v.contact_email;
       if (!email) return;
       const token = tokenByVendor.get(v.id);
+      const reason = reasonByVendor.get(v.id) ?? null;
       try {
         await adminClient.functions.invoke("send-transactional-email", {
           body: {
@@ -143,6 +152,8 @@ Deno.serve(async (req) => {
               paymentTerms: rfq.payment_terms,
               offerValidityDays: rfq.required_offer_validity_days,
               comment: rfq.comment,
+              targetReason: reason,
+              targetReasonLabel: reason ? (REASON_LABEL_FR[reason] ?? reason) : null,
               rfqUrl: `https://medikong-deal-finder.lovable.app/vendor/rfq/${rfq_id}?t=${token}`,
               trackingPixelUrl: `${SUPABASE_URL}/functions/v1/rfq-track?t=${token}&e=email_opened`,
             },

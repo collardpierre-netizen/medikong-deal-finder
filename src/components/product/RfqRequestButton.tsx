@@ -240,5 +240,7 @@ export default function RfqRequestButton({ productId, brandId, productName, bran
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    <RfqPaywallDialog open={paywallOpen} onOpenChange={setPaywallOpen} />
+    </>
   );
 }

@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { VCard } from "@/components/vendor/ui/VCard";
 import { VBtn } from "@/components/vendor/ui/VBtn";
 import { VBadge } from "@/components/vendor/ui/VBadge";
-import { Tag, Plus, Pencil, Trash2, X, Loader2, Package, Search, Download, Upload, FileSpreadsheet, ChevronDown, Users, ChevronRight, TrendingDown, TrendingUp, BarChart3, Eye, ImagePlus, ArrowLeft } from "lucide-react";
+import { Tag, Plus, Pencil, Trash2, X, Loader2, Package, Search, Download, Upload, FileSpreadsheet, ChevronDown, Users, ChevronRight, TrendingDown, TrendingUp, BarChart3, Eye, ImagePlus, ArrowLeft, Copy, PowerOff, Power } from "lucide-react";
 import ProductPhotoUploader from "@/components/admin/ProductPhotoUploader";
 import { CategoryTreeSelector } from "@/components/vendor/CategoryTreeSelector";
 import { MarginInsightCard } from "@/components/vendor/MarginInsightCard";
@@ -80,7 +80,7 @@ const useVendorOffers = (vendorId: string | undefined, statusFilter: OfferStatus
       if (!vendorId) return [];
       let q = supabase
         .from("offers")
-        .select("*, products(name, gtin, image_urls, slug, brand_name, category_name, cnk_code, pack_size)")
+        .select("*, products(name, gtin, image_urls, slug, brand_name, category_name, cnk_code, pack_size, manufacturer_id, manufacturers(name))")
         .eq("vendor_id", vendorId)
         .order("created_at", { ascending: false });
       if (statusFilter === "active") q = q.eq("is_active", true);

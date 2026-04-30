@@ -402,38 +402,110 @@ export default function AdminPriceCockpitPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="gaps">
+        <TabsContent value="gaps" className="space-y-3">
+          <Card>
+            <CardContent className="pt-4 flex flex-wrap items-end gap-3">
+              <div className="flex-1 min-w-[240px]">
+                <Label>Recherche (produit / marque / CNK)</Label>
+                <Input value={gapSearch} onChange={(e) => setGapSearch(e.target.value)} placeholder="Ex : doliprane, Pharmamed…" />
+              </div>
+              <div>
+                <Label>RFQ minimum (90j)</Label>
+                <Input
+                  type="number"
+                  step="1"
+                  min="0"
+                  className="w-28"
+                  value={gapMinRfq}
+                  onChange={(e) => setGapMinRfq(e.target.value)}
+                />
+              </div>
+              <div className="flex items-center gap-2 pb-2">
+                <input
+                  id="only-demand"
+                  type="checkbox"
+                  className="h-4 w-4"
+                  checked={gapOnlyDemand}
+                  onChange={(e) => setGapOnlyDemand(e.target.checked)}
+                />
+                <Label htmlFor="only-demand" className="text-sm">Uniquement avec demande (RFQ)</Label>
+              </div>
+              <div>
+                <Label>Trier par</Label>
+                <Select value={gapSortBy} onValueChange={(v: GapSortKey) => setGapSortBy(v)}>
+                  <SelectTrigger className="w-56"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="priority">Priorité (défaut)</SelectItem>
+                    <SelectItem value="rfq_count">Nombre de RFQ</SelectItem>
+                    <SelectItem value="popularity">Popularité produit</SelectItem>
+                    <SelectItem value="name">Nom (A→Z)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="text-sm text-muted-foreground ml-auto">
+                {gapsQ.isLoading ? "Chargement…" : `${sortedGaps.length} produit${sortedGaps.length > 1 ? "s" : ""}`}
+              </div>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardContent className="p-0 overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Produit</TableHead>
-                    <TableHead>Marque</TableHead>
-                    <TableHead className="text-right">Meilleur prix externe</TableHead>
+                    <TableHead className="text-right">Priorité</TableHead>
+                    <TableHead className="text-right">RFQ 90j</TableHead>
+                    <TableHead className="text-right">Qté demandée</TableHead>
+                    <TableHead className="text-right">Dernière RFQ</TableHead>
+                    <TableHead className="text-right">Popularité</TableHead>
+                    <TableHead className="text-right">Offres ext.</TableHead>
+                    <TableHead className="text-right">Meilleur ext. HT</TableHead>
                     <TableHead className="text-right">PVP TTC</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {gapsQ.isLoading && (
-                    <TableRow><TableCell colSpan={4} className="text-center py-8"><Loader2 className="w-5 h-5 animate-spin inline" /></TableCell></TableRow>
+                    <TableRow><TableCell colSpan={9} className="text-center py-8"><Loader2 className="w-5 h-5 animate-spin inline" /></TableCell></TableRow>
                   )}
-                  {!gapsQ.isLoading && (gapsQ.data ?? []).length === 0 && (
-                    <TableRow><TableCell colSpan={4} className="text-center py-8 text-muted-foreground">Aucun trou catalogue détecté 🎉</TableCell></TableRow>
+                  {!gapsQ.isLoading && sortedGaps.length === 0 && (
+                    <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">Aucun trou catalogue détecté 🎉</TableCell></TableRow>
                   )}
-                  {(gapsQ.data ?? []).map((g) => (
-                    <TableRow key={g.product_id}>
-                      <TableCell>
-                        <Link to={`/admin/produits/${g.product_id}`} className="font-medium text-mk-blue hover:underline">
-                          {g.product_name}
-                        </Link>
-                        <div className="text-xs text-muted-foreground">{g.cnk ? `CNK ${g.cnk}` : ""}</div>
-                      </TableCell>
-                      <TableCell>{g.brand_name ?? "—"}</TableCell>
-                      <TableCell className="text-right font-mono">{fmt(g.external_best_ht)}</TableCell>
-                      <TableCell className="text-right font-mono">{fmt(g.pvp_ttc)}</TableCell>
-                    </TableRow>
-                  ))}
+                  {sortedGaps.map((g) => {
+                    const score = g.priority_score ?? 0;
+                    const lastRfq = g.last_rfq_at ? new Date(g.last_rfq_at) : null;
+                    return (
+                      <TableRow key={g.product_id}>
+                        <TableCell className="max-w-xs">
+                          <Link to={`/admin/produits/${g.product_id}`} className="font-medium text-mk-blue hover:underline line-clamp-2">
+                            {g.product_name}
+                          </Link>
+                          <div className="text-xs text-muted-foreground">
+                            {g.brand_name ?? "—"}{g.cnk ? ` · CNK ${g.cnk}` : ""}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Badge
+                            variant={score >= 50 ? "destructive" : score >= 20 ? "secondary" : "outline"}
+                            title="Priorité = RFQ × 10 + popularité × 0.5 + bonus dispo externe + bonus RFQ récente (14j)"
+                          >
+                            {Math.round(score)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right font-mono">{g.rfq_count_90d}</TableCell>
+                        <TableCell className="text-right font-mono">{g.rfq_total_qty_90d || "—"}</TableCell>
+                        <TableCell className="text-right text-xs text-muted-foreground">
+                          {lastRfq ? lastRfq.toLocaleDateString("fr-BE", { day: "2-digit", month: "short" }) : "—"}
+                        </TableCell>
+                        <TableCell className="text-right font-mono">
+                          {g.popularity != null ? Math.round(g.popularity) : "—"}
+                        </TableCell>
+                        <TableCell className="text-right font-mono">{g.external_offers_count || "—"}</TableCell>
+                        <TableCell className="text-right font-mono">{fmt(g.external_best_ht)}</TableCell>
+                        <TableCell className="text-right font-mono">{fmt(g.pvp_ttc)}</TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </CardContent>

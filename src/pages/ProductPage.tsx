@@ -403,7 +403,7 @@ function OfferRow({
             )}
           </div>
           <div className="flex flex-col items-end gap-0.5">
-            <span className="text-base font-bold text-green-700">{formatEur(displayPrice)} € <span className="text-[10px] font-normal text-muted-foreground">{priceLabel}</span></span>
+            <span className="text-base font-bold text-green-700">{formatEur(displayPrice)} € <span className="text-[10px] font-normal text-muted-foreground">{basisSuffix} · {priceLabel}</span></span>
             <ProfileResolvedPriceBadge
               offerId={offer.id}
               basePrice={offer.unitPriceEur}

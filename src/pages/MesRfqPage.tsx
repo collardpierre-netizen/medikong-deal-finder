@@ -194,7 +194,7 @@ export default function MesRfqPage() {
                       <div className="flex items-center gap-2 flex-wrap">
                         <Badge variant={status.variant}>{status.label}</Badge>
                         {c?.awarded && <Badge variant="default" className="bg-emerald-600"><Award className="h-3 w-3 mr-1" /> Attribuée</Badge>}
-                        {rfq.responses_deadline && rfq.status === "collecting" && (
+                        {rfq.responses_deadline && ACTIVE_STATUSES.has(rfq.status) && (
                           <span className="text-xs text-muted-foreground inline-flex items-center gap-1">
                             <Clock className="h-3 w-3" /> Clôture {formatUpdatedAt(rfq.responses_deadline)}
                           </span>

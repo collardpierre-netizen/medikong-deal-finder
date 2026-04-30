@@ -6433,6 +6433,108 @@ export type Database = {
           },
         ]
       }
+      rfq_dispatch_log: {
+        Row: {
+          created_at: string
+          decline_reason: string | null
+          declined_at: string | null
+          dispatched_at: string
+          email_clicked_at: string | null
+          email_message_id: string | null
+          email_opened_at: string | null
+          expired_at: string | null
+          id: string
+          notification_id: string | null
+          reason: Database["public"]["Enums"]["rfq_target_reason"]
+          reminded_at: string | null
+          responded_at: string | null
+          rfq_id: string
+          status: Database["public"]["Enums"]["rfq_dispatch_status"]
+          tracking_token: string
+          updated_at: string
+          vendor_id: string
+          viewed_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          decline_reason?: string | null
+          declined_at?: string | null
+          dispatched_at?: string
+          email_clicked_at?: string | null
+          email_message_id?: string | null
+          email_opened_at?: string | null
+          expired_at?: string | null
+          id?: string
+          notification_id?: string | null
+          reason: Database["public"]["Enums"]["rfq_target_reason"]
+          reminded_at?: string | null
+          responded_at?: string | null
+          rfq_id: string
+          status?: Database["public"]["Enums"]["rfq_dispatch_status"]
+          tracking_token?: string
+          updated_at?: string
+          vendor_id: string
+          viewed_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          decline_reason?: string | null
+          declined_at?: string | null
+          dispatched_at?: string
+          email_clicked_at?: string | null
+          email_message_id?: string | null
+          email_opened_at?: string | null
+          expired_at?: string | null
+          id?: string
+          notification_id?: string | null
+          reason?: Database["public"]["Enums"]["rfq_target_reason"]
+          reminded_at?: string | null
+          responded_at?: string | null
+          rfq_id?: string
+          status?: Database["public"]["Enums"]["rfq_dispatch_status"]
+          tracking_token?: string
+          updated_at?: string
+          vendor_id?: string
+          viewed_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rfq_dispatch_log_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_notifications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rfq_dispatch_log_rfq_id_fkey"
+            columns: ["rfq_id"]
+            isOneToOne: false
+            referencedRelation: "rfqs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rfq_dispatch_log_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rfq_dispatch_log_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rfq_dispatch_log_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rfq_responses: {
         Row: {
           admin_override_visible: boolean
@@ -6521,13 +6623,16 @@ export type Database = {
           admin_curated: boolean
           brand_id: string | null
           buyer_user_id: string
+          closed_at: string | null
           comment: string | null
           created_at: string
           delivery_address: Json | null
           desired_delivery_date: string | null
           destination_country_code: string
+          dispatched_at: string | null
           id: string
           is_paid_feature: boolean
+          last_reminded_at: string | null
           payment_terms: string | null
           product_id: string | null
           quantity: number
@@ -6536,19 +6641,24 @@ export type Database = {
           status: Database["public"]["Enums"]["rfq_status"]
           target_price_excl_vat_cents: number | null
           target_scope: Database["public"]["Enums"]["rfq_target_scope"]
+          total_responded: number
+          total_targeted: number
           updated_at: string
         }
         Insert: {
           admin_curated?: boolean
           brand_id?: string | null
           buyer_user_id: string
+          closed_at?: string | null
           comment?: string | null
           created_at?: string
           delivery_address?: Json | null
           desired_delivery_date?: string | null
           destination_country_code: string
+          dispatched_at?: string | null
           id?: string
           is_paid_feature?: boolean
+          last_reminded_at?: string | null
           payment_terms?: string | null
           product_id?: string | null
           quantity: number
@@ -6557,19 +6667,24 @@ export type Database = {
           status?: Database["public"]["Enums"]["rfq_status"]
           target_price_excl_vat_cents?: number | null
           target_scope?: Database["public"]["Enums"]["rfq_target_scope"]
+          total_responded?: number
+          total_targeted?: number
           updated_at?: string
         }
         Update: {
           admin_curated?: boolean
           brand_id?: string | null
           buyer_user_id?: string
+          closed_at?: string | null
           comment?: string | null
           created_at?: string
           delivery_address?: Json | null
           desired_delivery_date?: string | null
           destination_country_code?: string
+          dispatched_at?: string | null
           id?: string
           is_paid_feature?: boolean
+          last_reminded_at?: string | null
           payment_terms?: string | null
           product_id?: string | null
           quantity?: number
@@ -6578,6 +6693,8 @@ export type Database = {
           status?: Database["public"]["Enums"]["rfq_status"]
           target_price_excl_vat_cents?: number | null
           target_scope?: Database["public"]["Enums"]["rfq_target_scope"]
+          total_responded?: number
+          total_targeted?: number
           updated_at?: string
         }
         Relationships: [
@@ -10342,6 +10459,27 @@ export type Database = {
         Args: { _backup_table_name?: string }
         Returns: Json
       }
+      rfq_close_expired: { Args: never; Returns: number }
+      rfq_dispatch: {
+        Args: { _rfq_id: string }
+        Returns: {
+          reason: Database["public"]["Enums"]["rfq_target_reason"]
+          vendor_id: string
+          was_new: boolean
+        }[]
+      }
+      rfq_resolve_target_vendors: {
+        Args: { _rfq_id: string }
+        Returns: {
+          reason: Database["public"]["Enums"]["rfq_target_reason"]
+          vendor_id: string
+        }[]
+      }
+      rfq_send_reminders: { Args: never; Returns: number }
+      rfq_track_event: {
+        Args: { _event: string; _token: string }
+        Returns: boolean
+      }
       snapshot_vendor_offer_history: { Args: never; Returns: Json }
       submit_brand_review: {
         Args: {
@@ -10452,7 +10590,20 @@ export type Database = {
         | "received_at_warehouse"
         | "repackaging"
         | "reshipped"
+      rfq_dispatch_status:
+        | "dispatched"
+        | "viewed"
+        | "reminded"
+        | "responded"
+        | "declined"
+        | "expired"
       rfq_status: "open" | "closed" | "awarded" | "cancelled"
+      rfq_target_reason:
+        | "product_offer"
+        | "brand_interest"
+        | "manufacturer_interest"
+        | "product_interest"
+        | "manual"
       rfq_target_scope: "product_only" | "brand_only" | "product_and_brand"
       shipment_status:
         | "pending"
@@ -10730,7 +10881,22 @@ export const Constants = {
         "repackaging",
         "reshipped",
       ],
+      rfq_dispatch_status: [
+        "dispatched",
+        "viewed",
+        "reminded",
+        "responded",
+        "declined",
+        "expired",
+      ],
       rfq_status: ["open", "closed", "awarded", "cancelled"],
+      rfq_target_reason: [
+        "product_offer",
+        "brand_interest",
+        "manufacturer_interest",
+        "product_interest",
+        "manual",
+      ],
       rfq_target_scope: ["product_only", "brand_only", "product_and_brand"],
       shipment_status: [
         "pending",

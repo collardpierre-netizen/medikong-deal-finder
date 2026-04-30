@@ -41,3 +41,6 @@ verify_jwt = false
 
 [functions.import-external-offers]
 verify_jwt = false
+
+[functions.rfq-track]
+verify_jwt = false

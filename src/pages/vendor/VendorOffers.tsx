@@ -590,10 +590,11 @@ function useOfferImport(vendorId: string | undefined) {
 
       // Upsert offers and collect IDs
       const offerIdsByKey: Record<string, string> = {};
+      const productPackFallbacks = new Map<string, number>(); // product_id -> pack
       if (uniqueOffers.length > 0) {
         for (let i = 0; i < uniqueOffers.length; i += 100) {
           const batchSource = uniqueOffers.slice(i, i + 100);
-          const batch = batchSource.map(({ _ean, _cnk, ...rest }) => rest);
+          const batch = batchSource.map(({ _ean, _cnk, _packForProduct, ...rest }) => rest);
           const { data: inserted, error } = await supabase.from("offers").upsert(batch, { onConflict: "product_id,vendor_id,country_code", ignoreDuplicates: false }).select("id, product_id");
           if (error) throw error;
           if (inserted) {
@@ -601,7 +602,26 @@ function useOfferImport(vendorId: string | undefined) {
               const src = batchSource[idx];
               if (src._ean) offerIdsByKey[src._ean] = ins.id;
               if (src._cnk) offerIdsByKey[src._cnk] = ins.id;
+              if (src._packForProduct && ins.product_id && !productPackFallbacks.has(ins.product_id)) {
+                productPackFallbacks.set(ins.product_id, src._packForProduct);
+              }
             });
+          }
+        }
+      }
+
+      // Fallback : si products.pack_size est vide, le remplir avec le pack vendeur
+      if (productPackFallbacks.size > 0) {
+        const ids = Array.from(productPackFallbacks.keys());
+        const { data: existingProducts } = await supabase
+          .from("products")
+          .select("id, pack_size")
+          .in("id", ids);
+        const toUpdate = (existingProducts || []).filter((p: any) => p.pack_size == null);
+        for (const p of toUpdate) {
+          const pack = productPackFallbacks.get(p.id);
+          if (pack) {
+            await supabase.from("products").update({ pack_size: pack }).eq("id", p.id);
           }
         }
       }

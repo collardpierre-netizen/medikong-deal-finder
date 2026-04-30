@@ -502,11 +502,46 @@ function PlanFormDialog({
   onSubmit: (p: Omit<RfqPlan, "id"> | RfqPlan) => void;
 }) {
   const [form, setForm] = useState<Omit<RfqPlan, "id"> | RfqPlan>(initial);
+  const [submitAttempted, setSubmitAttempted] = useState(false);
 
   const update = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
 
+  // Quand l'admin change de mode, on remet à zéro les champs interdits par le nouveau type
+  // pour éviter d'afficher des valeurs orphelines (et déclencher de fausses erreurs).
+  const updatePlanType = (newType: PlanType) => {
+    setForm((f) => ({
+      ...f,
+      plan_type: newType,
+      credits_included: newType === "credit_pack" ? f.credits_included : 0,
+      monthly_quota:
+        newType === "free_quota" || newType === "monthly_plan" ? f.monthly_quota : 0,
+      duration_days:
+        newType === "monthly_plan" || newType === "unlimited_plan"
+          ? f.duration_days ?? 30
+          : null,
+      is_unlimited: newType === "unlimited_plan",
+      // free_quota = gratuit obligatoire
+      price_cents: newType === "free_quota" ? 0 : f.price_cents,
+    }));
+  };
+
   const meta = PLAN_TYPE_META[form.plan_type];
+  const errors = validatePlan(form);
+  const errorCount = Object.keys(errors).length;
+  const showErr = (field: string) => submitAttempted && errors[field];
+
+  const handleSubmit = () => {
+    setSubmitAttempted(true);
+    if (errorCount > 0) {
+      toast.error(`${errorCount} erreur(s) à corriger avant d'enregistrer.`);
+      return;
+    }
+    onSubmit(form);
+  };
+
+  const errClass = (field: string) =>
+    showErr(field) ? "border-destructive focus-visible:ring-destructive" : "";
 
   return (
     <DialogContent className="max-w-2xl">
@@ -525,7 +560,12 @@ function PlanFormDialog({
               onChange={(e) => update("code", e.target.value)}
               placeholder="pack_25"
               disabled={isEdit}
+              aria-invalid={!!showErr("code")}
+              className={errClass("code")}
             />
+            {showErr("code") && (
+              <p className="text-xs text-destructive mt-1">{errors.code}</p>
+            )}
           </div>
           <div>
             <Label htmlFor="label">Libellé</Label>
@@ -534,13 +574,18 @@ function PlanFormDialog({
               value={form.label}
               onChange={(e) => update("label", e.target.value)}
               placeholder="Pack 25 crédits"
+              aria-invalid={!!showErr("label")}
+              className={errClass("label")}
             />
+            {showErr("label") && (
+              <p className="text-xs text-destructive mt-1">{errors.label}</p>
+            )}
           </div>
         </div>
 
         <div>
           <Label htmlFor="plan_type">Mode de monétisation</Label>
-          <Select value={form.plan_type} onValueChange={(v) => update("plan_type", v as PlanType)}>
+          <Select value={form.plan_type} onValueChange={(v) => updatePlanType(v as PlanType)}>
             <SelectTrigger id="plan_type">
               <SelectValue />
             </SelectTrigger>
@@ -572,7 +617,11 @@ function PlanFormDialog({
 
         <div className="grid grid-cols-3 gap-3">
           <div>
-            <Label htmlFor="price">Prix (€)</Label>
+            <Label htmlFor="price">
+              Prix (€){form.plan_type === "free_quota" && (
+                <span className="text-xs text-muted-foreground ml-1">— doit être 0</span>
+              )}
+            </Label>
             <Input
               id="price"
               type="number"
@@ -582,7 +631,13 @@ function PlanFormDialog({
               onChange={(e) =>
                 update("price_cents", Math.round(parseFloat(e.target.value || "0") * 100))
               }
+              disabled={form.plan_type === "free_quota"}
+              aria-invalid={!!showErr("price_cents")}
+              className={errClass("price_cents")}
             />
+            {showErr("price_cents") && (
+              <p className="text-xs text-destructive mt-1">{errors.price_cents}</p>
+            )}
           </div>
 
           {form.plan_type === "credit_pack" && (
@@ -591,10 +646,15 @@ function PlanFormDialog({
               <Input
                 id="credits"
                 type="number"
-                min="0"
+                min="1"
                 value={form.credits_included}
                 onChange={(e) => update("credits_included", parseInt(e.target.value || "0", 10))}
+                aria-invalid={!!showErr("credits_included")}
+                className={errClass("credits_included")}
               />
+              {showErr("credits_included") && (
+                <p className="text-xs text-destructive mt-1">{errors.credits_included}</p>
+              )}
             </div>
           )}
 
@@ -604,10 +664,15 @@ function PlanFormDialog({
               <Input
                 id="quota"
                 type="number"
-                min="0"
+                min="1"
                 value={form.monthly_quota}
                 onChange={(e) => update("monthly_quota", parseInt(e.target.value || "0", 10))}
+                aria-invalid={!!showErr("monthly_quota")}
+                className={errClass("monthly_quota")}
               />
+              {showErr("monthly_quota") && (
+                <p className="text-xs text-destructive mt-1">{errors.monthly_quota}</p>
+              )}
             </div>
           )}
 
@@ -618,9 +683,15 @@ function PlanFormDialog({
                 id="duration"
                 type="number"
                 min="1"
+                max="3650"
                 value={form.duration_days ?? 30}
                 onChange={(e) => update("duration_days", parseInt(e.target.value || "30", 10))}
+                aria-invalid={!!showErr("duration_days")}
+                className={errClass("duration_days")}
               />
+              {showErr("duration_days") && (
+                <p className="text-xs text-destructive mt-1">{errors.duration_days}</p>
+              )}
             </div>
           )}
 
@@ -629,9 +700,15 @@ function PlanFormDialog({
             <Input
               id="sort_order"
               type="number"
+              min="0"
               value={form.sort_order}
               onChange={(e) => update("sort_order", parseInt(e.target.value || "0", 10))}
+              aria-invalid={!!showErr("sort_order")}
+              className={errClass("sort_order")}
             />
+            {showErr("sort_order") && (
+              <p className="text-xs text-destructive mt-1">{errors.sort_order}</p>
+            )}
           </div>
         </div>
 
@@ -656,13 +733,34 @@ function PlanFormDialog({
             </div>
           </div>
         </div>
+
+        {/* Bandeau récap des erreurs après tentative de soumission */}
+        {submitAttempted && errorCount > 0 && (
+          <div
+            role="alert"
+            className="rounded-md border border-destructive/30 bg-destructive/5 p-3"
+          >
+            <p className="text-sm font-medium text-destructive mb-1">
+              {errorCount} {errorCount > 1 ? "incohérences détectées" : "incohérence détectée"} :
+            </p>
+            <ul className="list-disc ml-5 space-y-0.5 text-xs text-destructive/90">
+              {Object.entries(errors).map(([field, msg]) => (
+                <li key={field}>{msg}</li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
 
       <DialogFooter>
-        <Button onClick={() => onSubmit(form)} disabled={saving}>
+        <Button onClick={handleSubmit} disabled={saving}>
           {saving && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
           {isEdit ? "Enregistrer" : "Créer le plan"}
         </Button>
+      </DialogFooter>
+    </DialogContent>
+  );
+}
       </DialogFooter>
     </DialogContent>
   );

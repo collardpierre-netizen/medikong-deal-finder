@@ -62,6 +62,10 @@ export default function RfqRequestButton({ productId, brandId, productName, bran
 
   const submit = useMutation({
     mutationFn: async () => {
+      const totalSize = files.reduce((s, f) => s + f.size, 0);
+      if (totalSize > RFQ_MAX_TOTAL_SIZE) {
+        throw new Error("Taille totale des pièces jointes dépassée. Retirez un fichier.");
+      }
       // Validation
       const parsed = Schema.safeParse({
         quantity: Number(form.quantity),

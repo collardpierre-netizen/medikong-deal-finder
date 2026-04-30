@@ -193,8 +193,40 @@ export default function PriceChallengeModal({ open, onOpenChange, ctx, quickSend
     }
   }
 
+  const cooldown = cooldownQ.data ?? null;
+  const isBlocked = !!cooldown && !cooldown.allowed && !forceOverride;
+  const sendDisabled = sending || isBlocked || cooldownQ.isLoading;
+
+  const CooldownBanner = cooldown && !cooldown.allowed ? (
+    <div className="flex items-start gap-2 p-3 rounded-md border border-destructive/40 bg-destructive/10 text-sm">
+      <ShieldAlert className="w-4 h-4 mt-0.5 text-destructive shrink-0" />
+      <div className="flex-1 space-y-1">
+        <div className="font-medium text-destructive">
+          {REASON_LABEL[cooldown.block_reason ?? ""] ?? "Envoi bloqué"}
+        </div>
+        <div className="text-xs text-muted-foreground">
+          {cooldown.last_sent_at && (
+            <>Dernier envoi : {new Date(cooldown.last_sent_at).toLocaleString("fr-BE", { dateStyle: "short", timeStyle: "short" })}. </>
+          )}
+          {cooldown.next_allowed_at && (
+            <>Prochain envoi autorisé : {new Date(cooldown.next_allowed_at).toLocaleString("fr-BE", { dateStyle: "short", timeStyle: "short" })}. </>
+          )}
+          {cooldown.sent_today != null && <>Challenges envoyés à ce vendeur aujourd'hui : {cooldown.sent_today}.</>}
+        </div>
+        <label className="flex items-center gap-2 text-xs pt-1 cursor-pointer">
+          <input
+            type="checkbox"
+            className="h-3.5 w-3.5"
+            checked={forceOverride}
+            onChange={(e) => setForceOverride(e.target.checked)}
+          />
+          Forcer l'envoi malgré le blocage (admin)
+        </label>
+      </div>
+    </div>
+  ) : null;
+
   if (quickSend) {
-    // Auto-send via effect-style on first render? Non — on ouvre juste avec un seul bouton de confirmation rapide
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent>
@@ -203,6 +235,7 @@ export default function PriceChallengeModal({ open, onOpenChange, ctx, quickSend
               <Zap className="w-5 h-5 text-mk-blue" /> Envoi rapide à {ctx.vendorName}
             </DialogTitle>
           </DialogHeader>
+          {CooldownBanner}
           <div className="text-sm text-muted-foreground whitespace-pre-line bg-muted p-3 rounded-md max-h-64 overflow-auto">
             {body}
           </div>
@@ -210,7 +243,7 @@ export default function PriceChallengeModal({ open, onOpenChange, ctx, quickSend
             <Button variant="outline" onClick={() => onOpenChange(false)} disabled={sending}>
               Annuler
             </Button>
-            <Button onClick={send} disabled={sending}>
+            <Button onClick={send} disabled={sendDisabled}>
               {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
               Envoyer
             </Button>
@@ -227,6 +260,7 @@ export default function PriceChallengeModal({ open, onOpenChange, ctx, quickSend
           <DialogTitle>Challenger {ctx.vendorName}</DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
+          {CooldownBanner}
           <div className="text-sm bg-muted p-3 rounded-md">
             <div><strong>Produit :</strong> {ctx.productName}</div>
             <div><strong>Prix MK :</strong> {ctx.mkPriceHt.toFixed(2)} € HT</div>
@@ -246,7 +280,7 @@ export default function PriceChallengeModal({ open, onOpenChange, ctx, quickSend
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={sending}>
             Annuler
           </Button>
-          <Button onClick={send} disabled={sending}>
+          <Button onClick={send} disabled={sendDisabled}>
             {sending ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Send className="w-4 h-4 mr-1" />}
             Envoyer le challenge
           </Button>
@@ -255,3 +289,4 @@ export default function PriceChallengeModal({ open, onOpenChange, ctx, quickSend
     </Dialog>
   );
 }
+

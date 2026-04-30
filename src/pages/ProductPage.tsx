@@ -1397,7 +1397,7 @@ export default function ProductPage() {
                             <Award size={18} className="text-emerald-700" />
                             <h3 className="text-base md:text-lg font-bold text-emerald-800">Meilleure offre</h3>
                           </div>
-                          <span className="text-sm text-emerald-700 font-medium">{formatCount(totalStock)} disponibles{filteredOffers.length > 1 ? ` auprès de ${filteredOffers.length} fournisseurs` : ""}</span>
+                          <span className="text-sm text-emerald-700 font-medium">{formatCount(totalStock)} disponibles{uniqueVendorCount > 1 ? ` auprès de ${uniqueVendorCount} fournisseurs` : ""}</span>
                         </div>
 
                         <div className="hidden md:grid grid-cols-[1.5fr_2fr_0.8fr_1.5fr] gap-3 px-1 pb-3 text-xs font-semibold text-muted-foreground border-b border-border">

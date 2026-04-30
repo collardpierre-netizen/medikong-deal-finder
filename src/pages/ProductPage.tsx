@@ -1894,11 +1894,11 @@ export default function ProductPage() {
                                   <td className="px-2 py-2 text-right whitespace-nowrap">
                                     {deltaAbs !== null ? (
                                       <span className="inline-flex items-center gap-0.5">
-                                        <span className={`font-bold tabular-nums text-[12px] ${positive ? "text-emerald-600" : "text-destructive"}`}>
-                                          {positive ? "−" : "+"}{formatEur(Math.abs(deltaAbs))}&nbsp;€
+                                        <span className={`font-bold tabular-nums text-[12px] ${mkCheaper ? "text-emerald-600" : "text-destructive"}`}>
+                                          {mkCheaper ? "−" : "+"}{formatEur(Math.abs(deltaAbs))}&nbsp;€
                                         </span>
-                                        <span className={`inline-flex rounded-full px-1 py-0.5 text-[9px] font-semibold leading-none ${positive ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-destructive"}`}>
-                                          {positive ? "−" : "+"}{Math.abs(deltaPct!)}%
+                                        <span className={`inline-flex rounded-full px-1 py-0.5 text-[9px] font-semibold leading-none ${mkCheaper ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-destructive"}`}>
+                                          {mkCheaper ? "−" : "+"}{Math.abs(deltaPct!)}%
                                         </span>
                                       </span>
                                     ) : <span className="text-muted-foreground">—</span>}

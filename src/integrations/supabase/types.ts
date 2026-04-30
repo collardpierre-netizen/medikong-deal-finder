@@ -11696,6 +11696,31 @@ export type Database = {
           pvp_ttc: number
         }[]
       }
+      admin_price_cockpit_gaps_v2: {
+        Args: {
+          _brand_id?: string
+          _country?: string
+          _limit?: number
+          _min_rfq_count?: number
+          _only_with_demand?: boolean
+          _search?: string
+        }
+        Returns: {
+          brand_id: string
+          brand_name: string
+          cnk: string
+          external_best_ht: number
+          external_offers_count: number
+          last_rfq_at: string
+          popularity: number
+          priority_score: number
+          product_id: string
+          product_name: string
+          pvp_ttc: number
+          rfq_count_90d: number
+          rfq_total_qty_90d: number
+        }[]
+      }
       admin_price_cockpit_kpis: { Args: { _country?: string }; Returns: Json }
       admin_price_cockpit_rows: {
         Args: {

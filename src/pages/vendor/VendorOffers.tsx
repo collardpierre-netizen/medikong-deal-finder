@@ -1244,6 +1244,8 @@ export default function VendorOffers() {
       delivery_days: String(offer.delivery_days),
       country_code: offer.country_code || "BE",
       category_ids: (linkedCats || []).map((c: any) => c.category_id),
+      pack_size_override: offer.pack_size_override != null ? String(offer.pack_size_override) : "",
+      product_pack_size_fallback: (offer.products as any)?.pack_size ?? null,
     });
     setEditingId(offer.id);
     setShowForm(true);

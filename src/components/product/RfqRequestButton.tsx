@@ -104,11 +104,12 @@ export default function RfqRequestButton({ productId, brandId, productName, bran
       // Upload PJ
       for (const f of files) {
         const path = `rfq/${rfq.id}/${crypto.randomUUID()}-${f.name}`;
-        const { error: upErr } = await supabase.storage.from("rfq-attachments").upload(path, f, { contentType: f.type });
+        const mime = f.type || "application/octet-stream";
+        const { error: upErr } = await supabase.storage.from("rfq-attachments").upload(path, f, { contentType: mime });
         if (upErr) { toast.warning(`Pièce jointe '${f.name}' non envoyée : ${upErr.message}`); continue; }
         await supabase.from("rfq_attachments").insert({
           rfq_id: rfq.id, uploaded_by_user_id: user!.id, uploader_role: "buyer",
-          storage_path: path, file_name: f.name, mime_type: f.type || "application/octet-stream",
+          storage_path: path, file_name: f.name, mime_type: mime,
           size_bytes: f.size,
         });
       }

@@ -112,11 +112,11 @@ export default function AdminVatRules() {
   const [productSearch, setProductSearch] = useState("");
   const { data: products = [], isLoading: loadingP } = useQuery({
     queryKey: ["products-vat-overrides", productSearch],
-    queryFn: async () => {
-      let q = supabase.from("products").select("id, name, gtin, cnk_code, vat_rate_override, category_id, categories(name, vat_rate)").not("vat_rate_override", "is", null).limit(200);
-      if (productSearch.trim().length >= 2) {
-        q = supabase.from("products").select("id, name, gtin, cnk_code, vat_rate_override, category_id, categories(name, vat_rate)").or(`name.ilike.%${productSearch}%,gtin.ilike.%${productSearch}%,cnk_code.ilike.%${productSearch}%`).limit(50);
-      }
+    queryFn: async (): Promise<any[]> => {
+      const base: any = supabase.from("products" as any).select("id, name, gtin, cnk_code, vat_rate_override, category_id, categories(name, vat_rate)");
+      const q = productSearch.trim().length >= 2
+        ? base.or(`name.ilike.%${productSearch}%,gtin.ilike.%${productSearch}%,cnk_code.ilike.%${productSearch}%`).limit(50)
+        : base.not("vat_rate_override", "is", null).limit(200);
       const { data } = await q;
       return (data as any[]) || [];
     },

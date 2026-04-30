@@ -1231,7 +1231,7 @@ function VendorEditDialog({ open, onOpenChange, vendor, onSaved }: { open: boole
     margin_split_pct: String((vendor as any).margin_split_pct ?? 50),
     description: vendor.description || "",
     logo_url: vendor.logo_url || "",
-    website_url: vendor.website_url || "",
+    website_url: (vendor as any).website || (vendor as any).website_url || "",
     contact_name: vendor.contact_name || "",
   });
 
@@ -1275,7 +1275,7 @@ function VendorEditDialog({ open, onOpenChange, vendor, onSaved }: { open: boole
         margin_split_pct: form.commission_model === 'margin_split' ? parseInt(form.margin_split_pct) || 50 : null,
         description: form.description.trim() || null,
         logo_url: form.logo_url.trim() || null,
-        website_url: form.website_url.trim() || null,
+        website: form.website_url.trim() || null,
         contact_name: form.contact_name.trim() || null,
       } as any).eq("id", vendor.id);
       if (error) throw error;

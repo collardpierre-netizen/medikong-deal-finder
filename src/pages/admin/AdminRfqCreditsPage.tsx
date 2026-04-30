@@ -122,9 +122,14 @@ export default function AdminRfqCreditsPage() {
 
   return (
     <div className="space-y-6 p-6">
-      <div>
-        <h1 className="text-2xl font-bold">Crédits RFQ</h1>
-        <p className="text-sm text-muted-foreground">Suivez le solde de chaque acheteur, attribuez manuellement un forfait ou des crédits.</p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold">Crédits RFQ</h1>
+          <p className="text-sm text-muted-foreground">Suivez le solde de chaque acheteur, attribuez manuellement un forfait ou des crédits.</p>
+        </div>
+        <Button asChild variant="outline" size="sm">
+          <a href="/admin/rfq-plans">Configurer les plans →</a>
+        </Button>
       </div>
 
       <Card>

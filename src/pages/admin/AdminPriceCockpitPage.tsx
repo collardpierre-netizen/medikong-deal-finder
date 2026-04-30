@@ -131,6 +131,31 @@ export default function AdminPriceCockpitPage() {
     },
   });
 
+  const metricsQ = useQuery({
+    queryKey: ["price-challenge-metrics"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("vendor_price_challenge_metrics_v")
+        .select("*")
+        .order("total_challenges", { ascending: false })
+        .limit(200);
+      if (error) throw error;
+      return (data ?? []) as Array<{
+        vendor_id: string;
+        vendor_name: string | null;
+        total_challenges: number;
+        responded_count: number;
+        response_rate_pct: number | null;
+        avg_response_delta_pct: number | null;
+        avg_response_days: number | null;
+        last_sent_at: string | null;
+        last_open_challenge_at: string | null;
+        sent_30d: number;
+        responded_30d: number;
+      }>;
+    },
+  });
+
   const sortedGaps = useMemo(() => {
     const rows = gapsQ.data ?? [];
     const get = (r: GapRow) => {

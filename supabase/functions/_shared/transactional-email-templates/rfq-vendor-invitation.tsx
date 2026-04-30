@@ -42,6 +42,7 @@ const COUNTRY_NAMES: Record<string, string> = { BE: 'Belgique', FR: 'France', LU
 const RfqVendorInvitationEmail = ({
   vendorName, productName, brandName, quantity, targetPriceCents,
   countryCode, deadline, desiredDeliveryDate, paymentTerms, offerValidityDays, comment,
+  targetReasonLabel,
   rfqUrl, trackingPixelUrl,
 }: RfqVendorInvitationProps) => {
   const productLabel = productName ?? brandName ?? 'un produit de votre catalogue'

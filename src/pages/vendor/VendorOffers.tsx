@@ -518,11 +518,13 @@ function useOfferImport(vendorId: string | undefined) {
         }
       }
 
-      let created = 0, skipped = 0;
+      let created = 0, skipped = 0, submitted = 0;
       const offers: any[] = [];
       const profileRulesQueue: { ean: string; cnk: string; rule: any }[] = [];
       // Collecte d'erreurs détaillées (numéro de ligne XLSX = index + 2 car ligne 1 = entêtes)
       const importErrors: { line: number; ean: string; cnk: string; reason: string }[] = [];
+      // Soumissions de produits manquants (dédoublonnées par clé EAN|CNK)
+      const submissionsMap = new Map<string, { ean: string; cnk: string; lines: number[]; sample_row: any }>();
 
       for (let rowIdx = 0; rowIdx < rows.length; rowIdx++) {
         const row = rows[rowIdx];
@@ -531,7 +533,22 @@ function useOfferImport(vendorId: string | undefined) {
         const cnk = String(row["CNK"] || row["cnk"] || "");
         const productId = allIds[ean] || allIds[cnk];
         if (!productId) {
-          importErrors.push({ line: lineNo, ean, cnk, reason: "Produit introuvable (EAN/CNK inconnu)" });
+          // Soumettre le produit manquant pour validation admin (dédoublonné)
+          const key = ean || cnk;
+          if (key) {
+            const existing = submissionsMap.get(key);
+            if (existing) {
+              existing.lines.push(lineNo);
+            } else {
+              submissionsMap.set(key, { ean, cnk, lines: [lineNo], sample_row: row });
+            }
+          }
+          importErrors.push({
+            line: lineNo,
+            ean,
+            cnk,
+            reason: "Produit non catalogué — soumis pour validation",
+          });
           skipped++; continue;
         }
 
@@ -743,7 +760,57 @@ function useOfferImport(vendorId: string | undefined) {
         }
       }
 
+      // ─── Création auto de product_submissions pour les EAN/CNK inconnus ───
+      if (submissionsMap.size > 0) {
+        // Récupérer les soumissions existantes (en attente) pour ce vendeur afin d'éviter les doublons
+        const { data: existingSubs } = await supabase
+          .from("product_submissions")
+          .select("id, proposed_payload, status")
+          .eq("vendor_id", vendorId)
+          .in("status", ["submitted", "needs_changes"] as any);
+
+        const existingKeys = new Set<string>();
+        (existingSubs || []).forEach((s: any) => {
+          const payload = s.proposed_payload || {};
+          if (payload.gtin) existingKeys.add(String(payload.gtin));
+          if (payload.cnk_code) existingKeys.add(String(payload.cnk_code));
+        });
+
+        const submissionInserts = Array.from(submissionsMap.entries())
+          .filter(([key]) => !existingKeys.has(key))
+          .map(([_key, info]) => {
+            const row = info.sample_row || {};
+            return {
+              vendor_id: vendorId,
+              proposed_payload: {
+                gtin: info.ean || null,
+                cnk_code: info.cnk || null,
+                source: "vendor_offer_import",
+                proposed_name: row["Nom"] || row["nom"] || row["Designation"] || row["designation"] || null,
+                proposed_brand: row["Marque"] || row["marque"] || row["Brand"] || row["brand"] || null,
+                pack_size_hint: row["Conditionnement"] || row["conditionnement"] || row["Pack"] || null,
+                vat_rate_hint: row["TVA"] || row["tva"] || null,
+                country_code: row["Pays"] || row["pays"] || "BE",
+                lines_in_file: info.lines.slice(0, 20),
+                imported_at: new Date().toISOString(),
+              },
+              status: "submitted" as const,
+            };
+          });
+
+        if (submissionInserts.length > 0) {
+          for (let i = 0; i < submissionInserts.length; i += 100) {
+            const batch = submissionInserts.slice(i, i + 100);
+            const { error: subErr } = await supabase
+              .from("product_submissions")
+              .insert(batch as any);
+            if (!subErr) submitted += batch.length;
+          }
+        }
+      }
+
       qc.invalidateQueries({ queryKey: ["vendor-offers"] });
+      qc.invalidateQueries({ queryKey: ["product-submissions"] });
       // Le pack_size (override ou fallback produit) a pu changer → invalider tous les caches
       // qui dérivent du prix unitaire normalisé (fiche produit, offres marketplace, veille marché).
       qc.invalidateQueries({ queryKey: ["product"] });
@@ -751,6 +818,7 @@ function useOfferImport(vendorId: string | undefined) {
       qc.invalidateQueries({ queryKey: ["featured-products"] });
       qc.invalidateQueries({ queryKey: ["vendor-market-intel"] });
       const tiersMsg = tiersSheetName ? " + paliers dégressifs" : "";
+      const submittedMsg = submitted > 0 ? ` · ${submitted} produit(s) soumis pour validation` : "";
 
       if (importErrors.length > 0) {
         // Toast détaillé + rapport téléchargeable
@@ -759,8 +827,8 @@ function useOfferImport(vendorId: string | undefined) {
           .join("\n");
         const more = importErrors.length > 5 ? `\n…et ${importErrors.length - 5} autre(s) ligne(s).` : "";
         toast.warning(
-          `Import terminé : ${created} offre(s) créée(s), ${skipped} ignorée(s)${tiersMsg}.\n\n` +
-          `${importErrors.length} erreur(s) :\n${preview}${more}`,
+          `Import terminé : ${created} offre(s) créée(s), ${skipped} ignorée(s)${tiersMsg}${submittedMsg}.\n\n` +
+          `${importErrors.length} ligne(s) avec avertissement :\n${preview}${more}`,
           {
             duration: 15000,
             action: {
@@ -782,7 +850,7 @@ function useOfferImport(vendorId: string | undefined) {
           }
         );
       } else {
-        toast.success(`Import terminé : ${created} offres créées, ${skipped} ignorées${tiersMsg}`);
+        toast.success(`Import terminé : ${created} offres créées, ${skipped} ignorées${tiersMsg}${submittedMsg}`);
       }
     } catch (err: any) {
       // Erreur DB (ex: contrainte CHECK pack_size_override) — message clair

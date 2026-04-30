@@ -6478,6 +6478,47 @@ export type Database = {
           },
         ]
       }
+      rfq_access_grants: {
+        Row: {
+          expires_at: string | null
+          granted_at: string
+          id: string
+          notes: string | null
+          reason: string
+          revoked_at: string | null
+          rfq_id: string
+          user_id: string
+        }
+        Insert: {
+          expires_at?: string | null
+          granted_at?: string
+          id?: string
+          notes?: string | null
+          reason: string
+          revoked_at?: string | null
+          rfq_id: string
+          user_id: string
+        }
+        Update: {
+          expires_at?: string | null
+          granted_at?: string
+          id?: string
+          notes?: string | null
+          reason?: string
+          revoked_at?: string | null
+          rfq_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rfq_access_grants_rfq_id_fkey"
+            columns: ["rfq_id"]
+            isOneToOne: false
+            referencedRelation: "rfqs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rfq_attachments: {
         Row: {
           created_at: string
@@ -11560,6 +11601,24 @@ export type Database = {
       restore_brands_from_backup: {
         Args: { _backup_table_name?: string }
         Returns: Json
+      }
+      rfq_admin_grant_access: {
+        Args: {
+          _expires_at?: string
+          _notes?: string
+          _reason?: string
+          _rfq_id: string
+          _user_id: string
+        }
+        Returns: string
+      }
+      rfq_admin_revoke_access: {
+        Args: { _notes?: string; _rfq_id: string; _user_id: string }
+        Returns: undefined
+      }
+      rfq_buyer_can_view_results: {
+        Args: { _rfq_id: string; _user_id: string }
+        Returns: boolean
       }
       rfq_check_quota: { Args: { _user_id?: string }; Returns: Json }
       rfq_close_expired: { Args: never; Returns: number }

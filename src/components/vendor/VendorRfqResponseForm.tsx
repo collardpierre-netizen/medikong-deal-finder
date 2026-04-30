@@ -1,11 +1,12 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { VCard } from "@/components/vendor/ui/VCard";
 import { VBtn } from "@/components/vendor/ui/VBtn";
-import { Loader2, Send, X, Upload, Info } from "lucide-react";
+import { Loader2, Send, Info } from "lucide-react";
 import { toast } from "sonner";
+import RfqAttachmentPicker, { RFQ_MAX_TOTAL_SIZE } from "@/components/rfq/RfqAttachmentPicker";
 
 interface Props {
   rfqId: string;

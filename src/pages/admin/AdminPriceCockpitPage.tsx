@@ -253,6 +253,17 @@ export default function AdminPriceCockpitPage() {
                   onChange={(e) => setMinDelta(e.target.value)}
                 />
               </div>
+              <div>
+                <Label>Trier par</Label>
+                <Select value={sortBy} onValueChange={(v: SortKey) => setSortBy(v)}>
+                  <SelectTrigger className="w-56"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="action_score">Potentiel d'action (défaut)</SelectItem>
+                    <SelectItem value="delta_external">Écart externe (%)</SelectItem>
+                    <SelectItem value="delta_internal">Écart interne (%)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="text-sm text-muted-foreground ml-auto">
                 {rowsQ.isLoading ? "Chargement…" : `${filteredRows.length} ligne${filteredRows.length > 1 ? "s" : ""}`}
               </div>
@@ -265,6 +276,7 @@ export default function AdminPriceCockpitPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Produit</TableHead>
+                    <TableHead className="text-right">Score</TableHead>
                     <TableHead className="text-right">MK best HT</TableHead>
                     <TableHead className="text-right">Externe HT</TableHead>
                     <TableHead className="text-right">Écart externe</TableHead>

@@ -744,6 +744,12 @@ function useOfferImport(vendorId: string | undefined) {
       }
 
       qc.invalidateQueries({ queryKey: ["vendor-offers"] });
+      // Le pack_size (override ou fallback produit) a pu changer → invalider tous les caches
+      // qui dérivent du prix unitaire normalisé (fiche produit, offres marketplace, veille marché).
+      qc.invalidateQueries({ queryKey: ["product"] });
+      qc.invalidateQueries({ queryKey: ["offers"] });
+      qc.invalidateQueries({ queryKey: ["featured-products"] });
+      qc.invalidateQueries({ queryKey: ["vendor-market-intel"] });
       const tiersMsg = tiersSheetName ? " + paliers dégressifs" : "";
 
       if (importErrors.length > 0) {
@@ -1423,6 +1429,10 @@ export default function VendorOffers() {
     onSuccess: () => {
       toast.success(editingId ? "Offre modifiée" : "Offre créée");
       qc.invalidateQueries({ queryKey: ["vendor-offers"] });
+      // pack_size_override a pu être modifié → recalcule prix unitaire partout où il est affiché.
+      qc.invalidateQueries({ queryKey: ["product"] });
+      qc.invalidateQueries({ queryKey: ["offers"] });
+      qc.invalidateQueries({ queryKey: ["vendor-market-intel"] });
       // Avancer dans la file batch s'il en reste
       if (batchQueue && batchQueue.remaining.length > 0) {
         const [nextId, ...rest] = batchQueue.remaining;

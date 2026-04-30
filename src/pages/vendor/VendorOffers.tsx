@@ -518,11 +518,13 @@ function useOfferImport(vendorId: string | undefined) {
         }
       }
 
-      let created = 0, skipped = 0;
+      let created = 0, skipped = 0, submitted = 0;
       const offers: any[] = [];
       const profileRulesQueue: { ean: string; cnk: string; rule: any }[] = [];
       // Collecte d'erreurs détaillées (numéro de ligne XLSX = index + 2 car ligne 1 = entêtes)
       const importErrors: { line: number; ean: string; cnk: string; reason: string }[] = [];
+      // Soumissions de produits manquants (dédoublonnées par clé EAN|CNK)
+      const submissionsMap = new Map<string, { ean: string; cnk: string; lines: number[]; sample_row: any }>();
 
       for (let rowIdx = 0; rowIdx < rows.length; rowIdx++) {
         const row = rows[rowIdx];
@@ -531,7 +533,22 @@ function useOfferImport(vendorId: string | undefined) {
         const cnk = String(row["CNK"] || row["cnk"] || "");
         const productId = allIds[ean] || allIds[cnk];
         if (!productId) {
-          importErrors.push({ line: lineNo, ean, cnk, reason: "Produit introuvable (EAN/CNK inconnu)" });
+          // Soumettre le produit manquant pour validation admin (dédoublonné)
+          const key = ean || cnk;
+          if (key) {
+            const existing = submissionsMap.get(key);
+            if (existing) {
+              existing.lines.push(lineNo);
+            } else {
+              submissionsMap.set(key, { ean, cnk, lines: [lineNo], sample_row: row });
+            }
+          }
+          importErrors.push({
+            line: lineNo,
+            ean,
+            cnk,
+            reason: "Produit non catalogué — soumis pour validation",
+          });
           skipped++; continue;
         }
 

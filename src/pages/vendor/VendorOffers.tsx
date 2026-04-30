@@ -553,6 +553,11 @@ function useOfferImport(vendorId: string | undefined) {
 
         const purchasePrice = parseFloat(String(row["Prix_Achat_HT"] || row["prix_achat_ht"] || row["purchase_price"] || "0")) || null;
         const movAmount = parseFloat(String(row["MOV"] || row["mov"] || row["mov_amount"] || "0")) || 0;
+        const rawPack = row["Conditionnement"] ?? row["conditionnement"] ?? row["pack_size"] ?? row["Pack"];
+        const packParsed = rawPack !== undefined && rawPack !== null && String(rawPack).trim() !== ""
+          ? parseInt(String(rawPack))
+          : NaN;
+        const packSizeOverride = Number.isFinite(packParsed) && packParsed > 0 ? packParsed : null;
 
         offers.push({
           vendor_id: vendorId,
@@ -567,9 +572,11 @@ function useOfferImport(vendorId: string | undefined) {
           delivery_days: parseInt(row["Délai"] || row["delai"] || row["delivery_days"] || "3") || 3,
           country_code: row["Pays"] || row["pays"] || row["country_code"] || "BE",
           stock_status: stock > 0 ? "in_stock" : "out_of_stock",
+          pack_size_override: packSizeOverride,
           is_active: true,
           _ean: ean,
           _cnk: cnk,
+          _packForProduct: packSizeOverride,
         });
         created++;
       }

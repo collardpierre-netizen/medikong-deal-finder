@@ -873,7 +873,15 @@ export default function ProductPage() {
   });
 
   const bestOffer = filteredOffers[0];
-  const otherOffers = filteredOffers.slice(1);
+  // Dédoublonnage : un vendeur ne doit apparaître qu'une seule fois.
+  // On garde l'offre déjà sélectionnée comme "meilleure" et on filtre toutes
+  // les autres lignes du même vendeur (paliers, entrepôts, doublons d'import).
+  const otherOffers = filteredOffers.slice(1).filter(
+    (o) => !bestOffer || (o.sellerId && bestOffer.sellerId && o.sellerId !== bestOffer.sellerId)
+  );
+  // Idem pour le total stock / nombre de fournisseurs : on compte les vendeurs uniques.
+  const uniqueVendorIds = new Set(filteredOffers.map((o) => o.sellerId).filter(Boolean));
+  const uniqueVendorCount = uniqueVendorIds.size || filteredOffers.length;
   const totalStock = filteredOffers.reduce((s, o) => s + o.stockQuantity, 0);
 
   // Price history query (must be before early returns)

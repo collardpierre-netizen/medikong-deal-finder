@@ -761,7 +761,4 @@ function PlanFormDialog({
     </DialogContent>
   );
 }
-      </DialogFooter>
-    </DialogContent>
-  );
-}
+

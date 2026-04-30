@@ -170,6 +170,7 @@ export const template = {
     paymentTerms: '30 jours fin de mois',
     offerValidityDays: 14,
     comment: 'Commande récurrente possible si prix compétitif.',
+    targetReasonLabel: 'Vous suivez cette marque',
     rfqUrl: 'https://medikong-deal-finder.lovable.app/vendor/rfq/abc?t=xyz',
   },
 } satisfies TemplateEntry

@@ -29,6 +29,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { applyMargin, formatPriceEur } from "@/lib/pricing";
 import { useMarketPrices } from "@/hooks/useMarketPrices";
+import { computeMarketDelta } from "@/lib/market-price-delta";
 import { RestockSecondChance } from "@/components/product/RestockSecondChance";
 import { MyEncodedPriceBanner } from "@/components/product/MyEncodedPriceBanner";
 import { ExternalVendorLogo } from "@/components/product/ExternalVendorLogo";
@@ -1876,15 +1877,14 @@ export default function ProductPage() {
                                 publicTTC = publicHTVA ? Math.round(publicHTVA * (1 + tvaRate / 100) * 100) / 100 : 0;
                               }
 
-                              // Reference price for écart: use pharmacien HT > grossiste > public HTVA
-                              const refPrice = pharmHT || grossisteHT || publicHTVA;
-                              // Convention: deltaAbs = MK − concurrent.
-                              //   < 0  → MK est moins cher (bonne nouvelle, vert)
-                              //   > 0  → MK est plus cher (rouge)
-                              // Le % est rapporté au prix MK (référence acheteur).
-                              const deltaAbs = refPrice && mkHT ? mkHT - refPrice : null;
-                              const deltaPct = deltaAbs !== null && mkHT ? Math.round((deltaAbs / mkHT) * 100) : null;
-                              const mkCheaper = deltaAbs !== null && deltaAbs < 0;
+                              // Écart MK : cascade pharmacien > grossiste > public HTVA.
+                              // Cf. src/lib/market-price-delta.ts (testé unitairement).
+                              const { deltaAbs, deltaPct, mkCheaper } = computeMarketDelta({
+                                mkHT,
+                                pharmHT,
+                                grossisteHT,
+                                publicHTVA,
+                              });
                               const packBadge = packSizeSourceBadge(mpPack.source);
 
                               // Multiplicateur d'affichage selon la base sélectionnée.

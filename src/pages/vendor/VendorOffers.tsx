@@ -1214,6 +1214,8 @@ export default function VendorOffers() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<OfferForm>(emptyForm);
+  // Snapshot capturé à l'ouverture en édition pour afficher "avant → après" (prix HT + pack effectif)
+  const [initialSnapshot, setInitialSnapshot] = useState<{ priceExcl: number; effectivePack: number } | null>(null);
   const [search, setSearch] = useState("");
   const [filterBrand, setFilterBrand] = useState("");
   const [filterCountry, setFilterCountry] = useState("");

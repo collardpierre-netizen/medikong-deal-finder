@@ -60,6 +60,24 @@ function buildMessage(ctx: ChallengeContext): { title: string; body: string; sug
 export default function PriceChallengeModal({ open, onOpenChange, ctx, quickSend, onSent }: Props) {
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
+  const [forceOverride, setForceOverride] = useState(false);
+
+  useEffect(() => {
+    if (open) setForceOverride(false);
+  }, [open, ctx?.vendorId, ctx?.productId]);
+
+  const cooldownQ = useQuery({
+    enabled: open && !!ctx?.vendorId && !!ctx?.productId,
+    queryKey: ["price-challenge-cooldown", ctx?.vendorId, ctx?.productId],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("check_price_challenge_cooldown", {
+        _vendor_id: ctx!.vendorId,
+        _product_id: ctx!.productId,
+      });
+      if (error) throw error;
+      return ((data as unknown as CooldownInfo[])?.[0] ?? null) as CooldownInfo | null;
+    },
+  });
 
   if (!ctx) return null;
 

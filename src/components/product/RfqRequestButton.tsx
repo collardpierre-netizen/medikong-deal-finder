@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tag, Loader2, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { useRfqQuota } from "@/hooks/useRfqQuota";
+import RfqQuotaBadge from "@/components/rfq/RfqQuotaBadge";
+import RfqPaywallDialog from "@/components/rfq/RfqPaywallDialog";
 
 const COUNTRIES = [
   { code: "BE", label: "Belgique" }, { code: "FR", label: "France" },
@@ -38,7 +41,10 @@ interface Props {
 
 export default function RfqRequestButton({ productId, brandId, productName, brandName }: Props) {
   const { user, isVerifiedBuyer } = useAuth();
+  const qc = useQueryClient();
+  const { data: quota } = useRfqQuota();
   const [open, setOpen] = useState(false);
+  const [paywallOpen, setPaywallOpen] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
   const [form, setForm] = useState({
     quantity: "100",

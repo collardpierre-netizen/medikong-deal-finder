@@ -71,7 +71,7 @@ Deno.serve(async (req) => {
   // Pre-check (and load some metadata for the response email)
   const { data: rfq, error: rfqErr } = await adminClient
     .from("rfqs")
-    .select("id, buyer_user_id, product_id, brand_id, quantity, destination_country_code, responses_deadline, status")
+    .select("id, buyer_user_id, product_id, brand_id, quantity, target_price_excl_vat_cents, destination_country_code, responses_deadline, desired_delivery_date, payment_terms, required_offer_validity_days, comment, status")
     .eq("id", rfq_id)
     .maybeSingle();
 

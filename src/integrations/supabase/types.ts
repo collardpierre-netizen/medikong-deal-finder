@@ -7094,6 +7094,7 @@ export type Database = {
           closed_at: string | null
           comment: string | null
           created_at: string
+          currency_code: string
           current_wave: number
           delivery_address: Json | null
           desired_delivery_date: string | null
@@ -7123,6 +7124,7 @@ export type Database = {
           closed_at?: string | null
           comment?: string | null
           created_at?: string
+          currency_code?: string
           current_wave?: number
           delivery_address?: Json | null
           desired_delivery_date?: string | null
@@ -7152,6 +7154,7 @@ export type Database = {
           closed_at?: string | null
           comment?: string | null
           created_at?: string
+          currency_code?: string
           current_wave?: number
           delivery_address?: Json | null
           desired_delivery_date?: string | null
@@ -10121,6 +10124,7 @@ export type Database = {
       }
       vendors: {
         Row: {
+          accepted_currencies: string[]
           address_line1: string | null
           auth_user_id: string | null
           auto_forward_to_qogita: boolean
@@ -10171,6 +10175,7 @@ export type Database = {
           shipping_phone: string | null
           shipping_pickup_instructions: string | null
           shipping_postal_code: string | null
+          ships_to_countries: string[]
           show_real_name: boolean
           slug: string
           stripe_account_id: string | null
@@ -10195,6 +10200,7 @@ export type Database = {
           youtube_url: string | null
         }
         Insert: {
+          accepted_currencies?: string[]
           address_line1?: string | null
           auth_user_id?: string | null
           auto_forward_to_qogita?: boolean
@@ -10245,6 +10251,7 @@ export type Database = {
           shipping_phone?: string | null
           shipping_pickup_instructions?: string | null
           shipping_postal_code?: string | null
+          ships_to_countries?: string[]
           show_real_name?: boolean
           slug: string
           stripe_account_id?: string | null
@@ -10269,6 +10276,7 @@ export type Database = {
           youtube_url?: string | null
         }
         Update: {
+          accepted_currencies?: string[]
           address_line1?: string | null
           auth_user_id?: string | null
           auto_forward_to_qogita?: boolean
@@ -10319,6 +10327,7 @@ export type Database = {
           shipping_phone?: string | null
           shipping_pickup_instructions?: string | null
           shipping_postal_code?: string | null
+          ships_to_countries?: string[]
           show_real_name?: boolean
           slug?: string
           stripe_account_id?: string | null
@@ -11685,6 +11694,7 @@ export type Database = {
           closed_at: string | null
           comment: string | null
           created_at: string
+          currency_code: string
           current_wave: number
           delivery_address: Json | null
           desired_delivery_date: string | null
@@ -11785,6 +11795,7 @@ export type Database = {
           closed_at: string | null
           comment: string | null
           created_at: string
+          currency_code: string
           current_wave: number
           delivery_address: Json | null
           desired_delivery_date: string | null

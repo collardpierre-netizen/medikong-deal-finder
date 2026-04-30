@@ -818,6 +818,7 @@ function useOfferImport(vendorId: string | undefined) {
       qc.invalidateQueries({ queryKey: ["featured-products"] });
       qc.invalidateQueries({ queryKey: ["vendor-market-intel"] });
       const tiersMsg = tiersSheetName ? " + paliers dégressifs" : "";
+      const submittedMsg = submitted > 0 ? ` · ${submitted} produit(s) soumis pour validation` : "";
 
       if (importErrors.length > 0) {
         // Toast détaillé + rapport téléchargeable
@@ -826,8 +827,8 @@ function useOfferImport(vendorId: string | undefined) {
           .join("\n");
         const more = importErrors.length > 5 ? `\n…et ${importErrors.length - 5} autre(s) ligne(s).` : "";
         toast.warning(
-          `Import terminé : ${created} offre(s) créée(s), ${skipped} ignorée(s)${tiersMsg}.\n\n` +
-          `${importErrors.length} erreur(s) :\n${preview}${more}`,
+          `Import terminé : ${created} offre(s) créée(s), ${skipped} ignorée(s)${tiersMsg}${submittedMsg}.\n\n` +
+          `${importErrors.length} ligne(s) avec avertissement :\n${preview}${more}`,
           {
             duration: 15000,
             action: {
@@ -849,7 +850,7 @@ function useOfferImport(vendorId: string | undefined) {
           }
         );
       } else {
-        toast.success(`Import terminé : ${created} offres créées, ${skipped} ignorées${tiersMsg}`);
+        toast.success(`Import terminé : ${created} offres créées, ${skipped} ignorées${tiersMsg}${submittedMsg}`);
       }
     } catch (err: any) {
       // Erreur DB (ex: contrainte CHECK pack_size_override) — message clair

@@ -143,6 +143,7 @@ const AdminContractAudit = lazyWithRetry(() => import("./pages/admin/AdminContra
 const AdminDbBackups = lazyWithRetry(() => import("./pages/admin/AdminDbBackups"), "AdminDbBackups");
 const AdminBackupRlsAudit = lazyWithRetry(() => import("./pages/admin/AdminBackupRlsAudit"), "AdminBackupRlsAudit");
 const AdminRfqCreditsPage = lazyWithRetry(() => import("./pages/admin/AdminRfqCreditsPage"), "AdminRfqCreditsPage");
+const AdminRfqRemindersPage = lazyWithRetry(() => import("./pages/admin/AdminRfqRemindersPage"), "AdminRfqRemindersPage");
 const AdminAnnouncementBar = lazyWithRetry(() => import("./pages/admin/AdminAnnouncementBar"), "AdminAnnouncementBar");
 const AdminI18nPilot = lazyWithRetry(() => import("./pages/admin/AdminI18nPilot"), "AdminI18nPilot");
 const AdminCatalogDiagnostics = lazyWithRetry(() => import("./pages/admin/AdminCatalogDiagnostics"), "AdminCatalogDiagnostics");

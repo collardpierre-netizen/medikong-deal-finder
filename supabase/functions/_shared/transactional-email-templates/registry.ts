@@ -18,8 +18,10 @@ import { template as vendorContractSigned } from './vendor-contract-signed.tsx'
 import { template as adminContractNotification } from './admin-contract-notification.tsx'
 import { template as vendorContractSubmitted } from './vendor-contract-submitted.tsx'
 import { template as vendorContractReminder } from './vendor-contract-reminder.tsx'
+import { template as rfqVendorInvitation } from './rfq-vendor-invitation.tsx'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
+  'rfq-vendor-invitation': rfqVendorInvitation,
   'order-confirmation': orderConfirmation,
   'vendor-application': vendorApplication,
   'vendor-approved': vendorApproved,

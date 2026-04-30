@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { VCard } from "@/components/vendor/ui/VCard";
 import { VBtn } from "@/components/vendor/ui/VBtn";
-import { Loader2, Upload, Trash2, Globe, Linkedin, Facebook, Instagram, Twitter, Youtube, User, Image as ImageIcon } from "lucide-react";
+import { Loader2, Upload, Trash2, Globe, Linkedin, Facebook, Instagram, Twitter, Youtube, User, Image as ImageIcon, Link2, Check } from "lucide-react";
 import { toast } from "sonner";
 
 type Vendor = any;

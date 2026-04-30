@@ -1399,15 +1399,44 @@ export default function ProductPage() {
                       }}
                     />
 
-                    {/* RFQ — Demande de prix */}
-                    <div className="flex items-center justify-end mb-3">
-                      <RfqRequestButton
-                        productId={product.id}
-                        brandId={brandData?.id || product.brandId || null}
-                        productName={product.name}
-                        brandName={brandData?.name || product.brand || null}
-                      />
-                    </div>
+                    {/* RFQ + base de comparaison (€/pack · €/u. · €/100u.) */}
+                    {(() => {
+                      const _mkPack = resolvePackSize({
+                        offerOverride: (bestOffer as any)?.packSizeOverride,
+                        productPackSize: (product as any)?.pack_size,
+                        productName: product.name,
+                      });
+                      const showBasisToggle = !!bestOffer && _mkPack.packSize > 1;
+                      return (
+                        <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
+                          {showBasisToggle ? (
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                <BarChart3 size={14} />
+                                <span>Comparer sur la base&nbsp;:</span>
+                              </div>
+                              <ToggleGroup
+                                type="single"
+                                value={externalCompareBasis}
+                                onValueChange={(v) => v && setExternalCompareBasis(v as 'pack' | 'unit' | 'hundred')}
+                                className="bg-muted/40 rounded-lg p-0.5"
+                                size="sm"
+                              >
+                                <ToggleGroupItem value="pack" className="text-[11px] px-2.5 h-7 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">€/pack</ToggleGroupItem>
+                                <ToggleGroupItem value="unit" className="text-[11px] px-2.5 h-7 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">€/unité</ToggleGroupItem>
+                                <ToggleGroupItem value="hundred" className="text-[11px] px-2.5 h-7 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">€/100 u.</ToggleGroupItem>
+                              </ToggleGroup>
+                            </div>
+                          ) : <div />}
+                          <RfqRequestButton
+                            productId={product.id}
+                            brandId={brandData?.id || product.brandId || null}
+                            productName={product.name}
+                            brandName={brandData?.name || product.brand || null}
+                          />
+                        </div>
+                      );
+                    })()}
 
                     {/* Best Offer */}
                     {bestOffer ? (

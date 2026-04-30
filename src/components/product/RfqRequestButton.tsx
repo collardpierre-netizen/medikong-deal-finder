@@ -117,18 +117,36 @@ export default function RfqRequestButton({ productId, brandId, productName, bran
       toast.success(`Demande envoyée à ${r.vendors_targeted} vendeur(s). Vous recevrez les meilleures offres dans votre espace.`);
       setOpen(false);
       setFiles([]);
+      qc.invalidateQueries({ queryKey: ["rfq-quota"] });
+      qc.invalidateQueries({ queryKey: ["rfq-ledger"] });
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: any) => {
+      const msg = String(e?.message || "");
+      const hint = String(e?.hint || (e?.context?.hint ?? ""));
+      if (hint === "rfq_no_credits" || msg.toLowerCase().includes("crédits insuffisants")) {
+        setOpen(false);
+        setPaywallOpen(true);
+        return;
+      }
+      toast.error(msg || "Erreur lors de l'envoi");
+    },
   });
 
   if (!user || !isVerifiedBuyer) return null;
   if (!productId && !brandId) return null;
 
+  const blocked = quota && !quota.allowed;
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <>
+    <Dialog open={open} onOpenChange={(v) => {
+      if (v && blocked) { setPaywallOpen(true); return; }
+      setOpen(v);
+    }}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className="gap-2">
           <Tag className="h-4 w-4" /> Demande de prix
+          <RfqQuotaBadge className="ml-1 text-[10px] py-0 px-1.5" />
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">

@@ -873,7 +873,15 @@ export default function ProductPage() {
   });
 
   const bestOffer = filteredOffers[0];
-  const otherOffers = filteredOffers.slice(1);
+  // Dédoublonnage : un vendeur ne doit apparaître qu'une seule fois.
+  // On garde l'offre déjà sélectionnée comme "meilleure" et on filtre toutes
+  // les autres lignes du même vendeur (paliers, entrepôts, doublons d'import).
+  const otherOffers = filteredOffers.slice(1).filter(
+    (o) => !bestOffer || (o.sellerId && bestOffer.sellerId && o.sellerId !== bestOffer.sellerId)
+  );
+  // Idem pour le total stock / nombre de fournisseurs : on compte les vendeurs uniques.
+  const uniqueVendorIds = new Set(filteredOffers.map((o) => o.sellerId).filter(Boolean));
+  const uniqueVendorCount = uniqueVendorIds.size || filteredOffers.length;
   const totalStock = filteredOffers.reduce((s, o) => s + o.stockQuantity, 0);
 
   // Price history query (must be before early returns)
@@ -1287,7 +1295,7 @@ export default function ProductPage() {
                 <Tabs defaultValue="marketplace" className="mb-6">
                   <TabsList className="w-full grid grid-cols-3 mb-4">
                     <TabsTrigger value="marketplace" className="text-xs sm:text-sm gap-1.5">
-                      <ShoppingCart size={14} className="hidden sm:inline" /> Marketplace MediKong <span className="ml-1 bg-primary/10 text-primary text-[10px] font-bold px-1.5 py-0.5 rounded-full">{filteredOffers.length}</span>
+                      <ShoppingCart size={14} className="hidden sm:inline" /> Marketplace MediKong <span className="ml-1 bg-primary/10 text-primary text-[10px] font-bold px-1.5 py-0.5 rounded-full">{uniqueVendorCount}</span>
                     </TabsTrigger>
                     <TabsTrigger value="external" className="text-xs sm:text-sm gap-1.5">
                       <Globe size={14} className="hidden sm:inline" /> Offres externes <span className="ml-1 bg-muted text-muted-foreground text-[10px] font-bold px-1.5 py-0.5 rounded-full">{externalOfferItems.length}</span>
@@ -1389,7 +1397,7 @@ export default function ProductPage() {
                             <Award size={18} className="text-emerald-700" />
                             <h3 className="text-base md:text-lg font-bold text-emerald-800">Meilleure offre</h3>
                           </div>
-                          <span className="text-sm text-emerald-700 font-medium">{formatCount(totalStock)} disponibles{filteredOffers.length > 1 ? ` auprès de ${filteredOffers.length} fournisseurs` : ""}</span>
+                          <span className="text-sm text-emerald-700 font-medium">{formatCount(totalStock)} disponibles{uniqueVendorCount > 1 ? ` auprès de ${uniqueVendorCount} fournisseurs` : ""}</span>
                         </div>
 
                         <div className="hidden md:grid grid-cols-[1.5fr_2fr_0.8fr_1.5fr] gap-3 px-1 pb-3 text-xs font-semibold text-muted-foreground border-b border-border">

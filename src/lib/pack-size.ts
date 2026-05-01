@@ -47,6 +47,16 @@ export function extractPackSizeFromName(name: string | null | undefined): number
   const cleaned = name.trim();
   if (!cleaned) return null;
 
+  // 0) Convention grossiste CERP : suffixe "/N" en fin de libellé
+  //    (ex: "FRESUBIN 2 KCAL CAPPUCCINO /4", "DIBEN VANILLE /15").
+  //    On exige que ce soit isolé (espace ou début avant "/") pour éviter
+  //    de matcher des fractions ou des dates "12/04".
+  const cerpSlash = cleaned.match(/(?:^|\s)\/\s*(\d{1,3})\b\s*$/);
+  if (cerpSlash) {
+    const n = Number(cerpSlash[1]);
+    if (n >= 2 && n <= 500) return n;
+  }
+
   // 1) "N x Q unite" (ex: "4 x 125 ml") -> on prend N
   //    On exige une unite de volume/masse derriere le Q pour eviter les faux positifs.
   const multiPack = cleaned.match(

@@ -8,7 +8,7 @@ import { useState } from "react";
 import { BuyerImportModal } from "@/components/buyer/BuyerImportModal";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { getVendorPublicName } from "@/lib/vendor-display";
+import { getVendorPublicName, resolveVendorVisibility } from "@/lib/vendor-display";
 import { BrandFactSheet } from "@/components/brand/BrandFactSheet";
 import { Badge } from "@/components/ui/badge";
 
@@ -44,20 +44,34 @@ export default function BrandDetailPage() {
         .select("vendor_id, products!inner(brand_id)")
         .eq("is_active", true)
         .eq("products.brand_id", brandData!.id)
-        .limit(300);
+        .limit(2000);
       if (error) throw error;
 
+      // Comptage offres par vendeur (pour afficher "N offres" et trier)
+      const offerCountByVendor = new Map<string, number>();
+      for (const r of (offerRows || []) as any[]) {
+        if (!r.vendor_id) continue;
+        offerCountByVendor.set(r.vendor_id, (offerCountByVendor.get(r.vendor_id) || 0) + 1);
+      }
+
       // Étape 2 : récupérer les infos vendeurs publiques (vue vendors_public, sans PII)
-      const vendorIds = Array.from(new Set(
-        (offerRows || []).map((r: any) => r.vendor_id).filter(Boolean)
-      ));
+      const vendorIds = Array.from(offerCountByVendor.keys());
       if (vendorIds.length === 0) return [];
 
-      const { data: vendorsData, error: vErr } = await supabase
-        .from("vendors_public" as any)
-        .select("id, name, company_name, display_name, slug, is_verified, rating, total_sales, country_code, display_code, show_real_name")
-        .in("id", vendorIds);
+      // Étape 3 : règles de visibilité granulaires (mêmes règles que la fiche produit)
+      const [{ data: vendorsData, error: vErr }, { data: rulesData }] = await Promise.all([
+        supabase
+          .from("vendors_public" as any)
+          .select("id, name, company_name, display_name, slug, is_verified, rating, total_sales, country_code, display_code, show_real_name")
+          .in("id", vendorIds),
+        supabase
+          .from("vendor_visibility_rules" as any)
+          .select("*")
+          .in("vendor_id", vendorIds),
+      ]);
       if (vErr) throw vErr;
+
+      const rules = (rulesData || []) as any[];
 
       const dedup = new Map<string, {
         id: string;
@@ -68,23 +82,37 @@ export default function BrandDetailPage() {
         location: string;
         rating: number;
         orders: number;
+        offerCount: number;
       }>();
 
       for (const v of (vendorsData || []) as any[]) {
         if (!v?.id || dedup.has(v.id)) continue;
+        const showReal = resolveVendorVisibility(
+          { id: v.id, name: v.name, company_name: v.company_name, display_code: v.display_code, show_real_name: v.show_real_name },
+          rules,
+        );
         dedup.set(v.id, {
           id: v.id,
-          name: getVendorPublicName({ name: v.name, company_name: v.company_name, display_code: v.display_code, show_real_name: v.show_real_name }),
+          name: getVendorPublicName(
+            { name: v.name, company_name: v.company_name, display_code: v.display_code, show_real_name: v.show_real_name },
+            showReal,
+          ),
           slug: v.slug || "",
           verified: !!v.is_verified,
           topRated: (Number(v.rating) || 0) >= 4.5,
           location: v.country_code || "BE",
           rating: Number(v.rating) || 0,
           orders: Number(v.total_sales) || 0,
+          offerCount: offerCountByVendor.get(v.id) || 0,
         });
       }
 
-      return [...dedup.values()];
+      // Tri : plus d'offres d'abord, puis vérifiés, puis rating
+      return [...dedup.values()].sort((a, b) => {
+        if (b.offerCount !== a.offerCount) return b.offerCount - a.offerCount;
+        if (Number(b.verified) !== Number(a.verified)) return Number(b.verified) - Number(a.verified);
+        return b.rating - a.rating;
+      });
     },
   });
 
@@ -251,7 +279,13 @@ export default function BrandDetailPage() {
         {/* Sellers for this brand */}
         {brandSellers.length > 0 && (
           <div className="mb-6">
-            <h2 className="text-lg font-bold text-mk-navy mb-3 flex items-center gap-2"><Store size={18} /> Vendeurs proposant {brand.name}</h2>
+            <h2 className="text-lg font-bold text-mk-navy mb-1 flex items-center gap-2">
+              <Store size={18} /> Vendeurs proposant {brand.name}
+              <span className="text-sm font-normal text-mk-sec">({brandSellers.length})</span>
+            </h2>
+            <p className="text-xs text-mk-sec mb-3">
+              Sur l'ensemble des {brand.count} références {brand.name}. Le nombre d'offres par produit peut varier.
+            </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {brandSellers.slice(0, showAllSellers ? undefined : 6).map(s => (
                 <Link key={s.id} to={`/vendeur/${s.slug}?brand=${brand.slug}`} className="border border-mk-line rounded-lg p-4 flex items-center gap-3 hover:shadow-sm hover:border-mk-blue transition-all">
@@ -259,15 +293,17 @@ export default function BrandDetailPage() {
                     {s.name[0]}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-semibold text-mk-navy">{s.name}</span>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-sm font-semibold text-mk-navy truncate">{s.name}</span>
                       {s.verified && <span className="text-[10px] bg-mk-deal text-mk-green px-1.5 py-0.5 rounded font-medium">Vérifié</span>}
                       {s.topRated && <span className="text-[10px] bg-mk-deal text-mk-green px-1.5 py-0.5 rounded font-medium">Top</span>}
                     </div>
-                    <div className="flex items-center gap-3 text-[11px] text-mk-sec mt-0.5">
+                    <div className="flex items-center gap-3 text-[11px] text-mk-sec mt-0.5 flex-wrap">
                       <span className="flex items-center gap-1"><MapPin size={10} />{s.location}</span>
                       <span className="flex items-center gap-1"><Star size={10} fill="currentColor" className="text-mk-amber" />{s.rating || "-"}</span>
-                      <span className="flex items-center gap-1"><ShoppingCart size={10} />{s.orders.toLocaleString("fr-BE")}</span>
+                      <span className="flex items-center gap-1" title={`${s.offerCount} offre(s) actives sur cette marque`}>
+                        <Store size={10} />{s.offerCount} offre{s.offerCount > 1 ? "s" : ""}
+                      </span>
                     </div>
                   </div>
                 </Link>

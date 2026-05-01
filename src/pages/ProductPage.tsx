@@ -1452,7 +1452,9 @@ export default function ProductPage() {
 
                         <div className="hidden md:grid grid-cols-[1.5fr_2fr_0.8fr_1.5fr] gap-3 px-1 pb-3 text-xs font-semibold text-muted-foreground border-b border-border">
                           <span>Fournisseur</span>
-                          <span>Prix unitaire / MOV</span>
+                          <span>
+                            Prix {externalCompareBasis === 'pack' ? '/ pack' : externalCompareBasis === 'unit' ? '/ unité' : '/ 100 u.'} · MOV
+                          </span>
                           <span>Stock</span>
                           <span className="text-right">Commander</span>
                         </div>

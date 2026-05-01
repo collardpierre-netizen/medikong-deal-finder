@@ -205,26 +205,10 @@ export function CatalogProductCard({ product, index = 0, view = "grid", searchQu
                     )}
                     {addButton}
                   </div>
-                  <div className="mt-1.5 flex justify-end">
-                    <RfqRequestButton
-                      productId={product.id}
-                      brandId={product.brand_id}
-                      productName={product.name}
-                      brandName={product.brand_name}
-                    />
-                  </div>
                 </>
               ) : (
                 <div className="space-y-1.5">
                   <p className="text-xs text-muted-foreground italic">{t("catalog.noOfferYet", "Pas encore d'offre")}</p>
-                  <div className="flex justify-end">
-                    <RfqRequestButton
-                      productId={product.id}
-                      brandId={product.brand_id}
-                      productName={product.name}
-                      brandName={product.brand_name}
-                    />
-                  </div>
                 </div>
               )}
             </>

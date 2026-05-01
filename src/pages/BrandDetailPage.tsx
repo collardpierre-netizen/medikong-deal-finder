@@ -279,7 +279,13 @@ export default function BrandDetailPage() {
         {/* Sellers for this brand */}
         {brandSellers.length > 0 && (
           <div className="mb-6">
-            <h2 className="text-lg font-bold text-mk-navy mb-3 flex items-center gap-2"><Store size={18} /> Vendeurs proposant {brand.name}</h2>
+            <h2 className="text-lg font-bold text-mk-navy mb-1 flex items-center gap-2">
+              <Store size={18} /> Vendeurs proposant {brand.name}
+              <span className="text-sm font-normal text-mk-sec">({brandSellers.length})</span>
+            </h2>
+            <p className="text-xs text-mk-sec mb-3">
+              Sur l'ensemble des {brand.product_count || products.length} références {brand.name}. Le nombre d'offres par produit peut varier.
+            </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {brandSellers.slice(0, showAllSellers ? undefined : 6).map(s => (
                 <Link key={s.id} to={`/vendeur/${s.slug}?brand=${brand.slug}`} className="border border-mk-line rounded-lg p-4 flex items-center gap-3 hover:shadow-sm hover:border-mk-blue transition-all">
@@ -287,15 +293,17 @@ export default function BrandDetailPage() {
                     {s.name[0]}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-semibold text-mk-navy">{s.name}</span>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-sm font-semibold text-mk-navy truncate">{s.name}</span>
                       {s.verified && <span className="text-[10px] bg-mk-deal text-mk-green px-1.5 py-0.5 rounded font-medium">Vérifié</span>}
                       {s.topRated && <span className="text-[10px] bg-mk-deal text-mk-green px-1.5 py-0.5 rounded font-medium">Top</span>}
                     </div>
-                    <div className="flex items-center gap-3 text-[11px] text-mk-sec mt-0.5">
+                    <div className="flex items-center gap-3 text-[11px] text-mk-sec mt-0.5 flex-wrap">
                       <span className="flex items-center gap-1"><MapPin size={10} />{s.location}</span>
                       <span className="flex items-center gap-1"><Star size={10} fill="currentColor" className="text-mk-amber" />{s.rating || "-"}</span>
-                      <span className="flex items-center gap-1"><ShoppingCart size={10} />{s.orders.toLocaleString("fr-BE")}</span>
+                      <span className="flex items-center gap-1" title={`${s.offerCount} offre(s) actives sur cette marque`}>
+                        <Store size={10} />{s.offerCount} offre{s.offerCount > 1 ? "s" : ""}
+                      </span>
                     </div>
                   </div>
                 </Link>

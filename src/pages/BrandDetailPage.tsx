@@ -284,7 +284,7 @@ export default function BrandDetailPage() {
               <span className="text-sm font-normal text-mk-sec">({brandSellers.length})</span>
             </h2>
             <p className="text-xs text-mk-sec mb-3">
-              Sur l'ensemble des {brand.product_count || products.length} références {brand.name}. Le nombre d'offres par produit peut varier.
+              Sur l'ensemble des {brand.count} références {brand.name}. Le nombre d'offres par produit peut varier.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {brandSellers.slice(0, showAllSellers ? undefined : 6).map(s => (

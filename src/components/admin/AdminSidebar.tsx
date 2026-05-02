@@ -83,10 +83,10 @@ const sections: NavSection[] = [
   {
     labelKey: "restock",
     items: [
-      { labelKey: "restockOffers", path: "/restock/admin/offers", icon: LayoutGrid },
-      { labelKey: "restockBuyers", path: "/restock/admin/buyers", icon: Users2 },
-      { labelKey: "restockCampaigns", path: "/restock/admin/campaigns", icon: Mail },
-      { labelKey: "restockRules", path: "/restock/admin/rules", icon: Shield },
+      { labelKey: "restockOffers", path: "/admin/restock/offers", icon: LayoutGrid },
+      { labelKey: "restockBuyers", path: "/admin/restock/buyers", icon: Users2 },
+      { labelKey: "restockCampaigns", path: "/admin/restock/campaigns", icon: Mail },
+      { labelKey: "restockRules", path: "/admin/restock/rules", icon: Shield },
     ],
   },
   {

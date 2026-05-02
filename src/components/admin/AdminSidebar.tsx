@@ -13,7 +13,8 @@ import {
 } from "lucide-react";
 
 interface NavItem {
-  labelKey: string;
+  labelKey?: string;
+  label?: string;
   path: string;
   icon: React.ElementType;
 }

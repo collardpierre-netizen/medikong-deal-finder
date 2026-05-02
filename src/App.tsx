@@ -156,6 +156,7 @@ const AdminCatalogDiagnostics = lazyWithRetry(() => import("./pages/admin/AdminC
 const AdminOfferDataQuality = lazyWithRetry(() => import("./pages/admin/AdminOfferDataQuality"), "AdminOfferDataQuality");
 const AdminProductSubmissions = lazyWithRetry(() => import("./pages/admin/AdminProductSubmissions"), "AdminProductSubmissions");
 const AdminCommissions = lazyWithRetry(() => import("./pages/admin/AdminCommissions"), "AdminCommissions");
+const AdminCommissionOverridesPage = lazyWithRetry(() => import("./pages/admin/AdminCommissionOverridesPage"), "AdminCommissionOverridesPage");
 const AdminOnboardingCMS = lazyWithRetry(() => import("./pages/admin/AdminOnboardingCMS"), "AdminOnboardingCMS");
 const AdminSync = lazyWithRetry(() => import("./pages/admin/AdminSync"), "AdminSync");
 const AdminFabricants = lazyWithRetry(() => import("./pages/admin/AdminFabricants"), "AdminFabricants");
@@ -405,6 +406,7 @@ const App = () => (
               <Route path="offer-data-quality" element={<LP><AdminOfferDataQuality /></LP>} />
               <Route path="onboarding-cms" element={<LP><AdminOnboardingCMS /></LP>} />
               <Route path="commissions" element={<LP><AdminCommissions /></LP>} />
+              <Route path="commission-overrides" element={<LP><AdminCommissionOverridesPage /></LP>} />
               <Route path="sync" element={<LP><AdminSync /></LP>} />
               <Route path="api-keys" element={<LP><AdminApiKeys /></LP>} />
               <Route path="api-docs" element={<LP><AdminApiDocs /></LP>} />

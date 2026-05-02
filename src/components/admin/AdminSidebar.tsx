@@ -13,7 +13,8 @@ import {
 } from "lucide-react";
 
 interface NavItem {
-  labelKey: string;
+  labelKey?: string;
+  label?: string;
   path: string;
   icon: React.ElementType;
 }
@@ -42,6 +43,7 @@ const sections: NavSection[] = [
       { labelKey: "disputes", path: "/admin/litiges", icon: AlertCircle },
       { labelKey: "finances", path: "/admin/finances", icon: DollarSign },
       { labelKey: "commissions", path: "/admin/commissions", icon: Percent },
+      { label: "Commissions personnalisées", path: "/admin/commission-overrides", icon: Percent },
       { labelKey: "stripeConnect", path: "/admin/stripe-commissions", icon: CreditCard },
       { labelKey: "stripeRevenue", path: "/admin/stripe-revenue", icon: TrendingUp },
       { labelKey: "syncQogita", path: "/admin/sync", icon: RefreshCw },
@@ -188,7 +190,7 @@ const AdminSidebar = () => {
                   style={isActive(item.path) ? { backgroundColor: "#1B5BDA" } : {}}
                 >
                   <item.icon size={16} strokeWidth={1.8} />
-                  <span className="flex-1">{t(item.labelKey)}</span>
+                  <span className="flex-1">{item.label ?? (item.labelKey ? t(item.labelKey) : "")}</span>
                   {showBadge && (
                     <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold text-white" style={{ backgroundColor: "#EF4444", minWidth: 18, textAlign: "center" }}>
                       {pendingVendorsCount}

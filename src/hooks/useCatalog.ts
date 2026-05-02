@@ -70,6 +70,40 @@ async function fetchInactiveCategoryIds(): Promise<Set<string>> {
   return inactive;
 }
 
+/**
+ * Override les champs `offer_count` / `best_price_*` / `total_stock` / `is_in_stock`
+ * par les valeurs spécifiques au pays courant (table `product_country_stats`).
+ * Si aucune ligne n'existe pour ce pays → produit forcé à 0 offre / out of stock,
+ * pour rester cohérent avec la fiche produit qui filtre déjà par pays.
+ */
+async function applyCountryStats<T extends { id: string }>(
+  rows: T[],
+  country: string,
+): Promise<T[]> {
+  if (!rows.length) return rows;
+  const ids = rows.map((r) => r.id);
+  const { data } = await supabase
+    .from("product_country_stats")
+    .select("product_id, offer_count, best_price_excl_vat, best_price_incl_vat, total_stock, is_in_stock")
+    .eq("country_code", country)
+    .in("product_id", ids);
+
+  const byId = new Map<string, any>();
+  for (const s of data ?? []) byId.set((s as any).product_id, s);
+
+  return rows.map((r) => {
+    const s = byId.get(r.id);
+    return {
+      ...r,
+      offer_count: s?.offer_count ?? 0,
+      best_price_excl_vat: s?.best_price_excl_vat ?? null,
+      best_price_incl_vat: s?.best_price_incl_vat ?? null,
+      total_stock: s?.total_stock ?? 0,
+      is_in_stock: s?.is_in_stock ?? false,
+    } as T;
+  });
+}
+
 function applyCatalogProductFilters(
   query: any,
   filters: CatalogFilters,

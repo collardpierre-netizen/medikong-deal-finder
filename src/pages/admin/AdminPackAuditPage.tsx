@@ -185,9 +185,15 @@ export default function AdminPackAuditPage() {
             packs vus chez les vendeurs externes, et statut de cohérence.
           </p>
         </div>
-        <Button onClick={exportCsv} variant="outline" disabled={!data?.length}>
-          <Download className="h-4 w-4 mr-2" /> Exporter CSV
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={() => runAlert.mutate()} variant="default" disabled={runAlert.isPending}>
+            {runAlert.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Bell className="h-4 w-4 mr-2" />}
+            Lancer l'alerte maintenant
+          </Button>
+          <Button onClick={exportCsv} variant="outline" disabled={!data?.length}>
+            <Download className="h-4 w-4 mr-2" /> Exporter CSV
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">

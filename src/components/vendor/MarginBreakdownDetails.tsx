@@ -1,10 +1,18 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronDown, ChevronUp, Calculator, History, Loader2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Calculator, History, Loader2, Layers } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { fmtEur, fmtPct, type CommissionModel, type MarginBreakdown } from "@/lib/vendorMargin";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
+import { useEffectiveCommission, type EffectiveCommissionSource } from "@/hooks/useEffectiveCommission";
+
+const SOURCE_META: Record<EffectiveCommissionSource, { label: string; help: string; bg: string; fg: string }> = {
+  offer:   { label: "Override offre",   help: "Règle spécifique appliquée à cette offre.",                     bg: "#FEF3C7", fg: "#B45309" },
+  product: { label: "Override produit", help: "Règle vendeur × produit (vendor_product_commissions).",         bg: "#EDE9FE", fg: "#6D28D9" },
+  vendor:  { label: "Défaut vendeur",   help: "Aucun override : commission par défaut de votre fiche vendeur.", bg: "#EEF2FF", fg: "#1B5BDA" },
+};
+
 
 interface Props {
   breakdown: MarginBreakdown;

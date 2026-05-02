@@ -122,7 +122,7 @@ export default function AdminMarketDeltaThresholdsPage() {
         payload.product_id = newProductId;
       }
       // upsert manuel : si une règle active existe déjà pour la cible, on la désactive d'abord
-      let target = supabase.from("market_delta_thresholds" as never).update({ is_active: false }).eq("scope", newScope).eq("is_active", true);
+      let target = (supabase.from("market_delta_thresholds" as never) as any).update({ is_active: false }).eq("scope", newScope).eq("is_active", true);
       if (newScope === "category") target = target.eq("category_id", newCategoryId);
       else if (newScope === "product") target = target.eq("product_id", newProductId);
       // global → on désactive l'ancien global

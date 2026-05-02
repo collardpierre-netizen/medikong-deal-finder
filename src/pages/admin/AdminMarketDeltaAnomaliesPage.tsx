@@ -10,7 +10,9 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Loader2, RefreshCw, AlertTriangle, ExternalLink, Download } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Textarea } from "@/components/ui/textarea";
+import { Loader2, RefreshCw, AlertTriangle, ExternalLink, Download, MessageSquare, UserCog } from "lucide-react";
 import { toast } from "sonner";
 
 type AnomalyStatus = "open" | "reviewed" | "ignored" | "fixed";
@@ -33,6 +35,12 @@ interface AnomalyRow {
   threshold_pct: number;
   status: AnomalyStatus;
   notes: string | null;
+  assigned_to: string | null;
+  assigned_at: string | null;
+  notes_updated_at: string | null;
+  resolved_at: string | null;
+  resolved_by: string | null;
+  notes_updated_by: string | null;
 }
 
 interface RunRow {
@@ -46,11 +54,18 @@ interface RunRow {
   triggered_by: string;
 }
 
+interface AdminUser {
+  user_id: string;
+  email: string;
+  display_name: string;
+}
+
+// User-facing labels per spec: « à corriger », « corrigée », « ignorer »
 const STATUS_LABEL: Record<AnomalyStatus, string> = {
-  open: "À traiter",
-  reviewed: "Revue",
-  ignored: "Ignoré",
-  fixed: "Corrigé",
+  open: "À corriger",
+  reviewed: "En revue",
+  ignored: "Ignorée",
+  fixed: "Corrigée",
 };
 
 const STATUS_VARIANT: Record<AnomalyStatus, "default" | "secondary" | "outline" | "destructive"> = {
@@ -59,6 +74,8 @@ const STATUS_VARIANT: Record<AnomalyStatus, "default" | "secondary" | "outline" 
   ignored: "outline",
   fixed: "default",
 };
+
+const UNASSIGNED = "__none__";
 
 function fmtPct(v: number) {
   const sign = v > 0 ? "+" : "";
@@ -70,12 +87,18 @@ function fmtMoney(v: number | null | undefined) {
   return `${Number(v).toFixed(4)} €`;
 }
 
+function fmtDate(v: string | null | undefined) {
+  if (!v) return "—";
+  return new Date(v).toLocaleString("fr-FR");
+}
+
 export default function AdminMarketDeltaAnomaliesPage() {
   const qc = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const runFilter = searchParams.get("run") ?? "all";
   const [statusFilter, setStatusFilter] = useState<AnomalyStatus | "all">("open");
   const [directionFilter, setDirectionFilter] = useState<Direction | "all">("all");
+  const [assigneeFilter, setAssigneeFilter] = useState<string>("all");
   const [minPct, setMinPct] = useState<number>(15);
   const [threshold, setThreshold] = useState<number>(15);
 
@@ -92,13 +115,29 @@ export default function AdminMarketDeltaAnomaliesPage() {
     },
   });
 
+  const { data: admins } = useQuery({
+    queryKey: ["admin-users-list"],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("list_admin_users" as never);
+      if (error) throw error;
+      return (data ?? []) as unknown as AdminUser[];
+    },
+  });
+
+  const adminMap = useMemo(
+    () => new Map((admins ?? []).map((a) => [a.user_id, a])),
+    [admins],
+  );
+
   const { data: anomalies, isLoading } = useQuery({
-    queryKey: ["market-delta-anomalies", runFilter, statusFilter, directionFilter, minPct],
+    queryKey: ["market-delta-anomalies", runFilter, statusFilter, directionFilter, assigneeFilter, minPct],
     queryFn: async () => {
       let q = supabase.from("market_delta_anomalies" as never).select("*");
       if (runFilter !== "all") q = q.eq("run_id", runFilter);
       if (statusFilter !== "all") q = q.eq("status", statusFilter);
       if (directionFilter !== "all") q = q.eq("direction", directionFilter);
+      if (assigneeFilter === UNASSIGNED) q = q.is("assigned_to", null);
+      else if (assigneeFilter !== "all") q = q.eq("assigned_to", assigneeFilter);
       const { data, error } = await q
         .gte("delta_pct", -1)
         .order("delta_pct", { ascending: false })
@@ -143,7 +182,7 @@ export default function AdminMarketDeltaAnomaliesPage() {
     mutationFn: async () => {
       const { data, error } = await supabase.rpc(
         "run_market_delta_anomaly_job" as never,
-        { _threshold_pct: threshold / 100, _triggered_by: "manual_admin" } as never
+        { _threshold_pct: threshold / 100, _triggered_by: "manual_admin" } as never,
       );
       if (error) throw error;
       return data as any;
@@ -157,19 +196,28 @@ export default function AdminMarketDeltaAnomaliesPage() {
     onError: (e: any) => toast.error(`Erreur : ${e?.message ?? "inconnue"}`),
   });
 
-  const updateStatus = useMutation({
-    mutationFn: async (args: { id: string; status: AnomalyStatus }) => {
-      const { error } = await supabase
-        .from("market_delta_anomalies" as never)
-        .update({
-          status: args.status,
-          resolved_at: args.status === "open" ? null : new Date().toISOString(),
-        } as never)
-        .eq("id", args.id);
+  const updateAnomaly = useMutation({
+    mutationFn: async (args: {
+      id: string;
+      status?: AnomalyStatus;
+      notes?: string | null;
+      assigned_to?: string | null;
+      clear_assignee?: boolean;
+    }) => {
+      const payload: Record<string, unknown> = { _id: args.id };
+      if (args.status !== undefined) payload._status = args.status;
+      if (args.notes !== undefined) payload._notes = args.notes ?? "";
+      if (args.assigned_to !== undefined) payload._assigned_to = args.assigned_to;
+      if (args.clear_assignee) payload._clear_assignee = true;
+
+      const { error } = await supabase.rpc(
+        "update_market_delta_anomaly" as never,
+        payload as never,
+      );
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Statut mis à jour");
+      toast.success("Anomalie mise à jour");
       qc.invalidateQueries({ queryKey: ["market-delta-anomalies"] });
     },
     onError: (e: any) => toast.error(`Erreur : ${e?.message ?? "inconnue"}`),
@@ -182,11 +230,12 @@ export default function AdminMarketDeltaAnomaliesPage() {
     const header = [
       "produit", "cnk", "vendeur", "pack_mk", "prix_unitaire_mk",
       "mediane_marche", "echantillon", "delta_abs", "delta_pct",
-      "direction", "statut", "detecte_le",
+      "direction", "statut", "responsable", "note", "detecte_le", "resolu_le",
     ];
     const lines = anomalies.map((a) => {
       const p = products?.get(a.product_id);
       const v = a.vendor_id ? vendors?.get(a.vendor_id) : null;
+      const assignee = a.assigned_to ? adminMap.get(a.assigned_to)?.display_name ?? a.assigned_to : "";
       return [
         p?.name ?? a.product_id,
         p?.cnk_code ?? "",
@@ -198,9 +247,12 @@ export default function AdminMarketDeltaAnomaliesPage() {
         Number(a.delta_abs).toFixed(4),
         (Number(a.delta_pct) * 100).toFixed(2),
         a.direction,
-        a.status,
+        STATUS_LABEL[a.status],
+        assignee,
+        a.notes ?? "",
         a.detected_at,
-      ].map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",");
+        a.resolved_at ?? "",
+      ].map((val) => `"${String(val).replace(/"/g, '""')}"`).join(",");
     });
     const csv = [header.join(","), ...lines].join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
@@ -301,7 +353,7 @@ export default function AdminMarketDeltaAnomaliesPage() {
         <CardHeader>
           <CardTitle className="text-base">Filtres</CardTitle>
         </CardHeader>
-        <CardContent className="grid grid-cols-1 md:grid-cols-4 gap-3">
+        <CardContent className="grid grid-cols-1 md:grid-cols-5 gap-3">
           <div>
             <Label>Run</Label>
             <Select value={runFilter} onValueChange={(v) => setSearchParams(v === "all" ? {} : { run: v })}>
@@ -322,10 +374,10 @@ export default function AdminMarketDeltaAnomaliesPage() {
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tous</SelectItem>
-                <SelectItem value="open">À traiter</SelectItem>
-                <SelectItem value="reviewed">Revue</SelectItem>
-                <SelectItem value="ignored">Ignoré</SelectItem>
-                <SelectItem value="fixed">Corrigé</SelectItem>
+                <SelectItem value="open">{STATUS_LABEL.open}</SelectItem>
+                <SelectItem value="reviewed">{STATUS_LABEL.reviewed}</SelectItem>
+                <SelectItem value="ignored">{STATUS_LABEL.ignored}</SelectItem>
+                <SelectItem value="fixed">{STATUS_LABEL.fixed}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -337,6 +389,19 @@ export default function AdminMarketDeltaAnomaliesPage() {
                 <SelectItem value="all">Toutes</SelectItem>
                 <SelectItem value="mk_higher">MK plus cher</SelectItem>
                 <SelectItem value="mk_lower">MK moins cher</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Responsable</Label>
+            <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tous</SelectItem>
+                <SelectItem value={UNASSIGNED}>Non assigné</SelectItem>
+                {admins?.map((u) => (
+                  <SelectItem key={u.user_id} value={u.user_id}>{u.display_name}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -364,10 +429,11 @@ export default function AdminMarketDeltaAnomaliesPage() {
                   <TableHead className="text-right">Pack MK</TableHead>
                   <TableHead className="text-right">€/u. MK</TableHead>
                   <TableHead className="text-right">Médiane marché</TableHead>
-                  <TableHead className="text-right">Échantillon</TableHead>
                   <TableHead className="text-right">Écart</TableHead>
                   <TableHead>Statut</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>Responsable</TableHead>
+                  <TableHead>Note</TableHead>
+                  <TableHead className="text-right">Action</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -375,9 +441,10 @@ export default function AdminMarketDeltaAnomaliesPage() {
                   const p = products?.get(a.product_id);
                   const v = a.vendor_id ? vendors?.get(a.vendor_id) : null;
                   const pct = Number(a.delta_pct);
+                  const assignee = a.assigned_to ? adminMap.get(a.assigned_to) : null;
                   return (
                     <TableRow key={a.id}>
-                      <TableCell className="max-w-[300px]">
+                      <TableCell className="max-w-[280px]">
                         <div className="font-medium truncate">{p?.name ?? a.product_id}</div>
                         <div className="text-xs text-muted-foreground flex items-center gap-2">
                           {p?.cnk_code && <span>CNK {p.cnk_code}</span>}
@@ -392,28 +459,75 @@ export default function AdminMarketDeltaAnomaliesPage() {
                       <TableCell className="text-right">{a.mk_pack_size}</TableCell>
                       <TableCell className="text-right font-mono text-sm">{fmtMoney(a.mk_unit_price)}</TableCell>
                       <TableCell className="text-right font-mono text-sm">{fmtMoney(a.market_unit_price_median)}</TableCell>
-                      <TableCell className="text-right text-sm">{a.market_sample_size}</TableCell>
                       <TableCell className="text-right">
                         <Badge variant={a.direction === "mk_higher" ? "destructive" : "default"}>
                           {fmtPct(pct)}
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={STATUS_VARIANT[a.status]}>{STATUS_LABEL[a.status]}</Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
                         <Select
                           value={a.status}
-                          onValueChange={(s) => updateStatus.mutate({ id: a.id, status: s as AnomalyStatus })}
+                          onValueChange={(s) =>
+                            updateAnomaly.mutate({ id: a.id, status: s as AnomalyStatus })
+                          }
                         >
-                          <SelectTrigger className="w-32 h-8 text-xs"><SelectValue /></SelectTrigger>
+                          <SelectTrigger className="w-32 h-8 text-xs">
+                            <SelectValue>
+                              <Badge variant={STATUS_VARIANT[a.status]} className="text-[10px]">
+                                {STATUS_LABEL[a.status]}
+                              </Badge>
+                            </SelectValue>
+                          </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="open">À traiter</SelectItem>
-                            <SelectItem value="reviewed">Revue</SelectItem>
-                            <SelectItem value="ignored">Ignoré</SelectItem>
-                            <SelectItem value="fixed">Corrigé</SelectItem>
+                            <SelectItem value="open">{STATUS_LABEL.open}</SelectItem>
+                            <SelectItem value="reviewed">{STATUS_LABEL.reviewed}</SelectItem>
+                            <SelectItem value="ignored">{STATUS_LABEL.ignored}</SelectItem>
+                            <SelectItem value="fixed">{STATUS_LABEL.fixed}</SelectItem>
                           </SelectContent>
                         </Select>
+                      </TableCell>
+                      <TableCell>
+                        <Select
+                          value={a.assigned_to ?? UNASSIGNED}
+                          onValueChange={(uid) => {
+                            if (uid === UNASSIGNED) {
+                              updateAnomaly.mutate({ id: a.id, clear_assignee: true });
+                            } else {
+                              updateAnomaly.mutate({ id: a.id, assigned_to: uid });
+                            }
+                          }}
+                        >
+                          <SelectTrigger className="w-40 h-8 text-xs">
+                            <SelectValue>
+                              <span className="flex items-center gap-1 truncate">
+                                <UserCog className="h-3 w-3" />
+                                {assignee?.display_name ?? "Non assigné"}
+                              </span>
+                            </SelectValue>
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value={UNASSIGNED}>Non assigné</SelectItem>
+                            {admins?.map((u) => (
+                              <SelectItem key={u.user_id} value={u.user_id}>
+                                {u.display_name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                      <TableCell>
+                        <NoteCell
+                          anomaly={a}
+                          onSave={(notes) => updateAnomaly.mutate({ id: a.id, notes })}
+                          adminLabel={
+                            a.notes_updated_by
+                              ? adminMap.get(a.notes_updated_by)?.display_name ?? null
+                              : null
+                          }
+                        />
+                      </TableCell>
+                      <TableCell className="text-right text-xs text-muted-foreground">
+                        {a.resolved_at ? `Résolu ${fmtDate(a.resolved_at)}` : ""}
                       </TableCell>
                     </TableRow>
                   );
@@ -424,5 +538,69 @@ export default function AdminMarketDeltaAnomaliesPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+function NoteCell({
+  anomaly,
+  onSave,
+  adminLabel,
+}: {
+  anomaly: AnomalyRow;
+  onSave: (notes: string) => void;
+  adminLabel: string | null;
+}) {
+  const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState(anomaly.notes ?? "");
+  const hasNote = !!anomaly.notes;
+
+  return (
+    <Popover
+      open={open}
+      onOpenChange={(o) => {
+        setOpen(o);
+        if (o) setDraft(anomaly.notes ?? "");
+      }}
+    >
+      <PopoverTrigger asChild>
+        <Button
+          variant={hasNote ? "secondary" : "ghost"}
+          size="sm"
+          className="h-8 max-w-[200px] justify-start text-xs"
+        >
+          <MessageSquare className="h-3 w-3 mr-1 shrink-0" />
+          <span className="truncate">{hasNote ? anomaly.notes : "Ajouter une note"}</span>
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-80 space-y-2" align="end">
+        <Label className="text-xs">Note</Label>
+        <Textarea
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          rows={4}
+          placeholder="Décrire le problème ou la correction…"
+        />
+        {anomaly.notes_updated_at && (
+          <p className="text-[10px] text-muted-foreground">
+            Mis à jour {fmtDate(anomaly.notes_updated_at)}
+            {adminLabel ? ` par ${adminLabel}` : ""}
+          </p>
+        )}
+        <div className="flex justify-end gap-2">
+          <Button variant="ghost" size="sm" onClick={() => setOpen(false)}>
+            Annuler
+          </Button>
+          <Button
+            size="sm"
+            onClick={() => {
+              onSave(draft.trim());
+              setOpen(false);
+            }}
+          >
+            Enregistrer
+          </Button>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }

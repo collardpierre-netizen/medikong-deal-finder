@@ -101,6 +101,9 @@ export function MarginBreakdownDetails({
     },
   });
 
+  const { data: effective } = useEffectiveCommission(offerId ?? null);
+  const sourceMeta = effective ? SOURCE_META[effective.source] : null;
+
   const formula = formulaFor(
     commissionModel,
     commissionRate,
@@ -120,6 +123,16 @@ export function MarginBreakdownDetails({
         <span className="flex items-center gap-2">
           <Calculator size={13} style={{ color: "#1B5BDA" }} />
           Détail du calcul du net en poche
+          {sourceMeta && (
+            <span
+              className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full"
+              style={{ backgroundColor: sourceMeta.bg, color: sourceMeta.fg }}
+              title={sourceMeta.help}
+            >
+              <Layers size={9} />
+              {sourceMeta.label}
+            </span>
+          )}
         </span>
         {open ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
       </button>

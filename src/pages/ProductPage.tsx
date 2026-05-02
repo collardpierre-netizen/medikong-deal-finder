@@ -2019,11 +2019,7 @@ export default function ProductPage() {
               {/* ── Description ── */}
               <div className="mb-8">
                 <h2 className="text-lg font-bold text-foreground mb-3">Description du produit</h2>
-                {description ? (
-                  <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">{description}</p>
-                ) : (
-                  <p className="text-sm text-muted-foreground italic">Description non disponible pour ce produit.</p>
-                )}
+                <ProductDescription description={description} />
               </div>
 
               {/* ── Product Details ── */}

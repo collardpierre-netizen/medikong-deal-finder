@@ -41,11 +41,9 @@ import { PvpEconomyBadge } from "@/components/product/PvpEconomyBadge";
 import RfqRequestButton from "@/components/product/RfqRequestButton";
 import { ProductDescription } from "@/components/product/ProductDescription";
 
-function formatEur(n: number | null | undefined): string {
-  const v = Number(n);
-  if (!Number.isFinite(v)) return "—";
-  return v.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
+// Helpers de formatage harmonisés (locale fr-BE, suffixes uniques).
+// Cf. src/lib/price-format.ts pour la source de vérité.
+import { formatAmount as formatEur, formatBasisLabel, type CompareBasis } from "@/lib/price-format";
 
 function formatCount(n: number | null | undefined): string {
   const v = Number(n);

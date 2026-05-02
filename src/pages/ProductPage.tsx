@@ -733,8 +733,9 @@ export default function ProductPage() {
   // Base de comparaison pour les offres externes : ramène toutes les offres
   // au même conditionnement pour comparer "des pommes à des pommes".
   // Défaut: 'pack' = prix exactement tel qu'importé chez le vendeur (le plus fidèle).
-  // Les offres marketplace sont encodées à l'unité ; le toggle permet de convertir en pack ou /100 unités.
-  const [externalCompareBasis, setExternalCompareBasis] = useState<'pack' | 'unit' | 'hundred'>('unit');
+  // Les offres marketplace sont encodées à l'unité ; les relevés externes/marché restent affichés par pack par défaut.
+  const [offerCompareBasis, setOfferCompareBasis] = useState<'pack' | 'unit' | 'hundred'>('unit');
+  const [externalCompareBasis, setExternalCompareBasis] = useState<'pack' | 'unit' | 'hundred'>('pack');
   const offerSectionRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
 
@@ -1018,7 +1019,7 @@ export default function ProductPage() {
   });
   const bestOfferPackSize = bestOfferPack.packSize || 1;
   const bestOfferUnitPrice = bestOffer ? (isTVAC ? bestOffer.unitPriceInclVat : bestOffer.unitPriceEur) : 0;
-  const bestOfferDisplayPrice = priceFromUnit(bestOfferUnitPrice, externalCompareBasis as CompareBasis, bestOfferPackSize);
+  const bestOfferDisplayPrice = priceFromUnit(bestOfferUnitPrice, offerCompareBasis as CompareBasis, bestOfferPackSize);
   const clientPrice = bestOfferUnitPrice;
   const userPriceNum = parseFloat(userPrice.replace(",", ".")) || 0;
   const savingsAbs = userPriceNum > 0 ? userPriceNum - clientPrice : 0;

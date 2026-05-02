@@ -1,10 +1,18 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronDown, ChevronUp, Calculator, History, Loader2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Calculator, History, Loader2, Layers } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { fmtEur, fmtPct, type CommissionModel, type MarginBreakdown } from "@/lib/vendorMargin";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
+import { useEffectiveCommission, type EffectiveCommissionSource } from "@/hooks/useEffectiveCommission";
+
+const SOURCE_META: Record<EffectiveCommissionSource, { label: string; help: string; bg: string; fg: string }> = {
+  offer:   { label: "Override offre",   help: "Règle spécifique appliquée à cette offre.",                     bg: "#FEF3C7", fg: "#B45309" },
+  product: { label: "Override produit", help: "Règle vendeur × produit (vendor_product_commissions).",         bg: "#EDE9FE", fg: "#6D28D9" },
+  vendor:  { label: "Défaut vendeur",   help: "Aucun override : commission par défaut de votre fiche vendeur.", bg: "#EEF2FF", fg: "#1B5BDA" },
+};
+
 
 interface Props {
   breakdown: MarginBreakdown;
@@ -93,6 +101,9 @@ export function MarginBreakdownDetails({
     },
   });
 
+  const { data: effective } = useEffectiveCommission(offerId ?? null);
+  const sourceMeta = effective ? SOURCE_META[effective.source] : null;
+
   const formula = formulaFor(
     commissionModel,
     commissionRate,
@@ -112,6 +123,16 @@ export function MarginBreakdownDetails({
         <span className="flex items-center gap-2">
           <Calculator size={13} style={{ color: "#1B5BDA" }} />
           Détail du calcul du net en poche
+          {sourceMeta && (
+            <span
+              className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full"
+              style={{ backgroundColor: sourceMeta.bg, color: sourceMeta.fg }}
+              title={sourceMeta.help}
+            >
+              <Layers size={9} />
+              {sourceMeta.label}
+            </span>
+          )}
         </span>
         {open ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
       </button>
@@ -164,6 +185,17 @@ export function MarginBreakdownDetails({
                   value={`${fmtEur(breakdown.commission)} (${fmtPct(breakdown.commissionPct)})`}
                   highlight="commission"
                 />
+                {sourceMeta && (
+                  <Row
+                    label="↳ Source de la commission"
+                    value={
+                      effective?.valid_until
+                        ? `${sourceMeta.label} · valide jusqu'au ${new Date(effective.valid_until).toLocaleDateString("fr-FR")}`
+                        : sourceMeta.label
+                    }
+                    muted
+                  />
+                )}
                 <Row
                   label="= Net en poche"
                   value={fmtEur(breakdown.netRevenue)}

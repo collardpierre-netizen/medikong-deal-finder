@@ -1836,7 +1836,7 @@ export default function ProductPage() {
                           return (
                           <>
                           {bestOffer && (
-                            <div className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-[12px] flex flex-wrap items-center gap-x-4 gap-y-1">
+                            <div id="mk-reference-pack" className="scroll-mt-24 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-[12px] flex flex-wrap items-center gap-x-4 gap-y-1">
                               <span className="font-semibold text-foreground">Référence MediKong&nbsp;:</span>
                               <span className="inline-flex items-center gap-1.5">
                                 <span className="text-muted-foreground">Pack&nbsp;</span>

@@ -1824,7 +1824,45 @@ export default function ProductPage() {
                             externalCompareBasis === 'pack' ? '/pack' :
                             externalCompareBasis === 'hundred' ? '/100 u.' :
                             '/u.';
+
+                          // Récap pack MK + prix MK utilisés pour le calcul des écarts
+                          const mkPack = resolvePackSize({
+                            offerOverride: (bestOffer as any)?.packSizeOverride,
+                            productPackSize: (product as any)?.pack_size,
+                            productName: product.name,
+                          });
+                          const mkUnit = bestOffer?.unitPriceEur ?? 0;
+                          const mkPackPrice = mkUnit * mkPack.packSize;
                           return (
+                          <>
+                          {bestOffer && (
+                            <div className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-[12px] flex flex-wrap items-center gap-x-4 gap-y-1">
+                              <span className="font-semibold text-foreground">Référence MediKong&nbsp;:</span>
+                              <span className="inline-flex items-center gap-1.5">
+                                <span className="text-muted-foreground">Pack&nbsp;</span>
+                                <span className="font-bold tabular-nums">×{mkPack.packSize}</span>
+                                <PackSizeExplainer
+                                  packSize={mkPack.packSize}
+                                  source={mkPack.source}
+                                  rawTitle={product.name}
+                                  packPriceEur={mkPackPrice || undefined}
+                                  mkUnitPriceEur={mkUnit}
+                                />
+                              </span>
+                              {mkPack.packSize > 1 && (
+                                <span className="text-muted-foreground">
+                                  Pack&nbsp;: <span className="font-bold text-foreground tabular-nums">{formatEur(mkPackPrice)} €</span>
+                                </span>
+                              )}
+                              <span className="text-muted-foreground">
+                                Unitaire&nbsp;: <span className="font-bold text-foreground tabular-nums">{formatEur(mkUnit)} €/u.</span>
+                              </span>
+                              <span className="ml-auto text-[11px] text-muted-foreground italic">
+                                Les écarts ci-dessous sont calculés à l'unité.
+                              </span>
+                            </div>
+                          )}
+
                       <div className="rounded-xl border border-border overflow-hidden">
                         <table className="w-full text-sm">
                           <thead>

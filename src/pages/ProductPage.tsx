@@ -1823,17 +1823,14 @@ export default function ProductPage() {
                         {(() => {
                           const basisSuffix = formatBasisLabel(externalCompareBasis as CompareBasis).replace(/^€\//, '/');
 
-                          // Récap pack MK + prix MK utilisés pour le calcul des écarts
+                          // Récap prix MK : les offres marketplace sont encodées à l'unité.
                           const mkPack = resolvePackSize({
                             offerOverride: (bestOffer as any)?.packSizeOverride,
                             productPackSize: (product as any)?.pack_size,
                             productName: product.name,
                           });
-                          // ⚠️ Convention : bestOffer.unitPriceEur est le prix TEL QU'ENCODÉ
-                          // par le vendeur, qui correspond au pack vendeur (ex: Valerco 3,09 €/pack de 4).
-                          // → Le prix unitaire MediKong se déduit en divisant par le pack.
-                          const mkPackPrice = bestOffer?.unitPriceEur ?? 0;
-                          const mkUnit = mkPack.packSize > 0 ? mkPackPrice / mkPack.packSize : mkPackPrice;
+                          const mkUnit = bestOffer?.unitPriceEur ?? 0;
+                          const mkPackPrice = priceFromUnit(mkUnit, 'pack', mkPack.packSize);
                           return (
                           <>
                           {bestOffer && (
@@ -1846,13 +1843,11 @@ export default function ProductPage() {
                                   packSize={mkPack.packSize}
                                   source={mkPack.source}
                                   rawTitle={product.name}
-                                  packPriceEur={mkPackPrice || undefined}
-                                  mkUnitPriceEur={mkUnit}
                                 />
                               </span>
                               {mkPack.packSize > 1 && (
                                 <span className="text-muted-foreground">
-                                  Pack&nbsp;: <span className="font-bold text-foreground tabular-nums">{formatEur(mkPackPrice)} €</span>
+                                  Pack calculé&nbsp;: <span className="font-bold text-foreground tabular-nums">{formatEur(mkPackPrice)} €</span>
                                 </span>
                               )}
                               <span className="text-muted-foreground">

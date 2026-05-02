@@ -1817,10 +1817,7 @@ export default function ProductPage() {
                           </ToggleGroup>
                         </div>
                         {(() => {
-                          const basisSuffix =
-                            externalCompareBasis === 'pack' ? '/pack' :
-                            externalCompareBasis === 'hundred' ? '/100 u.' :
-                            '/u.';
+                          const basisSuffix = formatBasisLabel(externalCompareBasis as CompareBasis).replace(/^€\//, '/');
 
                           // Récap pack MK + prix MK utilisés pour le calcul des écarts
                           const mkPack = resolvePackSize({

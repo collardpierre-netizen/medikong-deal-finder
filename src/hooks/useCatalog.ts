@@ -7,6 +7,40 @@ import { applyHiddenCategoryFilter } from "@/lib/catalog-filters";
 import { useCallback, useMemo } from "react";
 
 const PRODUCT_SELECT_FIELDS = "id, slug, name, name_fr, name_nl, name_de, brand_name, brand_id, category_id, category_name, gtin, cnk_code, image_url, image_urls, short_description, is_promotion, promotion_label, best_price_excl_vat, best_price_incl_vat, offer_count, total_stock, is_in_stock, created_at";
+
+// Vue catalogue country-aware : projette les stats par pays (`country_*`)
+// + les valeurs globales (`global_*`). Lue dès qu'un pays est sélectionné
+// pour que filtres (prix, stock, has_offers) et tri agissent sur les vraies
+// dispos du pays — au lieu des agrégats globaux.
+const COUNTRY_VIEW_SELECT = "id, slug, name, name_fr, name_nl, name_de, brand_name, brand_id, category_id, category_name, gtin, cnk_code, image_url, image_urls, short_description, is_promotion, promotion_label, created_at, country_offer_count, country_best_price_excl_vat, country_best_price_incl_vat, country_total_stock, country_is_in_stock";
+
+function mapCountryViewRow(row: any): CatalogProduct {
+  return {
+    id: row.id,
+    slug: row.slug,
+    name: row.name,
+    name_fr: row.name_fr,
+    name_nl: row.name_nl,
+    name_de: row.name_de,
+    brand_name: row.brand_name,
+    brand_id: row.brand_id,
+    category_id: row.category_id,
+    category_name: row.category_name,
+    gtin: row.gtin,
+    cnk_code: row.cnk_code,
+    image_url: row.image_url,
+    image_urls: row.image_urls,
+    short_description: row.short_description,
+    is_promotion: row.is_promotion,
+    promotion_label: row.promotion_label,
+    created_at: row.created_at,
+    best_price_excl_vat: row.country_best_price_excl_vat,
+    best_price_incl_vat: row.country_best_price_incl_vat,
+    offer_count: row.country_offer_count ?? 0,
+    total_stock: row.country_total_stock ?? 0,
+    is_in_stock: row.country_is_in_stock ?? false,
+  } as CatalogProduct;
+}
 const CATALOG_QUERY_TIMEOUT_MS = 8000;
 const CATALOG_COUNT_TIMEOUT_MS = 4000;
 const CATEGORY_COUNT_TIMEOUT_MS = 3000;
@@ -104,6 +138,28 @@ async function applyCountryStats<T extends { id: string }>(
   });
 }
 
+/** Noms de colonnes utilisés pour les agrégats — varient entre `products` (global) et la vue country-aware. */
+interface CatalogColumns {
+  bestPriceExclVat: string;
+  offerCount: string;
+  totalStock: string;
+  isInStock: string;
+}
+
+const GLOBAL_COLUMNS: CatalogColumns = {
+  bestPriceExclVat: "best_price_excl_vat",
+  offerCount: "offer_count",
+  totalStock: "total_stock",
+  isInStock: "is_in_stock",
+};
+
+const COUNTRY_COLUMNS: CatalogColumns = {
+  bestPriceExclVat: "country_best_price_excl_vat",
+  offerCount: "country_offer_count",
+  totalStock: "country_total_stock",
+  isInStock: "country_is_in_stock",
+};
+
 function applyCatalogProductFilters(
   query: any,
   filters: CatalogFilters,
@@ -112,8 +168,10 @@ function applyCatalogProductFilters(
     resolvedBrandIds: string[] | null;
     manufacturerIds: string[] | null;
     effectiveSearch?: string;
+    columns?: CatalogColumns;
   }
 ) {
+  const cols = options.columns ?? GLOBAL_COLUMNS;
   let next = query;
 
   if (options.categoryIds?.length) next = next.in("category_id", options.categoryIds);
@@ -125,10 +183,10 @@ function applyCatalogProductFilters(
   // longue (~37 KB) qui casse PostgREST (HTTP 400). Les filtres mots-clés
   // dans `applyHiddenCategoryFilter` couvrent déjà l'essentiel côté serveur.
 
-  if (filters.priceMin !== undefined) next = next.gte("best_price_excl_vat", filters.priceMin);
-  if (filters.priceMax !== undefined) next = next.lte("best_price_excl_vat", filters.priceMax);
-  if (filters.inStock) next = next.eq("is_in_stock", true);
-  if (filters.hasOffers) next = next.gt("offer_count", 0);
+  if (filters.priceMin !== undefined) next = next.gte(cols.bestPriceExclVat, filters.priceMin);
+  if (filters.priceMax !== undefined) next = next.lte(cols.bestPriceExclVat, filters.priceMax);
+  if (filters.inStock) next = next.eq(cols.isInStock, true);
+  if (filters.hasOffers) next = next.gt(cols.offerCount, 0);
 
   if (options.effectiveSearch) {
     const pattern = `%${options.effectiveSearch}%`;
@@ -138,12 +196,12 @@ function applyCatalogProductFilters(
   return next;
 }
 
-function applyCatalogSort(query: any, sort: string) {
+function applyCatalogSort(query: any, sort: string, columns: CatalogColumns = GLOBAL_COLUMNS) {
   switch (sort) {
     case "price_asc":
-      return query.order("best_price_excl_vat", { ascending: true, nullsFirst: false });
+      return query.order(columns.bestPriceExclVat, { ascending: true, nullsFirst: false });
     case "price_desc":
-      return query.order("best_price_excl_vat", { ascending: false });
+      return query.order(columns.bestPriceExclVat, { ascending: false });
     case "name_asc":
       return query.order("name", { ascending: true });
     case "name_desc":
@@ -151,9 +209,9 @@ function applyCatalogSort(query: any, sort: string) {
     case "newest":
       return query.order("created_at", { ascending: false });
     case "stock_desc":
-      return query.order("total_stock", { ascending: false });
+      return query.order(columns.totalStock, { ascending: false });
     default:
-      return query.order("offer_count", { ascending: false });
+      return query.order(columns.offerCount, { ascending: false });
   }
 }
 
@@ -353,32 +411,47 @@ export function useCatalogProducts(filters: CatalogFilters) {
           ? rows
           : rows.filter((r) => !r.category_id || !inactiveCategoryIdSet.has(r.category_id));
 
-      const buildProductQuery = () =>
-        applyCatalogProductFilters(
-          applyHiddenCategoryFilter(
-            supabase.from("products").select(PRODUCT_SELECT_FIELDS).eq("is_active", true)
-          ),
-          filters,
-          filterContext
-        );
+      // Mode country-aware : on lit la vue qui projette les stats du pays
+      // sélectionné. Les filtres prix/stock/has_offers et le tri prix/stock/relevance
+      // s'appliquent alors sur les colonnes pays-spécifiques côté SQL.
+      const useCountryView = !!country;
+      const columns: CatalogColumns = useCountryView ? COUNTRY_COLUMNS : GLOBAL_COLUMNS;
+      const filterContextWithCols = { ...filterContext, columns };
 
-      const buildCountQuery = () =>
-        applyCatalogProductFilters(
-          // Use exact count when no heavy filters are applied so the catalogue header
-          // shows the real total (~348k). Switch to estimated when filters narrow
-          // the result set, for performance on combined OR/IN clauses.
-          applyHiddenCategoryFilter(
-            supabase.from("products").select("id", { count: hasFilters ? "estimated" : "exact" }).eq("is_active", true)
-          ),
-          filters,
-          filterContext
-        );
+      const buildProductQuery = () => {
+        const base = useCountryView
+          ? supabase
+              .from("products_with_country_stats_v")
+              .select(COUNTRY_VIEW_SELECT)
+              .eq("is_active", true)
+              .eq("country_code", country)
+          : supabase.from("products").select(PRODUCT_SELECT_FIELDS).eq("is_active", true);
+        return applyCatalogProductFilters(applyHiddenCategoryFilter(base), filters, filterContextWithCols);
+      };
+
+      const buildCountQuery = () => {
+        const base = useCountryView
+          ? supabase
+              .from("products_with_country_stats_v")
+              .select("id", { count: hasFilters ? "estimated" : "exact" })
+              .eq("is_active", true)
+              .eq("country_code", country)
+          : supabase
+              .from("products")
+              .select("id", { count: hasFilters ? "estimated" : "exact" })
+              .eq("is_active", true);
+        return applyCatalogProductFilters(applyHiddenCategoryFilter(base), filters, filterContextWithCols);
+      };
 
       const countPromise = withTimeout(
         (async () => await buildCountQuery().range(0, 0))(),
         CATALOG_COUNT_TIMEOUT_MS,
         "Le comptage des produits est trop lent."
       ).catch(() => null);
+
+      // Normalise une ligne (vue ou table) vers la forme CatalogProduct.
+      const normalizeRows = (rows: any[]): CatalogProduct[] =>
+        useCountryView ? rows.map(mapCountryViewRow) : (rows as CatalogProduct[]);
 
       if (filters.sort === "relevance" && isDefaultCatalogueView && filters.page <= 2) {
         try {
@@ -398,7 +471,7 @@ export function useCatalogProducts(filters: CatalogFilters) {
             const featuredOrder = featured.map((f) => f.category_id);
             // Sur-fetch pour absorber le filtrage client des catégories inactives.
             const fetchSize = Math.max(filters.perPage * 3, 72);
-            const boostedQuery = applyCatalogSort(buildProductQuery(), filters.sort);
+            const boostedQuery = applyCatalogSort(buildProductQuery(), filters.sort, columns);
             const { data: rawData, error: rawError } = await withTimeout(
               (async () => await boostedQuery.range(0, fetchSize - 1))(),
               CATALOG_QUERY_TIMEOUT_MS,
@@ -420,11 +493,13 @@ export function useCatalogProducts(filters: CatalogFilters) {
 
             const countResult = await countPromise;
 
-            const pageRows = boosted.slice(offset, offset + filters.perPage) as CatalogProduct[];
-            const localized = await applyCountryStats(pageRows, country);
+            const pageRows = boosted.slice(offset, offset + filters.perPage);
+            const products = useCountryView
+              ? normalizeRows(pageRows)
+              : await applyCountryStats(pageRows as CatalogProduct[], country);
 
             return {
-              products: localized,
+              products,
               total: countResult?.count ?? boosted.length,
             };
           }
@@ -435,7 +510,7 @@ export function useCatalogProducts(filters: CatalogFilters) {
 
       // Sur-fetch côté serveur pour absorber le filtrage client (catégories désactivées).
       const overFetch = filters.perPage + Math.min(filters.perPage, 24);
-      const query = applyCatalogSort(buildProductQuery(), filters.sort);
+      const query = applyCatalogSort(buildProductQuery(), filters.sort, columns);
       const { data, error } = await withTimeout(
         (async () => await query.range(offset, offset + overFetch - 1))(),
         CATALOG_QUERY_TIMEOUT_MS,
@@ -447,8 +522,10 @@ export function useCatalogProducts(filters: CatalogFilters) {
       const countResult = await countPromise;
       const total = countResult?.count ?? (filteredRows.length === filters.perPage ? offset + filteredRows.length + 1 : offset + filteredRows.length);
 
-      const localized = await applyCountryStats(filteredRows as CatalogProduct[], country);
-      return { products: localized, total };
+      const products = useCountryView
+        ? normalizeRows(filteredRows)
+        : await applyCountryStats(filteredRows as CatalogProduct[], country);
+      return { products, total };
     },
     placeholderData: (previousData) => previousData,
     staleTime: 2 * 60 * 1000,

@@ -1,10 +1,17 @@
 import { useCurrentVendor } from "@/hooks/useCurrentVendor";
+import { useVendorDashboardKpis } from "@/hooks/useVendorDashboardKpis";
 import { VCard } from "@/components/vendor/ui/VCard";
 import { VStat } from "@/components/vendor/ui/VStat";
 import { Database } from "lucide-react";
 import VendorKycStepper from "@/components/vendor/VendorKycStepper";
 import NoShippingDashboard from "@/components/vendor/dashboard/NoShippingDashboard";
 import SendcloudDashboard from "@/components/vendor/dashboard/SendcloudDashboard";
+
+const eurFormatter = new Intl.NumberFormat("fr-BE", {
+  style: "currency",
+  currency: "EUR",
+  maximumFractionDigits: 0,
+});
 
 const today = new Date();
 const dateStr = today.toLocaleDateString("fr-BE", { weekday: "long", day: "numeric", month: "long", year: "numeric" });

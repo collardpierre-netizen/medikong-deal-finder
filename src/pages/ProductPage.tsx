@@ -733,8 +733,8 @@ export default function ProductPage() {
   // Base de comparaison pour les offres externes : ramène toutes les offres
   // au même conditionnement pour comparer "des pommes à des pommes".
   // Défaut: 'pack' = prix exactement tel qu'importé chez le vendeur (le plus fidèle).
-  // Le toggle permet de ramener à l'unité ou aux 100 unités pour comparer.
-  const [externalCompareBasis, setExternalCompareBasis] = useState<'pack' | 'unit' | 'hundred'>('pack');
+  // Les offres marketplace sont encodées à l'unité ; le toggle permet de convertir en pack ou /100 unités.
+  const [externalCompareBasis, setExternalCompareBasis] = useState<'pack' | 'unit' | 'hundred'>('unit');
   const offerSectionRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
 

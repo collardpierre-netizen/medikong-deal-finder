@@ -1421,8 +1421,8 @@ export default function ProductPage() {
                               </div>
                               <ToggleGroup
                                 type="single"
-                                value={externalCompareBasis}
-                                onValueChange={(v) => v && setExternalCompareBasis(v as 'pack' | 'unit' | 'hundred')}
+                                value={offerCompareBasis}
+                                onValueChange={(v) => v && setOfferCompareBasis(v as 'pack' | 'unit' | 'hundred')}
                                 className="bg-muted/40 rounded-lg p-0.5"
                                 size="sm"
                               >
@@ -1456,7 +1456,7 @@ export default function ProductPage() {
                         <div className="hidden md:grid grid-cols-[1.5fr_2fr_0.8fr_1.5fr] gap-3 px-1 pb-3 text-xs font-semibold text-muted-foreground border-b border-border">
                           <span>Fournisseur</span>
                           <span>
-                            Prix {externalCompareBasis === 'pack' ? '/ pack' : externalCompareBasis === 'unit' ? '/ unité' : '/ 100 u.'} · MOV
+                            Prix {offerCompareBasis === 'pack' ? '/ pack' : offerCompareBasis === 'unit' ? '/ unité' : '/ 100 u.'} · MOV
                           </span>
                           <span>Stock</span>
                           <span className="text-right">Commander</span>
@@ -1475,7 +1475,7 @@ export default function ProductPage() {
                             isTVAC={isTVAC}
                             categoryId={categoryData?.category?.id}
                             discountPercentage={Number((product as any)?.discount_percentage) || 0}
-                            compareBasis={externalCompareBasis}
+                            compareBasis={offerCompareBasis}
                             packSize={resolvePackSize({
                               offerOverride: (bestOffer as any)?.packSizeOverride,
                               productPackSize: (product as any)?.pack_size,
@@ -1518,7 +1518,7 @@ export default function ProductPage() {
 
                         <div className="hidden md:grid grid-cols-[1.5fr_2fr_0.8fr_1.5fr] gap-3 px-1 pb-3 text-xs font-semibold text-muted-foreground border-b border-border">
                           <span>Fournisseur</span>
-                          <span>Prix {externalCompareBasis === 'pack' ? '/ pack' : externalCompareBasis === 'unit' ? '/ unité' : '/ 100 u.'} · MOV</span>
+                          <span>Prix {offerCompareBasis === 'pack' ? '/ pack' : offerCompareBasis === 'unit' ? '/ unité' : '/ 100 u.'} · MOV</span>
                           <span>Stock</span>
                           <span className="text-right">Commander</span>
                         </div>
@@ -1541,7 +1541,7 @@ export default function ProductPage() {
                               categoryId={categoryData?.category?.id}
                               bestPrice={bestOffer ? bestOfferDisplayPrice : undefined}
                               discountPercentage={Number((product as any)?.discount_percentage) || 0}
-                              compareBasis={externalCompareBasis}
+                              compareBasis={offerCompareBasis}
                               packSize={resolvePackSize({
                                 offerOverride: (offer as any)?.packSizeOverride,
                                 productPackSize: (product as any)?.pack_size,

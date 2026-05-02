@@ -1888,7 +1888,7 @@ export default function ProductPage() {
                                 grossisteHT,
                                 publicHTVA,
                               });
-                              const packBadge = packSizeSourceBadge(mpPack.source);
+                              // Badge pack désormais rendu via <PackSizeExplainer/> (popover détaillé).
 
                               // Multiplicateur d'affichage selon la base sélectionnée.
                               // Les valeurs ci-dessus sont à l'unité ; on multiplie pour pack ou /100u.

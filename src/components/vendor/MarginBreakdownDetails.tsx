@@ -185,6 +185,17 @@ export function MarginBreakdownDetails({
                   value={`${fmtEur(breakdown.commission)} (${fmtPct(breakdown.commissionPct)})`}
                   highlight="commission"
                 />
+                {sourceMeta && (
+                  <Row
+                    label="↳ Source de la commission"
+                    value={
+                      effective?.valid_until
+                        ? `${sourceMeta.label} · valide jusqu'au ${new Date(effective.valid_until).toLocaleDateString("fr-FR")}`
+                        : sourceMeta.label
+                    }
+                    muted
+                  />
+                )}
                 <Row
                   label="= Net en poche"
                   value={fmtEur(breakdown.netRevenue)}

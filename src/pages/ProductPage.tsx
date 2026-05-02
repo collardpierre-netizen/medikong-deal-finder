@@ -152,9 +152,11 @@ function OfferRow({
   const displayCode = offer.displayCode || offer.sellerId.slice(0, 6).toUpperCase();
   // sellerName already encapsulates the anonymization rules (real name vs "Fournisseur XXXXXX")
   const sellerLabel = offer.sellerName || `Fournisseur ${displayCode}`;
-  // Prix marketplace stocké à l'unité. La base "pack" multiplie par le conditionnement.
+  // ⚠️ `offers.price_excl_vat` (offer.unitPriceEur) est le prix de l'unité de vente
+  // côté vendeur = prix du PACK. On dérive donc le vrai €/u en divisant par le packSize.
   const packSize = Math.max(1, packSizeProp ?? 1);
-  const baseUnitPrice = isTVAC ? offer.unitPriceInclVat : offer.unitPriceEur;
+  const basePackPrice = isTVAC ? offer.unitPriceInclVat : offer.unitPriceEur;
+  const baseUnitPrice = packSize > 0 ? basePackPrice / packSize : basePackPrice;
   const displayPrice = priceFromUnit(baseUnitPrice, compareBasis as CompareBasis, packSize);
   const basisSuffix = ` ${formatBasisLabel(compareBasis as CompareBasis, { packSize, withPackSize: true })}`;
   const priceLabel = isTVAC ? "TVAC" : "HTVA";

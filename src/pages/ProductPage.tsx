@@ -1858,7 +1858,7 @@ export default function ProductPage() {
                                 Unitaire&nbsp;: <span className="font-bold text-foreground tabular-nums">{formatEur(mkUnit)} €/u.</span>
                               </span>
                               <span className="ml-auto text-[11px] text-muted-foreground italic">
-                                Les écarts ci-dessous sont calculés à l'unité.
+                                Le % d'écart est invariant ; le montant € suit la base ({externalCompareBasis === 'pack' ? '€/pack' : externalCompareBasis === 'hundred' ? '€/100 u.' : '€/unité'}).
                               </span>
                             </div>
                           )}
@@ -1890,10 +1890,10 @@ export default function ProductPage() {
                                       </a>
                                     </TooltipTrigger>
                                     <TooltipContent side="top" className="max-w-xs text-xs leading-relaxed">
-                                      <p className="font-semibold mb-1">Calcul à l'unité, pas au pack</p>
+                                      <p className="font-semibold mb-1">Pourcentage invariant, montant adapté</p>
                                       <p>
-                                        Le pourcentage d'écart compare toujours le <strong>prix unitaire</strong> de l'offre
-                                        externe à celui de la référence MediKong, indépendamment de la base affichée
+                                        Le <strong>pourcentage d'écart</strong> compare le prix unitaire et reste identique quelle
+                                        que soit la base affichée. Le <strong>montant en €</strong>, lui, suit la base sélectionnée
                                         (€/pack, €/u. ou €/100 u.).
                                       </p>
                                       <p className="mt-1 text-muted-foreground">
@@ -2040,7 +2040,7 @@ export default function ProductPage() {
                                       <div className="flex flex-col items-end gap-0.5">
                                         <span className="inline-flex items-center gap-0.5">
                                           <span className={`font-bold tabular-nums text-[12px] ${mkCheaper ? "text-emerald-600" : "text-destructive"}`}>
-                                            {mkCheaper ? "−" : "+"}{formatEur(Math.abs(deltaAbs))}&nbsp;€
+                                            {mkCheaper ? "−" : "+"}{formatEur(Math.abs(deltaAbs) * mult)}&nbsp;€
                                           </span>
                                           <span className={`inline-flex rounded-full px-1 py-0.5 text-[9px] font-semibold leading-none ${mkCheaper ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-destructive"}`}>
                                             {mkCheaper ? "−" : "+"}{Math.abs(deltaPct!)}%
@@ -2052,6 +2052,11 @@ export default function ProductPage() {
                                             productPackSize: (product as any)?.pack_size,
                                             productName: product.name,
                                           });
+                                          const mkBasis = mkHT * mult;
+                                          const mkBasisLabel =
+                                            externalCompareBasis === 'pack' ? `€/pack×${packDiv}` :
+                                            externalCompareBasis === 'hundred' ? '€/100u' :
+                                            '€/u';
                                           return (
                                             <a
                                               href="#mk-reference-pack"
@@ -2063,7 +2068,7 @@ export default function ProductPage() {
                                               className="inline-flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground tabular-nums leading-none"
                                             >
                                               <span className="rounded border border-border bg-muted/40 px-1 py-0.5">Pack MK&nbsp;×{mkPackForRow.packSize}</span>
-                                              <span className="rounded border border-border bg-muted/40 px-1 py-0.5">MK&nbsp;{formatEur(mkHT)}&nbsp;€/u</span>
+                                              <span className="rounded border border-border bg-muted/40 px-1 py-0.5">MK&nbsp;{formatEur(mkBasis)}&nbsp;{mkBasisLabel}</span>
                                             </a>
                                           );
                                         })()}
@@ -2083,7 +2088,7 @@ export default function ProductPage() {
                           );
                         })()}
                         <p className="text-[11px] text-muted-foreground italic px-1">
-                          ⓘ L'écart MK reste calculé à l'unité, indépendamment de la base affichée.
+                          ⓘ Le pourcentage d'écart est invariant ; le montant en euros suit la base choisie ({externalCompareBasis === 'pack' ? '€/pack' : externalCompareBasis === 'hundred' ? '€/100 u.' : '€/unité'}).
                         </p>
                       </div>
                     ) : (

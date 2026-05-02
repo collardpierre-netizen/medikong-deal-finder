@@ -190,7 +190,7 @@ const AdminSidebar = () => {
                   style={isActive(item.path) ? { backgroundColor: "#1B5BDA" } : {}}
                 >
                   <item.icon size={16} strokeWidth={1.8} />
-                  <span className="flex-1">{t(item.labelKey)}</span>
+                  <span className="flex-1">{item.label ?? (item.labelKey ? t(item.labelKey) : "")}</span>
                   {showBadge && (
                     <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold text-white" style={{ backgroundColor: "#EF4444", minWidth: 18, textAlign: "center" }}>
                       {pendingVendorsCount}

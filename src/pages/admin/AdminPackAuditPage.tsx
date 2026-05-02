@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Loader2, Package, Download, ExternalLink, Check, X } from "lucide-react";
+import { Loader2, Package, Download, ExternalLink, Check, X, Bell } from "lucide-react";
 import { toast } from "sonner";
 
 type PackStatus =

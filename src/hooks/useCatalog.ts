@@ -447,7 +447,8 @@ export function useCatalogProducts(filters: CatalogFilters) {
       const countResult = await countPromise;
       const total = countResult?.count ?? (filteredRows.length === filters.perPage ? offset + filteredRows.length + 1 : offset + filteredRows.length);
 
-      return { products: filteredRows as CatalogProduct[], total };
+      const localized = await applyCountryStats(filteredRows as CatalogProduct[], country);
+      return { products: localized, total };
     },
     placeholderData: (previousData) => previousData,
     staleTime: 2 * 60 * 1000,

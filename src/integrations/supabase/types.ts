@@ -12031,6 +12031,72 @@ export type Database = {
         Args: { _source_id: string; _source_type: string }
         Returns: number
       }
+      admin_review_offer_commission: {
+        Args: { _decision: string; _offer_id: string; _reason?: string }
+        Returns: {
+          applied_margin_percentage: number | null
+          applied_margin_rule_id: string | null
+          campaign_id: string | null
+          commission_model: string | null
+          commission_override_reason: string | null
+          commission_override_status:
+            | Database["public"]["Enums"]["commission_override_status"]
+            | null
+          commission_override_updated_at: string | null
+          commission_override_updated_by: string | null
+          commission_rate: number | null
+          commission_valid_from: string | null
+          commission_valid_until: string | null
+          country_code: string | null
+          created_at: string
+          delivery_days: number | null
+          down_payment_pct: number | null
+          estimated_delivery_days: number | null
+          fixed_commission_amount: number | null
+          has_extended_delivery: boolean | null
+          id: string
+          is_active: boolean
+          is_qogita_backed: boolean
+          is_top_seller: boolean | null
+          is_traceable: boolean | null
+          margin_amount: number | null
+          margin_split_pct: number | null
+          max_delivery_days: number | null
+          min_delivery_days: number | null
+          moq: number
+          mov: number | null
+          mov_amount: number | null
+          mov_currency: string | null
+          pack_size_override: number | null
+          price_excl_vat: number
+          price_incl_vat: number
+          price_tiers: Json | null
+          product_id: string
+          purchase_price: number | null
+          purchase_price_excl_vat: number | null
+          qogita_base_delay_days: number | null
+          qogita_base_price: number | null
+          qogita_offer_qid: string | null
+          qogita_seller_fid: string | null
+          shipping_from_country: string | null
+          stock_quantity: number
+          stock_status: Database["public"]["Enums"]["stock_status_enum"]
+          suggested_retail_price_cents: number | null
+          suggested_retail_price_source:
+            | Database["public"]["Enums"]["pvp_source_enum"]
+            | null
+          synced_at: string | null
+          updated_at: string
+          vat_rate: number
+          vendor_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "offers"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       admin_review_product_commission: {
         Args: { _decision: string; _id: string; _reason?: string }
         Returns: {

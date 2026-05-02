@@ -1679,10 +1679,11 @@ export default function ProductPage() {
                                       externalCompareBasis === 'pack' ? displayPrice :
                                       externalCompareBasis === 'hundred' ? perUnit * 100 :
                                       perUnit;
-                                    const headlineSuffix =
-                                      externalCompareBasis === 'pack' ? `/pack${pack.packSize > 1 ? ` de ${pack.packSize}` : ''}` :
-                                      externalCompareBasis === 'hundred' ? '/100 u.' :
-                                      '/unité';
+                                    // Suffixes harmonisés (cf. formatBasisLabel) : /pack[ de N], /u., /100 u.
+                                    const headlineSuffix = formatBasisLabel(
+                                      externalCompareBasis as CompareBasis,
+                                      { packSize: pack.packSize, withPackSize: true }
+                                    ).replace(/^€\//, '/');
                                     return (
                                       <>
                                         <div className="flex items-baseline justify-end gap-2">

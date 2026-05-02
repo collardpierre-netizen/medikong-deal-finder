@@ -118,6 +118,7 @@ const AdminCommandes = lazyWithRetry(() => import("./pages/admin/AdminCommandes"
 const AdminFinances = lazyWithRetry(() => import("./pages/admin/AdminFinances"), "AdminFinances");
 const AdminLitiges = lazyWithRetry(() => import("./pages/admin/AdminLitiges"), "AdminLitiges");
 const AdminVeillePrix = lazyWithRetry(() => import("./pages/admin/AdminVeillePrix"), "AdminVeillePrix");
+const AdminPackAnomalies = lazyWithRetry(() => import("./pages/admin/AdminPackAnomalies"), "AdminPackAnomalies");
 const AdminLeads = lazyWithRetry(() => import("./pages/admin/AdminLeads"), "AdminLeads");
 const AdminAnalytics = lazyWithRetry(() => import("./pages/admin/AdminAnalytics"), "AdminAnalytics");
 const AdminReglementaire = lazyWithRetry(() => import("./pages/admin/AdminReglementaire"), "AdminReglementaire");
@@ -382,6 +383,7 @@ const App = () => (
               <Route path="litiges" element={<LP><AdminLitiges /></LP>} />
               <Route path="finances" element={<LP><AdminFinances /></LP>} />
               <Route path="veille-prix" element={<LP><AdminVeillePrix /></LP>} />
+              <Route path="pack-anomalies" element={<LP><AdminPackAnomalies /></LP>} />
               <Route path="prix-cockpit" element={<LP><AdminPriceCockpitPage /></LP>} />
               <Route path="leads" element={<LP><AdminLeads /></LP>} />
               <Route path="analytics" element={<LP><AdminAnalytics /></LP>} />

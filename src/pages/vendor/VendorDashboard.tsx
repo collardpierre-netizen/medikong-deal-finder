@@ -18,9 +18,14 @@ const dateStr = today.toLocaleDateString("fr-BE", { weekday: "long", day: "numer
 
 export default function VendorDashboard() {
   const { data: vendor } = useCurrentVendor();
+  const { data: kpis } = useVendorDashboardKpis(vendor?.id);
 
   const isApproved = vendor?.validation_status === "approved";
   const shippingMode = (vendor as any)?.vendor_shipping_mode ?? "no_shipping";
+
+  const activeOffers = kpis?.activeOffers ?? 0;
+  const monthOrders = kpis?.monthOrders ?? 0;
+  const revenueEur = (kpis?.revenueCents ?? 0) / 100;
 
   return (
     <div className="space-y-5">
@@ -38,9 +43,27 @@ export default function VendorDashboard() {
       {isApproved && (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <VStat label="CA du mois" value="0 EUR" icon="Euro" color="#1B5BDA" sub="aucune vente" />
-            <VStat label="Commandes" value="0" icon="ShoppingCart" color="#059669" sub="ce mois" />
-            <VStat label="Offres actives" value="0" icon="Tag" color="#7C3AED" sub="aucune offre" />
+            <VStat
+              label="CA du mois"
+              value={revenueEur > 0 ? eurFormatter.format(revenueEur) : "0 EUR"}
+              icon="Euro"
+              color="#1B5BDA"
+              sub={revenueEur > 0 ? "ce mois" : "aucune vente"}
+            />
+            <VStat
+              label="Commandes"
+              value={String(monthOrders)}
+              icon="ShoppingCart"
+              color="#059669"
+              sub="ce mois"
+            />
+            <VStat
+              label="Offres actives"
+              value={String(activeOffers)}
+              icon="Tag"
+              color="#7C3AED"
+              sub={activeOffers > 0 ? `${activeOffers} en ligne` : "aucune offre"}
+            />
             <VStat label="Taux Buy Box" value="—" icon="Trophy" color="#F59E0B" sub="pas de données" />
           </div>
 

@@ -145,8 +145,8 @@ export default function AdminMarketDeltaThresholdsPage() {
 
   const toggleActive = useMutation({
     mutationFn: async ({ id, value }: { id: string; value: boolean }) => {
-      const { error } = await supabase
-        .from("market_delta_thresholds" as never)
+      const { error } = await (supabase
+        .from("market_delta_thresholds" as never) as any)
         .update({ is_active: value })
         .eq("id", id);
       if (error) throw error;

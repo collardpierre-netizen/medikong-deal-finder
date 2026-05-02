@@ -1825,8 +1825,11 @@ export default function ProductPage() {
                             productPackSize: (product as any)?.pack_size,
                             productName: product.name,
                           });
-                          const mkUnit = bestOffer?.unitPriceEur ?? 0;
-                          const mkPackPrice = mkUnit * mkPack.packSize;
+                          // ⚠️ Convention : bestOffer.unitPriceEur est le prix TEL QU'ENCODÉ
+                          // par le vendeur, qui correspond au pack vendeur (ex: Valerco 3,09 €/pack de 4).
+                          // → Le prix unitaire MediKong se déduit en divisant par le pack.
+                          const mkPackPrice = bestOffer?.unitPriceEur ?? 0;
+                          const mkUnit = mkPack.packSize > 0 ? mkPackPrice / mkPack.packSize : mkPackPrice;
                           return (
                           <>
                           {bestOffer && (
@@ -1902,7 +1905,14 @@ export default function ProductPage() {
                           </thead>
                           <tbody className="divide-y divide-border">
                             {marketPriceItems.map((mp: any) => {
-                              const mkHT = bestOffer ? bestOffer.unitPriceEur : 0;
+                              // ⚠️ bestOffer.unitPriceEur est le prix au pack vendeur ; on le ramène
+                              // à l'unité avec le pack MK pour comparer à du marché normalisé /unité.
+                              const mkPackForUnit = resolvePackSize({
+                                offerOverride: (bestOffer as any)?.packSizeOverride,
+                                productPackSize: (product as any)?.pack_size,
+                                productName: product?.name,
+                              }).packSize || 1;
+                              const mkHT = bestOffer ? (bestOffer.unitPriceEur / mkPackForUnit) : 0;
                               const isOnline = mp.market_price_sources?.source_type === "online";
                               const tvaRate = Number(mp.tva_rate || 21);
 

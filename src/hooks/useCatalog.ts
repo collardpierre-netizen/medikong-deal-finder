@@ -7,6 +7,40 @@ import { applyHiddenCategoryFilter } from "@/lib/catalog-filters";
 import { useCallback, useMemo } from "react";
 
 const PRODUCT_SELECT_FIELDS = "id, slug, name, name_fr, name_nl, name_de, brand_name, brand_id, category_id, category_name, gtin, cnk_code, image_url, image_urls, short_description, is_promotion, promotion_label, best_price_excl_vat, best_price_incl_vat, offer_count, total_stock, is_in_stock, created_at";
+
+// Vue catalogue country-aware : projette les stats par pays (`country_*`)
+// + les valeurs globales (`global_*`). Lue dès qu'un pays est sélectionné
+// pour que filtres (prix, stock, has_offers) et tri agissent sur les vraies
+// dispos du pays — au lieu des agrégats globaux.
+const COUNTRY_VIEW_SELECT = "id, slug, name, name_fr, name_nl, name_de, brand_name, brand_id, category_id, category_name, gtin, cnk_code, image_url, image_urls, short_description, is_promotion, promotion_label, created_at, country_offer_count, country_best_price_excl_vat, country_best_price_incl_vat, country_total_stock, country_is_in_stock";
+
+function mapCountryViewRow(row: any): CatalogProduct {
+  return {
+    id: row.id,
+    slug: row.slug,
+    name: row.name,
+    name_fr: row.name_fr,
+    name_nl: row.name_nl,
+    name_de: row.name_de,
+    brand_name: row.brand_name,
+    brand_id: row.brand_id,
+    category_id: row.category_id,
+    category_name: row.category_name,
+    gtin: row.gtin,
+    cnk_code: row.cnk_code,
+    image_url: row.image_url,
+    image_urls: row.image_urls,
+    short_description: row.short_description,
+    is_promotion: row.is_promotion,
+    promotion_label: row.promotion_label,
+    created_at: row.created_at,
+    best_price_excl_vat: row.country_best_price_excl_vat,
+    best_price_incl_vat: row.country_best_price_incl_vat,
+    offer_count: row.country_offer_count ?? 0,
+    total_stock: row.country_total_stock ?? 0,
+    is_in_stock: row.country_is_in_stock ?? false,
+  } as CatalogProduct;
+}
 const CATALOG_QUERY_TIMEOUT_MS = 8000;
 const CATALOG_COUNT_TIMEOUT_MS = 4000;
 const CATEGORY_COUNT_TIMEOUT_MS = 3000;

@@ -389,6 +389,7 @@ const App = () => (
               <Route path="pack-anomalies" element={<LP><AdminPackAnomalies /></LP>} />
               <Route path="prix-cockpit" element={<LP><AdminPriceCockpitPage /></LP>} />
               <Route path="market-delta-anomalies" element={<LP><AdminMarketDeltaAnomaliesPage /></LP>} />
+              <Route path="market-delta-thresholds" element={<LP><AdminMarketDeltaThresholdsPage /></LP>} />
               <Route path="pack-audit" element={<LP><AdminPackAuditPage /></LP>} />
               <Route path="leads" element={<LP><AdminLeads /></LP>} />
               <Route path="analytics" element={<LP><AdminAnalytics /></LP>} />

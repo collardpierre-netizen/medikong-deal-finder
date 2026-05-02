@@ -60,3 +60,20 @@ export function formatEurWithBasis(
 ): string {
   return `${formatEur(n)} ${formatBasisLabel(basis, opts)}`;
 }
+
+/**
+ * Convertit un prix source exprimé à l'unité vers la base d'affichage choisie.
+ * Sur les offres marketplace, `offers.price_excl_vat` / `unitPriceEur` est un prix unitaire.
+ */
+export function priceFromUnit(
+  unitPrice: number | null | undefined,
+  basis: CompareBasis,
+  packSize: number | null | undefined = 1
+): number {
+  const unit = Number(unitPrice);
+  if (!Number.isFinite(unit)) return 0;
+  const pack = Math.max(1, Number(packSize) || 1);
+  if (basis === "pack") return unit * pack;
+  if (basis === "hundred") return unit * 100;
+  return unit;
+}

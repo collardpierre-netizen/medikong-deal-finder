@@ -1904,14 +1904,8 @@ export default function ProductPage() {
                           </thead>
                           <tbody className="divide-y divide-border">
                             {marketPriceItems.map((mp: any) => {
-                              // ⚠️ bestOffer.unitPriceEur est le prix au pack vendeur ; on le ramène
-                              // à l'unité avec le pack MK pour comparer à du marché normalisé /unité.
-                              const mkPackForUnit = resolvePackSize({
-                                offerOverride: (bestOffer as any)?.packSizeOverride,
-                                productPackSize: (product as any)?.pack_size,
-                                productName: product?.name,
-                              }).packSize || 1;
-                              const mkHT = bestOffer ? (bestOffer.unitPriceEur / mkPackForUnit) : 0;
+                              // Prix MediKong HTVA à l'unité (offers.price_excl_vat est unitaire).
+                              const mkHT = bestOffer ? bestOffer.unitPriceEur : 0;
                               const isOnline = mp.market_price_sources?.source_type === "online";
                               const tvaRate = Number(mp.tva_rate || 21);
 
@@ -1921,7 +1915,7 @@ export default function ProductPage() {
                               // divise tous les prix par ce pack pour comparer "des pommes à des pommes".
                               const mpPack = resolvePackSize({
                                 offerOverride: null,
-                                productPackSize: (product as any)?.pack_size,
+                                productPackSize: null,
                                 productName: product?.name,
                                 offerTitle: mp.product_name_source,
                                 offerUrl: mp.product_url,
@@ -2055,7 +2049,7 @@ export default function ProductPage() {
                                             productPackSize: (product as any)?.pack_size,
                                             productName: product.name,
                                           });
-                                          const mkBasis = mkHT * mult;
+                                          const mkBasis = priceFromUnit(mkHT, externalCompareBasis as CompareBasis, mkPackForRow.packSize);
                                           const mkBasisLabel = formatBasisLabel(externalCompareBasis as CompareBasis);
                                           return (
                                             <a

@@ -1858,7 +1858,7 @@ export default function ProductPage() {
                                 Unitaire&nbsp;: <span className="font-bold text-foreground tabular-nums">{formatEur(mkUnit)} €/u.</span>
                               </span>
                               <span className="ml-auto text-[11px] text-muted-foreground italic">
-                                Les écarts ci-dessous sont calculés à l'unité.
+                                Le % d'écart est invariant ; le montant € suit la base ({externalCompareBasis === 'pack' ? '€/pack' : externalCompareBasis === 'hundred' ? '€/100 u.' : '€/unité'}).
                               </span>
                             </div>
                           )}
@@ -1890,10 +1890,10 @@ export default function ProductPage() {
                                       </a>
                                     </TooltipTrigger>
                                     <TooltipContent side="top" className="max-w-xs text-xs leading-relaxed">
-                                      <p className="font-semibold mb-1">Calcul à l'unité, pas au pack</p>
+                                      <p className="font-semibold mb-1">Pourcentage invariant, montant adapté</p>
                                       <p>
-                                        Le pourcentage d'écart compare toujours le <strong>prix unitaire</strong> de l'offre
-                                        externe à celui de la référence MediKong, indépendamment de la base affichée
+                                        Le <strong>pourcentage d'écart</strong> compare le prix unitaire et reste identique quelle
+                                        que soit la base affichée. Le <strong>montant en €</strong>, lui, suit la base sélectionnée
                                         (€/pack, €/u. ou €/100 u.).
                                       </p>
                                       <p className="mt-1 text-muted-foreground">

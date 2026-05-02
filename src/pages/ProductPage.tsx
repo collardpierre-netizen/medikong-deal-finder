@@ -1829,14 +1829,16 @@ export default function ProductPage() {
                         {(() => {
                           const basisSuffix = formatBasisLabel(externalCompareBasis as CompareBasis).replace(/^€\//, '/');
 
-                          // Récap prix MK : les offres marketplace sont encodées à l'unité.
+                          // Récap prix MK : `offers.price_excl_vat` est le prix du PACK (unité de vente vendeur).
+                          // -> mkPackPrice = valeur stockée, mkUnit = pack ÷ packSize.
                           const mkPack = resolvePackSize({
                             offerOverride: (bestOffer as any)?.packSizeOverride,
                             productPackSize: (product as any)?.pack_size,
                             productName: product.name,
                           });
-                          const mkUnit = bestOffer?.unitPriceEur ?? 0;
-                          const mkPackPrice = priceFromUnit(mkUnit, 'pack', mkPack.packSize);
+                          const _mkPackSize = Math.max(1, mkPack.packSize || 1);
+                          const mkPackPrice = bestOffer?.unitPriceEur ?? 0;
+                          const mkUnit = mkPackPrice / _mkPackSize;
                           return (
                           <>
                           {bestOffer && (

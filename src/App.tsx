@@ -147,6 +147,7 @@ const AdminRfqCreditsPage = lazyWithRetry(() => import("./pages/admin/AdminRfqCr
 const AdminRfqLedgerPage = lazyWithRetry(() => import("./pages/admin/AdminRfqLedgerPage"), "AdminRfqLedgerPage");
 const AdminRfqPlansPage = lazyWithRetry(() => import("./pages/admin/AdminRfqPlansPage"), "AdminRfqPlansPage");
 const AdminPriceCockpitPage = lazyWithRetry(() => import("./pages/admin/AdminPriceCockpitPage"), "AdminPriceCockpitPage");
+const AdminMarketDeltaAnomaliesPage = lazyWithRetry(() => import("./pages/admin/AdminMarketDeltaAnomaliesPage"), "AdminMarketDeltaAnomaliesPage");
 const AdminRfqRemindersPage = lazyWithRetry(() => import("./pages/admin/AdminRfqRemindersPage"), "AdminRfqRemindersPage");
 const AdminRfqRoutingTestPage = lazyWithRetry(() => import("./pages/admin/AdminRfqRoutingTestPage"), "AdminRfqRoutingTestPage");
 const AdminRfqRoutingAuditPage = lazyWithRetry(() => import("./pages/admin/AdminRfqRoutingAuditPage"), "AdminRfqRoutingAuditPage");
@@ -385,6 +386,7 @@ const App = () => (
               <Route path="veille-prix" element={<LP><AdminVeillePrix /></LP>} />
               <Route path="pack-anomalies" element={<LP><AdminPackAnomalies /></LP>} />
               <Route path="prix-cockpit" element={<LP><AdminPriceCockpitPage /></LP>} />
+              <Route path="market-delta-anomalies" element={<LP><AdminMarketDeltaAnomaliesPage /></LP>} />
               <Route path="leads" element={<LP><AdminLeads /></LP>} />
               <Route path="analytics" element={<LP><AdminAnalytics /></LP>} />
               <Route path="reglementaire" element={<LP><AdminReglementaire /></LP>} />

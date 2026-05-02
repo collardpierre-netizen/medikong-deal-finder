@@ -1,20 +1,24 @@
 import { describe, it, expect } from "vitest";
 import { resolvePackSize, extractPackSizeFromName } from "@/lib/pack-size";
 import { computeMarketDelta } from "@/lib/market-price-delta";
+import { priceFromUnit } from "@/lib/price-format";
 
 /**
  * Tests de conversion pack -> unitaire et de leur impact sur computeMarketDelta.
  *
- * Cas pivot du bug Valerco : un pack MK à 7,54 € avec pack_size = 4 doit
- * donner 1,885 €/u. (et non 7,54 €/u.). Sans cette résolution, l'écart vs
- * une référence externe à 1,98 €/u. était calculé en pack vs unit -> +281 %
- * (faux positif). Après correction : (1,885 - 1,98) / 1,885 ≈ -5 % -> MK -5 %.
+ * Convention actuelle : les offres marketplace (`offers.price_excl_vat`) sont
+ * encodées à l'unité. Le pack sert uniquement à convertir l'affichage en €/pack.
  */
 
 const toUnit = (packPrice: number, packSize: number) =>
   Number((packPrice / packSize).toFixed(4));
 
 describe("pack -> unitaire — cas représentatifs", () => {
+  it("offre marketplace 2,10 €/u. avec pack=24 affiche 2,10 €/u. et 50,40 €/pack", () => {
+    expect(priceFromUnit(2.1, "unit", 24)).toBeCloseTo(2.1, 2);
+    expect(priceFromUnit(2.1, "pack", 24)).toBeCloseTo(50.4, 2);
+  });
+
   it("7,54 € sur pack=4 donne 1,885 €/u.", () => {
     expect(toUnit(7.54, 4)).toBeCloseTo(1.885, 3);
   });

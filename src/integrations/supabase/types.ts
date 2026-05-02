@@ -13759,6 +13759,7 @@ export type Database = {
         Args: { _threshold_pct?: number; _triggered_by?: string }
         Returns: Json
       }
+      run_pack_mismatch_alert_job: { Args: never; Returns: Json }
       snapshot_vendor_offer_history: { Args: never; Returns: Json }
       start_vendor_market_intel_trial: {
         Args: { _notes?: string; _trial_days?: number; _vendor_id: string }

@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Loader2, Package, Download, ExternalLink, Check, X } from "lucide-react";
+import { Loader2, Package, Download, ExternalLink, Check, X, Bell } from "lucide-react";
 import { toast } from "sonner";
 
 type PackStatus =
@@ -98,6 +98,22 @@ export default function AdminPackAuditPage() {
     onError: (e: any) => toast.error(`Erreur : ${e?.message ?? "inconnue"}`),
   });
 
+  const runAlert = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.rpc("run_pack_mismatch_alert_job" as never);
+      if (error) throw error;
+      return data as { status: string; total_issues: number };
+    },
+    onSuccess: (res: any) => {
+      if (res?.total_issues > 0) {
+        toast.success(`Alerte envoyée : ${res.total_issues} produit(s) à corriger`);
+      } else {
+        toast.success("Aucune incohérence détectée — pas d'alerte envoyée");
+      }
+    },
+    onError: (e: any) => toast.error(`Erreur : ${e?.message ?? "inconnue"}`),
+  });
+
   const stats = useMemo(() => {
     const list = data ?? [];
     return {
@@ -169,9 +185,15 @@ export default function AdminPackAuditPage() {
             packs vus chez les vendeurs externes, et statut de cohérence.
           </p>
         </div>
-        <Button onClick={exportCsv} variant="outline" disabled={!data?.length}>
-          <Download className="h-4 w-4 mr-2" /> Exporter CSV
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={() => runAlert.mutate()} variant="default" disabled={runAlert.isPending}>
+            {runAlert.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Bell className="h-4 w-4 mr-2" />}
+            Lancer l'alerte maintenant
+          </Button>
+          <Button onClick={exportCsv} variant="outline" disabled={!data?.length}>
+            <Download className="h-4 w-4 mr-2" /> Exporter CSV
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">

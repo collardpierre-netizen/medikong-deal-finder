@@ -347,9 +347,9 @@ function OfferRow({
                 </span>
                 <span className="text-sm text-foreground whitespace-nowrap">{offer.movEur > 0 ? <>{formatEur(offer.movEur)}&nbsp;€</> : "—"}</span>
               </div>
-              {compareBasis !== 'pack' && packSize > 1 && (
+              {compareBasis !== 'unit' && packSize > 1 && (
                 <span className="text-[10px] text-muted-foreground">
-                  Pack vendeur : {formatEur(basePackPrice)}&nbsp;€ /pack de {packSize}
+                  Prix unitaire : {formatEur(baseUnitPrice)}&nbsp;€ /u. · pack de {packSize}
                 </span>
               )}
               <ProfileResolvedPriceBadge

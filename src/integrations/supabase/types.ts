@@ -1297,6 +1297,45 @@ export type Database = {
         }
         Relationships: []
       }
+      commission_overrides_audit: {
+        Row: {
+          action: string
+          after_data: Json | null
+          before_data: Json | null
+          changed_at: string
+          changed_by: string | null
+          id: number
+          offer_id: string | null
+          product_id: string | null
+          scope: string
+          vendor_id: string | null
+        }
+        Insert: {
+          action: string
+          after_data?: Json | null
+          before_data?: Json | null
+          changed_at?: string
+          changed_by?: string | null
+          id?: number
+          offer_id?: string | null
+          product_id?: string | null
+          scope: string
+          vendor_id?: string | null
+        }
+        Update: {
+          action?: string
+          after_data?: Json | null
+          before_data?: Json | null
+          changed_at?: string
+          changed_by?: string | null
+          id?: number
+          offer_id?: string | null
+          product_id?: string | null
+          scope?: string
+          vendor_id?: string | null
+        }
+        Relationships: []
+      }
       countries: {
         Row: {
           code: string
@@ -3171,11 +3210,22 @@ export type Database = {
           applied_margin_percentage: number | null
           applied_margin_rule_id: string | null
           campaign_id: string | null
+          commission_model: string | null
+          commission_override_reason: string | null
+          commission_override_status:
+            | Database["public"]["Enums"]["commission_override_status"]
+            | null
+          commission_override_updated_at: string | null
+          commission_override_updated_by: string | null
+          commission_rate: number | null
+          commission_valid_from: string | null
+          commission_valid_until: string | null
           country_code: string | null
           created_at: string
           delivery_days: number | null
           down_payment_pct: number | null
           estimated_delivery_days: number | null
+          fixed_commission_amount: number | null
           has_extended_delivery: boolean | null
           id: string
           is_active: boolean
@@ -3183,6 +3233,7 @@ export type Database = {
           is_top_seller: boolean | null
           is_traceable: boolean | null
           margin_amount: number | null
+          margin_split_pct: number | null
           max_delivery_days: number | null
           min_delivery_days: number | null
           moq: number
@@ -3216,11 +3267,22 @@ export type Database = {
           applied_margin_percentage?: number | null
           applied_margin_rule_id?: string | null
           campaign_id?: string | null
+          commission_model?: string | null
+          commission_override_reason?: string | null
+          commission_override_status?:
+            | Database["public"]["Enums"]["commission_override_status"]
+            | null
+          commission_override_updated_at?: string | null
+          commission_override_updated_by?: string | null
+          commission_rate?: number | null
+          commission_valid_from?: string | null
+          commission_valid_until?: string | null
           country_code?: string | null
           created_at?: string
           delivery_days?: number | null
           down_payment_pct?: number | null
           estimated_delivery_days?: number | null
+          fixed_commission_amount?: number | null
           has_extended_delivery?: boolean | null
           id?: string
           is_active?: boolean
@@ -3228,6 +3290,7 @@ export type Database = {
           is_top_seller?: boolean | null
           is_traceable?: boolean | null
           margin_amount?: number | null
+          margin_split_pct?: number | null
           max_delivery_days?: number | null
           min_delivery_days?: number | null
           moq?: number
@@ -3261,11 +3324,22 @@ export type Database = {
           applied_margin_percentage?: number | null
           applied_margin_rule_id?: string | null
           campaign_id?: string | null
+          commission_model?: string | null
+          commission_override_reason?: string | null
+          commission_override_status?:
+            | Database["public"]["Enums"]["commission_override_status"]
+            | null
+          commission_override_updated_at?: string | null
+          commission_override_updated_by?: string | null
+          commission_rate?: number | null
+          commission_valid_from?: string | null
+          commission_valid_until?: string | null
           country_code?: string | null
           created_at?: string
           delivery_days?: number | null
           down_payment_pct?: number | null
           estimated_delivery_days?: number | null
+          fixed_commission_amount?: number | null
           has_extended_delivery?: boolean | null
           id?: string
           is_active?: boolean
@@ -3273,6 +3347,7 @@ export type Database = {
           is_top_seller?: boolean | null
           is_traceable?: boolean | null
           margin_amount?: number | null
+          margin_split_pct?: number | null
           max_delivery_days?: number | null
           min_delivery_days?: number | null
           moq?: number
@@ -10179,6 +10254,109 @@ export type Database = {
           },
         ]
       }
+      vendor_product_commissions: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          commission_model: string
+          commission_rate: number | null
+          created_at: string
+          created_by: string | null
+          fixed_commission_amount: number | null
+          id: string
+          margin_split_pct: number | null
+          note: string | null
+          product_id: string
+          rejected_reason: string | null
+          status: Database["public"]["Enums"]["commission_override_status"]
+          updated_at: string
+          valid_from: string | null
+          valid_until: string | null
+          vendor_id: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          commission_model: string
+          commission_rate?: number | null
+          created_at?: string
+          created_by?: string | null
+          fixed_commission_amount?: number | null
+          id?: string
+          margin_split_pct?: number | null
+          note?: string | null
+          product_id: string
+          rejected_reason?: string | null
+          status?: Database["public"]["Enums"]["commission_override_status"]
+          updated_at?: string
+          valid_from?: string | null
+          valid_until?: string | null
+          vendor_id: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          commission_model?: string
+          commission_rate?: number | null
+          created_at?: string
+          created_by?: string | null
+          fixed_commission_amount?: number | null
+          id?: string
+          margin_split_pct?: number | null
+          note?: string | null
+          product_id?: string
+          rejected_reason?: string | null
+          status?: Database["public"]["Enums"]["commission_override_status"]
+          updated_at?: string
+          valid_from?: string | null
+          valid_until?: string | null
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_product_commissions_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_product_commissions_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_product_commissions_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_market_intel_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_product_commissions_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_product_commissions_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_product_commissions_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vendor_product_costs: {
         Row: {
           created_at: string
@@ -11853,6 +12031,34 @@ export type Database = {
         Args: { _source_id: string; _source_type: string }
         Returns: number
       }
+      admin_review_product_commission: {
+        Args: { _decision: string; _id: string; _reason?: string }
+        Returns: {
+          approved_at: string | null
+          approved_by: string | null
+          commission_model: string
+          commission_rate: number | null
+          created_at: string
+          created_by: string | null
+          fixed_commission_amount: number | null
+          id: string
+          margin_split_pct: number | null
+          note: string | null
+          product_id: string
+          rejected_reason: string | null
+          status: Database["public"]["Enums"]["commission_override_status"]
+          updated_at: string
+          valid_from: string | null
+          valid_until: string | null
+          vendor_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "vendor_product_commissions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       admin_review_product_submission: {
         Args: {
           _comment?: string
@@ -12249,6 +12455,18 @@ export type Database = {
         Args: { _user_id: string }
         Returns: string
       }
+      resolve_effective_commission: {
+        Args: { _offer_id: string }
+        Returns: {
+          commission_model: string
+          commission_rate: number
+          fixed_commission_amount: number
+          margin_split_pct: number
+          source: string
+          valid_from: string
+          valid_until: string
+        }[]
+      }
       resolve_effective_pack_size: {
         Args: { _external_offer_id: string }
         Returns: {
@@ -12614,6 +12832,12 @@ export type Database = {
         | "rejected"
         | "archived"
       commission_model_enum: "flat_percentage" | "margin_split" | "fixed_amount"
+      commission_override_status:
+        | "draft"
+        | "pending_approval"
+        | "approved"
+        | "rejected"
+        | "expired"
       customer_type: "pharmacy" | "hospital" | "clinic" | "lab" | "other"
       delegate_availability:
         | "available"
@@ -12928,6 +13152,13 @@ export const Constants = {
         "flat_percentage",
         "margin_split",
         "fixed_amount",
+      ],
+      commission_override_status: [
+        "draft",
+        "pending_approval",
+        "approved",
+        "rejected",
+        "expired",
       ],
       customer_type: ["pharmacy", "hospital", "clinic", "lab", "other"],
       delegate_availability: [

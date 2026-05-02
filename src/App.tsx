@@ -406,6 +406,7 @@ const App = () => (
               <Route path="offer-data-quality" element={<LP><AdminOfferDataQuality /></LP>} />
               <Route path="onboarding-cms" element={<LP><AdminOnboardingCMS /></LP>} />
               <Route path="commissions" element={<LP><AdminCommissions /></LP>} />
+              <Route path="commission-overrides" element={<LP><AdminCommissionOverridesPage /></LP>} />
               <Route path="sync" element={<LP><AdminSync /></LP>} />
               <Route path="api-keys" element={<LP><AdminApiKeys /></LP>} />
               <Route path="api-docs" element={<LP><AdminApiDocs /></LP>} />

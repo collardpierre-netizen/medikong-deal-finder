@@ -211,7 +211,15 @@ export default function AdminCommissionOverridesPage() {
             />
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          {/* Toggle scope produit / offre */}
+          <Tabs value={scope} onValueChange={(v) => setScope(v as "product" | "offer")}>
+            <TabsList>
+              <TabsTrigger value="product">Overrides produit (vendeur × produit)</TabsTrigger>
+              <TabsTrigger value="offer">Overrides offre (ligne unique)</TabsTrigger>
+            </TabsList>
+          </Tabs>
+
           <Tabs value={tab} onValueChange={(v) => setTab(v as Status)}>
             <TabsList>
               <TabsTrigger value="pending_approval">En attente</TabsTrigger>
@@ -221,20 +229,101 @@ export default function AdminCommissionOverridesPage() {
             </TabsList>
 
             <TabsContent value={tab} className="mt-4">
-              {isLoading ? (
+              {scope === "product" ? (
+                isLoading ? (
+                  <div className="py-12 flex items-center justify-center">
+                    <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                  </div>
+                ) : filtered.length === 0 ? (
+                  <div className="py-12 text-center text-sm text-muted-foreground">
+                    Aucune demande dans ce statut.
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Vendeur</TableHead>
+                        <TableHead>Produit</TableHead>
+                        <TableHead>Règle</TableHead>
+                        <TableHead>Validité</TableHead>
+                        <TableHead>Statut</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filtered.map((r) => (
+                        <TableRow key={r.id}>
+                          <TableCell>
+                            <div className="font-medium">{r.vendors?.company_name || r.vendors?.name || "—"}</div>
+                            <div className="text-xs text-muted-foreground font-mono">{r.vendor_id.slice(0, 8)}…</div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="font-medium line-clamp-1 max-w-xs">{r.products?.name || "—"}</div>
+                            {r.products?.gtin && (
+                              <div className="text-xs text-muted-foreground font-mono">{r.products.gtin}</div>
+                            )}
+                            {r.note && (
+                              <div className="text-xs text-amber-700 mt-1 italic">« {r.note} »</div>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <span className="font-semibold text-mk-navy">{describeRule(r)}</span>
+                            <div className="text-xs text-muted-foreground capitalize">{r.commission_model.replace("_", " ")}</div>
+                          </TableCell>
+                          <TableCell className="text-xs">
+                            {r.valid_from ? new Date(r.valid_from).toLocaleDateString("fr-BE") : "—"}
+                            {" → "}
+                            {r.valid_until ? new Date(r.valid_until).toLocaleDateString("fr-BE") : "∞"}
+                          </TableCell>
+                          <TableCell><StatusBadge s={r.status} /></TableCell>
+                          <TableCell className="text-right">
+                            {r.status === "pending_approval" ? (
+                              <div className="flex items-center justify-end gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="border-rose-300 text-rose-700 hover:bg-rose-50"
+                                  onClick={() => setRejectTarget({ id: r.id, scope: "product" })}
+                                  disabled={reviewMutation.isPending}
+                                >
+                                  <X size={14} className="mr-1" /> Rejeter
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  className="bg-emerald-600 hover:bg-emerald-700"
+                                  onClick={() => reviewMutation.mutate({ id: r.id, scope: "product", decision: "approve" })}
+                                  disabled={reviewMutation.isPending}
+                                >
+                                  <Check size={14} className="mr-1" /> Approuver
+                                </Button>
+                              </div>
+                            ) : r.status === "rejected" && r.rejected_reason ? (
+                              <span className="text-xs text-muted-foreground italic flex items-center justify-end gap-1">
+                                <AlertTriangle size={12} /> {r.rejected_reason}
+                              </span>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">—</span>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )
+              ) : offerLoading ? (
                 <div className="py-12 flex items-center justify-center">
                   <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
                 </div>
-              ) : filtered.length === 0 ? (
+              ) : filteredOffers.length === 0 ? (
                 <div className="py-12 text-center text-sm text-muted-foreground">
-                  Aucune demande dans ce statut.
+                  Aucun override offre dans ce statut.
                 </div>
               ) : (
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Vendeur</TableHead>
-                      <TableHead>Produit</TableHead>
+                      <TableHead>Offre · Produit</TableHead>
                       <TableHead>Règle</TableHead>
                       <TableHead>Validité</TableHead>
                       <TableHead>Statut</TableHead>
@@ -242,7 +331,7 @@ export default function AdminCommissionOverridesPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filtered.map((r) => (
+                    {filteredOffers.map((r) => (
                       <TableRow key={r.id}>
                         <TableCell>
                           <div className="font-medium">{r.vendors?.company_name || r.vendors?.name || "—"}</div>
@@ -253,28 +342,29 @@ export default function AdminCommissionOverridesPage() {
                           {r.products?.gtin && (
                             <div className="text-xs text-muted-foreground font-mono">{r.products.gtin}</div>
                           )}
-                          {r.note && (
-                            <div className="text-xs text-amber-700 mt-1 italic">« {r.note} »</div>
+                          <div className="text-[10px] text-muted-foreground font-mono">offer #{r.id.slice(0, 8)}…</div>
+                          {r.commission_override_reason && (
+                            <div className="text-xs text-amber-700 mt-1 italic">« {r.commission_override_reason} »</div>
                           )}
                         </TableCell>
                         <TableCell>
-                          <span className="font-semibold text-mk-navy">{describeRule(r)}</span>
+                          <span className="font-semibold text-mk-navy">{describeOfferRule(r)}</span>
                           <div className="text-xs text-muted-foreground capitalize">{r.commission_model.replace("_", " ")}</div>
                         </TableCell>
                         <TableCell className="text-xs">
-                          {r.valid_from ? new Date(r.valid_from).toLocaleDateString("fr-BE") : "—"}
+                          {r.commission_valid_from ? new Date(r.commission_valid_from).toLocaleDateString("fr-BE") : "—"}
                           {" → "}
-                          {r.valid_until ? new Date(r.valid_until).toLocaleDateString("fr-BE") : "∞"}
+                          {r.commission_valid_until ? new Date(r.commission_valid_until).toLocaleDateString("fr-BE") : "∞"}
                         </TableCell>
-                        <TableCell><StatusBadge s={r.status} /></TableCell>
+                        <TableCell><StatusBadge s={r.commission_override_status} /></TableCell>
                         <TableCell className="text-right">
-                          {r.status === "pending_approval" ? (
+                          {r.commission_override_status === "pending_approval" ? (
                             <div className="flex items-center justify-end gap-2">
                               <Button
                                 size="sm"
                                 variant="outline"
                                 className="border-rose-300 text-rose-700 hover:bg-rose-50"
-                                onClick={() => setRejectTarget(r)}
+                                onClick={() => setRejectTarget({ id: r.id, scope: "offer" })}
                                 disabled={reviewMutation.isPending}
                               >
                                 <X size={14} className="mr-1" /> Rejeter
@@ -282,15 +372,15 @@ export default function AdminCommissionOverridesPage() {
                               <Button
                                 size="sm"
                                 className="bg-emerald-600 hover:bg-emerald-700"
-                                onClick={() => reviewMutation.mutate({ id: r.id, decision: "approve" })}
+                                onClick={() => reviewMutation.mutate({ id: r.id, scope: "offer", decision: "approve" })}
                                 disabled={reviewMutation.isPending}
                               >
                                 <Check size={14} className="mr-1" /> Approuver
                               </Button>
                             </div>
-                          ) : r.status === "rejected" && r.rejected_reason ? (
+                          ) : r.commission_override_status === "rejected" && r.commission_override_reason ? (
                             <span className="text-xs text-muted-foreground italic flex items-center justify-end gap-1">
-                              <AlertTriangle size={12} /> {r.rejected_reason}
+                              <AlertTriangle size={12} /> {r.commission_override_reason}
                             </span>
                           ) : (
                             <span className="text-xs text-muted-foreground">—</span>
@@ -326,7 +416,7 @@ export default function AdminCommissionOverridesPage() {
               variant="destructive"
               onClick={() =>
                 rejectTarget &&
-                reviewMutation.mutate({ id: rejectTarget.id, decision: "reject", reason: rejectReason.trim() || undefined })
+                reviewMutation.mutate({ id: rejectTarget.id, scope: rejectTarget.scope, decision: "reject", reason: rejectReason.trim() || undefined })
               }
               disabled={reviewMutation.isPending}
             >

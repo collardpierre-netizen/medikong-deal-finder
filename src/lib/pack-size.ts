@@ -57,6 +57,24 @@ export function extractPackSizeFromName(name: string | null | undefined): number
     if (n >= 2 && n <= 500) return n;
   }
 
+  // 0 bis) Convention CERP "compacte" : nombre isolé en fin de libellé sans "/"
+  //    (ex: "FRESUBIN 2 KCAL FIBRE PECHE 4", "DIBEN VANILLE FRAISE 15").
+  //    Garde-fous pour éviter les faux positifs sur dosages / années / kcal :
+  //      - exige un espace avant le nombre et la fin de chaîne
+  //      - le token précédent ne doit pas être une unité (mg, ml, g, kg, cl, l,
+  //        kcal, cc, oz, mcg, µg, ui, iu) ni un nombre (sinon "4 x 200 ml" ou
+  //        "200 ml 4" deviendraient ambigus — déjà géré par les règles 1)
+  //      - bornes strictes 2..50 (pack vendeur réaliste)
+  const cerpTrailing = cleaned.match(/(?:^|\s)([A-Za-zÀ-ÿ./]+)\s+(\d{1,3})\s*$/);
+  if (cerpTrailing) {
+    const prevToken = cerpTrailing[1].toLowerCase().replace(/\.$/, "");
+    const n = Number(cerpTrailing[2]);
+    const isUnit = /^(mg|ml|g|kg|cl|l|kcal|cc|oz|mcg|µg|ug|ui|iu|mm|cm|m|%)$/.test(
+      prevToken
+    );
+    if (!isUnit && n >= 2 && n <= 50) return n;
+  }
+
   // 1) "N x Q unite" (ex: "4 x 125 ml") -> on prend N
   //    On exige une unite de volume/masse derriere le Q pour eviter les faux positifs.
   const multiPack = cleaned.match(

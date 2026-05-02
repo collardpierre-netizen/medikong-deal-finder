@@ -1,11 +1,19 @@
 ---
 name: CERP pack suffix convention
-description: CERP encode le pack en suffixe "/N" du libellé (ex "FRESUBIN 2 KCAL CAPPUCCINO /4") — reconnu en priorité 0 par extractPackSizeFromName
+description: CERP encode le pack soit en suffixe "/N" soit en nombre nu en fin de libellé (ex "FRESUBIN ... PECHE 4") — reconnu par extractPackSizeFromName
 type: feature
 ---
 
-CERP (et certains imports grossistes) encode le conditionnement en **suffixe `/N`** du libellé brut, ex : `"FRESUBIN 2 KCAL CAPPUCCINO /4"` = pack de 4.
+CERP (et certains imports grossistes) encodent le conditionnement de **deux façons** en fin de libellé brut :
 
-`extractPackSizeFromName` (src/lib/pack-size.ts) gère ce pattern en **priorité 0** (avant les regex `4x200ml`, gélules, "pack de N") via la regex `/(?:^|\s)\/\s*(\d{1,3})\b\s*$/` qui exige un séparateur avant `/` et la fin de chaîne — pour éviter les faux positifs sur fractions ou dates `12/04`.
+1. **Suffixe `/N`** : `"FRESUBIN 2 KCAL CAPPUCCINO /4"` → 4
+2. **Nombre nu en fin de libellé** : `"FRESUBIN 2 KCAL FIBRE PECHE 4"` → 4
 
-Sans ce pattern, l'écart MK CERP était calculé sur le prix pack divisé par 1 → écart négatif faux (ex Fresubin 2 KCAL : -53 % au lieu de +44 % vs MediKong).
+`extractPackSizeFromName` (src/lib/pack-size.ts) gère les deux patterns en **priorité 0** (avant les regex `4x200ml`, gélules, "pack de N") :
+
+- **Règle 0 (slash)** : `/(?:^|\s)\/\s*(\d{1,3})\b\s*$/` — exige séparateur avant `/` et fin de chaîne pour éviter fractions/dates `12/04`.
+- **Règle 0 bis (nombre nu)** : `/(?:^|\s)([A-Za-zÀ-ÿ./]+)\s+(\d{1,3})\s*$/` avec garde-fous :
+  - le token précédent ne doit pas être une unité (mg, ml, g, kg, cl, l, kcal, cc, oz, mcg, µg, ui, iu, mm, cm, m, %)
+  - bornes strictes 2..50 (pack vendeur réaliste, évite dosages/années)
+
+Sans ces patterns, l'écart MK CERP était calculé sur le prix pack divisé par 1 → écart négatif faux. Exemple Fresubin 2 KCAL Fibre Pêche : -56 % affiché au lieu de +61 % (équivalent Febelco qui livre exactement le même pack 4×200 ml).

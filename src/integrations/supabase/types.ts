@@ -2643,6 +2643,132 @@ export type Database = {
         }
         Relationships: []
       }
+      market_price_pack_anomalies: {
+        Row: {
+          admin_note: string | null
+          cnk: string | null
+          created_at: string
+          current_pack_size: number | null
+          current_raw_title: string | null
+          detected_at: string
+          ean: string | null
+          id: string
+          pack_ratio: number | null
+          previous_pack_size: number | null
+          previous_raw_title: string | null
+          product_id: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          source_id: string
+          status: string
+        }
+        Insert: {
+          admin_note?: string | null
+          cnk?: string | null
+          created_at?: string
+          current_pack_size?: number | null
+          current_raw_title?: string | null
+          detected_at?: string
+          ean?: string | null
+          id?: string
+          pack_ratio?: number | null
+          previous_pack_size?: number | null
+          previous_raw_title?: string | null
+          product_id?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source_id: string
+          status?: string
+        }
+        Update: {
+          admin_note?: string | null
+          cnk?: string | null
+          created_at?: string
+          current_pack_size?: number | null
+          current_raw_title?: string | null
+          detected_at?: string
+          ean?: string | null
+          id?: string
+          pack_ratio?: number | null
+          previous_pack_size?: number | null
+          previous_raw_title?: string | null
+          product_id?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "market_price_pack_anomalies_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "market_price_pack_anomalies_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "market_price_sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      market_price_pack_history: {
+        Row: {
+          cnk: string | null
+          created_at: string
+          ean: string | null
+          id: string
+          last_pack_size: number | null
+          last_raw_title: string | null
+          last_seen_at: string
+          product_id: string | null
+          source_id: string
+          updated_at: string
+        }
+        Insert: {
+          cnk?: string | null
+          created_at?: string
+          ean?: string | null
+          id?: string
+          last_pack_size?: number | null
+          last_raw_title?: string | null
+          last_seen_at?: string
+          product_id?: string | null
+          source_id: string
+          updated_at?: string
+        }
+        Update: {
+          cnk?: string | null
+          created_at?: string
+          ean?: string | null
+          id?: string
+          last_pack_size?: number | null
+          last_raw_title?: string | null
+          last_seen_at?: string
+          product_id?: string | null
+          source_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "market_price_pack_history_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "market_price_pack_history_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "market_price_sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       market_price_sources: {
         Row: {
           country_code: string | null
@@ -12221,6 +12347,13 @@ export type Database = {
         Returns: boolean
       }
       delete_user_account: { Args: { _user_id: string }; Returns: undefined }
+      detect_market_price_pack_anomalies: {
+        Args: { _source_id_filter?: string }
+        Returns: {
+          anomalies_created: number
+          history_rows_updated: number
+        }[]
+      }
       detect_price_alerts_batch: {
         Args: { _th_crit?: number; _th_info?: number; _th_warn?: number }
         Returns: Json
@@ -12255,6 +12388,10 @@ export type Database = {
         Returns: {
           sql_line: string
         }[]
+      }
+      extract_pack_size_from_name_sql: {
+        Args: { _name: string }
+        Returns: number
       }
       finalize_qogita_resync_log: {
         Args: {

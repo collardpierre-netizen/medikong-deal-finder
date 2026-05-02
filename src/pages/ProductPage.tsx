@@ -43,7 +43,7 @@ import { ProductDescription } from "@/components/product/ProductDescription";
 
 // Helpers de formatage harmonisés (locale fr-BE, suffixes uniques).
 // Cf. src/lib/price-format.ts pour la source de vérité.
-import { formatAmount as formatEur, formatBasisLabel, type CompareBasis } from "@/lib/price-format";
+import { formatAmount as formatEur, formatBasisLabel, priceFromUnit, type CompareBasis } from "@/lib/price-format";
 
 function formatCount(n: number | null | undefined): string {
   const v = Number(n);
@@ -152,14 +152,10 @@ function OfferRow({
   const displayCode = offer.displayCode || offer.sellerId.slice(0, 6).toUpperCase();
   // sellerName already encapsulates the anonymization rules (real name vs "Fournisseur XXXXXX")
   const sellerLabel = offer.sellerName || `Fournisseur ${displayCode}`;
-  // Prix vendeur "au pack" tel qu'importé. Bascule sur unité ou /100u via compareBasis.
+  // Prix marketplace stocké à l'unité. La base "pack" multiplie par le conditionnement.
   const packSize = Math.max(1, packSizeProp ?? 1);
-  const basePackPrice = isTVAC ? offer.unitPriceInclVat : offer.unitPriceEur;
-  const perUnitPrice = packSize > 0 ? basePackPrice / packSize : basePackPrice;
-  const displayPrice =
-    compareBasis === 'pack' ? basePackPrice :
-    compareBasis === 'unit' ? perUnitPrice :
-    perUnitPrice * 100;
+  const baseUnitPrice = isTVAC ? offer.unitPriceInclVat : offer.unitPriceEur;
+  const displayPrice = priceFromUnit(baseUnitPrice, compareBasis as CompareBasis, packSize);
   const basisSuffix = ` ${formatBasisLabel(compareBasis as CompareBasis, { packSize, withPackSize: true })}`;
   const priceLabel = isTVAC ? "TVAC" : "HTVA";
 

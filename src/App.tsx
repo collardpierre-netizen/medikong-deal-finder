@@ -425,6 +425,17 @@ const App = () => (
               <Route path="flash-deals" element={<LP><AdminFlashDeals /></LP>} />
               <Route path="shipments" element={<LP><AdminShipments /></LP>} />
               <Route path="reconciliation" element={<LP><AdminReconciliation /></LP>} />
+              {/* ReStock administration — wrapped in AdminLayout to keep super-admin shell */}
+              <Route path="restock" element={<Navigate to="/admin/restock/offers" replace />} />
+              <Route path="restock/offers" element={<LP><RestockAdminOffers /></LP>} />
+              <Route path="restock/buyers" element={<LP><RestockAdminBuyers /></LP>} />
+              <Route path="restock/campaigns" element={<LP><RestockAdminCampaigns /></LP>} />
+              <Route path="restock/rules" element={<LP><RestockAdminRules /></LP>} />
+              <Route path="restock/settings" element={<LP><RestockSettings /></LP>} />
+              <Route path="restock/drops" element={<LP><RestockDrops /></LP>} />
+              <Route path="restock/faq" element={<LP><RestockAdminFaq /></LP>} />
+              <Route path="restock/price-references" element={<LP><RestockAdminPriceReferences /></LP>} />
+              <Route path="restock/payouts" element={<LP><RestockAdminPayouts /></LP>} />
             </Route>
 
             {/* Vendor Dashboard */}

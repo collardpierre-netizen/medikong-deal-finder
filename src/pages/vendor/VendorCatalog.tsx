@@ -22,6 +22,7 @@ import {
   type CatalogFilters,
 } from "@/components/vendor/catalog/VendorCatalogFilters";
 import { InterestToggleButton } from "@/components/vendor/catalog/InterestToggleButton";
+import { getProductImageSrc, isQogitaPlaceholder, isValidProductImage, MEDIKONG_PLACEHOLDER } from "@/lib/image-utils";
 
 type EntityType = "products" | "brands" | "manufacturers";
 type ProductSort = "popularity" | "price_asc" | "price_desc" | "availability" | "newest";
@@ -371,10 +372,17 @@ export default function VendorCatalog() {
                       />
                     )}
                     <div className="w-14 h-14 rounded bg-muted/50 flex items-center justify-center overflow-hidden shrink-0">
-                      {p.image_url ? (
-                        <img src={p.image_url} alt={p.name} className="w-full h-full object-contain" loading="lazy" />
+                      {isValidProductImage(p.image_url) ? (
+                        <img
+                          src={getProductImageSrc(p.image_url)}
+                          alt={p.name}
+                          className="w-full h-full object-contain"
+                          loading="lazy"
+                          onLoad={(e) => { if (isQogitaPlaceholder(e.currentTarget)) e.currentTarget.src = MEDIKONG_PLACEHOLDER; }}
+                          onError={(e) => { (e.currentTarget as HTMLImageElement).src = MEDIKONG_PLACEHOLDER; }}
+                        />
                       ) : (
-                        <Package className="h-6 w-6 text-muted-foreground" />
+                        <img src={MEDIKONG_PLACEHOLDER} alt={p.name} className="w-full h-full object-contain" loading="lazy" />
                       )}
                     </div>
                     <div className="flex-1 min-w-0">

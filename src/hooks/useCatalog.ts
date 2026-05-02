@@ -420,8 +420,11 @@ export function useCatalogProducts(filters: CatalogFilters) {
 
             const countResult = await countPromise;
 
+            const pageRows = boosted.slice(offset, offset + filters.perPage) as CatalogProduct[];
+            const localized = await applyCountryStats(pageRows, country);
+
             return {
-              products: boosted.slice(offset, offset + filters.perPage) as CatalogProduct[],
+              products: localized,
               total: countResult?.count ?? boosted.length,
             };
           }

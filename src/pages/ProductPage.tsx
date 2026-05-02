@@ -2037,14 +2037,37 @@ export default function ProductPage() {
                                   </td>
                                   <td className="px-2 py-2 text-right whitespace-nowrap">
                                     {deltaAbs !== null ? (
-                                      <span className="inline-flex items-center gap-0.5">
-                                        <span className={`font-bold tabular-nums text-[12px] ${mkCheaper ? "text-emerald-600" : "text-destructive"}`}>
-                                          {mkCheaper ? "−" : "+"}{formatEur(Math.abs(deltaAbs))}&nbsp;€
+                                      <div className="flex flex-col items-end gap-0.5">
+                                        <span className="inline-flex items-center gap-0.5">
+                                          <span className={`font-bold tabular-nums text-[12px] ${mkCheaper ? "text-emerald-600" : "text-destructive"}`}>
+                                            {mkCheaper ? "−" : "+"}{formatEur(Math.abs(deltaAbs))}&nbsp;€
+                                          </span>
+                                          <span className={`inline-flex rounded-full px-1 py-0.5 text-[9px] font-semibold leading-none ${mkCheaper ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-destructive"}`}>
+                                            {mkCheaper ? "−" : "+"}{Math.abs(deltaPct!)}%
+                                          </span>
                                         </span>
-                                        <span className={`inline-flex rounded-full px-1 py-0.5 text-[9px] font-semibold leading-none ${mkCheaper ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-destructive"}`}>
-                                          {mkCheaper ? "−" : "+"}{Math.abs(deltaPct!)}%
-                                        </span>
-                                      </span>
+                                        {bestOffer && (() => {
+                                          const mkPackForRow = resolvePackSize({
+                                            offerOverride: (bestOffer as any)?.packSizeOverride,
+                                            productPackSize: (product as any)?.pack_size,
+                                            productName: product.name,
+                                          });
+                                          return (
+                                            <a
+                                              href="#mk-reference-pack"
+                                              onClick={(e) => {
+                                                e.preventDefault();
+                                                document.getElementById('mk-reference-pack')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                              }}
+                                              title="Référence MK utilisée pour ce calcul — cliquez pour voir le détail"
+                                              className="inline-flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground tabular-nums leading-none"
+                                            >
+                                              <span className="rounded border border-border bg-muted/40 px-1 py-0.5">Pack MK&nbsp;×{mkPackForRow.packSize}</span>
+                                              <span className="rounded border border-border bg-muted/40 px-1 py-0.5">MK&nbsp;{formatEur(mkHT)}&nbsp;€/u</span>
+                                            </a>
+                                          );
+                                        })()}
+                                      </div>
                                     ) : <span className="text-muted-foreground">—</span>}
                                   </td>
                                   <td className="px-2 py-2 text-right text-[10px] text-muted-foreground whitespace-nowrap">

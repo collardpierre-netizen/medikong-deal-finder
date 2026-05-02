@@ -2715,6 +2715,8 @@ export type Database = {
       }
       market_delta_anomalies: {
         Row: {
+          assigned_at: string | null
+          assigned_to: string | null
           delta_abs: number
           delta_pct: number
           detected_at: string
@@ -2725,6 +2727,8 @@ export type Database = {
           mk_pack_size: number
           mk_unit_price: number
           notes: string | null
+          notes_updated_at: string | null
+          notes_updated_by: string | null
           offer_id: string
           product_id: string
           resolved_at: string | null
@@ -2735,6 +2739,8 @@ export type Database = {
           vendor_id: string | null
         }
         Insert: {
+          assigned_at?: string | null
+          assigned_to?: string | null
           delta_abs: number
           delta_pct: number
           detected_at?: string
@@ -2745,6 +2751,8 @@ export type Database = {
           mk_pack_size: number
           mk_unit_price: number
           notes?: string | null
+          notes_updated_at?: string | null
+          notes_updated_by?: string | null
           offer_id: string
           product_id: string
           resolved_at?: string | null
@@ -2755,6 +2763,8 @@ export type Database = {
           vendor_id?: string | null
         }
         Update: {
+          assigned_at?: string | null
+          assigned_to?: string | null
           delta_abs?: number
           delta_pct?: number
           detected_at?: string
@@ -2765,6 +2775,8 @@ export type Database = {
           mk_pack_size?: number
           mk_unit_price?: number
           notes?: string | null
+          notes_updated_at?: string | null
+          notes_updated_by?: string | null
           offer_id?: string
           product_id?: string
           resolved_at?: string | null
@@ -13448,6 +13460,14 @@ export type Database = {
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      list_admin_users: {
+        Args: never
+        Returns: {
+          display_name: string
+          email: string
+          user_id: string
+        }[]
+      }
       log_offer_data_issue: {
         Args: {
           _details?: Json
@@ -13881,6 +13901,45 @@ export type Database = {
       unaccent: { Args: { "": string }; Returns: string }
       update_brand_product_counts: { Args: never; Returns: undefined }
       update_manufacturer_product_counts: { Args: never; Returns: undefined }
+      update_market_delta_anomaly: {
+        Args: {
+          _assigned_to?: string
+          _clear_assignee?: boolean
+          _id: string
+          _notes?: string
+          _status?: string
+        }
+        Returns: {
+          assigned_at: string | null
+          assigned_to: string | null
+          delta_abs: number
+          delta_pct: number
+          detected_at: string
+          direction: string
+          id: string
+          market_sample_size: number
+          market_unit_price_median: number
+          mk_pack_size: number
+          mk_unit_price: number
+          notes: string | null
+          notes_updated_at: string | null
+          notes_updated_by: string | null
+          offer_id: string
+          product_id: string
+          resolved_at: string | null
+          resolved_by: string | null
+          run_id: string
+          status: string
+          threshold_pct: number
+          vendor_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "market_delta_anomalies"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       upsert_market_prices: { Args: { rows: Json }; Returns: number }
       user_has_ordered_brand: {
         Args: { _brand_id: string; _user_id: string }

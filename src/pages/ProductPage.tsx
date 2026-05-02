@@ -152,9 +152,11 @@ function OfferRow({
   const displayCode = offer.displayCode || offer.sellerId.slice(0, 6).toUpperCase();
   // sellerName already encapsulates the anonymization rules (real name vs "Fournisseur XXXXXX")
   const sellerLabel = offer.sellerName || `Fournisseur ${displayCode}`;
-  // Prix marketplace stocké à l'unité. La base "pack" multiplie par le conditionnement.
+  // ⚠️ `offers.price_excl_vat` (offer.unitPriceEur) est le prix de l'unité de vente
+  // côté vendeur = prix du PACK. On dérive donc le vrai €/u en divisant par le packSize.
   const packSize = Math.max(1, packSizeProp ?? 1);
-  const baseUnitPrice = isTVAC ? offer.unitPriceInclVat : offer.unitPriceEur;
+  const basePackPrice = isTVAC ? offer.unitPriceInclVat : offer.unitPriceEur;
+  const baseUnitPrice = packSize > 0 ? basePackPrice / packSize : basePackPrice;
   const displayPrice = priceFromUnit(baseUnitPrice, compareBasis as CompareBasis, packSize);
   const basisSuffix = ` ${formatBasisLabel(compareBasis as CompareBasis, { packSize, withPackSize: true })}`;
   const priceLabel = isTVAC ? "TVAC" : "HTVA";
@@ -1018,7 +1020,10 @@ export default function ProductPage() {
     productName: product.name,
   });
   const bestOfferPackSize = bestOfferPack.packSize || 1;
-  const bestOfferUnitPrice = bestOffer ? (isTVAC ? bestOffer.unitPriceInclVat : bestOffer.unitPriceEur) : 0;
+  // ⚠️ En base, `offers.price_excl_vat` est le prix de l'unité de vente côté vendeur
+  // = prix du PACK (ex. 8,39 € pour un pack ×4 à 2,0975 €/u). On dérive donc l'unitaire.
+  const bestOfferPackPrice = bestOffer ? (isTVAC ? bestOffer.unitPriceInclVat : bestOffer.unitPriceEur) : 0;
+  const bestOfferUnitPrice = bestOfferPackSize > 0 ? bestOfferPackPrice / bestOfferPackSize : bestOfferPackPrice;
   const bestOfferDisplayPrice = priceFromUnit(bestOfferUnitPrice, offerCompareBasis as CompareBasis, bestOfferPackSize);
   const clientPrice = bestOfferUnitPrice;
   const userPriceNum = parseFloat(userPrice.replace(",", ".")) || 0;
@@ -1824,14 +1829,16 @@ export default function ProductPage() {
                         {(() => {
                           const basisSuffix = formatBasisLabel(externalCompareBasis as CompareBasis).replace(/^€\//, '/');
 
-                          // Récap prix MK : les offres marketplace sont encodées à l'unité.
+                          // Récap prix MK : `offers.price_excl_vat` est le prix du PACK (unité de vente vendeur).
+                          // -> mkPackPrice = valeur stockée, mkUnit = pack ÷ packSize.
                           const mkPack = resolvePackSize({
                             offerOverride: (bestOffer as any)?.packSizeOverride,
                             productPackSize: (product as any)?.pack_size,
                             productName: product.name,
                           });
-                          const mkUnit = bestOffer?.unitPriceEur ?? 0;
-                          const mkPackPrice = priceFromUnit(mkUnit, 'pack', mkPack.packSize);
+                          const _mkPackSize = Math.max(1, mkPack.packSize || 1);
+                          const mkPackPrice = bestOffer?.unitPriceEur ?? 0;
+                          const mkUnit = mkPackPrice / _mkPackSize;
                           return (
                           <>
                           {bestOffer && (
@@ -1905,8 +1912,9 @@ export default function ProductPage() {
                           </thead>
                           <tbody className="divide-y divide-border">
                             {marketPriceItems.map((mp: any) => {
-                              // Prix MediKong HTVA à l'unité (offers.price_excl_vat est unitaire).
-                              const mkHT = bestOffer ? bestOffer.unitPriceEur : 0;
+                              // ⚠️ `offers.price_excl_vat` (offer.unitPriceEur) = prix du PACK côté vendeur.
+                              // Le vrai prix unitaire MK est donc pack ÷ packSize.
+                              const mkHT = bestOffer ? bestOfferUnitPrice : 0;
                               const isOnline = mp.market_price_sources?.source_type === "online";
                               const tvaRate = Number(mp.tva_rate || 21);
 

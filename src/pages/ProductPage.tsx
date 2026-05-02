@@ -1910,8 +1910,9 @@ export default function ProductPage() {
                           </thead>
                           <tbody className="divide-y divide-border">
                             {marketPriceItems.map((mp: any) => {
-                              // Prix MediKong HTVA à l'unité (offers.price_excl_vat est unitaire).
-                              const mkHT = bestOffer ? bestOffer.unitPriceEur : 0;
+                              // ⚠️ `offers.price_excl_vat` (offer.unitPriceEur) = prix du PACK côté vendeur.
+                              // Le vrai prix unitaire MK est donc pack ÷ packSize.
+                              const mkHT = bestOffer ? bestOfferUnitPrice : 0;
                               const isOnline = mp.market_price_sources?.source_type === "online";
                               const tvaRate = Number(mp.tva_rate || 21);
 

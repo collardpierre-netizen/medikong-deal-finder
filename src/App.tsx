@@ -494,17 +494,17 @@ const App = () => (
               <Route path="/restock/seller/help" element={<LP><RestockSellerHelp /></LP>} />
               <Route path="/restock/faq" element={<LP><RestockFaqPage /></LP>} />
 
-              {/* Admin */}
-              <Route path="/restock/admin" element={<Navigate to="/restock/admin/offers" replace />} />
-              <Route path="/restock/admin/offers" element={<LP><RestockAdminOffers /></LP>} />
-              <Route path="/restock/admin/buyers" element={<LP><RestockAdminBuyers /></LP>} />
-              <Route path="/restock/admin/campaigns" element={<LP><RestockAdminCampaigns /></LP>} />
-              <Route path="/restock/admin/rules" element={<LP><RestockAdminRules /></LP>} />
-              <Route path="/restock/admin/settings" element={<LP><RestockSettings /></LP>} />
-              <Route path="/restock/admin/drops" element={<LP><RestockDrops /></LP>} />
-              <Route path="/restock/admin/faq" element={<LP><RestockAdminFaq /></LP>} />
-              <Route path="/restock/admin/price-references" element={<LP><RestockAdminPriceReferences /></LP>} />
-              <Route path="/restock/admin/payouts" element={<LP><RestockAdminPayouts /></LP>} />
+              {/* Admin ReStock — redirect legacy /restock/admin/* to /admin/restock/* */}
+              <Route path="/restock/admin" element={<Navigate to="/admin/restock/offers" replace />} />
+              <Route path="/restock/admin/offers" element={<Navigate to="/admin/restock/offers" replace />} />
+              <Route path="/restock/admin/buyers" element={<Navigate to="/admin/restock/buyers" replace />} />
+              <Route path="/restock/admin/campaigns" element={<Navigate to="/admin/restock/campaigns" replace />} />
+              <Route path="/restock/admin/rules" element={<Navigate to="/admin/restock/rules" replace />} />
+              <Route path="/restock/admin/settings" element={<Navigate to="/admin/restock/settings" replace />} />
+              <Route path="/restock/admin/drops" element={<Navigate to="/admin/restock/drops" replace />} />
+              <Route path="/restock/admin/faq" element={<Navigate to="/admin/restock/faq" replace />} />
+              <Route path="/restock/admin/price-references" element={<Navigate to="/admin/restock/price-references" replace />} />
+              <Route path="/restock/admin/payouts" element={<Navigate to="/admin/restock/payouts" replace />} />
             </Route>
 
             {/* ReStock standalone mobile */}

@@ -13460,6 +13460,14 @@ export type Database = {
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      list_admin_users: {
+        Args: never
+        Returns: {
+          display_name: string
+          email: string
+          user_id: string
+        }[]
+      }
       log_offer_data_issue: {
         Args: {
           _details?: Json

@@ -55,6 +55,7 @@ const sections: NavSection[] = [
     items: [
       { labelKey: "priceCockpit", path: "/admin/prix-cockpit", icon: TrendingDown },
       { label: "Écarts prix anormaux", path: "/admin/market-delta-anomalies", icon: AlertTriangle },
+      { label: "Audit conditionnements", path: "/admin/pack-audit", icon: Package },
       { labelKey: "priceWatch", path: "/admin/veille-prix", icon: Eye },
       { labelKey: "priceAlerts", path: "/admin/price-alerts", icon: AlertTriangle },
       { labelKey: "leads", path: "/admin/leads", icon: Link },

@@ -1011,7 +1011,15 @@ export default function ProductPage() {
 
   const description = productDetails?.description || (productDetails as any)?.label || product.descriptionShort || "";
 
-  const clientPrice = bestOffer ? (isTVAC ? bestOffer.unitPriceInclVat : bestOffer.unitPriceEur) : 0;
+  const bestOfferPack = resolvePackSize({
+    offerOverride: bestOffer?.packSizeOverride,
+    productPackSize: (product as any)?.pack_size,
+    productName: product.name,
+  });
+  const bestOfferPackSize = bestOfferPack.packSize || 1;
+  const bestOfferUnitPrice = bestOffer ? (isTVAC ? bestOffer.unitPriceInclVat : bestOffer.unitPriceEur) : 0;
+  const bestOfferDisplayPrice = priceFromUnit(bestOfferUnitPrice, externalCompareBasis as CompareBasis, bestOfferPackSize);
+  const clientPrice = bestOfferUnitPrice;
   const userPriceNum = parseFloat(userPrice.replace(",", ".")) || 0;
   const savingsAbs = userPriceNum > 0 ? userPriceNum - clientPrice : 0;
   const savingsPct = userPriceNum > 0 ? ((savingsAbs / userPriceNum) * 100) : 0;

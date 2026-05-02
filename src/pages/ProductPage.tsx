@@ -1425,8 +1425,8 @@ export default function ProductPage() {
                                 className="bg-muted/40 rounded-lg p-0.5"
                                 size="sm"
                               >
-                                <ToggleGroupItem value="pack" className="text-[11px] px-2.5 h-7 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">€/pack</ToggleGroupItem>
                                 <ToggleGroupItem value="unit" className="text-[11px] px-2.5 h-7 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">€/unité</ToggleGroupItem>
+                                <ToggleGroupItem value="pack" className="text-[11px] px-2.5 h-7 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">€/pack</ToggleGroupItem>
                                 <ToggleGroupItem value="hundred" className="text-[11px] px-2.5 h-7 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">€/100 u.</ToggleGroupItem>
                               </ToggleGroup>
                             </div>

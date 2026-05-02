@@ -1018,7 +1018,10 @@ export default function ProductPage() {
     productName: product.name,
   });
   const bestOfferPackSize = bestOfferPack.packSize || 1;
-  const bestOfferUnitPrice = bestOffer ? (isTVAC ? bestOffer.unitPriceInclVat : bestOffer.unitPriceEur) : 0;
+  // ⚠️ En base, `offers.price_excl_vat` est le prix de l'unité de vente côté vendeur
+  // = prix du PACK (ex. 8,39 € pour un pack ×4 à 2,0975 €/u). On dérive donc l'unitaire.
+  const bestOfferPackPrice = bestOffer ? (isTVAC ? bestOffer.unitPriceInclVat : bestOffer.unitPriceEur) : 0;
+  const bestOfferUnitPrice = bestOfferPackSize > 0 ? bestOfferPackPrice / bestOfferPackSize : bestOfferPackPrice;
   const bestOfferDisplayPrice = priceFromUnit(bestOfferUnitPrice, offerCompareBasis as CompareBasis, bestOfferPackSize);
   const clientPrice = bestOfferUnitPrice;
   const userPriceNum = parseFloat(userPrice.replace(",", ".")) || 0;

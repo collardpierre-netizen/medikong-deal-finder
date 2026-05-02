@@ -41,11 +41,9 @@ import { PvpEconomyBadge } from "@/components/product/PvpEconomyBadge";
 import RfqRequestButton from "@/components/product/RfqRequestButton";
 import { ProductDescription } from "@/components/product/ProductDescription";
 
-function formatEur(n: number | null | undefined): string {
-  const v = Number(n);
-  if (!Number.isFinite(v)) return "—";
-  return v.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
+// Helpers de formatage harmonisés (locale fr-BE, suffixes uniques).
+// Cf. src/lib/price-format.ts pour la source de vérité.
+import { formatAmount as formatEur, formatBasisLabel, type CompareBasis } from "@/lib/price-format";
 
 function formatCount(n: number | null | undefined): string {
   const v = Number(n);
@@ -162,9 +160,7 @@ function OfferRow({
     compareBasis === 'pack' ? basePackPrice :
     compareBasis === 'unit' ? perUnitPrice :
     perUnitPrice * 100;
-  const basisSuffix =
-    compareBasis === 'pack' ? (packSize > 1 ? ` /pack de ${packSize}` : ' /pack') :
-    compareBasis === 'unit' ? ' /u.' : ' /100 u.';
+  const basisSuffix = ` ${formatBasisLabel(compareBasis as CompareBasis, { packSize, withPackSize: true })}`;
   const priceLabel = isTVAC ? "TVAC" : "HTVA";
 
   const handleAdd = () => {
@@ -1683,10 +1679,11 @@ export default function ProductPage() {
                                       externalCompareBasis === 'pack' ? displayPrice :
                                       externalCompareBasis === 'hundred' ? perUnit * 100 :
                                       perUnit;
-                                    const headlineSuffix =
-                                      externalCompareBasis === 'pack' ? `/pack${pack.packSize > 1 ? ` de ${pack.packSize}` : ''}` :
-                                      externalCompareBasis === 'hundred' ? '/100 u.' :
-                                      '/unité';
+                                    // Suffixes harmonisés (cf. formatBasisLabel) : /pack[ de N], /u., /100 u.
+                                    const headlineSuffix = formatBasisLabel(
+                                      externalCompareBasis as CompareBasis,
+                                      { packSize: pack.packSize, withPackSize: true }
+                                    ).replace(/^€\//, '/');
                                     return (
                                       <>
                                         <div className="flex items-baseline justify-end gap-2">
@@ -1820,10 +1817,7 @@ export default function ProductPage() {
                           </ToggleGroup>
                         </div>
                         {(() => {
-                          const basisSuffix =
-                            externalCompareBasis === 'pack' ? '/pack' :
-                            externalCompareBasis === 'hundred' ? '/100 u.' :
-                            '/u.';
+                          const basisSuffix = formatBasisLabel(externalCompareBasis as CompareBasis).replace(/^€\//, '/');
 
                           // Récap pack MK + prix MK utilisés pour le calcul des écarts
                           const mkPack = resolvePackSize({
@@ -2053,10 +2047,7 @@ export default function ProductPage() {
                                             productName: product.name,
                                           });
                                           const mkBasis = mkHT * mult;
-                                          const mkBasisLabel =
-                                            externalCompareBasis === 'pack' ? `€/pack×${packDiv}` :
-                                            externalCompareBasis === 'hundred' ? '€/100u' :
-                                            '€/u';
+                                          const mkBasisLabel = formatBasisLabel(externalCompareBasis as CompareBasis);
                                           return (
                                             <a
                                               href="#mk-reference-pack"

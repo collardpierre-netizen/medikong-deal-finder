@@ -1836,7 +1836,7 @@ export default function ProductPage() {
                           return (
                           <>
                           {bestOffer && (
-                            <div className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-[12px] flex flex-wrap items-center gap-x-4 gap-y-1">
+                            <div id="mk-reference-pack" className="scroll-mt-24 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-[12px] flex flex-wrap items-center gap-x-4 gap-y-1">
                               <span className="font-semibold text-foreground">Référence MediKong&nbsp;:</span>
                               <span className="inline-flex items-center gap-1.5">
                                 <span className="text-muted-foreground">Pack&nbsp;</span>
@@ -1874,7 +1874,35 @@ export default function ProductPage() {
                               {mpVisMap.show_public_price && <th className="px-2 py-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider text-right">Pub. HTVA {basisSuffix}</th>}
                               <th className="px-2 py-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider text-right">Pub. TTC {basisSuffix}</th>
                               <th className="px-1 py-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider text-center">Stock</th>
-                              <th className="px-2 py-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider text-right">Écart MK</th>
+                              <th className="px-2 py-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider text-right">
+                                <TooltipProvider delayDuration={150}>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <a
+                                        href="#mk-reference-pack"
+                                        onClick={(e) => {
+                                          e.preventDefault();
+                                          document.getElementById('mk-reference-pack')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                        }}
+                                        className="inline-flex items-center gap-1 hover:text-foreground underline decoration-dotted underline-offset-2 cursor-help"
+                                      >
+                                        Écart MK <span aria-hidden className="text-[11px] leading-none">ⓘ</span>
+                                      </a>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top" className="max-w-xs text-xs leading-relaxed">
+                                      <p className="font-semibold mb-1">Calcul à l'unité, pas au pack</p>
+                                      <p>
+                                        Le pourcentage d'écart compare toujours le <strong>prix unitaire</strong> de l'offre
+                                        externe à celui de la référence MediKong, indépendamment de la base affichée
+                                        (€/pack, €/u. ou €/100 u.).
+                                      </p>
+                                      <p className="mt-1 text-muted-foreground">
+                                        Cliquez pour voir le pack et le prix unitaire MK utilisés.
+                                      </p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              </th>
                               <th className="px-2 py-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider text-right">Relevé</th>
                             </tr>
                           </thead>

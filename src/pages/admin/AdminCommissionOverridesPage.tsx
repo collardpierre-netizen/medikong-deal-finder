@@ -60,15 +60,42 @@ function StatusBadge({ s }: { s: Status }) {
   return <Badge variant="outline" className={m.cls}>{m.label}</Badge>;
 }
 
+interface OfferOverrideRow {
+  id: string;
+  vendor_id: string;
+  product_id: string | null;
+  commission_model: string;
+  commission_rate: number | null;
+  margin_split_pct: number | null;
+  fixed_commission_amount: number | null;
+  commission_override_status: Status;
+  commission_valid_from: string | null;
+  commission_valid_until: string | null;
+  commission_override_reason: string | null;
+  vendors: { id: string; name: string | null; company_name: string | null } | null;
+  products: { id: string; name: string; gtin: string | null } | null;
+}
+
+function describeOfferRule(r: OfferOverrideRow): string {
+  switch (r.commission_model) {
+    case "flat_percentage": return `${r.commission_rate ?? "—"} %`;
+    case "margin_split":    return `Split marge ${r.margin_split_pct ?? "—"} %`;
+    case "fixed_amount":    return `${r.fixed_commission_amount ?? "—"} € / unité`;
+    default: return r.commission_model;
+  }
+}
+
 export default function AdminCommissionOverridesPage() {
   const qc = useQueryClient();
+  const [scope, setScope] = useState<"product" | "offer">("product");
   const [tab, setTab] = useState<Status>("pending_approval");
   const [search, setSearch] = useState("");
-  const [rejectTarget, setRejectTarget] = useState<OverrideRow | null>(null);
+  const [rejectTarget, setRejectTarget] = useState<{ id: string; scope: "product" | "offer" } | null>(null);
   const [rejectReason, setRejectReason] = useState("");
 
   const { data, isLoading } = useQuery({
-    queryKey: ["admin-commission-overrides", tab],
+    enabled: scope === "product",
+    queryKey: ["admin-commission-overrides", "product", tab],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("vendor_product_commissions")
@@ -87,14 +114,45 @@ export default function AdminCommissionOverridesPage() {
     },
   });
 
-  const reviewMutation = useMutation({
-    mutationFn: async (vars: { id: string; decision: "approve" | "reject"; reason?: string }) => {
-      const { error } = await supabase.rpc("admin_review_product_commission", {
-        _id: vars.id,
-        _decision: vars.decision,
-        _reason: vars.reason ?? null,
-      });
+  const { data: offerData, isLoading: offerLoading } = useQuery({
+    enabled: scope === "offer",
+    queryKey: ["admin-commission-overrides", "offer", tab],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("offers")
+        .select(`
+          id, vendor_id, product_id, commission_model, commission_rate,
+          margin_split_pct, fixed_commission_amount, commission_override_status,
+          commission_valid_from, commission_valid_until, commission_override_reason,
+          vendors:vendor_id ( id, name, company_name ),
+          products:product_id ( id, name, gtin )
+        `)
+        .eq("commission_override_status", tab)
+        .not("commission_model", "is", null)
+        .order("commission_override_updated_at", { ascending: false })
+        .limit(200);
       if (error) throw error;
+      return (data ?? []) as unknown as OfferOverrideRow[];
+    },
+  });
+
+  const reviewMutation = useMutation({
+    mutationFn: async (vars: { id: string; scope: "product" | "offer"; decision: "approve" | "reject"; reason?: string }) => {
+      if (vars.scope === "product") {
+        const { error } = await supabase.rpc("admin_review_product_commission", {
+          _id: vars.id,
+          _decision: vars.decision,
+          _reason: vars.reason ?? null,
+        });
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.rpc("admin_review_offer_commission" as any, {
+          _offer_id: vars.id,
+          _decision: vars.decision,
+          _reason: vars.reason ?? null,
+        });
+        if (error) throw error;
+      }
     },
     onSuccess: (_d, vars) => {
       toast.success(vars.decision === "approve" ? "Override approuvé" : "Override rejeté");
@@ -107,6 +165,17 @@ export default function AdminCommissionOverridesPage() {
   });
 
   const filtered = (data ?? []).filter((r) => {
+    if (!search.trim()) return true;
+    const q = search.toLowerCase();
+    return (
+      r.vendors?.name?.toLowerCase().includes(q) ||
+      r.vendors?.company_name?.toLowerCase().includes(q) ||
+      r.products?.name?.toLowerCase().includes(q) ||
+      r.products?.gtin?.toLowerCase().includes(q)
+    );
+  });
+
+  const filteredOffers = (offerData ?? []).filter((r) => {
     if (!search.trim()) return true;
     const q = search.toLowerCase();
     return (

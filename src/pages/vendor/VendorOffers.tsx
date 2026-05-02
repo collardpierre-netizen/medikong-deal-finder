@@ -5,7 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { VCard } from "@/components/vendor/ui/VCard";
 import { VBtn } from "@/components/vendor/ui/VBtn";
 import { VBadge } from "@/components/vendor/ui/VBadge";
-import { Tag, Plus, Pencil, Trash2, X, Loader2, Package, Search, Download, Upload, FileSpreadsheet, ChevronDown, Users, ChevronRight, TrendingDown, TrendingUp, BarChart3, Eye, ImagePlus, ArrowLeft, Copy, PowerOff, Power } from "lucide-react";
+import { Tag, Plus, Pencil, Trash2, X, Loader2, Package, Search, Download, Upload, FileSpreadsheet, ChevronDown, Users, ChevronRight, TrendingDown, TrendingUp, BarChart3, Eye, ImagePlus, ArrowLeft, Copy, PowerOff, Power, Percent } from "lucide-react";
+import { VendorCommissionOverrideDialog } from "@/components/vendor/VendorCommissionOverrideDialog";
 import ProductPhotoUploader from "@/components/admin/ProductPhotoUploader";
 import { CategoryTreeSelector } from "@/components/vendor/CategoryTreeSelector";
 import { MarginInsightCard } from "@/components/vendor/MarginInsightCard";
@@ -2332,6 +2333,19 @@ export default function VendorOffers() {
                           <button onClick={() => openEdit(offer)} className="p-1.5 hover:bg-[#EFF6FF] rounded" title="Modifier">
                             <Pencil size={14} style={{ color: "#1B5BDA" }} />
                           </button>
+                          {offer.product_id && vendor?.id && (
+                            <VendorCommissionOverrideDialog
+                              vendorId={vendor.id}
+                              productId={offer.product_id}
+                              productName={prod?.name}
+                              offerId={offer.id}
+                              trigger={
+                                <button className="p-1.5 hover:bg-[#FEF3C7] rounded" title="Personnaliser la commission MediKong">
+                                  <Percent size={14} style={{ color: "#D97706" }} />
+                                </button>
+                              }
+                            />
+                          )}
                           <button onClick={() => { if (confirm("Supprimer cette offre ?")) deleteOffer.mutate(offer.id); }}
                             className="p-1.5 hover:bg-[#FEF2F2] rounded" title="Supprimer">
                             <Trash2 size={14} style={{ color: "#EF4343" }} />

@@ -138,6 +138,28 @@ async function applyCountryStats<T extends { id: string }>(
   });
 }
 
+/** Noms de colonnes utilisés pour les agrégats — varient entre `products` (global) et la vue country-aware. */
+interface CatalogColumns {
+  bestPriceExclVat: string;
+  offerCount: string;
+  totalStock: string;
+  isInStock: string;
+}
+
+const GLOBAL_COLUMNS: CatalogColumns = {
+  bestPriceExclVat: "best_price_excl_vat",
+  offerCount: "offer_count",
+  totalStock: "total_stock",
+  isInStock: "is_in_stock",
+};
+
+const COUNTRY_COLUMNS: CatalogColumns = {
+  bestPriceExclVat: "country_best_price_excl_vat",
+  offerCount: "country_offer_count",
+  totalStock: "country_total_stock",
+  isInStock: "country_is_in_stock",
+};
+
 function applyCatalogProductFilters(
   query: any,
   filters: CatalogFilters,
@@ -146,8 +168,10 @@ function applyCatalogProductFilters(
     resolvedBrandIds: string[] | null;
     manufacturerIds: string[] | null;
     effectiveSearch?: string;
+    columns?: CatalogColumns;
   }
 ) {
+  const cols = options.columns ?? GLOBAL_COLUMNS;
   let next = query;
 
   if (options.categoryIds?.length) next = next.in("category_id", options.categoryIds);
@@ -159,10 +183,10 @@ function applyCatalogProductFilters(
   // longue (~37 KB) qui casse PostgREST (HTTP 400). Les filtres mots-clés
   // dans `applyHiddenCategoryFilter` couvrent déjà l'essentiel côté serveur.
 
-  if (filters.priceMin !== undefined) next = next.gte("best_price_excl_vat", filters.priceMin);
-  if (filters.priceMax !== undefined) next = next.lte("best_price_excl_vat", filters.priceMax);
-  if (filters.inStock) next = next.eq("is_in_stock", true);
-  if (filters.hasOffers) next = next.gt("offer_count", 0);
+  if (filters.priceMin !== undefined) next = next.gte(cols.bestPriceExclVat, filters.priceMin);
+  if (filters.priceMax !== undefined) next = next.lte(cols.bestPriceExclVat, filters.priceMax);
+  if (filters.inStock) next = next.eq(cols.isInStock, true);
+  if (filters.hasOffers) next = next.gt(cols.offerCount, 0);
 
   if (options.effectiveSearch) {
     const pattern = `%${options.effectiveSearch}%`;
@@ -172,12 +196,12 @@ function applyCatalogProductFilters(
   return next;
 }
 
-function applyCatalogSort(query: any, sort: string) {
+function applyCatalogSort(query: any, sort: string, columns: CatalogColumns = GLOBAL_COLUMNS) {
   switch (sort) {
     case "price_asc":
-      return query.order("best_price_excl_vat", { ascending: true, nullsFirst: false });
+      return query.order(columns.bestPriceExclVat, { ascending: true, nullsFirst: false });
     case "price_desc":
-      return query.order("best_price_excl_vat", { ascending: false });
+      return query.order(columns.bestPriceExclVat, { ascending: false });
     case "name_asc":
       return query.order("name", { ascending: true });
     case "name_desc":
@@ -185,9 +209,9 @@ function applyCatalogSort(query: any, sort: string) {
     case "newest":
       return query.order("created_at", { ascending: false });
     case "stock_desc":
-      return query.order("total_stock", { ascending: false });
+      return query.order(columns.totalStock, { ascending: false });
     default:
-      return query.order("offer_count", { ascending: false });
+      return query.order(columns.offerCount, { ascending: false });
   }
 }
 

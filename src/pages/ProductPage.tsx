@@ -2028,6 +2028,7 @@ export default function ProductPage() {
                           </tbody>
                         </table>
                       </div>
+                          </>
                           );
                         })()}
                         <p className="text-[11px] text-muted-foreground italic px-1">

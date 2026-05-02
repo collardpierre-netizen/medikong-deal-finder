@@ -148,6 +148,7 @@ const AdminRfqLedgerPage = lazyWithRetry(() => import("./pages/admin/AdminRfqLed
 const AdminRfqPlansPage = lazyWithRetry(() => import("./pages/admin/AdminRfqPlansPage"), "AdminRfqPlansPage");
 const AdminPriceCockpitPage = lazyWithRetry(() => import("./pages/admin/AdminPriceCockpitPage"), "AdminPriceCockpitPage");
 const AdminMarketDeltaAnomaliesPage = lazyWithRetry(() => import("./pages/admin/AdminMarketDeltaAnomaliesPage"), "AdminMarketDeltaAnomaliesPage");
+const AdminMarketDeltaThresholdsPage = lazyWithRetry(() => import("./pages/admin/AdminMarketDeltaThresholdsPage"), "AdminMarketDeltaThresholdsPage");
 const AdminPackAuditPage = lazyWithRetry(() => import("./pages/admin/AdminPackAuditPage"), "AdminPackAuditPage");
 const AdminRfqRemindersPage = lazyWithRetry(() => import("./pages/admin/AdminRfqRemindersPage"), "AdminRfqRemindersPage");
 const AdminRfqRoutingTestPage = lazyWithRetry(() => import("./pages/admin/AdminRfqRoutingTestPage"), "AdminRfqRoutingTestPage");

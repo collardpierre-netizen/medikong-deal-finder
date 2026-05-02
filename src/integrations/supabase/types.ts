@@ -2678,6 +2678,176 @@ export type Database = {
         }
         Relationships: []
       }
+      market_delta_anomalies: {
+        Row: {
+          delta_abs: number
+          delta_pct: number
+          detected_at: string
+          direction: string
+          id: string
+          market_sample_size: number
+          market_unit_price_median: number
+          mk_pack_size: number
+          mk_unit_price: number
+          notes: string | null
+          offer_id: string
+          product_id: string
+          resolved_at: string | null
+          resolved_by: string | null
+          run_id: string
+          status: string
+          threshold_pct: number
+          vendor_id: string | null
+        }
+        Insert: {
+          delta_abs: number
+          delta_pct: number
+          detected_at?: string
+          direction: string
+          id?: string
+          market_sample_size: number
+          market_unit_price_median: number
+          mk_pack_size: number
+          mk_unit_price: number
+          notes?: string | null
+          offer_id: string
+          product_id: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          run_id: string
+          status?: string
+          threshold_pct: number
+          vendor_id?: string | null
+        }
+        Update: {
+          delta_abs?: number
+          delta_pct?: number
+          detected_at?: string
+          direction?: string
+          id?: string
+          market_sample_size?: number
+          market_unit_price_median?: number
+          mk_pack_size?: number
+          mk_unit_price?: number
+          notes?: string | null
+          offer_id?: string
+          product_id?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          run_id?: string
+          status?: string
+          threshold_pct?: number
+          vendor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "market_delta_anomalies_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "effective_offer_prices_v"
+            referencedColumns: ["offer_id"]
+          },
+          {
+            foreignKeyName: "market_delta_anomalies_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "market_delta_anomalies_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "public_offers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "market_delta_anomalies_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "market_delta_anomalies_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products_with_country_stats_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "market_delta_anomalies_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "market_delta_anomalies_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_market_intel_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "market_delta_anomalies_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "market_delta_anomalies_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "market_delta_anomalies_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      market_delta_runs: {
+        Row: {
+          anomalies_found: number
+          error: string | null
+          finished_at: string | null
+          id: string
+          offers_scanned: number
+          offers_with_market: number
+          started_at: string
+          threshold_pct: number
+          triggered_by: string
+        }
+        Insert: {
+          anomalies_found?: number
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          offers_scanned?: number
+          offers_with_market?: number
+          started_at?: string
+          threshold_pct: number
+          triggered_by?: string
+        }
+        Update: {
+          anomalies_found?: number
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          offers_scanned?: number
+          offers_with_market?: number
+          started_at?: string
+          threshold_pct?: number
+          triggered_by?: string
+        }
+        Relationships: []
+      }
       market_price_pack_anomalies: {
         Row: {
           admin_note: string | null
@@ -9986,7 +10156,7 @@ export type Database = {
           read_at: string | null
           title: string
           type: string
-          vendor_id: string
+          vendor_id: string | null
         }
         Insert: {
           body?: string | null
@@ -9998,7 +10168,7 @@ export type Database = {
           read_at?: string | null
           title: string
           type: string
-          vendor_id: string
+          vendor_id?: string | null
         }
         Update: {
           body?: string | null
@@ -10010,7 +10180,7 @@ export type Database = {
           read_at?: string | null
           title?: string
           type?: string
-          vendor_id?: string
+          vendor_id?: string | null
         }
         Relationships: [
           {
@@ -12678,6 +12848,15 @@ export type Database = {
         Returns: boolean
       }
       delete_user_account: { Args: { _user_id: string }; Returns: undefined }
+      detect_market_delta_anomalies: {
+        Args: { _threshold_pct?: number; _triggered_by?: string }
+        Returns: {
+          anomalies_found: number
+          offers_scanned: number
+          offers_with_market: number
+          run_id: string
+        }[]
+      }
       detect_market_price_pack_anomalies: {
         Args: { _source_id_filter?: string }
         Returns: {
@@ -13291,6 +13470,10 @@ export type Database = {
       rfq_vendor_state_label: {
         Args: { _status: Database["public"]["Enums"]["rfq_dispatch_status"] }
         Returns: string
+      }
+      run_market_delta_anomaly_job: {
+        Args: { _threshold_pct?: number; _triggered_by?: string }
+        Returns: Json
       }
       snapshot_vendor_offer_history: { Args: never; Returns: Json }
       start_vendor_market_intel_trial: {

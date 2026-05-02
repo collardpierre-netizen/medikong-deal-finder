@@ -160,9 +160,7 @@ function OfferRow({
     compareBasis === 'pack' ? basePackPrice :
     compareBasis === 'unit' ? perUnitPrice :
     perUnitPrice * 100;
-  const basisSuffix =
-    compareBasis === 'pack' ? (packSize > 1 ? ` /pack de ${packSize}` : ' /pack') :
-    compareBasis === 'unit' ? ' /u.' : ' /100 u.';
+  const basisSuffix = ` ${formatBasisLabel(compareBasis as CompareBasis, { packSize, withPackSize: true })}`;
   const priceLabel = isTVAC ? "TVAC" : "HTVA";
 
   const handleAdd = () => {
@@ -2051,10 +2049,7 @@ export default function ProductPage() {
                                             productName: product.name,
                                           });
                                           const mkBasis = mkHT * mult;
-                                          const mkBasisLabel =
-                                            externalCompareBasis === 'pack' ? `€/pack×${packDiv}` :
-                                            externalCompareBasis === 'hundred' ? '€/100u' :
-                                            '€/u';
+                                          const mkBasisLabel = formatBasisLabel(externalCompareBasis as CompareBasis);
                                           return (
                                             <a
                                               href="#mk-reference-pack"

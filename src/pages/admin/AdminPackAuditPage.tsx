@@ -98,6 +98,22 @@ export default function AdminPackAuditPage() {
     onError: (e: any) => toast.error(`Erreur : ${e?.message ?? "inconnue"}`),
   });
 
+  const runAlert = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.rpc("run_pack_mismatch_alert_job" as never);
+      if (error) throw error;
+      return data as { status: string; total_issues: number };
+    },
+    onSuccess: (res: any) => {
+      if (res?.total_issues > 0) {
+        toast.success(`Alerte envoyée : ${res.total_issues} produit(s) à corriger`);
+      } else {
+        toast.success("Aucune incohérence détectée — pas d'alerte envoyée");
+      }
+    },
+    onError: (e: any) => toast.error(`Erreur : ${e?.message ?? "inconnue"}`),
+  });
+
   const stats = useMemo(() => {
     const list = data ?? [];
     return {

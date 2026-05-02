@@ -23,6 +23,7 @@ import { useCountry } from "@/contexts/CountryContext";
 import { usePriceDisplay } from "@/contexts/PriceDisplayContext";
 import { useProductVatRate, vatSourceLabel } from "@/hooks/useProductVatRate";
 import { resolvePackSize, packSizeSourceLabel, packSizeSourceBadge } from "@/lib/pack-size";
+import { PackSizeExplainer } from "@/components/product/PackSizeExplainer";
 import { useProductPrice } from "@/hooks/useProductPriceLevel";
 import { Helmet } from "react-helmet-async";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -1912,16 +1913,29 @@ export default function ProductPage() {
                                       )}
                                     </span>
                                   </td>
-                                  <td className="px-2 py-2 text-center text-[11px] whitespace-nowrap" title={`${packBadge.title} — libellé source : ${mp.product_name_source ?? '—'}`}>
+                                  <td className="px-2 py-2 text-center text-[11px] whitespace-nowrap">
                                     {mpPack.packSize > 1 ? (
                                       <span className="inline-flex items-center gap-1">
                                         <span className="font-semibold text-foreground tabular-nums">×{mpPack.packSize}</span>
-                                        <span className={`inline-flex items-center px-1 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide border leading-none ${packBadge.className}`}>
-                                          {packBadge.code}
-                                        </span>
+                                        <PackSizeExplainer
+                                          packSize={mpPack.packSize}
+                                          source={mpPack.source}
+                                          rawTitle={mp.product_name_source}
+                                          rawUrl={mp.product_url}
+                                          packPriceEur={Number(mp.prix_grossiste || mp.prix_pharmacien || mp.prix_public || 0)}
+                                          mkUnitPriceEur={mkHT}
+                                        />
                                       </span>
                                     ) : (
-                                      <span className="text-muted-foreground">×1</span>
+                                      <span className="inline-flex items-center gap-1">
+                                        <span className="text-muted-foreground">×1</span>
+                                        <PackSizeExplainer
+                                          packSize={1}
+                                          source={mpPack.source}
+                                          rawTitle={mp.product_name_source}
+                                          rawUrl={mp.product_url}
+                                        />
+                                      </span>
                                     )}
                                   </td>
                                   {mpVisMap.show_pharmacist_price && (

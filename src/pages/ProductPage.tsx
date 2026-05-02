@@ -43,7 +43,7 @@ import { ProductDescription } from "@/components/product/ProductDescription";
 
 // Helpers de formatage harmonisés (locale fr-BE, suffixes uniques).
 // Cf. src/lib/price-format.ts pour la source de vérité.
-import { formatAmount as formatEur, formatBasisLabel, type CompareBasis } from "@/lib/price-format";
+import { formatAmount as formatEur, formatBasisLabel, priceFromUnit, type CompareBasis } from "@/lib/price-format";
 
 function formatCount(n: number | null | undefined): string {
   const v = Number(n);
@@ -152,14 +152,10 @@ function OfferRow({
   const displayCode = offer.displayCode || offer.sellerId.slice(0, 6).toUpperCase();
   // sellerName already encapsulates the anonymization rules (real name vs "Fournisseur XXXXXX")
   const sellerLabel = offer.sellerName || `Fournisseur ${displayCode}`;
-  // Prix vendeur "au pack" tel qu'importé. Bascule sur unité ou /100u via compareBasis.
+  // Prix marketplace stocké à l'unité. La base "pack" multiplie par le conditionnement.
   const packSize = Math.max(1, packSizeProp ?? 1);
-  const basePackPrice = isTVAC ? offer.unitPriceInclVat : offer.unitPriceEur;
-  const perUnitPrice = packSize > 0 ? basePackPrice / packSize : basePackPrice;
-  const displayPrice =
-    compareBasis === 'pack' ? basePackPrice :
-    compareBasis === 'unit' ? perUnitPrice :
-    perUnitPrice * 100;
+  const baseUnitPrice = isTVAC ? offer.unitPriceInclVat : offer.unitPriceEur;
+  const displayPrice = priceFromUnit(baseUnitPrice, compareBasis as CompareBasis, packSize);
   const basisSuffix = ` ${formatBasisLabel(compareBasis as CompareBasis, { packSize, withPackSize: true })}`;
   const priceLabel = isTVAC ? "TVAC" : "HTVA";
 
@@ -351,9 +347,9 @@ function OfferRow({
                 </span>
                 <span className="text-sm text-foreground whitespace-nowrap">{offer.movEur > 0 ? <>{formatEur(offer.movEur)}&nbsp;€</> : "—"}</span>
               </div>
-              {compareBasis !== 'pack' && packSize > 1 && (
+              {compareBasis !== 'unit' && packSize > 1 && (
                 <span className="text-[10px] text-muted-foreground">
-                  Pack vendeur : {formatEur(basePackPrice)}&nbsp;€ /pack de {packSize}
+                  Prix unitaire : {formatEur(baseUnitPrice)}&nbsp;€ /u. · pack de {packSize}
                 </span>
               )}
               <ProfileResolvedPriceBadge
@@ -737,7 +733,8 @@ export default function ProductPage() {
   // Base de comparaison pour les offres externes : ramène toutes les offres
   // au même conditionnement pour comparer "des pommes à des pommes".
   // Défaut: 'pack' = prix exactement tel qu'importé chez le vendeur (le plus fidèle).
-  // Le toggle permet de ramener à l'unité ou aux 100 unités pour comparer.
+  // Les offres marketplace sont encodées à l'unité ; les relevés externes/marché restent affichés par pack par défaut.
+  const [offerCompareBasis, setOfferCompareBasis] = useState<'pack' | 'unit' | 'hundred'>('unit');
   const [externalCompareBasis, setExternalCompareBasis] = useState<'pack' | 'unit' | 'hundred'>('pack');
   const offerSectionRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
@@ -1015,7 +1012,15 @@ export default function ProductPage() {
 
   const description = productDetails?.description || (productDetails as any)?.label || product.descriptionShort || "";
 
-  const clientPrice = bestOffer ? (isTVAC ? bestOffer.unitPriceInclVat : bestOffer.unitPriceEur) : 0;
+  const bestOfferPack = resolvePackSize({
+    offerOverride: bestOffer?.packSizeOverride,
+    productPackSize: (product as any)?.pack_size,
+    productName: product.name,
+  });
+  const bestOfferPackSize = bestOfferPack.packSize || 1;
+  const bestOfferUnitPrice = bestOffer ? (isTVAC ? bestOffer.unitPriceInclVat : bestOffer.unitPriceEur) : 0;
+  const bestOfferDisplayPrice = priceFromUnit(bestOfferUnitPrice, offerCompareBasis as CompareBasis, bestOfferPackSize);
+  const clientPrice = bestOfferUnitPrice;
   const userPriceNum = parseFloat(userPrice.replace(",", ".")) || 0;
   const savingsAbs = userPriceNum > 0 ? userPriceNum - clientPrice : 0;
   const savingsPct = userPriceNum > 0 ? ((savingsAbs / userPriceNum) * 100) : 0;
@@ -1416,13 +1421,13 @@ export default function ProductPage() {
                               </div>
                               <ToggleGroup
                                 type="single"
-                                value={externalCompareBasis}
-                                onValueChange={(v) => v && setExternalCompareBasis(v as 'pack' | 'unit' | 'hundred')}
+                                value={offerCompareBasis}
+                                onValueChange={(v) => v && setOfferCompareBasis(v as 'pack' | 'unit' | 'hundred')}
                                 className="bg-muted/40 rounded-lg p-0.5"
                                 size="sm"
                               >
-                                <ToggleGroupItem value="pack" className="text-[11px] px-2.5 h-7 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">€/pack</ToggleGroupItem>
                                 <ToggleGroupItem value="unit" className="text-[11px] px-2.5 h-7 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">€/unité</ToggleGroupItem>
+                                <ToggleGroupItem value="pack" className="text-[11px] px-2.5 h-7 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">€/pack</ToggleGroupItem>
                                 <ToggleGroupItem value="hundred" className="text-[11px] px-2.5 h-7 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">€/100 u.</ToggleGroupItem>
                               </ToggleGroup>
                             </div>
@@ -1451,7 +1456,7 @@ export default function ProductPage() {
                         <div className="hidden md:grid grid-cols-[1.5fr_2fr_0.8fr_1.5fr] gap-3 px-1 pb-3 text-xs font-semibold text-muted-foreground border-b border-border">
                           <span>Fournisseur</span>
                           <span>
-                            Prix {externalCompareBasis === 'pack' ? '/ pack' : externalCompareBasis === 'unit' ? '/ unité' : '/ 100 u.'} · MOV
+                            Prix {offerCompareBasis === 'pack' ? '/ pack' : offerCompareBasis === 'unit' ? '/ unité' : '/ 100 u.'} · MOV
                           </span>
                           <span>Stock</span>
                           <span className="text-right">Commander</span>
@@ -1470,7 +1475,7 @@ export default function ProductPage() {
                             isTVAC={isTVAC}
                             categoryId={categoryData?.category?.id}
                             discountPercentage={Number((product as any)?.discount_percentage) || 0}
-                            compareBasis={externalCompareBasis}
+                            compareBasis={offerCompareBasis}
                             packSize={resolvePackSize({
                               offerOverride: (bestOffer as any)?.packSizeOverride,
                               productPackSize: (product as any)?.pack_size,
@@ -1513,7 +1518,7 @@ export default function ProductPage() {
 
                         <div className="hidden md:grid grid-cols-[1.5fr_2fr_0.8fr_1.5fr] gap-3 px-1 pb-3 text-xs font-semibold text-muted-foreground border-b border-border">
                           <span>Fournisseur</span>
-                          <span>Prix unitaire / MOV</span>
+                          <span>Prix {offerCompareBasis === 'pack' ? '/ pack' : offerCompareBasis === 'unit' ? '/ unité' : '/ 100 u.'} · MOV</span>
                           <span>Stock</span>
                           <span className="text-right">Commander</span>
                         </div>
@@ -1534,9 +1539,9 @@ export default function ProductPage() {
                               delay={i * 0.06}
                               isTVAC={isTVAC}
                               categoryId={categoryData?.category?.id}
-                              bestPrice={bestOffer ? (isTVAC ? bestOffer.unitPriceInclVat : bestOffer.unitPriceEur) : undefined}
+                              bestPrice={bestOffer ? bestOfferDisplayPrice : undefined}
                               discountPercentage={Number((product as any)?.discount_percentage) || 0}
-                              compareBasis={externalCompareBasis}
+                              compareBasis={offerCompareBasis}
                               packSize={resolvePackSize({
                                 offerOverride: (offer as any)?.packSizeOverride,
                                 productPackSize: (product as any)?.pack_size,
@@ -1819,17 +1824,14 @@ export default function ProductPage() {
                         {(() => {
                           const basisSuffix = formatBasisLabel(externalCompareBasis as CompareBasis).replace(/^€\//, '/');
 
-                          // Récap pack MK + prix MK utilisés pour le calcul des écarts
+                          // Récap prix MK : les offres marketplace sont encodées à l'unité.
                           const mkPack = resolvePackSize({
                             offerOverride: (bestOffer as any)?.packSizeOverride,
                             productPackSize: (product as any)?.pack_size,
                             productName: product.name,
                           });
-                          // ⚠️ Convention : bestOffer.unitPriceEur est le prix TEL QU'ENCODÉ
-                          // par le vendeur, qui correspond au pack vendeur (ex: Valerco 3,09 €/pack de 4).
-                          // → Le prix unitaire MediKong se déduit en divisant par le pack.
-                          const mkPackPrice = bestOffer?.unitPriceEur ?? 0;
-                          const mkUnit = mkPack.packSize > 0 ? mkPackPrice / mkPack.packSize : mkPackPrice;
+                          const mkUnit = bestOffer?.unitPriceEur ?? 0;
+                          const mkPackPrice = priceFromUnit(mkUnit, 'pack', mkPack.packSize);
                           return (
                           <>
                           {bestOffer && (
@@ -1842,13 +1844,11 @@ export default function ProductPage() {
                                   packSize={mkPack.packSize}
                                   source={mkPack.source}
                                   rawTitle={product.name}
-                                  packPriceEur={mkPackPrice || undefined}
-                                  mkUnitPriceEur={mkUnit}
                                 />
                               </span>
                               {mkPack.packSize > 1 && (
                                 <span className="text-muted-foreground">
-                                  Pack&nbsp;: <span className="font-bold text-foreground tabular-nums">{formatEur(mkPackPrice)} €</span>
+                                  Pack calculé&nbsp;: <span className="font-bold text-foreground tabular-nums">{formatEur(mkPackPrice)} €</span>
                                 </span>
                               )}
                               <span className="text-muted-foreground">
@@ -1905,14 +1905,8 @@ export default function ProductPage() {
                           </thead>
                           <tbody className="divide-y divide-border">
                             {marketPriceItems.map((mp: any) => {
-                              // ⚠️ bestOffer.unitPriceEur est le prix au pack vendeur ; on le ramène
-                              // à l'unité avec le pack MK pour comparer à du marché normalisé /unité.
-                              const mkPackForUnit = resolvePackSize({
-                                offerOverride: (bestOffer as any)?.packSizeOverride,
-                                productPackSize: (product as any)?.pack_size,
-                                productName: product?.name,
-                              }).packSize || 1;
-                              const mkHT = bestOffer ? (bestOffer.unitPriceEur / mkPackForUnit) : 0;
+                              // Prix MediKong HTVA à l'unité (offers.price_excl_vat est unitaire).
+                              const mkHT = bestOffer ? bestOffer.unitPriceEur : 0;
                               const isOnline = mp.market_price_sources?.source_type === "online";
                               const tvaRate = Number(mp.tva_rate || 21);
 
@@ -1922,7 +1916,7 @@ export default function ProductPage() {
                               // divise tous les prix par ce pack pour comparer "des pommes à des pommes".
                               const mpPack = resolvePackSize({
                                 offerOverride: null,
-                                productPackSize: (product as any)?.pack_size,
+                                productPackSize: null,
                                 productName: product?.name,
                                 offerTitle: mp.product_name_source,
                                 offerUrl: mp.product_url,
@@ -2056,7 +2050,7 @@ export default function ProductPage() {
                                             productPackSize: (product as any)?.pack_size,
                                             productName: product.name,
                                           });
-                                          const mkBasis = mkHT * mult;
+                                          const mkBasis = priceFromUnit(mkHT, externalCompareBasis as CompareBasis, mkPackForRow.packSize);
                                           const mkBasisLabel = formatBasisLabel(externalCompareBasis as CompareBasis);
                                           return (
                                             <a

@@ -184,6 +184,7 @@ export interface Offer {
   stockQuantity: number;
   movEur: number;
   bundleSize: number;
+  packSizeOverride?: number | null;
   deliveryDays: number;
   shipFromCountry: string;
   priceTiers: any[] | null;
@@ -308,6 +309,7 @@ export function useProductOffers(productId: string | undefined) {
           stockQuantity: Number(o.stock_quantity) || 0,
           movEur: Number(o.mov || o.mov_amount || 0),
           bundleSize: Number(o.moq) || 1,
+          packSizeOverride: o.pack_size_override ?? null,
           deliveryDays: o.delivery_days ?? null,
           shipFromCountry: o.shipping_from_country || 'BE',
           priceTiers: o.price_tiers || null,

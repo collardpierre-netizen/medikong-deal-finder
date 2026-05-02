@@ -1825,8 +1825,11 @@ export default function ProductPage() {
                             productPackSize: (product as any)?.pack_size,
                             productName: product.name,
                           });
-                          const mkUnit = bestOffer?.unitPriceEur ?? 0;
-                          const mkPackPrice = mkUnit * mkPack.packSize;
+                          // ⚠️ Convention : bestOffer.unitPriceEur est le prix TEL QU'ENCODÉ
+                          // par le vendeur, qui correspond au pack vendeur (ex: Valerco 3,09 €/pack de 4).
+                          // → Le prix unitaire MediKong se déduit en divisant par le pack.
+                          const mkPackPrice = bestOffer?.unitPriceEur ?? 0;
+                          const mkUnit = mkPack.packSize > 0 ? mkPackPrice / mkPack.packSize : mkPackPrice;
                           return (
                           <>
                           {bestOffer && (

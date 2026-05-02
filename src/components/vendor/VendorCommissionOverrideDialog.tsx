@@ -21,12 +21,14 @@ interface Props {
   /** Optionnel : si vous avez une offre, on affiche la cascade actuelle. */
   offerId?: string;
   triggerLabel?: string;
+  /** Optionnel : remplace complètement le bouton trigger par défaut. */
+  trigger?: React.ReactNode;
 }
 
 type Model = "flat_percentage" | "margin_split" | "fixed_amount";
 
 export function VendorCommissionOverrideDialog({
-  vendorId, productId, productName, offerId, triggerLabel,
+  vendorId, productId, productName, offerId, triggerLabel, trigger,
 }: Props) {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
@@ -131,10 +133,12 @@ export function VendorCommissionOverrideDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="sm" variant="outline" className="gap-2">
-          <Settings2 size={14} />
-          {triggerLabel ?? "Personnaliser la commission"}
-        </Button>
+        {trigger ?? (
+          <Button size="sm" variant="outline" className="gap-2">
+            <Settings2 size={14} />
+            {triggerLabel ?? "Personnaliser la commission"}
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="max-w-lg">
         <DialogHeader>

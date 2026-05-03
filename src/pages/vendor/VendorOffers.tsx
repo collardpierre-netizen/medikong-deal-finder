@@ -1799,6 +1799,26 @@ export default function VendorOffers() {
                 style={{ borderColor: "#E2E8F0" }} value={form.delivery_days} onChange={e => setForm(p => ({ ...p, delivery_days: e.target.value }))} />
             </div>
             <div className="md:col-span-2">
+              <label className="text-[11px] mb-1 flex items-center justify-between" style={{ color: "#8B95A5" }}>
+                <span>Note vendeur (visible acheteur)</span>
+                <span className="text-[10px]" style={{ color: form.vendor_note.length > 500 ? "#DC2626" : "#B0BAC9" }}>
+                  {form.vendor_note.length}/500
+                </span>
+              </label>
+              <textarea
+                rows={2}
+                maxLength={500}
+                placeholder="Ex. Packaging FR + arabe sur une face · Notice multilingue · Lot court DLU"
+                className="w-full px-3 py-2 text-[13px] border rounded-lg focus:border-[#1B5BDA] focus:outline-none resize-y"
+                style={{ borderColor: "#E2E8F0" }}
+                value={form.vendor_note}
+                onChange={e => setForm(p => ({ ...p, vendor_note: e.target.value }))}
+              />
+              <p className="text-[11px] mt-1" style={{ color: "#8B95A5" }}>
+                Affichée à l'acheteur en survol d'une icône ⓘ à côté de votre offre.
+              </p>
+            </div>
+            <div className="md:col-span-2">
               {(() => {
                 const overrideRaw = form.pack_size_override?.trim();
                 const overrideNum = overrideRaw ? Number(overrideRaw) : NaN;

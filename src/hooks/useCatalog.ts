@@ -424,7 +424,11 @@ export function useCatalogProducts(filters: CatalogFilters) {
               .from("products_with_country_stats_v")
               .select(COUNTRY_VIEW_SELECT)
               .eq("is_active", true)
-              .eq("country_code", country)
+              // Inclure aussi les produits actifs sans offre (pas de ligne dans
+              // product_country_stats → country_code NULL via LEFT JOIN). Sinon
+              // un produit visible dans le moteur de recherche disparaît du
+              // catalogue dès qu'aucune offre BE n'existe encore.
+              .or(`country_code.eq.${country},country_code.is.null`)
           : supabase.from("products").select(PRODUCT_SELECT_FIELDS).eq("is_active", true);
         return applyCatalogProductFilters(applyHiddenCategoryFilter(base), filters, filterContextWithCols);
       };
@@ -435,7 +439,7 @@ export function useCatalogProducts(filters: CatalogFilters) {
               .from("products_with_country_stats_v")
               .select("id", { count: hasFilters ? "estimated" : "exact" })
               .eq("is_active", true)
-              .eq("country_code", country)
+              .or(`country_code.eq.${country},country_code.is.null`)
           : supabase
               .from("products")
               .select("id", { count: hasFilters ? "estimated" : "exact" })

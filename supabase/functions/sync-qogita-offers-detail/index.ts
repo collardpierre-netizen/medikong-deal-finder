@@ -847,7 +847,11 @@ async function processSingleProduct(
       const bpMov = parseFloat(String(variant?.mov ?? variant?.minimumOrderValue ?? "0")) || 0;
       const bpRawTiers = extractRawTiers(variant);
 
-      if (priceExclVat > 0) {
+      // POLITIQUE ANTI-VENDEUR ANONYME :
+      // On n'enregistre PLUS d'offre catch-all sur le vendeur virtuel "qogita-best-price".
+      // Seules les offres multi-vendor (avec FID vendeur réel) sont persistées plus bas.
+      // Le bloc ci-dessous est désactivé volontairement.
+      if (false && priceExclVat > 0) {
         const { data: bpUpserted, error: offerErr } = await sb.from("offers").upsert(
           {
             product_id: product.id,

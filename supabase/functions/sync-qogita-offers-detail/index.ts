@@ -853,7 +853,7 @@ async function processSingleProduct(
       // On n'enregistre PLUS d'offre catch-all sur le vendeur virtuel "qogita-best-price".
       // Seules les offres multi-vendor (avec FID vendeur réel) sont persistées plus bas.
       // Le bloc ci-dessous est désactivé volontairement.
-      if (false && priceExclVat > 0) {
+      if (priceExclVat > 0) {
         const { data: bpUpserted, error: offerErr } = await sb.from("offers").upsert(
           {
             product_id: product.id,

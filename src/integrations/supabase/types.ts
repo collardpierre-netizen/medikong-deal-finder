@@ -5408,6 +5408,7 @@ export type Database = {
           pack_size: number | null
           pack_size_source: string | null
           pack_size_updated_at: string | null
+          pack_size_validated: boolean
           popularity: number | null
           promotion_end_date: string | null
           promotion_label: string | null
@@ -5498,6 +5499,7 @@ export type Database = {
           pack_size?: number | null
           pack_size_source?: string | null
           pack_size_updated_at?: string | null
+          pack_size_validated?: boolean
           popularity?: number | null
           promotion_end_date?: string | null
           promotion_label?: string | null
@@ -5588,6 +5590,7 @@ export type Database = {
           pack_size?: number | null
           pack_size_source?: string | null
           pack_size_updated_at?: string | null
+          pack_size_validated?: boolean
           popularity?: number | null
           promotion_end_date?: string | null
           promotion_label?: string | null

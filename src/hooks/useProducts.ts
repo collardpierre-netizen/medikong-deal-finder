@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { isValidProductImage } from "@/lib/image-utils";
+import { getPreferredProductImageUrls, isValidProductImage } from "@/lib/image-utils";
 import { useCountry } from "@/contexts/CountryContext";
 import { resolveVendorVisibility, getVendorPublicName } from "@/lib/vendor-display";
 import { applyHiddenCategoryFilter } from "@/lib/catalog-filters";
@@ -45,7 +45,10 @@ function slugify(text: string): string {
 
 function mapDbProduct(row: any, offersData?: any[]): Product {
   const productOffers = offersData?.filter((o: any) => o.product_id === row.id) || [];
-  const validImageUrls = Array.isArray(row.image_urls) ? row.image_urls.filter(isValidProductImage) : [];
+  const validImageUrls = getPreferredProductImageUrls([
+    ...(Array.isArray(row.image_urls) ? row.image_urls : []),
+    row.image_url,
+  ]);
   const fallbackImageUrl = isValidProductImage(row.image_url) ? row.image_url : undefined;
   const lowestPrice = productOffers.length > 0
     ? Math.min(...productOffers.map((o: any) => Number(o.price_excl_vat)))

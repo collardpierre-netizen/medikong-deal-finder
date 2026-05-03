@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Loader2, Upload, X, Image as ImageIcon, ImagePlus, AlertTriangle, ShieldCheck, Sparkles } from "lucide-react";
 import { normalizeImageFile } from "@/lib/imageNormalize";
+import { getPreferredProductImageUrls } from "@/lib/image-utils";
 
 const MAX_FILE_SIZE = 8 * 1024 * 1024; // 8MB per file
 const ACCEPTED = ["image/jpeg", "image/png", "image/webp", "image/avif"];
@@ -231,8 +232,9 @@ export default function ProductPhotoUploader({
         setProgress(Math.round((done / toUpload.length) * 100));
       }
 
-      const finalImages =
-        mode === "replace" ? uploaded : [...currentImages, ...uploaded];
+      const finalImages = getPreferredProductImageUrls(
+        mode === "replace" ? uploaded : [...uploaded, ...currentImages]
+      );
 
       const { error: dbErr } = await supabase
         .from("products")

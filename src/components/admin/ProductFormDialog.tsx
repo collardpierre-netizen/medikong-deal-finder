@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { ChevronsUpDown, Check, ImageOff, Plus, ArrowUp, ArrowDown, Trash2, Upload, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { normalizeImageFile } from "@/lib/imageNormalize";
+import { getPreferredProductImageUrls, isQogitaPlaceholder, MEDIKONG_PLACEHOLDER } from "@/lib/image-utils";
 
 interface ProductFormDialogProps {
   open: boolean;
@@ -106,7 +107,7 @@ export function ProductFormDialog({ open, onOpenChange, product, brands, manufac
         const { data } = supabase.storage.from("product-images").getPublicUrl(path);
         newUrls.push(data.publicUrl);
       }
-      setMediaUrls((prev) => [...prev, ...newUrls]);
+      setMediaUrls((prev) => getPreferredProductImageUrls([...newUrls, ...prev]));
       toast.success(`${newUrls.length} image(s) ajoutée(s)`);
     } catch (e: any) {
       toast.error(e.message || "Échec de l'upload");
@@ -154,8 +155,8 @@ export function ProductFormDialog({ open, onOpenChange, product, brands, manufac
       description: form.description.trim() || null,
       short_description: form.short_description.trim() || null,
       unit_quantity: parseInt(form.unit_quantity) || 1,
-      image_urls: mediaUrls.map(normalizeUrl).filter(Boolean),
-      image_url: mediaUrls.length > 0 ? normalizeUrl(mediaUrls[0]) : null,
+      image_urls: getPreferredProductImageUrls(mediaUrls.map(normalizeUrl).filter(Boolean)),
+      image_url: getPreferredProductImageUrls(mediaUrls.map(normalizeUrl).filter(Boolean))[0] ?? null,
       is_active: form.is_active,
     };
 
@@ -339,8 +340,9 @@ export function ProductFormDialog({ open, onOpenChange, product, brands, manufac
                       alt={`Média ${index + 1}`}
                       referrerPolicy="no-referrer"
                       className="w-10 h-10 rounded object-contain border border-border bg-background"
+                      onLoad={(e) => { if (isQogitaPlaceholder(e.currentTarget)) e.currentTarget.src = MEDIKONG_PLACEHOLDER; }}
                       onError={(e) => {
-                        (e.target as HTMLImageElement).src = "/medikong-placeholder.png";
+                        (e.target as HTMLImageElement).src = MEDIKONG_PLACEHOLDER;
                       }}
                     />
                     <div className="flex items-center gap-1">

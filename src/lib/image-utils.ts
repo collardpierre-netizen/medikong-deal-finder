@@ -30,6 +30,16 @@ export function isValidProductImage(url: string | undefined | null): boolean {
   return true;
 }
 
+export function isMediKongProductImage(url: string | undefined | null): boolean {
+  if (!url) return false;
+  return url.includes("/storage/v1/object/public/product-images/");
+}
+
+export function getPreferredProductImageUrls(urls: (string | null | undefined)[] | undefined | null): string[] {
+  const unique = Array.from(new Set((urls || []).filter((url): url is string => isValidProductImage(url))));
+  return unique.sort((a, b) => Number(isMediKongProductImage(b)) - Number(isMediKongProductImage(a)));
+}
+
 function isProxyUrl(url: string): boolean {
   return url.includes(IMAGE_PROXY_PATH);
 }

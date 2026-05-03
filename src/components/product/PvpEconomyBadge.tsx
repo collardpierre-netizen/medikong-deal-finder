@@ -37,6 +37,7 @@ const SOURCE_BADGE: Record<string, { short: string; bg: string; fg: string; ring
  */
 export function PvpEconomyBadge({
   productId,
+  offerId,
   buyerPriceTtc,
   buyerPriceHtva,
   countryCode = "BE",

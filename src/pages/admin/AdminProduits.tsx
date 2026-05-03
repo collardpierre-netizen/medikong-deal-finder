@@ -199,7 +199,15 @@ const AdminProduits = () => {
   const toggleHideOffer = async (offer: any) => {
     const next = !offer.admin_hidden;
     let reason: string | null = offer.admin_hidden_reason ?? null;
-    if (next) reason = window.prompt("Raison du masquage (optionnel) :", "") ?? "";
+    if (next) {
+      reason = window.prompt("Raison du masquage (optionnel) :", "") ?? "";
+    } else {
+      const productName = offer.products?.name || "cette offre";
+      const ok = window.confirm(
+        `Réactiver « ${productName} » ?\n\nL'offre redeviendra visible sur le frontend acheteur (is_active = true, admin_hidden = false).`
+      );
+      if (!ok) return;
+    }
     setBusyHide(offer.id);
     const { data: { user } } = await supabase.auth.getUser();
     const { error } = await supabase.from("offers").update({

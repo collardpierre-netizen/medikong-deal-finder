@@ -564,16 +564,50 @@ const AdminProduits = () => {
               <SelectTrigger className="w-[130px] h-9 text-[13px]"><SelectValue placeholder="Statut" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tous statuts</SelectItem>
-                <SelectItem value="active">Actives</SelectItem>
+                <SelectItem value="active">Actives (visibles)</SelectItem>
                 <SelectItem value="inactive">Inactives</SelectItem>
+                <SelectItem value="hidden">Masquées (admin)</SelectItem>
               </SelectContent>
             </Select>
-            {(offersVendorFilter !== "all" || offersBrandFilter !== "all" || offersCountryFilter !== "all" || offersStatusFilter !== "active" || debouncedOffersSearch) && (
+            {(offersVendorFilter !== "all" || offersBrandFilter !== "all" || offersCountryFilter !== "all" || offersStatusFilter !== "active" || debouncedOffersSearch ||
+              offersPriceMin || offersPriceMax || offersStockMin || offersStockMax || offersMoqMin || offersMoqMax || offersDelayMax) && (
               <Button variant="ghost" size="sm" className="text-[12px] h-9" onClick={() => {
                 setOffersVendorFilter("all"); setOffersBrandFilter("all"); setOffersCountryFilter("all"); setOffersStatusFilter("active");
                 setOffersSearch(""); setDebouncedOffersSearch(""); setOffersPage(1);
+                setOffersPriceMin(""); setOffersPriceMax("");
+                setOffersStockMin(""); setOffersStockMax("");
+                setOffersMoqMin(""); setOffersMoqMax(""); setOffersDelayMax("");
               }}>Réinitialiser</Button>
             )}
+          </div>
+
+          {/* Numeric filters row */}
+          <div className="flex items-center gap-2 mb-4 flex-wrap text-[12px]">
+            <span className="font-medium" style={{ color: "#616B7C" }}>Prix HT €</span>
+            <input type="number" step="0.01" placeholder="min" value={offersPriceMin}
+              onChange={(e) => { setOffersPriceMin(e.target.value); setOffersPage(1); }}
+              className="w-20 h-8 px-2 rounded border outline-none" style={{ borderColor: "#E2E8F0" }} />
+            <input type="number" step="0.01" placeholder="max" value={offersPriceMax}
+              onChange={(e) => { setOffersPriceMax(e.target.value); setOffersPage(1); }}
+              className="w-20 h-8 px-2 rounded border outline-none" style={{ borderColor: "#E2E8F0" }} />
+            <span className="font-medium ml-2" style={{ color: "#616B7C" }}>Stock</span>
+            <input type="number" placeholder="min" value={offersStockMin}
+              onChange={(e) => { setOffersStockMin(e.target.value); setOffersPage(1); }}
+              className="w-20 h-8 px-2 rounded border outline-none" style={{ borderColor: "#E2E8F0" }} />
+            <input type="number" placeholder="max" value={offersStockMax}
+              onChange={(e) => { setOffersStockMax(e.target.value); setOffersPage(1); }}
+              className="w-20 h-8 px-2 rounded border outline-none" style={{ borderColor: "#E2E8F0" }} />
+            <span className="font-medium ml-2" style={{ color: "#616B7C" }}>MOQ</span>
+            <input type="number" placeholder="min" value={offersMoqMin}
+              onChange={(e) => { setOffersMoqMin(e.target.value); setOffersPage(1); }}
+              className="w-20 h-8 px-2 rounded border outline-none" style={{ borderColor: "#E2E8F0" }} />
+            <input type="number" placeholder="max" value={offersMoqMax}
+              onChange={(e) => { setOffersMoqMax(e.target.value); setOffersPage(1); }}
+              className="w-20 h-8 px-2 rounded border outline-none" style={{ borderColor: "#E2E8F0" }} />
+            <span className="font-medium ml-2" style={{ color: "#616B7C" }}>Délai max (j)</span>
+            <input type="number" placeholder="ex: 7" value={offersDelayMax}
+              onChange={(e) => { setOffersDelayMax(e.target.value); setOffersPage(1); }}
+              className="w-20 h-8 px-2 rounded border outline-none" style={{ borderColor: "#E2E8F0" }} />
           </div>
 
           {/* Offers count + pagination */}

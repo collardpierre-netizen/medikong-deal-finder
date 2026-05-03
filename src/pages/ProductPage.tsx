@@ -796,7 +796,7 @@ export default function ProductPage() {
   const navigate = useNavigate();
   const routeLocation = useLocation();
   const { user, isVerifiedBuyer, verificationLoading } = useAuth();
-  const { country } = useCountry();
+  const { country, currentCountry } = useCountry();
   const { isTVAC } = usePriceDisplay();
   const { data: product, isLoading } = useProduct(slug);
   const { data: resolvedVat } = useProductVatRate(product?.id, country || "BE");
@@ -1542,14 +1542,24 @@ export default function ProductPage() {
                         </SafeBoundary>
                       </div>
                     ) : (
-                      <div className="border border-border rounded-xl p-8 text-center">
+                      <div
+                        className="border border-amber-200 bg-amber-50/60 rounded-xl p-8 text-center"
+                        role="status"
+                        data-testid="no-offers-for-country"
+                      >
                         <img src="/medikong-placeholder.png" alt="" className="w-10 h-10 mx-auto mb-3 opacity-40" />
-                        <p className="text-muted-foreground font-medium">Ce produit est temporairement indisponible.</p>
-                        <p className="text-sm text-muted-foreground/70 mt-1">
-                          Ajoutez-le à votre liste de suivi pour être notifié de sa disponibilité.
+                        <p className="text-amber-900 font-semibold">
+                          Aucune offre disponible pour ce pays
+                          {currentCountry?.flag_emoji ? ` ${currentCountry.flag_emoji}` : ""}
+                          {currentCountry?.name ? ` (${currentCountry.name})` : country ? ` (${country})` : ""}
+                        </p>
+                        <p className="text-sm text-amber-800/80 mt-1">
+                          Ce produit n'est pas encore référencé par un vendeur dans votre pays.
+                          Essayez de changer de pays dans le sélecteur en haut à droite, ou ajoutez-le à votre liste de suivi
+                          pour être notifié dès qu'une offre est publiée.
                         </p>
                         <button
-                          className="mt-4 inline-flex items-center gap-2 px-4 py-2 border border-border rounded-lg text-sm font-medium text-foreground hover:bg-muted transition-colors"
+                          className="mt-4 inline-flex items-center gap-2 px-4 py-2 border border-amber-300 bg-white rounded-lg text-sm font-medium text-amber-900 hover:bg-amber-100 transition-colors"
                           onClick={() => toast.info("Fonctionnalité bientôt disponible")}
                         >
                           <Heart size={16} />

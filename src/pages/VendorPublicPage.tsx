@@ -57,7 +57,7 @@ function VendorProductCard({ product: p, index, addToCart, openDrawer, onQuickVi
     openDrawer();
     setQty(1);
   };
-  const imgSrc = isValidProductImage(p.imageUrl) ? p.imageUrl : MEDIKONG_PLACEHOLDER;
+  const imgSrc = getProductImageSrc(p.imageUrl);
   return (
     <motion.div
       className="border border-border rounded-lg p-3"

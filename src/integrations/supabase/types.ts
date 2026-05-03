@@ -911,6 +911,68 @@ export type Database = {
           },
         ]
       }
+      catalog_health_missing_offers: {
+        Row: {
+          captured_at: string
+          country_code: string
+          id: number
+          product_id: string
+          run_id: string
+        }
+        Insert: {
+          captured_at?: string
+          country_code: string
+          id?: number
+          product_id: string
+          run_id: string
+        }
+        Update: {
+          captured_at?: string
+          country_code?: string
+          id?: number
+          product_id?: string
+          run_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "catalog_health_missing_offers_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_health_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      catalog_health_runs: {
+        Row: {
+          active_products_count: number
+          country_code: string
+          created_at: string
+          id: string
+          missing_offers_count: number
+          missing_ratio: number
+          run_at: string
+        }
+        Insert: {
+          active_products_count?: number
+          country_code: string
+          created_at?: string
+          id?: string
+          missing_offers_count?: number
+          missing_ratio?: number
+          run_at?: string
+        }
+        Update: {
+          active_products_count?: number
+          country_code?: string
+          created_at?: string
+          id?: string
+          missing_offers_count?: number
+          missing_ratio?: number
+          run_at?: string
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           description: string | null
@@ -11884,6 +11946,17 @@ export type Database = {
         }
         Relationships: []
       }
+      catalog_health_missing_offers_frequency_v: {
+        Row: {
+          country_code: string | null
+          first_seen_at: string | null
+          last_seen_at: string | null
+          missing_run_count: number | null
+          product_id: string | null
+          total_runs_30d: number | null
+        }
+        Relationships: []
+      }
       customer_order_lines: {
         Row: {
           fulfillment_status:
@@ -13503,6 +13576,14 @@ export type Database = {
           display_name: string
           email: string
           user_id: string
+        }[]
+      }
+      log_active_products_without_offers: {
+        Args: never
+        Returns: {
+          active_products_count: number
+          country_code: string
+          missing_offers_count: number
         }[]
       }
       log_offer_data_issue: {

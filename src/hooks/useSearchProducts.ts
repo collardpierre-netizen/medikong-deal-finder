@@ -135,6 +135,7 @@ export function useSearchProducts(query: string, sort: SortOption = "relevance")
       let offersData: any[] = [];
 
       if (productIds.length > 0) {
+        // 1) Offres du pays courant (priorité affichage prix/stock).
         const offersResult = await withSearchTimeout(
           (async () =>
             await supabase
@@ -147,6 +148,29 @@ export function useSearchProducts(query: string, sort: SortOption = "relevance")
         ).catch(() => null);
 
         offersData = offersResult?.data || [];
+
+        // 2) Fallback : pour les produits actifs sans aucune offre dans le
+        //    pays sélectionné, on récupère leurs offres globales (toutes
+        //    countries confondues) pour quand même afficher un prix de
+        //    référence — au lieu de "0,00 €" qui donne l'impression d'un bug.
+        const coveredIds = new Set((offersData || []).map((o: any) => o.product_id));
+        const missingIds = productIds.filter((id: string) => !coveredIds.has(id));
+
+        if (missingIds.length > 0) {
+          const fallbackResult = await withSearchTimeout(
+            (async () =>
+              await supabase
+                .from("offers")
+                .select("product_id, price_excl_vat, stock_quantity, is_active")
+                .eq("is_active", true)
+                .in("product_id", missingIds))(),
+            3000
+          ).catch(() => null);
+
+          if (fallbackResult?.data?.length) {
+            offersData = [...offersData, ...fallbackResult.data];
+          }
+        }
       }
 
       let results = productsData.map((row: any) => mapSearchResult(row, offersData || []));

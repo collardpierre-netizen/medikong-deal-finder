@@ -10,8 +10,9 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ChevronsUpDown, Check, ImageOff, Plus, ArrowUp, ArrowDown, Trash2 } from "lucide-react";
+import { ChevronsUpDown, Check, ImageOff, Plus, ArrowUp, ArrowDown, Trash2, Upload, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { normalizeImageFile } from "@/lib/imageNormalize";
 
 interface ProductFormDialogProps {
   open: boolean;

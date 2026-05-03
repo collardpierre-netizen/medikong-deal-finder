@@ -1884,6 +1884,8 @@ export default function VendorOffers() {
             </div>
 
             <div className="md:col-span-2">
+              <label className="text-[11px] mb-1 flex items-center justify-between" style={{ color: "#8B95A5" }}>
+                <span>Note vendeur (visible acheteur)</span>
                 <span className="text-[10px]" style={{ color: form.vendor_note.length > 500 ? "#DC2626" : "#B0BAC9" }}>
                   {form.vendor_note.length}/500
                 </span>

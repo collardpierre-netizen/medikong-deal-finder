@@ -199,7 +199,15 @@ const AdminProduits = () => {
   const toggleHideOffer = async (offer: any) => {
     const next = !offer.admin_hidden;
     let reason: string | null = offer.admin_hidden_reason ?? null;
-    if (next) reason = window.prompt("Raison du masquage (optionnel) :", "") ?? "";
+    if (next) {
+      reason = window.prompt("Raison du masquage (optionnel) :", "") ?? "";
+    } else {
+      const productName = offer.products?.name || "cette offre";
+      const ok = window.confirm(
+        `Réactiver « ${productName} » ?\n\nL'offre redeviendra visible sur le frontend acheteur (is_active = true, admin_hidden = false).`
+      );
+      if (!ok) return;
+    }
     setBusyHide(offer.id);
     const { data: { user } } = await supabase.auth.getUser();
     const { error } = await supabase.from("offers").update({
@@ -710,15 +718,18 @@ const AdminProduits = () => {
                       <td className="px-3 py-3">
                         <Button
                           size="sm"
-                          variant={o.admin_hidden ? "outline" : "ghost"}
+                          variant={o.admin_hidden ? "default" : "ghost"}
                           disabled={busyHide === o.id}
                           onClick={() => toggleHideOffer(o)}
                           title={o.admin_hidden
-                            ? `Masquée${o.admin_hidden_reason ? ` — ${o.admin_hidden_reason}` : ""}\nCliquer pour ré-afficher`
+                            ? `Masquée${o.admin_hidden_reason ? ` — ${o.admin_hidden_reason}` : ""}\nCliquer pour réactiver (visible frontend)`
                             : "Masquer cette offre du catalogue"}
                           className="h-7 px-2 text-[11px] gap-1"
+                          style={o.admin_hidden ? { backgroundColor: "#16A34A", color: "white", borderColor: "#15803D" } : undefined}
                         >
-                          {o.admin_hidden ? <><Eye size={12} /> Afficher</> : <><EyeOff size={12} /> Masquer</>}
+                          {busyHide === o.id
+                            ? <Loader2 size={12} className="animate-spin" />
+                            : o.admin_hidden ? <><Eye size={12} /> Réactiver</> : <><EyeOff size={12} /> Masquer</>}
                         </Button>
                       </td>
                     </tr>

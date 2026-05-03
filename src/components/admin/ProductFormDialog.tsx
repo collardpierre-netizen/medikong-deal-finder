@@ -299,7 +299,23 @@ export function ProductFormDialog({ open, onOpenChange, product, brands, manufac
                 className="flex-1"
               />
               <Button type="button" variant="outline" onClick={handleAddMediaUrl}>
-                <Plus size={14} className="mr-1" /> Ajouter
+                <Plus size={14} className="mr-1" /> Ajouter URL
+              </Button>
+              <Button type="button" variant="outline" asChild disabled={uploading}>
+                <label className="cursor-pointer">
+                  {uploading ? <Loader2 size={14} className="mr-1 animate-spin" /> : <Upload size={14} className="mr-1" />}
+                  Upload
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => {
+                      handleUploadFiles(e.target.files);
+                      e.target.value = "";
+                    }}
+                  />
+                </label>
               </Button>
             </div>
 

@@ -230,7 +230,7 @@ const AdminSearchDebug = () => {
                 </span>
               </header>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-                <Tile label="Produits actifs" value={r.activeProducts} icon={Package as any} />
+                <Tile label="Produits actifs" value={r.activeProducts} />
                 <Tile
                   label={`Avec offres ${r.country}`}
                   value={r.withCountryStats}

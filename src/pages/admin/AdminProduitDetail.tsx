@@ -32,7 +32,7 @@ const AdminProduitDetail = () => {
   const { data: offers = [] } = useQuery({
     queryKey: ["product-offers", id],
     queryFn: async () => {
-      const { data } = await supabase.from("offers").select("*, vendors(name, company_name)").eq("product_id", id!);
+      const { data } = await supabase.from("offers").select("*, vendors(name, company_name, display_code, qogita_seller_alias)").eq("product_id", id!);
       return data || [];
     },
     enabled: !!id,
@@ -168,15 +168,27 @@ const AdminProduitDetail = () => {
           <table className="w-full text-left">
             <thead>
               <tr style={{ borderBottom: "1px solid #E2E8F0", backgroundColor: "#F8FAFC" }}>
-                {["Vendeur", "Prix HT", "Prix TTC", "Stock", "MOQ", "Délai", "Qogita"].map(h => (
+                {["Vendeur", "ID MediKong", "ID Qogita", "Prix HT", "Prix TTC", "Stock", "MOQ", "Délai", "Qogita"].map(h => (
                   <th key={h} className="px-4 py-3 text-[10px] font-semibold uppercase tracking-wider" style={{ color: "#8B95A5" }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {offers.map((o) => (
+              {offers.map((o) => {
+                const v: any = o.vendors;
+                return (
                 <tr key={o.id} style={{ borderBottom: "1px solid #F1F5F9" }}>
-                  <td className="px-4 py-3 text-[13px] font-semibold" style={{ color: "#1B5BDA" }}>{(o.vendors as any)?.company_name || (o.vendors as any)?.name || "—"}</td>
+                  <td className="px-4 py-3 text-[13px] font-semibold" style={{ color: "#1B5BDA" }}>{v?.company_name || v?.name || "—"}</td>
+                  <td className="px-4 py-3">
+                    {v?.display_code ? (
+                      <span className="px-2 py-1 rounded text-[11px] font-mono" style={{ backgroundColor: "#F1F5F9", color: "#616B7C" }}>{v.display_code}</span>
+                    ) : <span className="text-[11px]" style={{ color: "#CBD5E1" }}>—</span>}
+                  </td>
+                  <td className="px-4 py-3">
+                    {v?.qogita_seller_alias ? (
+                      <span className="px-2 py-1 rounded text-[11px] font-mono" style={{ backgroundColor: "#EFF6FF", color: "#1B5BDA" }}>{v.qogita_seller_alias}</span>
+                    ) : <span className="text-[11px]" style={{ color: "#CBD5E1" }}>—</span>}
+                  </td>
                   <td className="px-4 py-3 text-[13px] font-bold" style={{ color: "#1D2530" }}>€{Number(o.price_excl_vat).toFixed(2)}</td>
                   <td className="px-4 py-3 text-[13px]" style={{ color: "#616B7C" }}>€{Number(o.price_incl_vat).toFixed(2)}</td>
                   <td className="px-4 py-3 text-[12px]" style={{ color: "#616B7C" }}>{o.stock_quantity.toLocaleString()}</td>
@@ -186,7 +198,8 @@ const AdminProduitDetail = () => {
                     {o.is_qogita_backed ? <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ backgroundColor: "#F0FDF4", color: "#059669" }}>Oui</span> : <span className="text-[11px]" style={{ color: "#8B95A5" }}>Non</span>}
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
           {offers.length === 0 && <div className="py-8 text-center text-[13px]" style={{ color: "#8B95A5" }}>Aucune offre</div>}

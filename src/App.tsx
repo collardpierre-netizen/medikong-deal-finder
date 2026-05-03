@@ -416,6 +416,7 @@ const App = () => (
               <Route path="audit-log" element={<LP><AdminAuditLog /></LP>} />
               <Route path="contract-audit" element={<LP><AdminContractAudit /></LP>} />
               <Route path="catalog-diagnostics" element={<LP><AdminCatalogDiagnostics /></LP>} />
+              <Route path="search-debug" element={<LP><AdminSearchDebug /></LP>} />
               <Route path="offer-data-quality" element={<LP><AdminOfferDataQuality /></LP>} />
               <Route path="onboarding-cms" element={<LP><AdminOnboardingCMS /></LP>} />
               <Route path="commissions" element={<LP><AdminCommissions /></LP>} />

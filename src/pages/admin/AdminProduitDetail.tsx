@@ -3,12 +3,13 @@ import { useParams, useNavigate } from "react-router-dom";
 import AdminTopBar from "@/components/admin/AdminTopBar";
 import KpiCard from "@/components/admin/KpiCard";
 import StatusBadge from "@/components/admin/StatusBadge";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, ShoppingCart, Package, ImageOff, ExternalLink } from "lucide-react";
+import { ArrowLeft, ShoppingCart, Package, ImageOff, ExternalLink, EyeOff, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ProductPhotoUploader from "@/components/admin/ProductPhotoUploader";
 import PvpEditor from "@/components/admin/PvpEditor";
+import { toast } from "sonner";
 
 const AdminProduitDetail = () => {
   const { id } = useParams();

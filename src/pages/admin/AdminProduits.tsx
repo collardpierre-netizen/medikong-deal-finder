@@ -585,10 +585,10 @@ const AdminProduits = () => {
                 <SelectItem value="hidden">Masquées (admin)</SelectItem>
               </SelectContent>
             </Select>
-            {(offersVendorFilter !== "all" || offersBrandFilter !== "all" || offersCountryFilter !== "all" || offersStatusFilter !== "active" || debouncedOffersSearch ||
+            {(offersVendorFilter !== "all" || offersBrandFilter !== "all" || offersCountryFilter !== "all" || offersStatusFilter !== "all" || debouncedOffersSearch ||
               offersPriceMin || offersPriceMax || offersStockMin || offersStockMax || offersMoqMin || offersMoqMax || offersDelayMax) && (
               <Button variant="ghost" size="sm" className="text-[12px] h-9" onClick={() => {
-                setOffersVendorFilter("all"); setOffersBrandFilter("all"); setOffersCountryFilter("all"); setOffersStatusFilter("active");
+                setOffersVendorFilter("all"); setOffersBrandFilter("all"); setOffersCountryFilter("all"); setOffersStatusFilter("all");
                 setOffersSearch(""); setDebouncedOffersSearch(""); setOffersPage(1);
                 setOffersPriceMin(""); setOffersPriceMax("");
                 setOffersStockMin(""); setOffersStockMax("");

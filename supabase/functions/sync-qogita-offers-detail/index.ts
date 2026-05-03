@@ -834,8 +834,8 @@ async function processSingleProduct(
       await sb.from("products").update(productUpdate).eq("id", product.id);
 
       // --- Best price offer ---
-      const priceInclVat = parseFloat(String(variant?.price ?? "0")) || 0;
-      const priceExclVat = priceInclVat > 0 ? Math.round((priceInclVat / vatMultiplier) * 100) / 100 : 0;
+      const priceExclVat = parseFloat(String(variant?.price ?? "0")) || 0;
+      const priceInclVat = priceExclVat > 0 ? Math.round((priceExclVat * vatMultiplier) * 100) / 100 : 0;
       const stockQty = parseInt(String(variant?.inventory ?? "0"), 10) || 0;
       const delayDays = parseDeliveryDays(variant?.delay);
       const offerQid = variant?.qid ? `${variant.qid}-${country}` : `${product.gtin}-${country}`;

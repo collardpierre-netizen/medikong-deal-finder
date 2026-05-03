@@ -204,7 +204,7 @@ const AdminProduitDetail = () => {
               {offers.map((o) => {
                 const v: any = o.vendors;
                 return (
-                <tr key={o.id} style={{ borderBottom: "1px solid #F1F5F9" }}>
+                <tr key={o.id} style={{ borderBottom: "1px solid #F1F5F9", backgroundColor: o.admin_hidden ? "#FEF2F2" : undefined, opacity: o.admin_hidden ? 0.65 : 1 }}>
                   <td className="px-4 py-3 text-[13px] font-semibold" style={{ color: "#1B5BDA" }}>{v?.company_name || v?.name || "—"}</td>
                   <td className="px-4 py-3">
                     {v?.display_code ? (

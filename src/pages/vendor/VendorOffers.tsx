@@ -114,11 +114,16 @@ interface OfferForm {
   product_pack_size_fallback: number | null;
   /** Note libre vendeur (ex. langue packaging) — affichée à l'acheteur en tooltip. */
   vendor_note: string;
+  /** Nombre d'unités par carton (master case). Vide = inconnu. */
+  carton_size_override: string;
+  /** Codes ISO 639-1 (2 lettres) des langues présentes sur le packaging. */
+  packaging_languages: string[];
 }
 
 const emptyForm: OfferForm = {
   product_id: "", product_name: "", price_excl_vat: "", purchase_price_excl_vat: "", save_as_product_default: false, vat_rate: "21", stock_quantity: "", moq: "1", mov_amount: "0", delivery_days: "3", country_code: "BE", category_ids: [],
   pack_size_override: "", product_pack_size_fallback: null, vendor_note: "",
+  carton_size_override: "", packaging_languages: [],
 };
 
 function ProductThumb({ imageUrls, alt = "" }: { imageUrls?: string[] | null; alt?: string }) {

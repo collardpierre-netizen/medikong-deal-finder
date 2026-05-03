@@ -1358,6 +1358,8 @@ export default function VendorOffers() {
       pack_size_override: offer.pack_size_override != null ? String(offer.pack_size_override) : "",
       product_pack_size_fallback: (offer.products as any)?.pack_size ?? null,
       vendor_note: (offer as any).vendor_note ?? "",
+      carton_size_override: (offer as any).carton_size_override != null ? String((offer as any).carton_size_override) : "",
+      packaging_languages: Array.isArray((offer as any).packaging_languages) ? (offer as any).packaging_languages : [],
     });
     // Snapshot "avant" : prix HT + pack effectif au moment de l'ouverture
     const initialOverride = offer.pack_size_override;

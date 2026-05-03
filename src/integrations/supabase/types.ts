@@ -3744,6 +3744,7 @@ export type Database = {
           applied_margin_percentage: number | null
           applied_margin_rule_id: string | null
           campaign_id: string | null
+          carton_size_override: number | null
           commission_model: string | null
           commission_override_reason: string | null
           commission_override_status:
@@ -3775,6 +3776,7 @@ export type Database = {
           mov_amount: number | null
           mov_currency: string | null
           pack_size_override: number | null
+          packaging_languages: string[] | null
           price_excl_vat: number
           price_incl_vat: number
           price_tiers: Json | null
@@ -3806,6 +3808,7 @@ export type Database = {
           applied_margin_percentage?: number | null
           applied_margin_rule_id?: string | null
           campaign_id?: string | null
+          carton_size_override?: number | null
           commission_model?: string | null
           commission_override_reason?: string | null
           commission_override_status?:
@@ -3837,6 +3840,7 @@ export type Database = {
           mov_amount?: number | null
           mov_currency?: string | null
           pack_size_override?: number | null
+          packaging_languages?: string[] | null
           price_excl_vat: number
           price_incl_vat: number
           price_tiers?: Json | null
@@ -3868,6 +3872,7 @@ export type Database = {
           applied_margin_percentage?: number | null
           applied_margin_rule_id?: string | null
           campaign_id?: string | null
+          carton_size_override?: number | null
           commission_model?: string | null
           commission_override_reason?: string | null
           commission_override_status?:
@@ -3899,6 +3904,7 @@ export type Database = {
           mov_amount?: number | null
           mov_currency?: string | null
           pack_size_override?: number | null
+          packaging_languages?: string[] | null
           price_excl_vat?: number
           price_incl_vat?: number
           price_tiers?: Json | null
@@ -13054,6 +13060,7 @@ export type Database = {
           applied_margin_percentage: number | null
           applied_margin_rule_id: string | null
           campaign_id: string | null
+          carton_size_override: number | null
           commission_model: string | null
           commission_override_reason: string | null
           commission_override_status:
@@ -13085,6 +13092,7 @@ export type Database = {
           mov_amount: number | null
           mov_currency: string | null
           pack_size_override: number | null
+          packaging_languages: string[] | null
           price_excl_vat: number
           price_incl_vat: number
           price_tiers: Json | null

@@ -114,11 +114,16 @@ interface OfferForm {
   product_pack_size_fallback: number | null;
   /** Note libre vendeur (ex. langue packaging) — affichée à l'acheteur en tooltip. */
   vendor_note: string;
+  /** Nombre d'unités par carton (master case). Vide = inconnu. */
+  carton_size_override: string;
+  /** Codes ISO 639-1 (2 lettres) des langues présentes sur le packaging. */
+  packaging_languages: string[];
 }
 
 const emptyForm: OfferForm = {
   product_id: "", product_name: "", price_excl_vat: "", purchase_price_excl_vat: "", save_as_product_default: false, vat_rate: "21", stock_quantity: "", moq: "1", mov_amount: "0", delivery_days: "3", country_code: "BE", category_ids: [],
   pack_size_override: "", product_pack_size_fallback: null, vendor_note: "",
+  carton_size_override: "", packaging_languages: [],
 };
 
 function ProductThumb({ imageUrls, alt = "" }: { imageUrls?: string[] | null; alt?: string }) {
@@ -1353,6 +1358,8 @@ export default function VendorOffers() {
       pack_size_override: offer.pack_size_override != null ? String(offer.pack_size_override) : "",
       product_pack_size_fallback: (offer.products as any)?.pack_size ?? null,
       vendor_note: (offer as any).vendor_note ?? "",
+      carton_size_override: (offer as any).carton_size_override != null ? String((offer as any).carton_size_override) : "",
+      packaging_languages: Array.isArray((offer as any).packaging_languages) ? (offer as any).packaging_languages : [],
     });
     // Snapshot "avant" : prix HT + pack effectif au moment de l'ouverture
     const initialOverride = offer.pack_size_override;
@@ -1501,6 +1508,10 @@ export default function VendorOffers() {
         stock_status: parseInt(form.stock_quantity) > 0 ? "in_stock" as const : "out_of_stock" as const,
         pack_size_override: packOverride,
         vendor_note: form.vendor_note?.trim() ? form.vendor_note.trim().slice(0, 500) : null,
+        carton_size_override: form.carton_size_override.trim()
+          ? Math.max(1, Math.min(100000, parseInt(form.carton_size_override, 10) || 0)) || null
+          : null,
+        packaging_languages: form.packaging_languages.length > 0 ? form.packaging_languages : null,
         is_active: true,
       };
       let offerId = editingId;
@@ -1798,6 +1809,80 @@ export default function VendorOffers() {
               <input type="number" min="1" className="w-full px-3 py-2 text-[13px] border rounded-lg focus:border-[#1B5BDA] focus:outline-none"
                 style={{ borderColor: "#E2E8F0" }} value={form.delivery_days} onChange={e => setForm(p => ({ ...p, delivery_days: e.target.value }))} />
             </div>
+
+            {/* Conditionnement carton (master case) + €/unité dérivé */}
+            <div>
+              <label className="text-[11px] block mb-1" style={{ color: "#8B95A5" }}>
+                Unités par carton (master case)
+              </label>
+              <input
+                type="number" min="1" max="100000"
+                placeholder="Ex. 24"
+                className="w-full px-3 py-2 text-[13px] border rounded-lg focus:border-[#1B5BDA] focus:outline-none"
+                style={{ borderColor: "#E2E8F0" }}
+                value={form.carton_size_override}
+                onChange={e => setForm(p => ({ ...p, carton_size_override: e.target.value }))}
+              />
+              {(() => {
+                const carton = parseInt(form.carton_size_override, 10);
+                const priceExcl = parseFloat(form.price_excl_vat);
+                const overrideRaw = form.pack_size_override?.trim();
+                const overrideNum = overrideRaw ? Number(overrideRaw) : NaN;
+                const fallback = form.product_pack_size_fallback;
+                const pack = Number.isFinite(overrideNum) && overrideNum > 0
+                  ? overrideNum
+                  : fallback && fallback > 0 ? fallback : 1;
+                if (!Number.isFinite(carton) || carton < 1 || !Number.isFinite(priceExcl) || priceExcl <= 0) return null;
+                const cartonPrice = priceExcl * carton;
+                const unitsPerCarton = carton * pack;
+                const unitPrice = cartonPrice / unitsPerCarton;
+                return (
+                  <p className="text-[11px] mt-1" style={{ color: "#1B5BDA" }}>
+                    1 carton = {carton} × {pack} u. = <strong>{unitsPerCarton} u.</strong> · {cartonPrice.toFixed(2)} € HT · <strong>{unitPrice.toFixed(unitPrice < 1 ? 4 : 3)} €/unité</strong>
+                  </p>
+                );
+              })()}
+            </div>
+
+            {/* Langues du packaging */}
+            <div>
+              <label className="text-[11px] block mb-1" style={{ color: "#8B95A5" }}>
+                Langues du packaging (conformité acheteur)
+              </label>
+              <div className="flex flex-wrap gap-1.5">
+                {[
+                  { code: "fr", label: "FR" }, { code: "nl", label: "NL" }, { code: "de", label: "DE" },
+                  { code: "en", label: "EN" }, { code: "ar", label: "AR" }, { code: "es", label: "ES" },
+                  { code: "it", label: "IT" }, { code: "pt", label: "PT" },
+                ].map(({ code, label }) => {
+                  const active = form.packaging_languages.includes(code);
+                  return (
+                    <button
+                      key={code}
+                      type="button"
+                      onClick={() => setForm(p => ({
+                        ...p,
+                        packaging_languages: active
+                          ? p.packaging_languages.filter(c => c !== code)
+                          : [...p.packaging_languages, code],
+                      }))}
+                      className="px-2.5 py-1 text-[12px] font-semibold rounded-md border transition-colors"
+                      style={{
+                        borderColor: active ? "#1B5BDA" : "#E2E8F0",
+                        background: active ? "#1B5BDA" : "#FFFFFF",
+                        color: active ? "#FFFFFF" : "#4B5563",
+                      }}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-[11px] mt-1" style={{ color: "#8B95A5" }}>
+                Sélectionnez toutes les langues présentes sur l'emballage. Affiché en badges sur la fiche produit.
+              </p>
+            </div>
+
             <div className="md:col-span-2">
               <label className="text-[11px] mb-1 flex items-center justify-between" style={{ color: "#8B95A5" }}>
                 <span>Note vendeur (visible acheteur)</span>

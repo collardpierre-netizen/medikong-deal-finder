@@ -290,6 +290,38 @@ function OfferRow({
               <Store size={11} /> Voir la boutique
             </Link>
           )}
+          {/* Carton + €/unité dérivé */}
+          {offer.cartonSizeOverride && offer.cartonSizeOverride > 0 && (() => {
+            const carton = offer.cartonSizeOverride;
+            const pack = packSize > 0 ? packSize : 1;
+            const unitsPerCarton = carton * pack;
+            const cartonPrice = basePackPrice * carton;
+            const unitPrice = cartonPrice / unitsPerCarton;
+            return (
+              <span className="text-[11px] text-muted-foreground">
+                Carton de <strong>{carton}</strong> ({unitsPerCarton} u.) · {cartonPrice.toFixed(2)} € · <strong>{unitPrice.toFixed(unitPrice < 1 ? 4 : 3)} €/u.</strong>
+              </span>
+            );
+          })()}
+          {/* Langues du packaging */}
+          {offer.packagingLanguages && offer.packagingLanguages.length > 0 && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center gap-1 flex-wrap cursor-help">
+                  <Globe size={11} className="text-muted-foreground" />
+                  {offer.packagingLanguages.map(code => (
+                    <span key={code} className="px-1.5 py-0.5 text-[10px] font-bold uppercase rounded bg-muted text-foreground/80">
+                      {code}
+                    </span>
+                  ))}
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-[260px] text-xs">
+                <span className="block font-semibold mb-1">Langues présentes sur le packaging</span>
+                Vérifiez la conformité réglementaire pour votre pays de revente.
+              </TooltipContent>
+            </Tooltip>
+          )}
         </div>
 
         {/* Price + MOV merged column */}

@@ -483,11 +483,7 @@ function ProductPicker({ value, productName, onChange }: { value: string; produc
                 <button key={p.id} type="button"
                   onClick={() => { onChange(p.id, p.name); setOpen(false); setSearch(""); }}
                   className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-[#F8FAFC] transition-colors border-b border-[#F1F5F9] last:border-0">
-                  {p.image_urls?.[0] ? (
-                    <img src={p.image_urls[0]} alt="" className="w-8 h-8 rounded object-contain bg-[#F8FAFC] shrink-0" />
-                  ) : (
-                    <div className="w-8 h-8 rounded bg-[#F1F5F9] flex items-center justify-center shrink-0"><Package size={12} className="text-[#CBD5E1]" /></div>
-                  )}
+                  <ProductThumb imageUrls={p.image_urls} alt={p.name} />
                   <div className="flex-1 min-w-0">
                     <p className="text-[12px] font-medium text-[#1D2530] truncate">{p.name}</p>
                     <p className="text-[10px] text-[#8B95A5] truncate">
@@ -2265,13 +2261,7 @@ export default function VendorOffers() {
                         {(() => {
                           const inner = (
                             <div className="flex items-center gap-2">
-                              {prod?.image_urls?.[0] ? (
-                                <img src={prod.image_urls[0]} alt="" className="w-8 h-8 rounded object-contain shrink-0" style={{ backgroundColor: "#F8FAFC" }} />
-                              ) : (
-                                <div className="w-8 h-8 rounded flex items-center justify-center shrink-0" style={{ backgroundColor: "#F1F5F9" }}>
-                                  <Package size={14} style={{ color: "#CBD5E1" }} />
-                                </div>
-                              )}
+                              <ProductThumb imageUrls={prod?.image_urls} alt={prod?.name || "Produit"} />
                               <div className="min-w-0">
                                 <span className="font-medium line-clamp-1 max-w-[200px] block hover:underline" style={{ color: "#1D2530" }}>{prod?.name || "Produit inconnu"}</span>
                                 {prod?.gtin && <span className="text-[10px] block" style={{ color: "#8B95A5" }}>EAN: {prod.gtin}</span>}

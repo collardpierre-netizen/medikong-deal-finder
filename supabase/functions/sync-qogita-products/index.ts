@@ -648,13 +648,13 @@ async function processBatch(
     const bp = parseFloat(priceStr) || 0;
     const stock = parseInt(inventoryStr, 10) || 0;
     const delivery = parseInt(deliveryStr, 10) || 0;
-    const pe = bp > 0 ? Math.round((bp / (1 + vat / 100)) * 100) / 100 : 0;
+    const pe = bp;  // CSV "Lowest price" est déjà HT (convention B2B Qogita)
     const isPreorder = preorderStr.toLowerCase() === "true" || preorderStr === "1";
 
     parsedRows.push({
       qid: stableId, gtin: gtin || null, name,
       brand: brand || null, category: category || null,
-      imageUrl, pe, pi: bp, stock, delivery, isPreorder,
+      imageUrl, pe, pi: bp > 0 ? Math.round(bp * (1 + vat / 100) * 100) / 100 : 0, stock, delivery, isPreorder,
     });
   }
 

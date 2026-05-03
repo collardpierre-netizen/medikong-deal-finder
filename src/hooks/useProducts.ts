@@ -208,6 +208,7 @@ export interface Offer {
   minDeliveryDays?: number;
   maxDeliveryDays?: number;
   estimatedDeliveryDays?: number;
+  vendorNote?: string | null;
 }
 
 export function useProductOffers(productId: string | undefined) {

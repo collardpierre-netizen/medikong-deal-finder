@@ -10,8 +10,9 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ChevronsUpDown, Check, ImageOff, Plus, ArrowUp, ArrowDown, Trash2 } from "lucide-react";
+import { ChevronsUpDown, Check, ImageOff, Plus, ArrowUp, ArrowDown, Trash2, Upload, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { normalizeImageFile } from "@/lib/imageNormalize";
 
 interface ProductFormDialogProps {
   open: boolean;
@@ -31,6 +32,7 @@ export function ProductFormDialog({ open, onOpenChange, product, brands, manufac
   const [saving, setSaving] = useState(false);
   const [newMediaUrl, setNewMediaUrl] = useState("");
   const [mediaUrls, setMediaUrls] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
 
   const [form, setForm] = useState({
     name: "", slug: "", gtin: "", cnk_code: "", sku: "",
@@ -86,6 +88,31 @@ export function ProductFormDialog({ open, onOpenChange, product, brands, manufac
     }
     setMediaUrls((prev) => [...prev, url]);
     setNewMediaUrl("");
+  };
+
+  const handleUploadFiles = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setUploading(true);
+    try {
+      const folder = product?.id || `new-${crypto.randomUUID()}`;
+      const newUrls: string[] = [];
+      for (const file of Array.from(files)) {
+        const normalized = await normalizeImageFile(file, { size: 1200, mime: "image/webp" });
+        const path = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.webp`;
+        const { error } = await supabase.storage
+          .from("product-images")
+          .upload(path, normalized, { contentType: "image/webp", upsert: true });
+        if (error) throw error;
+        const { data } = supabase.storage.from("product-images").getPublicUrl(path);
+        newUrls.push(data.publicUrl);
+      }
+      setMediaUrls((prev) => [...prev, ...newUrls]);
+      toast.success(`${newUrls.length} image(s) ajoutée(s)`);
+    } catch (e: any) {
+      toast.error(e.message || "Échec de l'upload");
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleUpdateMediaUrl = (index: number, value: string) => {
@@ -272,7 +299,23 @@ export function ProductFormDialog({ open, onOpenChange, product, brands, manufac
                 className="flex-1"
               />
               <Button type="button" variant="outline" onClick={handleAddMediaUrl}>
-                <Plus size={14} className="mr-1" /> Ajouter
+                <Plus size={14} className="mr-1" /> Ajouter URL
+              </Button>
+              <Button type="button" variant="outline" asChild disabled={uploading}>
+                <label className="cursor-pointer">
+                  {uploading ? <Loader2 size={14} className="mr-1 animate-spin" /> : <Upload size={14} className="mr-1" />}
+                  Upload
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => {
+                      handleUploadFiles(e.target.files);
+                      e.target.value = "";
+                    }}
+                  />
+                </label>
               </Button>
             </div>
 

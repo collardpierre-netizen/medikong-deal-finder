@@ -14,7 +14,7 @@ import { exportProducts, exportOffers, importProducts, downloadProductTemplate, 
 import { getProductImageSrc } from "@/lib/image-utils";
 import { toast } from "sonner";
 import { useImportJobs } from "@/contexts/ImportContext";
-import { Package, Tag, ShoppingCart, Search, Download, Upload, Plus, FileSpreadsheet, ChevronLeft, ChevronRight, X, Loader2, ImageIcon, EyeOff, Eye } from "lucide-react";
+import { Package, Tag, ShoppingCart, Search, Download, Upload, Plus, FileSpreadsheet, ChevronLeft, ChevronRight, X, Loader2, ImageIcon, EyeOff, Eye, Pencil } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
 const PER_PAGE = 50;

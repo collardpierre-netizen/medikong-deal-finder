@@ -772,7 +772,7 @@ const AdminProduits = () => {
                     </tr>
                   ))}
                   {offersItems.length === 0 && (
-                    <tr><td colSpan={12} className="px-4 py-12 text-center text-[13px]" style={{ color: "#8B95A5" }}>Aucune offre trouvée</td></tr>
+                    <tr><td colSpan={13} className="px-4 py-12 text-center text-[13px]" style={{ color: "#8B95A5" }}>Aucune offre trouvée</td></tr>
                   )}
                 </tbody>
               </table>

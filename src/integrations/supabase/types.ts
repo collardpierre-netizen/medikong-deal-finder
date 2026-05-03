@@ -13222,7 +13222,6 @@ export type Database = {
           sent_today: number
         }[]
       }
-      cleanup_qogita_master_catchall_batch: { Args: never; Returns: number }
       consume_qogita_tokens: { Args: { _amount: number }; Returns: Json }
       count_products_per_category: {
         Args: never

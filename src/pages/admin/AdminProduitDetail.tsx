@@ -14,7 +14,33 @@ import { toast } from "sonner";
 const AdminProduitDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const qc = useQueryClient();
   const [activeTab, setActiveTab] = useState("resume");
+  const [busyOfferId, setBusyOfferId] = useState<string | null>(null);
+
+  const toggleHidden = async (offer: any) => {
+    const next = !offer.admin_hidden;
+    let reason: string | null = offer.admin_hidden_reason ?? null;
+    if (next) {
+      reason = window.prompt("Raison du masquage de cette offre (optionnel) :", "") ?? "";
+    }
+    setBusyOfferId(offer.id);
+    const { data: { user } } = await supabase.auth.getUser();
+    const { error } = await supabase.from("offers").update({
+      admin_hidden: next,
+      admin_hidden_reason: next ? (reason || null) : null,
+      admin_hidden_at: next ? new Date().toISOString() : null,
+      admin_hidden_by: next ? user?.id ?? null : null,
+      ...(next ? {} : { is_active: true }),
+    } as any).eq("id", offer.id);
+    setBusyOfferId(null);
+    if (error) {
+      toast.error("Échec de l'opération", { description: error.message });
+      return;
+    }
+    toast.success(next ? "Offre masquée" : "Offre ré-affichée");
+    qc.invalidateQueries({ queryKey: ["product-offers", id] });
+  };
 
   const { data: product, isLoading } = useQuery({
     queryKey: ["product-detail", id],

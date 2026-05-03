@@ -159,7 +159,7 @@ const AdminProduits = () => {
   const [offersVendorFilter, setOffersVendorFilter] = useState("all");
   const [offersBrandFilter, setOffersBrandFilter] = useState("all");
   const [offersCountryFilter, setOffersCountryFilter] = useState("all");
-  const [offersStatusFilter, setOffersStatusFilter] = useState("active");
+  const [offersStatusFilter, setOffersStatusFilter] = useState("all");
   const offersDebounceRef = useRef<ReturnType<typeof setTimeout>>();
   const [offersPriceMin, setOffersPriceMin] = useState<string>("");
   const [offersPriceMax, setOffersPriceMax] = useState<string>("");

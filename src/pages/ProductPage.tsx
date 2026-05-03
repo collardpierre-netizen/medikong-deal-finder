@@ -1361,6 +1361,7 @@ export default function ProductPage() {
                 <div className="mb-6">
                   <PvpEconomyBadge
                     productId={product.id}
+                    offerId={(bestOffer as any).id ?? (bestOffer as any).offerId ?? null}
                     buyerPriceTtc={Number(bestOffer.unitPriceInclVat) || Number(bestOffer.unitPriceEur) * 1.21}
                     buyerPriceHtva={Number(bestOffer.unitPriceEur)}
                     countryCode={(product as any).pvp_country_code || "BE"}

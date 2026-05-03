@@ -126,7 +126,7 @@ function VendorProductListRow({ product: p, addToCart, openDrawer, onQuickView }
     openDrawer();
     setQty(1);
   };
-  const imgSrc = isValidProductImage(p.imageUrl) ? p.imageUrl : MEDIKONG_PLACEHOLDER;
+  const imgSrc = getProductImageSrc(p.imageUrl);
   return (
     <div className="flex items-center gap-3 px-3 py-2.5 hover:bg-muted/40 transition-colors">
       <Link to={`/produit/${p.slug}`} className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center overflow-hidden shrink-0">

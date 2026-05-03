@@ -159,7 +159,7 @@ const AdminProduits = () => {
   const [offersVendorFilter, setOffersVendorFilter] = useState("all");
   const [offersBrandFilter, setOffersBrandFilter] = useState("all");
   const [offersCountryFilter, setOffersCountryFilter] = useState("all");
-  const [offersStatusFilter, setOffersStatusFilter] = useState("active");
+  const [offersStatusFilter, setOffersStatusFilter] = useState("all");
   const offersDebounceRef = useRef<ReturnType<typeof setTimeout>>();
   const [offersPriceMin, setOffersPriceMin] = useState<string>("");
   const [offersPriceMax, setOffersPriceMax] = useState<string>("");
@@ -585,10 +585,10 @@ const AdminProduits = () => {
                 <SelectItem value="hidden">Masquées (admin)</SelectItem>
               </SelectContent>
             </Select>
-            {(offersVendorFilter !== "all" || offersBrandFilter !== "all" || offersCountryFilter !== "all" || offersStatusFilter !== "active" || debouncedOffersSearch ||
+            {(offersVendorFilter !== "all" || offersBrandFilter !== "all" || offersCountryFilter !== "all" || offersStatusFilter !== "all" || debouncedOffersSearch ||
               offersPriceMin || offersPriceMax || offersStockMin || offersStockMax || offersMoqMin || offersMoqMax || offersDelayMax) && (
               <Button variant="ghost" size="sm" className="text-[12px] h-9" onClick={() => {
-                setOffersVendorFilter("all"); setOffersBrandFilter("all"); setOffersCountryFilter("all"); setOffersStatusFilter("active");
+                setOffersVendorFilter("all"); setOffersBrandFilter("all"); setOffersCountryFilter("all"); setOffersStatusFilter("all");
                 setOffersSearch(""); setDebouncedOffersSearch(""); setOffersPage(1);
                 setOffersPriceMin(""); setOffersPriceMax("");
                 setOffersStockMin(""); setOffersStockMax("");
@@ -675,9 +675,15 @@ const AdminProduits = () => {
                 </thead>
                 <tbody>
                   {offersItems.map((o: any) => (
-                    <tr key={o.id} style={{ borderBottom: "1px solid #F1F5F9", backgroundColor: o.admin_hidden ? "#FEF2F2" : undefined, opacity: o.admin_hidden ? 0.7 : 1 }}>
+                    <tr key={o.id}
+                      title={o.admin_hidden ? `⚠ Masquée du frontend${o.admin_hidden_reason ? ` — ${o.admin_hidden_reason}` : ""}` : undefined}
+                      style={{
+                        borderBottom: "1px solid #F1F5F9",
+                        backgroundColor: o.admin_hidden ? "#FEF2F2" : (!o.is_active ? "#FFFBEB" : undefined),
+                        borderLeft: o.admin_hidden ? "4px solid #DC2626" : (!o.is_active ? "4px solid #F59E0B" : "4px solid transparent"),
+                      }}>
                       <td className="px-3 py-3">
-                        <span className="text-[13px] font-medium block" style={{ color: "#1D2530" }}>{o.products?.name || "—"}</span>
+                        <span className="text-[13px] font-medium block" style={{ color: o.admin_hidden ? "#991B1B" : "#1D2530", textDecoration: o.admin_hidden ? "line-through" : undefined }}>{o.products?.name || "—"}</span>
                         <span className="text-[10px]" style={{ color: "#8B95A5" }}>{o.products?.brand_name || ""}</span>
                       </td>
                       <td className="px-3 py-3 text-[11px] font-mono" style={{ color: "#616B7C" }}>{o.products?.gtin || "—"}</td>
@@ -694,8 +700,12 @@ const AdminProduits = () => {
                       </td>
                       <td className="px-3 py-3">
                         {o.admin_hidden
-                          ? <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ backgroundColor: "#FEF2F2", color: "#B91C1C" }}>Masquée</span>
-                          : <StatusBadge status={o.is_active ? "active" : "inactive"} />}
+                          ? <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold border" style={{ backgroundColor: "#FEE2E2", color: "#991B1B", borderColor: "#FCA5A5" }}>
+                              <EyeOff size={11} /> Masquée frontend
+                            </span>
+                          : !o.is_active
+                            ? <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold" style={{ backgroundColor: "#FEF3C7", color: "#92400E" }}>Inactive</span>
+                            : <StatusBadge status="active" />}
                       </td>
                       <td className="px-3 py-3">
                         <Button

@@ -1352,6 +1352,7 @@ export default function VendorOffers() {
       category_ids: (linkedCats || []).map((c: any) => c.category_id),
       pack_size_override: offer.pack_size_override != null ? String(offer.pack_size_override) : "",
       product_pack_size_fallback: (offer.products as any)?.pack_size ?? null,
+      vendor_note: (offer as any).vendor_note ?? "",
     });
     // Snapshot "avant" : prix HT + pack effectif au moment de l'ouverture
     const initialOverride = offer.pack_size_override;

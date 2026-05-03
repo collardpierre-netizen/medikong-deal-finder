@@ -119,6 +119,7 @@ const AdminFinances = lazyWithRetry(() => import("./pages/admin/AdminFinances"),
 const AdminLitiges = lazyWithRetry(() => import("./pages/admin/AdminLitiges"), "AdminLitiges");
 const AdminVeillePrix = lazyWithRetry(() => import("./pages/admin/AdminVeillePrix"), "AdminVeillePrix");
 const AdminPackAnomalies = lazyWithRetry(() => import("./pages/admin/AdminPackAnomalies"), "AdminPackAnomalies");
+const AdminPackSizeBackfill = lazyWithRetry(() => import("./pages/admin/AdminPackSizeBackfill"), "AdminPackSizeBackfill");
 const AdminLeads = lazyWithRetry(() => import("./pages/admin/AdminLeads"), "AdminLeads");
 const AdminAnalytics = lazyWithRetry(() => import("./pages/admin/AdminAnalytics"), "AdminAnalytics");
 const AdminReglementaire = lazyWithRetry(() => import("./pages/admin/AdminReglementaire"), "AdminReglementaire");
@@ -387,6 +388,7 @@ const App = () => (
               <Route path="finances" element={<LP><AdminFinances /></LP>} />
               <Route path="veille-prix" element={<LP><AdminVeillePrix /></LP>} />
               <Route path="pack-anomalies" element={<LP><AdminPackAnomalies /></LP>} />
+              <Route path="pack-size-backfill" element={<LP><AdminPackSizeBackfill /></LP>} />
               <Route path="prix-cockpit" element={<LP><AdminPriceCockpitPage /></LP>} />
               <Route path="market-delta-anomalies" element={<LP><AdminMarketDeltaAnomaliesPage /></LP>} />
               <Route path="market-delta-thresholds" element={<LP><AdminMarketDeltaThresholdsPage /></LP>} />

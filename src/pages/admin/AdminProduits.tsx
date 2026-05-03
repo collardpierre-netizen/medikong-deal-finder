@@ -14,7 +14,7 @@ import { exportProducts, exportOffers, importProducts, downloadProductTemplate, 
 import { getProductImageSrc } from "@/lib/image-utils";
 import { toast } from "sonner";
 import { useImportJobs } from "@/contexts/ImportContext";
-import { Package, Tag, ShoppingCart, Search, Download, Upload, Plus, FileSpreadsheet, ChevronLeft, ChevronRight, X, Loader2, ImageIcon, EyeOff, Eye } from "lucide-react";
+import { Package, Tag, ShoppingCart, Search, Download, Upload, Plus, FileSpreadsheet, ChevronLeft, ChevronRight, X, Loader2, ImageIcon, EyeOff, Eye, Pencil } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
 const PER_PAGE = 50;
@@ -220,6 +220,25 @@ const AdminProduits = () => {
     setBusyHide(null);
     if (error) { toast.error("Échec", { description: error.message }); return; }
     toast.success(next ? "Offre masquée" : "Offre ré-affichée");
+    qcMain.invalidateQueries({ queryKey: ["admin-offers-paginated"] });
+  };
+
+  const editHideReason = async (offer: any) => {
+    const current = offer.admin_hidden_reason ?? "";
+    const input = window.prompt(
+      `Raison interne pour cette offre${offer.admin_hidden ? " (masquée)" : ""} :\n\nLaisser vide pour effacer la raison.`,
+      current
+    );
+    if (input === null) return; // cancelled
+    const newReason = input.trim() || null;
+    if (newReason === (current || null)) return; // no change
+    setBusyHide(offer.id);
+    const { error } = await supabase.from("offers").update({
+      admin_hidden_reason: newReason,
+    } as any).eq("id", offer.id);
+    setBusyHide(null);
+    if (error) { toast.error("Échec", { description: error.message }); return; }
+    toast.success(newReason ? "Raison mise à jour" : "Raison effacée");
     qcMain.invalidateQueries({ queryKey: ["admin-offers-paginated"] });
   };
 
@@ -676,7 +695,7 @@ const AdminProduits = () => {
               <table className="w-full text-left">
                 <thead>
                   <tr style={{ borderBottom: "1px solid #E2E8F0", backgroundColor: "#F8FAFC" }}>
-                    {["Produit", "EAN", "Vendeur", "Pays", "Prix HT", "Prix TTC", "Stock", "MOQ", "Délai", "Marge", "Statut", "Action"].map((h) => (
+                    {["Produit", "EAN", "Vendeur", "Pays", "Prix HT", "Prix TTC", "Stock", "MOQ", "Délai", "Marge", "Statut", "Raison", "Action"].map((h) => (
                       <th key={h} className="px-3 py-3 text-[11px] font-semibold uppercase tracking-wider" style={{ color: "#8B95A5" }}>{h}</th>
                     ))}
                   </tr>
@@ -715,6 +734,24 @@ const AdminProduits = () => {
                             ? <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold" style={{ backgroundColor: "#FEF3C7", color: "#92400E" }}>Inactive</span>
                             : <StatusBadge status="active" />}
                       </td>
+                      <td className="px-3 py-3 max-w-[200px]">
+                        <button
+                          type="button"
+                          onClick={() => editHideReason(o)}
+                          disabled={busyHide === o.id}
+                          title={o.admin_hidden_reason ? `Raison : ${o.admin_hidden_reason}\n\nCliquer pour éditer` : "Aucune raison saisie — cliquer pour ajouter"}
+                          className="group flex items-start gap-1 text-left w-full hover:bg-[#F1F5F9] rounded px-1 py-0.5 transition-colors"
+                        >
+                          {o.admin_hidden_reason ? (
+                            <span className="text-[11px] leading-snug line-clamp-2" style={{ color: o.admin_hidden ? "#991B1B" : "#616B7C" }}>
+                              {o.admin_hidden_reason}
+                            </span>
+                          ) : (
+                            <span className="text-[11px] italic" style={{ color: "#CBD5E1" }}>—</span>
+                          )}
+                          <Pencil size={10} className="opacity-0 group-hover:opacity-60 mt-0.5 shrink-0" style={{ color: "#616B7C" }} />
+                        </button>
+                      </td>
                       <td className="px-3 py-3">
                         <Button
                           size="sm"
@@ -735,7 +772,7 @@ const AdminProduits = () => {
                     </tr>
                   ))}
                   {offersItems.length === 0 && (
-                    <tr><td colSpan={12} className="px-4 py-12 text-center text-[13px]" style={{ color: "#8B95A5" }}>Aucune offre trouvée</td></tr>
+                    <tr><td colSpan={13} className="px-4 py-12 text-center text-[13px]" style={{ color: "#8B95A5" }}>Aucune offre trouvée</td></tr>
                   )}
                 </tbody>
               </table>

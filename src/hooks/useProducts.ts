@@ -209,6 +209,8 @@ export interface Offer {
   maxDeliveryDays?: number;
   estimatedDeliveryDays?: number;
   vendorNote?: string | null;
+  cartonSizeOverride?: number | null;
+  packagingLanguages?: string[] | null;
 }
 
 export function useProductOffers(productId: string | undefined) {

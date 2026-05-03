@@ -5406,6 +5406,8 @@ export type Database = {
           offer_count: number
           origin_country: string | null
           pack_size: number | null
+          pack_size_source: string | null
+          pack_size_updated_at: string | null
           popularity: number | null
           promotion_end_date: string | null
           promotion_label: string | null
@@ -5494,6 +5496,8 @@ export type Database = {
           offer_count?: number
           origin_country?: string | null
           pack_size?: number | null
+          pack_size_source?: string | null
+          pack_size_updated_at?: string | null
           popularity?: number | null
           promotion_end_date?: string | null
           promotion_label?: string | null
@@ -5582,6 +5586,8 @@ export type Database = {
           offer_count?: number
           origin_country?: string | null
           pack_size?: number | null
+          pack_size_source?: string | null
+          pack_size_updated_at?: string | null
           popularity?: number | null
           promotion_end_date?: string | null
           promotion_label?: string | null

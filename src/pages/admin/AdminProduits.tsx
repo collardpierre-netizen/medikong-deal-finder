@@ -14,23 +14,33 @@ import { exportProducts, exportOffers, importProducts, downloadProductTemplate, 
 import { getProductImageSrc } from "@/lib/image-utils";
 import { toast } from "sonner";
 import { useImportJobs } from "@/contexts/ImportContext";
-import { Package, Tag, ShoppingCart, Search, Download, Upload, Plus, FileSpreadsheet, ChevronLeft, ChevronRight, X, Loader2, ImageIcon } from "lucide-react";
+import { Package, Tag, ShoppingCart, Search, Download, Upload, Plus, FileSpreadsheet, ChevronLeft, ChevronRight, X, Loader2, ImageIcon, EyeOff, Eye } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
 const PER_PAGE = 50;
 const OFFERS_PER_PAGE = 50;
 
-function useAdminPaginatedOffers(page: number, search: string, vendorFilter: string, brandFilter: string, countryFilter: string, statusFilter: string) {
+type OfferNumericFilters = {
+  priceMin?: number; priceMax?: number;
+  stockMin?: number; stockMax?: number;
+  moqMin?: number; moqMax?: number;
+  delayMax?: number;
+};
+
+function useAdminPaginatedOffers(
+  page: number, search: string,
+  vendorFilter: string, brandFilter: string, countryFilter: string, statusFilter: string,
+  numeric: OfferNumericFilters,
+) {
   return useQuery({
-    queryKey: ["admin-offers-paginated", page, search, vendorFilter, brandFilter, countryFilter, statusFilter],
+    queryKey: ["admin-offers-paginated", page, search, vendorFilter, brandFilter, countryFilter, statusFilter, numeric],
     queryFn: async () => {
-      // Détecte si au moins un filtre restrictif est posé : count exact uniquement dans ce cas,
-      // sinon count estimé (planificateur Postgres) pour éviter le timeout sur 500k+ lignes.
       const hasRestrictiveFilter =
         !!search ||
         vendorFilter !== "all" ||
         brandFilter !== "all" ||
-        countryFilter !== "all";
+        countryFilter !== "all" ||
+        Object.values(numeric).some(v => v !== undefined && v !== null && !Number.isNaN(v));
 
       const countMode: "exact" | "estimated" = hasRestrictiveFilter ? "exact" : "estimated";
 
@@ -38,14 +48,23 @@ function useAdminPaginatedOffers(page: number, search: string, vendorFilter: str
         .from("offers")
         .select("*, vendors(name, company_name), products(name, brand_name, gtin, cnk_code)", { count: countMode });
 
-      if (statusFilter === "active") query = query.eq("is_active", true);
+      if (statusFilter === "active") query = query.eq("is_active", true).eq("admin_hidden", false);
       else if (statusFilter === "inactive") query = query.eq("is_active", false);
+      else if (statusFilter === "hidden") query = query.eq("admin_hidden", true);
 
       if (vendorFilter !== "all") query = query.eq("vendor_id", vendorFilter);
       if (countryFilter !== "all") query = query.eq("country_code", countryFilter);
 
+      // Numeric filters (server-side)
+      if (numeric.priceMin !== undefined) query = query.gte("price_excl_vat", numeric.priceMin);
+      if (numeric.priceMax !== undefined) query = query.lte("price_excl_vat", numeric.priceMax);
+      if (numeric.stockMin !== undefined) query = query.gte("stock_quantity", numeric.stockMin);
+      if (numeric.stockMax !== undefined) query = query.lte("stock_quantity", numeric.stockMax);
+      if (numeric.moqMin !== undefined) query = query.gte("moq", numeric.moqMin);
+      if (numeric.moqMax !== undefined) query = query.lte("moq", numeric.moqMax);
+      if (numeric.delayMax !== undefined) query = query.lte("delivery_days", numeric.delayMax);
+
       if (brandFilter !== "all") {
-        // Need to filter via product's brand_id
         const { data: productIds } = await supabase.from("products").select("id").eq("brand_id", brandFilter);
         if (productIds && productIds.length > 0) {
           query = query.in("product_id", productIds.map(p => p.id));
@@ -55,7 +74,6 @@ function useAdminPaginatedOffers(page: number, search: string, vendorFilter: str
       }
 
       if (search) {
-        // Search by product name or vendor name — use product name via textSearch
         const { data: matchProducts } = await supabase
           .from("products")
           .select("id")
@@ -143,6 +161,43 @@ const AdminProduits = () => {
   const [offersCountryFilter, setOffersCountryFilter] = useState("all");
   const [offersStatusFilter, setOffersStatusFilter] = useState("active");
   const offersDebounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const [offersPriceMin, setOffersPriceMin] = useState<string>("");
+  const [offersPriceMax, setOffersPriceMax] = useState<string>("");
+  const [offersStockMin, setOffersStockMin] = useState<string>("");
+  const [offersStockMax, setOffersStockMax] = useState<string>("");
+  const [offersMoqMin, setOffersMoqMin] = useState<string>("");
+  const [offersMoqMax, setOffersMoqMax] = useState<string>("");
+  const [offersDelayMax, setOffersDelayMax] = useState<string>("");
+  const numericFilters: OfferNumericFilters = {
+    priceMin: offersPriceMin ? parseFloat(offersPriceMin) : undefined,
+    priceMax: offersPriceMax ? parseFloat(offersPriceMax) : undefined,
+    stockMin: offersStockMin ? parseInt(offersStockMin, 10) : undefined,
+    stockMax: offersStockMax ? parseInt(offersStockMax, 10) : undefined,
+    moqMin: offersMoqMin ? parseInt(offersMoqMin, 10) : undefined,
+    moqMax: offersMoqMax ? parseInt(offersMoqMax, 10) : undefined,
+    delayMax: offersDelayMax ? parseInt(offersDelayMax, 10) : undefined,
+  };
+  const [busyHide, setBusyHide] = useState<string | null>(null);
+  const qcMain = useQueryClient();
+
+  const toggleHideOffer = async (offer: any) => {
+    const next = !offer.admin_hidden;
+    let reason: string | null = offer.admin_hidden_reason ?? null;
+    if (next) reason = window.prompt("Raison du masquage (optionnel) :", "") ?? "";
+    setBusyHide(offer.id);
+    const { data: { user } } = await supabase.auth.getUser();
+    const { error } = await supabase.from("offers").update({
+      admin_hidden: next,
+      admin_hidden_reason: next ? (reason || null) : null,
+      admin_hidden_at: next ? new Date().toISOString() : null,
+      admin_hidden_by: next ? user?.id ?? null : null,
+      ...(next ? {} : { is_active: true }),
+    } as any).eq("id", offer.id);
+    setBusyHide(null);
+    if (error) { toast.error("Échec", { description: error.message }); return; }
+    toast.success(next ? "Offre masquée" : "Offre ré-affichée");
+    qcMain.invalidateQueries({ queryKey: ["admin-offers-paginated"] });
+  };
 
   const { data: brands = [] } = useBrands();
   const { data: manufacturers = [] } = useManufacturers();
@@ -156,7 +211,7 @@ const AdminProduits = () => {
   const totalFiltered = pageData?.total || 0;
   const totalPages = Math.max(1, Math.ceil(totalFiltered / PER_PAGE));
 
-  const { data: offersData, isLoading: loadingOffers } = useAdminPaginatedOffers(offersPage, debouncedOffersSearch, offersVendorFilter, offersBrandFilter, offersCountryFilter, offersStatusFilter);
+  const { data: offersData, isLoading: loadingOffers } = useAdminPaginatedOffers(offersPage, debouncedOffersSearch, offersVendorFilter, offersBrandFilter, offersCountryFilter, offersStatusFilter, numericFilters);
   const offersItems = offersData?.offers || [];
   const totalOffersFiltered = offersData?.total || 0;
   const totalOffersPages = Math.max(1, Math.ceil(totalOffersFiltered / OFFERS_PER_PAGE));
@@ -509,16 +564,50 @@ const AdminProduits = () => {
               <SelectTrigger className="w-[130px] h-9 text-[13px]"><SelectValue placeholder="Statut" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tous statuts</SelectItem>
-                <SelectItem value="active">Actives</SelectItem>
+                <SelectItem value="active">Actives (visibles)</SelectItem>
                 <SelectItem value="inactive">Inactives</SelectItem>
+                <SelectItem value="hidden">Masquées (admin)</SelectItem>
               </SelectContent>
             </Select>
-            {(offersVendorFilter !== "all" || offersBrandFilter !== "all" || offersCountryFilter !== "all" || offersStatusFilter !== "active" || debouncedOffersSearch) && (
+            {(offersVendorFilter !== "all" || offersBrandFilter !== "all" || offersCountryFilter !== "all" || offersStatusFilter !== "active" || debouncedOffersSearch ||
+              offersPriceMin || offersPriceMax || offersStockMin || offersStockMax || offersMoqMin || offersMoqMax || offersDelayMax) && (
               <Button variant="ghost" size="sm" className="text-[12px] h-9" onClick={() => {
                 setOffersVendorFilter("all"); setOffersBrandFilter("all"); setOffersCountryFilter("all"); setOffersStatusFilter("active");
                 setOffersSearch(""); setDebouncedOffersSearch(""); setOffersPage(1);
+                setOffersPriceMin(""); setOffersPriceMax("");
+                setOffersStockMin(""); setOffersStockMax("");
+                setOffersMoqMin(""); setOffersMoqMax(""); setOffersDelayMax("");
               }}>Réinitialiser</Button>
             )}
+          </div>
+
+          {/* Numeric filters row */}
+          <div className="flex items-center gap-2 mb-4 flex-wrap text-[12px]">
+            <span className="font-medium" style={{ color: "#616B7C" }}>Prix HT €</span>
+            <input type="number" step="0.01" placeholder="min" value={offersPriceMin}
+              onChange={(e) => { setOffersPriceMin(e.target.value); setOffersPage(1); }}
+              className="w-20 h-8 px-2 rounded border outline-none" style={{ borderColor: "#E2E8F0" }} />
+            <input type="number" step="0.01" placeholder="max" value={offersPriceMax}
+              onChange={(e) => { setOffersPriceMax(e.target.value); setOffersPage(1); }}
+              className="w-20 h-8 px-2 rounded border outline-none" style={{ borderColor: "#E2E8F0" }} />
+            <span className="font-medium ml-2" style={{ color: "#616B7C" }}>Stock</span>
+            <input type="number" placeholder="min" value={offersStockMin}
+              onChange={(e) => { setOffersStockMin(e.target.value); setOffersPage(1); }}
+              className="w-20 h-8 px-2 rounded border outline-none" style={{ borderColor: "#E2E8F0" }} />
+            <input type="number" placeholder="max" value={offersStockMax}
+              onChange={(e) => { setOffersStockMax(e.target.value); setOffersPage(1); }}
+              className="w-20 h-8 px-2 rounded border outline-none" style={{ borderColor: "#E2E8F0" }} />
+            <span className="font-medium ml-2" style={{ color: "#616B7C" }}>MOQ</span>
+            <input type="number" placeholder="min" value={offersMoqMin}
+              onChange={(e) => { setOffersMoqMin(e.target.value); setOffersPage(1); }}
+              className="w-20 h-8 px-2 rounded border outline-none" style={{ borderColor: "#E2E8F0" }} />
+            <input type="number" placeholder="max" value={offersMoqMax}
+              onChange={(e) => { setOffersMoqMax(e.target.value); setOffersPage(1); }}
+              className="w-20 h-8 px-2 rounded border outline-none" style={{ borderColor: "#E2E8F0" }} />
+            <span className="font-medium ml-2" style={{ color: "#616B7C" }}>Délai max (j)</span>
+            <input type="number" placeholder="ex: 7" value={offersDelayMax}
+              onChange={(e) => { setOffersDelayMax(e.target.value); setOffersPage(1); }}
+              className="w-20 h-8 px-2 rounded border outline-none" style={{ borderColor: "#E2E8F0" }} />
           </div>
 
           {/* Offers count + pagination */}
@@ -544,14 +633,14 @@ const AdminProduits = () => {
               <table className="w-full text-left">
                 <thead>
                   <tr style={{ borderBottom: "1px solid #E2E8F0", backgroundColor: "#F8FAFC" }}>
-                    {["Produit", "EAN", "Vendeur", "Pays", "Prix HT", "Prix TTC", "Stock", "MOQ", "Délai", "Marge", "Statut"].map((h) => (
+                    {["Produit", "EAN", "Vendeur", "Pays", "Prix HT", "Prix TTC", "Stock", "MOQ", "Délai", "Marge", "Statut", "Action"].map((h) => (
                       <th key={h} className="px-3 py-3 text-[11px] font-semibold uppercase tracking-wider" style={{ color: "#8B95A5" }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {offersItems.map((o: any) => (
-                    <tr key={o.id} style={{ borderBottom: "1px solid #F1F5F9" }}>
+                    <tr key={o.id} style={{ borderBottom: "1px solid #F1F5F9", backgroundColor: o.admin_hidden ? "#FEF2F2" : undefined, opacity: o.admin_hidden ? 0.7 : 1 }}>
                       <td className="px-3 py-3">
                         <span className="text-[13px] font-medium block" style={{ color: "#1D2530" }}>{o.products?.name || "—"}</span>
                         <span className="text-[10px]" style={{ color: "#8B95A5" }}>{o.products?.brand_name || ""}</span>
@@ -568,11 +657,29 @@ const AdminProduits = () => {
                         {o.margin_amount ? `€${Number(o.margin_amount).toFixed(2)}` : "—"}
                         {o.applied_margin_percentage ? <span className="text-[10px] ml-1">({o.applied_margin_percentage}%)</span> : null}
                       </td>
-                      <td className="px-3 py-3"><StatusBadge status={o.is_active ? "active" : "inactive"} /></td>
+                      <td className="px-3 py-3">
+                        {o.admin_hidden
+                          ? <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ backgroundColor: "#FEF2F2", color: "#B91C1C" }}>Masquée</span>
+                          : <StatusBadge status={o.is_active ? "active" : "inactive"} />}
+                      </td>
+                      <td className="px-3 py-3">
+                        <Button
+                          size="sm"
+                          variant={o.admin_hidden ? "outline" : "ghost"}
+                          disabled={busyHide === o.id}
+                          onClick={() => toggleHideOffer(o)}
+                          title={o.admin_hidden
+                            ? `Masquée${o.admin_hidden_reason ? ` — ${o.admin_hidden_reason}` : ""}\nCliquer pour ré-afficher`
+                            : "Masquer cette offre du catalogue"}
+                          className="h-7 px-2 text-[11px] gap-1"
+                        >
+                          {o.admin_hidden ? <><Eye size={12} /> Afficher</> : <><EyeOff size={12} /> Masquer</>}
+                        </Button>
+                      </td>
                     </tr>
                   ))}
                   {offersItems.length === 0 && (
-                    <tr><td colSpan={11} className="px-4 py-12 text-center text-[13px]" style={{ color: "#8B95A5" }}>Aucune offre trouvée</td></tr>
+                    <tr><td colSpan={12} className="px-4 py-12 text-center text-[13px]" style={{ color: "#8B95A5" }}>Aucune offre trouvée</td></tr>
                   )}
                 </tbody>
               </table>

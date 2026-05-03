@@ -249,6 +249,20 @@ const AdminProduitDetail = () => {
                   <td className="px-4 py-3">
                     {o.is_qogita_backed ? <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ backgroundColor: "#F0FDF4", color: "#059669" }}>Oui</span> : <span className="text-[11px]" style={{ color: "#8B95A5" }}>Non</span>}
                   </td>
+                  <td className="px-4 py-3">
+                    <Button
+                      size="sm"
+                      variant={o.admin_hidden ? "outline" : "ghost"}
+                      disabled={busyOfferId === o.id}
+                      onClick={() => toggleHidden(o)}
+                      title={o.admin_hidden
+                        ? `Masquée${o.admin_hidden_reason ? ` — ${o.admin_hidden_reason}` : ""}${o.admin_hidden_at ? ` (le ${new Date(o.admin_hidden_at).toLocaleDateString("fr-FR")})` : ""}\nCliquer pour ré-afficher`
+                        : "Masquer cette offre du catalogue"}
+                      className="h-7 px-2 text-[11px] gap-1"
+                    >
+                      {o.admin_hidden ? <><Eye size={12} /> Ré-afficher</> : <><EyeOff size={12} /> Masquer</>}
+                    </Button>
+                  </td>
                 </tr>
                 );
               })}

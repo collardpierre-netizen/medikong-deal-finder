@@ -734,6 +734,24 @@ const AdminProduits = () => {
                             ? <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold" style={{ backgroundColor: "#FEF3C7", color: "#92400E" }}>Inactive</span>
                             : <StatusBadge status="active" />}
                       </td>
+                      <td className="px-3 py-3 max-w-[200px]">
+                        <button
+                          type="button"
+                          onClick={() => editHideReason(o)}
+                          disabled={busyHide === o.id}
+                          title={o.admin_hidden_reason ? `Raison : ${o.admin_hidden_reason}\n\nCliquer pour éditer` : "Aucune raison saisie — cliquer pour ajouter"}
+                          className="group flex items-start gap-1 text-left w-full hover:bg-[#F1F5F9] rounded px-1 py-0.5 transition-colors"
+                        >
+                          {o.admin_hidden_reason ? (
+                            <span className="text-[11px] leading-snug line-clamp-2" style={{ color: o.admin_hidden ? "#991B1B" : "#616B7C" }}>
+                              {o.admin_hidden_reason}
+                            </span>
+                          ) : (
+                            <span className="text-[11px] italic" style={{ color: "#CBD5E1" }}>—</span>
+                          )}
+                          <Pencil size={10} className="opacity-0 group-hover:opacity-60 mt-0.5 shrink-0" style={{ color: "#616B7C" }} />
+                        </button>
+                      </td>
                       <td className="px-3 py-3">
                         <Button
                           size="sm"

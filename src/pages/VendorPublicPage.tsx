@@ -36,7 +36,7 @@ interface VendorFilters {
 
 const EMPTY_FILTERS: VendorFilters = { brands: [], categories: [], search: "" };
 
-import { MEDIKONG_PLACEHOLDER, isValidProductImage, isQogitaPlaceholder } from "@/lib/image-utils";
+import { MEDIKONG_PLACEHOLDER, isValidProductImage, isQogitaPlaceholder, getProductImageSrc } from "@/lib/image-utils";
 
 /* ───── Vendor-specific product card (grid) ───── */
 function VendorProductCard({ product: p, index, addToCart, openDrawer, onQuickView }: { product: any; index: number; addToCart: any; openDrawer: () => void; onQuickView: (p: any) => void }) {
@@ -57,7 +57,7 @@ function VendorProductCard({ product: p, index, addToCart, openDrawer, onQuickVi
     openDrawer();
     setQty(1);
   };
-  const imgSrc = isValidProductImage(p.imageUrl) ? p.imageUrl : MEDIKONG_PLACEHOLDER;
+  const imgSrc = getProductImageSrc(p.imageUrl);
   return (
     <motion.div
       className="border border-border rounded-lg p-3"
@@ -126,7 +126,7 @@ function VendorProductListRow({ product: p, addToCart, openDrawer, onQuickView }
     openDrawer();
     setQty(1);
   };
-  const imgSrc = isValidProductImage(p.imageUrl) ? p.imageUrl : MEDIKONG_PLACEHOLDER;
+  const imgSrc = getProductImageSrc(p.imageUrl);
   return (
     <div className="flex items-center gap-3 px-3 py-2.5 hover:bg-muted/40 transition-colors">
       <Link to={`/produit/${p.slug}`} className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center overflow-hidden shrink-0">

@@ -121,7 +121,7 @@ export function PvpEconomyBadge({
   const palette = isPositive
     ? { border: "border-emerald-200", bg: "bg-emerald-50/50", title: "text-emerald-900", icon: "text-emerald-700", marginFg: "text-emerald-700", marginBg: "text-emerald-700/80", Icon: TrendingUp }
     : isNegative
-    ? { border: "border-rose-200", bg: "bg-rose-50/50", title: "text-rose-900", icon: "text-rose-700", marginFg: "text-rose-700", marginBg: "text-rose-700/80", Icon: TrendingDown }
+    ? { border: "border-amber-200", bg: "bg-amber-50/60", title: "text-amber-900", icon: "text-amber-700", marginFg: "text-amber-800", marginBg: "text-amber-700/80", Icon: AlertTriangle }
     : { border: "border-slate-200", bg: "bg-slate-50/50", title: "text-slate-900", icon: "text-slate-600", marginFg: "text-slate-700", marginBg: "text-slate-600", Icon: Minus };
 
   const sourceBadge = SOURCE_BADGE[pvp.source] ?? SOURCE_BADGE.manual;

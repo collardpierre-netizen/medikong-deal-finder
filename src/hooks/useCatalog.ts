@@ -441,7 +441,7 @@ export function useCatalogProducts(filters: CatalogFilters) {
               // product_country_stats → country_code NULL via LEFT JOIN). Sinon
               // un produit visible dans le moteur de recherche disparaît du
               // catalogue dès qu'aucune offre BE n'existe encore.
-              .or(`country_code.eq.${country},country_code.is.null`)
+              .or(buildCountryFilterExpression(country))
           : supabase.from("products").select(PRODUCT_SELECT_FIELDS).eq("is_active", true);
         return applyCatalogProductFilters(applyHiddenCategoryFilter(base), filters, filterContextWithCols);
       };

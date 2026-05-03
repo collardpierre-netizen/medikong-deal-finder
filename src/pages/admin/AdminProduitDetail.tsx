@@ -3,17 +3,44 @@ import { useParams, useNavigate } from "react-router-dom";
 import AdminTopBar from "@/components/admin/AdminTopBar";
 import KpiCard from "@/components/admin/KpiCard";
 import StatusBadge from "@/components/admin/StatusBadge";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, ShoppingCart, Package, ImageOff, ExternalLink } from "lucide-react";
+import { ArrowLeft, ShoppingCart, Package, ImageOff, ExternalLink, EyeOff, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ProductPhotoUploader from "@/components/admin/ProductPhotoUploader";
 import PvpEditor from "@/components/admin/PvpEditor";
+import { toast } from "sonner";
 
 const AdminProduitDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const qc = useQueryClient();
   const [activeTab, setActiveTab] = useState("resume");
+  const [busyOfferId, setBusyOfferId] = useState<string | null>(null);
+
+  const toggleHidden = async (offer: any) => {
+    const next = !offer.admin_hidden;
+    let reason: string | null = offer.admin_hidden_reason ?? null;
+    if (next) {
+      reason = window.prompt("Raison du masquage de cette offre (optionnel) :", "") ?? "";
+    }
+    setBusyOfferId(offer.id);
+    const { data: { user } } = await supabase.auth.getUser();
+    const { error } = await supabase.from("offers").update({
+      admin_hidden: next,
+      admin_hidden_reason: next ? (reason || null) : null,
+      admin_hidden_at: next ? new Date().toISOString() : null,
+      admin_hidden_by: next ? user?.id ?? null : null,
+      ...(next ? {} : { is_active: true }),
+    } as any).eq("id", offer.id);
+    setBusyOfferId(null);
+    if (error) {
+      toast.error("Échec de l'opération", { description: error.message });
+      return;
+    }
+    toast.success(next ? "Offre masquée" : "Offre ré-affichée");
+    qc.invalidateQueries({ queryKey: ["product-offers", id] });
+  };
 
   const { data: product, isLoading } = useQuery({
     queryKey: ["product-detail", id],
@@ -168,7 +195,7 @@ const AdminProduitDetail = () => {
           <table className="w-full text-left">
             <thead>
               <tr style={{ borderBottom: "1px solid #E2E8F0", backgroundColor: "#F8FAFC" }}>
-                {["Vendeur", "ID MediKong", "Vendeur Qogita (FID)", "Offer QID", "Prix HT", "Prix TTC", "Stock", "MOQ", "Délai", "Qogita"].map(h => (
+                {["Vendeur", "ID MediKong", "Vendeur Qogita (FID)", "Offer QID", "Prix HT", "Prix TTC", "Stock", "MOQ", "Délai", "Qogita", "Action"].map(h => (
                   <th key={h} className="px-4 py-3 text-[10px] font-semibold uppercase tracking-wider" style={{ color: "#8B95A5" }}>{h}</th>
                 ))}
               </tr>
@@ -177,7 +204,7 @@ const AdminProduitDetail = () => {
               {offers.map((o) => {
                 const v: any = o.vendors;
                 return (
-                <tr key={o.id} style={{ borderBottom: "1px solid #F1F5F9" }}>
+                <tr key={o.id} style={{ borderBottom: "1px solid #F1F5F9", backgroundColor: o.admin_hidden ? "#FEF2F2" : undefined, opacity: o.admin_hidden ? 0.65 : 1 }}>
                   <td className="px-4 py-3 text-[13px] font-semibold" style={{ color: "#1B5BDA" }}>{v?.company_name || v?.name || "—"}</td>
                   <td className="px-4 py-3">
                     {v?.display_code ? (
@@ -221,6 +248,20 @@ const AdminProduitDetail = () => {
                   <td className="px-4 py-3 text-[12px]" style={{ color: "#616B7C" }}>{o.delivery_days}j</td>
                   <td className="px-4 py-3">
                     {o.is_qogita_backed ? <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ backgroundColor: "#F0FDF4", color: "#059669" }}>Oui</span> : <span className="text-[11px]" style={{ color: "#8B95A5" }}>Non</span>}
+                  </td>
+                  <td className="px-4 py-3">
+                    <Button
+                      size="sm"
+                      variant={o.admin_hidden ? "outline" : "ghost"}
+                      disabled={busyOfferId === o.id}
+                      onClick={() => toggleHidden(o)}
+                      title={o.admin_hidden
+                        ? `Masquée${o.admin_hidden_reason ? ` — ${o.admin_hidden_reason}` : ""}${o.admin_hidden_at ? ` (le ${new Date(o.admin_hidden_at).toLocaleDateString("fr-FR")})` : ""}\nCliquer pour ré-afficher`
+                        : "Masquer cette offre du catalogue"}
+                      className="h-7 px-2 text-[11px] gap-1"
+                    >
+                      {o.admin_hidden ? <><Eye size={12} /> Ré-afficher</> : <><EyeOff size={12} /> Masquer</>}
+                    </Button>
                   </td>
                 </tr>
                 );

@@ -452,7 +452,7 @@ export function useCatalogProducts(filters: CatalogFilters) {
               .from("products_with_country_stats_v")
               .select("id", { count: hasFilters ? "estimated" : "exact" })
               .eq("is_active", true)
-              .or(`country_code.eq.${country},country_code.is.null`)
+              .or(buildCountryFilterExpression(country))
           : supabase
               .from("products")
               .select("id", { count: hasFilters ? "estimated" : "exact" })

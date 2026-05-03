@@ -161,6 +161,43 @@ const AdminProduits = () => {
   const [offersCountryFilter, setOffersCountryFilter] = useState("all");
   const [offersStatusFilter, setOffersStatusFilter] = useState("active");
   const offersDebounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const [offersPriceMin, setOffersPriceMin] = useState<string>("");
+  const [offersPriceMax, setOffersPriceMax] = useState<string>("");
+  const [offersStockMin, setOffersStockMin] = useState<string>("");
+  const [offersStockMax, setOffersStockMax] = useState<string>("");
+  const [offersMoqMin, setOffersMoqMin] = useState<string>("");
+  const [offersMoqMax, setOffersMoqMax] = useState<string>("");
+  const [offersDelayMax, setOffersDelayMax] = useState<string>("");
+  const numericFilters: OfferNumericFilters = {
+    priceMin: offersPriceMin ? parseFloat(offersPriceMin) : undefined,
+    priceMax: offersPriceMax ? parseFloat(offersPriceMax) : undefined,
+    stockMin: offersStockMin ? parseInt(offersStockMin, 10) : undefined,
+    stockMax: offersStockMax ? parseInt(offersStockMax, 10) : undefined,
+    moqMin: offersMoqMin ? parseInt(offersMoqMin, 10) : undefined,
+    moqMax: offersMoqMax ? parseInt(offersMoqMax, 10) : undefined,
+    delayMax: offersDelayMax ? parseInt(offersDelayMax, 10) : undefined,
+  };
+  const [busyHide, setBusyHide] = useState<string | null>(null);
+  const qcMain = useQueryClient();
+
+  const toggleHideOffer = async (offer: any) => {
+    const next = !offer.admin_hidden;
+    let reason: string | null = offer.admin_hidden_reason ?? null;
+    if (next) reason = window.prompt("Raison du masquage (optionnel) :", "") ?? "";
+    setBusyHide(offer.id);
+    const { data: { user } } = await supabase.auth.getUser();
+    const { error } = await supabase.from("offers").update({
+      admin_hidden: next,
+      admin_hidden_reason: next ? (reason || null) : null,
+      admin_hidden_at: next ? new Date().toISOString() : null,
+      admin_hidden_by: next ? user?.id ?? null : null,
+      ...(next ? {} : { is_active: true }),
+    } as any).eq("id", offer.id);
+    setBusyHide(null);
+    if (error) { toast.error("Échec", { description: error.message }); return; }
+    toast.success(next ? "Offre masquée" : "Offre ré-affichée");
+    qcMain.invalidateQueries({ queryKey: ["admin-offers-paginated"] });
+  };
 
   const { data: brands = [] } = useBrands();
   const { data: manufacturers = [] } = useManufacturers();

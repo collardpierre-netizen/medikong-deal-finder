@@ -134,7 +134,7 @@ function ProductThumb({ imageUrls, alt = "" }: { imageUrls?: string[] | null; al
         if (isQogitaPlaceholder(img)) img.src = MEDIKONG_PLACEHOLDER;
       }}
       onError={(event) => {
-        event.currentTarget.src = MEDIKONG_PLACEHOLDER;
+        if (!event.currentTarget.src.includes(MEDIKONG_PLACEHOLDER)) event.currentTarget.src = MEDIKONG_PLACEHOLDER;
       }}
     />
   );

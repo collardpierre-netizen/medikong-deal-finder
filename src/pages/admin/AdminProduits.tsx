@@ -211,7 +211,7 @@ const AdminProduits = () => {
   const totalFiltered = pageData?.total || 0;
   const totalPages = Math.max(1, Math.ceil(totalFiltered / PER_PAGE));
 
-  const { data: offersData, isLoading: loadingOffers } = useAdminPaginatedOffers(offersPage, debouncedOffersSearch, offersVendorFilter, offersBrandFilter, offersCountryFilter, offersStatusFilter);
+  const { data: offersData, isLoading: loadingOffers } = useAdminPaginatedOffers(offersPage, debouncedOffersSearch, offersVendorFilter, offersBrandFilter, offersCountryFilter, offersStatusFilter, numericFilters);
   const offersItems = offersData?.offers || [];
   const totalOffersFiltered = offersData?.total || 0;
   const totalOffersPages = Math.max(1, Math.ceil(totalOffersFiltered / OFFERS_PER_PAGE));

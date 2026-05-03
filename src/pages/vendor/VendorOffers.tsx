@@ -112,11 +112,13 @@ interface OfferForm {
   pack_size_override: string;
   /** Conditionnement de la fiche produit MediKong (lecture seule, sert au fallback). */
   product_pack_size_fallback: number | null;
+  /** Note libre vendeur (ex. langue packaging) — affichée à l'acheteur en tooltip. */
+  vendor_note: string;
 }
 
 const emptyForm: OfferForm = {
   product_id: "", product_name: "", price_excl_vat: "", purchase_price_excl_vat: "", save_as_product_default: false, vat_rate: "21", stock_quantity: "", moq: "1", mov_amount: "0", delivery_days: "3", country_code: "BE", category_ids: [],
-  pack_size_override: "", product_pack_size_fallback: null,
+  pack_size_override: "", product_pack_size_fallback: null, vendor_note: "",
 };
 
 function ProductThumb({ imageUrls, alt = "" }: { imageUrls?: string[] | null; alt?: string }) {
@@ -1350,6 +1352,7 @@ export default function VendorOffers() {
       category_ids: (linkedCats || []).map((c: any) => c.category_id),
       pack_size_override: offer.pack_size_override != null ? String(offer.pack_size_override) : "",
       product_pack_size_fallback: (offer.products as any)?.pack_size ?? null,
+      vendor_note: (offer as any).vendor_note ?? "",
     });
     // Snapshot "avant" : prix HT + pack effectif au moment de l'ouverture
     const initialOverride = offer.pack_size_override;
@@ -1497,6 +1500,7 @@ export default function VendorOffers() {
         delivery_days: parseInt(form.delivery_days) || 3, country_code: form.country_code,
         stock_status: parseInt(form.stock_quantity) > 0 ? "in_stock" as const : "out_of_stock" as const,
         pack_size_override: packOverride,
+        vendor_note: form.vendor_note?.trim() ? form.vendor_note.trim().slice(0, 500) : null,
         is_active: true,
       };
       let offerId = editingId;
@@ -1793,6 +1797,26 @@ export default function VendorOffers() {
               <label className="text-[11px] block mb-1" style={{ color: "#8B95A5" }}>Délai livraison (jours)</label>
               <input type="number" min="1" className="w-full px-3 py-2 text-[13px] border rounded-lg focus:border-[#1B5BDA] focus:outline-none"
                 style={{ borderColor: "#E2E8F0" }} value={form.delivery_days} onChange={e => setForm(p => ({ ...p, delivery_days: e.target.value }))} />
+            </div>
+            <div className="md:col-span-2">
+              <label className="text-[11px] mb-1 flex items-center justify-between" style={{ color: "#8B95A5" }}>
+                <span>Note vendeur (visible acheteur)</span>
+                <span className="text-[10px]" style={{ color: form.vendor_note.length > 500 ? "#DC2626" : "#B0BAC9" }}>
+                  {form.vendor_note.length}/500
+                </span>
+              </label>
+              <textarea
+                rows={2}
+                maxLength={500}
+                placeholder="Ex. Packaging FR + arabe sur une face · Notice multilingue · Lot court DLU"
+                className="w-full px-3 py-2 text-[13px] border rounded-lg focus:border-[#1B5BDA] focus:outline-none resize-y"
+                style={{ borderColor: "#E2E8F0" }}
+                value={form.vendor_note}
+                onChange={e => setForm(p => ({ ...p, vendor_note: e.target.value }))}
+              />
+              <p className="text-[11px] mt-1" style={{ color: "#8B95A5" }}>
+                Affichée à l'acheteur en survol d'une icône ⓘ à côté de votre offre.
+              </p>
             </div>
             <div className="md:col-span-2">
               {(() => {

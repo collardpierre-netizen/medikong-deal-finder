@@ -3796,6 +3796,7 @@ export type Database = {
           updated_at: string
           vat_rate: number
           vendor_id: string
+          vendor_note: string | null
         }
         Insert: {
           admin_hidden?: boolean
@@ -3857,6 +3858,7 @@ export type Database = {
           updated_at?: string
           vat_rate?: number
           vendor_id: string
+          vendor_note?: string | null
         }
         Update: {
           admin_hidden?: boolean
@@ -3918,6 +3920,7 @@ export type Database = {
           updated_at?: string
           vat_rate?: number
           vendor_id?: string
+          vendor_note?: string | null
         }
         Relationships: [
           {
@@ -13103,6 +13106,7 @@ export type Database = {
           updated_at: string
           vat_rate: number
           vendor_id: string
+          vendor_note: string | null
         }
         SetofOptions: {
           from: "*"

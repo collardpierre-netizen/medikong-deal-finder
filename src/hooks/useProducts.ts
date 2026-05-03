@@ -208,6 +208,7 @@ export interface Offer {
   minDeliveryDays?: number;
   maxDeliveryDays?: number;
   estimatedDeliveryDays?: number;
+  vendorNote?: string | null;
 }
 
 export function useProductOffers(productId: string | undefined) {
@@ -340,6 +341,7 @@ export function useProductOffers(productId: string | undefined) {
           minDeliveryDays: o.min_delivery_days || undefined,
           maxDeliveryDays: o.max_delivery_days || undefined,
           estimatedDeliveryDays: o.estimated_delivery_days || undefined,
+          vendorNote: o.vendor_note ?? null,
         };
       });
 

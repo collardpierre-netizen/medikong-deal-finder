@@ -36,7 +36,7 @@ interface VendorFilters {
 
 const EMPTY_FILTERS: VendorFilters = { brands: [], categories: [], search: "" };
 
-import { MEDIKONG_PLACEHOLDER, isValidProductImage, isQogitaPlaceholder } from "@/lib/image-utils";
+import { MEDIKONG_PLACEHOLDER, isValidProductImage, isQogitaPlaceholder, getProductImageSrc } from "@/lib/image-utils";
 
 /* ───── Vendor-specific product card (grid) ───── */
 function VendorProductCard({ product: p, index, addToCart, openDrawer, onQuickView }: { product: any; index: number; addToCart: any; openDrawer: () => void; onQuickView: (p: any) => void }) {

@@ -32,6 +32,7 @@ export function ProductFormDialog({ open, onOpenChange, product, brands, manufac
   const [saving, setSaving] = useState(false);
   const [newMediaUrl, setNewMediaUrl] = useState("");
   const [mediaUrls, setMediaUrls] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
 
   const [form, setForm] = useState({
     name: "", slug: "", gtin: "", cnk_code: "", sku: "",

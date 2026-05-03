@@ -598,32 +598,51 @@ const AdminProduits = () => {
           </div>
 
           {/* Numeric filters row */}
-          <div className="flex items-center gap-2 mb-4 flex-wrap text-[12px]">
-            <span className="font-medium" style={{ color: "#616B7C" }}>Prix HT €</span>
-            <input type="number" step="0.01" placeholder="min" value={offersPriceMin}
-              onChange={(e) => { setOffersPriceMin(e.target.value); setOffersPage(1); }}
-              className="w-20 h-8 px-2 rounded border outline-none" style={{ borderColor: "#E2E8F0" }} />
-            <input type="number" step="0.01" placeholder="max" value={offersPriceMax}
-              onChange={(e) => { setOffersPriceMax(e.target.value); setOffersPage(1); }}
-              className="w-20 h-8 px-2 rounded border outline-none" style={{ borderColor: "#E2E8F0" }} />
-            <span className="font-medium ml-2" style={{ color: "#616B7C" }}>Stock</span>
-            <input type="number" placeholder="min" value={offersStockMin}
-              onChange={(e) => { setOffersStockMin(e.target.value); setOffersPage(1); }}
-              className="w-20 h-8 px-2 rounded border outline-none" style={{ borderColor: "#E2E8F0" }} />
-            <input type="number" placeholder="max" value={offersStockMax}
-              onChange={(e) => { setOffersStockMax(e.target.value); setOffersPage(1); }}
-              className="w-20 h-8 px-2 rounded border outline-none" style={{ borderColor: "#E2E8F0" }} />
-            <span className="font-medium ml-2" style={{ color: "#616B7C" }}>MOQ</span>
-            <input type="number" placeholder="min" value={offersMoqMin}
-              onChange={(e) => { setOffersMoqMin(e.target.value); setOffersPage(1); }}
-              className="w-20 h-8 px-2 rounded border outline-none" style={{ borderColor: "#E2E8F0" }} />
-            <input type="number" placeholder="max" value={offersMoqMax}
-              onChange={(e) => { setOffersMoqMax(e.target.value); setOffersPage(1); }}
-              className="w-20 h-8 px-2 rounded border outline-none" style={{ borderColor: "#E2E8F0" }} />
-            <span className="font-medium ml-2" style={{ color: "#616B7C" }}>Délai max (j)</span>
-            <input type="number" placeholder="ex: 7" value={offersDelayMax}
-              onChange={(e) => { setOffersDelayMax(e.target.value); setOffersPage(1); }}
-              className="w-20 h-8 px-2 rounded border outline-none" style={{ borderColor: "#E2E8F0" }} />
+          <div className="mb-4 p-3 rounded-[10px] flex items-end gap-3 flex-wrap" style={{ backgroundColor: "#F8FAFC", border: "1px solid #E2E8F0" }}>
+            <div className="flex flex-col gap-1">
+              <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: "#616B7C" }}>Prix HT (€)</label>
+              <div className="flex gap-1.5">
+                <input type="number" step="0.01" placeholder="min" value={offersPriceMin}
+                  onChange={(e) => setOffersPriceMin(e.target.value)}
+                  className="w-24 h-9 px-2 rounded border outline-none text-[13px] bg-white" style={{ borderColor: "#CBD5E1" }} />
+                <input type="number" step="0.01" placeholder="max" value={offersPriceMax}
+                  onChange={(e) => setOffersPriceMax(e.target.value)}
+                  className="w-24 h-9 px-2 rounded border outline-none text-[13px] bg-white" style={{ borderColor: "#CBD5E1" }} />
+              </div>
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: "#616B7C" }}>Stock</label>
+              <div className="flex gap-1.5">
+                <input type="number" placeholder="min" value={offersStockMin}
+                  onChange={(e) => setOffersStockMin(e.target.value)}
+                  className="w-24 h-9 px-2 rounded border outline-none text-[13px] bg-white" style={{ borderColor: "#CBD5E1" }} />
+                <input type="number" placeholder="max" value={offersStockMax}
+                  onChange={(e) => setOffersStockMax(e.target.value)}
+                  className="w-24 h-9 px-2 rounded border outline-none text-[13px] bg-white" style={{ borderColor: "#CBD5E1" }} />
+              </div>
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: "#616B7C" }}>MOQ</label>
+              <div className="flex gap-1.5">
+                <input type="number" placeholder="min" value={offersMoqMin}
+                  onChange={(e) => setOffersMoqMin(e.target.value)}
+                  className="w-24 h-9 px-2 rounded border outline-none text-[13px] bg-white" style={{ borderColor: "#CBD5E1" }} />
+                <input type="number" placeholder="max" value={offersMoqMax}
+                  onChange={(e) => setOffersMoqMax(e.target.value)}
+                  className="w-24 h-9 px-2 rounded border outline-none text-[13px] bg-white" style={{ borderColor: "#CBD5E1" }} />
+              </div>
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: "#616B7C" }}>Délai max (jours)</label>
+              <input type="number" placeholder="ex: 7" value={offersDelayMax}
+                onChange={(e) => setOffersDelayMax(e.target.value)}
+                className="w-28 h-9 px-2 rounded border outline-none text-[13px] bg-white" style={{ borderColor: "#CBD5E1" }} />
+            </div>
+            {hasNumericFilter && (
+              <Button variant="ghost" size="sm" onClick={resetNumericFilters} className="h-9 text-[12px]">
+                Effacer filtres chiffrés
+              </Button>
+            )}
           </div>
 
           {/* Offers count + pagination */}

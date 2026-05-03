@@ -168,14 +168,30 @@ const AdminProduits = () => {
   const [offersMoqMin, setOffersMoqMin] = useState<string>("");
   const [offersMoqMax, setOffersMoqMax] = useState<string>("");
   const [offersDelayMax, setOffersDelayMax] = useState<string>("");
-  const numericFilters: OfferNumericFilters = {
-    priceMin: offersPriceMin ? parseFloat(offersPriceMin) : undefined,
-    priceMax: offersPriceMax ? parseFloat(offersPriceMax) : undefined,
-    stockMin: offersStockMin ? parseInt(offersStockMin, 10) : undefined,
-    stockMax: offersStockMax ? parseInt(offersStockMax, 10) : undefined,
-    moqMin: offersMoqMin ? parseInt(offersMoqMin, 10) : undefined,
-    moqMax: offersMoqMax ? parseInt(offersMoqMax, 10) : undefined,
-    delayMax: offersDelayMax ? parseInt(offersDelayMax, 10) : undefined,
+  // Debounce numeric filters: une seule requête après 350ms d'inactivité
+  const [debouncedNumeric, setDebouncedNumeric] = useState<OfferNumericFilters>({});
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedNumeric({
+        priceMin: offersPriceMin ? parseFloat(offersPriceMin) : undefined,
+        priceMax: offersPriceMax ? parseFloat(offersPriceMax) : undefined,
+        stockMin: offersStockMin ? parseInt(offersStockMin, 10) : undefined,
+        stockMax: offersStockMax ? parseInt(offersStockMax, 10) : undefined,
+        moqMin: offersMoqMin ? parseInt(offersMoqMin, 10) : undefined,
+        moqMax: offersMoqMax ? parseInt(offersMoqMax, 10) : undefined,
+        delayMax: offersDelayMax ? parseInt(offersDelayMax, 10) : undefined,
+      });
+      setOffersPage(1);
+    }, 350);
+    return () => clearTimeout(t);
+  }, [offersPriceMin, offersPriceMax, offersStockMin, offersStockMax, offersMoqMin, offersMoqMax, offersDelayMax]);
+  const numericFilters = debouncedNumeric;
+  const hasNumericFilter = Object.values(numericFilters).some(v => v !== undefined && !Number.isNaN(v));
+  const resetNumericFilters = () => {
+    setOffersPriceMin(""); setOffersPriceMax("");
+    setOffersStockMin(""); setOffersStockMax("");
+    setOffersMoqMin(""); setOffersMoqMax("");
+    setOffersDelayMax("");
   };
   const [busyHide, setBusyHide] = useState<string | null>(null);
   const qcMain = useQueryClient();

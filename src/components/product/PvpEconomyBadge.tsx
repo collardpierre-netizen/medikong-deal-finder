@@ -86,6 +86,38 @@ export function PvpEconomyBadge({
   const isNegative = (margin?.marginAmount ?? 0) < 0;
   const isZero = margin?.marginAmount === 0;
 
+  // Marge négative = anomalie de données (PVP obsolète, prix d'achat mal encodé,
+  // pack_size manquant, etc.). On masque les chiffres côté front et on logge
+  // côté back pour /admin/offer-data-quality.
+  const loggedKeyRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (variant !== "card" || !isNegative || !margin) return;
+    const key = `${productId}|${offerId ?? "noid"}`;
+    if (loggedKeyRef.current === key) return;
+    loggedKeyRef.current = key;
+    const sessionKey = `pvp-neg-margin-logged:${key}`;
+    if (typeof window !== "undefined" && sessionStorage.getItem(sessionKey)) return;
+    if (typeof window !== "undefined") sessionStorage.setItem(sessionKey, "1");
+    supabase
+      .rpc("log_offer_data_issue", {
+        _product_id: productId,
+        _offer_id: offerId ?? productId,
+        _issue_code: "negative_margin_vs_pvp",
+        _details: {
+          pvp_ttc: pvp.pvpTtc,
+          pvp_source: pvp.source,
+          buyer_price_ttc: buyerPriceTtc,
+          buyer_price_htva: buyerPriceHtva ?? null,
+          margin_amount: margin.marginAmount,
+          margin_pct: margin.marginPct,
+          country_code: countryCode,
+        },
+      } as any)
+      .then(({ error }: any) => {
+        if (error) console.warn("[PvpEconomyBadge] log_offer_data_issue failed", error);
+      });
+  }, [variant, isNegative, margin, productId, offerId, pvp, buyerPriceTtc, buyerPriceHtva, countryCode]);
+
   const palette = isPositive
     ? { border: "border-emerald-200", bg: "bg-emerald-50/50", title: "text-emerald-900", icon: "text-emerald-700", marginFg: "text-emerald-700", marginBg: "text-emerald-700/80", Icon: TrendingUp }
     : isNegative

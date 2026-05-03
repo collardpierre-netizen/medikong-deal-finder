@@ -185,7 +185,16 @@ export function PvpEconomyBadge({
           {/* Marge potentielle */}
           <div>
             <div className="text-xs text-muted-foreground">Marge potentielle</div>
-            {margin ? (
+            {isNegative ? (
+              <>
+                <div className={`font-semibold ${palette.marginFg} text-sm leading-tight`}>
+                  Indisponible
+                </div>
+                <div className={`text-[11px] ${palette.marginBg}`}>
+                  Anomalie détectée — vérification en cours
+                </div>
+              </>
+            ) : margin ? (
               <>
                 <div className={`font-semibold tabular-nums ${palette.marginFg}`}>
                   {margin.marginAmount >= 0 ? "+" : ""}
@@ -209,13 +218,16 @@ export function PvpEconomyBadge({
         </div>
 
         {/* Hint si marge négative ou nulle */}
-        {(isNegative || isZero) && (
+        {isNegative ? (
           <p className={`mt-3 text-[11px] ${palette.marginBg}`}>
-            {isNegative
-              ? "⚠ Votre prix d'achat est supérieur au PVP conseillé : revente non rentable au prix public."
-              : "Votre prix d'achat est aligné sur le PVP conseillé : aucune marge à la revente publique."}
+            ⚠ Une incohérence a été détectée entre le prix d'achat et le prix public conseillé pour cette offre.
+            Notre équipe a été notifiée et vérifie la donnée. Le calcul de marge sera réactivé dès la correction.
           </p>
-        )}
+        ) : isZero ? (
+          <p className={`mt-3 text-[11px] ${palette.marginBg}`}>
+            Votre prix d'achat est aligné sur le PVP conseillé : aucune marge à la revente publique.
+          </p>
+        ) : null}
 
         <p className="mt-2 text-[11px] text-muted-foreground">{pvp.sourceLabel}</p>
       </CardContent>

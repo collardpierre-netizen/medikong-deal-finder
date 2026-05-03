@@ -408,12 +408,14 @@ Deno.serve(async (req) => {
   const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
   let targetCountry = "";
-  let fetchMultiVendor = false;
+  // Politique anti-vendeur anonyme : multi_vendor TOUJOURS activé pour récupérer les FID vendeurs réels.
+  // L'offre catch-all "qogita-best-price" n'est plus enregistrée (cf. branche désactivée plus bas).
+  let fetchMultiVendor = true;
   let resyncLogId: string | null = null;
   try {
     const body = await req.json();
     if (body?.country) targetCountry = body.country;
-    if (body?.multi_vendor) fetchMultiVendor = true;
+    // body.multi_vendor ignoré : forcé à true.
     if (body?.resync_log_id) resyncLogId = String(body.resync_log_id);
   } catch {
     // no-op
@@ -847,7 +849,11 @@ async function processSingleProduct(
       const bpMov = parseFloat(String(variant?.mov ?? variant?.minimumOrderValue ?? "0")) || 0;
       const bpRawTiers = extractRawTiers(variant);
 
-      if (priceExclVat > 0) {
+      // POLITIQUE ANTI-VENDEUR ANONYME :
+      // On n'enregistre PLUS d'offre catch-all sur le vendeur virtuel "qogita-best-price".
+      // Seules les offres multi-vendor (avec FID vendeur réel) sont persistées plus bas.
+      // Le bloc ci-dessous est désactivé volontairement.
+      if (false && priceExclVat > 0) {
         const { data: bpUpserted, error: offerErr } = await sb.from("offers").upsert(
           {
             product_id: product.id,

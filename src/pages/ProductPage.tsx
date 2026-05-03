@@ -796,7 +796,7 @@ export default function ProductPage() {
   const navigate = useNavigate();
   const routeLocation = useLocation();
   const { user, isVerifiedBuyer, verificationLoading } = useAuth();
-  const { country } = useCountry();
+  const { country, currentCountry } = useCountry();
   const { isTVAC } = usePriceDisplay();
   const { data: product, isLoading } = useProduct(slug);
   const { data: resolvedVat } = useProductVatRate(product?.id, country || "BE");

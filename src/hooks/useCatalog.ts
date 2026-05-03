@@ -160,6 +160,19 @@ const COUNTRY_COLUMNS: CatalogColumns = {
   isInStock: "country_is_in_stock",
 };
 
+/**
+ * Filtre pays catalogue : inclut les lignes du pays courant ET celles à
+ * `country_code IS NULL` (LEFT JOIN sur `product_country_stats` qui ne
+ * matche pas → produits actifs sans aucune offre dans ce pays).
+ *
+ * Sans le `is.null`, un produit actif sans offre BE disparaît du catalogue
+ * (régression rapportée : "produits visibles dans la recherche, vides dans
+ * la grille catalogue"). Cf. tests dans `useCatalog.country-filter.test.ts`.
+ */
+export function buildCountryFilterExpression(country: string): string {
+  return `country_code.eq.${country},country_code.is.null`;
+}
+
 function applyCatalogProductFilters(
   query: any,
   filters: CatalogFilters,

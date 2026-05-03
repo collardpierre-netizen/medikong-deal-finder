@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getVendorPublicName, resolveVendorVisibility } from "@/lib/vendor-display";
 import { BrandFactSheet } from "@/components/brand/BrandFactSheet";
 import { Badge } from "@/components/ui/badge";
+import { getProductImageSrc } from "@/lib/image-utils";
 
 export default function BrandDetailPage() {
   const { slug } = useParams();

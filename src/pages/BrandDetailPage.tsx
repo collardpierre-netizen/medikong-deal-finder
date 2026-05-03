@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getVendorPublicName, resolveVendorVisibility } from "@/lib/vendor-display";
 import { BrandFactSheet } from "@/components/brand/BrandFactSheet";
 import { Badge } from "@/components/ui/badge";
+import { getProductImageSrc } from "@/lib/image-utils";
 
 export default function BrandDetailPage() {
   const { slug } = useParams();
@@ -420,7 +421,7 @@ export default function BrandDetailPage() {
                       {filtered.map((p) => (
                         <div key={p.id} className="flex items-center gap-4 border border-mk-line rounded-lg p-4 hover:shadow-sm transition-shadow bg-white">
                           <div className="w-20 h-20 shrink-0 rounded bg-muted flex items-center justify-center overflow-hidden">
-                            <img src={p.imageUrl || "/medikong-placeholder.png"} alt={p.name} className="w-full h-full object-contain p-1" onError={(e) => { (e.target as HTMLImageElement).src = '/medikong-placeholder.png'; }} />
+                            <img src={getProductImageSrc(p.imageUrl)} alt={p.name} loading="lazy" referrerPolicy="no-referrer" className="w-full h-full object-contain p-1" onError={(e) => { (e.target as HTMLImageElement).src = '/medikong-placeholder.png'; }} />
                           </div>
                           <div className="flex-1 min-w-0">
                             <Link to={`/produit/${p.slug}`} className="text-sm font-semibold text-mk-navy hover:text-mk-blue line-clamp-2">{p.name}</Link>

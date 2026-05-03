@@ -272,7 +272,8 @@ export default function VendorPublicPage() {
         priceInclVat: Number(o.price_incl_vat) || 0,
         deliveryDays: o.delivery_days ?? o.estimated_delivery_days ?? null,
       };
-    }), [offers]);
+    });
+  }, [offers]);
 
   // Extract unique brands & categories with counts
   const { brands, categories } = useMemo(() => {

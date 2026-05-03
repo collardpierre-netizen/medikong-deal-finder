@@ -1508,6 +1508,10 @@ export default function VendorOffers() {
         stock_status: parseInt(form.stock_quantity) > 0 ? "in_stock" as const : "out_of_stock" as const,
         pack_size_override: packOverride,
         vendor_note: form.vendor_note?.trim() ? form.vendor_note.trim().slice(0, 500) : null,
+        carton_size_override: form.carton_size_override.trim()
+          ? Math.max(1, Math.min(100000, parseInt(form.carton_size_override, 10) || 0)) || null
+          : null,
+        packaging_languages: form.packaging_languages.length > 0 ? form.packaging_languages : null,
         is_active: true,
       };
       let offerId = editingId;

@@ -90,6 +90,31 @@ export function ProductFormDialog({ open, onOpenChange, product, brands, manufac
     setNewMediaUrl("");
   };
 
+  const handleUploadFiles = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setUploading(true);
+    try {
+      const folder = product?.id || `new-${crypto.randomUUID()}`;
+      const newUrls: string[] = [];
+      for (const file of Array.from(files)) {
+        const normalized = await normalizeImageFile(file, { size: 1200, mime: "image/webp" });
+        const path = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.webp`;
+        const { error } = await supabase.storage
+          .from("product-images")
+          .upload(path, normalized, { contentType: "image/webp", upsert: true });
+        if (error) throw error;
+        const { data } = supabase.storage.from("product-images").getPublicUrl(path);
+        newUrls.push(data.publicUrl);
+      }
+      setMediaUrls((prev) => [...prev, ...newUrls]);
+      toast.success(`${newUrls.length} image(s) ajoutée(s)`);
+    } catch (e: any) {
+      toast.error(e.message || "Échec de l'upload");
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const handleUpdateMediaUrl = (index: number, value: string) => {
     setMediaUrls((prev) => prev.map((u, i) => (i === index ? value : u)));
   };

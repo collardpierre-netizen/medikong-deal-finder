@@ -19,6 +19,7 @@ import { useCurrentVendor } from "@/hooks/useCurrentVendor";
 import ProfilePricesEditor from "@/components/vendor/ProfilePricesEditor";
 import OfferSuggestedRetailPriceEditor from "@/components/vendor/OfferSuggestedRetailPriceEditor";
 import * as XLSX from "xlsx";
+import { getProductImageSrc, isQogitaPlaceholder, isValidProductImage, MEDIKONG_PLACEHOLDER } from "@/lib/image-utils";
 
 const PROFILE_TYPES = [
   { value: "pharmacy", label: "Pharmacie" },
@@ -117,6 +118,27 @@ const emptyForm: OfferForm = {
   product_id: "", product_name: "", price_excl_vat: "", purchase_price_excl_vat: "", save_as_product_default: false, vat_rate: "21", stock_quantity: "", moq: "1", mov_amount: "0", delivery_days: "3", country_code: "BE", category_ids: [],
   pack_size_override: "", product_pack_size_fallback: null,
 };
+
+function ProductThumb({ imageUrls, alt = "" }: { imageUrls?: string[] | null; alt?: string }) {
+  const validImage = Array.isArray(imageUrls) ? imageUrls.find((url) => isValidProductImage(url)) : undefined;
+
+  return (
+    <img
+      src={getProductImageSrc(validImage)}
+      alt={alt}
+      className="w-8 h-8 rounded object-contain shrink-0 p-0.5"
+      style={{ backgroundColor: "#F8FAFC" }}
+      onLoad={(event) => {
+        const img = event.currentTarget;
+        if (img.src.includes(MEDIKONG_PLACEHOLDER)) return;
+        if (isQogitaPlaceholder(img)) img.src = MEDIKONG_PLACEHOLDER;
+      }}
+      onError={(event) => {
+        event.currentTarget.src = MEDIKONG_PLACEHOLDER;
+      }}
+    />
+  );
+}
 
 /* ─── Competitive Intelligence Module ─── */
 function CompetitiveIntel({ productId, currentPrice, vendorId }: { productId: string; currentPrice: number; vendorId: string }) {

@@ -1644,7 +1644,9 @@ export default function ProductPage() {
                                 user_id: user?.id || null,
                                 user_agent: navigator.userAgent,
                               });
-                            } catch {}
+                            } catch {
+                              // Lead tracking is best-effort and must not block navigation.
+                            }
                             // Open in new tab
                             window.open(eo.product_url, "_blank", "noopener,noreferrer");
                           };

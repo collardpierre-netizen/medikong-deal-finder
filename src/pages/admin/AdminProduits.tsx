@@ -612,6 +612,18 @@ const AdminProduits = () => {
                 <SelectItem value="hidden">Masquées (admin)</SelectItem>
               </SelectContent>
             </Select>
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => { setOffersStatusFilter(offersStatusFilter === "hidden" ? "all" : "hidden"); setOffersPage(1); }}
+              title={offersStatusFilter === "hidden" ? "Cliquer pour retirer le filtre" : "Afficher uniquement les offres masquées du frontend"}
+              className="h-9 text-[12px] gap-1 border"
+              style={offersStatusFilter === "hidden"
+                ? { backgroundColor: "#DC2626", color: "white", borderColor: "#B91C1C" }
+                : { backgroundColor: "white", color: "#991B1B", borderColor: "#FCA5A5" }}
+            >
+              <EyeOff size={13} /> Masquées frontend
+            </Button>
             {(offersVendorFilter !== "all" || offersBrandFilter !== "all" || offersCountryFilter !== "all" || offersStatusFilter !== "all" || debouncedOffersSearch ||
               offersPriceMin || offersPriceMax || offersStockMin || offersStockMax || offersMoqMin || offersMoqMax || offersDelayMax) && (
               <Button variant="ghost" size="sm" className="text-[12px] h-9" onClick={() => {

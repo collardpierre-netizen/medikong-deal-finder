@@ -223,6 +223,25 @@ const AdminProduits = () => {
     qcMain.invalidateQueries({ queryKey: ["admin-offers-paginated"] });
   };
 
+  const editHideReason = async (offer: any) => {
+    const current = offer.admin_hidden_reason ?? "";
+    const input = window.prompt(
+      `Raison interne pour cette offre${offer.admin_hidden ? " (masquée)" : ""} :\n\nLaisser vide pour effacer la raison.`,
+      current
+    );
+    if (input === null) return; // cancelled
+    const newReason = input.trim() || null;
+    if (newReason === (current || null)) return; // no change
+    setBusyHide(offer.id);
+    const { error } = await supabase.from("offers").update({
+      admin_hidden_reason: newReason,
+    } as any).eq("id", offer.id);
+    setBusyHide(null);
+    if (error) { toast.error("Échec", { description: error.message }); return; }
+    toast.success(newReason ? "Raison mise à jour" : "Raison effacée");
+    qcMain.invalidateQueries({ queryKey: ["admin-offers-paginated"] });
+  };
+
   const { data: brands = [] } = useBrands();
   const { data: manufacturers = [] } = useManufacturers();
   const { data: vendors = [] } = useVendors();

@@ -168,7 +168,7 @@ const AdminProduitDetail = () => {
           <table className="w-full text-left">
             <thead>
               <tr style={{ borderBottom: "1px solid #E2E8F0", backgroundColor: "#F8FAFC" }}>
-                {["Vendeur", "ID MediKong", "ID Qogita", "Prix HT", "Prix TTC", "Stock", "MOQ", "Délai", "Qogita"].map(h => (
+                {["Vendeur", "ID MediKong", "Vendeur Qogita (FID)", "Offer QID", "Prix HT", "Prix TTC", "Stock", "MOQ", "Délai", "Qogita"].map(h => (
                   <th key={h} className="px-4 py-3 text-[10px] font-semibold uppercase tracking-wider" style={{ color: "#8B95A5" }}>{h}</th>
                 ))}
               </tr>
@@ -185,8 +185,33 @@ const AdminProduitDetail = () => {
                     ) : <span className="text-[11px]" style={{ color: "#CBD5E1" }}>—</span>}
                   </td>
                   <td className="px-4 py-3">
-                    {v?.qogita_seller_alias ? (
-                      <span className="px-2 py-1 rounded text-[11px] font-mono" style={{ backgroundColor: "#EFF6FF", color: "#1B5BDA" }}>{v.qogita_seller_alias}</span>
+                    {o.qogita_seller_fid ? (
+                      <button
+                        type="button"
+                        onClick={() => { navigator.clipboard?.writeText(o.qogita_seller_fid); }}
+                        title={`Vendeur Qogita réel : ${o.qogita_seller_fid}${v?.qogita_seller_alias && v.qogita_seller_alias !== "qogita" ? ` · alias compte : ${v.qogita_seller_alias}` : ""}\nCliquer pour copier`}
+                        className="px-2 py-1 rounded text-[11px] font-mono hover:opacity-80"
+                        style={{ backgroundColor: "#EFF6FF", color: "#1B5BDA" }}
+                      >
+                        {o.qogita_seller_fid}
+                      </button>
+                    ) : v?.qogita_seller_alias && v.qogita_seller_alias !== "qogita" ? (
+                      <span className="px-2 py-1 rounded text-[11px] font-mono" title="Alias vendeur (global, pas par offre)" style={{ backgroundColor: "#F1F5F9", color: "#616B7C" }}>{v.qogita_seller_alias}</span>
+                    ) : (
+                      <span className="text-[11px]" title="Offre agrégée Qogita (catch-all) — pas de seller unique" style={{ color: "#CBD5E1" }}>agrégée</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
+                    {o.qogita_offer_qid ? (
+                      <button
+                        type="button"
+                        onClick={() => { navigator.clipboard?.writeText(o.qogita_offer_qid); }}
+                        title={`Offer QID : ${o.qogita_offer_qid}\nCliquer pour copier`}
+                        className="px-2 py-1 rounded text-[10px] font-mono hover:opacity-80 max-w-[140px] truncate inline-block"
+                        style={{ backgroundColor: "#F8FAFC", color: "#8B95A5" }}
+                      >
+                        {o.qogita_offer_qid.length > 14 ? `${o.qogita_offer_qid.slice(0, 8)}…${o.qogita_offer_qid.slice(-4)}` : o.qogita_offer_qid}
+                      </button>
                     ) : <span className="text-[11px]" style={{ color: "#CBD5E1" }}>—</span>}
                   </td>
                   <td className="px-4 py-3 text-[13px] font-bold" style={{ color: "#1D2530" }}>€{Number(o.price_excl_vat).toFixed(2)}</td>

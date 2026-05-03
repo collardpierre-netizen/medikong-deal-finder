@@ -640,7 +640,7 @@ const AdminProduits = () => {
                 </thead>
                 <tbody>
                   {offersItems.map((o: any) => (
-                    <tr key={o.id} style={{ borderBottom: "1px solid #F1F5F9" }}>
+                    <tr key={o.id} style={{ borderBottom: "1px solid #F1F5F9", backgroundColor: o.admin_hidden ? "#FEF2F2" : undefined, opacity: o.admin_hidden ? 0.7 : 1 }}>
                       <td className="px-3 py-3">
                         <span className="text-[13px] font-medium block" style={{ color: "#1D2530" }}>{o.products?.name || "—"}</span>
                         <span className="text-[10px]" style={{ color: "#8B95A5" }}>{o.products?.brand_name || ""}</span>
@@ -657,11 +657,29 @@ const AdminProduits = () => {
                         {o.margin_amount ? `€${Number(o.margin_amount).toFixed(2)}` : "—"}
                         {o.applied_margin_percentage ? <span className="text-[10px] ml-1">({o.applied_margin_percentage}%)</span> : null}
                       </td>
-                      <td className="px-3 py-3"><StatusBadge status={o.is_active ? "active" : "inactive"} /></td>
+                      <td className="px-3 py-3">
+                        {o.admin_hidden
+                          ? <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ backgroundColor: "#FEF2F2", color: "#B91C1C" }}>Masquée</span>
+                          : <StatusBadge status={o.is_active ? "active" : "inactive"} />}
+                      </td>
+                      <td className="px-3 py-3">
+                        <Button
+                          size="sm"
+                          variant={o.admin_hidden ? "outline" : "ghost"}
+                          disabled={busyHide === o.id}
+                          onClick={() => toggleHideOffer(o)}
+                          title={o.admin_hidden
+                            ? `Masquée${o.admin_hidden_reason ? ` — ${o.admin_hidden_reason}` : ""}\nCliquer pour ré-afficher`
+                            : "Masquer cette offre du catalogue"}
+                          className="h-7 px-2 text-[11px] gap-1"
+                        >
+                          {o.admin_hidden ? <><Eye size={12} /> Afficher</> : <><EyeOff size={12} /> Masquer</>}
+                        </Button>
+                      </td>
                     </tr>
                   ))}
                   {offersItems.length === 0 && (
-                    <tr><td colSpan={11} className="px-4 py-12 text-center text-[13px]" style={{ color: "#8B95A5" }}>Aucune offre trouvée</td></tr>
+                    <tr><td colSpan={12} className="px-4 py-12 text-center text-[13px]" style={{ color: "#8B95A5" }}>Aucune offre trouvée</td></tr>
                   )}
                 </tbody>
               </table>

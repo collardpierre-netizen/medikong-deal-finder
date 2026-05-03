@@ -195,7 +195,7 @@ const AdminProduitDetail = () => {
           <table className="w-full text-left">
             <thead>
               <tr style={{ borderBottom: "1px solid #E2E8F0", backgroundColor: "#F8FAFC" }}>
-                {["Vendeur", "ID MediKong", "Vendeur Qogita (FID)", "Offer QID", "Prix HT", "Prix TTC", "Stock", "MOQ", "Délai", "Qogita"].map(h => (
+                {["Vendeur", "ID MediKong", "Vendeur Qogita (FID)", "Offer QID", "Prix HT", "Prix TTC", "Stock", "MOQ", "Délai", "Qogita", "Action"].map(h => (
                   <th key={h} className="px-4 py-3 text-[10px] font-semibold uppercase tracking-wider" style={{ color: "#8B95A5" }}>{h}</th>
                 ))}
               </tr>

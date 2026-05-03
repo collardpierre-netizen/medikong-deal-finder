@@ -1,12 +1,15 @@
-import { Info, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { useEffect, useRef } from "react";
+import { Info, TrendingUp, TrendingDown, Minus, AlertTriangle } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useResolvedPvp, computeResaleMargin } from "@/hooks/useResolvedPvp";
 import { useProductVatRate } from "@/hooks/useProductVatRate";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatUpdatedAtFull } from "@/lib/format-date";
+import { supabase } from "@/integrations/supabase/client";
 
 interface PvpEconomyBadgeProps {
   productId: string;
+  offerId?: string | null;
   buyerPriceTtc: number; // prix TTC payé par l'acheteur (€)
   buyerPriceHtva?: number; // facultatif, pour le bloc complet
   countryCode?: string;

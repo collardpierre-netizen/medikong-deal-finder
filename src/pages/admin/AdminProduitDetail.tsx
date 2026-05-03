@@ -32,7 +32,7 @@ const AdminProduitDetail = () => {
   const { data: offers = [] } = useQuery({
     queryKey: ["product-offers", id],
     queryFn: async () => {
-      const { data } = await supabase.from("offers").select("*, vendors(name, company_name)").eq("product_id", id!);
+      const { data } = await supabase.from("offers").select("*, vendors(name, company_name, display_code, qogita_seller_alias)").eq("product_id", id!);
       return data || [];
     },
     enabled: !!id,

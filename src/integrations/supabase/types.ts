@@ -3737,6 +3737,10 @@ export type Database = {
       }
       offers: {
         Row: {
+          admin_hidden: boolean
+          admin_hidden_at: string | null
+          admin_hidden_by: string | null
+          admin_hidden_reason: string | null
           applied_margin_percentage: number | null
           applied_margin_rule_id: string | null
           campaign_id: string | null
@@ -3794,6 +3798,10 @@ export type Database = {
           vendor_id: string
         }
         Insert: {
+          admin_hidden?: boolean
+          admin_hidden_at?: string | null
+          admin_hidden_by?: string | null
+          admin_hidden_reason?: string | null
           applied_margin_percentage?: number | null
           applied_margin_rule_id?: string | null
           campaign_id?: string | null
@@ -3851,6 +3859,10 @@ export type Database = {
           vendor_id: string
         }
         Update: {
+          admin_hidden?: boolean
+          admin_hidden_at?: string | null
+          admin_hidden_by?: string | null
+          admin_hidden_reason?: string | null
           applied_margin_percentage?: number | null
           applied_margin_rule_id?: string | null
           campaign_id?: string | null
@@ -13032,6 +13044,10 @@ export type Database = {
       admin_review_offer_commission: {
         Args: { _decision: string; _offer_id: string; _reason?: string }
         Returns: {
+          admin_hidden: boolean
+          admin_hidden_at: string | null
+          admin_hidden_by: string | null
+          admin_hidden_reason: string | null
           applied_margin_percentage: number | null
           applied_margin_rule_id: string | null
           campaign_id: string | null

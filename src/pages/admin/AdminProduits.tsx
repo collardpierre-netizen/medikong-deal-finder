@@ -20,17 +20,27 @@ import { Progress } from "@/components/ui/progress";
 const PER_PAGE = 50;
 const OFFERS_PER_PAGE = 50;
 
-function useAdminPaginatedOffers(page: number, search: string, vendorFilter: string, brandFilter: string, countryFilter: string, statusFilter: string) {
+type OfferNumericFilters = {
+  priceMin?: number; priceMax?: number;
+  stockMin?: number; stockMax?: number;
+  moqMin?: number; moqMax?: number;
+  delayMax?: number;
+};
+
+function useAdminPaginatedOffers(
+  page: number, search: string,
+  vendorFilter: string, brandFilter: string, countryFilter: string, statusFilter: string,
+  numeric: OfferNumericFilters,
+) {
   return useQuery({
-    queryKey: ["admin-offers-paginated", page, search, vendorFilter, brandFilter, countryFilter, statusFilter],
+    queryKey: ["admin-offers-paginated", page, search, vendorFilter, brandFilter, countryFilter, statusFilter, numeric],
     queryFn: async () => {
-      // Détecte si au moins un filtre restrictif est posé : count exact uniquement dans ce cas,
-      // sinon count estimé (planificateur Postgres) pour éviter le timeout sur 500k+ lignes.
       const hasRestrictiveFilter =
         !!search ||
         vendorFilter !== "all" ||
         brandFilter !== "all" ||
-        countryFilter !== "all";
+        countryFilter !== "all" ||
+        Object.values(numeric).some(v => v !== undefined && v !== null && !Number.isNaN(v));
 
       const countMode: "exact" | "estimated" = hasRestrictiveFilter ? "exact" : "estimated";
 
@@ -38,14 +48,23 @@ function useAdminPaginatedOffers(page: number, search: string, vendorFilter: str
         .from("offers")
         .select("*, vendors(name, company_name), products(name, brand_name, gtin, cnk_code)", { count: countMode });
 
-      if (statusFilter === "active") query = query.eq("is_active", true);
+      if (statusFilter === "active") query = query.eq("is_active", true).eq("admin_hidden", false);
       else if (statusFilter === "inactive") query = query.eq("is_active", false);
+      else if (statusFilter === "hidden") query = query.eq("admin_hidden", true);
 
       if (vendorFilter !== "all") query = query.eq("vendor_id", vendorFilter);
       if (countryFilter !== "all") query = query.eq("country_code", countryFilter);
 
+      // Numeric filters (server-side)
+      if (numeric.priceMin !== undefined) query = query.gte("price_excl_vat", numeric.priceMin);
+      if (numeric.priceMax !== undefined) query = query.lte("price_excl_vat", numeric.priceMax);
+      if (numeric.stockMin !== undefined) query = query.gte("stock_quantity", numeric.stockMin);
+      if (numeric.stockMax !== undefined) query = query.lte("stock_quantity", numeric.stockMax);
+      if (numeric.moqMin !== undefined) query = query.gte("moq", numeric.moqMin);
+      if (numeric.moqMax !== undefined) query = query.lte("moq", numeric.moqMax);
+      if (numeric.delayMax !== undefined) query = query.lte("delivery_days", numeric.delayMax);
+
       if (brandFilter !== "all") {
-        // Need to filter via product's brand_id
         const { data: productIds } = await supabase.from("products").select("id").eq("brand_id", brandFilter);
         if (productIds && productIds.length > 0) {
           query = query.in("product_id", productIds.map(p => p.id));
@@ -55,7 +74,6 @@ function useAdminPaginatedOffers(page: number, search: string, vendorFilter: str
       }
 
       if (search) {
-        // Search by product name or vendor name — use product name via textSearch
         const { data: matchProducts } = await supabase
           .from("products")
           .select("id")

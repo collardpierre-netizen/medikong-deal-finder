@@ -1,5 +1,5 @@
 import { Layout } from "@/components/layout/Layout";
-import { isValidProductImage, getProductImageSrc, MEDIKONG_PLACEHOLDER, isQogitaPlaceholder } from "@/lib/image-utils";
+import { isValidProductImage, getProductImageSrc, MEDIKONG_PLACEHOLDER, isQogitaPlaceholder, getPreferredProductImageUrls } from "@/lib/image-utils";
 import { useProduct, useProductOffers, type Offer } from "@/hooks/useProducts";
 import { useCart } from "@/hooks/useCart";
 import { useAuth } from "@/contexts/AuthContext";
@@ -976,10 +976,10 @@ export default function ProductPage() {
 
   // Compute gallery images BEFORE the useEffect — must run unconditionally on every render
   // (Rules of Hooks: do not place useEffect after early returns)
-  const _productImageUrls = product?.imageUrls?.filter((u: string) => isValidProductImage(u)) || [];
-  const _rawImages: string[] = _productImageUrls.length > 0
-    ? _productImageUrls
-    : (product && isValidProductImage(product.imageUrl) ? [product.imageUrl!] : []);
+  const _rawImages: string[] = getPreferredProductImageUrls([
+    ...(product?.imageUrls || []),
+    product?.imageUrl,
+  ]);
   const _galleryLen = Math.min(_rawImages.length, 6);
 
   // Auto-rotate gallery photos every 3s when more than 1 image, paused on hover

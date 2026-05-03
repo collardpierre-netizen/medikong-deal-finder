@@ -234,10 +234,20 @@ export default function VendorPublicPage() {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Map to display products
-  const vendorProducts = useMemo(() => offers
-    .filter((o: any) => o.products)
-    .map((o: any) => {
+  // Map to display products (dedupe by product id, keep cheapest in-stock offer)
+  const vendorProducts = useMemo(() => {
+    const byProduct = new Map<string, any>();
+    for (const o of offers) {
+      if (!o.products) continue;
+      const existing = byProduct.get(o.products.id);
+      const price = Number(o.price_excl_vat) || 0;
+      const existingPrice = existing ? Number(existing.price_excl_vat) || 0 : Infinity;
+      // prefer in-stock, then lower price
+      const candWeight = (o.stock_quantity > 0 ? 0 : 1) * 1e9 + price;
+      const exWeight = existing ? (existing.stock_quantity > 0 ? 0 : 1) * 1e9 + existingPrice : Infinity;
+      if (!existing || candWeight < exWeight) byProduct.set(o.products.id, o);
+    }
+    return Array.from(byProduct.values()).map((o: any) => {
       const p = o.products;
       const price = Number(o.price_excl_vat) || 0;
       return {
@@ -262,7 +272,8 @@ export default function VendorPublicPage() {
         priceInclVat: Number(o.price_incl_vat) || 0,
         deliveryDays: o.delivery_days ?? o.estimated_delivery_days ?? null,
       };
-    }), [offers]);
+    });
+  }, [offers]);
 
   // Extract unique brands & categories with counts
   const { brands, categories } = useMemo(() => {

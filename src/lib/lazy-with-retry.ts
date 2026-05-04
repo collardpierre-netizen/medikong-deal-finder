@@ -27,8 +27,49 @@ function isChunkLoadError(error: unknown) {
     message.includes("loading chunk") ||
     message.includes("chunkloaderror") ||
     message.includes("module script") ||
-    message.includes("network")
+    message.includes("network") ||
+    // HTML-instead-of-JS responses (SPA fallback / 404 page returned with text/html)
+    message.includes("text/html") ||
+    message.includes("mime type") ||
+    message.includes("expected a javascript") ||
+    message.includes("html-document") ||
+    message.includes("not a valid javascript")
   );
+}
+
+/**
+ * Probes a URL to verify the server responds with a JavaScript MIME type.
+ * Returns true when the response looks like HTML (SPA fallback / 404 page),
+ * which means the dynamic import would silently produce an unusable module.
+ */
+async function isHtmlResponse(url: string): Promise<boolean> {
+  try {
+    const res = await fetch(url, {
+      method: "GET",
+      cache: "no-store",
+      credentials: "same-origin",
+    });
+    if (!res.ok) return true; // 4xx/5xx served as HTML error page
+    const ct = (res.headers.get("content-type") || "").toLowerCase();
+    if (!ct) return false;
+    if (ct.includes("text/html")) return true;
+    if (
+      ct.includes("javascript") ||
+      ct.includes("ecmascript") ||
+      ct.includes("module")
+    ) {
+      return false;
+    }
+    // Unknown content-type: peek at first bytes to detect "<!doctype" / "<html"
+    try {
+      const text = (await res.text()).slice(0, 64).trim().toLowerCase();
+      return text.startsWith("<!doctype") || text.startsWith("<html") || text.startsWith("<");
+    } catch {
+      return false;
+    }
+  } catch {
+    return false;
+  }
 }
 
 function readInt(key: string): number {
@@ -85,27 +126,38 @@ export function lazyWithRetry<T extends ComponentType<any>>(
   key: string,
 ): LazyExoticComponent<T> {
   return lazy(async () => {
+    let importError: unknown = null;
+    let mod: { default: T } | null = null;
     try {
-      const mod = await importer();
-      // Defensive: a stale CDN / SPA fallback can resolve a chunk request with
-      // an HTML page or an empty module. React's lazy would then store
-      // `_result = undefined` and crash on `_result.default` with a blank
-      // screen. Force a real error so the boundary + retry kick in.
-      if (!mod || typeof (mod as { default?: unknown }).default === "undefined") {
-        throw new Error(
+      mod = await importer();
+    } catch (err) {
+      importError = err;
+    }
+
+    // Detect HTML-instead-of-JS: either the import threw, or it resolved
+    // without a default export (some bundlers swallow the MIME error).
+    const looksInvalid =
+      importError != null ||
+      !mod ||
+      typeof (mod as { default?: unknown }).default === "undefined";
+
+    if (looksInvalid) {
+      // Try to extract a URL from the original error to probe its content-type.
+      const msg = getErrorMessage(importError);
+      const urlMatch = msg.match(/https?:\/\/[^\s'")]+\.[a-z]+(?:\?[^\s'")]*)?/i);
+      if (urlMatch && (await isHtmlResponse(urlMatch[0]))) {
+        importError = new Error(
+          `Lazy chunk "${key}" was served as text/html instead of JavaScript (stale deploy or SPA fallback): ${urlMatch[0]}`,
+        );
+      } else if (!importError) {
+        importError = new Error(
           `Lazy chunk "${key}" resolved without a default export (stale or invalid chunk)`,
         );
       }
-      if (typeof window !== "undefined") {
-        window.sessionStorage.removeItem(`${RETRY_TOKEN_PREFIX}${key}`);
-      }
-      return mod;
-    } catch (error) {
-      if (typeof window !== "undefined" && isChunkLoadError(error)) {
+
+      if (typeof window !== "undefined" && isChunkLoadError(importError)) {
         const retryKey = `${RETRY_TOKEN_PREFIX}${key}`;
         const alreadyRetried = window.sessionStorage.getItem(retryKey) === "1";
-
-        // Per-chunk guard (1 retry max for THIS chunk) AND global session cap.
         if (!alreadyRetried && canAutoReload()) {
           window.sessionStorage.setItem(retryKey, "1");
           if (safeAutoReload()) {
@@ -113,10 +165,13 @@ export function lazyWithRetry<T extends ComponentType<any>>(
           }
         }
       }
-
-      // Quota exhausted or non-chunk error: let the LazyRouteBoundary catch it.
-      throw error;
+      throw importError;
     }
+
+    if (typeof window !== "undefined") {
+      window.sessionStorage.removeItem(`${RETRY_TOKEN_PREFIX}${key}`);
+    }
+    return mod!;
   });
 }
 

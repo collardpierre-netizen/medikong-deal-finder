@@ -312,7 +312,7 @@ export default function AccountPage() {
                   return (
                     <motion.button
                       key={t.key}
-                      onClick={() => !t.disabled && setActiveTab(t.key)}
+                      onClick={() => !t.disabled && handleSetTab(t.key)}
                       disabled={t.disabled}
                       className={`flex items-center gap-2 px-3 py-2.5 rounded-md text-sm whitespace-nowrap transition-colors ${
                         t.disabled

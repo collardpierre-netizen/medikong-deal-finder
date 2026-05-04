@@ -18,6 +18,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { EntityDelegatesSection } from "@/components/admin/EntityDelegatesSection";
 import { ContractHistoryTable } from "@/components/vendor/ContractHistoryTable";
+import { VendorMarketIntelAdminCard } from "@/components/admin/VendorMarketIntelAdminCard";
 
 type VendorValidationStatus = "pending_review" | "under_review" | "accepted" | "approved" | "rejected";
 

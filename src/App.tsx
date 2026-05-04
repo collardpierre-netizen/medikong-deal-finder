@@ -118,6 +118,7 @@ const AdminSchemasPIM = lazyWithRetry(() => import("./pages/admin/AdminSchemasPI
 const AdminCommandes = lazyWithRetry(() => import("./pages/admin/AdminCommandes"), "AdminCommandes");
 const AdminFinances = lazyWithRetry(() => import("./pages/admin/AdminFinances"), "AdminFinances");
 const AdminLitiges = lazyWithRetry(() => import("./pages/admin/AdminLitiges"), "AdminLitiges");
+const AdminCommandesEnRetard = lazyWithRetry(() => import("./pages/admin/AdminCommandesEnRetard"), "AdminCommandesEnRetard");
 const AdminVeillePrix = lazyWithRetry(() => import("./pages/admin/AdminVeillePrix"), "AdminVeillePrix");
 const AdminPackAnomalies = lazyWithRetry(() => import("./pages/admin/AdminPackAnomalies"), "AdminPackAnomalies");
 const AdminPackSizeBackfill = lazyWithRetry(() => import("./pages/admin/AdminPackSizeBackfill"), "AdminPackSizeBackfill");

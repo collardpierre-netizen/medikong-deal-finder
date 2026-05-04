@@ -73,8 +73,8 @@ async function checkVersion() {
       active.tagName === "TEXTAREA" ||
       active.isContentEditable);
 
-  if (!isEditing && document.visibilityState === "visible") {
-    window.location.reload();
+  if (!isEditing && document.visibilityState === "visible" && canAutoReload()) {
+    safeAutoReload();
   }
   // Otherwise: the next chunk error or visibility change will trigger reload.
 }

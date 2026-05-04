@@ -154,6 +154,10 @@ export default function AccountPage() {
   };
   const [newListName, setNewListName] = useState("");
   const [importOpen, setImportOpen] = useState(false);
+  const [orderStatusFilter, setOrderStatusFilter] = useState<string>("all");
+  const filteredOrders = orderStatusFilter === "all"
+    ? dbOrders
+    : (dbOrders as any[]).filter((o: any) => o.status === orderStatusFilter);
 
   // ---- Profile state ----
   const [profileForm, setProfileForm] = useState({
@@ -503,6 +507,24 @@ export default function AccountPage() {
                     <div>
                       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-5 gap-3">
                         <h2 className="text-xl font-bold text-mk-navy">Commandes</h2>
+                        <div className="flex items-center gap-2">
+                          <label htmlFor="order-status-filter" className="text-xs text-mk-sec">Statut</label>
+                          <select
+                            id="order-status-filter"
+                            value={orderStatusFilter}
+                            onChange={(e) => setOrderStatusFilter(e.target.value)}
+                            className="border border-mk-line rounded-md px-3 py-2 text-sm bg-background"
+                          >
+                            <option value="all">Tous les statuts</option>
+                            <option value="confirmed">Confirmée</option>
+                            <option value="accepted">Reçue par le vendeur</option>
+                            <option value="in_preparation">En préparation</option>
+                            <option value="shipped">Expédiée</option>
+                            <option value="delivered">Livrée</option>
+                            <option value="cancelled">Annulée</option>
+                            <option value="refunded">Remboursée</option>
+                          </select>
+                        </div>
                       </div>
                       {ordersLoading ? (
                         <p className="text-sm text-mk-sec py-8 text-center">Chargement...</p>
@@ -512,10 +534,15 @@ export default function AccountPage() {
                           <h3 className="text-lg font-bold text-mk-navy mb-1">Aucune commande</h3>
                           <p className="text-sm text-mk-sec">Vos commandes apparaîtront ici après votre premier achat.</p>
                         </motion.div>
+                      ) : filteredOrders.length === 0 ? (
+                        <div className="text-center py-12 border border-mk-line rounded-xl">
+                          <Package size={32} className="mx-auto text-mk-ter mb-2" />
+                          <p className="text-sm text-mk-sec">Aucune commande ne correspond à ce statut.</p>
+                        </div>
                       ) : (
                         <>
                           <div className="sm:hidden space-y-3">
-                            {dbOrders.map((o: any, i: number) => {
+                            {filteredOrders.map((o: any, i: number) => {
                               const meta = getOrderStatusMeta(o.status);
                               return (
                                 <motion.div key={o.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}>
@@ -524,28 +551,36 @@ export default function AccountPage() {
                                       <span className="font-medium text-mk-navy text-sm">{o.order_number}</span>
                                       <span className={`text-xs font-medium px-2 py-0.5 rounded ${meta.badgeClass}`}>{meta.label}</span>
                                     </div>
-                                    <div className="flex justify-between text-sm">
+                                    <div className="flex justify-between text-sm mb-3">
                                       <span className="text-mk-sec">{formatOrderDateTime(o.created_at)}</span>
                                       <span className="font-bold text-mk-navy">{formatPrice(Number(o.total_incl_vat))} EUR</span>
                                     </div>
+                                    <Button size="sm" variant="outline" className="w-full border-mk-blue text-mk-blue hover:bg-mk-blue hover:text-white">
+                                      Voir le détail
+                                    </Button>
                                   </Link>
                                 </motion.div>
                               );
                             })}
                           </div>
                           <motion.div className="hidden sm:block border border-mk-line rounded-lg overflow-hidden" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                            <div className="grid grid-cols-4 gap-3 px-4 py-2 bg-mk-alt text-xs font-semibold text-mk-sec">
-                              <span>ID Commande</span><span>Date &amp; heure</span><span>Statut</span><span>Montant</span>
+                            <div className="grid grid-cols-5 gap-3 px-4 py-2 bg-mk-alt text-xs font-semibold text-mk-sec">
+                              <span>ID Commande</span><span>Date &amp; heure</span><span>Statut</span><span>Montant</span><span className="text-right">Actions</span>
                             </div>
-                            {dbOrders.map((o: any, i: number) => {
+                            {filteredOrders.map((o: any, i: number) => {
                               const meta = getOrderStatusMeta(o.status);
                               return (
                                 <motion.div key={o.id} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.15 + i * 0.06 }}>
-                                  <Link to={`/commande/${o.id}`} className="grid grid-cols-4 gap-3 px-4 py-3 border-t border-mk-line text-sm items-center hover:bg-mk-alt">
+                                  <Link to={`/commande/${o.id}`} className="grid grid-cols-5 gap-3 px-4 py-3 border-t border-mk-line text-sm items-center hover:bg-mk-alt">
                                     <span className="font-medium text-mk-navy">{o.order_number}</span>
                                     <span className="text-mk-sec">{formatOrderDateTime(o.created_at)}</span>
                                     <span className={`text-xs font-medium px-2 py-0.5 rounded w-fit ${meta.badgeClass}`}>{meta.label}</span>
                                     <span className="font-bold text-mk-navy">{formatPrice(Number(o.total_incl_vat))} EUR</span>
+                                    <span className="flex justify-end">
+                                      <Button size="sm" variant="outline" className="border-mk-blue text-mk-blue hover:bg-mk-blue hover:text-white">
+                                        Voir le détail
+                                      </Button>
+                                    </span>
                                   </Link>
                                 </motion.div>
                               );

@@ -16,6 +16,7 @@ import { HelmetProvider } from "react-helmet-async";
 import { Loader2 } from "lucide-react";
 import { lazyWithRetry } from "@/lib/lazy-with-retry";
 import { SafeBoundary } from "@/components/SafeBoundary";
+import { LazyRouteBoundary } from "@/components/LazyRouteBoundary";
 
 // Page loader for lazy routes
 function PageLoader() {

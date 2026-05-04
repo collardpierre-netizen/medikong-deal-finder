@@ -410,8 +410,25 @@ export default function CheckoutPage() {
                     <div className="border border-mk-line rounded-lg p-4 mb-6">
                       <h3 className="text-sm font-semibold text-mk-navy mb-3">Paiement sécurisé par carte</h3>
                       {initLoading && (
-                        <div className="flex items-center gap-2 text-sm text-mk-sec py-6 justify-center">
-                          <Loader2 size={16} className="animate-spin" /> Initialisation du paiement...
+                        <div className="py-6 space-y-3">
+                          <div className="flex items-center gap-2 text-sm text-mk-sec justify-center">
+                            <Loader2 size={16} className="animate-spin" />
+                            {stripeSlow ? "Chargement plus long que prévu..." : "Initialisation du paiement..."}
+                          </div>
+                          {stripeSlow && !stripeReady && !stripeLoadError && (
+                            <div className="text-center space-y-2">
+                              <p className="text-xs text-mk-sec">
+                                Stripe.js met du temps à se charger. Cela peut venir de votre connexion, d'un bloqueur de publicités ou d'une extension navigateur.
+                              </p>
+                              <button
+                                type="button"
+                                onClick={retryStripeLoad}
+                                className="border border-mk-navy text-mk-navy font-bold text-xs px-3 py-1.5 rounded-md"
+                              >
+                                Relancer le chargement
+                              </button>
+                            </div>
+                          )}
                         </div>
                       )}
                       <div className="flex items-center justify-between mb-3 px-1">

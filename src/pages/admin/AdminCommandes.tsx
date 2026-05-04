@@ -2,10 +2,11 @@ import { useState } from "react";
 import AdminTopBar from "@/components/admin/AdminTopBar";
 import KpiCard from "@/components/admin/KpiCard";
 import StatusBadge from "@/components/admin/StatusBadge";
+import AdminOrderSlaPanel from "@/components/admin/AdminOrderSlaPanel";
 import { useI18n } from "@/contexts/I18nContext";
 import { useOrders } from "@/hooks/useAdminData";
 import { supabase } from "@/integrations/supabase/client";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -13,7 +14,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   ShoppingCart, TrendingUp, Clock, CreditCard, Truck,
-  Search, Filter, Download, ChevronDown, ChevronRight, Package, Trash2,
+  Search, Filter, Download, ChevronDown, ChevronRight, Package, Trash2, AlertTriangle,
 } from "lucide-react";
 
 const buyerColors: Record<string, { bg: string; text: string }> = {

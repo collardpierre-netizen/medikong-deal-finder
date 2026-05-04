@@ -1,6 +1,11 @@
 import { Component, type ReactNode } from "react";
 import { AlertTriangle, RefreshCw } from "lucide-react";
 import { report as reportClientError } from "@/lib/errorReporter";
+import {
+  getReloadAttempts,
+  MAX_AUTO_RELOADS_PER_SESSION,
+  resetReloadAttempts,
+} from "@/lib/lazy-with-retry";
 
 interface Props {
   children: ReactNode;

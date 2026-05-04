@@ -42,6 +42,7 @@ const AdminCommandes = () => {
   const [activeTab, setActiveTab] = useState<"list" | "timeline" | "aging" | "buyers">("list");
   const [statusFilter, setStatusFilter] = useState("all");
   const [search, setSearch] = useState("");
+  const [hideTest, setHideTest] = useState(true);
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
 
   const orders = ordersData.map(o => ({
@@ -57,11 +58,13 @@ const AdminCommandes = () => {
     paymentTerms: o.payment_method || "invoice",
     dueDate: o.payment_due_date ? new Date(o.payment_due_date).toLocaleDateString("fr-BE") : "—",
     status: o.status as "pending" | "confirmed" | "shipped" | "delivered" | "cancelled",
+    isTest: Boolean((o as any).is_test),
     date: new Date(o.created_at).toLocaleDateString("fr-BE"),
     lines: ((o as any).order_lines || []) as any[],
   }));
 
-  const displayOrders = orders;
+  const displayOrders = hideTest ? orders.filter(o => !o.isTest) : orders;
+  const testCount = orders.filter(o => o.isTest).length;
 
   const filtered = displayOrders.filter((o) => {
     if (statusFilter !== "all" && o.status !== statusFilter) return false;
@@ -158,6 +161,17 @@ const AdminCommandes = () => {
               <input type="text" placeholder="Rechercher par ID, acheteur..." value={search} onChange={(e) => setSearch(e.target.value)}
                 className="flex-1 text-[13px] outline-none bg-transparent" style={{ color: "#1D2530" }} />
             </div>
+            <label className="flex items-center gap-2 px-3 py-2 rounded-md text-[12px] font-medium cursor-pointer select-none"
+              style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0", color: "#616B7C" }}
+              title="Masquer les commandes payées avec une clé Stripe de test">
+              <input type="checkbox" checked={hideTest} onChange={(e) => setHideTest(e.target.checked)} />
+              Masquer commandes test
+              {testCount > 0 && (
+                <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold" style={{ backgroundColor: "#FEF3C7", color: "#92400E" }}>
+                  {testCount}
+                </span>
+              )}
+            </label>
             <button className="flex items-center gap-2 px-3 py-2 rounded-md text-[13px] font-medium" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0", color: "#616B7C" }}><Filter size={14} /> Filtres</button>
           </div>
 
@@ -187,7 +201,14 @@ const AdminCommandes = () => {
                               {isExpanded ? <ChevronDown size={14} style={{ color: "#8B95A5" }} /> : <ChevronRight size={14} style={{ color: "#8B95A5" }} />}
                             </td>
                             <td className="px-3 py-3">
-                              <span className="text-[12px] font-bold font-mono block" style={{ color: "#1B5BDA" }}>{o.id}</span>
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[12px] font-bold font-mono" style={{ color: "#1B5BDA" }}>{o.id}</span>
+                                {o.isTest && (
+                                  <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide" style={{ backgroundColor: "#FEF3C7", color: "#92400E" }}>
+                                    Test
+                                  </span>
+                                )}
+                              </div>
                               <span className="text-[10px]" style={{ color: "#8B95A5" }}>{o.date}</span>
                             </td>
                             <td className="px-3 py-3 text-[12px] font-medium" style={{ color: "#1D2530" }}>{o.buyer}</td>

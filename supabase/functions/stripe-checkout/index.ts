@@ -277,8 +277,11 @@ Deno.serve(async (req) => {
         },
       });
 
-      // Persist session id (and PI id if already linked)
-      const update: Record<string, unknown> = { stripe_session_id: session.id };
+      // Persist session id (and PI id if already linked) + flag test si Stripe en mode test
+      const update: Record<string, unknown> = {
+        stripe_session_id: session.id,
+        is_test: session.livemode === false,
+      };
       if (typeof session.payment_intent === "string") {
         update.stripe_payment_intent_id = session.payment_intent;
       }

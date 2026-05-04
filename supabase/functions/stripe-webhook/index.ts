@@ -96,6 +96,7 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
     status: "confirmed",
     payment_status: "paid",
     stripe_session_id: session.id,
+    is_test: session.livemode === false,
   };
   if (typeof session.payment_intent === "string") {
     update.stripe_payment_intent_id = session.payment_intent;

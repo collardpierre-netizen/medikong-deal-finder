@@ -27,12 +27,36 @@ export class LazyRouteBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error) {
+    const enriched = error as Error & {
+      chunkKey?: string;
+      probe?: {
+        url: string;
+        status: number | null;
+        statusText: string | null;
+        contentType: string | null;
+        contentLength: string | null;
+        bodySnippet: string | null;
+        looksLikeHtml: boolean;
+        fetchError?: string;
+      } | null;
+    };
     void reportClientError({
       source: "boundary",
       level: "error",
       message: error.message || String(error),
       stack: error.stack || null,
       component: "LazyRouteBoundary",
+      metadata: {
+        chunkKey: enriched.chunkKey ?? null,
+        chunkUrl: enriched.probe?.url ?? null,
+        chunkStatus: enriched.probe?.status ?? null,
+        chunkStatusText: enriched.probe?.statusText ?? null,
+        chunkContentType: enriched.probe?.contentType ?? null,
+        chunkContentLength: enriched.probe?.contentLength ?? null,
+        chunkLooksLikeHtml: enriched.probe?.looksLikeHtml ?? null,
+        chunkFetchError: enriched.probe?.fetchError ?? null,
+        chunkBodySnippet: enriched.probe?.bodySnippet ?? null,
+      },
     });
   }
 

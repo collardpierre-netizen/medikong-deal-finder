@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { getProductImageSrc } from "@/lib/image-utils";
 
 /**
  * Logo de vendeur externe avec fallback automatique :
@@ -46,6 +47,13 @@ export function ExternalVendorLogo({
     setFailed(!!logoUrl && FAILED_LOGOS.has(logoUrl));
   }, [logoUrl]);
 
+  // Route external logos through image-proxy to bypass hotlink/CORS protection
+  // (e.g. IIS servers like idphar.be that 403 on cross-origin Referer)
+  const proxiedSrc = useMemo(
+    () => (logoUrl ? getProductImageSrc(logoUrl) : null),
+    [logoUrl],
+  );
+
   const showFallback = !logoUrl || failed;
   const initials = getInitials(name);
   const dim = { width: size, height: size };
@@ -78,7 +86,7 @@ export function ExternalVendorLogo({
 
   return (
     <img
-      src={logoUrl!}
+      src={proxiedSrc!}
       alt={name || "Vendeur externe"}
       referrerPolicy="no-referrer"
       style={dim}

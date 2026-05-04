@@ -1,5 +1,5 @@
 import { Layout } from "@/components/layout/Layout";
-import { Check, Truck, Shield, RefreshCw, AlertTriangle } from "lucide-react";
+import { Check, Truck, Shield, RefreshCw, AlertTriangle, Clock } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { PageTransition } from "@/components/shared/PageTransition";
@@ -84,8 +84,59 @@ export default function ConfirmationPage() {
     }
   }, [cacheKey, order, dataUpdatedAt]);
 
+  // Historique des statuts (basé sur created_at + observations client)
+  const historyKey = orderNumber ? `mk:order-history:${orderNumber}` : "";
+  const [history, setHistory] = useState<Array<{ status: string; at: string }>>(() => {
+    if (!historyKey) return [];
+    try {
+      const raw = sessionStorage.getItem(historyKey);
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const currentStatus = (order as any)?.status as string | undefined;
+  const createdAt = (order as any)?.created_at as string | undefined;
+  const updatedAtDb = (order as any)?.updated_at as string | undefined;
+
+  useEffect(() => {
+    if (!historyKey || !currentStatus) return;
+    setHistory((prev) => {
+      // Bootstrap : ajouter "created" depuis created_at si absent
+      const next = [...prev];
+      if (createdAt && !next.some((e) => e.status === "created")) {
+        next.push({ status: "created", at: createdAt });
+      }
+      const last = next[next.length - 1];
+      if (!last || last.status !== currentStatus) {
+        next.push({ status: currentStatus, at: updatedAtDb || new Date().toISOString() });
+      }
+      try {
+        sessionStorage.setItem(historyKey, JSON.stringify(next));
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+  }, [historyKey, currentStatus, createdAt, updatedAtDb]);
+
   // Considère une erreur "active" uniquement si on n'a pas encore de data fraîche
   const hasFetchError = !!error && !order;
+
+  const statusLabels: Record<string, string> = {
+    created: "Commande créée",
+    draft: "Brouillon",
+    pending: "En attente",
+    pending_payment: "Paiement en cours",
+    paid: "Paiement reçu",
+    confirmed: "Commande confirmée",
+    shipped: "Expédiée",
+    delivered: "Livrée",
+    cancelled: "Annulée",
+    failed: "Paiement échoué",
+  };
 
   const status = (order as any)?.status as string | undefined;
   const paymentDone = isTest || (!!status && !["pending", "pending_payment", "draft"].includes(status));
@@ -207,6 +258,29 @@ export default function ConfirmationPage() {
             )}
             {isTest && (
               <p className="text-[11px] text-mk-sec mt-2 text-center">Mode test : aucun paiement carte n'a été effectué.</p>
+            )}
+            {history.length > 0 && (
+              <details className="mt-3 text-[11px] text-mk-sec">
+                <summary className="cursor-pointer inline-flex items-center gap-1 hover:text-mk-navy select-none">
+                  <Clock size={11} /> Historique des statuts ({history.length})
+                </summary>
+                <ol className="mt-2 space-y-1 border-l border-mk-line pl-3">
+                  {history.map((entry, i) => {
+                    const d = new Date(entry.at);
+                    const isLast = i === history.length - 1;
+                    return (
+                      <li key={`${entry.status}-${entry.at}-${i}`} className="flex items-baseline gap-2">
+                        <span className={`w-1.5 h-1.5 rounded-full -ml-[14px] ${isLast ? "bg-mk-blue" : "bg-mk-line"}`} />
+                        <span className={`font-medium ${isLast ? "text-mk-navy" : "text-mk-sec"}`}>
+                          {statusLabels[entry.status] || entry.status}
+                        </span>
+                        <span className="text-mk-sec">·</span>
+                        <span>{d.toLocaleDateString("fr-BE")} {d.toLocaleTimeString("fr-BE", { hour: "2-digit", minute: "2-digit" })}</span>
+                      </li>
+                    );
+                  })}
+                </ol>
+              </details>
             )}
           </motion.div>
 

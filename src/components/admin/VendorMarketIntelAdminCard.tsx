@@ -75,10 +75,10 @@ export function VendorMarketIntelAdminCard({ vendorId, vendorName }: Props) {
         .eq("vendor_id", vendorId)
         .maybeSingle();
       if (error) throw error;
-      return (data as Row | null) ?? {
+      return ((data as unknown) as Row | null) ?? ({
         vendor_id: vendorId,
         vendor_name: vendorName ?? null,
-        status: "none",
+        status: "none" as const,
         trial_started_at: null,
         trial_ends_at: null,
         trial_days_remaining: null,
@@ -88,7 +88,7 @@ export function VendorMarketIntelAdminCard({ vendorId, vendorName }: Props) {
         monthly_price_cents: null,
         billing_method: null,
         has_access: false,
-      };
+      } satisfies Row);
     },
     enabled: !!vendorId,
   });

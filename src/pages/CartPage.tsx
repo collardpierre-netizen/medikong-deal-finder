@@ -205,7 +205,7 @@ export default function CartPage() {
               <span className="text-mk-line">|</span>
               <button
                 className="flex items-center gap-1.5 text-mk-red hover:underline"
-                onClick={() => clearCart.mutate()}
+                onClick={() => clearCart.mutate(undefined, { onSettled: scrollTop })}
               >
                 <Trash2 size={14} /> Vider
               </button>

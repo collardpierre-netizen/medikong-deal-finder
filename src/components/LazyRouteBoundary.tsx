@@ -37,14 +37,18 @@ export class LazyRouteBoundary extends Component<Props, State> {
   }
 
   handleRetry = () => {
+    // Manual retry: reset the session-level reload counter so auto-recovery
+    // works again on the next chunk error after this fresh load.
+    resetReloadAttempts();
     this.setState({ error: null });
-    // Hard reload to fetch fresh chunks
     if (typeof window !== "undefined") window.location.reload();
   };
 
   render() {
     const { error } = this.state;
     if (!error) return this.props.children;
+    const attempts = getReloadAttempts();
+    const exhausted = attempts >= MAX_AUTO_RELOADS_PER_SESSION;
 
     return (
       <div className="min-h-[60vh] flex items-center justify-center px-4">

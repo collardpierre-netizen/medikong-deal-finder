@@ -154,6 +154,10 @@ export default function AccountPage() {
   };
   const [newListName, setNewListName] = useState("");
   const [importOpen, setImportOpen] = useState(false);
+  const [orderStatusFilter, setOrderStatusFilter] = useState<string>("all");
+  const filteredOrders = orderStatusFilter === "all"
+    ? dbOrders
+    : (dbOrders as any[]).filter((o: any) => o.status === orderStatusFilter);
 
   // ---- Profile state ----
   const [profileForm, setProfileForm] = useState({

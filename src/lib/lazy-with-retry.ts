@@ -126,27 +126,38 @@ export function lazyWithRetry<T extends ComponentType<any>>(
   key: string,
 ): LazyExoticComponent<T> {
   return lazy(async () => {
+    let importError: unknown = null;
+    let mod: { default: T } | null = null;
     try {
-      const mod = await importer();
-      // Defensive: a stale CDN / SPA fallback can resolve a chunk request with
-      // an HTML page or an empty module. React's lazy would then store
-      // `_result = undefined` and crash on `_result.default` with a blank
-      // screen. Force a real error so the boundary + retry kick in.
-      if (!mod || typeof (mod as { default?: unknown }).default === "undefined") {
-        throw new Error(
+      mod = await importer();
+    } catch (err) {
+      importError = err;
+    }
+
+    // Detect HTML-instead-of-JS: either the import threw, or it resolved
+    // without a default export (some bundlers swallow the MIME error).
+    const looksInvalid =
+      importError != null ||
+      !mod ||
+      typeof (mod as { default?: unknown }).default === "undefined";
+
+    if (looksInvalid) {
+      // Try to extract a URL from the original error to probe its content-type.
+      const msg = getErrorMessage(importError);
+      const urlMatch = msg.match(/https?:\/\/[^\s'")]+\.[a-z]+(?:\?[^\s'")]*)?/i);
+      if (urlMatch && (await isHtmlResponse(urlMatch[0]))) {
+        importError = new Error(
+          `Lazy chunk "${key}" was served as text/html instead of JavaScript (stale deploy or SPA fallback): ${urlMatch[0]}`,
+        );
+      } else if (!importError) {
+        importError = new Error(
           `Lazy chunk "${key}" resolved without a default export (stale or invalid chunk)`,
         );
       }
-      if (typeof window !== "undefined") {
-        window.sessionStorage.removeItem(`${RETRY_TOKEN_PREFIX}${key}`);
-      }
-      return mod;
-    } catch (error) {
-      if (typeof window !== "undefined" && isChunkLoadError(error)) {
+
+      if (typeof window !== "undefined" && isChunkLoadError(importError)) {
         const retryKey = `${RETRY_TOKEN_PREFIX}${key}`;
         const alreadyRetried = window.sessionStorage.getItem(retryKey) === "1";
-
-        // Per-chunk guard (1 retry max for THIS chunk) AND global session cap.
         if (!alreadyRetried && canAutoReload()) {
           window.sessionStorage.setItem(retryKey, "1");
           if (safeAutoReload()) {
@@ -154,10 +165,13 @@ export function lazyWithRetry<T extends ComponentType<any>>(
           }
         }
       }
-
-      // Quota exhausted or non-chunk error: let the LazyRouteBoundary catch it.
-      throw error;
+      throw importError;
     }
+
+    if (typeof window !== "undefined") {
+      window.sessionStorage.removeItem(`${RETRY_TOKEN_PREFIX}${key}`);
+    }
+    return mod!;
   });
 }
 

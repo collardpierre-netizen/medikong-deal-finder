@@ -92,6 +92,28 @@ const AdminCommandes = () => {
     dueDate: o.payment_due_date ? new Date(o.payment_due_date).toLocaleDateString("fr-BE") : "—",
     status: o.status as "pending" | "confirmed" | "shipped" | "delivered" | "cancelled",
     isTest: Boolean((o as any).is_test),
+    hiddenFromList: Boolean((o as any).hidden_from_list),
+    date: new Date(o.created_at).toLocaleDateString("fr-BE"),
+    lines: ((o as any).order_lines || []) as any[],
+  }));
+
+  const visibleOrders = hideDeleted ? orders.filter(o => !o.hiddenFromList) : orders;
+  const displayOrders = hideTest ? visibleOrders.filter(o => !o.isTest) : visibleOrders;
+  const testCount = visibleOrders.filter(o => o.isTest).length;
+  const deletedCount = orders.filter(o => o.hiddenFromList).length;
+    id: o.order_number,
+    rawId: o.id,
+    refPO: "—",
+    buyer: (o.customers as any)?.company_name || "—",
+    buyerType: (o.customers as any)?.customer_type || "pharmacy",
+    seller: "—",
+    amountHT: Number(o.subtotal_excl_vat) || 0,
+    tva: Number(o.vat_amount) || 0,
+    ttc: Number(o.total_incl_vat) || 0,
+    paymentTerms: o.payment_method || "invoice",
+    dueDate: o.payment_due_date ? new Date(o.payment_due_date).toLocaleDateString("fr-BE") : "—",
+    status: o.status as "pending" | "confirmed" | "shipped" | "delivered" | "cancelled",
+    isTest: Boolean((o as any).is_test),
     date: new Date(o.created_at).toLocaleDateString("fr-BE"),
     lines: ((o as any).order_lines || []) as any[],
   }));

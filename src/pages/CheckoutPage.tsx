@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label";
 import { useQuery } from "@tanstack/react-query";
 import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import type { Stripe, StripeElementsOptions } from "@stripe/stripe-js";
-import { getStripe } from "@/lib/stripe";
+import { getStripe, getStripeLoadError, resetStripe } from "@/lib/stripe";
 
 
 interface AddressForm {

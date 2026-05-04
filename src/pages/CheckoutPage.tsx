@@ -13,9 +13,8 @@ import { ShoppingCart, Loader2, Truck } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useQuery } from "@tanstack/react-query";
-import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
-import type { Stripe, StripeElementsOptions } from "@stripe/stripe-js";
-import { getStripe, getStripeLoadError, resetStripe } from "@/lib/stripe";
+// Stripe Checkout HOSTED : pas d'Elements ni de Stripe.js côté front.
+// Le front se contente de créer l'order puis de rediriger vers session.url.
 
 
 interface AddressForm {

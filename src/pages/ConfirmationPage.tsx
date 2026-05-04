@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 export default function ConfirmationPage() {
   const [searchParams] = useSearchParams();
   const orderNumber = searchParams.get("order") || "";
+  const isTest = searchParams.get("test") === "1";
   const { user } = useAuth();
 
   const { data: order } = useQuery({
@@ -52,7 +53,30 @@ export default function ConfirmationPage() {
             initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
             Commande confirmée !
           </motion.h1>
-          <p className="text-sm text-mk-sec mb-8">Votre commande a été enregistrée. Vous recevrez un email de confirmation sous peu.</p>
+          <p className="text-sm text-mk-sec mb-6">Votre commande a été enregistrée. Vous recevrez un email de confirmation sous peu.</p>
+
+          {/* Statut commande */}
+          <motion.div
+            className="border border-mk-line rounded-lg p-3 mb-6 bg-mk-alt/40 text-left"
+            initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}
+          >
+            <ol className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs">
+              {[
+                { label: "Commande créée" },
+                { label: isTest ? "Paiement simulé" : "Paiement validé" },
+                { label: "Confirmée" },
+              ].map((s, i) => (
+                <li key={s.label} className="flex items-center gap-1.5">
+                  <span className="w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold bg-mk-green text-white">✓</span>
+                  <span className="text-mk-navy font-medium">{s.label}</span>
+                  {i < 2 && <span className="text-mk-sec">→</span>}
+                </li>
+              ))}
+            </ol>
+            {isTest && (
+              <p className="text-[11px] text-mk-sec mt-2 text-center">Mode test : aucun paiement carte n'a été effectué.</p>
+            )}
+          </motion.div>
 
           <motion.div className="bg-mk-alt rounded-lg p-5 md:p-6 mb-6 text-left"
             initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>

@@ -184,7 +184,7 @@ const AdminCommandes = () => {
         <div className="flex items-center gap-2">
           {testCount > 0 && (
             <button
-              onClick={() => setPurgeOpen(true)}
+              onClick={openPurgeDialog}
               className="flex items-center gap-2 px-3 py-2 rounded-md text-[13px] font-semibold"
               style={{ backgroundColor: "#fff", border: "1px solid #FCA5A5", color: "#B91C1C" }}
               title="Supprimer toutes les commandes marquées « test »"

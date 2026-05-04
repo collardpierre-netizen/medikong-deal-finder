@@ -16,9 +16,35 @@ export default function ConfirmationPage() {
   const { user } = useAuth();
   const [lastChecked, setLastChecked] = useState<Date>(new Date());
 
+  // Cache local du dernier statut connu (sessionStorage) pour éviter le clignotement
+  // au retour via back/forward et permettre un affichage immédiat
+  const cacheKey = orderNumber ? `mk:order-confirmation:${orderNumber}` : "";
+  const cached = (() => {
+    if (!cacheKey) return undefined;
+    try {
+      const raw = sessionStorage.getItem(cacheKey);
+      if (!raw) return undefined;
+      const parsed = JSON.parse(raw);
+      return parsed && typeof parsed === "object" ? parsed : undefined;
+    } catch {
+      return undefined;
+    }
+  })();
+
+  const cachedStatus = (cached?.data as any)?.status as string | undefined;
+  const cachedIsFinal =
+    !!cachedStatus &&
+    ["confirmed", "paid", "shipped", "delivered", "cancelled", "failed"].includes(cachedStatus);
+
   const { data: order, isFetching, refetch, dataUpdatedAt, error, failureCount, errorUpdatedAt } = useQuery({
     queryKey: ["order-confirmation", orderNumber],
     enabled: !!user && !!orderNumber,
+    // Hydrate immédiatement avec la dernière valeur connue → pas de flash "Initialisation"
+    initialData: cached?.data,
+    initialDataUpdatedAt: cached?.updatedAt,
+    // Si le statut en cache est déjà final, on considère la donnée fraîche 30s
+    // → pas de refetch automatique au remount (back/forward)
+    staleTime: cachedIsFinal ? 30_000 : 0,
     refetchInterval: (query) => {
       const status = (query.state.data as any)?.status;
       // Stop polling once final state reached
@@ -27,7 +53,9 @@ export default function ConfirmationPage() {
       }
       return 5000;
     },
-    refetchOnWindowFocus: true,
+    // Pas de refetch on focus si on a déjà un statut final
+    refetchOnWindowFocus: !cachedIsFinal,
+    refetchOnMount: cachedIsFinal ? false : "always",
     // Auto-retry exponentiel jusqu'à 5 tentatives en cas d'échec réseau/DB
     retry: 5,
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 15000),
@@ -45,6 +73,16 @@ export default function ConfirmationPage() {
   useEffect(() => {
     if (dataUpdatedAt) setLastChecked(new Date(dataUpdatedAt));
   }, [dataUpdatedAt]);
+
+  // Persiste la dernière donnée fraîche dans sessionStorage pour le prochain montage
+  useEffect(() => {
+    if (!cacheKey || !order || !dataUpdatedAt) return;
+    try {
+      sessionStorage.setItem(cacheKey, JSON.stringify({ data: order, updatedAt: dataUpdatedAt }));
+    } catch {
+      /* quota / private mode : ignorer */
+    }
+  }, [cacheKey, order, dataUpdatedAt]);
 
   // Considère une erreur "active" uniquement si on n'a pas encore de data fraîche
   const hasFetchError = !!error && !order;

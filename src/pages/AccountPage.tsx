@@ -573,12 +573,8 @@ export default function AccountPage() {
                             <option value="desc">Plus récentes d'abord</option>
                             <option value="asc">Plus anciennes d'abord</option>
                           </select>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="ml-2 border-mk-blue text-mk-blue hover:bg-mk-blue hover:text-white"
-                            disabled={filteredOrders.length === 0}
-                            onClick={() => {
+                          {(() => {
+                            const exportCsv = (scope: "page" | "all") => {
                               const statusLabelsCsv: Record<string, string> = {
                                 confirmed: "Confirmée",
                                 accepted: "Reçue par le vendeur",
@@ -592,6 +588,7 @@ export default function AccountPage() {
                                 const s = v === null || v === undefined ? "" : String(v);
                                 return /[",;\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
                               };
+                              const dataset = scope === "page" ? paginatedOrders : filteredOrders;
                               const header = [
                                 "ID Commande",
                                 "Date de passage",
@@ -599,7 +596,7 @@ export default function AccountPage() {
                                 "Dernière mise à jour du statut",
                                 "Montant TTC (EUR)",
                               ];
-                              const rows = filteredOrders.map((o: any) => [
+                              const rows = dataset.map((o: any) => [
                                 o.order_number,
                                 formatOrderDateTime(o.created_at),
                                 statusLabelsCsv[o.status] || o.status,
@@ -608,13 +605,15 @@ export default function AccountPage() {
                               ]);
                               const meta = [
                                 ["# Export Mes commandes"],
+                                ["# Portée", scope === "page" ? `Page courante (${orderPageSafe}/${orderTotalPages})` : "Toutes les commandes filtrées"],
                                 ["# Statut", orderStatusFilter === "all" ? "Tous les statuts" : (statusLabelsCsv[orderStatusFilter] || orderStatusFilter)],
                                 ["# Tri par date de passage", orderSort === "desc" ? "Plus récentes d'abord" : "Plus anciennes d'abord"],
-                                ["# Nombre de commandes", String(filteredOrders.length)],
-                                 ["# Page", String(orderPageSafe)],
-                                 ["# Taille de page", String(orderPageSize)],
-                                 ["# Pages totales", String(orderTotalPages)],
-                                 ["# Exporté le", new Date().toLocaleString("fr-BE")],
+                                ["# Nombre de commandes exportées", String(rows.length)],
+                                ["# Nombre total filtré", String(filteredOrders.length)],
+                                ["# Page", String(orderPageSafe)],
+                                ["# Taille de page", String(orderPageSize)],
+                                ["# Pages totales", String(orderTotalPages)],
+                                ["# Exporté le", new Date().toLocaleString("fr-BE")],
                                 [],
                               ];
                               const csv = "\uFEFF" + [...meta, header, ...rows]
@@ -624,16 +623,41 @@ export default function AccountPage() {
                               const url = URL.createObjectURL(blob);
                               const a = document.createElement("a");
                               const stamp = new Date().toISOString().slice(0, 10);
+                              const scopeTag = scope === "page"
+                                ? `page${orderPageSafe}-sur-${orderTotalPages}_taille${orderPageSize}`
+                                : `tout-${filteredOrders.length}`;
                               a.href = url;
-                              a.download = `mes-commandes_${orderStatusFilter}_${orderSort}_p${orderPageSafe}-sur-${orderTotalPages}_taille${orderPageSize}_${stamp}.csv`;
+                              a.download = `mes-commandes_${orderStatusFilter}_${orderSort}_${scopeTag}_${stamp}.csv`;
                               document.body.appendChild(a);
                               a.click();
                               document.body.removeChild(a);
                               URL.revokeObjectURL(url);
-                            }}
-                          >
-                            Exporter en CSV
-                          </Button>
+                            };
+                            return (
+                              <>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="ml-2 border-mk-blue text-mk-blue hover:bg-mk-blue hover:text-white"
+                                  disabled={paginatedOrders.length === 0}
+                                  onClick={() => exportCsv("page")}
+                                  title={`Exporter les ${paginatedOrders.length} commande(s) de la page courante`}
+                                >
+                                  Exporter la page ({paginatedOrders.length})
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="ml-2 border-mk-blue text-mk-blue hover:bg-mk-blue hover:text-white"
+                                  disabled={filteredOrders.length === 0}
+                                  onClick={() => exportCsv("all")}
+                                  title={`Exporter toutes les ${filteredOrders.length} commande(s) filtrée(s)`}
+                                >
+                                  Exporter tout ({filteredOrders.length})
+                                </Button>
+                              </>
+                            );
+                          })()}
                         </div>
                       </div>
                       {(() => {

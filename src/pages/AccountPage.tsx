@@ -573,6 +573,64 @@ export default function AccountPage() {
                             <option value="desc">Plus récentes d'abord</option>
                             <option value="asc">Plus anciennes d'abord</option>
                           </select>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="ml-2 border-mk-blue text-mk-blue hover:bg-mk-blue hover:text-white"
+                            disabled={filteredOrders.length === 0}
+                            onClick={() => {
+                              const statusLabelsCsv: Record<string, string> = {
+                                confirmed: "Confirmée",
+                                accepted: "Reçue par le vendeur",
+                                in_preparation: "En préparation",
+                                shipped: "Expédiée",
+                                delivered: "Livrée",
+                                cancelled: "Annulée",
+                                refunded: "Remboursée",
+                              };
+                              const escape = (v: any) => {
+                                const s = v === null || v === undefined ? "" : String(v);
+                                return /[",;\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+                              };
+                              const header = [
+                                "ID Commande",
+                                "Date de passage",
+                                "Statut",
+                                "Dernière mise à jour du statut",
+                                "Montant TTC (EUR)",
+                              ];
+                              const rows = filteredOrders.map((o: any) => [
+                                o.order_number,
+                                formatOrderDateTime(o.created_at),
+                                statusLabelsCsv[o.status] || o.status,
+                                o.updated_at && o.updated_at !== o.created_at ? formatOrderDateTime(o.updated_at) : "",
+                                formatPrice(Number(o.total_incl_vat)),
+                              ]);
+                              const meta = [
+                                ["# Export Mes commandes"],
+                                ["# Statut", orderStatusFilter === "all" ? "Tous les statuts" : (statusLabelsCsv[orderStatusFilter] || orderStatusFilter)],
+                                ["# Tri par date de passage", orderSort === "desc" ? "Plus récentes d'abord" : "Plus anciennes d'abord"],
+                                ["# Nombre de commandes", String(filteredOrders.length)],
+                                ["# Exporté le", new Date().toLocaleString("fr-BE")],
+                                [],
+                              ];
+                              const csv = "\uFEFF" + [...meta, header, ...rows]
+                                .map((r) => r.map(escape).join(";"))
+                                .join("\n");
+                              const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+                              const url = URL.createObjectURL(blob);
+                              const a = document.createElement("a");
+                              const stamp = new Date().toISOString().slice(0, 10);
+                              a.href = url;
+                              a.download = `mes-commandes_${orderStatusFilter}_${orderSort}_${stamp}.csv`;
+                              document.body.appendChild(a);
+                              a.click();
+                              document.body.removeChild(a);
+                              URL.revokeObjectURL(url);
+                            }}
+                          >
+                            Exporter en CSV
+                          </Button>
                         </div>
                       </div>
                       {(() => {

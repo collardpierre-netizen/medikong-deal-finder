@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 export default function ConfirmationPage() {
   const [searchParams] = useSearchParams();
   const orderNumber = searchParams.get("order") || "";
+  const isTest = searchParams.get("test") === "1";
   const { user } = useAuth();
 
   const { data: order } = useQuery({

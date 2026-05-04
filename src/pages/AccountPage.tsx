@@ -140,7 +140,18 @@ export default function AccountPage() {
   const { activities } = useRecentActivity();
   const { watches, removeWatch } = usePriceWatches();
   const { data: dbOrders = [], isLoading: ordersLoading } = useOrders();
-  const [activeTab, setActiveTab] = useState("profil");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialTab = searchParams.get("tab") || "profil";
+  const [activeTab, setActiveTab] = useState(initialTab);
+  useEffect(() => {
+    const t = searchParams.get("tab");
+    if (t && t !== activeTab) setActiveTab(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+  const handleSetTab = (key: string) => {
+    setActiveTab(key);
+    setSearchParams(prev => { const p = new URLSearchParams(prev); p.set("tab", key); return p; }, { replace: true });
+  };
   const [newListName, setNewListName] = useState("");
   const [importOpen, setImportOpen] = useState(false);
 

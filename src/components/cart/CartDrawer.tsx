@@ -1,8 +1,9 @@
 import { useCart } from "@/hooks/useCart";
 import { formatPrice } from "@/data/mock";
-import { ShoppingCart, X, Minus, Plus, Trash2, ArrowRight, Package, Truck } from "lucide-react";
+import { ShoppingCart, X, Trash2, ArrowRight, Package, Truck } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { QuantityInput } from "@/components/cart/QuantityInput";
 
 export default function CartDrawer() {
   const { items, cartCount, isDrawerOpen, closeDrawer, updateQuantity, removeFromCart } = useCart();

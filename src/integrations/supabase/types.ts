@@ -14662,6 +14662,19 @@ export type Database = {
         Args: { _name: string }
         Returns: number
       }
+      fanout_order_to_vendors: {
+        Args: { _order_id: string }
+        Returns: {
+          line_count: number
+          order_number: string
+          order_total_incl_vat: number
+          sub_order_id: string
+          vendor_email: string
+          vendor_id: string
+          vendor_name: string
+          vendor_subtotal_incl_vat: number
+        }[]
+      }
       finalize_qogita_resync_log: {
         Args: {
           _id: string

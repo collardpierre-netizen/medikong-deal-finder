@@ -175,7 +175,7 @@ function OfferRow({
       maxQuantity: maxQty,
       vendorId: offer.sellerId,
       priceExclVat: offer.unitPriceEur,
-      productData: { id: productId, name: productName, brand: "", slug: productSlug, price: offer.unitPriceEur },
+      productData: { id: productId, name: productName, brand: "", slug: productSlug, price: offer.unitPriceEur, imageUrl: productImageUrl },
       deliveryDays: offer.deliveryDays || null,
     });
   };
@@ -1454,7 +1454,7 @@ export default function ProductPage() {
                           maxQuantity: bestOffer.stockQuantity || 999,
                           vendorId: bestOffer.sellerId,
                           priceExclVat: bestOffer.unitPriceEur,
-                          productData: { id: product.id, name: product.name, brand: brandData?.name || product.brand || "", slug: product.slug, price: bestOffer.unitPriceEur },
+                          productData: { id: product.id, name: product.name, brand: brandData?.name || product.brand || "", slug: product.slug, price: bestOffer.unitPriceEur, imageUrl: product.imageUrls?.[0] || product.imageUrl || undefined },
                           deliveryDays: bestOffer.deliveryDays || null,
                         });
                       }}
@@ -1525,6 +1525,7 @@ export default function ProductPage() {
                             productId={product.id}
                             productName={product.name}
                             productSlug={product.slug}
+                            productImageUrl={product.imageUrls?.[0] || product.imageUrl || undefined}
                             user={user}
                             navigate={navigate}
                             addToCart={addToCart}
@@ -1600,6 +1601,7 @@ export default function ProductPage() {
                               productId={product.id}
                               productName={product.name}
                               productSlug={product.slug}
+                              productImageUrl={product.imageUrls?.[0] || product.imageUrl || undefined}
                               user={user}
                               navigate={navigate}
                               addToCart={addToCart}
@@ -2557,7 +2559,7 @@ export default function ProductPage() {
                         maxQuantity: bestOffer.stockQuantity > 0 ? bestOffer.stockQuantity : undefined,
                         vendorId: bestOffer.sellerId,
                         priceExclVat: bestOffer.unitPriceEur,
-                        productData: { id: product.id, name: product.name, brand: product.brand || "", slug: product.slug, price: bestOffer.unitPriceEur },
+                        productData: { id: product.id, name: product.name, brand: product.brand || "", slug: product.slug, price: bestOffer.unitPriceEur, imageUrl: product.imageUrls?.[0] || product.imageUrl || undefined },
                         deliveryDays: bestOffer.deliveryDays || null,
                       });
                       

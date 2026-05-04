@@ -9,7 +9,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { PageTransition } from "@/components/shared/PageTransition";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { getVendorPublicName } from "@/lib/vendor-display";
+import { getVendorPublicName, resolveVendorVisibility } from "@/lib/vendor-display";
+import { useCountry } from "@/contexts/CountryContext";
 import { useVendorMov } from "@/hooks/useVendorMov";
 import { getProductImageSrc, MEDIKONG_PLACEHOLDER, isQogitaPlaceholder } from "@/lib/image-utils";
 import VendorDelegateCompact from "@/components/vendor/VendorDelegateCompact";
@@ -33,6 +34,7 @@ type FilterType = "all" | "ready" | "below" | "changes";
 export default function CartPage() {
   const { user } = useAuth();
   const { items, isLoading, cartCount, updateQuantity, removeFromCart, clearCart } = useCart();
+  const { country } = useCountry();
   const [expandedSuppliers, setExpandedSuppliers] = useState<Record<string, boolean>>({});
   const [filter, setFilter] = useState<FilterType>("all");
   const [remark, setRemark] = useState("");
@@ -53,6 +55,19 @@ export default function CartPage() {
     enabled: vendorIds.length > 0,
   });
 
+  const { data: visRules = [] } = useQuery({
+    queryKey: ["cart-vendor-visibility-rules", vendorIds],
+    queryFn: async () => {
+      if (vendorIds.length === 0) return [];
+      const { data } = await supabase
+        .from("vendor_visibility_rules" as any)
+        .select("*")
+        .in("vendor_id", vendorIds as string[]);
+      return (data as any[]) || [];
+    },
+    enabled: vendorIds.length > 0,
+  });
+
   const vendorMap = useMemo(() => new Map(vendors.map(v => [v.id, v])), [vendors]);
 
   // Group items by vendor_id
@@ -69,9 +84,12 @@ export default function CartPage() {
       const currentMov = getMovForVendor(vendorId);
       const remaining = Math.max(currentMov - total, 0);
       const progress = Math.min((total / currentMov) * 100, 100);
+      const showReal = vendor
+        ? resolveVendorVisibility({ ...vendor, id: vendorId }, visRules as any, { country })
+        : false;
       return {
         vendorId,
-        vendorName: vendor ? getVendorPublicName(vendor) : `Fournisseur #${vendorId.slice(0, 6).toUpperCase()}`,
+        vendorName: vendor ? getVendorPublicName(vendor, showReal) : `Fournisseur #${vendorId.slice(0, 6).toUpperCase()}`,
         vendorSlug: vendor?.slug || undefined,
         isVerified: vendor?.is_verified || false,
         items: groupItems,
@@ -82,7 +100,7 @@ export default function CartPage() {
         meetsMinimum: total >= currentMov,
       };
     });
-  }, [items, vendorMap, getMovForVendor]);
+  }, [items, vendorMap, getMovForVendor, visRules, country]);
 
   const totalCart = items.reduce((s, i) => s + (i.price_excl_vat || i.product?.price || 0) * i.quantity, 0);
   const readyCount = supplierGroups.filter(g => g.meetsMinimum).length;

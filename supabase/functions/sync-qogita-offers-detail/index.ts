@@ -22,6 +22,17 @@ function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
+function scheduleNextChunk(body: object) {
+  fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/sync-qogita-offers-detail`, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  }).catch((e) => console.error("scheduleNextChunk failed:", e.message));
+}
+
 // --- Qogita rate limiter (token bucket en mémoire) ---
 // Lisse les appels à ~4 req/s globales pour cette instance d'edge function,
 // indépendamment de la concurrence interne. Évite les pics 429.

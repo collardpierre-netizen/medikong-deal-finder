@@ -573,8 +573,118 @@ export default function AccountPage() {
                             <option value="desc">Plus récentes d'abord</option>
                             <option value="asc">Plus anciennes d'abord</option>
                           </select>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="ml-2 border-mk-blue text-mk-blue hover:bg-mk-blue hover:text-white"
+                            disabled={filteredOrders.length === 0}
+                            onClick={() => {
+                              const statusLabelsCsv: Record<string, string> = {
+                                confirmed: "Confirmée",
+                                accepted: "Reçue par le vendeur",
+                                in_preparation: "En préparation",
+                                shipped: "Expédiée",
+                                delivered: "Livrée",
+                                cancelled: "Annulée",
+                                refunded: "Remboursée",
+                              };
+                              const escape = (v: any) => {
+                                const s = v === null || v === undefined ? "" : String(v);
+                                return /[",;\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+                              };
+                              const header = [
+                                "ID Commande",
+                                "Date de passage",
+                                "Statut",
+                                "Dernière mise à jour du statut",
+                                "Montant TTC (EUR)",
+                              ];
+                              const rows = filteredOrders.map((o: any) => [
+                                o.order_number,
+                                formatOrderDateTime(o.created_at),
+                                statusLabelsCsv[o.status] || o.status,
+                                o.updated_at && o.updated_at !== o.created_at ? formatOrderDateTime(o.updated_at) : "",
+                                formatPrice(Number(o.total_incl_vat)),
+                              ]);
+                              const meta = [
+                                ["# Export Mes commandes"],
+                                ["# Statut", orderStatusFilter === "all" ? "Tous les statuts" : (statusLabelsCsv[orderStatusFilter] || orderStatusFilter)],
+                                ["# Tri par date de passage", orderSort === "desc" ? "Plus récentes d'abord" : "Plus anciennes d'abord"],
+                                ["# Nombre de commandes", String(filteredOrders.length)],
+                                ["# Exporté le", new Date().toLocaleString("fr-BE")],
+                                [],
+                              ];
+                              const csv = "\uFEFF" + [...meta, header, ...rows]
+                                .map((r) => r.map(escape).join(";"))
+                                .join("\n");
+                              const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+                              const url = URL.createObjectURL(blob);
+                              const a = document.createElement("a");
+                              const stamp = new Date().toISOString().slice(0, 10);
+                              a.href = url;
+                              a.download = `mes-commandes_${orderStatusFilter}_${orderSort}_${stamp}.csv`;
+                              document.body.appendChild(a);
+                              a.click();
+                              document.body.removeChild(a);
+                              URL.revokeObjectURL(url);
+                            }}
+                          >
+                            Exporter en CSV
+                          </Button>
                         </div>
                       </div>
+                      {(() => {
+                        const statusLabels: Record<string, string> = {
+                          confirmed: "Confirmée",
+                          accepted: "Reçue par le vendeur",
+                          in_preparation: "En préparation",
+                          shipped: "Expédiée",
+                          delivered: "Livrée",
+                          cancelled: "Annulée",
+                          refunded: "Remboursée",
+                        };
+                        const hasStatus = orderStatusFilter !== "all";
+                        const hasSort = orderSort !== "desc";
+                        if (!hasStatus && !hasSort) return null;
+                        return (
+                          <div className="flex flex-wrap items-center gap-2 mb-4 p-3 bg-mk-alt border border-mk-line rounded-md">
+                            <span className="text-xs text-mk-sec font-medium">Filtres actifs :</span>
+                            {hasStatus && (
+                              <button
+                                type="button"
+                                onClick={() => setOrderStatusFilter("all")}
+                                className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded bg-background border border-mk-line text-mk-navy hover:bg-mk-line/40"
+                                title="Retirer ce filtre"
+                              >
+                                Statut : {statusLabels[orderStatusFilter] || orderStatusFilter}
+                                <span aria-hidden>×</span>
+                              </button>
+                            )}
+                            {hasSort && (
+                              <button
+                                type="button"
+                                onClick={() => setOrderSort("desc")}
+                                className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded bg-background border border-mk-line text-mk-navy hover:bg-mk-line/40"
+                                title="Revenir au tri par défaut"
+                              >
+                                Tri : Plus anciennes d'abord
+                                <span aria-hidden>×</span>
+                              </button>
+                            )}
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="ml-auto text-mk-blue hover:bg-mk-blue/10"
+                              onClick={() => {
+                                setOrderStatusFilter("all");
+                                setOrderSort("desc");
+                              }}
+                            >
+                              Tout réinitialiser
+                            </Button>
+                          </div>
+                        );
+                      })()}
                       {ordersLoading ? (
                         <p className="text-sm text-mk-sec py-8 text-center">Chargement...</p>
                       ) : dbOrders.length === 0 ? (

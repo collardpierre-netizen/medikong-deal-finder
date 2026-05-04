@@ -58,8 +58,9 @@ export class LazyRouteBoundary extends Component<Props, State> {
             Cette page n'a pas pu se charger
           </h1>
           <p className="text-sm text-muted-foreground mb-6">
-            Une nouvelle version du site est peut-être disponible, ou votre
-            connexion a été interrompue. Réessayez pour continuer.
+            {exhausted
+              ? `Le chargement a échoué après ${attempts} rechargement${attempts > 1 ? "s" : ""} automatique${attempts > 1 ? "s" : ""}. Vérifiez votre connexion puis réessayez manuellement.`
+              : "Une nouvelle version du site est peut-être disponible, ou votre connexion a été interrompue. Réessayez pour continuer."}
           </p>
           <button
             onClick={this.handleRetry}

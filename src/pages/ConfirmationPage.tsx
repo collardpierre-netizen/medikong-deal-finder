@@ -256,6 +256,17 @@ export default function ConfirmationPage() {
                 </div>
               </div>
             )}
+            {!hasFetchError && !confirmed && !failed && !isTest && (
+              <div role="status" aria-live="polite" className="mt-3 flex items-start gap-2 rounded-md border border-mk-blue/30 bg-mk-blue/5 p-2.5 text-[11px] text-mk-navy">
+                <RefreshCw size={14} className="mt-0.5 shrink-0 text-mk-blue animate-spin" />
+                <div className="flex-1 text-left">
+                  <p className="font-semibold text-mk-blue">Vérification en cours…</p>
+                  <p className="text-mk-sec">
+                    Nous interrogeons le serveur toutes les 5&nbsp;secondes pour mettre à jour le statut. Vous pouvez laisser cette page ouverte.
+                  </p>
+                </div>
+              </div>
+            )}
             {isTest && (
               <p className="text-[11px] text-mk-sec mt-2 text-center">Mode test : aucun paiement carte n'a été effectué.</p>
             )}

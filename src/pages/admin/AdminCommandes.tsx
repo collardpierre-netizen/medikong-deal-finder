@@ -161,6 +161,17 @@ const AdminCommandes = () => {
               <input type="text" placeholder="Rechercher par ID, acheteur..." value={search} onChange={(e) => setSearch(e.target.value)}
                 className="flex-1 text-[13px] outline-none bg-transparent" style={{ color: "#1D2530" }} />
             </div>
+            <label className="flex items-center gap-2 px-3 py-2 rounded-md text-[12px] font-medium cursor-pointer select-none"
+              style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0", color: "#616B7C" }}
+              title="Masquer les commandes payées avec une clé Stripe de test">
+              <input type="checkbox" checked={hideTest} onChange={(e) => setHideTest(e.target.checked)} />
+              Masquer commandes test
+              {testCount > 0 && (
+                <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold" style={{ backgroundColor: "#FEF3C7", color: "#92400E" }}>
+                  {testCount}
+                </span>
+              )}
+            </label>
             <button className="flex items-center gap-2 px-3 py-2 rounded-md text-[13px] font-medium" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0", color: "#616B7C" }}><Filter size={14} /> Filtres</button>
           </div>
 

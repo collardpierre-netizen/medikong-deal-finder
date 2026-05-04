@@ -136,9 +136,11 @@ export default function CheckoutPage() {
     if (!stripePromise) setStripePromise(getStripe());
   }, [stripePromise]);
 
+  const [initStarted, setInitStarted] = useState(false);
   // When entering step 3 with no clientSecret yet, create order + payment intent
   useEffect(() => {
-    if (step !== 3 || clientSecret || initLoading) return;
+    if (step !== 3 || clientSecret || initStarted) return;
+    setInitStarted(true);
     let cancelled = false;
     (async () => {
       setInitLoading(true);
@@ -181,6 +183,7 @@ export default function CheckoutPage() {
       } catch (e: any) {
         if (!cancelled) {
           setInitError(e.message || "Erreur d'initialisation");
+          setInitStarted(false); // allow retry
           toast.error("Erreur paiement: " + (e.message || "Réessayez"));
         }
       } finally {
@@ -188,7 +191,8 @@ export default function CheckoutPage() {
       }
     })();
     return () => { cancelled = true; };
-  }, [step]);
+  }, [step, clientSecret, initStarted]);
+
 
   const handlePaymentSuccess = useCallback(async () => {
     if (!orderId || !orderNumber) return;

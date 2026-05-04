@@ -625,7 +625,7 @@ export default function AccountPage() {
                               const a = document.createElement("a");
                               const stamp = new Date().toISOString().slice(0, 10);
                               a.href = url;
-                              a.download = `mes-commandes_${orderStatusFilter}_${orderSort}_${stamp}.csv`;
+                              a.download = `mes-commandes_${orderStatusFilter}_${orderSort}_p${orderPageSafe}-sur-${orderTotalPages}_taille${orderPageSize}_${stamp}.csv`;
                               document.body.appendChild(a);
                               a.click();
                               document.body.removeChild(a);

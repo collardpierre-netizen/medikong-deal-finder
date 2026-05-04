@@ -88,10 +88,11 @@ export default function CheckoutPage() {
         .eq("country_code", shippingAddr.country)
         .eq("is_active", true)
         .order("sort_order");
-      if (!data || data.length === 0) {
-        return [{ id: "default", name: "Standard", name_fr: "Standard", delivery_min_days: 5, delivery_max_days: 7, price_adjustment: 0, is_free: true, currency: "EUR" }];
-      }
-      return data;
+      const fallback = [{ id: "default", name: "Standard", name_fr: "Standard", delivery_min_days: 5, delivery_max_days: 7, price_adjustment: 0, is_free: true, currency: "EUR" }];
+      if (!data || data.length === 0) return fallback;
+      // V1: only Standard option exposed
+      const standard = data.filter((s: any) => /standard/i.test(s.name_fr || s.name || ""));
+      return standard.length > 0 ? standard : [data[0]];
     },
     staleTime: 5 * 60 * 1000,
   });

@@ -13,6 +13,7 @@ import { getVendorPublicName } from "@/lib/vendor-display";
 import { useVendorMov } from "@/hooks/useVendorMov";
 import { getProductImageSrc, MEDIKONG_PLACEHOLDER, isQogitaPlaceholder } from "@/lib/image-utils";
 import VendorDelegateCompact from "@/components/vendor/VendorDelegateCompact";
+import { QuantityInput } from "@/components/cart/QuantityInput";
 
 interface SupplierGroup {
   vendorId: string;
@@ -344,22 +345,11 @@ export default function CartPage() {
                                     </p>
                                   </div>
                                   <div className="flex items-center gap-2 shrink-0">
-                                    <div className="flex items-center border border-mk-line rounded-md">
-                                      <button
-                                        className="px-2 py-1.5 text-mk-sec hover:text-mk-navy"
-                                        onClick={() => updateQuantity.mutate({ itemId: item.id, quantity: item.quantity - 1 })}
-                                      >
-                                        <Minus size={13} />
-                                      </button>
-                                      <span className="px-2.5 text-sm font-medium min-w-[32px] text-center">{item.quantity}</span>
-                                      <button
-                                        className="px-2 py-1.5 text-mk-sec hover:text-mk-navy disabled:opacity-40 disabled:cursor-not-allowed"
-                                        onClick={() => updateQuantity.mutate({ itemId: item.id, quantity: item.quantity + 1 })}
-                                        disabled={!!item.max_quantity && item.quantity >= item.max_quantity}
-                                      >
-                                        <Plus size={13} />
-                                      </button>
-                                    </div>
+                                    <QuantityInput
+                                      value={item.quantity}
+                                      max={item.max_quantity || undefined}
+                                      onChange={(q) => updateQuantity.mutate({ itemId: item.id, quantity: q })}
+                                    />
                                     {!!item.max_quantity && item.quantity >= item.max_quantity && (
                                       <span className="text-[10px] text-destructive font-medium flex items-center gap-0.5" title="Stock maximum atteint">
                                         <AlertCircle size={11} /> Max

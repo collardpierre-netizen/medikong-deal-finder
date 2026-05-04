@@ -339,6 +339,7 @@ const AdminVendeurDetail = () => {
               <InfoRow label="Pays" value={vendor.country_code} />
             </div>
           </div>
+          <VendorMarketIntelAdminCard vendorId={vendor.id} vendorName={vendor.company_name || vendor.name} />
         </div>
       )}
 

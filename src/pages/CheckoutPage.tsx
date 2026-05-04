@@ -198,39 +198,6 @@ export default function CheckoutPage() {
   ]);
 
 
-  const handlePaymentSuccess = useCallback(async () => {
-    if (!orderId || !orderNumber) return;
-    try {
-      await supabase.functions.invoke("send-transactional-email", {
-        body: {
-          templateName: "order-confirmation",
-          recipientEmail: user!.email,
-          idempotencyKey: `order-confirm-${orderId}`,
-          templateData: {
-            orderNumber,
-            total: `${formatPrice(total)} EUR`,
-            itemCount: items.length,
-            shippingAddress: formatAddr(shippingAddr),
-            paymentMethod: paymentMethods[payment].label,
-          },
-        },
-      });
-    } catch (e) {
-      console.warn("Email confirmation failed:", e);
-    }
-    clearCart.mutate();
-    navigate(`/confirmation?order=${orderNumber}`);
-  }, [orderId, orderNumber, user, total, items, shippingAddr, payment, clearCart, navigate]);
-
-  const handleTestOrderConfirmation = useCallback(async () => {
-    if (!orderId || !orderNumber || submitting) return;
-    setSubmitting(true);
-    try {
-      await handlePaymentSuccess();
-    } finally {
-      setSubmitting(false);
-    }
-  }, [orderId, orderNumber, submitting, handlePaymentSuccess]);
 
   if (!user) {
     return (

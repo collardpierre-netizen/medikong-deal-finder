@@ -53,6 +53,15 @@ const AdminCommandes = () => {
   const [hideTest, setHideTest] = useState(true);
   const [purgeOpen, setPurgeOpen] = useState(false);
   const [purging, setPurging] = useState(false);
+  const [purgePreview, setPurgePreview] = useState<null | {
+    targets_count: number;
+    total_incl_vat?: number;
+    targets: Array<{ id: string; order_number: string; status: string; total_incl_vat: number; created_at: string }>;
+  }>(null);
+  const [confirmToken, setConfirmToken] = useState("");
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const isProd = typeof window !== "undefined" && /medikong\.pro|medikong\.com/i.test(window.location.hostname);
+  const REQUIRED_TOKEN = "PURGE TEST ORDERS";
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
 
   const orders = ordersData.map(o => ({
@@ -124,10 +133,34 @@ const AdminCommandes = () => {
     setExpandedOrder(prev => prev === orderId ? null : orderId);
   };
 
+  const openPurgeDialog = async () => {
+    setPurgeOpen(true);
+    setPurgePreview(null);
+    setConfirmToken("");
+    setPreviewLoading(true);
+    try {
+      const { data, error } = await supabase.rpc("admin_purge_test_orders" as any, {
+        _dry_run: true,
+        _confirm_token: null,
+      });
+      if (error) throw error;
+      setPurgePreview(data as any);
+    } catch (e: any) {
+      toast.error(e?.message || "Impossible de prévisualiser");
+      setPurgeOpen(false);
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
   const handlePurgeTestOrders = async () => {
+    if (confirmToken !== REQUIRED_TOKEN) return;
     setPurging(true);
     try {
-      const { data, error } = await supabase.rpc("admin_purge_test_orders" as any);
+      const { data, error } = await supabase.rpc("admin_purge_test_orders" as any, {
+        _dry_run: false,
+        _confirm_token: confirmToken,
+      });
       if (error) throw error;
       const result = (data as any) || {};
       const n = Number(result.orders_deleted || 0);
@@ -151,7 +184,7 @@ const AdminCommandes = () => {
         <div className="flex items-center gap-2">
           {testCount > 0 && (
             <button
-              onClick={() => setPurgeOpen(true)}
+              onClick={openPurgeDialog}
               className="flex items-center gap-2 px-3 py-2 rounded-md text-[13px] font-semibold"
               style={{ backgroundColor: "#fff", border: "1px solid #FCA5A5", color: "#B91C1C" }}
               title="Supprimer toutes les commandes marquées « test »"
@@ -422,23 +455,75 @@ const AdminCommandes = () => {
         </div>
       )}
 
-      <AlertDialog open={purgeOpen} onOpenChange={setPurgeOpen}>
-        <AlertDialogContent>
+      <AlertDialog open={purgeOpen} onOpenChange={(o) => { setPurgeOpen(o); if (!o) { setPurgePreview(null); setConfirmToken(""); } }}>
+        <AlertDialogContent className="max-w-2xl">
           <AlertDialogHeader>
-            <AlertDialogTitle>Supprimer les commandes test ?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Cette action va supprimer définitivement <strong>{testCount}</strong> commande{testCount > 1 ? "s" : ""} marquée{testCount > 1 ? "s" : ""} « test » ainsi que toutes leurs lignes.
-              L'opération sera enregistrée dans le journal d'audit. Elle est irréversible.
+            <AlertDialogTitle>Purge des commandes test — confirmation</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3 text-[13px]">
+                {isProd && (
+                  <div className="rounded-md p-3 border border-destructive/40 bg-destructive/5 text-destructive font-semibold">
+                    ⚠️ Vous êtes sur l'environnement de production ({window.location.hostname}). Vérifiez deux fois avant de purger.
+                  </div>
+                )}
+                {previewLoading && <div>Chargement de la prévisualisation…</div>}
+                {!previewLoading && purgePreview && (
+                  <>
+                    <div>
+                      Prévisualisation : <strong>{purgePreview.targets_count}</strong> commande
+                      {purgePreview.targets_count > 1 ? "s" : ""} test seront supprimées
+                      {typeof purgePreview.total_incl_vat === "number" && (
+                        <> (total TTC <strong>{Number(purgePreview.total_incl_vat).toLocaleString("fr-BE", { minimumFractionDigits: 2 })} €</strong>)</>
+                      )}
+                      .
+                    </div>
+                    {purgePreview.targets_count > 0 && (
+                      <div className="max-h-48 overflow-auto rounded border border-border">
+                        <table className="w-full text-[12px]">
+                          <thead className="bg-muted">
+                            <tr><th className="text-left px-2 py-1">N°</th><th className="text-left px-2 py-1">Statut</th><th className="text-right px-2 py-1">TTC</th><th className="text-left px-2 py-1">Date</th></tr>
+                          </thead>
+                          <tbody>
+                            {purgePreview.targets.map((t) => (
+                              <tr key={t.id} className="border-t border-border">
+                                <td className="px-2 py-1 font-mono">{t.order_number}</td>
+                                <td className="px-2 py-1">{t.status}</td>
+                                <td className="px-2 py-1 text-right">{Number(t.total_incl_vat).toLocaleString("fr-BE", { minimumFractionDigits: 2 })}</td>
+                                <td className="px-2 py-1">{new Date(t.created_at).toLocaleDateString("fr-BE")}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                    {purgePreview.targets_count > 0 && (
+                      <div className="space-y-1 pt-2">
+                        <label className="text-[12px] text-muted-foreground">
+                          Pour confirmer, tapez exactement : <code className="px-1 bg-muted rounded">{REQUIRED_TOKEN}</code>
+                        </label>
+                        <input
+                          type="text"
+                          value={confirmToken}
+                          onChange={(e) => setConfirmToken(e.target.value)}
+                          autoFocus
+                          className="w-full px-3 py-2 border border-border rounded-md text-[13px] outline-none focus:border-destructive"
+                          placeholder={REQUIRED_TOKEN}
+                        />
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={purging}>Annuler</AlertDialogCancel>
             <AlertDialogAction
               onClick={(e) => { e.preventDefault(); handlePurgeTestOrders(); }}
-              disabled={purging || testCount === 0}
+              disabled={purging || previewLoading || !purgePreview || purgePreview.targets_count === 0 || confirmToken !== REQUIRED_TOKEN}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {purging ? "Suppression..." : `Supprimer ${testCount} commande${testCount > 1 ? "s" : ""}`}
+              {purging ? "Suppression..." : `Supprimer définitivement${purgePreview ? ` ${purgePreview.targets_count}` : ""}`}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

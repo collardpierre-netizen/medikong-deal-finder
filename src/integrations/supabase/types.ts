@@ -13137,7 +13137,10 @@ export type Database = {
           worst_action_score: number
         }[]
       }
-      admin_purge_test_orders: { Args: never; Returns: Json }
+      admin_purge_test_orders: {
+        Args: { _confirm_token?: string; _dry_run?: boolean }
+        Returns: Json
+      }
       admin_redispatch_catalog_notifications: {
         Args: { _source_id: string; _source_type: string }
         Returns: number

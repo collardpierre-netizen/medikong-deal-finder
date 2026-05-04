@@ -544,6 +544,7 @@ const App = () => (
             <Route path="*" element={<LP><NotFound /></LP>} />
           </Routes>
           </Suspense>
+          </LazyRouteBoundary>
           <CookieConsent />
         </BrowserRouter>
       </TooltipProvider>

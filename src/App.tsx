@@ -279,6 +279,7 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <ImpersonationBanner />
+          <LazyRouteBoundary>
           <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="/" element={<LP><HomePage /></LP>} />

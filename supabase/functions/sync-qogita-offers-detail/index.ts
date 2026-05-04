@@ -423,11 +423,13 @@ Deno.serve(async (req) => {
   // L'offre catch-all "qogita-best-price" n'est plus enregistrée (cf. branche désactivée plus bas).
   let fetchMultiVendor = true;
   let resyncLogId: string | null = null;
+  let offsetCursor = 0;
   try {
     const body = await req.json();
     if (body?.country) targetCountry = body.country;
     // body.multi_vendor ignoré : forcé à true.
     if (body?.resync_log_id) resyncLogId = String(body.resync_log_id);
+    if (body?.offset !== undefined) offsetCursor = parseInt(String(body.offset), 10) || 0;
   } catch {
     // no-op
   }

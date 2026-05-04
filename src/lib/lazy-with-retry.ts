@@ -14,7 +14,13 @@ function isChunkLoadError(error: unknown) {
     message.includes("failed to fetch dynamically imported module") ||
     message.includes("error loading dynamically imported module") ||
     message.includes("importing a module script failed") ||
-    message.includes("fetch")
+    message.includes("fetch") ||
+    message.includes("_result") ||
+    message.includes("default") ||
+    message.includes("loading chunk") ||
+    message.includes("chunkloaderror") ||
+    message.includes("module script") ||
+    message.includes("network")
   );
 }
 

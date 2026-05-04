@@ -22,6 +22,13 @@ export interface OrderInput {
   subtotal: number;
   total: number;
   items?: OrderItemInput[];
+  customerInfo?: {
+    company: string;
+    street: string;
+    city: string;
+    postalCode: string;
+    country: string;
+  };
 }
 
 export function useCreateOrder() {
@@ -29,8 +36,22 @@ export function useCreateOrder() {
   return useMutation({
     mutationFn: async (input: OrderInput) => {
       if (!user) throw new Error("Non authentifié");
-      const { data: customer } = await supabase.from("customers").select("id").eq("auth_user_id", user.id).maybeSingle();
-      if (!customer) throw new Error("Profil client non trouvé");
+      let { data: customer } = await supabase.from("customers").select("id").eq("auth_user_id", user.id).maybeSingle();
+      if (!customer) {
+        const ci = input.customerInfo;
+        if (!ci) throw new Error("Profil client non trouvé");
+        const { data: created, error: cErr } = await supabase.from("customers").insert({
+          auth_user_id: user.id,
+          email: user.email!,
+          company_name: ci.company || user.email!,
+          address_line1: ci.street,
+          city: ci.city,
+          postal_code: ci.postalCode,
+          country_code: ci.country || "BE",
+        }).select("id").single();
+        if (cErr) throw cErr;
+        customer = created;
+      }
 
       const vatAmount = input.total - input.subtotal;
       const orderNumber = `MK-${new Date().getFullYear()}-${String(Date.now()).slice(-5)}`;

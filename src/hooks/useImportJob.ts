@@ -111,7 +111,7 @@ export function useImportJob(jobId: string | null) {
     refetch().finally(() => setLoading(false));
 
     const channel = supabase
-      .channel(`import-job-${jobId}`)
+      .channel(`import-job-${jobId}-${Math.random().toString(36).slice(2, 10)}`)
       .on(
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "import_jobs", filter: `id=eq.${jobId}` },

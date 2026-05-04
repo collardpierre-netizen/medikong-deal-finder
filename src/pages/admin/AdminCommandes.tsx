@@ -133,10 +133,34 @@ const AdminCommandes = () => {
     setExpandedOrder(prev => prev === orderId ? null : orderId);
   };
 
+  const openPurgeDialog = async () => {
+    setPurgeOpen(true);
+    setPurgePreview(null);
+    setConfirmToken("");
+    setPreviewLoading(true);
+    try {
+      const { data, error } = await supabase.rpc("admin_purge_test_orders" as any, {
+        _dry_run: true,
+        _confirm_token: null,
+      });
+      if (error) throw error;
+      setPurgePreview(data as any);
+    } catch (e: any) {
+      toast.error(e?.message || "Impossible de prévisualiser");
+      setPurgeOpen(false);
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
   const handlePurgeTestOrders = async () => {
+    if (confirmToken !== REQUIRED_TOKEN) return;
     setPurging(true);
     try {
-      const { data, error } = await supabase.rpc("admin_purge_test_orders" as any);
+      const { data, error } = await supabase.rpc("admin_purge_test_orders" as any, {
+        _dry_run: false,
+        _confirm_token: confirmToken,
+      });
       if (error) throw error;
       const result = (data as any) || {};
       const n = Number(result.orders_deleted || 0);

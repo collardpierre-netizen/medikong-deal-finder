@@ -150,6 +150,13 @@ export default function CheckoutPage() {
           paymentMethod: paymentMethods[payment].label,
           subtotal,
           total,
+          customerInfo: {
+            company: shippingAddr.company,
+            street: shippingAddr.street,
+            city: shippingAddr.city,
+            postalCode: shippingAddr.postalCode,
+            country: shippingAddr.country,
+          },
           items: items.map(item => ({
             offer_id: item.offer_id,
             product_id: item.product_id,

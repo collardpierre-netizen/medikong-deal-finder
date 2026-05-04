@@ -524,28 +524,36 @@ export default function AccountPage() {
                                       <span className="font-medium text-mk-navy text-sm">{o.order_number}</span>
                                       <span className={`text-xs font-medium px-2 py-0.5 rounded ${meta.badgeClass}`}>{meta.label}</span>
                                     </div>
-                                    <div className="flex justify-between text-sm">
+                                    <div className="flex justify-between text-sm mb-3">
                                       <span className="text-mk-sec">{formatOrderDateTime(o.created_at)}</span>
                                       <span className="font-bold text-mk-navy">{formatPrice(Number(o.total_incl_vat))} EUR</span>
                                     </div>
+                                    <Button size="sm" variant="outline" className="w-full border-mk-blue text-mk-blue hover:bg-mk-blue hover:text-white">
+                                      Voir le détail
+                                    </Button>
                                   </Link>
                                 </motion.div>
                               );
                             })}
                           </div>
                           <motion.div className="hidden sm:block border border-mk-line rounded-lg overflow-hidden" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                            <div className="grid grid-cols-4 gap-3 px-4 py-2 bg-mk-alt text-xs font-semibold text-mk-sec">
-                              <span>ID Commande</span><span>Date &amp; heure</span><span>Statut</span><span>Montant</span>
+                            <div className="grid grid-cols-5 gap-3 px-4 py-2 bg-mk-alt text-xs font-semibold text-mk-sec">
+                              <span>ID Commande</span><span>Date &amp; heure</span><span>Statut</span><span>Montant</span><span className="text-right">Actions</span>
                             </div>
                             {dbOrders.map((o: any, i: number) => {
                               const meta = getOrderStatusMeta(o.status);
                               return (
                                 <motion.div key={o.id} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.15 + i * 0.06 }}>
-                                  <Link to={`/commande/${o.id}`} className="grid grid-cols-4 gap-3 px-4 py-3 border-t border-mk-line text-sm items-center hover:bg-mk-alt">
+                                  <Link to={`/commande/${o.id}`} className="grid grid-cols-5 gap-3 px-4 py-3 border-t border-mk-line text-sm items-center hover:bg-mk-alt">
                                     <span className="font-medium text-mk-navy">{o.order_number}</span>
                                     <span className="text-mk-sec">{formatOrderDateTime(o.created_at)}</span>
                                     <span className={`text-xs font-medium px-2 py-0.5 rounded w-fit ${meta.badgeClass}`}>{meta.label}</span>
                                     <span className="font-bold text-mk-navy">{formatPrice(Number(o.total_incl_vat))} EUR</span>
+                                    <span className="flex justify-end">
+                                      <Button size="sm" variant="outline" className="border-mk-blue text-mk-blue hover:bg-mk-blue hover:text-white">
+                                        Voir le détail
+                                      </Button>
+                                    </span>
                                   </Link>
                                 </motion.div>
                               );

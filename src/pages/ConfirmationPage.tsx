@@ -1,5 +1,5 @@
 import { Layout } from "@/components/layout/Layout";
-import { Check, Truck, Shield, RefreshCw } from "lucide-react";
+import { Check, Truck, Shield, RefreshCw, AlertTriangle } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { PageTransition } from "@/components/shared/PageTransition";
@@ -16,7 +16,7 @@ export default function ConfirmationPage() {
   const { user } = useAuth();
   const [lastChecked, setLastChecked] = useState<Date>(new Date());
 
-  const { data: order, isFetching, refetch, dataUpdatedAt } = useQuery({
+  const { data: order, isFetching, refetch, dataUpdatedAt, error, failureCount, errorUpdatedAt } = useQuery({
     queryKey: ["order-confirmation", orderNumber],
     enabled: !!user && !!orderNumber,
     refetchInterval: (query) => {
@@ -28,6 +28,9 @@ export default function ConfirmationPage() {
       return 5000;
     },
     refetchOnWindowFocus: true,
+    // Auto-retry exponentiel jusqu'à 5 tentatives en cas d'échec réseau/DB
+    retry: 5,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 15000),
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
@@ -42,6 +45,9 @@ export default function ConfirmationPage() {
   useEffect(() => {
     if (dataUpdatedAt) setLastChecked(new Date(dataUpdatedAt));
   }, [dataUpdatedAt]);
+
+  // Considère une erreur "active" uniquement si on n'a pas encore de data fraîche
+  const hasFetchError = !!error && !order;
 
   const status = (order as any)?.status as string | undefined;
   const paymentDone = isTest || (!!status && !["pending", "pending_payment", "draft"].includes(status));
@@ -140,6 +146,27 @@ export default function ConfirmationPage() {
                 Actualiser
               </button>
             </div>
+            {hasFetchError && (
+              <div role="alert" className="mt-3 flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/5 p-2.5 text-[11px] text-destructive">
+                <AlertTriangle size={14} className="mt-0.5 shrink-0" />
+                <div className="flex-1 text-left">
+                  <p className="font-semibold">Impossible de rafraîchir le statut</p>
+                  <p className="text-destructive/80">
+                    {(error as any)?.message || "La connexion au serveur a échoué."} Nouvelle tentative automatique en cours
+                    {failureCount > 0 ? ` (essai ${failureCount}/5)` : ""}…
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => refetch()}
+                    disabled={isFetching}
+                    className="mt-1 inline-flex items-center gap-1 font-semibold underline hover:no-underline disabled:opacity-50"
+                  >
+                    <RefreshCw size={11} className={isFetching ? "animate-spin" : ""} />
+                    Réessayer maintenant
+                  </button>
+                </div>
+              </div>
+            )}
             {isTest && (
               <p className="text-[11px] text-mk-sec mt-2 text-center">Mode test : aucun paiement carte n'a été effectué.</p>
             )}

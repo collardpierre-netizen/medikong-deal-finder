@@ -404,7 +404,27 @@ export default function CheckoutPage() {
                           </button>
                         </div>
                       )}
-                      {clientSecret && stripePromise && (
+                      {clientSecret && !stripeReady && !stripeLoadError && (
+                        <div className="flex items-center gap-2 text-sm text-mk-sec py-6 justify-center">
+                          <Loader2 size={16} className="animate-spin" /> Chargement du module carte...
+                        </div>
+                      )}
+                      {stripeLoadError && !initLoading && (
+                        <div className="rounded-md border border-mk-line bg-mk-alt p-3 space-y-3">
+                          <p className="text-sm text-mk-navy">{stripeLoadError}</p>
+                          {orderId && orderNumber && (
+                            <button
+                              type="button"
+                              onClick={handleTestOrderConfirmation}
+                              disabled={submitting}
+                              className="bg-mk-navy text-white font-bold text-sm px-4 py-2 rounded-md disabled:opacity-60"
+                            >
+                              {submitting ? "Validation..." : "Poursuivre le test sans paiement carte"}
+                            </button>
+                          )}
+                        </div>
+                      )}
+                      {clientSecret && stripePromise && stripeReady && (
                         <Elements
                           stripe={stripePromise}
                           options={{ clientSecret, appearance: { theme: "stripe" } } satisfies StripeElementsOptions}

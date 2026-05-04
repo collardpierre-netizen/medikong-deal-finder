@@ -2,10 +2,11 @@ import { useState } from "react";
 import AdminTopBar from "@/components/admin/AdminTopBar";
 import KpiCard from "@/components/admin/KpiCard";
 import StatusBadge from "@/components/admin/StatusBadge";
+import AdminOrderSlaPanel from "@/components/admin/AdminOrderSlaPanel";
 import { useI18n } from "@/contexts/I18nContext";
 import { useOrders } from "@/hooks/useAdminData";
 import { supabase } from "@/integrations/supabase/client";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -13,7 +14,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   ShoppingCart, TrendingUp, Clock, CreditCard, Truck,
-  Search, Filter, Download, ChevronDown, ChevronRight, Package, Trash2,
+  Search, Filter, Download, ChevronDown, ChevronRight, Package, Trash2, AlertTriangle,
 } from "lucide-react";
 
 const buyerColors: Record<string, { bg: string; text: string }> = {
@@ -47,7 +48,20 @@ const AdminCommandes = () => {
   const { t } = useI18n();
   const { data: ordersData = [], isLoading } = useOrders();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<"list" | "timeline" | "aging" | "buyers">("list");
+  const [activeTab, setActiveTab] = useState<"list" | "timeline" | "aging" | "buyers" | "sla">("list");
+  const [hideDeleted, setHideDeleted] = useState(true);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; number: string } | null>(null);
+  const [deleteReason, setDeleteReason] = useState("");
+  const [deleting, setDeleting] = useState(false);
+
+  const { data: slaCount } = useQuery({
+    queryKey: ["admin-sla-count"],
+    queryFn: async () => {
+      const { data } = await supabase.rpc("admin_sla_open_alerts_count" as any);
+      return (data as any)?.[0] || { total: 0, warnings: 0, criticals: 0 };
+    },
+    refetchInterval: 60_000,
+  });
   const [statusFilter, setStatusFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [hideTest, setHideTest] = useState(true);
@@ -78,12 +92,15 @@ const AdminCommandes = () => {
     dueDate: o.payment_due_date ? new Date(o.payment_due_date).toLocaleDateString("fr-BE") : "—",
     status: o.status as "pending" | "confirmed" | "shipped" | "delivered" | "cancelled",
     isTest: Boolean((o as any).is_test),
+    hiddenFromList: Boolean((o as any).hidden_from_list),
     date: new Date(o.created_at).toLocaleDateString("fr-BE"),
     lines: ((o as any).order_lines || []) as any[],
   }));
 
-  const displayOrders = hideTest ? orders.filter(o => !o.isTest) : orders;
-  const testCount = orders.filter(o => o.isTest).length;
+  const visibleOrders = hideDeleted ? orders.filter(o => !o.hiddenFromList) : orders;
+  const displayOrders = hideTest ? visibleOrders.filter(o => !o.isTest) : visibleOrders;
+  const testCount = visibleOrders.filter(o => o.isTest).length;
+  const deletedCount = orders.filter(o => o.hiddenFromList).length;
 
   const filtered = displayOrders.filter((o) => {
     if (statusFilter !== "all" && o.status !== statusFilter) return false;
@@ -98,10 +115,31 @@ const AdminCommandes = () => {
 
   const tabs = [
     { key: "list" as const, label: "Liste" },
+    { key: "sla" as const, label: `Retards SLA${slaCount?.total ? ` (${slaCount.total})` : ""}` },
     { key: "timeline" as const, label: "Timeline" },
     { key: "aging" as const, label: "Échéances paiement" },
     { key: "buyers" as const, label: "Par type acheteur" },
   ];
+
+  const handleSoftDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      const { error } = await supabase.rpc("admin_soft_delete_order" as any, {
+        _order_id: deleteTarget.id,
+        _reason: deleteReason || null,
+      });
+      if (error) throw error;
+      toast.success(`Commande ${deleteTarget.number} supprimée`);
+      await queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
+      setDeleteTarget(null);
+      setDeleteReason("");
+    } catch (e: any) {
+      toast.error(e?.message || "Échec de la suppression");
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const timeline = displayOrders.slice(0, 6).map(o => ({
     time: new Date().toLocaleTimeString("fr-BE", { hour: "2-digit", minute: "2-digit" }),
@@ -258,7 +296,7 @@ const AdminCommandes = () => {
                   <thead>
                     <tr style={{ borderBottom: "1px solid #E2E8F0", backgroundColor: "#F8FAFC" }}>
                       <th className="px-2 py-3 w-8"></th>
-                      {["ID / Réf PO", "Acheteur", "Type", "Lignes", "HT", "TVA", "TTC", "Paiement", "Statut"].map((h) => (
+                      {["ID / Réf PO", "Acheteur", "Type", "Lignes", "HT", "TVA", "TTC", "Paiement", "Statut", ""].map((h) => (
                         <th key={h} className="px-3 py-3 text-[10px] font-semibold uppercase tracking-wider" style={{ color: "#8B95A5" }}>{h}</th>
                       ))}
                     </tr>
@@ -303,10 +341,20 @@ const AdminCommandes = () => {
                             <td className="px-3 py-3 text-[12px] font-bold font-mono" style={{ color: "#059669" }}>{fmt(o.ttc)}</td>
                             <td className="px-3 py-3 text-[11px]" style={{ color: "#616B7C" }}>{o.paymentTerms}</td>
                             <td className="px-3 py-3"><StatusBadge status={o.status} /></td>
+                            <td className="px-3 py-3 text-right">
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setDeleteTarget({ id: o.rawId, number: o.id }); }}
+                                title="Archiver cette commande (soft-delete)"
+                                className="p-1.5 rounded hover:bg-red-50"
+                                style={{ color: "#B91C1C" }}
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </td>
                           </tr>
                           {isExpanded && o.lines.length > 0 && (
                             <tr key={`${o.rawId}-lines`}>
-                              <td colSpan={10} className="px-0 py-0">
+                              <td colSpan={11} className="px-0 py-0">
                                 <div className="mx-4 mb-3 rounded-lg overflow-hidden" style={{ border: "1px solid #E2E8F0", backgroundColor: "#F8FAFC" }}>
                                   <table className="w-full text-left">
                                     <thead>
@@ -372,7 +420,7 @@ const AdminCommandes = () => {
                           )}
                           {isExpanded && o.lines.length === 0 && (
                             <tr key={`${o.rawId}-empty`}>
-                              <td colSpan={10} className="px-6 py-4 text-center text-[12px]" style={{ color: "#8B95A5" }}>
+                              <td colSpan={11} className="px-6 py-4 text-center text-[12px]" style={{ color: "#8B95A5" }}>
                                 Aucune ligne de commande enregistrée.
                               </td>
                             </tr>
@@ -387,6 +435,8 @@ const AdminCommandes = () => {
           </div>
         </div>
       )}
+
+      {activeTab === "sla" && <AdminOrderSlaPanel />}
 
       {activeTab === "timeline" && (
         <div className="p-5 rounded-[10px]" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
@@ -524,6 +574,37 @@ const AdminCommandes = () => {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {purging ? "Suppression..." : `Supprimer définitivement${purgePreview ? ` ${purgePreview.targets_count}` : ""}`}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => { if (!o) { setDeleteTarget(null); setDeleteReason(""); } }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer la commande {deleteTarget?.number} ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              La commande sera marquée <b>annulée</b> et masquée de la liste. L'historique comptable et Stripe est conservé. Action réversible via la base.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-2">
+            <label className="text-[12px] font-semibold text-slate-600">Raison (optionnel)</label>
+            <textarea
+              value={deleteReason}
+              onChange={(e) => setDeleteReason(e.target.value)}
+              className="w-full mt-1 px-3 py-2 rounded border text-[13px]"
+              rows={2}
+              placeholder="ex : commande de test, doublon, demande client…"
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); handleSoftDelete(); }}
+              disabled={deleting}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {deleting ? "Suppression..." : "Supprimer"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

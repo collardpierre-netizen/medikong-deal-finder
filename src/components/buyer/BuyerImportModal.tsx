@@ -421,7 +421,7 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
           { duration: 8000 }
         );
         setPhase("instructions");
-        setProgress(null);
+        setProgress({ current: 0, total: 0, startTime: 0 });
         return;
       }
 

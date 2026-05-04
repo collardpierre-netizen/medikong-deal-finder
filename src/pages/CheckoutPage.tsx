@@ -122,65 +122,26 @@ export default function CheckoutPage() {
   const formatAddr = (a: AddressForm) =>
     `${a.company}, ${a.street}${a.street2 ? ", " + a.street2 : ""}, ${a.postalCode} ${a.city}, ${a.country}`;
 
-  // Stripe state
-  const [stripePromise, setStripePromise] = useState<Promise<Stripe | null> | null>(null);
-  const [stripeReady, setStripeReady] = useState(false);
-  const [stripeLoadError, setStripeLoadError] = useState<string | null>(null);
-  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  // Stripe Checkout hosted state — pas de Stripe.js, simple redirection
   const [orderId, setOrderId] = useState<string | null>(null);
   const [orderNumber, setOrderNumber] = useState<string | null>(null);
   const [initLoading, setInitLoading] = useState(false);
   const [initError, setInitError] = useState<string | null>(null);
-  const [initErrorStage, setInitErrorStage] = useState<"order" | "intent" | null>(null);
-
-  const [stripeLoadAttempt, setStripeLoadAttempt] = useState(0);
-  const [stripeSlow, setStripeSlow] = useState(false);
-
-  // Lazy-init Stripe.js (re-trigger on retry)
-  useEffect(() => {
-    setStripeReady(false);
-    setStripeLoadError(null);
-    setStripeSlow(false);
-    const promise = getStripe();
-    setStripePromise(promise);
-    const slowTimer = setTimeout(() => setStripeSlow(true), 6000);
-    let cancelled = false;
-    promise.then((stripe) => {
-      if (cancelled) return;
-      clearTimeout(slowTimer);
-      if (stripe) {
-        setStripeReady(true);
-      } else {
-        setStripeLoadError(
-          getStripeLoadError() ||
-            "Stripe.js n'a pas pu se charger. Vérifiez votre connexion ou désactivez les bloqueurs de scripts."
-        );
-      }
-    });
-    return () => {
-      cancelled = true;
-      clearTimeout(slowTimer);
-    };
-  }, [stripeLoadAttempt]);
-
-  const retryStripeLoad = useCallback(() => {
-    resetStripe();
-    setStripeLoadAttempt((n) => n + 1);
-  }, []);
-
-  const [initStarted, setInitStarted] = useState(false);
+  const [initErrorStage, setInitErrorStage] = useState<"order" | "session" | null>(null);
   const [testMode, setTestMode] = useState(false);
-  // When entering step 3 with no clientSecret yet, create order + payment intent
-  useEffect(() => {
-    if (step !== 3 || clientSecret || initStarted || testMode) return;
-    setInitStarted(true);
-    let cancelled = false;
-    (async () => {
-      setInitLoading(true);
-      setInitError(null);
-      setInitErrorStage(null);
-      let stage: "order" | "intent" = "order";
-      try {
+
+  const handlePlaceOrder = useCallback(async () => {
+    if (submitting || initLoading) return;
+    setSubmitting(true);
+    setInitLoading(true);
+    setInitError(null);
+    setInitErrorStage(null);
+    let stage: "order" | "session" = "order";
+    let oid = orderId;
+    let onum = orderNumber;
+    try {
+      // Step 1 : create order if not already created
+      if (!oid || !onum) {
         const finalBilling = sameAsBilling ? shippingAddr : billingAddr;
         const order = await createOrder.mutateAsync({
           shippingAddress: formatAddr(shippingAddr),
@@ -203,36 +164,38 @@ export default function CheckoutPage() {
             unit_price_incl_vat: item.price_incl_vat || item.price_excl_vat || 0,
           })),
         });
-        if (cancelled) return;
-        setOrderId(order.id);
-        setOrderNumber(order.order_number);
-
-        stage = "intent";
-        const { data, error } = await supabase.functions.invoke("stripe-checkout", {
-          body: { action: "create-payment-intent", order_id: order.id },
-        });
-        if (cancelled) return;
-        if (error || !data?.client_secret) {
-          throw new Error(error?.message || data?.error || "Initialisation paiement impossible");
-        }
-        setClientSecret(data.client_secret);
-      } catch (e: any) {
-        if (!cancelled) {
-          setInitError(e.message || "Erreur d'initialisation");
-          setInitErrorStage(stage);
-          setInitStarted(false); // allow retry
-          toast.error(
-            stage === "order"
-              ? "Création de commande impossible : " + (e.message || "Réessayez")
-              : "Initialisation paiement impossible : " + (e.message || "Réessayez")
-          );
-        }
-      } finally {
-        if (!cancelled) setInitLoading(false);
+        oid = order.id;
+        onum = order.order_number;
+        setOrderId(oid);
+        setOrderNumber(onum);
       }
-    })();
-    return () => { cancelled = true; };
-  }, [step, clientSecret, initStarted]);
+
+      // Step 2 : create Stripe Checkout session
+      stage = "session";
+      const { data, error } = await supabase.functions.invoke("stripe-checkout", {
+        body: { action: "create-checkout-session", order_id: oid },
+      });
+      if (error || !data?.url) {
+        throw new Error(error?.message || data?.error || "Création de la session Stripe impossible");
+      }
+
+      // Step 3 : redirect to Stripe-hosted checkout
+      window.location.href = data.url as string;
+    } catch (e: any) {
+      setInitError(e.message || "Erreur");
+      setInitErrorStage(stage);
+      toast.error(
+        stage === "order"
+          ? "Création de commande impossible : " + (e.message || "Réessayez")
+          : "Redirection vers Stripe impossible : " + (e.message || "Réessayez")
+      );
+      setSubmitting(false);
+      setInitLoading(false);
+    }
+  }, [
+    submitting, initLoading, orderId, orderNumber, sameAsBilling, shippingAddr, billingAddr,
+    paymentMethods, payment, subtotal, total, items, createOrder,
+  ]);
 
 
   const handlePaymentSuccess = useCallback(async () => {

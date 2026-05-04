@@ -9,6 +9,7 @@ import { installGlobalErrorReporting } from "@/lib/errorReporter";
 import {
   checkSupabaseEnv,
   renderSupabaseEnvError,
+  type SupabaseEnvCheck,
 } from "@/lib/supabase-env-validation";
 
 installViteChunkReloadGuard();

@@ -47,8 +47,44 @@ export function PvpEconomyBadge({
   const { data: vatInfo } = useProductVatRate(productId);
   const vatRate = vatInfo?.vat_rate ?? 21;
 
-  if (!pvp) return null;
-  const margin = computeResaleMargin(pvp.pvpTtc, buyerPriceTtc);
+  const margin = pvp ? computeResaleMargin(pvp.pvpTtc, buyerPriceTtc) : null;
+  const isPositive = (margin?.marginAmount ?? 0) > 0;
+  const isNegative = (margin?.marginAmount ?? 0) < 0;
+  const isZero = margin?.marginAmount === 0;
+
+  // Hook must be declared unconditionally (before any early return) — otherwise
+  // mounting/unmounting the badge as data loads triggers
+  // "Rendered more hooks than during the previous render".
+  const loggedKeyRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (variant !== "card" || !isNegative || !margin || !pvp) return;
+    const key = `${productId}|${offerId ?? "noid"}`;
+    if (loggedKeyRef.current === key) return;
+    loggedKeyRef.current = key;
+    const sessionKey = `pvp-neg-margin-logged:${key}`;
+    if (typeof window !== "undefined" && sessionStorage.getItem(sessionKey)) return;
+    if (typeof window !== "undefined") sessionStorage.setItem(sessionKey, "1");
+    supabase
+      .rpc("log_offer_data_issue", {
+        _product_id: productId,
+        _offer_id: offerId ?? productId,
+        _issue_code: "negative_margin_vs_pvp",
+        _details: {
+          pvp_ttc: pvp.pvpTtc,
+          pvp_source: pvp.source,
+          buyer_price_ttc: buyerPriceTtc,
+          buyer_price_htva: buyerPriceHtva ?? null,
+          margin_amount: margin.marginAmount,
+          margin_pct: margin.marginPct,
+          country_code: countryCode,
+        },
+      } as any)
+      .then(({ error }: any) => {
+        if (error) console.warn("[PvpEconomyBadge] log_offer_data_issue failed", error);
+      });
+  }, [variant, isNegative, margin, productId, offerId, pvp, buyerPriceTtc, buyerPriceHtva, countryCode]);
+
+  if (!pvp || !margin) return null;
 
   // Variant inline : ancien comportement, n'affiche que si marge positive
   if (variant === "inline") {

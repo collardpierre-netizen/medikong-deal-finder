@@ -162,8 +162,9 @@ async function handlePaymentSucceeded(pi: Stripe.PaymentIntent) {
 
     const stripeAccountId = vendor?.stripe_account_id || vb.stripe_account_id;
     const commRate = Number(vendor?.commission_rate ?? vb.commission_rate);
-    const commissionAmount = Math.round(vb.subtotal * commRate);
+    const commissionAmount = Math.round(vb.subtotal * commRate / 100);
     const transferAmount = vb.subtotal - commissionAmount;
+    if (transferAmount < 0) throw new Error(`Negative transfer_amount: ${transferAmount}`);
 
     let stripeTransferId: string | null = null;
 

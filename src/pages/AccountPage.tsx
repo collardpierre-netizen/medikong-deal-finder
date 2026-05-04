@@ -643,6 +643,47 @@ export default function AccountPage() {
                               );
                             })}
                           </motion.div>
+                          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mt-4 text-sm">
+                            <div className="text-mk-sec">
+                              {filteredOrders.length === 0 ? "0 commande" : (
+                                <>
+                                  {(orderPageSafe - 1) * orderPageSize + 1}–{Math.min(orderPageSafe * orderPageSize, filteredOrders.length)} sur {filteredOrders.length}
+                                </>
+                              )}
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <label htmlFor="order-page-size" className="text-xs text-mk-sec">Par page</label>
+                              <select
+                                id="order-page-size"
+                                value={orderPageSize}
+                                onChange={(e) => setOrderPageSize(parseInt(e.target.value, 10))}
+                                className="border border-mk-line rounded-md px-2 py-1.5 text-sm bg-background"
+                              >
+                                {ORDER_PAGE_SIZES.map((s) => (
+                                  <option key={s} value={s}>{s}</option>
+                                ))}
+                              </select>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                disabled={orderPageSafe <= 1}
+                                onClick={() => setOrderPage(orderPageSafe - 1)}
+                              >
+                                Précédent
+                              </Button>
+                              <span className="text-mk-sec text-xs px-1">
+                                Page {orderPageSafe} / {orderTotalPages}
+                              </span>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                disabled={orderPageSafe >= orderTotalPages}
+                                onClick={() => setOrderPage(orderPageSafe + 1)}
+                              >
+                                Suivant
+                              </Button>
+                            </div>
+                          </div>
                         </>
                       )}
                     </div>

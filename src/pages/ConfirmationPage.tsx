@@ -259,6 +259,29 @@ export default function ConfirmationPage() {
             {isTest && (
               <p className="text-[11px] text-mk-sec mt-2 text-center">Mode test : aucun paiement carte n'a été effectué.</p>
             )}
+            {history.length > 0 && (
+              <details className="mt-3 text-[11px] text-mk-sec">
+                <summary className="cursor-pointer inline-flex items-center gap-1 hover:text-mk-navy select-none">
+                  <Clock size={11} /> Historique des statuts ({history.length})
+                </summary>
+                <ol className="mt-2 space-y-1 border-l border-mk-line pl-3">
+                  {history.map((entry, i) => {
+                    const d = new Date(entry.at);
+                    const isLast = i === history.length - 1;
+                    return (
+                      <li key={`${entry.status}-${entry.at}-${i}`} className="flex items-baseline gap-2">
+                        <span className={`w-1.5 h-1.5 rounded-full -ml-[14px] ${isLast ? "bg-mk-blue" : "bg-mk-line"}`} />
+                        <span className={`font-medium ${isLast ? "text-mk-navy" : "text-mk-sec"}`}>
+                          {statusLabels[entry.status] || entry.status}
+                        </span>
+                        <span className="text-mk-sec">·</span>
+                        <span>{d.toLocaleDateString("fr-BE")} {d.toLocaleTimeString("fr-BE", { hour: "2-digit", minute: "2-digit" })}</span>
+                      </li>
+                    );
+                  })}
+                </ol>
+              </details>
+            )}
           </motion.div>
 
           <motion.div className="bg-mk-alt rounded-lg p-5 md:p-6 mb-6 text-left"

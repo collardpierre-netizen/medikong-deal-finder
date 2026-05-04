@@ -405,7 +405,7 @@ export default function CartPage() {
                                     )}
                                     <button
                                       className="text-mk-ter hover:text-mk-red transition-colors p-1"
-                                      onClick={() => removeFromCart.mutate(item.id)}
+                                      onClick={() => { removeFromCart.mutate(item.id); scrollTop(); }}
                                     >
                                       <Trash2 size={15} />
                                     </button>

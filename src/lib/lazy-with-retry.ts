@@ -27,8 +27,49 @@ function isChunkLoadError(error: unknown) {
     message.includes("loading chunk") ||
     message.includes("chunkloaderror") ||
     message.includes("module script") ||
-    message.includes("network")
+    message.includes("network") ||
+    // HTML-instead-of-JS responses (SPA fallback / 404 page returned with text/html)
+    message.includes("text/html") ||
+    message.includes("mime type") ||
+    message.includes("expected a javascript") ||
+    message.includes("html-document") ||
+    message.includes("not a valid javascript")
   );
+}
+
+/**
+ * Probes a URL to verify the server responds with a JavaScript MIME type.
+ * Returns true when the response looks like HTML (SPA fallback / 404 page),
+ * which means the dynamic import would silently produce an unusable module.
+ */
+async function isHtmlResponse(url: string): Promise<boolean> {
+  try {
+    const res = await fetch(url, {
+      method: "GET",
+      cache: "no-store",
+      credentials: "same-origin",
+    });
+    if (!res.ok) return true; // 4xx/5xx served as HTML error page
+    const ct = (res.headers.get("content-type") || "").toLowerCase();
+    if (!ct) return false;
+    if (ct.includes("text/html")) return true;
+    if (
+      ct.includes("javascript") ||
+      ct.includes("ecmascript") ||
+      ct.includes("module")
+    ) {
+      return false;
+    }
+    // Unknown content-type: peek at first bytes to detect "<!doctype" / "<html"
+    try {
+      const text = (await res.text()).slice(0, 64).trim().toLowerCase();
+      return text.startsWith("<!doctype") || text.startsWith("<html") || text.startsWith("<");
+    } catch {
+      return false;
+    }
+  } catch {
+    return false;
+  }
 }
 
 function readInt(key: string): number {

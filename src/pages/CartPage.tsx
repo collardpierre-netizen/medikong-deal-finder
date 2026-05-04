@@ -45,6 +45,9 @@ export default function CartPage() {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   }, []);
 
+  // Helper: scroll to top after a cart mutation completes
+  const scrollTop = () => window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+
   // Fetch real vendor data for all vendor_ids in cart
   const vendorIds = useMemo(() => [...new Set(items.map(i => i.vendor_id).filter(Boolean))], [items]) as string[];
   const { getMovForVendor } = useVendorMov(vendorIds);

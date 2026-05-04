@@ -86,7 +86,7 @@ export function ExternalVendorLogo({
 
   return (
     <img
-      src={logoUrl!}
+      src={proxiedSrc!}
       alt={name || "Vendeur externe"}
       referrerPolicy="no-referrer"
       style={dim}

@@ -106,8 +106,9 @@ Deno.serve(async (req) => {
         const subtotalEur = vendorTotals[vid];
         const subtotalCents = Math.round(subtotalEur * 100);
         const commRate = vendor?.commission_rate ?? defaultCommission;
-        const commissionCents = Math.round(subtotalCents * Number(commRate));
+        const commissionCents = Math.round(subtotalCents * Number(commRate) / 100);
         const transferCents = subtotalCents - commissionCents;
+        if (transferCents < 0) throw new Error(`Negative transfer_amount: ${transferCents}`);
 
         return {
           vendor_id: vid,

@@ -145,13 +145,23 @@ export class LazyRouteBoundary extends Component<Props, State> {
               ? `Le chargement a échoué après ${attempts} rechargement${attempts > 1 ? "s" : ""} automatique${attempts > 1 ? "s" : ""}. Vérifiez votre connexion puis réessayez manuellement.`
               : "Une nouvelle version du site est peut-être disponible, ou votre connexion a été interrompue. Réessayez pour continuer."}
           </p>
-          <button
-            onClick={this.handleRetry}
-            className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-md text-sm font-semibold hover:opacity-90 transition-opacity"
-          >
-            <RefreshCw size={14} />
-            Recharger la page
-          </button>
+          <div className="flex flex-col sm:flex-row gap-2 justify-center">
+            <button
+              onClick={this.handleRetry}
+              className="inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-md text-sm font-semibold hover:opacity-90 transition-opacity"
+            >
+              <RefreshCw size={14} />
+              Recharger la page
+            </button>
+            <button
+              onClick={this.handleHardReset}
+              className="inline-flex items-center justify-center gap-2 border border-border bg-background text-foreground px-4 py-2 rounded-md text-sm font-medium hover:bg-muted transition-colors"
+              title="Vide le cache local et les service workers, puis recharge"
+            >
+              <Trash2 size={14} />
+              Vider le cache et recharger
+            </button>
+          </div>
           {import.meta.env.DEV && (
             <pre className="mt-6 text-[11px] text-left text-muted-foreground bg-muted/40 rounded p-2 overflow-auto max-h-32">
               {error.message}

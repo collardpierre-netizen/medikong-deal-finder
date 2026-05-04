@@ -125,6 +125,8 @@ export default function CheckoutPage() {
 
   // Stripe state
   const [stripePromise, setStripePromise] = useState<Promise<Stripe | null> | null>(null);
+  const [stripeReady, setStripeReady] = useState(false);
+  const [stripeLoadError, setStripeLoadError] = useState<string | null>(null);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [orderId, setOrderId] = useState<string | null>(null);
   const [orderNumber, setOrderNumber] = useState<string | null>(null);
@@ -133,7 +135,16 @@ export default function CheckoutPage() {
 
   // Lazy-init Stripe.js once
   useEffect(() => {
-    if (!stripePromise) setStripePromise(getStripe());
+    if (stripePromise) return;
+    const promise = getStripe();
+    setStripePromise(promise);
+    promise.then((stripe) => {
+      if (stripe) {
+        setStripeReady(true);
+      } else {
+        setStripeLoadError("Le paiement carte ne peut pas se charger dans ce navigateur. La commande peut quand même être enregistrée pour test.");
+      }
+    });
   }, [stripePromise]);
 
   const [initStarted, setInitStarted] = useState(false);
@@ -217,6 +228,16 @@ export default function CheckoutPage() {
     clearCart.mutate();
     navigate(`/confirmation?order=${orderNumber}`);
   }, [orderId, orderNumber, user, total, items, shippingAddr, payment, clearCart, navigate]);
+
+  const handleTestOrderConfirmation = useCallback(async () => {
+    if (!orderId || !orderNumber || submitting) return;
+    setSubmitting(true);
+    try {
+      await handlePaymentSuccess();
+    } finally {
+      setSubmitting(false);
+    }
+  }, [orderId, orderNumber, submitting, handlePaymentSuccess]);
 
   if (!user) {
     return (
@@ -383,7 +404,27 @@ export default function CheckoutPage() {
                           </button>
                         </div>
                       )}
-                      {clientSecret && stripePromise && (
+                      {clientSecret && !stripeReady && !stripeLoadError && (
+                        <div className="flex items-center gap-2 text-sm text-mk-sec py-6 justify-center">
+                          <Loader2 size={16} className="animate-spin" /> Chargement du module carte...
+                        </div>
+                      )}
+                      {stripeLoadError && !initLoading && (
+                        <div className="rounded-md border border-mk-line bg-mk-alt p-3 space-y-3">
+                          <p className="text-sm text-mk-navy">{stripeLoadError}</p>
+                          {orderId && orderNumber && (
+                            <button
+                              type="button"
+                              onClick={handleTestOrderConfirmation}
+                              disabled={submitting}
+                              className="bg-mk-navy text-white font-bold text-sm px-4 py-2 rounded-md disabled:opacity-60"
+                            >
+                              {submitting ? "Validation..." : "Poursuivre le test sans paiement carte"}
+                            </button>
+                          )}
+                        </div>
+                      )}
+                      {clientSecret && stripePromise && stripeReady && (
                         <Elements
                           stripe={stripePromise}
                           options={{ clientSecret, appearance: { theme: "stripe" } } satisfies StripeElementsOptions}

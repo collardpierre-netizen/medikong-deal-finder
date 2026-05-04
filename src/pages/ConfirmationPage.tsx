@@ -344,7 +344,7 @@ export default function ConfirmationPage() {
           )}
 
           <div className="flex flex-col sm:flex-row justify-center gap-3 mb-8">
-            <Link to="/compte" className="bg-mk-blue text-white text-sm font-semibold px-5 py-2.5 rounded-md">Mes commandes</Link>
+            <Link to="/compte?tab=commandes" className="bg-mk-blue text-white text-sm font-semibold px-5 py-2.5 rounded-md">Mes commandes</Link>
             <Link to="/recherche" className="border border-mk-navy text-mk-navy text-sm font-semibold px-5 py-2.5 rounded-md">Retour aux achats</Link>
           </div>
 

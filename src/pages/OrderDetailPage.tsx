@@ -2,78 +2,113 @@ import { Layout } from "@/components/layout/Layout";
 import { useParams, Link } from "react-router-dom";
 import { Download } from "lucide-react";
 import { formatPrice } from "@/data/mock";
-
-const timeline = ["Confirmee", "En preparation", "Expediee", "Livree"];
+import { useOrderDetail } from "@/hooks/useOrders";
+import { ORDER_WORKFLOW_STEPS, getOrderStatusMeta, formatOrderDateTime } from "@/lib/order-status";
 
 export default function OrderDetailPage() {
   const { id } = useParams();
-  const currentStep = 2;
+  const { data: order, isLoading } = useOrderDetail(id || "");
 
-  const items = [
-    { name: "Gants nitrile Aurelia x200", qty: 2, price: 12.90 },
-    { name: "Sekusept Aktiv 6kg", qty: 1, price: 33.59 },
-    { name: "Masques FFP2 Kolmi x50", qty: 3, price: 18.50 },
-  ];
-  const total = items.reduce((s, i) => s + i.qty * i.price, 0);
+  const meta = getOrderStatusMeta(order?.status);
+  const currentStep = meta.step; // -1 si hors workflow
+  const items: any[] = (order as any)?.items || [];
+  const subtotal = Number((order as any)?.subtotal_excl_vat || 0);
+  const vat = Number((order as any)?.vat_amount || 0);
+  const shipping = Number((order as any)?.shipping_cost || 0);
+  const total = Number((order as any)?.total_incl_vat || 0);
+  const shippingAddr: any = (order as any)?.shipping_address || {};
 
   return (
     <Layout>
       <div className="mk-container py-6 md:py-8">
         <div className="text-xs text-mk-sec mb-4">
-          <Link to="/" className="hover:text-mk-blue">Accueil</Link> &gt; <Link to="/compte" className="hover:text-mk-blue">Mon compte</Link> &gt; Commandes &gt; #{id}
-        </div>
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-3">
-          <h1 className="text-2xl md:text-[28px] font-bold text-mk-navy">Commande #{id}</h1>
-          <button className="border border-mk-line text-sm px-4 py-2 rounded-md text-mk-sec flex items-center gap-1.5"><Download size={14} /> Telecharger facture</button>
+          <Link to="/" className="hover:text-mk-blue">Accueil</Link> &gt;{" "}
+          <Link to="/compte?tab=commandes" className="hover:text-mk-blue">Mon compte</Link> &gt; Commandes &gt; #{(order as any)?.order_number || id}
         </div>
 
-        {/* Timeline */}
-        <div className="bg-mk-alt rounded-lg p-4 md:p-6 mb-8 overflow-x-auto">
-          <div className="flex items-center justify-between min-w-[400px]">
-            {timeline.map((s, i) => (
-              <div key={s} className="flex items-center gap-2 md:gap-3">
-                <div className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center text-xs md:text-sm font-bold ${i <= currentStep ? "bg-mk-green text-white" : "bg-mk-line text-mk-sec"}`}>
-                  {i + 1}
-                </div>
-                <span className={`text-xs md:text-sm ${i <= currentStep ? "font-bold text-mk-navy" : "text-mk-sec"}`}>{s}</span>
-                {i < 3 && <div className={`w-6 md:w-12 h-0.5 ${i < currentStep ? "bg-mk-green" : "bg-mk-line"}`} />}
-              </div>
-            ))}
-          </div>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-2 gap-3">
+          <h1 className="text-2xl md:text-[28px] font-bold text-mk-navy">Commande #{(order as any)?.order_number || id}</h1>
+          <button className="border border-mk-line text-sm px-4 py-2 rounded-md text-mk-sec flex items-center gap-1.5">
+            <Download size={14} /> Télécharger facture
+          </button>
         </div>
+
+        {/* Date + statut */}
+        <div className="flex flex-wrap items-center gap-3 mb-6">
+          <span className="text-sm text-mk-sec">Passée le {formatOrderDateTime((order as any)?.created_at)}</span>
+          <span className={`text-xs font-medium px-2.5 py-1 rounded ${meta.badgeClass}`}>{meta.label}</span>
+        </div>
+
+        {/* Timeline dynamique */}
+        {currentStep >= 0 ? (
+          <div className="bg-mk-alt rounded-lg p-4 md:p-6 mb-8 overflow-x-auto">
+            <div className="flex items-center justify-between min-w-[520px]">
+              {ORDER_WORKFLOW_STEPS.map((s, i) => (
+                <div key={s.key} className="flex items-center gap-2 md:gap-3">
+                  <div className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center text-xs md:text-sm font-bold ${i <= currentStep ? "bg-mk-green text-white" : "bg-mk-line text-mk-sec"}`}>
+                    {i + 1}
+                  </div>
+                  <span className={`text-xs md:text-sm ${i <= currentStep ? "font-bold text-mk-navy" : "text-mk-sec"}`}>{s.label}</span>
+                  {i < ORDER_WORKFLOW_STEPS.length - 1 && (
+                    <div className={`w-6 md:w-12 h-0.5 ${i < currentStep ? "bg-mk-green" : "bg-mk-line"}`} />
+                  )}
+                </div>
+              ))}
+            </div>
+            {currentStep === 0 && (
+              <p className="text-xs text-mk-sec mt-3">
+                ⏳ Votre commande est confirmée et a été transmise au vendeur. En attente d'acceptation.
+              </p>
+            )}
+          </div>
+        ) : (
+          <div className={`rounded-lg p-4 mb-8 ${meta.badgeClass}`}>
+            <p className="text-sm font-medium">{meta.label}</p>
+          </div>
+        )}
 
         {/* Articles */}
-        <div className="border border-mk-line rounded-lg overflow-x-auto mb-8">
+        <div className="border border-mk-line rounded-lg overflow-x-auto mb-6">
           <div className="grid grid-cols-4 gap-3 px-4 py-2 bg-mk-alt text-xs font-semibold text-mk-sec min-w-[400px]">
-            <span>Produit</span><span>Quantite</span><span>Prix/u</span><span>Montant</span>
+            <span>Produit</span><span>Quantité</span><span>Prix/u HTVA</span><span>Montant HTVA</span>
           </div>
-          {items.map(i => (
-            <div key={i.name} className="grid grid-cols-4 gap-3 px-4 py-3 border-t border-mk-line text-sm items-center min-w-[400px]">
-              <span className="font-medium text-mk-navy">{i.name}</span>
-              <span className="text-mk-sec">{i.qty}</span>
-              <span className="text-mk-sec">{formatPrice(i.price)} EUR</span>
-              <span className="font-bold text-mk-navy">{formatPrice(i.qty * i.price)} EUR</span>
+          {isLoading ? (
+            <div className="px-4 py-6 text-sm text-mk-sec">Chargement…</div>
+          ) : items.length === 0 ? (
+            <div className="px-4 py-6 text-sm text-mk-sec">Aucun article</div>
+          ) : items.map((it, idx) => (
+            <div key={it.id || idx} className="grid grid-cols-4 gap-3 px-4 py-3 border-t border-mk-line text-sm items-center min-w-[400px]">
+              <span className="font-medium text-mk-navy">{it.product_name || it.name || "—"}</span>
+              <span className="text-mk-sec">{it.quantity}</span>
+              <span className="text-mk-sec">{formatPrice(Number(it.unit_price_excl_vat || 0))} EUR</span>
+              <span className="font-bold text-mk-navy">{formatPrice(Number(it.unit_price_excl_vat || 0) * Number(it.quantity || 0))} EUR</span>
             </div>
           ))}
-          <div className="grid grid-cols-4 gap-3 px-4 py-3 border-t border-mk-line bg-mk-alt min-w-[400px]">
-            <span className="col-span-3 text-right font-bold text-mk-navy text-sm">Total</span>
-            <span className="font-bold text-mk-navy text-sm">{formatPrice(total)} EUR</span>
+          <div className="border-t border-mk-line bg-mk-alt px-4 py-3 text-sm space-y-1 min-w-[400px]">
+            <div className="flex justify-between"><span className="text-mk-sec">Sous-total HTVA</span><span className="text-mk-navy">{formatPrice(subtotal)} EUR</span></div>
+            {shipping > 0 && <div className="flex justify-between"><span className="text-mk-sec">Livraison</span><span className="text-mk-navy">{formatPrice(shipping)} EUR</span></div>}
+            <div className="flex justify-between"><span className="text-mk-sec">TVA</span><span className="text-mk-navy">{formatPrice(vat)} EUR</span></div>
+            <div className="flex justify-between pt-1 border-t border-mk-line"><span className="font-bold text-mk-navy">Total TTC</span><span className="font-bold text-mk-navy">{formatPrice(total)} EUR</span></div>
           </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
           <div className="border border-mk-line rounded-lg p-5">
             <p className="text-xs text-mk-sec mb-1">Adresse de livraison</p>
-            <p className="text-sm text-mk-navy">23 rue de la Procession<br />B-7822 Ath, Belgique</p>
+            <p className="text-sm text-mk-navy">
+              {shippingAddr.line1 || "—"}
+              {shippingAddr.postal_code || shippingAddr.city ? <><br />{shippingAddr.postal_code} {shippingAddr.city}</> : null}
+              {shippingAddr.country ? <><br />{shippingAddr.country}</> : null}
+            </p>
           </div>
           <div className="border border-mk-line rounded-lg p-5">
             <p className="text-xs text-mk-sec mb-1">Paiement</p>
-            <p className="text-sm text-mk-navy">Carte bancaire ****4567</p>
+            <p className="text-sm text-mk-navy capitalize">{(order as any)?.payment_method || "—"}</p>
             <p className="text-sm font-bold text-mk-navy mt-1">{formatPrice(total)} EUR</p>
           </div>
         </div>
 
-        <button className="border border-mk-red text-mk-red text-sm px-4 py-2 rounded-md">Signaler un probleme</button>
+        <button className="border border-mk-red text-mk-red text-sm px-4 py-2 rounded-md">Signaler un problème</button>
       </div>
     </Layout>
   );

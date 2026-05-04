@@ -1,5 +1,5 @@
 import { Layout } from "@/components/layout/Layout";
-import { Check, Truck, Shield } from "lucide-react";
+import { Check, Truck, Shield, RefreshCw } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { PageTransition } from "@/components/shared/PageTransition";
@@ -7,16 +7,27 @@ import { formatPrice } from "@/data/mock";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useState, useEffect } from "react";
 
 export default function ConfirmationPage() {
   const [searchParams] = useSearchParams();
   const orderNumber = searchParams.get("order") || "";
   const isTest = searchParams.get("test") === "1";
   const { user } = useAuth();
+  const [lastChecked, setLastChecked] = useState<Date>(new Date());
 
-  const { data: order } = useQuery({
+  const { data: order, isFetching, refetch, dataUpdatedAt } = useQuery({
     queryKey: ["order-confirmation", orderNumber],
     enabled: !!user && !!orderNumber,
+    refetchInterval: (query) => {
+      const status = (query.state.data as any)?.status;
+      // Stop polling once final state reached
+      if (status && ["confirmed", "paid", "shipped", "delivered", "cancelled", "failed"].includes(status)) {
+        return false;
+      }
+      return 5000;
+    },
+    refetchOnWindowFocus: true,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
@@ -27,6 +38,14 @@ export default function ConfirmationPage() {
       return data;
     },
   });
+
+  useEffect(() => {
+    if (dataUpdatedAt) setLastChecked(new Date(dataUpdatedAt));
+  }, [dataUpdatedAt]);
+
+  const status = (order as any)?.status as string | undefined;
+  const paymentDone = isTest || !!status && !["pending", "pending_payment", "draft"].includes(status);
+  const confirmed = !!status && ["confirmed", "paid", "shipped", "delivered"].includes(status);
 
   const deliveryDate = new Date();
   deliveryDate.setDate(deliveryDate.getDate() + 7);

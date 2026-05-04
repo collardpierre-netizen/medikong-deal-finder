@@ -525,18 +525,28 @@ export default function CheckoutPage() {
                         </div>
                       )}
                       {!testMode && stripeLoadError && !initLoading && (
-                        <div className="rounded-md border border-mk-line bg-mk-alt p-3 space-y-3">
+                        <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3 space-y-3">
+                          <p className="text-sm font-semibold text-destructive">Impossible de charger Stripe.js</p>
                           <p className="text-sm text-mk-navy">{stripeLoadError}</p>
-                          {orderId && orderNumber && (
+                          <div className="flex flex-wrap gap-2">
                             <button
                               type="button"
-                              onClick={handleTestOrderConfirmation}
-                              disabled={submitting}
-                              className="bg-mk-navy text-white font-bold text-sm px-4 py-2 rounded-md disabled:opacity-60"
+                              onClick={retryStripeLoad}
+                              className="bg-mk-blue text-white font-bold text-sm px-4 py-2 rounded-md"
                             >
-                              {submitting ? "Validation..." : "Poursuivre le test sans paiement carte"}
+                              Relancer le chargement de Stripe.js
                             </button>
-                          )}
+                            {orderId && orderNumber && (
+                              <button
+                                type="button"
+                                onClick={handleTestOrderConfirmation}
+                                disabled={submitting}
+                                className="border border-mk-navy text-mk-navy font-bold text-sm px-4 py-2 rounded-md disabled:opacity-60"
+                              >
+                                {submitting ? "Validation..." : "Poursuivre en mode test"}
+                              </button>
+                            )}
+                          </div>
                         </div>
                       )}
                       {!testMode && clientSecret && stripePromise && stripeReady && (

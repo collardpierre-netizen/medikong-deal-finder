@@ -289,6 +289,12 @@ async function handlePaymentSucceeded(pi: Stripe.PaymentIntent) {
     status: "confirmed",
     payment_status: "paid",
   }).eq("id", orderId);
+  // Fan-out vendeurs : sub_orders + notif cloche + email "nouvelle commande"
+  try {
+    await supabase.functions.invoke("notify-vendors-new-order", { body: { orderId } });
+  } catch (e) {
+    console.error("[stripe-webhook] notify-vendors-new-order failed", e);
+  }
 }
 
 async function handlePaymentFailed(pi: Stripe.PaymentIntent) {

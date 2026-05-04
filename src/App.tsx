@@ -242,6 +242,7 @@ const RestockAdminPriceReferences = lazyWithRetry(() => import("./pages/restock/
 const RestockAdminPayouts = lazyWithRetry(() => import("./pages/restock/RestockAdminPayouts"), "RestockAdminPayouts");
 const RestockSellerReferral = lazyWithRetry(() => import("./pages/restock/RestockSellerReferral"), "RestockSellerReferral");
 const RestockCheckout = lazyWithRetry(() => import("./pages/restock/RestockCheckout"), "RestockCheckout");
+const PitchdeckRedirect = lazyWithRetry(() => import("./pages/PitchdeckRedirect"), "PitchdeckRedirect");
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -275,6 +276,7 @@ const App = () => (
           <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="/" element={<LP><HomePage /></LP>} />
+            <Route path="/pitchdeck" element={<PitchdeckRedirect />} />
             <Route path="/recherche" element={<LP><SearchResultsPage /></LP>} />
             <Route path="/produit/:slug" element={<LP><SafeBoundary label="la fiche produit"><ProductPage /></SafeBoundary></LP>} />
             <Route path="/marques" element={<LP><BrandsPage /></LP>} />

@@ -660,6 +660,7 @@ async function syncOffers(
           progress_message: `${country}: pause timeout — ${batchStart}/${total} (reprendra au prochain clic)`,
         })
         .eq("id", logId);
+      scheduleNextChunk({ country, multi_vendor: fetchMultiVendor });
       return stats;
     }
 

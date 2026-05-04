@@ -602,7 +602,12 @@ export default function AccountPage() {
                                   <Link to={`/commande/${o.id}`} className="grid grid-cols-5 gap-3 px-4 py-3 border-t border-mk-line text-sm items-center hover:bg-mk-alt">
                                     <span className="font-medium text-mk-navy">{o.order_number}</span>
                                     <span className="text-mk-sec">{formatOrderDateTime(o.created_at)}</span>
-                                    <span className={`text-xs font-medium px-2 py-0.5 rounded w-fit ${meta.badgeClass}`}>{meta.label}</span>
+                                    <span className="flex flex-col gap-0.5">
+                                      <span className={`text-xs font-medium px-2 py-0.5 rounded w-fit ${meta.badgeClass}`}>{meta.label}</span>
+                                      {o.updated_at && o.updated_at !== o.created_at && (
+                                        <span className="text-[11px] text-mk-sec">MAJ : {formatOrderDateTime(o.updated_at)}</span>
+                                      )}
+                                    </span>
                                     <span className="font-bold text-mk-navy">{formatPrice(Number(o.total_incl_vat))} EUR</span>
                                     <span className="flex justify-end">
                                       <Button size="sm" variant="outline" className="border-mk-blue text-mk-blue hover:bg-mk-blue hover:text-white">

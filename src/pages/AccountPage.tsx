@@ -611,7 +611,10 @@ export default function AccountPage() {
                                 ["# Statut", orderStatusFilter === "all" ? "Tous les statuts" : (statusLabelsCsv[orderStatusFilter] || orderStatusFilter)],
                                 ["# Tri par date de passage", orderSort === "desc" ? "Plus récentes d'abord" : "Plus anciennes d'abord"],
                                 ["# Nombre de commandes", String(filteredOrders.length)],
-                                ["# Exporté le", new Date().toLocaleString("fr-BE")],
+                                 ["# Page", String(orderPageSafe)],
+                                 ["# Taille de page", String(orderPageSize)],
+                                 ["# Pages totales", String(orderTotalPages)],
+                                 ["# Exporté le", new Date().toLocaleString("fr-BE")],
                                 [],
                               ];
                               const csv = "\uFEFF" + [...meta, header, ...rows]

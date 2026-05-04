@@ -40,6 +40,11 @@ export default function CartPage() {
   const [filter, setFilter] = useState<FilterType>("all");
   const [remark, setRemark] = useState("");
 
+  // Scroll to top when arriving on cart page (e.g. after "Ajouter au panier")
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, []);
+
   // Fetch real vendor data for all vendor_ids in cart
   const vendorIds = useMemo(() => [...new Set(items.map(i => i.vendor_id).filter(Boolean))], [items]) as string[];
   const { getMovForVendor } = useVendorMov(vendorIds);

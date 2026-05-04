@@ -410,3 +410,60 @@ export default function CheckoutPage() {
     </Layout>
   );
 }
+
+function StripePaymentForm({ onSuccess, onBack }: { onSuccess: () => void | Promise<void>; onBack: () => void }) {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [submitting, setSubmitting] = useState(false);
+  const [errMsg, setErrMsg] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!stripe || !elements || submitting) return;
+    setSubmitting(true);
+    setErrMsg(null);
+
+    const { error, paymentIntent } = await stripe.confirmPayment({
+      elements,
+      confirmParams: {
+        return_url: `${window.location.origin}/confirmation`,
+      },
+      redirect: "if_required",
+    });
+
+    if (error) {
+      const msg = error.message || "Paiement refusé";
+      setErrMsg(msg);
+      toast.error(msg);
+      setSubmitting(false);
+      return;
+    }
+
+    if (paymentIntent && (paymentIntent.status === "succeeded" || paymentIntent.status === "processing")) {
+      await onSuccess();
+      return;
+    }
+
+    // Fallback (e.g. requires_action handled via redirect)
+    setSubmitting(false);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <PaymentElement />
+      {errMsg && <p className="text-sm text-destructive">{errMsg}</p>}
+      <div className="flex gap-3 pt-2">
+        <button type="button" onClick={onBack} disabled={submitting}
+          className="border border-mk-navy text-mk-navy font-bold text-sm px-6 py-3 rounded-md disabled:opacity-50">
+          Retour
+        </button>
+        <button type="submit" disabled={!stripe || !elements || submitting}
+          className="bg-mk-green text-white font-bold text-sm px-6 py-3 rounded-md flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
+          {submitting && <Loader2 size={16} className="animate-spin" />}
+          {submitting ? "Traitement en cours..." : "Passer la commande"}
+        </button>
+      </div>
+    </form>
+  );
+}
+

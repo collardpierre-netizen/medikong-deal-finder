@@ -46,10 +46,13 @@ const fmt = (n: number) => n.toLocaleString("fr-BE", { minimumFractionDigits: 2,
 const AdminCommandes = () => {
   const { t } = useI18n();
   const { data: ordersData = [], isLoading } = useOrders();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<"list" | "timeline" | "aging" | "buyers">("list");
   const [statusFilter, setStatusFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [hideTest, setHideTest] = useState(true);
+  const [purgeOpen, setPurgeOpen] = useState(false);
+  const [purging, setPurging] = useState(false);
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
 
   const orders = ordersData.map(o => ({

@@ -147,6 +147,149 @@ Deno.serve(async (req) => {
       );
     }
 
+    if (action === "create-checkout-session") {
+      if (!order_id) {
+        return new Response(JSON.stringify({ error: "order_id requis" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Load order
+      const { data: order, error: orderErr } = await supabase
+        .from("orders")
+        .select("id, order_number, total_incl_vat, customer_id, stripe_session_id, stripe_payment_intent_id")
+        .eq("id", order_id)
+        .single();
+
+      if (orderErr || !order) {
+        return new Response(JSON.stringify({ error: "Commande introuvable" }), {
+          status: 404,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // IDOR check : caller must own this order via customers.auth_user_id
+      const { data: customer, error: custErr } = await supabase
+        .from("customers")
+        .select("id, auth_user_id")
+        .eq("id", order.customer_id)
+        .maybeSingle();
+
+      if (custErr || !customer || customer.auth_user_id !== caller.id) {
+        return new Response(JSON.stringify({ error: "Accès refusé" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // If a session already exists, return it (avoid duplicates)
+      if (order.stripe_session_id) {
+        try {
+          const existing = await stripe.checkout.sessions.retrieve(order.stripe_session_id);
+          if (existing && existing.url && existing.status === "open") {
+            return new Response(
+              JSON.stringify({ url: existing.url, session_id: existing.id }),
+              { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
+          }
+        } catch (e) {
+          console.warn("Existing session retrieval failed, creating a new one:", e);
+        }
+      }
+
+      // Load order lines with product info
+      const { data: lines } = await supabase
+        .from("order_lines")
+        .select("vendor_id, product_id, quantity, unit_price_incl_vat, line_total_incl_vat, product:products(name)")
+        .eq("order_id", order_id);
+
+      if (!lines || lines.length === 0) {
+        return new Response(JSON.stringify({ error: "Commande sans articles" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Build vendor breakdown (same logic as create-payment-intent)
+      const vendorTotals: Record<string, number> = {};
+      for (const line of lines) {
+        vendorTotals[line.vendor_id] =
+          (vendorTotals[line.vendor_id] || 0) + Number(line.line_total_incl_vat);
+      }
+      const vendorIds = Object.keys(vendorTotals);
+      const { data: vendors } = await supabase
+        .from("vendors")
+        .select("id, stripe_account_id, commission_rate, stripe_charges_enabled")
+        .in("id", vendorIds);
+      const vendorMap = new Map(vendors?.map((v) => [v.id, v]) || []);
+      const vendorBreakdown = vendorIds.map((vid) => {
+        const vendor = vendorMap.get(vid);
+        const subtotalCents = Math.round(vendorTotals[vid] * 100);
+        const commRate = vendor?.commission_rate ?? defaultCommission;
+        const commissionCents = Math.round(subtotalCents * Number(commRate));
+        return {
+          vendor_id: vid,
+          stripe_account_id: vendor?.stripe_account_id || null,
+          subtotal: subtotalCents,
+          commission_rate: Number(commRate),
+          commission_amount: commissionCents,
+          transfer_amount: subtotalCents - commissionCents,
+        };
+      });
+
+      // Build Stripe line_items from order_lines
+      const lineItems = lines.map((l: any) => ({
+        price_data: {
+          currency: "eur",
+          product_data: {
+            name: l.product?.name || `Produit ${l.product_id}`,
+            metadata: { product_id: String(l.product_id) },
+          },
+          unit_amount: Math.round(Number(l.unit_price_incl_vat) * 100),
+        },
+        quantity: l.quantity,
+      }));
+
+      const origin =
+        req.headers.get("origin") || req.headers.get("referer")?.replace(/\/[^/]*$/, "") ||
+        "https://dev.medikong.pro";
+
+      const session = await stripe.checkout.sessions.create({
+        mode: "payment",
+        payment_method_types: ["card"],
+        line_items: lineItems,
+        success_url: `${origin}/confirmation?order=${order.order_number}&session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${origin}/checkout`,
+        metadata: {
+          order_id: order.id,
+          order_number: order.order_number,
+          platform: "medikong",
+          vendor_breakdown: JSON.stringify(vendorBreakdown),
+        },
+        payment_intent_data: {
+          metadata: {
+            order_id: order.id,
+            order_number: order.order_number,
+            platform: "medikong",
+            vendor_breakdown: JSON.stringify(vendorBreakdown),
+          },
+        },
+      });
+
+      // Persist session id (and PI id if already linked)
+      const update: Record<string, unknown> = { stripe_session_id: session.id };
+      if (typeof session.payment_intent === "string") {
+        update.stripe_payment_intent_id = session.payment_intent;
+      }
+      await supabase.from("orders").update(update).eq("id", order_id);
+
+      return new Response(
+        JSON.stringify({ url: session.url, session_id: session.id }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     return new Response(JSON.stringify({ error: "Action inconnue" }), {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

@@ -4,7 +4,7 @@ import { formatPrice } from "@/data/mock";
 import { useCart } from "@/hooks/useCart";
 import { useAuth } from "@/contexts/AuthContext";
 import { Download, Upload, Trash2, Minus, Plus, ShoppingCart, ChevronDown, ChevronUp, Package, AlertTriangle, HelpCircle, CheckCircle2, Store, Truck, AlertCircle } from "lucide-react";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { PageTransition } from "@/components/shared/PageTransition";

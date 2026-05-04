@@ -104,6 +104,12 @@ Deno.serve(async (req) => {
       }
       nextStatus = updated.status;
       nextPaymentStatus = updated.payment_status;
+      // Fan-out vendeurs : sub_orders + notif cloche + email "nouvelle commande" (best-effort)
+      try {
+        await supabase.functions.invoke("notify-vendors-new-order", { body: { orderId: order.id } });
+      } catch (e) {
+        console.error("[check-session-status] notify-vendors-new-order failed", e);
+      }
     }
 
     return json(200, {

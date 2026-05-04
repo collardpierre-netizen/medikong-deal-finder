@@ -102,11 +102,31 @@ export default function CartPage() {
     });
   }, [items, vendorMap, getMovForVendor, visRules, country]);
 
+  // Résolution dynamique des taux TVA (6% médicaments / 21% OTC) via RPC resolve_product_vat_rate
+  const productIds = useMemo(() => [...new Set(items.map(i => i.product_id).filter(Boolean))] as string[], [items]);
+  const { data: vatRates = {} } = useQuery<Record<string, number>>({
+    queryKey: ["cart-vat-rates", productIds, country],
+    enabled: productIds.length > 0,
+    staleTime: 10 * 60 * 1000,
+    queryFn: async () => {
+      const out: Record<string, number> = {};
+      const results = await Promise.all(productIds.map(async pid => {
+        const { data, error } = await supabase.rpc("resolve_product_vat_rate", { _product_id: pid, _country_code: country || "BE" });
+        if (error || !data) return [pid, 21] as const;
+        const row: any = Array.isArray(data) ? data[0] : data;
+        return [pid, Number(row?.vat_rate ?? 21)] as const;
+      }));
+      results.forEach(([pid, rate]) => { out[pid] = rate; });
+      return out;
+    },
+  });
+
   const totalCart = items.reduce((s, i) => s + (i.price_excl_vat || i.product?.price || 0) * i.quantity, 0);
   const totalCartIncl = items.reduce((s, i) => {
     const excl = i.price_excl_vat || i.product?.price || 0;
-    const incl = i.price_incl_vat && i.price_incl_vat > 0 ? i.price_incl_vat : excl * 1.21;
-    return s + incl * i.quantity;
+    if (i.price_incl_vat && i.price_incl_vat > 0) return s + i.price_incl_vat * i.quantity;
+    const rate = (i.product_id && vatRates[i.product_id]) ?? 21;
+    return s + excl * (1 + rate / 100) * i.quantity;
   }, 0);
   const totalVat = Math.max(totalCartIncl - totalCart, 0);
   const readyCount = supplierGroups.filter(g => g.meetsMinimum).length;

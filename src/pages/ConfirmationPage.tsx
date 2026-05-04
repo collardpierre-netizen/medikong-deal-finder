@@ -1,5 +1,5 @@
 import { Layout } from "@/components/layout/Layout";
-import { Check, Truck, Shield, RefreshCw, AlertTriangle } from "lucide-react";
+import { Check, Truck, Shield, RefreshCw, AlertTriangle, Clock } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { PageTransition } from "@/components/shared/PageTransition";

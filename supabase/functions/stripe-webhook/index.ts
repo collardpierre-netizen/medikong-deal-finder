@@ -36,6 +36,7 @@ Deno.serve(async (req) => {
     }
   }
 
+  console.log("[stripe-webhook] Event received:", event.type);
   console.log(`Webhook event: ${event.type} (${event.id})`);
 
   try {
@@ -105,7 +106,84 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
   if (error) {
     console.error("checkout.session.completed: order update failed", error);
   } else {
-    console.log(`checkout.session.completed: order ${orderId} confirmed (transfers handled by payment_intent.succeeded)`);
+    console.log(`checkout.session.completed: order ${orderId} confirmed`);
+  }
+
+  // Parse vendor_breakdown
+  const vendorBreakdown = JSON.parse(session.metadata?.vendor_breakdown || "[]");
+  const paymentIntentId = typeof session.payment_intent === "string"
+    ? session.payment_intent
+    : session.payment_intent?.id;
+  const transferGroup = `order_${session.metadata?.order_id}`;
+
+  if (!paymentIntentId) {
+    console.log("[stripe-webhook] No payment_intent on session, skipping transfers");
+    return;
+  }
+
+  // Récupérer le charge ID depuis le payment_intent
+  const pi = await stripe.paymentIntents.retrieve(paymentIntentId);
+  const chargeId = pi.latest_charge as string;
+
+  for (const vb of vendorBreakdown) {
+    console.log(`[stripe-webhook] Creating transfer for vendor ${vb.vendor_id} amount=${vb.transfer_amount}`);
+
+    // 1. INSERT en pending
+    const { data: transferRow, error: insertErr } = await supabase
+      .from("order_transfers")
+      .insert({
+        order_id: session.metadata?.order_id,
+        vendor_id: vb.vendor_id,
+        amount: vb.transfer_amount,
+        commission_amount: vb.commission_amount,
+        commission_rate: vb.commission_rate,
+        status: "pending",
+      })
+      .select()
+      .single();
+
+    if (insertErr) {
+      console.error(`[stripe-webhook] Insert order_transfer failed:`, insertErr);
+      continue;
+    }
+
+    // 2. Créer le transfer Stripe
+    try {
+      const transfer = await stripe.transfers.create({
+        amount: vb.transfer_amount,
+        currency: "eur",
+        destination: vb.stripe_account_id,
+        transfer_group: transferGroup,
+        source_transaction: chargeId,
+        metadata: {
+          order_id: session.metadata?.order_id,
+          order_number: session.metadata?.order_number,
+          vendor_id: vb.vendor_id,
+        },
+      });
+
+      // 3. Update en completed
+      await supabase
+        .from("order_transfers")
+        .update({
+          stripe_transfer_id: transfer.id,
+          status: "completed",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", transferRow.id);
+
+      console.log(`[stripe-webhook] Transfer created ${transfer.id} for vendor ${vb.vendor_id}`);
+    } catch (err: any) {
+      console.error(`[stripe-webhook] Transfer creation failed:`, err);
+      await supabase
+        .from("order_transfers")
+        .update({
+          status: "failed",
+          error_message: err.message || String(err),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", transferRow.id);
+    }
   }
 }
 

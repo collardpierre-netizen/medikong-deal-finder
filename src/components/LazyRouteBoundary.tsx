@@ -68,6 +68,65 @@ export class LazyRouteBoundary extends Component<Props, State> {
     if (typeof window !== "undefined") window.location.reload();
   };
 
+  handleHardReset = async () => {
+    if (typeof window === "undefined") return;
+    // Clear sessionStorage (build version, retry tokens, reload counters).
+    try {
+      window.sessionStorage.clear();
+    } catch {
+      /* ignore */
+    }
+    // Clear localStorage keys related to build/version/cache, but keep auth.
+    try {
+      const keys: string[] = [];
+      for (let i = 0; i < window.localStorage.length; i++) {
+        const k = window.localStorage.key(i);
+        if (!k) continue;
+        const lower = k.toLowerCase();
+        if (
+          lower.includes("build") ||
+          lower.includes("version") ||
+          lower.includes("cache") ||
+          lower.includes("chunk") ||
+          lower.startsWith("medikong:")
+        ) {
+          keys.push(k);
+        }
+      }
+      keys.forEach((k) => window.localStorage.removeItem(k));
+    } catch {
+      /* ignore */
+    }
+    // Clear Cache Storage (service worker / HTTP caches).
+    try {
+      if ("caches" in window) {
+        const names = await window.caches.keys();
+        await Promise.all(names.map((n) => window.caches.delete(n)));
+      }
+    } catch {
+      /* ignore */
+    }
+    // Unregister any service workers so the next load fetches fresh assets.
+    try {
+      if ("serviceWorker" in navigator) {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map((r) => r.unregister()));
+      }
+    } catch {
+      /* ignore */
+    }
+    resetReloadAttempts();
+    this.setState({ error: null });
+    // Cache-bust the URL so we bypass the HTTP cache on reload.
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.set("_v", Date.now().toString());
+      window.location.replace(url.toString());
+    } catch {
+      window.location.reload();
+    }
+  };
+
   render() {
     const { error } = this.state;
     if (!error) return this.props.children;

@@ -40,13 +40,30 @@ export default function CartPage() {
   const [filter, setFilter] = useState<FilterType>("all");
   const [remark, setRemark] = useState("");
 
-  // Scroll to top when arriving on cart page (e.g. after "Ajouter au panier")
+  // Scroll position memory: restore where the user left off when returning to the cart.
+  // Falls back to top on first visit (e.g. after "Ajouter au panier").
+  const SCROLL_KEY = "cart:scrollY";
   useEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    const saved = sessionStorage.getItem(SCROLL_KEY);
+    const y = saved ? parseInt(saved, 10) : 0;
+    // Defer to next frame so layout is ready before restoring
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: Number.isFinite(y) ? y : 0, left: 0, behavior: "auto" });
+    });
+
+    const onScroll = () => sessionStorage.setItem(SCROLL_KEY, String(window.scrollY));
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      sessionStorage.setItem(SCROLL_KEY, String(window.scrollY));
+      window.removeEventListener("scroll", onScroll);
+    };
   }, []);
 
-  // Helper: scroll to top after a cart mutation completes
-  const scrollTop = () => window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+  // Helper: scroll to top after a cart mutation completes (and reset memory)
+  const scrollTop = () => {
+    sessionStorage.setItem(SCROLL_KEY, "0");
+    window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+  };
 
   // Fetch real vendor data for all vendor_ids in cart
   const vendorIds = useMemo(() => [...new Set(items.map(i => i.vendor_id).filter(Boolean))], [items]) as string[];

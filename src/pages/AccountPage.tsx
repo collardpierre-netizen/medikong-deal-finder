@@ -611,7 +611,10 @@ export default function AccountPage() {
                                 ["# Statut", orderStatusFilter === "all" ? "Tous les statuts" : (statusLabelsCsv[orderStatusFilter] || orderStatusFilter)],
                                 ["# Tri par date de passage", orderSort === "desc" ? "Plus récentes d'abord" : "Plus anciennes d'abord"],
                                 ["# Nombre de commandes", String(filteredOrders.length)],
-                                ["# Exporté le", new Date().toLocaleString("fr-BE")],
+                                 ["# Page", String(orderPageSafe)],
+                                 ["# Taille de page", String(orderPageSize)],
+                                 ["# Pages totales", String(orderTotalPages)],
+                                 ["# Exporté le", new Date().toLocaleString("fr-BE")],
                                 [],
                               ];
                               const csv = "\uFEFF" + [...meta, header, ...rows]
@@ -622,7 +625,7 @@ export default function AccountPage() {
                               const a = document.createElement("a");
                               const stamp = new Date().toISOString().slice(0, 10);
                               a.href = url;
-                              a.download = `mes-commandes_${orderStatusFilter}_${orderSort}_${stamp}.csv`;
+                              a.download = `mes-commandes_${orderStatusFilter}_${orderSort}_p${orderPageSafe}-sur-${orderTotalPages}_taille${orderPageSize}_${stamp}.csv`;
                               document.body.appendChild(a);
                               a.click();
                               document.body.removeChild(a);

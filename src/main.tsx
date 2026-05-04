@@ -3,10 +3,12 @@ import "./i18n";
 import App from "./App.tsx";
 import "./index.css";
 import { installViteChunkReloadGuard } from "@/lib/lazy-with-retry";
+import { installBuildVersionWatcher } from "@/lib/build-version";
 import { runContractEnvValidationOnBoot } from "@/lib/contract/env-validation";
 import { installGlobalErrorReporting } from "@/lib/errorReporter";
 
 installViteChunkReloadGuard();
+installBuildVersionWatcher();
 installGlobalErrorReporting();
 
 // Diagnostic non bloquant : vérifie au démarrage que les variables d'env

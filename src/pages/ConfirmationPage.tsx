@@ -84,8 +84,59 @@ export default function ConfirmationPage() {
     }
   }, [cacheKey, order, dataUpdatedAt]);
 
+  // Historique des statuts (basé sur created_at + observations client)
+  const historyKey = orderNumber ? `mk:order-history:${orderNumber}` : "";
+  const [history, setHistory] = useState<Array<{ status: string; at: string }>>(() => {
+    if (!historyKey) return [];
+    try {
+      const raw = sessionStorage.getItem(historyKey);
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const currentStatus = (order as any)?.status as string | undefined;
+  const createdAt = (order as any)?.created_at as string | undefined;
+  const updatedAtDb = (order as any)?.updated_at as string | undefined;
+
+  useEffect(() => {
+    if (!historyKey || !currentStatus) return;
+    setHistory((prev) => {
+      // Bootstrap : ajouter "created" depuis created_at si absent
+      const next = [...prev];
+      if (createdAt && !next.some((e) => e.status === "created")) {
+        next.push({ status: "created", at: createdAt });
+      }
+      const last = next[next.length - 1];
+      if (!last || last.status !== currentStatus) {
+        next.push({ status: currentStatus, at: updatedAtDb || new Date().toISOString() });
+      }
+      try {
+        sessionStorage.setItem(historyKey, JSON.stringify(next));
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+  }, [historyKey, currentStatus, createdAt, updatedAtDb]);
+
   // Considère une erreur "active" uniquement si on n'a pas encore de data fraîche
   const hasFetchError = !!error && !order;
+
+  const statusLabels: Record<string, string> = {
+    created: "Commande créée",
+    draft: "Brouillon",
+    pending: "En attente",
+    pending_payment: "Paiement en cours",
+    paid: "Paiement reçu",
+    confirmed: "Commande confirmée",
+    shipped: "Expédiée",
+    delivered: "Livrée",
+    cancelled: "Annulée",
+    failed: "Paiement échoué",
+  };
 
   const status = (order as any)?.status as string | undefined;
   const paymentDone = isTest || (!!status && !["pending", "pending_payment", "draft"].includes(status));

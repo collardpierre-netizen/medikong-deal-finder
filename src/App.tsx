@@ -258,7 +258,11 @@ const queryClient = new QueryClient({
 });
 
 function LP({ children }: { children: React.ReactNode }) {
-  return <Suspense fallback={<PageLoader />}>{children}</Suspense>;
+  return (
+    <LazyRouteBoundary>
+      <Suspense fallback={<PageLoader />}>{children}</Suspense>
+    </LazyRouteBoundary>
+  );
 }
 
 const App = () => (

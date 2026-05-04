@@ -593,12 +593,20 @@ async function syncOffers(
   recordEndpointError: (endpoint: string, status: number | null, message: string) => Promise<void>,
   recordProgress: (delta: Record<string, number>) => Promise<void>,
   resyncLogId: string | null,
+  offsetCursor: number = 0,
 ) {
   const executionProfile = getExecutionProfile(fetchMultiVendor);
   const { token, baseUrl } = await getQogitaToken(sb);
   const bestPriceVendorId = await ensureBestPriceVendor(sb, country);
 
   const incrementalProductFilter = "offer_count.gt.0,synced_at.is.null,qogita_qid.is.null";
+
+  const { count: totalEligible } = await sb
+    .from("products")
+    .select("id", { count: "exact", head: true })
+    .eq("is_active", true)
+    .not("gtin", "is", null)
+    .or(incrementalProductFilter);
 
   const { data: products, error: pErr } = await sb
     .from("products")
@@ -607,7 +615,7 @@ async function syncOffers(
     .not("gtin", "is", null)
     .or(incrementalProductFilter)
     .order("created_at", { ascending: true })
-    .range(0, 59999);
+    .range(offsetCursor, offsetCursor + 999);
 
   if (pErr) throw pErr;
 

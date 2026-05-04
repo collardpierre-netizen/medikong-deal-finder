@@ -372,7 +372,16 @@ export default function CheckoutPage() {
                         </div>
                       )}
                       {initError && !initLoading && (
-                        <p className="text-sm text-destructive">{initError}</p>
+                        <div className="space-y-3">
+                          <p className="text-sm text-destructive">{initError}</p>
+                          <button
+                            type="button"
+                            onClick={() => { setClientSecret(null); setInitError(null); }}
+                            className="border border-mk-navy text-mk-navy font-bold text-sm px-4 py-2 rounded-md"
+                          >
+                            Réessayer
+                          </button>
+                        </div>
                       )}
                       {clientSecret && stripePromise && (
                         <Elements

@@ -53,6 +53,15 @@ const AdminCommandes = () => {
   const [hideTest, setHideTest] = useState(true);
   const [purgeOpen, setPurgeOpen] = useState(false);
   const [purging, setPurging] = useState(false);
+  const [purgePreview, setPurgePreview] = useState<null | {
+    targets_count: number;
+    total_incl_vat?: number;
+    targets: Array<{ id: string; order_number: string; status: string; total_incl_vat: number; created_at: string }>;
+  }>(null);
+  const [confirmToken, setConfirmToken] = useState("");
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const isProd = typeof window !== "undefined" && /medikong\.pro|medikong\.com/i.test(window.location.hostname);
+  const REQUIRED_TOKEN = "PURGE TEST ORDERS";
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
 
   const orders = ordersData.map(o => ({

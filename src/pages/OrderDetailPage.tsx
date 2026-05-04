@@ -37,6 +37,9 @@ export default function OrderDetailPage() {
         <div className="flex flex-wrap items-center gap-3 mb-6">
           <span className="text-sm text-mk-sec">Passée le {formatOrderDateTime((order as any)?.created_at)}</span>
           <span className={`text-xs font-medium px-2.5 py-1 rounded ${meta.badgeClass}`}>{meta.label}</span>
+          {(order as any)?.updated_at && (order as any).updated_at !== (order as any)?.created_at && (
+            <span className="text-sm text-mk-sec">· Statut mis à jour le {formatOrderDateTime((order as any).updated_at)}</span>
+          )}
         </div>
 
         {/* Timeline dynamique */}

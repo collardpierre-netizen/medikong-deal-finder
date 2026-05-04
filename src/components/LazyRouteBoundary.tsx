@@ -1,5 +1,5 @@
 import { Component, type ReactNode } from "react";
-import { AlertTriangle, RefreshCw } from "lucide-react";
+import { AlertTriangle, RefreshCw, Trash2 } from "lucide-react";
 import { report as reportClientError } from "@/lib/errorReporter";
 import {
   getReloadAttempts,

@@ -4,7 +4,7 @@ import { formatPrice } from "@/data/mock";
 import { useCart } from "@/hooks/useCart";
 import { useAuth } from "@/contexts/AuthContext";
 import { Download, Upload, Trash2, Minus, Plus, ShoppingCart, ChevronDown, ChevronUp, Package, AlertTriangle, HelpCircle, CheckCircle2, Store, Truck, AlertCircle } from "lucide-react";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { PageTransition } from "@/components/shared/PageTransition";
@@ -39,6 +39,11 @@ export default function CartPage() {
   const [expandedSuppliers, setExpandedSuppliers] = useState<Record<string, boolean>>({});
   const [filter, setFilter] = useState<FilterType>("all");
   const [remark, setRemark] = useState("");
+
+  // Scroll to top when arriving on cart page (e.g. after "Ajouter au panier")
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, []);
 
   // Fetch real vendor data for all vendor_ids in cart
   const vendorIds = useMemo(() => [...new Set(items.map(i => i.vendor_id).filter(Boolean))], [items]) as string[];

@@ -493,6 +493,39 @@ export default function CartPage() {
                         <span className="text-mk-sec">TVA</span>
                         <span className="text-mk-navy font-medium">{formatPrice(totalVat)}€</span>
                       </div>
+                      {(() => {
+                        // Détail par taux de TVA appliqué
+                        const buckets = new Map<number, { base: number; vat: number }>();
+                        for (const it of items as any[]) {
+                          const excl = Number(it.price_excl_vat ?? it.product?.price ?? 0) || 0;
+                          const qty = Number(it.quantity) || 0;
+                          const rate = Number(vatRates[it.product_id] ?? 21);
+                          const base = excl * qty;
+                          const incl = it.price_incl_vat && it.price_incl_vat > 0
+                            ? Number(it.price_incl_vat) * qty
+                            : base * (1 + rate / 100);
+                          const vat = Math.max(incl - base, 0);
+                          const key = Math.round(rate * 100) / 100;
+                          const cur = buckets.get(key) || { base: 0, vat: 0 };
+                          cur.base += base;
+                          cur.vat += vat;
+                          buckets.set(key, cur);
+                        }
+                        const rows = [...buckets.entries()]
+                          .filter(([, v]) => v.base > 0)
+                          .sort((a, b) => a[0] - b[0]);
+                        if (rows.length === 0) return null;
+                        return (
+                          <div className="pl-3 space-y-0.5">
+                            {rows.map(([rate, v]) => (
+                              <div key={rate} className="flex justify-between text-xs text-mk-ter">
+                                <span>dont TVA {rate}% (base {formatPrice(v.base)}€)</span>
+                                <span>{formatPrice(v.vat)}€</span>
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
 

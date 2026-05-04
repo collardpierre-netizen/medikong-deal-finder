@@ -154,6 +154,25 @@ export default function AccountPage() {
   };
   const [newListName, setNewListName] = useState("");
   const [importOpen, setImportOpen] = useState(false);
+  const [orderStatusFilter, setOrderStatusFilter] = useState<string>("all");
+  const orderSort = (searchParams.get("orderSort") === "asc" ? "asc" : "desc") as "asc" | "desc";
+  const setOrderSort = (next: "asc" | "desc") => {
+    setSearchParams(prev => {
+      const p = new URLSearchParams(prev);
+      if (next === "desc") p.delete("orderSort"); else p.set("orderSort", next);
+      return p;
+    }, { replace: true });
+  };
+  const filteredOrders = (() => {
+    const base = orderStatusFilter === "all"
+      ? (dbOrders as any[])
+      : (dbOrders as any[]).filter((o: any) => o.status === orderStatusFilter);
+    return [...base].sort((a, b) => {
+      const ta = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const tb = b.created_at ? new Date(b.created_at).getTime() : 0;
+      return orderSort === "asc" ? ta - tb : tb - ta;
+    });
+  })();
 
   // ---- Profile state ----
   const [profileForm, setProfileForm] = useState({
@@ -503,6 +522,34 @@ export default function AccountPage() {
                     <div>
                       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-5 gap-3">
                         <h2 className="text-xl font-bold text-mk-navy">Commandes</h2>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <label htmlFor="order-status-filter" className="text-xs text-mk-sec">Statut</label>
+                          <select
+                            id="order-status-filter"
+                            value={orderStatusFilter}
+                            onChange={(e) => setOrderStatusFilter(e.target.value)}
+                            className="border border-mk-line rounded-md px-3 py-2 text-sm bg-background"
+                          >
+                            <option value="all">Tous les statuts</option>
+                            <option value="confirmed">Confirmée</option>
+                            <option value="accepted">Reçue par le vendeur</option>
+                            <option value="in_preparation">En préparation</option>
+                            <option value="shipped">Expédiée</option>
+                            <option value="delivered">Livrée</option>
+                            <option value="cancelled">Annulée</option>
+                            <option value="refunded">Remboursée</option>
+                          </select>
+                          <label htmlFor="order-sort" className="text-xs text-mk-sec ml-2">Tri</label>
+                          <select
+                            id="order-sort"
+                            value={orderSort}
+                            onChange={(e) => setOrderSort(e.target.value as "asc" | "desc")}
+                            className="border border-mk-line rounded-md px-3 py-2 text-sm bg-background"
+                          >
+                            <option value="desc">Plus récentes d'abord</option>
+                            <option value="asc">Plus anciennes d'abord</option>
+                          </select>
+                        </div>
                       </div>
                       {ordersLoading ? (
                         <p className="text-sm text-mk-sec py-8 text-center">Chargement...</p>
@@ -512,10 +559,15 @@ export default function AccountPage() {
                           <h3 className="text-lg font-bold text-mk-navy mb-1">Aucune commande</h3>
                           <p className="text-sm text-mk-sec">Vos commandes apparaîtront ici après votre premier achat.</p>
                         </motion.div>
+                      ) : filteredOrders.length === 0 ? (
+                        <div className="text-center py-12 border border-mk-line rounded-xl">
+                          <Package size={32} className="mx-auto text-mk-ter mb-2" />
+                          <p className="text-sm text-mk-sec">Aucune commande ne correspond à ce statut.</p>
+                        </div>
                       ) : (
                         <>
                           <div className="sm:hidden space-y-3">
-                            {dbOrders.map((o: any, i: number) => {
+                            {filteredOrders.map((o: any, i: number) => {
                               const meta = getOrderStatusMeta(o.status);
                               return (
                                 <motion.div key={o.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}>
@@ -540,7 +592,7 @@ export default function AccountPage() {
                             <div className="grid grid-cols-5 gap-3 px-4 py-2 bg-mk-alt text-xs font-semibold text-mk-sec">
                               <span>ID Commande</span><span>Date &amp; heure</span><span>Statut</span><span>Montant</span><span className="text-right">Actions</span>
                             </div>
-                            {dbOrders.map((o: any, i: number) => {
+                            {filteredOrders.map((o: any, i: number) => {
                               const meta = getOrderStatusMeta(o.status);
                               return (
                                 <motion.div key={o.id} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.15 + i * 0.06 }}>

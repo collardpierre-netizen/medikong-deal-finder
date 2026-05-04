@@ -4500,6 +4500,7 @@ export type Database = {
           source: Database["public"]["Enums"]["order_source"]
           status: Database["public"]["Enums"]["order_status"]
           stripe_payment_intent_id: string | null
+          stripe_session_id: string | null
           subtotal_excl_vat: number
           total_cost: number | null
           total_incl_vat: number
@@ -4524,6 +4525,7 @@ export type Database = {
           source?: Database["public"]["Enums"]["order_source"]
           status?: Database["public"]["Enums"]["order_status"]
           stripe_payment_intent_id?: string | null
+          stripe_session_id?: string | null
           subtotal_excl_vat?: number
           total_cost?: number | null
           total_incl_vat?: number
@@ -4548,6 +4550,7 @@ export type Database = {
           source?: Database["public"]["Enums"]["order_source"]
           status?: Database["public"]["Enums"]["order_status"]
           stripe_payment_intent_id?: string | null
+          stripe_session_id?: string | null
           subtotal_excl_vat?: number
           total_cost?: number | null
           total_incl_vat?: number

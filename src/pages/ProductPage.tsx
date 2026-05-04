@@ -133,10 +133,10 @@ function formatRelative(iso?: string | null): string | null {
 
 /* ── Offer Row ─────────────────────────────────────────── */
 function OfferRow({
-  offer, productId, productName, productSlug, user, navigate, addToCart, isBest, delay = 0, isTVAC = false, categoryId, bestPrice, discountPercentage = 0,
+  offer, productId, productName, productSlug, productImageUrl, user, navigate, addToCart, isBest, delay = 0, isTVAC = false, categoryId, bestPrice, discountPercentage = 0,
   compareBasis = 'pack', packSize: packSizeProp,
 }: {
-  offer: Offer; productId: string; productName: string; productSlug: string;
+  offer: Offer; productId: string; productName: string; productSlug: string; productImageUrl?: string;
   user: any; navigate: any; addToCart: any; isBest?: boolean; delay?: number; isTVAC?: boolean; categoryId?: string; bestPrice?: number; discountPercentage?: number;
   compareBasis?: 'pack' | 'unit' | 'hundred'; packSize?: number;
 }) {

@@ -40,6 +40,10 @@ Deno.serve(async (req) => {
 
   try {
     switch (event.type) {
+      case "checkout.session.completed":
+        await handleCheckoutSessionCompleted(event.data.object as Stripe.Checkout.Session);
+        break;
+
       case "payment_intent.succeeded":
         await handlePaymentSucceeded(event.data.object as Stripe.PaymentIntent);
         break;
@@ -81,6 +85,28 @@ Deno.serve(async (req) => {
     headers: { "Content-Type": "application/json" },
   });
 });
+
+async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) {
+  const orderId = session.metadata?.order_id;
+  if (!orderId) {
+    console.log("checkout.session.completed: no order_id in metadata, skipping");
+    return;
+  }
+  const update: Record<string, unknown> = {
+    status: "confirmed",
+    payment_status: "paid",
+    stripe_session_id: session.id,
+  };
+  if (typeof session.payment_intent === "string") {
+    update.stripe_payment_intent_id = session.payment_intent;
+  }
+  const { error } = await supabase.from("orders").update(update).eq("id", orderId);
+  if (error) {
+    console.error("checkout.session.completed: order update failed", error);
+  } else {
+    console.log(`checkout.session.completed: order ${orderId} confirmed (transfers handled by payment_intent.succeeded)`);
+  }
+}
 
 async function handlePaymentSucceeded(pi: Stripe.PaymentIntent) {
   const orderId = pi.metadata?.order_id;

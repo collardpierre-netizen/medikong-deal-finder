@@ -12,9 +12,12 @@ import { useState, useEffect } from "react";
 export default function ConfirmationPage() {
   const [searchParams] = useSearchParams();
   const orderNumber = searchParams.get("order") || "";
+  const sessionId = searchParams.get("session_id") || "";
   const isTest = searchParams.get("test") === "1";
   const { user } = useAuth();
   const [lastChecked, setLastChecked] = useState<Date>(new Date());
+  const [pollAttempts, setPollAttempts] = useState(0);
+  const MAX_POLL_ATTEMPTS = 24; // 2 min @ 5s
 
   // Cache local du dernier statut connu (sessionStorage) pour éviter le clignotement
   // au retour via back/forward et permettre un affichage immédiat
@@ -37,29 +40,51 @@ export default function ConfirmationPage() {
     ["confirmed", "paid", "shipped", "delivered", "cancelled", "failed"].includes(cachedStatus);
 
   const { data: order, isFetching, refetch, dataUpdatedAt, error, failureCount, errorUpdatedAt } = useQuery({
-    queryKey: ["order-confirmation", orderNumber],
+    queryKey: ["order-confirmation", orderNumber, sessionId],
     enabled: !!user && !!orderNumber,
-    // Hydrate immédiatement avec la dernière valeur connue → pas de flash "Initialisation"
     initialData: cached?.data,
     initialDataUpdatedAt: cached?.updatedAt,
-    // Si le statut en cache est déjà final, on considère la donnée fraîche 30s
-    // → pas de refetch automatique au remount (back/forward)
     staleTime: cachedIsFinal ? 30_000 : 0,
     refetchInterval: (query) => {
       const status = (query.state.data as any)?.status;
-      // Stop polling once final state reached
       if (status && ["confirmed", "paid", "shipped", "delivered", "cancelled", "failed"].includes(status)) {
         return false;
       }
+      if (pollAttempts >= MAX_POLL_ATTEMPTS) return false;
       return 5000;
     },
-    // Pas de refetch on focus si on a déjà un statut final
     refetchOnWindowFocus: !cachedIsFinal,
     refetchOnMount: cachedIsFinal ? false : "always",
-    // Auto-retry exponentiel jusqu'à 5 tentatives en cas d'échec réseau/DB
     retry: 5,
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 15000),
     queryFn: async () => {
+      setPollAttempts((n) => n + 1);
+
+      // Statut autoritaire via Edge Function (vérifie Stripe + met à jour la commande)
+      if (sessionId) {
+        const { data: statusResp, error: fnErr } = await supabase.functions.invoke(
+          "check-session-status",
+          { body: { session_id: sessionId } },
+        );
+        if (fnErr) throw fnErr;
+
+        // Charge les détails d'affichage (méthode, montant, adresse...) en lecture
+        const { data: details } = await supabase
+          .from("orders")
+          .select("payment_method, total_incl_vat, shipping_address, created_at, updated_at")
+          .eq("order_number", orderNumber)
+          .maybeSingle();
+
+        return {
+          ...(details ?? {}),
+          order_number: statusResp.order_number ?? orderNumber,
+          status: statusResp.status,
+          payment_status: statusResp.payment_status,
+          stripe_payment_status: statusResp.stripe_payment_status,
+        };
+      }
+
+      // Fallback (ex : mode test, lien sans session_id) → lecture directe
       const { data, error } = await supabase
         .from("orders")
         .select("*")

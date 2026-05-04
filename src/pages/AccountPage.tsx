@@ -619,7 +619,7 @@ export default function AccountPage() {
                             <div className="grid grid-cols-5 gap-3 px-4 py-2 bg-mk-alt text-xs font-semibold text-mk-sec">
                               <span>ID Commande</span><span>Date &amp; heure</span><span>Statut</span><span>Montant</span><span className="text-right">Actions</span>
                             </div>
-                            {filteredOrders.map((o: any, i: number) => {
+                            {paginatedOrders.map((o: any, i: number) => {
                               const meta = getOrderStatusMeta(o.status);
                               return (
                                 <motion.div key={o.id} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.15 + i * 0.06 }}>

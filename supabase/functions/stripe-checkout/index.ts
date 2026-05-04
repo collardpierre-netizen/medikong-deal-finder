@@ -271,6 +271,7 @@ Deno.serve(async (req) => {
           vendor_breakdown: JSON.stringify(vendorBreakdown),
         },
         payment_intent_data: {
+          transfer_group: `order_${order.id}`,
           metadata: {
             order_id: order.id,
             order_number: order.order_number,

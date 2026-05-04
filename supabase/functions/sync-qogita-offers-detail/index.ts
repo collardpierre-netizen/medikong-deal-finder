@@ -498,7 +498,16 @@ Deno.serve(async (req) => {
   if (existingPartial) {
     syncLogId = existingPartial.id;
     const prevStats = (existingPartial.stats as any) || {};
-    lastOffset = prevStats.last_offset || existingPartial.progress_current || 0;
+    const prevChunkStart = (prevStats.chunk_start !== undefined && prevStats.chunk_start !== null)
+      ? Number(prevStats.chunk_start)
+      : 0;
+    if (offsetCursor !== prevChunkStart) {
+      // On reprend sur un autre chunk → reset intra-chunk
+      lastOffset = 0;
+    } else {
+      // Même chunk → resume normal
+      lastOffset = prevStats.last_offset || existingPartial.progress_current || 0;
+    }
     await sb
       .from("sync_logs")
       .update({
@@ -506,7 +515,7 @@ Deno.serve(async (req) => {
         completed_at: null,
         error_message: null,
         progress_current: lastOffset,
-        progress_message: `Reprise ${targetCountry} à partir de ${lastOffset}...`,
+        progress_message: `Reprise ${targetCountry} chunk@${offsetCursor} à partir de ${lastOffset}...`,
       })
       .eq("id", syncLogId);
   } else {
@@ -521,7 +530,7 @@ Deno.serve(async (req) => {
       .insert({
         sync_type: syncType as any,
         status: "running",
-        stats: { country: targetCountry, multi_vendor: fetchMultiVendor },
+        stats: { country: targetCountry, multi_vendor: fetchMultiVendor, chunk_start: offsetCursor },
         progress_current: 0,
         progress_total: 0,
         progress_message: `${targetCountry}: authentification...`,
@@ -539,7 +548,7 @@ Deno.serve(async (req) => {
     .not("gtin", "is", null)
     .or(incrementalProductFilter);
 
-  const remaining = Math.max((totalProducts || 0) - lastOffset, 0);
+  const remaining = Math.max((totalProducts || 0) - offsetCursor - (lastOffset || 0), 0);
 
   // Run sync synchronously (not in background) so we can return accurate remaining
   let productsEnriched = 0;
@@ -652,6 +661,7 @@ async function syncOffers(
     skipped: 0,
     rate_limited: 0,
     last_offset: startOffset,
+    chunk_start: offsetCursor,
     first_api_response_keys: null,
     first_flat_sample: null,
   };

@@ -538,9 +538,15 @@ export default function CheckoutPage() {
             <motion.aside className="w-full lg:w-[320px] shrink-0"
               initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.2 }}>
               <div className="border border-mk-line rounded-lg p-5 lg:sticky lg:top-20">
-                <h3 className="text-lg font-bold text-mk-navy mb-4">Récapitulatif</h3>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-bold text-mk-navy">Récapitulatif</h3>
+                  <Link to="/panier" className="text-xs font-medium text-mk-blue hover:underline inline-flex items-center gap-1">
+                    <Pencil size={12} /> Modifier le panier
+                  </Link>
+                </div>
                 <div className="space-y-2 text-sm mb-4">
-                  <div className="flex justify-between"><span className="text-mk-sec">Sous-total ({items.length} article{items.length > 1 ? "s" : ""})</span><span className="text-mk-navy">{formatPrice(subtotal)} EUR</span></div>
+                  <div className="flex justify-between"><span className="text-mk-sec">Sous-total HTVA ({items.length} article{items.length > 1 ? "s" : ""})</span><span className="text-mk-navy">{formatPrice(subtotal)} EUR</span></div>
+                  <div className="flex justify-between"><span className="text-mk-sec">TVA</span><span className="text-mk-navy">{formatPrice(vatAmount)} EUR</span></div>
                   <div className="flex justify-between"><span className="text-mk-sec">Livraison</span><span className="text-mk-navy">{shippingCost === 0 ? "Incluse" : `${formatPrice(shippingCost)} EUR`}</span></div>
                   <div className="flex justify-between items-center">
                     <span className="text-mk-sec flex items-center gap-1"><Truck size={13} /> Délai estimé</span>

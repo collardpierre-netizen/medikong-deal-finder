@@ -55,6 +55,19 @@ export default function CartPage() {
     enabled: vendorIds.length > 0,
   });
 
+  const { data: visRules = [] } = useQuery({
+    queryKey: ["cart-vendor-visibility-rules", vendorIds],
+    queryFn: async () => {
+      if (vendorIds.length === 0) return [];
+      const { data } = await supabase
+        .from("vendor_visibility_rules" as any)
+        .select("*")
+        .in("vendor_id", vendorIds as string[]);
+      return (data as any[]) || [];
+    },
+    enabled: vendorIds.length > 0,
+  });
+
   const vendorMap = useMemo(() => new Map(vendors.map(v => [v.id, v])), [vendors]);
 
   // Group items by vendor_id
@@ -71,9 +84,12 @@ export default function CartPage() {
       const currentMov = getMovForVendor(vendorId);
       const remaining = Math.max(currentMov - total, 0);
       const progress = Math.min((total / currentMov) * 100, 100);
+      const showReal = vendor
+        ? resolveVendorVisibility({ ...vendor, id: vendorId }, visRules as any, { country })
+        : false;
       return {
         vendorId,
-        vendorName: vendor ? getVendorPublicName(vendor) : `Fournisseur #${vendorId.slice(0, 6).toUpperCase()}`,
+        vendorName: vendor ? getVendorPublicName(vendor, showReal) : `Fournisseur #${vendorId.slice(0, 6).toUpperCase()}`,
         vendorSlug: vendor?.slug || undefined,
         isVerified: vendor?.is_verified || false,
         items: groupItems,

@@ -721,6 +721,7 @@ async function syncOffers(
             progress_message: `${country}: pause contrôlée — ${stats.last_offset}/${total} (reprendra automatiquement)`,
           })
           .eq("id", logId);
+        scheduleNextChunk({ country, multi_vendor: fetchMultiVendor });
         return stats;
       }
     }

@@ -105,12 +105,10 @@ export default function CheckoutPage() {
   const getItemPrice = (item: typeof items[0]) => item.price_excl_vat || item.product?.price || 0;
   const getItemPriceTTC = (item: typeof items[0]) => {
     if (item.price_incl_vat && item.price_incl_vat > 0) return item.price_incl_vat;
-    // Fallback : si pas de TTC stocké, applique 21% par défaut (alignement B2B)
     return getItemPrice(item) * 1.21;
   };
-  const subtotal = items.reduce((s, i) => s + getItemPrice(i) * i.quantity, 0);
-  const subtotalTTC = items.reduce((s, i) => s + getItemPriceTTC(i) * i.quantity, 0);
-  const vatAmount = Math.max(subtotalTTC - subtotal, 0);
+  const { subtotalExcl: subtotal, subtotalIncl: subtotalTTC, vat: vatAmount } =
+    computeCartTotals(items as any);
   const selectedOpt = shippingOpts[shipping] || shippingOpts[0];
   const shippingCost = selectedOpt ? Number(selectedOpt.price_adjustment) || 0 : 0;
   const total = subtotalTTC + shippingCost;

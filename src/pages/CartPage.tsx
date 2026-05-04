@@ -121,14 +121,8 @@ export default function CartPage() {
     },
   });
 
-  const totalCart = items.reduce((s, i) => s + (i.price_excl_vat || i.product?.price || 0) * i.quantity, 0);
-  const totalCartIncl = items.reduce((s, i) => {
-    const excl = i.price_excl_vat || i.product?.price || 0;
-    if (i.price_incl_vat && i.price_incl_vat > 0) return s + i.price_incl_vat * i.quantity;
-    const rate = (i.product_id && vatRates[i.product_id]) ?? 21;
-    return s + excl * (1 + rate / 100) * i.quantity;
-  }, 0);
-  const totalVat = Math.max(totalCartIncl - totalCart, 0);
+  const { subtotalExcl: totalCart, subtotalIncl: totalCartIncl, vat: totalVat } =
+    computeCartTotals(items as any, vatRates);
   const readyCount = supplierGroups.filter(g => g.meetsMinimum).length;
   const belowCount = supplierGroups.filter(g => !g.meetsMinimum).length;
   const totalReady = supplierGroups.filter(g => g.meetsMinimum).reduce((s, g) => s + g.total, 0);

@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { getProductImageSrc } from "@/lib/image-utils";
 
 /**
  * Logo de vendeur externe avec fallback automatique :

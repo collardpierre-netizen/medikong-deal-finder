@@ -522,7 +522,7 @@ export default function AccountPage() {
                     <div>
                       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-5 gap-3">
                         <h2 className="text-xl font-bold text-mk-navy">Commandes</h2>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <label htmlFor="order-status-filter" className="text-xs text-mk-sec">Statut</label>
                           <select
                             id="order-status-filter"
@@ -538,6 +538,16 @@ export default function AccountPage() {
                             <option value="delivered">Livrée</option>
                             <option value="cancelled">Annulée</option>
                             <option value="refunded">Remboursée</option>
+                          </select>
+                          <label htmlFor="order-sort" className="text-xs text-mk-sec ml-2">Tri</label>
+                          <select
+                            id="order-sort"
+                            value={orderSort}
+                            onChange={(e) => setOrderSort(e.target.value as "asc" | "desc")}
+                            className="border border-mk-line rounded-md px-3 py-2 text-sm bg-background"
+                          >
+                            <option value="desc">Plus récentes d'abord</option>
+                            <option value="asc">Plus anciennes d'abord</option>
                           </select>
                         </div>
                       </div>

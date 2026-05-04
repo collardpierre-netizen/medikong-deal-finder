@@ -34,6 +34,7 @@ type FilterType = "all" | "ready" | "below" | "changes";
 export default function CartPage() {
   const { user } = useAuth();
   const { items, isLoading, cartCount, updateQuantity, removeFromCart, clearCart } = useCart();
+  const { country } = useCountry();
   const [expandedSuppliers, setExpandedSuppliers] = useState<Record<string, boolean>>({});
   const [filter, setFilter] = useState<FilterType>("all");
   const [remark, setRemark] = useState("");

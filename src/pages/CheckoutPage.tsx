@@ -381,9 +381,8 @@ export default function CheckoutPage() {
                     {(() => {
                       const steps = [
                         { key: "created", label: "Commande créée", done: !!orderId },
-                        { key: "intent", label: "Paiement initialisé", done: !!clientSecret || testMode },
-                        { key: "ready", label: testMode ? "Mode test prêt" : "Module carte prêt", done: testMode ? !!orderId : (stripeReady && !!clientSecret) },
-                        { key: "submitting", label: "Paiement en cours", done: false, active: submitting },
+                        { key: "redirect", label: testMode ? "Mode test prêt" : "Redirection vers Stripe", done: !!orderId, active: initLoading && !testMode },
+                        { key: "submitting", label: "Paiement en cours sur stripe.com", done: false, active: submitting && !testMode },
                       ];
                       return (
                         <div className="border border-mk-line rounded-lg p-3 mb-4 bg-mk-alt/40">
@@ -404,49 +403,27 @@ export default function CheckoutPage() {
                       );
                     })()}
 
-                    <div className="border border-mk-line rounded-lg p-4 mb-6">
-                      <h3 className="text-sm font-semibold text-mk-navy mb-3">Paiement sécurisé par carte</h3>
-                      {initLoading && (
-                        <div className="py-6 space-y-3">
-                          <div className="flex items-center gap-2 text-sm text-mk-sec justify-center">
-                            <Loader2 size={16} className="animate-spin" />
-                            {stripeSlow ? "Chargement plus long que prévu..." : "Initialisation du paiement..."}
-                          </div>
-                          {stripeSlow && !stripeReady && !stripeLoadError && (
-                            <div className="text-center space-y-2">
-                              <p className="text-xs text-mk-sec">
-                                Stripe.js met du temps à se charger. Cela peut venir de votre connexion, d'un bloqueur de publicités ou d'une extension navigateur.
-                              </p>
-                              <button
-                                type="button"
-                                onClick={retryStripeLoad}
-                                className="border border-mk-navy text-mk-navy font-bold text-xs px-3 py-1.5 rounded-md"
-                              >
-                                Relancer le chargement
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                      <div className="flex items-center justify-between mb-3 px-1">
-                        <label className="flex items-center gap-2 text-xs text-mk-sec cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={testMode}
-                            onChange={(e) => {
-                              setTestMode(e.target.checked);
-                              if (e.target.checked) {
-                                setClientSecret(null);
-                                setInitError(null);
-                                setStripeLoadError(null);
-                              } else {
-                                setInitStarted(false);
-                              }
-                            }}
-                          />
-                          Mode test (sans paiement carte)
-                        </label>
+                    <div className="border border-mk-line rounded-lg p-4 mb-6 space-y-4">
+                      <div>
+                        <h3 className="text-sm font-semibold text-mk-navy">Paiement sécurisé par Stripe</h3>
+                        <p className="text-xs text-mk-sec mt-1">
+                          Vous serez redirigé vers la page de paiement sécurisée stripe.com pour finaliser votre commande. Aucune donnée de carte n'est saisie sur MediKong.
+                        </p>
                       </div>
+
+                      <label className="flex items-center gap-2 text-xs text-mk-sec cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={testMode}
+                          onChange={(e) => {
+                            setTestMode(e.target.checked);
+                            setInitError(null);
+                            setInitErrorStage(null);
+                          }}
+                        />
+                        Mode test (sans paiement carte)
+                      </label>
+
                       {testMode && (
                         <div className="rounded-md border border-dashed border-mk-line bg-mk-alt p-4 space-y-3">
                           <p className="text-sm text-mk-navy">
@@ -504,22 +481,23 @@ export default function CheckoutPage() {
                           </button>
                         </div>
                       )}
+
                       {!testMode && initError && !initLoading && (() => {
-                        const stage = initErrorStage ?? (orderId ? "intent" : "order");
+                        const stage = initErrorStage ?? (orderId ? "session" : "order");
                         const title =
                           stage === "order"
                             ? "Impossible de créer la commande"
-                            : "Impossible d'initialiser le paiement";
+                            : "Impossible de démarrer le paiement Stripe";
                         const hint =
                           stage === "order"
                             ? "Vérifiez votre adresse et votre connexion, puis réessayez. Aucune commande n'a été enregistrée."
-                            : `La commande ${orderNumber ?? ""} a bien été créée mais Stripe n'a pas pu démarrer le paiement. Vous pouvez réessayer ou poursuivre en mode test.`;
+                            : `La commande ${orderNumber ?? ""} a bien été créée mais Stripe n'a pas pu démarrer la session. Vous pouvez réessayer.`;
                         return (
                           <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3 space-y-3">
                             <div className="flex items-start justify-between gap-2">
                               <p className="text-sm font-semibold text-destructive">{title}</p>
                               <span className="text-[11px] uppercase tracking-wide text-mk-sec">
-                                Étape : {stage === "order" ? "Commande" : "Paiement"}
+                                Étape : {stage === "order" ? "Commande" : "Stripe"}
                               </span>
                             </div>
                             <p className="text-sm text-mk-navy">{initError}</p>
@@ -528,18 +506,17 @@ export default function CheckoutPage() {
                               <button
                                 type="button"
                                 onClick={() => {
-                                  setClientSecret(null);
                                   setInitError(null);
                                   setInitErrorStage(null);
                                   if (stage === "order") {
                                     setOrderId(null);
                                     setOrderNumber(null);
                                   }
-                                  setInitStarted(false);
+                                  handlePlaceOrder();
                                 }}
                                 className="bg-mk-blue text-white font-bold text-sm px-4 py-2 rounded-md"
                               >
-                                {stage === "order" ? "Recréer la commande" : "Relancer le paiement"}
+                                {stage === "order" ? "Recréer la commande" : "Relancer Stripe"}
                               </button>
                               {stage === "order" && (
                                 <button
@@ -550,57 +527,31 @@ export default function CheckoutPage() {
                                   Modifier l'adresse
                                 </button>
                               )}
-                              {stage === "intent" && orderId && orderNumber && (
-                                <button
-                                  type="button"
-                                  onClick={handleTestOrderConfirmation}
-                                  disabled={submitting}
-                                  className="border border-mk-navy text-mk-navy font-bold text-sm px-4 py-2 rounded-md disabled:opacity-60"
-                                >
-                                  {submitting ? "Validation..." : "Poursuivre en mode test"}
-                                </button>
-                              )}
                             </div>
                           </div>
                         );
                       })()}
-                      {!testMode && clientSecret && !stripeReady && !stripeLoadError && (
-                        <div className="flex items-center gap-2 text-sm text-mk-sec py-6 justify-center">
-                          <Loader2 size={16} className="animate-spin" /> Chargement du module carte...
+
+                      {!testMode && (
+                        <div className="flex gap-3 pt-2">
+                          <button
+                            type="button"
+                            onClick={() => setStep(2)}
+                            disabled={submitting || initLoading}
+                            className="border border-mk-navy text-mk-navy font-bold text-sm px-6 py-3 rounded-md disabled:opacity-50"
+                          >
+                            Retour
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handlePlaceOrder}
+                            disabled={submitting || initLoading}
+                            className="bg-mk-green text-white font-bold text-sm px-6 py-3 rounded-md flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                          >
+                            {(submitting || initLoading) && <Loader2 size={16} className="animate-spin" />}
+                            {initLoading ? "Redirection vers Stripe..." : "Passer la commande"}
+                          </button>
                         </div>
-                      )}
-                      {!testMode && stripeLoadError && !initLoading && (
-                        <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3 space-y-3">
-                          <p className="text-sm font-semibold text-destructive">Impossible de charger Stripe.js</p>
-                          <p className="text-sm text-mk-navy">{stripeLoadError}</p>
-                          <div className="flex flex-wrap gap-2">
-                            <button
-                              type="button"
-                              onClick={retryStripeLoad}
-                              className="bg-mk-blue text-white font-bold text-sm px-4 py-2 rounded-md"
-                            >
-                              Relancer le chargement de Stripe.js
-                            </button>
-                            {orderId && orderNumber && (
-                              <button
-                                type="button"
-                                onClick={handleTestOrderConfirmation}
-                                disabled={submitting}
-                                className="border border-mk-navy text-mk-navy font-bold text-sm px-4 py-2 rounded-md disabled:opacity-60"
-                              >
-                                {submitting ? "Validation..." : "Poursuivre en mode test"}
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                      {!testMode && clientSecret && stripePromise && stripeReady && (
-                        <Elements
-                          stripe={stripePromise}
-                          options={{ clientSecret, appearance: { theme: "stripe" } } satisfies StripeElementsOptions}
-                        >
-                          <StripePaymentForm onSuccess={handlePaymentSuccess} onBack={() => setStep(2)} />
-                        </Elements>
                       )}
                     </div>
 

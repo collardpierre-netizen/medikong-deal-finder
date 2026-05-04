@@ -303,6 +303,7 @@ export default function CartPage() {
                             onClick={() => {
                               // Remove all items from this supplier group
                               group.items.forEach(item => removeFromCart.mutate(item.id));
+                              scrollTop();
                             }}
                             className="text-mk-ter hover:text-mk-red transition-colors p-1"
                           >

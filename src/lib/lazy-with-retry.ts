@@ -173,14 +173,27 @@ export function lazyWithRetry<T extends ComponentType<any>>(
       // Try to extract a URL from the original error to probe its content-type.
       const msg = getErrorMessage(importError);
       const urlMatch = msg.match(/https?:\/\/[^\s'")]+\.[a-z]+(?:\?[^\s'")]*)?/i);
-      if (urlMatch && (await isHtmlResponse(urlMatch[0]))) {
+      let probe: ChunkProbeResult | null = null;
+      if (urlMatch) {
+        probe = await probeChunkUrl(urlMatch[0]);
+      }
+
+      if (probe?.looksLikeHtml) {
         importError = new Error(
-          `Lazy chunk "${key}" was served as text/html instead of JavaScript (stale deploy or SPA fallback): ${urlMatch[0]}`,
+          `Lazy chunk "${key}" was served as text/html instead of JavaScript (stale deploy or SPA fallback): ${probe.url}`,
         );
       } else if (!importError) {
         importError = new Error(
           `Lazy chunk "${key}" resolved without a default export (stale or invalid chunk)`,
         );
+      }
+
+      // Attach diagnostic context so the boundary/reporter can persist it.
+      try {
+        (importError as Error & { chunkKey?: string; probe?: ChunkProbeResult | null }).chunkKey = key;
+        (importError as Error & { chunkKey?: string; probe?: ChunkProbeResult | null }).probe = probe;
+      } catch {
+        /* ignore */
       }
 
       if (typeof window !== "undefined" && isChunkLoadError(importError)) {

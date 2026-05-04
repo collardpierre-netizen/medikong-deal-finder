@@ -16,7 +16,7 @@ export default function ConfirmationPage() {
   const { user } = useAuth();
   const [lastChecked, setLastChecked] = useState<Date>(new Date());
 
-  const { data: order, isFetching, refetch, dataUpdatedAt } = useQuery({
+  const { data: order, isFetching, refetch, dataUpdatedAt, error, failureCount, errorUpdatedAt } = useQuery({
     queryKey: ["order-confirmation", orderNumber],
     enabled: !!user && !!orderNumber,
     refetchInterval: (query) => {
@@ -28,6 +28,9 @@ export default function ConfirmationPage() {
       return 5000;
     },
     refetchOnWindowFocus: true,
+    // Auto-retry exponentiel jusqu'à 5 tentatives en cas d'échec réseau/DB
+    retry: 5,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 15000),
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
@@ -42,6 +45,9 @@ export default function ConfirmationPage() {
   useEffect(() => {
     if (dataUpdatedAt) setLastChecked(new Date(dataUpdatedAt));
   }, [dataUpdatedAt]);
+
+  // Considère une erreur "active" uniquement si on n'a pas encore de data fraîche
+  const hasFetchError = !!error && !order;
 
   const status = (order as any)?.status as string | undefined;
   const paymentDone = isTest || (!!status && !["pending", "pending_payment", "draft"].includes(status));

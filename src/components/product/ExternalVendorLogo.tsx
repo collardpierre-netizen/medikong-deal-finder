@@ -47,6 +47,13 @@ export function ExternalVendorLogo({
     setFailed(!!logoUrl && FAILED_LOGOS.has(logoUrl));
   }, [logoUrl]);
 
+  // Route external logos through image-proxy to bypass hotlink/CORS protection
+  // (e.g. IIS servers like idphar.be that 403 on cross-origin Referer)
+  const proxiedSrc = useMemo(
+    () => (logoUrl ? getProductImageSrc(logoUrl) : null),
+    [logoUrl],
+  );
+
   const showFallback = !logoUrl || failed;
   const initials = getInitials(name);
   const dim = { width: size, height: size };

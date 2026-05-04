@@ -133,19 +133,40 @@ export default function CheckoutPage() {
   const [initLoading, setInitLoading] = useState(false);
   const [initError, setInitError] = useState<string | null>(null);
 
-  // Lazy-init Stripe.js once
+  const [stripeLoadAttempt, setStripeLoadAttempt] = useState(0);
+  const [stripeSlow, setStripeSlow] = useState(false);
+
+  // Lazy-init Stripe.js (re-trigger on retry)
   useEffect(() => {
-    if (stripePromise) return;
+    setStripeReady(false);
+    setStripeLoadError(null);
+    setStripeSlow(false);
     const promise = getStripe();
     setStripePromise(promise);
+    const slowTimer = setTimeout(() => setStripeSlow(true), 6000);
+    let cancelled = false;
     promise.then((stripe) => {
+      if (cancelled) return;
+      clearTimeout(slowTimer);
       if (stripe) {
         setStripeReady(true);
       } else {
-        setStripeLoadError("Le paiement carte ne peut pas se charger dans ce navigateur. La commande peut quand même être enregistrée pour test.");
+        setStripeLoadError(
+          getStripeLoadError() ||
+            "Stripe.js n'a pas pu se charger. Vérifiez votre connexion ou désactivez les bloqueurs de scripts."
+        );
       }
     });
-  }, [stripePromise]);
+    return () => {
+      cancelled = true;
+      clearTimeout(slowTimer);
+    };
+  }, [stripeLoadAttempt]);
+
+  const retryStripeLoad = useCallback(() => {
+    resetStripe();
+    setStripeLoadAttempt((n) => n + 1);
+  }, []);
 
   const [initStarted, setInitStarted] = useState(false);
   const [testMode, setTestMode] = useState(false);

@@ -4491,6 +4491,7 @@ export type Database = {
           customer_id: string
           estimated_delivery_date: string | null
           id: string
+          is_test: boolean
           notes: string | null
           order_number: string
           payment_due_date: string | null
@@ -4516,6 +4517,7 @@ export type Database = {
           customer_id: string
           estimated_delivery_date?: string | null
           id?: string
+          is_test?: boolean
           notes?: string | null
           order_number: string
           payment_due_date?: string | null
@@ -4541,6 +4543,7 @@ export type Database = {
           customer_id?: string
           estimated_delivery_date?: string | null
           id?: string
+          is_test?: boolean
           notes?: string | null
           order_number?: string
           payment_due_date?: string | null

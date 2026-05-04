@@ -96,7 +96,7 @@ export function installBuildVersionWatcher() {
   });
   // If we already flagged stale and the user comes back, reload.
   window.addEventListener("focus", () => {
-    if (isBuildStale()) window.location.reload();
+    if (isBuildStale() && canAutoReload()) safeAutoReload();
   });
 }
 

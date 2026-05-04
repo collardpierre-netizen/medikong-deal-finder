@@ -8739,6 +8739,7 @@ export type Database = {
           investment_banner_enabled: boolean
           investment_banner_text: string | null
           reduced_vat_rate: number
+          restock_enabled: boolean
           site_name: string
           tagline: string
         }
@@ -8751,6 +8752,7 @@ export type Database = {
           investment_banner_enabled?: boolean
           investment_banner_text?: string | null
           reduced_vat_rate?: number
+          restock_enabled?: boolean
           site_name?: string
           tagline?: string
         }
@@ -8763,6 +8765,7 @@ export type Database = {
           investment_banner_enabled?: boolean
           investment_banner_text?: string | null
           reduced_vat_rate?: number
+          restock_enabled?: boolean
           site_name?: string
           tagline?: string
         }

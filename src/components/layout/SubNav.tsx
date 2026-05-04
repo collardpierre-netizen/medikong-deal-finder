@@ -1,10 +1,12 @@
 import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { LayoutGrid } from "lucide-react";
+import { useSiteFeatures } from "@/hooks/useSiteFeatures";
 
 export function SubNav() {
   const { pathname } = useLocation();
   const { t } = useTranslation();
+  const { data: features } = useSiteFeatures();
 
   const tabs = [
     { label: t("nav.shop"), path: "/" },
@@ -12,7 +14,7 @@ export function SubNav() {
     { label: t("nav.promotions"), path: "/promotions" },
     { label: t("nav.sourcing"), path: "/sourcing" },
     { label: t("nav.professionals"), path: "/professionnels" },
-    { label: "ReStock", path: "/restock" },
+    ...(features?.restockEnabled !== false ? [{ label: "ReStock", path: "/restock" }] : []),
   ];
 
   return (

@@ -106,6 +106,7 @@ const sections: NavSection[] = [
       { labelKey: "apiDocs", path: "/admin/api-docs", icon: Book },
       { labelKey: "countries", path: "/admin/pays", icon: Globe },
       { labelKey: "settings", path: "/admin/parametres", icon: Settings },
+      { label: "Modules du site", path: "/admin/modules", icon: Settings },
       { labelKey: "logs", path: "/admin/logs", icon: FileText },
       { labelKey: "auditLog", path: "/admin/audit-log", icon: ClipboardList },
       { labelKey: "contractAudit", path: "/admin/contract-audit", icon: ShieldCheckAlt },

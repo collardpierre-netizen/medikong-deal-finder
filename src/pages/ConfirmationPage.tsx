@@ -1,5 +1,5 @@
 import { Layout } from "@/components/layout/Layout";
-import { Check, Truck, Shield } from "lucide-react";
+import { Check, Truck, Shield, RefreshCw } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { PageTransition } from "@/components/shared/PageTransition";
@@ -7,16 +7,27 @@ import { formatPrice } from "@/data/mock";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useState, useEffect } from "react";
 
 export default function ConfirmationPage() {
   const [searchParams] = useSearchParams();
   const orderNumber = searchParams.get("order") || "";
   const isTest = searchParams.get("test") === "1";
   const { user } = useAuth();
+  const [lastChecked, setLastChecked] = useState<Date>(new Date());
 
-  const { data: order } = useQuery({
+  const { data: order, isFetching, refetch, dataUpdatedAt } = useQuery({
     queryKey: ["order-confirmation", orderNumber],
     enabled: !!user && !!orderNumber,
+    refetchInterval: (query) => {
+      const status = (query.state.data as any)?.status;
+      // Stop polling once final state reached
+      if (status && ["confirmed", "paid", "shipped", "delivered", "cancelled", "failed"].includes(status)) {
+        return false;
+      }
+      return 5000;
+    },
+    refetchOnWindowFocus: true,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
@@ -27,6 +38,14 @@ export default function ConfirmationPage() {
       return data;
     },
   });
+
+  useEffect(() => {
+    if (dataUpdatedAt) setLastChecked(new Date(dataUpdatedAt));
+  }, [dataUpdatedAt]);
+
+  const status = (order as any)?.status as string | undefined;
+  const paymentDone = isTest || !!status && !["pending", "pending_payment", "draft"].includes(status);
+  const confirmed = !!status && ["confirmed", "paid", "shipped", "delivered"].includes(status);
 
   const deliveryDate = new Date();
   deliveryDate.setDate(deliveryDate.getDate() + 7);
@@ -62,17 +81,31 @@ export default function ConfirmationPage() {
           >
             <ol className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs">
               {[
-                { label: "Commande créée" },
-                { label: isTest ? "Paiement simulé" : "Paiement validé" },
-                { label: "Confirmée" },
-              ].map((s, i) => (
+                { label: "Commande créée", done: true },
+                { label: isTest ? "Paiement simulé" : "Paiement validé", done: paymentDone },
+                { label: "Confirmée", done: confirmed },
+              ].map((s, i, arr) => (
                 <li key={s.label} className="flex items-center gap-1.5">
-                  <span className="w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold bg-mk-green text-white">✓</span>
-                  <span className="text-mk-navy font-medium">{s.label}</span>
-                  {i < 2 && <span className="text-mk-sec">→</span>}
+                  <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold ${s.done ? "bg-mk-green text-white" : "bg-mk-line text-mk-sec animate-pulse"}`}>
+                    {s.done ? "✓" : "…"}
+                  </span>
+                  <span className={`font-medium ${s.done ? "text-mk-navy" : "text-mk-sec"}`}>{s.label}</span>
+                  {i < arr.length - 1 && <span className="text-mk-sec">→</span>}
                 </li>
               ))}
             </ol>
+            <div className="flex items-center justify-center gap-3 mt-2 text-[11px] text-mk-sec">
+              <span>Dernière vérification : {lastChecked.toLocaleTimeString("fr-BE")}</span>
+              <button
+                type="button"
+                onClick={() => refetch()}
+                disabled={isFetching}
+                className="inline-flex items-center gap-1 underline hover:text-mk-navy disabled:opacity-50"
+              >
+                <RefreshCw size={11} className={isFetching ? "animate-spin" : ""} />
+                Actualiser
+              </button>
+            </div>
             {isTest && (
               <p className="text-[11px] text-mk-sec mt-2 text-center">Mode test : aucun paiement carte n'a été effectué.</p>
             )}

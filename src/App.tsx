@@ -16,6 +16,7 @@ import { HelmetProvider } from "react-helmet-async";
 import { Loader2 } from "lucide-react";
 import { lazyWithRetry } from "@/lib/lazy-with-retry";
 import { SafeBoundary } from "@/components/SafeBoundary";
+import { LazyRouteBoundary } from "@/components/LazyRouteBoundary";
 
 // Page loader for lazy routes
 function PageLoader() {
@@ -257,7 +258,11 @@ const queryClient = new QueryClient({
 });
 
 function LP({ children }: { children: React.ReactNode }) {
-  return <Suspense fallback={<PageLoader />}>{children}</Suspense>;
+  return (
+    <LazyRouteBoundary>
+      <Suspense fallback={<PageLoader />}>{children}</Suspense>
+    </LazyRouteBoundary>
+  );
 }
 
 const App = () => (
@@ -274,6 +279,7 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <ImpersonationBanner />
+          <LazyRouteBoundary>
           <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="/" element={<LP><HomePage /></LP>} />
@@ -538,6 +544,7 @@ const App = () => (
             <Route path="*" element={<LP><NotFound /></LP>} />
           </Routes>
           </Suspense>
+          </LazyRouteBoundary>
           <CookieConsent />
         </BrowserRouter>
       </TooltipProvider>

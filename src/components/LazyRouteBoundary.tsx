@@ -1,5 +1,5 @@
 import { Component, type ReactNode } from "react";
-import { AlertTriangle, RefreshCw } from "lucide-react";
+import { AlertTriangle, RefreshCw, Trash2 } from "lucide-react";
 import { report as reportClientError } from "@/lib/errorReporter";
 import {
   getReloadAttempts,
@@ -68,6 +68,65 @@ export class LazyRouteBoundary extends Component<Props, State> {
     if (typeof window !== "undefined") window.location.reload();
   };
 
+  handleHardReset = async () => {
+    if (typeof window === "undefined") return;
+    // Clear sessionStorage (build version, retry tokens, reload counters).
+    try {
+      window.sessionStorage.clear();
+    } catch {
+      /* ignore */
+    }
+    // Clear localStorage keys related to build/version/cache, but keep auth.
+    try {
+      const keys: string[] = [];
+      for (let i = 0; i < window.localStorage.length; i++) {
+        const k = window.localStorage.key(i);
+        if (!k) continue;
+        const lower = k.toLowerCase();
+        if (
+          lower.includes("build") ||
+          lower.includes("version") ||
+          lower.includes("cache") ||
+          lower.includes("chunk") ||
+          lower.startsWith("medikong:")
+        ) {
+          keys.push(k);
+        }
+      }
+      keys.forEach((k) => window.localStorage.removeItem(k));
+    } catch {
+      /* ignore */
+    }
+    // Clear Cache Storage (service worker / HTTP caches).
+    try {
+      if ("caches" in window) {
+        const names = await window.caches.keys();
+        await Promise.all(names.map((n) => window.caches.delete(n)));
+      }
+    } catch {
+      /* ignore */
+    }
+    // Unregister any service workers so the next load fetches fresh assets.
+    try {
+      if ("serviceWorker" in navigator) {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map((r) => r.unregister()));
+      }
+    } catch {
+      /* ignore */
+    }
+    resetReloadAttempts();
+    this.setState({ error: null });
+    // Cache-bust the URL so we bypass the HTTP cache on reload.
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.set("_v", Date.now().toString());
+      window.location.replace(url.toString());
+    } catch {
+      window.location.reload();
+    }
+  };
+
   render() {
     const { error } = this.state;
     if (!error) return this.props.children;
@@ -86,13 +145,23 @@ export class LazyRouteBoundary extends Component<Props, State> {
               ? `Le chargement a échoué après ${attempts} rechargement${attempts > 1 ? "s" : ""} automatique${attempts > 1 ? "s" : ""}. Vérifiez votre connexion puis réessayez manuellement.`
               : "Une nouvelle version du site est peut-être disponible, ou votre connexion a été interrompue. Réessayez pour continuer."}
           </p>
-          <button
-            onClick={this.handleRetry}
-            className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-md text-sm font-semibold hover:opacity-90 transition-opacity"
-          >
-            <RefreshCw size={14} />
-            Recharger la page
-          </button>
+          <div className="flex flex-col sm:flex-row gap-2 justify-center">
+            <button
+              onClick={this.handleRetry}
+              className="inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-md text-sm font-semibold hover:opacity-90 transition-opacity"
+            >
+              <RefreshCw size={14} />
+              Recharger la page
+            </button>
+            <button
+              onClick={this.handleHardReset}
+              className="inline-flex items-center justify-center gap-2 border border-border bg-background text-foreground px-4 py-2 rounded-md text-sm font-medium hover:bg-muted transition-colors"
+              title="Vide le cache local et les service workers, puis recharge"
+            >
+              <Trash2 size={14} />
+              Vider le cache et recharger
+            </button>
+          </div>
           {import.meta.env.DEV && (
             <pre className="mt-6 text-[11px] text-left text-muted-foreground bg-muted/40 rounded p-2 overflow-auto max-h-32">
               {error.message}

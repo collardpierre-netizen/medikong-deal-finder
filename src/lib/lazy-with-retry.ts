@@ -87,6 +87,15 @@ export function lazyWithRetry<T extends ComponentType<any>>(
   return lazy(async () => {
     try {
       const mod = await importer();
+      // Defensive: a stale CDN / SPA fallback can resolve a chunk request with
+      // an HTML page or an empty module. React's lazy would then store
+      // `_result = undefined` and crash on `_result.default` with a blank
+      // screen. Force a real error so the boundary + retry kick in.
+      if (!mod || typeof (mod as { default?: unknown }).default === "undefined") {
+        throw new Error(
+          `Lazy chunk "${key}" resolved without a default export (stale or invalid chunk)`,
+        );
+      }
       if (typeof window !== "undefined") {
         window.sessionStorage.removeItem(`${RETRY_TOKEN_PREFIX}${key}`);
       }

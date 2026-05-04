@@ -37,39 +37,67 @@ function isChunkLoadError(error: unknown) {
   );
 }
 
+export interface ChunkProbeResult {
+  url: string;
+  status: number | null;
+  statusText: string | null;
+  contentType: string | null;
+  contentLength: string | null;
+  bodySnippet: string | null;
+  looksLikeHtml: boolean;
+  fetchError?: string;
+}
+
 /**
- * Probes a URL to verify the server responds with a JavaScript MIME type.
- * Returns true when the response looks like HTML (SPA fallback / 404 page),
- * which means the dynamic import would silently produce an unusable module.
+ * Probes a URL and returns diagnostics (status, content-type, body snippet).
+ * Used to identify why a dynamic import failed: missing chunk, SPA fallback,
+ * CDN error page, etc.
  */
-async function isHtmlResponse(url: string): Promise<boolean> {
+export async function probeChunkUrl(url: string): Promise<ChunkProbeResult> {
+  const result: ChunkProbeResult = {
+    url,
+    status: null,
+    statusText: null,
+    contentType: null,
+    contentLength: null,
+    bodySnippet: null,
+    looksLikeHtml: false,
+  };
   try {
     const res = await fetch(url, {
       method: "GET",
       cache: "no-store",
       credentials: "same-origin",
     });
-    if (!res.ok) return true; // 4xx/5xx served as HTML error page
-    const ct = (res.headers.get("content-type") || "").toLowerCase();
-    if (!ct) return false;
-    if (ct.includes("text/html")) return true;
-    if (
-      ct.includes("javascript") ||
-      ct.includes("ecmascript") ||
-      ct.includes("module")
-    ) {
-      return false;
-    }
-    // Unknown content-type: peek at first bytes to detect "<!doctype" / "<html"
+    result.status = res.status;
+    result.statusText = res.statusText || null;
+    const ct = (res.headers.get("content-type") || "").toLowerCase() || null;
+    result.contentType = ct;
+    result.contentLength = res.headers.get("content-length");
     try {
-      const text = (await res.text()).slice(0, 64).trim().toLowerCase();
-      return text.startsWith("<!doctype") || text.startsWith("<html") || text.startsWith("<");
+      const body = await res.text();
+      result.bodySnippet = body.slice(0, 512);
+      const head = body.slice(0, 64).trim().toLowerCase();
+      const ctHtml = !!ct && ct.includes("text/html");
+      const ctJs =
+        !!ct && (ct.includes("javascript") || ct.includes("ecmascript") || ct.includes("module"));
+      result.looksLikeHtml =
+        ctHtml ||
+        (!ctJs &&
+          (head.startsWith("<!doctype") || head.startsWith("<html") || head.startsWith("<"))) ||
+        !res.ok;
     } catch {
-      return false;
+      result.looksLikeHtml = !res.ok;
     }
-  } catch {
-    return false;
+  } catch (e) {
+    result.fetchError = getErrorMessage(e);
   }
+  return result;
+}
+
+async function isHtmlResponse(url: string): Promise<boolean> {
+  const probe = await probeChunkUrl(url);
+  return probe.looksLikeHtml;
 }
 
 function readInt(key: string): number {
@@ -145,14 +173,27 @@ export function lazyWithRetry<T extends ComponentType<any>>(
       // Try to extract a URL from the original error to probe its content-type.
       const msg = getErrorMessage(importError);
       const urlMatch = msg.match(/https?:\/\/[^\s'")]+\.[a-z]+(?:\?[^\s'")]*)?/i);
-      if (urlMatch && (await isHtmlResponse(urlMatch[0]))) {
+      let probe: ChunkProbeResult | null = null;
+      if (urlMatch) {
+        probe = await probeChunkUrl(urlMatch[0]);
+      }
+
+      if (probe?.looksLikeHtml) {
         importError = new Error(
-          `Lazy chunk "${key}" was served as text/html instead of JavaScript (stale deploy or SPA fallback): ${urlMatch[0]}`,
+          `Lazy chunk "${key}" was served as text/html instead of JavaScript (stale deploy or SPA fallback): ${probe.url}`,
         );
       } else if (!importError) {
         importError = new Error(
           `Lazy chunk "${key}" resolved without a default export (stale or invalid chunk)`,
         );
+      }
+
+      // Attach diagnostic context so the boundary/reporter can persist it.
+      try {
+        (importError as Error & { chunkKey?: string; probe?: ChunkProbeResult | null }).chunkKey = key;
+        (importError as Error & { chunkKey?: string; probe?: ChunkProbeResult | null }).probe = probe;
+      } catch {
+        /* ignore */
       }
 
       if (typeof window !== "undefined" && isChunkLoadError(importError)) {

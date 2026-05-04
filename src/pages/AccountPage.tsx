@@ -154,15 +154,33 @@ export default function AccountPage() {
   };
   const [newListName, setNewListName] = useState("");
   const [importOpen, setImportOpen] = useState(false);
-  const [orderStatusFilter, setOrderStatusFilter] = useState<string>("all");
+  const ORDER_PAGE_SIZES = [10, 20, 50, 100] as const;
+  const orderStatusFilter = searchParams.get("orderStatus") || "all";
   const orderSort = (searchParams.get("orderSort") === "asc" ? "asc" : "desc") as "asc" | "desc";
-  const setOrderSort = (next: "asc" | "desc") => {
+  const orderPageSize = (() => {
+    const raw = parseInt(searchParams.get("orderPageSize") || "20", 10);
+    return ORDER_PAGE_SIZES.includes(raw as any) ? raw : 20;
+  })();
+  const orderPage = Math.max(1, parseInt(searchParams.get("orderPage") || "1", 10) || 1);
+
+  const updateOrderParams = (patch: Record<string, string | null>) => {
     setSearchParams(prev => {
       const p = new URLSearchParams(prev);
-      if (next === "desc") p.delete("orderSort"); else p.set("orderSort", next);
+      for (const [k, v] of Object.entries(patch)) {
+        if (v === null || v === "") p.delete(k); else p.set(k, v);
+      }
       return p;
     }, { replace: true });
   };
+  const setOrderStatusFilter = (next: string) =>
+    updateOrderParams({ orderStatus: next === "all" ? null : next, orderPage: null });
+  const setOrderSort = (next: "asc" | "desc") =>
+    updateOrderParams({ orderSort: next === "desc" ? null : next, orderPage: null });
+  const setOrderPageSize = (next: number) =>
+    updateOrderParams({ orderPageSize: next === 20 ? null : String(next), orderPage: null });
+  const setOrderPage = (next: number) =>
+    updateOrderParams({ orderPage: next <= 1 ? null : String(next) });
+
   const filteredOrders = (() => {
     const base = orderStatusFilter === "all"
       ? (dbOrders as any[])
@@ -173,6 +191,12 @@ export default function AccountPage() {
       return orderSort === "asc" ? ta - tb : tb - ta;
     });
   })();
+  const orderTotalPages = Math.max(1, Math.ceil(filteredOrders.length / orderPageSize));
+  const orderPageSafe = Math.min(orderPage, orderTotalPages);
+  const paginatedOrders = filteredOrders.slice(
+    (orderPageSafe - 1) * orderPageSize,
+    orderPageSafe * orderPageSize
+  );
 
   // ---- Profile state ----
   const [profileForm, setProfileForm] = useState({
@@ -567,7 +591,7 @@ export default function AccountPage() {
                       ) : (
                         <>
                           <div className="sm:hidden space-y-3">
-                            {filteredOrders.map((o: any, i: number) => {
+                            {paginatedOrders.map((o: any, i: number) => {
                               const meta = getOrderStatusMeta(o.status);
                               return (
                                 <motion.div key={o.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}>
@@ -595,7 +619,7 @@ export default function AccountPage() {
                             <div className="grid grid-cols-5 gap-3 px-4 py-2 bg-mk-alt text-xs font-semibold text-mk-sec">
                               <span>ID Commande</span><span>Date &amp; heure</span><span>Statut</span><span>Montant</span><span className="text-right">Actions</span>
                             </div>
-                            {filteredOrders.map((o: any, i: number) => {
+                            {paginatedOrders.map((o: any, i: number) => {
                               const meta = getOrderStatusMeta(o.status);
                               return (
                                 <motion.div key={o.id} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.15 + i * 0.06 }}>
@@ -619,6 +643,47 @@ export default function AccountPage() {
                               );
                             })}
                           </motion.div>
+                          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mt-4 text-sm">
+                            <div className="text-mk-sec">
+                              {filteredOrders.length === 0 ? "0 commande" : (
+                                <>
+                                  {(orderPageSafe - 1) * orderPageSize + 1}–{Math.min(orderPageSafe * orderPageSize, filteredOrders.length)} sur {filteredOrders.length}
+                                </>
+                              )}
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <label htmlFor="order-page-size" className="text-xs text-mk-sec">Par page</label>
+                              <select
+                                id="order-page-size"
+                                value={orderPageSize}
+                                onChange={(e) => setOrderPageSize(parseInt(e.target.value, 10))}
+                                className="border border-mk-line rounded-md px-2 py-1.5 text-sm bg-background"
+                              >
+                                {ORDER_PAGE_SIZES.map((s) => (
+                                  <option key={s} value={s}>{s}</option>
+                                ))}
+                              </select>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                disabled={orderPageSafe <= 1}
+                                onClick={() => setOrderPage(orderPageSafe - 1)}
+                              >
+                                Précédent
+                              </Button>
+                              <span className="text-mk-sec text-xs px-1">
+                                Page {orderPageSafe} / {orderTotalPages}
+                              </span>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                disabled={orderPageSafe >= orderTotalPages}
+                                onClick={() => setOrderPage(orderPageSafe + 1)}
+                              >
+                                Suivant
+                              </Button>
+                            </div>
+                          </div>
                         </>
                       )}
                     </div>

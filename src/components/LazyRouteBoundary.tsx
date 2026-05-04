@@ -1,6 +1,11 @@
 import { Component, type ReactNode } from "react";
 import { AlertTriangle, RefreshCw } from "lucide-react";
 import { report as reportClientError } from "@/lib/errorReporter";
+import {
+  getReloadAttempts,
+  MAX_AUTO_RELOADS_PER_SESSION,
+  resetReloadAttempts,
+} from "@/lib/lazy-with-retry";
 
 interface Props {
   children: ReactNode;
@@ -32,14 +37,18 @@ export class LazyRouteBoundary extends Component<Props, State> {
   }
 
   handleRetry = () => {
+    // Manual retry: reset the session-level reload counter so auto-recovery
+    // works again on the next chunk error after this fresh load.
+    resetReloadAttempts();
     this.setState({ error: null });
-    // Hard reload to fetch fresh chunks
     if (typeof window !== "undefined") window.location.reload();
   };
 
   render() {
     const { error } = this.state;
     if (!error) return this.props.children;
+    const attempts = getReloadAttempts();
+    const exhausted = attempts >= MAX_AUTO_RELOADS_PER_SESSION;
 
     return (
       <div className="min-h-[60vh] flex items-center justify-center px-4">
@@ -49,8 +58,9 @@ export class LazyRouteBoundary extends Component<Props, State> {
             Cette page n'a pas pu se charger
           </h1>
           <p className="text-sm text-muted-foreground mb-6">
-            Une nouvelle version du site est peut-être disponible, ou votre
-            connexion a été interrompue. Réessayez pour continuer.
+            {exhausted
+              ? `Le chargement a échoué après ${attempts} rechargement${attempts > 1 ? "s" : ""} automatique${attempts > 1 ? "s" : ""}. Vérifiez votre connexion puis réessayez manuellement.`
+              : "Une nouvelle version du site est peut-être disponible, ou votre connexion a été interrompue. Réessayez pour continuer."}
           </p>
           <button
             onClick={this.handleRetry}

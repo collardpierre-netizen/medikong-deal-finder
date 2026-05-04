@@ -4675,10 +4675,12 @@ export type Database = {
           commission_amount: number
           commission_rate: number
           created_at: string
+          error_message: string | null
           id: string
           order_id: string
           status: string
           stripe_transfer_id: string | null
+          updated_at: string | null
           vendor_id: string
         }
         Insert: {
@@ -4686,10 +4688,12 @@ export type Database = {
           commission_amount?: number
           commission_rate?: number
           created_at?: string
+          error_message?: string | null
           id?: string
           order_id: string
           status?: string
           stripe_transfer_id?: string | null
+          updated_at?: string | null
           vendor_id: string
         }
         Update: {
@@ -4697,10 +4701,12 @@ export type Database = {
           commission_amount?: number
           commission_rate?: number
           created_at?: string
+          error_message?: string | null
           id?: string
           order_id?: string
           status?: string
           stripe_transfer_id?: string | null
+          updated_at?: string | null
           vendor_id?: string
         }
         Relationships: [

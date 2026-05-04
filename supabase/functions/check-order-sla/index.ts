@@ -211,14 +211,27 @@ Deno.serve(async (req) => {
   }
 
   // 4) Auto-resolve alerts whose underlying issue is fixed
-  await supabase.rpc("noop_dummy" as any).catch(() => {});
-  // Resolve when sub_order moved past pending/processing or relevant timestamp set
-  await supabase
+  const { data: openAlerts } = await supabase
     .from("order_vendor_sla_alerts")
-    .update({ resolved_at: new Date().toISOString(), resolved_reason: "auto: action completed" })
-    .is("resolved_at", null)
-    .in("alert_type", ["not_viewed"])
-    .not("sub_order_id", "is", null);
+    .select("id, alert_type, sub_orders:sub_order_id(status, vendor_first_viewed_at, vendor_confirmed_at, shipped_at)")
+    .is("resolved_at", null);
+
+  for (const a of (openAlerts ?? []) as any[]) {
+    const so = a.sub_orders;
+    if (!so) continue;
+    let resolved = false;
+    if (a.alert_type === "not_viewed" && so.vendor_first_viewed_at) resolved = true;
+    if (a.alert_type === "not_confirmed" && so.vendor_confirmed_at) resolved = true;
+    if (a.alert_type === "not_shipped" && (so.shipped_at || ["shipped","delivered"].includes(so.status))) resolved = true;
+    if (a.alert_type === "critical_escalation" && (so.shipped_at || ["shipped","delivered","cancelled"].includes(so.status))) resolved = true;
+    if (so.status === "cancelled") resolved = true;
+    if (resolved) {
+      await supabase
+        .from("order_vendor_sla_alerts")
+        .update({ resolved_at: new Date().toISOString(), resolved_reason: "auto: action completed" })
+        .eq("id", a.id);
+    }
+  }
 
   return j({ ok: true, scanned: subOrders?.length ?? 0, created: created.length, skipped: skipped.length });
 });

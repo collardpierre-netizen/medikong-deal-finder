@@ -542,18 +542,66 @@ export default function CheckoutPage() {
                           </button>
                         </div>
                       )}
-                      {!testMode && initError && !initLoading && (
-                        <div className="space-y-3">
-                          <p className="text-sm text-destructive">{initError}</p>
-                          <button
-                            type="button"
-                            onClick={() => { setClientSecret(null); setInitError(null); setInitStarted(false); }}
-                            className="border border-mk-navy text-mk-navy font-bold text-sm px-4 py-2 rounded-md"
-                          >
-                            Réessayer
-                          </button>
-                        </div>
-                      )}
+                      {!testMode && initError && !initLoading && (() => {
+                        const stage = initErrorStage ?? (orderId ? "intent" : "order");
+                        const title =
+                          stage === "order"
+                            ? "Impossible de créer la commande"
+                            : "Impossible d'initialiser le paiement";
+                        const hint =
+                          stage === "order"
+                            ? "Vérifiez votre adresse et votre connexion, puis réessayez. Aucune commande n'a été enregistrée."
+                            : `La commande ${orderNumber ?? ""} a bien été créée mais Stripe n'a pas pu démarrer le paiement. Vous pouvez réessayer ou poursuivre en mode test.`;
+                        return (
+                          <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3 space-y-3">
+                            <div className="flex items-start justify-between gap-2">
+                              <p className="text-sm font-semibold text-destructive">{title}</p>
+                              <span className="text-[11px] uppercase tracking-wide text-mk-sec">
+                                Étape : {stage === "order" ? "Commande" : "Paiement"}
+                              </span>
+                            </div>
+                            <p className="text-sm text-mk-navy">{initError}</p>
+                            <p className="text-xs text-mk-sec">{hint}</p>
+                            <div className="flex flex-wrap gap-2">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setClientSecret(null);
+                                  setInitError(null);
+                                  setInitErrorStage(null);
+                                  if (stage === "order") {
+                                    setOrderId(null);
+                                    setOrderNumber(null);
+                                  }
+                                  setInitStarted(false);
+                                }}
+                                className="bg-mk-blue text-white font-bold text-sm px-4 py-2 rounded-md"
+                              >
+                                {stage === "order" ? "Recréer la commande" : "Relancer le paiement"}
+                              </button>
+                              {stage === "order" && (
+                                <button
+                                  type="button"
+                                  onClick={() => setStep(1)}
+                                  className="border border-mk-navy text-mk-navy font-bold text-sm px-4 py-2 rounded-md"
+                                >
+                                  Modifier l'adresse
+                                </button>
+                              )}
+                              {stage === "intent" && orderId && orderNumber && (
+                                <button
+                                  type="button"
+                                  onClick={handleTestOrderConfirmation}
+                                  disabled={submitting}
+                                  className="border border-mk-navy text-mk-navy font-bold text-sm px-4 py-2 rounded-md disabled:opacity-60"
+                                >
+                                  {submitting ? "Validation..." : "Poursuivre en mode test"}
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })()}
                       {!testMode && clientSecret && !stripeReady && !stripeLoadError && (
                         <div className="flex items-center gap-2 text-sm text-mk-sec py-6 justify-center">
                           <Loader2 size={16} className="animate-spin" /> Chargement du module carte...

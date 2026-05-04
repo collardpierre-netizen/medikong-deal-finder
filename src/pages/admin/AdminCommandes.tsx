@@ -115,10 +115,31 @@ const AdminCommandes = () => {
 
   const tabs = [
     { key: "list" as const, label: "Liste" },
+    { key: "sla" as const, label: `Retards SLA${slaCount?.total ? ` (${slaCount.total})` : ""}` },
     { key: "timeline" as const, label: "Timeline" },
     { key: "aging" as const, label: "Échéances paiement" },
     { key: "buyers" as const, label: "Par type acheteur" },
   ];
+
+  const handleSoftDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      const { error } = await supabase.rpc("admin_soft_delete_order" as any, {
+        _order_id: deleteTarget.id,
+        _reason: deleteReason || null,
+      });
+      if (error) throw error;
+      toast.success(`Commande ${deleteTarget.number} supprimée`);
+      await queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
+      setDeleteTarget(null);
+      setDeleteReason("");
+    } catch (e: any) {
+      toast.error(e?.message || "Échec de la suppression");
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const timeline = displayOrders.slice(0, 6).map(o => ({
     time: new Date().toLocaleTimeString("fr-BE", { hour: "2-digit", minute: "2-digit" }),

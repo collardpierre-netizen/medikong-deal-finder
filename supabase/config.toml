@@ -1,5 +1,8 @@
 project_id = "iokwqxhhpblcbkrxgcje"
 
+[functions.get-stripe-config]
+verify_jwt = false
+
 [functions.translate-and-cache]
 verify_jwt = false
 

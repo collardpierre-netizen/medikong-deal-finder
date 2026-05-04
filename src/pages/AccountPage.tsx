@@ -576,10 +576,13 @@ export default function AccountPage() {
                                       <span className="font-medium text-mk-navy text-sm">{o.order_number}</span>
                                       <span className={`text-xs font-medium px-2 py-0.5 rounded ${meta.badgeClass}`}>{meta.label}</span>
                                     </div>
-                                    <div className="flex justify-between text-sm mb-3">
+                                    <div className="flex justify-between text-sm mb-1">
                                       <span className="text-mk-sec">{formatOrderDateTime(o.created_at)}</span>
                                       <span className="font-bold text-mk-navy">{formatPrice(Number(o.total_incl_vat))} EUR</span>
                                     </div>
+                                    {o.updated_at && o.updated_at !== o.created_at && (
+                                      <div className="text-xs text-mk-sec mb-3">Statut MAJ : {formatOrderDateTime(o.updated_at)}</div>
+                                    )}
                                     <Button size="sm" variant="outline" className="w-full border-mk-blue text-mk-blue hover:bg-mk-blue hover:text-white">
                                       Voir le détail
                                     </Button>

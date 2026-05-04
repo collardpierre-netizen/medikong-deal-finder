@@ -29,6 +29,42 @@ interface AddressForm {
 
 const emptyAddress: AddressForm = { company: "", street: "", street2: "", postalCode: "", city: "", country: "BE" };
 
+const AddressFields = ({ value, onChange, prefix }: { value: AddressForm; onChange: (v: AddressForm) => void; prefix: string }) => (
+  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+    <div className="sm:col-span-2">
+      <Label htmlFor={`${prefix}-company`} className="text-xs text-mk-sec mb-1">Société *</Label>
+      <Input id={`${prefix}-company`} value={value.company} onChange={e => onChange({ ...value, company: e.target.value })} placeholder="Nom de la société" />
+    </div>
+    <div className="sm:col-span-2">
+      <Label htmlFor={`${prefix}-street`} className="text-xs text-mk-sec mb-1">Adresse *</Label>
+      <Input id={`${prefix}-street`} value={value.street} onChange={e => onChange({ ...value, street: e.target.value })} placeholder="Rue et numéro" />
+    </div>
+    <div className="sm:col-span-2">
+      <Label htmlFor={`${prefix}-street2`} className="text-xs text-mk-sec mb-1">Complément</Label>
+      <Input id={`${prefix}-street2`} value={value.street2} onChange={e => onChange({ ...value, street2: e.target.value })} placeholder="Étage, boîte, etc." />
+    </div>
+    <div>
+      <Label htmlFor={`${prefix}-postal`} className="text-xs text-mk-sec mb-1">Code postal *</Label>
+      <Input id={`${prefix}-postal`} value={value.postalCode} onChange={e => onChange({ ...value, postalCode: e.target.value })} placeholder="1000" />
+    </div>
+    <div>
+      <Label htmlFor={`${prefix}-city`} className="text-xs text-mk-sec mb-1">Ville *</Label>
+      <Input id={`${prefix}-city`} value={value.city} onChange={e => onChange({ ...value, city: e.target.value })} placeholder="Bruxelles" />
+    </div>
+    <div>
+      <Label htmlFor={`${prefix}-country`} className="text-xs text-mk-sec mb-1">Pays</Label>
+      <select id={`${prefix}-country`} value={value.country} onChange={e => onChange({ ...value, country: e.target.value })}
+        className="w-full border border-input rounded-md px-3 py-2 text-sm bg-background">
+        <option value="BE">Belgique</option>
+        <option value="FR">France</option>
+        <option value="LU">Luxembourg</option>
+        <option value="NL">Pays-Bas</option>
+        <option value="DE">Allemagne</option>
+      </select>
+    </div>
+  </div>
+);
+
 export default function CheckoutPage() {
   const { user } = useAuth();
   const { items, clearCart } = useCart();

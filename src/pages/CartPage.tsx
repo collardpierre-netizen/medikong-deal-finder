@@ -103,6 +103,12 @@ export default function CartPage() {
   }, [items, vendorMap, getMovForVendor, visRules, country]);
 
   const totalCart = items.reduce((s, i) => s + (i.price_excl_vat || i.product?.price || 0) * i.quantity, 0);
+  const totalCartIncl = items.reduce((s, i) => {
+    const excl = i.price_excl_vat || i.product?.price || 0;
+    const incl = i.price_incl_vat && i.price_incl_vat > 0 ? i.price_incl_vat : excl * 1.21;
+    return s + incl * i.quantity;
+  }, 0);
+  const totalVat = Math.max(totalCartIncl - totalCart, 0);
   const readyCount = supplierGroups.filter(g => g.meetsMinimum).length;
   const belowCount = supplierGroups.filter(g => !g.meetsMinimum).length;
   const totalReady = supplierGroups.filter(g => g.meetsMinimum).reduce((s, g) => s + g.total, 0);

@@ -60,7 +60,11 @@ export default function CheckoutPage() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const paymentMethods = ["Carte bancaire", "Virement SEPA", "Paiement différé Mondu"];
+  const paymentMethods = [
+    { label: "Carte bancaire", enabled: true },
+    { label: "Virement SEPA", enabled: false },
+    { label: "Paiement différé Mondu", enabled: false },
+  ];
 
   const getItemPrice = (item: typeof items[0]) => item.price_excl_vat || item.product?.price || 0;
   const subtotal = items.reduce((s, i) => s + getItemPrice(i) * i.quantity, 0);

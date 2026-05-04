@@ -132,6 +132,7 @@ export default function CheckoutPage() {
   const [orderNumber, setOrderNumber] = useState<string | null>(null);
   const [initLoading, setInitLoading] = useState(false);
   const [initError, setInitError] = useState<string | null>(null);
+  const [initErrorStage, setInitErrorStage] = useState<"order" | "intent" | null>(null);
 
   const [stripeLoadAttempt, setStripeLoadAttempt] = useState(0);
   const [stripeSlow, setStripeSlow] = useState(false);

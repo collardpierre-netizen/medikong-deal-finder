@@ -515,35 +515,41 @@ export default function AccountPage() {
                       ) : (
                         <>
                           <div className="sm:hidden space-y-3">
-                            {dbOrders.map((o: any, i: number) => (
-                              <motion.div key={o.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}>
-                                <Link to={`/commande/${o.id}`} className="block border border-mk-line rounded-lg p-4">
-                                  <div className="flex justify-between mb-2">
-                                    <span className="font-medium text-mk-navy text-sm">{o.order_number}</span>
-                                    <span className="text-xs font-medium px-2 py-0.5 rounded bg-mk-alt text-mk-sec">{o.status}</span>
-                                  </div>
-                                  <div className="flex justify-between text-sm">
-                                    <span className="text-mk-sec">{new Date(o.created_at).toLocaleDateString("fr-BE")}</span>
-                                    <span className="font-bold text-mk-navy">{formatPrice(Number(o.total_incl_vat))} EUR</span>
-                                  </div>
-                                </Link>
-                              </motion.div>
-                            ))}
+                            {dbOrders.map((o: any, i: number) => {
+                              const meta = getOrderStatusMeta(o.status);
+                              return (
+                                <motion.div key={o.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}>
+                                  <Link to={`/commande/${o.id}`} className="block border border-mk-line rounded-lg p-4">
+                                    <div className="flex justify-between mb-2">
+                                      <span className="font-medium text-mk-navy text-sm">{o.order_number}</span>
+                                      <span className={`text-xs font-medium px-2 py-0.5 rounded ${meta.badgeClass}`}>{meta.label}</span>
+                                    </div>
+                                    <div className="flex justify-between text-sm">
+                                      <span className="text-mk-sec">{formatOrderDateTime(o.created_at)}</span>
+                                      <span className="font-bold text-mk-navy">{formatPrice(Number(o.total_incl_vat))} EUR</span>
+                                    </div>
+                                  </Link>
+                                </motion.div>
+                              );
+                            })}
                           </div>
                           <motion.div className="hidden sm:block border border-mk-line rounded-lg overflow-hidden" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                             <div className="grid grid-cols-4 gap-3 px-4 py-2 bg-mk-alt text-xs font-semibold text-mk-sec">
-                              <span>ID Commande</span><span>Date</span><span>Statut</span><span>Montant</span>
+                              <span>ID Commande</span><span>Date &amp; heure</span><span>Statut</span><span>Montant</span>
                             </div>
-                            {dbOrders.map((o: any, i: number) => (
-                              <motion.div key={o.id} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.15 + i * 0.06 }}>
-                                <Link to={`/commande/${o.id}`} className="grid grid-cols-4 gap-3 px-4 py-3 border-t border-mk-line text-sm items-center hover:bg-mk-alt">
-                                  <span className="font-medium text-mk-navy">{o.order_number}</span>
-                                  <span className="text-mk-sec">{new Date(o.created_at).toLocaleDateString("fr-BE")}</span>
-                                  <span className="text-xs font-medium px-2 py-0.5 rounded w-fit bg-mk-alt text-mk-sec">{o.status}</span>
-                                  <span className="font-bold text-mk-navy">{formatPrice(Number(o.total_incl_vat))} EUR</span>
-                                </Link>
-                              </motion.div>
-                            ))}
+                            {dbOrders.map((o: any, i: number) => {
+                              const meta = getOrderStatusMeta(o.status);
+                              return (
+                                <motion.div key={o.id} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.15 + i * 0.06 }}>
+                                  <Link to={`/commande/${o.id}`} className="grid grid-cols-4 gap-3 px-4 py-3 border-t border-mk-line text-sm items-center hover:bg-mk-alt">
+                                    <span className="font-medium text-mk-navy">{o.order_number}</span>
+                                    <span className="text-mk-sec">{formatOrderDateTime(o.created_at)}</span>
+                                    <span className={`text-xs font-medium px-2 py-0.5 rounded w-fit ${meta.badgeClass}`}>{meta.label}</span>
+                                    <span className="font-bold text-mk-navy">{formatPrice(Number(o.total_incl_vat))} EUR</span>
+                                  </Link>
+                                </motion.div>
+                              );
+                            })}
                           </motion.div>
                         </>
                       )}

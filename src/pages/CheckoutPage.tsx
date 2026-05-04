@@ -179,6 +179,8 @@ export default function CheckoutPage() {
     (async () => {
       setInitLoading(true);
       setInitError(null);
+      setInitErrorStage(null);
+      let stage: "order" | "intent" = "order";
       try {
         const finalBilling = sameAsBilling ? shippingAddr : billingAddr;
         const order = await createOrder.mutateAsync({
@@ -206,6 +208,7 @@ export default function CheckoutPage() {
         setOrderId(order.id);
         setOrderNumber(order.order_number);
 
+        stage = "intent";
         const { data, error } = await supabase.functions.invoke("stripe-checkout", {
           body: { action: "create-payment-intent", order_id: order.id },
         });
@@ -217,8 +220,13 @@ export default function CheckoutPage() {
       } catch (e: any) {
         if (!cancelled) {
           setInitError(e.message || "Erreur d'initialisation");
+          setInitErrorStage(stage);
           setInitStarted(false); // allow retry
-          toast.error("Erreur paiement: " + (e.message || "Réessayez"));
+          toast.error(
+            stage === "order"
+              ? "Création de commande impossible : " + (e.message || "Réessayez")
+              : "Initialisation paiement impossible : " + (e.message || "Réessayez")
+          );
         }
       } finally {
         if (!cancelled) setInitLoading(false);

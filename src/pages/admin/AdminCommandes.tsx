@@ -124,12 +124,45 @@ const AdminCommandes = () => {
     setExpandedOrder(prev => prev === orderId ? null : orderId);
   };
 
+  const handlePurgeTestOrders = async () => {
+    setPurging(true);
+    try {
+      const { data, error } = await supabase.rpc("admin_purge_test_orders" as any);
+      if (error) throw error;
+      const result = (data as any) || {};
+      const n = Number(result.orders_deleted || 0);
+      if (n === 0) {
+        toast.info("Aucune commande test à supprimer");
+      } else {
+        toast.success(`${n} commande${n > 1 ? "s" : ""} test supprimée${n > 1 ? "s" : ""} (${result.lines_deleted || 0} ligne(s))`);
+      }
+      await queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
+      setPurgeOpen(false);
+    } catch (e: any) {
+      toast.error(e?.message || "Échec de la suppression");
+    } finally {
+      setPurging(false);
+    }
+  };
+
   return (
     <div>
       <AdminTopBar title={t("orders")} subtitle="Gestion des commandes B2B" actions={
-        <button className="flex items-center gap-2 px-4 py-2 rounded-md text-[13px] font-bold text-white" style={{ backgroundColor: "#1B5BDA" }}>
-          <Download size={15} /> Export CSV
-        </button>
+        <div className="flex items-center gap-2">
+          {testCount > 0 && (
+            <button
+              onClick={() => setPurgeOpen(true)}
+              className="flex items-center gap-2 px-3 py-2 rounded-md text-[13px] font-semibold"
+              style={{ backgroundColor: "#fff", border: "1px solid #FCA5A5", color: "#B91C1C" }}
+              title="Supprimer toutes les commandes marquées « test »"
+            >
+              <Trash2 size={14} /> Purger commandes test ({testCount})
+            </button>
+          )}
+          <button className="flex items-center gap-2 px-4 py-2 rounded-md text-[13px] font-bold text-white" style={{ backgroundColor: "#1B5BDA" }}>
+            <Download size={15} /> Export CSV
+          </button>
+        </div>
       } />
 
       <div className="grid grid-cols-5 gap-3 mb-5">

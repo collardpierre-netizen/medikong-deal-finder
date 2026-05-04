@@ -4,9 +4,16 @@ import KpiCard from "@/components/admin/KpiCard";
 import StatusBadge from "@/components/admin/StatusBadge";
 import { useI18n } from "@/contexts/I18nContext";
 import { useOrders } from "@/hooks/useAdminData";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   ShoppingCart, TrendingUp, Clock, CreditCard, Truck,
-  Search, Filter, Download, ChevronDown, ChevronRight, Package,
+  Search, Filter, Download, ChevronDown, ChevronRight, Package, Trash2,
 } from "lucide-react";
 
 const buyerColors: Record<string, { bg: string; text: string }> = {
@@ -39,10 +46,13 @@ const fmt = (n: number) => n.toLocaleString("fr-BE", { minimumFractionDigits: 2,
 const AdminCommandes = () => {
   const { t } = useI18n();
   const { data: ordersData = [], isLoading } = useOrders();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<"list" | "timeline" | "aging" | "buyers">("list");
   const [statusFilter, setStatusFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [hideTest, setHideTest] = useState(true);
+  const [purgeOpen, setPurgeOpen] = useState(false);
+  const [purging, setPurging] = useState(false);
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
 
   const orders = ordersData.map(o => ({
@@ -114,12 +124,45 @@ const AdminCommandes = () => {
     setExpandedOrder(prev => prev === orderId ? null : orderId);
   };
 
+  const handlePurgeTestOrders = async () => {
+    setPurging(true);
+    try {
+      const { data, error } = await supabase.rpc("admin_purge_test_orders" as any);
+      if (error) throw error;
+      const result = (data as any) || {};
+      const n = Number(result.orders_deleted || 0);
+      if (n === 0) {
+        toast.info("Aucune commande test à supprimer");
+      } else {
+        toast.success(`${n} commande${n > 1 ? "s" : ""} test supprimée${n > 1 ? "s" : ""} (${result.lines_deleted || 0} ligne(s))`);
+      }
+      await queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
+      setPurgeOpen(false);
+    } catch (e: any) {
+      toast.error(e?.message || "Échec de la suppression");
+    } finally {
+      setPurging(false);
+    }
+  };
+
   return (
     <div>
       <AdminTopBar title={t("orders")} subtitle="Gestion des commandes B2B" actions={
-        <button className="flex items-center gap-2 px-4 py-2 rounded-md text-[13px] font-bold text-white" style={{ backgroundColor: "#1B5BDA" }}>
-          <Download size={15} /> Export CSV
-        </button>
+        <div className="flex items-center gap-2">
+          {testCount > 0 && (
+            <button
+              onClick={() => setPurgeOpen(true)}
+              className="flex items-center gap-2 px-3 py-2 rounded-md text-[13px] font-semibold"
+              style={{ backgroundColor: "#fff", border: "1px solid #FCA5A5", color: "#B91C1C" }}
+              title="Supprimer toutes les commandes marquées « test »"
+            >
+              <Trash2 size={14} /> Purger commandes test ({testCount})
+            </button>
+          )}
+          <button className="flex items-center gap-2 px-4 py-2 rounded-md text-[13px] font-bold text-white" style={{ backgroundColor: "#1B5BDA" }}>
+            <Download size={15} /> Export CSV
+          </button>
+        </div>
       } />
 
       <div className="grid grid-cols-5 gap-3 mb-5">
@@ -378,6 +421,28 @@ const AdminCommandes = () => {
           </div>
         </div>
       )}
+
+      <AlertDialog open={purgeOpen} onOpenChange={setPurgeOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer les commandes test ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette action va supprimer définitivement <strong>{testCount}</strong> commande{testCount > 1 ? "s" : ""} marquée{testCount > 1 ? "s" : ""} « test » ainsi que toutes leurs lignes.
+              L'opération sera enregistrée dans le journal d'audit. Elle est irréversible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={purging}>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); handlePurgeTestOrders(); }}
+              disabled={purging || testCount === 0}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {purging ? "Suppression..." : `Supprimer ${testCount} commande${testCount > 1 ? "s" : ""}`}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

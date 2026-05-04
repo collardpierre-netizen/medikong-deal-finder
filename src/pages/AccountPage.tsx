@@ -591,7 +591,7 @@ export default function AccountPage() {
                       ) : (
                         <>
                           <div className="sm:hidden space-y-3">
-                            {filteredOrders.map((o: any, i: number) => {
+                            {paginatedOrders.map((o: any, i: number) => {
                               const meta = getOrderStatusMeta(o.status);
                               return (
                                 <motion.div key={o.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}>

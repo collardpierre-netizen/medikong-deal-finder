@@ -81,17 +81,31 @@ export default function ConfirmationPage() {
           >
             <ol className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs">
               {[
-                { label: "Commande créée" },
-                { label: isTest ? "Paiement simulé" : "Paiement validé" },
-                { label: "Confirmée" },
-              ].map((s, i) => (
+                { label: "Commande créée", done: true },
+                { label: isTest ? "Paiement simulé" : "Paiement validé", done: paymentDone },
+                { label: "Confirmée", done: confirmed },
+              ].map((s, i, arr) => (
                 <li key={s.label} className="flex items-center gap-1.5">
-                  <span className="w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold bg-mk-green text-white">✓</span>
-                  <span className="text-mk-navy font-medium">{s.label}</span>
-                  {i < 2 && <span className="text-mk-sec">→</span>}
+                  <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold ${s.done ? "bg-mk-green text-white" : "bg-mk-line text-mk-sec animate-pulse"}`}>
+                    {s.done ? "✓" : "…"}
+                  </span>
+                  <span className={`font-medium ${s.done ? "text-mk-navy" : "text-mk-sec"}`}>{s.label}</span>
+                  {i < arr.length - 1 && <span className="text-mk-sec">→</span>}
                 </li>
               ))}
             </ol>
+            <div className="flex items-center justify-center gap-3 mt-2 text-[11px] text-mk-sec">
+              <span>Dernière vérification : {lastChecked.toLocaleTimeString("fr-BE")}</span>
+              <button
+                type="button"
+                onClick={() => refetch()}
+                disabled={isFetching}
+                className="inline-flex items-center gap-1 underline hover:text-mk-navy disabled:opacity-50"
+              >
+                <RefreshCw size={11} className={isFetching ? "animate-spin" : ""} />
+                Actualiser
+              </button>
+            </div>
             {isTest && (
               <p className="text-[11px] text-mk-sec mt-2 text-center">Mode test : aucun paiement carte n'a été effectué.</p>
             )}

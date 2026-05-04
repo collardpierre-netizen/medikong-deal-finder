@@ -13,6 +13,7 @@ import { getVendorPublicName } from "@/lib/vendor-display";
 import { useVendorMov } from "@/hooks/useVendorMov";
 import { getProductImageSrc, MEDIKONG_PLACEHOLDER, isQogitaPlaceholder } from "@/lib/image-utils";
 import VendorDelegateCompact from "@/components/vendor/VendorDelegateCompact";
+import { QuantityInput } from "@/components/cart/QuantityInput";
 
 interface SupplierGroup {
   vendorId: string;

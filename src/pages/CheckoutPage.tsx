@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label";
 import { useQuery } from "@tanstack/react-query";
 import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import type { Stripe, StripeElementsOptions } from "@stripe/stripe-js";
-import { getStripe } from "@/lib/stripe";
+import { getStripe, getStripeLoadError, resetStripe } from "@/lib/stripe";
 
 
 interface AddressForm {
@@ -133,19 +133,40 @@ export default function CheckoutPage() {
   const [initLoading, setInitLoading] = useState(false);
   const [initError, setInitError] = useState<string | null>(null);
 
-  // Lazy-init Stripe.js once
+  const [stripeLoadAttempt, setStripeLoadAttempt] = useState(0);
+  const [stripeSlow, setStripeSlow] = useState(false);
+
+  // Lazy-init Stripe.js (re-trigger on retry)
   useEffect(() => {
-    if (stripePromise) return;
+    setStripeReady(false);
+    setStripeLoadError(null);
+    setStripeSlow(false);
     const promise = getStripe();
     setStripePromise(promise);
+    const slowTimer = setTimeout(() => setStripeSlow(true), 6000);
+    let cancelled = false;
     promise.then((stripe) => {
+      if (cancelled) return;
+      clearTimeout(slowTimer);
       if (stripe) {
         setStripeReady(true);
       } else {
-        setStripeLoadError("Le paiement carte ne peut pas se charger dans ce navigateur. La commande peut quand même être enregistrée pour test.");
+        setStripeLoadError(
+          getStripeLoadError() ||
+            "Stripe.js n'a pas pu se charger. Vérifiez votre connexion ou désactivez les bloqueurs de scripts."
+        );
       }
     });
-  }, [stripePromise]);
+    return () => {
+      cancelled = true;
+      clearTimeout(slowTimer);
+    };
+  }, [stripeLoadAttempt]);
+
+  const retryStripeLoad = useCallback(() => {
+    resetStripe();
+    setStripeLoadAttempt((n) => n + 1);
+  }, []);
 
   const [initStarted, setInitStarted] = useState(false);
   const [testMode, setTestMode] = useState(false);
@@ -389,8 +410,25 @@ export default function CheckoutPage() {
                     <div className="border border-mk-line rounded-lg p-4 mb-6">
                       <h3 className="text-sm font-semibold text-mk-navy mb-3">Paiement sécurisé par carte</h3>
                       {initLoading && (
-                        <div className="flex items-center gap-2 text-sm text-mk-sec py-6 justify-center">
-                          <Loader2 size={16} className="animate-spin" /> Initialisation du paiement...
+                        <div className="py-6 space-y-3">
+                          <div className="flex items-center gap-2 text-sm text-mk-sec justify-center">
+                            <Loader2 size={16} className="animate-spin" />
+                            {stripeSlow ? "Chargement plus long que prévu..." : "Initialisation du paiement..."}
+                          </div>
+                          {stripeSlow && !stripeReady && !stripeLoadError && (
+                            <div className="text-center space-y-2">
+                              <p className="text-xs text-mk-sec">
+                                Stripe.js met du temps à se charger. Cela peut venir de votre connexion, d'un bloqueur de publicités ou d'une extension navigateur.
+                              </p>
+                              <button
+                                type="button"
+                                onClick={retryStripeLoad}
+                                className="border border-mk-navy text-mk-navy font-bold text-xs px-3 py-1.5 rounded-md"
+                              >
+                                Relancer le chargement
+                              </button>
+                            </div>
+                          )}
                         </div>
                       )}
                       <div className="flex items-center justify-between mb-3 px-1">
@@ -487,18 +525,28 @@ export default function CheckoutPage() {
                         </div>
                       )}
                       {!testMode && stripeLoadError && !initLoading && (
-                        <div className="rounded-md border border-mk-line bg-mk-alt p-3 space-y-3">
+                        <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3 space-y-3">
+                          <p className="text-sm font-semibold text-destructive">Impossible de charger Stripe.js</p>
                           <p className="text-sm text-mk-navy">{stripeLoadError}</p>
-                          {orderId && orderNumber && (
+                          <div className="flex flex-wrap gap-2">
                             <button
                               type="button"
-                              onClick={handleTestOrderConfirmation}
-                              disabled={submitting}
-                              className="bg-mk-navy text-white font-bold text-sm px-4 py-2 rounded-md disabled:opacity-60"
+                              onClick={retryStripeLoad}
+                              className="bg-mk-blue text-white font-bold text-sm px-4 py-2 rounded-md"
                             >
-                              {submitting ? "Validation..." : "Poursuivre le test sans paiement carte"}
+                              Relancer le chargement de Stripe.js
                             </button>
-                          )}
+                            {orderId && orderNumber && (
+                              <button
+                                type="button"
+                                onClick={handleTestOrderConfirmation}
+                                disabled={submitting}
+                                className="border border-mk-navy text-mk-navy font-bold text-sm px-4 py-2 rounded-md disabled:opacity-60"
+                              >
+                                {submitting ? "Validation..." : "Poursuivre en mode test"}
+                              </button>
+                            )}
+                          </div>
                         </div>
                       )}
                       {!testMode && clientSecret && stripePromise && stripeReady && (

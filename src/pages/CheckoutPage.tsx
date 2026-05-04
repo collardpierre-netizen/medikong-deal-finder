@@ -393,24 +393,100 @@ export default function CheckoutPage() {
                           <Loader2 size={16} className="animate-spin" /> Initialisation du paiement...
                         </div>
                       )}
-                      {initError && !initLoading && (
+                      <div className="flex items-center justify-between mb-3 px-1">
+                        <label className="flex items-center gap-2 text-xs text-mk-sec cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={testMode}
+                            onChange={(e) => {
+                              setTestMode(e.target.checked);
+                              if (e.target.checked) {
+                                setClientSecret(null);
+                                setInitError(null);
+                                setStripeLoadError(null);
+                              } else {
+                                setInitStarted(false);
+                              }
+                            }}
+                          />
+                          Mode test (sans paiement carte)
+                        </label>
+                      </div>
+                      {testMode && (
+                        <div className="rounded-md border border-dashed border-mk-line bg-mk-alt p-4 space-y-3">
+                          <p className="text-sm text-mk-navy">
+                            Mode test activé : la commande sera enregistrée sans appel à Stripe.
+                          </p>
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              if (submitting) return;
+                              setSubmitting(true);
+                              try {
+                                let oid = orderId;
+                                let onum = orderNumber;
+                                if (!oid || !onum) {
+                                  const finalBilling = sameAsBilling ? shippingAddr : billingAddr;
+                                  const order = await createOrder.mutateAsync({
+                                    shippingAddress: formatAddr(shippingAddr),
+                                    billingAddress: formatAddr(finalBilling),
+                                    paymentMethod: paymentMethods[payment].label + " (test)",
+                                    subtotal,
+                                    total,
+                                    customerInfo: {
+                                      company: shippingAddr.company,
+                                      street: shippingAddr.street,
+                                      city: shippingAddr.city,
+                                      postalCode: shippingAddr.postalCode,
+                                      country: shippingAddr.country,
+                                    },
+                                    items: items.map(item => ({
+                                      offer_id: item.offer_id,
+                                      product_id: item.product_id,
+                                      quantity: item.quantity,
+                                      unit_price_excl_vat: item.price_excl_vat || 0,
+                                      unit_price_incl_vat: item.price_incl_vat || item.price_excl_vat || 0,
+                                    })),
+                                  });
+                                  oid = order.id;
+                                  onum = order.order_number;
+                                  setOrderId(oid);
+                                  setOrderNumber(onum);
+                                }
+                                clearCart.mutate();
+                                navigate(`/confirmation?order=${onum}&test=1`);
+                              } catch (e: any) {
+                                toast.error("Erreur test: " + (e.message || "réessayez"));
+                              } finally {
+                                setSubmitting(false);
+                              }
+                            }}
+                            disabled={submitting}
+                            className="bg-mk-navy text-white font-bold text-sm px-4 py-2 rounded-md disabled:opacity-60 flex items-center gap-2"
+                          >
+                            {submitting && <Loader2 size={16} className="animate-spin" />}
+                            Simuler la confirmation de paiement
+                          </button>
+                        </div>
+                      )}
+                      {!testMode && initError && !initLoading && (
                         <div className="space-y-3">
                           <p className="text-sm text-destructive">{initError}</p>
                           <button
                             type="button"
-                            onClick={() => { setClientSecret(null); setInitError(null); }}
+                            onClick={() => { setClientSecret(null); setInitError(null); setInitStarted(false); }}
                             className="border border-mk-navy text-mk-navy font-bold text-sm px-4 py-2 rounded-md"
                           >
                             Réessayer
                           </button>
                         </div>
                       )}
-                      {clientSecret && !stripeReady && !stripeLoadError && (
+                      {!testMode && clientSecret && !stripeReady && !stripeLoadError && (
                         <div className="flex items-center gap-2 text-sm text-mk-sec py-6 justify-center">
                           <Loader2 size={16} className="animate-spin" /> Chargement du module carte...
                         </div>
                       )}
-                      {stripeLoadError && !initLoading && (
+                      {!testMode && stripeLoadError && !initLoading && (
                         <div className="rounded-md border border-mk-line bg-mk-alt p-3 space-y-3">
                           <p className="text-sm text-mk-navy">{stripeLoadError}</p>
                           {orderId && orderNumber && (
@@ -425,7 +501,7 @@ export default function CheckoutPage() {
                           )}
                         </div>
                       )}
-                      {clientSecret && stripePromise && stripeReady && (
+                      {!testMode && clientSecret && stripePromise && stripeReady && (
                         <Elements
                           stripe={stripePromise}
                           options={{ clientSecret, appearance: { theme: "stripe" } } satisfies StripeElementsOptions}

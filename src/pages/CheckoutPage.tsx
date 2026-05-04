@@ -301,12 +301,18 @@ export default function CheckoutPage() {
                     <h2 className="text-xl font-bold text-mk-navy mb-5">Méthode de paiement</h2>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
                       {paymentMethods.map((m, i) => (
-                        <motion.button key={i} onClick={() => setPayment(i)}
-                          className={`border rounded-lg p-4 text-left ${payment === i ? "border-mk-blue border-2 bg-blue-50" : "border-mk-line"}`}
-                          whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                          <p className="text-sm font-bold text-mk-navy">{m}</p>
+                        <motion.button
+                          key={i}
+                          onClick={() => m.enabled && setPayment(i)}
+                          disabled={!m.enabled}
+                          title={m.enabled ? undefined : "Bientôt disponible"}
+                          className={`border rounded-lg p-4 text-left transition ${payment === i && m.enabled ? "border-mk-blue border-2 bg-blue-50" : "border-mk-line"} ${!m.enabled ? "opacity-50 cursor-not-allowed" : ""}`}
+                          whileHover={m.enabled ? { scale: 1.02 } : {}} whileTap={m.enabled ? { scale: 0.98 } : {}}>
+                          <p className="text-sm font-bold text-mk-navy">{m.label}</p>
+                          {!m.enabled && <p className="text-[11px] text-mk-sec mt-1">Bientôt disponible</p>}
                         </motion.button>
                       ))}
+
                     </div>
                     <div className="flex gap-3">
                       <motion.button onClick={() => setStep(1)} className="border border-mk-navy text-mk-navy font-bold text-sm px-6 py-3 rounded-md" whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>Retour</motion.button>
@@ -322,7 +328,7 @@ export default function CheckoutPage() {
                       {[
                         { label: "Adresse de livraison", value: formatAddr(shippingAddr) },
                         { label: "Livraison", value: selectedOpt?.name_fr || selectedOpt?.name || "Standard" },
-                        { label: "Paiement", value: paymentMethods[payment] },
+                        { label: "Paiement", value: paymentMethods[payment].label },
                       ].map((item, i) => (
                         <motion.div key={item.label} className="border border-mk-line rounded-lg p-4"
                           initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}>
@@ -344,18 +350,26 @@ export default function CheckoutPage() {
                       ))}
                     </div>
 
-                    <div className="flex gap-3">
-                      <motion.button onClick={() => setStep(2)} className="border border-mk-navy text-mk-navy font-bold text-sm px-6 py-3 rounded-md" whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>Retour</motion.button>
-                      <motion.button
-                        onClick={handlePlaceOrder}
-                        disabled={submitting || createOrder.isPending}
-                        className="bg-mk-green text-white font-bold text-sm px-6 py-3 rounded-md flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
-                        whileHover={!submitting ? { scale: 1.03 } : {}} whileTap={!submitting ? { scale: 0.97 } : {}}
-                      >
-                        {(submitting || createOrder.isPending) && <Loader2 size={16} className="animate-spin" />}
-                        {submitting ? "Traitement en cours..." : "Passer la commande"}
-                      </motion.button>
+                    <div className="border border-mk-line rounded-lg p-4 mb-6">
+                      <h3 className="text-sm font-semibold text-mk-navy mb-3">Paiement sécurisé par carte</h3>
+                      {initLoading && (
+                        <div className="flex items-center gap-2 text-sm text-mk-sec py-6 justify-center">
+                          <Loader2 size={16} className="animate-spin" /> Initialisation du paiement...
+                        </div>
+                      )}
+                      {initError && !initLoading && (
+                        <p className="text-sm text-destructive">{initError}</p>
+                      )}
+                      {clientSecret && stripePromise && (
+                        <Elements
+                          stripe={stripePromise}
+                          options={{ clientSecret, appearance: { theme: "stripe" } } satisfies StripeElementsOptions}
+                        >
+                          <StripePaymentForm onSuccess={handlePaymentSuccess} onBack={() => setStep(2)} />
+                        </Elements>
+                      )}
                     </div>
+
                   </motion.div>
                 )}
               </AnimatePresence>

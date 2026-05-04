@@ -6,5 +6,7 @@ Disallow: /connexion
 Disallow: /onboarding
 Disallow: /admin
 Disallow: /vendor
+Disallow: /pitchdeck
+Disallow: /pitchdeck-medikong.pdf
 
 Sitemap: https://medikong-deal-finder.lovable.app/sitemap.xml

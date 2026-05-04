@@ -407,6 +407,32 @@ export default function CheckoutPage() {
                       ))}
                     </div>
 
+                    {(() => {
+                      const steps = [
+                        { key: "created", label: "Commande créée", done: !!orderId },
+                        { key: "intent", label: "Paiement initialisé", done: !!clientSecret || testMode },
+                        { key: "ready", label: testMode ? "Mode test prêt" : "Module carte prêt", done: testMode ? !!orderId : (stripeReady && !!clientSecret) },
+                        { key: "submitting", label: "Paiement en cours", done: false, active: submitting },
+                      ];
+                      return (
+                        <div className="border border-mk-line rounded-lg p-3 mb-4 bg-mk-alt/40">
+                          <ol className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
+                            {steps.map((s, i) => (
+                              <li key={s.key} className="flex items-center gap-1.5">
+                                <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold ${s.done ? "bg-mk-green text-white" : s.active ? "bg-mk-blue text-white animate-pulse" : "bg-mk-line text-mk-sec"}`}>
+                                  {s.done ? "✓" : i + 1}
+                                </span>
+                                <span className={s.done || s.active ? "text-mk-navy font-medium" : "text-mk-sec"}>{s.label}</span>
+                              </li>
+                            ))}
+                          </ol>
+                          {orderNumber && (
+                            <p className="text-[11px] text-mk-sec mt-2">Commande <span className="font-mono text-mk-navy">{orderNumber}</span></p>
+                          )}
+                        </div>
+                      );
+                    })()}
+
                     <div className="border border-mk-line rounded-lg p-4 mb-6">
                       <h3 className="text-sm font-semibold text-mk-navy mb-3">Paiement sécurisé par carte</h3>
                       {initLoading && (

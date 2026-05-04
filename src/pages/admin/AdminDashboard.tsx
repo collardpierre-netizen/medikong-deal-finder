@@ -56,14 +56,30 @@ const AdminDashboard = () => {
       commission: Number(v.commission_rate) || 0,
     }));
 
-  const recentOrders = (ordersQuery.data || []).slice(0, 6).map(o => ({
-    id: o.order_number,
-    buyer: (o.customers as any)?.company_name || "—",
-    seller: "—",
-    amount: `€ ${Number(o.total_incl_vat || 0).toLocaleString("fr-BE", { minimumFractionDigits: 2 })}`,
-    status: o.status,
-    date: new Date(o.created_at).toLocaleDateString("fr-BE", { day: "2-digit", month: "2-digit" }),
-  }));
+  const recentOrders = (ordersQuery.data || []).slice(0, 6).map(o => {
+    const lines = ((o as any).order_lines || []) as Array<{ vendor_id: string | null; vendors?: { company_name?: string | null; slug?: string | null } | null }>;
+    const seenIds = new Set<string>();
+    const names: string[] = [];
+    for (const l of lines) {
+      const key = l.vendor_id || l.vendors?.slug || l.vendors?.company_name;
+      if (!key || seenIds.has(key)) continue;
+      seenIds.add(key);
+      const name = l.vendors?.company_name?.trim();
+      if (name) names.push(name);
+    }
+    let seller = "—";
+    if (names.length === 1) seller = names[0];
+    else if (names.length > 1) seller = `${names[0]} +${names.length - 1}`;
+    else if (seenIds.size > 0) seller = `${seenIds.size} vendeur${seenIds.size > 1 ? "s" : ""}`;
+    return {
+      id: o.order_number,
+      buyer: (o.customers as any)?.company_name || "—",
+      seller,
+      amount: `€ ${Number(o.total_incl_vat || 0).toLocaleString("fr-BE", { minimumFractionDigits: 2 })}`,
+      status: o.status,
+      date: new Date(o.created_at).toLocaleDateString("fr-BE", { day: "2-digit", month: "2-digit" }),
+    };
+  });
 
   const pendingVendorsList = pendingVendors.data || [];
   const pendingBuyersList = pendingBuyers.data || [];

@@ -88,17 +88,21 @@ export default function ConfirmationPage() {
       <PageTransition>
         <div className="mk-container py-12 md:py-16 max-w-[800px] mx-auto text-center px-4">
           <motion.div
-            className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-mk-green flex items-center justify-center mx-auto mb-6"
+            className={`w-16 h-16 md:w-20 md:h-20 rounded-full flex items-center justify-center mx-auto mb-6 ${failed ? "bg-destructive" : confirmed ? "bg-mk-green" : "bg-mk-blue"}`}
             initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 200, delay: 0.2 }}
           >
-            <Check size={32} className="text-white" strokeWidth={3} />
+            {confirmed || failed ? (
+              <Check size={32} className="text-white" strokeWidth={3} />
+            ) : (
+              <RefreshCw size={28} className="text-white animate-spin" strokeWidth={3} />
+            )}
           </motion.div>
 
-          <motion.h1 className="text-2xl md:text-[32px] font-bold text-mk-green mb-2"
+          <motion.h1 className={`text-2xl md:text-[32px] font-bold mb-2 ${failed ? "text-destructive" : confirmed ? "text-mk-green" : "text-mk-navy"}`}
             initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-            Commande confirmée !
+            {headline}
           </motion.h1>
-          <p className="text-sm text-mk-sec mb-6">Votre commande a été enregistrée. Vous recevrez un email de confirmation sous peu.</p>
+          <p className="text-sm text-mk-sec mb-6">{subline}</p>
 
           {/* Statut commande */}
           <motion.div
@@ -107,18 +111,22 @@ export default function ConfirmationPage() {
           >
             <ol className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs">
               {[
-                { label: "Commande créée", done: true },
-                { label: isTest ? "Paiement simulé" : "Paiement validé", done: paymentDone },
-                { label: "Confirmée", done: confirmed },
-              ].map((s, i, arr) => (
-                <li key={s.label} className="flex items-center gap-1.5">
-                  <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold ${s.done ? "bg-mk-green text-white" : "bg-mk-line text-mk-sec animate-pulse"}`}>
-                    {s.done ? "✓" : "…"}
-                  </span>
-                  <span className={`font-medium ${s.done ? "text-mk-navy" : "text-mk-sec"}`}>{s.label}</span>
-                  {i < arr.length - 1 && <span className="text-mk-sec">→</span>}
-                </li>
-              ))}
+                { label: "Commande créée", idx: 0 },
+                { label: isTest ? "Paiement simulé" : "Paiement en cours", idx: 1 },
+                { label: "Confirmée", idx: 2 },
+              ].map((s, i, arr) => {
+                const done = currentStep > s.idx || (s.idx === 2 && confirmed) || (s.idx === 0 && !!orderNumber);
+                const active = currentStep === s.idx && !confirmed && !failed;
+                return (
+                  <li key={s.label} className="flex items-center gap-1.5">
+                    <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold ${done ? "bg-mk-green text-white" : active ? "bg-mk-blue text-white animate-pulse" : "bg-mk-line text-mk-sec"}`}>
+                      {done ? "✓" : active ? "…" : ""}
+                    </span>
+                    <span className={`font-medium ${done ? "text-mk-navy" : active ? "text-mk-blue" : "text-mk-sec"}`}>{s.label}</span>
+                    {i < arr.length - 1 && <span className="text-mk-sec">→</span>}
+                  </li>
+                );
+              })}
             </ol>
             <div className="flex items-center justify-center gap-3 mt-2 text-[11px] text-mk-sec">
               <span>Dernière vérification : {lastChecked.toLocaleTimeString("fr-BE")}</span>

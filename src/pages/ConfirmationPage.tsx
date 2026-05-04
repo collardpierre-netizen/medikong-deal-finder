@@ -44,8 +44,34 @@ export default function ConfirmationPage() {
   }, [dataUpdatedAt]);
 
   const status = (order as any)?.status as string | undefined;
-  const paymentDone = isTest || !!status && !["pending", "pending_payment", "draft"].includes(status);
+  const paymentDone = isTest || (!!status && !["pending", "pending_payment", "draft"].includes(status));
   const confirmed = !!status && ["confirmed", "paid", "shipped", "delivered"].includes(status);
+  const failed = status === "failed" || status === "cancelled";
+
+  // Étape courante : 0 = créée, 1 = paiement en cours, 2 = confirmée
+  const currentStep = failed ? -1 : confirmed ? 2 : paymentDone ? 2 : status ? 1 : 0;
+
+  const headline = failed
+    ? status === "cancelled"
+      ? "Commande annulée"
+      : "Paiement échoué"
+    : confirmed
+    ? "Commande confirmée !"
+    : paymentDone
+    ? "Paiement reçu, finalisation en cours…"
+    : status
+    ? "Paiement en cours de traitement…"
+    : "Commande créée, en attente du paiement…";
+
+  const subline = failed
+    ? "Aucun montant n'a été débité. Vous pouvez réessayer depuis votre panier."
+    : confirmed
+    ? "Votre commande a été enregistrée. Vous recevrez un email de confirmation sous peu."
+    : paymentDone
+    ? "Nous validons les derniers détails avec le vendeur, cela ne prend que quelques secondes."
+    : status
+    ? "Votre paiement est en cours de vérification. Cette page se met à jour automatiquement."
+    : "Nous attendons la confirmation du paiement. Merci de ne pas fermer cette page.";
 
   const deliveryDate = new Date();
   deliveryDate.setDate(deliveryDate.getDate() + 7);

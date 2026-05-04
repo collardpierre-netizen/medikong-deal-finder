@@ -1,4 +1,5 @@
 import { Layout } from "@/components/layout/Layout";
+import { computeCartTotals } from "@/lib/cart-totals";
 import { formatPrice } from "@/data/mock";
 import { useCart } from "@/hooks/useCart";
 import { useAuth } from "@/contexts/AuthContext";

@@ -1,4 +1,5 @@
 import { Layout } from "@/components/layout/Layout";
+import { computeCartTotals } from "@/lib/cart-totals";
 import { formatPrice } from "@/data/mock";
 import { useState, useCallback, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";

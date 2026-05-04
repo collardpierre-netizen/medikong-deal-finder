@@ -723,7 +723,15 @@ function StripePaymentForm({ onSuccess, onBack }: { onSuccess: () => void | Prom
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <PaymentElement />
-      {errMsg && <p className="text-sm text-destructive">{errMsg}</p>}
+      {errMsg && (
+        <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3 space-y-2">
+          <p className="text-sm font-semibold text-destructive">Paiement refusé par Stripe</p>
+          <p className="text-sm text-mk-navy">{errMsg}</p>
+          <p className="text-xs text-mk-sec">
+            Vérifiez le numéro de carte, la date d'expiration, le CVC, ou essayez une autre carte. Aucun débit n'a été effectué.
+          </p>
+        </div>
+      )}
       <div className="flex gap-3 pt-2">
         <button type="button" onClick={onBack} disabled={submitting}
           className="border border-mk-navy text-mk-navy font-bold text-sm px-6 py-3 rounded-md disabled:opacity-50">
@@ -732,7 +740,7 @@ function StripePaymentForm({ onSuccess, onBack }: { onSuccess: () => void | Prom
         <button type="submit" disabled={!stripe || !elements || submitting}
           className="bg-mk-green text-white font-bold text-sm px-6 py-3 rounded-md flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
           {submitting && <Loader2 size={16} className="animate-spin" />}
-          {submitting ? "Traitement en cours..." : "Passer la commande"}
+          {submitting ? "Traitement en cours..." : errMsg ? "Réessayer le paiement" : "Passer la commande"}
         </button>
       </div>
     </form>

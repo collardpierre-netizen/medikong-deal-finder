@@ -751,6 +751,24 @@ async function syncOffers(
     await sleep(executionProfile.batchDelayMs);
   }
 
+  const processedSoFar = offsetCursor + (products?.length || 0);
+  const hasMoreChunks = (totalEligible || 0) > processedSoFar;
+
+  if (hasMoreChunks) {
+    await sb
+      .from("sync_logs")
+      .update({
+        status: "partial",
+        stats,
+        progress_current: total,
+        progress_total: total,
+        progress_message: `${country}: chunk terminé (${processedSoFar}/${totalEligible}) — relance auto`,
+      })
+      .eq("id", logId);
+    scheduleNextChunk({ country, multi_vendor: fetchMultiVendor, offset: processedSoFar });
+    return stats;
+  }
+
   await sb
     .from("sync_logs")
     .update({

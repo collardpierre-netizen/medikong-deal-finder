@@ -36,6 +36,3 @@ if (!supabaseEnv.ok) {
 } else {
   createRoot(document.getElementById("root")!).render(<App />);
 }
-
-import type { SupabaseEnvCheck } from "@/lib/supabase-env-validation";
-

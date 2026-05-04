@@ -146,6 +146,27 @@ export default function ConfirmationPage() {
                 Actualiser
               </button>
             </div>
+            {hasFetchError && (
+              <div role="alert" className="mt-3 flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/5 p-2.5 text-[11px] text-destructive">
+                <AlertTriangle size={14} className="mt-0.5 shrink-0" />
+                <div className="flex-1 text-left">
+                  <p className="font-semibold">Impossible de rafraîchir le statut</p>
+                  <p className="text-destructive/80">
+                    {(error as any)?.message || "La connexion au serveur a échoué."} Nouvelle tentative automatique en cours
+                    {failureCount > 0 ? ` (essai ${failureCount}/5)` : ""}…
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => refetch()}
+                    disabled={isFetching}
+                    className="mt-1 inline-flex items-center gap-1 font-semibold underline hover:no-underline disabled:opacity-50"
+                  >
+                    <RefreshCw size={11} className={isFetching ? "animate-spin" : ""} />
+                    Réessayer maintenant
+                  </button>
+                </div>
+              </div>
+            )}
             {isTest && (
               <p className="text-[11px] text-mk-sec mt-2 text-center">Mode test : aucun paiement carte n'a été effectué.</p>
             )}

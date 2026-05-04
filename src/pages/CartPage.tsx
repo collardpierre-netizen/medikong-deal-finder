@@ -103,6 +103,12 @@ export default function CartPage() {
   }, [items, vendorMap, getMovForVendor, visRules, country]);
 
   const totalCart = items.reduce((s, i) => s + (i.price_excl_vat || i.product?.price || 0) * i.quantity, 0);
+  const totalCartIncl = items.reduce((s, i) => {
+    const excl = i.price_excl_vat || i.product?.price || 0;
+    const incl = i.price_incl_vat && i.price_incl_vat > 0 ? i.price_incl_vat : excl * 1.21;
+    return s + incl * i.quantity;
+  }, 0);
+  const totalVat = Math.max(totalCartIncl - totalCart, 0);
   const readyCount = supplierGroups.filter(g => g.meetsMinimum).length;
   const belowCount = supplierGroups.filter(g => !g.meetsMinimum).length;
   const totalReady = supplierGroups.filter(g => g.meetsMinimum).reduce((s, g) => s + g.total, 0);
@@ -445,6 +451,10 @@ export default function CartPage() {
                     {/* Details */}
                     <div className="space-y-2.5 text-sm">
                       <div className="flex justify-between">
+                        <span className="text-mk-sec">Sous-total HTVA</span>
+                        <span className="text-mk-navy font-medium">{formatPrice(totalCart)}€</span>
+                      </div>
+                      <div className="flex justify-between">
                         <span className="text-mk-sec">Livraison</span>
                         <span className="text-mk-navy font-medium">Incluse</span>
                       </div>
@@ -461,17 +471,22 @@ export default function CartPage() {
                       </div>
                       <div className="flex justify-between">
                         <span className="text-mk-sec">TVA</span>
-                        <span className="text-mk-sec">Ajoutée au checkout</span>
+                        <span className="text-mk-navy font-medium">{formatPrice(totalVat)}€</span>
                       </div>
                     </div>
                   </div>
 
                   {/* Order total */}
-                  <div className="border-t border-mk-line pt-4 mb-5">
-                    <div className="flex justify-between items-baseline">
-                      <span className="font-bold text-mk-navy">Total commande</span>
-                      <span className="text-xl font-bold text-mk-navy">{formatPrice(totalCart)}€</span>
+                  <div className="border-t border-mk-line pt-4 mb-5 space-y-1">
+                    <div className="flex justify-between items-baseline text-sm">
+                      <span className="text-mk-sec">Total HTVA</span>
+                      <span className="text-mk-navy font-medium">{formatPrice(totalCart)}€</span>
                     </div>
+                    <div className="flex justify-between items-baseline">
+                      <span className="font-bold text-mk-navy">Total TTC</span>
+                      <span className="text-xl font-bold text-mk-navy">{formatPrice(totalCartIncl)}€</span>
+                    </div>
+                    <p className="text-xs text-mk-ter">TVA calculée par produit (6 % médicaments / 21 % OTC).</p>
                   </div>
 
                   {/* Remark field */}

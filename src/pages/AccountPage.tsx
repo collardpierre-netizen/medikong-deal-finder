@@ -155,9 +155,24 @@ export default function AccountPage() {
   const [newListName, setNewListName] = useState("");
   const [importOpen, setImportOpen] = useState(false);
   const [orderStatusFilter, setOrderStatusFilter] = useState<string>("all");
-  const filteredOrders = orderStatusFilter === "all"
-    ? dbOrders
-    : (dbOrders as any[]).filter((o: any) => o.status === orderStatusFilter);
+  const orderSort = (searchParams.get("orderSort") === "asc" ? "asc" : "desc") as "asc" | "desc";
+  const setOrderSort = (next: "asc" | "desc") => {
+    setSearchParams(prev => {
+      const p = new URLSearchParams(prev);
+      if (next === "desc") p.delete("orderSort"); else p.set("orderSort", next);
+      return p;
+    }, { replace: true });
+  };
+  const filteredOrders = (() => {
+    const base = orderStatusFilter === "all"
+      ? (dbOrders as any[])
+      : (dbOrders as any[]).filter((o: any) => o.status === orderStatusFilter);
+    return [...base].sort((a, b) => {
+      const ta = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const tb = b.created_at ? new Date(b.created_at).getTime() : 0;
+      return orderSort === "asc" ? ta - tb : tb - ta;
+    });
+  })();
 
   // ---- Profile state ----
   const [profileForm, setProfileForm] = useState({

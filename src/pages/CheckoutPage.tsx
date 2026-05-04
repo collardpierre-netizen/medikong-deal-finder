@@ -132,6 +132,7 @@ export default function CheckoutPage() {
   const [orderNumber, setOrderNumber] = useState<string | null>(null);
   const [initLoading, setInitLoading] = useState(false);
   const [initError, setInitError] = useState<string | null>(null);
+  const [initErrorStage, setInitErrorStage] = useState<"order" | "intent" | null>(null);
 
   const [stripeLoadAttempt, setStripeLoadAttempt] = useState(0);
   const [stripeSlow, setStripeSlow] = useState(false);
@@ -178,6 +179,8 @@ export default function CheckoutPage() {
     (async () => {
       setInitLoading(true);
       setInitError(null);
+      setInitErrorStage(null);
+      let stage: "order" | "intent" = "order";
       try {
         const finalBilling = sameAsBilling ? shippingAddr : billingAddr;
         const order = await createOrder.mutateAsync({
@@ -205,6 +208,7 @@ export default function CheckoutPage() {
         setOrderId(order.id);
         setOrderNumber(order.order_number);
 
+        stage = "intent";
         const { data, error } = await supabase.functions.invoke("stripe-checkout", {
           body: { action: "create-payment-intent", order_id: order.id },
         });
@@ -216,8 +220,13 @@ export default function CheckoutPage() {
       } catch (e: any) {
         if (!cancelled) {
           setInitError(e.message || "Erreur d'initialisation");
+          setInitErrorStage(stage);
           setInitStarted(false); // allow retry
-          toast.error("Erreur paiement: " + (e.message || "Réessayez"));
+          toast.error(
+            stage === "order"
+              ? "Création de commande impossible : " + (e.message || "Réessayez")
+              : "Initialisation paiement impossible : " + (e.message || "Réessayez")
+          );
         }
       } finally {
         if (!cancelled) setInitLoading(false);
@@ -533,18 +542,66 @@ export default function CheckoutPage() {
                           </button>
                         </div>
                       )}
-                      {!testMode && initError && !initLoading && (
-                        <div className="space-y-3">
-                          <p className="text-sm text-destructive">{initError}</p>
-                          <button
-                            type="button"
-                            onClick={() => { setClientSecret(null); setInitError(null); setInitStarted(false); }}
-                            className="border border-mk-navy text-mk-navy font-bold text-sm px-4 py-2 rounded-md"
-                          >
-                            Réessayer
-                          </button>
-                        </div>
-                      )}
+                      {!testMode && initError && !initLoading && (() => {
+                        const stage = initErrorStage ?? (orderId ? "intent" : "order");
+                        const title =
+                          stage === "order"
+                            ? "Impossible de créer la commande"
+                            : "Impossible d'initialiser le paiement";
+                        const hint =
+                          stage === "order"
+                            ? "Vérifiez votre adresse et votre connexion, puis réessayez. Aucune commande n'a été enregistrée."
+                            : `La commande ${orderNumber ?? ""} a bien été créée mais Stripe n'a pas pu démarrer le paiement. Vous pouvez réessayer ou poursuivre en mode test.`;
+                        return (
+                          <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3 space-y-3">
+                            <div className="flex items-start justify-between gap-2">
+                              <p className="text-sm font-semibold text-destructive">{title}</p>
+                              <span className="text-[11px] uppercase tracking-wide text-mk-sec">
+                                Étape : {stage === "order" ? "Commande" : "Paiement"}
+                              </span>
+                            </div>
+                            <p className="text-sm text-mk-navy">{initError}</p>
+                            <p className="text-xs text-mk-sec">{hint}</p>
+                            <div className="flex flex-wrap gap-2">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setClientSecret(null);
+                                  setInitError(null);
+                                  setInitErrorStage(null);
+                                  if (stage === "order") {
+                                    setOrderId(null);
+                                    setOrderNumber(null);
+                                  }
+                                  setInitStarted(false);
+                                }}
+                                className="bg-mk-blue text-white font-bold text-sm px-4 py-2 rounded-md"
+                              >
+                                {stage === "order" ? "Recréer la commande" : "Relancer le paiement"}
+                              </button>
+                              {stage === "order" && (
+                                <button
+                                  type="button"
+                                  onClick={() => setStep(1)}
+                                  className="border border-mk-navy text-mk-navy font-bold text-sm px-4 py-2 rounded-md"
+                                >
+                                  Modifier l'adresse
+                                </button>
+                              )}
+                              {stage === "intent" && orderId && orderNumber && (
+                                <button
+                                  type="button"
+                                  onClick={handleTestOrderConfirmation}
+                                  disabled={submitting}
+                                  className="border border-mk-navy text-mk-navy font-bold text-sm px-4 py-2 rounded-md disabled:opacity-60"
+                                >
+                                  {submitting ? "Validation..." : "Poursuivre en mode test"}
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })()}
                       {!testMode && clientSecret && !stripeReady && !stripeLoadError && (
                         <div className="flex items-center gap-2 text-sm text-mk-sec py-6 justify-center">
                           <Loader2 size={16} className="animate-spin" /> Chargement du module carte...
@@ -666,7 +723,15 @@ function StripePaymentForm({ onSuccess, onBack }: { onSuccess: () => void | Prom
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <PaymentElement />
-      {errMsg && <p className="text-sm text-destructive">{errMsg}</p>}
+      {errMsg && (
+        <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3 space-y-2">
+          <p className="text-sm font-semibold text-destructive">Paiement refusé par Stripe</p>
+          <p className="text-sm text-mk-navy">{errMsg}</p>
+          <p className="text-xs text-mk-sec">
+            Vérifiez le numéro de carte, la date d'expiration, le CVC, ou essayez une autre carte. Aucun débit n'a été effectué.
+          </p>
+        </div>
+      )}
       <div className="flex gap-3 pt-2">
         <button type="button" onClick={onBack} disabled={submitting}
           className="border border-mk-navy text-mk-navy font-bold text-sm px-6 py-3 rounded-md disabled:opacity-50">
@@ -675,7 +740,7 @@ function StripePaymentForm({ onSuccess, onBack }: { onSuccess: () => void | Prom
         <button type="submit" disabled={!stripe || !elements || submitting}
           className="bg-mk-green text-white font-bold text-sm px-6 py-3 rounded-md flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
           {submitting && <Loader2 size={16} className="animate-spin" />}
-          {submitting ? "Traitement en cours..." : "Passer la commande"}
+          {submitting ? "Traitement en cours..." : errMsg ? "Réessayer le paiement" : "Passer la commande"}
         </button>
       </div>
     </form>

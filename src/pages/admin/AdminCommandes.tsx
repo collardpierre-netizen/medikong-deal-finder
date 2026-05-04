@@ -48,7 +48,20 @@ const AdminCommandes = () => {
   const { t } = useI18n();
   const { data: ordersData = [], isLoading } = useOrders();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<"list" | "timeline" | "aging" | "buyers">("list");
+  const [activeTab, setActiveTab] = useState<"list" | "timeline" | "aging" | "buyers" | "sla">("list");
+  const [hideDeleted, setHideDeleted] = useState(true);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; number: string } | null>(null);
+  const [deleteReason, setDeleteReason] = useState("");
+  const [deleting, setDeleting] = useState(false);
+
+  const { data: slaCount } = useQuery({
+    queryKey: ["admin-sla-count"],
+    queryFn: async () => {
+      const { data } = await supabase.rpc("admin_sla_open_alerts_count" as any);
+      return (data as any)?.[0] || { total: 0, warnings: 0, criticals: 0 };
+    },
+    refetchInterval: 60_000,
+  });
   const [statusFilter, setStatusFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [hideTest, setHideTest] = useState(true);

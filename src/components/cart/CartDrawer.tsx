@@ -53,11 +53,12 @@ export default function CartDrawer() {
                               </p>
                             </div>
                             <div className="flex items-center gap-2 shrink-0">
-                              <div className="flex items-center border border-mk-line rounded-md bg-white">
-                                <button onClick={() => updateQuantity.mutate({ itemId: item.id, quantity: item.quantity - 1 })} className="px-1.5 py-1 text-mk-sec hover:text-mk-navy"><Minus size={12} /></button>
-                                <span className="px-2 text-sm font-medium min-w-[28px] text-center">{item.quantity}</span>
-                                <button onClick={() => updateQuantity.mutate({ itemId: item.id, quantity: item.quantity + 1 })} className="px-1.5 py-1 text-mk-sec hover:text-mk-navy disabled:opacity-40 disabled:cursor-not-allowed" disabled={!!item.max_quantity && item.quantity >= item.max_quantity}><Plus size={12} /></button>
-                              </div>
+                              <QuantityInput
+                                size="sm"
+                                value={item.quantity}
+                                max={item.max_quantity || undefined}
+                                onChange={(q) => updateQuantity.mutate({ itemId: item.id, quantity: q })}
+                              />
                               <button onClick={() => removeFromCart.mutate(item.id)} className="text-mk-ter hover:text-mk-red transition-colors p-1"><Trash2 size={15} /></button>
                             </div>
                           </div>

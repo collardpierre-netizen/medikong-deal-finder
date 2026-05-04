@@ -421,6 +421,28 @@ const AdminCommandes = () => {
           </div>
         </div>
       )}
+
+      <AlertDialog open={purgeOpen} onOpenChange={setPurgeOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer les commandes test ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette action va supprimer définitivement <strong>{testCount}</strong> commande{testCount > 1 ? "s" : ""} marquée{testCount > 1 ? "s" : ""} « test » ainsi que toutes leurs lignes.
+              L'opération sera enregistrée dans le journal d'audit. Elle est irréversible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={purging}>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); handlePurgeTestOrders(); }}
+              disabled={purging || testCount === 0}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {purging ? "Suppression..." : `Supprimer ${testCount} commande${testCount > 1 ? "s" : ""}`}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

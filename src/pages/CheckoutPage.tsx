@@ -1,6 +1,6 @@
 import { Layout } from "@/components/layout/Layout";
 import { formatPrice } from "@/data/mock";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { PageTransition } from "@/components/shared/PageTransition";
@@ -13,6 +13,10 @@ import { ShoppingCart, Loader2, Truck } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useQuery } from "@tanstack/react-query";
+import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
+import type { Stripe, StripeElementsOptions } from "@stripe/stripe-js";
+import { getStripe } from "@/lib/stripe";
+
 
 interface AddressForm {
   company: string;

@@ -661,6 +661,7 @@ async function syncOffers(
     skipped: 0,
     rate_limited: 0,
     last_offset: startOffset,
+    chunk_start: offsetCursor,
     first_api_response_keys: null,
     first_flat_sample: null,
   };

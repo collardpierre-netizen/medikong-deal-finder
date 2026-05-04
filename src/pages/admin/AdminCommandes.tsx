@@ -42,6 +42,7 @@ const AdminCommandes = () => {
   const [activeTab, setActiveTab] = useState<"list" | "timeline" | "aging" | "buyers">("list");
   const [statusFilter, setStatusFilter] = useState("all");
   const [search, setSearch] = useState("");
+  const [hideTest, setHideTest] = useState(true);
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
 
   const orders = ordersData.map(o => ({
@@ -57,11 +58,13 @@ const AdminCommandes = () => {
     paymentTerms: o.payment_method || "invoice",
     dueDate: o.payment_due_date ? new Date(o.payment_due_date).toLocaleDateString("fr-BE") : "—",
     status: o.status as "pending" | "confirmed" | "shipped" | "delivered" | "cancelled",
+    isTest: Boolean((o as any).is_test),
     date: new Date(o.created_at).toLocaleDateString("fr-BE"),
     lines: ((o as any).order_lines || []) as any[],
   }));
 
-  const displayOrders = orders;
+  const displayOrders = hideTest ? orders.filter(o => !o.isTest) : orders;
+  const testCount = orders.filter(o => o.isTest).length;
 
   const filtered = displayOrders.filter((o) => {
     if (statusFilter !== "all" && o.status !== statusFilter) return false;

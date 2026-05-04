@@ -154,15 +154,33 @@ export default function AccountPage() {
   };
   const [newListName, setNewListName] = useState("");
   const [importOpen, setImportOpen] = useState(false);
-  const [orderStatusFilter, setOrderStatusFilter] = useState<string>("all");
+  const ORDER_PAGE_SIZES = [10, 20, 50, 100] as const;
+  const orderStatusFilter = searchParams.get("orderStatus") || "all";
   const orderSort = (searchParams.get("orderSort") === "asc" ? "asc" : "desc") as "asc" | "desc";
-  const setOrderSort = (next: "asc" | "desc") => {
+  const orderPageSize = (() => {
+    const raw = parseInt(searchParams.get("orderPageSize") || "20", 10);
+    return ORDER_PAGE_SIZES.includes(raw as any) ? raw : 20;
+  })();
+  const orderPage = Math.max(1, parseInt(searchParams.get("orderPage") || "1", 10) || 1);
+
+  const updateOrderParams = (patch: Record<string, string | null>) => {
     setSearchParams(prev => {
       const p = new URLSearchParams(prev);
-      if (next === "desc") p.delete("orderSort"); else p.set("orderSort", next);
+      for (const [k, v] of Object.entries(patch)) {
+        if (v === null || v === "") p.delete(k); else p.set(k, v);
+      }
       return p;
     }, { replace: true });
   };
+  const setOrderStatusFilter = (next: string) =>
+    updateOrderParams({ orderStatus: next === "all" ? null : next, orderPage: null });
+  const setOrderSort = (next: "asc" | "desc") =>
+    updateOrderParams({ orderSort: next === "desc" ? null : next, orderPage: null });
+  const setOrderPageSize = (next: number) =>
+    updateOrderParams({ orderPageSize: next === 20 ? null : String(next), orderPage: null });
+  const setOrderPage = (next: number) =>
+    updateOrderParams({ orderPage: next <= 1 ? null : String(next) });
+
   const filteredOrders = (() => {
     const base = orderStatusFilter === "all"
       ? (dbOrders as any[])
@@ -173,6 +191,12 @@ export default function AccountPage() {
       return orderSort === "asc" ? ta - tb : tb - ta;
     });
   })();
+  const orderTotalPages = Math.max(1, Math.ceil(filteredOrders.length / orderPageSize));
+  const orderPageSafe = Math.min(orderPage, orderTotalPages);
+  const paginatedOrders = filteredOrders.slice(
+    (orderPageSafe - 1) * orderPageSize,
+    orderPageSafe * orderPageSize
+  );
 
   // ---- Profile state ----
   const [profileForm, setProfileForm] = useState({

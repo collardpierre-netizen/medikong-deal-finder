@@ -45,6 +45,9 @@ export default function CartPage() {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   }, []);
 
+  // Helper: scroll to top after a cart mutation completes
+  const scrollTop = () => window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+
   // Fetch real vendor data for all vendor_ids in cart
   const vendorIds = useMemo(() => [...new Set(items.map(i => i.vendor_id).filter(Boolean))], [items]) as string[];
   const { getMovForVendor } = useVendorMov(vendorIds);
@@ -202,7 +205,7 @@ export default function CartPage() {
               <span className="text-mk-line">|</span>
               <button
                 className="flex items-center gap-1.5 text-mk-red hover:underline"
-                onClick={() => clearCart.mutate()}
+                onClick={() => { clearCart.mutate(); scrollTop(); }}
               >
                 <Trash2 size={14} /> Vider
               </button>
@@ -300,6 +303,7 @@ export default function CartPage() {
                             onClick={() => {
                               // Remove all items from this supplier group
                               group.items.forEach(item => removeFromCart.mutate(item.id));
+                              scrollTop();
                             }}
                             className="text-mk-ter hover:text-mk-red transition-colors p-1"
                           >
@@ -401,7 +405,7 @@ export default function CartPage() {
                                     )}
                                     <button
                                       className="text-mk-ter hover:text-mk-red transition-colors p-1"
-                                      onClick={() => removeFromCart.mutate(item.id)}
+                                      onClick={() => { removeFromCart.mutate(item.id); scrollTop(); }}
                                     >
                                       <Trash2 size={15} />
                                     </button>

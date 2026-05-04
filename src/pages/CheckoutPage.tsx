@@ -148,9 +148,10 @@ export default function CheckoutPage() {
   }, [stripePromise]);
 
   const [initStarted, setInitStarted] = useState(false);
+  const [testMode, setTestMode] = useState(false);
   // When entering step 3 with no clientSecret yet, create order + payment intent
   useEffect(() => {
-    if (step !== 3 || clientSecret || initStarted) return;
+    if (step !== 3 || clientSecret || initStarted || testMode) return;
     setInitStarted(true);
     let cancelled = false;
     (async () => {

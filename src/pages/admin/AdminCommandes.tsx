@@ -201,7 +201,14 @@ const AdminCommandes = () => {
                               {isExpanded ? <ChevronDown size={14} style={{ color: "#8B95A5" }} /> : <ChevronRight size={14} style={{ color: "#8B95A5" }} />}
                             </td>
                             <td className="px-3 py-3">
-                              <span className="text-[12px] font-bold font-mono block" style={{ color: "#1B5BDA" }}>{o.id}</span>
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[12px] font-bold font-mono" style={{ color: "#1B5BDA" }}>{o.id}</span>
+                                {o.isTest && (
+                                  <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide" style={{ backgroundColor: "#FEF3C7", color: "#92400E" }}>
+                                    Test
+                                  </span>
+                                )}
+                              </div>
                               <span className="text-[10px]" style={{ color: "#8B95A5" }}>{o.date}</span>
                             </td>
                             <td className="px-3 py-3 text-[12px] font-medium" style={{ color: "#1D2530" }}>{o.buyer}</td>

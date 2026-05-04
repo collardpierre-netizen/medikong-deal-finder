@@ -18,6 +18,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { EntityDelegatesSection } from "@/components/admin/EntityDelegatesSection";
 import { ContractHistoryTable } from "@/components/vendor/ContractHistoryTable";
+import { VendorMarketIntelAdminCard } from "@/components/admin/VendorMarketIntelAdminCard";
 
 type VendorValidationStatus = "pending_review" | "under_review" | "accepted" | "approved" | "rejected";
 
@@ -338,6 +339,7 @@ const AdminVendeurDetail = () => {
               <InfoRow label="Pays" value={vendor.country_code} />
             </div>
           </div>
+          <VendorMarketIntelAdminCard vendorId={vendor.id} vendorName={vendor.company_name || vendor.name} />
         </div>
       )}
 

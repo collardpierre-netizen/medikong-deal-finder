@@ -86,52 +86,89 @@ export default function CheckoutPage() {
   const formatAddr = (a: AddressForm) =>
     `${a.company}, ${a.street}${a.street2 ? ", " + a.street2 : ""}, ${a.postalCode} ${a.city}, ${a.country}`;
 
-  const handlePlaceOrder = useCallback(async () => {
-    if (submitting) return; // double-click guard
-    setSubmitting(true);
-    try {
-      const finalBilling = sameAsBilling ? shippingAddr : billingAddr;
-      const order = await createOrder.mutateAsync({
-        shippingAddress: formatAddr(shippingAddr),
-        billingAddress: formatAddr(finalBilling),
-        paymentMethod: paymentMethods[payment],
-        subtotal,
-        total,
-        items: items.map(item => ({
-          offer_id: item.offer_id,
-          product_id: item.product_id,
-          quantity: item.quantity,
-          unit_price_excl_vat: item.price_excl_vat || 0,
-          unit_price_incl_vat: item.price_incl_vat || item.price_excl_vat || 0,
-        })),
-      });
-      clearCart.mutate();
+  // Stripe state
+  const [stripePromise, setStripePromise] = useState<Promise<Stripe | null> | null>(null);
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [orderId, setOrderId] = useState<string | null>(null);
+  const [orderNumber, setOrderNumber] = useState<string | null>(null);
+  const [initLoading, setInitLoading] = useState(false);
+  const [initError, setInitError] = useState<string | null>(null);
 
+  // Lazy-init Stripe.js once
+  useEffect(() => {
+    if (!stripePromise) setStripePromise(getStripe());
+  }, [stripePromise]);
+
+  // When entering step 3 with no clientSecret yet, create order + payment intent
+  useEffect(() => {
+    if (step !== 3 || clientSecret || initLoading) return;
+    let cancelled = false;
+    (async () => {
+      setInitLoading(true);
+      setInitError(null);
       try {
-        await supabase.functions.invoke("send-transactional-email", {
-          body: {
-            templateName: "order-confirmation",
-            recipientEmail: user!.email,
-            idempotencyKey: `order-confirm-${order.id}`,
-            templateData: {
-              orderNumber: order.order_number,
-              total: `${formatPrice(total)} EUR`,
-              itemCount: items.length,
-              shippingAddress: formatAddr(shippingAddr),
-              paymentMethod: paymentMethods[payment],
-            },
-          },
+        const finalBilling = sameAsBilling ? shippingAddr : billingAddr;
+        const order = await createOrder.mutateAsync({
+          shippingAddress: formatAddr(shippingAddr),
+          billingAddress: formatAddr(finalBilling),
+          paymentMethod: paymentMethods[payment].label,
+          subtotal,
+          total,
+          items: items.map(item => ({
+            offer_id: item.offer_id,
+            product_id: item.product_id,
+            quantity: item.quantity,
+            unit_price_excl_vat: item.price_excl_vat || 0,
+            unit_price_incl_vat: item.price_incl_vat || item.price_excl_vat || 0,
+          })),
         });
-      } catch (emailErr) {
-        console.warn("Email confirmation failed:", emailErr);
-      }
+        if (cancelled) return;
+        setOrderId(order.id);
+        setOrderNumber(order.order_number);
 
-      navigate(`/confirmation?order=${order.order_number}`);
-    } catch (e: any) {
-      toast.error("Erreur lors de la commande: " + (e.message || "Réessayez"));
-      setSubmitting(false);
+        const { data, error } = await supabase.functions.invoke("stripe-checkout", {
+          body: { action: "create-payment-intent", order_id: order.id },
+        });
+        if (cancelled) return;
+        if (error || !data?.client_secret) {
+          throw new Error(error?.message || data?.error || "Initialisation paiement impossible");
+        }
+        setClientSecret(data.client_secret);
+      } catch (e: any) {
+        if (!cancelled) {
+          setInitError(e.message || "Erreur d'initialisation");
+          toast.error("Erreur paiement: " + (e.message || "Réessayez"));
+        }
+      } finally {
+        if (!cancelled) setInitLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [step]);
+
+  const handlePaymentSuccess = useCallback(async () => {
+    if (!orderId || !orderNumber) return;
+    try {
+      await supabase.functions.invoke("send-transactional-email", {
+        body: {
+          templateName: "order-confirmation",
+          recipientEmail: user!.email,
+          idempotencyKey: `order-confirm-${orderId}`,
+          templateData: {
+            orderNumber,
+            total: `${formatPrice(total)} EUR`,
+            itemCount: items.length,
+            shippingAddress: formatAddr(shippingAddr),
+            paymentMethod: paymentMethods[payment].label,
+          },
+        },
+      });
+    } catch (e) {
+      console.warn("Email confirmation failed:", e);
     }
-  }, [submitting, shippingAddr, billingAddr, sameAsBilling, payment, subtotal, total, items]);
+    clearCart.mutate();
+    navigate(`/confirmation?order=${orderNumber}`);
+  }, [orderId, orderNumber, user, total, items, shippingAddr, payment, clearCart, navigate]);
 
   if (!user) {
     return (

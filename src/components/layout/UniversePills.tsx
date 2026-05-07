@@ -21,7 +21,7 @@ export function UniversePills() {
 
   return (
     <div className="border-b border-border py-3">
-      <div className="mk-container flex items-center gap-2 overflow-x-auto">
+      <div className="mk-container flex items-center gap-2 overflow-x-auto scrollbar-hide">
         {parentCategories.map(cat => (
           <button
             key={cat.id}

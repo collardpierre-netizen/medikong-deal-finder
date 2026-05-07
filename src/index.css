@@ -283,3 +283,7 @@
 .tf-dot-pulse { animation: dotPulse 0.6s ease; }
 .tf-enter-pulse { animation: enterPulse 2s ease infinite; }
 .tf-spin { animation: tfSpin 0.6s linear infinite; }
+
+/* Hide scrollbar visually but keep scroll functionality */
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+.scrollbar-hide::-webkit-scrollbar { display: none; }

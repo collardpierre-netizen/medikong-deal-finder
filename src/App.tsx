@@ -373,6 +373,7 @@ const App = () => (
               <Route index element={<LP><AdminDashboard /></LP>} />
               <Route path="vendeurs" element={<LP><AdminVendeurs /></LP>} />
               <Route path="vendeurs/:id" element={<LP><AdminVendeurDetail /></LP>} />
+              <Route path="vendors-stripe" element={<LP><AdminVendors /></LP>} />
               <Route path="onboarding" element={<LP><AdminOnboarding /></LP>} />
               <Route path="produits" element={<LP><AdminProduits /></LP>} />
               <Route path="produits/mapping" element={<LP><AdminSourceMapping /></LP>} />

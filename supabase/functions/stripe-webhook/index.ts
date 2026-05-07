@@ -120,8 +120,6 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
   const paymentIntentId = typeof session.payment_intent === "string"
     ? session.payment_intent
     : session.payment_intent?.id;
-  const transferGroup = `order_${session.metadata?.order_id}`;
-
   if (!paymentIntentId) {
     console.log("[stripe-webhook] No payment_intent on session, skipping transfers");
     return;
@@ -132,43 +130,75 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
   const chargeId = pi.latest_charge as string;
 
   for (const vb of vendorBreakdown) {
-    console.log(`[stripe-webhook] Creating transfer for vendor ${vb.vendor_id} amount=${vb.transfer_amount}`);
-
-    // 1. INSERT en pending
-    const { data: transferRow, error: insertErr } = await supabase
+    // 1. Vérifier si un transfer existe déjà pour cette commande+vendor
+    const { data: existing } = await supabase
       .from("order_transfers")
-      .insert({
-        order_id: session.metadata?.order_id,
-        vendor_id: vb.vendor_id,
-        amount: vb.transfer_amount,
-        commission_amount: vb.commission_amount,
-        commission_rate: vb.commission_rate,
-        status: "pending",
-      })
-      .select()
-      .single();
+      .select("id, status, stripe_transfer_id")
+      .eq("order_id", session.metadata.order_id)
+      .eq("vendor_id", vb.vendor_id)
+      .maybeSingle();
 
-    if (insertErr) {
-      console.error(`[stripe-webhook] Insert order_transfer failed:`, insertErr);
+    if (existing && existing.status === "completed" && existing.stripe_transfer_id) {
+      console.log(`[stripe-webhook] Transfer déjà completed pour vendor ${vb.vendor_id}, skip`);
       continue;
     }
 
-    // 2. Créer le transfer Stripe
-    try {
-      const transfer = await stripe.transfers.create({
-        amount: vb.transfer_amount,
-        currency: "eur",
-        destination: vb.stripe_account_id,
-        transfer_group: transferGroup,
-        source_transaction: chargeId,
-        metadata: {
-          order_id: session.metadata?.order_id,
-          order_number: session.metadata?.order_number,
+    // 2. Si existe en pending/failed, on retry, sinon on crée la ligne
+    let transferRowId: string;
+    if (existing) {
+      transferRowId = existing.id;
+    } else {
+      const { data: inserted, error: insertErr } = await supabase
+        .from("order_transfers")
+        .insert({
+          order_id: session.metadata.order_id,
           vendor_id: vb.vendor_id,
-        },
-      });
+          amount: vb.transfer_amount,
+          commission_amount: vb.commission_amount,
+          commission_rate: vb.commission_rate,
+          status: "pending",
+        })
+        .select("id")
+        .single();
 
-      // 3. Update en completed
+      if (insertErr) {
+        // Race: une autre instance vient de créer la ligne entre notre
+        // SELECT et notre INSERT (grâce à la contrainte unique on évite
+        // le doublon). On re-fetch et on skip.
+        console.warn(`[stripe-webhook] Insert race, refetch:`, insertErr.code);
+        const { data: refetched } = await supabase
+          .from("order_transfers")
+          .select("id, status")
+          .eq("order_id", session.metadata.order_id)
+          .eq("vendor_id", vb.vendor_id)
+          .single();
+        if (refetched?.status === "completed") continue;
+        transferRowId = refetched!.id;
+      } else {
+        transferRowId = inserted.id;
+      }
+    }
+
+    // 3. Appeler Stripe avec un idempotency_key déterministe
+    try {
+      const transfer = await stripe.transfers.create(
+        {
+          amount: vb.transfer_amount,
+          currency: "eur",
+          destination: vb.stripe_account_id,
+          transfer_group: `order_${session.metadata.order_id}`,
+          source_transaction: chargeId,
+          metadata: {
+            order_id: session.metadata.order_id,
+            order_number: session.metadata.order_number,
+            vendor_id: vb.vendor_id,
+          },
+        },
+        {
+          idempotencyKey: `transfer_${session.metadata.order_id}_${vb.vendor_id}`,
+        },
+      );
+
       await supabase
         .from("order_transfers")
         .update({
@@ -176,11 +206,11 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
           status: "completed",
           updated_at: new Date().toISOString(),
         })
-        .eq("id", transferRow.id);
+        .eq("id", transferRowId);
 
-      console.log(`[stripe-webhook] Transfer created ${transfer.id} for vendor ${vb.vendor_id}`);
+      console.log(`[stripe-webhook] Transfer ${transfer.id} OK pour vendor ${vb.vendor_id}`);
     } catch (err: any) {
-      console.error(`[stripe-webhook] Transfer creation failed:`, err);
+      console.error(`[stripe-webhook] Transfer FAILED pour vendor ${vb.vendor_id}:`, err);
       await supabase
         .from("order_transfers")
         .update({
@@ -188,7 +218,7 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
           error_message: err.message || String(err),
           updated_at: new Date().toISOString(),
         })
-        .eq("id", transferRow.id);
+        .eq("id", transferRowId);
     }
   }
 }

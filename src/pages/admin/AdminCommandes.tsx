@@ -336,6 +336,34 @@ const AdminCommandes = () => {
                                 {o.lines.length} article{o.lines.length > 1 ? "s" : ""}
                               </span>
                             </td>
+                            <td className="px-3 py-3">
+                              {(() => {
+                                const names = Array.from(new Set((o.lines || []).map((l: any) => l.vendors?.company_name || l.qogita_seller_fid).filter(Boolean)));
+                                if (names.length === 0) return <span className="text-[11px]" style={{ color: "#8B95A5" }}>—</span>;
+                                const shown = names.slice(0, 2).join(", ");
+                                const extra = names.length > 2 ? ` +${names.length - 2}` : "";
+                                return (
+                                  <span className="text-[11px]" style={{ color: "#1D2530" }} title={names.join(", ")}>
+                                    {shown}{extra}
+                                  </span>
+                                );
+                              })()}
+                            </td>
+                            <td className="px-3 py-3">
+                              {(() => {
+                                const codes = (o.lines || [])
+                                  .map((l: any) => l.products?.gtin || l.products?.cnk_code || l.products?.sku)
+                                  .filter(Boolean);
+                                if (codes.length === 0) return <span className="text-[11px]" style={{ color: "#8B95A5" }}>—</span>;
+                                const shown = codes.slice(0, 2).join(", ");
+                                const extra = codes.length > 2 ? ` +${codes.length - 2}` : "";
+                                return (
+                                  <span className="text-[10px] font-mono" style={{ color: "#616B7C" }} title={codes.join(", ")}>
+                                    {shown}{extra}
+                                  </span>
+                                );
+                              })()}
+                            </td>
                             <td className="px-3 py-3 text-[12px] font-bold font-mono" style={{ color: "#1D2530" }}>{fmt(o.amountHT)}</td>
                             <td className="px-3 py-3 text-[11px] font-mono" style={{ color: "#8B95A5" }}>{fmt(o.tva)}</td>
                             <td className="px-3 py-3 text-[12px] font-bold font-mono" style={{ color: "#059669" }}>{fmt(o.ttc)}</td>

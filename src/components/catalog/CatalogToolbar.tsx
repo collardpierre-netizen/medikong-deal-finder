@@ -17,10 +17,10 @@ export function CatalogToolbar({ filters, setFilter, total, view, setView }: Pro
   const { t } = useTranslation();
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-      <div className="flex items-center gap-3">
+    <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+      <div className="flex items-center gap-2 min-w-0">
         <Select value={filters.sort} onValueChange={v => setFilter("sort", v)}>
-          <SelectTrigger className="h-8 text-sm w-[180px]">
+          <SelectTrigger className="h-8 text-sm w-[150px] sm:w-[180px]">
             <SelectValue placeholder={t("catalog.sortBy")} />
           </SelectTrigger>
           <SelectContent>
@@ -35,13 +35,13 @@ export function CatalogToolbar({ filters, setFilter, total, view, setView }: Pro
         </Select>
       </div>
 
-      <div className="flex items-center gap-2">
-        <span className="text-sm text-muted-foreground hidden sm:inline">
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="text-sm text-muted-foreground hidden md:inline">
           {t("catalog.productsCount", { count: total })}
         </span>
 
         <Select value={String(filters.perPage)} onValueChange={v => setFilter("per_page", v)}>
-          <SelectTrigger className="h-8 text-sm w-[120px]">
+          <SelectTrigger className="h-8 text-sm w-[100px] sm:w-[120px]">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -51,7 +51,7 @@ export function CatalogToolbar({ filters, setFilter, total, view, setView }: Pro
           </SelectContent>
         </Select>
 
-        <div className="flex border border-border rounded-md overflow-hidden">
+        <div className="hidden sm:flex border border-border rounded-md overflow-hidden">
           <button onClick={() => setView("grid")} title={t("catalog.grid")} className={`p-1.5 ${view === "grid" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>
             <Grid size={16} />
           </button>
@@ -63,7 +63,7 @@ export function CatalogToolbar({ filters, setFilter, total, view, setView }: Pro
           </button>
         </div>
 
-        <button className="p-1.5 border border-border rounded-md text-muted-foreground hover:bg-muted" title={t("catalog.downloadCsv")}>
+        <button className="hidden sm:inline-flex p-1.5 border border-border rounded-md text-muted-foreground hover:bg-muted" title={t("catalog.downloadCsv")}>
           <Download size={16} />
         </button>
       </div>

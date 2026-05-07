@@ -275,34 +275,34 @@ export default function HomePage() {
 
           {/* Inline stats — dynamic per country */}
           <motion.div
-            className="flex items-center justify-center gap-0 divide-x divide-mk-line"
+            className="grid grid-cols-2 sm:flex sm:items-center sm:justify-center sm:gap-0 sm:divide-x sm:divide-mk-line gap-y-3 max-w-md sm:max-w-none mx-auto"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.4 }}
           >
-            <div className="px-4 md:px-6 text-center">
-              <div className="text-xl md:text-2xl font-bold text-mk-navy">
+            <div className="px-3 sm:px-4 md:px-6 text-center">
+              <div className="text-lg sm:text-xl md:text-2xl font-bold text-mk-navy">
                 {renderCountryStat(countryStats?.vendors)}
               </div>
-              <div className="text-xs text-mk-sec mt-0.5">{t("stats.suppliers")}</div>
+              <div className="text-[11px] sm:text-xs text-mk-sec mt-0.5">{t("stats.suppliers")}</div>
             </div>
-            <div className="px-4 md:px-6 text-center">
-              <div className="text-xl md:text-2xl font-bold text-mk-navy">
+            <div className="px-3 sm:px-4 md:px-6 text-center">
+              <div className="text-lg sm:text-xl md:text-2xl font-bold text-mk-navy">
                 {renderCountryStat(countryStats?.brands)}
               </div>
-              <div className="text-xs text-mk-sec mt-0.5">{t("stats.brands")}</div>
+              <div className="text-[11px] sm:text-xs text-mk-sec mt-0.5">{t("stats.brands")}</div>
             </div>
-            <div className="px-4 md:px-6 text-center">
-              <div className="text-xl md:text-2xl font-bold text-mk-navy">
+            <div className="px-3 sm:px-4 md:px-6 text-center">
+              <div className="text-lg sm:text-xl md:text-2xl font-bold text-mk-navy">
                 {renderCountryStat(countryStats?.products)}
               </div>
-              <div className="text-xs text-mk-sec mt-0.5">{t("stats.products")} {countryLabel}</div>
+              <div className="text-[11px] sm:text-xs text-mk-sec mt-0.5">{t("stats.products")} {countryLabel}</div>
             </div>
-            <div className="px-4 md:px-6 text-center">
-              <div className="text-xl md:text-2xl font-bold text-mk-navy">
+            <div className="px-3 sm:px-4 md:px-6 text-center">
+              <div className="text-lg sm:text-xl md:text-2xl font-bold text-mk-navy">
                 {renderCountryStat(countryStats?.offers)}
               </div>
-              <div className="text-xs text-mk-sec mt-0.5">{t("stats.offers", "Offres")}</div>
+              <div className="text-[11px] sm:text-xs text-mk-sec mt-0.5">{t("stats.offers", "Offres")}</div>
             </div>
           </motion.div>
 

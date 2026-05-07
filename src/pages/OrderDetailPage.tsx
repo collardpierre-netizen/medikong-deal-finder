@@ -89,7 +89,13 @@ export default function OrderDetailPage() {
                   {it.product_sku && <span>SKU: {it.product_sku}</span>}
                 </div>
               </div>
-              <span className="text-mk-sec text-xs">{it.vendor_name || "—"}</span>
+              {it.vendor_slug ? (
+                <a href={`/vendeur/${it.vendor_slug}`} className="text-mk-primary hover:underline text-xs">
+                  {it.vendor_name || "—"}
+                </a>
+              ) : (
+                <span className="text-mk-sec text-xs">{it.vendor_name || "—"}</span>
+              )}
               <span className="text-mk-sec">{it.quantity}</span>
               <span className="text-mk-sec">{formatPrice(Number(it.unit_price_excl_vat || 0))} EUR</span>
               <span className="font-bold text-mk-navy">{formatPrice(Number(it.unit_price_excl_vat || 0) * Number(it.quantity || 0))} EUR</span>

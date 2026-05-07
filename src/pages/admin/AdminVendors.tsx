@@ -54,11 +54,11 @@ const AdminVendors = () => {
       const { data, error } = await supabase
         .from("vendors")
         .select(
-          "id, name, slug, vendor_type, commission_rate, stripe_account_id, stripe_onboarding_complete, stripe_charges_enabled, stripe_payouts_enabled"
+          "id, name, slug, type, commission_rate, stripe_account_id, stripe_onboarding_complete, stripe_charges_enabled, stripe_payouts_enabled"
         )
         .order("name");
       if (error) throw error;
-      return (data ?? []) as VendorRow[];
+      return (data ?? []) as unknown as VendorRow[];
     },
     enabled: isAdmin,
   });

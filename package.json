@@ -13,7 +13,9 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "test:e2e:install": "playwright install --with-deps chromium"
+    "test:e2e:install": "playwright install --with-deps chromium",
+    "lighthouse": "lhci autorun --config=./lighthouserc.cjs",
+    "lighthouse:desktop": "lhci autorun --config=./lighthouserc.cjs --collect.settings.preset=desktop"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

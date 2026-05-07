@@ -1,0 +1,54 @@
+name: Lighthouse CI
+
+on:
+  # Lancement manuel depuis l'onglet Actions de GitHub
+  workflow_dispatch:
+  # Après chaque push sur main (déclenché par les déploiements Lovable)
+  push:
+    branches: [main]
+  # Audit quotidien pour suivre la dérive de perf dans le temps
+  schedule:
+    - cron: "0 5 * * *" # 05:00 UTC
+
+# Évite l'empilement de runs sur des push rapprochés
+concurrency:
+  group: lighthouse-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    name: Lighthouse (${{ matrix.preset }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        preset: [mobile, desktop]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Lighthouse CI
+        run: npm install -g @lhci/cli@0.14.x
+
+      - name: Wait for live deployment to settle
+        run: sleep 30
+
+      - name: Run Lighthouse CI (${{ matrix.preset }})
+        env:
+          LHCI_PRESET: ${{ matrix.preset }}
+        run: |
+          # Surcharge du preset (mobile par défaut dans lighthouserc.cjs)
+          lhci autorun \
+            --config=./lighthouserc.cjs \
+            --collect.settings.preset=$LHCI_PRESET
+
+      - name: Upload Lighthouse reports as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-${{ matrix.preset }}-${{ github.run_number }}
+          path: .lighthouseci/
+          retention-days: 30

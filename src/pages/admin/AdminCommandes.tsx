@@ -382,7 +382,7 @@ const AdminCommandes = () => {
                           </tr>
                           {isExpanded && o.lines.length > 0 && (
                             <tr key={`${o.rawId}-lines`}>
-                              <td colSpan={11} className="px-0 py-0">
+                              <td colSpan={13} className="px-0 py-0">
                                 <div className="mx-4 mb-3 rounded-lg overflow-hidden" style={{ border: "1px solid #E2E8F0", backgroundColor: "#F8FAFC" }}>
                                   <table className="w-full text-left">
                                     <thead>
@@ -448,7 +448,7 @@ const AdminCommandes = () => {
                           )}
                           {isExpanded && o.lines.length === 0 && (
                             <tr key={`${o.rawId}-empty`}>
-                              <td colSpan={11} className="px-6 py-4 text-center text-[12px]" style={{ color: "#8B95A5" }}>
+                              <td colSpan={13} className="px-6 py-4 text-center text-[12px]" style={{ color: "#8B95A5" }}>
                                 Aucune ligne de commande enregistrée.
                               </td>
                             </tr>

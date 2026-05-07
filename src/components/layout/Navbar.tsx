@@ -23,6 +23,20 @@ export function Navbar() {
   const [isVendor, setIsVendor] = useState(false);
   const { isTVAC, toggleTVAC } = usePriceDisplay();
 
+  // Close mobile menu on route change
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [location.pathname]);
+
+  // Lock body scroll when mobile menu is open
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      const prev = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => { document.body.style.overflow = prev; };
+    }
+  }, [mobileMenuOpen]);
+
   useEffect(() => {
     if (!user) { setIsAdmin(false); setIsVendor(false); return; }
     const check = async () => {
@@ -59,9 +73,9 @@ export function Navbar() {
           <img src={logoHorizontal} alt="MediKong" className="h-[67px]" />
         </Link>
 
-        {/* Search bar — hidden on homepage */}
+        {/* Search bar — hidden on homepage, visible from md+ on others (mobile uses burger menu) */}
         {!isHomePage && (
-          <div className="flex-1 max-w-[520px] mx-auto hidden sm:block">
+          <div className="flex-1 max-w-[520px] mx-auto hidden md:block">
             <InstantSearchBar />
           </div>
         )}
@@ -142,42 +156,62 @@ export function Navbar() {
       {/* Mobile menu */}
       <AnimatePresence>
         {mobileMenuOpen && (
-          <motion.div
-            className="absolute top-16 left-0 right-0 bg-white border-b border-border p-4 flex flex-col gap-3 md:hidden z-50 shadow-lg"
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2 }}
-          >
-            <InstantSearchBar className="sm:hidden" />
-            {user ? (
-              <>
-                {isAdmin && (
-                  <Link to="/admin" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 text-primary text-sm font-semibold">
-                    <Shield size={16} /> {t("common.administration")}
+          <>
+            <motion.div
+              className="fixed inset-0 top-16 bg-black/40 z-40 md:hidden"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setMobileMenuOpen(false)}
+            />
+            <motion.div
+              className="absolute top-16 left-0 right-0 bg-white border-b border-border p-4 flex flex-col gap-3 md:hidden z-50 shadow-lg max-h-[calc(100vh-4rem)] overflow-y-auto"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              <InstantSearchBar />
+              <button
+                onClick={toggleTVAC}
+                className="flex items-center justify-center gap-1 text-xs font-semibold rounded-full px-3 py-2 border border-border self-start"
+              >
+                <span className={isTVAC ? "text-muted-foreground" : "text-primary font-bold"}>HTVA</span>
+                <span className="text-muted-foreground">/</span>
+                <span className={isTVAC ? "text-primary font-bold" : "text-muted-foreground"}>TTC</span>
+              </button>
+              {user ? (
+                <>
+                  {isAdmin && (
+                    <Link to="/admin" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 text-primary text-sm font-semibold py-1">
+                      <Shield size={16} /> {t("common.administration")}
+                    </Link>
+                  )}
+                  {isVendor && (
+                    <Link to="/vendor" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 text-primary text-sm font-semibold py-1">
+                      <Store size={16} /> {t("common.vendorSpace")}
+                    </Link>
+                  )}
+                  <Link to="/mes-prix" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 text-emerald-600 text-sm font-semibold py-1">
+                    <Tag size={16} /> Mes Prix
                   </Link>
-                )}
-                {isVendor && (
-                  <Link to="/vendor" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 text-primary text-sm font-semibold">
-                    <Store size={16} /> {t("common.vendorSpace")}
+                  <Link to="/compte" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 text-foreground text-sm py-1">
+                    <Users size={16} /> {t("common.account")}
                   </Link>
-                )}
-                <Link to="/mes-prix" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 text-emerald-600 text-sm font-semibold">
-                  <Tag size={16} /> Mes Prix
+                  <button onClick={() => { handleSignOut(); setMobileMenuOpen(false); }} className="flex items-center gap-2 text-muted-foreground text-sm py-1">
+                    <LogOut size={16} /> {t("common.signOut")}
+                  </button>
+                </>
+              ) : (
+                <Link to="/connexion" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 text-foreground text-sm py-1">
+                  <Users size={16} /> {t("common.login")}
                 </Link>
-                <Link to="/compte" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 text-foreground text-sm">
-                  <Users size={16} /> {t("common.account")}
-                </Link>
-                <button onClick={() => { handleSignOut(); setMobileMenuOpen(false); }} className="flex items-center gap-2 text-muted-foreground text-sm">
-                  <LogOut size={16} /> {t("common.signOut")}
-                </button>
-              </>
-            ) : (
-              <Link to="/connexion" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 text-foreground text-sm">
-                <Users size={16} /> {t("common.login")}
-              </Link>
-            )}
-          </motion.div>
+              )}
+              <div className="pt-2 border-t border-border">
+                <LanguageSelector variant="light" />
+              </div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
     </nav>

@@ -23,6 +23,20 @@ export function Navbar() {
   const [isVendor, setIsVendor] = useState(false);
   const { isTVAC, toggleTVAC } = usePriceDisplay();
 
+  // Close mobile menu on route change
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [location.pathname]);
+
+  // Lock body scroll when mobile menu is open
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      const prev = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => { document.body.style.overflow = prev; };
+    }
+  }, [mobileMenuOpen]);
+
   useEffect(() => {
     if (!user) { setIsAdmin(false); setIsVendor(false); return; }
     const check = async () => {

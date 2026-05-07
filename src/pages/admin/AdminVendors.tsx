@@ -161,7 +161,7 @@ const AdminVendors = () => {
                 <TableRow key={v.id}>
                   <TableCell className="font-medium">{v.name ?? "—"}</TableCell>
                   <TableCell className="text-muted-foreground">{v.slug ?? "—"}</TableCell>
-                  <TableCell>{v.vendor_type ?? "—"}</TableCell>
+                  <TableCell>{v.type ?? "—"}</TableCell>
                   <TableCell>
                     {v.commission_rate != null ? `${(v.commission_rate * 100).toFixed(1)}%` : "—"}
                   </TableCell>

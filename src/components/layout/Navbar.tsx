@@ -73,9 +73,9 @@ export function Navbar() {
           <img src={logoHorizontal} alt="MediKong" className="h-[67px]" />
         </Link>
 
-        {/* Search bar — hidden on homepage */}
+        {/* Search bar — hidden on homepage, visible from md+ on others (mobile uses burger menu) */}
         {!isHomePage && (
-          <div className="flex-1 max-w-[520px] mx-auto hidden sm:block">
+          <div className="flex-1 max-w-[520px] mx-auto hidden md:block">
             <InstantSearchBar />
           </div>
         )}

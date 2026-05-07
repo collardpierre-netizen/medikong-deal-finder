@@ -1,9 +1,11 @@
 import { Layout } from "@/components/layout/Layout";
 import { useParams, Link } from "react-router-dom";
-import { Download } from "lucide-react";
+import { Download, FileText, FileSpreadsheet } from "lucide-react";
 import { formatPrice } from "@/data/mock";
 import { useOrderDetail } from "@/hooks/useOrders";
 import { ORDER_WORKFLOW_STEPS, getOrderStatusMeta, formatOrderDateTime } from "@/lib/order-status";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 export default function OrderDetailPage() {
   const { id } = useParams();
@@ -18,19 +20,90 @@ export default function OrderDetailPage() {
   const total = Number((order as any)?.total_incl_vat || 0);
   const shippingAddr: any = (order as any)?.shipping_address || {};
 
+  const orderNumber = (order as any)?.order_number || id || "commande";
+
+  const buildRows = () =>
+    items.map((it: any) => {
+      const qty = Number(it.quantity || 0);
+      const unit = Number(it.unit_price_excl_vat || 0);
+      return {
+        name: it.product_name || it.name || "—",
+        ean: it.product_gtin || "",
+        cnk: it.product_cnk || "",
+        sku: it.product_sku || "",
+        vendor: it.vendor_name || "",
+        qty,
+        unit,
+        total: unit * qty,
+      };
+    });
+
+  const handleExportCSV = () => {
+    const rows = buildRows();
+    const header = ["Produit", "EAN", "CNK", "SKU", "Vendeur", "Quantité", "Prix unitaire HTVA (EUR)", "Montant HTVA (EUR)"];
+    const escape = (v: any) => {
+      const s = String(v ?? "");
+      return /[";,\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const lines = [header.join(";")];
+    rows.forEach(r => lines.push([r.name, r.ean, r.cnk, r.sku, r.vendor, r.qty, r.unit.toFixed(2), r.total.toFixed(2)].map(escape).join(";")));
+    lines.push("");
+    lines.push(["", "", "", "", "", "", "Sous-total HTVA", subtotal.toFixed(2)].map(escape).join(";"));
+    if (shipping > 0) lines.push(["", "", "", "", "", "", "Livraison", shipping.toFixed(2)].map(escape).join(";"));
+    lines.push(["", "", "", "", "", "", "TVA", vat.toFixed(2)].map(escape).join(";"));
+    lines.push(["", "", "", "", "", "", "Total TTC", total.toFixed(2)].map(escape).join(";"));
+    const blob = new Blob(["\uFEFF" + lines.join("\n")], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `commande-${orderNumber}.csv`; a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleExportPDF = () => {
+    const rows = buildRows();
+    const doc = new jsPDF({ orientation: "landscape" });
+    doc.setFontSize(14);
+    doc.text(`Commande #${orderNumber}`, 14, 15);
+    doc.setFontSize(10);
+    doc.text(`Date : ${formatOrderDateTime((order as any)?.created_at) || "—"}`, 14, 22);
+    autoTable(doc, {
+      startY: 28,
+      head: [["Produit", "EAN", "CNK", "SKU", "Vendeur", "Qté", "Prix HTVA", "Montant HTVA"]],
+      body: rows.map(r => [r.name, r.ean, r.cnk, r.sku, r.vendor, r.qty, `${r.unit.toFixed(2)} EUR`, `${r.total.toFixed(2)} EUR`]),
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [28, 88, 217] },
+      foot: [
+        ["", "", "", "", "", "", "Sous-total HTVA", `${subtotal.toFixed(2)} EUR`],
+        ...(shipping > 0 ? [["", "", "", "", "", "", "Livraison", `${shipping.toFixed(2)} EUR`]] : []),
+        ["", "", "", "", "", "", "TVA", `${vat.toFixed(2)} EUR`],
+        ["", "", "", "", "", "", "Total TTC", `${total.toFixed(2)} EUR`],
+      ],
+      footStyles: { fillColor: [245, 247, 250], textColor: 30, fontStyle: "bold" },
+    });
+    doc.save(`commande-${orderNumber}.pdf`);
+  };
+
   return (
     <Layout>
       <div className="mk-container py-6 md:py-8">
         <div className="text-xs text-mk-sec mb-4">
           <Link to="/" className="hover:text-mk-blue">Accueil</Link> &gt;{" "}
-          <Link to="/compte?tab=commandes" className="hover:text-mk-blue">Mon compte</Link> &gt; Commandes &gt; #{(order as any)?.order_number || id}
+          <Link to="/compte?tab=commandes" className="hover:text-mk-blue">Mon compte</Link> &gt; Commandes &gt; #{orderNumber}
         </div>
 
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-2 gap-3">
-          <h1 className="text-2xl md:text-[28px] font-bold text-mk-navy">Commande #{(order as any)?.order_number || id}</h1>
-          <button className="border border-mk-line text-sm px-4 py-2 rounded-md text-mk-sec flex items-center gap-1.5">
-            <Download size={14} /> Télécharger facture
-          </button>
+          <h1 className="text-2xl md:text-[28px] font-bold text-mk-navy">Commande #{orderNumber}</h1>
+          <div className="flex items-center gap-2 flex-wrap">
+            <button onClick={handleExportCSV} disabled={!items.length} className="border border-mk-line text-sm px-3 py-2 rounded-md text-mk-sec flex items-center gap-1.5 disabled:opacity-50">
+              <FileSpreadsheet size={14} /> Export CSV
+            </button>
+            <button onClick={handleExportPDF} disabled={!items.length} className="border border-mk-line text-sm px-3 py-2 rounded-md text-mk-sec flex items-center gap-1.5 disabled:opacity-50">
+              <FileText size={14} /> Export PDF
+            </button>
+            <button className="border border-mk-line text-sm px-4 py-2 rounded-md text-mk-sec flex items-center gap-1.5">
+              <Download size={14} /> Télécharger facture
+            </button>
+          </div>
         </div>
 
         {/* Date + statut */}

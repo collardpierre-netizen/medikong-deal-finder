@@ -287,3 +287,24 @@
 /* Hide scrollbar visually but keep scroll functionality */
 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 .scrollbar-hide::-webkit-scrollbar { display: none; }
+
+/* Global guard: prevent any horizontal overflow on mobile.
+   Components that genuinely need horizontal scroll must opt in via
+   `.scrollbar-hide` / `overflow-x-auto` on their own container. */
+@media (max-width: 767px) {
+  html, body {
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+  /* Long unbreakable strings (URLs, codes EAN/CNK, emails) ne doivent pas
+     pousser la largeur de leur parent au-delà du viewport. */
+  main, main * {
+    min-width: 0;
+  }
+  main img,
+  main video,
+  main iframe,
+  main table {
+    max-width: 100%;
+  }
+}

@@ -19,7 +19,7 @@ export function SubNav() {
 
   return (
     <div className="border-b border-border bg-white">
-      <div className="mk-container flex items-center gap-1 overflow-x-auto">
+      <div className="mk-container flex items-center gap-1 overflow-x-auto scrollbar-hide">
         {/* Categories button */}
         <Link
           to="/categories"

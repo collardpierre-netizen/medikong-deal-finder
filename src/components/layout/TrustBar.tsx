@@ -12,9 +12,9 @@ export function TrustBar() {
 
   return (
     <div className="bg-mk-navy py-2">
-      <div className="mk-container flex items-center justify-center gap-6 md:gap-10">
+      <div className="mk-container flex flex-wrap items-center justify-center gap-x-4 gap-y-1 sm:gap-6 md:gap-10 px-3">
         {items.map((item, i) => (
-          <div key={i} className="flex items-center gap-1.5 text-xs text-white/90 whitespace-nowrap">
+          <div key={i} className="flex items-center gap-1.5 text-[11px] sm:text-xs text-white/90">
             <item.icon size={14} className="text-white/70 shrink-0" />
             <span>{item.text}</span>
           </div>

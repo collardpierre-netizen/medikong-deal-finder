@@ -110,6 +110,7 @@ const AdminLoginPage = lazyWithRetry(() => import("./pages/admin/AdminLoginPage"
 const AdminLayout = lazyWithRetry(() => import("./components/admin/AdminLayout"), "AdminLayout");
 const AdminDashboard = lazyWithRetry(() => import("./pages/admin/AdminDashboard"), "AdminDashboard");
 const AdminVendeurs = lazyWithRetry(() => import("./pages/admin/AdminVendeurs"), "AdminVendeurs");
+const AdminVendors = lazyWithRetry(() => import("./pages/admin/AdminVendors"), "AdminVendors");
 const AdminVendeurDetail = lazyWithRetry(() => import("./pages/admin/AdminVendeurDetail"), "AdminVendeurDetail");
 const AdminOnboarding = lazyWithRetry(() => import("./pages/admin/AdminOnboarding"), "AdminOnboarding");
 const AdminProduits = lazyWithRetry(() => import("./pages/admin/AdminProduits"), "AdminProduits");
@@ -372,6 +373,7 @@ const App = () => (
               <Route index element={<LP><AdminDashboard /></LP>} />
               <Route path="vendeurs" element={<LP><AdminVendeurs /></LP>} />
               <Route path="vendeurs/:id" element={<LP><AdminVendeurDetail /></LP>} />
+              <Route path="vendors-stripe" element={<LP><AdminVendors /></LP>} />
               <Route path="onboarding" element={<LP><AdminOnboarding /></LP>} />
               <Route path="produits" element={<LP><AdminProduits /></LP>} />
               <Route path="produits/mapping" element={<LP><AdminSourceMapping /></LP>} />

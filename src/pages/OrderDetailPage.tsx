@@ -72,22 +72,30 @@ export default function OrderDetailPage() {
 
         {/* Articles */}
         <div className="border border-mk-line rounded-lg overflow-x-auto mb-6">
-          <div className="grid grid-cols-4 gap-3 px-4 py-2 bg-mk-alt text-xs font-semibold text-mk-sec min-w-[400px]">
-            <span>Produit</span><span>Quantité</span><span>Prix/u HTVA</span><span>Montant HTVA</span>
+          <div className="grid grid-cols-5 gap-3 px-4 py-2 bg-mk-alt text-xs font-semibold text-mk-sec min-w-[640px]">
+            <span>Produit</span><span>Vendeur</span><span>Quantité</span><span>Prix/u HTVA</span><span>Montant HTVA</span>
           </div>
           {isLoading ? (
             <div className="px-4 py-6 text-sm text-mk-sec">Chargement…</div>
           ) : items.length === 0 ? (
             <div className="px-4 py-6 text-sm text-mk-sec">Aucun article</div>
           ) : items.map((it, idx) => (
-            <div key={it.id || idx} className="grid grid-cols-4 gap-3 px-4 py-3 border-t border-mk-line text-sm items-center min-w-[400px]">
-              <span className="font-medium text-mk-navy">{it.product_name || it.name || "—"}</span>
+            <div key={it.id || idx} className="grid grid-cols-5 gap-3 px-4 py-3 border-t border-mk-line text-sm items-center min-w-[640px]">
+              <div>
+                <div className="font-medium text-mk-navy">{it.product_name || it.name || "—"}</div>
+                <div className="text-[11px] text-mk-sec mt-0.5 space-x-2">
+                  {it.product_gtin && <span>EAN: {it.product_gtin}</span>}
+                  {it.product_cnk && <span>CNK: {it.product_cnk}</span>}
+                  {it.product_sku && !it.product_gtin && !it.product_cnk && <span>SKU: {it.product_sku}</span>}
+                </div>
+              </div>
+              <span className="text-mk-sec text-xs">{it.vendor_name || "—"}</span>
               <span className="text-mk-sec">{it.quantity}</span>
               <span className="text-mk-sec">{formatPrice(Number(it.unit_price_excl_vat || 0))} EUR</span>
               <span className="font-bold text-mk-navy">{formatPrice(Number(it.unit_price_excl_vat || 0) * Number(it.quantity || 0))} EUR</span>
             </div>
           ))}
-          <div className="border-t border-mk-line bg-mk-alt px-4 py-3 text-sm space-y-1 min-w-[400px]">
+          <div className="border-t border-mk-line bg-mk-alt px-4 py-3 text-sm space-y-1 min-w-[640px]">
             <div className="flex justify-between"><span className="text-mk-sec">Sous-total HTVA</span><span className="text-mk-navy">{formatPrice(subtotal)} EUR</span></div>
             {shipping > 0 && <div className="flex justify-between"><span className="text-mk-sec">Livraison</span><span className="text-mk-navy">{formatPrice(shipping)} EUR</span></div>}
             <div className="flex justify-between"><span className="text-mk-sec">TVA</span><span className="text-mk-navy">{formatPrice(vat)} EUR</span></div>

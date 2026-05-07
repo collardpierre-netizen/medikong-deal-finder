@@ -83,10 +83,10 @@ export default function OrderDetailPage() {
             <div key={it.id || idx} className="grid grid-cols-5 gap-3 px-4 py-3 border-t border-mk-line text-sm items-center min-w-[640px]">
               <div>
                 <div className="font-medium text-mk-navy">{it.product_name || it.name || "—"}</div>
-                <div className="text-[11px] text-mk-sec mt-0.5 space-x-2">
+                <div className="text-[11px] text-mk-sec mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5">
                   {it.product_gtin && <span>EAN: {it.product_gtin}</span>}
                   {it.product_cnk && <span>CNK: {it.product_cnk}</span>}
-                  {it.product_sku && !it.product_gtin && !it.product_cnk && <span>SKU: {it.product_sku}</span>}
+                  {it.product_sku && <span>SKU: {it.product_sku}</span>}
                 </div>
               </div>
               <span className="text-mk-sec text-xs">{it.vendor_name || "—"}</span>

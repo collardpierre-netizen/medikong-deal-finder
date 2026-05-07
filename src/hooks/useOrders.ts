@@ -163,8 +163,25 @@ export function useOrderDetail(orderId: string) {
     queryFn: async () => {
       const { data, error } = await supabase.from("orders").select("*").eq("id", orderId).single();
       if (error) throw error;
-      const { data: orderItems } = await supabase.from("order_items" as any).select("*").eq("order_id", orderId);
-      return { ...data, items: orderItems || [] };
+      const { data: orderLines } = await supabase
+        .from("order_lines")
+        .select("*, products:product_id(name, gtin, cnk_code, sku), vendors:vendor_id(name, slug)")
+        .eq("order_id", orderId);
+      const items = (orderLines || []).map((l: any) => ({
+        ...l,
+        product_name: l.products?.name,
+        product_gtin: l.products?.gtin,
+        product_cnk: l.products?.cnk_code,
+        product_sku: l.products?.sku,
+        vendor_name: l.vendors?.name,
+        vendor_slug: l.vendors?.slug,
+      }));
+      // Fallback legacy order_items if no order_lines
+      if (items.length === 0) {
+        const { data: legacy } = await supabase.from("order_items" as any).select("*").eq("order_id", orderId);
+        return { ...data, items: legacy || [] };
+      }
+      return { ...data, items };
     },
   });
 }

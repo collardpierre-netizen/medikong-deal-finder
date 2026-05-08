@@ -15,10 +15,9 @@ function isValid(v: string | null | undefined): v is CatalogView {
 
 function trackEvent(event: string, payload: Record<string, unknown>) {
   if (typeof window === "undefined") return;
-  // @ts-expect-error - dataLayer declared globally in Layout
-  window.dataLayer = window.dataLayer || [];
-  // @ts-expect-error
-  window.dataLayer.push({ event, ...payload });
+  const w = window as unknown as { dataLayer?: Record<string, unknown>[] };
+  w.dataLayer = w.dataLayer || [];
+  w.dataLayer.push({ event, ...payload });
 }
 
 function getDefaultView(pathname: string, params: URLSearchParams, isMobile: boolean): CatalogView {

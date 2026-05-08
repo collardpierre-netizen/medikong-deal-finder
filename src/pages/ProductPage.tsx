@@ -262,7 +262,7 @@ function OfferRow({
       })()}
 
       {/* Desktop grid */}
-      <div className="hidden md:grid grid-cols-[minmax(180px,1.4fr)_minmax(200px,1.8fr)_60px_minmax(260px,1.6fr)] gap-3 items-start">
+      <div className="hidden md:grid grid-cols-[minmax(180px,1.4fr)_minmax(200px,1.8fr)_64px_240px] gap-3 items-start">
         <div className="flex flex-col gap-1.5">
           {(() => {
             if (vendorTrust) {
@@ -423,10 +423,10 @@ function OfferRow({
         <span className="text-sm text-foreground whitespace-nowrap">{offer.stockQuantity.toLocaleString("fr-FR")}</span>
 
         {/* Actions */}
-        <div className="flex flex-col items-stretch gap-1.5 min-w-0 w-full max-w-[320px] justify-self-end">
-          <div className="grid grid-cols-[auto_minmax(0,1fr)] items-stretch gap-2 w-full min-w-0">
+        <div className="flex flex-col items-stretch gap-1.5 w-[240px] justify-self-end">
+          <div className="grid grid-cols-[106px_minmax(0,1fr)] items-stretch gap-2 w-full">
             <div
-              className="flex items-center justify-between border border-border rounded-md shrink-0 h-9 w-[106px] overflow-hidden bg-background"
+              className="flex items-center justify-between border border-border rounded-md h-9 w-[106px] overflow-hidden bg-background"
               role="group"
               aria-label={`Quantité — par lots de ${step}`}
             >
@@ -458,23 +458,23 @@ function OfferRow({
                 <Plus size={14} aria-hidden />
               </button>
             </div>
-            <motion.button
+            <button
               type="button"
-              className="bg-primary text-primary-foreground px-2.5 h-9 rounded-md text-sm font-semibold inline-flex items-center justify-center gap-1.5 whitespace-nowrap overflow-hidden focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 hover:bg-primary/90 transition-colors w-full min-w-0"
+              className="bg-primary text-primary-foreground px-2.5 h-9 rounded-md text-sm font-semibold inline-flex items-center justify-center gap-1.5 whitespace-nowrap overflow-hidden focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 hover:bg-primary/90 active:bg-primary/80 transition-colors w-full min-w-0"
               onClick={handleAdd}
               title={`Ajouter ${Math.min(qty, maxQty)} × ${formatEur(basePackPrice)} € au panier`}
               aria-label={`Ajouter ${Math.min(qty, maxQty)} unité(s) au panier — total ${formatEur(Math.min(qty, maxQty) * basePackPrice)} € ${priceLabel}`}
             >
               <ShoppingCart size={14} aria-hidden className="shrink-0" />
-              <span className="hidden xl:inline shrink-0">Ajouter</span>
-              <span className="hidden xl:inline opacity-60 shrink-0">·</span>
+              <span className="hidden lg:inline shrink-0">Ajouter</span>
+              <span className="hidden lg:inline opacity-60 shrink-0">·</span>
               <span className="tabular-nums min-w-0 truncate" aria-live="polite">
                 {formatEur(Math.min(qty, maxQty) * basePackPrice)}&nbsp;€
               </span>
-            </motion.button>
+            </button>
           </div>
           {step > 1 && (
-            <span className="text-[11px] text-muted-foreground tabular-nums" title={`Quantité minimum de commande : ${step}. Toute quantité doit être un multiple de ${step}.`}>
+            <span className="text-[11px] text-muted-foreground tabular-nums text-right" title={`Quantité minimum de commande : ${step}. Toute quantité doit être un multiple de ${step}.`}>
               Lots de {step}
             </span>
           )}
@@ -582,9 +582,9 @@ function OfferRow({
               <Plus size={14} aria-hidden />
             </button>
           </div>
-          <motion.button
+          <button
             type="button"
-            className="bg-primary text-primary-foreground px-2.5 h-10 rounded-md text-sm font-semibold flex items-center justify-center gap-1.5 whitespace-nowrap overflow-hidden focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 w-full min-w-0"
+            className="bg-primary text-primary-foreground px-2.5 h-10 rounded-md text-sm font-semibold flex items-center justify-center gap-1.5 whitespace-nowrap overflow-hidden focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 hover:bg-primary/90 active:bg-primary/80 transition-colors w-full min-w-0"
             onClick={handleAdd}
             title={`Ajouter ${Math.min(qty, maxQty)} × ${formatEur(basePackPrice)} € au panier`}
             aria-label={`Ajouter ${Math.min(qty, maxQty)} unité(s) au panier — total ${formatEur(Math.min(qty, maxQty) * basePackPrice)} € ${priceLabel}`}
@@ -595,7 +595,7 @@ function OfferRow({
             <span className="tabular-nums min-w-0 truncate" aria-live="polite">
               {formatEur(Math.min(qty, maxQty) * basePackPrice)}&nbsp;€
             </span>
-          </motion.button>
+          </button>
         </div>
       </div>
 
@@ -1666,7 +1666,7 @@ export default function ProductPage() {
                           <span className="text-sm text-emerald-700 font-medium">{formatCount(totalStock)} disponibles{uniqueVendorCount > 1 ? ` auprès de ${uniqueVendorCount} fournisseurs` : ""}</span>
                         </div>
 
-                        <div className="hidden md:grid grid-cols-[minmax(180px,1.4fr)_minmax(200px,1.8fr)_60px_minmax(260px,1.6fr)] gap-3 px-1 pb-3 text-xs font-semibold text-muted-foreground border-b border-border">
+                        <div className="hidden md:grid grid-cols-[minmax(180px,1.4fr)_minmax(200px,1.8fr)_64px_240px] gap-3 px-1 pb-3 text-xs font-semibold text-muted-foreground border-b border-border">
                           <span>Fournisseur</span>
                           <span>
                             Prix {offerCompareBasis === 'pack' ? '/ pack' : offerCompareBasis === 'unit' ? '/ unité' : '/ 100 u.'} · MOV
@@ -1740,7 +1740,7 @@ export default function ProductPage() {
                           </span>
                         </div>
 
-                        <div className="hidden md:grid grid-cols-[minmax(180px,1.4fr)_minmax(200px,1.8fr)_60px_minmax(260px,1.6fr)] gap-3 px-1 pb-3 text-xs font-semibold text-muted-foreground border-b border-border">
+                        <div className="hidden md:grid grid-cols-[minmax(180px,1.4fr)_minmax(200px,1.8fr)_64px_240px] gap-3 px-1 pb-3 text-xs font-semibold text-muted-foreground border-b border-border">
                           <span>Fournisseur</span>
                           <span>Prix {offerCompareBasis === 'pack' ? '/ pack' : offerCompareBasis === 'unit' ? '/ unité' : '/ 100 u.'} · MOV</span>
                           <span>Stock</span>

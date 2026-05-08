@@ -1454,7 +1454,6 @@ export default function ProductPage() {
                         Vendeurs vérifiés FAGG uniquement
                       </label>
                     </div>
-                    </div>
 
                     {/* My encoded price banner — visible only if user has an encoded price for this product */}
                     <MyEncodedPriceBanner
@@ -1647,6 +1646,7 @@ export default function ProductPage() {
                         ))}
                       </div>
                     )}
+                    </VendorTrustProvider>
                   </TabsContent>
 
                   {/* ── Tab: Offres externes ── */}

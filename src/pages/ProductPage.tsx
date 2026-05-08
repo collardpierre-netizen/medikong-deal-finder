@@ -262,7 +262,7 @@ function OfferRow({
       })()}
 
       {/* Desktop grid */}
-      <div className="hidden md:grid grid-cols-[minmax(180px,1.4fr)_minmax(200px,1.8fr)_64px_240px] gap-3 items-start">
+      <div className="hidden md:grid grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)_72px] gap-x-4 gap-y-3 items-start">
         <div className="flex flex-col gap-1.5">
           {(() => {
             if (vendorTrust) {
@@ -423,8 +423,8 @@ function OfferRow({
         <span className="text-sm text-foreground whitespace-nowrap">{offer.stockQuantity.toLocaleString("fr-FR")}</span>
 
         {/* Actions */}
-        <div className="flex flex-col items-stretch gap-1 w-[260px] justify-self-end">
-          <div className="grid grid-cols-[100px_minmax(0,1fr)] items-stretch gap-2 w-full">
+        <div className="col-span-3 flex flex-col items-end gap-1 min-w-0">
+          <div className="grid grid-cols-[100px_minmax(0,1fr)] items-stretch gap-2 w-full max-w-[320px]">
             <div
               className="flex items-center justify-between border border-border rounded-md h-9 w-[100px] overflow-hidden bg-background"
               role="group"
@@ -469,7 +469,7 @@ function OfferRow({
               <span className="shrink-0">Ajouter au panier</span>
             </button>
           </div>
-          <div className="flex items-center justify-end gap-2 text-[11px] text-muted-foreground">
+          <div className="flex items-center justify-end gap-2 text-[11px] text-muted-foreground w-full max-w-[320px]">
             {step > 1 && (
               <span className="tabular-nums" title={`Quantité minimum de commande : ${step}. Toute quantité doit être un multiple de ${step}.`}>
                 Lots de {step}

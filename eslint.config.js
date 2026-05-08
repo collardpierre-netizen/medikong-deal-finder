@@ -45,6 +45,20 @@ export default tseslint.config(
         },
       ],
       "jsx-a11y/anchor-has-content": "error",
+      // Structural JSX safety nets — catch the kinds of bugs that make
+      // a file fail to compile (unclosed tags, stray text, dup props…)
+      // without forcing a full strict TS migration.
+      "react/jsx-no-undef": "error",
+      "react/jsx-no-duplicate-props": "error",
+      "react/jsx-key": "error",
+      "react/jsx-no-target-blank": "error",
+      "react/no-unescaped-entities": "off",
+      "react/no-children-prop": "error",
+      "react/no-direct-mutation-state": "error",
+      "react/jsx-uses-vars": "error",
+      "react-hooks/rules-of-hooks": "error",
+      "react-hooks/exhaustive-deps": "warn",
+      "no-fallthrough": "error",
     },
   },
 );

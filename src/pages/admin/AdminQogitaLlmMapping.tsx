@@ -57,6 +57,8 @@ const AdminQogitaLlmMapping = () => {
   const [batchSize, setBatchSize] = useState<number>(30);
   const [maxBatches, setMaxBatches] = useState<number>(10);
   const [forceResync, setForceResync] = useState(false);
+  const [autoApply, setAutoApply] = useState(false);
+  const [autoApplyThreshold, setAutoApplyThreshold] = useState<number>(0.9);
 
   const { data: proposals = [], isLoading, refetch } = useQuery({
     queryKey: ["qogita-llm-proposals", statusFilter],
@@ -94,15 +96,23 @@ const AdminQogitaLlmMapping = () => {
   const runClassify = useMutation({
     mutationFn: async () => {
       const { data, error } = await sb.functions.invoke("classify-qogita-categories", {
-        body: { batch_size: batchSize, max_batches: maxBatches, force_resync: forceResync },
+        body: {
+          batch_size: batchSize,
+          max_batches: maxBatches,
+          force_resync: forceResync,
+          auto_apply_threshold: autoApply ? autoApplyThreshold : null,
+        },
       });
       if (error) throw error;
       return data;
     },
     onSuccess: (data) => {
+      const auto = data.auto_applied
+        ? ` · auto-appliquées : ${data.auto_applied.proposals_applied} (${data.auto_applied.products_updated} produits)`
+        : "";
       toast({
         title: "Classification terminée",
-        description: `${data.processed} propositions générées en ${data.batches} batchs (${data.errors} erreurs). Reste ~${data.remaining_after} cats à traiter.`,
+        description: `${data.processed} propositions générées en ${data.batches} batchs (${data.errors} erreurs)${auto}. Reste ~${data.remaining_after} cats.`,
       });
       qc.invalidateQueries({ queryKey: ["qogita-llm-proposals"] });
     },
@@ -207,6 +217,34 @@ const AdminQogitaLlmMapping = () => {
               <><Play className="mr-2 h-4 w-4" /> Lancer</>
             )}
           </Button>
+        </div>
+        <div className="flex flex-wrap items-end gap-3 pt-2 border-t">
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={autoApply}
+              onChange={(e) => setAutoApply(e.target.checked)}
+            />
+            Auto-appliquer les propositions ≥ seuil dans la foulée
+          </label>
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground">Seuil auto-apply</label>
+            <Input
+              type="number"
+              step="0.05"
+              min={0}
+              max={1}
+              value={autoApplyThreshold}
+              onChange={(e) => setAutoApplyThreshold(Number(e.target.value))}
+              disabled={!autoApply}
+              className="w-32"
+            />
+          </div>
+          {autoApply && (
+            <Badge variant="secondary">
+              Aliases + primary_category_id écrits direct ≥ {(autoApplyThreshold * 100).toFixed(0)}%
+            </Badge>
+          )}
         </div>
         <p className="text-xs text-muted-foreground">
           ~{batchSize * maxBatches} catégories Qogita traitées par appel. Pour ~2450 cats, prévoir ~{Math.ceil(2450 / (batchSize * maxBatches))} appels.

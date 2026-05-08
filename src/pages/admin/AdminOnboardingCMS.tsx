@@ -179,8 +179,9 @@ export default function AdminOnboardingCMS() {
                 <div className="flex gap-2 flex-wrap">
                   {gradientPresets.map(g => (
                     <button key={g.label} onClick={() => setForm(f => ({ ...f, gradient: g.value }))}
+                      aria-label={g.label}
                       className={`w-8 h-8 rounded-md border-2 ${form.gradient === g.value ? "border-mk-navy" : "border-transparent"}`}
-                      style={{ background: g.value }} title={g.label} />
+                      style={{ background: g.value }} />
                   ))}
                 </div>
               </div>

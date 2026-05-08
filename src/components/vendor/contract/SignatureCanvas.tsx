@@ -92,6 +92,7 @@ export function SignatureCanvas({ onChange, height = 180 }: SignatureCanvasProps
       <div className="rounded-lg border-2 border-dashed border-border bg-background relative" style={{ height }}>
         <canvas
           ref={canvasRef}
+          aria-label="Zone de signature"
           className="absolute inset-0 w-full h-full touch-none cursor-crosshair"
           onMouseDown={start}
           onMouseMove={move}

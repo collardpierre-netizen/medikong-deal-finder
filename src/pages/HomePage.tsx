@@ -615,9 +615,28 @@ export default function HomePage() {
             <p className="text-sm text-white/60 mb-8 max-w-md mx-auto">
               {t("cta.subtitle")}
             </p>
-            <Link to="/onboarding" className="inline-flex items-center gap-2 bg-white text-mk-navy font-bold text-sm px-8 py-3.5 rounded-lg hover:bg-gray-100 transition-colors">
-              {t("common.signup")} <ArrowRight size={16} />
-            </Link>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              {demoSlug && (
+                <Link
+                  to={`/produits/${demoSlug}`}
+                  onClick={() => trackHomeCta("see_demo", { productSlug: demoSlug, location: "final_cta" })}
+                  className="inline-flex items-center gap-2 bg-white text-mk-navy font-bold text-sm px-8 py-3.5 rounded-lg hover:bg-gray-100 transition-colors"
+                >
+                  {t("hero.ctaSeeDemo", "Voir un exemple de comparaison")} <ArrowRight size={16} />
+                </Link>
+              )}
+              <Link
+                to="/onboarding"
+                onClick={() => trackHomeCta("create_account", { location: "final_cta" })}
+                className={
+                  demoSlug
+                    ? "inline-flex items-center gap-2 border border-white/40 text-white font-semibold text-sm px-8 py-3.5 rounded-lg hover:bg-white/10 transition-colors"
+                    : "inline-flex items-center gap-2 bg-white text-mk-navy font-bold text-sm px-8 py-3.5 rounded-lg hover:bg-gray-100 transition-colors"
+                }
+              >
+                {t("hero.ctaCreateAccount", "Créer mon compte (gratuit, 1 min)")} <ArrowRight size={16} />
+              </Link>
+            </div>
           </motion.div>
         </div>
       </section>

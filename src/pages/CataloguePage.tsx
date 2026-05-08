@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
@@ -6,11 +6,11 @@ import { CatalogSidebar } from "@/components/catalog/CatalogSidebar";
 import { CatalogToolbar } from "@/components/catalog/CatalogToolbar";
 import { CatalogProductCard } from "@/components/catalog/CatalogProductCard";
 import SearchTrivagoView from "@/components/search/SearchTrivagoView";
-import type { CatalogViewMode } from "@/components/catalog/CatalogToolbar";
 import { CatalogPagination } from "@/components/catalog/CatalogPagination";
 import { ActiveFilters } from "@/components/catalog/ActiveFilters";
 // MasterTaxonomyBar retiré : navigation par catégorie pilotée par la sidebar (vague 2 prévue pour un éventuel bandeau d'univers).
 import { useCatalogFilters, useCatalogProducts, useCatalogBrands } from "@/hooks/useCatalog";
+import { useCatalogViewMode } from "@/hooks/useCatalogViewMode";
 import { Loader2, SlidersHorizontal, X } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { HreflangTags } from "@/components/seo/HreflangTags";
@@ -32,7 +32,7 @@ export default function CataloguePage() {
   const { data, isLoading, isError, error, refetch, isFetching } = useCatalogProducts(filters);
   const products = data?.products || [];
   const total = data?.total || 0;
-  const [view, setView] = useState<CatalogViewMode>("grid");
+  const { view, setView } = useCatalogViewMode();
   const [mobileFilters, setMobileFilters] = useState(false);
 
   // Collect category IDs from results for contextual sidebar filtering
@@ -148,12 +148,9 @@ export default function CataloguePage() {
                 category: p.category_name || undefined,
               }))} />
             ) : (
-              <div className={view === "grid"
-                ? "grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3"
-                : "space-y-3"
-              }>
+              <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
                 {products.map((p, i) => (
-                  <CatalogProductCard key={p.id} product={p} index={i} view={view} />
+                  <CatalogProductCard key={p.id} product={p} index={i} view="grid" />
                 ))}
               </div>
             )}

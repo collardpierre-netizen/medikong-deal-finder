@@ -439,6 +439,7 @@ const App = () => (
               <Route path="cms" element={<LP><AdminCMS /></LP>} />
               <Route path="cms/home/marques" element={<LP><AdminCmsHomeBrands /></LP>} />
               <Route path="cms/home/produits" element={<LP><AdminCmsHomeProducts /></LP>} />
+              <Route path="cms/home/comparaison" element={<LP><AdminCmsHomeShowcase /></LP>} />
               <Route path="categories/non-mappees" element={<LP><AdminUnmappedCategories /></LP>} />
               <Route path="categories/qogita-mapping-llm" element={<LP><AdminQogitaLlmMapping /></LP>} />
               <Route path="categories/qogita-mapping-review" element={<LP><AdminQogitaAmbiguousReview /></LP>} />

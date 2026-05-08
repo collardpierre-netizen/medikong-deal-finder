@@ -319,7 +319,7 @@ export default function PromotionsPage() {
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
           {[
-            { icon: Tag, value: `${promoCount} produits en promo`, color: "text-primary" },
+            { icon: Tag, value: `${formatCount(promoCount)} produits en promo`, color: "text-primary" },
             { icon: TrendingDown, value: "Jusqu'à -65%", color: "text-destructive" },
             { icon: Truck, value: "Livraison incluse", color: "text-emerald-600" },
           ].map(s => (

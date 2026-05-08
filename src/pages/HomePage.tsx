@@ -42,7 +42,7 @@ export default function HomePage() {
   const { country, currentCountry } = useCountry();
   const navigate = useNavigate();
   const { data: metrics } = useMarketplaceMetrics();
-  const metricsAvg = metrics?.avgOffersPerProduct;
+  const metricsMaxOffers = metrics?.maxOffersPerProduct ?? 0;
 
   const { data: countryStats, isLoading: isCountryStatsLoading, isError: isCountryStatsError } = useQuery({
     queryKey: ["homepage-stats", country],

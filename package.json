@@ -19,7 +19,9 @@
     "lighthouse:desktop": "lhci autorun --config=./lighthouserc.cjs --collect.settings.preset=desktop",
     "check:i18n": "bun scripts/check-i18n-strings.ts",
     "check:i18n:list": "bun scripts/check-i18n-strings.ts --list",
-    "check:i18n:update": "bun scripts/check-i18n-strings.ts --update"
+    "check:i18n:update": "bun scripts/check-i18n-strings.ts --update",
+    "check:fr-typo": "bun scripts/check-fr-typography.ts",
+    "check:fr-typo:fix": "bun scripts/check-fr-typography.ts --fix"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

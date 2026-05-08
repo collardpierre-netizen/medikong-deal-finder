@@ -9,8 +9,7 @@ import SearchTrivagoView from "@/components/search/SearchTrivagoView";
 import type { CatalogViewMode } from "@/components/catalog/CatalogToolbar";
 import { CatalogPagination } from "@/components/catalog/CatalogPagination";
 import { ActiveFilters } from "@/components/catalog/ActiveFilters";
-// UniversePills retiré (vague 1 taxonomie) — bandeau de chips supprimé en faveur de la sidebar.
-// Sera remplacé en vague 2 par un bandeau branché sur is_featured_top de la taxonomie maîtresse.
+import { MasterTaxonomyBar } from "@/components/catalog/MasterTaxonomyBar";
 import { useCatalogFilters, useCatalogProducts, useCatalogBrands } from "@/hooks/useCatalog";
 import { Loader2, SlidersHorizontal, X } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -112,6 +111,10 @@ export default function CataloguePage() {
 
           {/* Main content */}
           <div className="flex-1 min-w-0">
+            <MasterTaxonomyBar
+              selectedSlug={filters.category}
+              onSelect={(slug) => setFilter("category", slug)}
+            />
             <ActiveFilters filters={filters} setFilter={setFilter} />
             <CatalogToolbar filters={filters} setFilter={setFilter} total={total} view={view} setView={setView} />
 

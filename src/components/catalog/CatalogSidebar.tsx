@@ -20,9 +20,12 @@ interface Props {
 export function CatalogSidebar({ filters, setFilter, clearAll, resultCategoryIds }: Props) {
   const { t, i18n } = useTranslation();
   const { currentCountry } = useCountry();
-  const { data: categories = [] } = useCatalogCategories();
-  const { data: brands = [] } = useCatalogBrands(filters.category);
+  const { data: categories = [], isPending: isCategoriesPending } = useCatalogCategories();
+  const { data: brands = [], isPending: isBrandsPending } = useCatalogBrands(filters.category);
   const { data: manufacturers = [] } = useCatalogManufacturers();
+  // Skeleton uniquement au tout premier chargement (pas de liste en cache).
+  const showCategoriesSkeleton = isCategoriesPending && categories.length === 0;
+  const showBrandsSkeleton = isBrandsPending && brands.length === 0;
   const { visibleCategoryIds, isFiltered: professionFiltered, professionType } = useVisibleCategories();
   const [showAllCats, setShowAllCats] = useState(false);
 

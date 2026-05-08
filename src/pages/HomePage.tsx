@@ -18,6 +18,8 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { applyHiddenCategoryFilter } from "@/lib/catalog-filters";
 import { InstantSearchBar } from "@/components/search/InstantSearchBar";
+import { useMarketplaceMetrics } from "@/hooks/useMarketplaceMetrics";
+import { formatCount } from "@/lib/formatCount";
 import { RecentSearches } from "@/components/home/RecentSearches";
 
 const iconMap: Record<string, React.ReactNode> = {
@@ -40,6 +42,8 @@ export default function HomePage() {
   const { data: products = [] } = useFeaturedProducts(5);
   const { country, currentCountry } = useCountry();
   const navigate = useNavigate();
+  const { data: metrics } = useMarketplaceMetrics();
+  const metricsAvg = metrics?.avgOffersPerProduct;
 
   const { data: countryStats, isLoading: isCountryStatsLoading, isError: isCountryStatsError } = useQuery({
     queryKey: ["homepage-stats", country],

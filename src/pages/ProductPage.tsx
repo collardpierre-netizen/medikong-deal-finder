@@ -576,18 +576,24 @@ function OfferRow({
 
         if (items.length === 0) return null;
         return (
-          <div className="mt-3 flex items-center gap-x-3 gap-y-1 flex-wrap text-[11px] text-muted-foreground">
+          <ul className="mt-3 flex flex-col items-start gap-1 text-[11px] text-muted-foreground sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-3 sm:gap-y-1">
             {items.map((it, i) => {
               const Icon = it.icon;
               return (
-                <span key={it.key} className="inline-flex items-center gap-1" title={it.title}>
-                  {i > 0 && <span aria-hidden className="text-muted-foreground/40">·</span>}
+                <li
+                  key={it.key}
+                  className="inline-flex max-w-full items-center gap-1 whitespace-nowrap"
+                  title={it.title}
+                >
+                  {i > 0 && (
+                    <span aria-hidden className="hidden text-muted-foreground/40 sm:inline">·</span>
+                  )}
                   <Icon size={11} className="shrink-0" />
-                  {it.label}
-                </span>
+                  <span className="truncate">{it.label}</span>
+                </li>
               );
             })}
-          </div>
+          </ul>
         );
       })()}
 

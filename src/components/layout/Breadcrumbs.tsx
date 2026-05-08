@@ -56,7 +56,12 @@ export function Breadcrumbs() {
       return getVendorPublicName(data);
     },
     enabled: !!vendorSlug,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 30 * 60 * 1000,
+    gcTime: 24 * 60 * 60 * 1000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    placeholderData: keepPreviousData,
     retry: false,
   });
 
@@ -80,6 +85,11 @@ export function Breadcrumbs() {
     },
     enabled: !!categorySlug,
     staleTime: 60 * 60 * 1000,
+    gcTime: 24 * 60 * 60 * 1000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    placeholderData: keepPreviousData,
     retry: false,
   });
   const categoryLabel = categoryRow

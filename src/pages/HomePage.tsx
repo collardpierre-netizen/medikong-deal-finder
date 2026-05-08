@@ -42,7 +42,7 @@ export default function HomePage() {
   const { country, currentCountry } = useCountry();
   const navigate = useNavigate();
   const { data: metrics } = useMarketplaceMetrics();
-  const metricsAvg = metrics?.avgOffersPerProduct;
+  const metricsMaxOffers = metrics?.maxOffersPerProduct ?? 0;
 
   const { data: countryStats, isLoading: isCountryStatsLoading, isError: isCountryStatsError } = useQuery({
     queryKey: ["homepage-stats", country],
@@ -159,7 +159,7 @@ export default function HomePage() {
   const suppliersTxt = countryStats?.vendors
     ? formatCount(countryStats.vendors, { suffix: "+" })
     : "—";
-  const avgOffersTxt = metricsAvg ? metricsAvg.toString().replace(".", ",") : "—";
+  const maxOffersTxt = metricsMaxOffers > 0 ? metricsMaxOffers.toString() : "—";
 
   const valueProps = [
     { icon: <TrendingDown size={22} />, title: t("valueProps.bestPrices"), desc: t("valueProps.bestPricesDesc", { suppliers: suppliersTxt }) },
@@ -175,7 +175,7 @@ export default function HomePage() {
   const comparisonNew = [
     t("comparison.mk1"), t("comparison.mk2"),
     t("comparison.mk3", { suppliers: suppliersTxt }),
-    t("comparison.mk4", { avgOffers: avgOffersTxt }),
+    t("comparison.mk4", { maxOffers: maxOffersTxt }),
     t("comparison.mk5"), t("comparison.mk6"),
   ];
 
@@ -219,7 +219,7 @@ export default function HomePage() {
   };
 
   return (
-    <Layout title="MediKong — Fournitures médicales B2B en Belgique | Comparez & Commandez" description="MediKong.pro : marketplace B2B + comparateur de prix pour fournitures médicales en Belgique. Comparez, commandez, économisez.">
+    <Layout title={t("seo.homeTitle")} description={t("seo.homeDescription")}>
       <HreflangTags />
       <Helmet>
         <script type="application/ld+json">{JSON.stringify(orgJsonLd)}</script>

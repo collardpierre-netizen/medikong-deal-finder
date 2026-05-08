@@ -83,7 +83,7 @@
     "guaranteedDesc": "Elk product komt van geverifieerde leveranciers. 100% CE- en FAGG-conform."
   },
   "brands": {
-    "title": "Premium & trending merken",
+    "title": "Referentiemerken in apotheek en dermatologie",
     "filters": {
       "bestSellers": "Bestverkocht",
       "care": "Verzorging",
@@ -105,7 +105,7 @@
     "mk1": "Zonder contract, zonder verplichting",
     "mk2": "MOV vanaf €150 excl. BTW",
     "mk3": "Directe toegang tot {{suppliers}} leveranciers",
-    "mk4": "{{avgOffers}} leveranciers per referentie gemiddeld",
+    "mk4": "Tot {{maxOffers}} leveranciers op één SKU",
     "mk5": "Realtime voorraadanalyse",
     "mk6": "Kopersbescherming inbegrepen"
   },
@@ -478,5 +478,9 @@
     "searchManufacturers": "Fabrikanten zoeken",
     "showMore": "Meer tonen",
     "showLess": "Minder tonen"
+  },
+  "seo": {
+    "homeTitle": "MediKong — De B2B-marktplaats voor zorgprofessionals in België",
+    "homeDescription": "MediKong.pro: B2B-prijsvergelijker en marktplaats voor apotheken, medische praktijken en zorgprofessionals in België. Vergelijk aanbiedingen van honderden leveranciers, bestel in enkele klikken."
   }
 }

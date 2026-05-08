@@ -80,7 +80,7 @@
     "guaranteedDesc": "Jedes Produkt stammt von verifizierten Lieferanten. 100% CE- und FAMHP-konform."
   },
   "brands": {
-    "title": "Premium- & Trendmarken",
+    "title": "Referenzmarken in Apotheke und Dermatologie",
     "filters": {
       "bestSellers": "Bestseller",
       "care": "Pflege",
@@ -102,7 +102,7 @@
     "mk1": "Ohne Vertrag, ohne Verpflichtung",
     "mk2": "MOV ab €150 exkl. MwSt.",
     "mk3": "Sofortiger Zugang zu {{suppliers}} Lieferanten",
-    "mk4": "{{avgOffers}} Lieferanten pro Referenz im Schnitt",
+    "mk4": "Bis zu {{maxOffers}} Lieferanten auf einer SKU",
     "mk5": "Echtzeit-Bestandsanalyse",
     "mk6": "Käuferschutz inklusive"
   },
@@ -475,5 +475,9 @@
     "searchManufacturers": "Hersteller suchen",
     "showMore": "Mehr anzeigen",
     "showLess": "Weniger anzeigen"
+  },
+  "seo": {
+    "homeTitle": "MediKong — Der B2B-Marktplatz für Gesundheitsfachkräfte in Belgien",
+    "homeDescription": "MediKong.pro: B2B-Preisvergleich und Marktplatz für Apotheken, Arztpraxen und Gesundheitsfachkräfte in Belgien. Vergleichen Sie Angebote von Hunderten Lieferanten und bestellen Sie mit wenigen Klicks."
   }
 }

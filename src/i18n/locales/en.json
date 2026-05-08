@@ -84,7 +84,7 @@
     "guaranteedDesc": "Every product comes from verified suppliers. 100% CE and FAMHP compliant."
   },
   "brands": {
-    "title": "Premium & trending brands",
+    "title": "Reference brands in pharmacy and dermo",
     "filters": {
       "bestSellers": "Best sellers",
       "care": "Care",
@@ -106,7 +106,7 @@
     "mk1": "No contract, no commitment",
     "mk2": "MOV from €150 excl. VAT",
     "mk3": "Instant access to {{suppliers}} suppliers",
-    "mk4": "{{avgOffers}} suppliers per reference on average",
+    "mk4": "Up to {{maxOffers}} suppliers on a single SKU",
     "mk5": "Real-time stock analysis",
     "mk6": "Buyer protection included"
   },
@@ -480,5 +480,9 @@
     "searchManufacturers": "Search manufacturers",
     "showMore": "Show more",
     "showLess": "Show less"
+  },
+  "seo": {
+    "homeTitle": "MediKong — The B2B marketplace for healthcare professionals in Belgium",
+    "homeDescription": "MediKong.pro: B2B price comparison and marketplace for pharmacies, medical practices and healthcare professionals in Belgium. Compare offers from hundreds of suppliers, order in just a few clicks."
   }
 }

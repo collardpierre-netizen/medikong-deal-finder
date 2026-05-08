@@ -83,39 +83,56 @@ export default function SearchTrivagoCard({ product: p }: Props) {
         </div>
 
         {/* ZONE 3 — Best deal panel — high contrast like Trivago */}
-        <div className="w-full md:w-[250px] shrink-0 border-t md:border-t-0 md:border-l border-border
-                       bg-emerald-50 p-4 flex flex-col justify-between">
-          <div>
-            <p className="text-xs font-bold text-emerald-800">
-              {bestOffer?.sellerName || "Meilleur prix"}
-            </p>
-            {bestOffer && (
-              <p className="text-[10px] text-emerald-600 mt-1 flex items-center gap-1">
-                <Check size={10} className="text-emerald-500" />
-                Réservez au meilleur prix
-              </p>
-            )}
-          </div>
-          <div className="mt-3">
-            <span className="text-2xl font-extrabold text-foreground tracking-tight">{price.toFixed(2)}&nbsp;€</span>
-            {pct > 0 && (
-              <span className="ml-2 text-xs font-bold text-emerald-600 bg-emerald-100 px-1.5 py-0.5 rounded">-{pct}%</span>
-            )}
-            <p className="text-[10px] text-muted-foreground mt-0.5">HTVA</p>
-            {bestOffer && (
-              <div className="flex items-center gap-3 mt-1.5 text-[10px] text-muted-foreground">
-                <span className="flex items-center gap-1"><Truck size={10} /> {bestOffer.deliveryDays}j</span>
-                <span className="flex items-center gap-1"><RotateCcw size={10} /> Retour 30j</span>
+        <div className={`w-full md:w-[250px] shrink-0 border-t md:border-t-0 md:border-l border-border p-4 flex flex-col justify-between ${hasOffer ? "bg-emerald-50" : "bg-muted/40"}`}>
+          {hasOffer ? (
+            <>
+              <div>
+                <p className="text-xs font-bold text-emerald-800">
+                  {bestOffer?.sellerName || "Meilleur prix"}
+                </p>
+                {bestOffer && (
+                  <p className="text-[10px] text-emerald-600 mt-1 flex items-center gap-1">
+                    <Check size={10} className="text-emerald-500" />
+                    Réservez au meilleur prix
+                  </p>
+                )}
               </div>
-            )}
-            <button
-              onClick={() => navigate(`/produit/${p.slug}`, fromState)}
-              className="w-full mt-3 py-2.5 text-white text-[13px] font-bold rounded-lg
-                        transition-all bg-emerald-700 hover:bg-emerald-800 flex items-center justify-center gap-2 shadow-sm"
-            >
-              Voir l'offre <ArrowRight size={14} />
-            </button>
-          </div>
+              <div className="mt-3">
+                <span className="text-2xl font-extrabold text-foreground tracking-tight">{price.toFixed(2)}&nbsp;€</span>
+                {pct > 0 && (
+                  <span className="ml-2 text-xs font-bold text-emerald-600 bg-emerald-100 px-1.5 py-0.5 rounded">-{pct}%</span>
+                )}
+                <p className="text-[10px] text-muted-foreground mt-0.5">HTVA</p>
+                {bestOffer && (
+                  <div className="flex items-center gap-3 mt-1.5 text-[10px] text-muted-foreground">
+                    <span className="flex items-center gap-1"><Truck size={10} /> {bestOffer.deliveryDays}j</span>
+                    <span className="flex items-center gap-1"><RotateCcw size={10} /> Retour 30j</span>
+                  </div>
+                )}
+                <button
+                  onClick={() => navigate(`/produit/${p.slug}`, fromState)}
+                  className="w-full mt-3 py-2.5 text-white text-[13px] font-bold rounded-lg
+                            transition-all bg-emerald-700 hover:bg-emerald-800 flex items-center justify-center gap-2 shadow-sm"
+                >
+                  Voir l'offre <ArrowRight size={14} />
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="flex-1 flex flex-col items-center justify-center text-center gap-2">
+              <Package size={20} className="text-muted-foreground" aria-hidden="true" />
+              <p className="text-sm font-semibold text-foreground">Pas encore d'offre</p>
+              <p className="text-[11px] text-muted-foreground leading-snug">
+                Aucun fournisseur n'a listé ce produit pour le moment.
+              </p>
+              <button
+                onClick={() => navigate(`/produit/${p.slug}`, fromState)}
+                className="mt-1 px-3.5 py-2 border border-border text-foreground text-[12px] font-semibold rounded-md hover:bg-muted transition-colors inline-flex items-center gap-1.5"
+              >
+                Voir le produit <ArrowRight size={12} />
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

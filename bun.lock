@@ -69,6 +69,7 @@
         "zod": "^3.25.76",
       },
       "devDependencies": {
+        "@axe-core/playwright": "^4.11.3",
         "@eslint/js": "^9.32.0",
         "@playwright/test": "^1.57.0",
         "@tailwindcss/typography": "^0.5.16",
@@ -79,6 +80,7 @@
         "@types/react-dom": "^18.3.7",
         "@vitejs/plugin-react-swc": "^3.11.0",
         "autoprefixer": "^10.4.21",
+        "axe-core": "^4.11.4",
         "eslint": "^9.32.0",
         "eslint-plugin-jsx-a11y": "^6.10.2",
         "eslint-plugin-react-hooks": "^5.2.0",
@@ -99,6 +101,8 @@
     "@adobe/css-tools": ["@adobe/css-tools@4.4.4", "https://europe-west1-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@adobe/css-tools/-/css-tools-4.4.4.tgz", {}, "sha512-Elp+iwUx5rN5+Y8xLt5/GRoG20WGoDCQ/1Fb+1LiGtvwbDavuSk0jhD/eZdckHAuzcDzccnkv+rEjyWfRx18gg=="],
 
     "@alloc/quick-lru": ["@alloc/quick-lru@5.2.0", "", {}, "sha512-UrcABB+4bUrFABwbluTIBErXwvbsU/V7TZWfmbgJfbkwiBuziS9gxdODUyuiecfdGQ85jglMW6juS3+z5TsKLw=="],
+
+    "@axe-core/playwright": ["@axe-core/playwright@4.11.3", "https://europe-west4-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@axe-core/playwright/-/playwright-4.11.3.tgz", { "dependencies": { "axe-core": "~4.11.4" }, "peerDependencies": { "playwright-core": ">= 1.0.0" } }, "sha512-h/kfksv4F0cVIDlKpT4700OehdRgpvuVskuQ2nb7/JmtWUXpe9ftHAPtwyXGvVSsa6SJ64A9ER7Zrzc/sIvC4w=="],
 
     "@babel/code-frame": ["@babel/code-frame@7.29.0", "https://europe-west1-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@babel/code-frame/-/code-frame-7.29.0.tgz", { "dependencies": { "@babel/helper-validator-identifier": "^7.28.5", "js-tokens": "^4.0.0", "picocolors": "^1.1.1" } }, "sha512-9NhCeYjq9+3uxgdtp20LSiJXJvN0FeCtNGpJxuMFZ1Kv3cWUNb6DOhJwUvcVCzKGR66cw4njwM6hrJLqgOwbcw=="],
 

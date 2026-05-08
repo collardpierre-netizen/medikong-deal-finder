@@ -18,7 +18,13 @@ export default function SearchTrivagoView({ products }: Props) {
   // Tri par défaut : "Le moins cher" — aligné avec l'ordre prix croissant attendu sur les pages d'intention transactionnelle.
   const [sort, setSort] = useState<SortMode>("cheapest");
 
+  // Toujours pousser les produits sans offre en bas de liste, quel que soit le tri.
+  // (Sinon "Le moins cher" trie par prix=0 en tête → faux best-deals à 0,00 €.)
+  const hasOffer = (p: Product) => (p.sellers || 0) > 0 && (p.price || 0) > 0;
   const sorted = [...products].sort((a, b) => {
+    const aHas = hasOffer(a);
+    const bHas = hasOffer(b);
+    if (aHas !== bHas) return aHas ? -1 : 1;
     switch (sort) {
       case "cheapest": return a.price - b.price;
       case "fastest": return 0; // no delivery data at product level

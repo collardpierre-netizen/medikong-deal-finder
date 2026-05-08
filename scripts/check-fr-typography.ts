@@ -193,7 +193,12 @@ if (existsSync(localePath("fr"))) {
 for (const lang of ["nl", "de", "en"]) {
   if (!existsSync(localePath(lang))) continue;
   const file = relative(ROOT, localePath(lang));
-  const json = JSON.parse(readFileSync(localePath(lang), "utf8"));
+  let json = JSON.parse(readFileSync(localePath(lang), "utf8"));
+  if (FIX) {
+    json = transformJson(json, autofixUniversal);
+    writeFileSync(localePath(lang), JSON.stringify(json, null, 2) + "\n");
+    console.log(`✓ Autofix universel appliqué à ${file}`);
+  }
   walkJson(json, "", (path, value) => {
     if (typeof value !== "string") return;
     if (/  +/.test(value.replace(/\n/g, ""))) {

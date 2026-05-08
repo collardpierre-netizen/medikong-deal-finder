@@ -7,6 +7,11 @@ import AxeBuilder from "@axe-core/playwright";
  *
  * Tags axe utilisés : wcag2a, wcag2aa, wcag21a, wcag21aa.
  *
+ * Joué sur deux viewports via les projects Playwright (cf. playwright.config.ts) :
+ *   - desktop-1280 (1280×800)
+ *   - mobile-390   (Pixel 5, ≈ 393×851)
+ * Toute nouvelle violation sur l'un des deux fait échouer la CI.
+ *
  * Pour limiter le bruit pendant qu'on rattrape la dette, on tolère
  * temporairement quelques règles via `disableRules` ci-dessous. Chaque
  * entrée doit pointer vers un ticket de remédiation et être levée

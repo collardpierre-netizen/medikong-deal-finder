@@ -9,7 +9,7 @@ import SearchTrivagoView from "@/components/search/SearchTrivagoView";
 import type { CatalogViewMode } from "@/components/catalog/CatalogToolbar";
 import { CatalogPagination } from "@/components/catalog/CatalogPagination";
 import { ActiveFilters } from "@/components/catalog/ActiveFilters";
-import { MasterTaxonomyBar } from "@/components/catalog/MasterTaxonomyBar";
+// MasterTaxonomyBar retiré : navigation par catégorie pilotée par la sidebar (vague 2 prévue pour un éventuel bandeau d'univers).
 import { useCatalogFilters, useCatalogProducts, useCatalogBrands } from "@/hooks/useCatalog";
 import { Loader2, SlidersHorizontal, X } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";

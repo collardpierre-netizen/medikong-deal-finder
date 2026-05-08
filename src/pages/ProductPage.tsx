@@ -796,6 +796,7 @@ export default function ProductPage() {
   const [copied, setCopied] = useState(false);
   const [movFilter, setMovFilter] = useState<number | null>(null);
   const [delayFilter, setDelayFilter] = useState<number | null>(null);
+  const [faggOnly, setFaggOnly] = useState(false);
   const [showStickyBar, setShowStickyBar] = useState(false);
   const [stickyQty, setStickyQty] = useState(1);
   // Base de comparaison pour les offres externes : ramène toutes les offres

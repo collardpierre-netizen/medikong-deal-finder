@@ -218,6 +218,34 @@ const AdminQogitaLlmMapping = () => {
             )}
           </Button>
         </div>
+        <div className="flex flex-wrap items-end gap-3 pt-2 border-t">
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={autoApply}
+              onChange={(e) => setAutoApply(e.target.checked)}
+            />
+            Auto-appliquer les propositions ≥ seuil dans la foulée
+          </label>
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground">Seuil auto-apply</label>
+            <Input
+              type="number"
+              step="0.05"
+              min={0}
+              max={1}
+              value={autoApplyThreshold}
+              onChange={(e) => setAutoApplyThreshold(Number(e.target.value))}
+              disabled={!autoApply}
+              className="w-32"
+            />
+          </div>
+          {autoApply && (
+            <Badge variant="secondary">
+              Aliases + primary_category_id écrits direct ≥ {(autoApplyThreshold * 100).toFixed(0)}%
+            </Badge>
+          )}
+        </div>
         <p className="text-xs text-muted-foreground">
           ~{batchSize * maxBatches} catégories Qogita traitées par appel. Pour ~2450 cats, prévoir ~{Math.ceil(2450 / (batchSize * maxBatches))} appels.
         </p>

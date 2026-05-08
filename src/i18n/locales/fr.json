@@ -53,17 +53,17 @@
     "buyerProtection": "Protection acheteur"
   },
   "hero": {
-    "title": "Tout le médical, tous les prix,\nun seul endroit",
+    "title": "Tout le médical, tous les prix, un seul endroit",
     "titleHighlight": "Tout le médical",
     "titleAfterHighlight": ", tous les prix,",
-    "titleLine2": "un seul endroit",
+    "titleLine2": " un seul endroit",
     "subtitle": "Le comparateur B2B qui met en concurrence des centaines de fournisseurs pour vous.",
     "searchExamples": "Ex:",
     "exampleGloves": "Gants nitrile",
     "exampleBetadine": "Betadine",
     "exampleTena": "TENA",
     "exampleMasks": "Masques FFP2",
-    "slideFallbackTitle": "Le marketplace médical de référence en Belgique",
+    "slideFallbackTitle": "La marketplace médicale de référence en Belgique",
     "slideFallbackSubtitle": "MediKong.pro"
   },
   "stats": {
@@ -146,7 +146,7 @@
     "supplierVerification": "Vérification fournisseurs",
     "qualityGuarantee": "Garantie qualité",
     "howToOrder": "Comment commander",
-    "howWeWork": "Comment on travaille",
+    "howWeWork": "Comment ça marche",
     "logistics": "Logistique",
     "shippingOptions": "Options livraison",
     "deferredPayment": "Paiement différé",

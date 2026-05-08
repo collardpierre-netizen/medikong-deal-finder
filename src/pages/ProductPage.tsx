@@ -1585,7 +1585,7 @@ export default function ProductPage() {
                             <h3 className="text-base font-bold text-foreground">
                               {otherOffers.length} autre{otherOffers.length > 1 ? "s" : ""} offre{otherOffers.length > 1 ? "s" : ""}
                             </h3>
-                            <span className="text-xs text-muted-foreground">Trie par prix</span>
+                            <span className="text-xs text-muted-foreground">Tri par prix</span>
                           </div>
                           <span className="text-sm text-primary font-medium">
                             {formatCount(otherOffers.reduce((s, o) => s + o.stockQuantity, 0))} disponibles{otherOffers.length > 1 ? ` auprès de ${otherOffers.length} fournisseurs` : ""}

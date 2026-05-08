@@ -28,16 +28,8 @@ const TEMPORARILY_DISABLED_RULES: string[] = [
   // ex: "color-contrast", // dette CMS — ticket A11Y-12
 ];
 
-// Ce projet ne tourne qu'une fois — pas besoin de le rejouer sur 6 viewports.
-const A11Y_PROJECTS = ["desktop-1280"];
-
 for (const { name, path } of KEY_PUBLIC_PAGES) {
   test.describe(`A11y ${name} (${path})`, () => {
-    test.skip(
-      ({}, testInfo) => !A11Y_PROJECTS.includes(testInfo.project.name),
-      "Audit a11y exécuté uniquement sur desktop-1280",
-    );
-
     test("aucune violation WCAG A/AA", async ({ page }) => {
       await page.goto(path, { waitUntil: "networkidle" });
 

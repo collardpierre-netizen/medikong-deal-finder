@@ -14,6 +14,7 @@ import { useCatalogViewMode } from "@/hooks/useCatalogViewMode";
 import { Loader2, SlidersHorizontal, X } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { HreflangTags } from "@/components/seo/HreflangTags";
+import { useCategoryLabel } from "@/hooks/useCategory";
 
 export default function CataloguePage() {
   const { slug } = useParams();
@@ -40,8 +41,9 @@ export default function CataloguePage() {
     ? [...new Set(products.map(p => p.category_id).filter(Boolean) as string[])]
     : undefined;
 
+  const categoryLabel = useCategoryLabel(filters.category);
   const title = filters.category
-    ? filters.category.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase())
+    ? (categoryLabel || "Catégorie")
     : "Tous les produits";
 
   return (

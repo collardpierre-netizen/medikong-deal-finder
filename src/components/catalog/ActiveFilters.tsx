@@ -1,5 +1,6 @@
 import { X } from "lucide-react";
 import type { CatalogFilters } from "@/hooks/useCatalog";
+import { useCategoryLabel } from "@/hooks/useCategory";
 
 interface Props {
   filters: CatalogFilters;
@@ -7,10 +8,11 @@ interface Props {
 }
 
 export function ActiveFilters({ filters, setFilter }: Props) {
+  const categoryLabel = useCategoryLabel(filters.category);
   const chips: { label: string; onRemove: () => void }[] = [];
 
   if (filters.category) {
-    chips.push({ label: `Catégorie: ${filters.category}`, onRemove: () => setFilter("category", undefined) });
+    chips.push({ label: `Catégorie: ${categoryLabel || filters.category}`, onRemove: () => setFilter("category", undefined) });
   }
   filters.brands?.forEach(b => {
     chips.push({ label: `Marque: ${b}`, onRemove: () => setFilter("brand", (filters.brands || []).filter(x => x !== b)) });

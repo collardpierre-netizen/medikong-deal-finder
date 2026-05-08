@@ -196,7 +196,11 @@ export function VendorTrustHeader({ trust, variant = "full", className = "" }: P
         )}
       </div>
 
-      {chips.length > 0 && <div className="flex items-center gap-1.5 flex-wrap">{chips}</div>}
+      {chips.length > 0 && (
+        <div className="flex flex-col items-start gap-1 sm:flex-row sm:flex-wrap sm:items-center sm:gap-1.5">
+          {chips}
+        </div>
+      )}
     </div>
   );
 }

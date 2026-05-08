@@ -582,9 +582,9 @@ function OfferRow({
               <Plus size={14} aria-hidden />
             </button>
           </div>
-          <motion.button
+          <button
             type="button"
-            className="bg-primary text-primary-foreground px-2.5 h-10 rounded-md text-sm font-semibold flex items-center justify-center gap-1.5 whitespace-nowrap overflow-hidden focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 w-full min-w-0"
+            className="bg-primary text-primary-foreground px-2.5 h-10 rounded-md text-sm font-semibold flex items-center justify-center gap-1.5 whitespace-nowrap overflow-hidden focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 hover:bg-primary/90 active:bg-primary/80 transition-colors w-full min-w-0"
             onClick={handleAdd}
             title={`Ajouter ${Math.min(qty, maxQty)} × ${formatEur(basePackPrice)} € au panier`}
             aria-label={`Ajouter ${Math.min(qty, maxQty)} unité(s) au panier — total ${formatEur(Math.min(qty, maxQty) * basePackPrice)} € ${priceLabel}`}
@@ -595,7 +595,7 @@ function OfferRow({
             <span className="tabular-nums min-w-0 truncate" aria-live="polite">
               {formatEur(Math.min(qty, maxQty) * basePackPrice)}&nbsp;€
             </span>
-          </motion.button>
+          </button>
         </div>
       </div>
 

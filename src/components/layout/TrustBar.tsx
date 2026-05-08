@@ -1,11 +1,12 @@
 import { Truck, ShieldCheck, BadgeCheck } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { shippingCopy } from "@/config/copy";
 
 
 export function TrustBar() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const items = [
-    { icon: Truck, text: t("trustBar.freeDelivery", "Livraison gratuite — sous 10 jours ouvrés") },
+    { icon: Truck, text: shippingCopy("short", i18n.language) },
     { icon: ShieldCheck, text: t("trustBar.authenticity", "100% Authenticité garantie") },
     { icon: BadgeCheck, text: t("trustBar.verifiedSuppliers") },
   ];

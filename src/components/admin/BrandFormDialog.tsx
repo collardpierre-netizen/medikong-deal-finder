@@ -37,6 +37,28 @@ export function BrandFormDialog({ open, onOpenChange, brand, manufacturers }: Br
     desc_fr: "", desc_nl: "", desc_de: "",
   });
   const [translating, setTranslating] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+
+  const handleLogoUpload = async (file: File) => {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) { toast.error("Fichier image uniquement"); return; }
+    if (file.size > 2 * 1024 * 1024) { toast.error("Logo max 2 Mo"); return; }
+    setUploadingLogo(true);
+    try {
+      const ext = file.name.split(".").pop()?.toLowerCase() || "png";
+      const baseSlug = (form.slug || slugify(form.name) || "brand");
+      const path = `${baseSlug}-${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from("brand-logos").upload(path, file, { cacheControl: "3600", upsert: true, contentType: file.type });
+      if (error) throw error;
+      const { data } = supabase.storage.from("brand-logos").getPublicUrl(path);
+      setForm(f => ({ ...f, logo_url: data.publicUrl }));
+      toast.success("Logo importé");
+    } catch (e: any) {
+      toast.error("Erreur upload : " + (e.message || "inconnue"));
+    } finally {
+      setUploadingLogo(false);
+    }
+  };
 
   useEffect(() => {
     if (!open) return;

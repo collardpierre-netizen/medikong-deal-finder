@@ -162,8 +162,13 @@ export default function HomePage() {
     return <AnimatedCounter target={value || 0} suffix="+" />;
   };
 
+  const suppliersTxt = countryStats?.vendors
+    ? formatCount(countryStats.vendors, { suffix: "+" })
+    : "—";
+  const avgOffersTxt = metricsAvg ? metricsAvg.toString().replace(".", ",") : "—";
+
   const valueProps = [
-    { icon: <TrendingDown size={22} />, title: t("valueProps.bestPrices"), desc: t("valueProps.bestPricesDesc") },
+    { icon: <TrendingDown size={22} />, title: t("valueProps.bestPrices"), desc: t("valueProps.bestPricesDesc", { suppliers: suppliersTxt }) },
     { icon: <ShoppingCart size={22} />, title: t("valueProps.simpleOrders"), desc: t("valueProps.simpleOrdersDesc") },
     { icon: <Shield size={22} />, title: t("valueProps.guaranteed"), desc: t("valueProps.guaranteedDesc") },
   ];
@@ -174,8 +179,10 @@ export default function HomePage() {
   ];
 
   const comparisonNew = [
-    t("comparison.mk1"), t("comparison.mk2"), t("comparison.mk3"),
-    t("comparison.mk4"), t("comparison.mk5"), t("comparison.mk6"),
+    t("comparison.mk1"), t("comparison.mk2"),
+    t("comparison.mk3", { suppliers: suppliersTxt }),
+    t("comparison.mk4", { avgOffers: avgOffersTxt }),
+    t("comparison.mk5"), t("comparison.mk6"),
   ];
 
   const howItWorks = [
@@ -186,7 +193,7 @@ export default function HomePage() {
   ];
 
   const faqs = [
-    { q: t("faq.q1"), a: t("faq.a1") },
+    { q: t("faq.q1"), a: t("faq.a1", { suppliers: suppliersTxt }) },
     { q: t("faq.q2"), a: t("faq.a2") },
     { q: t("faq.q3"), a: t("faq.a3") },
     { q: t("faq.q4"), a: t("faq.a4") },

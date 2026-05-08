@@ -586,18 +586,18 @@ function OfferRow({
           </div>
           <button
             type="button"
-            className="bg-primary text-primary-foreground px-2.5 h-10 rounded-md text-sm font-semibold flex items-center justify-center gap-1.5 whitespace-nowrap overflow-hidden focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 hover:bg-primary/90 active:bg-primary/80 transition-colors w-full min-w-0"
+            className="bg-primary text-primary-foreground px-3 h-10 rounded-md text-sm font-semibold flex items-center justify-center gap-1.5 whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 hover:bg-primary/90 active:bg-primary/80 transition-colors w-full min-w-0"
             onClick={handleAdd}
             title={`Ajouter ${Math.min(qty, maxQty)} × ${formatEur(basePackPrice)} € au panier`}
             aria-label={`Ajouter ${Math.min(qty, maxQty)} unité(s) au panier — total ${formatEur(Math.min(qty, maxQty) * basePackPrice)} € ${priceLabel}`}
           >
             <ShoppingCart size={14} aria-hidden className="shrink-0" />
-            <span className="hidden min-[390px]:inline shrink-0">Ajouter</span>
-            <span className="hidden min-[390px]:inline opacity-60 shrink-0">·</span>
-            <span className="tabular-nums min-w-0 truncate" aria-live="polite">
-              {formatEur(Math.min(qty, maxQty) * basePackPrice)}&nbsp;€
-            </span>
+            <span className="shrink-0">Ajouter au panier</span>
           </button>
+        </div>
+        <div className="flex items-center justify-end text-[11px] text-muted-foreground tabular-nums" aria-live="polite">
+          Total&nbsp;<span className="font-semibold text-foreground">{formatEur(Math.min(qty, maxQty) * basePackPrice)}&nbsp;€</span>&nbsp;
+          <span className="opacity-70">{priceLabel}</span>
         </div>
       </div>
 

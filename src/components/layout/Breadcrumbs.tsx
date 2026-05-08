@@ -73,7 +73,7 @@ export function Breadcrumbs() {
     segments[1]
       ? segments[1]
       : null;
-  const { data: categoryRow } = useQuery({
+  const { data: categoryRow, isLoading: isCategoryLoading } = useQuery({
     queryKey: ["breadcrumb-category", categorySlug],
     queryFn: async () => {
       const { data } = await supabase
@@ -97,6 +97,8 @@ export function Breadcrumbs() {
         .replace(/^MK\s*·\s*/i, "")
         .trim()
     : null;
+  const categoryLabelPending = !!categorySlug && !categoryLabel && isCategoryLoading;
+  const vendorLabelPending = !!vendorSlug && !vendorLabel;
 
   // Don't show on homepage
   if (hideBreadcrumbs) return null;
@@ -108,12 +110,19 @@ export function Breadcrumbs() {
     const prevSeg = i > 0 ? segments[i - 1] : "";
 
     let label = routeLabels[seg];
+    let pending = false;
     if (!label) {
       // For vendor slug, use the fetched public name
       if (prevSeg === "vendeur" && vendorLabel) {
         label = vendorLabel;
+      } else if (prevSeg === "vendeur" && vendorLabelPending) {
+        label = "";
+        pending = true;
       } else if ((prevSeg === "categorie" || prevSeg === "catalogue") && categoryLabel) {
         label = categoryLabel;
+      } else if ((prevSeg === "categorie" || prevSeg === "catalogue") && categoryLabelPending) {
+        label = "";
+        pending = true;
       } else {
         const decoded = decodeURIComponent(seg).replace(/-/g, " ");
         label = decoded.replace(/qogita\s*/gi, "").trim();
@@ -122,7 +131,7 @@ export function Breadcrumbs() {
       }
     }
 
-    return { path, label, isLast };
+    return { path, label, isLast, pending };
   });
 
   const breadcrumbJsonLd = {

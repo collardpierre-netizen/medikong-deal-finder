@@ -58,7 +58,23 @@ export default function HomePage() {
   const metricsMaxOffers = metrics?.maxOffersPerProduct ?? 0;
   // Top SKU multi-vendeurs du jour : alimente la démo + le CTA "voir une comparaison".
   const { data: topDeltas } = useTopPriceDeltas(1);
-  const demoSlug = topDeltas?.[0]?.slug ?? null;
+  // Produit configurable en admin pour le CTA "Voir un exemple de comparaison".
+  const { data: showcaseSettings } = useHomeShowcaseSettings();
+  const { data: demoCtaProduct } = useQuery({
+    queryKey: ["home-demo-cta-product", showcaseSettings?.demo_cta_product_id],
+    enabled: !!showcaseSettings?.demo_cta_product_id,
+    staleTime: 10 * 60 * 1000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("products")
+        .select("slug")
+        .eq("id", showcaseSettings!.demo_cta_product_id!)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+  const demoSlug = demoCtaProduct?.slug ?? topDeltas?.[0]?.slug ?? null;
 
   const { data: countryStats, isLoading: isCountryStatsLoading, isError: isCountryStatsError } = useQuery({
     queryKey: ["homepage-stats", country],

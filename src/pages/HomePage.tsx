@@ -21,6 +21,7 @@ import { formatCount } from "@/lib/formatCount";
 import { RecentSearches } from "@/components/home/RecentSearches";
 import { useHomeFeaturedBrands, useHomeFeaturedProducts, HOME_FEATURED_BADGE_LABEL } from "@/hooks/useHomeFeatured";
 import { useTopPriceDeltas } from "@/hooks/useTopPriceDeltas";
+import { useHomeShowcaseSettings } from "@/hooks/useHomeShowcaseSettings";
 import { PriceDeltaShowcase } from "@/components/home/PriceDeltaShowcase";
 
 // Tracking analytics minimal (GTM dataLayer) pour mesurer l'inversion des CTAs.

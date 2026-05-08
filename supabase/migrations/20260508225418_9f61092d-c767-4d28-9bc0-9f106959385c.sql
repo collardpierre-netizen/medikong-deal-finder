@@ -1,0 +1,2 @@
+ALTER TABLE public.home_showcase_settings ADD COLUMN IF NOT EXISTS demo_cta_product_id uuid REFERENCES public.products(id) ON DELETE SET NULL;
+UPDATE public.home_showcase_settings SET demo_cta_product_id = '14c6fff1-9c6b-4841-8517-b964f7468749' WHERE id = true;

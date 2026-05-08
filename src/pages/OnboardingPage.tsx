@@ -1232,10 +1232,9 @@ export default function OnboardingPage() {
             {allInterests.map(cat => {
               const sel = interests.includes(cat);
               return (
-                <button key={cat} onClick={() => setInterests(sel ? interests.filter(i => i !== cat) : [...interests, cat])}
+                <button key={cat} aria-label={cat} onClick={() => setInterests(sel ? interests.filter(i => i !== cat) : [...interests, cat])}
                   style={{ padding: "8px 16px", borderRadius: 100, fontSize: 12, border: `1px solid ${sel ? S.blue : S.line}`, background: sel ? S.blueBg : "#fff", color: sel ? S.blue : S.sec, fontWeight: sel ? 500 : 400, cursor: "pointer", transition: "all .2s", display: "flex", alignItems: "center", gap: 4 }}
                 >
-                  {/* eslint-disable-next-line jsx-a11y/control-has-associated-label */}
                   {sel && <span aria-hidden="true"><Check size={12} /></span>} {cat}
                 </button>
               );

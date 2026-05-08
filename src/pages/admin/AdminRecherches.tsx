@@ -122,6 +122,15 @@ export default function AdminRecherches() {
     },
   });
 
+  const gaps = useQuery({
+    queryKey: ["admin-search-gaps", period],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("admin_search_zero_results_with_suggestions", { _days: period, _limit: 100 });
+      if (error) throw error;
+      return (data ?? []) as unknown as GapRow[];
+    },
+  });
+
   const k = kpis.data;
 
   return (

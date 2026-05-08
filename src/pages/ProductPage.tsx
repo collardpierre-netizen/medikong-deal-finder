@@ -1409,6 +1409,7 @@ export default function ProductPage() {
 
                   {/* ── Tab: Marketplace MediKong ── */}
                   <TabsContent value="marketplace">
+                    <VendorTrustProvider trustMap={trustMap}>
                     {/* Filters */}
                     <div className="bg-muted/50 border border-border rounded-xl p-4 mb-6">
                       <div className="flex items-center gap-2 mb-3">

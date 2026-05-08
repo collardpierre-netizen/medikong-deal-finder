@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Building2, Heart, Home, Stethoscope, Smile, PawPrint, TrendingDown, Truck, CreditCard, Headphones, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { AnimatedSection, StaggerContainer, StaggerItem } from "@/components/shared/PageTransition";
+import { SHIPPING_COPY } from "@/config/copy";
 
 const segments = [
   { icon: <Building2 size={28} />, title: "Pharmacies", desc: "Accédez aux prix de gros sur des milliers de références. MOQ bas adaptés aux officines.", link: "/pharmacies" },

@@ -53,18 +53,21 @@
     "buyerProtection": "Buyer protection"
   },
   "hero": {
-    "title": "Everything beauty, care and health — in one place",
-    "titleHighlight": "Everything beauty, care and health",
-    "titleAfterHighlight": " —",
-    "titleLine2": " in one place",
-    "subtitle": "The B2B comparator that pits hundreds of suppliers against each other for pharmacies, salons and beauty professionals.",
+    "title": "Everything for healthcare professionals, in one place.",
+    "titleHighlight": "Everything for healthcare professionals",
+    "titleAfterHighlight": ",",
+    "titleLine2": " in one place.",
+    "subtitle": "The B2B price comparison platform connecting hundreds of suppliers for pharmacies, medical practices and healthcare professionals.",
     "searchExamples": "E.g.:",
     "exampleGloves": "Nitrile gloves",
     "exampleBetadine": "Betadine",
     "exampleTena": "TENA",
     "exampleMasks": "FFP2 masks",
-    "slideFallbackTitle": "The leading medical marketplace in Belgium",
-    "slideFallbackSubtitle": "MediKong.pro"
+    "slideFallbackTitle": "The B2B marketplace for healthcare professionals in Belgium",
+    "slideFallbackSubtitle": "MediKong.pro",
+    "titleBefore": "Everything for ",
+    "titleAccent": "healthcare professionals",
+    "titleAfter": ", in one place."
   },
   "stats": {
     "suppliers": "Verified suppliers",

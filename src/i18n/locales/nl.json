@@ -52,18 +52,21 @@
     "buyerProtection": "Kopersbescherming"
   },
   "hero": {
-    "title": "Alles voor beauty, verzorging en gezondheid — op één plek",
-    "titleHighlight": "Alles voor beauty, verzorging en gezondheid",
-    "titleAfterHighlight": " —",
-    "titleLine2": " op één plek",
-    "subtitle": "De B2B-vergelijker die honderden leveranciers samenbrengt voor apotheken, instituten en beautyprofessionals.",
+    "title": "Alles voor zorgprofessionals, op één plek.",
+    "titleHighlight": "Alles voor zorgprofessionals",
+    "titleAfterHighlight": ",",
+    "titleLine2": " op één plek.",
+    "subtitle": "De B2B-vergelijker die honderden leveranciers met elkaar laat concurreren voor apotheken, medische praktijken en zorgprofessionals.",
     "searchExamples": "Bv:",
     "exampleGloves": "Nitrilhandschoenen",
     "exampleBetadine": "Betadine",
     "exampleTena": "TENA",
     "exampleMasks": "FFP2-maskers",
-    "slideFallbackTitle": "De toonaangevende medische marktplaats in België",
-    "slideFallbackSubtitle": "MediKong.pro"
+    "slideFallbackTitle": "De B2B-marktplaats voor zorgprofessionals in België",
+    "slideFallbackSubtitle": "MediKong.pro",
+    "titleBefore": "Alles voor ",
+    "titleAccent": "zorgprofessionals",
+    "titleAfter": ", op één plek."
   },
   "stats": {
     "suppliers": "Geverifieerde leveranciers",

@@ -2,8 +2,6 @@ import { Layout } from "@/components/layout/Layout";
 import { Link, useNavigate } from "react-router-dom";
 import { Search, Shield, Truck, Award, Package, Heart, Activity, Droplet, Droplets, Wrench, ChevronRight, Check, Armchair, TrendingDown, ArrowRight, Globe, Zap, ShoppingCart, FileSearch, BarChart3, ChevronDown } from "lucide-react";
 import { categories, formatPrice } from "@/data/mock";
-import { useFeaturedProducts } from "@/hooks/useProducts";
-import { ProductCard } from "@/components/shared/ProductCard";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AnimatedSection, StaggerContainer, StaggerItem, HoverCard } from "@/components/shared/PageTransition";
@@ -40,7 +38,6 @@ export default function HomePage() {
   const { t } = useTranslation();
   
   const [openFaq, setOpenFaq] = useState<number | null>(null);
-  const { data: products = [] } = useFeaturedProducts(5);
   const { data: curatedProducts = [] } = useHomeFeaturedProducts();
   const { country, currentCountry } = useCountry();
   const navigate = useNavigate();
@@ -124,37 +121,13 @@ export default function HomePage() {
   // Curation pilotable depuis l'admin (table home_featured_brands)
   const { data: curatedBrands = [] } = useHomeFeaturedBrands();
 
-  // Fallback rétro-compatible : si la curation manuelle est vide, on retombe
-  // sur les marques `is_featured` existantes (toggle dans /admin/marques).
-  const { data: rawFeaturedBrands = [] } = useQuery({
-    queryKey: ["featured-brands-homepage"],
-    enabled: curatedBrands.length === 0,
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("brands")
-        .select("id, name, slug, logo_url, website_url, product_count, is_featured")
-        .eq("is_active", true)
-        .gt("product_count", 0)
-        .order("is_featured", { ascending: false })
-        .order("product_count", { ascending: false })
-        .limit(40);
-      return (data || []).filter((b: any) => b.logo_url || b.website_url);
-    },
-    staleTime: 5 * 60 * 1000,
-    retry: false,
-    refetchOnWindowFocus: false,
-  });
-
-  // Source unifiée : curation prioritaire, sinon fallback marques featured.
-  const brandsSource: any[] = curatedBrands.length > 0
-    ? curatedBrands.map((b) => ({
-        id: b.brand_id,
-        name: b.brand_name,
-        slug: b.brand_slug,
-        logo_url: b.logo_url,
-        website_url: b.website_url,
-      }))
-    : rawFeaturedBrands;
+  const brandsSource: any[] = curatedBrands.map((b) => ({
+    id: b.brand_id,
+    name: b.brand_name,
+    slug: b.brand_slug,
+    logo_url: b.logo_url,
+    website_url: b.website_url,
+  }));
 
   const featuredBrands = brandsSource.filter((b: any) => !failedLogos.has(b.id));
 
@@ -378,6 +351,7 @@ export default function HomePage() {
         </StaggerContainer>
       </AnimatedSection>
 
+       {featuredBrands.length > 0 && (
        <AnimatedSection className="py-14 md:py-20">
         <div className="mk-container">
           <h2 className="text-2xl md:text-3xl font-bold text-mk-navy mb-8 text-center">{t("brands.title")}</h2>
@@ -424,6 +398,7 @@ export default function HomePage() {
           </div>
         </div>
       </AnimatedSection>
+       )}
 
       {/* ═══ COMPARISON TABLE ═══ */}
       <AnimatedSection className="py-14 md:py-20 bg-mk-alt/30">
@@ -485,59 +460,51 @@ export default function HomePage() {
         </div>
       </AnimatedSection>
 
-      {/* ═══ POPULAR / CURATED PRODUCTS ═══ */}
+      {/* ═══ CURATED PRODUCTS ═══ */}
+      {curatedProducts.length > 0 && (
       <AnimatedSection className="py-14 md:py-20 bg-mk-alt/30">
         <div className="mk-container">
           <div className="flex items-center justify-between mb-8">
-            <h2 className="text-2xl font-bold text-mk-navy">
-              {curatedProducts.length > 0 ? "Best-sellers officine" : t("popularProducts.title")}
-            </h2>
+            <h2 className="text-2xl font-bold text-mk-navy">Best-sellers officine</h2>
             <Link to="/recherche" className="text-sm text-mk-blue hover:underline flex items-center gap-1">
               {t("common.viewAll")} <ChevronRight size={14} />
             </Link>
           </div>
-          {curatedProducts.length > 0 ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-              {curatedProducts.slice(0, 10).map((p) => {
-                const img = p.image_url || (Array.isArray(p.image_urls) ? p.image_urls[0] : null);
-                return (
-                  <Link
-                    key={p.id}
-                    to={`/produits/${p.product_slug}`}
-                    className="group relative bg-white rounded-xl border border-mk-line overflow-hidden hover:shadow-md transition-all"
-                  >
-                    {p.badge && (
-                      <span className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded-md bg-mk-blue text-white text-[10px] font-semibold uppercase tracking-wide">
-                        {HOME_FEATURED_BADGE_LABEL[p.badge]}
-                      </span>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            {curatedProducts.slice(0, 10).map((p) => {
+              const img = p.image_url || (Array.isArray(p.image_urls) ? p.image_urls[0] : null);
+              return (
+                <Link
+                  key={p.id}
+                  to={`/produits/${p.product_slug}`}
+                  className="group relative bg-white rounded-xl border border-mk-line overflow-hidden hover:shadow-md transition-all"
+                >
+                  {p.badge && (
+                    <span className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded-md bg-mk-blue text-white text-[10px] font-semibold uppercase tracking-wide">
+                      {HOME_FEATURED_BADGE_LABEL[p.badge]}
+                    </span>
+                  )}
+                  <div className="aspect-square bg-mk-alt/40 flex items-center justify-center overflow-hidden">
+                    {img ? (
+                      <img src={img} alt={p.product_name} className="w-full h-full object-contain p-3" referrerPolicy="no-referrer" />
+                    ) : (
+                      <Package size={32} className="text-mk-sec/40" />
                     )}
-                    <div className="aspect-square bg-mk-alt/40 flex items-center justify-center overflow-hidden">
-                      {img ? (
-                        <img src={img} alt={p.product_name} className="w-full h-full object-contain p-3" referrerPolicy="no-referrer" />
-                      ) : (
-                        <Package size={32} className="text-mk-sec/40" />
-                      )}
-                    </div>
-                    <div className="p-3">
-                      {p.brand_name && <p className="text-[10px] uppercase tracking-wide text-mk-sec font-semibold truncate">{p.brand_name}</p>}
-                      <p className="text-xs font-semibold text-mk-navy mt-0.5 line-clamp-2 min-h-[32px]">{p.product_name}</p>
-                      {p.best_price_excl_vat != null && (
-                        <p className="text-sm font-bold text-mk-navy mt-1">{formatPrice(Number(p.best_price_excl_vat))} <span className="text-[10px] font-normal text-mk-sec">HTVA</span></p>
-                      )}
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-              {products.slice(0, 5).map((p, i) => (
-                <ProductCard key={p.id} product={p} index={i} />
-              ))}
-            </div>
-          )}
+                  </div>
+                  <div className="p-3">
+                    {p.brand_name && <p className="text-[10px] uppercase tracking-wide text-mk-sec font-semibold truncate">{p.brand_name}</p>}
+                    <p className="text-xs font-semibold text-mk-navy mt-0.5 line-clamp-2 min-h-[32px]">{p.product_name}</p>
+                    {p.best_price_excl_vat != null && (
+                      <p className="text-sm font-bold text-mk-navy mt-1">{formatPrice(Number(p.best_price_excl_vat))} <span className="text-[10px] font-normal text-mk-sec">HTVA</span></p>
+                    )}
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
         </div>
       </AnimatedSection>
+      )}
 
       {/* ═══ HOW IT WORKS ═══ */}
       <AnimatedSection className="py-14 md:py-20">

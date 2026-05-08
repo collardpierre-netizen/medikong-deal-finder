@@ -439,6 +439,7 @@ const App = () => (
               <Route path="cms/home/produits" element={<LP><AdminCmsHomeProducts /></LP>} />
               <Route path="categories/non-mappees" element={<LP><AdminUnmappedCategories /></LP>} />
               <Route path="categories/qogita-mapping-llm" element={<LP><AdminQogitaLlmMapping /></LP>} />
+              <Route path="categories/dashboard" element={<LP><AdminCategoryMappingDashboard /></LP>} />
               <Route path="prix-reference" element={<LP><AdminMarketCodes /></LP>} />
               {/* /admin/product-prices supprimé : utiliser /vendor/offers (offer_buyer_profile_prices) */}
               <Route path="invest-pipeline" element={<LP><AdminInvestPipeline /></LP>} />

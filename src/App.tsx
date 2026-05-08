@@ -33,6 +33,12 @@ function RedirectBrandSingular() {
   return <Navigate to={`/marques/${slug ?? ""}`} replace />;
 }
 
+// Redirection /shop → /catalogue avec conservation des query params et hash
+function RedirectShopToCatalogue() {
+  const { search, hash } = useLocation();
+  return <Navigate to={`/catalogue${search}${hash}`} replace />;
+}
+
 // Lazy load ALL pages
 const HomePage = lazyWithRetry(() => import("./pages/HomePage"), "HomePage");
 const SearchResultsPage = lazyWithRetry(() => import("./pages/SearchResultsPage"), "SearchResultsPage");

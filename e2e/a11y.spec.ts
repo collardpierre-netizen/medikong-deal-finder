@@ -154,3 +154,31 @@ for (const { name, path } of KEY_PUBLIC_PAGES) {
     });
   });
 }
+
+/**
+ * Garde-fou : une fois la dette purgée, `TEMPORARILY_DISABLED_RULES`
+ * doit rester vide. Si une règle subsiste sans ticket associé, ou si
+ * le tableau n'a pas été nettoyé après remédiation, ce test échoue
+ * et liste clairement la règle + le ticket à corriger.
+ */
+test.describe("Garde-fou TEMPORARILY_DISABLED_RULES", () => {
+  test("toutes les règles temporairement désactivées ont un ticket et le tableau est vidé après remédiation", () => {
+    // 1) Toute entrée doit avoir un ticket non vide.
+    const missingTicket = TEMPORARILY_DISABLED_RULES.filter(
+      (r) => !r.ticket || !r.ticket.trim(),
+    );
+    expect(
+      missingTicket,
+      `Règles a11y désactivées sans ticket :\n${JSON.stringify(missingTicket, null, 2)}`,
+    ).toEqual([]);
+
+    // 2) Le tableau doit être vide une fois la remédiation terminée.
+    const pending = TEMPORARILY_DISABLED_RULES.map(
+      (r) => `  - ${r.rule}  →  ticket ${r.ticket}${r.reason ? `  (${r.reason})` : ""}`,
+    ).join("\n");
+    expect(
+      TEMPORARILY_DISABLED_RULES,
+      `\n\n❌ ${TEMPORARILY_DISABLED_RULES.length} règle(s) a11y encore désactivée(s) — à corriger :\n${pending}\n\nUne fois chaque ticket résolu, retire l'entrée correspondante de TEMPORARILY_DISABLED_RULES dans e2e/a11y.spec.ts.\n`,
+    ).toEqual([]);
+  });
+});

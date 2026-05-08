@@ -17,6 +17,39 @@ function countryName(iso: string | null) {
   return COUNTRY_LABELS[iso.toUpperCase()] ?? iso.toUpperCase();
 }
 
+/** Convertit un code ISO 3166-1 alpha-2 en emoji drapeau régional. */
+function countryFlag(iso: string | null): string | null {
+  if (!iso || iso.length !== 2) return null;
+  const cc = iso.toUpperCase();
+  if (!/^[A-Z]{2}$/.test(cc)) return null;
+  const A = 0x1f1e6;
+  return String.fromCodePoint(A + cc.charCodeAt(0) - 65, A + cc.charCodeAt(1) - 65);
+}
+
+/** Initiales (max 2) à partir d'un libellé. */
+function initialsOf(label: string): string {
+  const parts = label.replace(/[^\p{L}\p{N}\s]/gu, " ").trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  const first = parts[0][0] ?? "";
+  const second = parts.length > 1 ? parts[parts.length - 1][0] ?? "" : "";
+  return (first + second).toUpperCase().slice(0, 2);
+}
+
+/** Couleur stable dérivée du nom (palette tokens-friendly). */
+const AVATAR_PALETTE = [
+  "bg-primary/10 text-primary",
+  "bg-amber-100 text-amber-800",
+  "bg-emerald-100 text-emerald-800",
+  "bg-sky-100 text-sky-800",
+  "bg-violet-100 text-violet-800",
+  "bg-rose-100 text-rose-800",
+];
+function avatarTone(seed: string): string {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) | 0;
+  return AVATAR_PALETTE[Math.abs(h) % AVATAR_PALETTE.length];
+}
+
 function formatJoined(iso: string) {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "";

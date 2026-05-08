@@ -82,6 +82,7 @@ const sections: NavSection[] = [
       { labelKey: "cms", path: "/admin/cms", icon: Layout },
       { label: "Home — Marques", path: "/admin/cms/home/marques", icon: Tag },
       { label: "Home — Produits", path: "/admin/cms/home/produits", icon: Package },
+      { label: "Home — Comparaison live", path: "/admin/cms/home/comparaison", icon: TrendingDown },
       { labelKey: "onboardingCms", path: "/admin/onboarding-cms", icon: ClipboardList },
       { labelKey: "flashDeals", path: "/admin/flash-deals", icon: Zap },
       { labelKey: "investPipeline", path: "/admin/invest-pipeline", icon: DollarSign },

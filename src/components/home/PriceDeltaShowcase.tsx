@@ -3,13 +3,7 @@ import { Package, ArrowRight, TrendingDown } from "lucide-react";
 import { motion } from "framer-motion";
 import { useTopPriceDeltas, type PriceDelta } from "@/hooks/useTopPriceDeltas";
 import { useFeaturedPriceDelta } from "@/hooks/useFeaturedPriceDelta";
-
-/**
- * Produit pinné pour la home (La Roche-Posay Lipikar Urea 10 — GTIN 3337875852302).
- * Multi-vendeurs (~29 offres BE), écart représentatif. Si la requête échoue ou
- * ne renvoie pas assez d'offres, on retombe sur le top delta automatique.
- */
-const PINNED_PRODUCT_ID = "bf295fc4-e87f-488b-8936-f394c3f8feac";
+import { useHomeShowcaseSettings } from "@/hooks/useHomeShowcaseSettings";
 
 /**
  * Mini-encart "Exemple de comparaison live" affiché dans le hero de la home.
@@ -39,9 +33,12 @@ const fmt = (n: number) =>
   }).format(n);
 
 export function PriceDeltaShowcase() {
-  const pinned = useFeaturedPriceDelta(PINNED_PRODUCT_ID);
+  const settings = useHomeShowcaseSettings();
+  const pinnedId = settings.data?.pinned_product_id ?? null;
+  const pinned = useFeaturedPriceDelta(pinnedId);
   const fallback = useTopPriceDeltas(1);
-  const isLoading = pinned.isLoading || (!pinned.data && fallback.isLoading);
+  const isLoading =
+    settings.isLoading || pinned.isLoading || (!pinned.data && fallback.isLoading);
   if (isLoading) return null;
   const featured: PriceDelta | undefined = pinned.data ?? fallback.data?.[0];
   if (!featured) return null;

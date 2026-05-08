@@ -146,6 +146,7 @@ const AdminCRM = lazyWithRetry(() => import("./pages/admin/AdminCRM"), "AdminCRM
 const AdminCMS = lazyWithRetry(() => import("./pages/admin/AdminCMS"), "AdminCMS");
 const AdminCmsHomeBrands = lazyWithRetry(() => import("./pages/admin/AdminCmsHomeBrands"), "AdminCmsHomeBrands");
 const AdminCmsHomeProducts = lazyWithRetry(() => import("./pages/admin/AdminCmsHomeProducts"), "AdminCmsHomeProducts");
+const AdminCmsHomeShowcase = lazyWithRetry(() => import("./pages/admin/AdminCmsHomeShowcase"), "AdminCmsHomeShowcase");
 const AdminUnmappedCategories = lazyWithRetry(() => import("./pages/admin/AdminUnmappedCategories"), "AdminUnmappedCategories");
 const AdminQogitaLlmMapping = lazyWithRetry(() => import("./pages/admin/AdminQogitaLlmMapping"), "AdminQogitaLlmMapping");
 const AdminQogitaAmbiguousReview = lazyWithRetry(() => import("./pages/admin/AdminQogitaAmbiguousReview"), "AdminQogitaAmbiguousReview");
@@ -438,6 +439,7 @@ const App = () => (
               <Route path="cms" element={<LP><AdminCMS /></LP>} />
               <Route path="cms/home/marques" element={<LP><AdminCmsHomeBrands /></LP>} />
               <Route path="cms/home/produits" element={<LP><AdminCmsHomeProducts /></LP>} />
+              <Route path="cms/home/comparaison" element={<LP><AdminCmsHomeShowcase /></LP>} />
               <Route path="categories/non-mappees" element={<LP><AdminUnmappedCategories /></LP>} />
               <Route path="categories/qogita-mapping-llm" element={<LP><AdminQogitaLlmMapping /></LP>} />
               <Route path="categories/qogita-mapping-review" element={<LP><AdminQogitaAmbiguousReview /></LP>} />

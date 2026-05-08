@@ -1213,6 +1213,100 @@ export type Database = {
           },
         ]
       }
+      category_llm_mapping_proposals: {
+        Row: {
+          applied_at: string | null
+          applied_by: string | null
+          confidence: number | null
+          created_at: string
+          id: string
+          model: string
+          products_count: number
+          qogita_category_id: string
+          qogita_name: string
+          raw_response: Json | null
+          reason: string | null
+          status: string
+          suggested_mk_category_id: string | null
+          suggested_mk_slug: string | null
+        }
+        Insert: {
+          applied_at?: string | null
+          applied_by?: string | null
+          confidence?: number | null
+          created_at?: string
+          id?: string
+          model?: string
+          products_count?: number
+          qogita_category_id: string
+          qogita_name: string
+          raw_response?: Json | null
+          reason?: string | null
+          status?: string
+          suggested_mk_category_id?: string | null
+          suggested_mk_slug?: string | null
+        }
+        Update: {
+          applied_at?: string | null
+          applied_by?: string | null
+          confidence?: number | null
+          created_at?: string
+          id?: string
+          model?: string
+          products_count?: number
+          qogita_category_id?: string
+          qogita_name?: string
+          raw_response?: Json | null
+          reason?: string | null
+          status?: string
+          suggested_mk_category_id?: string | null
+          suggested_mk_slug?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "category_llm_mapping_proposals_qogita_category_id_fkey"
+            columns: ["qogita_category_id"]
+            isOneToOne: true
+            referencedRelation: "admin_category_vat_audit"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "category_llm_mapping_proposals_qogita_category_id_fkey"
+            columns: ["qogita_category_id"]
+            isOneToOne: true
+            referencedRelation: "admin_unmapped_qogita_categories"
+            referencedColumns: ["qogita_category_id"]
+          },
+          {
+            foreignKeyName: "category_llm_mapping_proposals_qogita_category_id_fkey"
+            columns: ["qogita_category_id"]
+            isOneToOne: true
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "category_llm_mapping_proposals_suggested_mk_category_id_fkey"
+            columns: ["suggested_mk_category_id"]
+            isOneToOne: false
+            referencedRelation: "admin_category_vat_audit"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "category_llm_mapping_proposals_suggested_mk_category_id_fkey"
+            columns: ["suggested_mk_category_id"]
+            isOneToOne: false
+            referencedRelation: "admin_unmapped_qogita_categories"
+            referencedColumns: ["qogita_category_id"]
+          },
+          {
+            foreignKeyName: "category_llm_mapping_proposals_suggested_mk_category_id_fkey"
+            columns: ["suggested_mk_category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       category_source_aliases: {
         Row: {
           category_id: string | null
@@ -15513,6 +15607,14 @@ export type Database = {
         Returns: {
           updated_count: number
         }[]
+      }
+      apply_qogita_llm_mapping: {
+        Args: { _proposal_id: string }
+        Returns: Json
+      }
+      apply_qogita_llm_mappings_bulk: {
+        Args: { _min_confidence?: number }
+        Returns: Json
       }
       audit_backup_tables_rls: {
         Args: never

@@ -99,9 +99,17 @@ const AdminMarques = () => {
                   </TableCell>
                   <TableCell className="text-[11px] text-right" style={{ color: "#616B7C" }}>{b.product_count || 0}</TableCell>
                   <TableCell>
-                    <Badge variant="outline" className="text-[10px] font-bold">
-                      {b.is_featured ? "Featured" : "Standard"}
-                    </Badge>
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); toggleFeatured(b); }}
+                      className="inline-flex items-center gap-1 text-[10px] font-bold rounded px-1.5 py-0.5 hover:bg-amber-50 transition-colors"
+                      title={b.is_featured ? "Retirer du carrousel home" : "Épingler dans le carrousel home"}
+                    >
+                      <Star size={12} className={b.is_featured ? "fill-amber-500 text-amber-500" : "text-muted-foreground"} />
+                      <span className={b.is_featured ? "text-amber-700" : "text-muted-foreground"}>
+                        {b.is_featured ? "Featured" : "Standard"}
+                      </span>
+                    </button>
                   </TableCell>
                   <TableCell>
                     <Badge variant="outline" className="text-[10px] font-bold" style={{

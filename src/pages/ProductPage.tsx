@@ -262,7 +262,7 @@ function OfferRow({
       })()}
 
       {/* Desktop grid */}
-      <div className="hidden md:grid grid-cols-[1.5fr_2fr_0.8fr_1.5fr] gap-3 items-start">
+      <div className="hidden md:grid grid-cols-[minmax(180px,1.4fr)_minmax(200px,1.8fr)_60px_minmax(260px,1.6fr)] gap-3 items-start">
         <div className="flex flex-col gap-1.5">
           {(() => {
             if (vendorTrust) {
@@ -423,17 +423,17 @@ function OfferRow({
         <span className="text-sm text-foreground whitespace-nowrap">{offer.stockQuantity.toLocaleString("fr-FR")}</span>
 
         {/* Actions */}
-        <div className="flex flex-col items-end gap-1">
-          <div className="flex items-center justify-end gap-2">
+        <div className="flex flex-col items-end gap-1 min-w-0">
+          <div className="flex items-center justify-end gap-2 w-full">
             <div
-              className="flex items-center border border-border rounded-md"
+              className="flex items-center border border-border rounded-md shrink-0 h-9"
               role="group"
               aria-label={`Quantité — par lots de ${step}`}
             >
               <button
                 type="button"
                 onClick={() => setQty((q) => Math.max(step, q - step))}
-                className="px-2.5 py-2 text-muted-foreground hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary rounded-l-md disabled:opacity-40"
+                className="px-2 h-full text-muted-foreground hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary rounded-l-md disabled:opacity-40"
                 disabled={qty <= step}
                 aria-label={`Diminuer la quantité de ${step}`}
                 title={`Retirer ${step}`}
@@ -441,7 +441,7 @@ function OfferRow({
                 <Minus size={14} aria-hidden />
               </button>
               <span
-                className="px-3 py-2 text-sm font-medium min-w-[40px] text-center tabular-nums"
+                className="px-2 text-sm font-medium min-w-[32px] text-center tabular-nums"
                 aria-live="polite"
                 aria-atomic="true"
               >
@@ -450,7 +450,7 @@ function OfferRow({
               <button
                 type="button"
                 onClick={() => setQty((q) => Math.min(maxQty, q + step))}
-                className="px-2.5 py-2 text-muted-foreground hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary rounded-r-md disabled:opacity-40"
+                className="px-2 h-full text-muted-foreground hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary rounded-r-md disabled:opacity-40"
                 disabled={qty >= maxQty}
                 aria-label={`Augmenter la quantité de ${step}`}
                 title={`Ajouter ${step}`}
@@ -460,15 +460,16 @@ function OfferRow({
             </div>
             <motion.button
               type="button"
-              className="bg-primary text-primary-foreground px-3 py-2 rounded-md text-sm font-semibold inline-flex items-center gap-1.5 whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+              className="bg-primary text-primary-foreground px-3 h-9 rounded-md text-sm font-semibold inline-flex items-center justify-center gap-1.5 whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 flex-1 min-w-0"
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
               onClick={handleAdd}
               title={`Ajouter ${Math.min(qty, maxQty)} × ${formatEur(basePackPrice)} € au panier`}
               aria-label={`Ajouter ${Math.min(qty, maxQty)} unité(s) au panier — total ${formatEur(Math.min(qty, maxQty) * basePackPrice)} € ${priceLabel}`}
             >
-              <ShoppingCart size={14} aria-hidden />
-              <span>Ajouter ·</span>
+              <ShoppingCart size={14} aria-hidden className="shrink-0" />
+              <span>Ajouter</span>
+              <span className="opacity-60">·</span>
               <span className="tabular-nums" aria-live="polite">
                 {formatEur(Math.min(qty, maxQty) * basePackPrice)}&nbsp;€
               </span>
@@ -1667,7 +1668,7 @@ export default function ProductPage() {
                           <span className="text-sm text-emerald-700 font-medium">{formatCount(totalStock)} disponibles{uniqueVendorCount > 1 ? ` auprès de ${uniqueVendorCount} fournisseurs` : ""}</span>
                         </div>
 
-                        <div className="hidden md:grid grid-cols-[1.5fr_2fr_0.8fr_1.5fr] gap-3 px-1 pb-3 text-xs font-semibold text-muted-foreground border-b border-border">
+                        <div className="hidden md:grid grid-cols-[minmax(180px,1.4fr)_minmax(200px,1.8fr)_60px_minmax(260px,1.6fr)] gap-3 px-1 pb-3 text-xs font-semibold text-muted-foreground border-b border-border">
                           <span>Fournisseur</span>
                           <span>
                             Prix {offerCompareBasis === 'pack' ? '/ pack' : offerCompareBasis === 'unit' ? '/ unité' : '/ 100 u.'} · MOV
@@ -1741,7 +1742,7 @@ export default function ProductPage() {
                           </span>
                         </div>
 
-                        <div className="hidden md:grid grid-cols-[1.5fr_2fr_0.8fr_1.5fr] gap-3 px-1 pb-3 text-xs font-semibold text-muted-foreground border-b border-border">
+                        <div className="hidden md:grid grid-cols-[minmax(180px,1.4fr)_minmax(200px,1.8fr)_60px_minmax(260px,1.6fr)] gap-3 px-1 pb-3 text-xs font-semibold text-muted-foreground border-b border-border">
                           <span>Fournisseur</span>
                           <span>Prix {offerCompareBasis === 'pack' ? '/ pack' : offerCompareBasis === 'unit' ? '/ unité' : '/ 100 u.'} · MOV</span>
                           <span>Stock</span>

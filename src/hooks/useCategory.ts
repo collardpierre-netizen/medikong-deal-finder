@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -32,6 +32,11 @@ export function useCategory(slug: string | undefined | null) {
     queryKey: ["category-by-slug", slug],
     enabled: !!slug,
     staleTime: 1000 * 60 * 60,
+    gcTime: 24 * 60 * 60 * 1000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    placeholderData: keepPreviousData,
     queryFn: async (): Promise<CategoryRecord | null> => {
       if (!slug) return null;
       const { data, error } = await supabase
@@ -72,14 +77,24 @@ export function useCategoryLabel(slug: string | undefined | null): string {
   return pickCategoryLabel(data, i18n.language) || slug;
 }
 
-/** Hook returning {label, isLoading} for callers that need a skeleton. */
+/**
+ * Hook returning {label, isLoading} for callers that need a skeleton.
+ * `isLoading` is true ONLY on the very first fetch with no cached/previous
+ * data — once the slug has been resolved (or another slug's data is kept as
+ * placeholder), we render the (possibly stale) label instead of a skeleton
+ * to eliminate flicker when navigating between categories.
+ */
 export function useCategoryLabelStatus(slug: string | undefined | null): {
   label: string;
   isLoading: boolean;
 } {
   const { i18n } = useTranslation();
-  const { data, isLoading } = useCategory(slug);
+  // `isPending` is false as soon as we have data (including placeholderData
+  // from a previous slug), so skeletons disappear on subsequent navigations.
+  const { data, isPending, isFetching } = useCategory(slug);
   if (!slug) return { label: "", isLoading: false };
   const label = data ? pickCategoryLabel(data, i18n.language) || slug : "";
-  return { label, isLoading: isLoading && !data };
+  // Only show skeleton on the true first load (no data at all yet).
+  const isLoading = !data && (isPending || isFetching);
+  return { label, isLoading };
 }

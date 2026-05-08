@@ -74,7 +74,7 @@ for (const { name, path } of KEY_PUBLIC_PAGES) {
 
       const results = await new AxeBuilder({ page })
         .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
-        .disableRules(TEMPORARILY_DISABLED_RULES)
+        .disableRules(DISABLED_RULE_IDS)
         // Ignore les iframes tierces (recaptcha, stripe, gtm, etc.)
         .exclude("iframe")
         .analyze();

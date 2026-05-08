@@ -1232,10 +1232,10 @@ export default function OnboardingPage() {
             {allInterests.map(cat => {
               const sel = interests.includes(cat);
               return (
-                <button key={cat} onClick={() => setInterests(sel ? interests.filter(i => i !== cat) : [...interests, cat])}
+                <button key={cat} aria-label={cat} onClick={() => setInterests(sel ? interests.filter(i => i !== cat) : [...interests, cat])}
                   style={{ padding: "8px 16px", borderRadius: 100, fontSize: 12, border: `1px solid ${sel ? S.blue : S.line}`, background: sel ? S.blueBg : "#fff", color: sel ? S.blue : S.sec, fontWeight: sel ? 500 : 400, cursor: "pointer", transition: "all .2s", display: "flex", alignItems: "center", gap: 4 }}
                 >
-                  {sel && <Check size={12} />} {cat}
+                  {sel && <span aria-hidden="true"><Check size={12} /></span>} {cat}
                 </button>
               );
             })}
@@ -1533,7 +1533,7 @@ export default function OnboardingPage() {
           ))}
           <div style={{ display: "flex", gap: 8, marginTop: 20 }}>
             {activeTestimonials.map((_, i) => (
-              <button key={i} onClick={() => setTIdx(i)} style={{
+              <button key={i} onClick={() => setTIdx(i)} aria-label={`Témoignage ${i + 1}`} style={{
                 width: tIdx % activeTestimonials.length === i ? 24 : 8, height: 8,
                 borderRadius: tIdx % activeTestimonials.length === i ? 4 : "50%",
                 background: tIdx % activeTestimonials.length === i ? "#fff" : "rgba(255,255,255,.35)",

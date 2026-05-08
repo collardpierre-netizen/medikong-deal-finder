@@ -3,11 +3,15 @@ import globals from "globals";
 import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
 import tseslint from "typescript-eslint";
+import jsxA11y from "eslint-plugin-jsx-a11y";
 
 export default tseslint.config(
   { ignores: ["dist"] },
   {
-    extends: [js.configs.recommended, ...tseslint.configs.recommended],
+    extends: [
+      js.configs.recommended,
+      ...tseslint.configs.recommended,
+    ],
     files: ["**/*.{ts,tsx}"],
     languageOptions: {
       ecmaVersion: 2020,
@@ -16,6 +20,7 @@ export default tseslint.config(
     plugins: {
       "react-hooks": reactHooks,
       "react-refresh": reactRefresh,
+      "jsx-a11y": jsxA11y,
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
@@ -24,6 +29,17 @@ export default tseslint.config(
       "@typescript-eslint/no-explicit-any": "off",
       "@typescript-eslint/no-empty-object-type": "off",
       "@typescript-eslint/no-unused-expressions": "off",
+      // Icon-only buttons/links must have an accessible label.
+      // Ignoring input/select/textarea to avoid noise on form fields
+      // wrapped in labels without htmlFor; td/th are table cells, not controls.
+      "jsx-a11y/control-has-associated-label": [
+        "error",
+        {
+          ignoreElements: ["input", "select", "textarea", "td", "th"],
+          depth: 5,
+        },
+      ],
+      "jsx-a11y/anchor-has-content": "error",
     },
   },
 );

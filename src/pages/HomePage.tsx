@@ -21,6 +21,7 @@ import { InstantSearchBar } from "@/components/search/InstantSearchBar";
 import { useMarketplaceMetrics } from "@/hooks/useMarketplaceMetrics";
 import { formatCount } from "@/lib/formatCount";
 import { RecentSearches } from "@/components/home/RecentSearches";
+import { useHomeFeaturedBrands, useHomeFeaturedProducts, HOME_FEATURED_BADGE_LABEL } from "@/hooks/useHomeFeatured";
 
 const iconMap: Record<string, React.ReactNode> = {
   Shield: <Shield size={20} className="text-mk-navy" />,

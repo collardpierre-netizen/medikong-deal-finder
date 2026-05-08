@@ -146,6 +146,7 @@ const AdminCRM = lazyWithRetry(() => import("./pages/admin/AdminCRM"), "AdminCRM
 const AdminCMS = lazyWithRetry(() => import("./pages/admin/AdminCMS"), "AdminCMS");
 const AdminCmsHomeBrands = lazyWithRetry(() => import("./pages/admin/AdminCmsHomeBrands"), "AdminCmsHomeBrands");
 const AdminCmsHomeProducts = lazyWithRetry(() => import("./pages/admin/AdminCmsHomeProducts"), "AdminCmsHomeProducts");
+const AdminCmsHomeShowcase = lazyWithRetry(() => import("./pages/admin/AdminCmsHomeShowcase"), "AdminCmsHomeShowcase");
 const AdminUnmappedCategories = lazyWithRetry(() => import("./pages/admin/AdminUnmappedCategories"), "AdminUnmappedCategories");
 const AdminQogitaLlmMapping = lazyWithRetry(() => import("./pages/admin/AdminQogitaLlmMapping"), "AdminQogitaLlmMapping");
 const AdminQogitaAmbiguousReview = lazyWithRetry(() => import("./pages/admin/AdminQogitaAmbiguousReview"), "AdminQogitaAmbiguousReview");

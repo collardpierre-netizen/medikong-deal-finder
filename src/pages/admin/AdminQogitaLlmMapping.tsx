@@ -420,3 +420,155 @@ const AdminQogitaLlmMapping = () => {
 };
 
 export default AdminQogitaLlmMapping;
+
+/* ── Dry-run dialog ─────────────────────────────────────── */
+
+function DryRunDialog({
+  open,
+  onOpenChange,
+  threshold,
+  onConfirm,
+  isApplying,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  threshold: number;
+  onConfirm: () => void;
+  isApplying: boolean;
+}) {
+  const { data, isLoading } = useQuery({
+    queryKey: ["qogita-llm-dry-run", threshold],
+    enabled: open,
+    queryFn: async () => {
+      const { data, error } = await sb
+        .from("category_llm_mapping_proposals")
+        .select("id, qogita_name, products_count, suggested_mk_slug, suggested_mk_category_id, confidence")
+        .eq("status", "pending")
+        .gte("confidence", threshold)
+        .not("suggested_mk_category_id", "is", null)
+        .order("products_count", { ascending: false })
+        .limit(2000);
+      if (error) throw error;
+      return (data ?? []) as Array<{
+        id: string;
+        qogita_name: string;
+        products_count: number;
+        suggested_mk_slug: string | null;
+        suggested_mk_category_id: string | null;
+        confidence: number | null;
+      }>;
+    },
+  });
+
+  const rows = data ?? [];
+  const totalProducts = rows.reduce((s, r) => s + (r.products_count || 0), 0);
+
+  // Distribution par cible MK
+  const perTarget = useMemo(() => {
+    const map = new Map<string, { count: number; products: number }>();
+    for (const r of rows) {
+      const k = r.suggested_mk_slug ?? "—";
+      const cur = map.get(k) ?? { count: 0, products: 0 };
+      cur.count += 1;
+      cur.products += r.products_count || 0;
+      map.set(k, cur);
+    }
+    return Array.from(map.entries()).sort((a, b) => b[1].products - a[1].products);
+  }, [rows]);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden flex flex-col">
+        <DialogHeader>
+          <DialogTitle>Dry-run · application des propositions ≥ {(threshold * 100).toFixed(0)}%</DialogTitle>
+          <DialogDescription>
+            Aucune écriture n'a encore eu lieu. Voici exactement ce qui sera appliqué dans
+            <code className="mx-1 px-1 py-0.5 rounded bg-muted text-xs">products.primary_category_id</code>
+            si tu confirmes.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="grid grid-cols-3 gap-3 my-2">
+          <div className="rounded-lg border bg-card p-3">
+            <div className="text-xs text-muted-foreground">Propositions</div>
+            <div className="text-2xl font-semibold">{rows.length.toLocaleString("fr-BE")}</div>
+          </div>
+          <div className="rounded-lg border bg-card p-3">
+            <div className="text-xs text-muted-foreground">Produits impactés</div>
+            <div className="text-2xl font-semibold">{totalProducts.toLocaleString("fr-BE")}</div>
+          </div>
+          <div className="rounded-lg border bg-card p-3">
+            <div className="text-xs text-muted-foreground">Catégories MK ciblées</div>
+            <div className="text-2xl font-semibold">{perTarget.length}</div>
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-auto rounded-lg border">
+          {isLoading ? (
+            <div className="text-center py-8 text-sm text-muted-foreground">Chargement…</div>
+          ) : rows.length === 0 ? (
+            <div className="text-center py-8 text-sm text-muted-foreground">
+              Aucune proposition pending ≥ {(threshold * 100).toFixed(0)}% avec une cible MK valide.
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Libellé Qogita</TableHead>
+                  <TableHead className="w-24 text-right">Produits</TableHead>
+                  <TableHead>Cible MK</TableHead>
+                  <TableHead className="w-24 text-right">Conf.</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {rows.map((r) => (
+                  <TableRow key={r.id}>
+                    <TableCell className="font-medium">{r.qogita_name}</TableCell>
+                    <TableCell className="text-right tabular-nums">{r.products_count.toLocaleString("fr-BE")}</TableCell>
+                    <TableCell>
+                      <code className="text-xs bg-muted px-1.5 py-0.5 rounded">{r.suggested_mk_slug}</code>
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {((r.confidence ?? 0) * 100).toFixed(0)}%
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </div>
+
+        {perTarget.length > 0 && (
+          <div className="mt-2 max-h-32 overflow-auto rounded-lg border bg-muted/30 p-2 text-xs space-y-1">
+            <div className="font-semibold mb-1">Répartition par catégorie MK</div>
+            {perTarget.map(([slug, agg]) => (
+              <div key={slug} className="flex justify-between">
+                <code className="bg-background px-1.5 py-0.5 rounded">{slug}</code>
+                <span className="text-muted-foreground">
+                  {agg.count} prop · {agg.products.toLocaleString("fr-BE")} produits
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <DialogFooter className="mt-3">
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isApplying}>
+            Annuler
+          </Button>
+          <Button
+            onClick={onConfirm}
+            disabled={isApplying || rows.length === 0}
+          >
+            {isApplying ? (
+              <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Application…</>
+            ) : (
+              <><CheckCircle2 className="mr-2 h-4 w-4" /> Confirmer · appliquer {rows.length} proposition(s)</>
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+

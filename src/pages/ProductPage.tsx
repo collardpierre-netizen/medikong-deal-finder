@@ -521,11 +521,13 @@ function OfferRow({
         </div>
       </div>
 
-      {/* Delivery estimate */}
-      <div className="flex items-center gap-1.5 mt-3 text-xs text-muted-foreground">
-        <Truck size={13} />
-        <span>Livraison estimée : {offer.deliveryDays ? (offer.deliveryDays <= 7 ? `${offer.deliveryDays} jours` : `${Math.ceil(offer.deliveryDays / 7)} semaines`) : "5-10 jours ouvrables"}</span>
-      </div>
+      {/* Delivery estimate (per offer) — n'afficher que si la donnée est connue */}
+      {offer.deliveryDays ? (
+        <div className="flex items-center gap-1.5 mt-3 text-xs text-muted-foreground">
+          <Truck size={13} />
+          <span>Livraison estimée : {offer.deliveryDays <= 7 ? `${offer.deliveryDays} jours` : `${Math.ceil(offer.deliveryDays / 7)} semaines`}</span>
+        </div>
+      ) : null}
 
       {offer.sellerId && (
         <VendorSuggestions

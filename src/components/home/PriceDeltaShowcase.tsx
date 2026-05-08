@@ -1,29 +1,20 @@
+import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Package, ArrowRight, TrendingDown } from "lucide-react";
 import { motion } from "framer-motion";
 import { useTopPriceDeltas, type PriceDelta } from "@/hooks/useTopPriceDeltas";
 import { useFeaturedPriceDelta } from "@/hooks/useFeaturedPriceDelta";
 import { useHomeShowcaseSettings } from "@/hooks/useHomeShowcaseSettings";
+import {
+  trackShowcaseImpression,
+  trackShowcaseClick,
+  type ShowcaseVariant,
+} from "@/lib/home-showcase-tracking";
 
 /**
  * Mini-encart "Exemple de comparaison live" affiché dans le hero de la home.
- *
- * Montre le SKU multi-vendeurs au plus gros écart de prix du jour
- * (calcul live via la vue `public_top_price_deltas`). Aucune promesse moyenne :
- * le pourcentage affiché est l'écart max/min réel sur le SKU mis en avant.
- *
- * Si la vue ne renvoie aucune ligne (catalogue trop pauvre), le composant
- * ne s'affiche pas et la home retombe sur ses CTAs classiques.
+ * Mesure les impressions/clics via `home_showcase_events` + dataLayer GTM.
  */
-function trackEvent(name: string, payload: Record<string, unknown>) {
-  try {
-    const w = window as unknown as { dataLayer?: Array<Record<string, unknown>> };
-    w.dataLayer = w.dataLayer ?? [];
-    w.dataLayer.push({ event: name, ...payload });
-  } catch {
-    /* no-op */
-  }
-}
 
 const fmt = (n: number) =>
   new Intl.NumberFormat("fr-BE", {

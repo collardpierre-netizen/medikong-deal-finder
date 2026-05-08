@@ -14873,8 +14873,12 @@ export type Database = {
       }
       public_marketplace_metrics: {
         Row: {
+          avg_offers_per_multi_product: number | null
           avg_offers_per_product: number | null
           brands_count: number | null
+          max_offers_per_product: number | null
+          median_offers_per_multi_product: number | null
+          multi_vendor_products_count: number | null
           offers_count: number | null
           products_count: number | null
           products_on_promo: number | null

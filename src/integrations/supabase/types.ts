@@ -14655,6 +14655,7 @@ export type Database = {
           name_de: string | null
           name_fr: string | null
           name_nl: string | null
+          primary_category_id: string | null
           promotion_label: string | null
           short_description: string | null
           slug: string | null
@@ -14700,6 +14701,27 @@ export type Database = {
             columns: ["manufacturer_id"]
             isOneToOne: false
             referencedRelation: "manufacturers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_primary_category_id_fkey"
+            columns: ["primary_category_id"]
+            isOneToOne: false
+            referencedRelation: "admin_category_vat_audit"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_primary_category_id_fkey"
+            columns: ["primary_category_id"]
+            isOneToOne: false
+            referencedRelation: "admin_unmapped_qogita_categories"
+            referencedColumns: ["qogita_category_id"]
+          },
+          {
+            foreignKeyName: "products_primary_category_id_fkey"
+            columns: ["primary_category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
             referencedColumns: ["id"]
           },
         ]
@@ -16062,6 +16084,12 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      category_descendants: {
+        Args: { root_slug: string }
+        Returns: {
+          id: string
+        }[]
       }
       check_price_challenge_cooldown: {
         Args: { _product_id: string; _vendor_id: string }

@@ -1,16 +1,18 @@
-import { Grid, List, Columns3, Download } from "lucide-react";
+import { Download } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTranslation } from "react-i18next";
 import type { CatalogFilters } from "@/hooks/useCatalog";
+import { CatalogViewToggle } from "@/components/catalog/CatalogViewToggle";
+import type { CatalogView } from "@/hooks/useCatalogViewMode";
 
-export type CatalogViewMode = "grid" | "list" | "trivago";
+export type CatalogViewMode = CatalogView;
 
 interface Props {
   filters: CatalogFilters;
   setFilter: (key: string, value: any) => void;
   total: number;
-  view: CatalogViewMode;
-  setView: (v: CatalogViewMode) => void;
+  view: CatalogView;
+  setView: (v: CatalogView) => void;
 }
 
 export function CatalogToolbar({ filters, setFilter, total, view, setView }: Props) {
@@ -51,16 +53,8 @@ export function CatalogToolbar({ filters, setFilter, total, view, setView }: Pro
           </SelectContent>
         </Select>
 
-        <div className="hidden sm:flex border border-border rounded-md overflow-hidden">
-          <button onClick={() => setView("grid")} title={t("catalog.grid")} className={`p-1.5 ${view === "grid" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>
-            <Grid size={16} />
-          </button>
-          <button onClick={() => setView("list")} title={t("catalog.list")} className={`p-1.5 ${view === "list" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>
-            <List size={16} />
-          </button>
-          <button onClick={() => setView("trivago")} title={t("catalog.comparator")} className={`p-1.5 ${view === "trivago" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>
-            <Columns3 size={16} />
-          </button>
+        <div className="hidden sm:block">
+          <CatalogViewToggle view={view} setView={setView} />
         </div>
 
         <button className="hidden sm:inline-flex p-1.5 border border-border rounded-md text-muted-foreground hover:bg-muted" title={t("catalog.downloadCsv")}>

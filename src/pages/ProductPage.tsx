@@ -1668,13 +1668,12 @@ export default function ProductPage() {
                           <span className="text-sm text-emerald-700 font-medium">{formatCount(totalStock)} disponibles{uniqueVendorCount > 1 ? ` auprès de ${uniqueVendorCount} fournisseurs` : ""}</span>
                         </div>
 
-                        <div className="hidden md:grid grid-cols-[minmax(180px,1.4fr)_minmax(200px,1.8fr)_64px_240px] gap-3 px-1 pb-3 text-xs font-semibold text-muted-foreground border-b border-border">
+                        <div className="hidden md:grid grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)_72px] gap-x-4 px-1 pb-3 text-xs font-semibold text-muted-foreground border-b border-border">
                           <span>Fournisseur</span>
                           <span>
                             Prix {offerCompareBasis === 'pack' ? '/ pack' : offerCompareBasis === 'unit' ? '/ unité' : '/ 100 u.'} · MOV
                           </span>
                           <span>Stock</span>
-                          <span className="text-right">Commander</span>
                         </div>
 
                         <SafeBoundary label={`l'offre de ${bestOffer.sellerName || "ce fournisseur"}`}>
@@ -1742,11 +1741,10 @@ export default function ProductPage() {
                           </span>
                         </div>
 
-                        <div className="hidden md:grid grid-cols-[minmax(180px,1.4fr)_minmax(200px,1.8fr)_64px_240px] gap-3 px-1 pb-3 text-xs font-semibold text-muted-foreground border-b border-border">
+                        <div className="hidden md:grid grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)_72px] gap-x-4 px-1 pb-3 text-xs font-semibold text-muted-foreground border-b border-border">
                           <span>Fournisseur</span>
                           <span>Prix {offerCompareBasis === 'pack' ? '/ pack' : offerCompareBasis === 'unit' ? '/ unité' : '/ 100 u.'} · MOV</span>
                           <span>Stock</span>
-                          <span className="text-right">Commander</span>
                         </div>
 
                         {otherOffers.map((offer, i) => (

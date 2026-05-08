@@ -159,7 +159,7 @@ export default function HomePage() {
   const suppliersTxt = countryStats?.vendors
     ? formatCount(countryStats.vendors, { suffix: "+" })
     : "—";
-  const avgOffersTxt = metricsAvg ? metricsAvg.toString().replace(".", ",") : "—";
+  const maxOffersTxt = metricsMaxOffers > 0 ? metricsMaxOffers.toString() : "—";
 
   const valueProps = [
     { icon: <TrendingDown size={22} />, title: t("valueProps.bestPrices"), desc: t("valueProps.bestPricesDesc", { suppliers: suppliersTxt }) },

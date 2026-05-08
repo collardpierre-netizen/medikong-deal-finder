@@ -22,6 +22,10 @@ export default tseslint.config(
       "react-hooks": reactHooks,
       "react-refresh": reactRefresh,
       "jsx-a11y": jsxA11y,
+      react,
+    },
+    settings: {
+      react: { version: "detect" },
     },
     rules: {
       ...reactHooks.configs.recommended.rules,

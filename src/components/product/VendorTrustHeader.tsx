@@ -50,7 +50,7 @@ function avatarTone(seed: string): string {
   return AVATAR_PALETTE[Math.abs(h) % AVATAR_PALETTE.length];
 }
 
-function formatJoined(iso: string) {
+export function formatJoined(iso: string) {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "";
   return d.toLocaleDateString("fr-BE", { month: "2-digit", year: "numeric" });

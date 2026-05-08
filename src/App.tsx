@@ -11,6 +11,8 @@ import { ImpersonationProvider } from "@/contexts/ImpersonationContext";
 import { CountryProvider } from "@/contexts/CountryContext";
 import { PriceDisplayProvider } from "@/contexts/PriceDisplayContext";
 import ImpersonationBanner from "@/components/admin/ImpersonationBanner";
+import { EnvBanner } from "@/components/layout/EnvBanner";
+import { EnvNoIndex } from "@/components/layout/EnvNoIndex";
 import { CookieConsent } from "@/components/layout/CookieConsent";
 import { HelmetProvider } from "react-helmet-async";
 import { Loader2 } from "lucide-react";

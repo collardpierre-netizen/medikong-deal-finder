@@ -105,7 +105,7 @@
     "mk1": "Zonder contract, zonder verplichting",
     "mk2": "MOV vanaf €150 excl. BTW",
     "mk3": "Directe toegang tot {{suppliers}} leveranciers",
-    "mk4": "{{avgOffers}} leveranciers per referentie gemiddeld",
+    "mk4": "Tot {{maxOffers}} leveranciers op één SKU",
     "mk5": "Realtime voorraadanalyse",
     "mk6": "Kopersbescherming inbegrepen"
   },

@@ -9,7 +9,7 @@ export function SubNav() {
   const { data: features } = useSiteFeatures();
 
   const tabs = [
-    { label: t("nav.shop"), path: "/" },
+    { label: t("nav.shop"), path: "/shop" },
     { label: t("nav.brands"), path: "/marques" },
     { label: t("nav.promotions"), path: "/promotions" },
     { label: t("nav.sourcing"), path: "/sourcing" },

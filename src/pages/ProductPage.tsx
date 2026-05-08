@@ -274,9 +274,8 @@ function OfferRow({
       <div className="hidden md:grid grid-cols-[1.5fr_2fr_0.8fr_1.5fr] gap-3 items-start">
         <div className="flex flex-col gap-1.5">
           {(() => {
-            const trust = useVendorTrustForId(offer.sellerId);
-            if (trust) {
-              return <VendorTrustHeader trust={trust} variant="full" />;
+            if (vendorTrust) {
+              return <VendorTrustHeader trust={vendorTrust} variant="full" />;
             }
             return (
               <span className="font-bold text-sm text-foreground inline-flex items-center gap-1.5">

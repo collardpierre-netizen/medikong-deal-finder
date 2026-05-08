@@ -38,7 +38,7 @@ export async function logSearch(input: LogSearchInput): Promise<void> {
     const { data: auth } = await supabase.auth.getUser();
     const userId = auth?.user?.id ?? null;
 
-    await supabase.from("search_logs").insert({
+    const payload = {
       user_id: userId,
       session_id: getSessionId() || null,
       query: q,
@@ -46,12 +46,13 @@ export async function logSearch(input: LogSearchInput): Promise<void> {
       clicked_type: input.clickedType ?? null,
       clicked_id: input.clickedId ?? null,
       clicked_slug: input.clickedSlug ?? null,
-      filters: input.filters ?? {},
+      filters: (input.filters ?? {}) as Record<string, unknown>,
       country: input.country ?? null,
       locale: input.locale ?? (typeof navigator !== "undefined" ? navigator.language : null),
       source: input.source ?? null,
       user_agent: typeof navigator !== "undefined" ? navigator.userAgent.slice(0, 500) : null,
-    });
+    };
+    await supabase.from("search_logs").insert(payload as never);
   } catch (err) {
     // Silent: tracking should never break UX
     if (import.meta.env.DEV) console.warn("[search-logging] insert failed", err);

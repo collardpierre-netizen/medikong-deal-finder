@@ -14,6 +14,7 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:install": "playwright install --with-deps chromium",
+    "test:a11y": "playwright test e2e/a11y.spec.ts --project=desktop-1280",
     "lighthouse": "lhci autorun --config=./lighthouserc.cjs",
     "lighthouse:desktop": "lhci autorun --config=./lighthouserc.cjs --collect.settings.preset=desktop"
   },

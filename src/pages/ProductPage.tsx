@@ -2690,18 +2690,18 @@ export default function ProductPage() {
                   <p className="text-base font-bold text-green-700">{formatEur(isTVAC ? bestOffer.unitPriceInclVat : bestOffer.unitPriceEur)} €</p>
                   <p className="text-[10px] text-muted-foreground truncate">{isTVAC ? "TVAC" : "HTVA"} · {brandData?.name || product.brand || ""}</p>
                 </div>
-                <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                  <div className="grid grid-cols-[auto_auto_minmax(0,1fr)] sm:flex sm:items-center gap-2 sm:gap-3 shrink-0 min-w-0">
                   <div className="text-right hidden sm:block">
                     <p className="text-lg font-bold text-green-700">{formatEur(isTVAC ? bestOffer.unitPriceInclVat : bestOffer.unitPriceEur)} €</p>
                     <p className="text-[11px] text-muted-foreground">{isTVAC ? "TVAC" : "HTVA"}</p>
                   </div>
-                  <div className="flex items-center border border-border rounded-md bg-background">
-                    <button onClick={() => setStickyQty(Math.max(1, stickyQty - 1))} className="px-2 py-1.5 text-muted-foreground"><Minus size={14} /></button>
-                    <span className="px-2 text-sm font-medium">{stickyQty}</span>
-                    <button onClick={() => setStickyQty(Math.min(bestOffer.stockQuantity > 0 ? bestOffer.stockQuantity : 999, stickyQty + 1))} className="px-2 py-1.5 text-muted-foreground" disabled={stickyQty >= (bestOffer.stockQuantity > 0 ? bestOffer.stockQuantity : 999)}><Plus size={14} /></button>
+                  <div className="flex items-center justify-between border border-border rounded-md bg-background h-10 w-[106px] overflow-hidden shrink-0">
+                    <button onClick={() => setStickyQty(Math.max(1, stickyQty - 1))} className="w-8 h-full inline-flex items-center justify-center text-muted-foreground"><Minus size={14} /></button>
+                    <span className="flex-1 px-1 text-sm font-medium text-center tabular-nums min-w-0">{stickyQty}</span>
+                    <button onClick={() => setStickyQty(Math.min(bestOffer.stockQuantity > 0 ? bestOffer.stockQuantity : 999, stickyQty + 1))} className="w-8 h-full inline-flex items-center justify-center text-muted-foreground" disabled={stickyQty >= (bestOffer.stockQuantity > 0 ? bestOffer.stockQuantity : 999)}><Plus size={14} /></button>
                   </div>
                   <button
-                    className="bg-primary text-primary-foreground text-sm font-semibold px-4 py-2.5 rounded-lg flex items-center gap-2 shadow-lg hover:opacity-90 transition-opacity"
+                    className="bg-primary text-primary-foreground text-sm font-semibold px-3 h-10 rounded-md inline-flex items-center justify-center gap-2 shadow-lg hover:bg-primary/90 transition-colors min-w-0 overflow-hidden whitespace-nowrap"
                     onClick={() => {
                       if (!user) {
                         toast.error("Connectez-vous pour ajouter des produits au panier", {
@@ -2729,9 +2729,9 @@ export default function ProductPage() {
 
                     }}
                   >
-                    <ShoppingCart size={14} />
-                    <span className="hidden sm:inline">Ajouter au panier</span>
-                    <span className="sm:hidden">Ajouter</span>
+                    <ShoppingCart size={14} className="shrink-0" />
+                    <span className="hidden sm:inline truncate">Ajouter au panier</span>
+                    <span className="sm:hidden truncate">Ajouter</span>
                   </button>
                 </div>
               </div>

@@ -111,7 +111,7 @@
     "mk1": "Sans contrat, sans engagement",
     "mk2": "MOV à partir de 150€ HT",
     "mk3": "Accès instantané à {{suppliers}} fournisseurs",
-    "mk4": "{{avgOffers}} fournisseurs par référence en moyenne",
+    "mk4": "Jusqu'à {{maxOffers}} fournisseurs sur un même SKU",
     "mk5": "Analyse en temps réel des stocks",
     "mk6": "Protection acheteur incluse"
   },

@@ -508,51 +508,86 @@ export default function HomePage() {
         </div>
       </AnimatedSection>
 
-      {/* ═══ CURATED PRODUCTS ═══ */}
-      {curatedProducts.length > 0 && (
-      <AnimatedSection className="py-14 md:py-20 bg-mk-alt/30">
-        <div className="mk-container">
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-2xl font-bold text-mk-navy">Best-sellers officine</h2>
-            <Link to="/recherche" className="text-sm text-mk-blue hover:underline flex items-center gap-1">
-              {t("common.viewAll")} <ChevronRight size={14} />
-            </Link>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            {curatedProducts.slice(0, 10).map((p) => {
-              const img = p.image_url || (Array.isArray(p.image_urls) ? p.image_urls[0] : null);
-              return (
-                <Link
-                  key={p.id}
-                  to={`/produits/${p.product_slug}`}
-                  className="group relative bg-white rounded-xl border border-mk-line overflow-hidden hover:shadow-md transition-all"
-                >
-                  {p.badge && (
-                    <span className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded-md bg-mk-blue text-white text-[10px] font-semibold uppercase tracking-wide">
-                      {HOME_FEATURED_BADGE_LABEL[p.badge]}
-                    </span>
-                  )}
-                  <div className="aspect-square bg-mk-alt/40 flex items-center justify-center overflow-hidden">
-                    {img ? (
-                      <img src={img} alt={p.product_name} className="w-full h-full object-contain p-3" referrerPolicy="no-referrer" />
-                    ) : (
-                      <Package size={32} className="text-mk-sec/40" />
-                    )}
+      {/* ═══ CURATED PRODUCTS — groupés par catégorie ═══
+          Priorité explicite : Compléments alimentaires & Nutrition d'abord,
+          puis le reste dans l'ordre alphabétique. Permet à un admin qui
+          remplit la curation de voir tout de suite "compléments / nutrition"
+          en haut de la home plutôt qu'un mélange aléatoire. */}
+      {curatedProducts.length > 0 && (() => {
+        const PRIORITY_KEYWORDS = ["complément", "complement", "nutrition"];
+        const matchPriority = (label: string | null): number => {
+          const lc = (label || "").toLowerCase();
+          for (let i = 0; i < PRIORITY_KEYWORDS.length; i++) {
+            if (lc.includes(PRIORITY_KEYWORDS[i])) return i;
+          }
+          return 999;
+        };
+
+        const groups = new Map<string, { label: string; priority: number; items: typeof curatedProducts }>();
+        for (const p of curatedProducts) {
+          const key = p.category_id ?? "__none__";
+          const label = p.category_name ?? "Autres best-sellers";
+          if (!groups.has(key)) {
+            groups.set(key, { label, priority: matchPriority(label), items: [] });
+          }
+          groups.get(key)!.items.push(p);
+        }
+        const orderedGroups = Array.from(groups.values()).sort((a, b) => {
+          if (a.priority !== b.priority) return a.priority - b.priority;
+          return a.label.localeCompare(b.label, "fr");
+        });
+
+        return (
+          <AnimatedSection className="py-14 md:py-20 bg-mk-alt/30">
+            <div className="mk-container space-y-12">
+              {orderedGroups.map((g, idx) => (
+                <div key={g.label}>
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-2xl font-bold text-mk-navy">
+                      {idx === 0 && g.priority < 999 ? `Best-sellers — ${g.label}` : g.label}
+                    </h2>
+                    <Link to="/recherche" className="text-sm text-mk-blue hover:underline flex items-center gap-1">
+                      {t("common.viewAll")} <ChevronRight size={14} />
+                    </Link>
                   </div>
-                  <div className="p-3">
-                    {p.brand_name && <p className="text-[10px] uppercase tracking-wide text-mk-sec font-semibold truncate">{p.brand_name}</p>}
-                    <p className="text-xs font-semibold text-mk-navy mt-0.5 line-clamp-2 min-h-[32px]">{p.product_name}</p>
-                    {p.best_price_excl_vat != null && (
-                      <p className="text-sm font-bold text-mk-navy mt-1">{formatPrice(Number(p.best_price_excl_vat))} <span className="text-[10px] font-normal text-mk-sec">HTVA</span></p>
-                    )}
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                    {g.items.slice(0, 10).map((p) => {
+                      const img = p.image_url || (Array.isArray(p.image_urls) ? p.image_urls[0] : null);
+                      return (
+                        <Link
+                          key={p.id}
+                          to={`/produits/${p.product_slug}`}
+                          className="group relative bg-white rounded-xl border border-mk-line overflow-hidden hover:shadow-md transition-all"
+                        >
+                          {p.badge && (
+                            <span className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded-md bg-mk-blue text-white text-[10px] font-semibold uppercase tracking-wide">
+                              {HOME_FEATURED_BADGE_LABEL[p.badge]}
+                            </span>
+                          )}
+                          <div className="aspect-square bg-mk-alt/40 flex items-center justify-center overflow-hidden">
+                            {img ? (
+                              <img src={img} alt={p.product_name} className="w-full h-full object-contain p-3" referrerPolicy="no-referrer" />
+                            ) : (
+                              <Package size={32} className="text-mk-sec/40" />
+                            )}
+                          </div>
+                          <div className="p-3">
+                            {p.brand_name && <p className="text-[10px] uppercase tracking-wide text-mk-sec font-semibold truncate">{p.brand_name}</p>}
+                            <p className="text-xs font-semibold text-mk-navy mt-0.5 line-clamp-2 min-h-[32px]">{p.product_name}</p>
+                            {p.best_price_excl_vat != null && (
+                              <p className="text-sm font-bold text-mk-navy mt-1">{formatPrice(Number(p.best_price_excl_vat))} <span className="text-[10px] font-normal text-mk-sec">HTVA</span></p>
+                            )}
+                          </div>
+                        </Link>
+                      );
+                    })}
                   </div>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-      </AnimatedSection>
-      )}
+                </div>
+              ))}
+            </div>
+          </AnimatedSection>
+        );
+      })()}
 
       {/* ═══ HOW IT WORKS ═══ */}
       <AnimatedSection className="py-14 md:py-20">

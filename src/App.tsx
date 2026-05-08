@@ -132,6 +132,7 @@ const AdminPackSizeBackfill = lazyWithRetry(() => import("./pages/admin/AdminPac
 const AdminPackSizeMismatches = lazyWithRetry(() => import("./pages/admin/AdminPackSizeMismatches"), "AdminPackSizeMismatches");
 const AdminLeads = lazyWithRetry(() => import("./pages/admin/AdminLeads"), "AdminLeads");
 const AdminAnalytics = lazyWithRetry(() => import("./pages/admin/AdminAnalytics"), "AdminAnalytics");
+const AdminRecherches = lazyWithRetry(() => import("./pages/admin/AdminRecherches"), "AdminRecherches");
 const AdminReglementaire = lazyWithRetry(() => import("./pages/admin/AdminReglementaire"), "AdminReglementaire");
 const AdminImportExport = lazyWithRetry(() => import("./pages/admin/AdminImportExport"), "AdminImportExport");
 const AdminCategories = lazyWithRetry(() => import("./pages/admin/AdminCategories"), "AdminCategories");
@@ -420,6 +421,7 @@ const App = () => (
               <Route path="pack-audit" element={<LP><AdminPackAuditPage /></LP>} />
               <Route path="leads" element={<LP><AdminLeads /></LP>} />
               <Route path="analytics" element={<LP><AdminAnalytics /></LP>} />
+              <Route path="recherches" element={<LP><AdminRecherches /></LP>} />
               <Route path="reglementaire" element={<LP><AdminReglementaire /></LP>} />
               <Route path="import-export" element={<LP><AdminImportExport /></LP>} />
               <Route path="crm" element={<LP><AdminCRM /></LP>} />

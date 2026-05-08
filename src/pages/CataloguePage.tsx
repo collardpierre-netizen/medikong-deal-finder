@@ -36,7 +36,13 @@ export default function CataloguePage() {
   // Brand list for sidebar
   const { data: allBrands = [] } = useCatalogBrands();
 
-  const { data, isLoading, isError, error, refetch, isFetching } = useCatalogProducts(filters);
+  // Pré-injecte le slug d'URL dans les filtres consommés par le hook,
+  // pour que la première requête lance déjà le filtre `primary_category_id`.
+  const effectiveFilters = useMemo(
+    () => (filters.category ? filters : { ...filters, category: effectiveCategorySlug }),
+    [filters, effectiveCategorySlug],
+  );
+  const { data, isLoading, isError, error, refetch, isFetching } = useCatalogProducts(effectiveFilters);
   const products = data?.products || [];
   const total = data?.total || 0;
   const { view, setView } = useCatalogViewMode();
@@ -47,8 +53,8 @@ export default function CataloguePage() {
     ? [...new Set(products.map(p => p.category_id).filter(Boolean) as string[])]
     : undefined;
 
-  const categoryLabel = useCategoryLabel(filters.category);
-  const title = filters.category
+  const categoryLabel = useCategoryLabel(effectiveCategorySlug);
+  const title = effectiveCategorySlug
     ? (categoryLabel || "Catégorie")
     : "Tous les produits";
 

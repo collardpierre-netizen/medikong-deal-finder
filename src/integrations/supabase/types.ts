@@ -8919,6 +8919,63 @@ export type Database = {
           },
         ]
       }
+      search_logs: {
+        Row: {
+          clicked_id: string | null
+          clicked_slug: string | null
+          clicked_type: string | null
+          country: string | null
+          created_at: string
+          filters: Json
+          id: string
+          locale: string | null
+          normalized_query: string | null
+          query: string
+          results_count: number | null
+          session_id: string | null
+          source: string | null
+          user_agent: string | null
+          user_id: string | null
+          zero_results: boolean | null
+        }
+        Insert: {
+          clicked_id?: string | null
+          clicked_slug?: string | null
+          clicked_type?: string | null
+          country?: string | null
+          created_at?: string
+          filters?: Json
+          id?: string
+          locale?: string | null
+          normalized_query?: string | null
+          query: string
+          results_count?: number | null
+          session_id?: string | null
+          source?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+          zero_results?: boolean | null
+        }
+        Update: {
+          clicked_id?: string | null
+          clicked_slug?: string | null
+          clicked_type?: string | null
+          country?: string | null
+          created_at?: string
+          filters?: Json
+          id?: string
+          locale?: string | null
+          normalized_query?: string | null
+          query?: string
+          results_count?: number | null
+          session_id?: string | null
+          source?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+          zero_results?: boolean | null
+        }
+        Relationships: []
+      }
       seller_contracts: {
         Row: {
           contract_type: string

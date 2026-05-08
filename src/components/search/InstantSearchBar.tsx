@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { federatedSearch } from "@/lib/supabase-search";
 import type { FederatedResults } from "@/lib/supabase-search";
 import { pushRecentTerm, pushRecentProduct, pushRecentTaxon } from "@/hooks/useRecentSearches";
+import { logSearch } from "@/lib/search-logging";
 
 interface InstantSearchBarProps {
   className?: string;
@@ -58,12 +59,26 @@ export function InstantSearchBar({ className = "", placeholder, variant = "navba
     if (!q) { navigate("/catalogue"); setIsOpen(false); return; }
     // Trace l'historique côté client (pour reprise type Trivago).
     pushRecentTerm(q);
+    const totalResults = results.products.length + results.brands.length + results.categories.length;
     // If search matches a brand from instant results, go directly to brand filter
     const matchedBrand = results.brands.find(b => b.name.toLowerCase() === q.toLowerCase());
     if (matchedBrand) {
       pushRecentTaxon({ type: "brand", slug: matchedBrand.slug, name: matchedBrand.name });
+      void logSearch({
+        query: q,
+        resultsCount: totalResults,
+        clickedType: "brand",
+        clickedId: matchedBrand.id,
+        clickedSlug: matchedBrand.slug,
+        source: `${variant}-submit-brand-match`,
+      });
       navigate(`/catalogue?brand=${encodeURIComponent(matchedBrand.slug)}`);
     } else {
+      void logSearch({
+        query: q,
+        resultsCount: totalResults,
+        source: `${variant}-submit`,
+      });
       navigate(`/catalogue?q=${encodeURIComponent(q)}`);
     }
     setIsOpen(false);
@@ -94,14 +109,19 @@ export function InstantSearchBar({ className = "", placeholder, variant = "navba
       e.preventDefault();
       const sel = allItems[selectedIndex];
       const it: any = sel.item;
+      const totalResults = allItems.length;
+      const q = query.trim();
       if (sel.type === "product") {
         pushRecentProduct({ id: it.id, slug: it.slug, name: it.name, image: resolveRecentProductImage(it) });
+        void logSearch({ query: q, resultsCount: totalResults, clickedType: "product", clickedId: it.id, clickedSlug: it.slug, source: `${variant}-keyboard` });
         navigate(`/produit/${it.slug}`);
       } else if (sel.type === "brand") {
         pushRecentTaxon({ type: "brand", slug: it.slug, name: it.name });
+        void logSearch({ query: q, resultsCount: totalResults, clickedType: "brand", clickedId: it.id, clickedSlug: it.slug, source: `${variant}-keyboard` });
         navigate(`/marques/${it.slug}`);
       } else {
         pushRecentTaxon({ type: "category", slug: it.slug, name: it.name });
+        void logSearch({ query: q, resultsCount: totalResults, clickedType: "category", clickedId: it.id, clickedSlug: it.slug, source: `${variant}-keyboard` });
         navigate(`/categorie/${it.slug}`);
       }
       setIsOpen(false);
@@ -173,6 +193,8 @@ export function InstantSearchBar({ className = "", placeholder, variant = "navba
             onClick={() => {
               const q = query.trim();
               if (q) pushRecentTerm(q);
+              const totalResults = results.products.length + results.brands.length + results.categories.length;
+              void logSearch({ query: q, resultsCount: totalResults, source: `${variant}-see-all` });
               navigate(`/catalogue?q=${encodeURIComponent(query)}`);
               setIsOpen(false);
             }}
@@ -193,6 +215,8 @@ export function InstantSearchBar({ className = "", placeholder, variant = "navba
                   key={p.id}
                   onClick={() => {
                     pushRecentProduct({ id: p.id, slug: p.slug, name: p.name, image: resolveRecentProductImage(p) });
+                    const totalResults = results.products.length + results.brands.length + results.categories.length;
+                    void logSearch({ query: query.trim(), resultsCount: totalResults, clickedType: "product", clickedId: p.id, clickedSlug: p.slug, source: `${variant}-instant-click` });
                     navigate(`/produit/${p.slug}`);
                     setIsOpen(false);
                     setQuery("");
@@ -235,6 +259,8 @@ export function InstantSearchBar({ className = "", placeholder, variant = "navba
                     key={b.id}
                     onClick={() => {
                       pushRecentTaxon({ type: "brand", slug: b.slug, name: b.name });
+                      const totalResults = results.products.length + results.brands.length + results.categories.length;
+                      void logSearch({ query: query.trim(), resultsCount: totalResults, clickedType: "brand", clickedId: b.id, clickedSlug: b.slug, source: `${variant}-instant-click` });
                       navigate(`/marques/${b.slug}`);
                       setIsOpen(false);
                       setQuery("");
@@ -273,6 +299,8 @@ export function InstantSearchBar({ className = "", placeholder, variant = "navba
                     key={c.id}
                     onClick={() => {
                       pushRecentTaxon({ type: "category", slug: c.slug, name: c.name });
+                      const totalResults = results.products.length + results.brands.length + results.categories.length;
+                      void logSearch({ query: query.trim(), resultsCount: totalResults, clickedType: "category", clickedId: c.id, clickedSlug: c.slug, source: `${variant}-instant-click` });
                       navigate(`/categorie/${c.slug}`);
                       setIsOpen(false);
                       setQuery("");

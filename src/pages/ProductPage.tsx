@@ -516,13 +516,61 @@ function OfferRow({
         </div>
       </div>
 
-      {/* Delivery estimate (per offer) — n'afficher que si la donnée est connue */}
-      {offer.deliveryDays ? (
-        <div className="flex items-center gap-1.5 mt-3 text-xs text-muted-foreground">
-          <Truck size={13} />
-          <span>Livraison estimée : {offer.deliveryDays <= 7 ? `${offer.deliveryDays} jours` : `${Math.ceil(offer.deliveryDays / 7)} semaines`}</span>
-        </div>
-      ) : null}
+      {/* Ligne méta consolidée — bas de carte */}
+      {(() => {
+        const items: { key: string; icon: typeof Truck; label: string; title?: string }[] = [];
+
+        if (vendorTrust?.shipsFromCountry) {
+          items.push({
+            key: "origin",
+            icon: MapPin,
+            label: `Expédié depuis ${countryName(vendorTrust.shipsFromCountry)}`,
+          });
+        }
+
+        if (vendorTrust && vendorTrust.monthsActive >= 1) {
+          items.push({
+            key: "seniority",
+            icon: Clock,
+            label: `Sur MediKong depuis ${formatJoined(vendorTrust.joinedAt)}`,
+          });
+        }
+
+        if (offer.deliveryDays) {
+          const dl = offer.deliveryDays <= 7
+            ? `${offer.deliveryDays} j`
+            : `${Math.ceil(offer.deliveryDays / 7)} sem`;
+          items.push({ key: "delivery", icon: Truck, label: `Livraison ~${dl}` });
+        }
+
+        const iso = offer.updatedAt || offer.syncedAt;
+        const rel = formatUpdatedAt(iso);
+        if (rel) {
+          const full = formatUpdatedAtFull(iso) || rel;
+          items.push({
+            key: "updated",
+            icon: RefreshCw,
+            label: `Maj ${rel}`,
+            title: `Dernière mise à jour : ${full}`,
+          });
+        }
+
+        if (items.length === 0) return null;
+        return (
+          <div className="mt-3 flex items-center gap-x-3 gap-y-1 flex-wrap text-[11px] text-muted-foreground">
+            {items.map((it, i) => {
+              const Icon = it.icon;
+              return (
+                <span key={it.key} className="inline-flex items-center gap-1" title={it.title}>
+                  {i > 0 && <span aria-hidden className="text-muted-foreground/40">·</span>}
+                  <Icon size={11} className="shrink-0" />
+                  {it.label}
+                </span>
+              );
+            })}
+          </div>
+        );
+      })()}
 
       {offer.sellerId && (
         <VendorSuggestions

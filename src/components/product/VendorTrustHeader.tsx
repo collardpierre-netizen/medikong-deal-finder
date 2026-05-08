@@ -12,7 +12,7 @@ const COUNTRY_LABELS: Record<string, string> = {
   ES: "Espagne",
 };
 
-function countryName(iso: string | null) {
+export function countryName(iso: string | null) {
   if (!iso) return "l'UE";
   return COUNTRY_LABELS[iso.toUpperCase()] ?? iso.toUpperCase();
 }

@@ -6,7 +6,7 @@
     "closeMenu": "Fermer le menu",
     "addToFavorites": "Ajouter aux favoris",
     "search": "Rechercher",
-    "searchPlaceholder": "Rechercher produits, CNK, EAN, marques...",
+    "searchPlaceholder": "Rechercher produits, CNK, EAN, marques…",
     "login": "Connexion",
     "signup": "Créer un compte gratuit",
     "cart": "Panier",
@@ -14,7 +14,7 @@
     "addToCart": "Ajouter",
     "viewAll": "Voir tout",
     "allBrands": "Voir toutes les marques",
-    "loading": "Chargement...",
+    "loading": "Chargement…",
     "error": "Une erreur est survenue",
     "retry": "Réessayer",
     "close": "Fermer",
@@ -63,7 +63,7 @@
     "titleAfterHighlight": ", tous les prix,",
     "titleLine2": " un seul endroit",
     "subtitle": "Le comparateur B2B qui met en concurrence des centaines de fournisseurs pour vous.",
-    "searchExamples": "Ex:",
+    "searchExamples": "Ex :",
     "exampleGloves": "Gants nitrile",
     "exampleBetadine": "Betadine",
     "exampleTena": "TENA",
@@ -134,7 +134,7 @@
     "q1": "Comment fonctionne MediKong ?",
     "a1": "MediKong est un marketplace B2B qui regroupe les offres de {{suppliers}} fournisseurs médicaux vérifiés. Vous pouvez acheter directement via la marketplace, comparer les prix du marché, ou être redirigé vers les offres externes les plus compétitives.",
     "q2": "Quels professionnels peuvent s'inscrire ?",
-    "a2": "Tous les professionnels de santé en Belgique : pharmacies, hôpitaux, cliniques, MR/MRS, cabinets médicaux, kinésithérapeutes, dentistes, centrales d'achat et revendeurs agréés.",
+    "a2": "Tous les professionnels de santé en Belgique  : pharmacies, hôpitaux, cliniques, MR/MRS, cabinets médicaux, kinésithérapeutes, dentistes, centrales d'achat et revendeurs agréés.",
     "q3": "Les prix incluent-ils la TVA ?",
     "a3": "Les prix affichés sont hors TVA (HT). La TVA applicable est ajoutée au moment du checkout selon votre statut et localisation.",
     "q4": "Comment fonctionne la livraison ?",
@@ -186,8 +186,8 @@
   "helpCenter": {
     "title": "Centre d'aide MediKong",
     "subtitle": "Trouvez rapidement les réponses à vos questions sur les commandes, la livraison, les paiements et plus encore.",
-    "searchPlaceholder": "Rechercher dans l'aide...",
-    "noResults": "Aucun résultat pour « {{query}} ». Essayez un autre terme ou",
+    "searchPlaceholder": "Rechercher dans l'aide…",
+    "noResults": "Aucun résultat pour «  {{query}} ». Essayez un autre terme ou",
     "contactUs": "contactez-nous",
     "faqTitle": "Questions les plus fréquentes",
     "contactTitle": "Vous n'avez pas trouvé votre réponse ?",
@@ -283,7 +283,7 @@
       "q5": "Comment suivre ma commande ?",
       "a5": "Un numéro de suivi vous est envoyé par email dès l'expédition. Vous pouvez aussi suivre votre commande en temps réel depuis votre espace client dans 'Mes commandes'.",
       "q6": "Quels sont les délais de livraison ?",
-      "a6": "Le délai d'expédition dépend du vendeur et est précisé sur chaque offre. Filtrez sur \"Le plus rapide\" pour voir les offres expédiées sous 48h.",
+      "a6": "Le délai d'expédition dépend du vendeur et est précisé sur chaque offre. Filtrez sur « Le plus rapide » pour voir les offres expédiées sous 48h.",
       "q7": "Comment devenir vendeur sur MediKong ?",
       "a7": "Rendez-vous sur la page 'Devenir vendeur' et remplissez le formulaire d'inscription. Notre équipe vérifiera vos documents sous 48h.",
       "q8": "Comment fonctionne la TVA sur MediKong ?",
@@ -297,7 +297,7 @@
       "s1h": "Conditions requises",
       "s1": "Pour créer un compte sur MediKong, vous devez être un professionnel de santé enregistré en Belgique ou dans l'Union Européenne. Vous aurez besoin de votre numéro BCE (Belgique) ou équivalent, votre numéro de TVA intracommunautaire et une adresse email professionnelle.",
       "s2h": "Étapes d'inscription",
-      "s2": "1. Rendez-vous sur la page d'inscription et sélectionnez \"Je souhaite acheter\".\n2. Renseignez vos informations professionnelles (raison sociale, BCE, TVA).\n3. Ajoutez votre adresse de livraison et de facturation.\n4. Validez votre email via le lien de confirmation.",
+      "s2": "1. Rendez-vous sur la page d'inscription et sélectionnez « Je souhaite acheter ».\n2. Renseignez vos informations professionnelles (raison sociale, BCE, TVA).\n3. Ajoutez votre adresse de livraison et de facturation.\n4. Validez votre email via le lien de confirmation.",
       "s3h": "Validation du compte",
       "s3": "Notre équipe vérifie vos informations sous 24h ouvrées. Vous recevrez un email de confirmation dès que votre compte sera activé. En attendant, vous pouvez parcourir le catalogue mais pas passer de commande."
     },
@@ -306,7 +306,7 @@
       "s1h": "Rechercher des produits",
       "s1": "Utilisez la barre de recherche pour trouver vos produits par nom, CNK, EAN ou marque. Vous pouvez aussi parcourir les catégories ou filtrer par fournisseur.",
       "s2h": "Ajouter au panier",
-      "s2": "Cliquez sur \"Ajouter\" pour mettre un produit dans votre panier. Ajustez les quantités directement. Attention au MOV (Minimum Order Value) de chaque fournisseur, affiché dans le panier.",
+      "s2": "Cliquez sur « Ajouter » pour mettre un produit dans votre panier. Ajustez les quantités directement. Attention au MOV (Minimum Order Value) de chaque fournisseur, affiché dans le panier.",
       "s3h": "Finaliser la commande",
       "s3": "Vérifiez votre panier, choisissez votre mode de paiement (carte, virement SEPA, paiement différé) et confirmez votre adresse de livraison. La commande est envoyée aux fournisseurs dès validation."
     },
@@ -338,14 +338,14 @@
       "s1h": "Numéro de suivi",
       "s1": "Dès que votre commande est expédiée, vous recevez un email avec le numéro de suivi et un lien direct vers le transporteur. Les principaux transporteurs sont DPD, GLS et PostNL.",
       "s2h": "Suivi dans votre espace",
-      "s2": "Connectez-vous à votre espace client et rendez-vous dans \"Mes commandes\". Chaque commande affiche son statut en temps réel : en préparation, expédiée, en transit ou livrée."
+      "s2": "Connectez-vous à votre espace client et rendez-vous dans « Mes commandes ». Chaque commande affiche son statut en temps réel  : en préparation, expédiée, en transit ou livrée."
     },
     "retournerProduit": {
       "title": "Comment retourner un produit ?",
       "s1h": "Conditions de retour",
       "s1": "Vous disposez de 14 jours après réception pour retourner un produit non ouvert et dans son emballage d'origine. Les produits thermosensibles ou à usage unique ne sont pas éligibles au retour.",
       "s2h": "Procédure de retour",
-      "s2": "1. Rendez-vous dans \"Mes commandes\" de votre espace client.\n2. Sélectionnez la commande et cliquez sur \"Demander un retour\".\n3. Indiquez le motif du retour.\n4. Un bon de retour prépayé vous sera envoyé par email.",
+      "s2": "1. Rendez-vous dans « Mes commandes » de votre espace client.\n2. Sélectionnez la commande et cliquez sur « Demander un retour ».\n3. Indiquez le motif du retour.\n4. Un bon de retour prépayé vous sera envoyé par email.",
       "s3h": "Remboursement",
       "s3": "Le remboursement est effectué sous 5-10 jours ouvrables dès réception du produit retourné. Le montant est crédité sur le moyen de paiement original."
     },
@@ -359,50 +359,50 @@
     "telechargerFactures": {
       "title": "Où télécharger mes factures ?",
       "s1h": "Accéder aux factures",
-      "s1": "Rendez-vous dans \"Mon compte\" > \"Mes commandes\". Chaque commande livrée dispose d'un bouton \"Télécharger la facture\" au format PDF.",
+      "s1": "Rendez-vous dans « Mon compte » > « Mes commandes ». Chaque commande livrée dispose d'un bouton « Télécharger la facture » au format PDF.",
       "s2h": "Factures automatiques",
       "s2": "Les factures sont générées automatiquement à l'expédition. Elles incluent toutes les mentions légales obligatoires (TVA, numéro BCE, adresses). Vous pouvez aussi recevoir vos factures par email automatiquement en activant l'option dans vos paramètres."
     },
     "modifierFacturation": {
       "title": "Comment modifier mes données de facturation ?",
       "s1h": "Modifier les informations",
-      "s1": "Rendez-vous dans \"Mon compte\" > \"Paramètres\" > \"Facturation\". Vous pouvez modifier votre raison sociale, adresse de facturation, numéro de TVA et les préférences d'envoi des factures. Les modifications s'appliquent aux futures commandes uniquement."
+      "s1": "Rendez-vous dans « Mon compte » > « Paramètres » > « Facturation ». Vous pouvez modifier votre raison sociale, adresse de facturation, numéro de TVA et les préférences d'envoi des factures. Les modifications s'appliquent aux futures commandes uniquement."
     },
     "signalerProbleme": {
       "title": "Comment signaler un problème avec ma commande ?",
       "s1h": "Ouvrir une réclamation",
-      "s1": "Rendez-vous dans \"Mes commandes\" et cliquez sur la commande concernée. Utilisez le bouton \"Signaler un problème\" pour ouvrir une réclamation. Décrivez le problème et joignez des photos si nécessaire.",
+      "s1": "Rendez-vous dans « Mes commandes » et cliquez sur la commande concernée. Utilisez le bouton « Signaler un problème » pour ouvrir une réclamation. Décrivez le problème et joignez des photos si nécessaire.",
       "s2h": "Types de problèmes",
-      "s2": "Vous pouvez signaler : un produit endommagé, un produit manquant, un produit incorrect, un retard de livraison ou un problème de facturation. Chaque type a un processus de résolution adapté."
+      "s2": "Vous pouvez signaler  : un produit endommagé, un produit manquant, un produit incorrect, un retard de livraison ou un problème de facturation. Chaque type a un processus de résolution adapté."
     },
     "delaiRemboursement": {
       "title": "Quel est le délai de remboursement ?",
       "s1h": "Délais par type de paiement",
-      "s1": "Carte bancaire : 5-10 jours ouvrables après validation du retour.\nVirement SEPA : 3-5 jours ouvrables.\nPaiement différé : déduction sur la prochaine facture.\n\nVous recevez un email de confirmation dès que le remboursement est initié."
+      "s1": "Carte bancaire  : 5-10 jours ouvrables après validation du retour.\nVirement SEPA  : 3-5 jours ouvrables.\nPaiement différé  : déduction sur la prochaine facture.\n\nVous recevez un email de confirmation dès que le remboursement est initié."
     },
     "suivreReclamation": {
       "title": "Comment suivre ma réclamation ?",
       "s1h": "Suivi en temps réel",
-      "s1": "Chaque réclamation dispose d'un numéro de suivi. Rendez-vous dans \"Mes commandes\" > commande concernée > \"Réclamations\" pour voir le statut en temps réel. Notre équipe s'engage à répondre sous 24h ouvrées."
+      "s1": "Chaque réclamation dispose d'un numéro de suivi. Rendez-vous dans « Mes commandes » > commande concernée > « Réclamations » pour voir le statut en temps réel. Notre équipe s'engage à répondre sous 24h ouvrées."
     },
     "ajouterUtilisateur": {
       "title": "Comment ajouter un utilisateur ?",
       "s1h": "Gestion multi-utilisateurs",
-      "s1": "Si vous disposez d'un compte entreprise, rendez-vous dans \"Mon compte\" > \"Équipe\". Cliquez sur \"Inviter un utilisateur\", renseignez son email et définissez son rôle (acheteur, administrateur, observateur). L'utilisateur recevra un email d'invitation."
+      "s1": "Si vous disposez d'un compte entreprise, rendez-vous dans « Mon compte » > « Équipe ». Cliquez sur « Inviter un utilisateur », renseignez son email et définissez son rôle (acheteur, administrateur, observateur). L'utilisateur recevra un email d'invitation."
     },
     "securiserCompte": {
       "title": "Comment sécuriser mon compte ?",
       "s1h": "Mot de passe fort",
       "s1": "Utilisez un mot de passe d'au moins 12 caractères, combinant lettres, chiffres et caractères spéciaux. Ne réutilisez pas un mot de passe d'un autre service.",
       "s2h": "Bonnes pratiques",
-      "s2": "Changez votre mot de passe régulièrement (tous les 3 mois). Ne partagez jamais vos identifiants. Déconnectez-vous des appareils partagés. Vérifiez régulièrement l'historique de connexion dans \"Mon compte\" > \"Sécurité\"."
+      "s2": "Changez votre mot de passe régulièrement (tous les 3 mois). Ne partagez jamais vos identifiants. Déconnectez-vous des appareils partagés. Vérifiez régulièrement l'historique de connexion dans « Mon compte » > « Sécurité »."
     },
     "gererCatalogue": {
       "title": "Comment gérer mon catalogue vendeur ?",
       "s1h": "Ajouter des produits",
-      "s1": "Connectez-vous à votre Espace Vendeur et rendez-vous dans \"Catalogue\". Vous pouvez ajouter des produits un par un ou en masse via import CSV/Excel. Chaque produit doit avoir un EAN/GTIN valide.",
+      "s1": "Connectez-vous à votre Espace Vendeur et rendez-vous dans « Catalogue ». Vous pouvez ajouter des produits un par un ou en masse via import CSV/Excel. Chaque produit doit avoir un EAN/GTIN valide.",
       "s2h": "Gérer les offres",
-      "s2": "Dans l'onglet \"Offres\", définissez vos prix, quantités en stock, MOQ (quantité minimum) et délais de livraison. Les offres sont visibles immédiatement après validation."
+      "s2": "Dans l'onglet « Offres », définissez vos prix, quantités en stock, MOQ (quantité minimum) et délais de livraison. Les offres sont visibles immédiatement après validation."
     },
     "marquageCe": {
       "title": "Qu'est-ce que le marquage CE ?",
@@ -421,7 +421,7 @@
     "configurerAlertes": {
       "title": "Comment configurer des alertes de prix ?",
       "s1h": "Créer une alerte",
-      "s1": "Sur la fiche d'un produit, cliquez sur \"Surveiller le prix\". Définissez votre prix cible HT. Vous recevrez un email dès qu'une offre atteint ou passe sous ce seuil. Gérez toutes vos alertes dans \"Mon compte\" > \"Alertes prix\"."
+      "s1": "Sur la fiche d'un produit, cliquez sur « Surveiller le prix ». Définissez votre prix cible HT. Vous recevrez un email dès qu'une offre atteint ou passe sous ce seuil. Gérez toutes vos alertes dans « Mon compte » > « Alertes prix »."
     },
     "accederApi": {
       "title": "Comment accéder à l'API MediKong ?",

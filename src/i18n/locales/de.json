@@ -1,7 +1,7 @@
 {
   "common": {
     "search": "Suchen",
-    "searchPlaceholder": "Produkte, CNK, EAN, Marken suchen...",
+    "searchPlaceholder": "Produkte, CNK, EAN, Marken suchen…",
     "login": "Anmelden",
     "signup": "Kostenloses Konto erstellen",
     "cart": "Warenkorb",
@@ -9,7 +9,7 @@
     "addToCart": "Hinzufügen",
     "viewAll": "Alle anzeigen",
     "allBrands": "Alle Marken anzeigen",
-    "loading": "Wird geladen...",
+    "loading": "Wird geladen…",
     "error": "Ein Fehler ist aufgetreten",
     "retry": "Erneut versuchen",
     "close": "Schließen",
@@ -179,7 +179,7 @@
   "helpCenter": {
     "title": "MediKong Hilfezentrum",
     "subtitle": "Finden Sie schnell Antworten auf Ihre Fragen zu Bestellungen, Lieferung, Zahlungen und mehr.",
-    "searchPlaceholder": "In der Hilfe suchen...",
+    "searchPlaceholder": "In der Hilfe suchen…",
     "noResults": "Keine Ergebnisse für \"{{query}}\". Versuchen Sie einen anderen Begriff oder",
     "contactUs": "kontaktieren Sie uns",
     "faqTitle": "Häufig gestellte Fragen",

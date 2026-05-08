@@ -108,19 +108,22 @@ const AdminCmsHomeShowcase = () => {
   });
 
   const setPinned = useMutation({
-    mutationFn: async (productId: string | null) => {
+    mutationFn: async (vars: { slot: "pinned" | "demo_cta"; productId: string | null }) => {
+      const column = vars.slot === "pinned" ? "pinned_product_id" : "demo_cta_product_id";
       const { error } = await sb
         .from("home_showcase_settings")
-        .update({ pinned_product_id: productId })
+        .update({ [column]: vars.productId })
         .eq("id", true);
       if (error) throw error;
     },
-    onSuccess: (_d, productId) => {
-      toast.success(productId ? "Produit épinglé mis à jour" : "Produit épinglé retiré");
+    onSuccess: (_d, vars) => {
+      const label = vars.slot === "pinned" ? "Produit comparaison" : "Produit CTA démo";
+      toast.success(vars.productId ? `${label} mis à jour` : `${label} retiré`);
       setSearch("");
       qc.invalidateQueries({ queryKey: ["admin-home-showcase-settings"] });
       qc.invalidateQueries({ queryKey: ["home-showcase-settings"] });
       qc.invalidateQueries({ queryKey: ["featured-price-delta"] });
+      qc.invalidateQueries({ queryKey: ["home-demo-cta-product"] });
     },
     onError: (err: any) =>
       toast.error("Mise à jour impossible : " + (err?.message || "erreur inconnue")),

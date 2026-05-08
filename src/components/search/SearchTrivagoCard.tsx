@@ -76,9 +76,18 @@ export default function SearchTrivagoCard({ product: p }: Props) {
                 MediKong
               </span>
             )}
-            <span className="text-[11px] text-muted-foreground font-medium">
-              {offers.length || p.sellers} offre{(offers.length || p.sellers) !== 1 ? "s" : ""}
-            </span>
+            {(() => {
+              const n = offers.length || p.sellers || 0;
+              return n > 0 ? (
+                <span className="text-[11px] text-muted-foreground font-medium">
+                  {n} offre{n !== 1 ? "s" : ""}
+                </span>
+              ) : (
+                <span className="text-[11px] text-muted-foreground font-medium italic">
+                  Pas encore d'offre
+                </span>
+              );
+            })()}
           </div>
         </div>
 

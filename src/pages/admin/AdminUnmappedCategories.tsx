@@ -14,7 +14,7 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { ArrowLeft, AlertTriangle, CheckCircle2, Search, Sparkles } from "lucide-react";
+import { ArrowLeft, AlertTriangle, CheckCircle2, Search, Sparkles, TrendingUp } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import AdminTopBar from "@/components/admin/AdminTopBar";

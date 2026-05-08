@@ -361,14 +361,17 @@ export function useCatalogProducts(filters: CatalogFilters) {
   return useQuery({
     queryKey: ["catalog-products", filters, country],
     queryFn: async () => {
+      const isMasterSlug = !!filters.category && filters.category.startsWith("mk-");
       const [categoryIds, explicitBrandIds, mfIds, inactiveCategoryIdSet] = await Promise.all([
         filters.category
-          ? supabase.from("categories").select("id").eq("slug", filters.category).maybeSingle().then(({ data: cat }) => {
-              if (!cat) return null;
-              return supabase.from("categories").select("id").eq("parent_id", cat.id).then(({ data: children }) =>
-                [cat.id, ...(children || []).map(c => c.id)]
-              );
-            })
+          ? (isMasterSlug
+              ? supabase.from("categories").select("id").eq("slug", filters.category).maybeSingle().then(({ data: cat }) => cat ? [cat.id] : null)
+              : supabase.from("categories").select("id").eq("slug", filters.category).maybeSingle().then(({ data: cat }) => {
+                  if (!cat) return null;
+                  return supabase.from("categories").select("id").eq("parent_id", cat.id).then(({ data: children }) =>
+                    [cat.id, ...(children || []).map(c => c.id)]
+                  );
+                }))
           : Promise.resolve(null),
         filters.brands && filters.brands.length > 0
           ? supabase.from("brands").select("id").in("slug", filters.brands).then(({ data }) => data?.map(b => b.id) || null)

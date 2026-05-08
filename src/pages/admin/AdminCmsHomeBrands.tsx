@@ -190,8 +190,11 @@ const AdminCmsHomeBrands = () => {
               ))}
             </TabsList>
           </Tabs>
-          <div className="text-xs text-muted-foreground">
-            La home affiche les entrées de la locale courante <strong>+</strong> celles marquées « Toutes ».
+          <div className="flex items-center gap-3">
+            <HomeSeedRecommendedButton kind="brands" locale={locale} existingIds={existingBrandIds} />
+            <div className="text-xs text-muted-foreground">
+              La home affiche les entrées de la locale courante <strong>+</strong> celles marquées « Toutes ».
+            </div>
           </div>
         </div>
 

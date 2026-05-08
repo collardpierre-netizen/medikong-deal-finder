@@ -307,18 +307,26 @@ const AdminQogitaLlmMapping = () => {
               className="w-32"
             />
           </div>
-          <Button onClick={() => applyBulk.mutate()} disabled={applyBulk.isPending} variant="default">
-            {applyBulk.isPending ? (
-              <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Application…</>
-            ) : (
-              <><CheckCircle2 className="mr-2 h-4 w-4" /> Appliquer pending ≥ {(bulkThreshold * 100).toFixed(0)}%</>
-            )}
+          <Button onClick={() => setDryRunOpen(true)} variant="default">
+            <Eye className="mr-2 h-4 w-4" /> Prévisualiser (dry-run) ≥ {(bulkThreshold * 100).toFixed(0)}%
           </Button>
           <p className="text-xs text-muted-foreground">
-            Crée les aliases et reporte primary_category_id sur les produits concernés.
+            Affiche exactement les propositions qui seront appliquées avant d'écrire dans products.primary_category_id.
           </p>
         </div>
       </div>
+
+      <DryRunDialog
+        open={dryRunOpen}
+        onOpenChange={setDryRunOpen}
+        threshold={bulkThreshold}
+        onConfirm={() => {
+          setDryRunOpen(false);
+          applyBulk.mutate();
+        }}
+        isApplying={applyBulk.isPending}
+      />
+
 
       {/* Filtres + table */}
       <div className="rounded-xl border bg-card p-4 space-y-3">

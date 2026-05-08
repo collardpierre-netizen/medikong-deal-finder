@@ -15,7 +15,15 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Play, CheckCircle2, XCircle, Loader2, Sparkles, Filter } from "lucide-react";
+import { ArrowLeft, Play, CheckCircle2, XCircle, Loader2, Sparkles, Filter, Eye } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 import { supabase } from "@/integrations/supabase/client";
 import AdminTopBar from "@/components/admin/AdminTopBar";

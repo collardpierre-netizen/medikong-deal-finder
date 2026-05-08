@@ -219,7 +219,7 @@ export default function HomePage() {
   };
 
   return (
-    <Layout title="MediKong — Fournitures médicales B2B en Belgique | Comparez & Commandez" description="MediKong.pro : marketplace B2B + comparateur de prix pour fournitures médicales en Belgique. Comparez, commandez, économisez.">
+    <Layout title={t("seo.homeTitle")} description={t("seo.homeDescription")}>
       <HreflangTags />
       <Helmet>
         <script type="application/ld+json">{JSON.stringify(orgJsonLd)}</script>

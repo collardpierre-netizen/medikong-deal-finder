@@ -315,6 +315,8 @@ const App = () => (
             <Route path="/inscription" element={<Navigate to="/onboarding" replace />} />
             <Route path="/categorie/:slug" element={<LP><CataloguePage /></LP>} />
             <Route path="/catalogue" element={<LP><CataloguePage /></LP>} />
+            <Route path="/shop" element={<RedirectShopToCatalogue />} />
+            <Route path="/shop/*" element={<RedirectShopToCatalogue />} />
             <Route path="/promotions" element={<LP><PromotionsPage /></LP>} />
             <Route path="/seller-onboarding" element={<Navigate to="/onboarding" replace />} />
             <Route path="/buyer-onboarding" element={<Navigate to="/onboarding" replace />} />

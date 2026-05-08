@@ -70,7 +70,18 @@ export default function CataloguePage() {
         <div className="flex items-center justify-between mb-4 mt-2">
           <div className="space-y-1">
             {showTitleSkeleton ? (
-              <Skeleton className="h-8 md:h-9 w-64 rounded-md" />
+              <div
+                role="status"
+                aria-live="polite"
+                aria-busy="true"
+                aria-label="Chargement du titre de la catégorie"
+              >
+                <Skeleton
+                  className="h-8 md:h-9 w-64 rounded-md"
+                  aria-hidden="true"
+                />
+                <span className="sr-only">Chargement du titre de la catégorie…</span>
+              </div>
             ) : (
               <h1 className="text-2xl md:text-[28px] font-bold text-foreground">{title}</h1>
             )}

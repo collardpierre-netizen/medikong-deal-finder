@@ -73,7 +73,7 @@ export function Breadcrumbs() {
     segments[1]
       ? segments[1]
       : null;
-  const { data: categoryRow, isLoading: isCategoryLoading } = useQuery({
+  const { data: categoryRow, isPending: isCategoryPending } = useQuery({
     queryKey: ["breadcrumb-category", categorySlug],
     queryFn: async () => {
       const { data } = await supabase
@@ -97,7 +97,10 @@ export function Breadcrumbs() {
         .replace(/^MK\s*·\s*/i, "")
         .trim()
     : null;
-  const categoryLabelPending = !!categorySlug && !categoryLabel && isCategoryLoading;
+  // Skeleton only on the true first fetch (no cached/placeholder data yet);
+  // when navigating between categories, keepPreviousData provides a label
+  // immediately so we never flash a skeleton.
+  const categoryLabelPending = !!categorySlug && !categoryRow && isCategoryPending;
   const vendorLabelPending = !!vendorSlug && !vendorLabel;
 
   // Don't show on homepage

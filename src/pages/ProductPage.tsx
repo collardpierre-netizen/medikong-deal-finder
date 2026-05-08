@@ -423,10 +423,10 @@ function OfferRow({
         <span className="text-sm text-foreground whitespace-nowrap">{offer.stockQuantity.toLocaleString("fr-FR")}</span>
 
         {/* Actions */}
-        <div className="flex flex-col items-stretch gap-1.5 w-[240px] justify-self-end">
-          <div className="grid grid-cols-[106px_minmax(0,1fr)] items-stretch gap-2 w-full">
+        <div className="flex flex-col items-stretch gap-1 w-[260px] justify-self-end">
+          <div className="grid grid-cols-[100px_minmax(0,1fr)] items-stretch gap-2 w-full">
             <div
-              className="flex items-center justify-between border border-border rounded-md h-9 w-[106px] overflow-hidden bg-background"
+              className="flex items-center justify-between border border-border rounded-md h-9 w-[100px] overflow-hidden bg-background"
               role="group"
               aria-label={`Quantité — par lots de ${step}`}
             >
@@ -460,24 +460,26 @@ function OfferRow({
             </div>
             <button
               type="button"
-              className="bg-primary text-primary-foreground px-2.5 h-9 rounded-md text-sm font-semibold inline-flex items-center justify-center gap-1.5 whitespace-nowrap overflow-hidden focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 hover:bg-primary/90 active:bg-primary/80 transition-colors w-full min-w-0"
+              className="bg-primary text-primary-foreground px-3 h-9 rounded-md text-sm font-semibold inline-flex items-center justify-center gap-1.5 whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 hover:bg-primary/90 active:bg-primary/80 transition-colors w-full min-w-0"
               onClick={handleAdd}
               title={`Ajouter ${Math.min(qty, maxQty)} × ${formatEur(basePackPrice)} € au panier`}
               aria-label={`Ajouter ${Math.min(qty, maxQty)} unité(s) au panier — total ${formatEur(Math.min(qty, maxQty) * basePackPrice)} € ${priceLabel}`}
             >
               <ShoppingCart size={14} aria-hidden className="shrink-0" />
-              <span className="hidden lg:inline shrink-0">Ajouter</span>
-              <span className="hidden lg:inline opacity-60 shrink-0">·</span>
-              <span className="tabular-nums min-w-0 truncate" aria-live="polite">
-                {formatEur(Math.min(qty, maxQty) * basePackPrice)}&nbsp;€
-              </span>
+              <span className="shrink-0">Ajouter au panier</span>
             </button>
           </div>
-          {step > 1 && (
-            <span className="text-[11px] text-muted-foreground tabular-nums text-right" title={`Quantité minimum de commande : ${step}. Toute quantité doit être un multiple de ${step}.`}>
-              Lots de {step}
+          <div className="flex items-center justify-end gap-2 text-[11px] text-muted-foreground">
+            {step > 1 && (
+              <span className="tabular-nums" title={`Quantité minimum de commande : ${step}. Toute quantité doit être un multiple de ${step}.`}>
+                Lots de {step}
+              </span>
+            )}
+            <span className="tabular-nums" aria-live="polite">
+              Total&nbsp;<span className="font-semibold text-foreground">{formatEur(Math.min(qty, maxQty) * basePackPrice)}&nbsp;€</span>{" "}
+              <span className="opacity-70">{priceLabel}</span>
             </span>
-          )}
+          </div>
         </div>
       </div>
 
@@ -584,18 +586,18 @@ function OfferRow({
           </div>
           <button
             type="button"
-            className="bg-primary text-primary-foreground px-2.5 h-10 rounded-md text-sm font-semibold flex items-center justify-center gap-1.5 whitespace-nowrap overflow-hidden focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 hover:bg-primary/90 active:bg-primary/80 transition-colors w-full min-w-0"
+            className="bg-primary text-primary-foreground px-3 h-10 rounded-md text-sm font-semibold flex items-center justify-center gap-1.5 whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 hover:bg-primary/90 active:bg-primary/80 transition-colors w-full min-w-0"
             onClick={handleAdd}
             title={`Ajouter ${Math.min(qty, maxQty)} × ${formatEur(basePackPrice)} € au panier`}
             aria-label={`Ajouter ${Math.min(qty, maxQty)} unité(s) au panier — total ${formatEur(Math.min(qty, maxQty) * basePackPrice)} € ${priceLabel}`}
           >
             <ShoppingCart size={14} aria-hidden className="shrink-0" />
-            <span className="hidden min-[390px]:inline shrink-0">Ajouter</span>
-            <span className="hidden min-[390px]:inline opacity-60 shrink-0">·</span>
-            <span className="tabular-nums min-w-0 truncate" aria-live="polite">
-              {formatEur(Math.min(qty, maxQty) * basePackPrice)}&nbsp;€
-            </span>
+            <span className="shrink-0">Ajouter au panier</span>
           </button>
+        </div>
+        <div className="flex items-center justify-end text-[11px] text-muted-foreground tabular-nums" aria-live="polite">
+          Total&nbsp;<span className="font-semibold text-foreground">{formatEur(Math.min(qty, maxQty) * basePackPrice)}&nbsp;€</span>&nbsp;
+          <span className="opacity-70">{priceLabel}</span>
         </div>
       </div>
 

@@ -111,6 +111,10 @@ export default function CataloguePage() {
 
           {/* Main content */}
           <div className="flex-1 min-w-0">
+            <MasterTaxonomyBar
+              selectedSlug={filters.category}
+              onSelect={(slug) => setFilter("category", slug)}
+            />
             <ActiveFilters filters={filters} setFilter={setFilter} />
             <CatalogToolbar filters={filters} setFilter={setFilter} total={total} view={view} setView={setView} />
 

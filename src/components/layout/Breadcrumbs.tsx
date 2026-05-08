@@ -164,7 +164,12 @@ export function Breadcrumbs() {
         {crumbs.map((crumb) => (
           <li key={crumb.path} className="inline-flex items-center gap-1.5">
             <ChevronRight size={12} className="text-mk-ter" />
-            {crumb.isLast ? (
+            {crumb.pending ? (
+              <span
+                aria-label="Chargement"
+                className="inline-block h-3 w-24 rounded-sm bg-muted animate-pulse align-middle"
+              />
+            ) : crumb.isLast ? (
               <span className="font-semibold text-mk-navy">{crumb.label}</span>
             ) : (
               <Link to={crumb.path} className="text-mk-sec hover:text-mk-blue transition-colors">

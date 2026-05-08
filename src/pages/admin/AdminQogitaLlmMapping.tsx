@@ -96,15 +96,23 @@ const AdminQogitaLlmMapping = () => {
   const runClassify = useMutation({
     mutationFn: async () => {
       const { data, error } = await sb.functions.invoke("classify-qogita-categories", {
-        body: { batch_size: batchSize, max_batches: maxBatches, force_resync: forceResync },
+        body: {
+          batch_size: batchSize,
+          max_batches: maxBatches,
+          force_resync: forceResync,
+          auto_apply_threshold: autoApply ? autoApplyThreshold : null,
+        },
       });
       if (error) throw error;
       return data;
     },
     onSuccess: (data) => {
+      const auto = data.auto_applied
+        ? ` · auto-appliquées : ${data.auto_applied.proposals_applied} (${data.auto_applied.products_updated} produits)`
+        : "";
       toast({
         title: "Classification terminée",
-        description: `${data.processed} propositions générées en ${data.batches} batchs (${data.errors} erreurs). Reste ~${data.remaining_after} cats à traiter.`,
+        description: `${data.processed} propositions générées en ${data.batches} batchs (${data.errors} erreurs)${auto}. Reste ~${data.remaining_after} cats.`,
       });
       qc.invalidateQueries({ queryKey: ["qogita-llm-proposals"] });
     },

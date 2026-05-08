@@ -1,102 +1,217 @@
-## Re-curation home : architecture pilotable
+## Objectif
 
-### Adaptation au schéma réel
+Construire une taxonomie maîtresse MediKong indépendante des feeds sources, traduite FR/NL/EN, ordonnée selon l'usage officine belge, mapper l'existant, puis brancher l'UI catalogue / sidebar / breadcrumb / promotions / admin.
 
-Le ticket réfère à `catalog_brands` / `catalog_products` / `supplier_offer_items`. Schéma réel : `brands`, `products`, `offers`. Le bloc « Marques » de la home pioche déjà dans `brands.is_featured` (toggle dans `/admin/marques`), et le bloc « Tendances » dans `useFeaturedProducts(5)` qui sélectionne par popularité.
+## Découpage en 4 vagues
 
-On garde `is_featured` comme **fallback rétro-compatible** mais on introduit le nouveau modèle riche par-dessus.
-
----
-
-### 1. Migrations DB (un seul appel `supabase--migration`)
-
-**Tables**
-- `home_featured_brands(brand_id, position, locale, valid_from, valid_to, created_by, …)` — UNIQUE `(brand_id, locale)`
-- `home_featured_products(product_id, position, locale, badge, valid_from, valid_to, created_by, …)` — UNIQUE `(product_id, locale)`, badge ∈ {bestseller, top_vente, nouveau, promo}
-- `home_featured_category_whitelist(category_id PK)` — IDs de catégories autorisées pour fallback algo
-
-**Vues** `security_invoker = true`
-- `public_home_featured_brands_v` : join `brands` + filtre actif + fenêtre `valid_*`
-- `public_home_featured_products_v` : join `products` + best_price (HTVA) via `effective_offer_prices_v` + offers_count + filtre `is_active=true` et offre active
-
-**RLS**
-- SELECT public sur les deux tables (vues + tables, pour le hook)
-- INSERT/UPDATE/DELETE limité aux rôles `admin` / `super_admin` via `has_role()`
-- Index partiels sur `(locale, position) WHERE valid_to IS NULL OR valid_to > now()`
-
-**Pas de seed automatique dans la migration** : les noms exacts des marques varient. Bouton "Seed initial recommandé" dans l'admin (étape 4) qui propose la liste cible et insère uniquement les marques/produits trouvés (pré-visualisation avant validation).
+Le ticket est très large. Je propose de le livrer en 4 vagues distinctes, chacune approuvée avant la suivante. Cette demande couvre la **vague 1 (fondations DB + seed niveau 1)**, et je préviens des vagues 2/3/4 à venir.
 
 ---
 
-### 2. Hooks React (`src/hooks/`)
+## Vague 1 — Fondations DB + seed niveau 1 + premiers mappings (cette livraison)
 
-- `useHomeFeaturedBrands()` → lit `public_home_featured_brands_v` filtré sur `[locale, 'all']`, tri par `position`. Si `< 6` lignes → renvoie `[]` (le bloc UI s'auto-masque).
-- `useHomeFeaturedProducts()` → idem sur `public_home_featured_products_v`. Si `< 8` lignes ET fallback activé → complète automatiquement avec top produits dont `category_id ∈ home_featured_category_whitelist` triés par `offer_count` desc.
+### 1.1 Nouvelles tables
 
-Cache `staleTime: 30 min`.
+- `categories` (id, parent_id, slug unique, level, position, icon, is_visible, is_featured_top, status, timestamps).
+- `category_translations` (category_id, locale ∈ fr/nl/en, name, description, meta_title, meta_description ; PK composite).
+- `category_source_aliases` (id, source_path, source_locale nullable, category_id nullable, unique(source_path, coalesce(source_locale,''))).
+- Vue `admin_unmapped_categories` (groupée par catégorie source non mappée, classée par volume).
 
----
+### 1.2 Adaptation `catalog_products`
 
-### 3. UI home (`src/pages/HomePage.tsx`)
+- Ajouter colonne nullable `primary_category_id uuid references categories(id)` + index.
+- Garder l'ancienne colonne `category text` pendant la transition (hors scope explicite).
 
-- Section marques : remplacer le query `featured-brands-homepage` par `useHomeFeaturedBrands()`. Renommer `t("brands.title")` en `t("brands.referenceTitle")` ("Marques de référence"). Conserver carrousel infini.
-- Section tendances : remplacer `useFeaturedProducts(5)` par `useHomeFeaturedProducts()`. Renommer le titre en "Best-sellers officine" via i18n. Ajouter rendu du badge (Bestseller / Top vente / Nouveau / Promo) en chip sur la vignette.
-- Auto-masquage du bloc si liste vide (pas de placeholder cassé).
-- Mise à jour `src/i18n/locales/{fr,nl,de,en}.json` (clés `home.brands.referenceTitle`, `home.products.bestSellersTitle`, badges).
+### 1.3 RLS
 
----
+- Lecture publique sur `categories` (filtrée `is_visible=true and status='active'`) et `category_translations`.
+- Écriture réservée aux rôles `admin` / `super_admin` via `has_role()` (pas de nouveau rôle `taxonomy_manager` pour rester aligné avec le RBAC actuel — à confirmer si tu veux un rôle dédié).
+- `category_source_aliases` : lecture admin uniquement (mapping interne).
 
-### 4. Back-office admin
+### 1.4 Seed
 
-Deux pages route imbriquée sous `/admin/cms/home` (déjà un `AdminCMS` existe) :
-- `/admin/cms/home/marques` — composant `<HomeFeaturedBrandsAdmin />`
-- `/admin/cms/home/produits` — composant `<HomeFeaturedProductsAdmin />`
+- 12 catégories niveau 1 selon le ticket, avec `is_featured_top=true` pour les 6 premières (OTC, Dermato, Hygiène, Pansements, Diagnostic, Diabète).
+- Traductions FR/NL/EN niveau 1 (les 36 lignes du ticket).
+- Première vague de `category_source_aliases` (15 entrées du ticket, dont quelques `category_id = null` pour explicitement « ignorer » : `Accessoires > Accessoires`, `Animal & Pet Repellents`, `Abattement – Désespoir`, `Lunettes et verres`).
 
-Chaque page :
-- Table : Marque/Produit, Position (drag-and-drop via `@dnd-kit/sortable` déjà présent), Locale, Badge (produits), Validité (range datepicker), Actions.
-- Ajout : combobox autocomplete (recherche `brands` / `products` par nom/cnk/gtin, debounce 250 ms, limit 20 résultats).
-- Bouton "Aperçu home" → ouvre `/` dans nouvel onglet.
-- Bouton "Seed initial recommandé" — dialog qui résout la liste cible (Bétadine/Avène/…/Voltaren…), affiche ce qui existe vs absent, valide en bulk-insert.
+### 1.5 RPC d'aide
 
-Sous-menu ajouté dans `AdminCMS` (onglet "Home Curation" avec deux sous-onglets).
+- `apply_category_aliases()` : batch update `catalog_products.primary_category_id` depuis `category_source_aliases` quand alias matche `category` et `category_id is not null`. Idempotent.
 
-RBAC : protégé via le wrapper `<LP>` (déjà admin-only) + RLS DB.
+### 1.6 Hook + lecture
 
----
+- `src/hooks/useCategories.ts` : `useCategories(level, locale)` qui renvoie catégories visibles + traduction de la locale active, tri par `position`, fallback EN si traduction manquante (filtré côté client).
+- Pas de modification UI dans cette vague — juste le hook et un mini test de smoke.
 
-### 5. Cleanup
+### 1.7 Bandeau de chips catalogue
 
-- Plus de marques/produits hardcodés dans `HomePage.tsx`. (Aujourd'hui la home pioche déjà en DB, donc principalement renommage + bascule de hook.)
-- Documenter dans `mem://features/home-curation-pilotable` : tables, vues, route admin, fallback whitelist.
+- Suppression du bandeau de chips actuel sur `/catalogue` (cf. recommandation MVP du ticket : la sidebar suffit en B2B).
 
 ---
 
-### Détails techniques
+## Vagues suivantes (annoncées, pas dans cette livraison)
 
-**Best price** : utiliser `effective_offer_prices_v` déjà existante (`min(htva_price_cents)` group by product_id) et `country` du contexte si pertinent.
+### Vague 2 — Niveau 2 + sidebar refondue
+- Seed complet niveau 2 (≈ 60 sous-catégories) + traductions FR/NL/EN.
+- Refonte `<CategorySidebar />` du catalogue : niveau 1 + déroulement niveau 2, compteur live de produits, masquage si `is_visible=false`.
+- Brancher la sidebar `/promotions` sur la taxonomie maîtresse (tri par volume promo).
 
-**Locale** : récupérée via `useTranslation().i18n.language.split('-')[0]`. Filtre `.in("locale", [locale, "all"])`.
+### Vague 3 — Breadcrumb + mapping en masse
+- Breadcrumb fiche produit refondu sur `primary_category_id` + traductions.
+- Élargir `category_source_aliases` à partir de `admin_unmapped_categories` (script semi-auto + écran admin de mapping).
+- Lancer `apply_category_aliases()` en prod.
 
-**Drag-and-drop** : update `position` en bulk RPC `admin_reorder_home_featured(_kind text, _ids uuid[])` qui boucle et set `position = idx + 1`.
-
-**Badges** : enum Postgres `home_featured_badge` (bestseller, top_vente, nouveau, promo).
+### Vague 4 — Back-office admin
+- `/admin/catalogue/taxonomie` : arbre drag-and-drop, édition inline traductions, toggles visibility/featured.
+- `/admin/catalogue/mappings` : CRUD `category_source_aliases`.
+- `/admin/catalogue/categories-non-mappees` : vue `admin_unmapped_categories` avec mapper-vers en un clic.
 
 ---
 
-### Hors-scope confirmé
+## Détails techniques (vague 1)
 
-- Pas de bannières saisonnières (ticket séparé).
-- Pas de refonte du layout home.
-- Chiffres clés et bloc "MediKong vs sourcing" intacts.
+### Migrations à créer
+
+```sql
+-- categories
+create table public.categories (
+  id uuid primary key default gen_random_uuid(),
+  parent_id uuid references public.categories(id) on delete restrict,
+  slug text not null unique,
+  level smallint not null,
+  position smallint not null default 0,
+  icon text,
+  is_visible boolean not null default true,
+  is_featured_top boolean not null default false,
+  status text not null default 'active' check (status in ('active','archived')),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index idx_categories_parent on public.categories(parent_id);
+create index idx_categories_level_position on public.categories(level, position);
+
+-- translations
+create table public.category_translations (
+  category_id uuid not null references public.categories(id) on delete cascade,
+  locale text not null check (locale in ('fr','nl','en')),
+  name text not null,
+  description text,
+  meta_title text,
+  meta_description text,
+  primary key (category_id, locale)
+);
+create index idx_category_translations_locale_name on public.category_translations(locale, name);
+
+-- aliases
+create table public.category_source_aliases (
+  id uuid primary key default gen_random_uuid(),
+  source_path text not null,
+  source_locale text,
+  category_id uuid references public.categories(id) on delete cascade,
+  created_at timestamptz not null default now()
+);
+create unique index ux_category_source_aliases_path_locale
+  on public.category_source_aliases(source_path, coalesce(source_locale, ''));
+create index idx_category_source_aliases_path on public.category_source_aliases(source_path);
+
+-- catalog_products
+alter table public.catalog_products
+  add column if not exists primary_category_id uuid references public.categories(id);
+create index if not exists idx_catalog_products_primary_category
+  on public.catalog_products(primary_category_id);
+
+-- updated_at trigger sur categories
+create trigger trg_categories_updated_at
+  before update on public.categories
+  for each row execute function public.update_updated_at_column();
+
+-- vue non-mappées
+create view public.admin_unmapped_categories
+with (security_invoker = true) as
+select category, count(*)::int as products_count
+  from public.catalog_products
+ where primary_category_id is null
+   and category is not null
+ group by category
+ order by count(*) desc;
+```
+
+### RLS
+
+```sql
+alter table public.categories enable row level security;
+alter table public.category_translations enable row level security;
+alter table public.category_source_aliases enable row level security;
+
+-- lecture publique des catégories actives
+create policy "categories public read"
+  on public.categories for select
+  using (is_visible = true and status = 'active');
+create policy "categories admin all"
+  on public.categories for all
+  using (public.has_role(auth.uid(), 'admin') or public.has_role(auth.uid(), 'super_admin'))
+  with check (public.has_role(auth.uid(), 'admin') or public.has_role(auth.uid(), 'super_admin'));
+
+-- traductions : lecture publique
+create policy "category_translations public read"
+  on public.category_translations for select using (true);
+create policy "category_translations admin all"
+  on public.category_translations for all
+  using (public.has_role(auth.uid(), 'admin') or public.has_role(auth.uid(), 'super_admin'))
+  with check (public.has_role(auth.uid(), 'admin') or public.has_role(auth.uid(), 'super_admin'));
+
+-- aliases : admin only (mapping interne)
+create policy "category_source_aliases admin all"
+  on public.category_source_aliases for all
+  using (public.has_role(auth.uid(), 'admin') or public.has_role(auth.uid(), 'super_admin'))
+  with check (public.has_role(auth.uid(), 'admin') or public.has_role(auth.uid(), 'super_admin'));
+```
+
+### RPC `apply_category_aliases`
+
+```sql
+create or replace function public.apply_category_aliases()
+returns table(updated_count int)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare v_count int;
+begin
+  if not (has_role(auth.uid(), 'admin') or has_role(auth.uid(), 'super_admin')) then
+    raise exception 'forbidden';
+  end if;
+  update catalog_products p
+     set primary_category_id = a.category_id
+    from category_source_aliases a
+   where p.primary_category_id is null
+     and p.category = a.source_path
+     and a.category_id is not null;
+  get diagnostics v_count = row_count;
+  return query select v_count;
+end $$;
+```
+
+### Hook React
+
+`src/hooks/useCategories.ts` — Query par locale (lit `useTranslation().i18n.language`), retourne `{ id, slug, name, icon, is_featured_top, position, parent_id }[]` triés par `position`.
+
+### Suppression chips catalogue
+
+Identifier le composant rendant le bandeau sur `CataloguePage.tsx` (probablement `CategoryChips` / `FeaturedCategories` dans `src/components/catalog/`) — vérifier le code à l'implémentation et retirer le rendu (pas le composant entier, juste l'usage), avec un commentaire renvoyant à la vague 2.
 
 ---
 
-### Étapes d'exécution une fois validé
+## Hors scope (rappel ticket)
 
-1. Migration DB (tables + vues + RLS + RPC reorder + enum badge).
-2. Hooks `useHomeFeaturedBrands` / `useHomeFeaturedProducts`.
-3. Branchement `HomePage.tsx` + i18n + masquage conditionnel.
-4. Pages admin + onglet dans `AdminCMS` + autocomplete + drag-and-drop + dialog seed.
-5. Mémoire projet.
+- Pas de drop de `catalog_products.category`.
+- Pas de SEO catégoriel automatique.
+- Pas de refonte `catalog_products` au-delà de l'ajout colonne.
+- Pas de changement de la mécanique des promotions.
 
-OK pour démarrer ?
+---
+
+## À confirmer avant exécution
+
+1. **Rôle admin** : OK pour réutiliser `admin` + `super_admin` du RBAC actuel, sans créer `taxonomy_manager` ?
+2. **Vague 1 seule** ou tu veux que j'enchaîne directement vague 2 (sidebar + niveau 2) après approbation ?

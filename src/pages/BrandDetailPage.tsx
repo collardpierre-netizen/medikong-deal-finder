@@ -3,7 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { useFeaturedProducts } from "@/hooks/useProducts";
 import { ProductCard } from "@/components/shared/ProductCard";
 import SearchTrivagoCard from "@/components/search/SearchTrivagoCard";
-import { Star, ExternalLink, Heart, Download, Upload, List, Factory, Store, MapPin, ShoppingCart, Award, ChevronRight, Trophy } from "lucide-react";
+import { Star, ExternalLink, Heart, Download, Upload, Factory, Store, MapPin, ShoppingCart, Award, ChevronRight, Trophy } from "lucide-react";
 import { useState } from "react";
 import { CatalogViewToggle } from "@/components/catalog/CatalogViewToggle";
 import { useCatalogViewMode } from "@/hooks/useCatalogViewMode";
@@ -13,7 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getVendorPublicName, resolveVendorVisibility } from "@/lib/vendor-display";
 import { BrandFactSheet } from "@/components/brand/BrandFactSheet";
 import { Badge } from "@/components/ui/badge";
-import { getProductImageSrc } from "@/lib/image-utils";
+
 
 export default function BrandDetailPage() {
   const { slug } = useParams();
@@ -21,7 +21,6 @@ export default function BrandDetailPage() {
   const [importOpen, setImportOpen] = useState(false);
   const { data: products = [] } = useFeaturedProducts(200, { brandSlug: slug, categoryName: activeCat || undefined });
   const { view, setView } = useCatalogViewMode();
-  const [listMode, setListMode] = useState(false); // toggle interne pour mode liste compact (rare)
   const [showFilters, setShowFilters] = useState(false);
   const [showAllSellers, setShowAllSellers] = useState(false);
   const { data: brandData } = useQuery({

@@ -41,8 +41,9 @@ export default function CataloguePage() {
     ? [...new Set(products.map(p => p.category_id).filter(Boolean) as string[])]
     : undefined;
 
+  const categoryLabel = useCategoryLabel(filters.category);
   const title = filters.category
-    ? filters.category.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase())
+    ? (categoryLabel || "Catégorie")
     : "Tous les produits";
 
   return (

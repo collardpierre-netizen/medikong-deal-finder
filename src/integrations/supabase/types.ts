@@ -1004,6 +1004,8 @@ export type Database = {
           id: string
           image_url: string | null
           is_active: boolean
+          is_featured_top: boolean
+          level: number | null
           name: string
           name_de: string | null
           name_en: string | null
@@ -1012,6 +1014,7 @@ export type Database = {
           parent_id: string | null
           qogita_qid: string | null
           slug: string
+          status: string
           synced_at: string | null
           vat_rate: number | null
         }
@@ -1024,6 +1027,8 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean
+          is_featured_top?: boolean
+          level?: number | null
           name: string
           name_de?: string | null
           name_en?: string | null
@@ -1032,6 +1037,7 @@ export type Database = {
           parent_id?: string | null
           qogita_qid?: string | null
           slug: string
+          status?: string
           synced_at?: string | null
           vat_rate?: number | null
         }
@@ -1044,6 +1050,8 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean
+          is_featured_top?: boolean
+          level?: number | null
           name?: string
           name_de?: string | null
           name_en?: string | null
@@ -1052,6 +1060,7 @@ export type Database = {
           parent_id?: string | null
           qogita_qid?: string | null
           slug?: string
+          status?: string
           synced_at?: string | null
           vat_rate?: number | null
         }
@@ -1190,6 +1199,96 @@ export type Database = {
             columns: ["undo_action_id"]
             isOneToOne: false
             referencedRelation: "category_bulk_actions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      category_source_aliases: {
+        Row: {
+          category_id: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          source_locale: string | null
+          source_path: string
+        }
+        Insert: {
+          category_id?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          source_locale?: string | null
+          source_path: string
+        }
+        Update: {
+          category_id?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          source_locale?: string | null
+          source_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "category_source_aliases_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "admin_category_vat_audit"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "category_source_aliases_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      category_translations: {
+        Row: {
+          category_id: string
+          created_at: string
+          description: string | null
+          locale: string
+          meta_description: string | null
+          meta_title: string | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          description?: string | null
+          locale: string
+          meta_description?: string | null
+          meta_title?: string | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          description?: string | null
+          locale?: string
+          meta_description?: string | null
+          meta_title?: string | null
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "category_translations_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "admin_category_vat_audit"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "category_translations_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
             referencedColumns: ["id"]
           },
         ]
@@ -6144,6 +6243,7 @@ export type Database = {
           pack_size_updated_at: string | null
           pack_size_validated: boolean
           popularity: number | null
+          primary_category_id: string | null
           promotion_end_date: string | null
           promotion_label: string | null
           promotion_start_date: string | null
@@ -6235,6 +6335,7 @@ export type Database = {
           pack_size_updated_at?: string | null
           pack_size_validated?: boolean
           popularity?: number | null
+          primary_category_id?: string | null
           promotion_end_date?: string | null
           promotion_label?: string | null
           promotion_start_date?: string | null
@@ -6326,6 +6427,7 @@ export type Database = {
           pack_size_updated_at?: string | null
           pack_size_validated?: boolean
           popularity?: number | null
+          primary_category_id?: string | null
           promotion_end_date?: string | null
           promotion_label?: string | null
           promotion_start_date?: string | null
@@ -6396,6 +6498,20 @@ export type Database = {
             columns: ["manufacturer_id"]
             isOneToOne: false
             referencedRelation: "manufacturers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_primary_category_id_fkey"
+            columns: ["primary_category_id"]
+            isOneToOne: false
+            referencedRelation: "admin_category_vat_audit"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_primary_category_id_fkey"
+            columns: ["primary_category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
             referencedColumns: ["id"]
           },
           {
@@ -13187,6 +13303,13 @@ export type Database = {
           },
         ]
       }
+      admin_unmapped_categories: {
+        Row: {
+          products_count: number | null
+          source_path: string | null
+        }
+        Relationships: []
+      }
       brand_logistics_stats: {
         Row: {
           avg_delivery_days: number | null
@@ -14891,6 +15014,12 @@ export type Database = {
       admin_soft_delete_order: {
         Args: { _order_id: string; _reason?: string }
         Returns: undefined
+      }
+      apply_category_aliases: {
+        Args: never
+        Returns: {
+          updated_count: number
+        }[]
       }
       audit_backup_tables_rls: {
         Args: never

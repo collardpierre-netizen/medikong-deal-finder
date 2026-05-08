@@ -475,5 +475,9 @@
     "searchManufacturers": "Hersteller suchen",
     "showMore": "Mehr anzeigen",
     "showLess": "Weniger anzeigen"
+  },
+  "seo": {
+    "homeTitle": "MediKong — Der B2B-Marktplatz für Gesundheitsfachkräfte in Belgien",
+    "homeDescription": "MediKong.pro: B2B-Preisvergleich und Marktplatz für Apotheken, Arztpraxen und Gesundheitsfachkräfte in Belgien. Vergleichen Sie Angebote von Hunderten Lieferanten und bestellen Sie mit wenigen Klicks."
   }
 }

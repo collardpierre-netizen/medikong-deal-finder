@@ -14,7 +14,7 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { ArrowLeft, AlertTriangle, CheckCircle2, Search, Sparkles } from "lucide-react";
+import { ArrowLeft, AlertTriangle, CheckCircle2, Search, Sparkles, TrendingUp } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import AdminTopBar from "@/components/admin/AdminTopBar";
@@ -73,6 +73,11 @@ const AdminUnmappedCategories = () => {
         subtitle="Libellés de catégorie source pour lesquels aucun produit n'a encore reçu de primary_category_id."
         actions={
           <div className="flex gap-2">
+            <Button asChild variant="secondary" size="sm">
+              <Link to="/admin/categories/dashboard">
+                <TrendingUp className="mr-2 h-4 w-4" /> Tableau de bord
+              </Link>
+            </Button>
             <Button asChild variant="default" size="sm">
               <Link to="/admin/categories/qogita-mapping-llm">
                 <Sparkles className="mr-2 h-4 w-4" /> Mapping LLM (passe 2)

@@ -15301,6 +15301,7 @@ export type Database = {
         }
         Returns: Json
       }
+      admin_category_mapping_dashboard: { Args: never; Returns: Json }
       admin_claim_product_submission: {
         Args: { _submission_id: string }
         Returns: undefined

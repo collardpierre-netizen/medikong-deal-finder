@@ -148,6 +148,7 @@ const AdminCmsHomeBrands = lazyWithRetry(() => import("./pages/admin/AdminCmsHom
 const AdminCmsHomeProducts = lazyWithRetry(() => import("./pages/admin/AdminCmsHomeProducts"), "AdminCmsHomeProducts");
 const AdminUnmappedCategories = lazyWithRetry(() => import("./pages/admin/AdminUnmappedCategories"), "AdminUnmappedCategories");
 const AdminQogitaLlmMapping = lazyWithRetry(() => import("./pages/admin/AdminQogitaLlmMapping"), "AdminQogitaLlmMapping");
+const AdminCategoryMappingDashboard = lazyWithRetry(() => import("./pages/admin/AdminCategoryMappingDashboard"), "AdminCategoryMappingDashboard");
 // AdminProductPrices supprimé : remplacé par offer_buyer_profile_prices (édition par offre dans /vendor/offers).
 const AdminInvestPipeline = lazyWithRetry(() => import("./pages/admin/AdminInvestPipeline"), "AdminInvestPipeline");
 const AdminLogistique = lazyWithRetry(() => import("./pages/admin/AdminLogistique"), "AdminLogistique");
@@ -438,6 +439,7 @@ const App = () => (
               <Route path="cms/home/produits" element={<LP><AdminCmsHomeProducts /></LP>} />
               <Route path="categories/non-mappees" element={<LP><AdminUnmappedCategories /></LP>} />
               <Route path="categories/qogita-mapping-llm" element={<LP><AdminQogitaLlmMapping /></LP>} />
+              <Route path="categories/dashboard" element={<LP><AdminCategoryMappingDashboard /></LP>} />
               <Route path="prix-reference" element={<LP><AdminMarketCodes /></LP>} />
               {/* /admin/product-prices supprimé : utiliser /vendor/offers (offer_buyer_profile_prices) */}
               <Route path="invest-pipeline" element={<LP><AdminInvestPipeline /></LP>} />

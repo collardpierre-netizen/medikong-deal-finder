@@ -15,28 +15,33 @@ const tabs: { id: SortMode; label: string; sub: string }[] = [
 ];
 
 export default function SearchTrivagoView({ products }: Props) {
-  const [sort, setSort] = useState<SortMode>("best");
+  // Tri par défaut : "Le moins cher" — aligné avec l'ordre prix croissant attendu sur les pages d'intention transactionnelle.
+  const [sort, setSort] = useState<SortMode>("cheapest");
 
   const sorted = [...products].sort((a, b) => {
     switch (sort) {
       case "cheapest": return a.price - b.price;
       case "fastest": return 0; // no delivery data at product level
+      case "best":
       default: return (b.sellers - a.sellers) || (a.price - b.price);
     }
   });
 
-  const cheapest = products.length > 0 ? Math.min(...products.map(p => p.price || Infinity)) : 0;
-  const bestPrice = sorted[0]?.price || 0;
-
   return (
     <div className="space-y-4">
-      {/* Sort tabs */}
-      <div className="flex border-b border-border bg-card rounded-t-xl overflow-hidden">
+      {/* Sort tabs — scroll horizontal natif sur mobile (snap CSS) */}
+      <div
+        role="tablist"
+        aria-label="Trier la comparaison"
+        className="flex border-b border-border bg-card rounded-t-xl overflow-x-auto sm:overflow-visible snap-x snap-mandatory"
+      >
         {tabs.map((tab) => (
           <button
             key={tab.id}
+            role="tab"
+            aria-selected={sort === tab.id}
             onClick={() => setSort(tab.id)}
-            className={`flex-1 px-4 py-3 text-center border-b-2 transition-colors
+            className={`shrink-0 sm:flex-1 min-w-[60%] sm:min-w-0 snap-start px-4 py-3 text-center border-b-2 transition-colors
               ${sort === tab.id
                 ? "border-primary bg-muted/50"
                 : "border-transparent hover:bg-muted/30"

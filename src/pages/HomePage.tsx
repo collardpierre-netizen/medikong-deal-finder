@@ -235,13 +235,9 @@ export default function HomePage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
           >
-            <span className="relative inline-block pb-1">
-              {t("hero.titleHighlight")}
-              <span className="absolute left-0 right-0 bottom-0 h-[8px] bg-mk-blue/25 rounded-full" />
-            </span>
-            {t("hero.titleAfterHighlight")}
-            <br />
-            {t("hero.titleLine2")}
+            {t("hero.titleBefore")}
+            <span className="text-mk-blue">{t("hero.titleAccent")}</span>
+            {t("hero.titleAfter")}
           </motion.h1>
           <motion.p
             className="text-base md:text-lg text-mk-sec mb-8 max-w-xl mx-auto"

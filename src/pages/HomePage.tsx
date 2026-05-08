@@ -351,6 +351,7 @@ export default function HomePage() {
         </StaggerContainer>
       </AnimatedSection>
 
+       {featuredBrands.length > 0 && (
        <AnimatedSection className="py-14 md:py-20">
         <div className="mk-container">
           <h2 className="text-2xl md:text-3xl font-bold text-mk-navy mb-8 text-center">{t("brands.title")}</h2>

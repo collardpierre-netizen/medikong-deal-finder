@@ -244,6 +244,20 @@ Deno.serve(async (req) => {
       await new Promise((r) => setTimeout(r, 250));
     }
 
+    // Auto-apply : si seuil fourni, applique les pending ≥ seuil
+    let autoApplied: any = null;
+    if (autoApplyThreshold !== null && processed > 0) {
+      const { data: applyRes, error: applyErr } = await admin.rpc(
+        "apply_qogita_llm_mappings_bulk",
+        { _min_confidence: autoApplyThreshold },
+      );
+      if (applyErr) {
+        errorSamples.push(`auto_apply: ${applyErr.message}`);
+      } else {
+        autoApplied = applyRes;
+      }
+    }
+
     return new Response(
       JSON.stringify({
         processed,
@@ -251,6 +265,8 @@ Deno.serve(async (req) => {
         errors,
         error_samples: errorSamples.slice(0, 5),
         remaining_after: Math.max(0, pool.length - batches * batchSize),
+        auto_apply_threshold: autoApplyThreshold,
+        auto_applied: autoApplied,
         ms: Date.now() - t0,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },

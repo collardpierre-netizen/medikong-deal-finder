@@ -88,14 +88,35 @@ export function HeroImageGallery() {
       </div>
       {count > 1 && (
         <>
-          <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); prev(); }} className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/20 backdrop-blur-sm text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white/40"><ChevronLeft size={18} /></button>
-          <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); next(); }} className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/20 backdrop-blur-sm text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white/40"><ChevronRight size={18} /></button>
+          <button
+            type="button"
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); prev(); }}
+            aria-label={t("common.previous", "Précédent")}
+            className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/20 backdrop-blur-sm text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white/40"
+          >
+            <ChevronLeft size={18} aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); next(); }}
+            aria-label={t("common.next", "Suivant")}
+            className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/20 backdrop-blur-sm text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white/40"
+          >
+            <ChevronRight size={18} aria-hidden="true" />
+          </button>
         </>
       )}
       {count > 1 && (
         <div className="absolute bottom-3 right-4 flex gap-1.5 z-10">
           {images.map((_, i) => (
-            <button key={i} onClick={(e) => { e.preventDefault(); e.stopPropagation(); setCurrent(i); }} className={`w-2 h-2 rounded-full transition-all ${i === current ? "bg-white w-5" : "bg-white/50"}`} />
+            <button
+              key={i}
+              type="button"
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setCurrent(i); }}
+              aria-label={`Aller à la diapositive ${i + 1}`}
+              aria-current={i === current ? "true" : undefined}
+              className={`w-2 h-2 rounded-full transition-all ${i === current ? "bg-white w-5" : "bg-white/50"}`}
+            />
           ))}
         </div>
       )}

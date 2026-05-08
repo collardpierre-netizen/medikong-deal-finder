@@ -1,5 +1,10 @@
 {
   "common": {
+    "previous": "Précédent",
+    "notifications": "Notifications",
+    "openMenu": "Ouvrir le menu",
+    "closeMenu": "Fermer le menu",
+    "addToFavorites": "Ajouter aux favoris",
     "search": "Rechercher",
     "searchPlaceholder": "Rechercher produits, CNK, EAN, marques...",
     "login": "Connexion",

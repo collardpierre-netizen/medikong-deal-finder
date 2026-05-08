@@ -14,7 +14,8 @@ import { useCatalogViewMode } from "@/hooks/useCatalogViewMode";
 import { Loader2, SlidersHorizontal, X } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { HreflangTags } from "@/components/seo/HreflangTags";
-import { useCategoryLabel } from "@/hooks/useCategory";
+import { useCategoryLabelStatus } from "@/hooks/useCategory";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function CataloguePage() {
   const { slug } = useParams();

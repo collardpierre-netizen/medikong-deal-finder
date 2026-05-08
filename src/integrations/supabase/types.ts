@@ -2454,6 +2454,158 @@ export type Database = {
           },
         ]
       }
+      home_featured_brands: {
+        Row: {
+          brand_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          locale: Database["public"]["Enums"]["home_featured_locale"]
+          position: number
+          updated_at: string
+          valid_from: string
+          valid_to: string | null
+        }
+        Insert: {
+          brand_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          locale?: Database["public"]["Enums"]["home_featured_locale"]
+          position?: number
+          updated_at?: string
+          valid_from?: string
+          valid_to?: string | null
+        }
+        Update: {
+          brand_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          locale?: Database["public"]["Enums"]["home_featured_locale"]
+          position?: number
+          updated_at?: string
+          valid_from?: string
+          valid_to?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "home_featured_brands_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brand_logistics_stats"
+            referencedColumns: ["brand_id"]
+          },
+          {
+            foreignKeyName: "home_featured_brands_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brands"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      home_featured_category_whitelist: {
+        Row: {
+          added_at: string
+          added_by: string | null
+          category_id: string
+        }
+        Insert: {
+          added_at?: string
+          added_by?: string | null
+          category_id: string
+        }
+        Update: {
+          added_at?: string
+          added_by?: string | null
+          category_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "home_featured_category_whitelist_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: true
+            referencedRelation: "admin_category_vat_audit"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "home_featured_category_whitelist_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: true
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      home_featured_products: {
+        Row: {
+          badge: Database["public"]["Enums"]["home_featured_badge"] | null
+          created_at: string
+          created_by: string | null
+          id: string
+          locale: Database["public"]["Enums"]["home_featured_locale"]
+          position: number
+          product_id: string
+          updated_at: string
+          valid_from: string
+          valid_to: string | null
+        }
+        Insert: {
+          badge?: Database["public"]["Enums"]["home_featured_badge"] | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          locale?: Database["public"]["Enums"]["home_featured_locale"]
+          position?: number
+          product_id: string
+          updated_at?: string
+          valid_from?: string
+          valid_to?: string | null
+        }
+        Update: {
+          badge?: Database["public"]["Enums"]["home_featured_badge"] | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          locale?: Database["public"]["Enums"]["home_featured_locale"]
+          position?: number
+          product_id?: string
+          updated_at?: string
+          valid_from?: string
+          valid_to?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "home_featured_products_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "admin_price_cockpit_mv"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "home_featured_products_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_pack_audit_v"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "home_featured_products_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "home_featured_products_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products_with_country_stats_v"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       import_job_payload: {
         Row: {
           created_at: string
@@ -13541,6 +13693,116 @@ export type Database = {
           },
         ]
       }
+      public_home_featured_brands_v: {
+        Row: {
+          brand_id: string | null
+          brand_name: string | null
+          brand_slug: string | null
+          id: string | null
+          locale: Database["public"]["Enums"]["home_featured_locale"] | null
+          logo_url: string | null
+          position: number | null
+          valid_from: string | null
+          valid_to: string | null
+          website_url: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "home_featured_brands_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brand_logistics_stats"
+            referencedColumns: ["brand_id"]
+          },
+          {
+            foreignKeyName: "home_featured_brands_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brands"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      public_home_featured_products_v: {
+        Row: {
+          badge: Database["public"]["Enums"]["home_featured_badge"] | null
+          best_price_excl_vat: number | null
+          best_price_incl_vat: number | null
+          brand_id: string | null
+          brand_name: string | null
+          category_id: string | null
+          category_name: string | null
+          id: string | null
+          image_url: string | null
+          image_urls: string[] | null
+          locale: Database["public"]["Enums"]["home_featured_locale"] | null
+          offer_count: number | null
+          position: number | null
+          product_id: string | null
+          product_name: string | null
+          product_slug: string | null
+          valid_from: string | null
+          valid_to: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "home_featured_products_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "admin_price_cockpit_mv"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "home_featured_products_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_pack_audit_v"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "home_featured_products_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "home_featured_products_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products_with_country_stats_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brand_logistics_stats"
+            referencedColumns: ["brand_id"]
+          },
+          {
+            foreignKeyName: "products_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brands"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "admin_category_vat_audit"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       public_marketplace_metrics: {
         Row: {
           avg_offers_per_product: number | null
@@ -14466,6 +14728,10 @@ export type Database = {
       admin_redispatch_catalog_notifications: {
         Args: { _source_id: string; _source_type: string }
         Returns: number
+      }
+      admin_reorder_home_featured: {
+        Args: { _ids: string[]; _kind: string }
+        Returns: undefined
       }
       admin_restore_order: { Args: { _order_id: string }; Returns: undefined }
       admin_review_offer_commission: {
@@ -15513,6 +15779,8 @@ export type Database = {
         | "delivered"
         | "cancelled"
       fulfillment_type: "qogita" | "medikong_direct" | "vendor_direct"
+      home_featured_badge: "bestseller" | "top_vente" | "nouveau" | "promo"
+      home_featured_locale: "fr" | "nl" | "de" | "en" | "all"
       import_job_status:
         | "pending"
         | "processing"
@@ -15837,6 +16105,8 @@ export const Constants = {
         "cancelled",
       ],
       fulfillment_type: ["qogita", "medikong_direct", "vendor_direct"],
+      home_featured_badge: ["bestseller", "top_vente", "nouveau", "promo"],
+      home_featured_locale: ["fr", "nl", "de", "en", "all"],
       import_job_status: [
         "pending",
         "processing",

@@ -12,7 +12,7 @@ const COUNTRY_LABELS: Record<string, string> = {
   ES: "Espagne",
 };
 
-function countryName(iso: string | null) {
+export function countryName(iso: string | null) {
   if (!iso) return "l'UE";
   return COUNTRY_LABELS[iso.toUpperCase()] ?? iso.toUpperCase();
 }
@@ -50,7 +50,7 @@ function avatarTone(seed: string): string {
   return AVATAR_PALETTE[Math.abs(h) % AVATAR_PALETTE.length];
 }
 
-function formatJoined(iso: string) {
+export function formatJoined(iso: string) {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "";
   return d.toLocaleDateString("fr-BE", { month: "2-digit", year: "numeric" });
@@ -97,16 +97,7 @@ export function VendorTrustHeader({ trust, variant = "full", className = "" }: P
   // Note : origine + rating sont désormais affichés inline dans la ligne d'identité,
   // on ne les répète pas en chip pour garder l'en-tête lisible.
 
-  if (trust.monthsActive >= 1) {
-    chips.push(
-      <Chip
-        key="seniority"
-        tone="muted"
-        icon={Clock}
-        label={`Sur MediKong depuis ${formatJoined(trust.joinedAt)}`}
-      />
-    );
-  }
+  // Ancienneté ("Sur MediKong depuis ...") est rendue dans la ligne méta du bas de carte.
 
   if (trust.onTimePct90d !== null && trust.orders90dCount >= 10) {
     chips.push(

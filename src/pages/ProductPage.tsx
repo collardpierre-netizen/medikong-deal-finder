@@ -6,13 +6,13 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useParams, Link, useNavigate, useLocation } from "react-router-dom";
 import {
   Copy, Sliders, ShoppingCart, Shield, Check, Truck, Minus, Plus,
-  Heart, Tag, Package, ChevronRight, Home, Star, Info, Award, Globe, BarChart3, Calculator, TrendingDown, Bell, ExternalLink, Lock, ArrowRight, HelpCircle, ChevronDown, Store, Play, Pause
+  Heart, Tag, Package, ChevronRight, Home, Star, Info, Award, Globe, BarChart3, Calculator, TrendingDown, Bell, ExternalLink, Lock, ArrowRight, HelpCircle, ChevronDown, Store, Play, Pause, MapPin, Clock, RefreshCw
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useFavorites, useRecentActivity } from "@/hooks/useFavorites";
 import { useVendorTrust } from "@/hooks/useVendorTrust";
 import { VendorTrustProvider, useVendorTrustForId } from "@/contexts/VendorTrustContext";
-import { VendorTrustHeader } from "@/components/product/VendorTrustHeader";
+import { VendorTrustHeader, countryName, formatJoined } from "@/components/product/VendorTrustHeader";
 import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -239,21 +239,7 @@ function OfferRow({
         )}
       </div>
 
-      {/* Last update */}
-      {(() => {
-        const iso = offer.updatedAt || offer.syncedAt;
-        const rel = formatUpdatedAt(iso);
-        if (!rel) return null;
-        const full = formatUpdatedAtFull(iso) || rel;
-        return (
-          <div
-            className="text-[11px] text-muted-foreground mb-3"
-            title={`Dernière mise à jour : ${full}`}
-          >
-            Mis à jour {rel}
-          </div>
-        );
-      })()}
+      {/* Mise à jour, origine, ancienneté & livraison sont regroupées dans la ligne méta du bas. */}
 
 
       {/* Delta vs best */}
@@ -530,13 +516,61 @@ function OfferRow({
         </div>
       </div>
 
-      {/* Delivery estimate (per offer) — n'afficher que si la donnée est connue */}
-      {offer.deliveryDays ? (
-        <div className="flex items-center gap-1.5 mt-3 text-xs text-muted-foreground">
-          <Truck size={13} />
-          <span>Livraison estimée : {offer.deliveryDays <= 7 ? `${offer.deliveryDays} jours` : `${Math.ceil(offer.deliveryDays / 7)} semaines`}</span>
-        </div>
-      ) : null}
+      {/* Ligne méta consolidée — bas de carte */}
+      {(() => {
+        const items: { key: string; icon: typeof Truck; label: string; title?: string }[] = [];
+
+        if (vendorTrust?.shipsFromCountry) {
+          items.push({
+            key: "origin",
+            icon: MapPin,
+            label: `Expédié depuis ${countryName(vendorTrust.shipsFromCountry)}`,
+          });
+        }
+
+        if (vendorTrust && vendorTrust.monthsActive >= 1) {
+          items.push({
+            key: "seniority",
+            icon: Clock,
+            label: `Sur MediKong depuis ${formatJoined(vendorTrust.joinedAt)}`,
+          });
+        }
+
+        if (offer.deliveryDays) {
+          const dl = offer.deliveryDays <= 7
+            ? `${offer.deliveryDays} j`
+            : `${Math.ceil(offer.deliveryDays / 7)} sem`;
+          items.push({ key: "delivery", icon: Truck, label: `Livraison ~${dl}` });
+        }
+
+        const iso = offer.updatedAt || offer.syncedAt;
+        const rel = formatUpdatedAt(iso);
+        if (rel) {
+          const full = formatUpdatedAtFull(iso) || rel;
+          items.push({
+            key: "updated",
+            icon: RefreshCw,
+            label: `Maj ${rel}`,
+            title: `Dernière mise à jour : ${full}`,
+          });
+        }
+
+        if (items.length === 0) return null;
+        return (
+          <div className="mt-3 flex items-center gap-x-3 gap-y-1 flex-wrap text-[11px] text-muted-foreground">
+            {items.map((it, i) => {
+              const Icon = it.icon;
+              return (
+                <span key={it.key} className="inline-flex items-center gap-1" title={it.title}>
+                  {i > 0 && <span aria-hidden className="text-muted-foreground/40">·</span>}
+                  <Icon size={11} className="shrink-0" />
+                  {it.label}
+                </span>
+              );
+            })}
+          </div>
+        );
+      })()}
 
       {offer.sellerId && (
         <VendorSuggestions

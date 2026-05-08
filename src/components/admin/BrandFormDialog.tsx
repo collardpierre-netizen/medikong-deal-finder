@@ -11,7 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEntityItemTranslations, useBatchSaveTranslations } from "@/hooks/useTranslations";
 import { toast } from "sonner";
-import { Languages, ChevronsUpDown, Check, Wand2 } from "lucide-react";
+import { Languages, ChevronsUpDown, Check, Wand2, Upload, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface BrandFormDialogProps {
@@ -37,6 +37,28 @@ export function BrandFormDialog({ open, onOpenChange, brand, manufacturers }: Br
     desc_fr: "", desc_nl: "", desc_de: "",
   });
   const [translating, setTranslating] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+
+  const handleLogoUpload = async (file: File) => {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) { toast.error("Fichier image uniquement"); return; }
+    if (file.size > 2 * 1024 * 1024) { toast.error("Logo max 2 Mo"); return; }
+    setUploadingLogo(true);
+    try {
+      const ext = file.name.split(".").pop()?.toLowerCase() || "png";
+      const baseSlug = (form.slug || slugify(form.name) || "brand");
+      const path = `${baseSlug}-${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from("brand-logos").upload(path, file, { cacheControl: "3600", upsert: true, contentType: file.type });
+      if (error) throw error;
+      const { data } = supabase.storage.from("brand-logos").getPublicUrl(path);
+      setForm(f => ({ ...f, logo_url: data.publicUrl }));
+      toast.success("Logo importé");
+    } catch (e: any) {
+      toast.error("Erreur upload : " + (e.message || "inconnue"));
+    } finally {
+      setUploadingLogo(false);
+    }
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -186,9 +208,17 @@ export function BrandFormDialog({ open, onOpenChange, brand, manufacturers }: Br
             </div>
           </div>
           <div>
-            <Label className="text-xs">Logo URL</Label>
-            <Input value={form.logo_url} onChange={e => setForm({ ...form, logo_url: e.target.value })} placeholder="https://..." />
-            {form.logo_url && <img src={form.logo_url} alt="Logo" referrerPolicy="no-referrer" className="mt-1 w-10 h-10 rounded object-contain border border-border" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />}
+            <Label className="text-xs">Logo</Label>
+            <div className="flex items-center gap-2">
+              <Input value={form.logo_url} onChange={e => setForm({ ...form, logo_url: e.target.value })} placeholder="https://... ou importer un fichier" className="flex-1" />
+              <label className="inline-flex">
+                <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleLogoUpload(f); e.currentTarget.value = ""; }} />
+                <Button type="button" variant="outline" size="sm" className="h-9 gap-1.5" disabled={uploadingLogo} asChild>
+                  <span>{uploadingLogo ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />} Importer</span>
+                </Button>
+              </label>
+            </div>
+            {form.logo_url && <img src={form.logo_url} alt="Logo" referrerPolicy="no-referrer" className="mt-2 w-12 h-12 rounded object-contain border border-border bg-white p-1" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />}
           </div>
           <div><Label className="text-xs">Site web</Label><Input value={form.website} onChange={e => setForm({ ...form, website: e.target.value })} placeholder="https://" /></div>
           <div><Label className="text-xs">Description (originale)</Label><Textarea rows={2} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} /></div>

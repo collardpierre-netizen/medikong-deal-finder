@@ -35,7 +35,14 @@ export function SubNav() {
 
         {/* Links */}
         {tabs.map(tab => {
-          const active = pathname === tab.path || (tab.path === "/" && pathname === "");
+          const active = (() => {
+            if (pathname === tab.path) return true;
+            if (tab.path === "/shop") {
+              return pathname === "/shop" || pathname.startsWith("/catalogue") || pathname.startsWith("/categorie");
+            }
+            if (tab.path === "/") return pathname === "/" || pathname === "";
+            return false;
+          })();
           return (
             <Link
               key={tab.path}

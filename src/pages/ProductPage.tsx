@@ -525,11 +525,11 @@ function OfferRow({
             whileTap={{ scale: 0.95 }}
             onClick={handleAdd}
             title={`Ajouter ${Math.min(qty, maxQty)} × ${formatEur(basePackPrice)} € au panier`}
+            aria-label={`Ajouter au panier — total ${formatEur(Math.min(qty, maxQty) * basePackPrice)} €`}
           >
             <ShoppingCart size={14} />
-            <span>Ajouter</span>
-            <span className="text-primary-foreground/85 font-medium tabular-nums">
-              · {formatEur(Math.min(qty, maxQty) * basePackPrice)}&nbsp;€
+            <span className="tabular-nums">
+              {formatEur(Math.min(qty, maxQty) * basePackPrice)}&nbsp;€
             </span>
           </motion.button>
         </div>

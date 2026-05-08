@@ -40,6 +40,32 @@ interface ZeroRow {
   last_searched_at: string;
 }
 
+interface SuggestionItem {
+  id: string;
+  name: string;
+  slug: string | null;
+  is_active: boolean;
+  similarity: number;
+}
+
+interface GapRow {
+  normalized_query: string;
+  sample_query: string;
+  searches: number;
+  last_searched_at: string;
+  suggested_brands: SuggestionItem[];
+  suggested_categories: SuggestionItem[];
+  matching_products_count: number;
+  recommendation: "boost_seo" | "activate_brand" | "enrich_category" | "add_to_catalog";
+}
+
+const RECO_LABEL: Record<GapRow["recommendation"], { label: string; variant: "default" | "secondary" | "outline" | "destructive"; hint: string }> = {
+  boost_seo: { label: "Booster SEO / synonymes", variant: "secondary", hint: "Des produits existent mais ne ressortent pas. Ajouter des synonymes / mots-clés." },
+  activate_brand: { label: "Activer / référencer marque", variant: "default", hint: "Une marque proche existe — l'activer ou rattacher des produits." },
+  enrich_category: { label: "Enrichir catégorie", variant: "default", hint: "Catégorie connue mais peu fournie. Ajouter des produits." },
+  add_to_catalog: { label: "Ajouter au catalogue", variant: "destructive", hint: "Aucune marque ni catégorie proche. Vraie opportunité d'ajout." },
+};
+
 function formatDate(iso: string) {
   return new Date(iso).toLocaleString("fr-BE", {
     day: "2-digit",

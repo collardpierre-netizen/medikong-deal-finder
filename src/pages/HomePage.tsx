@@ -56,6 +56,9 @@ export default function HomePage() {
   const navigate = useNavigate();
   const { data: metrics } = useMarketplaceMetrics();
   const metricsMaxOffers = metrics?.maxOffersPerProduct ?? 0;
+  // Top SKU multi-vendeurs du jour : alimente la démo + le CTA "voir une comparaison".
+  const { data: topDeltas } = useTopPriceDeltas(1);
+  const demoSlug = topDeltas?.[0]?.slug ?? null;
 
   const { data: countryStats, isLoading: isCountryStatsLoading, isError: isCountryStatsError } = useQuery({
     queryKey: ["homepage-stats", country],

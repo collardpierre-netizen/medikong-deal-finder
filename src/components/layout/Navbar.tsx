@@ -91,11 +91,19 @@ export function Navbar() {
             <span className="text-muted-foreground">/</span>
             <span className={isTVAC ? "text-primary font-bold" : "text-muted-foreground"}>TTC</span>
           </button>
-          <button className="p-2 rounded-full hover:bg-muted transition-colors">
-            <Bell className="text-foreground" size={20} />
+          <button
+            type="button"
+            aria-label={t("common.notifications", "Notifications")}
+            className="p-2 rounded-full hover:bg-muted transition-colors"
+          >
+            <Bell className="text-foreground" size={20} aria-hidden="true" />
           </button>
-          <Link to="/panier" className="relative p-2 rounded-full hover:bg-muted transition-colors">
-            <ShoppingCart className="text-foreground" size={20} />
+          <Link
+            to="/panier"
+            aria-label={t("common.cart", "Panier")}
+            className="relative p-2 rounded-full hover:bg-muted transition-colors"
+          >
+            <ShoppingCart className="text-foreground" size={20} aria-hidden="true" />
             {cartCount > 0 && (
               <span className="absolute top-0.5 right-0.5 bg-primary text-primary-foreground text-[10px] font-bold rounded-full w-4.5 h-4.5 flex items-center justify-center min-w-[18px] h-[18px]">{cartCount}</span>
             )}
@@ -124,8 +132,13 @@ export function Navbar() {
               >
                 {userInitials}
               </Link>
-              <button onClick={handleSignOut} className="p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
-                <LogOut size={16} />
+              <button
+                type="button"
+                onClick={handleSignOut}
+                aria-label={t("common.signOut", "Se déconnecter")}
+                className="p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <LogOut size={16} aria-hidden="true" />
               </button>
             </div>
           ) : (

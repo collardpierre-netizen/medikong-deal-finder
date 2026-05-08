@@ -46,7 +46,9 @@ export function cleanCategoryLabel(
   rawName: string | null | undefined,
   lang: string = "fr"
 ): { short: string; full: string } {
-  const safe = (rawName || "").trim();
+  // Strip "MK · " prefix used internally on the 14 master taxonomy roots —
+  // c'est un marqueur back-office, pas un libellé public.
+  const safe = (rawName || "").replace(/^MK\s*·\s*/i, "").trim();
   if (!safe) return { short: "—", full: "" };
   const l = (lang.substring(0, 2) as Lang);
   const useLang: Lang = l === "nl" || l === "de" ? l : "fr";

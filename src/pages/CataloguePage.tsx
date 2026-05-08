@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
@@ -19,18 +19,30 @@ import { useCategoryLabel } from "@/hooks/useCategory";
 export default function CataloguePage() {
   const { slug } = useParams();
   const { filters, setFilter, clearAll } = useCatalogFilters();
-  
-  // Sync route param slug to category filter
+
+  // Sync route param slug to category filter — sans cela, la première frame
+  // affiche "Tous les produits / 0 produits" puis flash sur la vraie catégorie.
   useEffect(() => {
     if (slug && slug !== filters.category) {
       setFilter("category", slug);
     }
   }, [slug]);
 
+  // Pour le H1 et la requête : utiliser le slug d'URL en fallback immédiat,
+  // pour ne pas attendre le re-render post-setFilter (évite "0 produits"
+  // affiché brièvement sur /categorie/mk-*).
+  const effectiveCategorySlug = filters.category ?? slug ?? undefined;
+
   // Brand list for sidebar
   const { data: allBrands = [] } = useCatalogBrands();
 
-  const { data, isLoading, isError, error, refetch, isFetching } = useCatalogProducts(filters);
+  // Pré-injecte le slug d'URL dans les filtres consommés par le hook,
+  // pour que la première requête lance déjà le filtre `primary_category_id`.
+  const effectiveFilters = useMemo(
+    () => (filters.category ? filters : { ...filters, category: effectiveCategorySlug }),
+    [filters, effectiveCategorySlug],
+  );
+  const { data, isLoading, isError, error, refetch, isFetching } = useCatalogProducts(effectiveFilters);
   const products = data?.products || [];
   const total = data?.total || 0;
   const { view, setView } = useCatalogViewMode();
@@ -41,8 +53,8 @@ export default function CataloguePage() {
     ? [...new Set(products.map(p => p.category_id).filter(Boolean) as string[])]
     : undefined;
 
-  const categoryLabel = useCategoryLabel(filters.category);
-  const title = filters.category
+  const categoryLabel = useCategoryLabel(effectiveCategorySlug);
+  const title = effectiveCategorySlug
     ? (categoryLabel || "Catégorie")
     : "Tous les produits";
 

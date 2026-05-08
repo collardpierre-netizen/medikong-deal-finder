@@ -60,6 +60,34 @@ export function Breadcrumbs() {
     retry: false,
   });
 
+  // Fetch localized category name when on /categorie/:slug or /catalogue/:slug
+  // Sans cela, le breadcrumb capitalise mécaniquement le slug ("Mk Otc Medicaments").
+  const categorySlug =
+    !hideBreadcrumbs &&
+    (segments[0] === "categorie" || segments[0] === "catalogue") &&
+    segments[1]
+      ? segments[1]
+      : null;
+  const { data: categoryRow } = useQuery({
+    queryKey: ["breadcrumb-category", categorySlug],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("categories")
+        .select("name, name_fr, name_nl, name_en")
+        .eq("slug", categorySlug!)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!categorySlug,
+    staleTime: 60 * 60 * 1000,
+    retry: false,
+  });
+  const categoryLabel = categoryRow
+    ? (categoryRow.name_fr || categoryRow.name_en || categoryRow.name || "")
+        .replace(/^MK\s*·\s*/i, "")
+        .trim()
+    : null;
+
   // Don't show on homepage
   if (hideBreadcrumbs) return null;
 
@@ -74,6 +102,8 @@ export function Breadcrumbs() {
       // For vendor slug, use the fetched public name
       if (prevSeg === "vendeur" && vendorLabel) {
         label = vendorLabel;
+      } else if ((prevSeg === "categorie" || prevSeg === "catalogue") && categoryLabel) {
+        label = categoryLabel;
       } else {
         const decoded = decodeURIComponent(seg).replace(/-/g, " ");
         label = decoded.replace(/qogita\s*/gi, "").trim();

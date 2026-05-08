@@ -406,37 +406,13 @@ export default function BrandDetailPage() {
                     <span className="text-sm text-mk-sec">{filtered.length.toLocaleString("fr-BE")} produits</span>
                     <div className="flex items-center gap-3">
                       <button onClick={() => setShowFilters(!showFilters)} className="lg:hidden border border-mk-line text-sm px-3 py-1.5 rounded-md text-mk-sec">Filtres</button>
-                      <div className="flex border border-mk-line rounded-md overflow-hidden">
-                        {([ ["grid", Grid], ["list", List], ["trivago", Columns] ] as const).map(([v, Icon]) => (
-                          <button key={v} onClick={() => setView(v)} className={`p-2 ${view === v ? "bg-mk-navy text-white" : "text-mk-sec"}`}><Icon size={16} /></button>
-                        ))}
-                      </div>
+                      <CatalogViewToggle view={view} setView={setView} />
                     </div>
                   </div>
                   {view === "trivago" ? (
                     <div className="space-y-3">
                       {filtered.map((p) => (
                         <SearchTrivagoCard key={p.id} product={p} />
-                      ))}
-                    </div>
-                  ) : view === "list" ? (
-                    <div className="space-y-3">
-                      {filtered.map((p) => (
-                        <div key={p.id} className="flex items-center gap-4 border border-mk-line rounded-lg p-4 hover:shadow-sm transition-shadow bg-white">
-                          <div className="w-20 h-20 shrink-0 rounded bg-muted flex items-center justify-center overflow-hidden">
-                            <img src={getProductImageSrc(p.imageUrl)} alt={p.name} loading="lazy" referrerPolicy="no-referrer" className="w-full h-full object-contain p-1" onError={(e) => { (e.target as HTMLImageElement).src = '/medikong-placeholder.png'; }} />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <Link to={`/produit/${p.slug}`} className="text-sm font-semibold text-mk-navy hover:text-mk-blue line-clamp-2">{p.name}</Link>
-                            <p className="text-xs text-muted-foreground mt-1">{p.brand} · EAN {p.gtin}</p>
-                            {p.descriptionShort && <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{p.descriptionShort}</p>}
-                          </div>
-                          <div className="text-right shrink-0 space-y-1">
-                            <p className="text-base font-bold text-mk-green">{p.price.toLocaleString("fr-BE", { minimumFractionDigits: 2 })} €</p>
-                            {p.pub > 0 && p.pct > 0 && <p className="text-xs text-muted-foreground line-through">{p.pub.toLocaleString("fr-BE", { minimumFractionDigits: 2 })} €</p>}
-                            {p.sellers > 0 && <p className="text-xs text-muted-foreground">{p.sellers} offre{p.sellers > 1 ? "s" : ""}</p>}
-                          </div>
-                        </div>
                       ))}
                     </div>
                   ) : (

@@ -183,11 +183,18 @@ const AdminQogitaLlmMapping = () => {
         title="Mapping LLM des catégories Qogita restantes"
         subtitle="Passe 2 — Gemini classifie chaque libellé Qogita non mappé vers une des 14 catégories MediKong (mk-*). Dry-run par défaut."
         actions={
-          <Button asChild variant="outline" size="sm">
-            <Link to="/admin/categories/non-mappees">
-              <ArrowLeft className="mr-2 h-4 w-4" /> Retour audit
-            </Link>
-          </Button>
+          <div className="flex gap-2">
+            <Button asChild variant="outline" size="sm">
+              <Link to="/admin/categories/qogita-mapping-review">
+                Revue ambiguës
+              </Link>
+            </Button>
+            <Button asChild variant="outline" size="sm">
+              <Link to="/admin/categories/non-mappees">
+                <ArrowLeft className="mr-2 h-4 w-4" /> Retour audit
+              </Link>
+            </Button>
+          </div>
         }
       />
 

@@ -17,6 +17,39 @@ function countryName(iso: string | null) {
   return COUNTRY_LABELS[iso.toUpperCase()] ?? iso.toUpperCase();
 }
 
+/** Convertit un code ISO 3166-1 alpha-2 en emoji drapeau régional. */
+function countryFlag(iso: string | null): string | null {
+  if (!iso || iso.length !== 2) return null;
+  const cc = iso.toUpperCase();
+  if (!/^[A-Z]{2}$/.test(cc)) return null;
+  const A = 0x1f1e6;
+  return String.fromCodePoint(A + cc.charCodeAt(0) - 65, A + cc.charCodeAt(1) - 65);
+}
+
+/** Initiales (max 2) à partir d'un libellé. */
+function initialsOf(label: string): string {
+  const parts = label.replace(/[^\p{L}\p{N}\s]/gu, " ").trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  const first = parts[0][0] ?? "";
+  const second = parts.length > 1 ? parts[parts.length - 1][0] ?? "" : "";
+  return (first + second).toUpperCase().slice(0, 2);
+}
+
+/** Couleur stable dérivée du nom (palette tokens-friendly). */
+const AVATAR_PALETTE = [
+  "bg-primary/10 text-primary",
+  "bg-amber-100 text-amber-800",
+  "bg-emerald-100 text-emerald-800",
+  "bg-sky-100 text-sky-800",
+  "bg-violet-100 text-violet-800",
+  "bg-rose-100 text-rose-800",
+];
+function avatarTone(seed: string): string {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) | 0;
+  return AVATAR_PALETTE[Math.abs(h) % AVATAR_PALETTE.length];
+}
+
 function formatJoined(iso: string) {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "";
@@ -61,16 +94,8 @@ export function VendorTrustHeader({ trust, variant = "full", className = "" }: P
     );
   }
 
-  if (trust.shipsFromCountry) {
-    chips.push(
-      <Chip
-        key="origin"
-        tone="muted"
-        icon={MapPin}
-        label={`Expédie depuis ${countryName(trust.shipsFromCountry)}`}
-      />
-    );
-  }
+  // Note : origine + rating sont désormais affichés inline dans la ligne d'identité,
+  // on ne les répète pas en chip pour garder l'en-tête lisible.
 
   if (trust.monthsActive >= 1) {
     chips.push(
@@ -95,17 +120,6 @@ export function VendorTrustHeader({ trust, variant = "full", className = "" }: P
     );
   }
 
-  if (trust.avgScore !== null && trust.ratingsCount >= 5) {
-    chips.push(
-      <Chip
-        key="rating"
-        tone="amber"
-        icon={Star}
-        label={`${trust.avgScore.toFixed(1)} / 5 (${trust.ratingsCount} avis)`}
-      />
-    );
-  }
-
   if (trust.totalOrders >= 50) {
     chips.push(
       <Chip
@@ -117,19 +131,68 @@ export function VendorTrustHeader({ trust, variant = "full", className = "" }: P
     );
   }
 
+  const flag = countryFlag(trust.shipsFromCountry);
+  const originLabel = `Expédie depuis ${countryName(trust.shipsFromCountry)}`;
+  const showRating = trust.avgScore !== null && trust.ratingsCount >= 5;
+  const initials = initialsOf(displayName);
+  const tone = avatarTone(trust.vendorId || displayName);
+
   return (
     <div className={`space-y-1.5 ${className}`}>
-      <div className="flex items-center gap-1.5 flex-wrap">
-        <span className="font-bold text-sm text-foreground">{displayName}</span>
+      {/* Identité — une seule ligne : avatar · nom · note · drapeau */}
+      <div className="flex items-center gap-2 min-w-0">
+        <span
+          aria-hidden="true"
+          className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${tone}`}
+        >
+          {initials}
+        </span>
+
+        <span className="font-bold text-sm text-foreground truncate" title={displayName}>
+          {displayName}
+        </span>
+
+        {showRating && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="inline-flex items-center gap-0.5 text-[11px] font-semibold text-amber-700 shrink-0 cursor-help">
+                <Star size={11} className="fill-amber-500 text-amber-500" />
+                {trust.avgScore!.toFixed(1)}
+                <span className="text-muted-foreground font-normal">·{trust.ratingsCount}</span>
+              </span>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="text-xs">
+              {trust.avgScore!.toFixed(1)} / 5 sur {trust.ratingsCount} avis
+            </TooltipContent>
+          </Tooltip>
+        )}
+
+        {flag && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span
+                className="text-base leading-none shrink-0 cursor-help"
+                aria-label={originLabel}
+                role="img"
+              >
+                {flag}
+              </span>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="text-xs">
+              {originLabel}
+            </TooltipContent>
+          </Tooltip>
+        )}
+
         {isAnonymous && variant === "full" && (
           <Tooltip>
             <TooltipTrigger asChild>
               <button
                 type="button"
                 aria-label="Pourquoi un identifiant ?"
-                className="inline-flex items-center gap-1 text-[10px] font-medium text-muted-foreground hover:text-foreground bg-muted/60 rounded px-1.5 py-0.5 cursor-help focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                className="inline-flex items-center gap-1 text-[10px] font-medium text-muted-foreground hover:text-foreground bg-muted/60 rounded px-1.5 py-0.5 cursor-help focus:outline-none focus-visible:ring-2 focus-visible:ring-primary shrink-0"
               >
-                Identifiant vendeur <Info size={11} />
+                ID <Info size={11} />
               </button>
             </TooltipTrigger>
             <TooltipContent side="top" className="max-w-[280px] text-xs">

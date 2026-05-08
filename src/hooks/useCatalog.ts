@@ -557,15 +557,18 @@ export function useCatalogProducts(filters: CatalogFilters) {
 
 export function useCatalogCategories() {
   return useQuery({
-    queryKey: ["catalog-categories"],
+    queryKey: ["catalog-categories", "master-mk"],
     queryFn: async () => {
+      // Taxonomie maîtresse MediKong : on n'expose que les 14 catégories mk-*.
+      // Les ~3 187 catégories Qogita restent en base (utilisées par le pipeline
+      // d'import et par les filtres internes), mais sont masquées du public.
       const [catResult, countResult] = await Promise.all([
-        (async () =>
-          await supabase
-            .from("categories")
-            .select("id, name, name_fr, name_nl, name_de, slug, parent_id")
-            .eq("is_active", true)
-            .order("display_order", { ascending: true }))(),
+        supabase
+          .from("categories")
+          .select("id, name, name_fr, name_nl, name_de, slug, parent_id, display_order, is_featured_top")
+          .like("slug", "mk-%")
+          .eq("is_active", true)
+          .order("display_order", { ascending: true }),
         withTimeout(
           (async () => await supabase.rpc("count_products_per_category"))(),
           CATEGORY_COUNT_TIMEOUT_MS,
@@ -582,23 +585,13 @@ export function useCatalogCategories() {
         }
       }
 
-      const all = (catResult.data || []).map((c: any) => ({
+      // Pas d'arborescence en V1 : 14 catégories à plat, l'ordre vient de display_order.
+      return ((catResult.data || []) as any[]).map((c) => ({
         ...c,
         name: getLocalizedName(c),
         product_count: countMap.get(c.id) || 0,
-      }));
-
-      // Build full tree: L1 > L2 > L3, sorted alphabetically
-      const roots = all.filter(c => !c.parent_id).sort((a, b) => a.name.localeCompare(b.name, 'fr'));
-      return roots.map(r => {
-        const l2Children = all.filter(c => c.parent_id === r.id).sort((a, b) => a.name.localeCompare(b.name, 'fr')).map(l2 => {
-          const l3Children = all.filter(c => c.parent_id === l2.id).sort((a, b) => a.name.localeCompare(b.name, 'fr'));
-          const l2Total = l2.product_count + l3Children.reduce((s, c) => s + c.product_count, 0);
-          return { ...l2, product_count: l2Total, children: l3Children };
-        });
-        const totalCount = r.product_count + l2Children.reduce((s, c) => s + c.product_count, 0);
-        return { ...r, product_count: totalCount, children: l2Children };
-      }) as CategoryNode[];
+        children: [] as CategoryNode[],
+      })) as CategoryNode[];
     },
     staleTime: 10 * 60 * 1000,
     retry: false,

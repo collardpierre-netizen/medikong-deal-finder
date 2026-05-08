@@ -5,6 +5,7 @@ import { CtaBanner } from "@/components/entreprise/CtaBanner";
 import { StatsRow } from "@/components/entreprise/StatsRow";
 import { TestimonialCard } from "@/components/trust/TestimonialCard";
 import { testimonials } from "@/data/trust-process-data";
+import { useMarketplaceMetrics } from "@/hooks/useMarketplaceMetrics";
 
 export default function TestimonialsPage() {
   return (

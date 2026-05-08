@@ -950,10 +950,15 @@ export default function ProductPage() {
     setTimeout(() => setCopied(false), 1500);
   };
 
+  // Trust signals
+  const vendorIdsForTrust = Array.from(new Set(realOffers.map((o) => o.sellerId).filter(Boolean) as string[]));
+  const { data: trustMap = {} } = useVendorTrust(vendorIdsForTrust);
+
   // Filter offers
   const filteredOffers = realOffers.filter((o) => {
     if (movFilter && o.movEur > movFilter) return false;
     if (delayFilter && o.deliveryDays > delayFilter) return false;
+    if (faggOnly && !trustMap[o.sellerId]?.isFaggVerified) return false;
     return true;
   });
 

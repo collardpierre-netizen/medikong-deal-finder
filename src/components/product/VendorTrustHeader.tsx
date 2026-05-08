@@ -97,16 +97,7 @@ export function VendorTrustHeader({ trust, variant = "full", className = "" }: P
   // Note : origine + rating sont désormais affichés inline dans la ligne d'identité,
   // on ne les répète pas en chip pour garder l'en-tête lisible.
 
-  if (trust.monthsActive >= 1) {
-    chips.push(
-      <Chip
-        key="seniority"
-        tone="muted"
-        icon={Clock}
-        label={`Sur MediKong depuis ${formatJoined(trust.joinedAt)}`}
-      />
-    );
-  }
+  // Ancienneté ("Sur MediKong depuis ...") est rendue dans la ligne méta du bas de carte.
 
   if (trust.onTimePct90d !== null && trust.orders90dCount >= 10) {
     chips.push(

@@ -10,6 +10,9 @@ import {
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useFavorites, useRecentActivity } from "@/hooks/useFavorites";
+import { useVendorTrust } from "@/hooks/useVendorTrust";
+import { VendorTrustProvider, useVendorTrustForId } from "@/contexts/VendorTrustContext";
+import { VendorTrustHeader } from "@/components/product/VendorTrustHeader";
 import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -267,26 +270,30 @@ function OfferRow({
       {/* Desktop grid */}
       <div className="hidden md:grid grid-cols-[1.5fr_2fr_0.8fr_1.5fr] gap-3 items-start">
         <div className="flex flex-col gap-1.5">
-          <span className="font-bold text-sm text-foreground inline-flex items-center gap-1.5">
-            {sellerLabel}
-            {offer.vendorNote && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    type="button"
-                    aria-label="Note du fournisseur"
-                    className="inline-flex items-center justify-center text-primary hover:text-primary/80 cursor-help"
-                  >
-                    <Info size={14} />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-[280px] text-xs whitespace-pre-line">
-                  <span className="block font-semibold mb-1">Note du fournisseur</span>
-                  {offer.vendorNote}
-                </TooltipContent>
-              </Tooltip>
-            )}
-          </span>
+          {(() => {
+            const trust = useVendorTrustForId(offer.sellerId);
+            if (trust) {
+              return <VendorTrustHeader trust={trust} variant="full" />;
+            }
+            return (
+              <span className="font-bold text-sm text-foreground inline-flex items-center gap-1.5">
+                {sellerLabel}
+                {offer.vendorNote && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button type="button" aria-label="Note du fournisseur" className="inline-flex items-center justify-center text-primary hover:text-primary/80 cursor-help">
+                        <Info size={14} />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-[280px] text-xs whitespace-pre-line">
+                      <span className="block font-semibold mb-1">Note du fournisseur</span>
+                      {offer.vendorNote}
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+              </span>
+            );
+          })()}
           {offer.sellerSlug && (
             <Link
               to={`/vendeur/${offer.sellerSlug}`}
@@ -789,6 +796,7 @@ export default function ProductPage() {
   const [copied, setCopied] = useState(false);
   const [movFilter, setMovFilter] = useState<number | null>(null);
   const [delayFilter, setDelayFilter] = useState<number | null>(null);
+  const [faggOnly, setFaggOnly] = useState(false);
   const [showStickyBar, setShowStickyBar] = useState(false);
   const [stickyQty, setStickyQty] = useState(1);
   // Base de comparaison pour les offres externes : ramène toutes les offres
@@ -942,10 +950,15 @@ export default function ProductPage() {
     setTimeout(() => setCopied(false), 1500);
   };
 
+  // Trust signals
+  const vendorIdsForTrust = Array.from(new Set(realOffers.map((o) => o.sellerId).filter(Boolean) as string[]));
+  const { data: trustMap = {} } = useVendorTrust(vendorIdsForTrust);
+
   // Filter offers
   const filteredOffers = realOffers.filter((o) => {
     if (movFilter && o.movEur > movFilter) return false;
     if (delayFilter && o.deliveryDays > delayFilter) return false;
+    if (faggOnly && !trustMap[o.sellerId]?.isFaggVerified) return false;
     return true;
   });
 
@@ -1396,6 +1409,7 @@ export default function ProductPage() {
 
                   {/* ── Tab: Marketplace MediKong ── */}
                   <TabsContent value="marketplace">
+                    <VendorTrustProvider trustMap={trustMap}>
                     {/* Filters */}
                     <div className="bg-muted/50 border border-border rounded-xl p-4 mb-6">
                       <div className="flex items-center gap-2 mb-3">
@@ -1434,8 +1448,12 @@ export default function ProductPage() {
                             <option value="30">1 mois</option>
                           </select>
                           <p className="text-[11px] text-muted-foreground mt-1">Afficher uniquement les offres livrees dans ce delai</p>
-                        </div>
                       </div>
+                      <label className="mt-3 flex items-center gap-2 text-xs text-foreground cursor-pointer select-none">
+                        <input type="checkbox" checked={faggOnly} onChange={(e) => setFaggOnly(e.target.checked)} className="rounded border-border" />
+                        Vendeurs vérifiés FAGG uniquement
+                      </label>
+                    </div>
                     </div>
 
                     {/* My encoded price banner — visible only if user has an encoded price for this product */}

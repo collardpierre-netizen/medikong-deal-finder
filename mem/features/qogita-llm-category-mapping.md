@@ -6,7 +6,7 @@ type: feature
 
 ## Pipeline
 - Edge function `classify-qogita-categories` (verify_jwt par défaut, admin only via is_admin RPC) : lit `admin_unmapped_qogita_categories`, batches de N (défaut 30, max 50), appelle Lovable AI Gateway (`google/gemini-2.5-flash-lite`) avec tool calling structuré (`classify_categories(results[])`), upsert dans `category_llm_mapping_proposals` (status=pending). Skip auto les cats déjà proposées sauf `force_resync`.
-- Body : `{ batch_size?: 30, max_batches?: 10, force_resync?: false }`. Délai 250ms entre batchs.
+- Body : `{ batch_size?: 30, max_batches?: 10, force_resync?: false, auto_apply_threshold?: number|null }`. Si `auto_apply_threshold` (0..1) fourni, la fonction enchaîne `apply_qogita_llm_mappings_bulk(threshold)` sur les pending issues du run et renvoie `auto_applied`. Délai 250ms entre batchs.
 
 ## Table & RPCs
 - `category_llm_mapping_proposals` (RLS admin) : qogita_category_id (UNIQUE), suggested_mk_slug + suggested_mk_category_id, confidence 0..1, reason, status pending/approved/rejected/applied, model.

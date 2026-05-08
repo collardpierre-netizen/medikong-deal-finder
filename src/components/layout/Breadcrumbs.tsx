@@ -172,10 +172,18 @@ export function Breadcrumbs() {
               // (12px font + leading-4 = 16px) pour éviter tout reflow
               // quand le libellé réel (catégorie ou vendeur) prend le relais.
               <span
-                aria-label="Chargement"
+                role="status"
+                aria-live="polite"
                 aria-busy="true"
-                className="inline-block h-4 w-32 rounded-sm bg-muted animate-pulse align-middle"
-              />
+                aria-label="Chargement du fil d'Ariane"
+                className="inline-flex items-center align-middle"
+              >
+                <span
+                  aria-hidden="true"
+                  className="inline-block h-4 w-32 rounded-sm bg-muted animate-pulse"
+                />
+                <span className="sr-only">Chargement du segment de fil d'Ariane…</span>
+              </span>
             ) : crumb.isLast ? (
               <span className="inline-block min-h-4 font-semibold text-mk-navy align-middle">
                 {crumb.label}

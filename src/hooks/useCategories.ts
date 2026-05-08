@@ -38,6 +38,7 @@ export function useCategories(level: 1 | 2 | 3 = 1) {
         .from("categories")
         .select(
           `id, slug, parent_id, level, display_order, icon, is_featured_top,
+           name, name_fr, name_nl, name_en,
            translations:category_translations(locale, name, description)`
         )
         .eq("level", level)
@@ -54,6 +55,21 @@ export function useCategories(level: 1 | 2 | 3 = 1) {
           list.find((t) => t.locale === "en") ||
           list.find((t) => t.locale === "fr") ||
           null;
+        // Fallback order: category_translations → categories.name_<locale>
+        // → name_en → name_fr → legacy `name` → slug. Ensures a human label
+        // even when the dedicated translations table hasn't been populated.
+        const colByLocale: Record<Locale, string | null> = {
+          fr: row.name_fr ?? null,
+          nl: row.name_nl ?? null,
+          en: row.name_en ?? null,
+        };
+        const name =
+          pick?.name ||
+          colByLocale[locale] ||
+          row.name_en ||
+          row.name_fr ||
+          row.name ||
+          row.slug;
         return {
           id: row.id,
           slug: row.slug,
@@ -62,7 +78,7 @@ export function useCategories(level: 1 | 2 | 3 = 1) {
           position: row.display_order ?? 0,
           icon: row.icon,
           is_featured_top: !!row.is_featured_top,
-          name: pick?.name ?? row.slug,
+          name,
           description: pick?.description ?? null,
         } satisfies MasterCategory;
       });

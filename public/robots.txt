@@ -9,4 +9,8 @@ Disallow: /vendor
 Disallow: /pitchdeck
 Disallow: /pitchdeck-medikong.pdf
 
-Sitemap: https://medikong-deal-finder.lovable.app/sitemap.xml
+# NOTE: les environnements dev / staging (dev.medikong.pro, *.lovable.app)
+# sont bloqués via la <meta name="robots" content="noindex,nofollow,noarchive">
+# injectée par le composant <EnvNoIndex /> dans App.tsx.
+
+Sitemap: https://medikong.pro/sitemap.xml

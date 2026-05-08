@@ -289,6 +289,113 @@ export default function AdminRecherches() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          <TabsContent value="gaps" className="mt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Trous catalogue ({period}j)</CardTitle>
+                <p className="text-xs text-muted-foreground">
+                  Recherches sans résultat avec suggestions de marques / catégories existantes proches, et recommandation d'action.
+                </p>
+              </CardHeader>
+              <CardContent>
+                {gaps.isLoading ? (
+                  <div className="flex items-center justify-center py-12 text-muted-foreground">
+                    <Loader2 className="h-5 w-5 animate-spin mr-2" /> Chargement…
+                  </div>
+                ) : (gaps.data?.length ?? 0) === 0 ? (
+                  <div className="text-center py-12 text-sm text-muted-foreground">
+                    Aucun trou catalogue détecté sur la période. 🎉
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {gaps.data!.map((g) => {
+                      const reco = RECO_LABEL[g.recommendation];
+                      return (
+                        <div key={g.normalized_query} className="border rounded-lg p-4 hover:bg-muted/20">
+                          <div className="flex items-start justify-between gap-4 mb-2">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="font-medium">{g.sample_query}</span>
+                                <Badge variant="outline" className="text-xs">{g.searches} recherches</Badge>
+                                {g.matching_products_count > 0 && (
+                                  <Badge variant="secondary" className="text-xs">
+                                    {g.matching_products_count} produit(s) actif(s)
+                                  </Badge>
+                                )}
+                              </div>
+                              <p className="text-xs text-muted-foreground mt-1">{reco.hint}</p>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <Badge variant={reco.variant}>{reco.label}</Badge>
+                              <Link
+                                to={`/catalogue?q=${encodeURIComponent(g.sample_query)}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-primary hover:underline text-xs"
+                              >
+                                Tester →
+                              </Link>
+                            </div>
+                          </div>
+
+                          <div className="grid md:grid-cols-2 gap-3 mt-3">
+                            <div>
+                              <div className="text-xs uppercase tracking-wider text-muted-foreground mb-1">
+                                Marques proches
+                              </div>
+                              {g.suggested_brands.length === 0 ? (
+                                <span className="text-xs text-muted-foreground">Aucune</span>
+                              ) : (
+                                <div className="flex flex-wrap gap-1.5">
+                                  {g.suggested_brands.map((b) => (
+                                    <Link
+                                      key={b.id}
+                                      to={`/admin/marques/${b.slug ?? b.id}/edit`}
+                                      className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded border hover:bg-muted"
+                                    >
+                                      <span>{b.name}</span>
+                                      <span className="text-muted-foreground">({Math.round(b.similarity * 100)}%)</span>
+                                      {!b.is_active && <Badge variant="outline" className="text-[10px] py-0 px-1">inactive</Badge>}
+                                    </Link>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+
+                            <div>
+                              <div className="text-xs uppercase tracking-wider text-muted-foreground mb-1">
+                                Catégories proches
+                              </div>
+                              {g.suggested_categories.length === 0 ? (
+                                <span className="text-xs text-muted-foreground">Aucune</span>
+                              ) : (
+                                <div className="flex flex-wrap gap-1.5">
+                                  {g.suggested_categories.map((c) => (
+                                    <Link
+                                      key={c.id}
+                                      to={`/categorie/${c.slug ?? c.id}`}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded border hover:bg-muted"
+                                    >
+                                      <span>{c.name}</span>
+                                      <span className="text-muted-foreground">({Math.round(c.similarity * 100)}%)</span>
+                                      {!c.is_active && <Badge variant="outline" className="text-[10px] py-0 px-1">inactive</Badge>}
+                                    </Link>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
       </div>
     </Layout>

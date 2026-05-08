@@ -323,15 +323,32 @@ export default function HomePage() {
             </div>
           </motion.div>
 
-          {/* CTA */}
+          {/* CTA — primaire = voir une comparaison live, secondaire = créer un compte */}
           <motion.div
-            className="mt-8"
+            className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5 }}
           >
-            <Link to="/onboarding" className="inline-flex items-center gap-2 bg-mk-navy text-white font-semibold text-sm px-7 py-3 rounded-lg hover:opacity-90 transition-opacity">
-              {t("common.signup")} <ArrowRight size={16} />
+            {demoSlug && (
+              <Link
+                to={`/produits/${demoSlug}`}
+                onClick={() => trackHomeCta("see_demo", { productSlug: demoSlug, location: "hero" })}
+                className="inline-flex items-center gap-2 bg-mk-blue text-white font-semibold text-sm px-7 py-3 rounded-lg hover:opacity-90 transition-opacity shadow-sm"
+              >
+                {t("hero.ctaSeeDemo", "Voir un exemple de comparaison")} <ArrowRight size={16} />
+              </Link>
+            )}
+            <Link
+              to="/onboarding"
+              onClick={() => trackHomeCta("create_account", { location: "hero" })}
+              className={
+                demoSlug
+                  ? "inline-flex items-center gap-2 border border-mk-navy text-mk-navy font-semibold text-sm px-7 py-3 rounded-lg hover:bg-mk-navy hover:text-white transition-colors"
+                  : "inline-flex items-center gap-2 bg-mk-navy text-white font-semibold text-sm px-7 py-3 rounded-lg hover:opacity-90 transition-opacity"
+              }
+            >
+              {t("hero.ctaCreateAccount", "Créer mon compte (gratuit, 1 min)")} <ArrowRight size={16} />
             </Link>
           </motion.div>
         </div>

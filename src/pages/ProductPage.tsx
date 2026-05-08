@@ -164,6 +164,9 @@ function OfferRow({
   const displayPrice = priceFromUnit(baseUnitPrice, compareBasis as CompareBasis, packSize);
   const basisSuffix = ` ${formatBasisLabel(compareBasis as CompareBasis, { packSize, withPackSize: true })}`;
   const priceLabel = isTVAC ? "TVAC" : "HTVA";
+  // Trust signals (FAGG verified, ratings, etc.) are injected via VendorTrustContext
+  // — hooks must be called at the top level, never inside an IIFE/callback.
+  const vendorTrust = useVendorTrustForId(offer.sellerId);
 
   const handleAdd = () => {
     if (!user) {

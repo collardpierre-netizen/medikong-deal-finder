@@ -94,16 +94,8 @@ export function VendorTrustHeader({ trust, variant = "full", className = "" }: P
     );
   }
 
-  if (trust.shipsFromCountry) {
-    chips.push(
-      <Chip
-        key="origin"
-        tone="muted"
-        icon={MapPin}
-        label={`Expédie depuis ${countryName(trust.shipsFromCountry)}`}
-      />
-    );
-  }
+  // Note : origine + rating sont désormais affichés inline dans la ligne d'identité,
+  // on ne les répète pas en chip pour garder l'en-tête lisible.
 
   if (trust.monthsActive >= 1) {
     chips.push(
@@ -128,17 +120,6 @@ export function VendorTrustHeader({ trust, variant = "full", className = "" }: P
     );
   }
 
-  if (trust.avgScore !== null && trust.ratingsCount >= 5) {
-    chips.push(
-      <Chip
-        key="rating"
-        tone="amber"
-        icon={Star}
-        label={`${trust.avgScore.toFixed(1)} / 5 (${trust.ratingsCount} avis)`}
-      />
-    );
-  }
-
   if (trust.totalOrders >= 50) {
     chips.push(
       <Chip
@@ -150,19 +131,68 @@ export function VendorTrustHeader({ trust, variant = "full", className = "" }: P
     );
   }
 
+  const flag = countryFlag(trust.shipsFromCountry);
+  const originLabel = `Expédie depuis ${countryName(trust.shipsFromCountry)}`;
+  const showRating = trust.avgScore !== null && trust.ratingsCount >= 5;
+  const initials = initialsOf(displayName);
+  const tone = avatarTone(trust.vendorId || displayName);
+
   return (
     <div className={`space-y-1.5 ${className}`}>
-      <div className="flex items-center gap-1.5 flex-wrap">
-        <span className="font-bold text-sm text-foreground">{displayName}</span>
+      {/* Identité — une seule ligne : avatar · nom · note · drapeau */}
+      <div className="flex items-center gap-2 min-w-0">
+        <span
+          aria-hidden="true"
+          className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${tone}`}
+        >
+          {initials}
+        </span>
+
+        <span className="font-bold text-sm text-foreground truncate" title={displayName}>
+          {displayName}
+        </span>
+
+        {showRating && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="inline-flex items-center gap-0.5 text-[11px] font-semibold text-amber-700 shrink-0 cursor-help">
+                <Star size={11} className="fill-amber-500 text-amber-500" />
+                {trust.avgScore!.toFixed(1)}
+                <span className="text-muted-foreground font-normal">·{trust.ratingsCount}</span>
+              </span>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="text-xs">
+              {trust.avgScore!.toFixed(1)} / 5 sur {trust.ratingsCount} avis
+            </TooltipContent>
+          </Tooltip>
+        )}
+
+        {flag && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span
+                className="text-base leading-none shrink-0 cursor-help"
+                aria-label={originLabel}
+                role="img"
+              >
+                {flag}
+              </span>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="text-xs">
+              {originLabel}
+            </TooltipContent>
+          </Tooltip>
+        )}
+
         {isAnonymous && variant === "full" && (
           <Tooltip>
             <TooltipTrigger asChild>
               <button
                 type="button"
                 aria-label="Pourquoi un identifiant ?"
-                className="inline-flex items-center gap-1 text-[10px] font-medium text-muted-foreground hover:text-foreground bg-muted/60 rounded px-1.5 py-0.5 cursor-help focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                className="inline-flex items-center gap-1 text-[10px] font-medium text-muted-foreground hover:text-foreground bg-muted/60 rounded px-1.5 py-0.5 cursor-help focus:outline-none focus-visible:ring-2 focus-visible:ring-primary shrink-0"
               >
-                Identifiant vendeur <Info size={11} />
+                ID <Info size={11} />
               </button>
             </TooltipTrigger>
             <TooltipContent side="top" className="max-w-[280px] text-xs">

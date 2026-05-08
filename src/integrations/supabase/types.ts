@@ -14578,6 +14578,29 @@ export type Database = {
         }
         Returns: Json
       }
+      admin_search_kpis: { Args: { _days?: number }; Returns: Json }
+      admin_search_top_queries: {
+        Args: { _days?: number; _limit?: number }
+        Returns: {
+          click_rate: number
+          clicks: number
+          last_searched_at: string
+          normalized_query: string
+          sample_query: string
+          searches: number
+          zero_result_rate: number
+          zero_result_searches: number
+        }[]
+      }
+      admin_search_zero_results: {
+        Args: { _days?: number; _limit?: number }
+        Returns: {
+          last_searched_at: string
+          normalized_query: string
+          sample_query: string
+          searches: number
+        }[]
+      }
       admin_sla_open_alerts_count: {
         Args: never
         Returns: {

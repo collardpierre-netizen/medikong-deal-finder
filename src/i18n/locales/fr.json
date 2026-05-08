@@ -58,11 +58,11 @@
     "buyerProtection": "Protection acheteur"
   },
   "hero": {
-    "title": "Tout le médical, tous les prix, un seul endroit",
-    "titleHighlight": "Tout le médical",
-    "titleAfterHighlight": ", tous les prix,",
-    "titleLine2": " un seul endroit",
-    "subtitle": "Le comparateur B2B qui met en concurrence des centaines de fournisseurs pour vous.",
+    "title": "Tout le pro de la beauté, du soin et de la santé — en un seul endroit",
+    "titleHighlight": "Tout le pro de la beauté, du soin et de la santé",
+    "titleAfterHighlight": " —",
+    "titleLine2": " en un seul endroit",
+    "subtitle": "Le comparateur B2B qui met en concurrence des centaines de fournisseurs pour pharmacies, instituts et professionnels de la beauté.",
     "searchExamples": "Ex :",
     "exampleGloves": "Gants nitrile",
     "exampleBetadine": "Betadine",

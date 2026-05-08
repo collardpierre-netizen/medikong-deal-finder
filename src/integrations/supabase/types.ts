@@ -1079,6 +1079,13 @@ export type Database = {
             foreignKeyName: "categories_parent_id_fkey"
             columns: ["parent_id"]
             isOneToOne: false
+            referencedRelation: "admin_unmapped_qogita_categories"
+            referencedColumns: ["qogita_category_id"]
+          },
+          {
+            foreignKeyName: "categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
             referencedRelation: "categories"
             referencedColumns: ["id"]
           },
@@ -1243,6 +1250,13 @@ export type Database = {
             foreignKeyName: "category_source_aliases_category_id_fkey"
             columns: ["category_id"]
             isOneToOne: false
+            referencedRelation: "admin_unmapped_qogita_categories"
+            referencedColumns: ["qogita_category_id"]
+          },
+          {
+            foreignKeyName: "category_source_aliases_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
             referencedRelation: "categories"
             referencedColumns: ["id"]
           },
@@ -1286,6 +1300,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "admin_category_vat_audit"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "category_translations_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "admin_unmapped_qogita_categories"
+            referencedColumns: ["qogita_category_id"]
           },
           {
             foreignKeyName: "category_translations_category_id_fkey"
@@ -1370,6 +1391,13 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "admin_category_vat_audit"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cms_featured_categories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: true
+            referencedRelation: "admin_unmapped_qogita_categories"
+            referencedColumns: ["qogita_category_id"]
           },
           {
             foreignKeyName: "cms_featured_categories_category_id_fkey"
@@ -2670,6 +2698,13 @@ export type Database = {
             foreignKeyName: "home_featured_category_whitelist_category_id_fkey"
             columns: ["category_id"]
             isOneToOne: true
+            referencedRelation: "admin_unmapped_qogita_categories"
+            referencedColumns: ["qogita_category_id"]
+          },
+          {
+            foreignKeyName: "home_featured_category_whitelist_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: true
             referencedRelation: "categories"
             referencedColumns: ["id"]
           },
@@ -3062,6 +3097,13 @@ export type Database = {
             foreignKeyName: "margin_rules_category_id_fkey"
             columns: ["category_id"]
             isOneToOne: false
+            referencedRelation: "admin_unmapped_qogita_categories"
+            referencedColumns: ["qogita_category_id"]
+          },
+          {
+            foreignKeyName: "margin_rules_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
             referencedRelation: "categories"
             referencedColumns: ["id"]
           },
@@ -3409,6 +3451,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "admin_category_vat_audit"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "market_delta_thresholds_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "admin_unmapped_qogita_categories"
+            referencedColumns: ["qogita_category_id"]
           },
           {
             foreignKeyName: "market_delta_thresholds_category_id_fkey"
@@ -3892,6 +3941,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "admin_category_vat_audit"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offer_categories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "admin_unmapped_qogita_categories"
+            referencedColumns: ["qogita_category_id"]
           },
           {
             foreignKeyName: "offer_categories_category_id_fkey"
@@ -6661,6 +6717,13 @@ export type Database = {
             foreignKeyName: "products_category_id_fkey"
             columns: ["category_id"]
             isOneToOne: false
+            referencedRelation: "admin_unmapped_qogita_categories"
+            referencedColumns: ["qogita_category_id"]
+          },
+          {
+            foreignKeyName: "products_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
             referencedRelation: "categories"
             referencedColumns: ["id"]
           },
@@ -6677,6 +6740,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "admin_category_vat_audit"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_primary_category_id_fkey"
+            columns: ["primary_category_id"]
+            isOneToOne: false
+            referencedRelation: "admin_unmapped_qogita_categories"
+            referencedColumns: ["qogita_category_id"]
           },
           {
             foreignKeyName: "products_primary_category_id_fkey"
@@ -10707,6 +10777,13 @@ export type Database = {
             foreignKeyName: "vendor_catalog_interests_category_id_fkey"
             columns: ["category_id"]
             isOneToOne: false
+            referencedRelation: "admin_unmapped_qogita_categories"
+            referencedColumns: ["qogita_category_id"]
+          },
+          {
+            foreignKeyName: "vendor_catalog_interests_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
             referencedRelation: "categories"
             referencedColumns: ["id"]
           },
@@ -12319,6 +12396,13 @@ export type Database = {
             foreignKeyName: "vendor_price_alert_rules_category_id_fkey"
             columns: ["category_id"]
             isOneToOne: false
+            referencedRelation: "admin_unmapped_qogita_categories"
+            referencedColumns: ["qogita_category_id"]
+          },
+          {
+            foreignKeyName: "vendor_price_alert_rules_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
             referencedRelation: "categories"
             referencedColumns: ["id"]
           },
@@ -13416,6 +13500,13 @@ export type Database = {
             foreignKeyName: "categories_parent_id_fkey"
             columns: ["parent_id"]
             isOneToOne: false
+            referencedRelation: "admin_unmapped_qogita_categories"
+            referencedColumns: ["qogita_category_id"]
+          },
+          {
+            foreignKeyName: "categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
             referencedRelation: "categories"
             referencedColumns: ["id"]
           },
@@ -13546,6 +13637,13 @@ export type Database = {
             foreignKeyName: "products_category_id_fkey"
             columns: ["category_id"]
             isOneToOne: false
+            referencedRelation: "admin_unmapped_qogita_categories"
+            referencedColumns: ["qogita_category_id"]
+          },
+          {
+            foreignKeyName: "products_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
             referencedRelation: "categories"
             referencedColumns: ["id"]
           },
@@ -13555,6 +13653,15 @@ export type Database = {
         Row: {
           products_count: number | null
           source_path: string | null
+        }
+        Relationships: []
+      }
+      admin_unmapped_qogita_categories: {
+        Row: {
+          products_count: number | null
+          qogita_category_id: string | null
+          qogita_name: string | null
+          qogita_qid: string | null
         }
         Relationships: []
       }
@@ -13635,6 +13742,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "admin_category_vat_audit"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_primary_category_id_fkey"
+            columns: ["primary_category_id"]
+            isOneToOne: false
+            referencedRelation: "admin_unmapped_qogita_categories"
+            referencedColumns: ["qogita_category_id"]
           },
           {
             foreignKeyName: "products_primary_category_id_fkey"
@@ -14131,6 +14245,13 @@ export type Database = {
             foreignKeyName: "products_category_id_fkey"
             columns: ["category_id"]
             isOneToOne: false
+            referencedRelation: "admin_unmapped_qogita_categories"
+            referencedColumns: ["qogita_category_id"]
+          },
+          {
+            foreignKeyName: "products_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
             referencedRelation: "categories"
             referencedColumns: ["id"]
           },
@@ -14250,6 +14371,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "admin_category_vat_audit"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "admin_unmapped_qogita_categories"
+            referencedColumns: ["qogita_category_id"]
           },
           {
             foreignKeyName: "products_category_id_fkey"

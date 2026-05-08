@@ -36,6 +36,10 @@ export function useMarketplaceMetrics() {
         offersCount: Number(row.offers_count) || 0,
         productsOnPromo: Number(row.products_on_promo) || 0,
         avgOffersPerProduct: Number(row.avg_offers_per_product) || 0,
+        maxOffersPerProduct: Number(row.max_offers_per_product) || 0,
+        multiVendorProductsCount: Number(row.multi_vendor_products_count) || 0,
+        avgOffersPerMultiProduct: Number(row.avg_offers_per_multi_product) || 0,
+        medianOffersPerMultiProduct: Number(row.median_offers_per_multi_product) || 0,
         refreshedAt: row.refreshed_at,
       };
     },

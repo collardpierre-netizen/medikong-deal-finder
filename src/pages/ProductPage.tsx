@@ -124,6 +124,7 @@ function MarginCalcPctMode({
 }
 
 import { formatUpdatedAt, formatUpdatedAtFull } from "@/lib/format-date";
+import { SHIPPING_COPY, FAST_SHIPPING_MAX_DAYS } from "@/config/copy";
 
 /** @deprecated use formatUpdatedAt from @/lib/format-date */
 function formatRelative(iso?: string | null): string | null {

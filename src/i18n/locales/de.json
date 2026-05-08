@@ -102,7 +102,7 @@
     "mk1": "Ohne Vertrag, ohne Verpflichtung",
     "mk2": "MOV ab €150 exkl. MwSt.",
     "mk3": "Sofortiger Zugang zu {{suppliers}} Lieferanten",
-    "mk4": "{{avgOffers}} Lieferanten pro Referenz im Schnitt",
+    "mk4": "Bis zu {{maxOffers}} Lieferanten auf einer SKU",
     "mk5": "Echtzeit-Bestandsanalyse",
     "mk6": "Käuferschutz inklusive"
   },

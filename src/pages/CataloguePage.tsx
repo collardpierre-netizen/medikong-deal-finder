@@ -9,7 +9,7 @@ import SearchTrivagoView from "@/components/search/SearchTrivagoView";
 import type { CatalogViewMode } from "@/components/catalog/CatalogToolbar";
 import { CatalogPagination } from "@/components/catalog/CatalogPagination";
 import { ActiveFilters } from "@/components/catalog/ActiveFilters";
-import { MasterTaxonomyBar } from "@/components/catalog/MasterTaxonomyBar";
+// MasterTaxonomyBar retiré : navigation par catégorie pilotée par la sidebar (vague 2 prévue pour un éventuel bandeau d'univers).
 import { useCatalogFilters, useCatalogProducts, useCatalogBrands } from "@/hooks/useCatalog";
 import { Loader2, SlidersHorizontal, X } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -111,10 +111,8 @@ export default function CataloguePage() {
 
           {/* Main content */}
           <div className="flex-1 min-w-0">
-            <MasterTaxonomyBar
-              selectedSlug={filters.category}
-              onSelect={(slug) => setFilter("category", slug)}
-            />
+            {/* Bandeau d'univers retiré — navigation par catégorie via la sidebar. */}
+
             <ActiveFilters filters={filters} setFilter={setFilter} />
             <CatalogToolbar filters={filters} setFilter={setFilter} total={total} view={view} setView={setView} />
 

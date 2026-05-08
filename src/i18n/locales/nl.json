@@ -121,7 +121,7 @@
     "step3Title": "Bestel & betaal",
     "step3Desc": "Bevestig en betaal per kaart, overschrijving of uitgestelde betaling (30/60 dagen).",
     "step4Title": "Levering & support",
-    "step4Desc": "Verzending binnen 24-48u. Een probleem? Gegarandeerde oplossing binnen 24u."
+    "step4Desc": "Verzending afhankelijk van de verkoper — termijn vermeld op elk aanbod. Een probleem? Gegarandeerde oplossing binnen 24u."
   },
   "faq": {
     "title": "Veelgestelde vragen",
@@ -132,7 +132,7 @@
     "q3": "Zijn de prijzen inclusief BTW?",
     "a3": "De prijzen worden exclusief BTW weergegeven. De toepasselijke BTW wordt toegevoegd bij het afrekenen op basis van uw status en locatie.",
     "q4": "Hoe werkt de levering?",
-    "a4": "Bestellingen worden binnen 24-48u verzonden vanuit de magazijnen van onze leveranciers in België en Europa. Tracking is geïntegreerd in uw klantenruimte."
+    "a4": "Bestellingen worden verzonden volgens de voorwaarden van de verkoper — elk aanbod vermeldt zijn geschatte termijn. Tracking is geïntegreerd in uw klantenruimte."
   },
   "cta": {
     "title": "Vind de beste aanbiedingen op duizenden medische referenties.",
@@ -276,7 +276,7 @@
       "q5": "Hoe volg ik mijn bestelling?",
       "a5": "Een trackingnummer wordt per e-mail verzonden bij verzending. U kunt uw bestelling ook in realtime volgen via 'Mijn bestellingen' in uw klantenruimte.",
       "q6": "Wat zijn de levertijden?",
-      "a6": "De meeste bestellingen worden binnen 24-48 uur verzonden. Standaardlevering duurt 2-5 werkdagen in België en 3-7 dagen in de rest van de EU.",
+      "a6": "De verzendtermijn hangt af van de verkoper en wordt op elk aanbod vermeld. Filter op \"Snelste\" om de aanbiedingen te zien die binnen 48u worden verzonden.",
       "q7": "Hoe word ik verkoper op MediKong?",
       "a7": "Ga naar de pagina 'Verkoper worden' en vul het registratieformulier in. Ons team controleert uw documenten binnen 48 uur.",
       "q8": "Hoe werkt de BTW op MediKong?",

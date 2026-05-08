@@ -121,7 +121,7 @@
     "step3Title": "Bestellen & bezahlen",
     "step3Desc": "Bestätigen und bezahlen Sie per Karte, Überweisung oder aufgeschobener Zahlung (30/60 Tage).",
     "step4Title": "Lieferung & Support",
-    "step4Desc": "Versand innerhalb von 24-48 Std. Ein Problem? Garantierte Lösung innerhalb von 24 Std."
+    "step4Desc": "Versand je nach Verkäufer — Frist auf jedem Angebot angegeben. Ein Problem? Garantierte Lösung innerhalb von 24 Std."
   },
   "faq": {
     "title": "Häufig gestellte Fragen",
@@ -132,7 +132,7 @@
     "q3": "Sind die Preise inklusive MwSt.?",
     "a3": "Die Preise werden ohne MwSt. angezeigt. Die anwendbare MwSt. wird beim Checkout basierend auf Ihrem Status und Standort hinzugefügt.",
     "q4": "Wie funktioniert die Lieferung?",
-    "a4": "Bestellungen werden innerhalb von 24-48 Std. aus den Lagern unserer Lieferanten in Belgien und Europa versendet. Tracking ist in Ihrem Kundenbereich integriert."
+    "a4": "Bestellungen werden gemäß den Bedingungen des Verkäufers versendet — jedes Angebot gibt seine geschätzte Frist an. Tracking ist in Ihrem Kundenbereich integriert."
   },
   "cta": {
     "title": "Finden Sie die besten Angebote für Tausende medizinischer Referenzen.",
@@ -276,7 +276,7 @@
       "q5": "Wie verfolge ich meine Bestellung?",
       "a5": "Eine Sendungsverfolgungsnummer wird bei Versand per E-Mail gesendet. Sie können Ihre Bestellung auch in Echtzeit über 'Meine Bestellungen' in Ihrem Kundenbereich verfolgen.",
       "q6": "Wie sind die Lieferzeiten?",
-      "a6": "Die meisten Bestellungen werden innerhalb von 24-48h versandt. Die Standardlieferung dauert 2-5 Werktage in Belgien und 3-7 Tage im Rest der EU.",
+      "a6": "Die Versandfrist hängt vom Verkäufer ab und wird auf jedem Angebot angegeben. Filtern Sie auf \"Schnellste\", um die innerhalb von 48 Std. versendeten Angebote zu sehen.",
       "q7": "Wie werde ich Verkäufer auf MediKong?",
       "a7": "Gehen Sie zur Seite 'Verkäufer werden' und füllen Sie das Registrierungsformular aus. Unser Team prüft Ihre Unterlagen innerhalb von 48h.",
       "q8": "Wie funktioniert die MwSt. auf MediKong?",

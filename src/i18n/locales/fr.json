@@ -122,7 +122,7 @@
     "step3Title": "Commandez & payez",
     "step3Desc": "Validez et réglez par carte, virement ou paiement différé (30/60 jours).",
     "step4Title": "Livraison & support",
-    "step4Desc": "Expédition sous 24-48h. Un problème ? Résolution garantie sous 24h."
+    "step4Desc": "Expédition selon le vendeur — délai indiqué sur chaque offre. Un problème ? Résolution garantie sous 24h."
   },
   "faq": {
     "title": "Questions fréquentes",
@@ -133,7 +133,7 @@
     "q3": "Les prix incluent-ils la TVA ?",
     "a3": "Les prix affichés sont hors TVA (HT). La TVA applicable est ajoutée au moment du checkout selon votre statut et localisation.",
     "q4": "Comment fonctionne la livraison ?",
-    "a4": "Les commandes sont expédiées sous 24-48h depuis les entrepôts de nos fournisseurs en Belgique et en Europe. Le suivi est intégré dans votre espace client."
+    "a4": "Les commandes sont expédiées selon les conditions du vendeur — chaque offre indique son délai estimé. Le suivi est intégré dans votre espace client."
   },
   "cta": {
     "title": "Trouvez les meilleures offres sur des milliers de références médicales.",
@@ -278,7 +278,7 @@
       "q5": "Comment suivre ma commande ?",
       "a5": "Un numéro de suivi vous est envoyé par email dès l'expédition. Vous pouvez aussi suivre votre commande en temps réel depuis votre espace client dans 'Mes commandes'.",
       "q6": "Quels sont les délais de livraison ?",
-      "a6": "La plupart des commandes sont expédiées sous 24-48h. La livraison standard prend 2-5 jours ouvrables en Belgique, et 3-7 jours dans le reste de l'UE.",
+      "a6": "Le délai d'expédition dépend du vendeur et est précisé sur chaque offre. Filtrez sur \"Le plus rapide\" pour voir les offres expédiées sous 48h.",
       "q7": "Comment devenir vendeur sur MediKong ?",
       "a7": "Rendez-vous sur la page 'Devenir vendeur' et remplissez le formulaire d'inscription. Notre équipe vérifiera vos documents sous 48h.",
       "q8": "Comment fonctionne la TVA sur MediKong ?",

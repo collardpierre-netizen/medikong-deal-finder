@@ -122,7 +122,7 @@
     "step3Title": "Order & pay",
     "step3Desc": "Confirm and pay by card, bank transfer or deferred payment (30/60 days).",
     "step4Title": "Delivery & support",
-    "step4Desc": "Shipping within 24-48h. A problem? Guaranteed resolution within 24h."
+    "step4Desc": "Shipping depends on the seller — lead time shown on each offer. A problem? Guaranteed resolution within 24h."
   },
   "faq": {
     "title": "Frequently asked questions",
@@ -133,7 +133,7 @@
     "q3": "Do prices include VAT?",
     "a3": "Prices are displayed excluding VAT. The applicable VAT is added at checkout based on your status and location.",
     "q4": "How does delivery work?",
-    "a4": "Orders are shipped within 24-48h from our suppliers' warehouses in Belgium and Europe. Tracking is integrated in your customer area."
+    "a4": "Orders are shipped according to each seller's conditions — every offer displays its estimated lead time. Tracking is integrated in your customer area."
   },
   "cta": {
     "title": "Find the best deals on thousands of medical references.",
@@ -278,7 +278,7 @@
       "q5": "How to track my order?",
       "a5": "A tracking number is sent by email upon shipment. You can also track your order in real time from 'My Orders' in your account area.",
       "q6": "What are the delivery times?",
-      "a6": "Most orders are shipped within 24-48h. Standard delivery takes 2-5 business days in Belgium and 3-7 days in the rest of the EU.",
+      "a6": "Lead time depends on the seller and is shown on each offer. Filter on \"Fastest\" to see offers shipped within 48h.",
       "q7": "How to become a seller on MediKong?",
       "a7": "Go to the 'Become a Seller' page and fill in the registration form. Our team will verify your documents within 48h.",
       "q8": "How does VAT work on MediKong?",

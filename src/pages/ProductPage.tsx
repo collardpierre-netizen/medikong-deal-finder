@@ -12,7 +12,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { useFavorites, useRecentActivity } from "@/hooks/useFavorites";
 import { useVendorTrust } from "@/hooks/useVendorTrust";
 import { VendorTrustProvider, useVendorTrustForId } from "@/contexts/VendorTrustContext";
-import { VendorTrustHeader } from "@/components/product/VendorTrustHeader";
+import { VendorTrustHeader, countryName, formatJoined } from "@/components/product/VendorTrustHeader";
 import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";

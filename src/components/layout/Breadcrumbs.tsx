@@ -165,17 +165,26 @@ export function Breadcrumbs() {
           </Link>
         </li>
         {crumbs.map((crumb) => (
-          <li key={crumb.path} className="inline-flex items-center gap-1.5">
+          <li key={crumb.path} className="inline-flex items-center gap-1.5 leading-4">
             <ChevronRight size={12} className="text-mk-ter" />
             {crumb.pending ? (
+              // Largeur/hauteur fixes alignées sur le line-height du texte
+              // (12px font + leading-4 = 16px) pour éviter tout reflow
+              // quand le libellé réel (catégorie ou vendeur) prend le relais.
               <span
                 aria-label="Chargement"
-                className="inline-block h-3 w-24 rounded-sm bg-muted animate-pulse align-middle"
+                aria-busy="true"
+                className="inline-block h-4 w-32 rounded-sm bg-muted animate-pulse align-middle"
               />
             ) : crumb.isLast ? (
-              <span className="font-semibold text-mk-navy">{crumb.label}</span>
+              <span className="inline-block min-h-4 font-semibold text-mk-navy align-middle">
+                {crumb.label}
+              </span>
             ) : (
-              <Link to={crumb.path} className="text-mk-sec hover:text-mk-blue transition-colors">
+              <Link
+                to={crumb.path}
+                className="inline-block min-h-4 text-mk-sec hover:text-mk-blue transition-colors align-middle"
+              >
                 {crumb.label}
               </Link>
             )}

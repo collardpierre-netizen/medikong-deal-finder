@@ -11,6 +11,7 @@ import { ProcessStepsVertical } from "@/components/trust/ProcessStepsVertical";
 import { TrustTestimonials } from "@/components/trust/TrustTestimonials";
 import { SellerFaqSection } from "@/components/trust/SellerFaqSection";
 import { commissionTiers } from "@/data/trust-process-data";
+import { useMarketplaceMetrics } from "@/hooks/useMarketplaceMetrics";
 
 const sellerSteps = [
   { number: 1, title: "Créez votre compte vendeur", description: "Inscription gratuite en 5 minutes. Renseignez vos informations d'entreprise, numéro BCE et licence de distribution.", tags: ["BCE", "TVA", "Licence"] },

@@ -550,16 +550,16 @@ function OfferRow({
             </span>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-stretch gap-2">
           <div
-            className="flex items-center border border-border rounded-md flex-1"
+            className="flex items-center border border-border rounded-md shrink-0 h-10"
             role="group"
             aria-label={`Quantité — par lots de ${step}`}
           >
             <button
               type="button"
               onClick={() => setQty((q) => Math.max(step, q - step))}
-              className="px-2.5 py-2 text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary rounded-l-md disabled:opacity-40"
+              className="px-2.5 h-full text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary rounded-l-md disabled:opacity-40"
               disabled={qty <= step}
               aria-label={`Diminuer la quantité de ${step}`}
               title={`Retirer ${step}`}
@@ -567,7 +567,7 @@ function OfferRow({
               <Minus size={14} aria-hidden />
             </button>
             <span
-              className="px-3 py-2 text-sm font-medium text-center flex-1 tabular-nums"
+              className="px-2 text-sm font-medium text-center min-w-[36px] tabular-nums"
               aria-live="polite"
               aria-atomic="true"
             >
@@ -576,7 +576,7 @@ function OfferRow({
             <button
               type="button"
               onClick={() => setQty((q) => Math.min(maxQty, q + step))}
-              className="px-2.5 py-2 text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary rounded-r-md disabled:opacity-40"
+              className="px-2.5 h-full text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary rounded-r-md disabled:opacity-40"
               disabled={qty >= maxQty}
               aria-label={`Augmenter la quantité de ${step}`}
               title={`Ajouter ${step}`}
@@ -586,14 +586,15 @@ function OfferRow({
           </div>
           <motion.button
             type="button"
-            className="bg-primary text-primary-foreground px-4 py-2.5 rounded-md text-sm font-semibold flex items-center gap-1.5 whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+            className="bg-primary text-primary-foreground px-4 h-10 rounded-md text-sm font-semibold flex items-center justify-center gap-1.5 whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 flex-1 min-w-0"
             whileTap={{ scale: 0.95 }}
             onClick={handleAdd}
             title={`Ajouter ${Math.min(qty, maxQty)} × ${formatEur(basePackPrice)} € au panier`}
             aria-label={`Ajouter ${Math.min(qty, maxQty)} unité(s) au panier — total ${formatEur(Math.min(qty, maxQty) * basePackPrice)} € ${priceLabel}`}
           >
-            <ShoppingCart size={14} aria-hidden />
-            <span>Ajouter ·</span>
+            <ShoppingCart size={14} aria-hidden className="shrink-0" />
+            <span>Ajouter</span>
+            <span className="opacity-60">·</span>
             <span className="tabular-nums" aria-live="polite">
               {formatEur(Math.min(qty, maxQty) * basePackPrice)}&nbsp;€
             </span>

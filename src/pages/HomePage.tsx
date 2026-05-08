@@ -21,6 +21,7 @@ import { InstantSearchBar } from "@/components/search/InstantSearchBar";
 import { useMarketplaceMetrics } from "@/hooks/useMarketplaceMetrics";
 import { formatCount } from "@/lib/formatCount";
 import { RecentSearches } from "@/components/home/RecentSearches";
+import { useHomeFeaturedBrands, useHomeFeaturedProducts, HOME_FEATURED_BADGE_LABEL } from "@/hooks/useHomeFeatured";
 
 const iconMap: Record<string, React.ReactNode> = {
   Shield: <Shield size={20} className="text-mk-navy" />,
@@ -40,6 +41,7 @@ export default function HomePage() {
   
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const { data: products = [] } = useFeaturedProducts(5);
+  const { data: curatedProducts = [] } = useHomeFeaturedProducts();
   const { country, currentCountry } = useCountry();
   const navigate = useNavigate();
   const { data: metrics } = useMarketplaceMetrics();
@@ -119,19 +121,23 @@ export default function HomePage() {
 
   const [failedLogos, setFailedLogos] = useState<Set<string>>(new Set());
 
+  // Curation pilotable depuis l'admin (table home_featured_brands)
+  const { data: curatedBrands = [] } = useHomeFeaturedBrands();
+
+  // Fallback rétro-compatible : si la curation manuelle est vide, on retombe
+  // sur les marques `is_featured` existantes (toggle dans /admin/marques).
   const { data: rawFeaturedBrands = [] } = useQuery({
     queryKey: ["featured-brands-homepage"],
+    enabled: curatedBrands.length === 0,
     queryFn: async () => {
       const { data } = await supabase
         .from("brands")
         .select("id, name, slug, logo_url, website_url, product_count, is_featured")
         .eq("is_active", true)
         .gt("product_count", 0)
-        // Featured d'abord (curation manuelle dans /admin/marques), puis top product_count
         .order("is_featured", { ascending: false })
         .order("product_count", { ascending: false })
         .limit(40);
-      // Keep only brands that have a logo_url OR a website_url (for Clearbit fallback)
       return (data || []).filter((b: any) => b.logo_url || b.website_url);
     },
     staleTime: 5 * 60 * 1000,
@@ -139,7 +145,18 @@ export default function HomePage() {
     refetchOnWindowFocus: false,
   });
 
-  const featuredBrands = rawFeaturedBrands.filter((b: any) => !failedLogos.has(b.id));
+  // Source unifiée : curation prioritaire, sinon fallback marques featured.
+  const brandsSource: any[] = curatedBrands.length > 0
+    ? curatedBrands.map((b) => ({
+        id: b.brand_id,
+        name: b.brand_name,
+        slug: b.brand_slug,
+        logo_url: b.logo_url,
+        website_url: b.website_url,
+      }))
+    : rawFeaturedBrands;
+
+  const featuredBrands = brandsSource.filter((b: any) => !failedLogos.has(b.id));
 
   const getBrandLogoUrl = (b: any) => {
     if (b.logo_url) return b.logo_url;
@@ -468,20 +485,57 @@ export default function HomePage() {
         </div>
       </AnimatedSection>
 
-      {/* ═══ POPULAR PRODUCTS ═══ */}
+      {/* ═══ POPULAR / CURATED PRODUCTS ═══ */}
       <AnimatedSection className="py-14 md:py-20 bg-mk-alt/30">
         <div className="mk-container">
           <div className="flex items-center justify-between mb-8">
-            <h2 className="text-2xl font-bold text-mk-navy">{t("popularProducts.title")}</h2>
+            <h2 className="text-2xl font-bold text-mk-navy">
+              {curatedProducts.length > 0 ? "Best-sellers officine" : t("popularProducts.title")}
+            </h2>
             <Link to="/recherche" className="text-sm text-mk-blue hover:underline flex items-center gap-1">
               {t("common.viewAll")} <ChevronRight size={14} />
             </Link>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            {products.slice(0, 5).map((p, i) => (
-              <ProductCard key={p.id} product={p} index={i} />
-            ))}
-          </div>
+          {curatedProducts.length > 0 ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+              {curatedProducts.slice(0, 10).map((p) => {
+                const img = p.image_url || (Array.isArray(p.image_urls) ? p.image_urls[0] : null);
+                return (
+                  <Link
+                    key={p.id}
+                    to={`/produits/${p.product_slug}`}
+                    className="group relative bg-white rounded-xl border border-mk-line overflow-hidden hover:shadow-md transition-all"
+                  >
+                    {p.badge && (
+                      <span className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded-md bg-mk-blue text-white text-[10px] font-semibold uppercase tracking-wide">
+                        {HOME_FEATURED_BADGE_LABEL[p.badge]}
+                      </span>
+                    )}
+                    <div className="aspect-square bg-mk-alt/40 flex items-center justify-center overflow-hidden">
+                      {img ? (
+                        <img src={img} alt={p.product_name} className="w-full h-full object-contain p-3" referrerPolicy="no-referrer" />
+                      ) : (
+                        <Package size={32} className="text-mk-sec/40" />
+                      )}
+                    </div>
+                    <div className="p-3">
+                      {p.brand_name && <p className="text-[10px] uppercase tracking-wide text-mk-sec font-semibold truncate">{p.brand_name}</p>}
+                      <p className="text-xs font-semibold text-mk-navy mt-0.5 line-clamp-2 min-h-[32px]">{p.product_name}</p>
+                      {p.best_price_excl_vat != null && (
+                        <p className="text-sm font-bold text-mk-navy mt-1">{formatPrice(Number(p.best_price_excl_vat))} <span className="text-[10px] font-normal text-mk-sec">HTVA</span></p>
+                      )}
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+              {products.slice(0, 5).map((p, i) => (
+                <ProductCard key={p.id} product={p} index={i} />
+              ))}
+            </div>
+          )}
         </div>
       </AnimatedSection>
 

@@ -35,7 +35,7 @@ const TEMPORARILY_DISABLED_RULES: string[] = [
 
 for (const { name, path } of KEY_PUBLIC_PAGES) {
   test.describe(`A11y ${name} (${path})`, () => {
-    test("aucune violation WCAG A/AA", async ({ page }) => {
+    test("aucune violation WCAG A/AA", async ({ page }, testInfo) => {
       await page.goto(path, { waitUntil: "networkidle" });
 
       const results = await new AxeBuilder({ page })
@@ -54,9 +54,11 @@ for (const { name, path } of KEY_PUBLIC_PAGES) {
         firstTarget: v.nodes[0]?.target,
       }));
 
+      const vp = page.viewportSize();
+      const ctx = `[${testInfo.project.name} ${vp?.width}×${vp?.height}] ${path}`;
       expect(
         results.violations,
-        `Violations a11y détectées sur ${path}:\n${JSON.stringify(summary, null, 2)}`,
+        `Violations a11y détectées sur ${ctx}:\n${JSON.stringify(summary, null, 2)}`,
       ).toEqual([]);
     });
   });

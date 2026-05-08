@@ -72,7 +72,9 @@
     "slideFallbackSubtitle": "MediKong.pro",
     "titleBefore": "Tout pour les ",
     "titleAccent": "professionnels de santé",
-    "titleAfter": ", en un seul endroit."
+    "titleAfter": ", en un seul endroit.",
+    "ctaSeeDemo": "Voir un exemple de comparaison",
+    "ctaCreateAccount": "Créer mon compte (gratuit, 1 min)"
   },
   "stats": {
     "suppliers": "Fournisseurs vérifiés",

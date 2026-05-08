@@ -14601,6 +14601,19 @@ export type Database = {
           searches: number
         }[]
       }
+      admin_search_zero_results_with_suggestions: {
+        Args: { _days?: number; _limit?: number }
+        Returns: {
+          last_searched_at: string
+          matching_products_count: number
+          normalized_query: string
+          recommendation: string
+          sample_query: string
+          searches: number
+          suggested_brands: Json
+          suggested_categories: Json
+        }[]
+      }
       admin_sla_open_alerts_count: {
         Args: never
         Returns: {

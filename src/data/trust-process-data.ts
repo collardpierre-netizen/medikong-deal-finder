@@ -104,7 +104,7 @@ export const pricingCards: PricingCardData[] = [
 ];
 
 export const logisticsFaqItems: FaqItem[] = [
-  { question: "Quels sont les délais de livraison ?", answer: "La plupart des commandes sont expédiées sous 24-48h. La livraison standard prend 2-5 jours ouvrables en Belgique." },
+  { question: "Quels sont les délais de livraison ?", answer: "Le délai d'expédition dépend du vendeur et est précisé sur chaque offre. Filtrez sur \"Le plus rapide\" pour voir les offres expédiées sous 48h." },
   { question: "Livrez-vous à l'international ?", answer: "Oui, nous livrons dans toute l'Union Européenne. Les frais et délais varient selon la destination." },
   { question: "Comment suivre ma commande ?", answer: "Un numéro de suivi vous est envoyé par email dès l'expédition. Vous pouvez aussi suivre votre commande depuis votre espace client." },
   { question: "Que faire en cas de colis endommagé ?", answer: "Refusez le colis et contactez notre support immédiatement. Nous organisons un renvoi sous 24h." },
@@ -262,7 +262,7 @@ export const helpFaqItems: FaqItem[] = [
   { question: "Quels sont les moyens de paiement acceptés ?", answer: "Nous acceptons Visa, Mastercard, Bancontact, virement SEPA et le paiement différé 30/60 jours via Mondu (sous conditions)." },
   { question: "Comment contacter le support ?", answer: "Envoyez un email à support@medikong.pro (réponse sous 24h) ou via le formulaire de contact. Le chat en ligne sera bientôt disponible." },
   { question: "Comment suivre ma commande ?", answer: "Un numéro de suivi vous est envoyé par email dès l'expédition. Vous pouvez aussi suivre votre commande en temps réel depuis votre espace client dans 'Mes commandes'." },
-  { question: "Quels sont les délais de livraison ?", answer: "La plupart des commandes sont expédiées sous 24-48h. La livraison standard prend 2-5 jours ouvrables en Belgique, et 3-7 jours dans le reste de l'UE." },
+  { question: "Quels sont les délais de livraison ?", answer: "Le délai d'expédition dépend du vendeur et est indiqué sur chaque offre. Vous pouvez filtrer le catalogue sur \"Le plus rapide\" pour ne voir que les offres expédiées sous 48h." },
   { question: "Comment devenir vendeur sur MediKong ?", answer: "Rendez-vous sur la page 'Devenir vendeur' et remplissez le formulaire d'inscription. Notre équipe vérifiera vos documents sous 48h." },
   { question: "Comment fonctionne la TVA sur MediKong ?", answer: "Les prix affichés sont HT. La TVA applicable est calculée automatiquement selon le pays de livraison et le type de produit (taux standard ou réduit)." },
 ];

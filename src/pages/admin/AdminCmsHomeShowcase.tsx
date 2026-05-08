@@ -285,75 +285,102 @@ const AdminCmsHomeShowcase = () => {
         </div>
       </div>
 
-      {/* Currently pinned */}
-      <div className="rounded-xl border bg-card p-4 space-y-3">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold">Produit actuellement épinglé</h3>
-          {updatedAtLabel && (
-            <span className="text-xs text-muted-foreground">
-              Mis à jour le {updatedAtLabel}
-            </span>
-          )}
-        </div>
-
-        {loadingSettings ? (
-          <div className="text-sm text-muted-foreground">Chargement…</div>
-        ) : pinnedProduct ? (
-          <div className="flex items-center gap-3 rounded-lg border bg-muted/20 p-3">
-            <div className="h-14 w-14 shrink-0 rounded bg-white border flex items-center justify-center overflow-hidden">
-              {pinnedProduct.image_url ? (
-                <img
-                  src={pinnedProduct.image_url}
-                  alt=""
-                  className="h-full w-full object-contain p-1"
-                />
-              ) : (
-                <Package className="h-6 w-6 text-muted-foreground" />
+      {/* Currently configured products */}
+      {(["pinned", "demo_cta"] as const).map((s) => {
+        const isPinned = s === "pinned";
+        const product = isPinned ? pinnedProduct : demoCtaProduct;
+        const currentId = isPinned ? pinnedId : demoCtaId;
+        const title = isPinned
+          ? "Encart « Comparaison live » (produit épinglé)"
+          : 'CTA « Voir un exemple de comparaison »';
+        const emptyHint = isPinned
+          ? "Aucun produit épinglé. La home affichera automatiquement le SKU avec le plus gros écart de prix du jour."
+          : "Aucun produit configuré pour le CTA. La home retombera sur le top écart de prix du jour.";
+        return (
+          <div key={s} className="rounded-xl border bg-card p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold">{title}</h3>
+              {isPinned && updatedAtLabel && (
+                <span className="text-xs text-muted-foreground">
+                  Mis à jour le {updatedAtLabel}
+                </span>
               )}
             </div>
-            <div className="min-w-0 flex-1">
-              <div className="text-sm font-medium truncate">{pinnedProduct.name}</div>
-              <div className="text-xs text-muted-foreground truncate">
-                {pinnedProduct.brand_name ?? "—"}
-                {pinnedProduct.gtin ? ` · GTIN ${pinnedProduct.gtin}` : ""}
-                {pinnedProduct.is_active ? "" : " · ⚠️ inactif"}
+
+            {loadingSettings ? (
+              <div className="text-sm text-muted-foreground">Chargement…</div>
+            ) : product ? (
+              <div className="flex items-center gap-3 rounded-lg border bg-muted/20 p-3">
+                <div className="h-14 w-14 shrink-0 rounded bg-white border flex items-center justify-center overflow-hidden">
+                  {product.image_url ? (
+                    <img src={product.image_url} alt="" className="h-full w-full object-contain p-1" />
+                  ) : (
+                    <Package className="h-6 w-6 text-muted-foreground" />
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm font-medium truncate">{product.name}</div>
+                  <div className="text-xs text-muted-foreground truncate">
+                    {product.brand_name ?? "—"}
+                    {product.gtin ? ` · GTIN ${product.gtin}` : ""}
+                    {product.is_active ? "" : " · ⚠️ inactif"}
+                  </div>
+                </div>
+                <Button asChild variant="ghost" size="sm">
+                  <Link to={`/produit/${product.slug}`} target="_blank" rel="noreferrer">
+                    <ExternalLink className="h-4 w-4" />
+                  </Link>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPinned.mutate({ slot: s, productId: null })}
+                  disabled={setPinned.isPending}
+                >
+                  <X className="mr-1 h-4 w-4" /> Retirer
+                </Button>
               </div>
-            </div>
-            <Button asChild variant="ghost" size="sm">
-              <Link to={`/produit/${pinnedProduct.slug}`} target="_blank" rel="noreferrer">
-                <ExternalLink className="h-4 w-4" />
-              </Link>
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setPinned.mutate(null)}
-              disabled={setPinned.isPending}
-            >
-              <X className="mr-1 h-4 w-4" /> Retirer
-            </Button>
+            ) : currentId ? (
+              <div className="text-sm text-amber-600">
+                Produit introuvable (id <code>{currentId}</code>). Choisissez-en un autre ci-dessous.
+              </div>
+            ) : (
+              <div className="text-sm text-muted-foreground">{emptyHint}</div>
+            )}
           </div>
-        ) : pinnedId ? (
-          <div className="text-sm text-amber-600">
-            Produit introuvable (id <code>{pinnedId}</code>). Choisissez-en un autre ci-dessous.
-          </div>
-        ) : (
-          <div className="text-sm text-muted-foreground">
-            Aucun produit épinglé. La home affichera automatiquement le SKU avec le plus gros écart de prix du jour.
-          </div>
-        )}
-      </div>
+        );
+      })}
 
       {/* Picker */}
       <div className="rounded-xl border bg-card p-4 space-y-3">
-        <div>
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <Label htmlFor="product-search" className="text-sm font-semibold">
-            Choisir un nouveau produit épinglé
+            Choisir un produit pour {slot === "pinned" ? "l'encart comparaison" : "le CTA démo"}
           </Label>
-          <p className="text-xs text-muted-foreground mt-1">
-            Recherche par <strong>GTIN</strong> (ex&nbsp;: <code>3337875852302</code>) ou par <strong>nom</strong> (min. 2 caractères). Privilégiez un produit multi-vendeurs avec un écart de prix net.
-          </p>
+          <div className="inline-flex rounded-md border bg-background p-0.5">
+            {([
+              { v: "pinned", label: "Encart comparaison" },
+              { v: "demo_cta", label: "CTA démo" },
+            ] as const).map((opt) => (
+              <button
+                key={opt.v}
+                type="button"
+                onClick={() => setSlot(opt.v)}
+                className={`px-2.5 py-1 text-xs rounded ${
+                  slot === opt.v
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
         </div>
+        <p className="text-xs text-muted-foreground">
+          Recherche par <strong>GTIN</strong> (ex&nbsp;: <code>4051895033402</code>) ou par <strong>nom</strong> (min. 2 caractères).
+          Pour l'encart comparaison, privilégiez un produit multi-vendeurs avec un écart de prix net.
+        </p>
 
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -376,7 +403,8 @@ const AdminCmsHomeShowcase = () => {
               </div>
             ) : (
               searchResults.map((p) => {
-                const already = p.id === pinnedId;
+                const currentId = slot === "pinned" ? pinnedId : demoCtaId;
+                const already = p.id === currentId;
                 return (
                   <div
                     key={p.id}
@@ -400,9 +428,9 @@ const AdminCmsHomeShowcase = () => {
                       size="sm"
                       variant={already ? "outline" : "default"}
                       disabled={already || setPinned.isPending}
-                      onClick={() => setPinned.mutate(p.id)}
+                      onClick={() => setPinned.mutate({ slot, productId: p.id })}
                     >
-                      {already ? "Déjà épinglé" : "Épingler"}
+                      {already ? "Déjà sélectionné" : "Sélectionner"}
                     </Button>
                   </div>
                 );

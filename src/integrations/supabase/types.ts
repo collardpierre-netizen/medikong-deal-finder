@@ -15015,6 +15015,16 @@ export type Database = {
         Args: { _order_id: string; _reason?: string }
         Returns: undefined
       }
+      admin_unmapped_categories: {
+        Args: { _limit?: number }
+        Returns: {
+          has_alias: boolean
+          mapped_to_name: string
+          mapped_to_slug: string
+          product_count: number
+          raw_label: string
+        }[]
+      }
       apply_category_aliases: {
         Args: never
         Returns: {

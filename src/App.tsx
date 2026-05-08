@@ -146,6 +146,7 @@ const AdminCRM = lazyWithRetry(() => import("./pages/admin/AdminCRM"), "AdminCRM
 const AdminCMS = lazyWithRetry(() => import("./pages/admin/AdminCMS"), "AdminCMS");
 const AdminCmsHomeBrands = lazyWithRetry(() => import("./pages/admin/AdminCmsHomeBrands"), "AdminCmsHomeBrands");
 const AdminCmsHomeProducts = lazyWithRetry(() => import("./pages/admin/AdminCmsHomeProducts"), "AdminCmsHomeProducts");
+const AdminUnmappedCategories = lazyWithRetry(() => import("./pages/admin/AdminUnmappedCategories"), "AdminUnmappedCategories");
 // AdminProductPrices supprimé : remplacé par offer_buyer_profile_prices (édition par offre dans /vendor/offers).
 const AdminInvestPipeline = lazyWithRetry(() => import("./pages/admin/AdminInvestPipeline"), "AdminInvestPipeline");
 const AdminLogistique = lazyWithRetry(() => import("./pages/admin/AdminLogistique"), "AdminLogistique");
@@ -434,6 +435,7 @@ const App = () => (
               <Route path="cms" element={<LP><AdminCMS /></LP>} />
               <Route path="cms/home/marques" element={<LP><AdminCmsHomeBrands /></LP>} />
               <Route path="cms/home/produits" element={<LP><AdminCmsHomeProducts /></LP>} />
+              <Route path="categories/non-mappees" element={<LP><AdminUnmappedCategories /></LP>} />
               <Route path="prix-reference" element={<LP><AdminMarketCodes /></LP>} />
               {/* /admin/product-prices supprimé : utiliser /vendor/offers (offer_buyer_profile_prices) */}
               <Route path="invest-pipeline" element={<LP><AdminInvestPipeline /></LP>} />

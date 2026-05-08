@@ -7,6 +7,11 @@ import AxeBuilder from "@axe-core/playwright";
  *
  * Tags axe utilisés : wcag2a, wcag2aa, wcag21a, wcag21aa.
  *
+ * Joué sur deux viewports via les projects Playwright (cf. playwright.config.ts) :
+ *   - desktop-1280 (1280×800)
+ *   - mobile-390   (Pixel 5, ≈ 393×851)
+ * Toute nouvelle violation sur l'un des deux fait échouer la CI.
+ *
  * Pour limiter le bruit pendant qu'on rattrape la dette, on tolère
  * temporairement quelques règles via `disableRules` ci-dessous. Chaque
  * entrée doit pointer vers un ticket de remédiation et être levée
@@ -30,7 +35,7 @@ const TEMPORARILY_DISABLED_RULES: string[] = [
 
 for (const { name, path } of KEY_PUBLIC_PAGES) {
   test.describe(`A11y ${name} (${path})`, () => {
-    test("aucune violation WCAG A/AA", async ({ page }) => {
+    test("aucune violation WCAG A/AA", async ({ page }, testInfo) => {
       await page.goto(path, { waitUntil: "networkidle" });
 
       const results = await new AxeBuilder({ page })
@@ -49,9 +54,11 @@ for (const { name, path } of KEY_PUBLIC_PAGES) {
         firstTarget: v.nodes[0]?.target,
       }));
 
+      const vp = page.viewportSize();
+      const ctx = `[${testInfo.project.name} ${vp?.width}×${vp?.height}] ${path}`;
       expect(
         results.violations,
-        `Violations a11y détectées sur ${path}:\n${JSON.stringify(summary, null, 2)}`,
+        `Violations a11y détectées sur ${ctx}:\n${JSON.stringify(summary, null, 2)}`,
       ).toEqual([]);
     });
   });

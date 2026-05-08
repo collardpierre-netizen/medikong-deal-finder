@@ -1,6 +1,6 @@
 import { Suspense } from "react"; // v2
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes, Navigate, useParams } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Navigate, useParams, useLocation } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -31,6 +31,12 @@ function PageLoader() {
 function RedirectBrandSingular() {
   const { slug } = useParams();
   return <Navigate to={`/marques/${slug ?? ""}`} replace />;
+}
+
+// Redirection /shop → /catalogue avec conservation des query params et hash
+function RedirectShopToCatalogue() {
+  const { search, hash } = useLocation();
+  return <Navigate to={`/catalogue${search}${hash}`} replace />;
 }
 
 // Lazy load ALL pages
@@ -309,6 +315,8 @@ const App = () => (
             <Route path="/inscription" element={<Navigate to="/onboarding" replace />} />
             <Route path="/categorie/:slug" element={<LP><CataloguePage /></LP>} />
             <Route path="/catalogue" element={<LP><CataloguePage /></LP>} />
+            <Route path="/shop" element={<RedirectShopToCatalogue />} />
+            <Route path="/shop/*" element={<RedirectShopToCatalogue />} />
             <Route path="/promotions" element={<LP><PromotionsPage /></LP>} />
             <Route path="/seller-onboarding" element={<Navigate to="/onboarding" replace />} />
             <Route path="/buyer-onboarding" element={<Navigate to="/onboarding" replace />} />

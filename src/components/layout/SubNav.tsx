@@ -9,7 +9,7 @@ export function SubNav() {
   const { data: features } = useSiteFeatures();
 
   const tabs = [
-    { label: t("nav.shop"), path: "/" },
+    { label: t("nav.shop"), path: "/shop" },
     { label: t("nav.brands"), path: "/marques" },
     { label: t("nav.promotions"), path: "/promotions" },
     { label: t("nav.sourcing"), path: "/sourcing" },
@@ -35,7 +35,14 @@ export function SubNav() {
 
         {/* Links */}
         {tabs.map(tab => {
-          const active = pathname === tab.path || (tab.path === "/" && pathname === "");
+          const active = (() => {
+            if (pathname === tab.path) return true;
+            if (tab.path === "/shop") {
+              return pathname === "/shop" || pathname.startsWith("/catalogue") || pathname.startsWith("/categorie");
+            }
+            if (tab.path === "/") return pathname === "/" || pathname === "";
+            return false;
+          })();
           return (
             <Link
               key={tab.path}

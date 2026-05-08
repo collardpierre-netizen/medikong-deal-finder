@@ -287,6 +287,8 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <EnvNoIndex />
+          <EnvBanner />
           <ImpersonationBanner />
           <LazyRouteBoundary>
           <Suspense fallback={<PageLoader />}>

@@ -485,20 +485,57 @@ export default function HomePage() {
         </div>
       </AnimatedSection>
 
-      {/* ═══ POPULAR PRODUCTS ═══ */}
+      {/* ═══ POPULAR / CURATED PRODUCTS ═══ */}
       <AnimatedSection className="py-14 md:py-20 bg-mk-alt/30">
         <div className="mk-container">
           <div className="flex items-center justify-between mb-8">
-            <h2 className="text-2xl font-bold text-mk-navy">{t("popularProducts.title")}</h2>
+            <h2 className="text-2xl font-bold text-mk-navy">
+              {curatedProducts.length > 0 ? "Best-sellers officine" : t("popularProducts.title")}
+            </h2>
             <Link to="/recherche" className="text-sm text-mk-blue hover:underline flex items-center gap-1">
               {t("common.viewAll")} <ChevronRight size={14} />
             </Link>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            {products.slice(0, 5).map((p, i) => (
-              <ProductCard key={p.id} product={p} index={i} />
-            ))}
-          </div>
+          {curatedProducts.length > 0 ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+              {curatedProducts.slice(0, 10).map((p) => {
+                const img = p.image_url || (Array.isArray(p.image_urls) ? p.image_urls[0] : null);
+                return (
+                  <Link
+                    key={p.id}
+                    to={`/produits/${p.product_slug}`}
+                    className="group relative bg-white rounded-xl border border-mk-line overflow-hidden hover:shadow-md transition-all"
+                  >
+                    {p.badge && (
+                      <span className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded-md bg-mk-blue text-white text-[10px] font-semibold uppercase tracking-wide">
+                        {HOME_FEATURED_BADGE_LABEL[p.badge]}
+                      </span>
+                    )}
+                    <div className="aspect-square bg-mk-alt/40 flex items-center justify-center overflow-hidden">
+                      {img ? (
+                        <img src={img} alt={p.product_name} className="w-full h-full object-contain p-3" referrerPolicy="no-referrer" />
+                      ) : (
+                        <Package size={32} className="text-mk-sec/40" />
+                      )}
+                    </div>
+                    <div className="p-3">
+                      {p.brand_name && <p className="text-[10px] uppercase tracking-wide text-mk-sec font-semibold truncate">{p.brand_name}</p>}
+                      <p className="text-xs font-semibold text-mk-navy mt-0.5 line-clamp-2 min-h-[32px]">{p.product_name}</p>
+                      {p.best_price_excl_vat != null && (
+                        <p className="text-sm font-bold text-mk-navy mt-1">{formatPrice(Number(p.best_price_excl_vat))} <span className="text-[10px] font-normal text-mk-sec">HTVA</span></p>
+                      )}
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+              {products.slice(0, 5).map((p, i) => (
+                <ProductCard key={p.id} product={p} index={i} />
+              ))}
+            </div>
+          )}
         </div>
       </AnimatedSection>
 

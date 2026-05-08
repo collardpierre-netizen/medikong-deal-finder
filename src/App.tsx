@@ -432,6 +432,8 @@ const App = () => (
               <Route path="import-export" element={<LP><AdminImportExport /></LP>} />
               <Route path="crm" element={<LP><AdminCRM /></LP>} />
               <Route path="cms" element={<LP><AdminCMS /></LP>} />
+              <Route path="cms/home/marques" element={<LP><AdminCmsHomeBrands /></LP>} />
+              <Route path="cms/home/produits" element={<LP><AdminCmsHomeProducts /></LP>} />
               <Route path="prix-reference" element={<LP><AdminMarketCodes /></LP>} />
               {/* /admin/product-prices supprimé : utiliser /vendor/offers (offer_buyer_profile_prices) */}
               <Route path="invest-pipeline" element={<LP><AdminInvestPipeline /></LP>} />

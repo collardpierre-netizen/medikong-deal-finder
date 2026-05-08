@@ -2656,17 +2656,30 @@ export default function ProductPage() {
                         });
                         return;
                       }
-                      addToCart.mutate({
-                        offerId: bestOffer.id,
-                        productId: product.id,
-                        quantity: Math.min(stickyQty, bestOffer.stockQuantity > 0 ? bestOffer.stockQuantity : 999),
-                        maxQuantity: bestOffer.stockQuantity > 0 ? bestOffer.stockQuantity : undefined,
-                        vendorId: bestOffer.sellerId,
-                        priceExclVat: bestOffer.unitPriceEur,
-                        productData: { id: product.id, name: product.name, brand: product.brand || "", slug: product.slug, price: bestOffer.unitPriceEur, imageUrl: product.imageUrls?.[0] || product.imageUrl || undefined },
-                        deliveryDays: bestOffer.deliveryDays || null,
-                      });
-                      
+                      const stickyMax = bestOffer.stockQuantity > 0 ? bestOffer.stockQuantity : 999;
+                      const stickyAppliedQty = Math.min(stickyQty, stickyMax);
+                      const stickyUnit = isTVAC ? bestOffer.unitPriceInclVat : bestOffer.unitPriceEur;
+                      const stickyTotal = stickyAppliedQty * stickyUnit;
+                      addToCart.mutate(
+                        {
+                          offerId: bestOffer.id,
+                          productId: product.id,
+                          quantity: stickyAppliedQty,
+                          maxQuantity: bestOffer.stockQuantity > 0 ? bestOffer.stockQuantity : undefined,
+                          vendorId: bestOffer.sellerId,
+                          priceExclVat: bestOffer.unitPriceEur,
+                          productData: { id: product.id, name: product.name, brand: product.brand || "", slug: product.slug, price: bestOffer.unitPriceEur, imageUrl: product.imageUrls?.[0] || product.imageUrl || undefined },
+                          deliveryDays: bestOffer.deliveryDays || null,
+                        },
+                        {
+                          onSuccess: () => {
+                            toast.success("Ajouté au panier", {
+                              description: `${product.name} — ${stickyAppliedQty} × ${formatEur(stickyUnit)} € = ${formatEur(stickyTotal)} € ${isTVAC ? "TVAC" : "HTVA"}`,
+                            });
+                          },
+                        }
+                      );
+
                     }}
                   >
                     <ShoppingCart size={14} />

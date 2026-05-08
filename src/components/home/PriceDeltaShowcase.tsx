@@ -1,29 +1,20 @@
+import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Package, ArrowRight, TrendingDown } from "lucide-react";
 import { motion } from "framer-motion";
 import { useTopPriceDeltas, type PriceDelta } from "@/hooks/useTopPriceDeltas";
 import { useFeaturedPriceDelta } from "@/hooks/useFeaturedPriceDelta";
 import { useHomeShowcaseSettings } from "@/hooks/useHomeShowcaseSettings";
+import {
+  trackShowcaseImpression,
+  trackShowcaseClick,
+  type ShowcaseVariant,
+} from "@/lib/home-showcase-tracking";
 
 /**
  * Mini-encart "Exemple de comparaison live" affiché dans le hero de la home.
- *
- * Montre le SKU multi-vendeurs au plus gros écart de prix du jour
- * (calcul live via la vue `public_top_price_deltas`). Aucune promesse moyenne :
- * le pourcentage affiché est l'écart max/min réel sur le SKU mis en avant.
- *
- * Si la vue ne renvoie aucune ligne (catalogue trop pauvre), le composant
- * ne s'affiche pas et la home retombe sur ses CTAs classiques.
+ * Mesure les impressions/clics via `home_showcase_events` + dataLayer GTM.
  */
-function trackEvent(name: string, payload: Record<string, unknown>) {
-  try {
-    const w = window as unknown as { dataLayer?: Array<Record<string, unknown>> };
-    w.dataLayer = w.dataLayer ?? [];
-    w.dataLayer.push({ event: name, ...payload });
-  } catch {
-    /* no-op */
-  }
-}
 
 const fmt = (n: number) =>
   new Intl.NumberFormat("fr-BE", {
@@ -32,24 +23,96 @@ const fmt = (n: number) =>
     minimumFractionDigits: 2,
   }).format(n);
 
+type Display =
+  | {
+      kind: "ok";
+      variant: ShowcaseVariant; // "ok" (pinned) or "fallback" (auto top)
+      productId: string;
+      slug: string;
+      name: string;
+      brandName: string | null;
+      imageUrl: string | null;
+      minPrice: number;
+      maxPrice: number;
+      offerCount: number;
+      deltaPct: number;
+    }
+  | {
+      kind: "no_offers";
+      variant: ShowcaseVariant; // "no_offers" | "single_offer"
+      productId: string;
+      slug: string;
+      name: string;
+      brandName: string | null;
+      imageUrl: string | null;
+      offerCount: number;
+    };
+
 export function PriceDeltaShowcase() {
   const settings = useHomeShowcaseSettings();
   const pinnedId = settings.data?.pinned_product_id ?? null;
   const pinned = useFeaturedPriceDelta(pinnedId);
   // Fallback automatique uniquement si AUCUN produit n'est épinglé.
-  // Si l'admin a épinglé un produit mais qu'il manque d'offres, on l'affiche
-  // explicitement plutôt que de basculer en silence sur un autre SKU.
   const fallback = useTopPriceDeltas(pinnedId ? 0 : 1);
 
-  if (settings.isLoading) return null;
-  if (pinnedId && pinned.isLoading) return null;
-  if (!pinnedId && fallback.isLoading) return null;
+  // Compute display first, hooks must run unconditionally
+  let display: Display | null = null;
+  const ready =
+    !settings.isLoading &&
+    !(pinnedId && pinned.isLoading) &&
+    !(!pinnedId && fallback.isLoading);
 
-  // 1) Produit épinglé sans assez d'offres → message clair
-  if (pinnedId && pinned.data && pinned.data.status !== "ok") {
-    const state = pinned.data;
-    if (state.status === "not_found") return null;
-    const { product, offerCount } = state;
+  if (ready) {
+    if (pinnedId && pinned.data && pinned.data.status !== "ok") {
+      const state = pinned.data;
+      if (state.status !== "not_found") {
+        display = {
+          kind: "no_offers",
+          variant: state.status, // "no_offers" | "single_offer"
+          productId: state.product.id,
+          slug: state.product.slug,
+          name: state.product.name,
+          brandName: state.product.brandName,
+          imageUrl: state.product.imageUrl,
+          offerCount: state.offerCount,
+        };
+      }
+    } else {
+      const featured: PriceDelta | undefined =
+        pinned.data?.status === "ok" ? pinned.data.delta : fallback.data?.[0];
+      if (featured) {
+        display = {
+          kind: "ok",
+          variant: pinned.data?.status === "ok" ? "ok" : "fallback",
+          productId: featured.productId,
+          slug: featured.slug,
+          name: featured.name,
+          brandName: featured.brandName,
+          imageUrl: featured.imageUrl,
+          minPrice: featured.minPrice,
+          maxPrice: featured.maxPrice,
+          offerCount: featured.offerCount,
+          deltaPct: featured.deltaPct,
+        };
+      }
+    }
+  }
+
+  // Impression tracking (dédoublonnée par session, voir helper)
+  useEffect(() => {
+    if (!display) return;
+    trackShowcaseImpression({
+      productId: display.productId,
+      productSlug: display.slug,
+      variant: display.variant,
+      deltaPct: display.kind === "ok" ? display.deltaPct : null,
+      offerCount: display.offerCount,
+    });
+  }, [display?.productId, display?.variant]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (!display) return null;
+
+  if (display.kind === "no_offers") {
     return (
       <motion.aside
         role="complementary"
@@ -67,9 +130,9 @@ export function PriceDeltaShowcase() {
         </div>
         <div className="flex items-center gap-3 md:gap-4">
           <div className="shrink-0 w-14 h-14 md:w-16 md:h-16 rounded-lg bg-mk-alt/40 flex items-center justify-center overflow-hidden border border-mk-line">
-            {product.imageUrl ? (
+            {display.imageUrl ? (
               <img
-                src={product.imageUrl}
+                src={display.imageUrl}
                 alt=""
                 className="w-full h-full object-contain p-1"
                 referrerPolicy="no-referrer"
@@ -80,16 +143,14 @@ export function PriceDeltaShowcase() {
             )}
           </div>
           <div className="min-w-0 flex-1">
-            {product.brandName && (
+            {display.brandName && (
               <p className="text-[10px] uppercase tracking-wide text-mk-sec font-semibold truncate">
-                {product.brandName}
+                {display.brandName}
               </p>
             )}
-            <p className="text-sm font-semibold text-mk-navy line-clamp-2">
-              {product.name}
-            </p>
+            <p className="text-sm font-semibold text-mk-navy line-clamp-2">{display.name}</p>
             <p className="text-[11px] text-mk-sec mt-0.5">
-              {offerCount === 0
+              {display.offerCount === 0
                 ? "Pas encore d'offres actives sur cette référence."
                 : "1 seule offre active — comparaison disponible dès qu'un second vendeur se positionne."}
             </p>
@@ -100,7 +161,15 @@ export function PriceDeltaShowcase() {
             Soyez alerté dès qu'un nouveau prix est publié.
           </p>
           <Link
-            to={`/produit/${product.slug}`}
+            to={`/produit/${display.slug}`}
+            onClick={() =>
+              trackShowcaseClick({
+                productId: display.productId,
+                productSlug: display.slug,
+                variant: display.variant,
+                offerCount: display.offerCount,
+              })
+            }
             className="shrink-0 inline-flex items-center gap-1 text-xs font-semibold text-mk-blue hover:underline"
           >
             Voir la fiche produit <ArrowRight size={12} aria-hidden="true" />
@@ -109,11 +178,6 @@ export function PriceDeltaShowcase() {
       </motion.aside>
     );
   }
-
-  // 2) Comparaison disponible (épinglé OU fallback top delta)
-  const featured: PriceDelta | undefined =
-    pinned.data?.status === "ok" ? pinned.data.delta : fallback.data?.[0];
-  if (!featured) return null;
 
   return (
     <motion.aside
@@ -133,9 +197,9 @@ export function PriceDeltaShowcase() {
 
       <div className="flex items-center gap-3 md:gap-4">
         <div className="shrink-0 w-14 h-14 md:w-16 md:h-16 rounded-lg bg-mk-alt/40 flex items-center justify-center overflow-hidden border border-mk-line">
-          {featured.imageUrl ? (
+          {display.imageUrl ? (
             <img
-              src={featured.imageUrl}
+              src={display.imageUrl}
               alt=""
               className="w-full h-full object-contain p-1"
               referrerPolicy="no-referrer"
@@ -147,28 +211,26 @@ export function PriceDeltaShowcase() {
         </div>
 
         <div className="min-w-0 flex-1">
-          {featured.brandName && (
+          {display.brandName && (
             <p className="text-[10px] uppercase tracking-wide text-mk-sec font-semibold truncate">
-              {featured.brandName}
+              {display.brandName}
             </p>
           )}
-          <p className="text-sm font-semibold text-mk-navy line-clamp-2">
-            {featured.name}
-          </p>
+          <p className="text-sm font-semibold text-mk-navy line-clamp-2">{display.name}</p>
           <p className="text-[11px] text-mk-sec mt-0.5">
-            {featured.offerCount} fournisseurs en concurrence
+            {display.offerCount} fournisseurs en concurrence
           </p>
         </div>
 
         <div className="shrink-0 text-right">
           <div className="text-xs text-mk-sec line-through tabular-nums">
-            {fmt(featured.maxPrice)}
+            {fmt(display.maxPrice)}
           </div>
           <div className="text-base md:text-lg font-bold text-mk-navy tabular-nums">
-            {fmt(featured.minPrice)}
+            {fmt(display.minPrice)}
           </div>
           <div className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-semibold">
-            −{Math.round(featured.deltaPct)}%
+            −{Math.round(display.deltaPct)}%
           </div>
         </div>
       </div>
@@ -178,12 +240,14 @@ export function PriceDeltaShowcase() {
           Écart entre vendeurs sur cette référence multi-fournisseurs.
         </p>
         <Link
-          to={`/produit/${featured.slug}`}
+          to={`/produit/${display.slug}`}
           onClick={() =>
-            trackEvent("home_price_delta_viewed", {
-              productId: featured.productId,
-              productSlug: featured.slug,
-              deltaPct: featured.deltaPct,
+            trackShowcaseClick({
+              productId: display.productId,
+              productSlug: display.slug,
+              variant: display.variant,
+              deltaPct: display.deltaPct,
+              offerCount: display.offerCount,
             })
           }
           className="shrink-0 inline-flex items-center gap-1 text-xs font-semibold text-mk-blue hover:underline"

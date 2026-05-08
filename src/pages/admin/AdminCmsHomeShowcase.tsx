@@ -116,6 +116,36 @@ const AdminCmsHomeShowcase = () => {
     }
   }, [settings?.updated_at]);
 
+  // Analytics KPIs
+  const [periodDays, setPeriodDays] = useState<number>(30);
+  const { data: kpis = [], isLoading: loadingKpis } = useQuery({
+    queryKey: ["admin-home-showcase-kpis", periodDays],
+    queryFn: async () => {
+      const { data, error } = await sb.rpc("admin_home_showcase_kpis", { _days: periodDays });
+      if (error) throw error;
+      return (data ?? []) as Array<{
+        product_id: string | null;
+        product_name: string | null;
+        product_slug: string | null;
+        variant: string;
+        impressions: number;
+        clicks: number;
+        ctr: number;
+        last_seen: string;
+      }>;
+    },
+  });
+
+  const totals = useMemo(() => {
+    const impr = kpis.reduce((s, r) => s + Number(r.impressions || 0), 0);
+    const clk = kpis.reduce((s, r) => s + Number(r.clicks || 0), 0);
+    return {
+      impressions: impr,
+      clicks: clk,
+      ctr: impr > 0 ? Math.round((clk / impr) * 10000) / 100 : 0,
+    };
+  }, [kpis]);
+
   return (
     <div className="space-y-4">
       <AdminTopBar
@@ -129,6 +159,106 @@ const AdminCmsHomeShowcase = () => {
           </Button>
         }
       />
+
+      {/* Analytics */}
+      <div className="rounded-xl border bg-card p-4 space-y-3">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <h3 className="text-sm font-semibold">Analytics — impressions, clics, CTR</h3>
+          <div className="inline-flex rounded-md border bg-background p-0.5">
+            {[7, 30, 90].map((d) => (
+              <button
+                key={d}
+                type="button"
+                onClick={() => setPeriodDays(d)}
+                className={`px-2.5 py-1 text-xs rounded ${
+                  periodDays === d
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {d}j
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-3 gap-3">
+          <div className="rounded-lg border bg-muted/20 p-3">
+            <div className="text-xs text-muted-foreground">Impressions</div>
+            <div className="text-xl font-semibold tabular-nums">
+              {totals.impressions.toLocaleString("fr-BE")}
+            </div>
+          </div>
+          <div className="rounded-lg border bg-muted/20 p-3">
+            <div className="text-xs text-muted-foreground">Clics</div>
+            <div className="text-xl font-semibold tabular-nums">
+              {totals.clicks.toLocaleString("fr-BE")}
+            </div>
+          </div>
+          <div className="rounded-lg border bg-muted/20 p-3">
+            <div className="text-xs text-muted-foreground">CTR</div>
+            <div className="text-xl font-semibold tabular-nums">{totals.ctr}%</div>
+          </div>
+        </div>
+
+        <div className="rounded-lg border overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
+              <tr>
+                <th className="text-left px-3 py-2">Produit</th>
+                <th className="text-left px-3 py-2">Variante</th>
+                <th className="text-right px-3 py-2">Impr.</th>
+                <th className="text-right px-3 py-2">Clics</th>
+                <th className="text-right px-3 py-2">CTR</th>
+                <th className="text-left px-3 py-2">Dernière vue</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loadingKpis ? (
+                <tr>
+                  <td colSpan={6} className="px-3 py-3 text-muted-foreground">Chargement…</td>
+                </tr>
+              ) : kpis.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-3 py-3 text-muted-foreground">
+                    Aucun événement enregistré sur la période.
+                  </td>
+                </tr>
+              ) : (
+                kpis.map((r, i) => (
+                  <tr key={`${r.product_id ?? "none"}-${r.variant}-${i}`} className="border-t">
+                    <td className="px-3 py-2">
+                      {r.product_slug ? (
+                        <Link
+                          to={`/produit/${r.product_slug}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-primary hover:underline"
+                        >
+                          {r.product_name ?? r.product_id}
+                        </Link>
+                      ) : (
+                        r.product_name ?? "—"
+                      )}
+                    </td>
+                    <td className="px-3 py-2">
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-muted text-[11px]">
+                        {r.variant}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2 text-right tabular-nums">{Number(r.impressions).toLocaleString("fr-BE")}</td>
+                    <td className="px-3 py-2 text-right tabular-nums">{Number(r.clicks).toLocaleString("fr-BE")}</td>
+                    <td className="px-3 py-2 text-right tabular-nums">{Number(r.ctr).toFixed(2)}%</td>
+                    <td className="px-3 py-2 text-xs text-muted-foreground">
+                      {r.last_seen ? new Date(r.last_seen).toLocaleString("fr-BE") : "—"}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
       {/* Currently pinned */}
       <div className="rounded-xl border bg-card p-4 space-y-3">

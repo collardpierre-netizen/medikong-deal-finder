@@ -148,6 +148,7 @@ const AdminCmsHomeBrands = lazyWithRetry(() => import("./pages/admin/AdminCmsHom
 const AdminCmsHomeProducts = lazyWithRetry(() => import("./pages/admin/AdminCmsHomeProducts"), "AdminCmsHomeProducts");
 const AdminUnmappedCategories = lazyWithRetry(() => import("./pages/admin/AdminUnmappedCategories"), "AdminUnmappedCategories");
 const AdminQogitaLlmMapping = lazyWithRetry(() => import("./pages/admin/AdminQogitaLlmMapping"), "AdminQogitaLlmMapping");
+const AdminQogitaAmbiguousReview = lazyWithRetry(() => import("./pages/admin/AdminQogitaAmbiguousReview"), "AdminQogitaAmbiguousReview");
 const AdminCategoryMappingDashboard = lazyWithRetry(() => import("./pages/admin/AdminCategoryMappingDashboard"), "AdminCategoryMappingDashboard");
 // AdminProductPrices supprimé : remplacé par offer_buyer_profile_prices (édition par offre dans /vendor/offers).
 const AdminInvestPipeline = lazyWithRetry(() => import("./pages/admin/AdminInvestPipeline"), "AdminInvestPipeline");

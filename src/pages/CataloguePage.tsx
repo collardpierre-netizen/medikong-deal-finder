@@ -14,7 +14,8 @@ import { useCatalogViewMode } from "@/hooks/useCatalogViewMode";
 import { Loader2, SlidersHorizontal, X } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { HreflangTags } from "@/components/seo/HreflangTags";
-import { useCategoryLabel } from "@/hooks/useCategory";
+import { useCategoryLabelStatus } from "@/hooks/useCategory";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function CataloguePage() {
   const { slug } = useParams();
@@ -53,10 +54,12 @@ export default function CataloguePage() {
     ? [...new Set(products.map(p => p.category_id).filter(Boolean) as string[])]
     : undefined;
 
-  const categoryLabel = useCategoryLabel(effectiveCategorySlug);
+  const { label: categoryLabel, isLoading: categoryLabelLoading } =
+    useCategoryLabelStatus(effectiveCategorySlug);
   const title = effectiveCategorySlug
     ? (categoryLabel || "Catégorie")
     : "Tous les produits";
+  const showTitleSkeleton = !!effectiveCategorySlug && categoryLabelLoading && !categoryLabel;
 
   return (
     <Layout>
@@ -66,7 +69,11 @@ export default function CataloguePage() {
 
         <div className="flex items-center justify-between mb-4 mt-2">
           <div className="space-y-1">
-            <h1 className="text-2xl md:text-[28px] font-bold text-foreground">{title}</h1>
+            {showTitleSkeleton ? (
+              <Skeleton className="h-8 md:h-9 w-64 rounded-md" />
+            ) : (
+              <h1 className="text-2xl md:text-[28px] font-bold text-foreground">{title}</h1>
+            )}
             {filters.search && (
               <p className="text-sm text-muted-foreground">
                 Résultats pour le mot-clé <span className="font-medium text-foreground">“{filters.search}”</span>

@@ -2956,6 +2956,91 @@ export type Database = {
           },
         ]
       }
+      home_showcase_events: {
+        Row: {
+          country_code: string | null
+          delta_pct: number | null
+          id: number
+          kind: string
+          locale: string | null
+          occurred_at: string
+          offer_count: number | null
+          product_id: string | null
+          session_id: string | null
+          user_id: string | null
+          variant: string
+        }
+        Insert: {
+          country_code?: string | null
+          delta_pct?: number | null
+          id?: number
+          kind: string
+          locale?: string | null
+          occurred_at?: string
+          offer_count?: number | null
+          product_id?: string | null
+          session_id?: string | null
+          user_id?: string | null
+          variant: string
+        }
+        Update: {
+          country_code?: string | null
+          delta_pct?: number | null
+          id?: number
+          kind?: string
+          locale?: string | null
+          occurred_at?: string
+          offer_count?: number | null
+          product_id?: string | null
+          session_id?: string | null
+          user_id?: string | null
+          variant?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "home_showcase_events_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "admin_price_cockpit_mv"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "home_showcase_events_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "home_showcase_events_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_pack_audit_v"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "home_showcase_events_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "home_showcase_events_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products_with_country_stats_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "home_showcase_events_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
+          },
+        ]
+      }
       home_showcase_settings: {
         Row: {
           id: boolean
@@ -16125,6 +16210,19 @@ export type Database = {
           product_name: string
           product_slug: string
           similarity: number
+        }[]
+      }
+      admin_home_showcase_kpis: {
+        Args: { _days?: number }
+        Returns: {
+          clicks: number
+          ctr: number
+          impressions: number
+          last_seen: string
+          product_id: string
+          product_name: string
+          product_slug: string
+          variant: string
         }[]
       }
       admin_log_price_challenge:

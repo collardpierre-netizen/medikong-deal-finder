@@ -288,6 +288,8 @@ export default function HomePage() {
             ))}
           </motion.div>
 
+          {/* Preuve chiffrée live — top SKU multi-vendeurs */}
+          <PriceDeltaShowcase />
           {/* Inline stats — dynamic per country */}
           <motion.div
             className="grid grid-cols-2 sm:flex sm:items-center sm:justify-center sm:gap-0 sm:divide-x sm:divide-mk-line gap-y-3 max-w-md sm:max-w-none mx-auto"

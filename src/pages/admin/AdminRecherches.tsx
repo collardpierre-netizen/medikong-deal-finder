@@ -1,0 +1,260 @@
+import { useState } from "react";
+import { Layout } from "@/components/layout/Layout";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Loader2, Search, MousePointerClick, Ban, Hash } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Link } from "react-router-dom";
+
+type Period = 7 | 30;
+
+interface KpiData {
+  days: number;
+  total_searches: number;
+  unique_queries: number;
+  clicks: number;
+  zero_results: number;
+  click_rate: number;
+  zero_result_rate: number;
+  error?: string;
+}
+
+interface TopRow {
+  normalized_query: string;
+  sample_query: string;
+  searches: number;
+  clicks: number;
+  zero_result_searches: number;
+  click_rate: number;
+  zero_result_rate: number;
+  last_searched_at: string;
+}
+
+interface ZeroRow {
+  normalized_query: string;
+  sample_query: string;
+  searches: number;
+  last_searched_at: string;
+}
+
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleString("fr-BE", {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function KpiCard({ icon: Icon, label, value, hint }: { icon: typeof Search; label: string; value: string | number; hint?: string }) {
+  return (
+    <Card>
+      <CardContent className="pt-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-xs text-muted-foreground uppercase tracking-wider">{label}</div>
+            <div className="text-2xl font-bold mt-1">{value}</div>
+            {hint && <div className="text-xs text-muted-foreground mt-0.5">{hint}</div>}
+          </div>
+          <Icon className="h-8 w-8 text-muted-foreground/40" />
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+export default function AdminRecherches() {
+  const [period, setPeriod] = useState<Period>(7);
+
+  const kpis = useQuery({
+    queryKey: ["admin-search-kpis", period],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("admin_search_kpis", { _days: period });
+      if (error) throw error;
+      return data as unknown as KpiData;
+    },
+  });
+
+  const top = useQuery({
+    queryKey: ["admin-search-top", period],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("admin_search_top_queries", { _days: period, _limit: 100 });
+      if (error) throw error;
+      return (data ?? []) as unknown as TopRow[];
+    },
+  });
+
+  const zero = useQuery({
+    queryKey: ["admin-search-zero", period],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("admin_search_zero_results", { _days: period, _limit: 100 });
+      if (error) throw error;
+      return (data ?? []) as unknown as ZeroRow[];
+    },
+  });
+
+  const k = kpis.data;
+
+  return (
+    <Layout>
+      <div className="container mx-auto py-8 max-w-7xl">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-2xl font-bold">Recherches</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Mots-clés tapés par les utilisateurs, recherches sans résultat et taux de clic.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant={period === 7 ? "default" : "outline"} size="sm" onClick={() => setPeriod(7)}>
+              7 jours
+            </Button>
+            <Button variant={period === 30 ? "default" : "outline"} size="sm" onClick={() => setPeriod(30)}>
+              30 jours
+            </Button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <KpiCard icon={Search} label="Recherches" value={kpis.isLoading ? "—" : (k?.total_searches ?? 0).toLocaleString("fr-BE")} hint={`${period} derniers jours`} />
+          <KpiCard icon={Hash} label="Mots-clés uniques" value={kpis.isLoading ? "—" : (k?.unique_queries ?? 0).toLocaleString("fr-BE")} />
+          <KpiCard icon={MousePointerClick} label="Taux de clic" value={kpis.isLoading ? "—" : `${k?.click_rate ?? 0}%`} hint={`${(k?.clicks ?? 0).toLocaleString("fr-BE")} clics`} />
+          <KpiCard icon={Ban} label="Sans résultat" value={kpis.isLoading ? "—" : `${k?.zero_result_rate ?? 0}%`} hint={`${(k?.zero_results ?? 0).toLocaleString("fr-BE")} recherches`} />
+        </div>
+
+        <Tabs defaultValue="top">
+          <TabsList>
+            <TabsTrigger value="top">Top mots-clés</TabsTrigger>
+            <TabsTrigger value="zero">Sans résultat</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="top" className="mt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Top mots-clés ({period}j)</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {top.isLoading ? (
+                  <div className="flex items-center justify-center py-12 text-muted-foreground">
+                    <Loader2 className="h-5 w-5 animate-spin mr-2" /> Chargement…
+                  </div>
+                ) : (top.data?.length ?? 0) === 0 ? (
+                  <div className="text-center py-12 text-sm text-muted-foreground">
+                    Aucune recherche enregistrée sur la période.
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b text-xs text-muted-foreground uppercase tracking-wider">
+                          <th className="text-left py-2 font-medium">Requête</th>
+                          <th className="text-right py-2 font-medium">Recherches</th>
+                          <th className="text-right py-2 font-medium">Clics</th>
+                          <th className="text-right py-2 font-medium">Taux clic</th>
+                          <th className="text-right py-2 font-medium">Sans résultat</th>
+                          <th className="text-right py-2 font-medium">Dernière</th>
+                          <th className="text-right py-2 font-medium">Voir</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {top.data!.map((r) => (
+                          <tr key={r.normalized_query} className="border-b last:border-0 hover:bg-muted/30">
+                            <td className="py-2 font-medium">{r.sample_query}</td>
+                            <td className="py-2 text-right tabular-nums">{r.searches.toLocaleString("fr-BE")}</td>
+                            <td className="py-2 text-right tabular-nums">{r.clicks.toLocaleString("fr-BE")}</td>
+                            <td className="py-2 text-right tabular-nums">
+                              <Badge variant={r.click_rate >= 30 ? "default" : r.click_rate >= 10 ? "secondary" : "outline"}>
+                                {r.click_rate}%
+                              </Badge>
+                            </td>
+                            <td className="py-2 text-right tabular-nums">
+                              {r.zero_result_rate > 0 ? (
+                                <Badge variant={r.zero_result_rate >= 50 ? "destructive" : "outline"}>
+                                  {r.zero_result_rate}%
+                                </Badge>
+                              ) : (
+                                <span className="text-muted-foreground">—</span>
+                              )}
+                            </td>
+                            <td className="py-2 text-right text-xs text-muted-foreground">{formatDate(r.last_searched_at)}</td>
+                            <td className="py-2 text-right">
+                              <Link
+                                to={`/catalogue?q=${encodeURIComponent(r.sample_query)}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-primary hover:underline text-xs"
+                              >
+                                Tester →
+                              </Link>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="zero" className="mt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Recherches sans résultat ({period}j)</CardTitle>
+                <p className="text-xs text-muted-foreground">
+                  Indicateurs pour repérer les trous catalogue (produits absents ou mal référencés).
+                </p>
+              </CardHeader>
+              <CardContent>
+                {zero.isLoading ? (
+                  <div className="flex items-center justify-center py-12 text-muted-foreground">
+                    <Loader2 className="h-5 w-5 animate-spin mr-2" /> Chargement…
+                  </div>
+                ) : (zero.data?.length ?? 0) === 0 ? (
+                  <div className="text-center py-12 text-sm text-muted-foreground">
+                    Aucune recherche sans résultat sur la période. 🎉
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b text-xs text-muted-foreground uppercase tracking-wider">
+                          <th className="text-left py-2 font-medium">Requête</th>
+                          <th className="text-right py-2 font-medium">Occurrences</th>
+                          <th className="text-right py-2 font-medium">Dernière</th>
+                          <th className="text-right py-2 font-medium">Voir</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {zero.data!.map((r) => (
+                          <tr key={r.normalized_query} className="border-b last:border-0 hover:bg-muted/30">
+                            <td className="py-2 font-medium">{r.sample_query}</td>
+                            <td className="py-2 text-right tabular-nums">{r.searches.toLocaleString("fr-BE")}</td>
+                            <td className="py-2 text-right text-xs text-muted-foreground">{formatDate(r.last_searched_at)}</td>
+                            <td className="py-2 text-right">
+                              <Link
+                                to={`/catalogue?q=${encodeURIComponent(r.sample_query)}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-primary hover:underline text-xs"
+                              >
+                                Tester →
+                              </Link>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </Layout>
+  );
+}

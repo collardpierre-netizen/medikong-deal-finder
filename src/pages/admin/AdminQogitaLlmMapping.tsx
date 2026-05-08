@@ -57,6 +57,8 @@ const AdminQogitaLlmMapping = () => {
   const [batchSize, setBatchSize] = useState<number>(30);
   const [maxBatches, setMaxBatches] = useState<number>(10);
   const [forceResync, setForceResync] = useState(false);
+  const [autoApply, setAutoApply] = useState(false);
+  const [autoApplyThreshold, setAutoApplyThreshold] = useState<number>(0.9);
 
   const { data: proposals = [], isLoading, refetch } = useQuery({
     queryKey: ["qogita-llm-proposals", statusFilter],

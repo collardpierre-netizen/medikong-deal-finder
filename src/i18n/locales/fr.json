@@ -58,18 +58,21 @@
     "buyerProtection": "Protection acheteur"
   },
   "hero": {
-    "title": "Tout le pro de la beauté, du soin et de la santé — en un seul endroit",
-    "titleHighlight": "Tout le pro de la beauté, du soin et de la santé",
-    "titleAfterHighlight": " —",
-    "titleLine2": " en un seul endroit",
-    "subtitle": "Le comparateur B2B qui met en concurrence des centaines de fournisseurs pour pharmacies, instituts et professionnels de la beauté.",
+    "title": "Tout pour les professionnels de santé, en un seul endroit.",
+    "titleHighlight": "Tout pour les professionnels de santé",
+    "titleAfterHighlight": ",",
+    "titleLine2": " en un seul endroit.",
+    "subtitle": "Le comparateur B2B qui met en concurrence des centaines de fournisseurs pour pharmacies, cabinets médicaux et professionnels de santé.",
     "searchExamples": "Ex :",
     "exampleGloves": "Gants nitrile",
     "exampleBetadine": "Betadine",
     "exampleTena": "TENA",
     "exampleMasks": "Masques FFP2",
-    "slideFallbackTitle": "La marketplace médicale de référence en Belgique",
-    "slideFallbackSubtitle": "MediKong.pro"
+    "slideFallbackTitle": "La marketplace B2B des professionnels de santé en Belgique",
+    "slideFallbackSubtitle": "MediKong.pro",
+    "titleBefore": "Tout pour les ",
+    "titleAccent": "professionnels de santé",
+    "titleAfter": ", en un seul endroit."
   },
   "stats": {
     "suppliers": "Fournisseurs vérifiés",

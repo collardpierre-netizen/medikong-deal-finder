@@ -30,10 +30,23 @@ const KEY_PUBLIC_PAGES = [
 ];
 
 // Règles temporairement désactivées (à vider au fur et à mesure).
-// Documente toujours la raison + le ticket de suivi.
-const TEMPORARILY_DISABLED_RULES: string[] = [
-  // ex: "color-contrast", // dette CMS — ticket A11Y-12
+// Chaque entrée DOIT pointer vers un ticket de remédiation. Une fois la
+// dette purgée, l'entrée doit être retirée — sinon le job CI échoue
+// (cf. test "garde-fou TEMPORARILY_DISABLED_RULES" plus bas).
+type DisabledRule = {
+  /** Identifiant axe-core (ex: "color-contrast") */
+  rule: string;
+  /** Ticket de suivi (ex: "A11Y-12") — obligatoire */
+  ticket: string;
+  /** Contexte/raison courte */
+  reason?: string;
+};
+
+const TEMPORARILY_DISABLED_RULES: DisabledRule[] = [
+  // ex: { rule: "color-contrast", ticket: "A11Y-12", reason: "dette CMS hero" },
 ];
+
+const DISABLED_RULE_IDS = TEMPORARILY_DISABLED_RULES.map((r) => r.rule);
 
 // Identifiants d'archivage (PR / commit / horodatage). Resté inertes en local.
 const RUN_TS = new Date().toISOString().replace(/[:.]/g, "-"); // 2026-05-08T09-12-33-000Z

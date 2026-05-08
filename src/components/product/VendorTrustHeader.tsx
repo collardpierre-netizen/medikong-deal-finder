@@ -228,10 +228,10 @@ function Chip({
 }) {
   const node = (
     <span
-      className={`inline-flex items-center gap-1 text-[10.5px] font-medium px-2 py-0.5 rounded-full ${TONE_CLASSES[tone]} ${tooltip ? "cursor-help" : ""}`}
+      className={`inline-flex items-center gap-1 text-[10.5px] font-medium px-2 py-0.5 rounded-full whitespace-nowrap max-w-full ${TONE_CLASSES[tone]} ${tooltip ? "cursor-help" : ""}`}
     >
-      <Icon size={11} />
-      {label}
+      <Icon size={11} className="shrink-0" />
+      <span className="truncate">{label}</span>
     </span>
   );
   if (!tooltip) return node;

@@ -6,6 +6,7 @@ import { useVisibleCategories } from "@/hooks/useVisibleCategories";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useTranslation } from "react-i18next";
 import { cleanCategoryLabel } from "@/lib/category-label";
 
@@ -19,9 +20,12 @@ interface Props {
 export function CatalogSidebar({ filters, setFilter, clearAll, resultCategoryIds }: Props) {
   const { t, i18n } = useTranslation();
   const { currentCountry } = useCountry();
-  const { data: categories = [] } = useCatalogCategories();
-  const { data: brands = [] } = useCatalogBrands(filters.category);
+  const { data: categories = [], isPending: isCategoriesPending } = useCatalogCategories();
+  const { data: brands = [], isPending: isBrandsPending } = useCatalogBrands(filters.category);
   const { data: manufacturers = [] } = useCatalogManufacturers();
+  // Skeleton uniquement au tout premier chargement (pas de liste en cache).
+  const showCategoriesSkeleton = isCategoriesPending && categories.length === 0;
+  const showBrandsSkeleton = isBrandsPending && brands.length === 0;
   const { visibleCategoryIds, isFiltered: professionFiltered, professionType } = useVisibleCategories();
   const [showAllCats, setShowAllCats] = useState(false);
 
@@ -233,30 +237,37 @@ export function CatalogSidebar({ filters, setFilter, clearAll, resultCategoryIds
         <div className="relative">
           <div className="max-h-[220px] overflow-y-auto pr-2">
             <div className="space-y-0.5">
-              {displayCategories.map((cat: any) => {
-                const { short, full } = cleanCategoryLabel(cat.name, i18n.language);
-                const showTooltip = full && full !== short;
-                return (
-                  <button
-                    key={cat.id}
-                    onClick={() => setFilter("category", cat.slug)}
-                    title={showTooltip ? full : undefined}
-                    className={`flex w-full items-center justify-between gap-2 text-sm py-1.5 px-2 rounded text-left transition-colors ${
-                      filters.category === cat.slug
-                        ? "bg-primary/10 text-primary font-medium"
-                        : "text-foreground hover:bg-muted"
-                    }`}
-                  >
-                    <span className="truncate min-w-0 flex-1">{short}</span>
-                    {cat.product_count > 0 && (
-                      <span className="text-xs text-muted-foreground shrink-0">({cat.product_count.toLocaleString("fr-FR")})</span>
-                    )}
-                  </button>
-                );
-              })}
+              {showCategoriesSkeleton
+                ? Array.from({ length: 8 }).map((_, i) => (
+                    <div key={`cat-skel-${i}`} className="flex items-center justify-between gap-2 py-1.5 px-2">
+                      <Skeleton className="h-4 flex-1 rounded-sm" />
+                      <Skeleton className="h-3 w-8 rounded-sm shrink-0" />
+                    </div>
+                  ))
+                : displayCategories.map((cat: any) => {
+                    const { short, full } = cleanCategoryLabel(cat.name, i18n.language);
+                    const showTooltip = full && full !== short;
+                    return (
+                      <button
+                        key={cat.id}
+                        onClick={() => setFilter("category", cat.slug)}
+                        title={showTooltip ? full : undefined}
+                        className={`flex w-full items-center justify-between gap-2 text-sm py-1.5 px-2 rounded text-left transition-colors ${
+                          filters.category === cat.slug
+                            ? "bg-primary/10 text-primary font-medium"
+                            : "text-foreground hover:bg-muted"
+                        }`}
+                      >
+                        <span className="truncate min-w-0 flex-1">{short}</span>
+                        {cat.product_count > 0 && (
+                          <span className="text-xs text-muted-foreground shrink-0">({cat.product_count.toLocaleString("fr-FR")})</span>
+                        )}
+                      </button>
+                    );
+                  })}
             </div>
           </div>
-          {displayCategories.length > 8 && (
+          {!showCategoriesSkeleton && displayCategories.length > 8 && (
             <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-background to-transparent" />
           )}
         </div>
@@ -310,21 +321,29 @@ export function CatalogSidebar({ filters, setFilter, clearAll, resultCategoryIds
 
         <div className="max-h-[220px] overflow-y-auto pr-1">
           <div className="space-y-1">
-            {filteredBrands.map(b => (
-              <label key={b.id} className="flex items-center gap-2 text-sm cursor-pointer py-0.5 hover:bg-muted px-1 rounded">
-                <input
-                  type="checkbox"
-                  checked={filters.brands?.includes(b.slug) || false}
-                  onChange={() => toggleBrand(b.slug)}
-                  className="rounded border-border"
-                />
-                <span className="flex-1 truncate text-foreground">{b.name}</span>
-                <span className="text-xs text-muted-foreground">({b.product_count})</span>
-              </label>
-            ))}
+            {showBrandsSkeleton
+              ? Array.from({ length: 6 }).map((_, i) => (
+                  <div key={`brand-skel-${i}`} className="flex items-center gap-2 py-0.5 px-1">
+                    <Skeleton className="h-3.5 w-3.5 rounded-sm" />
+                    <Skeleton className="h-4 flex-1 rounded-sm" />
+                    <Skeleton className="h-3 w-6 rounded-sm" />
+                  </div>
+                ))
+              : filteredBrands.map(b => (
+                  <label key={b.id} className="flex items-center gap-2 text-sm cursor-pointer py-0.5 hover:bg-muted px-1 rounded">
+                    <input
+                      type="checkbox"
+                      checked={filters.brands?.includes(b.slug) || false}
+                      onChange={() => toggleBrand(b.slug)}
+                      className="rounded border-border"
+                    />
+                    <span className="flex-1 truncate text-foreground">{b.name}</span>
+                    <span className="text-xs text-muted-foreground">({b.product_count})</span>
+                  </label>
+                ))}
           </div>
         </div>
-        {brands.length > 15 && !showAllBrands && (
+        {!showBrandsSkeleton && brands.length > 15 && !showAllBrands && (
            <button onClick={() => setShowAllBrands(true)} className="text-xs text-mk-blue hover:underline mt-1">
              {t("catalog.showMore")} ({brands.length - 15})
           </button>

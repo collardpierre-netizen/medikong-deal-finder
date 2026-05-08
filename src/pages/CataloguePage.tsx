@@ -19,13 +19,19 @@ import { useCategoryLabel } from "@/hooks/useCategory";
 export default function CataloguePage() {
   const { slug } = useParams();
   const { filters, setFilter, clearAll } = useCatalogFilters();
-  
-  // Sync route param slug to category filter
+
+  // Sync route param slug to category filter — sans cela, la première frame
+  // affiche "Tous les produits / 0 produits" puis flash sur la vraie catégorie.
   useEffect(() => {
     if (slug && slug !== filters.category) {
       setFilter("category", slug);
     }
   }, [slug]);
+
+  // Pour le H1 et la requête : utiliser le slug d'URL en fallback immédiat,
+  // pour ne pas attendre le re-render post-setFilter (évite "0 produits"
+  // affiché brièvement sur /categorie/mk-*).
+  const effectiveCategorySlug = filters.category ?? slug ?? undefined;
 
   // Brand list for sidebar
   const { data: allBrands = [] } = useCatalogBrands();

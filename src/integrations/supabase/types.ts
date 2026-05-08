@@ -2956,6 +2956,70 @@ export type Database = {
           },
         ]
       }
+      home_showcase_settings: {
+        Row: {
+          id: boolean
+          pinned_product_id: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          id?: boolean
+          pinned_product_id?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          id?: boolean
+          pinned_product_id?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "home_showcase_settings_pinned_product_id_fkey"
+            columns: ["pinned_product_id"]
+            isOneToOne: false
+            referencedRelation: "admin_price_cockpit_mv"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "home_showcase_settings_pinned_product_id_fkey"
+            columns: ["pinned_product_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "home_showcase_settings_pinned_product_id_fkey"
+            columns: ["pinned_product_id"]
+            isOneToOne: false
+            referencedRelation: "product_pack_audit_v"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "home_showcase_settings_pinned_product_id_fkey"
+            columns: ["pinned_product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "home_showcase_settings_pinned_product_id_fkey"
+            columns: ["pinned_product_id"]
+            isOneToOne: false
+            referencedRelation: "products_with_country_stats_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "home_showcase_settings_pinned_product_id_fkey"
+            columns: ["pinned_product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
+          },
+        ]
+      }
       import_job_payload: {
         Row: {
           created_at: string

@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { federatedSearch } from "@/lib/supabase-search";
 import type { FederatedResults } from "@/lib/supabase-search";
 import { pushRecentTerm, pushRecentProduct, pushRecentTaxon } from "@/hooks/useRecentSearches";
+import { logSearch } from "@/lib/search-logging";
 
 interface InstantSearchBarProps {
   className?: string;
@@ -58,12 +59,26 @@ export function InstantSearchBar({ className = "", placeholder, variant = "navba
     if (!q) { navigate("/catalogue"); setIsOpen(false); return; }
     // Trace l'historique côté client (pour reprise type Trivago).
     pushRecentTerm(q);
+    const totalResults = results.products.length + results.brands.length + results.categories.length;
     // If search matches a brand from instant results, go directly to brand filter
     const matchedBrand = results.brands.find(b => b.name.toLowerCase() === q.toLowerCase());
     if (matchedBrand) {
       pushRecentTaxon({ type: "brand", slug: matchedBrand.slug, name: matchedBrand.name });
+      void logSearch({
+        query: q,
+        resultsCount: totalResults,
+        clickedType: "brand",
+        clickedId: matchedBrand.id,
+        clickedSlug: matchedBrand.slug,
+        source: `${variant}-submit-brand-match`,
+      });
       navigate(`/catalogue?brand=${encodeURIComponent(matchedBrand.slug)}`);
     } else {
+      void logSearch({
+        query: q,
+        resultsCount: totalResults,
+        source: `${variant}-submit`,
+      });
       navigate(`/catalogue?q=${encodeURIComponent(q)}`);
     }
     setIsOpen(false);

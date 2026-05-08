@@ -42,6 +42,15 @@ const AdminMarques = () => {
     }
   };
 
+  const toggleFeatured = async (brand: any) => {
+    const next = !brand.is_featured;
+    const { error } = await supabase.from("brands").update({ is_featured: next }).eq("id", brand.id);
+    if (error) { toast.error(error.message); return; }
+    toast.success(next ? `${brand.name} épinglée` : `${brand.name} retirée des featured`);
+    qc.invalidateQueries({ queryKey: ["admin-brands"] });
+    qc.invalidateQueries({ queryKey: ["featured-brands-homepage"] });
+  };
+
   return (
     <div>
       <AdminTopBar title="Marques" subtitle="Gestion du portefeuille marques"

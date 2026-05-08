@@ -7184,6 +7184,7 @@ export type Database = {
           id: string
           legal_faq_acknowledged_at: string | null
           phone: string | null
+          preferences: Json
           preferred_language: string | null
           price_level_code: string | null
           profession_type_id: string | null
@@ -7204,6 +7205,7 @@ export type Database = {
           id?: string
           legal_faq_acknowledged_at?: string | null
           phone?: string | null
+          preferences?: Json
           preferred_language?: string | null
           price_level_code?: string | null
           profession_type_id?: string | null
@@ -7224,6 +7226,7 @@ export type Database = {
           id?: string
           legal_faq_acknowledged_at?: string | null
           phone?: string | null
+          preferences?: Json
           preferred_language?: string | null
           price_level_code?: string | null
           profession_type_id?: string | null
@@ -16367,6 +16370,10 @@ export type Database = {
         Returns: Json
       }
       run_pack_mismatch_alert_job: { Args: never; Returns: Json }
+      set_user_preference: {
+        Args: { _key: string; _value: string }
+        Returns: undefined
+      }
       snapshot_vendor_offer_history: { Args: never; Returns: Json }
       start_vendor_market_intel_trial: {
         Args: { _notes?: string; _trial_days?: number; _vendor_id: string }

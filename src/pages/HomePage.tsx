@@ -20,6 +20,19 @@ import { useMarketplaceMetrics } from "@/hooks/useMarketplaceMetrics";
 import { formatCount } from "@/lib/formatCount";
 import { RecentSearches } from "@/components/home/RecentSearches";
 import { useHomeFeaturedBrands, useHomeFeaturedProducts, HOME_FEATURED_BADGE_LABEL } from "@/hooks/useHomeFeatured";
+import { useTopPriceDeltas } from "@/hooks/useTopPriceDeltas";
+import { PriceDeltaShowcase } from "@/components/home/PriceDeltaShowcase";
+
+// Tracking analytics minimal (GTM dataLayer) pour mesurer l'inversion des CTAs.
+function trackHomeCta(type: "see_demo" | "create_account", extra?: Record<string, unknown>) {
+  try {
+    const w = window as unknown as { dataLayer?: Array<Record<string, unknown>> };
+    w.dataLayer = w.dataLayer ?? [];
+    w.dataLayer.push({ event: "home_cta_clicked", type, ...(extra ?? {}) });
+  } catch {
+    /* no-op */
+  }
+}
 
 const iconMap: Record<string, React.ReactNode> = {
   Shield: <Shield size={20} className="text-mk-navy" />,
@@ -43,6 +56,9 @@ export default function HomePage() {
   const navigate = useNavigate();
   const { data: metrics } = useMarketplaceMetrics();
   const metricsMaxOffers = metrics?.maxOffersPerProduct ?? 0;
+  // Top SKU multi-vendeurs du jour : alimente la démo + le CTA "voir une comparaison".
+  const { data: topDeltas } = useTopPriceDeltas(1);
+  const demoSlug = topDeltas?.[0]?.slug ?? null;
 
   const { data: countryStats, isLoading: isCountryStatsLoading, isError: isCountryStatsError } = useQuery({
     queryKey: ["homepage-stats", country],
@@ -272,6 +288,8 @@ export default function HomePage() {
             ))}
           </motion.div>
 
+          {/* Preuve chiffrée live — top SKU multi-vendeurs */}
+          <PriceDeltaShowcase />
           {/* Inline stats — dynamic per country */}
           <motion.div
             className="grid grid-cols-2 sm:flex sm:items-center sm:justify-center sm:gap-0 sm:divide-x sm:divide-mk-line gap-y-3 max-w-md sm:max-w-none mx-auto"
@@ -305,15 +323,32 @@ export default function HomePage() {
             </div>
           </motion.div>
 
-          {/* CTA */}
+          {/* CTA — primaire = voir une comparaison live, secondaire = créer un compte */}
           <motion.div
-            className="mt-8"
+            className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5 }}
           >
-            <Link to="/onboarding" className="inline-flex items-center gap-2 bg-mk-navy text-white font-semibold text-sm px-7 py-3 rounded-lg hover:opacity-90 transition-opacity">
-              {t("common.signup")} <ArrowRight size={16} />
+            {demoSlug && (
+              <Link
+                to={`/produit/${demoSlug}`}
+                onClick={() => trackHomeCta("see_demo", { productSlug: demoSlug, location: "hero" })}
+                className="inline-flex items-center gap-2 bg-mk-blue text-white font-semibold text-sm px-7 py-3 rounded-lg hover:opacity-90 transition-opacity shadow-sm"
+              >
+                {t("hero.ctaSeeDemo", "Voir un exemple de comparaison")} <ArrowRight size={16} />
+              </Link>
+            )}
+            <Link
+              to="/onboarding"
+              onClick={() => trackHomeCta("create_account", { location: "hero" })}
+              className={
+                demoSlug
+                  ? "inline-flex items-center gap-2 border border-mk-navy text-mk-navy font-semibold text-sm px-7 py-3 rounded-lg hover:bg-mk-navy hover:text-white transition-colors"
+                  : "inline-flex items-center gap-2 bg-mk-navy text-white font-semibold text-sm px-7 py-3 rounded-lg hover:opacity-90 transition-opacity"
+              }
+            >
+              {t("hero.ctaCreateAccount", "Créer mon compte (gratuit, 1 min)")} <ArrowRight size={16} />
             </Link>
           </motion.div>
         </div>
@@ -580,9 +615,28 @@ export default function HomePage() {
             <p className="text-sm text-white/60 mb-8 max-w-md mx-auto">
               {t("cta.subtitle")}
             </p>
-            <Link to="/onboarding" className="inline-flex items-center gap-2 bg-white text-mk-navy font-bold text-sm px-8 py-3.5 rounded-lg hover:bg-gray-100 transition-colors">
-              {t("common.signup")} <ArrowRight size={16} />
-            </Link>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              {demoSlug && (
+                <Link
+                  to={`/produit/${demoSlug}`}
+                  onClick={() => trackHomeCta("see_demo", { productSlug: demoSlug, location: "final_cta" })}
+                  className="inline-flex items-center gap-2 bg-white text-mk-navy font-bold text-sm px-8 py-3.5 rounded-lg hover:bg-gray-100 transition-colors"
+                >
+                  {t("hero.ctaSeeDemo", "Voir un exemple de comparaison")} <ArrowRight size={16} />
+                </Link>
+              )}
+              <Link
+                to="/onboarding"
+                onClick={() => trackHomeCta("create_account", { location: "final_cta" })}
+                className={
+                  demoSlug
+                    ? "inline-flex items-center gap-2 border border-white/40 text-white font-semibold text-sm px-8 py-3.5 rounded-lg hover:bg-white/10 transition-colors"
+                    : "inline-flex items-center gap-2 bg-white text-mk-navy font-bold text-sm px-8 py-3.5 rounded-lg hover:bg-gray-100 transition-colors"
+                }
+              >
+                {t("hero.ctaCreateAccount", "Créer mon compte (gratuit, 1 min)")} <ArrowRight size={16} />
+              </Link>
+            </div>
           </motion.div>
         </div>
       </section>

@@ -67,7 +67,9 @@
     "slideFallbackSubtitle": "MediKong.pro",
     "titleBefore": "Everything for ",
     "titleAccent": "healthcare professionals",
-    "titleAfter": ", in one place."
+    "titleAfter": ", in one place.",
+    "ctaSeeDemo": "See a live price comparison",
+    "ctaCreateAccount": "Create my account (free, 1 min)"
   },
   "stats": {
     "suppliers": "Verified suppliers",

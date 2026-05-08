@@ -2228,6 +2228,13 @@ export type Database = {
             referencedRelation: "products_with_country_stats_v"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "external_leads_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
+          },
         ]
       }
       external_offers: {
@@ -2321,6 +2328,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "products_with_country_stats_v"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "external_offers_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
           },
         ]
       }
@@ -2574,6 +2588,13 @@ export type Database = {
             referencedRelation: "products_with_country_stats_v"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "favorite_list_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
+          },
         ]
       }
       favorite_lists: {
@@ -2657,6 +2678,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "products_with_country_stats_v"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "favorites_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
           },
         ]
       }
@@ -2745,6 +2773,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "products_with_country_stats_v"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flash_deals_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
           },
         ]
       }
@@ -2911,6 +2946,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "products_with_country_stats_v"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "home_featured_products_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
           },
         ]
       }
@@ -3471,6 +3513,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "market_delta_anomalies_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
+          },
+          {
             foreignKeyName: "market_delta_anomalies_vendor_id_fkey"
             columns: ["vendor_id"]
             isOneToOne: false
@@ -3651,6 +3700,13 @@ export type Database = {
             referencedRelation: "products_with_country_stats_v"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "market_delta_thresholds_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
+          },
         ]
       }
       market_price_pack_anomalies: {
@@ -3745,6 +3801,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "market_price_pack_anomalies_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
+          },
+          {
             foreignKeyName: "market_price_pack_anomalies_source_id_fkey"
             columns: ["source_id"]
             isOneToOne: false
@@ -3825,6 +3888,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "products_with_country_stats_v"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "market_price_pack_history_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
           },
           {
             foreignKeyName: "market_price_pack_history_source_id_fkey"
@@ -3967,6 +4037,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "products_with_country_stats_v"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "market_prices_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
           },
           {
             foreignKeyName: "market_prices_source_id_fkey"
@@ -4234,6 +4311,13 @@ export type Database = {
             referencedRelation: "products_with_country_stats_v"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "offer_data_quality_logs_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
+          },
         ]
       }
       offer_margin_snapshots: {
@@ -4360,6 +4444,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "products_with_country_stats_v"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offer_margin_snapshots_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
           },
           {
             foreignKeyName: "offer_margin_snapshots_vendor_id_fkey"
@@ -4781,6 +4872,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "offers_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
+          },
+          {
             foreignKeyName: "offers_vendor_id_fkey"
             columns: ["vendor_id"]
             isOneToOne: false
@@ -5010,6 +5108,13 @@ export type Database = {
             referencedRelation: "products_with_country_stats_v"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
+          },
         ]
       }
       order_line_sub_orders: {
@@ -5210,6 +5315,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "products_with_country_stats_v"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_lines_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
           },
           {
             foreignKeyName: "order_lines_vendor_id_fkey"
@@ -5697,6 +5809,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "price_adjustment_log_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
+          },
+          {
             foreignKeyName: "price_adjustment_log_vendor_id_fkey"
             columns: ["vendor_id"]
             isOneToOne: false
@@ -5996,6 +6115,13 @@ export type Database = {
             referencedRelation: "products_with_country_stats_v"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "price_alerts_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
+          },
         ]
       }
       price_challenge_settings: {
@@ -6082,6 +6208,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "products_with_country_stats_v"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "price_history_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
           },
         ]
       }
@@ -6230,6 +6363,13 @@ export type Database = {
             referencedRelation: "products_with_country_stats_v"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "product_alerts_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
+          },
         ]
       }
       product_country_stats: {
@@ -6298,6 +6438,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "products_with_country_stats_v"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_country_stats_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
           },
         ]
       }
@@ -6378,6 +6525,13 @@ export type Database = {
             referencedRelation: "products_with_country_stats_v"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "product_market_codes_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
+          },
         ]
       }
       product_prices: {
@@ -6456,6 +6610,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "products_with_country_stats_v"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_prices_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
           },
         ]
       }
@@ -6568,6 +6729,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "products_with_country_stats_v"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_submissions_resulting_product_id_fkey"
+            columns: ["resulting_product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
           },
           {
             foreignKeyName: "product_submissions_vendor_id_fkey"
@@ -7595,6 +7763,13 @@ export type Database = {
             referencedRelation: "products_with_country_stats_v"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "recent_activity_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
+          },
         ]
       }
       restock_buyers: {
@@ -8028,6 +8203,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "products_with_country_stats_v"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "restock_offers_matched_product_id_fkey"
+            columns: ["matched_product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
           },
         ]
       }
@@ -9691,6 +9873,13 @@ export type Database = {
             referencedRelation: "products_with_country_stats_v"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "rfqs_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
+          },
         ]
       }
       search_logs: {
@@ -10774,6 +10963,13 @@ export type Database = {
             referencedRelation: "products_with_country_stats_v"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "user_price_watches_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
+          },
         ]
       }
       user_prices: {
@@ -10842,6 +11038,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "products_with_country_stats_v"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_prices_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
           },
         ]
       }
@@ -11404,6 +11607,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "products_with_country_stats_v"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_competitor_alerts_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
           },
           {
             foreignKeyName: "vendor_competitor_alerts_vendor_id_fkey"
@@ -12512,6 +12722,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "vendor_offer_history_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
+          },
+          {
             foreignKeyName: "vendor_offer_history_vendor_id_fkey"
             columns: ["vendor_id"]
             isOneToOne: false
@@ -12652,6 +12869,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "products_with_country_stats_v"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_price_alert_events_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
           },
           {
             foreignKeyName: "vendor_price_alert_events_rule_id_fkey"
@@ -12962,6 +13186,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "vendor_price_challenges_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
+          },
+          {
             foreignKeyName: "vendor_price_challenges_vendor_id_fkey"
             columns: ["vendor_id"]
             isOneToOne: false
@@ -13107,6 +13338,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "vendor_product_commissions_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
+          },
+          {
             foreignKeyName: "vendor_product_commissions_vendor_id_fkey"
             columns: ["vendor_id"]
             isOneToOne: false
@@ -13223,6 +13461,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "products_with_country_stats_v"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_product_costs_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
           },
           {
             foreignKeyName: "vendor_product_costs_vendor_id_fkey"
@@ -14359,6 +14604,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "order_lines_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
+          },
+          {
             foreignKeyName: "order_lines_vendor_id_fkey"
             columns: ["vendor_id"]
             isOneToOne: false
@@ -14456,6 +14708,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "products_with_country_stats_v"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offers_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
           },
           {
             foreignKeyName: "offers_vendor_id_fkey"
@@ -14835,6 +15094,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "home_featured_products_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
+          },
+          {
             foreignKeyName: "products_brand_id_fkey"
             columns: ["brand_id"]
             isOneToOne: false
@@ -15004,6 +15270,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "offers_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
+          },
+          {
             foreignKeyName: "offers_vendor_id_fkey"
             columns: ["vendor_id"]
             isOneToOne: false
@@ -15053,6 +15326,22 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      public_top_price_deltas: {
+        Row: {
+          brand_name: string | null
+          delta_pct: number | null
+          image_url: string | null
+          image_urls: string[] | null
+          max_price: number | null
+          min_price: number | null
+          name: string | null
+          name_fr: string | null
+          offer_count: number | null
+          product_id: string | null
+          slug: string | null
+        }
+        Relationships: []
       }
       public_vendor_trust_signals: {
         Row: {
@@ -15180,6 +15469,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "products_with_country_stats_v"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "restock_offers_matched_product_id_fkey"
+            columns: ["matched_product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
           },
         ]
       }
@@ -15410,6 +15706,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "products_with_country_stats_v"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rfqs_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
           },
         ]
       }

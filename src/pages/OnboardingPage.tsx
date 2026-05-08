@@ -1235,7 +1235,7 @@ export default function OnboardingPage() {
                 <button key={cat} onClick={() => setInterests(sel ? interests.filter(i => i !== cat) : [...interests, cat])}
                   style={{ padding: "8px 16px", borderRadius: 100, fontSize: 12, border: `1px solid ${sel ? S.blue : S.line}`, background: sel ? S.blueBg : "#fff", color: sel ? S.blue : S.sec, fontWeight: sel ? 500 : 400, cursor: "pointer", transition: "all .2s", display: "flex", alignItems: "center", gap: 4 }}
                 >
-                  {sel && <Check size={12} aria-hidden="true" />} {cat}
+                  {sel && <span aria-hidden="true"><Check size={12} /></span>} {cat}
                 </button>
               );
             })}

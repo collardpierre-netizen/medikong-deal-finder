@@ -39,9 +39,11 @@ const fmt = (n: number) =>
   }).format(n);
 
 export function PriceDeltaShowcase() {
-  const { data, isLoading } = useTopPriceDeltas(1);
+  const pinned = useFeaturedPriceDelta(PINNED_PRODUCT_ID);
+  const fallback = useTopPriceDeltas(1);
+  const isLoading = pinned.isLoading || (!pinned.data && fallback.isLoading);
   if (isLoading) return null;
-  const featured: PriceDelta | undefined = data?.[0];
+  const featured: PriceDelta | undefined = pinned.data ?? fallback.data?.[0];
   if (!featured) return null;
 
   return (

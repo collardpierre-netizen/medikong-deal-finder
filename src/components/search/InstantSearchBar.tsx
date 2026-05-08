@@ -215,6 +215,8 @@ export function InstantSearchBar({ className = "", placeholder, variant = "navba
                   key={p.id}
                   onClick={() => {
                     pushRecentProduct({ id: p.id, slug: p.slug, name: p.name, image: resolveRecentProductImage(p) });
+                    const totalResults = results.products.length + results.brands.length + results.categories.length;
+                    void logSearch({ query: query.trim(), resultsCount: totalResults, clickedType: "product", clickedId: p.id, clickedSlug: p.slug, source: `${variant}-instant-click` });
                     navigate(`/produit/${p.slug}`);
                     setIsOpen(false);
                     setQuery("");
@@ -257,6 +259,8 @@ export function InstantSearchBar({ className = "", placeholder, variant = "navba
                     key={b.id}
                     onClick={() => {
                       pushRecentTaxon({ type: "brand", slug: b.slug, name: b.name });
+                      const totalResults = results.products.length + results.brands.length + results.categories.length;
+                      void logSearch({ query: query.trim(), resultsCount: totalResults, clickedType: "brand", clickedId: b.id, clickedSlug: b.slug, source: `${variant}-instant-click` });
                       navigate(`/marques/${b.slug}`);
                       setIsOpen(false);
                       setQuery("");
@@ -295,6 +299,8 @@ export function InstantSearchBar({ className = "", placeholder, variant = "navba
                     key={c.id}
                     onClick={() => {
                       pushRecentTaxon({ type: "category", slug: c.slug, name: c.name });
+                      const totalResults = results.products.length + results.brands.length + results.categories.length;
+                      void logSearch({ query: query.trim(), resultsCount: totalResults, clickedType: "category", clickedId: c.id, clickedSlug: c.slug, source: `${variant}-instant-click` });
                       navigate(`/categorie/${c.slug}`);
                       setIsOpen(false);
                       setQuery("");

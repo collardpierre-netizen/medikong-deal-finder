@@ -35,6 +35,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 
 import { HomeFeaturedSortableTable } from "@/components/admin/cms/HomeFeaturedSortableTable";
+import { HomeSeedRecommendedButton } from "@/components/admin/cms/HomeSeedRecommendedButton";
 import {
   HOME_FEATURED_BADGES,
   HOME_FEATURED_LOCALES,

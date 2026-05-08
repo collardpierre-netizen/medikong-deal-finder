@@ -178,6 +178,7 @@ function applyCatalogProductFilters(
   filters: CatalogFilters,
   options: {
     categoryIds: string[] | null;
+    categoryColumn?: "category_id" | "primary_category_id";
     resolvedBrandIds: string[] | null;
     manufacturerIds: string[] | null;
     effectiveSearch?: string;
@@ -187,7 +188,7 @@ function applyCatalogProductFilters(
   const cols = options.columns ?? GLOBAL_COLUMNS;
   let next = query;
 
-  if (options.categoryIds?.length) next = next.in("category_id", options.categoryIds);
+  if (options.categoryIds?.length) next = next.in(options.categoryColumn ?? "category_id", options.categoryIds);
   if (options.resolvedBrandIds?.length) next = next.in("brand_id", options.resolvedBrandIds);
   if (options.manufacturerIds?.length) next = next.in("manufacturer_id", options.manufacturerIds);
 

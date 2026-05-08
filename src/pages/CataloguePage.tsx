@@ -135,7 +135,14 @@ export default function CataloguePage() {
             {/* Bandeau d'univers retiré — navigation par catégorie via la sidebar. */}
 
             <ActiveFilters filters={filters} setFilter={setFilter} />
-            <CatalogToolbar filters={filters} setFilter={setFilter} total={total} view={view} setView={setView} />
+            <CatalogToolbar
+              filters={filters}
+              setFilter={setFilter}
+              total={total}
+              view={view}
+              setView={setView}
+              isLoading={isLoading && !data}
+            />
 
             <CatalogPagination page={filters.page} perPage={filters.perPage} total={total} onPageChange={p => setFilter("page", p)} />
 

@@ -193,6 +193,8 @@ export function InstantSearchBar({ className = "", placeholder, variant = "navba
             onClick={() => {
               const q = query.trim();
               if (q) pushRecentTerm(q);
+              const totalResults = results.products.length + results.brands.length + results.categories.length;
+              void logSearch({ query: q, resultsCount: totalResults, source: `${variant}-see-all` });
               navigate(`/catalogue?q=${encodeURIComponent(query)}`);
               setIsOpen(false);
             }}

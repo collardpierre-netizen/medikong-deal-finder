@@ -74,7 +74,7 @@
   },
   "valueProps": {
     "bestPrices": "Best B2B prices",
-    "bestPricesDesc": "Compare offers from 350+ wholesalers, brands and distributors in one unified catalog.",
+    "bestPricesDesc": "Compare offers from {{suppliers}} wholesalers, brands and distributors in one unified catalog.",
     "simpleOrders": "Simplified ordering",
     "simpleOrdersDesc": "Low MOQ, integrated payment and tracked delivery. Access wholesale prices usually reserved for large groups.",
     "guaranteed": "Guaranteed authenticity",
@@ -102,8 +102,8 @@
     "trad6": "No protection in case of errors",
     "mk1": "No contract, no commitment",
     "mk2": "MOV from €150 excl. VAT",
-    "mk3": "Instant access to 350+ suppliers",
-    "mk4": "15+ suppliers per reference",
+    "mk3": "Instant access to {{suppliers}} suppliers",
+    "mk4": "{{avgOffers}} suppliers per reference on average",
     "mk5": "Real-time stock analysis",
     "mk6": "Buyer protection included"
   },
@@ -127,7 +127,7 @@
   "faq": {
     "title": "Frequently asked questions",
     "q1": "How does MediKong work?",
-    "a1": "MediKong is a B2B marketplace that aggregates offers from over 350 verified medical suppliers. You can buy directly, compare market prices, or be redirected to the most competitive external offers.",
+    "a1": "MediKong is a B2B marketplace that aggregates offers from {{suppliers}} verified medical suppliers. You can buy directly, compare market prices, or be redirected to the most competitive external offers.",
     "q2": "Which professionals can sign up?",
     "a2": "All healthcare professionals in Belgium: pharmacies, hospitals, clinics, nursing homes, medical practices, physiotherapists, dentists, purchasing centers and authorized resellers.",
     "q3": "Do prices include VAT?",
@@ -437,7 +437,7 @@
       "s1h": "Purchase planning",
       "s1": "Anticipate your needs by analyzing your consumption history. Order regularly in small quantities rather than bulk purchases to avoid stockouts and optimize cash flow.",
       "s2h": "Multi-supplier management",
-      "s2": "Diversify your supply sources to reduce stockout risks. MediKong brings together 350+ verified suppliers. Compare offers and delivery times before each order. Use favorites lists to speed up recurring purchases."
+      "s2": "Diversify your supply sources to reduce stockout risks. MediKong brings together {{suppliers}} verified suppliers. Compare offers and delivery times before each order. Use favorites lists to speed up recurring purchases."
     }
   },
   "catalog": {

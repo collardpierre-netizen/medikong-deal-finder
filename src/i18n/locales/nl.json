@@ -73,7 +73,7 @@
   },
   "valueProps": {
     "bestPrices": "Beste B2B-prijzen",
-    "bestPricesDesc": "Vergelijk aanbiedingen van 350+ groothandels, merken en distributeurs in één uniforme catalogus.",
+    "bestPricesDesc": "Vergelijk aanbiedingen van {{suppliers}} groothandels, merken en distributeurs in één uniforme catalogus.",
     "simpleOrders": "Vereenvoudigde bestellingen",
     "simpleOrdersDesc": "Lage MOQ, geïntegreerde betaling en tracked levering. Toegang tot groothandelsprijzen.",
     "guaranteed": "Gegarandeerde authenticiteit",
@@ -101,8 +101,8 @@
     "trad6": "Geen bescherming bij fouten",
     "mk1": "Zonder contract, zonder verplichting",
     "mk2": "MOV vanaf €150 excl. BTW",
-    "mk3": "Directe toegang tot 350+ leveranciers",
-    "mk4": "15+ leveranciers per referentie",
+    "mk3": "Directe toegang tot {{suppliers}} leveranciers",
+    "mk4": "{{avgOffers}} leveranciers per referentie gemiddeld",
     "mk5": "Realtime voorraadanalyse",
     "mk6": "Kopersbescherming inbegrepen"
   },
@@ -126,7 +126,7 @@
   "faq": {
     "title": "Veelgestelde vragen",
     "q1": "Hoe werkt MediKong?",
-    "a1": "MediKong is een B2B-marketplace die aanbiedingen van meer dan 350 geverifieerde medische leveranciers samenbrengt. U kunt rechtstreeks kopen, prijzen vergelijken of worden doorverwezen naar de meest competitieve externe aanbiedingen.",
+    "a1": "MediKong is een B2B-marketplace die aanbiedingen van {{suppliers}} geverifieerde medische leveranciers samenbrengt. U kunt rechtstreeks kopen, prijzen vergelijken of worden doorverwezen naar de meest competitieve externe aanbiedingen.",
     "q2": "Welke professionals kunnen zich inschrijven?",
     "a2": "Alle zorgprofessionals in België: apotheken, ziekenhuizen, klinieken, woonzorgcentra, artsenpraktijken, kinesitherapeuten, tandartsen, aankoopcentra en erkende wederverkopers.",
     "q3": "Zijn de prijzen inclusief BTW?",
@@ -435,7 +435,7 @@
       "s1h": "Inkoopplanning",
       "s1": "Anticipeer op uw behoeften door uw verbruikshistorie te analyseren. Bestel regelmatig in kleine hoeveelheden in plaats van grote bulkaankopen om voorraadtekorten te voorkomen en de cashflow te optimaliseren.",
       "s2h": "Multi-leveranciersbeheer",
-      "s2": "Diversifieer uw bevoorradingsbronnen om het risico op tekorten te verminderen. MediKong brengt 350+ geverifieerde leveranciers samen. Vergelijk aanbiedingen en levertijden voor elke bestelling. Gebruik favorietenlijsten om terugkerende aankopen te versnellen."
+      "s2": "Diversifieer uw bevoorradingsbronnen om het risico op tekorten te verminderen. MediKong brengt {{suppliers}} geverifieerde leveranciers samen. Vergelijk aanbiedingen en levertijden voor elke bestelling. Gebruik favorietenlijsten om terugkerende aankopen te versnellen."
     }
   },
   "catalog": {

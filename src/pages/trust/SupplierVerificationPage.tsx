@@ -9,10 +9,12 @@ import { StatsRow } from "@/components/entreprise/StatsRow";
 import { ProcessStepsVertical } from "@/components/trust/ProcessStepsVertical";
 import { ComparisonTable } from "@/components/trust/ComparisonTable";
 import { verificationSteps, comparisonRows } from "@/data/trust-process-data";
+import { useMarketplaceMetrics } from "@/hooks/useMarketplaceMetrics";
 
 export default function SupplierVerificationPage() {
   const { getImage } = usePageImages("supplier-verification");
   const partImg = getImage("split-partners");
+  const { data: metrics } = useMarketplaceMetrics();
   return (
     <TrustProcessLayout>
       <EntrepriseHero
@@ -29,10 +31,10 @@ export default function SupplierVerificationPage() {
       </Section>
       <Section title="Nos chiffres parlent d'eux-mêmes">
         <StatsRow stats={[
-          { value: 350, suffix: "+", label: "Fournisseurs vérifiés" },
+          { value: metrics?.suppliersCount ?? 0, suffix: "+", label: "Fournisseurs vérifiés" },
           { value: 100, suffix: "%", label: "Conformité CE" },
           { value: 48, suffix: "h", label: "Délai de vérification" },
-          { value: 12500, suffix: "+", label: "Produits certifiés" },
+          { value: metrics?.productsCount ?? 0, suffix: "+", label: "Produits référencés" },
           { value: 99, suffix: "%", label: "Taux de satisfaction" },
         ]} />
       </Section>

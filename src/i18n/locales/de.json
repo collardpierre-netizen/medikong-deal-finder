@@ -73,7 +73,7 @@
   },
   "valueProps": {
     "bestPrices": "Beste B2B-Preise",
-    "bestPricesDesc": "Vergleichen Sie Angebote von 350+ Großhändlern, Marken und Distributoren in einem einheitlichen Katalog.",
+    "bestPricesDesc": "Vergleichen Sie Angebote von {{suppliers}} Großhändlern, Marken und Distributoren in einem einheitlichen Katalog.",
     "simpleOrders": "Vereinfachte Bestellungen",
     "simpleOrdersDesc": "Niedrige Mindestbestellmengen, integrierte Zahlung und verfolgte Lieferung. Zugang zu Großhandelspreisen.",
     "guaranteed": "Garantierte Authentizität",
@@ -101,8 +101,8 @@
     "trad6": "Kein Schutz bei Fehlern",
     "mk1": "Ohne Vertrag, ohne Verpflichtung",
     "mk2": "MOV ab €150 exkl. MwSt.",
-    "mk3": "Sofortiger Zugang zu 350+ Lieferanten",
-    "mk4": "15+ Lieferanten pro Referenz",
+    "mk3": "Sofortiger Zugang zu {{suppliers}} Lieferanten",
+    "mk4": "{{avgOffers}} Lieferanten pro Referenz im Schnitt",
     "mk5": "Echtzeit-Bestandsanalyse",
     "mk6": "Käuferschutz inklusive"
   },
@@ -126,7 +126,7 @@
   "faq": {
     "title": "Häufig gestellte Fragen",
     "q1": "Wie funktioniert MediKong?",
-    "a1": "MediKong ist ein B2B-Marktplatz, der Angebote von über 350 verifizierten medizinischen Lieferanten bündelt. Sie können direkt kaufen, Marktpreise vergleichen oder zu den wettbewerbsfähigsten externen Angeboten weitergeleitet werden.",
+    "a1": "MediKong ist ein B2B-Marktplatz, der Angebote von {{suppliers}} verifizierten medizinischen Lieferanten bündelt. Sie können direkt kaufen, Marktpreise vergleichen oder zu den wettbewerbsfähigsten externen Angeboten weitergeleitet werden.",
     "q2": "Welche Fachleute können sich anmelden?",
     "a2": "Alle Gesundheitsfachkräfte in Belgien: Apotheken, Krankenhäuser, Kliniken, Pflegeheime, Arztpraxen, Physiotherapeuten, Zahnärzte, Einkaufszentralen und autorisierte Wiederverkäufer.",
     "q3": "Sind die Preise inklusive MwSt.?",
@@ -435,7 +435,7 @@
       "s1h": "Einkaufsplanung",
       "s1": "Antizipieren Sie Ihre Bedürfnisse, indem Sie Ihren Verbrauchsverlauf analysieren. Bestellen Sie regelmäßig in kleinen Mengen statt in großen Einzelbestellungen, um Engpässe zu vermeiden und den Cashflow zu optimieren.",
       "s2h": "Multi-Lieferanten-Management",
-      "s2": "Diversifizieren Sie Ihre Bezugsquellen, um das Risiko von Engpässen zu reduzieren. MediKong vereint 350+ verifizierte Lieferanten. Vergleichen Sie Angebote und Lieferzeiten vor jeder Bestellung. Nutzen Sie Favoritenlisten, um wiederkehrende Einkäufe zu beschleunigen."
+      "s2": "Diversifizieren Sie Ihre Bezugsquellen, um das Risiko von Engpässen zu reduzieren. MediKong vereint {{suppliers}} verifizierte Lieferanten. Vergleichen Sie Angebote und Lieferzeiten vor jeder Bestellung. Nutzen Sie Favoritenlisten, um wiederkehrende Einkäufe zu beschleunigen."
     }
   },
   "catalog": {

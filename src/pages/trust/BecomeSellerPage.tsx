@@ -11,6 +11,7 @@ import { ProcessStepsVertical } from "@/components/trust/ProcessStepsVertical";
 import { TrustTestimonials } from "@/components/trust/TrustTestimonials";
 import { SellerFaqSection } from "@/components/trust/SellerFaqSection";
 import { commissionTiers } from "@/data/trust-process-data";
+import { useMarketplaceMetrics } from "@/hooks/useMarketplaceMetrics";
 
 const sellerSteps = [
   { number: 1, title: "Créez votre compte vendeur", description: "Inscription gratuite en 5 minutes. Renseignez vos informations d'entreprise, numéro BCE et licence de distribution.", tags: ["BCE", "TVA", "Licence"] },
@@ -22,6 +23,7 @@ const sellerSteps = [
 export default function BecomeSellerPage() {
   const { getImage } = usePageImages("become-seller");
   const dashImg = getImage("split-dashboard");
+  const { data: metrics } = useMarketplaceMetrics();
   return (
     <TrustProcessLayout>
       <EntrepriseHero
@@ -36,9 +38,9 @@ export default function BecomeSellerPage() {
       </Section>
       <Section bg="gray" title="Nos chiffres">
         <StatsRow stats={[
-          { value: 350, suffix: "+", label: "Vendeurs actifs" },
+          { value: metrics?.suppliersCount ?? 0, suffix: "+", label: "Vendeurs actifs" },
           { value: 500, suffix: "+", label: "Pharmacies acheteuses" },
-          { value: 12500, suffix: "+", label: "Produits en ligne" },
+          { value: metrics?.productsCount ?? 0, suffix: "+", label: "Produits en ligne" },
           { value: 3, suffix: "x", label: "Croissance moyenne vendeur" },
           { value: 7, suffix: "j", label: "Délai paiement (Gold)" },
         ]} />

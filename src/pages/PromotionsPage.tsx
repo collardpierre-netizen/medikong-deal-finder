@@ -13,6 +13,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { formatCount } from "@/lib/formatCount";
 
 function FlashCountdown({ endsAt }: { endsAt: string }) {
   const [remaining, setRemaining] = useState(() => calcRemaining(endsAt));
@@ -319,7 +320,7 @@ export default function PromotionsPage() {
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
           {[
-            { icon: Tag, value: `${promoCount} produits en promo`, color: "text-primary" },
+            { icon: Tag, value: `${formatCount(promoCount)} produits en promo`, color: "text-primary" },
             { icon: TrendingDown, value: "Jusqu'à -65%", color: "text-destructive" },
             { icon: Truck, value: "Livraison incluse", color: "text-emerald-600" },
           ].map(s => (

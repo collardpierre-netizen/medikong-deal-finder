@@ -16,7 +16,7 @@ const segments = [
 
 const advantages = [
   { icon: <TrendingDown size={22} />, title: "Prix de gros", desc: "Accédez aux tarifs professionnels habituellement réservés aux grandes structures." },
-  { icon: <Truck size={22} />, title: "Livraison rapide", desc: "Expédition sous 24-48h depuis nos entrepôts en Belgique et en Europe." },
+  { icon: <Truck size={22} />, title: "Livraison rapide", desc: SHIPPING_COPY.pro.fr },
   { icon: <CreditCard size={22} />, title: "Paiement différé", desc: "Réglez vos factures à 30 ou 60 jours. Sans frais supplémentaires." },
   { icon: <Headphones size={22} />, title: "Support dédié", desc: "Un interlocuteur unique pour tous vos besoins d'approvisionnement." },
 ];

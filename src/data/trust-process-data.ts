@@ -104,7 +104,7 @@ export const pricingCards: PricingCardData[] = [
 ];
 
 export const logisticsFaqItems: FaqItem[] = [
-  { question: "Quels sont les délais de livraison ?", answer: "La plupart des commandes sont expédiées sous 24-48h. La livraison standard prend 2-5 jours ouvrables en Belgique." },
+  { question: "Quels sont les délais de livraison ?", answer: "Le délai d'expédition dépend du vendeur et est précisé sur chaque offre. Filtrez sur \"Le plus rapide\" pour voir les offres expédiées sous 48h." },
   { question: "Livrez-vous à l'international ?", answer: "Oui, nous livrons dans toute l'Union Européenne. Les frais et délais varient selon la destination." },
   { question: "Comment suivre ma commande ?", answer: "Un numéro de suivi vous est envoyé par email dès l'expédition. Vous pouvez aussi suivre votre commande depuis votre espace client." },
   { question: "Que faire en cas de colis endommagé ?", answer: "Refusez le colis et contactez notre support immédiatement. Nous organisons un renvoi sous 24h." },

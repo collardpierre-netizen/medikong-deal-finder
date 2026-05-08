@@ -170,6 +170,10 @@ const issues: Issue[] = [];
 const localePath = (lang: string) => join(ROOT, LOCALES_DIR, `${lang}.json`);
 
 // FR is the source of truth for typography
+// Universal autofix (safe across all locales): "..." → … and double spaces collapse
+const autofixUniversal = (s: string) =>
+  typeof s === "string" ? s.replace(/\.{3}/g, "…").replace(/ {2,}/g, " ") : s;
+
 if (existsSync(localePath("fr"))) {
   const file = relative(ROOT, localePath("fr"));
   let json = JSON.parse(readFileSync(localePath("fr"), "utf8"));

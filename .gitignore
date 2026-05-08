@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# a11y JSON snapshots produits par les smoke tests Playwright
+a11y-snapshots/

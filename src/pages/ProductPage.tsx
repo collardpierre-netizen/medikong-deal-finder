@@ -226,6 +226,11 @@ function OfferRow({
             </TooltipContent>
           </Tooltip>
         )}
+        {offer.deliveryDays != null && offer.deliveryDays > 0 && offer.deliveryDays <= FAST_SHIPPING_MAX_DAYS && (
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-full">
+            <Truck size={12} /> {SHIPPING_COPY.fastBadge.fr}
+          </span>
+        )}
       </div>
 
       {/* Last update */}

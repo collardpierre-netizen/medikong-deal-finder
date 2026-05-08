@@ -1,7 +1,7 @@
 {
   "common": {
     "search": "Zoeken",
-    "searchPlaceholder": "Zoek producten, CNK, EAN, merken...",
+    "searchPlaceholder": "Zoek producten, CNK, EAN, merken…",
     "login": "Inloggen",
     "signup": "Gratis account aanmaken",
     "cart": "Winkelwagen",
@@ -9,7 +9,7 @@
     "addToCart": "Toevoegen",
     "viewAll": "Alles bekijken",
     "allBrands": "Alle merken bekijken",
-    "loading": "Laden...",
+    "loading": "Laden…",
     "error": "Er is een fout opgetreden",
     "retry": "Opnieuw proberen",
     "close": "Sluiten",
@@ -179,7 +179,7 @@
   "helpCenter": {
     "title": "MediKong Helpcentrum",
     "subtitle": "Vind snel antwoorden op uw vragen over bestellingen, levering, betalingen en meer.",
-    "searchPlaceholder": "Zoeken in help...",
+    "searchPlaceholder": "Zoeken in help…",
     "noResults": "Geen resultaten voor \"{{query}}\". Probeer een andere term of",
     "contactUs": "neem contact op",
     "faqTitle": "Meest gestelde vragen",

@@ -8,6 +8,7 @@ import { testimonials } from "@/data/trust-process-data";
 import { useMarketplaceMetrics } from "@/hooks/useMarketplaceMetrics";
 
 export default function TestimonialsPage() {
+  const { data: metrics } = useMarketplaceMetrics();
   return (
     <TrustProcessLayout>
       <EntrepriseHero
@@ -19,7 +20,7 @@ export default function TestimonialsPage() {
       <Section title="Ce que nos utilisateurs disent">
         <StatsRow stats={[
           { value: 500, suffix: "+", label: "Pharmacies partenaires" },
-          { value: 350, suffix: "+", label: "Vendeurs actifs" },
+          { value: metrics?.suppliersCount ?? 0, suffix: "+", label: "Vendeurs actifs" },
           { value: 4.8, suffix: "/5", label: "Note moyenne" },
           { value: 18, suffix: "%", label: "Économies moyennes" },
           { value: 99, suffix: "%", label: "Taux de satisfaction" },

@@ -23,6 +23,8 @@ export default function SearchTrivagoCard({ product: p }: Props) {
 
   const price = bestOffer?.unitPriceEur || p.price;
   const pct = p.pct;
+  // Aucun vendeur n'a encore listé une offre active sur ce SKU dans le pays courant.
+  const hasOffer = (p.sellers || 0) > 0 && price > 0;
 
   return (
     <div className="bg-card rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow border border-border">

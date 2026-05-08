@@ -175,15 +175,20 @@ function OfferRow({
       });
       return;
     }
+    const appliedQty = Math.min(qty, maxQty);
+    const appliedTotal = appliedQty * basePackPrice;
     addToCart.mutate({
       offerId: offer.id,
       productId,
-      quantity: Math.min(qty, maxQty),
+      quantity: appliedQty,
       maxQuantity: maxQty,
       vendorId: offer.sellerId,
       priceExclVat: offer.unitPriceEur,
       productData: { id: productId, name: productName, brand: "", slug: productSlug, price: offer.unitPriceEur, imageUrl: productImageUrl },
       deliveryDays: offer.deliveryDays || null,
+    });
+    toast.success("Ajouté au panier", {
+      description: `${productName} — ${appliedQty} × ${formatEur(basePackPrice)} € = ${formatEur(appliedTotal)} € ${priceLabel}`,
     });
   };
 
@@ -2645,17 +2650,24 @@ export default function ProductPage() {
                         });
                         return;
                       }
+                      const stickyMax = bestOffer.stockQuantity > 0 ? bestOffer.stockQuantity : 999;
+                      const stickyAppliedQty = Math.min(stickyQty, stickyMax);
+                      const stickyUnit = isTVAC ? bestOffer.unitPriceInclVat : bestOffer.unitPriceEur;
+                      const stickyTotal = stickyAppliedQty * stickyUnit;
                       addToCart.mutate({
                         offerId: bestOffer.id,
                         productId: product.id,
-                        quantity: Math.min(stickyQty, bestOffer.stockQuantity > 0 ? bestOffer.stockQuantity : 999),
+                        quantity: stickyAppliedQty,
                         maxQuantity: bestOffer.stockQuantity > 0 ? bestOffer.stockQuantity : undefined,
                         vendorId: bestOffer.sellerId,
                         priceExclVat: bestOffer.unitPriceEur,
                         productData: { id: product.id, name: product.name, brand: product.brand || "", slug: product.slug, price: bestOffer.unitPriceEur, imageUrl: product.imageUrls?.[0] || product.imageUrl || undefined },
                         deliveryDays: bestOffer.deliveryDays || null,
                       });
-                      
+                      toast.success("Ajouté au panier", {
+                        description: `${product.name} — ${stickyAppliedQty} × ${formatEur(stickyUnit)} € = ${formatEur(stickyTotal)} € ${isTVAC ? "TVAC" : "HTVA"}`,
+                      });
+
                     }}
                   >
                     <ShoppingCart size={14} />

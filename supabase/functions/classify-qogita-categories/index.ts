@@ -144,6 +144,14 @@ Deno.serve(async (req) => {
     const batchSize = Math.min(50, Math.max(1, body.batch_size ?? 30));
     const maxBatches = Math.min(200, Math.max(1, body.max_batches ?? 10));
     const forceResync = !!body.force_resync;
+    // Si fourni (0..1), les propositions ≥ seuil sont appliquées immédiatement
+    // (création d'aliases + backfill products.primary_category_id) via la RPC bulk.
+    const autoApplyThreshold: number | null =
+      typeof body.auto_apply_threshold === "number" &&
+      body.auto_apply_threshold >= 0 &&
+      body.auto_apply_threshold <= 1
+        ? body.auto_apply_threshold
+        : null;
 
     // Auth admin via JWT du caller
     const authHeader = req.headers.get("Authorization") || "";

@@ -398,6 +398,7 @@ export default function HomePage() {
           </div>
         </div>
       </AnimatedSection>
+       )}
 
       {/* ═══ COMPARISON TABLE ═══ */}
       <AnimatedSection className="py-14 md:py-20 bg-mk-alt/30">

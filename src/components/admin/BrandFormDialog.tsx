@@ -208,9 +208,17 @@ export function BrandFormDialog({ open, onOpenChange, brand, manufacturers }: Br
             </div>
           </div>
           <div>
-            <Label className="text-xs">Logo URL</Label>
-            <Input value={form.logo_url} onChange={e => setForm({ ...form, logo_url: e.target.value })} placeholder="https://..." />
-            {form.logo_url && <img src={form.logo_url} alt="Logo" referrerPolicy="no-referrer" className="mt-1 w-10 h-10 rounded object-contain border border-border" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />}
+            <Label className="text-xs">Logo</Label>
+            <div className="flex items-center gap-2">
+              <Input value={form.logo_url} onChange={e => setForm({ ...form, logo_url: e.target.value })} placeholder="https://... ou importer un fichier" className="flex-1" />
+              <label className="inline-flex">
+                <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleLogoUpload(f); e.currentTarget.value = ""; }} />
+                <Button type="button" variant="outline" size="sm" className="h-9 gap-1.5" disabled={uploadingLogo} asChild>
+                  <span>{uploadingLogo ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />} Importer</span>
+                </Button>
+              </label>
+            </div>
+            {form.logo_url && <img src={form.logo_url} alt="Logo" referrerPolicy="no-referrer" className="mt-2 w-12 h-12 rounded object-contain border border-border bg-white p-1" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />}
           </div>
           <div><Label className="text-xs">Site web</Label><Input value={form.website} onChange={e => setForm({ ...form, website: e.target.value })} placeholder="https://" /></div>
           <div><Label className="text-xs">Description (originale)</Label><Textarea rows={2} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} /></div>

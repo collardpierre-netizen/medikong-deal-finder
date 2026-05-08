@@ -239,21 +239,7 @@ function OfferRow({
         )}
       </div>
 
-      {/* Last update */}
-      {(() => {
-        const iso = offer.updatedAt || offer.syncedAt;
-        const rel = formatUpdatedAt(iso);
-        if (!rel) return null;
-        const full = formatUpdatedAtFull(iso) || rel;
-        return (
-          <div
-            className="text-[11px] text-muted-foreground mb-3"
-            title={`Dernière mise à jour : ${full}`}
-          >
-            Mis à jour {rel}
-          </div>
-        );
-      })()}
+      {/* Mise à jour, origine, ancienneté & livraison sont regroupées dans la ligne méta du bas. */}
 
 
       {/* Delta vs best */}

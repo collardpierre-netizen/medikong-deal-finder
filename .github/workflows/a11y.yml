@@ -46,11 +46,20 @@ jobs:
           PLAYWRIGHT_BASE_URL: http://localhost:8080
         run: npm run test:a11y
 
-      - name: Upload report on failure
+      - name: Upload a11y snapshots (always)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: a11y-snapshots-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || github.ref_name }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: a11y-snapshots/
+          retention-days: 90
+          if-no-files-found: warn
+
+      - name: Upload Playwright report on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-a11y-report
+          name: playwright-a11y-report-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             playwright-report/
             test-results/

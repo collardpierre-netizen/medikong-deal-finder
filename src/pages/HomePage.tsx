@@ -175,7 +175,7 @@ export default function HomePage() {
   const comparisonNew = [
     t("comparison.mk1"), t("comparison.mk2"),
     t("comparison.mk3", { suppliers: suppliersTxt }),
-    t("comparison.mk4", { avgOffers: avgOffersTxt }),
+    t("comparison.mk4", { maxOffers: maxOffersTxt }),
     t("comparison.mk5"), t("comparison.mk6"),
   ];
 

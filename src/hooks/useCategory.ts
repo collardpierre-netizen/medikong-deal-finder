@@ -64,7 +64,22 @@ export function pickCategoryLabel(
 /** Hook returning the localized label for a slug (empty string while loading). */
 export function useCategoryLabel(slug: string | undefined | null): string {
   const { i18n } = useTranslation();
-  const { data } = useCategory(slug);
+  const { data, isLoading } = useCategory(slug);
   if (!slug) return "";
+  // During the first fetch we have no data yet; return "" so callers can show
+  // a skeleton instead of flashing the technical slug.
+  if (isLoading && !data) return "";
   return pickCategoryLabel(data, i18n.language) || slug;
+}
+
+/** Hook returning {label, isLoading} for callers that need a skeleton. */
+export function useCategoryLabelStatus(slug: string | undefined | null): {
+  label: string;
+  isLoading: boolean;
+} {
+  const { i18n } = useTranslation();
+  const { data, isLoading } = useCategory(slug);
+  if (!slug) return { label: "", isLoading: false };
+  const label = data ? pickCategoryLabel(data, i18n.language) || slug : "";
+  return { label, isLoading: isLoading && !data };
 }

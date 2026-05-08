@@ -99,7 +99,7 @@ export function PriceDeltaShowcase() {
           Écart entre vendeurs sur cette référence multi-fournisseurs.
         </p>
         <Link
-          to={`/produits/${featured.slug}`}
+          to={`/produit/${featured.slug}`}
           onClick={() =>
             trackEvent("home_price_delta_viewed", {
               productId: featured.productId,

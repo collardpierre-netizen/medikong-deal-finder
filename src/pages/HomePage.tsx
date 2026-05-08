@@ -332,7 +332,7 @@ export default function HomePage() {
           >
             {demoSlug && (
               <Link
-                to={`/produits/${demoSlug}`}
+                to={`/produit/${demoSlug}`}
                 onClick={() => trackHomeCta("see_demo", { productSlug: demoSlug, location: "hero" })}
                 className="inline-flex items-center gap-2 bg-mk-blue text-white font-semibold text-sm px-7 py-3 rounded-lg hover:opacity-90 transition-opacity shadow-sm"
               >
@@ -618,7 +618,7 @@ export default function HomePage() {
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
               {demoSlug && (
                 <Link
-                  to={`/produits/${demoSlug}`}
+                  to={`/produit/${demoSlug}`}
                   onClick={() => trackHomeCta("see_demo", { productSlug: demoSlug, location: "final_cta" })}
                   className="inline-flex items-center gap-2 bg-white text-mk-navy font-bold text-sm px-8 py-3.5 rounded-lg hover:bg-gray-100 transition-colors"
                 >

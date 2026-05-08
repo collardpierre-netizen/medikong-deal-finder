@@ -33,9 +33,12 @@ const fmt = (n: number) =>
   }).format(n);
 
 export function PriceDeltaShowcase() {
-  const pinned = useFeaturedPriceDelta(PINNED_PRODUCT_ID);
+  const settings = useHomeShowcaseSettings();
+  const pinnedId = settings.data?.pinned_product_id ?? null;
+  const pinned = useFeaturedPriceDelta(pinnedId);
   const fallback = useTopPriceDeltas(1);
-  const isLoading = pinned.isLoading || (!pinned.data && fallback.isLoading);
+  const isLoading =
+    settings.isLoading || pinned.isLoading || (!pinned.data && fallback.isLoading);
   if (isLoading) return null;
   const featured: PriceDelta | undefined = pinned.data ?? fallback.data?.[0];
   if (!featured) return null;

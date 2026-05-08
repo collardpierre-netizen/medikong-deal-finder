@@ -73,6 +73,11 @@ const AdminUnmappedCategories = () => {
         subtitle="Libellés de catégorie source pour lesquels aucun produit n'a encore reçu de primary_category_id."
         actions={
           <div className="flex gap-2">
+            <Button asChild variant="secondary" size="sm">
+              <Link to="/admin/categories/dashboard">
+                <TrendingUp className="mr-2 h-4 w-4" /> Tableau de bord
+              </Link>
+            </Button>
             <Button asChild variant="default" size="sm">
               <Link to="/admin/categories/qogita-mapping-llm">
                 <Sparkles className="mr-2 h-4 w-4" /> Mapping LLM (passe 2)

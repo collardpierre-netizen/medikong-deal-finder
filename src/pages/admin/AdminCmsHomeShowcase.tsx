@@ -33,20 +33,28 @@ const AdminCmsHomeShowcase = () => {
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
 
+  const [slot, setSlot] = useState<"pinned" | "demo_cta">("pinned");
+
   const { data: settings, isLoading: loadingSettings } = useQuery({
     queryKey: ["admin-home-showcase-settings"],
     queryFn: async () => {
       const { data, error } = await sb
         .from("home_showcase_settings")
-        .select("pinned_product_id, updated_at, updated_by")
+        .select("pinned_product_id, demo_cta_product_id, updated_at, updated_by")
         .eq("id", true)
         .maybeSingle();
       if (error) throw error;
-      return data as { pinned_product_id: string | null; updated_at: string; updated_by: string | null } | null;
+      return data as {
+        pinned_product_id: string | null;
+        demo_cta_product_id: string | null;
+        updated_at: string;
+        updated_by: string | null;
+      } | null;
     },
   });
 
   const pinnedId = settings?.pinned_product_id ?? null;
+  const demoCtaId = settings?.demo_cta_product_id ?? null;
 
   const { data: pinnedProduct } = useQuery({
     queryKey: ["admin-home-showcase-pinned", pinnedId],
@@ -56,6 +64,20 @@ const AdminCmsHomeShowcase = () => {
         .from("products")
         .select("id, name, slug, image_url, brand_name, gtin, is_active")
         .eq("id", pinnedId)
+        .maybeSingle();
+      if (error) throw error;
+      return data as ProductLite | null;
+    },
+  });
+
+  const { data: demoCtaProduct } = useQuery({
+    queryKey: ["admin-home-showcase-demo-cta", demoCtaId],
+    enabled: !!demoCtaId,
+    queryFn: async (): Promise<ProductLite | null> => {
+      const { data, error } = await sb
+        .from("products")
+        .select("id, name, slug, image_url, brand_name, gtin, is_active")
+        .eq("id", demoCtaId)
         .maybeSingle();
       if (error) throw error;
       return data as ProductLite | null;

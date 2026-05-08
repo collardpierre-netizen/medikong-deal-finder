@@ -63,7 +63,9 @@
     "exampleTena": "TENA",
     "exampleMasks": "FFP2-Masken",
     "slideFallbackTitle": "Der führende Medizin-Marktplatz in Belgien",
-    "slideFallbackSubtitle": "MediKong.pro"
+    "slideFallbackSubtitle": "MediKong.pro",
+    "ctaSeeDemo": "Live-Preisvergleich ansehen",
+    "ctaCreateAccount": "Konto erstellen (kostenlos, 1 Min.)"
   },
   "stats": {
     "suppliers": "Verifizierte Lieferanten",

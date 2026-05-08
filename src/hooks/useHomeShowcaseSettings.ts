@@ -11,11 +11,15 @@ export function useHomeShowcaseSettings() {
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("home_showcase_settings")
-        .select("pinned_product_id, updated_at")
+        .select("pinned_product_id, demo_cta_product_id, updated_at")
         .eq("id", true)
         .maybeSingle();
       if (error) throw error;
-      return (data ?? null) as { pinned_product_id: string | null; updated_at: string } | null;
+      return (data ?? null) as {
+        pinned_product_id: string | null;
+        demo_cta_product_id: string | null;
+        updated_at: string;
+      } | null;
     },
     staleTime: 10 * 60 * 1000,
     refetchOnWindowFocus: false,

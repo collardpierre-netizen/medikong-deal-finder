@@ -177,25 +177,19 @@ function OfferRow({
     }
     const appliedQty = Math.min(qty, maxQty);
     const appliedTotal = appliedQty * basePackPrice;
-    addToCart.mutate(
-      {
-        offerId: offer.id,
-        productId,
-        quantity: appliedQty,
-        maxQuantity: maxQty,
-        vendorId: offer.sellerId,
-        priceExclVat: offer.unitPriceEur,
-        productData: { id: productId, name: productName, brand: "", slug: productSlug, price: offer.unitPriceEur, imageUrl: productImageUrl },
-        deliveryDays: offer.deliveryDays || null,
-      },
-      {
-        onSuccess: () => {
-          toast.success("Ajouté au panier", {
-            description: `${productName} — ${appliedQty} × ${formatEur(basePackPrice)} € = ${formatEur(appliedTotal)} € ${priceLabel}`,
-          });
-        },
-      }
-    );
+    addToCart.mutate({
+      offerId: offer.id,
+      productId,
+      quantity: appliedQty,
+      maxQuantity: maxQty,
+      vendorId: offer.sellerId,
+      priceExclVat: offer.unitPriceEur,
+      productData: { id: productId, name: productName, brand: "", slug: productSlug, price: offer.unitPriceEur, imageUrl: productImageUrl },
+      deliveryDays: offer.deliveryDays || null,
+    });
+    toast.success("Ajouté au panier", {
+      description: `${productName} — ${appliedQty} × ${formatEur(basePackPrice)} € = ${formatEur(appliedTotal)} € ${priceLabel}`,
+    });
   };
 
   return (

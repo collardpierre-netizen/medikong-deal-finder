@@ -11,7 +11,6 @@ export default tseslint.config(
     extends: [
       js.configs.recommended,
       ...tseslint.configs.recommended,
-      jsxA11y.flatConfigs.recommended,
     ],
     files: ["**/*.{ts,tsx}"],
     languageOptions: {
@@ -21,6 +20,7 @@ export default tseslint.config(
     plugins: {
       "react-hooks": reactHooks,
       "react-refresh": reactRefresh,
+      "jsx-a11y": jsxA11y,
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
@@ -29,7 +29,10 @@ export default tseslint.config(
       "@typescript-eslint/no-explicit-any": "off",
       "@typescript-eslint/no-empty-object-type": "off",
       "@typescript-eslint/no-unused-expressions": "off",
+      // Icon-only buttons must have an accessible label
       "jsx-a11y/control-has-associated-label": "error",
+      // Icon-only links must have an accessible label
+      "jsx-a11y/anchor-has-content": "error",
     },
   },
 );

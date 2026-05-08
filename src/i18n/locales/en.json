@@ -106,7 +106,7 @@
     "mk1": "No contract, no commitment",
     "mk2": "MOV from €150 excl. VAT",
     "mk3": "Instant access to {{suppliers}} suppliers",
-    "mk4": "{{avgOffers}} suppliers per reference on average",
+    "mk4": "Up to {{maxOffers}} suppliers on a single SKU",
     "mk5": "Real-time stock analysis",
     "mk6": "Buyer protection included"
   },

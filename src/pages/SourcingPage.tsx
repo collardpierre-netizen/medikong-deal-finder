@@ -4,23 +4,27 @@ import { motion } from "framer-motion";
 import { AnimatedSection, StaggerContainer, StaggerItem } from "@/components/shared/PageTransition";
 import { useState } from "react";
 import { toast } from "sonner";
-
-const steps = [
-  { icon: <FileSearch size={22} />, title: "Décrivez votre besoin", desc: "Indiquez le produit recherché, les quantités et votre budget estimé." },
-  { icon: <Users size={22} />, title: "Nos experts cherchent", desc: "Notre équipe contacte nos 350+ fournisseurs pour trouver la meilleure offre." },
-  { icon: <Clock size={22} />, title: "Recevez vos devis sous 48h", desc: "Vous recevez une sélection d'offres vérifiées avec les meilleurs tarifs." },
-];
-
-const advantages = [
-  "Accès à 350+ fournisseurs vérifiés",
-  "Négociation de prix de gros",
-  "Vérification qualité incluse",
-  "Réponse garantie sous 48h",
-  "Sans engagement",
-];
+import { useMarketplaceMetrics } from "@/hooks/useMarketplaceMetrics";
+import { formatCount } from "@/lib/formatCount";
 
 export default function SourcingPage() {
   const [form, setForm] = useState({ name: "", email: "", phone: "", company: "", bce: "", description: "", budget: "", urgency: "medium" });
+  const { data: metrics } = useMarketplaceMetrics();
+  const suppliersLabel = metrics ? formatCount(metrics.suppliersCount, { suffix: "+" }) : "—";
+
+  const steps = [
+    { icon: <FileSearch size={22} />, title: "Décrivez votre besoin", desc: "Indiquez le produit recherché, les quantités et votre budget estimé." },
+    { icon: <Users size={22} />, title: "Nos experts cherchent", desc: `Notre équipe contacte nos ${suppliersLabel} fournisseurs pour trouver la meilleure offre.` },
+    { icon: <Clock size={22} />, title: "Recevez vos devis sous 48h", desc: "Vous recevez une sélection d'offres vérifiées avec les meilleurs tarifs." },
+  ];
+
+  const advantages = [
+    `Accès à ${suppliersLabel} fournisseurs vérifiés`,
+    "Négociation de prix de gros",
+    "Vérification qualité incluse",
+    "Réponse garantie sous 48h",
+    "Sans engagement",
+  ];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

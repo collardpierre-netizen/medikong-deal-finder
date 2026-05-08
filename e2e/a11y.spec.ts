@@ -30,10 +30,23 @@ const KEY_PUBLIC_PAGES = [
 ];
 
 // Règles temporairement désactivées (à vider au fur et à mesure).
-// Documente toujours la raison + le ticket de suivi.
-const TEMPORARILY_DISABLED_RULES: string[] = [
-  // ex: "color-contrast", // dette CMS — ticket A11Y-12
+// Chaque entrée DOIT pointer vers un ticket de remédiation. Une fois la
+// dette purgée, l'entrée doit être retirée — sinon le job CI échoue
+// (cf. test "garde-fou TEMPORARILY_DISABLED_RULES" plus bas).
+type DisabledRule = {
+  /** Identifiant axe-core (ex: "color-contrast") */
+  rule: string;
+  /** Ticket de suivi (ex: "A11Y-12") — obligatoire */
+  ticket: string;
+  /** Contexte/raison courte */
+  reason?: string;
+};
+
+const TEMPORARILY_DISABLED_RULES: DisabledRule[] = [
+  // ex: { rule: "color-contrast", ticket: "A11Y-12", reason: "dette CMS hero" },
 ];
+
+const DISABLED_RULE_IDS = TEMPORARILY_DISABLED_RULES.map((r) => r.rule);
 
 // Identifiants d'archivage (PR / commit / horodatage). Resté inertes en local.
 const RUN_TS = new Date().toISOString().replace(/[:.]/g, "-"); // 2026-05-08T09-12-33-000Z
@@ -61,7 +74,7 @@ for (const { name, path } of KEY_PUBLIC_PAGES) {
 
       const results = await new AxeBuilder({ page })
         .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
-        .disableRules(TEMPORARILY_DISABLED_RULES)
+        .disableRules(DISABLED_RULE_IDS)
         // Ignore les iframes tierces (recaptcha, stripe, gtm, etc.)
         .exclude("iframe")
         .analyze();
@@ -141,3 +154,31 @@ for (const { name, path } of KEY_PUBLIC_PAGES) {
     });
   });
 }
+
+/**
+ * Garde-fou : une fois la dette purgée, `TEMPORARILY_DISABLED_RULES`
+ * doit rester vide. Si une règle subsiste sans ticket associé, ou si
+ * le tableau n'a pas été nettoyé après remédiation, ce test échoue
+ * et liste clairement la règle + le ticket à corriger.
+ */
+test.describe("Garde-fou TEMPORARILY_DISABLED_RULES", () => {
+  test("toutes les règles temporairement désactivées ont un ticket et le tableau est vidé après remédiation", () => {
+    // 1) Toute entrée doit avoir un ticket non vide.
+    const missingTicket = TEMPORARILY_DISABLED_RULES.filter(
+      (r) => !r.ticket || !r.ticket.trim(),
+    );
+    expect(
+      missingTicket,
+      `Règles a11y désactivées sans ticket :\n${JSON.stringify(missingTicket, null, 2)}`,
+    ).toEqual([]);
+
+    // 2) Le tableau doit être vide une fois la remédiation terminée.
+    const pending = TEMPORARILY_DISABLED_RULES.map(
+      (r) => `  - ${r.rule}  →  ticket ${r.ticket}${r.reason ? `  (${r.reason})` : ""}`,
+    ).join("\n");
+    expect(
+      TEMPORARILY_DISABLED_RULES,
+      `\n\n❌ ${TEMPORARILY_DISABLED_RULES.length} règle(s) a11y encore désactivée(s) — à corriger :\n${pending}\n\nUne fois chaque ticket résolu, retire l'entrée correspondante de TEMPORARILY_DISABLED_RULES dans e2e/a11y.spec.ts.\n`,
+    ).toEqual([]);
+  });
+});

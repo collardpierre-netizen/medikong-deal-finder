@@ -262,7 +262,7 @@ function OfferRow({
       })()}
 
       {/* Desktop grid */}
-      <div className="hidden md:grid grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)_72px] gap-x-4 gap-y-3 items-start">
+      <div className="hidden md:grid grid-cols-[minmax(150px,1fr)_minmax(160px,0.9fr)_64px_176px] gap-x-3 items-start">
         <div className="flex flex-col gap-1.5">
           {(() => {
             if (vendorTrust) {
@@ -331,7 +331,7 @@ function OfferRow({
         </div>
 
         {/* Price + MOV merged column */}
-        <div>
+        <div className="min-w-0">
           {hasTiers ? (
             <div className="relative pl-4">
               <div className="absolute left-[3px] top-[7px] w-px border-l border-dashed border-muted-foreground/40" style={{ height: `calc(100% - 14px)` }} />
@@ -399,7 +399,7 @@ function OfferRow({
             </div>
           ) : (
             <div className="flex flex-col gap-1">
-              <div className="flex items-baseline gap-6">
+              <div className="flex items-baseline justify-between gap-3 min-w-0">
                 <span className="text-sm font-bold text-green-700 whitespace-nowrap">
                   {formatEur(displayPrice)}&nbsp;€
                   <span className="text-[10px] font-normal text-muted-foreground">{basisSuffix} · {priceLabel}</span>
@@ -420,13 +420,13 @@ function OfferRow({
             </div>
           )}
         </div>
-        <span className="text-sm text-foreground whitespace-nowrap">{offer.stockQuantity.toLocaleString("fr-FR")}</span>
+        <span className="text-sm text-foreground whitespace-nowrap tabular-nums">{offer.stockQuantity.toLocaleString("fr-FR")}</span>
 
         {/* Actions */}
-        <div className="col-span-3 flex flex-col items-end gap-1 min-w-0">
-          <div className="grid grid-cols-[100px_minmax(0,1fr)] items-stretch gap-2 w-full max-w-[320px]">
+        <div className="flex flex-col items-stretch gap-1 w-full min-w-0">
+          <div className="grid grid-cols-1 items-stretch gap-1.5 w-full">
             <div
-              className="flex items-center justify-between border border-border rounded-md h-9 w-[100px] overflow-hidden bg-background"
+              className="flex items-center justify-between border border-border rounded-md h-8 w-full overflow-hidden bg-background"
               role="group"
               aria-label={`Quantité — par lots de ${step}`}
             >
@@ -460,16 +460,16 @@ function OfferRow({
             </div>
             <button
               type="button"
-              className="bg-primary text-primary-foreground px-3 h-9 rounded-md text-sm font-semibold inline-flex items-center justify-center gap-1.5 whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 hover:bg-primary/90 active:bg-primary/80 transition-colors w-full min-w-0"
+              className="bg-primary text-primary-foreground px-3 h-8 rounded-md text-sm font-semibold inline-flex items-center justify-center gap-1.5 whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 hover:bg-primary/90 active:bg-primary/80 transition-colors w-full min-w-0"
               onClick={handleAdd}
               title={`Ajouter ${Math.min(qty, maxQty)} × ${formatEur(basePackPrice)} € au panier`}
               aria-label={`Ajouter ${Math.min(qty, maxQty)} unité(s) au panier — total ${formatEur(Math.min(qty, maxQty) * basePackPrice)} € ${priceLabel}`}
             >
               <ShoppingCart size={14} aria-hidden className="shrink-0" />
-              <span className="shrink-0">Ajouter au panier</span>
+              <span className="shrink-0">Ajouter</span>
             </button>
           </div>
-          <div className="flex items-center justify-end gap-2 text-[11px] text-muted-foreground w-full max-w-[320px]">
+          <div className="flex items-center justify-end gap-2 text-[10px] text-muted-foreground w-full min-w-0">
             {step > 1 && (
               <span className="tabular-nums" title={`Quantité minimum de commande : ${step}. Toute quantité doit être un multiple de ${step}.`}>
                 Lots de {step}

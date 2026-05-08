@@ -124,6 +124,7 @@ function MarginCalcPctMode({
 }
 
 import { formatUpdatedAt, formatUpdatedAtFull } from "@/lib/format-date";
+import { SHIPPING_COPY, FAST_SHIPPING_MAX_DAYS } from "@/config/copy";
 
 /** @deprecated use formatUpdatedAt from @/lib/format-date */
 function formatRelative(iso?: string | null): string | null {
@@ -224,6 +225,11 @@ function OfferRow({
               Produit traçable : numéro de lot, date d'expiration et certificats disponibles pour garantir l'authenticité et la conformité.
             </TooltipContent>
           </Tooltip>
+        )}
+        {offer.deliveryDays != null && offer.deliveryDays > 0 && offer.deliveryDays <= FAST_SHIPPING_MAX_DAYS && (
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-full">
+            <Truck size={12} /> {SHIPPING_COPY.fastBadge.fr}
+          </span>
         )}
       </div>
 
@@ -515,11 +521,13 @@ function OfferRow({
         </div>
       </div>
 
-      {/* Delivery estimate */}
-      <div className="flex items-center gap-1.5 mt-3 text-xs text-muted-foreground">
-        <Truck size={13} />
-        <span>Livraison estimée : {offer.deliveryDays ? (offer.deliveryDays <= 7 ? `${offer.deliveryDays} jours` : `${Math.ceil(offer.deliveryDays / 7)} semaines`) : "5-10 jours ouvrables"}</span>
-      </div>
+      {/* Delivery estimate (per offer) — n'afficher que si la donnée est connue */}
+      {offer.deliveryDays ? (
+        <div className="flex items-center gap-1.5 mt-3 text-xs text-muted-foreground">
+          <Truck size={13} />
+          <span>Livraison estimée : {offer.deliveryDays <= 7 ? `${offer.deliveryDays} jours` : `${Math.ceil(offer.deliveryDays / 7)} semaines`}</span>
+        </div>
+      ) : null}
 
       {offer.sellerId && (
         <VendorSuggestions

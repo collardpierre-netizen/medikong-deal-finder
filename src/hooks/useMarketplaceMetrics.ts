@@ -8,6 +8,10 @@ export type MarketplaceMetrics = {
   offersCount: number;
   productsOnPromo: number;
   avgOffersPerProduct: number;
+  maxOffersPerProduct: number;
+  multiVendorProductsCount: number;
+  avgOffersPerMultiProduct: number;
+  medianOffersPerMultiProduct: number;
   refreshedAt: string;
 };
 

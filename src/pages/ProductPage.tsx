@@ -425,8 +425,18 @@ function OfferRow({
               <span className="px-3 py-2 text-sm font-medium min-w-[40px] text-center">{qty}</span>
               <button onClick={() => setQty(Math.min(maxQty, qty + step))} className="px-2.5 py-2 text-muted-foreground hover:text-foreground" disabled={qty >= maxQty}><Plus size={14} /></button>
             </div>
-            <motion.button className="bg-primary text-primary-foreground p-2.5 rounded-md" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={handleAdd}>
-              <ShoppingCart size={16} />
+            <motion.button
+              className="bg-primary text-primary-foreground px-3 py-2 rounded-md text-sm font-semibold inline-flex items-center gap-1.5 whitespace-nowrap"
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={handleAdd}
+              title={`Ajouter ${Math.min(qty, maxQty)} × ${formatEur(basePackPrice)} € au panier`}
+            >
+              <ShoppingCart size={14} />
+              <span>Ajouter</span>
+              <span className="text-primary-foreground/85 font-medium tabular-nums">
+                · {formatEur(Math.min(qty, maxQty) * basePackPrice)}&nbsp;€
+              </span>
             </motion.button>
           </div>
           {step > 1 && (

@@ -65,6 +65,17 @@ export default function VendorBilling() {
     enabled: !!vendorId,
   });
 
+  // Redirect non-whitelabel (after hooks to satisfy rules-of-hooks)
+  if (!vendorLoading && shippingMode && shippingMode !== "medikong_whitelabel") {
+    return (
+      <div className="text-center py-24">
+        <Receipt size={48} className="text-[#CBD5E1] mx-auto mb-4" />
+        <p className="text-[#8B95A5] text-[14px]">La facturation n'est disponible qu'en mode Medikong Shipping.</p>
+        <VBtn className="mt-4" onClick={() => navigate("/vendor")}>Retour au dashboard</VBtn>
+      </div>
+    );
+  }
+
   const runningTotal = currentShipments.reduce((s, sh) => s + (sh.cost_total_cents ?? 0), 0);
   const runningBase = currentShipments.reduce((s, sh) => s + (sh.cost_base_cents ?? 0), 0);
   const runningMargin = currentShipments.reduce((s, sh) => s + (sh.cost_margin_cents ?? 0), 0);

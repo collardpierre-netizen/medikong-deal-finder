@@ -38,7 +38,6 @@ export default function HomePage() {
   const { t } = useTranslation();
   
   const [openFaq, setOpenFaq] = useState<number | null>(null);
-  const { data: products = [] } = useFeaturedProducts(5);
   const { data: curatedProducts = [] } = useHomeFeaturedProducts();
   const { country, currentCountry } = useCountry();
   const navigate = useNavigate();

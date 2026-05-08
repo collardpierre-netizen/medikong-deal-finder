@@ -1453,7 +1453,7 @@ export default function ProductPage() {
                         <input type="checkbox" checked={faggOnly} onChange={(e) => setFaggOnly(e.target.checked)} className="rounded border-border" />
                         Vendeurs vérifiés FAGG uniquement
                       </label>
-                    </div>
+                      </div>
                     </div>
 
                     {/* My encoded price banner — visible only if user has an encoded price for this product */}
@@ -1647,6 +1647,7 @@ export default function ProductPage() {
                         ))}
                       </div>
                     )}
+                    </VendorTrustProvider>
                   </TabsContent>
 
                   {/* ── Tab: Offres externes ── */}

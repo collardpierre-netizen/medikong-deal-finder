@@ -550,20 +550,50 @@ function OfferRow({
           )}
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex items-center border border-border rounded-md flex-1">
-            <button onClick={() => setQty(Math.max(step, qty - step))} className="px-2.5 py-2 text-muted-foreground" disabled={qty <= step}><Minus size={14} /></button>
-            <span className="px-3 py-2 text-sm font-medium text-center flex-1">{qty}</span>
-            <button onClick={() => setQty(Math.min(maxQty, qty + step))} className="px-2.5 py-2 text-muted-foreground" disabled={qty >= maxQty}><Plus size={14} /></button>
+          <div
+            className="flex items-center border border-border rounded-md flex-1"
+            role="group"
+            aria-label={`Quantité — par lots de ${step}`}
+          >
+            <button
+              type="button"
+              onClick={() => setQty((q) => Math.max(step, q - step))}
+              className="px-2.5 py-2 text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary rounded-l-md disabled:opacity-40"
+              disabled={qty <= step}
+              aria-label={`Diminuer la quantité de ${step}`}
+              title={`Retirer ${step}`}
+            >
+              <Minus size={14} aria-hidden />
+            </button>
+            <span
+              className="px-3 py-2 text-sm font-medium text-center flex-1 tabular-nums"
+              aria-live="polite"
+              aria-atomic="true"
+            >
+              {qty}
+            </span>
+            <button
+              type="button"
+              onClick={() => setQty((q) => Math.min(maxQty, q + step))}
+              className="px-2.5 py-2 text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary rounded-r-md disabled:opacity-40"
+              disabled={qty >= maxQty}
+              aria-label={`Augmenter la quantité de ${step}`}
+              title={`Ajouter ${step}`}
+            >
+              <Plus size={14} aria-hidden />
+            </button>
           </div>
           <motion.button
-            className="bg-primary text-primary-foreground px-4 py-2.5 rounded-md text-sm font-semibold flex items-center gap-1.5 whitespace-nowrap"
+            type="button"
+            className="bg-primary text-primary-foreground px-4 py-2.5 rounded-md text-sm font-semibold flex items-center gap-1.5 whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
             whileTap={{ scale: 0.95 }}
             onClick={handleAdd}
             title={`Ajouter ${Math.min(qty, maxQty)} × ${formatEur(basePackPrice)} € au panier`}
-            aria-label={`Ajouter au panier — total ${formatEur(Math.min(qty, maxQty) * basePackPrice)} €`}
+            aria-label={`Ajouter ${Math.min(qty, maxQty)} unité(s) au panier — total ${formatEur(Math.min(qty, maxQty) * basePackPrice)} € ${priceLabel}`}
           >
-            <ShoppingCart size={14} />
-            <span className="tabular-nums">
+            <ShoppingCart size={14} aria-hidden />
+            <span>Ajouter ·</span>
+            <span className="tabular-nums" aria-live="polite">
               {formatEur(Math.min(qty, maxQty) * basePackPrice)}&nbsp;€
             </span>
           </motion.button>

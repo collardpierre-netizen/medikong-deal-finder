@@ -53,7 +53,7 @@ export default function SourcingPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
           >
-            Vous ne trouvez pas un produit ? Notre équipe le source pour vous auprès de nos 350+ fournisseurs.
+            Vous ne trouvez pas un produit ? Notre équipe le source pour vous auprès de nos {suppliersLabel} fournisseurs.
           </motion.p>
         </div>
       </section>

@@ -31,11 +31,11 @@ export default tseslint.config(
       "@typescript-eslint/no-unused-expressions": "off",
       // Icon-only buttons/links must have an accessible label.
       // Ignoring input/select/textarea to avoid noise on form fields
-      // wrapped in labels without htmlFor; those should be fixed separately.
+      // wrapped in labels without htmlFor; td/th are table cells, not controls.
       "jsx-a11y/control-has-associated-label": [
         "error",
         {
-          ignoreElements: ["input", "select", "textarea"],
+          ignoreElements: ["input", "select", "textarea", "td", "th"],
           depth: 5,
         },
       ],

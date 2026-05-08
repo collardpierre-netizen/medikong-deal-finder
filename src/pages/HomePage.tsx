@@ -20,6 +20,19 @@ import { useMarketplaceMetrics } from "@/hooks/useMarketplaceMetrics";
 import { formatCount } from "@/lib/formatCount";
 import { RecentSearches } from "@/components/home/RecentSearches";
 import { useHomeFeaturedBrands, useHomeFeaturedProducts, HOME_FEATURED_BADGE_LABEL } from "@/hooks/useHomeFeatured";
+import { useTopPriceDeltas } from "@/hooks/useTopPriceDeltas";
+import { PriceDeltaShowcase } from "@/components/home/PriceDeltaShowcase";
+
+// Tracking analytics minimal (GTM dataLayer) pour mesurer l'inversion des CTAs.
+function trackHomeCta(type: "see_demo" | "create_account", extra?: Record<string, unknown>) {
+  try {
+    const w = window as unknown as { dataLayer?: Array<Record<string, unknown>> };
+    w.dataLayer = w.dataLayer ?? [];
+    w.dataLayer.push({ event: "home_cta_clicked", type, ...(extra ?? {}) });
+  } catch {
+    /* no-op */
+  }
+}
 
 const iconMap: Record<string, React.ReactNode> = {
   Shield: <Shield size={20} className="text-mk-navy" />,

@@ -74,7 +74,7 @@
   },
   "valueProps": {
     "bestPrices": "Meilleurs prix B2B",
-    "bestPricesDesc": "Comparez les offres de 350+ grossistes, marques et distributeurs dans un catalogue unifié.",
+    "bestPricesDesc": "Comparez les offres de {{suppliers}} grossistes, marques et distributeurs dans un catalogue unifié.",
     "simpleOrders": "Commandes simplifiées",
     "simpleOrdersDesc": "MOQ bas, paiement intégré et livraison suivie. Accédez aux prix de gros habituellement réservés aux grandes structures.",
     "guaranteed": "Authenticité garantie",
@@ -102,8 +102,8 @@
     "trad6": "Aucune protection en cas d'erreur",
     "mk1": "Sans contrat, sans engagement",
     "mk2": "MOV à partir de 150€ HT",
-    "mk3": "Accès instantané à 350+ fournisseurs",
-    "mk4": "15+ fournisseurs par référence",
+    "mk3": "Accès instantané à {{suppliers}} fournisseurs",
+    "mk4": "{{avgOffers}} fournisseurs par référence en moyenne",
     "mk5": "Analyse en temps réel des stocks",
     "mk6": "Protection acheteur incluse"
   },
@@ -127,7 +127,7 @@
   "faq": {
     "title": "Questions fréquentes",
     "q1": "Comment fonctionne MediKong ?",
-    "a1": "MediKong est un marketplace B2B qui regroupe les offres de 350+ fournisseurs médicaux vérifiés. Vous pouvez acheter directement via la marketplace, comparer les prix du marché, ou être redirigé vers les offres externes les plus compétitives.",
+    "a1": "MediKong est un marketplace B2B qui regroupe les offres de {{suppliers}} fournisseurs médicaux vérifiés. Vous pouvez acheter directement via la marketplace, comparer les prix du marché, ou être redirigé vers les offres externes les plus compétitives.",
     "q2": "Quels professionnels peuvent s'inscrire ?",
     "a2": "Tous les professionnels de santé en Belgique : pharmacies, hôpitaux, cliniques, MR/MRS, cabinets médicaux, kinésithérapeutes, dentistes, centrales d'achat et revendeurs agréés.",
     "q3": "Les prix incluent-ils la TVA ?",
@@ -437,7 +437,7 @@
       "s1h": "Planification des achats",
       "s1": "Anticipez vos besoins en analysant votre historique de consommation. Commandez régulièrement en petites quantités plutôt qu'en gros stocks ponctuels pour éviter les ruptures et optimiser votre trésorerie.",
       "s2h": "Gestion multi-fournisseurs",
-      "s2": "Diversifiez vos sources d'approvisionnement pour réduire les risques de rupture. MediKong regroupe plus de 350 fournisseurs vérifiés. Comparez les offres et les délais avant chaque commande. Utilisez les listes de favoris pour accélérer vos achats récurrents."
+      "s2": "Diversifiez vos sources d'approvisionnement pour réduire les risques de rupture. MediKong regroupe {{suppliers}} fournisseurs vérifiés. Comparez les offres et les délais avant chaque commande. Utilisez les listes de favoris pour accélérer vos achats récurrents."
     }
   },
   "catalog": {

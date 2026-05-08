@@ -267,26 +267,30 @@ function OfferRow({
       {/* Desktop grid */}
       <div className="hidden md:grid grid-cols-[1.5fr_2fr_0.8fr_1.5fr] gap-3 items-start">
         <div className="flex flex-col gap-1.5">
-          <span className="font-bold text-sm text-foreground inline-flex items-center gap-1.5">
-            {sellerLabel}
-            {offer.vendorNote && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    type="button"
-                    aria-label="Note du fournisseur"
-                    className="inline-flex items-center justify-center text-primary hover:text-primary/80 cursor-help"
-                  >
-                    <Info size={14} />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-[280px] text-xs whitespace-pre-line">
-                  <span className="block font-semibold mb-1">Note du fournisseur</span>
-                  {offer.vendorNote}
-                </TooltipContent>
-              </Tooltip>
-            )}
-          </span>
+          {(() => {
+            const trust = useVendorTrustForId(offer.sellerId);
+            if (trust) {
+              return <VendorTrustHeader trust={trust} variant="full" />;
+            }
+            return (
+              <span className="font-bold text-sm text-foreground inline-flex items-center gap-1.5">
+                {sellerLabel}
+                {offer.vendorNote && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button type="button" aria-label="Note du fournisseur" className="inline-flex items-center justify-center text-primary hover:text-primary/80 cursor-help">
+                        <Info size={14} />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-[280px] text-xs whitespace-pre-line">
+                      <span className="block font-semibold mb-1">Note du fournisseur</span>
+                      {offer.vendorNote}
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+              </span>
+            );
+          })()}
           {offer.sellerSlug && (
             <Link
               to={`/vendeur/${offer.sellerSlug}`}

@@ -66,6 +66,7 @@ const AdminQogitaLlmMapping = () => {
   const [maxBatches, setMaxBatches] = useState<number>(10);
   const [forceResync, setForceResync] = useState(false);
   const [autoApply, setAutoApply] = useState(false);
+  const [dryRunOpen, setDryRunOpen] = useState(false);
   const [autoApplyThreshold, setAutoApplyThreshold] = useState<number>(0.9);
 
   const { data: proposals = [], isLoading, refetch } = useQuery({

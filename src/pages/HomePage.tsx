@@ -120,9 +120,11 @@ export default function HomePage() {
     queryFn: async () => {
       const { data } = await supabase
         .from("brands")
-        .select("id, name, slug, logo_url, website_url, product_count")
+        .select("id, name, slug, logo_url, website_url, product_count, is_featured")
         .eq("is_active", true)
         .gt("product_count", 0)
+        // Featured d'abord (curation manuelle dans /admin/marques), puis top product_count
+        .order("is_featured", { ascending: false })
         .order("product_count", { ascending: false })
         .limit(40);
       // Keep only brands that have a logo_url OR a website_url (for Clearbit fallback)

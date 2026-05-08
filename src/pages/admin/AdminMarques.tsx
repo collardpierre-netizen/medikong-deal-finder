@@ -11,8 +11,9 @@ import { BrandFormDialog } from "@/components/admin/BrandFormDialog";
 import { exportBrands, importBrands } from "@/lib/xlsx-utils";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Tag, Package, Plus, Download, Upload, Search, ExternalLink, Globe, Shield, GitMerge } from "lucide-react";
+import { Tag, Package, Plus, Download, Upload, Search, ExternalLink, Globe, Shield, GitMerge, Star } from "lucide-react";
 import { Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 const fmt = (n: number) => n.toLocaleString("fr-BE");
 
@@ -39,6 +40,15 @@ const AdminMarques = () => {
     } catch (e: any) {
       toast.error(e.message || "Erreur import");
     }
+  };
+
+  const toggleFeatured = async (brand: any) => {
+    const next = !brand.is_featured;
+    const { error } = await supabase.from("brands").update({ is_featured: next }).eq("id", brand.id);
+    if (error) { toast.error(error.message); return; }
+    toast.success(next ? `${brand.name} épinglée` : `${brand.name} retirée des featured`);
+    qc.invalidateQueries({ queryKey: ["admin-brands"] });
+    qc.invalidateQueries({ queryKey: ["featured-brands-homepage"] });
   };
 
   return (
@@ -89,9 +99,17 @@ const AdminMarques = () => {
                   </TableCell>
                   <TableCell className="text-[11px] text-right" style={{ color: "#616B7C" }}>{b.product_count || 0}</TableCell>
                   <TableCell>
-                    <Badge variant="outline" className="text-[10px] font-bold">
-                      {b.is_featured ? "Featured" : "Standard"}
-                    </Badge>
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); toggleFeatured(b); }}
+                      className="inline-flex items-center gap-1 text-[10px] font-bold rounded px-1.5 py-0.5 hover:bg-amber-50 transition-colors"
+                      title={b.is_featured ? "Retirer du carrousel home" : "Épingler dans le carrousel home"}
+                    >
+                      <Star size={12} className={b.is_featured ? "fill-amber-500 text-amber-500" : "text-muted-foreground"} />
+                      <span className={b.is_featured ? "text-amber-700" : "text-muted-foreground"}>
+                        {b.is_featured ? "Featured" : "Standard"}
+                      </span>
+                    </button>
                   </TableCell>
                   <TableCell>
                     <Badge variant="outline" className="text-[10px] font-bold" style={{

@@ -6805,6 +6805,134 @@ export type Database = {
           },
         ]
       }
+      product_category_anomaly_actions: {
+        Row: {
+          action: string
+          anomaly_id: string
+          from_category_id: string | null
+          id: string
+          note: string | null
+          performed_at: string
+          performed_by: string | null
+          product_id: string
+          to_category_id: string | null
+        }
+        Insert: {
+          action: string
+          anomaly_id: string
+          from_category_id?: string | null
+          id?: string
+          note?: string | null
+          performed_at?: string
+          performed_by?: string | null
+          product_id: string
+          to_category_id?: string | null
+        }
+        Update: {
+          action?: string
+          anomaly_id?: string
+          from_category_id?: string | null
+          id?: string
+          note?: string | null
+          performed_at?: string
+          performed_by?: string | null
+          product_id?: string
+          to_category_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_category_anomaly_actions_anomaly_id_fkey"
+            columns: ["anomaly_id"]
+            isOneToOne: false
+            referencedRelation: "product_category_anomalies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_category_anomaly_actions_from_category_id_fkey"
+            columns: ["from_category_id"]
+            isOneToOne: false
+            referencedRelation: "admin_category_vat_audit"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_category_anomaly_actions_from_category_id_fkey"
+            columns: ["from_category_id"]
+            isOneToOne: false
+            referencedRelation: "admin_unmapped_qogita_categories"
+            referencedColumns: ["qogita_category_id"]
+          },
+          {
+            foreignKeyName: "product_category_anomaly_actions_from_category_id_fkey"
+            columns: ["from_category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_category_anomaly_actions_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "admin_price_cockpit_mv"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "product_category_anomaly_actions_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_category_anomaly_actions_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_pack_audit_v"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "product_category_anomaly_actions_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_category_anomaly_actions_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products_with_country_stats_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_category_anomaly_actions_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "product_category_anomaly_actions_to_category_id_fkey"
+            columns: ["to_category_id"]
+            isOneToOne: false
+            referencedRelation: "admin_category_vat_audit"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_category_anomaly_actions_to_category_id_fkey"
+            columns: ["to_category_id"]
+            isOneToOne: false
+            referencedRelation: "admin_unmapped_qogita_categories"
+            referencedColumns: ["qogita_category_id"]
+          },
+          {
+            foreignKeyName: "product_category_anomaly_actions_to_category_id_fkey"
+            columns: ["to_category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_country_stats: {
         Row: {
           best_price_excl_vat: number | null
@@ -17557,6 +17685,15 @@ export type Database = {
           _issue_code: string
           _offer_id: string
           _product_id: string
+        }
+        Returns: undefined
+      }
+      log_product_category_anomaly_action: {
+        Args: {
+          _action: string
+          _anomaly_id: string
+          _note?: string
+          _to_category_id?: string
         }
         Returns: undefined
       }

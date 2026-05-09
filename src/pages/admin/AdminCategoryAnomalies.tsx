@@ -196,6 +196,9 @@ export default function AdminCategoryAnomalies() {
                     </div>
                   </div>
                   <div className="flex gap-2 shrink-0 flex-wrap">
+                    <Button asChild size="sm" variant="ghost">
+                      <Link to={`/admin/categories/anomalies/${a.id}`}>Détails</Link>
+                    </Button>
                     {a.suggested_category_id && a.status === "open" && (
                       <Button size="sm" onClick={() => apply.mutate(a.id)} disabled={apply.isPending}>
                         <CheckCircle2 className="w-4 h-4 mr-1" /> Appliquer suggestion

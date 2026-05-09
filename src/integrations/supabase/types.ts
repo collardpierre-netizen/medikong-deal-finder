@@ -3043,22 +3043,28 @@ export type Database = {
       }
       home_showcase_settings: {
         Row: {
+          demo_cta_product_gtin: string | null
           demo_cta_product_id: string | null
           id: boolean
+          pinned_product_gtin: string | null
           pinned_product_id: string | null
           updated_at: string
           updated_by: string | null
         }
         Insert: {
+          demo_cta_product_gtin?: string | null
           demo_cta_product_id?: string | null
           id?: boolean
+          pinned_product_gtin?: string | null
           pinned_product_id?: string | null
           updated_at?: string
           updated_by?: string | null
         }
         Update: {
+          demo_cta_product_gtin?: string | null
           demo_cta_product_id?: string | null
           id?: boolean
+          pinned_product_gtin?: string | null
           pinned_product_id?: string | null
           updated_at?: string
           updated_by?: string | null

@@ -230,7 +230,7 @@ export default function BrandDetailPage() {
   const brand = {
     name: brandData?.name || slug || "Marque",
     slug: brandData?.slug || slug || "marque",
-    count: Number(brandData?.product_count) || products.length,
+    count: typeof liveCount === "number" ? liveCount : (Number(brandData?.product_count) || products.length),
     manufacturer: (brandData?.manufacturers as any)?.name || "Fabricant non renseigné",
     manufacturerSlug: (brandData?.manufacturers as any)?.slug || "",
     description: brandData?.description || "Marque partenaire disponible sur MediKong pour les professionnels de santé.",

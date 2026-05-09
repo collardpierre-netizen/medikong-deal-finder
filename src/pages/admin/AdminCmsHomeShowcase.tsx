@@ -40,13 +40,17 @@ const AdminCmsHomeShowcase = () => {
     queryFn: async () => {
       const { data, error } = await sb
         .from("home_showcase_settings")
-        .select("pinned_product_id, demo_cta_product_id, updated_at, updated_by")
+        .select(
+          "pinned_product_id, demo_cta_product_id, pinned_product_gtin, demo_cta_product_gtin, updated_at, updated_by",
+        )
         .eq("id", true)
         .maybeSingle();
       if (error) throw error;
       return data as {
         pinned_product_id: string | null;
         demo_cta_product_id: string | null;
+        pinned_product_gtin: string | null;
+        demo_cta_product_gtin: string | null;
         updated_at: string;
         updated_by: string | null;
       } | null;
@@ -55,6 +59,8 @@ const AdminCmsHomeShowcase = () => {
 
   const pinnedId = settings?.pinned_product_id ?? null;
   const demoCtaId = settings?.demo_cta_product_id ?? null;
+  const pinnedGtin = settings?.pinned_product_gtin ?? null;
+  const demoCtaGtin = settings?.demo_cta_product_gtin ?? null;
 
   const { data: pinnedProduct } = useQuery({
     queryKey: ["admin-home-showcase-pinned", pinnedId],

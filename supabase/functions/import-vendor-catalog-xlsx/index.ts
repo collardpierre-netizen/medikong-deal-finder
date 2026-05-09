@@ -334,6 +334,43 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Detect category anomalies for matched products (best effort)
+    let categoryAnomalies: Array<{
+      product_id: string;
+      product_name?: string;
+      reason: string;
+      current_category?: string | null;
+      suggested_category?: string | null;
+    }> = [];
+    try {
+      const matchedIds = Array.from(new Set(offerRows.map((o) => o.product_id))).filter(Boolean);
+      if (matchedIds.length > 0) {
+        const { data: anom } = await admin.rpc("get_product_category_anomalies", { _product_ids: matchedIds });
+        if (Array.isArray(anom) && anom.length > 0) {
+          // hydrate names
+          const ids = new Set<string>();
+          anom.forEach((a: any) => {
+            if (a.current_category_id) ids.add(a.current_category_id);
+            if (a.suggested_category_id) ids.add(a.suggested_category_id);
+          });
+          const { data: cats } = await admin.from("categories").select("id, name").in("id", Array.from(ids));
+          const catMap = new Map((cats ?? []).map((c: any) => [c.id, c.name]));
+          const prodIds = anom.map((a: any) => a.product_id);
+          const { data: prods } = await admin.from("products").select("id, name").in("id", prodIds);
+          const prodMap = new Map((prods ?? []).map((p: any) => [p.id, p.name]));
+          categoryAnomalies = anom.map((a: any) => ({
+            product_id: a.product_id,
+            product_name: prodMap.get(a.product_id),
+            reason: a.reason,
+            current_category: a.current_category_id ? catMap.get(a.current_category_id) ?? null : null,
+            suggested_category: a.suggested_category_id ? catMap.get(a.suggested_category_id) ?? null : null,
+          }));
+        }
+      }
+    } catch (e) {
+      console.warn("category anomaly check failed", e);
+    }
+
     return json({
       ok: true,
       dryRun,
@@ -349,6 +386,7 @@ Deno.serve(async (req) => {
       offers_upserted: offersUpserted,
       submissions_created: submissionsCreated,
       errors: errors.slice(0, 200),
+      category_anomalies: categoryAnomalies,
     });
   } catch (e) {
     console.error("import-vendor-catalog-xlsx error", e);

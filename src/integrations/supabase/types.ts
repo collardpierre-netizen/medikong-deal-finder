@@ -6566,6 +6566,139 @@ export type Database = {
           },
         ]
       }
+      product_category_anomalies: {
+        Row: {
+          current_category_id: string | null
+          details: Json
+          detected_at: string
+          dismiss_note: string | null
+          dismissed_by: string | null
+          id: string
+          product_id: string
+          reason: string
+          resolved_at: string | null
+          score: number
+          severity: string
+          status: string
+          suggested_category_id: string | null
+        }
+        Insert: {
+          current_category_id?: string | null
+          details?: Json
+          detected_at?: string
+          dismiss_note?: string | null
+          dismissed_by?: string | null
+          id?: string
+          product_id: string
+          reason: string
+          resolved_at?: string | null
+          score?: number
+          severity?: string
+          status?: string
+          suggested_category_id?: string | null
+        }
+        Update: {
+          current_category_id?: string | null
+          details?: Json
+          detected_at?: string
+          dismiss_note?: string | null
+          dismissed_by?: string | null
+          id?: string
+          product_id?: string
+          reason?: string
+          resolved_at?: string | null
+          score?: number
+          severity?: string
+          status?: string
+          suggested_category_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_category_anomalies_current_category_id_fkey"
+            columns: ["current_category_id"]
+            isOneToOne: false
+            referencedRelation: "admin_category_vat_audit"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_category_anomalies_current_category_id_fkey"
+            columns: ["current_category_id"]
+            isOneToOne: false
+            referencedRelation: "admin_unmapped_qogita_categories"
+            referencedColumns: ["qogita_category_id"]
+          },
+          {
+            foreignKeyName: "product_category_anomalies_current_category_id_fkey"
+            columns: ["current_category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_category_anomalies_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "admin_price_cockpit_mv"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "product_category_anomalies_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_category_anomalies_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_pack_audit_v"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "product_category_anomalies_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_category_anomalies_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products_with_country_stats_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_category_anomalies_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "product_category_anomalies_suggested_category_id_fkey"
+            columns: ["suggested_category_id"]
+            isOneToOne: false
+            referencedRelation: "admin_category_vat_audit"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_category_anomalies_suggested_category_id_fkey"
+            columns: ["suggested_category_id"]
+            isOneToOne: false
+            referencedRelation: "admin_unmapped_qogita_categories"
+            referencedColumns: ["qogita_category_id"]
+          },
+          {
+            foreignKeyName: "product_category_anomalies_suggested_category_id_fkey"
+            columns: ["suggested_category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_country_stats: {
         Row: {
           best_price_excl_vat: number | null
@@ -16197,6 +16330,7 @@ export type Database = {
       }
     }
     Functions: {
+      _cat_tokens: { Args: { _label: string }; Returns: string[] }
       activate_vendor_market_intel_subscription: {
         Args: {
           _billing_method: Database["public"]["Enums"]["vendor_market_intel_billing"]
@@ -16560,6 +16694,10 @@ export type Database = {
           updated_count: number
         }[]
       }
+      apply_product_category_anomaly_suggestion: {
+        Args: { _id: string }
+        Returns: undefined
+      }
       apply_qogita_llm_mapping: {
         Args: { _proposal_id: string }
         Returns: Json
@@ -16681,7 +16819,19 @@ export type Database = {
         Args: { _th_crit?: number; _th_info?: number; _th_warn?: number }
         Returns: Json
       }
+      detect_product_category_anomalies: {
+        Args: { _limit?: number; _product_id?: string }
+        Returns: {
+          closed: number
+          flagged: number
+          scanned: number
+        }[]
+      }
       detect_vendor_competitor_alerts: { Args: never; Returns: Json }
+      dismiss_product_category_anomaly: {
+        Args: { _id: string; _note?: string }
+        Returns: undefined
+      }
       dispatch_brand_activation_notifications: {
         Args: { _brand_id: string }
         Returns: number
@@ -16767,6 +16917,19 @@ export type Database = {
           price_source: string
           product_id: string
           vendor_id: string
+        }[]
+      }
+      get_product_category_anomalies: {
+        Args: { _product_ids: string[] }
+        Returns: {
+          current_category_id: string
+          details: Json
+          product_id: string
+          reason: string
+          score: number
+          severity: string
+          status: string
+          suggested_category_id: string
         }[]
       }
       get_recent_import_runs: {

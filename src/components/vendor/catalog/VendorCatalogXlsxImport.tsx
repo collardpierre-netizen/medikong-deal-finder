@@ -11,6 +11,14 @@ import {
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 
+type CategoryAnomaly = {
+  product_id: string;
+  product_name?: string;
+  reason: string;
+  current_category?: string | null;
+  suggested_category?: string | null;
+};
+
 type ImportResult = {
   ok: boolean;
   dryRun: boolean;
@@ -18,6 +26,13 @@ type ImportResult = {
   offers_upserted: number;
   submissions_created: number;
   errors: { line: number; reason: string }[];
+  category_anomalies?: CategoryAnomaly[];
+};
+
+const REASON_LABEL: Record<string, string> = {
+  keyword_mismatch: "mots-clés incohérents",
+  brand_outlier: "hors-norme marque",
+  missing_category: "catégorie manquante",
 };
 
 export function VendorCatalogXlsxImport({ children }: { children?: React.ReactNode }) {
@@ -123,6 +138,27 @@ export function VendorCatalogXlsxImport({ children }: { children?: React.ReactNo
                 <ul className="mt-1 max-h-40 overflow-auto pl-4 list-disc">
                   {result.errors.slice(0, 50).map((e, i) => (
                     <li key={i}>{e.line ? `Ligne ${e.line} : ` : ""}{e.reason}</li>
+                  ))}
+                </ul>
+              </details>
+            )}
+            {result.category_anomalies && result.category_anomalies.length > 0 && (
+              <details className="mt-2" open>
+                <summary className="cursor-pointer text-amber-700 dark:text-amber-400 font-medium">
+                  ⚠ {result.category_anomalies.length} produit(s) avec catégorie suspecte
+                </summary>
+                <p className="mt-1 text-muted-foreground text-[11px]">
+                  Ces produits déjà dans le catalogue MediKong semblent mal catégorisés. Un admin va vérifier.
+                </p>
+                <ul className="mt-1 max-h-40 overflow-auto pl-4 list-disc">
+                  {result.category_anomalies.slice(0, 30).map((a, i) => (
+                    <li key={i}>
+                      <span className="font-medium">{a.product_name ?? a.product_id}</span>{" "}
+                      — {REASON_LABEL[a.reason] ?? a.reason}
+                      {a.current_category ? ` (actuelle : ${a.current_category}` : ""}
+                      {a.suggested_category ? ` → suggérée : ${a.suggested_category}` : ""}
+                      {a.current_category ? ")" : ""}
+                    </li>
                   ))}
                 </ul>
               </details>

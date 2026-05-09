@@ -201,6 +201,27 @@ export type Database = {
         }
         Relationships: []
       }
+      be_city_to_province: {
+        Row: {
+          city_label: string
+          city_normalized: string
+          postal_code_prefix: string | null
+          province: string
+        }
+        Insert: {
+          city_label: string
+          city_normalized: string
+          postal_code_prefix?: string | null
+          province: string
+        }
+        Update: {
+          city_label?: string
+          city_normalized?: string
+          postal_code_prefix?: string | null
+          province?: string
+        }
+        Relationships: []
+      }
       brand_official_distributors: {
         Row: {
           brand_id: string
@@ -3902,6 +3923,85 @@ export type Database = {
           },
           {
             foreignKeyName: "market_delta_thresholds_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
+          },
+        ]
+      }
+      market_price_observations: {
+        Row: {
+          created_at: string
+          id: string
+          observed_quantity: number | null
+          observed_unit_price_excl_vat: number
+          pharmacy_size_bucket: string | null
+          product_id: string | null
+          region: string | null
+          source_supplier: string
+          week_observed: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          observed_quantity?: number | null
+          observed_unit_price_excl_vat: number
+          pharmacy_size_bucket?: string | null
+          product_id?: string | null
+          region?: string | null
+          source_supplier: string
+          week_observed: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          observed_quantity?: number | null
+          observed_unit_price_excl_vat?: number
+          pharmacy_size_bucket?: string | null
+          product_id?: string | null
+          region?: string | null
+          source_supplier?: string
+          week_observed?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "market_price_observations_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "admin_price_cockpit_mv"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "market_price_observations_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "market_price_observations_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_pack_audit_v"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "market_price_observations_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "market_price_observations_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products_with_country_stats_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "market_price_observations_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "public_top_price_deltas"
@@ -10215,6 +10315,206 @@ export type Database = {
           },
         ]
       }
+      savings_simulation_lines: {
+        Row: {
+          created_at: string
+          detected_brand: string | null
+          detected_cnk: string | null
+          detected_ean: string | null
+          detected_name: string | null
+          detected_proprietary_code: string | null
+          detected_quantity: number | null
+          detected_unit_price_excl_vat: number | null
+          id: string
+          line_number: number | null
+          line_savings: number | null
+          line_savings_pct: number | null
+          match_confidence: number | null
+          match_method: string | null
+          matched_product_id: string | null
+          medikong_min_price_excl_vat: number | null
+          medikong_supplier_count: number | null
+          raw_text: string | null
+          simulation_id: string
+        }
+        Insert: {
+          created_at?: string
+          detected_brand?: string | null
+          detected_cnk?: string | null
+          detected_ean?: string | null
+          detected_name?: string | null
+          detected_proprietary_code?: string | null
+          detected_quantity?: number | null
+          detected_unit_price_excl_vat?: number | null
+          id?: string
+          line_number?: number | null
+          line_savings?: number | null
+          line_savings_pct?: number | null
+          match_confidence?: number | null
+          match_method?: string | null
+          matched_product_id?: string | null
+          medikong_min_price_excl_vat?: number | null
+          medikong_supplier_count?: number | null
+          raw_text?: string | null
+          simulation_id: string
+        }
+        Update: {
+          created_at?: string
+          detected_brand?: string | null
+          detected_cnk?: string | null
+          detected_ean?: string | null
+          detected_name?: string | null
+          detected_proprietary_code?: string | null
+          detected_quantity?: number | null
+          detected_unit_price_excl_vat?: number | null
+          id?: string
+          line_number?: number | null
+          line_savings?: number | null
+          line_savings_pct?: number | null
+          match_confidence?: number | null
+          match_method?: string | null
+          matched_product_id?: string | null
+          medikong_min_price_excl_vat?: number | null
+          medikong_supplier_count?: number | null
+          raw_text?: string | null
+          simulation_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "savings_simulation_lines_matched_product_id_fkey"
+            columns: ["matched_product_id"]
+            isOneToOne: false
+            referencedRelation: "admin_price_cockpit_mv"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "savings_simulation_lines_matched_product_id_fkey"
+            columns: ["matched_product_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "savings_simulation_lines_matched_product_id_fkey"
+            columns: ["matched_product_id"]
+            isOneToOne: false
+            referencedRelation: "product_pack_audit_v"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "savings_simulation_lines_matched_product_id_fkey"
+            columns: ["matched_product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "savings_simulation_lines_matched_product_id_fkey"
+            columns: ["matched_product_id"]
+            isOneToOne: false
+            referencedRelation: "products_with_country_stats_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "savings_simulation_lines_matched_product_id_fkey"
+            columns: ["matched_product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "savings_simulation_lines_simulation_id_fkey"
+            columns: ["simulation_id"]
+            isOneToOne: false
+            referencedRelation: "savings_simulations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      savings_simulations: {
+        Row: {
+          city: string | null
+          consent_given_at: string
+          created_at: string
+          email: string | null
+          email_sent_at: string | null
+          error_message: string | null
+          id: string
+          ip_address: string | null
+          match_rate: number | null
+          matched_lines: number | null
+          medikong_total_excl_vat: number | null
+          pharmacy_name: string | null
+          region: string | null
+          report_path: string | null
+          savings_amount: number | null
+          savings_pct: number | null
+          source_file_path: string | null
+          source_file_type: string | null
+          source_supplier: string
+          source_total_excl_vat: number | null
+          status: string
+          total_lines: number | null
+          updated_at: string
+          user_agent: string | null
+          vat_number: string | null
+        }
+        Insert: {
+          city?: string | null
+          consent_given_at?: string
+          created_at?: string
+          email?: string | null
+          email_sent_at?: string | null
+          error_message?: string | null
+          id?: string
+          ip_address?: string | null
+          match_rate?: number | null
+          matched_lines?: number | null
+          medikong_total_excl_vat?: number | null
+          pharmacy_name?: string | null
+          region?: string | null
+          report_path?: string | null
+          savings_amount?: number | null
+          savings_pct?: number | null
+          source_file_path?: string | null
+          source_file_type?: string | null
+          source_supplier: string
+          source_total_excl_vat?: number | null
+          status?: string
+          total_lines?: number | null
+          updated_at?: string
+          user_agent?: string | null
+          vat_number?: string | null
+        }
+        Update: {
+          city?: string | null
+          consent_given_at?: string
+          created_at?: string
+          email?: string | null
+          email_sent_at?: string | null
+          error_message?: string | null
+          id?: string
+          ip_address?: string | null
+          match_rate?: number | null
+          matched_lines?: number | null
+          medikong_total_excl_vat?: number | null
+          pharmacy_name?: string | null
+          region?: string | null
+          report_path?: string | null
+          savings_amount?: number | null
+          savings_pct?: number | null
+          source_file_path?: string | null
+          source_file_type?: string | null
+          source_supplier?: string
+          source_total_excl_vat?: number | null
+          status?: string
+          total_lines?: number | null
+          updated_at?: string
+          user_agent?: string | null
+          vat_number?: string | null
+        }
+        Relationships: []
+      }
       search_logs: {
         Row: {
           clicked_id: string | null
@@ -11019,6 +11319,94 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "vendors_public"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      supplier_proprietary_codes: {
+        Row: {
+          confidence: number | null
+          created_at: string
+          id: string
+          last_observed_at: string
+          match_method: string | null
+          matched_product_id: string | null
+          observation_count: number
+          proprietary_code: string
+          proprietary_label: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          source_supplier: string
+        }
+        Insert: {
+          confidence?: number | null
+          created_at?: string
+          id?: string
+          last_observed_at?: string
+          match_method?: string | null
+          matched_product_id?: string | null
+          observation_count?: number
+          proprietary_code: string
+          proprietary_label?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source_supplier: string
+        }
+        Update: {
+          confidence?: number | null
+          created_at?: string
+          id?: string
+          last_observed_at?: string
+          match_method?: string | null
+          matched_product_id?: string | null
+          observation_count?: number
+          proprietary_code?: string
+          proprietary_label?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source_supplier?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_proprietary_codes_matched_product_id_fkey"
+            columns: ["matched_product_id"]
+            isOneToOne: false
+            referencedRelation: "admin_price_cockpit_mv"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "supplier_proprietary_codes_matched_product_id_fkey"
+            columns: ["matched_product_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_proprietary_codes_matched_product_id_fkey"
+            columns: ["matched_product_id"]
+            isOneToOne: false
+            referencedRelation: "product_pack_audit_v"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "supplier_proprietary_codes_matched_product_id_fkey"
+            columns: ["matched_product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_proprietary_codes_matched_product_id_fkey"
+            columns: ["matched_product_id"]
+            isOneToOne: false
+            referencedRelation: "products_with_country_stats_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_proprietary_codes_matched_product_id_fkey"
+            columns: ["matched_product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
           },
         ]
       }
@@ -15100,6 +15488,63 @@ export type Database = {
           },
         ]
       }
+      market_intelligence_v: {
+        Row: {
+          max_price: number | null
+          median_price: number | null
+          min_price: number | null
+          observations_count: number | null
+          product_id: string | null
+          q1_price: number | null
+          q3_price: number | null
+          source_supplier: string | null
+          week: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "market_price_observations_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "admin_price_cockpit_mv"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "market_price_observations_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "market_price_observations_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_pack_audit_v"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "market_price_observations_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "market_price_observations_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products_with_country_stats_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "market_price_observations_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
+          },
+        ]
+      }
       orders_visible_v: {
         Row: {
           admin_notes: string | null
@@ -16728,6 +17173,7 @@ export type Database = {
         Args: { _dry_run?: boolean }
         Returns: Json
       }
+      auto_promote_proprietary_codes: { Args: never; Returns: number }
       bulk_override_requested: { Args: never; Returns: boolean }
       bulk_set_cnk_codes: { Args: { pairs: Json }; Returns: number }
       bump_translation_cache_hit: {
@@ -16780,6 +17226,7 @@ export type Database = {
           sent_today: number
         }[]
       }
+      cleanup_old_savings_simulations: { Args: never; Returns: number }
       consume_qogita_tokens: { Args: { _amount: number }; Returns: Json }
       count_products_per_category: {
         Args: never
@@ -17082,6 +17529,10 @@ export type Database = {
           total_offers: number
         }[]
       }
+      increment_proprietary_code_observation: {
+        Args: { _code: string; _supplier: string }
+        Returns: undefined
+      }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       list_admin_users: {
@@ -17125,6 +17576,14 @@ export type Database = {
           saving: number
           status: string
           vendor_name: string
+        }[]
+      }
+      match_product_by_name: {
+        Args: { query_brand?: string; query_name: string; threshold?: number }
+        Returns: {
+          id: string
+          name: string
+          similarity: number
         }[]
       }
       merge_brands: { Args: { _drop: string; _keep: string }; Returns: Json }

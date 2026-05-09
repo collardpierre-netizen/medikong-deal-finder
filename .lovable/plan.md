@@ -1,217 +1,92 @@
-## Objectif
+# Calculateur d'économies — Plan d'implémentation
 
-Construire une taxonomie maîtresse MediKong indépendante des feeds sources, traduite FR/NL/EN, ordonnée selon l'usage officine belge, mapper l'existant, puis brancher l'UI catalogue / sidebar / breadcrumb / promotions / admin.
+Feature majeure d'acquisition. Découpée en 6 lots livrables séquentiellement pour valider la valeur avant chaque étape coûteuse (Claude OCR, Resend, PDF).
 
-## Découpage en 4 vagues
+## Pré-requis à confirmer avant le lot 1
 
-Le ticket est très large. Je propose de le livrer en 4 vagues distinctes, chacune approuvée avant la suivante. Cette demande couvre la **vague 1 (fondations DB + seed niveau 1)**, et je préviens des vagues 2/3/4 à venir.
+1. **Clés API à fournir** (via secrets) : `ANTHROPIC_API_KEY` (Claude Sonnet vision) et `RESEND_API_KEY`.
+   - Note : ce projet utilise déjà Lovable AI Gateway pour Gemini/GPT. Anthropic Claude n'est pas dans Lovable AI ; il faut donc ajouter le secret Anthropic.
+   - Pour l'email, MediKong a déjà son infra email (templates React-Email, edge functions transactionnelles, DKIM/SPF). Le brief impose Resend ; **je propose plutôt d'utiliser l'infra email existante** (template `savings-report`) pour rester cohérent. À confirmer.
+2. **Domaine de réception du PDF** : public (URL non-listée) → bucket `savings-reports` `public=true` + `X-Robots-Tag: noindex`. OK ?
+3. **Table `admin_users`** dans le brief n'existe pas tel quel — on a `user_roles` + `is_admin()`. J'adapterai les RLS en conséquence.
+4. **Table `supplier_offer_items`** mentionnée dans le brief n'existe pas — la source de vérité pour les prix MediKong est `effective_offer_prices_v` (vue unifiée). J'adapterai.
 
----
+## Lot 1 — Schéma DB + Storage + RLS (1 migration)
 
-## Vague 1 — Fondations DB + seed niveau 1 + premiers mappings (cette livraison)
+- Tables : `savings_simulations`, `savings_simulation_lines`, `supplier_proprietary_codes`, `market_price_observations`.
+- Vue agrégée k-anonyme `market_intelligence_v` (≥5 obs, security_invoker).
+- Buckets Storage : `savings-uploads` (privé, 10 Mo, lifecycle 30j) et `savings-reports` (public).
+- RLS strictes :
+  - `savings_simulations` / `_lines` : SELECT public (UUID = capacité), aucune écriture client (service_role only).
+  - `supplier_proprietary_codes` / `market_price_observations` / vue MI : `is_admin()` only.
+- RPCs SQL : `match_product_by_name` (pg_trgm), `increment_proprietary_code_observation`, `cleanup_old_savings_uploads`.
+- Cron `pg_cron` 03:00 UTC pour la purge.
 
-### 1.1 Nouvelles tables
+## Lot 2 — Edge Function `process-savings-upload` (cœur métier)
 
-- `categories` (id, parent_id, slug unique, level, position, icon, is_visible, is_featured_top, status, timestamps).
-- `category_translations` (category_id, locale ∈ fr/nl/en, name, description, meta_title, meta_description ; PK composite).
-- `category_source_aliases` (id, source_path, source_locale nullable, category_id nullable, unique(source_path, coalesce(source_locale,''))).
-- Vue `admin_unmapped_categories` (groupée par catégorie source non mappée, classée par volume).
+Reçoit le multipart, upload dans Storage, insère la simulation en `processing`, lance le pipeline en arrière-plan via `EdgeRuntime.waitUntil`, répond immédiatement `{ id }`.
 
-### 1.2 Adaptation `catalog_products`
+Pipeline :
+1. **Extraction** : CSV → parser direct ; PDF/image → Claude Sonnet vision avec le prompt OCR figé du brief.
+2. **Matching cascade** : CNK → EAN → `supplier_proprietary_codes` appris → `match_product_by_name` (pg_trgm ≥0.7) → `no_match`.
+3. **Apprentissage** : tout match fuzzy avec un `proprietary_code` est upserté dans `supplier_proprietary_codes` (`match_method='llm'`).
+4. **Calcul économies** : lecture du meilleur prix actif via `effective_offer_prices_v`.
+5. **Observations marché** : insert dans `market_price_observations` (semaine ISO + bucket taille + région).
+6. **Status final** : `done` / `no_match` / `failed`.
 
-- Ajouter colonne nullable `primary_category_id uuid references categories(id)` + index.
-- Garder l'ancienne colonne `category text` pendant la transition (hors scope explicite).
+Endpoint frère `GET /process-savings-upload?id=...` pour le polling (3 s côté client).
 
-### 1.3 RLS
+## Lot 3 — Front public `/economies`
 
-- Lecture publique sur `categories` (filtrée `is_visible=true and status='active'`) et `category_translations`.
-- Écriture réservée aux rôles `admin` / `super_admin` via `has_role()` (pas de nouveau rôle `taxonomy_manager` pour rester aligné avec le RBAC actuel — à confirmer si tu veux un rôle dédié).
-- `category_source_aliases` : lecture admin uniquement (mapping interne).
+- `EconomiesPage.tsx` (landing + form) avec SEO H1 unique, hreflang.
+- `SavingsCalculatorForm` en 3 étapes : grossiste → upload (drag-drop) → identité + consent unique obligatoire.
+- Polling `useSavingsSimulation(id)` toutes les 3s avec React Query.
+- **Résultat inline AVANT capture email** (point clé du brief) : héro chiffré, top 5 lignes, taux de match.
+- `EmailCaptureCTA` post-résultat : déclenche la génération PDF + envoi email.
+- `PrivacyTrustBanner` sous le formulaire + page dédiée `/confidentialite-economies`.
+- Tracking GTM : 10 événements (`savings_landing_viewed` … `savings_signup_after`).
+- Maj du CTA primaire de la HomePage : « Calculer mes économies en 60 secondes ».
 
-### 1.4 Seed
+## Lot 4 — Génération PDF + envoi email
 
-- 12 catégories niveau 1 selon le ticket, avec `is_featured_top=true` pour les 6 premières (OTC, Dermato, Hygiène, Pansements, Diagnostic, Diabète).
-- Traductions FR/NL/EN niveau 1 (les 36 lignes du ticket).
-- Première vague de `category_source_aliases` (15 entrées du ticket, dont quelques `category_id = null` pour explicitement « ignorer » : `Accessoires > Accessoires`, `Animal & Pet Repellents`, `Abattement – Désespoir`, `Lunettes et verres`).
+- Edge Function `generate-savings-report` : pdfkit-style (on a déjà la skill PDF côté serveur via `_shared/contract-template.ts`). Layout : héro chiffré, top 10 lignes, QR code → `/inscription?ref={id}`, mention RGPD + lien suppression.
+- Upload du PDF dans `savings-reports` ; URL publique avec `X-Robots-Tag: noindex` injecté via header de l'edge function de proxy.
+- Template React-Email `savings-report` (infra existante) avec récap chiffré + 3 lignes preview + 2 boutons (télécharger / créer compte) + lien suppression.
+- Idempotency key = `savings-report-${simulation_id}`.
 
-### 1.5 RPC d'aide
+## Lot 5 — Suppression RGPD + cron Storage
 
-- `apply_category_aliases()` : batch update `catalog_products.primary_category_id` depuis `category_source_aliases` quand alias matche `category` et `category_id is not null`. Idempotent.
+- Edge Function `delete-savings-simulation` (UUID = capacité, idempotente, audit_log).
+- Edge Function planifiée `cleanup-savings-storage` (quotidienne 03:15 UTC) qui supprime les objets du bucket `savings-uploads` pour les simulations dont `source_file_url IS NULL`.
 
-### 1.6 Hook + lecture
+## Lot 6 — Back-office admin
 
-- `src/hooks/useCategories.ts` : `useCategories(level, locale)` qui renvoie catégories visibles + traduction de la locale active, tri par `position`, fallback EN si traduction manquante (filtré côté client).
-- Pas de modification UI dans cette vague — juste le hook et un mini test de smoke.
+Trois pages, accessibles via `is_admin()` :
+1. `/admin/economies/codes-grossistes` — file de revue des `supplier_proprietary_codes` (status `llm` + obs ≥10 ou confidence <0.85). Boutons Valider / Réassigner / Rejeter.
+2. `/admin/economies/simulations` — liste paginée filtrable des 100 dernières.
+3. `/admin/economies/market-intelligence` — 4 onglets (top SKU, écarts MK vs grossiste, évolution prix grossiste, SKU manquants pour sourcing).
 
-### 1.7 Bandeau de chips catalogue
+Cron SQL de promotion auto : `obs ≥10 AND confidence ≥0.85` → `auto_inferred`.
 
-- Suppression du bandeau de chips actuel sur `/catalogue` (cf. recommandation MVP du ticket : la sidebar suffit en B2B).
+## Détails techniques transverses
 
----
+- **Pas de `dangerouslySetInnerHTML`** sur les libellés OCR (tout passe par React).
+- **Validation Zod** côté edge function pour l'input multipart.
+- **Anti-DOS** : taille max 10 Mo enforcée côté edge ET côté bucket policy ; rate limit 5 simulations/heure/IP.
+- **Région BE** : table `be_city_to_province` (mini-référence statique seedée) plutôt qu'objet TS hard-codé, pour pouvoir l'enrichir sans redeploy.
+- **Money** : tout en euros décimaux (`numeric(12,2)`) ici car prix grossistes affichés en €, pas de conversion vers cents — sortie du standard MediKong (cents int) car ces prix viennent d'OCR et nécessitent la précision décimale native ; je documenterai cette exception en mémoire.
 
-## Vagues suivantes (annoncées, pas dans cette livraison)
+## Hors scope (rappel du brief)
 
-### Vague 2 — Niveau 2 + sidebar refondue
-- Seed complet niveau 2 (≈ 60 sous-catégories) + traductions FR/NL/EN.
-- Refonte `<CategorySidebar />` du catalogue : niveau 1 + déroulement niveau 2, compteur live de produits, masquage si `is_visible=false`.
-- Brancher la sidebar `/promotions` sur la taxonomie maîtresse (tri par volume promo).
+- Pas de Stripe, pas d'admin fin des simulations au-delà du listing, pas d'autres grossistes que Febelco/CERP/Pharma Belgium, pas de scoring d'opportunité auto, pas d'ads.
 
-### Vague 3 — Breadcrumb + mapping en masse
-- Breadcrumb fiche produit refondu sur `primary_category_id` + traductions.
-- Élargir `category_source_aliases` à partir de `admin_unmapped_categories` (script semi-auto + écran admin de mapping).
-- Lancer `apply_category_aliases()` en prod.
+## Livraison proposée
 
-### Vague 4 — Back-office admin
-- `/admin/catalogue/taxonomie` : arbre drag-and-drop, édition inline traductions, toggles visibility/featured.
-- `/admin/catalogue/mappings` : CRUD `category_source_aliases`.
-- `/admin/catalogue/categories-non-mappees` : vue `admin_unmapped_categories` avec mapper-vers en un clic.
+Lots 1+2 ensemble (pas de valeur sans le pipeline), puis lot 3 (UI publique testable), puis 4, 5, 6. Estimation : ~6-8 messages au total avec validation après chaque lot.
 
----
+## À confirmer avant de démarrer
 
-## Détails techniques (vague 1)
-
-### Migrations à créer
-
-```sql
--- categories
-create table public.categories (
-  id uuid primary key default gen_random_uuid(),
-  parent_id uuid references public.categories(id) on delete restrict,
-  slug text not null unique,
-  level smallint not null,
-  position smallint not null default 0,
-  icon text,
-  is_visible boolean not null default true,
-  is_featured_top boolean not null default false,
-  status text not null default 'active' check (status in ('active','archived')),
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
-create index idx_categories_parent on public.categories(parent_id);
-create index idx_categories_level_position on public.categories(level, position);
-
--- translations
-create table public.category_translations (
-  category_id uuid not null references public.categories(id) on delete cascade,
-  locale text not null check (locale in ('fr','nl','en')),
-  name text not null,
-  description text,
-  meta_title text,
-  meta_description text,
-  primary key (category_id, locale)
-);
-create index idx_category_translations_locale_name on public.category_translations(locale, name);
-
--- aliases
-create table public.category_source_aliases (
-  id uuid primary key default gen_random_uuid(),
-  source_path text not null,
-  source_locale text,
-  category_id uuid references public.categories(id) on delete cascade,
-  created_at timestamptz not null default now()
-);
-create unique index ux_category_source_aliases_path_locale
-  on public.category_source_aliases(source_path, coalesce(source_locale, ''));
-create index idx_category_source_aliases_path on public.category_source_aliases(source_path);
-
--- catalog_products
-alter table public.catalog_products
-  add column if not exists primary_category_id uuid references public.categories(id);
-create index if not exists idx_catalog_products_primary_category
-  on public.catalog_products(primary_category_id);
-
--- updated_at trigger sur categories
-create trigger trg_categories_updated_at
-  before update on public.categories
-  for each row execute function public.update_updated_at_column();
-
--- vue non-mappées
-create view public.admin_unmapped_categories
-with (security_invoker = true) as
-select category, count(*)::int as products_count
-  from public.catalog_products
- where primary_category_id is null
-   and category is not null
- group by category
- order by count(*) desc;
-```
-
-### RLS
-
-```sql
-alter table public.categories enable row level security;
-alter table public.category_translations enable row level security;
-alter table public.category_source_aliases enable row level security;
-
--- lecture publique des catégories actives
-create policy "categories public read"
-  on public.categories for select
-  using (is_visible = true and status = 'active');
-create policy "categories admin all"
-  on public.categories for all
-  using (public.has_role(auth.uid(), 'admin') or public.has_role(auth.uid(), 'super_admin'))
-  with check (public.has_role(auth.uid(), 'admin') or public.has_role(auth.uid(), 'super_admin'));
-
--- traductions : lecture publique
-create policy "category_translations public read"
-  on public.category_translations for select using (true);
-create policy "category_translations admin all"
-  on public.category_translations for all
-  using (public.has_role(auth.uid(), 'admin') or public.has_role(auth.uid(), 'super_admin'))
-  with check (public.has_role(auth.uid(), 'admin') or public.has_role(auth.uid(), 'super_admin'));
-
--- aliases : admin only (mapping interne)
-create policy "category_source_aliases admin all"
-  on public.category_source_aliases for all
-  using (public.has_role(auth.uid(), 'admin') or public.has_role(auth.uid(), 'super_admin'))
-  with check (public.has_role(auth.uid(), 'admin') or public.has_role(auth.uid(), 'super_admin'));
-```
-
-### RPC `apply_category_aliases`
-
-```sql
-create or replace function public.apply_category_aliases()
-returns table(updated_count int)
-language plpgsql
-security definer
-set search_path = public
-as $$
-declare v_count int;
-begin
-  if not (has_role(auth.uid(), 'admin') or has_role(auth.uid(), 'super_admin')) then
-    raise exception 'forbidden';
-  end if;
-  update catalog_products p
-     set primary_category_id = a.category_id
-    from category_source_aliases a
-   where p.primary_category_id is null
-     and p.category = a.source_path
-     and a.category_id is not null;
-  get diagnostics v_count = row_count;
-  return query select v_count;
-end $$;
-```
-
-### Hook React
-
-`src/hooks/useCategories.ts` — Query par locale (lit `useTranslation().i18n.language`), retourne `{ id, slug, name, icon, is_featured_top, position, parent_id }[]` triés par `position`.
-
-### Suppression chips catalogue
-
-Identifier le composant rendant le bandeau sur `CataloguePage.tsx` (probablement `CategoryChips` / `FeaturedCategories` dans `src/components/catalog/`) — vérifier le code à l'implémentation et retirer le rendu (pas le composant entier, juste l'usage), avec un commentaire renvoyant à la vague 2.
-
----
-
-## Hors scope (rappel ticket)
-
-- Pas de drop de `catalog_products.category`.
-- Pas de SEO catégoriel automatique.
-- Pas de refonte `catalog_products` au-delà de l'ajout colonne.
-- Pas de changement de la mécanique des promotions.
-
----
-
-## À confirmer avant exécution
-
-1. **Rôle admin** : OK pour réutiliser `admin` + `super_admin` du RBAC actuel, sans créer `taxonomy_manager` ?
-2. **Vague 1 seule** ou tu veux que j'enchaîne directement vague 2 (sidebar + niveau 2) après approbation ?
+1. **Anthropic vs Lovable AI** : on garde Claude Sonnet (et tu fournis `ANTHROPIC_API_KEY`), ou on bascule sur `google/gemini-2.5-pro` via Lovable AI Gateway (vision multimodale, déjà câblé, pas de secret à ajouter) ?
+2. **Resend vs infra email MediKong existante** : on garde Resend (et tu fournis `RESEND_API_KEY` + DKIM séparé) ou on utilise l'infra déjà en prod (template `savings-report` dans la registry transactionnelle) ?
+3. **Bucket PDF public** : OK pour public + `X-Robots-Tag: noindex`, ou tu préfères URL signée 30 jours (plus sûr, mais expire) ?
+4. **Démarre directement par le lot 1+2** une fois les 3 questions ci-dessus tranchées ?

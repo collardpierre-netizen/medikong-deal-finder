@@ -195,12 +195,20 @@ export default function AdminCategoryAnomalies() {
                       )}
                     </div>
                   </div>
-                  <div className="flex gap-2 shrink-0">
+                  <div className="flex gap-2 shrink-0 flex-wrap">
                     {a.suggested_category_id && a.status === "open" && (
                       <Button size="sm" onClick={() => apply.mutate(a.id)} disabled={apply.isPending}>
-                        <CheckCircle2 className="w-4 h-4 mr-1" /> Appliquer
+                        <CheckCircle2 className="w-4 h-4 mr-1" /> Appliquer suggestion
                       </Button>
                     )}
+                    <ReassignCategoryDialog
+                      anomaly={a}
+                      trigger={
+                        <Button size="sm" variant="secondary">
+                          <Pencil className="w-4 h-4 mr-1" /> Réviser…
+                        </Button>
+                      }
+                    />
                     {a.status === "open" && (
                       <Button size="sm" variant="outline" onClick={() => dismiss.mutate(a.id)} disabled={dismiss.isPending}>
                         <XCircle className="w-4 h-4 mr-1" /> Ignorer

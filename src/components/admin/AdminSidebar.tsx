@@ -36,6 +36,7 @@ const sections: NavSection[] = [
       { labelKey: "products", path: "/admin/produits", icon: Package },
       { labelKey: "productSubmissions", path: "/admin/produits-soumis", icon: ClipboardList },
       { labelKey: "categories", path: "/admin/categories", icon: Layers },
+      { label: "Anomalies catégorie", path: "/admin/categories/anomalies", icon: Layers },
       { labelKey: "brands", path: "/admin/marques", icon: Tag },
       { labelKey: "manufacturers", path: "/admin/fabricants", icon: Factory },
       { labelKey: "delegates", path: "/admin/delegues", icon: Users2 },

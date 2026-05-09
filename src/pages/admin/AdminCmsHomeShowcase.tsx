@@ -40,13 +40,17 @@ const AdminCmsHomeShowcase = () => {
     queryFn: async () => {
       const { data, error } = await sb
         .from("home_showcase_settings")
-        .select("pinned_product_id, demo_cta_product_id, updated_at, updated_by")
+        .select(
+          "pinned_product_id, demo_cta_product_id, pinned_product_gtin, demo_cta_product_gtin, updated_at, updated_by",
+        )
         .eq("id", true)
         .maybeSingle();
       if (error) throw error;
       return data as {
         pinned_product_id: string | null;
         demo_cta_product_id: string | null;
+        pinned_product_gtin: string | null;
+        demo_cta_product_gtin: string | null;
         updated_at: string;
         updated_by: string | null;
       } | null;
@@ -55,6 +59,8 @@ const AdminCmsHomeShowcase = () => {
 
   const pinnedId = settings?.pinned_product_id ?? null;
   const demoCtaId = settings?.demo_cta_product_id ?? null;
+  const pinnedGtin = settings?.pinned_product_gtin ?? null;
+  const demoCtaGtin = settings?.demo_cta_product_gtin ?? null;
 
   const { data: pinnedProduct } = useQuery({
     queryKey: ["admin-home-showcase-pinned", pinnedId],
@@ -108,11 +114,18 @@ const AdminCmsHomeShowcase = () => {
   });
 
   const setPinned = useMutation({
-    mutationFn: async (vars: { slot: "pinned" | "demo_cta"; productId: string | null }) => {
-      const column = vars.slot === "pinned" ? "pinned_product_id" : "demo_cta_product_id";
+    mutationFn: async (vars: {
+      slot: "pinned" | "demo_cta";
+      productId: string | null;
+      gtin?: string | null;
+    }) => {
+      const idCol = vars.slot === "pinned" ? "pinned_product_id" : "demo_cta_product_id";
+      const gtinCol = vars.slot === "pinned" ? "pinned_product_gtin" : "demo_cta_product_gtin";
+      const patch: Record<string, string | null> = { [idCol]: vars.productId };
+      if (vars.gtin !== undefined) patch[gtinCol] = vars.gtin;
       const { error } = await sb
         .from("home_showcase_settings")
-        .update({ [column]: vars.productId })
+        .update(patch)
         .eq("id", true);
       if (error) throw error;
     },
@@ -127,6 +140,52 @@ const AdminCmsHomeShowcase = () => {
     },
     onError: (err: any) =>
       toast.error("Mise à jour impossible : " + (err?.message || "erreur inconnue")),
+  });
+
+  // Dedicated "Pin by GTIN" form: saves the GTIN string and resolves to a product_id
+  const [pinnedGtinInput, setPinnedGtinInput] = useState("");
+  const [demoCtaGtinInput, setDemoCtaGtinInput] = useState("");
+
+  const saveGtin = useMutation({
+    mutationFn: async (vars: { slot: "pinned" | "demo_cta"; gtinRaw: string }) => {
+      const gtin = vars.gtinRaw.trim();
+      if (!gtin) {
+        // Clear the slot
+        return { slot: vars.slot, productId: null, gtin: null, name: null };
+      }
+      if (!/^\d{6,14}$/.test(gtin)) {
+        throw new Error("GTIN invalide (6 à 14 chiffres attendus).");
+      }
+      const { data, error } = await sb
+        .from("products")
+        .select("id, name, is_active")
+        .eq("gtin", gtin)
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) throw new Error(`Aucun produit trouvé pour le GTIN ${gtin}.`);
+      const idCol = vars.slot === "pinned" ? "pinned_product_id" : "demo_cta_product_id";
+      const gtinCol = vars.slot === "pinned" ? "pinned_product_gtin" : "demo_cta_product_gtin";
+      const { error: updErr } = await sb
+        .from("home_showcase_settings")
+        .update({ [idCol]: data.id, [gtinCol]: gtin })
+        .eq("id", true);
+      if (updErr) throw updErr;
+      return { slot: vars.slot, productId: data.id, gtin, name: data.name };
+    },
+    onSuccess: (res) => {
+      if (!res.productId) {
+        toast.success("GTIN retiré");
+      } else {
+        toast.success(`Épinglé : ${res.name}${res.gtin ? ` (GTIN ${res.gtin})` : ""}`);
+      }
+      if (res.slot === "pinned") setPinnedGtinInput("");
+      else setDemoCtaGtinInput("");
+      qc.invalidateQueries({ queryKey: ["admin-home-showcase-settings"] });
+      qc.invalidateQueries({ queryKey: ["home-showcase-settings"] });
+      qc.invalidateQueries({ queryKey: ["featured-price-delta"] });
+      qc.invalidateQueries({ queryKey: ["home-demo-cta-product"] });
+    },
+    onError: (err: any) => toast.error(err?.message || "Erreur inconnue"),
   });
 
   const updatedAtLabel = useMemo(() => {
@@ -283,6 +342,73 @@ const AdminCmsHomeShowcase = () => {
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* Pin by GTIN — saves the GTIN string in DB and resolves to a product */}
+      <div className="rounded-xl border bg-card p-4 space-y-3">
+        <div>
+          <h3 className="text-sm font-semibold">Épingler par GTIN</h3>
+          <p className="text-xs text-muted-foreground mt-1">
+            Saisissez un GTIN (6 à 14 chiffres). Le code est sauvegardé en base
+            (<code>home_showcase_settings.pinned_product_gtin</code> /{" "}
+            <code>demo_cta_product_gtin</code>) et le produit correspondant est résolu automatiquement.
+            Laisser vide puis « Enregistrer » pour retirer.
+          </p>
+        </div>
+
+        {(["pinned", "demo_cta"] as const).map((s) => {
+          const isPinned = s === "pinned";
+          const label = isPinned ? "Encart comparaison" : "CTA démo";
+          const currentGtin = isPinned ? pinnedGtin : demoCtaGtin;
+          const currentName = (isPinned ? pinnedProduct : demoCtaProduct)?.name ?? null;
+          const value = isPinned ? pinnedGtinInput : demoCtaGtinInput;
+          const setValue = isPinned ? setPinnedGtinInput : setDemoCtaGtinInput;
+          return (
+            <div key={s} className="rounded-lg border bg-muted/20 p-3 space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <Label htmlFor={`gtin-${s}`} className="text-xs font-medium">
+                  {label}
+                </Label>
+                {currentGtin ? (
+                  <span className="text-[11px] text-muted-foreground truncate">
+                    Actuel : <code>{currentGtin}</code>
+                    {currentName ? ` — ${currentName}` : ""}
+                  </span>
+                ) : (
+                  <span className="text-[11px] text-muted-foreground">Aucun GTIN enregistré</span>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <Input
+                  id={`gtin-${s}`}
+                  inputMode="numeric"
+                  pattern="\d*"
+                  placeholder={currentGtin ?? "ex. 4051895033402"}
+                  value={value}
+                  onChange={(e) => setValue(e.target.value.replace(/\D/g, ""))}
+                  className="font-mono"
+                />
+                <Button
+                  size="sm"
+                  onClick={() => saveGtin.mutate({ slot: s, gtinRaw: value })}
+                  disabled={saveGtin.isPending}
+                >
+                  Enregistrer
+                </Button>
+                {currentGtin && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => saveGtin.mutate({ slot: s, gtinRaw: "" })}
+                    disabled={saveGtin.isPending}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {/* Currently configured products */}

@@ -105,12 +105,21 @@ export function ReassignCategoryDialog({
         _mark_validated: markValidated,
       });
       if (error) throw error;
+      // Log the manual reassignment in the anomaly history
+      await (supabase as any).rpc("log_product_category_anomaly_action", {
+        _anomaly_id: anomaly.id,
+        _action: "reassign",
+        _to_category_id: selected,
+        _note: markValidated ? "Réassignation manuelle (validée)" : "Réassignation manuelle",
+      });
       // Re-run anomaly detection on this product to close the open ones
       await supabase.rpc("detect_product_category_anomalies", { _product_id: anomaly.product_id, _limit: null });
     },
     onSuccess: () => {
       toast({ title: "Catégorie réassignée", description: "Le produit a été mis à jour et les anomalies revérifiées." });
       qc.invalidateQueries({ queryKey: ["admin-category-anomalies"] });
+      qc.invalidateQueries({ queryKey: ["admin-category-anomaly-detail", anomaly.id] });
+      qc.invalidateQueries({ queryKey: ["admin-category-anomaly-history", anomaly.id] });
       setOpen(false);
     },
     onError: (e: any) => toast({ title: "Erreur", description: e.message, variant: "destructive" }),

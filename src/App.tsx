@@ -365,6 +365,8 @@ const App = () => (
             <Route path="/dentistes" element={<LP><DentistesPage /></LP>} />
             <Route path="/veterinaires" element={<LP><VeterinairesPage /></LP>} />
             <Route path="/sourcing" element={<LP><SourcingPage /></LP>} />
+            <Route path="/economies" element={<LP><EconomiesPage /></LP>} />
+            <Route path="/calculateur-economies" element={<Navigate to="/economies" replace />} />
             <Route path="/categories" element={<LP><CategoriesPage /></LP>} />
             <Route path="/mes-prix" element={<LP><MyPricesPage /></LP>} />
             <Route path="/mes-alertes-prix" element={<LP><MyPriceAlertsPage /></LP>} />

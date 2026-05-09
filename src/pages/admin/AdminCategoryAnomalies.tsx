@@ -4,10 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Play, CheckCircle2, XCircle, ExternalLink, RefreshCw } from "lucide-react";
+import { Loader2, Play, CheckCircle2, XCircle, ExternalLink, RefreshCw, Pencil } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Link } from "react-router-dom";
+import { ReassignCategoryDialog } from "@/components/admin/ReassignCategoryDialog";
 
 type AnomalyRow = {
   id: string;

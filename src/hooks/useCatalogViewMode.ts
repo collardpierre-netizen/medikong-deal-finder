@@ -26,15 +26,7 @@ function getDefaultView(pathname: string, params: URLSearchParams, isMobile: boo
     return "grid";
   }
   if (pathname.startsWith("/catalogue") || pathname.startsWith("/recherche")) {
-    const hasIntent =
-      params.has("q") ||
-      params.has("search") ||
-      params.has("cnk") ||
-      params.has("ean") ||
-      params.has("category") ||
-      // /catalogue/:slug -> non-empty path segment after /catalogue
-      /^\/catalogue\/[^/]+/.test(pathname);
-    return hasIntent ? "trivago" : "grid";
+    return "trivago";
   }
   return "grid";
 }

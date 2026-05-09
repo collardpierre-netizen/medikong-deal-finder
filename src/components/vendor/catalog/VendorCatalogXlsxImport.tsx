@@ -11,6 +11,14 @@ import {
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 
+type CategoryAnomaly = {
+  product_id: string;
+  product_name?: string;
+  reason: string;
+  current_category?: string | null;
+  suggested_category?: string | null;
+};
+
 type ImportResult = {
   ok: boolean;
   dryRun: boolean;
@@ -18,6 +26,13 @@ type ImportResult = {
   offers_upserted: number;
   submissions_created: number;
   errors: { line: number; reason: string }[];
+  category_anomalies?: CategoryAnomaly[];
+};
+
+const REASON_LABEL: Record<string, string> = {
+  keyword_mismatch: "mots-clés incohérents",
+  brand_outlier: "hors-norme marque",
+  missing_category: "catégorie manquante",
 };
 
 export function VendorCatalogXlsxImport({ children }: { children?: React.ReactNode }) {

@@ -344,6 +344,73 @@ const AdminCmsHomeShowcase = () => {
         </div>
       </div>
 
+      {/* Pin by GTIN — saves the GTIN string in DB and resolves to a product */}
+      <div className="rounded-xl border bg-card p-4 space-y-3">
+        <div>
+          <h3 className="text-sm font-semibold">Épingler par GTIN</h3>
+          <p className="text-xs text-muted-foreground mt-1">
+            Saisissez un GTIN (6 à 14 chiffres). Le code est sauvegardé en base
+            (<code>home_showcase_settings.pinned_product_gtin</code> /{" "}
+            <code>demo_cta_product_gtin</code>) et le produit correspondant est résolu automatiquement.
+            Laisser vide puis « Enregistrer » pour retirer.
+          </p>
+        </div>
+
+        {(["pinned", "demo_cta"] as const).map((s) => {
+          const isPinned = s === "pinned";
+          const label = isPinned ? "Encart comparaison" : "CTA démo";
+          const currentGtin = isPinned ? pinnedGtin : demoCtaGtin;
+          const currentName = (isPinned ? pinnedProduct : demoCtaProduct)?.name ?? null;
+          const value = isPinned ? pinnedGtinInput : demoCtaGtinInput;
+          const setValue = isPinned ? setPinnedGtinInput : setDemoCtaGtinInput;
+          return (
+            <div key={s} className="rounded-lg border bg-muted/20 p-3 space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <Label htmlFor={`gtin-${s}`} className="text-xs font-medium">
+                  {label}
+                </Label>
+                {currentGtin ? (
+                  <span className="text-[11px] text-muted-foreground truncate">
+                    Actuel : <code>{currentGtin}</code>
+                    {currentName ? ` — ${currentName}` : ""}
+                  </span>
+                ) : (
+                  <span className="text-[11px] text-muted-foreground">Aucun GTIN enregistré</span>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <Input
+                  id={`gtin-${s}`}
+                  inputMode="numeric"
+                  pattern="\d*"
+                  placeholder={currentGtin ?? "ex. 4051895033402"}
+                  value={value}
+                  onChange={(e) => setValue(e.target.value.replace(/\D/g, ""))}
+                  className="font-mono"
+                />
+                <Button
+                  size="sm"
+                  onClick={() => saveGtin.mutate({ slot: s, gtinRaw: value })}
+                  disabled={saveGtin.isPending}
+                >
+                  Enregistrer
+                </Button>
+                {currentGtin && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => saveGtin.mutate({ slot: s, gtinRaw: "" })}
+                    disabled={saveGtin.isPending}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
       {/* Currently configured products */}
       {(["pinned", "demo_cta"] as const).map((s) => {
         const isPinned = s === "pinned";

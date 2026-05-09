@@ -4,10 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Play, CheckCircle2, XCircle, ExternalLink, RefreshCw } from "lucide-react";
+import { Loader2, Play, CheckCircle2, XCircle, ExternalLink, RefreshCw, Pencil } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Link } from "react-router-dom";
+import { ReassignCategoryDialog } from "@/components/admin/ReassignCategoryDialog";
 
 type AnomalyRow = {
   id: string;
@@ -194,12 +195,20 @@ export default function AdminCategoryAnomalies() {
                       )}
                     </div>
                   </div>
-                  <div className="flex gap-2 shrink-0">
+                  <div className="flex gap-2 shrink-0 flex-wrap">
                     {a.suggested_category_id && a.status === "open" && (
                       <Button size="sm" onClick={() => apply.mutate(a.id)} disabled={apply.isPending}>
-                        <CheckCircle2 className="w-4 h-4 mr-1" /> Appliquer
+                        <CheckCircle2 className="w-4 h-4 mr-1" /> Appliquer suggestion
                       </Button>
                     )}
+                    <ReassignCategoryDialog
+                      anomaly={a}
+                      trigger={
+                        <Button size="sm" variant="secondary">
+                          <Pencil className="w-4 h-4 mr-1" /> Réviser…
+                        </Button>
+                      }
+                    />
                     {a.status === "open" && (
                       <Button size="sm" variant="outline" onClick={() => dismiss.mutate(a.id)} disabled={dismiss.isPending}>
                         <XCircle className="w-4 h-4 mr-1" /> Ignorer

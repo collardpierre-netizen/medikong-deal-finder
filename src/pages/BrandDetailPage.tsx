@@ -39,6 +39,36 @@ export default function BrandDetailPage() {
     },
   });
 
+  // Live reference count — mirrors the catalog page logic so the badge
+  // ("X références") always matches what the user sees in /catalogue.
+  // Uses the country-aware view when a country is selected, else falls back
+  // to the global products table. Avoids drift with the denormalized
+  // brands.product_count which is only refreshed by an admin job.
+  const { data: liveCount } = useQuery({
+    queryKey: ["brand-live-product-count", brandData?.id, country],
+    enabled: !!brandData?.id,
+    queryFn: async () => {
+      if (country) {
+        const { count, error } = await supabase
+          .from("products_with_country_stats_v")
+          .select("id", { count: "exact", head: true })
+          .eq("is_active", true)
+          .eq("brand_id", brandData!.id)
+          .or(`country_code.eq.${country},country_code.is.null`);
+        if (error) throw error;
+        return count ?? 0;
+      }
+      const { count, error } = await supabase
+        .from("products")
+        .select("id", { count: "exact", head: true })
+        .eq("is_active", true)
+        .eq("brand_id", brandData!.id);
+      if (error) throw error;
+      return count ?? 0;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
   const { data: brandSellers = [] } = useQuery({
     queryKey: ["brand-sellers", brandData?.id],
     enabled: !!brandData?.id,

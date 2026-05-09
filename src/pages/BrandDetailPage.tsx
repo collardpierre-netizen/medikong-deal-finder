@@ -18,6 +18,7 @@ import { useCountry } from "@/contexts/CountryContext";
 
 export default function BrandDetailPage() {
   const { slug } = useParams();
+  const { country } = useCountry();
   const [activeCat, setActiveCat] = useState<string | null>(null);
   const [importOpen, setImportOpen] = useState(false);
   const { data: products = [] } = useFeaturedProducts(200, { brandSlug: slug, categoryName: activeCat || undefined });

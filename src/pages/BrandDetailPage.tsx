@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getVendorPublicName, resolveVendorVisibility } from "@/lib/vendor-display";
 import { BrandFactSheet } from "@/components/brand/BrandFactSheet";
 import { Badge } from "@/components/ui/badge";
+import { useCountry } from "@/contexts/CountryContext";
 
 
 export default function BrandDetailPage() {

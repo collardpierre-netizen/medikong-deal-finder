@@ -21,9 +21,11 @@ import { template as vendorContractReminder } from './vendor-contract-reminder.t
 import { template as rfqVendorInvitation } from './rfq-vendor-invitation.tsx'
 import { template as vendorPriceChallenge } from './vendor-price-challenge.tsx'
 import { template as vendorNewOrder } from './vendor-new-order.tsx'
+import { template as wholesaleSavingsReport } from './wholesale-savings-report.tsx'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'rfq-vendor-invitation': rfqVendorInvitation,
+  'wholesale-savings-report': wholesaleSavingsReport,
   'order-confirmation': orderConfirmation,
   'vendor-application': vendorApplication,
   'vendor-approved': vendorApproved,

@@ -77,6 +77,7 @@ const MesCategoriesPage = lazyWithRetry(() => import("./pages/MesCategoriesPage"
 const MesRfqPage = lazyWithRetry(() => import("./pages/MesRfqPage"), "MesRfqPage");
 const RfqCreditsPage = lazyWithRetry(() => import("./pages/RfqCreditsPage"), "RfqCreditsPage");
 const ImportHistoryPage = lazyWithRetry(() => import("./pages/ImportHistoryPage"), "ImportHistoryPage");
+const EconomiesPage = lazyWithRetry(() => import("./pages/EconomiesPage"), "EconomiesPage");
 
 // Segment landing pages
 const PharmaciesPage = lazyWithRetry(() => import("./pages/segment/PharmaciesPage"), "PharmaciesPage");
@@ -364,6 +365,8 @@ const App = () => (
             <Route path="/dentistes" element={<LP><DentistesPage /></LP>} />
             <Route path="/veterinaires" element={<LP><VeterinairesPage /></LP>} />
             <Route path="/sourcing" element={<LP><SourcingPage /></LP>} />
+            <Route path="/economies" element={<LP><EconomiesPage /></LP>} />
+            <Route path="/calculateur-economies" element={<Navigate to="/economies" replace />} />
             <Route path="/categories" element={<LP><CategoriesPage /></LP>} />
             <Route path="/mes-prix" element={<LP><MyPricesPage /></LP>} />
             <Route path="/mes-alertes-prix" element={<LP><MyPriceAlertsPage /></LP>} />

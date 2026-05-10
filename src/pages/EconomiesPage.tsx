@@ -22,6 +22,24 @@ interface SimulationStatus {
   email_sent_at: string | null;
 }
 
+interface SimulationLine {
+  id: string;
+  line_number: number | null;
+  detected_name: string | null;
+  detected_brand: string | null;
+  detected_cnk: string | null;
+  detected_quantity: number | null;
+  detected_unit_price_excl_vat: number | null;
+  matched_product_id: string | null;
+  match_method: string | null;
+  match_confidence: number | null;
+  medikong_min_price_excl_vat: number | null;
+  medikong_supplier_count: number | null;
+  line_savings: number | null;
+  line_savings_pct: number | null;
+  matched_product?: { name: string | null; slug: string | null } | null;
+}
+
 const SUPPLIERS: { value: Supplier; label: string }[] = [
   { value: "febelco", label: "Febelco" },
   { value: "cerp", label: "CERP" },

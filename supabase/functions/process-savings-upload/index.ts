@@ -361,6 +361,21 @@ async function processSimulation(simulationId: string, file: File, fileKind: Fil
     if (fileKind === "csv") {
       const text = await file.text();
       extracted = parseCsv(text, supplier);
+    } else if (fileKind === "pdf") {
+      // Voie rapide : extraire le texte du PDF puis l'envoyer en texte au LLM
+      try {
+        const pdfText = await extractPdfText(file);
+        console.log("[pipeline] pdf text extracted chars", pdfText.length);
+        if (pdfText.trim().length > 50) {
+          extracted = await callTextLLM(pdfText);
+        } else {
+          console.log("[pipeline] pdf text too short, fallback vision");
+          extracted = await callVisionLLM(file);
+        }
+      } catch (e) {
+        console.error("[pipeline] pdf text extraction failed, fallback vision", e);
+        extracted = await callVisionLLM(file);
+      }
     } else {
       extracted = await callVisionLLM(file);
     }

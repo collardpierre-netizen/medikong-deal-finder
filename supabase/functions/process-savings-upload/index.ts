@@ -310,6 +310,7 @@ async function getMedikongMinPrice(
 
 async function processSimulation(simulationId: string, file: File, fileKind: FileKind, supplier: Supplier) {
   const supabase = getAdminClient();
+  console.log("[pipeline] start", { simulationId, fileKind, supplier, mime: file.type, size: file.size });
   try {
     // Extraction
     let extracted: { supplier: Supplier; lines: ExtractedLine[] };
@@ -319,6 +320,7 @@ async function processSimulation(simulationId: string, file: File, fileKind: Fil
     } else {
       extracted = await callVisionLLM(file);
     }
+    console.log("[pipeline] extracted", { lines: extracted.lines?.length ?? 0 });
 
     if (!extracted.lines || extracted.lines.length === 0) {
       await supabase

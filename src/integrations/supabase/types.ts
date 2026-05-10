@@ -17723,6 +17723,14 @@ export type Database = {
           similarity: number
         }[]
       }
+      match_products_by_names_batch: {
+        Args: { _queries: Json; _threshold?: number }
+        Returns: {
+          idx: number
+          product_id: string
+          similarity: number
+        }[]
+      }
       merge_brands: { Args: { _drop: string; _keep: string }; Returns: Json }
       move_to_dlq: {
         Args: {

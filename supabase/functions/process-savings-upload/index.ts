@@ -403,11 +403,127 @@ async function processSimulation(simulationId: string, file: File, fileKind: Fil
     const observationsToInsert: any[] = [];
     const weekObserved = startOfIsoWeek(new Date(sim?.created_at ?? new Date().toISOString()));
 
-    for (const line of extracted.lines) {
+    // ====== BATCH MATCHING (perf) ======
+    const cnks = Array.from(new Set(extracted.lines.map((l) => l.cnk).filter(Boolean) as string[]));
+    const eans = Array.from(new Set(extracted.lines.map((l) => l.ean).filter(Boolean) as string[]));
+    const propCodes = Array.from(
+      new Set(extracted.lines.map((l) => l.proprietary_code).filter(Boolean) as string[]),
+    );
+    console.log("[pipeline] batch lookup", { cnks: cnks.length, eans: eans.length, propCodes: propCodes.length });
+
+    const cnkMap = new Map<string, string>();
+    const eanMap = new Map<string, string>();
+    const propMap = new Map<string, { product_id: string; confidence: number }>();
+
+    if (cnks.length > 0) {
+      const { data } = await supabase
+        .from("products")
+        .select("id, cnk_code")
+        .in("cnk_code", cnks)
+        .eq("is_active", true);
+      for (const r of data ?? []) cnkMap.set(String(r.cnk_code), String(r.id));
+    }
+    if (eans.length > 0) {
+      const { data } = await supabase
+        .from("products")
+        .select("id, gtin")
+        .in("gtin", eans)
+        .eq("is_active", true);
+      for (const r of data ?? []) eanMap.set(String(r.gtin), String(r.id));
+    }
+    if (propCodes.length > 0) {
+      const { data } = await supabase
+        .from("supplier_proprietary_codes")
+        .select("proprietary_code, matched_product_id, confidence")
+        .eq("source_supplier", supplier)
+        .in("proprietary_code", propCodes)
+        .not("matched_product_id", "is", null);
+      for (const r of data ?? []) {
+        if (r.matched_product_id)
+          propMap.set(String(r.proprietary_code), {
+            product_id: String(r.matched_product_id),
+            confidence: Number(r.confidence) || 0.8,
+          });
+      }
+    }
+
+    // Matches initiaux + lignes nécessitant le fuzzy name
+    const initialMatches: Array<MatchResult> = [];
+    const fuzzyIndices: number[] = [];
+    extracted.lines.forEach((line, idx) => {
+      let m: MatchResult = { product_id: null, confidence: 0, method: "no_match" };
+      if (line.cnk && cnkMap.has(line.cnk)) m = { product_id: cnkMap.get(line.cnk)!, confidence: 1.0, method: "cnk" };
+      else if (line.ean && eanMap.has(line.ean))
+        m = { product_id: eanMap.get(line.ean)!, confidence: 0.95, method: "ean" };
+      else if (line.proprietary_code && propMap.has(line.proprietary_code)) {
+        const p = propMap.get(line.proprietary_code)!;
+        m = { product_id: p.product_id, confidence: p.confidence, method: "proprietary_code" };
+      } else if (line.normalized_name_guess) {
+        fuzzyIndices.push(idx);
+      }
+      initialMatches.push(m);
+    });
+
+    // Fuzzy name matching en parallèle (chunks de 8)
+    const CHUNK = 8;
+    for (let i = 0; i < fuzzyIndices.length; i += CHUNK) {
+      const slice = fuzzyIndices.slice(i, i + CHUNK);
+      await Promise.all(
+        slice.map(async (idx) => {
+          const line = extracted.lines[idx];
+          try {
+            const { data } = await supabase.rpc("match_product_by_name", {
+              query_name: line.normalized_name_guess,
+              query_brand: line.brand_guess,
+              threshold: 0.55,
+            });
+            if (data && data.length > 0 && Number(data[0].similarity) >= 0.7) {
+              initialMatches[idx] = {
+                product_id: String(data[0].id),
+                confidence: Number(data[0].similarity),
+                method: "name_fuzzy",
+              };
+            }
+          } catch (e) {
+            console.error("[pipeline] fuzzy fail", idx, e);
+          }
+        }),
+      );
+    }
+
+    // Batch prix MediKong pour tous les product_id matchés
+    const matchedIds = Array.from(
+      new Set(initialMatches.map((m) => m.product_id).filter(Boolean) as string[]),
+    );
+    const priceMap = new Map<string, { price: number; supplierCount: number }>();
+    if (matchedIds.length > 0) {
+      const { data, error } = await supabase
+        .from("effective_offer_prices_v")
+        .select("product_id, effective_price_cents, vendor_id")
+        .in("product_id", matchedIds);
+      if (!error && data) {
+        const grouped = new Map<string, { prices: number[]; vendors: Set<string> }>();
+        for (const r of data) {
+          const pid = String(r.product_id);
+          if (!grouped.has(pid)) grouped.set(pid, { prices: [], vendors: new Set() });
+          const g = grouped.get(pid)!;
+          const c = Number(r.effective_price_cents);
+          if (c > 0) g.prices.push(c);
+          if (r.vendor_id) g.vendors.add(String(r.vendor_id));
+        }
+        for (const [pid, g] of grouped) {
+          if (g.prices.length > 0)
+            priceMap.set(pid, { price: Math.min(...g.prices) / 100, supplierCount: g.vendors.size });
+        }
+      }
+    }
+
+    for (let idx = 0; idx < extracted.lines.length; idx++) {
+      const line = extracted.lines[idx];
+      const match = initialMatches[idx];
       const lineTotal = (line.unit_price_excl_vat || 0) * (line.quantity || 1);
       totalSource += lineTotal;
 
-      const match = await matchLine(supabase, line, supplier);
       let mkPrice: number | null = null;
       let supplierCount = 0;
       let lineSavings: number | null = null;
@@ -415,9 +531,11 @@ async function processSimulation(simulationId: string, file: File, fileKind: Fil
 
       if (match.product_id) {
         matchedCount++;
-        const priceInfo = await getMedikongMinPrice(supabase, match.product_id);
-        mkPrice = priceInfo.price;
-        supplierCount = priceInfo.supplierCount;
+        const p = priceMap.get(match.product_id);
+        if (p) {
+          mkPrice = p.price;
+          supplierCount = p.supplierCount;
+        }
         if (mkPrice !== null && line.unit_price_excl_vat > 0) {
           lineSavings = (line.unit_price_excl_vat - mkPrice) * (line.quantity || 1);
           lineSavingsPct = ((line.unit_price_excl_vat - mkPrice) / line.unit_price_excl_vat) * 100;

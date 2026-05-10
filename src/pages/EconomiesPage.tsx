@@ -94,6 +94,23 @@ export default function EconomiesPage() {
     };
   }, [simId, sim?.status]);
 
+  // Fetch lines once simulation is done
+  useEffect(() => {
+    if (!simId || sim?.status !== "done" || lines !== null) return;
+    (async () => {
+      const { data, error } = await supabase
+        .from("savings_simulation_lines")
+        .select("id,line_number,detected_name,detected_brand,detected_cnk,detected_quantity,detected_unit_price_excl_vat,matched_product_id,match_method,match_confidence,medikong_min_price_excl_vat,medikong_supplier_count,line_savings,line_savings_pct,matched_product:products(name,slug)")
+        .eq("simulation_id", simId)
+        .order("line_savings", { ascending: false, nullsFirst: false });
+      if (error) {
+        console.error("[economies] fetch lines error", error);
+        return;
+      }
+      setLines((data ?? []) as unknown as SimulationLine[]);
+    })();
+  }, [simId, sim?.status, lines]);
+
   const handleFile = (f: File | null) => {
     if (!f) return;
     if (!ACCEPTED.includes(f.type)) {

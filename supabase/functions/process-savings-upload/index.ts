@@ -165,7 +165,7 @@ async function callTextLLM(textInput: string): Promise<{ supplier: Supplier; lin
       temperature: 0,
       response_format: { type: "json_object" },
       messages: [
-        { role: "system", text: undefined, content: OCR_PROMPT },
+        { role: "system", content: OCR_PROMPT },
         { role: "user", content: `Texte du bon de commande extrait :\n\n${textInput.slice(0, 60000)}` },
       ],
     }),

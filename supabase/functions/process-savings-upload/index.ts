@@ -544,16 +544,19 @@ Deno.serve(async (req) => {
         .eq("id", sim.id);
     }
 
-    // Pipeline en arrière-plan
-    (globalThis as any).EdgeRuntime?.waitUntil(
-      processSimulation(sim.id, file, fileKind, supplier),
-    );
-    // Fallback : si EdgeRuntime n'est pas dispo, on lance quand même
-    if (!(globalThis as any).EdgeRuntime) {
-      processSimulation(sim.id, file, fileKind, supplier).catch((e) =>
-        console.error("background pipeline error", e),
-      );
-    }
+    // Pipeline en arrière-plan — toujours catcher pour ne jamais perdre l'erreur
+    const bgTask = processSimulation(sim.id, file, fileKind, supplier).catch(async (e) => {
+      console.error("[pipeline] uncaught", e);
+      try {
+        await supabase
+          .from("savings_simulations")
+          .update({ status: "failed", error_message: String(e).slice(0, 500) })
+          .eq("id", sim.id);
+      } catch (e2) {
+        console.error("[pipeline] could not write error status", e2);
+      }
+    });
+    (globalThis as any).EdgeRuntime?.waitUntil?.(bgTask);
 
     return Response.json({ id: sim.id, status: "processing" }, { status: 202, headers: corsHeaders });
   } catch (err) {

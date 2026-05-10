@@ -144,13 +144,17 @@ function parseCsv(text: string, supplier: Supplier): { supplier: Supplier; lines
 async function callVisionLLM(file: File): Promise<{ supplier: Supplier; lines: ExtractedLine[] }> {
   const base64 = await fileToBase64(file);
   const mime = file.type;
-  const dataUrl = `data:${mime};base64,${base64}`;
+  console.log("[vision] file", { mime, sizeKB: Math.round(file.size / 1024), b64Len: base64.length });
 
+  // Lovable AI Gateway (OpenAI-compatible) accepts PDFs/images via image_url data URL for Gemini
+  // and also via the file content type. We use Bearer auth which is the documented format.
+  const dataUrl = `data:${mime};base64,${base64}`;
+  const t0 = Date.now();
   const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Lovable-API-Key": LOVABLE_API_KEY,
+      Authorization: `Bearer ${LOVABLE_API_KEY}`,
     },
     body: JSON.stringify({
       model: VISION_MODEL,
@@ -159,13 +163,14 @@ async function callVisionLLM(file: File): Promise<{ supplier: Supplier; lines: E
         {
           role: "user",
           content: [
-            { type: "image_url", image_url: { url: dataUrl } },
             { type: "text", text: OCR_PROMPT },
+            { type: "image_url", image_url: { url: dataUrl } },
           ],
         },
       ],
     }),
   });
+  console.log("[vision] ai-gateway response", { status: res.status, ms: Date.now() - t0 });
 
   if (!res.ok) {
     const body = await res.text();
@@ -173,10 +178,14 @@ async function callVisionLLM(file: File): Promise<{ supplier: Supplier; lines: E
   }
   const json = await res.json();
   const text = json.choices?.[0]?.message?.content ?? "{}";
+  console.log("[vision] content length", text.length);
   const match = text.match(/\{[\s\S]*\}/);
   try {
-    return JSON.parse(match?.[0] ?? "{}");
-  } catch {
+    const parsed = JSON.parse(match?.[0] ?? "{}");
+    console.log("[vision] parsed lines", parsed?.lines?.length ?? 0);
+    return parsed;
+  } catch (e) {
+    console.error("[vision] JSON parse fail", e, text.slice(0, 200));
     return { supplier: "other", lines: [] };
   }
 }

@@ -62,6 +62,8 @@ export default function EconomiesPage() {
   const [submitting, setSubmitting] = useState(false);
   const [simId, setSimId] = useState<string | null>(null);
   const [sim, setSim] = useState<SimulationStatus | null>(null);
+  const [lines, setLines] = useState<SimulationLine[] | null>(null);
+  const [showAllLines, setShowAllLines] = useState(false);
   const pollRef = useRef<number | null>(null);
 
   // Polling

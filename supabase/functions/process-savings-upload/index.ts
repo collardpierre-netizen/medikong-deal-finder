@@ -142,13 +142,57 @@ function parseCsv(text: string, supplier: Supplier): { supplier: Supplier; lines
   return { supplier, lines };
 }
 
+async function extractPdfText(file: File): Promise<string> {
+  // unpdf est compatible Deno et n'a pas besoin de worker
+  const { extractText, getDocumentProxy } = await import("https://esm.sh/unpdf@0.12.1");
+  const buf = new Uint8Array(await file.arrayBuffer());
+  const pdf = await getDocumentProxy(buf);
+  const { text } = await extractText(pdf, { mergePages: true });
+  return Array.isArray(text) ? text.join("\n") : String(text || "");
+}
+
+async function callTextLLM(textInput: string): Promise<{ supplier: Supplier; lines: ExtractedLine[] }> {
+  console.log("[text-llm] input chars", textInput.length);
+  const t0 = Date.now();
+  const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${LOVABLE_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: TEXT_MODEL,
+      temperature: 0,
+      response_format: { type: "json_object" },
+      messages: [
+        { role: "system", text: undefined, content: OCR_PROMPT },
+        { role: "user", content: `Texte du bon de commande extrait :\n\n${textInput.slice(0, 60000)}` },
+      ],
+    }),
+  });
+  console.log("[text-llm] response", { status: res.status, ms: Date.now() - t0 });
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`text LLM ${res.status}: ${body.slice(0, 500)}`);
+  }
+  const json = await res.json();
+  const text = json.choices?.[0]?.message?.content ?? "{}";
+  console.log("[text-llm] content length", text.length);
+  const match = text.match(/\{[\s\S]*\}/);
+  try {
+    const parsed = JSON.parse(match?.[0] ?? "{}");
+    console.log("[text-llm] parsed lines", parsed?.lines?.length ?? 0);
+    return parsed;
+  } catch (e) {
+    console.error("[text-llm] JSON parse fail", e, text.slice(0, 200));
+    return { supplier: "other", lines: [] };
+  }
+}
+
 async function callVisionLLM(file: File): Promise<{ supplier: Supplier; lines: ExtractedLine[] }> {
   const base64 = await fileToBase64(file);
   const mime = file.type;
   console.log("[vision] file", { mime, sizeKB: Math.round(file.size / 1024), b64Len: base64.length });
-
-  // Lovable AI Gateway (OpenAI-compatible) accepts PDFs/images via image_url data URL for Gemini
-  // and also via the file content type. We use Bearer auth which is the documented format.
   const dataUrl = `data:${mime};base64,${base64}`;
   const t0 = Date.now();
   const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -172,7 +216,6 @@ async function callVisionLLM(file: File): Promise<{ supplier: Supplier; lines: E
     }),
   });
   console.log("[vision] ai-gateway response", { status: res.status, ms: Date.now() - t0 });
-
   if (!res.ok) {
     const body = await res.text();
     throw new Error(`vision LLM ${res.status}: ${body.slice(0, 500)}`);

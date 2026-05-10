@@ -22,6 +22,24 @@ interface SimulationStatus {
   email_sent_at: string | null;
 }
 
+interface SimulationLine {
+  id: string;
+  line_number: number | null;
+  detected_name: string | null;
+  detected_brand: string | null;
+  detected_cnk: string | null;
+  detected_quantity: number | null;
+  detected_unit_price_excl_vat: number | null;
+  matched_product_id: string | null;
+  match_method: string | null;
+  match_confidence: number | null;
+  medikong_min_price_excl_vat: number | null;
+  medikong_supplier_count: number | null;
+  line_savings: number | null;
+  line_savings_pct: number | null;
+  matched_product?: { name: string | null; slug: string | null } | null;
+}
+
 const SUPPLIERS: { value: Supplier; label: string }[] = [
   { value: "febelco", label: "Febelco" },
   { value: "cerp", label: "CERP" },
@@ -44,6 +62,8 @@ export default function EconomiesPage() {
   const [submitting, setSubmitting] = useState(false);
   const [simId, setSimId] = useState<string | null>(null);
   const [sim, setSim] = useState<SimulationStatus | null>(null);
+  const [lines, setLines] = useState<SimulationLine[] | null>(null);
+  const [showAllLines, setShowAllLines] = useState(false);
   const pollRef = useRef<number | null>(null);
 
   // Polling
@@ -73,6 +93,23 @@ export default function EconomiesPage() {
       if (pollRef.current) window.clearInterval(pollRef.current);
     };
   }, [simId, sim?.status]);
+
+  // Fetch lines once simulation is done
+  useEffect(() => {
+    if (!simId || sim?.status !== "done" || lines !== null) return;
+    (async () => {
+      const { data, error } = await supabase
+        .from("savings_simulation_lines")
+        .select("id,line_number,detected_name,detected_brand,detected_cnk,detected_quantity,detected_unit_price_excl_vat,matched_product_id,match_method,match_confidence,medikong_min_price_excl_vat,medikong_supplier_count,line_savings,line_savings_pct,matched_product:products(name,slug)")
+        .eq("simulation_id", simId)
+        .order("line_savings", { ascending: false, nullsFirst: false });
+      if (error) {
+        console.error("[economies] fetch lines error", error);
+        return;
+      }
+      setLines((data ?? []) as unknown as SimulationLine[]);
+    })();
+  }, [simId, sim?.status, lines]);
 
   const handleFile = (f: File | null) => {
     if (!f) return;
@@ -283,6 +320,78 @@ export default function EconomiesPage() {
                           <dd className="font-semibold text-mk-navy">{fmtMoney(sim.medikong_total_excl_vat)}</dd>
                         </div>
                       </dl>
+
+                      {/* Détail ligne par ligne à l'écran */}
+                      <div className="border border-mk-border rounded-lg overflow-hidden mb-4">
+                        <div className="bg-mk-alt/40 px-4 py-2.5 text-sm font-semibold text-mk-navy border-b border-mk-border">
+                          Détail ligne par ligne {lines ? `(${lines.length})` : ""}
+                        </div>
+                        {lines === null && (
+                          <div className="p-6 text-center text-sm text-mk-text/60">
+                            <Loader2 className="inline animate-spin mr-2" size={14} /> Chargement du détail…
+                          </div>
+                        )}
+                        {lines && lines.length === 0 && (
+                          <div className="p-6 text-center text-sm text-mk-text/60">Aucune ligne à afficher.</div>
+                        )}
+                        {lines && lines.length > 0 && (
+                          <>
+                            <div className="overflow-x-auto">
+                              <table className="w-full text-xs">
+                                <thead className="bg-white text-mk-text/60 border-b border-mk-border">
+                                  <tr>
+                                    <th className="px-3 py-2 text-left font-medium">Produit</th>
+                                    <th className="px-3 py-2 text-right font-medium">Qté</th>
+                                    <th className="px-3 py-2 text-right font-medium">Prix grossiste</th>
+                                    <th className="px-3 py-2 text-right font-medium">Prix MediKong</th>
+                                    <th className="px-3 py-2 text-right font-medium">Économie</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {(showAllLines ? lines : lines.slice(0, 10)).map((l) => {
+                                    const matched = !!l.matched_product_id;
+                                    const name = l.matched_product?.name || l.detected_name || "—";
+                                    return (
+                                      <tr key={l.id} className="border-b border-mk-border/60 last:border-0 hover:bg-mk-alt/20">
+                                        <td className="px-3 py-2">
+                                          <div className="font-medium text-mk-navy line-clamp-1">{name}</div>
+                                          <div className="text-[11px] text-mk-text/50 flex gap-2">
+                                            {l.detected_brand && <span>{l.detected_brand}</span>}
+                                            {l.detected_cnk && <span>CNK {l.detected_cnk}</span>}
+                                            {!matched && <span className="text-amber-600">Non trouvé</span>}
+                                          </div>
+                                        </td>
+                                        <td className="px-3 py-2 text-right tabular-nums">{l.detected_quantity ?? "—"}</td>
+                                        <td className="px-3 py-2 text-right tabular-nums">{fmtMoney(l.detected_unit_price_excl_vat)}</td>
+                                        <td className="px-3 py-2 text-right tabular-nums">
+                                          {matched ? fmtMoney(l.medikong_min_price_excl_vat) : <span className="text-mk-text/40">—</span>}
+                                        </td>
+                                        <td className="px-3 py-2 text-right tabular-nums">
+                                          {l.line_savings && l.line_savings > 0 ? (
+                                            <span className="font-semibold text-green-600">
+                                              {fmtMoney(l.line_savings)}
+                                              {l.line_savings_pct ? <span className="text-[10px] font-normal opacity-70 ml-1">({l.line_savings_pct.toFixed(0)}%)</span> : null}
+                                            </span>
+                                          ) : (
+                                            <span className="text-mk-text/40">—</span>
+                                          )}
+                                        </td>
+                                      </tr>
+                                    );
+                                  })}
+                                </tbody>
+                              </table>
+                            </div>
+                            {lines.length > 10 && (
+                              <button onClick={() => setShowAllLines((v) => !v)}
+                                className="w-full text-center text-xs text-mk-blue py-2.5 hover:bg-mk-alt/30 border-t border-mk-border">
+                                {showAllLines ? "Réduire" : `Voir les ${lines.length - 10} autres lignes`}
+                              </button>
+                            )}
+                          </>
+                        )}
+                      </div>
+
                       <button onClick={sendReport}
                         className="w-full bg-mk-blue text-white rounded-lg px-4 py-3 text-sm font-semibold hover:bg-mk-blue/90 transition">
                         <Mail className="inline mr-2" size={14} />

@@ -464,31 +464,33 @@ async function processSimulation(simulationId: string, file: File, fileKind: Fil
       initialMatches.push(m);
     });
 
-    // Fuzzy name matching en parallèle (chunks de 8)
-    const CHUNK = 8;
-    for (let i = 0; i < fuzzyIndices.length; i += CHUNK) {
-      const slice = fuzzyIndices.slice(i, i + CHUNK);
-      await Promise.all(
-        slice.map(async (idx) => {
-          const line = extracted.lines[idx];
-          try {
-            const { data } = await supabase.rpc("match_product_by_name", {
-              query_name: line.normalized_name_guess,
-              query_brand: line.brand_guess,
-              threshold: 0.55,
-            });
-            if (data && data.length > 0 && Number(data[0].similarity) >= 0.7) {
-              initialMatches[idx] = {
-                product_id: String(data[0].id),
-                confidence: Number(data[0].similarity),
-                method: "name_fuzzy",
-              };
-            }
-          } catch (e) {
-            console.error("[pipeline] fuzzy fail", idx, e);
+    // Fuzzy name matching : un seul appel RPC batch
+    if (fuzzyIndices.length > 0) {
+      const queries = fuzzyIndices.map((idx) => ({
+        idx,
+        name: extracted.lines[idx].normalized_name_guess,
+        brand: extracted.lines[idx].brand_guess,
+      }));
+      console.log("[pipeline] fuzzy batch", { count: queries.length });
+      const tFuzzy = Date.now();
+      try {
+        const { data, error } = await supabase.rpc("match_products_by_names_batch", {
+          _queries: queries,
+          _threshold: 0.7,
+        });
+        console.log("[pipeline] fuzzy done", { ms: Date.now() - tFuzzy, rows: data?.length ?? 0, error });
+        for (const r of data ?? []) {
+          if (r.product_id) {
+            initialMatches[r.idx] = {
+              product_id: String(r.product_id),
+              confidence: Number(r.similarity),
+              method: "name_fuzzy",
+            };
           }
-        }),
-      );
+        }
+      } catch (e) {
+        console.error("[pipeline] fuzzy batch fail", e);
+      }
     }
 
     // Batch prix MediKong pour tous les product_id matchés

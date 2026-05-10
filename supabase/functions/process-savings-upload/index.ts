@@ -476,7 +476,7 @@ async function processSimulation(simulationId: string, file: File, fileKind: Fil
       try {
         const { data, error } = await supabase.rpc("match_products_by_names_batch", {
           _queries: queries,
-          _threshold: 0.7,
+          _threshold: 0.5,
         });
         console.log("[pipeline] fuzzy done", { ms: Date.now() - tFuzzy, rows: data?.length ?? 0, error });
         for (const r of data ?? []) {

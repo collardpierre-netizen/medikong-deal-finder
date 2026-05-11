@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { sanitizeVendorLabel } from "@/lib/vendor-display";
 import { useCurrentVendor } from "@/hooks/useCurrentVendor";
 import {
   useVendorCompetitorAlerts,

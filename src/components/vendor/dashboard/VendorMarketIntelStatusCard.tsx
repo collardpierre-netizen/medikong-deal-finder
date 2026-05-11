@@ -9,7 +9,7 @@ type Variant = {
   bg: string;
   text: string;
   border: string;
-  icon: React.ComponentType<{ size?: number; className?: string }>;
+  icon: LucideIcon;
 };
 
 const VARIANTS: Record<"none" | "trial" | "active" | "expired" | "cancelled", Variant> = {

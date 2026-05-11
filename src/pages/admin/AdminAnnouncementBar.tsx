@@ -7,26 +7,28 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Megaphone, Save, Eye, EyeOff } from "lucide-react";
+import { Loader2, Megaphone, Save, Eye, EyeOff, Coins } from "lucide-react";
 
 export default function AdminAnnouncementBar() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [enabled, setEnabled] = useState(true);
+  const [crowdfundingEnabled, setCrowdfundingEnabled] = useState(true);
   const [text, setText] = useState("");
 
   async function load() {
     setLoading(true);
     const { data, error } = await supabase
       .from("site_config")
-      .select("investment_banner_enabled, investment_banner_text")
+      .select("investment_banner_enabled, investment_banner_text, crowdfunding_enabled")
       .eq("id", 1)
       .maybeSingle();
     if (error) {
       toast({ title: "Erreur", description: error.message, variant: "destructive" });
     } else if (data) {
       setEnabled(data.investment_banner_enabled);
+      setCrowdfundingEnabled((data as any).crowdfunding_enabled ?? true);
       setText(data.investment_banner_text ?? "");
     }
     setLoading(false);

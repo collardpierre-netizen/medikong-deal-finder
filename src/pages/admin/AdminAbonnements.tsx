@@ -270,9 +270,20 @@ export default function AdminAbonnementsPage() {
         _notes: grantNotes.trim() || null,
       });
       if (error) throw error;
+
+      // Notify pharmacist by email (best-effort)
+      const { error: notifyErr } = await supabase.functions.invoke("notify-extension-decision", {
+        body: {
+          request_id: grantOpen.id,
+          decision: "approved",
+          granted_months: grantMonths,
+          internal_notes: grantNotes.trim() || null,
+        },
+      });
+      if (notifyErr) console.warn("Notification email failed:", notifyErr);
     },
     onSuccess: () => {
-      toast.success("Extension accordée");
+      toast.success("Extension accordée — pharmacien notifié");
       setGrantOpen(null);
       setGrantNotes("");
       setGrantContactNotes("");
@@ -304,9 +315,19 @@ export default function AdminAbonnementsPage() {
         })
         .eq("id", rejectOpen.id);
       if (error) throw error;
+
+      // Notify pharmacist by email (best-effort)
+      const { error: notifyErr } = await supabase.functions.invoke("notify-extension-decision", {
+        body: {
+          request_id: rejectOpen.id,
+          decision: "rejected",
+          rejection_reason: reason || null,
+        },
+      });
+      if (notifyErr) console.warn("Notification email failed:", notifyErr);
     },
     onSuccess: () => {
-      toast.success("Demande refusée");
+      toast.success("Demande refusée — pharmacien notifié");
       setRejectOpen(null);
       setRejectReason("");
       setRejectReasonPreset("volume_insuffisant");

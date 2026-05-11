@@ -358,6 +358,33 @@ export default function VendorMarketIntel() {
     },
   });
 
+  // Lookup display_code MediKong pour anonymiser les noms exposant "Qogita"
+  const offerVendorIds = useMemo(
+    () => Array.from(new Set((openRow?.medikong_offers || []).map((o) => o.vendor_id))),
+    [openRow?.medikong_offers],
+  );
+  const { data: vendorDisplayCodes = {} } = useQuery({
+    enabled: offerVendorIds.length > 0,
+    queryKey: ["vmi-vendor-display-codes", offerVendorIds.sort().join(",")],
+    queryFn: async (): Promise<Record<string, string | null>> => {
+      const { data, error } = await supabase
+        .from("vendors_public")
+        .select("id, display_code")
+        .in("id", offerVendorIds);
+      if (error) throw error;
+      const map: Record<string, string | null> = {};
+      (data ?? []).forEach((v: any) => { map[v.id] = v.display_code ?? null; });
+      return map;
+    },
+  });
+
+  /** Anonymise tout nom de vendeur mentionnant "Qogita" via l'ID public MediKong */
+  const sanitizeVendorName = (vendor_id: string, vendor_name: string): string => {
+    if (!/qogita/i.test(vendor_name)) return vendor_name;
+    const code = vendorDisplayCodes[vendor_id];
+    return code ? `Vendeur ${code}` : "Vendeur MediKong";
+  };
+
   // Persist filters
   useEffect(() => {
     try {

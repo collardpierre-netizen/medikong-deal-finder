@@ -107,6 +107,31 @@ export default function AdminAnnouncementBar() {
 
       <Card>
         <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Coins className={`h-5 w-5 ${crowdfundingEnabled ? "text-green-600" : "text-muted-foreground"}`} />
+            Crowdfunding actif
+          </CardTitle>
+          <CardDescription>
+            Quand activé, le bandeau redirige vers <code className="px-1 rounded bg-muted">/invest</code> (Tax Shelter / levée de fonds). Désactivez à la clôture de la levée pour rendre le bandeau non cliquable.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between p-4 border rounded-lg">
+            <div>
+              <Label htmlFor="crowdfunding" className="text-base font-medium cursor-pointer">
+                Lien vers la page Investissement
+              </Label>
+              <p className="text-sm text-muted-foreground mt-1">
+                Statut actuel : {crowdfundingEnabled ? <span className="text-green-600 font-medium">Actif (clic → /invest)</span> : <span className="text-muted-foreground font-medium">Inactif (bandeau non cliquable)</span>}
+              </p>
+            </div>
+            <Switch id="crowdfunding" checked={crowdfundingEnabled} onCheckedChange={setCrowdfundingEnabled} />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
           <CardTitle>Texte du bandeau</CardTitle>
           <CardDescription>
             Laissez vide pour utiliser le texte par défaut (traduit selon la langue du visiteur).

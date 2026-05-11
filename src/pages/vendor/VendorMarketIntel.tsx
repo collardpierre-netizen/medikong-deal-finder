@@ -379,11 +379,9 @@ export default function VendorMarketIntel() {
   });
 
   /** Anonymise tout nom de vendeur mentionnant "Qogita" via l'ID public MediKong */
-  const sanitizeVendorName = (vendor_id: string, vendor_name: string): string => {
-    if (!/qogita/i.test(vendor_name)) return vendor_name;
-    const code = vendorDisplayCodes[vendor_id];
-    return code ? `Vendeur ${code}` : "Vendeur MediKong";
-  };
+  const sanitizeVendorName = (vendor_id: string, vendor_name: string): string =>
+    sanitizeVendorLabel(vendor_name, vendorDisplayCodes[vendor_id]);
+
 
   // Persist filters
   useEffect(() => {

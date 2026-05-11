@@ -336,29 +336,17 @@ export default function AdminAbonnementsPage() {
     onError: (e: any) => toast.error(e?.message ?? "Échec"),
   });
 
-  // Filter overview
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return (overviews ?? []).filter((o) => {
-      if (phaseFilter !== "all" && o.current_phase !== phaseFilter) return false;
-      if (!q) return true;
-      const p = profileMap.get(o.buyer_id);
-      const hay = `${p?.full_name ?? ""} ${p?.company_name ?? ""} ${o.buyer_id}`.toLowerCase();
-      return hay.includes(q);
-    });
-  }, [overviews, search, phaseFilter, profileMap]);
-
-  // KPIs
-  const kpis = useMemo(() => {
-    const all = overviews ?? [];
-    return {
-      total: all.length,
-      trial: all.filter((o) => o.current_phase === "trial").length,
-      bonus: all.filter((o) => o.current_phase === "bonus_free" || o.current_phase === "extension").length,
-      paid: all.filter((o) => o.current_phase === "paid").length,
+  // KPIs (server-side counts + pending requests count from local list)
+  const kpis = useMemo(
+    () => ({
+      total: kpiCounts?.total ?? 0,
+      trial: kpiCounts?.trial ?? 0,
+      bonus: kpiCounts?.bonus ?? 0,
+      paid: kpiCounts?.paid ?? 0,
       pending: (requests ?? []).filter((r) => r.status === "pending" || r.status === "contacted").length,
-    };
-  }, [overviews, requests]);
+    }),
+    [kpiCounts, requests]
+  );
 
   const pendingRequests = useMemo(
     () => (requests ?? []).filter((r) => r.status === "pending" || r.status === "contacted"),
@@ -368,6 +356,31 @@ export default function AdminAbonnementsPage() {
     () => (requests ?? []).filter((r) => !["pending", "contacted"].includes(r.status)),
     [requests]
   );
+
+  const toggleSort = (key: SortKey) => {
+    if (sortBy === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    else {
+      setSortBy(key);
+      setSortDir("desc");
+    }
+  };
+
+  const SortHeader = ({ k, children, className }: { k: SortKey; children: React.ReactNode; className?: string }) => {
+    const active = sortBy === k;
+    const Icon = !active ? ArrowUpDown : sortDir === "asc" ? ArrowUp : ArrowDown;
+    return (
+      <TableHead className={className}>
+        <button
+          type="button"
+          onClick={() => toggleSort(k)}
+          className="inline-flex items-center gap-1 font-medium hover:text-foreground transition-colors"
+        >
+          {children}
+          <Icon className={`w-3 h-3 ${active ? "text-foreground" : "text-muted-foreground/60"}`} />
+        </button>
+      </TableHead>
+    );
+  };
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-6">

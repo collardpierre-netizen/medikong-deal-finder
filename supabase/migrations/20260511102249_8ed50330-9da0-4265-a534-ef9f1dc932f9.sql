@@ -1,0 +1,1 @@
+UPDATE public.site_config SET investment_banner_enabled = true WHERE id = 1;

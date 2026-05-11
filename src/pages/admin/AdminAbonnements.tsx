@@ -115,8 +115,11 @@ export default function AdminAbonnementsPage() {
   const [grantOpen, setGrantOpen] = useState<ExtRequest | null>(null);
   const [grantMonths, setGrantMonths] = useState(3);
   const [grantNotes, setGrantNotes] = useState("");
+  const [grantContactNotes, setGrantContactNotes] = useState("");
   const [rejectOpen, setRejectOpen] = useState<ExtRequest | null>(null);
+  const [rejectReasonPreset, setRejectReasonPreset] = useState<string>("volume_insuffisant");
   const [rejectReason, setRejectReason] = useState("");
+  const [rejectContactNotes, setRejectContactNotes] = useState("");
 
   // Debounce search
   useEffect(() => {
@@ -249,10 +252,22 @@ export default function AdminAbonnementsPage() {
   const grantMut = useMutation({
     mutationFn: async () => {
       if (!grantOpen) return;
+      // Persist contact notes (best-effort) before granting so trace stays even if RPC ignores them
+      const trimmedContact = grantContactNotes.trim();
+      if (trimmedContact) {
+        const existing = grantOpen.contact_notes ? `${grantOpen.contact_notes}\n` : "";
+        await supabase
+          .from("subscription_extension_requests")
+          .update({
+            contact_notes: `${existing}[${new Date().toISOString().slice(0, 10)}] ${trimmedContact}`.slice(0, 4000),
+            last_contact_at: new Date().toISOString(),
+          })
+          .eq("id", grantOpen.id);
+      }
       const { error } = await supabase.rpc("grant_subscription_extension", {
         _req_id: grantOpen.id,
         _months: grantMonths,
-        _notes: grantNotes || null,
+        _notes: grantNotes.trim() || null,
       });
       if (error) throw error;
     },
@@ -260,6 +275,7 @@ export default function AdminAbonnementsPage() {
       toast.success("Extension accordée");
       setGrantOpen(null);
       setGrantNotes("");
+      setGrantContactNotes("");
       qc.invalidateQueries({ queryKey: ["admin-extension-requests"] });
       qc.invalidateQueries({ queryKey: ["admin-subs-overview"] });
     },
@@ -270,11 +286,19 @@ export default function AdminAbonnementsPage() {
     mutationFn: async () => {
       if (!rejectOpen) return;
       const { data: u } = await supabase.auth.getUser();
+      const reason = rejectReason.trim();
+      const trimmedContact = rejectContactNotes.trim();
+      const existingNotes = rejectOpen.contact_notes ? `${rejectOpen.contact_notes}\n` : "";
+      const newContactNotes = trimmedContact
+        ? `${existingNotes}[${new Date().toISOString().slice(0, 10)}] ${trimmedContact}`.slice(0, 4000)
+        : rejectOpen.contact_notes ?? null;
       const { error } = await supabase
         .from("subscription_extension_requests")
         .update({
           status: "rejected",
-          rejection_reason: rejectReason || null,
+          rejection_reason: reason || null,
+          contact_notes: newContactNotes,
+          last_contact_at: trimmedContact ? new Date().toISOString() : rejectOpen.last_contact_at,
           resolved_at: new Date().toISOString(),
           resolved_by_user_id: u?.user?.id ?? null,
         })
@@ -285,6 +309,8 @@ export default function AdminAbonnementsPage() {
       toast.success("Demande refusée");
       setRejectOpen(null);
       setRejectReason("");
+      setRejectReasonPreset("volume_insuffisant");
+      setRejectContactNotes("");
       qc.invalidateQueries({ queryKey: ["admin-extension-requests"] });
     },
     onError: (e: any) => toast.error(e?.message ?? "Échec"),
@@ -615,10 +641,10 @@ export default function AdminAbonnementsPage() {
                             <Button size="sm" variant="outline" onClick={() => markContactedMut.mutate(r)} disabled={markContactedMut.isPending}>
                               <Phone className="w-3 h-3 mr-1" /> Contact effectué
                             </Button>
-                            <Button size="sm" onClick={() => { setGrantOpen(r); setGrantMonths(3); setGrantNotes(""); }}>
+                            <Button size="sm" onClick={() => { setGrantOpen(r); setGrantMonths(3); setGrantNotes(""); setGrantContactNotes(""); }}>
                               <CheckCircle2 className="w-3 h-3 mr-1" /> Accorder
                             </Button>
-                            <Button size="sm" variant="destructive" onClick={() => { setRejectOpen(r); setRejectReason(""); }}>
+                            <Button size="sm" variant="destructive" onClick={() => { setRejectOpen(r); setRejectReason(""); setRejectReasonPreset("volume_insuffisant"); setRejectContactNotes(""); }}>
                               <XCircle className="w-3 h-3 mr-1" /> Refuser
                             </Button>
                           </div>
@@ -682,51 +708,229 @@ export default function AdminAbonnementsPage() {
 
       {/* GRANT DIALOG */}
       <Dialog open={!!grantOpen} onOpenChange={(open) => !open && setGrantOpen(null)}>
-        <DialogContent>
+        <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Accorder une extension</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <CheckCircle2 className="w-5 h-5 text-primary" />
+              Accorder une extension
+            </DialogTitle>
             <DialogDescription>
-              La phase gratuite sera prolongée du nombre de mois choisi.
+              La phase gratuite sera prolongée du nombre de mois choisi. Cette action est tracée et notifiée au pharmacien.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-3">
-            <div>
-              <Label htmlFor="months">Nombre de mois</Label>
-              <Input id="months" type="number" min={1} max={24} value={grantMonths} onChange={(e) => setGrantMonths(parseInt(e.target.value || "3", 10))} />
-            </div>
-            <div>
-              <Label htmlFor="notes">Notes internes (optionnel)</Label>
-              <Textarea id="notes" rows={3} value={grantNotes} onChange={(e) => setGrantNotes(e.target.value)} />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setGrantOpen(null)}>Annuler</Button>
-            <Button onClick={() => grantMut.mutate()} disabled={grantMut.isPending || grantMonths < 1}>
-              {grantMut.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              Confirmer l'extension
-            </Button>
-          </DialogFooter>
+
+          {grantOpen && (() => {
+            const p = profileMap.get(grantOpen.buyer_id);
+            const months = Number.isFinite(grantMonths) ? grantMonths : 0;
+            const internalNotes = grantNotes.trim();
+            const contactNotes = grantContactNotes.trim();
+            const errors: string[] = [];
+            if (months < 1 || months > 24) errors.push("Le nombre de mois doit être compris entre 1 et 24.");
+            if (internalNotes.length > 0 && internalNotes.length < 10) errors.push("Les notes internes doivent contenir au moins 10 caractères si renseignées.");
+            if (internalNotes.length > 1000) errors.push("Notes internes : 1000 caractères max.");
+            if (contactNotes.length > 1000) errors.push("Notes de contact : 1000 caractères max.");
+            const isValid = errors.length === 0;
+
+            return (
+              <div className="space-y-4">
+                {/* Context recap */}
+                <div className="rounded-md border bg-muted/40 p-3 text-sm space-y-1">
+                  <div className="font-medium">{p?.company_name ?? p?.full_name ?? "Pharmacien"}</div>
+                  <div className="text-xs text-muted-foreground">
+                    Demande reçue {fmtDate(grantOpen.created_at)} · {grantOpen.contact_attempt_count ?? 0} tentative(s) de contact
+                  </div>
+                  {grantOpen.reason && (
+                    <div className="text-xs"><span className="text-muted-foreground">Motif demandé :</span> {grantOpen.reason}</div>
+                  )}
+                  {grantOpen.callback_window && (
+                    <div className="text-xs"><span className="text-muted-foreground">Créneau rappel :</span> {grantOpen.callback_window}</div>
+                  )}
+                </div>
+
+                {/* Presets + numeric input */}
+                <div>
+                  <Label htmlFor="months">Durée d'extension</Label>
+                  <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                    {[1, 3, 6, 12].map((m) => (
+                      <Button
+                        key={m}
+                        type="button"
+                        size="sm"
+                        variant={grantMonths === m ? "default" : "outline"}
+                        onClick={() => setGrantMonths(m)}
+                      >
+                        {m} mois
+                      </Button>
+                    ))}
+                    <Input
+                      id="months"
+                      type="number"
+                      min={1}
+                      max={24}
+                      value={grantMonths}
+                      onChange={(e) => setGrantMonths(parseInt(e.target.value || "0", 10))}
+                      className="w-20"
+                      aria-invalid={months < 1 || months > 24}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="contact-notes-grant">Notes de contact (optionnel)</Label>
+                  <Textarea
+                    id="contact-notes-grant"
+                    rows={2}
+                    maxLength={1000}
+                    value={grantContactNotes}
+                    onChange={(e) => setGrantContactNotes(e.target.value)}
+                    placeholder="Ex : appel du 11/05, échange OK, attend confirmation."
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Ajouté à l'historique de contact (horodaté). {grantContactNotes.length}/1000
+                  </p>
+                </div>
+
+                <div>
+                  <Label htmlFor="notes">Notes internes (optionnel)</Label>
+                  <Textarea
+                    id="notes"
+                    rows={3}
+                    maxLength={1000}
+                    value={grantNotes}
+                    onChange={(e) => setGrantNotes(e.target.value)}
+                    placeholder="Justification commerciale, conditions négociées…"
+                    aria-invalid={internalNotes.length > 0 && internalNotes.length < 10}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">{grantNotes.length}/1000</p>
+                </div>
+
+                {errors.length > 0 && (
+                  <div role="alert" className="rounded-md border border-destructive/40 bg-destructive/5 p-2 text-xs text-destructive space-y-1">
+                    {errors.map((err) => (<div key={err}>• {err}</div>))}
+                  </div>
+                )}
+
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setGrantOpen(null)} disabled={grantMut.isPending}>Annuler</Button>
+                  <Button onClick={() => grantMut.mutate()} disabled={grantMut.isPending || !isValid}>
+                    {grantMut.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                    Confirmer · +{months} mois
+                  </Button>
+                </DialogFooter>
+              </div>
+            );
+          })()}
         </DialogContent>
       </Dialog>
 
       {/* REJECT DIALOG */}
       <Dialog open={!!rejectOpen} onOpenChange={(open) => !open && setRejectOpen(null)}>
-        <DialogContent>
+        <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Refuser la demande</DialogTitle>
-            <DialogDescription>Le pharmacien verra le motif de refus dans son espace.</DialogDescription>
+            <DialogTitle className="flex items-center gap-2">
+              <XCircle className="w-5 h-5 text-destructive" />
+              Refuser la demande
+            </DialogTitle>
+            <DialogDescription>
+              Le pharmacien verra le motif de refus dans son espace. Cette action est définitive.
+            </DialogDescription>
           </DialogHeader>
-          <div>
-            <Label htmlFor="reject-reason">Motif</Label>
-            <Textarea id="reject-reason" rows={3} value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} placeholder="Ex : volume trop éloigné du seuil, déjà bénéficié d'une extension…" />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setRejectOpen(null)}>Annuler</Button>
-            <Button variant="destructive" onClick={() => rejectMut.mutate()} disabled={rejectMut.isPending}>
-              {rejectMut.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              Confirmer le refus
-            </Button>
-          </DialogFooter>
+
+          {rejectOpen && (() => {
+            const p = profileMap.get(rejectOpen.buyer_id);
+            const PRESETS: { value: string; label: string; template: string }[] = [
+              { value: "volume_insuffisant", label: "Volume insuffisant", template: "Le volume cumulé reste trop éloigné du seuil de prolongation. Nous reverrons votre situation au prochain palier." },
+              { value: "deja_etendu", label: "Déjà bénéficié d'une extension", template: "Une extension a déjà été accordée sur cet abonnement. Le passage à la formule payante reste la prochaine étape." },
+              { value: "non_eligible", label: "Profil non éligible", template: "Votre profil ne remplit pas les conditions de prolongation gratuite à ce stade." },
+              { value: "injoignable", label: "Pharmacien injoignable", template: "Plusieurs tentatives de contact n'ont pas abouti. Demande clôturée — n'hésitez pas à recontacter notre équipe commerciale." },
+              { value: "custom", label: "Motif personnalisé", template: "" },
+            ];
+            const reason = rejectReason.trim();
+            const contactNotes = rejectContactNotes.trim();
+            const errors: string[] = [];
+            if (reason.length < 10) errors.push("Le motif doit contenir au moins 10 caractères (visible par le pharmacien).");
+            if (reason.length > 1000) errors.push("Motif : 1000 caractères max.");
+            if (contactNotes.length > 1000) errors.push("Notes de contact : 1000 caractères max.");
+            const isValid = errors.length === 0;
+
+            return (
+              <div className="space-y-4">
+                <div className="rounded-md border bg-muted/40 p-3 text-sm space-y-1">
+                  <div className="font-medium">{p?.company_name ?? p?.full_name ?? "Pharmacien"}</div>
+                  <div className="text-xs text-muted-foreground">
+                    Demande reçue {fmtDate(rejectOpen.created_at)} · {rejectOpen.contact_attempt_count ?? 0} tentative(s)
+                  </div>
+                  {rejectOpen.reason && (
+                    <div className="text-xs"><span className="text-muted-foreground">Motif demandé :</span> {rejectOpen.reason}</div>
+                  )}
+                </div>
+
+                <div>
+                  <Label>Motif type</Label>
+                  <div className="flex flex-wrap gap-1.5 mt-1.5">
+                    {PRESETS.map((preset) => (
+                      <Button
+                        key={preset.value}
+                        type="button"
+                        size="sm"
+                        variant={rejectReasonPreset === preset.value ? "default" : "outline"}
+                        onClick={() => {
+                          setRejectReasonPreset(preset.value);
+                          if (preset.template) setRejectReason(preset.template);
+                          else setRejectReason("");
+                        }}
+                      >
+                        {preset.label}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="reject-reason">Motif détaillé (visible par le pharmacien)</Label>
+                  <Textarea
+                    id="reject-reason"
+                    rows={4}
+                    maxLength={1000}
+                    value={rejectReason}
+                    onChange={(e) => setRejectReason(e.target.value)}
+                    placeholder="Ex : volume trop éloigné du seuil, déjà bénéficié d'une extension…"
+                    aria-invalid={reason.length > 0 && reason.length < 10}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">{rejectReason.length}/1000</p>
+                </div>
+
+                <div>
+                  <Label htmlFor="contact-notes-reject">Notes de contact internes (optionnel)</Label>
+                  <Textarea
+                    id="contact-notes-reject"
+                    rows={2}
+                    maxLength={1000}
+                    value={rejectContactNotes}
+                    onChange={(e) => setRejectContactNotes(e.target.value)}
+                    placeholder="Synthèse de l'échange, prochaine relance, etc. (non visible par le pharmacien)"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Horodaté et ajouté à l'historique de contact. {rejectContactNotes.length}/1000
+                  </p>
+                </div>
+
+                {errors.length > 0 && (
+                  <div role="alert" className="rounded-md border border-destructive/40 bg-destructive/5 p-2 text-xs text-destructive space-y-1">
+                    {errors.map((err) => (<div key={err}>• {err}</div>))}
+                  </div>
+                )}
+
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setRejectOpen(null)} disabled={rejectMut.isPending}>Annuler</Button>
+                  <Button variant="destructive" onClick={() => rejectMut.mutate()} disabled={rejectMut.isPending || !isValid}>
+                    {rejectMut.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                    Confirmer le refus
+                  </Button>
+                </DialogFooter>
+              </div>
+            );
+          })()}
         </DialogContent>
       </Dialog>
     </div>

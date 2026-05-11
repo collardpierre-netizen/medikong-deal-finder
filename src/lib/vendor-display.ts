@@ -54,21 +54,36 @@ export function resolveVendorVisibility(
 }
 
 /**
+ * Anonymise tout libellé vendeur exposant la marque "Qogita" pour ne montrer
+ * que l'ID public MediKong. À appliquer sur toute liste d'offres face à
+ * acheteur OU vendeur — Qogita est un détail d'implémentation interne.
+ */
+export function sanitizeVendorLabel(name: string | null | undefined, displayCode?: string | null): string {
+  const raw = (name ?? "").trim();
+  if (!raw) return displayCode ? `Vendeur ${displayCode}` : "Vendeur MediKong";
+  if (!/qogita/i.test(raw)) return raw;
+  return displayCode ? `Vendeur ${displayCode}` : "Vendeur MediKong";
+}
+
+/**
  * Returns the public-facing display name for a vendor.
- * - If `show_real_name` is true → company_name or name
+ * - If `show_real_name` is true → company_name or name (sanitized si Qogita)
  * - Otherwise → "Fournisseur <display_code>" (anonymized)
  */
 export function getVendorPublicName(vendor: VendorDisplayInput, showReal?: boolean): string {
   const reveal = showReal !== undefined ? showReal : !!vendor.show_real_name;
-  if (reveal && (vendor.company_name || vendor.name)) {
-    return vendor.company_name || vendor.name || "Fournisseur";
-  }
   const code = vendor.display_code || vendor.name?.slice(0, 6)?.toUpperCase() || "XXXXXX";
+  if (reveal && (vendor.company_name || vendor.name)) {
+    const real = vendor.company_name || vendor.name || "";
+    // Anonymise si la raison sociale contient "Qogita" (vendeur back-office)
+    if (/qogita/i.test(real)) return `Fournisseur ${code}`;
+    return real;
+  }
   return `Fournisseur ${code}`;
 }
 
 /**
- * Returns the admin-facing display name (always real name).
+ * Returns the admin-facing display name (always real name, jamais anonymisé).
  */
 export function getVendorAdminName(vendor: VendorDisplayInput): string {
   return vendor.company_name || vendor.name || `Vendeur ${vendor.display_code || "—"}`;

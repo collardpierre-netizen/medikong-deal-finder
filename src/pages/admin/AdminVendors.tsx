@@ -45,9 +45,18 @@ const StatusBadge = ({ status }: { status: StripeStatus }) => {
   );
 };
 
+type VmiStatus = "none" | "trial" | "active" | "expired" | "cancelled";
+interface VmiRow {
+  vendor_id: string;
+  status: VmiStatus;
+  trial_ends_at: string | null;
+  trial_days_remaining: number | null;
+}
+
 const AdminVendors = () => {
   const { isAdmin, loading: authLoading } = useAdminAuth();
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [vmiBusyId, setVmiBusyId] = useState<string | null>(null);
 
   const { data: vendors = [], isLoading, refetch } = useQuery({
     queryKey: ["admin-vendors-stripe"],
@@ -63,6 +72,39 @@ const AdminVendors = () => {
     },
     enabled: isAdmin,
   });
+
+  const { data: vmiByVendor = {}, refetch: refetchVmi } = useQuery({
+    queryKey: ["admin-vendors-vmi"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("vendor_market_intel_status_v" as any)
+        .select("vendor_id, status, trial_ends_at, trial_days_remaining");
+      if (error) throw error;
+      const map: Record<string, VmiRow> = {};
+      ((data as unknown as VmiRow[]) ?? []).forEach((r) => { map[r.vendor_id] = r; });
+      return map;
+    },
+    enabled: isAdmin,
+  });
+
+  const startTrial = async (vendor_id: string, vendor_name: string | null) => {
+    if (!confirm(`Démarrer l'essai 180 jours pour ${vendor_name ?? vendor_id} ?`)) return;
+    setVmiBusyId(vendor_id);
+    try {
+      const { error } = await supabase.rpc("start_vendor_market_intel_trial" as any, {
+        _vendor_id: vendor_id,
+        _trial_days: 180,
+      });
+      if (error) throw error;
+      toast.success("Essai 180 j activé");
+      await refetchVmi();
+    } catch (e: any) {
+      toast.error("Erreur", { description: e?.message ?? String(e) });
+    } finally {
+      setVmiBusyId(null);
+    }
+  };
+
 
   if (authLoading) return <div className="p-8 text-sm text-muted-foreground">Chargement…</div>;
   if (!isAdmin) return <Navigate to="/admin/login" replace />;

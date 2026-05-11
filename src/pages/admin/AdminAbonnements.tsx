@@ -441,6 +441,22 @@ export default function AdminAbonnementsPage() {
                       <SelectItem value="cancelled">Annulé</SelectItem>
                     </SelectContent>
                   </Select>
+                  <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortKey)}>
+                    <SelectTrigger className="w-48"><SelectValue placeholder="Trier par…" /></SelectTrigger>
+                    <SelectContent>
+                      {(Object.keys(SORT_LABELS) as SortKey[]).map((k) => (
+                        <SelectItem key={k} value={k}>Trier : {SORT_LABELS[k]}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSortDir((d) => (d === "asc" ? "desc" : "asc"))}
+                    title={sortDir === "asc" ? "Croissant" : "Décroissant"}
+                  >
+                    {sortDir === "asc" ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />}
+                  </Button>
                 </div>
               </div>
             </CardHeader>
@@ -448,76 +464,121 @@ export default function AdminAbonnementsPage() {
               {loadingOverview ? (
                 <div className="flex items-center gap-2 text-muted-foreground"><Loader2 className="w-4 h-4 animate-spin" /> Chargement…</div>
               ) : (
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Pharmacie</TableHead>
-                        <TableHead>Phase</TableHead>
-                        <TableHead>Progression volume</TableHead>
-                        <TableHead>Phase actuelle se termine</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filtered.length === 0 ? (
-                        <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Aucun abonnement</TableCell></TableRow>
-                      ) : filtered.map((o) => {
-                        const p = profileMap.get(o.buyer_id);
-                        const phase = PHASE_BADGE[o.current_phase] ?? PHASE_BADGE.trial;
-                        const pct = Math.max(0, Math.min(100, o.threshold_progress_pct ?? 0));
-                        return (
-                          <TableRow key={o.subscription_id}>
-                            <TableCell>
-                              <div className="font-medium">{p?.company_name ?? p?.full_name ?? "—"}</div>
-                              <div className="text-xs text-muted-foreground">
-                                {p?.country ?? "—"} · <span className="font-mono">{o.buyer_id.slice(0, 8)}</span>
-                                {o.has_active_extension_request && (
-                                  <Badge variant="destructive" className="ml-2">Demande en cours</Badge>
-                                )}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant={phase.tone}>{phase.label}</Badge>
-                              <div className="text-xs text-muted-foreground mt-1">
-                                {o.status}
-                              </div>
-                            </TableCell>
-                            <TableCell className="min-w-[200px]">
-                              <Progress value={pct} className="h-2 mb-1" />
-                              <div className="text-xs text-muted-foreground">
-                                {fmtEUR(o.trial_volume_ht)} / {fmtEUR(o.volume_threshold_ht)} ({pct}%)
-                              </div>
-                              <div className="text-xs text-muted-foreground">
-                                Cumul : {fmtEUR(o.lifetime_volume_ht)}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="text-sm">{fmtDate(o.current_free_ends_at)}</div>
-                              <div className="text-xs text-muted-foreground">
-                                {o.free_days_remaining != null ? `${o.free_days_remaining} j restants` : "—"}
-                              </div>
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <div className="inline-flex flex-col gap-1">
-                                {o.current_phase !== "paid" && (
-                                  <Button size="sm" variant="outline" onClick={() => switchPaidMut.mutate(o.subscription_id)} disabled={switchPaidMut.isPending}>
-                                    <CreditCard className="w-3 h-3 mr-1" /> Bascule payant
-                                  </Button>
-                                )}
-                                {o.status !== "paused" && o.status !== "cancelled" && (
-                                  <Button size="sm" variant="ghost" onClick={() => pauseMut.mutate(o.subscription_id)} disabled={pauseMut.isPending}>
-                                    <Pause className="w-3 h-3 mr-1" /> Pause
-                                  </Button>
-                                )}
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                </div>
+                <>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Pharmacie</TableHead>
+                          <SortHeader k="current_phase">Phase</SortHeader>
+                          <SortHeader k="threshold_progress_pct">Progression volume</SortHeader>
+                          <SortHeader k="current_free_ends_at">Phase actuelle se termine</SortHeader>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {overviews.length === 0 ? (
+                          <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Aucun abonnement</TableCell></TableRow>
+                        ) : overviews.map((o) => {
+                          const p = profileMap.get(o.buyer_id);
+                          const phase = PHASE_BADGE[o.current_phase] ?? PHASE_BADGE.trial;
+                          const pct = Math.max(0, Math.min(100, o.threshold_progress_pct ?? 0));
+                          return (
+                            <TableRow key={o.subscription_id}>
+                              <TableCell>
+                                <div className="font-medium">{p?.company_name ?? p?.full_name ?? "—"}</div>
+                                <div className="text-xs text-muted-foreground">
+                                  {p?.country ?? "—"} · <span className="font-mono">{o.buyer_id.slice(0, 8)}</span>
+                                  {o.has_active_extension_request && (
+                                    <Badge variant="destructive" className="ml-2">Demande en cours</Badge>
+                                  )}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant={phase.tone}>{phase.label}</Badge>
+                                <div className="text-xs text-muted-foreground mt-1">
+                                  {o.status}
+                                </div>
+                              </TableCell>
+                              <TableCell className="min-w-[200px]">
+                                <Progress value={pct} className="h-2 mb-1" />
+                                <div className="text-xs text-muted-foreground">
+                                  {fmtEUR(o.trial_volume_ht)} / {fmtEUR(o.volume_threshold_ht)} ({pct}%)
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  Cumul : {fmtEUR(o.lifetime_volume_ht)}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="text-sm">{fmtDate(o.current_free_ends_at)}</div>
+                                <div className="text-xs text-muted-foreground">
+                                  {o.free_days_remaining != null ? `${o.free_days_remaining} j restants` : "—"}
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="inline-flex flex-col gap-1">
+                                  {o.current_phase !== "paid" && (
+                                    <Button size="sm" variant="outline" onClick={() => switchPaidMut.mutate(o.subscription_id)} disabled={switchPaidMut.isPending}>
+                                      <CreditCard className="w-3 h-3 mr-1" /> Bascule payant
+                                    </Button>
+                                  )}
+                                  {o.status !== "paused" && o.status !== "cancelled" && (
+                                    <Button size="sm" variant="ghost" onClick={() => pauseMut.mutate(o.subscription_id)} disabled={pauseMut.isPending}>
+                                      <Pause className="w-3 h-3 mr-1" /> Pause
+                                    </Button>
+                                  )}
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+
+                  {/* Pagination footer */}
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 mt-2 border-t">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      {fetchingOverview && <Loader2 className="w-3 h-3 animate-spin" />}
+                      <span>
+                        {totalCount === 0
+                          ? "0 résultat"
+                          : `${(page - 1) * pageSize + 1}–${Math.min(page * pageSize, totalCount)} sur ${totalCount.toLocaleString("fr-BE")}`}
+                      </span>
+                      <Select value={String(pageSize)} onValueChange={(v) => setPageSize(parseInt(v, 10))}>
+                        <SelectTrigger className="h-8 w-[110px] ml-2">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {[25, 50, 100, 200].map((n) => (
+                            <SelectItem key={n} value={String(n)}>{n} / page</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPage((p) => Math.max(1, p - 1))}
+                        disabled={page <= 1 || fetchingOverview}
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                      </Button>
+                      <span className="text-sm px-2 tabular-nums">
+                        Page {page} / {totalPages}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                        disabled={page >= totalPages || fetchingOverview}
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </>
               )}
             </CardContent>
           </Card>

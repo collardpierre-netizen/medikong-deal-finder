@@ -45,7 +45,8 @@ export default function AdminAnnouncementBar() {
       .update({
         investment_banner_enabled: enabled,
         investment_banner_text: text.trim() || null,
-      })
+        crowdfunding_enabled: crowdfundingEnabled,
+      } as any)
       .eq("id", 1);
     setSaving(false);
     if (error) {

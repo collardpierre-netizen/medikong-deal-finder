@@ -32,6 +32,7 @@ export interface VendorCompetitorAlert {
     id: string;
     company_name: string | null;
     name: string | null;
+    display_code: string | null;
   };
 }
 

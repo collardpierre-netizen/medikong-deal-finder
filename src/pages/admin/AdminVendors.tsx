@@ -179,6 +179,7 @@ const AdminVendors = () => {
               <TableHead>Type</TableHead>
               <TableHead>Commission</TableHead>
               <TableHead>Stripe</TableHead>
+              <TableHead>Veille marché</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>

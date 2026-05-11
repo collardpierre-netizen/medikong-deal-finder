@@ -115,8 +115,11 @@ export default function AdminAbonnementsPage() {
   const [grantOpen, setGrantOpen] = useState<ExtRequest | null>(null);
   const [grantMonths, setGrantMonths] = useState(3);
   const [grantNotes, setGrantNotes] = useState("");
+  const [grantContactNotes, setGrantContactNotes] = useState("");
   const [rejectOpen, setRejectOpen] = useState<ExtRequest | null>(null);
+  const [rejectReasonPreset, setRejectReasonPreset] = useState<string>("volume_insuffisant");
   const [rejectReason, setRejectReason] = useState("");
+  const [rejectContactNotes, setRejectContactNotes] = useState("");
 
   // Debounce search
   useEffect(() => {

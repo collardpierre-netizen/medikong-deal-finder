@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,7 +18,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Loader2, Search, CheckCircle2, XCircle, CreditCard, Pause, Inbox, Users, TrendingUp, Phone } from "lucide-react";
+import { Loader2, Search, CheckCircle2, XCircle, CreditCard, Pause, Inbox, Users, TrendingUp, Phone, ChevronLeft, ChevronRight, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import { formatUpdatedAt } from "@/lib/format-date";
 
 type Overview = {
@@ -82,34 +82,110 @@ const fmtEUR = (n: number | null | undefined) =>
   new Intl.NumberFormat("fr-BE", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(Number(n ?? 0));
 const fmtDate = (iso: string | null | undefined) => (iso ? formatUpdatedAt(iso) : "—");
 
+type SortKey =
+  | "created_at"
+  | "trial_volume_ht"
+  | "lifetime_volume_ht"
+  | "threshold_progress_pct"
+  | "current_free_ends_at"
+  | "current_phase";
+
+const SORT_LABELS: Record<SortKey, string> = {
+  created_at: "Date de création",
+  trial_volume_ht: "Volume essai",
+  lifetime_volume_ht: "Volume cumulé",
+  threshold_progress_pct: "Progression seuil",
+  current_free_ends_at: "Fin de phase",
+  current_phase: "Phase",
+};
+
+// Sanitize for PostgREST ilike/or() — strip commas, parens, % and quotes
+const sanitizeForOr = (s: string) => s.replace(/[(),"%]/g, " ").trim();
+
 export default function AdminAbonnementsPage() {
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [phaseFilter, setPhaseFilter] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<SortKey>("created_at");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+
   const [grantOpen, setGrantOpen] = useState<ExtRequest | null>(null);
   const [grantMonths, setGrantMonths] = useState(3);
   const [grantNotes, setGrantNotes] = useState("");
   const [rejectOpen, setRejectOpen] = useState<ExtRequest | null>(null);
   const [rejectReason, setRejectReason] = useState("");
 
-  // Overview list
-  const { data: overviews, isLoading: loadingOverview } = useQuery({
-    queryKey: ["admin-subs-overview"],
+  // Debounce search
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search.trim()), 350);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  // Reset page on filter/sort/search change
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, phaseFilter, sortBy, sortDir, pageSize]);
+
+  // Pre-resolve buyer_ids matching search (company / full_name)
+  const { data: searchBuyerIds } = useQuery({
+    queryKey: ["admin-subs-search", debouncedSearch],
+    enabled: debouncedSearch.length > 0,
     queryFn: async () => {
+      const q = sanitizeForOr(debouncedSearch);
+      if (!q) return [] as string[];
       const { data, error } = await supabase
-        .from("v_buyer_subscription_overview")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(500);
+        .from("profiles")
+        .select("user_id")
+        .or(`company_name.ilike.%${q}%,full_name.ilike.%${q}%`)
+        .limit(2000);
       if (error) throw error;
-      return (data ?? []) as Overview[];
+      return (data ?? []).map((p: any) => p.user_id as string);
     },
   });
 
-  // Profiles join
-  const buyerIds = useMemo(() => Array.from(new Set((overviews ?? []).map((o) => o.buyer_id))), [overviews]);
+  // Server-side paginated overview
+  const { data: pageResult, isLoading: loadingOverview, isFetching: fetchingOverview } = useQuery({
+    queryKey: [
+      "admin-subs-overview",
+      { phaseFilter, sortBy, sortDir, page, pageSize, search: debouncedSearch, ids: searchBuyerIds?.length ?? null },
+    ],
+    enabled: !debouncedSearch || searchBuyerIds !== undefined,
+    queryFn: async () => {
+      // If user is searching but no profile matches, short-circuit
+      if (debouncedSearch && (searchBuyerIds?.length ?? 0) === 0) {
+        return { rows: [] as Overview[], count: 0 };
+      }
+      let query = supabase
+        .from("v_buyer_subscription_overview")
+        .select("*", { count: "exact" });
+
+      if (phaseFilter !== "all") query = query.eq("current_phase", phaseFilter);
+      if (debouncedSearch && searchBuyerIds && searchBuyerIds.length > 0) {
+        query = query.in("buyer_id", searchBuyerIds);
+      }
+
+      query = query.order(sortBy, { ascending: sortDir === "asc", nullsFirst: false });
+
+      const from = (page - 1) * pageSize;
+      query = query.range(from, from + pageSize - 1);
+
+      const { data, error, count } = await query;
+      if (error) throw error;
+      return { rows: (data ?? []) as Overview[], count: count ?? 0 };
+    },
+  });
+
+  const overviews = pageResult?.rows ?? [];
+  const totalCount = pageResult?.count ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+
+  // Profiles join (only for current page)
+  const buyerIds = useMemo(() => Array.from(new Set(overviews.map((o) => o.buyer_id))), [overviews]);
   const { data: profiles } = useQuery({
-    queryKey: ["admin-subs-profiles", buyerIds.length],
+    queryKey: ["admin-subs-profiles", buyerIds.sort().join(",")],
     enabled: buyerIds.length > 0,
     queryFn: async () => {
       const { data, error } = await supabase
@@ -126,6 +202,34 @@ export default function AdminAbonnementsPage() {
     (profiles ?? []).forEach((p: any) => m.set(p.user_id, p));
     return m;
   }, [profiles]);
+
+  // KPIs computed server-side via head:true counts (independent of pagination)
+  const { data: kpiCounts } = useQuery({
+    queryKey: ["admin-subs-kpis"],
+    queryFn: async () => {
+      const headCount = (phase: string | null) => {
+        let q = supabase
+          .from("v_buyer_subscription_overview")
+          .select("subscription_id", { count: "exact", head: true });
+        if (phase) q = q.eq("current_phase", phase);
+        return q;
+      };
+      const [allRes, trialRes, bonusRes, extRes, paidRes] = await Promise.all([
+        headCount(null),
+        headCount("trial"),
+        headCount("bonus_free"),
+        headCount("extension"),
+        headCount("paid"),
+      ]);
+      return {
+        total: allRes.count ?? 0,
+        trial: trialRes.count ?? 0,
+        bonus: (bonusRes.count ?? 0) + (extRes.count ?? 0),
+        paid: paidRes.count ?? 0,
+      };
+    },
+    staleTime: 30_000,
+  });
 
   // Pending extension requests
   const { data: requests, isLoading: loadingReq } = useQuery({
@@ -232,29 +336,17 @@ export default function AdminAbonnementsPage() {
     onError: (e: any) => toast.error(e?.message ?? "Échec"),
   });
 
-  // Filter overview
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return (overviews ?? []).filter((o) => {
-      if (phaseFilter !== "all" && o.current_phase !== phaseFilter) return false;
-      if (!q) return true;
-      const p = profileMap.get(o.buyer_id);
-      const hay = `${p?.full_name ?? ""} ${p?.company_name ?? ""} ${o.buyer_id}`.toLowerCase();
-      return hay.includes(q);
-    });
-  }, [overviews, search, phaseFilter, profileMap]);
-
-  // KPIs
-  const kpis = useMemo(() => {
-    const all = overviews ?? [];
-    return {
-      total: all.length,
-      trial: all.filter((o) => o.current_phase === "trial").length,
-      bonus: all.filter((o) => o.current_phase === "bonus_free" || o.current_phase === "extension").length,
-      paid: all.filter((o) => o.current_phase === "paid").length,
+  // KPIs (server-side counts + pending requests count from local list)
+  const kpis = useMemo(
+    () => ({
+      total: kpiCounts?.total ?? 0,
+      trial: kpiCounts?.trial ?? 0,
+      bonus: kpiCounts?.bonus ?? 0,
+      paid: kpiCounts?.paid ?? 0,
       pending: (requests ?? []).filter((r) => r.status === "pending" || r.status === "contacted").length,
-    };
-  }, [overviews, requests]);
+    }),
+    [kpiCounts, requests]
+  );
 
   const pendingRequests = useMemo(
     () => (requests ?? []).filter((r) => r.status === "pending" || r.status === "contacted"),
@@ -264,6 +356,31 @@ export default function AdminAbonnementsPage() {
     () => (requests ?? []).filter((r) => !["pending", "contacted"].includes(r.status)),
     [requests]
   );
+
+  const toggleSort = (key: SortKey) => {
+    if (sortBy === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    else {
+      setSortBy(key);
+      setSortDir("desc");
+    }
+  };
+
+  const SortHeader = ({ k, children, className }: { k: SortKey; children: React.ReactNode; className?: string }) => {
+    const active = sortBy === k;
+    const Icon = !active ? ArrowUpDown : sortDir === "asc" ? ArrowUp : ArrowDown;
+    return (
+      <TableHead className={className}>
+        <button
+          type="button"
+          onClick={() => toggleSort(k)}
+          className="inline-flex items-center gap-1 font-medium hover:text-foreground transition-colors"
+        >
+          {children}
+          <Icon className={`w-3 h-3 ${active ? "text-foreground" : "text-muted-foreground/60"}`} />
+        </button>
+      </TableHead>
+    );
+  };
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-6">
@@ -289,7 +406,7 @@ export default function AdminAbonnementsPage() {
 
       <Tabs defaultValue="subs" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="subs">Abonnements ({overviews?.length ?? 0})</TabsTrigger>
+          <TabsTrigger value="subs">Abonnements ({totalCount})</TabsTrigger>
           <TabsTrigger value="pending">
             Demandes en attente ({pendingRequests.length})
           </TabsTrigger>
@@ -324,6 +441,22 @@ export default function AdminAbonnementsPage() {
                       <SelectItem value="cancelled">Annulé</SelectItem>
                     </SelectContent>
                   </Select>
+                  <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortKey)}>
+                    <SelectTrigger className="w-48"><SelectValue placeholder="Trier par…" /></SelectTrigger>
+                    <SelectContent>
+                      {(Object.keys(SORT_LABELS) as SortKey[]).map((k) => (
+                        <SelectItem key={k} value={k}>Trier : {SORT_LABELS[k]}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSortDir((d) => (d === "asc" ? "desc" : "asc"))}
+                    title={sortDir === "asc" ? "Croissant" : "Décroissant"}
+                  >
+                    {sortDir === "asc" ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />}
+                  </Button>
                 </div>
               </div>
             </CardHeader>
@@ -331,76 +464,121 @@ export default function AdminAbonnementsPage() {
               {loadingOverview ? (
                 <div className="flex items-center gap-2 text-muted-foreground"><Loader2 className="w-4 h-4 animate-spin" /> Chargement…</div>
               ) : (
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Pharmacie</TableHead>
-                        <TableHead>Phase</TableHead>
-                        <TableHead>Progression volume</TableHead>
-                        <TableHead>Phase actuelle se termine</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filtered.length === 0 ? (
-                        <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Aucun abonnement</TableCell></TableRow>
-                      ) : filtered.map((o) => {
-                        const p = profileMap.get(o.buyer_id);
-                        const phase = PHASE_BADGE[o.current_phase] ?? PHASE_BADGE.trial;
-                        const pct = Math.max(0, Math.min(100, o.threshold_progress_pct ?? 0));
-                        return (
-                          <TableRow key={o.subscription_id}>
-                            <TableCell>
-                              <div className="font-medium">{p?.company_name ?? p?.full_name ?? "—"}</div>
-                              <div className="text-xs text-muted-foreground">
-                                {p?.country ?? "—"} · <span className="font-mono">{o.buyer_id.slice(0, 8)}</span>
-                                {o.has_active_extension_request && (
-                                  <Badge variant="destructive" className="ml-2">Demande en cours</Badge>
-                                )}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant={phase.tone}>{phase.label}</Badge>
-                              <div className="text-xs text-muted-foreground mt-1">
-                                {o.status}
-                              </div>
-                            </TableCell>
-                            <TableCell className="min-w-[200px]">
-                              <Progress value={pct} className="h-2 mb-1" />
-                              <div className="text-xs text-muted-foreground">
-                                {fmtEUR(o.trial_volume_ht)} / {fmtEUR(o.volume_threshold_ht)} ({pct}%)
-                              </div>
-                              <div className="text-xs text-muted-foreground">
-                                Cumul : {fmtEUR(o.lifetime_volume_ht)}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="text-sm">{fmtDate(o.current_free_ends_at)}</div>
-                              <div className="text-xs text-muted-foreground">
-                                {o.free_days_remaining != null ? `${o.free_days_remaining} j restants` : "—"}
-                              </div>
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <div className="inline-flex flex-col gap-1">
-                                {o.current_phase !== "paid" && (
-                                  <Button size="sm" variant="outline" onClick={() => switchPaidMut.mutate(o.subscription_id)} disabled={switchPaidMut.isPending}>
-                                    <CreditCard className="w-3 h-3 mr-1" /> Bascule payant
-                                  </Button>
-                                )}
-                                {o.status !== "paused" && o.status !== "cancelled" && (
-                                  <Button size="sm" variant="ghost" onClick={() => pauseMut.mutate(o.subscription_id)} disabled={pauseMut.isPending}>
-                                    <Pause className="w-3 h-3 mr-1" /> Pause
-                                  </Button>
-                                )}
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                </div>
+                <>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Pharmacie</TableHead>
+                          <SortHeader k="current_phase">Phase</SortHeader>
+                          <SortHeader k="threshold_progress_pct">Progression volume</SortHeader>
+                          <SortHeader k="current_free_ends_at">Phase actuelle se termine</SortHeader>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {overviews.length === 0 ? (
+                          <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Aucun abonnement</TableCell></TableRow>
+                        ) : overviews.map((o) => {
+                          const p = profileMap.get(o.buyer_id);
+                          const phase = PHASE_BADGE[o.current_phase] ?? PHASE_BADGE.trial;
+                          const pct = Math.max(0, Math.min(100, o.threshold_progress_pct ?? 0));
+                          return (
+                            <TableRow key={o.subscription_id}>
+                              <TableCell>
+                                <div className="font-medium">{p?.company_name ?? p?.full_name ?? "—"}</div>
+                                <div className="text-xs text-muted-foreground">
+                                  {p?.country ?? "—"} · <span className="font-mono">{o.buyer_id.slice(0, 8)}</span>
+                                  {o.has_active_extension_request && (
+                                    <Badge variant="destructive" className="ml-2">Demande en cours</Badge>
+                                  )}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant={phase.tone}>{phase.label}</Badge>
+                                <div className="text-xs text-muted-foreground mt-1">
+                                  {o.status}
+                                </div>
+                              </TableCell>
+                              <TableCell className="min-w-[200px]">
+                                <Progress value={pct} className="h-2 mb-1" />
+                                <div className="text-xs text-muted-foreground">
+                                  {fmtEUR(o.trial_volume_ht)} / {fmtEUR(o.volume_threshold_ht)} ({pct}%)
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  Cumul : {fmtEUR(o.lifetime_volume_ht)}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="text-sm">{fmtDate(o.current_free_ends_at)}</div>
+                                <div className="text-xs text-muted-foreground">
+                                  {o.free_days_remaining != null ? `${o.free_days_remaining} j restants` : "—"}
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="inline-flex flex-col gap-1">
+                                  {o.current_phase !== "paid" && (
+                                    <Button size="sm" variant="outline" onClick={() => switchPaidMut.mutate(o.subscription_id)} disabled={switchPaidMut.isPending}>
+                                      <CreditCard className="w-3 h-3 mr-1" /> Bascule payant
+                                    </Button>
+                                  )}
+                                  {o.status !== "paused" && o.status !== "cancelled" && (
+                                    <Button size="sm" variant="ghost" onClick={() => pauseMut.mutate(o.subscription_id)} disabled={pauseMut.isPending}>
+                                      <Pause className="w-3 h-3 mr-1" /> Pause
+                                    </Button>
+                                  )}
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+
+                  {/* Pagination footer */}
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 mt-2 border-t">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      {fetchingOverview && <Loader2 className="w-3 h-3 animate-spin" />}
+                      <span>
+                        {totalCount === 0
+                          ? "0 résultat"
+                          : `${(page - 1) * pageSize + 1}–${Math.min(page * pageSize, totalCount)} sur ${totalCount.toLocaleString("fr-BE")}`}
+                      </span>
+                      <Select value={String(pageSize)} onValueChange={(v) => setPageSize(parseInt(v, 10))}>
+                        <SelectTrigger className="h-8 w-[110px] ml-2">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {[25, 50, 100, 200].map((n) => (
+                            <SelectItem key={n} value={String(n)}>{n} / page</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPage((p) => Math.max(1, p - 1))}
+                        disabled={page <= 1 || fetchingOverview}
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                      </Button>
+                      <span className="text-sm px-2 tabular-nums">
+                        Page {page} / {totalPages}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                        disabled={page >= totalPages || fetchingOverview}
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </>
               )}
             </CardContent>
           </Card>

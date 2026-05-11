@@ -420,6 +420,7 @@ const App = () => (
               <Route path="rfq-routing-test" element={<LP><AdminRfqRoutingTestPage /></LP>} />
               <Route path="rfq-routing-audit" element={<LP><AdminRfqRoutingAuditPage /></LP>} />
               <Route path="vendor-market-intel" element={<LP><AdminVendorMarketIntelPage /></LP>} />
+              <Route path="abonnements" element={<LP><AdminAbonnements /></LP>} />
               <Route path="announcement-bar" element={<LP><AdminAnnouncementBar /></LP>} />
               <Route path="modules" element={<LP><AdminFeatureFlags /></LP>} />
               <Route path="i18n-pilot" element={<LP><AdminI18nPilot /></LP>} />

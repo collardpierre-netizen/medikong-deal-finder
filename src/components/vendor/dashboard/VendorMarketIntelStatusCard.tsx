@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { BarChart3, Sparkles, CheckCircle2, AlertTriangle, Lock, ArrowRight } from "lucide-react";
+import { BarChart3, Sparkles, CheckCircle2, AlertTriangle, Lock, ArrowRight, type LucideIcon } from "lucide-react";
 import { useVendorMarketIntelEntitlement } from "@/hooks/useVendorMarketIntelEntitlement";
 import { VCard } from "@/components/vendor/ui/VCard";
 import { formatUpdatedAt } from "@/lib/format-date";

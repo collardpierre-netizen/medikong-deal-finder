@@ -5,7 +5,8 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Copy, ExternalLink, Loader2, RefreshCw } from "lucide-react";
+import { Copy, ExternalLink, Loader2, RefreshCw, Sparkles } from "lucide-react";
+import { formatUpdatedAt } from "@/lib/format-date";
 
 type StripeStatus = "none" | "pending" | "active";
 
@@ -44,9 +45,18 @@ const StatusBadge = ({ status }: { status: StripeStatus }) => {
   );
 };
 
+type VmiStatus = "none" | "trial" | "active" | "expired" | "cancelled";
+interface VmiRow {
+  vendor_id: string;
+  status: VmiStatus;
+  trial_ends_at: string | null;
+  trial_days_remaining: number | null;
+}
+
 const AdminVendors = () => {
   const { isAdmin, loading: authLoading } = useAdminAuth();
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [vmiBusyId, setVmiBusyId] = useState<string | null>(null);
 
   const { data: vendors = [], isLoading, refetch } = useQuery({
     queryKey: ["admin-vendors-stripe"],
@@ -62,6 +72,39 @@ const AdminVendors = () => {
     },
     enabled: isAdmin,
   });
+
+  const { data: vmiByVendor = {}, refetch: refetchVmi } = useQuery({
+    queryKey: ["admin-vendors-vmi"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("vendor_market_intel_status_v" as any)
+        .select("vendor_id, status, trial_ends_at, trial_days_remaining");
+      if (error) throw error;
+      const map: Record<string, VmiRow> = {};
+      ((data as unknown as VmiRow[]) ?? []).forEach((r) => { map[r.vendor_id] = r; });
+      return map;
+    },
+    enabled: isAdmin,
+  });
+
+  const startTrial = async (vendor_id: string, vendor_name: string | null) => {
+    if (!confirm(`Démarrer l'essai 180 jours pour ${vendor_name ?? vendor_id} ?`)) return;
+    setVmiBusyId(vendor_id);
+    try {
+      const { error } = await supabase.rpc("start_vendor_market_intel_trial" as any, {
+        _vendor_id: vendor_id,
+        _trial_days: 180,
+      });
+      if (error) throw error;
+      toast.success("Essai 180 j activé");
+      await refetchVmi();
+    } catch (e: any) {
+      toast.error("Erreur", { description: e?.message ?? String(e) });
+    } finally {
+      setVmiBusyId(null);
+    }
+  };
+
 
   if (authLoading) return <div className="p-8 text-sm text-muted-foreground">Chargement…</div>;
   if (!isAdmin) return <Navigate to="/admin/login" replace />;
@@ -136,20 +179,21 @@ const AdminVendors = () => {
               <TableHead>Type</TableHead>
               <TableHead>Commission</TableHead>
               <TableHead>Stripe</TableHead>
+              <TableHead>Veille marché</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading && (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                   Chargement…
                 </TableCell>
               </TableRow>
             )}
             {!isLoading && vendors.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                   Aucun vendor.
                 </TableCell>
               </TableRow>
@@ -166,6 +210,33 @@ const AdminVendors = () => {
                     {v.commission_rate != null ? `${(v.commission_rate * 100).toFixed(1)}%` : "—"}
                   </TableCell>
                   <TableCell><StatusBadge status={st} /></TableCell>
+                  <TableCell>
+                    {(() => {
+                      const vmi = vmiByVendor[v.id];
+                      const status = vmi?.status ?? "none";
+                      const vmiBusy = vmiBusyId === v.id;
+                      if (status === "trial") {
+                        return (
+                          <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <Sparkles size={11} /> Essai · fin {vmi?.trial_ends_at ? formatUpdatedAt(vmi.trial_ends_at) : "—"}
+                          </span>
+                        );
+                      }
+                      if (status === "active") {
+                        return <span className="text-[11px] font-semibold px-2 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200">Abonné</span>;
+                      }
+                      return (
+                        <button
+                          disabled={vmiBusy}
+                          onClick={() => startTrial(v.id, v.name)}
+                          className="inline-flex items-center gap-1.5 text-[12px] px-3 py-1.5 rounded-md bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50"
+                        >
+                          {vmiBusy ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+                          Démarrer l'essai 180 j
+                        </button>
+                      );
+                    })()}
+                  </TableCell>
                   <TableCell className="text-right">
                     <div className="inline-flex items-center gap-2">
                       {busy && <Loader2 size={14} className="animate-spin text-muted-foreground" />}

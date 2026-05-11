@@ -5,7 +5,8 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Copy, ExternalLink, Loader2, RefreshCw } from "lucide-react";
+import { Copy, ExternalLink, Loader2, RefreshCw, Sparkles } from "lucide-react";
+import { formatUpdatedAt } from "@/lib/format-date";
 
 type StripeStatus = "none" | "pending" | "active";
 

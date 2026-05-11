@@ -283,7 +283,7 @@ export default function AdminAbonnementsPage() {
       if (notifyErr) console.warn("Notification email failed:", notifyErr);
     },
     onSuccess: () => {
-      toast.success("Extension accordée");
+      toast.success("Extension accordée — pharmacien notifié");
       setGrantOpen(null);
       setGrantNotes("");
       setGrantContactNotes("");

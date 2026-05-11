@@ -210,6 +210,33 @@ const AdminVendors = () => {
                     {v.commission_rate != null ? `${(v.commission_rate * 100).toFixed(1)}%` : "—"}
                   </TableCell>
                   <TableCell><StatusBadge status={st} /></TableCell>
+                  <TableCell>
+                    {(() => {
+                      const vmi = vmiByVendor[v.id];
+                      const status = vmi?.status ?? "none";
+                      const vmiBusy = vmiBusyId === v.id;
+                      if (status === "trial") {
+                        return (
+                          <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <Sparkles size={11} /> Essai · fin {vmi?.trial_ends_at ? formatUpdatedAt(vmi.trial_ends_at) : "—"}
+                          </span>
+                        );
+                      }
+                      if (status === "active") {
+                        return <span className="text-[11px] font-semibold px-2 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200">Abonné</span>;
+                      }
+                      return (
+                        <button
+                          disabled={vmiBusy}
+                          onClick={() => startTrial(v.id, v.name)}
+                          className="inline-flex items-center gap-1.5 text-[12px] px-3 py-1.5 rounded-md bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50"
+                        >
+                          {vmiBusy ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+                          Démarrer l'essai 180 j
+                        </button>
+                      );
+                    })()}
+                  </TableCell>
                   <TableCell className="text-right">
                     <div className="inline-flex items-center gap-2">
                       {busy && <Loader2 size={14} className="animate-spin text-muted-foreground" />}

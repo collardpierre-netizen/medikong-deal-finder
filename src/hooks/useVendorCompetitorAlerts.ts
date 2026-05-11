@@ -32,6 +32,7 @@ export interface VendorCompetitorAlert {
     id: string;
     company_name: string | null;
     name: string | null;
+    display_code: string | null;
   };
 }
 
@@ -48,7 +49,7 @@ export function useVendorCompetitorAlerts(vendorId: string | undefined) {
         .select(`
           *,
           product:products!inner(id, name, gtin, image_url, brand_name),
-          competitor:vendors!vendor_competitor_alerts_competitor_vendor_id_fkey(id, company_name, name)
+          competitor:vendors!vendor_competitor_alerts_competitor_vendor_id_fkey(id, company_name, name, display_code)
         `)
         .eq("vendor_id", vendorId!)
         .in("status", ["new", "seen"])

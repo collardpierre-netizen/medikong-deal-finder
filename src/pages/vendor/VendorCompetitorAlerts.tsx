@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { sanitizeVendorLabel } from "@/lib/vendor-display";
 import { useCurrentVendor } from "@/hooks/useCurrentVendor";
 import {
   useVendorCompetitorAlerts,
@@ -213,7 +214,7 @@ export default function VendorCompetitorAlerts() {
                           {Number(a.competitor_price).toFixed(2)} €
                         </p>
                         <p className="text-[11px] text-[#8B95A5] truncate max-w-[120px] ml-auto">
-                          {a.competitor?.company_name || a.competitor?.name || "Concurrent MK"}
+                          {sanitizeVendorLabel(a.competitor?.company_name || a.competitor?.name, a.competitor?.display_code) || "Concurrent MK"}
                         </p>
                       </td>
                       <td className="px-4 py-3 text-right">

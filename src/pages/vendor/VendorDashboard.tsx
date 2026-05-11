@@ -6,6 +6,7 @@ import { Database } from "lucide-react";
 import VendorKycStepper from "@/components/vendor/VendorKycStepper";
 import NoShippingDashboard from "@/components/vendor/dashboard/NoShippingDashboard";
 import SendcloudDashboard from "@/components/vendor/dashboard/SendcloudDashboard";
+import VendorMarketIntelStatusCard from "@/components/vendor/dashboard/VendorMarketIntelStatusCard";
 
 const eurFormatter = new Intl.NumberFormat("fr-BE", {
   style: "currency",
@@ -42,6 +43,8 @@ export default function VendorDashboard() {
       {/* KPI Row — only show when approved */}
       {isApproved && (
         <>
+          <VendorMarketIntelStatusCard />
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <VStat
               label="CA du mois"

@@ -252,10 +252,22 @@ export default function AdminAbonnementsPage() {
   const grantMut = useMutation({
     mutationFn: async () => {
       if (!grantOpen) return;
+      // Persist contact notes (best-effort) before granting so trace stays even if RPC ignores them
+      const trimmedContact = grantContactNotes.trim();
+      if (trimmedContact) {
+        const existing = grantOpen.contact_notes ? `${grantOpen.contact_notes}\n` : "";
+        await supabase
+          .from("subscription_extension_requests")
+          .update({
+            contact_notes: `${existing}[${new Date().toISOString().slice(0, 10)}] ${trimmedContact}`.slice(0, 4000),
+            last_contact_at: new Date().toISOString(),
+          })
+          .eq("id", grantOpen.id);
+      }
       const { error } = await supabase.rpc("grant_subscription_extension", {
         _req_id: grantOpen.id,
         _months: grantMonths,
-        _notes: grantNotes || null,
+        _notes: grantNotes.trim() || null,
       });
       if (error) throw error;
     },
@@ -263,6 +275,7 @@ export default function AdminAbonnementsPage() {
       toast.success("Extension accordée");
       setGrantOpen(null);
       setGrantNotes("");
+      setGrantContactNotes("");
       qc.invalidateQueries({ queryKey: ["admin-extension-requests"] });
       qc.invalidateQueries({ queryKey: ["admin-subs-overview"] });
     },
@@ -273,11 +286,19 @@ export default function AdminAbonnementsPage() {
     mutationFn: async () => {
       if (!rejectOpen) return;
       const { data: u } = await supabase.auth.getUser();
+      const reason = rejectReason.trim();
+      const trimmedContact = rejectContactNotes.trim();
+      const existingNotes = rejectOpen.contact_notes ? `${rejectOpen.contact_notes}\n` : "";
+      const newContactNotes = trimmedContact
+        ? `${existingNotes}[${new Date().toISOString().slice(0, 10)}] ${trimmedContact}`.slice(0, 4000)
+        : rejectOpen.contact_notes ?? null;
       const { error } = await supabase
         .from("subscription_extension_requests")
         .update({
           status: "rejected",
-          rejection_reason: rejectReason || null,
+          rejection_reason: reason || null,
+          contact_notes: newContactNotes,
+          last_contact_at: trimmedContact ? new Date().toISOString() : rejectOpen.last_contact_at,
           resolved_at: new Date().toISOString(),
           resolved_by_user_id: u?.user?.id ?? null,
         })
@@ -288,6 +309,8 @@ export default function AdminAbonnementsPage() {
       toast.success("Demande refusée");
       setRejectOpen(null);
       setRejectReason("");
+      setRejectReasonPreset("volume_insuffisant");
+      setRejectContactNotes("");
       qc.invalidateQueries({ queryKey: ["admin-extension-requests"] });
     },
     onError: (e: any) => toast.error(e?.message ?? "Échec"),

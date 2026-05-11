@@ -12,7 +12,7 @@ export function AnnouncementBar() {
     queryFn: async () => {
       const { data } = await supabase
         .from("site_config")
-        .select("investment_banner_enabled, investment_banner_text")
+        .select("investment_banner_enabled, investment_banner_text, crowdfunding_enabled")
         .eq("id", 1)
         .maybeSingle();
       return data;
@@ -22,6 +22,8 @@ export function AnnouncementBar() {
 
   // Si désactivé en BDD → on cache le bandeau
   if (config && config.investment_banner_enabled === false) return null;
+
+  const crowdfundingActive = (config as any)?.crowdfunding_enabled !== false;
 
   const customText = config?.investment_banner_text?.trim();
   const messages = customText
@@ -38,23 +40,35 @@ export function AnnouncementBar() {
         { icon: Coins, text: t("investBanner.msg2") },
       ];
 
+  const innerContent = (
+    <>
+      {[...messages, ...messages].map((msg, i) => (
+        <span
+          key={i}
+          className="inline-flex items-center gap-2 text-xs text-white font-medium mx-12"
+        >
+          <msg.icon size={13} strokeWidth={2.5} className="text-white/70" />
+          {msg.text}
+          {crowdfundingActive && <ArrowRight size={12} className="text-white/60" />}
+        </span>
+      ))}
+    </>
+  );
+
   return (
     <div className="bg-mk-blue border-b border-white/10 overflow-hidden relative h-9">
-      <Link
-        to="/invest"
-        className="absolute inset-0 flex items-center animate-marquee whitespace-nowrap hover:opacity-80 transition-opacity"
-      >
-        {[...messages, ...messages].map((msg, i) => (
-          <span
-            key={i}
-            className="inline-flex items-center gap-2 text-xs text-white font-medium mx-12"
-          >
-            <msg.icon size={13} strokeWidth={2.5} className="text-white/70" />
-            {msg.text}
-            <ArrowRight size={12} className="text-white/60" />
-          </span>
-        ))}
-      </Link>
+      {crowdfundingActive ? (
+        <Link
+          to="/invest"
+          className="absolute inset-0 flex items-center animate-marquee whitespace-nowrap hover:opacity-80 transition-opacity"
+        >
+          {innerContent}
+        </Link>
+      ) : (
+        <div className="absolute inset-0 flex items-center animate-marquee whitespace-nowrap">
+          {innerContent}
+        </div>
+      )}
     </div>
   );
 }

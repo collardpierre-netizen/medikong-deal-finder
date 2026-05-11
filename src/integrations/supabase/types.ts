@@ -11131,6 +11131,7 @@ export type Database = {
       site_config: {
         Row: {
           country: string
+          crowdfunding_enabled: boolean
           currency: string
           default_vat_rate: number
           display_prices_incl_vat: boolean
@@ -11144,6 +11145,7 @@ export type Database = {
         }
         Insert: {
           country?: string
+          crowdfunding_enabled?: boolean
           currency?: string
           default_vat_rate?: number
           display_prices_incl_vat?: boolean
@@ -11157,6 +11159,7 @@ export type Database = {
         }
         Update: {
           country?: string
+          crowdfunding_enabled?: boolean
           currency?: string
           default_vat_rate?: number
           display_prices_incl_vat?: boolean

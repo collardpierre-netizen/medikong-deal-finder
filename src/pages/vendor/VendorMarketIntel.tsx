@@ -42,6 +42,7 @@ import { useVendorCommissionConfig } from "@/hooks/useVendorCommissionConfig";
 import { computeMargin, fmtEur } from "@/lib/vendorMargin";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
+import { sanitizeVendorLabel } from "@/lib/vendor-display";
 
 interface MedikongOffer {
   offer_id: string;

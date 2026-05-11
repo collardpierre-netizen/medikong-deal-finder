@@ -6,6 +6,7 @@ import { Database } from "lucide-react";
 import VendorKycStepper from "@/components/vendor/VendorKycStepper";
 import NoShippingDashboard from "@/components/vendor/dashboard/NoShippingDashboard";
 import SendcloudDashboard from "@/components/vendor/dashboard/SendcloudDashboard";
+import VendorMarketIntelStatusCard from "@/components/vendor/dashboard/VendorMarketIntelStatusCard";
 
 const eurFormatter = new Intl.NumberFormat("fr-BE", {
   style: "currency",

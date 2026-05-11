@@ -18,7 +18,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Loader2, Search, CheckCircle2, XCircle, CreditCard, Pause, Inbox, Users, TrendingUp, Phone } from "lucide-react";
+import { Loader2, Search, CheckCircle2, XCircle, CreditCard, Pause, Inbox, Users, TrendingUp, Phone, ChevronLeft, ChevronRight, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import { formatUpdatedAt } from "@/lib/format-date";
 
 type Overview = {

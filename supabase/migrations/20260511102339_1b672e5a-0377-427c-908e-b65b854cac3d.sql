@@ -1,0 +1,1 @@
+ALTER TABLE public.site_config ADD COLUMN IF NOT EXISTS crowdfunding_enabled BOOLEAN NOT NULL DEFAULT true;

@@ -406,7 +406,7 @@ export default function AdminAbonnementsPage() {
 
       <Tabs defaultValue="subs" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="subs">Abonnements ({overviews?.length ?? 0})</TabsTrigger>
+          <TabsTrigger value="subs">Abonnements ({totalCount})</TabsTrigger>
           <TabsTrigger value="pending">
             Demandes en attente ({pendingRequests.length})
           </TabsTrigger>

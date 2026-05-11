@@ -555,7 +555,7 @@ export default function AdminAbonnementsPage() {
   );
 }
 
-function Kpi({ icon: Icon, label, value, tone = "default" }: {
+function Kpi({ icon: Icon, label, value }: {
   icon: typeof Users; label: string; value: number;
   tone?: "default" | "secondary" | "outline" | "destructive";
 }) {
@@ -566,7 +566,6 @@ function Kpi({ icon: Icon, label, value, tone = "default" }: {
           <Icon className="w-3.5 h-3.5" /> {label}
         </div>
         <div className="text-2xl font-bold">{value}</div>
-        <Badge variant={tone} className="mt-1 text-[10px]">·</Badge>
       </CardContent>
     </Card>
   );

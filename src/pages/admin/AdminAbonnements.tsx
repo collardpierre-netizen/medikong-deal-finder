@@ -82,34 +82,110 @@ const fmtEUR = (n: number | null | undefined) =>
   new Intl.NumberFormat("fr-BE", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(Number(n ?? 0));
 const fmtDate = (iso: string | null | undefined) => (iso ? formatUpdatedAt(iso) : "—");
 
+type SortKey =
+  | "created_at"
+  | "trial_volume_ht"
+  | "lifetime_volume_ht"
+  | "threshold_progress_pct"
+  | "current_free_ends_at"
+  | "current_phase";
+
+const SORT_LABELS: Record<SortKey, string> = {
+  created_at: "Date de création",
+  trial_volume_ht: "Volume essai",
+  lifetime_volume_ht: "Volume cumulé",
+  threshold_progress_pct: "Progression seuil",
+  current_free_ends_at: "Fin de phase",
+  current_phase: "Phase",
+};
+
+// Sanitize for PostgREST ilike/or() — strip commas, parens, % and quotes
+const sanitizeForOr = (s: string) => s.replace(/[(),"%]/g, " ").trim();
+
 export default function AdminAbonnementsPage() {
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [phaseFilter, setPhaseFilter] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<SortKey>("created_at");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+
   const [grantOpen, setGrantOpen] = useState<ExtRequest | null>(null);
   const [grantMonths, setGrantMonths] = useState(3);
   const [grantNotes, setGrantNotes] = useState("");
   const [rejectOpen, setRejectOpen] = useState<ExtRequest | null>(null);
   const [rejectReason, setRejectReason] = useState("");
 
-  // Overview list
-  const { data: overviews, isLoading: loadingOverview } = useQuery({
-    queryKey: ["admin-subs-overview"],
+  // Debounce search
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search.trim()), 350);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  // Reset page on filter/sort/search change
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, phaseFilter, sortBy, sortDir, pageSize]);
+
+  // Pre-resolve buyer_ids matching search (company / full_name)
+  const { data: searchBuyerIds } = useQuery({
+    queryKey: ["admin-subs-search", debouncedSearch],
+    enabled: debouncedSearch.length > 0,
     queryFn: async () => {
+      const q = sanitizeForOr(debouncedSearch);
+      if (!q) return [] as string[];
       const { data, error } = await supabase
-        .from("v_buyer_subscription_overview")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(500);
+        .from("profiles")
+        .select("user_id")
+        .or(`company_name.ilike.%${q}%,full_name.ilike.%${q}%`)
+        .limit(2000);
       if (error) throw error;
-      return (data ?? []) as Overview[];
+      return (data ?? []).map((p: any) => p.user_id as string);
     },
   });
 
-  // Profiles join
-  const buyerIds = useMemo(() => Array.from(new Set((overviews ?? []).map((o) => o.buyer_id))), [overviews]);
+  // Server-side paginated overview
+  const { data: pageResult, isLoading: loadingOverview, isFetching: fetchingOverview } = useQuery({
+    queryKey: [
+      "admin-subs-overview",
+      { phaseFilter, sortBy, sortDir, page, pageSize, search: debouncedSearch, ids: searchBuyerIds?.length ?? null },
+    ],
+    enabled: !debouncedSearch || searchBuyerIds !== undefined,
+    queryFn: async () => {
+      // If user is searching but no profile matches, short-circuit
+      if (debouncedSearch && (searchBuyerIds?.length ?? 0) === 0) {
+        return { rows: [] as Overview[], count: 0 };
+      }
+      let query = supabase
+        .from("v_buyer_subscription_overview")
+        .select("*", { count: "exact" });
+
+      if (phaseFilter !== "all") query = query.eq("current_phase", phaseFilter);
+      if (debouncedSearch && searchBuyerIds && searchBuyerIds.length > 0) {
+        query = query.in("buyer_id", searchBuyerIds);
+      }
+
+      query = query.order(sortBy, { ascending: sortDir === "asc", nullsFirst: false });
+
+      const from = (page - 1) * pageSize;
+      query = query.range(from, from + pageSize - 1);
+
+      const { data, error, count } = await query;
+      if (error) throw error;
+      return { rows: (data ?? []) as Overview[], count: count ?? 0 };
+    },
+  });
+
+  const overviews = pageResult?.rows ?? [];
+  const totalCount = pageResult?.count ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+
+  // Profiles join (only for current page)
+  const buyerIds = useMemo(() => Array.from(new Set(overviews.map((o) => o.buyer_id))), [overviews]);
   const { data: profiles } = useQuery({
-    queryKey: ["admin-subs-profiles", buyerIds.length],
+    queryKey: ["admin-subs-profiles", buyerIds.sort().join(",")],
     enabled: buyerIds.length > 0,
     queryFn: async () => {
       const { data, error } = await supabase
@@ -126,6 +202,34 @@ export default function AdminAbonnementsPage() {
     (profiles ?? []).forEach((p: any) => m.set(p.user_id, p));
     return m;
   }, [profiles]);
+
+  // KPIs computed server-side via head:true counts (independent of pagination)
+  const { data: kpiCounts } = useQuery({
+    queryKey: ["admin-subs-kpis"],
+    queryFn: async () => {
+      const headCount = (phase: string | null) => {
+        let q = supabase
+          .from("v_buyer_subscription_overview")
+          .select("subscription_id", { count: "exact", head: true });
+        if (phase) q = q.eq("current_phase", phase);
+        return q;
+      };
+      const [allRes, trialRes, bonusRes, extRes, paidRes] = await Promise.all([
+        headCount(null),
+        headCount("trial"),
+        headCount("bonus_free"),
+        headCount("extension"),
+        headCount("paid"),
+      ]);
+      return {
+        total: allRes.count ?? 0,
+        trial: trialRes.count ?? 0,
+        bonus: (bonusRes.count ?? 0) + (extRes.count ?? 0),
+        paid: paidRes.count ?? 0,
+      };
+    },
+    staleTime: 30_000,
+  });
 
   // Pending extension requests
   const { data: requests, isLoading: loadingReq } = useQuery({

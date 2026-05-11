@@ -925,6 +925,104 @@ export type Database = {
         }
         Relationships: []
       }
+      buyer_subscriptions: {
+        Row: {
+          auto_switch_to_paid: boolean | null
+          bonus_eligible: boolean | null
+          bonus_ends_at: string | null
+          bonus_started_at: string | null
+          buyer_id: string
+          created_at: string | null
+          extension_ends_at: string | null
+          extension_granted_at: string | null
+          extension_granted_by: string | null
+          extension_started_at: string | null
+          id: string
+          lifetime_volume_ht: number | null
+          notes: string | null
+          paid_canceled_at: string | null
+          paid_current_period_end: string | null
+          paid_current_period_start: string | null
+          paid_monthly_price_ht: number | null
+          paid_next_invoice_at: string | null
+          paid_started_at: string | null
+          paid_vat_rate: number | null
+          plan_id: string
+          status: string
+          trial_ends_at: string
+          trial_started_at: string
+          trial_volume_ht: number | null
+          updated_at: string | null
+          volume_threshold_ht: number | null
+        }
+        Insert: {
+          auto_switch_to_paid?: boolean | null
+          bonus_eligible?: boolean | null
+          bonus_ends_at?: string | null
+          bonus_started_at?: string | null
+          buyer_id: string
+          created_at?: string | null
+          extension_ends_at?: string | null
+          extension_granted_at?: string | null
+          extension_granted_by?: string | null
+          extension_started_at?: string | null
+          id?: string
+          lifetime_volume_ht?: number | null
+          notes?: string | null
+          paid_canceled_at?: string | null
+          paid_current_period_end?: string | null
+          paid_current_period_start?: string | null
+          paid_monthly_price_ht?: number | null
+          paid_next_invoice_at?: string | null
+          paid_started_at?: string | null
+          paid_vat_rate?: number | null
+          plan_id: string
+          status?: string
+          trial_ends_at: string
+          trial_started_at?: string
+          trial_volume_ht?: number | null
+          updated_at?: string | null
+          volume_threshold_ht?: number | null
+        }
+        Update: {
+          auto_switch_to_paid?: boolean | null
+          bonus_eligible?: boolean | null
+          bonus_ends_at?: string | null
+          bonus_started_at?: string | null
+          buyer_id?: string
+          created_at?: string | null
+          extension_ends_at?: string | null
+          extension_granted_at?: string | null
+          extension_granted_by?: string | null
+          extension_started_at?: string | null
+          id?: string
+          lifetime_volume_ht?: number | null
+          notes?: string | null
+          paid_canceled_at?: string | null
+          paid_current_period_end?: string | null
+          paid_current_period_start?: string | null
+          paid_monthly_price_ht?: number | null
+          paid_next_invoice_at?: string | null
+          paid_started_at?: string | null
+          paid_vat_rate?: number | null
+          plan_id?: string
+          status?: string
+          trial_ends_at?: string
+          trial_started_at?: string
+          trial_volume_ht?: number | null
+          updated_at?: string | null
+          volume_threshold_ht?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "buyer_subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "pricing_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cart_items: {
         Row: {
           created_at: string
@@ -6593,6 +6691,60 @@ export type Database = {
         }
         Relationships: []
       }
+      pricing_plans: {
+        Row: {
+          bonus_months: number
+          created_at: string | null
+          description: string | null
+          effective_from: string | null
+          effective_to: string | null
+          extension_months: number
+          id: string
+          is_active: boolean | null
+          label: string
+          monthly_price_ht: number
+          trial_months: number
+          updated_at: string | null
+          vat_rate: number
+          volume_currency: string
+          volume_threshold_ht: number
+        }
+        Insert: {
+          bonus_months?: number
+          created_at?: string | null
+          description?: string | null
+          effective_from?: string | null
+          effective_to?: string | null
+          extension_months?: number
+          id: string
+          is_active?: boolean | null
+          label: string
+          monthly_price_ht?: number
+          trial_months?: number
+          updated_at?: string | null
+          vat_rate?: number
+          volume_currency?: string
+          volume_threshold_ht?: number
+        }
+        Update: {
+          bonus_months?: number
+          created_at?: string | null
+          description?: string | null
+          effective_from?: string | null
+          effective_to?: string | null
+          extension_months?: number
+          id?: string
+          is_active?: boolean | null
+          label?: string
+          monthly_price_ht?: number
+          trial_months?: number
+          updated_at?: string | null
+          vat_rate?: number
+          volume_currency?: string
+          volume_threshold_ht?: number
+        }
+        Relationships: []
+      }
       product_alerts: {
         Row: {
           created_at: string | null
@@ -11450,6 +11602,129 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "vendors_public"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscription_events: {
+        Row: {
+          buyer_id: string
+          created_at: string | null
+          event_type: string
+          id: string
+          occurred_at: string | null
+          payload: Json | null
+          performed_by_user_id: string | null
+          subscription_id: string
+        }
+        Insert: {
+          buyer_id: string
+          created_at?: string | null
+          event_type: string
+          id?: string
+          occurred_at?: string | null
+          payload?: Json | null
+          performed_by_user_id?: string | null
+          subscription_id: string
+        }
+        Update: {
+          buyer_id?: string
+          created_at?: string | null
+          event_type?: string
+          id?: string
+          occurred_at?: string | null
+          payload?: Json | null
+          performed_by_user_id?: string | null
+          subscription_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_events_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "buyer_subscriptions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscription_events_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "v_buyer_subscription_overview"
+            referencedColumns: ["subscription_id"]
+          },
+        ]
+      }
+      subscription_extension_requests: {
+        Row: {
+          assigned_to_user_id: string | null
+          buyer_id: string
+          callback_window: string | null
+          contact_attempt_count: number | null
+          contact_notes: string | null
+          context_snapshot: Json | null
+          created_at: string | null
+          granted_months: number | null
+          id: string
+          last_contact_at: string | null
+          reason: string | null
+          rejection_reason: string | null
+          resolved_at: string | null
+          resolved_by_user_id: string | null
+          status: string
+          subscription_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          assigned_to_user_id?: string | null
+          buyer_id: string
+          callback_window?: string | null
+          contact_attempt_count?: number | null
+          contact_notes?: string | null
+          context_snapshot?: Json | null
+          created_at?: string | null
+          granted_months?: number | null
+          id?: string
+          last_contact_at?: string | null
+          reason?: string | null
+          rejection_reason?: string | null
+          resolved_at?: string | null
+          resolved_by_user_id?: string | null
+          status?: string
+          subscription_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          assigned_to_user_id?: string | null
+          buyer_id?: string
+          callback_window?: string | null
+          contact_attempt_count?: number | null
+          contact_notes?: string | null
+          context_snapshot?: Json | null
+          created_at?: string | null
+          granted_months?: number | null
+          id?: string
+          last_contact_at?: string | null
+          reason?: string | null
+          rejection_reason?: string | null
+          resolved_at?: string | null
+          resolved_by_user_id?: string | null
+          status?: string
+          subscription_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_extension_requests_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "buyer_subscriptions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscription_extension_requests_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "v_buyer_subscription_overview"
+            referencedColumns: ["subscription_id"]
           },
         ]
       }
@@ -16713,6 +16988,41 @@ export type Database = {
           },
         ]
       }
+      v_buyer_subscription_overview: {
+        Row: {
+          bonus_ends_at: string | null
+          bonus_started_at: string | null
+          buyer_id: string | null
+          created_at: string | null
+          current_free_ends_at: string | null
+          current_phase: string | null
+          extension_ends_at: string | null
+          extension_started_at: string | null
+          free_days_remaining: number | null
+          has_active_extension_request: boolean | null
+          lifetime_volume_ht: number | null
+          paid_started_at: string | null
+          plan_id: string | null
+          plan_label: string | null
+          status: string | null
+          subscription_id: string | null
+          threshold_progress_pct: number | null
+          trial_ends_at: string | null
+          trial_started_at: string | null
+          trial_volume_ht: number | null
+          updated_at: string | null
+          volume_threshold_ht: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "buyer_subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "pricing_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vendor_market_intel_status_v: {
         Row: {
           billing_method:
@@ -16913,6 +17223,7 @@ export type Database = {
     }
     Functions: {
       _cat_tokens: { Args: { _label: string }; Returns: string[] }
+      _sub_is_admin: { Args: never; Returns: boolean }
       activate_vendor_market_intel_subscription: {
         Args: {
           _billing_method: Database["public"]["Enums"]["vendor_market_intel_billing"]
@@ -17288,6 +17599,10 @@ export type Database = {
         Args: { _min_confidence?: number }
         Returns: Json
       }
+      assign_extension_request: {
+        Args: { _req_id: string }
+        Returns: undefined
+      }
       audit_backup_tables_rls: {
         Args: never
         Returns: {
@@ -17314,6 +17629,10 @@ export type Database = {
       can_vendor_set_suggested_price: {
         Args: { _product_id: string; _vendor_id: string }
         Returns: boolean
+      }
+      cancel_subscription: {
+        Args: { _reason?: string; _sub_id: string }
+        Returns: undefined
       }
       cancel_vendor_market_intel_subscription: {
         Args: { _vendor_id: string }
@@ -17377,6 +17696,7 @@ export type Database = {
         Args: { _country_code?: string }
         Returns: Json
       }
+      current_buyer_id: { Args: never; Returns: string }
       current_vendor_id: { Args: never; Returns: string }
       delete_email: {
         Args: { message_id: number; queue_name: string }
@@ -17435,6 +17755,7 @@ export type Database = {
         }
         Returns: Json
       }
+      ensure_buyer_subscription: { Args: never; Returns: string }
       evaluate_vendor_price_alerts: {
         Args: { _vendor_id: string }
         Returns: Json
@@ -17481,10 +17802,15 @@ export type Database = {
           variant_count: number
         }[]
       }
+      force_bonus_volume: {
+        Args: { _reason: string; _sub_id: string }
+        Returns: undefined
+      }
       force_bulk_deactivate: {
         Args: { _ids: string[]; _table_name: string }
         Returns: Json
       }
+      force_switch_to_paid: { Args: { _sub_id: string }; Returns: undefined }
       get_admin_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["admin_role"]
@@ -17660,6 +17986,10 @@ export type Database = {
           total_offers: number
         }[]
       }
+      grant_subscription_extension: {
+        Args: { _months?: number; _notes?: string; _req_id: string }
+        Returns: undefined
+      }
       increment_proprietary_code_observation: {
         Args: { _code: string; _supplier: string }
         Returns: undefined
@@ -17698,6 +18028,10 @@ export type Database = {
           _note?: string
           _to_category_id?: string
         }
+        Returns: undefined
+      }
+      mark_extension_contacted: {
+        Args: { _notes?: string; _req_id: string }
         Returns: undefined
       }
       match_import_lines: {
@@ -17745,6 +18079,14 @@ export type Database = {
         Returns: number
       }
       normalize_brand_name: { Args: { _name: string }; Returns: string }
+      override_volume_threshold: {
+        Args: { _new_threshold: number; _sub_id: string }
+        Returns: undefined
+      }
+      pause_subscription: {
+        Args: { _reason?: string; _sub_id: string }
+        Returns: undefined
+      }
       public_active_offers_count: {
         Args: { _country_code?: string }
         Returns: number
@@ -17761,6 +18103,10 @@ export type Database = {
       }
       recompute_brand_top20: { Args: never; Returns: undefined }
       recompute_brand_top20_with_log: { Args: never; Returns: string }
+      recompute_buyer_volume: {
+        Args: { _buyer_id: string }
+        Returns: undefined
+      }
       recompute_rfq_response_ranks: {
         Args: { _rfq_id: string }
         Returns: undefined
@@ -17784,6 +18130,14 @@ export type Database = {
         Returns: Json
       }
       refresh_public_marketplace_metrics: { Args: never; Returns: undefined }
+      reject_extension_request: {
+        Args: { _reason: string; _req_id: string }
+        Returns: undefined
+      }
+      request_subscription_extension: {
+        Args: { _callback_window?: string; _reason?: string }
+        Returns: string
+      }
       resolve_buyer_profile_for_user: {
         Args: { _user_id: string }
         Returns: string
@@ -18143,6 +18497,7 @@ export type Database = {
         }
         Returns: string
       }
+      subscription_run_daily_tick: { Args: never; Returns: Json }
       unaccent: { Args: { "": string }; Returns: string }
       update_brand_product_counts: { Args: never; Returns: undefined }
       update_manufacturer_product_counts: { Args: never; Returns: undefined }

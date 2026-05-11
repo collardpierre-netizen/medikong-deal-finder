@@ -120,6 +120,7 @@ const AdminLoginPage = lazyWithRetry(() => import("./pages/admin/AdminLoginPage"
 const AdminLayout = lazyWithRetry(() => import("./components/admin/AdminLayout"), "AdminLayout");
 const AdminDashboard = lazyWithRetry(() => import("./pages/admin/AdminDashboard"), "AdminDashboard");
 const AdminVendeurs = lazyWithRetry(() => import("./pages/admin/AdminVendeurs"), "AdminVendeurs");
+const AdminAbonnements = lazyWithRetry(() => import("./pages/admin/AdminAbonnements"), "AdminAbonnements");
 const AdminVendors = lazyWithRetry(() => import("./pages/admin/AdminVendors"), "AdminVendors");
 const AdminVendeurDetail = lazyWithRetry(() => import("./pages/admin/AdminVendeurDetail"), "AdminVendeurDetail");
 const AdminOnboarding = lazyWithRetry(() => import("./pages/admin/AdminOnboarding"), "AdminOnboarding");
@@ -420,6 +421,7 @@ const App = () => (
               <Route path="rfq-routing-test" element={<LP><AdminRfqRoutingTestPage /></LP>} />
               <Route path="rfq-routing-audit" element={<LP><AdminRfqRoutingAuditPage /></LP>} />
               <Route path="vendor-market-intel" element={<LP><AdminVendorMarketIntelPage /></LP>} />
+              <Route path="abonnements" element={<LP><AdminAbonnements /></LP>} />
               <Route path="announcement-bar" element={<LP><AdminAnnouncementBar /></LP>} />
               <Route path="modules" element={<LP><AdminFeatureFlags /></LP>} />
               <Route path="i18n-pilot" element={<LP><AdminI18nPilot /></LP>} />

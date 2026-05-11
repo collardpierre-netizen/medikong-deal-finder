@@ -641,10 +641,10 @@ export default function AdminAbonnementsPage() {
                             <Button size="sm" variant="outline" onClick={() => markContactedMut.mutate(r)} disabled={markContactedMut.isPending}>
                               <Phone className="w-3 h-3 mr-1" /> Contact effectué
                             </Button>
-                            <Button size="sm" onClick={() => { setGrantOpen(r); setGrantMonths(3); setGrantNotes(""); }}>
+                            <Button size="sm" onClick={() => { setGrantOpen(r); setGrantMonths(3); setGrantNotes(""); setGrantContactNotes(""); }}>
                               <CheckCircle2 className="w-3 h-3 mr-1" /> Accorder
                             </Button>
-                            <Button size="sm" variant="destructive" onClick={() => { setRejectOpen(r); setRejectReason(""); }}>
+                            <Button size="sm" variant="destructive" onClick={() => { setRejectOpen(r); setRejectReason(""); setRejectReasonPreset("volume_insuffisant"); setRejectContactNotes(""); }}>
                               <XCircle className="w-3 h-3 mr-1" /> Refuser
                             </Button>
                           </div>

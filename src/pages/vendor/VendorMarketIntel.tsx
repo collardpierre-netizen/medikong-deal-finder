@@ -1244,7 +1244,7 @@ export default function VendorMarketIntel() {
                                       className="inline -mt-0.5 mr-1 text-emerald-600"
                                     />
                                   )}
-                                  {o.vendor_name}
+                                  {sanitizeVendorName(o.vendor_id, o.vendor_name)}
                                   {o.is_mine && (
                                     <span className="ml-1 text-[10px] text-primary font-semibold">
                                       (vous{isLive ? " · live" : ""})

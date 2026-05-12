@@ -652,6 +652,9 @@ export default function HomePage() {
       {/* ═══ TESTIMONIALS — masqué, à réactiver via CMS ═══ */}
       {/* <HomeTestimonials /> */}
 
+      {/* ═══ TRUST LOGOS (CMS placement = "invest", partagé avec /invest) ═══ */}
+      <TrustLogosBanner placement="invest" />
+
       {/* ═══ FINAL CTA BANNER ═══ */}
       <section className="py-16 md:py-24">
         <div className="mk-container max-w-3xl text-center">

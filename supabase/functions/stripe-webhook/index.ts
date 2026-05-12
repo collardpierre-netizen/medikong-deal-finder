@@ -121,9 +121,7 @@ async function sendBuyerOrderConfirmation(orderId: string) {
       sepa: "Virement SEPA",
       invoice: "Facture",
     };
-    const customerName = customer?.first_name
-      ? `${customer.first_name} ${customer.last_name || ""}`.trim()
-      : customer?.company_name;
+    const customerName = customer?.company_name;
 
     await supabase.functions.invoke("send-transactional-email", {
       body: {

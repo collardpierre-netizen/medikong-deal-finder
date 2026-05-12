@@ -91,7 +91,7 @@ async function sendBuyerOrderConfirmation(orderId: string) {
   try {
     const { data: order, error } = await supabase
       .from("orders")
-      .select("id, order_number, total_incl_vat, payment_method, shipping_address, customer:customers!orders_customer_id_fkey(email, company_name, first_name, last_name)")
+      .select("id, order_number, total_incl_vat, payment_method, shipping_address, customer:customers!orders_customer_id_fkey(email, company_name)")
       .eq("id", orderId)
       .maybeSingle();
     if (error || !order) {

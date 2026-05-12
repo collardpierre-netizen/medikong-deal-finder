@@ -87,6 +87,63 @@ Deno.serve(async (req) => {
   });
 });
 
+async function sendBuyerOrderConfirmation(orderId: string) {
+  try {
+    const { data: order, error } = await supabase
+      .from("orders")
+      .select("id, order_number, total_incl_vat, payment_method, shipping_address, customer:customers!orders_customer_id_fkey(email, company_name)")
+      .eq("id", orderId)
+      .maybeSingle();
+    if (error || !order) {
+      console.error("[stripe-webhook] order-confirmation: order fetch failed", error);
+      return;
+    }
+    const customer: any = order.customer;
+    const recipientEmail = customer?.email;
+    if (!recipientEmail) {
+      console.warn(`[stripe-webhook] order-confirmation: no email for order ${orderId}`);
+      return;
+    }
+    const { count: itemCount } = await supabase
+      .from("order_items")
+      .select("id", { count: "exact", head: true })
+      .eq("order_id", orderId);
+
+    const formatEUR = (n: number) =>
+      new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(n);
+    const addr = order.shipping_address as any;
+    const shippingAddress = addr && typeof addr === "object"
+      ? [addr.line1 || addr.address_line1, addr.line2 || addr.address_line2, [addr.postal_code, addr.city].filter(Boolean).join(" "), addr.country || addr.country_code]
+          .filter(Boolean).join(", ")
+      : undefined;
+    const paymentMethodLabel: Record<string, string> = {
+      card: "Carte bancaire",
+      sepa: "Virement SEPA",
+      invoice: "Facture",
+    };
+    const customerName = customer?.company_name;
+
+    await supabase.functions.invoke("send-transactional-email", {
+      body: {
+        templateName: "order-confirmation",
+        recipientEmail,
+        idempotencyKey: `order-confirmation-${orderId}`,
+        templateData: {
+          orderNumber: order.order_number,
+          customerName,
+          total: formatEUR(Number(order.total_incl_vat || 0)),
+          itemCount: itemCount ?? 0,
+          shippingAddress,
+          paymentMethod: paymentMethodLabel[order.payment_method] || order.payment_method,
+        },
+      },
+    });
+    console.log(`[stripe-webhook] order-confirmation sent for ${orderId}`);
+  } catch (e) {
+    console.error("[stripe-webhook] order-confirmation failed", e);
+  }
+}
+
 async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) {
   const orderId = session.metadata?.order_id;
   if (!orderId) {
@@ -113,6 +170,7 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
     } catch (e) {
       console.error("[stripe-webhook] notify-vendors-new-order failed", e);
     }
+    await sendBuyerOrderConfirmation(orderId);
   }
 
   // Parse vendor_breakdown
@@ -325,6 +383,7 @@ async function handlePaymentSucceeded(pi: Stripe.PaymentIntent) {
   } catch (e) {
     console.error("[stripe-webhook] notify-vendors-new-order failed", e);
   }
+  await sendBuyerOrderConfirmation(orderId);
 }
 
 async function handlePaymentFailed(pi: Stripe.PaymentIntent) {

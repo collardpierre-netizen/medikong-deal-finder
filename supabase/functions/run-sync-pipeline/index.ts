@@ -173,7 +173,7 @@ async function waitForSyncLogCompletion(
   logId: string,
   timeoutMs = 25 * 60 * 1000,
   pollMs = 5000,
-  stallTimeoutMs = 4 * 60 * 1000, // mark as stuck if no progress for 4 minutes
+  stallTimeoutMs = 10 * 60 * 1000, // mark as stuck if no progress for 10 minutes (CSV 115MB / 366k lignes peut bootstrap lentement)
 ) {
   const deadline = Date.now() + timeoutMs;
   let lastProgress = -1;
@@ -201,6 +201,11 @@ async function waitForSyncLogCompletion(
       lastProgress = cur;
       lastProgressAt = Date.now();
     } else if (Date.now() - lastProgressAt > stallTimeoutMs) {
+      const elapsed = Math.round((Date.now() - lastProgressAt) / 1000);
+      console.log(
+        `[watchdog] sync_log ${logId} progress=${log.progress_current}/${log.progress_total} elapsed=${elapsed}s, ` +
+        `bail-out en cours si pas de progression dans les prochaines secondes`,
+      );
       // Mark log as failed and give up — background worker is dead
       await supabase
         .from("sync_logs")

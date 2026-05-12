@@ -42,4 +42,5 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'vendor-new-order': vendorNewOrder,
   'subscription-extension-approved': subscriptionExtensionApproved,
   'subscription-extension-rejected': subscriptionExtensionRejected,
+  'admin-vendor-market-intel-notification': adminVendorMarketIntelNotification,
 }

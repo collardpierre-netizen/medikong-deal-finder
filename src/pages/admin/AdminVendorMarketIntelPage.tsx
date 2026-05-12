@@ -132,6 +132,8 @@ export default function AdminVendorMarketIntelPage() {
 
         <PendingRequestsSection />
 
+        <RequestsAuditLogSection />
+
         <Card className="mb-4">
           <CardHeader className="pb-3">
             <CardTitle className="text-base">Recherche</CardTitle>

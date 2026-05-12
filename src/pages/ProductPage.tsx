@@ -42,6 +42,7 @@ import { SafeBoundary } from "@/components/SafeBoundary";
 import VendorDelegateCompact from "@/components/vendor/VendorDelegateCompact";
 import { PvpEconomyBadge } from "@/components/product/PvpEconomyBadge";
 import RfqRequestButton from "@/components/product/RfqRequestButton";
+import { PriceAlertBellButton } from "@/components/product/PriceAlertBellButton";
 import { ProductDescription } from "@/components/product/ProductDescription";
 
 // Helpers de formatage harmonisés (locale fr-BE, suffixes uniques).

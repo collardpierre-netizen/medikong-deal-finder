@@ -170,15 +170,32 @@ export function VendorMarketIntelGate({ children }: { children: React.ReactNode 
               </ul>
 
               <div className="mt-6 flex flex-wrap gap-2">
-                <Button asChild>
-                  <a href="mailto:contact@medikong.pro?subject=Activation%20Veille%20March%C3%A9">
-                    {expired ? "Activer mon abonnement" : "Demander mes 180 jours d'essai"}
-                  </a>
-                </Button>
+                {expired ? (
+                  <>
+                    <Button onClick={() => setRenewOpen(true)}>
+                      <MailQuestion className="h-4 w-4 mr-2" /> Demander une prolongation
+                    </Button>
+                    <Button asChild variant="outline">
+                      <a href="mailto:contact@medikong.pro?subject=Activation%20abonnement%20Veille%20March%C3%A9">
+                        Activer mon abonnement
+                      </a>
+                    </Button>
+                  </>
+                ) : (
+                  <Button onClick={handleSelfActivate} disabled={activating}>
+                    {activating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
+                    Activer mes 180 jours d'essai
+                  </Button>
+                )}
                 <Button asChild variant="outline">
                   <Link to="/vendor/dashboard">Retour au tableau de bord</Link>
                 </Button>
               </div>
+              {!expired && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  Activation immédiate, sans engagement. Une seule activation gratuite par compte vendeur.
+                </p>
+              )}
             </div>
           </div>
         </CardContent>

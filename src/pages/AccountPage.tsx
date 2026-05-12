@@ -2,7 +2,7 @@ import { Layout } from "@/components/layout/Layout";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { getOrderStatusMeta, formatOrderDateTime } from "@/lib/order-status";
 import { ProductImage } from "@/components/shared/ProductCard";
-import { Users, MapPin, Package, AlertCircle, Heart, Zap, Download, Layers, Mail, Phone, Clock, List, Plus, Trash2, Eye, ShoppingCart, Search, TrendingDown, BarChart3, Upload, FileSpreadsheet, Recycle, BellRing, Tag, Coins } from "lucide-react";
+import { Users, MapPin, Package, AlertCircle, Heart, Zap, Download, Layers, Mail, Phone, Clock, List, Plus, Trash2, Eye, ShoppingCart, Search, TrendingDown, BarChart3, Upload, FileSpreadsheet, Recycle, BellRing, Tag, Coins, ScanLine } from "lucide-react";
 import { BuyerImportModal } from "@/components/buyer/BuyerImportModal";
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
@@ -33,6 +33,7 @@ const tabs = [
   { key: "categories", label: "Mes catégories", icon: Layers, disabled: false, href: "/compte/mes-categories" },
   { key: "portefeuille", label: "Portefeuille", icon: Zap, disabled: true },
   { key: "comparateur", label: "Comparateur", icon: FileSpreadsheet, disabled: false },
+  { key: "ocr-economies", label: "Calcul d'économies (OCR)", icon: ScanLine, disabled: false, href: "/economies" },
   { key: "catalogue", label: "Catalogue", icon: Download, disabled: false },
   { key: "restock", label: "ReStock", icon: Recycle, disabled: false, href: "/restock" },
   { key: "bnpl", label: "Payer plus tard", icon: Layers, disabled: true },

@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { BarChart3, Sparkles, CreditCard, FileText, Loader2, XCircle, MailQuestion, CheckCircle2 } from "lucide-react";
+import { BarChart3, Sparkles, CreditCard, FileText, Loader2, XCircle, MailQuestion, CheckCircle2, History } from "lucide-react";
 import { formatUpdatedAt } from "@/lib/format-date";
 
 type Row = {

@@ -272,6 +272,20 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
       console.log(`[stripe-webhook] Transfer ${transfer.id} OK pour vendor ${vb.vendor_id}`);
     } catch (err: any) {
       console.error(`[stripe-webhook] Transfer FAILED pour vendor ${vb.vendor_id}:`, err);
+
+      // Re-fetch l'état actuel pour éviter écrasement destructif d'un
+      // transfer déjà completed par une invocation parallèle
+      const { data: current } = await supabase
+        .from("order_transfers")
+        .select("status, stripe_transfer_id")
+        .eq("id", transferRowId)
+        .single();
+
+      if (current?.status === "completed" || current?.stripe_transfer_id) {
+        console.warn(`[stripe-webhook] Erreur Stripe sur retry mais transfer déjà completed (tr_id=${current.stripe_transfer_id}). IGNORE l'erreur pour préserver l'état.`);
+        continue;
+      }
+
       await supabase
         .from("order_transfers")
         .update({

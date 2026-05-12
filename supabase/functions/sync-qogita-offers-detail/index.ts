@@ -1022,19 +1022,26 @@ async function processSingleProduct(
                   is_active: true,
                   synced_at: new Date().toISOString(),
                 },
-                // Use qogita_offer_qid as the conflict target — it is the canonical
-                // unique identifier per (seller, variant, country) on Qogita's side
-                // and matches the offers_qogita_offer_qid_unique constraint.
-                { onConflict: "qogita_offer_qid", ignoreDuplicates: false },
+                // Conflict cible : (product_id, vendor_id, country_code) — contrainte
+                // offers_product_vendor_country_unique. ignoreDuplicates=false ⇒ UPDATE
+                // des champs prix/stock/availability sur conflit (idempotent).
+                { onConflict: "product_id,vendor_id,country_code", ignoreDuplicates: false },
               ).select("id").maybeSingle();
 
               if (mvErr) {
-                console.error(formatDbError("qogita.offers_detail.multi_vendor.upsert", mvErr, {
+                const code = (mvErr as any)?.code as string | undefined;
+                const isDbError = typeof code === "string" && code.startsWith("23");
+                const payload = formatDbError("qogita.offers_detail.multi_vendor.upsert", mvErr, {
                   product_id: product.id, gtin: product.gtin, seller: sellerCode,
                   country, vendor_id: vendorId, offer_qid: oQid,
                   price_excl_vat: oExclVat, price_incl_vat: oInclVat, stock: oStock, mov: oMov,
                   offer_sample: sampleValue(offer, 200),
-                }));
+                });
+                if (isDbError) {
+                  console.error(payload);
+                } else {
+                  console.warn(payload);
+                }
               } else {
                 localStats.multi_vendor_offers++;
 

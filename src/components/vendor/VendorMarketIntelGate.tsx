@@ -200,6 +200,33 @@ export function VendorMarketIntelGate({ children }: { children: React.ReactNode 
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={renewOpen} onOpenChange={(o) => !o && setRenewOpen(false)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Demander une prolongation d'essai</DialogTitle>
+            <DialogDescription>
+              Votre essai gratuit a déjà été utilisé. L'équipe MediKong examine votre demande et vous répond sous 48h ouvrées.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 py-2">
+            <label className="text-sm font-medium">Message (optionnel)</label>
+            <Textarea
+              rows={4}
+              placeholder="Expliquez brièvement votre besoin (volumes, marques suivies, contexte…)"
+              value={renewMsg}
+              onChange={(e) => setRenewMsg(e.target.value)}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRenewOpen(false)}>Annuler</Button>
+            <Button onClick={handleRenewSubmit} disabled={renewSubmitting}>
+              {renewSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Envoyer la demande
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

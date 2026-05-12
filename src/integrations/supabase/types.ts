@@ -1722,6 +1722,45 @@ export type Database = {
         }
         Relationships: []
       }
+      cms_partner_logos: {
+        Row: {
+          created_at: string
+          domain: string | null
+          id: string
+          is_active: boolean
+          logo_url: string | null
+          name: string
+          placement: string
+          sort_order: number
+          updated_at: string
+          website_url: string | null
+        }
+        Insert: {
+          created_at?: string
+          domain?: string | null
+          id?: string
+          is_active?: boolean
+          logo_url?: string | null
+          name: string
+          placement?: string
+          sort_order?: number
+          updated_at?: string
+          website_url?: string | null
+        }
+        Update: {
+          created_at?: string
+          domain?: string | null
+          id?: string
+          is_active?: boolean
+          logo_url?: string | null
+          name?: string
+          placement?: string
+          sort_order?: number
+          updated_at?: string
+          website_url?: string | null
+        }
+        Relationships: []
+      }
       cnk_vat_mapping: {
         Row: {
           cnk_code: string | null

@@ -47,7 +47,7 @@ export default function VendorMarketIntelStatusCard() {
         .limit(1)
         .maybeSingle();
       if (error) throw error;
-      return rows as { id: string; created_at: string } | null;
+      return (rows as unknown as { id: string; created_at: string } | null) ?? null;
     },
   });
 

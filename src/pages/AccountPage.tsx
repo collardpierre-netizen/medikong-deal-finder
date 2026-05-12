@@ -33,6 +33,7 @@ const tabs = [
   { key: "categories", label: "Mes catégories", icon: Layers, disabled: false, href: "/compte/mes-categories" },
   { key: "portefeuille", label: "Portefeuille", icon: Zap, disabled: true },
   { key: "comparateur", label: "Comparateur", icon: FileSpreadsheet, disabled: false },
+  { key: "ocr-economies", label: "Calcul d'économies (OCR)", icon: ScanLine, disabled: false, href: "/economies" },
   { key: "catalogue", label: "Catalogue", icon: Download, disabled: false },
   { key: "restock", label: "ReStock", icon: Recycle, disabled: false, href: "/restock" },
   { key: "bnpl", label: "Payer plus tard", icon: Layers, disabled: true },

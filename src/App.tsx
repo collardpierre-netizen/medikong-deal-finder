@@ -472,6 +472,7 @@ const App = () => (
               <Route path="catalog-diagnostics" element={<LP><AdminCatalogDiagnostics /></LP>} />
               <Route path="search-debug" element={<LP><AdminSearchDebug /></LP>} />
               <Route path="offer-data-quality" element={<LP><AdminOfferDataQuality /></LP>} />
+              <Route path="savings-ocr" element={<LP><AdminSavingsOcr /></LP>} />
               <Route path="onboarding-cms" element={<LP><AdminOnboardingCMS /></LP>} />
               <Route path="commissions" element={<LP><AdminCommissions /></LP>} />
               <Route path="commission-overrides" element={<LP><AdminCommissionOverridesPage /></LP>} />

@@ -4,6 +4,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useVendorMarketIntelEntitlement, useVendorMarketIntelPlans } from "@/hooks/useVendorMarketIntelEntitlement";
+import { useCurrentVendor } from "@/hooks/useCurrentVendor";
+import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -26,18 +28,53 @@ export function VendorMarketIntelGate({ children }: { children: React.ReactNode 
   const qc = useQueryClient();
   const { data: ent, isLoading } = useVendorMarketIntelEntitlement();
   const { data: plans = [] } = useVendorMarketIntelPlans();
+  const { data: vendor } = useCurrentVendor();
+  const { user } = useAuth();
   const [activating, setActivating] = useState(false);
   const [renewOpen, setRenewOpen] = useState(false);
   const [renewMsg, setRenewMsg] = useState("");
   const [renewSubmitting, setRenewSubmitting] = useState(false);
 
+  const buildVendorMeta = () => ({
+    vendorCompanyName: (vendor as any)?.company_name || (vendor as any)?.name || null,
+    vendorContactEmail: (vendor as any)?.email || user?.email || null,
+    vendorId: (vendor as any)?.id || null,
+    occurredAtFormatted: new Date().toLocaleString("fr-BE", { dateStyle: "short", timeStyle: "short" }),
+  });
+
+  const notifyAdmin = async (payload: Record<string, any>) => {
+    try {
+      await supabase.functions.invoke("send-transactional-email", {
+        body: {
+          templateName: "admin-vendor-market-intel-notification",
+          recipientEmail: "admin@medikong.pro",
+          idempotencyKey: payload.idempotencyKey,
+          templateData: payload.templateData,
+        },
+      });
+    } catch (err) {
+      // best-effort: ne pas bloquer l'utilisateur
+      console.error("[VMI] admin notification failed", err);
+    }
+  };
+
   const handleSelfActivate = async () => {
     setActivating(true);
     try {
-      const { error } = await supabase.rpc("self_start_vendor_market_intel_trial" as any);
+      const { data, error } = await supabase.rpc("self_start_vendor_market_intel_trial" as any);
       if (error) throw error;
       toast.success("Essai gratuit activé — 180 jours offerts !");
       await qc.invalidateQueries({ queryKey: ["vmi-entitlement"] });
+      const meta = buildVendorMeta();
+      const trialEnds = (data as any)?.trial_ends_at;
+      void notifyAdmin({
+        idempotencyKey: `vmi-self-activated-${meta.vendorId || user?.id}-${trialEnds || Date.now()}`,
+        templateData: {
+          eventKind: "self_activated",
+          ...meta,
+          trialEndsAtFormatted: trialEnds ? new Date(trialEnds).toLocaleDateString("fr-BE") : null,
+        },
+      });
     } catch (e: any) {
       const msg = String(e?.message || "");
       if (msg.includes("trial_already_used")) {
@@ -54,11 +91,22 @@ export function VendorMarketIntelGate({ children }: { children: React.ReactNode 
   const handleRenewSubmit = async () => {
     setRenewSubmitting(true);
     try {
-      const { error } = await supabase.rpc("request_vendor_market_intel_trial_renewal" as any, { _message: renewMsg });
+      const { data, error } = await supabase.rpc("request_vendor_market_intel_trial_renewal" as any, { _message: renewMsg });
       if (error) throw error;
       toast.success("Demande envoyée à l'équipe MediKong — réponse sous 48h ouvrées.");
+      const meta = buildVendorMeta();
+      const requestId = (data as any)?.id;
+      const userMessage = renewMsg;
       setRenewOpen(false);
       setRenewMsg("");
+      void notifyAdmin({
+        idempotencyKey: `vmi-renewal-${requestId || `${meta.vendorId}-${Date.now()}`}`,
+        templateData: {
+          eventKind: "renewal_requested",
+          ...meta,
+          message: userMessage || null,
+        },
+      });
     } catch (e: any) {
       const msg = String(e?.message || "");
       if (msg.includes("request_already_pending")) {

@@ -24,6 +24,7 @@ import { template as vendorNewOrder } from './vendor-new-order.tsx'
 import { template as wholesaleSavingsReport } from './wholesale-savings-report.tsx'
 import { template as subscriptionExtensionApproved } from './subscription-extension-approved.tsx'
 import { template as subscriptionExtensionRejected } from './subscription-extension-rejected.tsx'
+import { template as adminVendorMarketIntelNotification } from './admin-vendor-market-intel-notification.tsx'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'rfq-vendor-invitation': rfqVendorInvitation,
@@ -41,4 +42,5 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'vendor-new-order': vendorNewOrder,
   'subscription-extension-approved': subscriptionExtensionApproved,
   'subscription-extension-rejected': subscriptionExtensionRejected,
+  'admin-vendor-market-intel-notification': adminVendorMarketIntelNotification,
 }

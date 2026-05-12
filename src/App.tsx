@@ -147,6 +147,7 @@ const AdminBrandDuplicates = lazyWithRetry(() => import("./pages/admin/AdminBran
 const AdminSourceMapping = lazyWithRetry(() => import("./pages/admin/AdminSourceMapping"), "AdminSourceMapping");
 const AdminCRM = lazyWithRetry(() => import("./pages/admin/AdminCRM"), "AdminCRM");
 const AdminCMS = lazyWithRetry(() => import("./pages/admin/AdminCMS"), "AdminCMS");
+const AdminCmsPartnerLogos = lazyWithRetry(() => import("./pages/admin/AdminCmsPartnerLogos"), "AdminCmsPartnerLogos");
 const AdminCmsHomeBrands = lazyWithRetry(() => import("./pages/admin/AdminCmsHomeBrands"), "AdminCmsHomeBrands");
 const AdminCmsHomeProducts = lazyWithRetry(() => import("./pages/admin/AdminCmsHomeProducts"), "AdminCmsHomeProducts");
 const AdminCmsHomeShowcase = lazyWithRetry(() => import("./pages/admin/AdminCmsHomeShowcase"), "AdminCmsHomeShowcase");
@@ -449,6 +450,7 @@ const App = () => (
               <Route path="cms/home/marques" element={<LP><AdminCmsHomeBrands /></LP>} />
               <Route path="cms/home/produits" element={<LP><AdminCmsHomeProducts /></LP>} />
               <Route path="cms/home/comparaison" element={<LP><AdminCmsHomeShowcase /></LP>} />
+              <Route path="cms/partenaires-invest" element={<LP><AdminCmsPartnerLogos /></LP>} />
               <Route path="categories/non-mappees" element={<LP><AdminUnmappedCategories /></LP>} />
               <Route path="categories/anomalies" element={<LP><AdminCategoryAnomalies /></LP>} />
               <Route path="categories/anomalies/:id" element={<LP><AdminCategoryAnomalyDetail /></LP>} />

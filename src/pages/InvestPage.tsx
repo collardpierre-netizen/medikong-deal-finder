@@ -436,7 +436,19 @@ export default function InvestPage() {
           <div className="flex animate-[marquee_30s_linear_infinite] gap-12 items-center">
             {[...trustLogos, ...trustLogos].map((logo, i) => (
               <a key={`${logo.name}-${i}`} href={logo.url} target="_blank" rel="noopener noreferrer" className="shrink-0 opacity-60 hover:opacity-100 transition-opacity grayscale hover:grayscale-0" title={logo.name}>
-                <img src={logo.img} alt={logo.name} className="h-10 md:h-12 w-auto object-contain" />
+                <img
+                  src={logo.img}
+                  alt={logo.name}
+                  loading="lazy"
+                  className="h-10 md:h-12 w-auto object-contain"
+                  onError={(e) => {
+                    const el = e.currentTarget;
+                    el.onerror = null;
+                    // Fallback : badge SVG inline avec le nom de la société
+                    const txt = encodeURIComponent(logo.name);
+                    el.src = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='48'><rect width='100%25' height='100%25' fill='%23F1F5F9' rx='6'/><text x='50%25' y='55%25' text-anchor='middle' font-family='system-ui,sans-serif' font-size='14' font-weight='600' fill='%231E252F'>${txt}</text></svg>`;
+                  }}
+                />
               </a>
             ))}
           </div>

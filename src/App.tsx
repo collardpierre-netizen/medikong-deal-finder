@@ -147,6 +147,7 @@ const AdminBrandDuplicates = lazyWithRetry(() => import("./pages/admin/AdminBran
 const AdminSourceMapping = lazyWithRetry(() => import("./pages/admin/AdminSourceMapping"), "AdminSourceMapping");
 const AdminCRM = lazyWithRetry(() => import("./pages/admin/AdminCRM"), "AdminCRM");
 const AdminCMS = lazyWithRetry(() => import("./pages/admin/AdminCMS"), "AdminCMS");
+const AdminCmsPartnerLogos = lazyWithRetry(() => import("./pages/admin/AdminCmsPartnerLogos"), "AdminCmsPartnerLogos");
 const AdminCmsHomeBrands = lazyWithRetry(() => import("./pages/admin/AdminCmsHomeBrands"), "AdminCmsHomeBrands");
 const AdminCmsHomeProducts = lazyWithRetry(() => import("./pages/admin/AdminCmsHomeProducts"), "AdminCmsHomeProducts");
 const AdminCmsHomeShowcase = lazyWithRetry(() => import("./pages/admin/AdminCmsHomeShowcase"), "AdminCmsHomeShowcase");

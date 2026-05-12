@@ -17440,6 +17440,21 @@ export type Database = {
         Args: { _submission_id: string }
         Returns: undefined
       }
+      admin_email_deliverability_kpis: {
+        Args: never
+        Returns: {
+          bounce_rate: number
+          bounced: number
+          complained: number
+          complaint_rate: number
+          failed: number
+          sent: number
+          success_rate: number
+          suppressed: number
+          total: number
+          window_days: number
+        }[]
+      }
       admin_find_submission_duplicates: {
         Args: { _submission_id: string }
         Returns: {

@@ -42,6 +42,7 @@ import { SafeBoundary } from "@/components/SafeBoundary";
 import VendorDelegateCompact from "@/components/vendor/VendorDelegateCompact";
 import { PvpEconomyBadge } from "@/components/product/PvpEconomyBadge";
 import RfqRequestButton from "@/components/product/RfqRequestButton";
+import { PriceAlertBellButton } from "@/components/product/PriceAlertBellButton";
 import { ProductDescription } from "@/components/product/ProductDescription";
 
 // Helpers de formatage harmonisés (locale fr-BE, suffixes uniques).
@@ -1717,13 +1718,16 @@ export default function ProductPage() {
                           Essayez de changer de pays dans le sélecteur en haut à droite, ou ajoutez-le à votre liste de suivi
                           pour être notifié dès qu'une offre est publiée.
                         </p>
-                        <button
-                          className="mt-4 inline-flex items-center gap-2 px-4 py-2 border border-amber-300 bg-white rounded-lg text-sm font-medium text-amber-900 hover:bg-amber-100 transition-colors"
-                          onClick={() => toast.info("Fonctionnalité bientôt disponible")}
-                        >
-                          <Heart size={16} />
-                          M'alerter quand disponible
-                        </button>
+                        <div className="mt-4 inline-flex items-center gap-2">
+                          <PriceAlertBellButton
+                            productId={product.id}
+                            productName={product.name}
+                            size={16}
+                          />
+                          <span className="text-sm font-medium text-amber-900">
+                            Créer une alerte prix pour être notifié dès qu'une offre est publiée
+                          </span>
+                        </div>
                       </div>
                     )}
 

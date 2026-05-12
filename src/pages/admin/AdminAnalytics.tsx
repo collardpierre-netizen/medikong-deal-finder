@@ -1,5 +1,6 @@
 import AdminTopBar from "@/components/admin/AdminTopBar";
 import KpiCard from "@/components/admin/KpiCard";
+import EmailDeliverabilityWidget from "@/components/admin/EmailDeliverabilityWidget";
 import { useOrders, useCustomers } from "@/hooks/useAdminData";
 import {
   BarChart3, Users, Search, Target, ShoppingCart,

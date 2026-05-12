@@ -463,7 +463,7 @@ export default function InvestPage() {
         </div>
         <div className="relative">
           <div className="flex animate-[marquee_30s_linear_infinite] gap-12 items-center">
-            {[...trustLogos, ...trustLogos].map((logo, i) => (
+            {[...liveTrustLogos, ...liveTrustLogos].map((logo, i) => (
               <a key={`${logo.name}-${i}`} href={logo.url} target="_blank" rel="noopener noreferrer" className="shrink-0 opacity-60 hover:opacity-100 transition-opacity grayscale hover:grayscale-0" title={logo.name}>
                 <img
                   src={logo.img}

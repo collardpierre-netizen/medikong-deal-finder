@@ -168,6 +168,33 @@ export default function InvestPage() {
   const [activeSection, setActiveSection] = useState("");
   const [showSubscribe, setShowSubscribe] = useState(false);
 
+  // Logos partenaires gérés via CMS (fallback : liste statique au cas où la table est vide / hors ligne)
+  const { data: cmsLogos } = useQuery({
+    queryKey: ["cms-partner-logos", "invest"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("cms_partner_logos")
+        .select("name, website_url, logo_url, domain, sort_order")
+        .eq("placement", "invest")
+        .eq("is_active", true)
+        .order("sort_order");
+      if (error) throw error;
+      return (data ?? []) as { name: string; website_url: string | null; logo_url: string | null; domain: string | null; sort_order: number }[];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const liveTrustLogos = (cmsLogos && cmsLogos.length > 0
+    ? cmsLogos.map((l) => ({
+        name: l.name,
+        url: l.website_url || "#",
+        domain: l.domain || "",
+        img: l.logo_url && l.logo_url.trim()
+          ? l.logo_url.trim()
+          : (l.domain ? `https://logo.clearbit.com/${l.domain}?size=128` : ""),
+      }))
+    : trustLogos);
+
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => { entries.forEach((entry) => { if (entry.isIntersecting) setActiveSection(entry.target.id); }); },

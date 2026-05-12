@@ -203,6 +203,11 @@ const AdminCMS = () => {
   return (
     <div>
       <AdminTopBar title="CMS & Merchandising" subtitle="Gestion du contenu et de la mise en avant" />
+      <div className="px-5 -mt-2 mb-3">
+        <a href="/admin/cms/partenaires-invest" className="text-xs text-mk-blue underline hover:no-underline">
+          → Logos partenaires (page Invest)
+        </a>
+      </div>
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="mb-4" style={{ backgroundColor: "#E2E8F0" }}>
           <TabsTrigger value="pages" className="text-[13px]">Pages</TabsTrigger>

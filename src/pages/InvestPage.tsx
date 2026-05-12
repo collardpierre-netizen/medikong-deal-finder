@@ -45,16 +45,17 @@ const tractionMetrics = [
   { value: "BE, FR, LU", label: "Pays couverts", sub: "Ambition européenne" },
 ];
 
+// Logos résolus via Clearbit Logo API (gratuit, sans clé) à partir du domaine officiel
 const trustLogos = [
-  { name: "Febelco", url: "https://www.febelco.be/", img: "https://www.medikong.pro/assets/febelco-CSYKVv36.png" },
-  { name: "Emeis", url: "https://emeis.be/fr", img: "https://www.medikong.pro/assets/emeis-BmOiHRRq.png" },
-  { name: "Dynaphar", url: "https://dynaphar.be/fr", img: "https://www.medikong.pro/assets/dynaphar-BUJAqh3T.png" },
-  { name: "Fixmer Pharma", url: "https://www.fixmer-pharma.be/", img: "https://www.medikong.pro/assets/fixmer-pharma-CQ1CGzcC.png" },
-  { name: "PharmaMed", url: "https://www.pharmamed.be/", img: "https://www.medikong.pro/assets/pharmamed-Cq4BJI1Z.svg" },
-  { name: "Newtech", url: "https://newtech-ll.eu/", img: "https://www.medikong.pro/assets/newtech-ll-I3CS6HUK.png" },
-  { name: "BNA Santé", url: "https://www.bnasantepolyclinique.be/", img: "https://www.medikong.pro/assets/bna-sante-sSfIBMVW.svg" },
-  { name: "Continuing Care", url: "https://continuingcare.be/", img: "https://www.medikong.pro/assets/continuing-care-BaN_4bJV.png" },
-];
+  { name: "Febelco", url: "https://www.febelco.be/", domain: "febelco.be" },
+  { name: "Emeis", url: "https://emeis.be/fr", domain: "emeis.be" },
+  { name: "Dynaphar", url: "https://dynaphar.be/fr", domain: "dynaphar.be" },
+  { name: "Fixmer Pharma", url: "https://www.fixmer-pharma.be/", domain: "fixmer-pharma.be" },
+  { name: "PharmaMed", url: "https://www.pharmamed.be/", domain: "pharmamed.be" },
+  { name: "Newtech", url: "https://newtech-ll.eu/", domain: "newtech-ll.eu" },
+  { name: "BNA Santé", url: "https://www.bnasantepolyclinique.be/", domain: "bnasantepolyclinique.be" },
+  { name: "Continuing Care", url: "https://continuingcare.be/", domain: "continuingcare.be" },
+].map((l) => ({ ...l, img: `https://logo.clearbit.com/${l.domain}?size=128` }));
 
 const fundsAllocation = [
   { label: "Technologie & Produit", pct: 35 },

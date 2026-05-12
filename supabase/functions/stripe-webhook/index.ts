@@ -113,7 +113,7 @@ async function sendBuyerOrderConfirmation(orderId: string) {
       new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(n);
     const addr = order.shipping_address as any;
     const shippingAddress = addr && typeof addr === "object"
-      ? [addr.line1, addr.line2, [addr.postal_code, addr.city].filter(Boolean).join(" "), addr.country]
+      ? [addr.line1 || addr.address_line1, addr.line2 || addr.address_line2, [addr.postal_code, addr.city].filter(Boolean).join(" "), addr.country || addr.country_code]
           .filter(Boolean).join(", ")
       : undefined;
     const paymentMethodLabel: Record<string, string> = {

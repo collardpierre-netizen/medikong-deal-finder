@@ -385,6 +385,7 @@ async function handlePaymentSucceeded(pi: Stripe.PaymentIntent) {
   } catch (e) {
     console.error("[stripe-webhook] notify-vendors-new-order failed", e);
   }
+  await sendBuyerOrderConfirmation(orderId);
 }
 
 async function handlePaymentFailed(pi: Stripe.PaymentIntent) {

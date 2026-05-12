@@ -32,6 +32,10 @@ const AdminAnalytics = () => {
         <KpiCard icon={Search} label="Recherches / jour" value="—" iconColor="#8B95A5" iconBg="#F8FAFC" />
       </div>
 
+      <div className="mb-6">
+        <EmailDeliverabilityWidget />
+      </div>
+
       {!hasData ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <Database size={56} className="text-[#CBD5E1] mb-4" />

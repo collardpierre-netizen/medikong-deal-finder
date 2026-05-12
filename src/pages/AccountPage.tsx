@@ -199,6 +199,18 @@ export default function AccountPage() {
     orderPageSafe * orderPageSize
   );
 
+  // ---- Vendor detection (for "Devenir aussi vendeur" CTA) ----
+  const [isVendor, setIsVendor] = useState<boolean | null>(null);
+  useEffect(() => {
+    if (!user) { setIsVendor(false); return; }
+    supabase
+      .from("vendors")
+      .select("id")
+      .eq("auth_user_id", user.id)
+      .maybeSingle()
+      .then(({ data }) => setIsVendor(!!data));
+  }, [user]);
+
   // ---- Profile state ----
   const [profileForm, setProfileForm] = useState({
     firstName: "",

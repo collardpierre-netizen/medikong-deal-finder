@@ -403,6 +403,40 @@ export default function AccountPage() {
                 >
                   {activeTab === "profil" && (
                     <div>
+                      {isVendor === false && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="mb-6 rounded-lg border border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10 p-5 flex flex-col sm:flex-row sm:items-center gap-4"
+                        >
+                          <div className="w-11 h-11 rounded-full bg-primary/15 text-primary flex items-center justify-center shrink-0">
+                            <Store size={20} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-base font-semibold text-mk-navy">Devenir aussi vendeur sur MediKong</h3>
+                            <p className="text-sm text-mk-sec mt-0.5">Gardez votre compte acheteur et activez la vente de produits avec le même login.</p>
+                          </div>
+                          <Button asChild size="sm" className="shrink-0">
+                            <Link to="/vendor/onboarding" className="inline-flex items-center gap-1.5">
+                              Lancer l'onboarding vendeur
+                              <ArrowRight size={14} />
+                            </Link>
+                          </Button>
+                        </motion.div>
+                      )}
+                      {isVendor === true && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="mb-6 rounded-lg border border-mk-line bg-mk-alt p-4 flex items-center gap-3"
+                        >
+                          <Store size={18} className="text-primary shrink-0" />
+                          <p className="text-sm text-mk-sec flex-1">Vous avez aussi un espace vendeur actif sur ce compte.</p>
+                          <Button asChild variant="outline" size="sm">
+                            <Link to="/vendor">Aller à l'espace vendeur</Link>
+                          </Button>
+                        </motion.div>
+                      )}
                       <h2 className="text-xl font-bold text-mk-navy mb-5">Informations personnelles</h2>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
                         {([

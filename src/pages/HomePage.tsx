@@ -385,6 +385,9 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ═══ TRUST LOGOS (CMS placement = "invest", partagé avec /invest) ═══ */}
+      <TrustLogosBanner placement="invest" />
+
       {/* ═══ 3 VALUE PROPS ═══ */}
       <AnimatedSection className="py-14 md:py-20 border-t border-mk-line">
         <StaggerContainer className="mk-container grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">

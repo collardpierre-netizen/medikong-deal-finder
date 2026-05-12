@@ -1,0 +1,1 @@
+DELETE FROM public.vendor_visibility_rules WHERE id = '8745aab6-7c5c-4a95-a5c3-a56911fbe8c0';

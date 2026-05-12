@@ -196,8 +196,11 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
       .eq("vendor_id", vb.vendor_id)
       .maybeSingle();
 
-    if (existing && existing.status === "completed" && existing.stripe_transfer_id) {
-      console.log(`[stripe-webhook] Transfer déjà completed pour vendor ${vb.vendor_id}, skip`);
+    if (existing && (
+      existing.status === "completed" ||
+      existing.stripe_transfer_id !== null
+    )) {
+      console.log(`[stripe-webhook] Transfer déjà géré pour vendor ${vb.vendor_id} (status=${existing.status}, tr_id=${existing.stripe_transfer_id}), skip retry`);
       continue;
     }
 

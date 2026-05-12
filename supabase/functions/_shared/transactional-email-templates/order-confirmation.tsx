@@ -69,7 +69,7 @@ const OrderConfirmationEmail = ({
           </Row>
         </Section>
 
-        <Button href="https://medikong.pro/compte" style={button}>
+        <Button href="https://medikong.pro/compte?tab=commandes" style={button}>
           Suivre ma commande
         </Button>
 

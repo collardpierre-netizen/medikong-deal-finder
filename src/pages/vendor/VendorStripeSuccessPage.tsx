@@ -45,7 +45,13 @@ export default function VendorStripeSuccessPage() {
         }
       </p>
       <button
-        onClick={() => navigate("/vendor")}
+        onClick={() =>
+          navigate(
+            vendorId
+              ? `/vendor?impersonation_vendor_id=${encodeURIComponent(vendorId)}`
+              : "/vendor"
+          )
+        }
         className="px-8 py-3 rounded-lg text-sm font-bold text-white"
         style={{ backgroundColor: "#1B5BDA" }}
       >

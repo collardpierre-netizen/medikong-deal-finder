@@ -1,9 +1,15 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import { useVendorMarketIntelEntitlement, useVendorMarketIntelPlans } from "@/hooks/useVendorMarketIntelEntitlement";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { BarChart3, Lock, Sparkles, CalendarClock, ShieldCheck, CheckCircle2, Loader2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { BarChart3, Lock, Sparkles, CalendarClock, ShieldCheck, CheckCircle2, Loader2, MailQuestion } from "lucide-react";
 
 function formatPrice(cents: number) {
   return (cents / 100).toLocaleString("fr-BE", { style: "currency", currency: "EUR", minimumFractionDigits: 0 });

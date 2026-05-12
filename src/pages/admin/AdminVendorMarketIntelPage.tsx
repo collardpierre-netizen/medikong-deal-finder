@@ -130,6 +130,8 @@ export default function AdminVendorMarketIntelPage() {
           à la fin de l'essai, ou résiliez l'accès. Les essais expirent automatiquement chaque heure.
         </p>
 
+        <PendingRequestsSection />
+
         <Card className="mb-4">
           <CardHeader className="pb-3">
             <CardTitle className="text-base">Recherche</CardTitle>

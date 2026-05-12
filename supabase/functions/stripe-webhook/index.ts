@@ -172,6 +172,7 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
     } catch (e) {
       console.error("[stripe-webhook] notify-vendors-new-order failed", e);
     }
+    await sendBuyerOrderConfirmation(orderId);
   }
 
   // Parse vendor_breakdown

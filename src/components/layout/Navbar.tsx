@@ -117,10 +117,32 @@ export function Navbar() {
                 </Link>
               )}
               {isVendor && (
-                <Link to="/vendor" className="flex items-center gap-1 text-xs font-semibold text-primary bg-primary/10 px-2.5 py-1 rounded-full hover:bg-primary/15 transition-colors">
-                  <Store size={13} />
-                  <span>{t("common.vendor")}</span>
-                </Link>
+                <div className="flex items-center bg-muted/60 rounded-full p-0.5" role="group" aria-label="Bascule Acheteur / Vendeur">
+                  <Link
+                    to="/compte"
+                    aria-pressed={!location.pathname.startsWith("/vendor")}
+                    className={`flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full transition-colors ${
+                      !location.pathname.startsWith("/vendor")
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <Users size={12} />
+                    <span>Acheteur</span>
+                  </Link>
+                  <Link
+                    to="/vendor"
+                    aria-pressed={location.pathname.startsWith("/vendor")}
+                    className={`flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full transition-colors ${
+                      location.pathname.startsWith("/vendor")
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <Store size={12} />
+                    <span>Vendeur</span>
+                  </Link>
+                </div>
               )}
               <Link to="/mes-prix" className="flex items-center gap-1 text-xs font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full hover:bg-emerald-100 transition-colors">
                 <Tag size={13} />

@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { BarChart3, Sparkles, CreditCard, FileText, Loader2, XCircle, MailQuestion, CheckCircle2 } from "lucide-react";
+import { BarChart3, Sparkles, CreditCard, FileText, Loader2, XCircle, MailQuestion, CheckCircle2, History } from "lucide-react";
 import { formatUpdatedAt } from "@/lib/format-date";
 
 type Row = {
@@ -131,6 +131,8 @@ export default function AdminVendorMarketIntelPage() {
         </p>
 
         <PendingRequestsSection />
+
+        <RequestsAuditLogSection />
 
         <Card className="mb-4">
           <CardHeader className="pb-3">
@@ -367,6 +369,108 @@ function PendingRequestsSection() {
           </tbody>
         </table>
       </CardContent>
+    </Card>
+  );
+}
+
+type AuditEvent = "created" | "handled" | "dismissed" | "status_changed";
+type AuditRow = {
+  id: string;
+  request_id: string;
+  vendor_id: string;
+  event: AuditEvent;
+  previous_status: string | null;
+  new_status: string | null;
+  actor_user_id: string | null;
+  message: string | null;
+  created_at: string;
+  vendors?: { name: string | null; company_name: string | null } | null;
+};
+
+const EVENT_META: Record<AuditEvent, { label: string; cls: string }> = {
+  created:        { label: "Demande reçue",   cls: "bg-blue-100 text-blue-800 border-blue-300" },
+  handled:        { label: "Traitée",         cls: "bg-emerald-100 text-emerald-800 border-emerald-300" },
+  dismissed:      { label: "Rejetée",         cls: "bg-rose-100 text-rose-800 border-rose-300" },
+  status_changed: { label: "Statut modifié",  cls: "bg-muted text-muted-foreground" },
+};
+
+function RequestsAuditLogSection() {
+  const [open, setOpen] = useState(false);
+  const { data: rows = [], isLoading } = useQuery({
+    queryKey: ["admin-vmi-requests-audit", open],
+    enabled: open,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("vendor_market_intel_request_audit_log" as any)
+        .select("id, request_id, vendor_id, event, previous_status, new_status, actor_user_id, message, created_at, vendors:vendor_id(name, company_name)")
+        .order("created_at", { ascending: false })
+        .limit(200);
+      if (error) throw error;
+      return (data as unknown as AuditRow[]) || [];
+    },
+  });
+
+  return (
+    <Card className="mb-4">
+      <CardHeader className="pb-3 flex flex-row items-center justify-between">
+        <CardTitle className="text-base flex items-center gap-2">
+          <History className="h-4 w-4" />
+          Journal des demandes
+        </CardTitle>
+        <Button size="sm" variant="outline" onClick={() => setOpen((v) => !v)}>
+          {open ? "Masquer" : "Afficher"}
+        </Button>
+      </CardHeader>
+      {open && (
+        <CardContent className="p-0">
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8 text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin mr-2" /> Chargement…
+            </div>
+          ) : rows.length === 0 ? (
+            <div className="px-4 py-6 text-center text-sm text-muted-foreground">
+              Aucun événement enregistré.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/40 text-xs">
+                  <tr>
+                    <th className="px-3 py-2 text-left">Date</th>
+                    <th className="px-3 py-2 text-left">Vendeur</th>
+                    <th className="px-3 py-2 text-left">Événement</th>
+                    <th className="px-3 py-2 text-left">Transition</th>
+                    <th className="px-3 py-2 text-left">Auteur</th>
+                    <th className="px-3 py-2 text-left">Demande</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((r) => {
+                    const m = EVENT_META[r.event] || EVENT_META.status_changed;
+                    return (
+                      <tr key={r.id} className="border-t">
+                        <td className="px-3 py-2 text-xs whitespace-nowrap">{formatUpdatedAt(r.created_at)}</td>
+                        <td className="px-3 py-2 text-xs">
+                          <div className="font-medium">{r.vendors?.company_name || r.vendors?.name || "—"}</div>
+                          <div className="text-[10px] text-muted-foreground font-mono">{r.vendor_id.slice(0, 8)}</div>
+                        </td>
+                        <td className="px-3 py-2"><Badge variant="outline" className={m.cls}>{m.label}</Badge></td>
+                        <td className="px-3 py-2 text-xs text-muted-foreground">
+                          {r.previous_status ? `${r.previous_status} → ${r.new_status ?? "—"}` : (r.new_status ?? "—")}
+                        </td>
+                        <td className="px-3 py-2 text-xs font-mono">
+                          {r.actor_user_id ? r.actor_user_id.slice(0, 8) : <span className="italic text-muted-foreground">système</span>}
+                        </td>
+                        <td className="px-3 py-2 text-xs font-mono text-muted-foreground">{r.request_id.slice(0, 8)}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      )}
     </Card>
   );
 }

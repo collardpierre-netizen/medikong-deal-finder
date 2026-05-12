@@ -13349,6 +13349,50 @@ export type Database = {
         }
         Relationships: []
       }
+      vendor_market_intel_request_audit_log: {
+        Row: {
+          actor_user_id: string | null
+          created_at: string
+          event: string
+          id: string
+          message: string | null
+          new_status: string | null
+          previous_status: string | null
+          request_id: string
+          vendor_id: string
+        }
+        Insert: {
+          actor_user_id?: string | null
+          created_at?: string
+          event: string
+          id?: string
+          message?: string | null
+          new_status?: string | null
+          previous_status?: string | null
+          request_id: string
+          vendor_id: string
+        }
+        Update: {
+          actor_user_id?: string | null
+          created_at?: string
+          event?: string
+          id?: string
+          message?: string | null
+          new_status?: string | null
+          previous_status?: string | null
+          request_id?: string
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_market_intel_request_audit_log_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_market_intel_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vendor_market_intel_requests: {
         Row: {
           created_at: string

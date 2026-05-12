@@ -116,7 +116,7 @@ export default function AdminCmsPartnerLogos() {
 
   return (
     <div>
-      <AdminTopBar />
+      <AdminTopBar title="CMS — Logos partenaires" />
       <div className="max-w-6xl mx-auto px-5 py-6 space-y-6">
         <div className="flex items-center justify-between">
           <div>

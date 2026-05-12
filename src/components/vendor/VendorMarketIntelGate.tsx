@@ -23,8 +23,54 @@ function formatPrice(cents: number) {
  * Trial activation is admin-only. The vendor can request activation via mailto/contact.
  */
 export function VendorMarketIntelGate({ children }: { children: React.ReactNode }) {
+  const qc = useQueryClient();
   const { data: ent, isLoading } = useVendorMarketIntelEntitlement();
   const { data: plans = [] } = useVendorMarketIntelPlans();
+  const [activating, setActivating] = useState(false);
+  const [renewOpen, setRenewOpen] = useState(false);
+  const [renewMsg, setRenewMsg] = useState("");
+  const [renewSubmitting, setRenewSubmitting] = useState(false);
+
+  const handleSelfActivate = async () => {
+    setActivating(true);
+    try {
+      const { error } = await supabase.rpc("self_start_vendor_market_intel_trial" as any);
+      if (error) throw error;
+      toast.success("Essai gratuit activé — 180 jours offerts !");
+      await qc.invalidateQueries({ queryKey: ["vmi-entitlement"] });
+    } catch (e: any) {
+      const msg = String(e?.message || "");
+      if (msg.includes("trial_already_used")) {
+        toast.error("Vous avez déjà utilisé votre essai gratuit. Demandez une prolongation à l'équipe MediKong.");
+        setRenewOpen(true);
+      } else {
+        toast.error(msg || "Impossible d'activer l'essai");
+      }
+    } finally {
+      setActivating(false);
+    }
+  };
+
+  const handleRenewSubmit = async () => {
+    setRenewSubmitting(true);
+    try {
+      const { error } = await supabase.rpc("request_vendor_market_intel_trial_renewal" as any, { _message: renewMsg });
+      if (error) throw error;
+      toast.success("Demande envoyée à l'équipe MediKong — réponse sous 48h ouvrées.");
+      setRenewOpen(false);
+      setRenewMsg("");
+    } catch (e: any) {
+      const msg = String(e?.message || "");
+      if (msg.includes("request_already_pending")) {
+        toast.info("Une demande est déjà en cours de traitement.");
+        setRenewOpen(false);
+      } else {
+        toast.error(msg || "Impossible d'envoyer la demande");
+      }
+    } finally {
+      setRenewSubmitting(false);
+    }
+  };
 
   if (isLoading) {
     return (

@@ -13349,6 +13349,92 @@ export type Database = {
         }
         Relationships: []
       }
+      vendor_market_intel_requests: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          handled_at: string | null
+          handled_by: string | null
+          id: string
+          kind: string
+          message: string | null
+          status: string
+          vendor_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          handled_at?: string | null
+          handled_by?: string | null
+          id?: string
+          kind: string
+          message?: string | null
+          status?: string
+          vendor_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          handled_at?: string | null
+          handled_by?: string | null
+          id?: string
+          kind?: string
+          message?: string | null
+          status?: string
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_market_intel_requests_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "admin_orders_sla_overview_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_market_intel_requests_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendor_trust_signals"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_market_intel_requests_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_market_intel_requests_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_market_intel_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_market_intel_requests_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_market_intel_requests_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_market_intel_requests_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vendor_notification_dispatch_log: {
         Row: {
           dispatched_at: string
@@ -18177,6 +18263,26 @@ export type Database = {
         Args: { _callback_window?: string; _reason?: string }
         Returns: string
       }
+      request_vendor_market_intel_trial_renewal: {
+        Args: { _message?: string }
+        Returns: {
+          created_at: string
+          created_by: string | null
+          handled_at: string | null
+          handled_by: string | null
+          id: string
+          kind: string
+          message: string | null
+          status: string
+          vendor_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "vendor_market_intel_requests"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       resolve_buyer_profile_for_user: {
         Args: { _user_id: string }
         Returns: string
@@ -18493,6 +18599,32 @@ export type Database = {
         Returns: Json
       }
       run_pack_mismatch_alert_job: { Args: never; Returns: Json }
+      self_start_vendor_market_intel_trial: {
+        Args: never
+        Returns: {
+          billing_method:
+            | Database["public"]["Enums"]["vendor_market_intel_billing"]
+            | null
+          created_at: string
+          granted_by: string | null
+          notes: string | null
+          plan_id: string | null
+          status: Database["public"]["Enums"]["vendor_market_intel_status"]
+          stripe_subscription_id: string | null
+          subscription_current_period_end: string | null
+          subscription_started_at: string | null
+          trial_ends_at: string | null
+          trial_started_at: string | null
+          updated_at: string
+          vendor_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "vendor_market_intel_entitlements"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       set_user_preference: {
         Args: { _key: string; _value: string }
         Returns: undefined

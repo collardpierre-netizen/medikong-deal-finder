@@ -9,6 +9,7 @@ import { HeroImageGallery } from "@/components/home/HeroImageGallery";
 import { Helmet } from "react-helmet-async";
 import { HreflangTags } from "@/components/seo/HreflangTags";
 import { HomeTestimonials } from "@/components/home/HomeTestimonials";
+import TrustLogosBanner from "@/components/home/TrustLogosBanner";
 import { useTranslation } from "react-i18next";
 import { useCountry } from "@/contexts/CountryContext";
 import { AnimatedCounter } from "@/components/entreprise/AnimatedCounter";
@@ -650,6 +651,9 @@ export default function HomePage() {
 
       {/* ═══ TESTIMONIALS — masqué, à réactiver via CMS ═══ */}
       {/* <HomeTestimonials /> */}
+
+      {/* ═══ TRUST LOGOS (CMS placement = "invest", partagé avec /invest) ═══ */}
+      <TrustLogosBanner placement="invest" />
 
       {/* ═══ FINAL CTA BANNER ═══ */}
       <section className="py-16 md:py-24">

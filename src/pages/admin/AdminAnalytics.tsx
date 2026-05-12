@@ -1,5 +1,6 @@
 import AdminTopBar from "@/components/admin/AdminTopBar";
 import KpiCard from "@/components/admin/KpiCard";
+import EmailDeliverabilityWidget from "@/components/admin/EmailDeliverabilityWidget";
 import { useOrders, useCustomers } from "@/hooks/useAdminData";
 import {
   BarChart3, Users, Search, Target, ShoppingCart,
@@ -29,6 +30,10 @@ const AdminAnalytics = () => {
         <KpiCard icon={TrendingUp} label="GMV total" value={`${fmt(gmv)} €`} iconColor="#059669" iconBg="#ECFDF5" />
         <KpiCard icon={Target} label="Panier moyen" value={`${fmt(avgBasket)} €`} iconColor="#F59E0B" iconBg="#FFFBEB" />
         <KpiCard icon={Search} label="Recherches / jour" value="—" iconColor="#8B95A5" iconBg="#F8FAFC" />
+      </div>
+
+      <div className="mb-6">
+        <EmailDeliverabilityWidget />
       </div>
 
       {!hasData ? (

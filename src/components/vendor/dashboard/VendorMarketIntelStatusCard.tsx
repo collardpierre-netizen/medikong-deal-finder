@@ -1,8 +1,13 @@
 import { Link } from "react-router-dom";
-import { BarChart3, Sparkles, CheckCircle2, AlertTriangle, Lock, ArrowRight, type LucideIcon } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { BarChart3, Sparkles, CheckCircle2, AlertTriangle, Lock, ArrowRight, Clock, type LucideIcon } from "lucide-react";
 import { useVendorMarketIntelEntitlement } from "@/hooks/useVendorMarketIntelEntitlement";
+import { useCurrentVendor } from "@/hooks/useCurrentVendor";
+import { supabase } from "@/integrations/supabase/client";
 import { VCard } from "@/components/vendor/ui/VCard";
 import { formatUpdatedAt } from "@/lib/format-date";
+
+type DisplayStatus = "none" | "trial" | "active" | "expired" | "cancelled" | "renewal_pending";
 
 type Variant = {
   label: string;
@@ -12,19 +17,43 @@ type Variant = {
   icon: LucideIcon;
 };
 
-const VARIANTS: Record<"none" | "trial" | "active" | "expired" | "cancelled", Variant> = {
-  none:      { label: "Module non activé", bg: "#F1F5F9", text: "#616B7C", border: "#E2E8F0", icon: Lock },
-  trial:     { label: "Essai gratuit en cours", bg: "#ECFDF5", text: "#047857", border: "#A7F3D0", icon: Sparkles },
-  active:    { label: "Abonnement actif", bg: "#EFF6FF", text: "#1D4ED8", border: "#BFDBFE", icon: CheckCircle2 },
-  expired:   { label: "Essai expiré", bg: "#FFFBEB", text: "#B45309", border: "#FDE68A", icon: AlertTriangle },
-  cancelled: { label: "Abonnement résilié", bg: "#FEF2F2", text: "#B91C1C", border: "#FECACA", icon: AlertTriangle },
+const VARIANTS: Record<DisplayStatus, Variant> = {
+  none:             { label: "Module non activé", bg: "#F1F5F9", text: "#616B7C", border: "#E2E8F0", icon: Lock },
+  trial:            { label: "Essai gratuit en cours", bg: "#ECFDF5", text: "#047857", border: "#A7F3D0", icon: Sparkles },
+  active:           { label: "Abonnement actif", bg: "#EFF6FF", text: "#1D4ED8", border: "#BFDBFE", icon: CheckCircle2 },
+  expired:          { label: "Essai expiré", bg: "#FFFBEB", text: "#B45309", border: "#FDE68A", icon: AlertTriangle },
+  cancelled:        { label: "Abonnement résilié", bg: "#FEF2F2", text: "#B91C1C", border: "#FECACA", icon: AlertTriangle },
+  renewal_pending:  { label: "Prolongation demandée", bg: "#EFF6FF", text: "#1D4ED8", border: "#BFDBFE", icon: Clock },
 };
 
 export default function VendorMarketIntelStatusCard() {
   const { data, isLoading } = useVendorMarketIntelEntitlement();
+  const { data: vendor } = useCurrentVendor();
+
+  const baseStatus = (data?.status ?? "none") as "none" | "trial" | "active" | "expired" | "cancelled";
+  const checkPending = !!vendor?.id && (baseStatus === "none" || baseStatus === "expired" || baseStatus === "cancelled");
+
+  const { data: pendingRequest } = useQuery({
+    queryKey: ["vmi-pending-request", vendor?.id],
+    enabled: checkPending,
+    queryFn: async () => {
+      const { data: rows, error } = await supabase
+        .from("vendor_market_intel_requests" as any)
+        .select("id, kind, status, created_at")
+        .eq("vendor_id", vendor!.id)
+        .eq("status", "pending")
+        .eq("kind", "trial_renewal")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return (rows as unknown as { id: string; created_at: string } | null) ?? null;
+    },
+  });
+
   if (isLoading || !data) return null;
 
-  const status = (data.status ?? "none") as keyof typeof VARIANTS;
+  const status: DisplayStatus = pendingRequest ? "renewal_pending" : baseStatus;
   const v = VARIANTS[status] ?? VARIANTS.none;
   const Icon = v.icon;
 
@@ -46,7 +75,7 @@ export default function VendorMarketIntelStatusCard() {
             className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
             style={{ backgroundColor: "#fff", border: `1px solid ${v.border}` }}
           >
-            <Icon size={18} className="" />
+            <Icon size={18} style={{ color: v.text }} />
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
@@ -57,17 +86,20 @@ export default function VendorMarketIntelStatusCard() {
             </div>
             <p className="text-[12px] mt-0.5" style={{ color: v.text, opacity: 0.85 }}>
               {status === "trial" && deadline && (
-                <>Fin d'essai le <strong>{formatUpdatedAt(deadline)}</strong>{daysLeft != null && ` · ${daysLeft} jour${daysLeft > 1 ? "s" : ""} restant${daysLeft > 1 ? "s" : ""}`}</>
+                <>Actif jusqu'au <strong>{formatUpdatedAt(deadline)}</strong>{daysLeft != null && ` · ${daysLeft} jour${daysLeft > 1 ? "s" : ""} restant${daysLeft > 1 ? "s" : ""}`}</>
               )}
               {status === "active" && (
                 <>
                   {data.plan_label || "Plan actif"}
-                  {deadline && <> · prochaine échéance <strong>{formatUpdatedAt(deadline)}</strong></>}
+                  {deadline && <> · actif jusqu'au <strong>{formatUpdatedAt(deadline)}</strong></>}
                 </>
+              )}
+              {status === "renewal_pending" && pendingRequest && (
+                <>Demande envoyée le <strong>{formatUpdatedAt(pendingRequest.created_at)}</strong> · réponse sous 48h ouvrées.</>
               )}
               {status === "expired" && "Réactivez le module pour retrouver l'accès à la comparaison concurrentielle."}
               {status === "cancelled" && "Votre abonnement a été résilié. Contactez votre référent MediKong pour le réactiver."}
-              {status === "none" && "Classement EAN, comparaison HTVA/TVAC et alertes prix automatiques."}
+              {status === "none" && "Classement EAN, comparaison HTVA/TVAC et alertes prix automatiques — 180 jours offerts."}
             </p>
           </div>
         </div>
@@ -77,7 +109,11 @@ export default function VendorMarketIntelStatusCard() {
           className="inline-flex items-center gap-1.5 text-[12px] font-semibold px-3 py-2 rounded-md shrink-0"
           style={{ backgroundColor: "#fff", color: v.text, border: `1px solid ${v.border}` }}
         >
-          {status === "active" || status === "trial" ? "Ouvrir Veille marché" : "Découvrir le module"}
+          {status === "active" || status === "trial"
+            ? "Ouvrir Veille marché"
+            : status === "renewal_pending"
+            ? "Voir le statut"
+            : "Découvrir le module"}
           <ArrowRight size={12} />
         </Link>
       </div>

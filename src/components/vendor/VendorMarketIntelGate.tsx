@@ -1,9 +1,15 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import { useVendorMarketIntelEntitlement, useVendorMarketIntelPlans } from "@/hooks/useVendorMarketIntelEntitlement";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { BarChart3, Lock, Sparkles, CalendarClock, ShieldCheck, CheckCircle2, Loader2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { BarChart3, Lock, Sparkles, CalendarClock, ShieldCheck, CheckCircle2, Loader2, MailQuestion } from "lucide-react";
 
 function formatPrice(cents: number) {
   return (cents / 100).toLocaleString("fr-BE", { style: "currency", currency: "EUR", minimumFractionDigits: 0 });
@@ -17,8 +23,54 @@ function formatPrice(cents: number) {
  * Trial activation is admin-only. The vendor can request activation via mailto/contact.
  */
 export function VendorMarketIntelGate({ children }: { children: React.ReactNode }) {
+  const qc = useQueryClient();
   const { data: ent, isLoading } = useVendorMarketIntelEntitlement();
   const { data: plans = [] } = useVendorMarketIntelPlans();
+  const [activating, setActivating] = useState(false);
+  const [renewOpen, setRenewOpen] = useState(false);
+  const [renewMsg, setRenewMsg] = useState("");
+  const [renewSubmitting, setRenewSubmitting] = useState(false);
+
+  const handleSelfActivate = async () => {
+    setActivating(true);
+    try {
+      const { error } = await supabase.rpc("self_start_vendor_market_intel_trial" as any);
+      if (error) throw error;
+      toast.success("Essai gratuit activé — 180 jours offerts !");
+      await qc.invalidateQueries({ queryKey: ["vmi-entitlement"] });
+    } catch (e: any) {
+      const msg = String(e?.message || "");
+      if (msg.includes("trial_already_used")) {
+        toast.error("Vous avez déjà utilisé votre essai gratuit. Demandez une prolongation à l'équipe MediKong.");
+        setRenewOpen(true);
+      } else {
+        toast.error(msg || "Impossible d'activer l'essai");
+      }
+    } finally {
+      setActivating(false);
+    }
+  };
+
+  const handleRenewSubmit = async () => {
+    setRenewSubmitting(true);
+    try {
+      const { error } = await supabase.rpc("request_vendor_market_intel_trial_renewal" as any, { _message: renewMsg });
+      if (error) throw error;
+      toast.success("Demande envoyée à l'équipe MediKong — réponse sous 48h ouvrées.");
+      setRenewOpen(false);
+      setRenewMsg("");
+    } catch (e: any) {
+      const msg = String(e?.message || "");
+      if (msg.includes("request_already_pending")) {
+        toast.info("Une demande est déjà en cours de traitement.");
+        setRenewOpen(false);
+      } else {
+        toast.error(msg || "Impossible d'envoyer la demande");
+      }
+    } finally {
+      setRenewSubmitting(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -118,19 +170,63 @@ export function VendorMarketIntelGate({ children }: { children: React.ReactNode 
               </ul>
 
               <div className="mt-6 flex flex-wrap gap-2">
-                <Button asChild>
-                  <a href="mailto:contact@medikong.pro?subject=Activation%20Veille%20March%C3%A9">
-                    {expired ? "Activer mon abonnement" : "Demander mes 180 jours d'essai"}
-                  </a>
-                </Button>
+                {expired ? (
+                  <>
+                    <Button onClick={() => setRenewOpen(true)}>
+                      <MailQuestion className="h-4 w-4 mr-2" /> Demander une prolongation
+                    </Button>
+                    <Button asChild variant="outline">
+                      <a href="mailto:contact@medikong.pro?subject=Activation%20abonnement%20Veille%20March%C3%A9">
+                        Activer mon abonnement
+                      </a>
+                    </Button>
+                  </>
+                ) : (
+                  <Button onClick={handleSelfActivate} disabled={activating}>
+                    {activating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
+                    Activer mes 180 jours d'essai
+                  </Button>
+                )}
                 <Button asChild variant="outline">
                   <Link to="/vendor/dashboard">Retour au tableau de bord</Link>
                 </Button>
               </div>
+              {!expired && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  Activation immédiate, sans engagement. Une seule activation gratuite par compte vendeur.
+                </p>
+              )}
             </div>
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={renewOpen} onOpenChange={(o) => !o && setRenewOpen(false)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Demander une prolongation d'essai</DialogTitle>
+            <DialogDescription>
+              Votre essai gratuit a déjà été utilisé. L'équipe MediKong examine votre demande et vous répond sous 48h ouvrées.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 py-2">
+            <label className="text-sm font-medium">Message (optionnel)</label>
+            <Textarea
+              rows={4}
+              placeholder="Expliquez brièvement votre besoin (volumes, marques suivies, contexte…)"
+              value={renewMsg}
+              onChange={(e) => setRenewMsg(e.target.value)}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRenewOpen(false)}>Annuler</Button>
+            <Button onClick={handleRenewSubmit} disabled={renewSubmitting}>
+              {renewSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Envoyer la demande
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

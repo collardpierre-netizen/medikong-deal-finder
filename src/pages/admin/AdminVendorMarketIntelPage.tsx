@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { BarChart3, Sparkles, CreditCard, FileText, Loader2, XCircle } from "lucide-react";
+import { BarChart3, Sparkles, CreditCard, FileText, Loader2, XCircle, MailQuestion, CheckCircle2 } from "lucide-react";
 import { formatUpdatedAt } from "@/lib/format-date";
 
 type Row = {
@@ -129,6 +129,8 @@ export default function AdminVendorMarketIntelPage() {
           Démarrez un essai gratuit de 180 jours par vendeur, activez un abonnement (Stripe ou facturation MediKong)
           à la fin de l'essai, ou résiliez l'accès. Les essais expirent automatiquement chaque heure.
         </p>
+
+        <PendingRequestsSection />
 
         <Card className="mb-4">
           <CardHeader className="pb-3">
@@ -280,5 +282,91 @@ export default function AdminVendorMarketIntelPage() {
         </DialogContent>
       </Dialog>
     </>
+  );
+}
+
+function PendingRequestsSection() {
+  const qc = useQueryClient();
+  const { data: requests = [], isLoading } = useQuery({
+    queryKey: ["admin-vmi-requests"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("vendor_market_intel_requests" as any)
+        .select("id, vendor_id, kind, message, status, created_at, vendors:vendor_id(name, company_name)")
+        .eq("status", "pending")
+        .order("created_at", { ascending: false })
+        .limit(100);
+      if (error) throw error;
+      return (data as any[]) || [];
+    },
+  });
+
+  const handle = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: "handled" | "dismissed" }) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      const { error } = await supabase
+        .from("vendor_market_intel_requests" as any)
+        .update({ status, handled_at: new Date().toISOString(), handled_by: user?.id ?? null })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Demande mise à jour");
+      qc.invalidateQueries({ queryKey: ["admin-vmi-requests"] });
+      qc.invalidateQueries({ queryKey: ["admin-vmi-list"] });
+    },
+    onError: (e: any) => toast.error(e?.message || "Erreur"),
+  });
+
+  if (isLoading) return null;
+  if (requests.length === 0) return null;
+
+  return (
+    <Card className="mb-4 border-amber-300">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base flex items-center gap-2">
+          <MailQuestion className="h-4 w-4 text-amber-700" />
+          Demandes vendeurs en attente
+          <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300">{requests.length}</Badge>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-0">
+        <table className="w-full text-sm">
+          <thead className="bg-muted/40 text-xs">
+            <tr>
+              <th className="px-3 py-2 text-left">Vendeur</th>
+              <th className="px-3 py-2 text-left">Type</th>
+              <th className="px-3 py-2 text-left">Message</th>
+              <th className="px-3 py-2 text-left">Reçue le</th>
+              <th className="px-3 py-2 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {requests.map((r: any) => (
+              <tr key={r.id} className="border-t">
+                <td className="px-3 py-2 font-medium">
+                  {r.vendors?.company_name || r.vendors?.name || r.vendor_id.slice(0, 8)}
+                </td>
+                <td className="px-3 py-2 text-xs">
+                  {r.kind === "trial_renewal" ? "Prolongation essai" : r.kind}
+                </td>
+                <td className="px-3 py-2 text-xs text-muted-foreground max-w-md">
+                  {r.message || <span className="italic">—</span>}
+                </td>
+                <td className="px-3 py-2 text-xs">{formatUpdatedAt(r.created_at)}</td>
+                <td className="px-3 py-2 text-right whitespace-nowrap">
+                  <Button size="sm" variant="outline" onClick={() => handle.mutate({ id: r.id, status: "handled" })} disabled={handle.isPending}>
+                    <CheckCircle2 className="h-3 w-3 mr-1" /> Traitée
+                  </Button>
+                  <Button size="sm" variant="outline" className="ml-2 text-rose-700" onClick={() => handle.mutate({ id: r.id, status: "dismissed" })} disabled={handle.isPending}>
+                    <XCircle className="h-3 w-3 mr-1" /> Rejeter
+                  </Button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </CardContent>
+    </Card>
   );
 }

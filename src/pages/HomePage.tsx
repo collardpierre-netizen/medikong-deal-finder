@@ -9,6 +9,7 @@ import { HeroImageGallery } from "@/components/home/HeroImageGallery";
 import { Helmet } from "react-helmet-async";
 import { HreflangTags } from "@/components/seo/HreflangTags";
 import { HomeTestimonials } from "@/components/home/HomeTestimonials";
+import TrustLogosBanner from "@/components/home/TrustLogosBanner";
 import { useTranslation } from "react-i18next";
 import { useCountry } from "@/contexts/CountryContext";
 import { AnimatedCounter } from "@/components/entreprise/AnimatedCounter";

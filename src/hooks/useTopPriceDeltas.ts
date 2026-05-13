@@ -1,5 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
+import { getLocalizedName } from "@/lib/localization";
 
 /**
  * SKU multi-vendeurs avec écart de prix significatif entre offres actives.
@@ -25,20 +27,31 @@ export type PriceDelta = {
 };
 
 export function useTopPriceDeltas(limit = 3) {
+  const { i18n } = useTranslation();
+  const lang = i18n.language?.substring(0, 2) || "fr";
   return useQuery<PriceDelta[]>({
-    queryKey: ["top-price-deltas", limit],
+    queryKey: ["top-price-deltas", limit, lang],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("public_top_price_deltas" as any)
         .select(
-          "product_id, slug, name, name_fr, brand_name, image_url, image_urls, min_price, max_price, offer_count, delta_pct"
+          "product_id, slug, name, name_fr, name_nl, name_en, name_de, brand_name, image_url, image_urls, min_price, max_price, offer_count, delta_pct"
         )
         .limit(limit);
       if (error) throw error;
       return (data ?? []).map((d: any) => ({
         productId: d.product_id,
         slug: d.slug,
-        name: d.name_fr ?? d.name,
+        name: getLocalizedName(
+          {
+            name: d.name,
+            name_fr: d.name_fr,
+            name_nl: d.name_nl,
+            name_en: d.name_en,
+            name_de: d.name_de,
+          },
+          lang
+        ),
         brandName: d.brand_name ?? null,
         imageUrl:
           d.image_url ??

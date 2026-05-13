@@ -5,14 +5,16 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 export function AnnouncementBar() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const { data: config } = useQuery({
     queryKey: ["site_config", "announcement_bar"],
     queryFn: async () => {
       const { data } = await supabase
         .from("site_config")
-        .select("investment_banner_enabled, investment_banner_text, crowdfunding_enabled")
+        .select(
+          "investment_banner_enabled, investment_banner_text, investment_banner_text_nl, investment_banner_text_en, investment_banner_text_de, crowdfunding_enabled"
+        )
         .eq("id", 1)
         .maybeSingle();
       return data;
@@ -25,7 +27,16 @@ export function AnnouncementBar() {
 
   const crowdfundingActive = (config as any)?.crowdfunding_enabled !== false;
 
-  const customText = config?.investment_banner_text?.trim();
+  // Pick the localized text with fallback chain → current lang → FR → null
+  const lang = i18n.language?.substring(0, 2) || "fr";
+  const localizedMap: Record<string, string | null | undefined> = {
+    fr: config?.investment_banner_text,
+    nl: (config as any)?.investment_banner_text_nl,
+    en: (config as any)?.investment_banner_text_en,
+    de: (config as any)?.investment_banner_text_de,
+  };
+  const customText =
+    (localizedMap[lang]?.trim() || config?.investment_banner_text?.trim()) ?? "";
   const messages = customText
     ? [
         { icon: Rocket, text: customText },

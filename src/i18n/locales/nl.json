@@ -49,7 +49,19 @@
   "trustBar": {
     "certifiedCE": "CE-gecertificeerde producten",
     "verifiedSuppliers": "Geverifieerde leveranciers",
-    "buyerProtection": "Kopersbescherming"
+    "buyerProtection": "Kopersbescherming",
+    "authenticity": "100% Authenticiteit gegarandeerd"
+  },
+  "priceShowcase": {
+    "badgeLive": "Voorbeeld van live prijsvergelijking · data van vandaag",
+    "badgeNoOffers": "Uitgelicht product · nog geen vergelijking",
+    "competitors": "{{count}} leveranciers in concurrentie",
+    "noOffersDesc": "Nog geen actieve aanbiedingen voor deze referentie.",
+    "singleOfferDesc": "Slechts 1 actieve aanbieding — vergelijking beschikbaar zodra een tweede verkoper een prijs plaatst.",
+    "alertCta": "Word verwittigd zodra een nieuwe prijs gepubliceerd wordt.",
+    "viewProduct": "Bekijk de productfiche",
+    "viewComparison": "Bekijk de vergelijking",
+    "deltaCaption": "Prijsverschil tussen verkopers voor deze multi-leverancier referentie."
   },
   "hero": {
     "title": "Alles voor zorgprofessionals, op één plek.",

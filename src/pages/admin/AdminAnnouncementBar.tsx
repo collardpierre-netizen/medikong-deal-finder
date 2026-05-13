@@ -16,12 +16,17 @@ export default function AdminAnnouncementBar() {
   const [enabled, setEnabled] = useState(true);
   const [crowdfundingEnabled, setCrowdfundingEnabled] = useState(true);
   const [text, setText] = useState("");
+  const [textNl, setTextNl] = useState("");
+  const [textEn, setTextEn] = useState("");
+  const [textDe, setTextDe] = useState("");
 
   async function load() {
     setLoading(true);
     const { data, error } = await supabase
       .from("site_config")
-      .select("investment_banner_enabled, investment_banner_text, crowdfunding_enabled")
+      .select(
+        "investment_banner_enabled, investment_banner_text, investment_banner_text_nl, investment_banner_text_en, investment_banner_text_de, crowdfunding_enabled"
+      )
       .eq("id", 1)
       .maybeSingle();
     if (error) {
@@ -30,6 +35,9 @@ export default function AdminAnnouncementBar() {
       setEnabled(data.investment_banner_enabled);
       setCrowdfundingEnabled((data as any).crowdfunding_enabled ?? true);
       setText(data.investment_banner_text ?? "");
+      setTextNl((data as any).investment_banner_text_nl ?? "");
+      setTextEn((data as any).investment_banner_text_en ?? "");
+      setTextDe((data as any).investment_banner_text_de ?? "");
     }
     setLoading(false);
   }
@@ -45,6 +53,9 @@ export default function AdminAnnouncementBar() {
       .update({
         investment_banner_enabled: enabled,
         investment_banner_text: text.trim() || null,
+        investment_banner_text_nl: textNl.trim() || null,
+        investment_banner_text_en: textEn.trim() || null,
+        investment_banner_text_de: textDe.trim() || null,
         crowdfunding_enabled: crowdfundingEnabled,
       } as any)
       .eq("id", 1);
@@ -132,20 +143,30 @@ export default function AdminAnnouncementBar() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Texte du bandeau</CardTitle>
+          <CardTitle>Texte du bandeau (par langue)</CardTitle>
           <CardDescription>
-            Laissez vide pour utiliser le texte par défaut (traduit selon la langue du visiteur).
+            Renseignez le texte pour chaque langue. Si une langue est vide, le texte FR (puis le texte par défaut traduit) sera utilisé en fallback.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-3">
-          <Textarea
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            placeholder="Investissez dans MediKong — Tax Shelter 45% — Levée de fonds Phase 2 ouverte"
-            rows={3}
-            maxLength={200}
-          />
-          <p className="text-xs text-muted-foreground text-right">{text.length} / 200 caractères</p>
+        <CardContent className="space-y-4">
+          {([
+            { lang: "fr", label: "🇫🇷 Français (FR)", value: text, setter: setText, ph: "Investissez dans MediKong — Tax Shelter 45% — Levée de fonds Phase 2 ouverte" },
+            { lang: "nl", label: "🇳🇱 Néerlandais (NL)", value: textNl, setter: setTextNl, ph: "Investeer in MediKong — Tax Shelter 45% — Fondsenwerving Fase 2 open" },
+            { lang: "en", label: "🇬🇧 Anglais (EN)", value: textEn, setter: setTextEn, ph: "Invest in MediKong — Tax Shelter 45% — Phase 2 fundraising open" },
+            { lang: "de", label: "🇩🇪 Allemand (DE)", value: textDe, setter: setTextDe, ph: "Investieren Sie in MediKong — Tax Shelter 45% — Phase 2 Fundraising offen" },
+          ] as const).map((row) => (
+            <div key={row.lang} className="space-y-1.5">
+              <Label className="text-sm font-medium">{row.label}</Label>
+              <Textarea
+                value={row.value}
+                onChange={(e) => row.setter(e.target.value)}
+                placeholder={row.ph}
+                rows={2}
+                maxLength={200}
+              />
+              <p className="text-xs text-muted-foreground text-right">{row.value.length} / 200 caractères</p>
+            </div>
+          ))}
         </CardContent>
       </Card>
 

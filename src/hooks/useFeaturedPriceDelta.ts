@@ -1,5 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
+import { getLocalizedName } from "@/lib/localization";
 import type { PriceDelta } from "./useTopPriceDeltas";
 
 export type FeaturedPriceDeltaResult =
@@ -25,8 +27,10 @@ export type FeaturedPriceDeltaResult =
  * "pas encore d'offres" plutôt que de basculer silencieusement sur le top delta.
  */
 export function useFeaturedPriceDelta(productId: string | null | undefined) {
+  const { i18n } = useTranslation();
+  const lang = i18n.language?.substring(0, 2) || "fr";
   return useQuery<FeaturedPriceDeltaResult | null>({
-    queryKey: ["featured-price-delta", productId],
+    queryKey: ["featured-price-delta", productId, lang],
     enabled: !!productId,
     queryFn: async () => {
       if (!productId) return null;
@@ -34,7 +38,7 @@ export function useFeaturedPriceDelta(productId: string | null | undefined) {
       const [productRes, offersRes] = await Promise.all([
         supabase
           .from("products")
-          .select("id, slug, name, name_fr, image_url, image_urls, brand:brands(name)")
+          .select("id, slug, name, name_fr, name_nl, name_en, name_de, image_url, image_urls, brand:brands(name)")
           .eq("id", productId)
           .maybeSingle(),
         supabase
@@ -58,7 +62,7 @@ export function useFeaturedPriceDelta(productId: string | null | undefined) {
       const productLite = {
         id: product.id,
         slug: product.slug,
-        name: (product as any).name_fr ?? product.name,
+        name: getLocalizedName(product as any, lang),
         brandName: (product as any).brand?.name ?? null,
         imageUrl:
           product.image_url ??

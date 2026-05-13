@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, Languages, CheckCircle2, AlertTriangle, Database } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { I18nBatchTranslator } from "@/components/admin/I18nBatchTranslator";
 
 interface CacheStats {
   total: number;
@@ -168,6 +169,8 @@ export default function AdminI18nPilot() {
             </Button>
           </CardContent>
         </Card>
+
+        <I18nBatchTranslator />
 
         {cacheStats && (
           <Card className="mt-6">

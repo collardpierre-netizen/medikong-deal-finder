@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import SearchTrivagoCard from "./SearchTrivagoCard";
 import type { Product } from "@/hooks/useProducts";
 
 interface Props {
   products: Product[];
 }
+
+const PAGE_SIZE = 24;
 
 type SortMode = "best" | "cheapest" | "fastest";
 

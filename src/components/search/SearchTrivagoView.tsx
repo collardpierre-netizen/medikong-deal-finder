@@ -63,12 +63,38 @@ export default function SearchTrivagoView({ products }: Props) {
         ))}
       </div>
 
-      {/* Cards */}
-      <div className="space-y-3">
-        {sorted.map((p) => (
-          <SearchTrivagoCard key={p.id} product={p} />
-        ))}
-      </div>
+      {/* Cards — pagination progressive pour éviter de déclencher des centaines
+          de requêtes useProductOffers en parallèle (ex: une marque avec 200 SKU). */}
+      <TrivagoPaginatedList products={sorted} />
     </div>
   );
 }
+
+function TrivagoPaginatedList({ products }: { products: Product[] }) {
+  const [visible, setVisible] = useState(PAGE_SIZE);
+  // Reset si la liste sous-jacente change (changement de tri / filtre / catégorie)
+  useEffect(() => {
+    setVisible(PAGE_SIZE);
+  }, [products]);
+
+  const slice = products.slice(0, visible);
+  const remaining = products.length - slice.length;
+
+  return (
+    <>
+      <div className="space-y-3">
+        {slice.map((p) => (
+          <SearchTrivagoCard key={p.id} product={p} />
+        ))}
+      </div>
+      {remaining > 0 && (
+        <div className="flex justify-center pt-4">
+          <button
+            type="button"
+            onClick={() => setVisible((v) => v + PAGE_SIZE)}
+            className="px-5 py-2.5 border border-border rounded-md text-sm font-semibold text-foreground hover:bg-muted transition-colors"
+          >
+            Voir plus ({remaining} restant{remaining > 1 ? "s" : ""})
+          </button>
+        </div>
+      )}

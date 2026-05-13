@@ -204,7 +204,7 @@ export function PriceDeltaShowcase() {
         <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-mk-blue/10 text-mk-blue">
           <TrendingDown size={12} aria-hidden="true" />
         </span>
-        Exemple de comparaison live · données du jour
+        {t("priceShowcase.badgeLive")}
       </div>
 
       <div className="flex items-center gap-3 md:gap-4">

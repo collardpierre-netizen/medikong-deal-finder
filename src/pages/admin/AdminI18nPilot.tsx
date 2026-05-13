@@ -170,6 +170,8 @@ export default function AdminI18nPilot() {
           </CardContent>
         </Card>
 
+        <I18nBatchTranslator />
+
         {cacheStats && (
           <Card className="mt-6">
             <CardHeader>

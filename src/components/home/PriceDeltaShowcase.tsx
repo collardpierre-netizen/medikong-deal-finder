@@ -58,6 +58,9 @@ type Display =
     };
 
 export function PriceDeltaShowcase() {
+  const { t, i18n } = useTranslation();
+  const lang = i18n.language?.substring(0, 2) || "fr";
+  const fmt = fmtFor(lang);
   const settings = useHomeShowcaseSettings();
   const pinnedId = settings.data?.pinned_product_id ?? null;
   const pinned = useFeaturedPriceDelta(pinnedId);
@@ -135,7 +138,7 @@ export function PriceDeltaShowcase() {
           <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-mk-alt text-mk-sec">
             <Package size={12} aria-hidden="true" />
           </span>
-          Produit mis en avant · pas encore de comparaison
+          {t("priceShowcase.badgeNoOffers")}
         </div>
         <div className="flex items-center gap-3 md:gap-4">
           <div className="shrink-0 w-14 h-14 md:w-16 md:h-16 rounded-lg bg-mk-alt/40 flex items-center justify-center overflow-hidden border border-mk-line">
@@ -160,14 +163,14 @@ export function PriceDeltaShowcase() {
             <p className="text-sm font-semibold text-mk-navy line-clamp-2">{display.name}</p>
             <p className="text-[11px] text-mk-sec mt-0.5">
               {display.offerCount === 0
-                ? "Pas encore d'offres actives sur cette référence."
-                : "1 seule offre active — comparaison disponible dès qu'un second vendeur se positionne."}
+                ? t("priceShowcase.noOffersDesc")
+                : t("priceShowcase.singleOfferDesc")}
             </p>
           </div>
         </div>
         <div className="flex items-center justify-between mt-4 pt-3 border-t border-mk-line gap-3">
           <p className="text-xs text-mk-sec leading-snug">
-            Soyez alerté dès qu'un nouveau prix est publié.
+            {t("priceShowcase.alertCta")}
           </p>
           <Link
             to={`/produit/${display.slug}`}
@@ -181,7 +184,7 @@ export function PriceDeltaShowcase() {
             }
             className="shrink-0 inline-flex items-center gap-1 text-xs font-semibold text-mk-blue hover:underline"
           >
-            Voir la fiche produit <ArrowRight size={12} aria-hidden="true" />
+            {t("priceShowcase.viewProduct")} <ArrowRight size={12} aria-hidden="true" />
           </Link>
         </div>
       </motion.aside>
@@ -227,7 +230,7 @@ export function PriceDeltaShowcase() {
           )}
           <p className="text-sm font-semibold text-mk-navy line-clamp-2">{display.name}</p>
           <p className="text-[11px] text-mk-sec mt-0.5">
-            {display.offerCount} fournisseurs en concurrence
+            {t("priceShowcase.competitors", { count: display.offerCount })}
           </p>
         </div>
 
@@ -246,7 +249,7 @@ export function PriceDeltaShowcase() {
 
       <div className="flex items-center justify-between mt-4 pt-3 border-t border-mk-line gap-3">
         <p className="text-xs text-mk-sec leading-snug">
-          Écart entre vendeurs sur cette référence multi-fournisseurs.
+          {t("priceShowcase.deltaCaption")}
         </p>
         <Link
           to={`/produit/${display.slug}`}
@@ -261,7 +264,7 @@ export function PriceDeltaShowcase() {
           }
           className="shrink-0 inline-flex items-center gap-1 text-xs font-semibold text-mk-blue hover:underline"
         >
-          Voir la comparaison <ArrowRight size={12} aria-hidden="true" />
+          {t("priceShowcase.viewComparison")} <ArrowRight size={12} aria-hidden="true" />
         </Link>
       </div>
     </motion.aside>

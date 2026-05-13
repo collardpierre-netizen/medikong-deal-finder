@@ -23,12 +23,29 @@ serve(async (req) => {
     const entityType: string = body.entity_type || "product";
     const brandFilter: string | null = body.brand || null;
     const categoryFilter: string | null = body.category_id || null;
+    const productIds: string[] | null = Array.isArray(body.product_ids) && body.product_ids.length > 0
+      ? body.product_ids.slice(0, 100).filter((x: unknown) => typeof x === "string")
+      : null;
     const firstLocale = targetLocales[0];
 
     let items: { id: string; name: string; description?: string }[] = [];
     let totalUntranslated = 0;
 
-    if (entityType === "product") {
+    // Manual selection mode: translate the exact list of products to ALL target locales,
+    // bypassing the "already translated" filter so admins can re-translate or fill gaps.
+    if (entityType === "product" && productIds) {
+      const { data: products, error } = await supabase
+        .from("products")
+        .select("id, name, name_fr, short_description, description, description_fr")
+        .in("id", productIds);
+      if (error) throw error;
+      items = (products || []).map((p: any) => ({
+        id: p.id,
+        name: p.name_fr || p.name,
+        description: p.description_fr || p.description || p.short_description || "",
+      }));
+      totalUntranslated = items.length;
+    } else if (entityType === "product") {
       // Get IDs of already-translated products for first locale
       const { data: translatedRows } = await supabase
         .from("translations")

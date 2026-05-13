@@ -50,7 +50,19 @@
   "trustBar": {
     "certifiedCE": "CE certified products",
     "verifiedSuppliers": "Verified suppliers",
-    "buyerProtection": "Buyer protection"
+    "buyerProtection": "Buyer protection",
+    "authenticity": "100% Guaranteed authenticity"
+  },
+  "priceShowcase": {
+    "badgeLive": "Live price comparison · today's data",
+    "badgeNoOffers": "Featured product · no comparison yet",
+    "competitors": "{{count}} suppliers competing",
+    "noOffersDesc": "No active offers on this reference yet.",
+    "singleOfferDesc": "Only 1 active offer — comparison available as soon as a second seller posts a price.",
+    "alertCta": "Get notified as soon as a new price is posted.",
+    "viewProduct": "View product page",
+    "viewComparison": "View the comparison",
+    "deltaCaption": "Price gap between sellers on this multi-supplier reference."
   },
   "hero": {
     "title": "Everything for healthcare professionals, in one place.",

@@ -49,7 +49,19 @@
   "trustBar": {
     "certifiedCE": "CE-zertifizierte Produkte",
     "verifiedSuppliers": "Verifizierte Lieferanten",
-    "buyerProtection": "Käuferschutz"
+    "buyerProtection": "Käuferschutz",
+    "authenticity": "100% Authentizität garantiert"
+  },
+  "priceShowcase": {
+    "badgeLive": "Live-Preisvergleich · heutige Daten",
+    "badgeNoOffers": "Hervorgehobenes Produkt · noch kein Vergleich",
+    "competitors": "{{count}} konkurrierende Lieferanten",
+    "noOffersDesc": "Noch keine aktiven Angebote für diese Referenz.",
+    "singleOfferDesc": "Nur 1 aktives Angebot — Vergleich verfügbar, sobald ein zweiter Verkäufer einen Preis veröffentlicht.",
+    "alertCta": "Werden Sie benachrichtigt, sobald ein neuer Preis veröffentlicht wird.",
+    "viewProduct": "Produktseite ansehen",
+    "viewComparison": "Vergleich ansehen",
+    "deltaCaption": "Preisunterschied zwischen Verkäufern für diese Multi-Lieferanten-Referenz."
   },
   "hero": {
     "title": "Ihre medizinischen Produkte zum besten B2B-Preis",

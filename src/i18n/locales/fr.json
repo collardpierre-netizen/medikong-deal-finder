@@ -55,7 +55,19 @@
   "trustBar": {
     "certifiedCE": "Produits certifiés CE",
     "verifiedSuppliers": "Fournisseurs vérifiés",
-    "buyerProtection": "Protection acheteur"
+    "buyerProtection": "Protection acheteur",
+    "authenticity": "100% Authenticité garantie"
+  },
+  "priceShowcase": {
+    "badgeLive": "Exemple de comparaison live · données du jour",
+    "badgeNoOffers": "Produit mis en avant · pas encore de comparaison",
+    "competitors": "{{count}} fournisseurs en concurrence",
+    "noOffersDesc": "Pas encore d'offres actives sur cette référence.",
+    "singleOfferDesc": "1 seule offre active — comparaison disponible dès qu'un second vendeur se positionne.",
+    "alertCta": "Soyez alerté dès qu'un nouveau prix est publié.",
+    "viewProduct": "Voir la fiche produit",
+    "viewComparison": "Voir la comparaison",
+    "deltaCaption": "Écart entre vendeurs sur cette référence multi-fournisseurs."
   },
   "hero": {
     "title": "Tout pour les professionnels de santé, en un seul endroit.",

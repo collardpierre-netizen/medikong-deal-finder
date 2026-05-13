@@ -11329,6 +11329,9 @@ export type Database = {
           id: number
           investment_banner_enabled: boolean
           investment_banner_text: string | null
+          investment_banner_text_de: string | null
+          investment_banner_text_en: string | null
+          investment_banner_text_nl: string | null
           reduced_vat_rate: number
           restock_enabled: boolean
           site_name: string
@@ -11343,6 +11346,9 @@ export type Database = {
           id?: number
           investment_banner_enabled?: boolean
           investment_banner_text?: string | null
+          investment_banner_text_de?: string | null
+          investment_banner_text_en?: string | null
+          investment_banner_text_nl?: string | null
           reduced_vat_rate?: number
           restock_enabled?: boolean
           site_name?: string
@@ -11357,6 +11363,9 @@ export type Database = {
           id?: number
           investment_banner_enabled?: boolean
           investment_banner_text?: string | null
+          investment_banner_text_de?: string | null
+          investment_banner_text_en?: string | null
+          investment_banner_text_nl?: string | null
           reduced_vat_rate?: number
           restock_enabled?: boolean
           site_name?: string
@@ -16689,7 +16698,10 @@ export type Database = {
           max_price: number | null
           min_price: number | null
           name: string | null
+          name_de: string | null
+          name_en: string | null
           name_fr: string | null
+          name_nl: string | null
           offer_count: number | null
           product_id: string | null
           slug: string | null

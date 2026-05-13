@@ -288,6 +288,7 @@ Rules:
         const updates: Record<string, string> = {};
         if (t.nl) updates.name_nl = (t.nl as string).trim();
         if (t.de) updates.name_de = (t.de as string).trim();
+        if (t.en) updates.name_en = (t.en as string).trim();
         if (Object.keys(updates).length > 0) {
           await supabase.from(table).update(updates).eq("id", item.id);
         }

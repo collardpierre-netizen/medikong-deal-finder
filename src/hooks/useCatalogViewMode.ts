@@ -22,10 +22,15 @@ function trackEvent(event: string, payload: Record<string, unknown>) {
 
 function getDefaultView(pathname: string, params: URLSearchParams, isMobile: boolean): CatalogView {
   if (isMobile) return "trivago";
-  if (pathname.startsWith("/marques") || pathname.startsWith("/marque/") || pathname.startsWith("/promotions")) {
+  if (pathname.startsWith("/promotions")) {
     return "grid";
   }
-  if (pathname.startsWith("/catalogue") || pathname.startsWith("/recherche")) {
+  if (
+    pathname.startsWith("/marques") ||
+    pathname.startsWith("/marque/") ||
+    pathname.startsWith("/catalogue") ||
+    pathname.startsWith("/recherche")
+  ) {
     return "trivago";
   }
   return "grid";

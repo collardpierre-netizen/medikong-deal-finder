@@ -16,12 +16,17 @@ export default function AdminAnnouncementBar() {
   const [enabled, setEnabled] = useState(true);
   const [crowdfundingEnabled, setCrowdfundingEnabled] = useState(true);
   const [text, setText] = useState("");
+  const [textNl, setTextNl] = useState("");
+  const [textEn, setTextEn] = useState("");
+  const [textDe, setTextDe] = useState("");
 
   async function load() {
     setLoading(true);
     const { data, error } = await supabase
       .from("site_config")
-      .select("investment_banner_enabled, investment_banner_text, crowdfunding_enabled")
+      .select(
+        "investment_banner_enabled, investment_banner_text, investment_banner_text_nl, investment_banner_text_en, investment_banner_text_de, crowdfunding_enabled"
+      )
       .eq("id", 1)
       .maybeSingle();
     if (error) {
@@ -30,6 +35,9 @@ export default function AdminAnnouncementBar() {
       setEnabled(data.investment_banner_enabled);
       setCrowdfundingEnabled((data as any).crowdfunding_enabled ?? true);
       setText(data.investment_banner_text ?? "");
+      setTextNl((data as any).investment_banner_text_nl ?? "");
+      setTextEn((data as any).investment_banner_text_en ?? "");
+      setTextDe((data as any).investment_banner_text_de ?? "");
     }
     setLoading(false);
   }
@@ -45,6 +53,9 @@ export default function AdminAnnouncementBar() {
       .update({
         investment_banner_enabled: enabled,
         investment_banner_text: text.trim() || null,
+        investment_banner_text_nl: textNl.trim() || null,
+        investment_banner_text_en: textEn.trim() || null,
+        investment_banner_text_de: textDe.trim() || null,
         crowdfunding_enabled: crowdfundingEnabled,
       } as any)
       .eq("id", 1);

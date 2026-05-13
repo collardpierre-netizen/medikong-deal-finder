@@ -97,6 +97,7 @@ function TrivagoPaginatedList({ products }: { products: Product[] }) {
             Voir plus ({remaining} restant{remaining > 1 ? "s" : ""})
           </button>
         </div>
+      )}
     </>
   );
 }

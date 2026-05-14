@@ -68,9 +68,9 @@ const STATUS_LABEL: Record<string, { label: string; variant: "default" | "second
 
 const ACTIVE_STATUSES = new Set(["draft", "open", "dispatched", "in_followup"]);
 
-function formatPrice(cents: number | null | undefined) {
+function formatPrice(cents: number | null | undefined, locale?: string) {
   if (cents == null) return "—";
-  return (cents / 100).toLocaleString("fr-BE", { style: "currency", currency: "EUR", minimumFractionDigits: 2 });
+  return formatMoneyFromCentsStatic(cents, { locale });
 }
 
 export default function MesRfqPage() {

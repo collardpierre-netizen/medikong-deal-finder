@@ -11,6 +11,7 @@ import {
   Image as ImageIcon, FileSpreadsheet, File as FileIcon, X,
 } from "lucide-react";
 import { formatUpdatedAt, formatUpdatedAtFull } from "@/lib/format-date";
+import { useMoneyFormat, formatMoneyFromCents } from "@/lib/money-format";
 import { VendorRfqResponseForm } from "@/components/vendor/VendorRfqResponseForm";
 import { Helmet } from "react-helmet-async";
 
@@ -63,9 +64,9 @@ const TAB_FILTERS = [
   { key: "all", label: "Toutes", statuses: [] },
 ] as const;
 
-function formatPriceCents(cents: number | null | undefined) {
+function formatPriceCents(cents: number | null | undefined, locale?: string) {
   if (cents == null) return "—";
-  return (cents / 100).toLocaleString("fr-BE", { style: "currency", currency: "EUR", minimumFractionDigits: 2 });
+  return formatMoneyFromCents(cents, locale ? { locale } : undefined);
 }
 
 export default function VendorRfqInbox() {
@@ -334,6 +335,7 @@ function RfqDetailPanel({
   onAfter: () => void;
 }) {
   const rfq = row.rfq!;
+  const { locale } = useMoneyFormat();
   const status = STATUS_LABELS[row.status] || { label: row.status, tone: "bg-slate-100 text-slate-600" };
   const deadlinePassed = rfq.responses_deadline && new Date(rfq.responses_deadline) < new Date();
   const canRespond = !deadlinePassed && !["declined", "expired", "lost"].includes(row.status);
@@ -359,7 +361,7 @@ function RfqDetailPanel({
           <Field label="Pays de livraison"><strong>{rfq.destination_country_code}</strong></Field>
           {rfq.target_price_excl_vat_cents != null && (
             <Field label="Prix cible HTVA">
-              <strong>{formatPriceCents(rfq.target_price_excl_vat_cents)}</strong> /u.
+              <strong>{formatPriceCents(rfq.target_price_excl_vat_cents, locale)}</strong> /u.
             </Field>
           )}
           {rfq.desired_delivery_date && (

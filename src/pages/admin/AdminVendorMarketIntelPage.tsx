@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { toast } from "sonner";
 import { BarChart3, Sparkles, CreditCard, FileText, Loader2, XCircle, MailQuestion, CheckCircle2, History } from "lucide-react";
 import { formatUpdatedAt } from "@/lib/format-date";
+import { useMoneyFormat, formatMoneyFromCents } from "@/lib/money-format";
 
 type Row = {
   vendor_id: string;
@@ -35,13 +36,15 @@ const STATUS_META: Record<Row["status"], { label: string; cls: string }> = {
   cancelled: { label: "Annulé", cls: "bg-rose-100 text-rose-800 border-rose-300" },
 };
 
-function formatPrice(c: number | null) {
+function formatPrice(c: number | null, locale?: string) {
   if (c == null) return "—";
-  return (c / 100).toLocaleString("fr-BE", { style: "currency", currency: "EUR" });
+  return formatMoneyFromCents(c, locale ? { locale } : undefined);
 }
 
 export default function AdminVendorMarketIntelPage() {
   const qc = useQueryClient();
+  const { locale } = useMoneyFormat();
+  const fmtPrice = (c: number | null) => formatPrice(c, locale);
   const [search, setSearch] = useState("");
   const [trialDialog, setTrialDialog] = useState<{ vendorId: string; vendorName: string } | null>(null);
   const [trialDays, setTrialDays] = useState(180);
@@ -183,7 +186,7 @@ export default function AdminVendorMarketIntelPage() {
                         </td>
                         <td className="px-3 py-2">
                           {r.plan_label ? (
-                            <span>{r.plan_label} <span className="text-xs text-muted-foreground">· {formatPrice(r.monthly_price_cents)}/mois</span></span>
+                            <span>{r.plan_label} <span className="text-xs text-muted-foreground">· {fmtPrice(r.monthly_price_cents)}/mois</span></span>
                           ) : "—"}
                         </td>
                         <td className="px-3 py-2 text-xs">{deadline ? formatUpdatedAt(deadline) : "—"}</td>
@@ -253,7 +256,7 @@ export default function AdminVendorMarketIntelPage() {
                 <SelectContent>
                   {plans.map((p) => (
                     <SelectItem key={p.id} value={p.id}>
-                      {p.label} — {formatPrice(p.monthly_price_cents)}/mois ({p.ean_quota ? `${p.ean_quota} EAN` : "illimité"})
+                      {p.label} — {fmtPrice(p.monthly_price_cents)}/mois ({p.ean_quota ? `${p.ean_quota} EAN` : "illimité"})
                     </SelectItem>
                   ))}
                 </SelectContent>

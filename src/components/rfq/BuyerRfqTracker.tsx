@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, CheckCircle2, XCircle, Clock, Eye, Send, AlertTriangle, Bell, Award, Mail, MailX } from "lucide-react";
 import { formatUpdatedAtFull } from "@/lib/format-date";
+import { useMoneyFormat, formatMoneyFromCents } from "@/lib/money-format";
 
 type VendorStatusRow = {
   rfq_id: string | null;
@@ -68,9 +69,9 @@ const STATUS_META: Record<
   lost: { icon: XCircle, tone: "text-muted-foreground bg-muted border-border", label: "Non retenu" },
 };
 
-function formatPrice(cents: number | null) {
+function formatPrice(cents: number | null, locale?: string) {
   if (cents == null) return "—";
-  return (cents / 100).toLocaleString("fr-BE", { style: "currency", currency: "EUR", minimumFractionDigits: 2 });
+  return formatMoneyFromCents(cents, locale ? { locale } : undefined);
 }
 
 function TimelineDot({
@@ -106,6 +107,7 @@ function TimelineDot({
 }
 
 export function BuyerRfqTracker({ rfqId }: { rfqId: string }) {
+  const { locale } = useMoneyFormat();
   const { data: rows, isLoading } = useQuery({
     queryKey: ["buyer-rfq-tracker", rfqId],
     queryFn: async () => {
@@ -304,7 +306,7 @@ export function BuyerRfqTracker({ rfqId }: { rfqId: string }) {
                     {r.responded_at && r.unit_price_excl_vat_cents != null ? (
                       <div>
                         <div className="font-semibold text-emerald-800">
-                          {formatPrice(r.unit_price_excl_vat_cents)}/u.
+                          {formatPrice(r.unit_price_excl_vat_cents, locale)}/u.
                         </div>
                         <div className="text-muted-foreground">
                           {r.delivery_days ? `livraison ${r.delivery_days} j` : ""}

@@ -50,10 +50,14 @@ const SUPPLIERS: { value: Supplier; label: string }[] = [
 const ACCEPTED = ["application/pdf", "image/jpeg", "image/png", "text/csv", "application/vnd.ms-excel"];
 const MAX_SIZE = 10 * 1024 * 1024;
 
-const fmtMoney = (n: number | null | undefined) =>
-  typeof n === "number" ? n.toLocaleString("fr-BE", { style: "currency", currency: "EUR" }) : "—";
+import { useMoneyFormat, formatMoney } from "@/lib/money-format";
+
+const fmtMoneyStatic = (n: number | null | undefined, locale?: string) =>
+  typeof n === "number" ? formatMoney(n, { locale }) : "—";
 
 export default function EconomiesPage() {
+  const { locale } = useMoneyFormat();
+  const fmtMoney = (n: number | null | undefined) => fmtMoneyStatic(n, locale);
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [supplier, setSupplier] = useState<Supplier>("febelco");
   const [file, setFile] = useState<File | null>(null);

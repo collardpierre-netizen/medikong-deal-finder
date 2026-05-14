@@ -27,6 +27,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { formatUpdatedAt } from "@/lib/format-date";
+import { formatMoney, useMoneyFormat } from "@/lib/money-format";
 
 type Overview = {
   subscription_id: string;
@@ -86,9 +87,9 @@ const PHASE_LABEL: Record<string, { label: string; tone: "default" | "secondary"
   cancelled: { label: "Annulé", tone: "destructive", icon: Info },
 };
 
-function fmtEUR(amount: number | null | undefined) {
+function fmtEURStatic(amount: number | null | undefined, locale?: string) {
   const n = Number(amount ?? 0);
-  return new Intl.NumberFormat("fr-BE", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n);
+  return formatMoney(n, { locale, fractionDigits: 0 });
 }
 
 function fmtDate(iso: string | null | undefined) {
@@ -101,6 +102,8 @@ export default function PharmacieAbonnementPage() {
   const qc = useQueryClient();
   const [reason, setReason] = useState("");
   const [callbackWindow, setCallbackWindow] = useState("");
+  const { locale } = useMoneyFormat();
+  const fmtEUR = (amount: number | null | undefined) => fmtEURStatic(amount, locale);
 
   // Auto-ensure subscription exists on first visit
   useEffect(() => {

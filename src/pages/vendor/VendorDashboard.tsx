@@ -7,12 +7,7 @@ import VendorKycStepper from "@/components/vendor/VendorKycStepper";
 import NoShippingDashboard from "@/components/vendor/dashboard/NoShippingDashboard";
 import SendcloudDashboard from "@/components/vendor/dashboard/SendcloudDashboard";
 import VendorMarketIntelStatusCard from "@/components/vendor/dashboard/VendorMarketIntelStatusCard";
-
-const eurFormatter = new Intl.NumberFormat("fr-BE", {
-  style: "currency",
-  currency: "EUR",
-  maximumFractionDigits: 0,
-});
+import { useMoneyFormat } from "@/lib/money-format";
 
 const today = new Date();
 const dateStr = today.toLocaleDateString("fr-BE", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
@@ -20,6 +15,7 @@ const dateStr = today.toLocaleDateString("fr-BE", { weekday: "long", day: "numer
 export default function VendorDashboard() {
   const { data: vendor } = useCurrentVendor();
   const { data: kpis } = useVendorDashboardKpis(vendor?.id);
+  const { formatMoney } = useMoneyFormat();
 
   const isApproved = vendor?.validation_status === "approved";
   const shippingMode = (vendor as any)?.vendor_shipping_mode ?? "no_shipping";
@@ -48,7 +44,7 @@ export default function VendorDashboard() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <VStat
               label="CA du mois"
-              value={revenueEur > 0 ? eurFormatter.format(revenueEur) : "0 EUR"}
+              value={revenueEur > 0 ? formatMoney(revenueEur, { fractionDigits: 0 }) : "0 EUR"}
               icon="Euro"
               color="#1B5BDA"
               sub={revenueEur > 0 ? "ce mois" : "aucune vente"}

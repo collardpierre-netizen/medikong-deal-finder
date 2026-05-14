@@ -2,30 +2,25 @@
  * Helpers d'affichage harmonisés pour les prix sur la page produit
  * (et partout où l'on affiche un prix avec une base de comparaison).
  *
- * Règles uniques :
- *  - Locale : fr-BE (séparateur de milliers = espace insécable, décimale = virgule)
- *  - Toujours 2 décimales pour les montants
- *  - Symbole € séparé du nombre par une espace insécable
- *  - Suffixes de base : « €/pack », « €/u. », « €/100 u. » (jamais « /unit » ou « /u » seul)
+ * Le formatage des montants délègue désormais à `money-format.ts` (locale-aware).
+ * Ces helpers conservent leur signature et restent utilisables hors React ;
+ * en composant React, préférer `useMoneyFormat()` pour suivre la langue UI.
+ *
+ * Suffixes de base : « €/pack », « €/u. », « €/100 u. » (jamais « /unit » ou « /u » seul).
  */
+
+import { formatMoney, type MoneyLocale } from "./money-format";
 
 export type CompareBasis = "pack" | "unit" | "hundred";
 
-/** Formate un montant en euros, style fr-BE, 2 décimales (sans le symbole). */
-export function formatAmount(n: number | null | undefined): string {
-  const v = Number(n);
-  if (!Number.isFinite(v)) return "—";
-  return v.toLocaleString("fr-BE", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
+/** Formate un montant en euros, 2 décimales (sans le symbole). */
+export function formatAmount(n: number | null | undefined, locale: MoneyLocale = "fr-BE"): string {
+  return formatMoney(n, { locale, withSymbol: false });
 }
 
-/** Formate un montant avec le symbole « € » suffixé (espace insécable). */
-export function formatEur(n: number | null | undefined): string {
-  const formatted = formatAmount(n);
-  if (formatted === "—") return "—";
-  return `${formatted}\u00A0€`;
+/** Formate un montant avec le symbole de devise (espace insécable). */
+export function formatEur(n: number | null | undefined, locale: MoneyLocale = "fr-BE"): string {
+  return formatMoney(n, { locale, withSymbol: true });
 }
 
 /**

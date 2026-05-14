@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tag, Download, ChevronRight, Award, Loader2, Clock, Inbox } from "lucide-react";
 import { formatUpdatedAt } from "@/lib/format-date";
+import { useMoneyFormat } from "@/lib/money-format";
 import { BuyerRfqTracker } from "@/components/rfq/BuyerRfqTracker";
 import { RfqActivityHistory } from "@/components/rfq/RfqActivityHistory";
 
@@ -67,14 +68,17 @@ const STATUS_LABEL: Record<string, { label: string; variant: "default" | "second
 
 const ACTIVE_STATUSES = new Set(["draft", "open", "dispatched", "in_followup"]);
 
-function formatPrice(cents: number | null | undefined) {
+import { formatMoneyFromCents } from "@/lib/money-format";
+function formatPrice(cents: number | null | undefined, locale?: string) {
   if (cents == null) return "—";
-  return (cents / 100).toLocaleString("fr-BE", { style: "currency", currency: "EUR", minimumFractionDigits: 2 });
+  return formatMoneyFromCents(cents, locale ? { locale } : undefined);
 }
 
 export default function MesRfqPage() {
   const { user, isVerifiedBuyer } = useAuth();
   const [expanded, setExpanded] = useState<string | null>(null);
+  const { locale } = useMoneyFormat();
+  const fmtPrice = (c: number | null | undefined) => formatPrice(c, locale);
 
   const { data: rfqs, isLoading } = useQuery({
     queryKey: ["my-rfqs", user?.id],
@@ -213,7 +217,7 @@ export default function MesRfqPage() {
                       </CardTitle>
                       <p className="text-xs text-muted-foreground mt-1">
                         Qté <strong>{rfq.quantity.toLocaleString("fr-BE")}</strong> · livraison <strong>{rfq.destination_country_code}</strong>
-                        {rfq.target_price_excl_vat_cents != null && <> · cible <strong>{formatPrice(rfq.target_price_excl_vat_cents)}</strong>/u.</>}
+                        {rfq.target_price_excl_vat_cents != null && <> · cible <strong>{fmtPrice(rfq.target_price_excl_vat_cents)}</strong>/u.</>}
                         {rfq.desired_delivery_date && <> · pour le <strong>{formatUpdatedAt(rfq.desired_delivery_date)}</strong></>}
                         <> · créée le {formatUpdatedAt(rfq.created_at)}</>
                       </p>
@@ -221,7 +225,7 @@ export default function MesRfqPage() {
                     <div className="text-right">
                       <p className="text-xs text-muted-foreground">Offres reçues</p>
                       <p className="text-2xl font-bold leading-none">{c?.count ?? 0}</p>
-                      {c?.best != null && <p className="text-xs text-emerald-700 font-semibold mt-1">dès {formatPrice(c.best)}/u.</p>}
+                      {c?.best != null && <p className="text-xs text-emerald-700 font-semibold mt-1">dès {fmtPrice(c.best)}/u.</p>}
                       {c?.topScore != null && <p className="text-[10px] text-muted-foreground mt-0.5">Top score {c.topScore.toFixed(0)}/100</p>}
                     </div>
                   </div>
@@ -288,6 +292,8 @@ function ScoreBar({ value, label }: { value: number | null; label: string }) {
 }
 
 function RfqResponsesPanel({ rfqId }: { rfqId: string }) {
+  const { locale } = useMoneyFormat();
+  const fmtPrice = (c: number | null | undefined) => formatPrice(c, locale);
   const { data, isLoading } = useQuery({
     queryKey: ["rfq-responses", rfqId],
     queryFn: async () => {
@@ -319,7 +325,7 @@ function RfqResponsesPanel({ rfqId }: { rfqId: string }) {
               <span className="font-semibold text-emerald-800">Meilleure offre recommandée</span>
               {top.score != null && <Badge className="bg-emerald-600">Score {top.score.toFixed(0)}/100</Badge>}
             </div>
-            <span className="text-sm font-bold">{formatPrice(top.unit_price_excl_vat_cents)}/u.</span>
+            <span className="text-sm font-bold">{fmtPrice(top.unit_price_excl_vat_cents)}/u.</span>
           </div>
           <p className="text-sm">
             {top.vendor?.slug ? <Link to={`/vendeur/${top.vendor.slug}`} className="font-semibold hover:underline">{top.vendor.name}</Link> : top.vendor?.name}
@@ -376,7 +382,7 @@ function RfqResponsesPanel({ rfqId }: { rfqId: string }) {
                 <td className="px-3 py-2">
                   {r.vendor?.slug ? <Link to={`/vendeur/${r.vendor.slug}`} className="hover:underline">{r.vendor.name}</Link> : (r.vendor?.name || "—")}
                 </td>
-                <td className="px-3 py-2 text-right font-semibold">{formatPrice(r.unit_price_excl_vat_cents)}/u.</td>
+                <td className="px-3 py-2 text-right font-semibold">{fmtPrice(r.unit_price_excl_vat_cents)}/u.</td>
                 <td className="px-3 py-2 text-right">
                   {r.moq ?? "—"}
                   {r.compliance_flags?.moq_ok === false && <span className="ml-1 text-destructive" title="MOQ supérieur à la quantité demandée">⚠</span>}

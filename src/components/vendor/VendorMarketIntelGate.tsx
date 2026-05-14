@@ -12,9 +12,10 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { BarChart3, Lock, Sparkles, CalendarClock, ShieldCheck, CheckCircle2, Loader2, MailQuestion } from "lucide-react";
+import { useMoneyFormat, formatMoneyFromCents } from "@/lib/money-format";
 
-function formatPrice(cents: number) {
-  return (cents / 100).toLocaleString("fr-BE", { style: "currency", currency: "EUR", minimumFractionDigits: 0 });
+function formatPrice(cents: number, locale?: string) {
+  return formatMoneyFromCents(cents, { locale, fractionDigits: 0 });
 }
 
 /**
@@ -30,6 +31,7 @@ export function VendorMarketIntelGate({ children }: { children: React.ReactNode 
   const { data: plans = [] } = useVendorMarketIntelPlans();
   const { data: vendor } = useCurrentVendor();
   const { user } = useAuth();
+  const { locale } = useMoneyFormat();
   const [activating, setActivating] = useState(false);
   const [renewOpen, setRenewOpen] = useState(false);
   const [renewMsg, setRenewMsg] = useState("");
@@ -197,7 +199,7 @@ export function VendorMarketIntelGate({ children }: { children: React.ReactNode 
                   <div key={p.id} className="rounded-xl border bg-card p-4">
                     <p className="text-xs uppercase tracking-wide text-muted-foreground">{p.label}</p>
                     <p className="text-2xl font-bold mt-1">
-                      {formatPrice(p.monthly_price_cents)}
+                      {formatPrice(p.monthly_price_cents, locale)}
                       <span className="text-sm font-normal text-muted-foreground">/mois</span>
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">

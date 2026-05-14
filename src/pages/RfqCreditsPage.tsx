@@ -6,8 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Coins, Infinity as InfinityIcon, Sparkles, Calendar, History, Check } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
-
-const formatEur = (cents: number) => (cents / 100).toLocaleString("fr-BE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+import { useMoneyFormat } from "@/lib/money-format";
 
 const KIND_LABEL: Record<string, string> = {
   consume: "Demande de prix",
@@ -24,6 +23,8 @@ export default function RfqCreditsPage() {
   const { data: plans } = useRfqPlans();
   const { data: ledger } = useRfqLedger(30);
   const [purchasing, setPurchasing] = useState<string | null>(null);
+  const { formatMoneyFromCents } = useMoneyFormat();
+  const formatEur = (cents: number) => formatMoneyFromCents(cents, { withSymbol: false });
 
   const grouped = useMemo(() => {
     const arr = (plans || []) as RfqPlan[];

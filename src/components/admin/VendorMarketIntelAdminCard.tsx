@@ -15,6 +15,7 @@ import {
   BarChart3, Sparkles, CreditCard, FileText, Loader2, XCircle, ExternalLink,
 } from "lucide-react";
 import { formatUpdatedAt } from "@/lib/format-date";
+import { useMoneyFormat, formatMoneyFromCents } from "@/lib/money-format";
 import { Link } from "react-router-dom";
 
 /**
@@ -48,9 +49,9 @@ const STATUS_META: Record<Status, { label: string; cls: string }> = {
   cancelled: { label: "Annulé",         cls: "bg-rose-100 text-rose-800 border-rose-300" },
 };
 
-function formatPrice(c: number | null) {
+function formatPrice(c: number | null, locale?: string) {
   if (c == null) return "—";
-  return (c / 100).toLocaleString("fr-BE", { style: "currency", currency: "EUR" });
+  return formatMoneyFromCents(c, locale ? { locale } : undefined);
 }
 
 interface Props {
@@ -60,6 +61,8 @@ interface Props {
 
 export function VendorMarketIntelAdminCard({ vendorId, vendorName }: Props) {
   const qc = useQueryClient();
+  const { locale } = useMoneyFormat();
+  const fmtPrice = (c: number | null) => formatPrice(c, locale);
   const [trialOpen, setTrialOpen] = useState(false);
   const [trialDays, setTrialDays] = useState(180);
   const [activateOpen, setActivateOpen] = useState(false);
@@ -174,7 +177,7 @@ export function VendorMarketIntelAdminCard({ vendorId, vendorName }: Props) {
             )}
             {row?.plan_label && (
               <span className="text-xs text-muted-foreground">
-                · {row.plan_label} ({formatPrice(row.monthly_price_cents)}/mois)
+                · {row.plan_label} ({fmtPrice(row.monthly_price_cents)}/mois)
               </span>
             )}
             {row?.billing_method === "stripe" && (
@@ -257,7 +260,7 @@ export function VendorMarketIntelAdminCard({ vendorId, vendorName }: Props) {
                 <SelectContent>
                   {plans.map((p) => (
                     <SelectItem key={p.id} value={p.id}>
-                      {p.label} — {formatPrice(p.monthly_price_cents)}/mois ({p.ean_quota ? `${p.ean_quota} EAN` : "illimité"})
+                      {p.label} — {fmtPrice(p.monthly_price_cents)}/mois ({p.ean_quota ? `${p.ean_quota} EAN` : "illimité"})
                     </SelectItem>
                   ))}
                 </SelectContent>

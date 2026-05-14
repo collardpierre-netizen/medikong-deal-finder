@@ -1,92 +1,83 @@
+## Contexte
 
-# Module Offre Pharmacien MediKong
+Aujourd'hui le formatage monétaire est dispersé en 3 helpers (`src/lib/price-format.ts`, `src/lib/pricing.ts`, `src/lib/formatCount.ts`) **et** dupliqué en local dans ~30 fichiers via des `(cents/100).toLocaleString("fr-BE", { style: "currency", currency: "EUR" })`. Tout est figé sur `fr-BE` / `EUR`, donc un utilisateur en EN/NL/DE voit toujours `12,34 €` (virgule, espace insécable) au lieu d'un format adapté à sa locale.
 
-Mise en place du modèle commercial acheteur : 6 mois free → bonus 6 mois si volume ≥ 6 000 € HT → sinon 199 €/mois, avec extension manuelle 3 mois sur demande téléphonique.
+Aucun hook ni contexte de devise/locale dynamique n'existe encore.
 
-## 1. Migration SQL unique `pharmacist_subscription`
+## Ambiguïtés à lever AVANT implémentation
 
-Crée tout le schéma en une migration :
+Vu l'ampleur (~100 occurrences `fr-BE`, ~80 fichiers), et la règle « do EXACTLY what the prompt asks », j'ai besoin de tes décisions :
 
-- `pricing_plans` (référentiel) + seed `pharmacien_standard_2026` (6/6/3 mois, 6 000 €, 199 € HTVA, TVA 21 %).
-- `buyer_subscriptions` (1 par buyer, statuts `trial|bonus_free|extension_free|paid|paused|canceled`, dates trial/bonus/extension/paid, volume tracking dénormalisé, `auto_switch_to_paid`).
-- `subscription_events` (timeline append-only, `event_type` libre + payload jsonb).
-- `subscription_extension_requests` (file commerciale : `pending|contacted|approved|rejected|expired`, contact_attempts, notes, assigned_to).
-- Vue `v_buyer_subscription_overview` (phase courante, jours restants, % progression seuil, has_active_extension_request) en `security_invoker`.
-- Helper `public.current_buyer_id()` (mappé sur `buyers.user_id = auth.uid()`).
-- RLS sur les 4 tables (pharmacien voit ses données, admin tout, events read-only client).
-- Trigger `AFTER INSERT ON buyers` → crée auto le `buyer_subscriptions` trial + 2 events (`subscription.created`, `trial.started`).
-- Trigger `AFTER INSERT/UPDATE ON orders` (si table existe) → recalcule `trial_volume_ht` / `lifetime_volume_ht`, log `volume.threshold_reached` au franchissement. Sinon RPC `recompute_buyer_volume(buyer_id)` exposée pour branchement futur.
-- RPCs admin : `grant_subscription_extension(req_id, months, notes)`, `force_bonus_volume(sub_id, reason)`, `force_switch_to_paid(sub_id)`, `pause_subscription(sub_id)`, `cancel_subscription(sub_id)`.
-- RPC pharmacien : `request_subscription_extension(reason, callback_window)` (snapshot context, garde-fou anti-doublon).
+### 1. Source de la locale d'affichage
+- **Option A** — `i18n.language` (fr / en / nl / de) → mapping `fr→fr-BE`, `en→en-GB`, `nl→nl-BE`, `de→de-DE`. Cohérent avec le switcher de langue déjà en place.
+- **Option B** — Pays utilisateur (`useUserCountry` BE/FR/LU/NL) → `BE→fr-BE`, `FR→fr-FR`, `LU→fr-LU`, `NL→nl-NL`. Indépendant de la langue UI.
+- **Option C** — Hybride : langue pour le format des nombres, pays pour la devise (utile si EUR un jour cohabite avec d'autres devises RFQ — la mémoire mentionne `rfqs.currency_code`).
 
-Note : si la table `buyers` n'existe pas, on la crée minimale (`id, user_id, pharmacy_name, email, phone, status`).
+### 2. Périmètre exact de « tous les composants »
+- **Strict (recommandé)** : uniquement les helpers monétaires (`formatEur`, `formatPriceEur`, `formatAmount`, `formatPriceRaw`) + les ~30 montants inline `toLocaleString("fr-BE", { style: "currency"|undefined, ... })` qui formatent un montant en €.
+- **Étendu** : inclure aussi les `toLocaleString("fr-BE")` sur quantités (`rfq.quantity.toLocaleString`, `brand.count.toLocaleString`) → ces nombres entiers bénéficient aussi d'une locale dynamique mais ce n'est pas du « monétaire ».
+- **Hors scope quoi qu'il arrive** : les `toLocaleDateString("fr-BE")` / `toLocaleTimeString("fr-BE")` (~40 occurrences) — c'est du formatage de dates, pas de la monnaie. Tu as déjà des helpers `formatUpdatedAt` / `formatUpdatedAtFull` mémorisés pour les dates.
 
-## 2. Job quotidien (pg_cron 03:00 UTC)
+### 3. Contextes admin / vendeur
+Certains écrans vendeur/admin (`VendorMarketIntel`, `AdminVendeurDetail`, `RestockAdminCampaigns`, `VendorDashboard`…) sont **toujours en FR** côté UI, indépendamment de la langue utilisateur acheteur. Faut-il :
+- **A** — Forcer `fr-BE` sur ces écrans (laisser les `fr-BE` en dur dans `src/pages/admin/**` et `src/pages/vendor/**`) ?
+- **B** — Passer ces écrans aussi sur le formatter dynamique (cohérent si l'admin/vendeur change de langue) ?
 
-Edge function `subscription-daily-tick` + cron pg_net :
-- Bascule trial → bonus_free (si volume ≥ seuil) ou paid (sinon, si auto_switch).
-- Bascule bonus_free / extension_free → paid à échéance.
-- Met en pause toute bascule si `extension_request` active (event `trial.bascule_paused_pending_extension`).
-- Reminders J-30 / J-7 / J-2 (idempotents via events `reminder.sent` payload offset_days).
-- Expiration des `extension_requests` pending depuis >14j sans contact → `expired`.
-- Tous les envois email = TODO (templates listés en commentaires, branchement Lovable Emails à faire en passe ultérieure).
+## Plan d'implémentation (sous réserve des réponses ci-dessus)
 
-## 3. Pages pharmacien (rôle `buyer`)
+Hypothèse de travail si tu valides : **Option 1.A + 2.Strict + 3.B** (le plus simple et cohérent avec ton infra i18next existante).
 
-- **`/espace-pharmacie/abonnement`** : `<SubscriptionOverviewCard variant="full">` (chip statut, compteur jours, `<VolumeProgressBar>`, `<PhaseStepper>`), encadré "Besoin de plus de temps ?", panneau détails plan replié, `<SubscriptionTimeline audience="buyer">`.
-- **`/espace-pharmacie/abonnement/demander-extension`** : `<ExtensionRequestForm>` (téléphone pré-rempli + plage de rappel + raison optionnelle + récap contexte), appelle RPC `request_subscription_extension`, redirige avec toast.
-- Widget compact sur dashboard pharmacien existant + bannière < 30j.
-- Onglet "Abonnement" dans la sidebar pharmacien (icône Sparkles, point orange si demande pending).
+### Étape 1 — Créer `src/lib/money-format.ts` + hook `useMoneyFormat`
+- Fonction pure `formatMoney(amountEur, { locale, currency = "EUR", withSymbol = true, fractionDigits = 2 })`.
+- Fonction pure `formatMoneyFromCents(cents, opts)` (raccourci ÷ 100).
+- Fonction pure `formatDelta(deltaEur, opts)` qui ajoute un signe `+` / `−` explicite et préserve la couleur via classe (laissée au composant).
+- Hook `useMoneyFormat()` retourne `{ formatMoney, formatMoneyFromCents, formatDelta, formatBasisLabel, locale, currency }` en lisant `i18n.language` via `useTranslation` (mapping interne).
+- Conserve la signature et la sortie 1:1 quand `locale = fr-BE` pour ne pas casser les snapshots / styles existants.
 
-## 4. Pages admin
+### Étape 2 — Migrer les 3 helpers historiques
+- `formatEur` / `formatAmount` (`price-format.ts`) → délèguent à `formatMoney` avec un fallback `fr-BE` (pour les contextes serveur / SSR / tests sans React).
+- `formatPriceEur` / `formatPriceRaw` (`pricing.ts`) → idem, marqués `@deprecated, prefer useMoneyFormat()`.
+- `formatBasisLabel` reste textuel mais bascule via t() si tu valides — sinon on le garde tel quel.
 
-- **`/admin/abonnements`** : 4 KPI cards + `<AdminSubscriptionTable>` (TanStack Table) avec filtres (statut, phase, fenêtre fin de phase, seuil, demande active, recherche), actions par ligne, export CSV.
-- **`/admin/abonnements/[id]`** : panneau identité + dates clés + notes inline, timeline complète, bloc actions (`<GrantExtensionModal>`, forcer bonus avec raison, basculer paid, pause, annuler, surcharger seuil).
-- **`/admin/abonnements/demandes-extension`** : 3 onglets (À rappeler / Rappels en cours / Résolues 30j), tableau avec `tel:` clic-to-copy, drawer de détail, actions Prendre en charge / Marquer contacté / Accorder / Rejeter.
-- Section sidebar admin "Abonnements pharmaciens" avec badge nb pending.
+### Étape 3 — Migrer les composants prix / deltas / badges
+Cibles confirmées (montants en €) :
 
-## 5. Page publique `/offre-pharmacien`
+```
+src/pages/RfqCreditsPage.tsx                  (formatEur local)
+src/pages/MesRfqPage.tsx                       (formatEur local + 1 quantity)
+src/pages/PharmacieAbonnementPage.tsx         (Intl local)
+src/pages/vendor/VendorDashboard.tsx           (eurFormatter local)
+src/pages/vendor/VendorRfqInbox.tsx            (formatEur local + 2 quantity)
+src/pages/restock/RestockAdminCampaigns.tsx    (toLocaleString FR-BE 2 décimales)
+src/pages/admin/AdminVendorMarketIntelPage.tsx (Intl local)
+src/pages/EconomiesPage.tsx                    (Intl local)
+src/pages/InvestPage.tsx                       (5 lignes "€" inline)
+src/pages/ConfirmationPage.tsx                 (montants si présents — à re-scanner)
++ tous les composants de Cards/Badges qui affichent un prix : `MarginBreakdownDetails`, `PvpEconomyBadge`, `PriceDeltaShowcase`, `SearchTrivagoCard`, `BuyerComparator`, `OfferSuggestedRetailPriceEditor`, `AdjustPriceModal`…
+```
 
-Landing prospects : Hero ("6 mois gratuits. Et probablement 6 de plus."), 3 colonnes (free/bonus/payant), pour qui, inclus, FAQ (4 questions), CTA inscription. SEO indexable. Lien dans le footer.
+Pour chaque fichier : remplacer le formatter local par `const { formatMoneyFromCents } = useMoneyFormat()` (composants React) ou `formatMoney(eur, { locale })` (utilitaires non-React).
 
-## 6. Composants UI réutilisables (`src/components/subscription/`)
+### Étape 4 — Garde-fou
+- Ajout d'une règle `eslint-plugin-no-restricted-syntax` qui interdit `toLocaleString("fr-BE"` et `Intl.NumberFormat("fr-BE"` dans `src/**` (sauf le helper `money-format.ts` lui-même, et les utilitaires de date).
+- Échec en CI si quelqu'un réintroduit un format monétaire en dur.
 
-`SubscriptionStatusChip`, `SubscriptionPhaseBadge`, `VolumeProgressBar`, `DaysRemainingCounter` (variant urgence auto), `SubscriptionTimeline` (audience buyer/admin), `PhaseStepper`, `ExtensionRequestCard`, `ExtensionRequestForm`, `GrantExtensionModal`, `SubscriptionOverviewCard` (variants compact/full), `AdminSubscriptionTable`. Réutilisation `KpiCard` admin existant.
+### Étape 5 — Vérifications
+- Build TS (`bunx tsc --noEmit`).
+- Test manuel rapide : changer la langue UI → vérifier qu'un prix sur `/catalogue`, `/produit/:slug`, `/panier`, `/vendor/dashboard` change de format (point décimal en EN/DE, virgule en FR/NL).
+- Snapshot d'un prix en chaque locale fourni en réponse.
 
-Tous les textes copiés depuis la section 7 du prompt (chips, bandeaux, copy emails à laisser en TODO templates).
+### Hors scope explicite (ne sera PAS modifié sans validation)
+- Les ~40 `toLocaleDateString("fr-BE")` / `toLocaleTimeString("fr-BE")`.
+- Le helper `formatCount.ts` (compteurs marketing — pas de monnaie).
+- La logique TVA / pricing.ts `applyMargin` (pas de format).
+- Les exports CSV (`AccountPage`, `MesRfqPage` ligne 431, `RfqCreditsPage`) qui utilisent `fr-BE` pour rester compatibles avec Excel FR — cas particulier à confirmer.
 
-## 7. Inscription pharmacien
+## Volume estimé
+- 1 nouveau fichier (`money-format.ts` + hook).
+- ~30-40 fichiers modifiés.
+- 0 migration DB.
 
-Encadré "Vos 6 mois gratuits démarrent maintenant" sur la page de confirmation (création abonnement déléguée au trigger DB).
+## Question(s) bloquantes
 
-## 8. TODOs explicites en code
-
-Commentaires `// TODO(subscription):` couvrant : Stripe/Mollie SEPA, facturation Peppol mensuelle, branchement webhooks Slack équipe commerciale, templates Lovable Emails (8 templates listés), tests métier (cas A/B/C/D), instrumentation analytique conversion bonus/extension/rétention.
-
-## Détails techniques
-
-- Stack : React + TS + Tailwind + shadcn (existants). TanStack Query pour data, TanStack Table pour les tableaux admin.
-- Fichiers : `src/pages/buyer/BuyerSubscription.tsx`, `BuyerSubscriptionRequestExtension.tsx`, `src/pages/admin/AdminSubscriptions.tsx`, `AdminSubscriptionDetail.tsx`, `AdminSubscriptionExtensionRequests.tsx`, `src/pages/OffrePharmacienPage.tsx`, hooks `useBuyerSubscription`, `useAdminSubscriptions`, `useExtensionRequests`.
-- Routing : ajouter dans `App.tsx` (ou router central), route admin protégée par `useAdminAuth`, routes pharmacien protégées par auth `buyer`.
-- Sidebar admin : nouvelle section dans `src/components/admin/AdminSidebar.tsx` (section `subscriptions`).
-- Mémoire : sauvegarder un mémoire `mem://features/buyer-subscription-trial-bonus-paid.md` couvrant le modèle (statuts, transitions, seuil).
-
-## Ordre d'exécution
-
-1. Migration SQL (tables + RLS + triggers + RPCs + vue + helper + seed plan).
-2. Trigger auto-create sur `buyers` + RPCs.
-3. Edge function `subscription-daily-tick` + cron pg_net.
-4. Composants UI partagés.
-5. Pages pharmacien + widget dashboard + sidebar.
-6. Pages admin + sidebar + détail + file extensions.
-7. Page publique `/offre-pharmacien` + lien footer.
-8. Mémoire projet + checklist d'acceptation vérifiée.
-
-## Hors scope (TODO laissés en commentaires)
-
-- Paiement réel (Stripe/Mollie SEPA) à la bascule paid.
-- Émission facture Peppol mensuelle.
-- Templates email Lovable Emails brandés (structure prête, envoi à brancher).
-- Webhook Slack équipe commerciale sur `extension.requested`.
-- Génération PDF `/offre-pharmacien.pdf`.
-- Tests vitest/playwright des cas A/B/C/D.
+Réponds-moi sur **1.A/B/C, 2.Strict/Étendu, 3.A/B**, et confirme le hors-scope « dates et exports CSV ». Je lance ensuite la migration en un seul passage.

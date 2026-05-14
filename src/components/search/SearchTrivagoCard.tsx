@@ -36,8 +36,21 @@ export default function SearchTrivagoCard({ product: p }: Props) {
         {/* ZONE 1 — Image */}
         <div
           onClick={() => navigate(`/produit/${p.slug}`, fromState)}
-          className="w-full md:w-[190px] bg-white flex items-center justify-center relative shrink-0 cursor-pointer
-                     h-[180px] md:h-[220px] md:aspect-square border-b md:border-b-0 md:border-r border-border"
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              navigate(`/produit/${p.slug}`, fromState);
+            }
+          }}
+          role="button"
+          tabIndex={0}
+          aria-label={`Voir le produit ${p.name}`}
+          className="group/img w-full md:w-[190px] bg-white flex items-center justify-center relative shrink-0 cursor-pointer
+                     h-[180px] md:h-[220px] md:aspect-square border-b md:border-b-0 md:border-r border-border
+                     outline-none transition-shadow
+                     hover:shadow-[inset_0_0_0_2px_hsl(var(--primary)/0.6)]
+                     focus-visible:shadow-[inset_0_0_0_2px_hsl(var(--primary))]
+                     focus-visible:ring-2 focus-visible:ring-primary/40"
         >
           {pct > 0 && (
             <span className="absolute top-2.5 left-2.5 bg-destructive text-destructive-foreground
@@ -60,7 +73,7 @@ export default function SearchTrivagoCard({ product: p }: Props) {
             <img
               src={getProductImageSrc(p.imageUrls?.[0] || p.imageUrl)}
               alt={p.name}
-              className={`w-full h-full object-cover transition-opacity duration-200 ${imgLoaded ? "opacity-100" : "opacity-0"}`}
+              className={`w-full h-full object-cover transition-all duration-300 ease-out group-hover/img:scale-105 ${imgLoaded ? "opacity-100" : "opacity-0"}`}
               loading="lazy"
               referrerPolicy="no-referrer"
               onLoad={e => {

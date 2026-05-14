@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ImageOff } from "lucide-react";
 import { getProductImageSrc, MEDIKONG_PLACEHOLDER, isQogitaPlaceholder } from "@/lib/image-utils";
 import { Heart, Check, ChevronDown, ChevronUp, Package, Truck, RotateCcw, ArrowRight } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -14,6 +15,8 @@ export default function SearchTrivagoCard({ product: p }: Props) {
   const location = useLocation();
   const fromState = { state: { from: location.pathname + location.search } };
   const [showMore, setShowMore] = useState(false);
+  const [imgLoaded, setImgLoaded] = useState(false);
+  const [imgError, setImgError] = useState(false);
   const { data: offers = [] } = useProductOffers(p.id);
 
   const bestOffer = offers[0];
@@ -45,10 +48,30 @@ export default function SearchTrivagoCard({ product: p }: Props) {
           <button className="absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-white/80 backdrop-blur flex items-center justify-center hover:bg-white transition-colors z-10 border border-border/50">
             <Heart size={14} className="text-muted-foreground" />
           </button>
-          <img src={getProductImageSrc(p.imageUrls?.[0] || p.imageUrl)} alt={p.name} className="w-full h-full object-contain p-4"
-               loading="lazy" referrerPolicy="no-referrer"
-               onLoad={e => { if (isQogitaPlaceholder(e.currentTarget)) e.currentTarget.src = MEDIKONG_PLACEHOLDER; }}
-               onError={e => { e.currentTarget.src = MEDIKONG_PLACEHOLDER; }} />
+          {!imgLoaded && !imgError && (
+            <div className="absolute inset-0 animate-pulse bg-muted/60" aria-hidden="true" />
+          )}
+          {imgError ? (
+            <div className="flex flex-col items-center justify-center gap-1.5 text-muted-foreground">
+              <ImageOff size={28} strokeWidth={1.5} />
+              <span className="text-[10px] uppercase tracking-wider">Image indisponible</span>
+            </div>
+          ) : (
+            <img
+              src={getProductImageSrc(p.imageUrls?.[0] || p.imageUrl)}
+              alt={p.name}
+              className={`w-full h-full object-contain p-4 transition-opacity duration-200 ${imgLoaded ? "opacity-100" : "opacity-0"}`}
+              loading="lazy"
+              referrerPolicy="no-referrer"
+              onLoad={e => {
+                if (isQogitaPlaceholder(e.currentTarget)) {
+                  e.currentTarget.src = MEDIKONG_PLACEHOLDER;
+                }
+                setImgLoaded(true);
+              }}
+              onError={() => { setImgError(true); setImgLoaded(true); }}
+            />
+          )}
         </div>
 
         {/* ZONE 2 — Product info */}

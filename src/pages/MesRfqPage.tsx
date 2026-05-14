@@ -292,6 +292,8 @@ function ScoreBar({ value, label }: { value: number | null; label: string }) {
 }
 
 function RfqResponsesPanel({ rfqId }: { rfqId: string }) {
+  const { locale } = useMoneyFormat();
+  const fmtPrice = (c: number | null | undefined) => formatPrice(c, locale);
   const { data, isLoading } = useQuery({
     queryKey: ["rfq-responses", rfqId],
     queryFn: async () => {

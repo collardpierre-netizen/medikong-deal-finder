@@ -27,6 +27,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { formatUpdatedAt } from "@/lib/format-date";
+import { formatMoney, useMoneyFormat } from "@/lib/money-format";
 
 type Overview = {
   subscription_id: string;

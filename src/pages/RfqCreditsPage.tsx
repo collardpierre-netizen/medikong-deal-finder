@@ -23,6 +23,8 @@ export default function RfqCreditsPage() {
   const { data: plans } = useRfqPlans();
   const { data: ledger } = useRfqLedger(30);
   const [purchasing, setPurchasing] = useState<string | null>(null);
+  const { formatMoneyFromCents } = useMoneyFormat();
+  const formatEur = (cents: number) => formatMoneyFromCents(cents, { withSymbol: false });
 
   const grouped = useMemo(() => {
     const arr = (plans || []) as RfqPlan[];

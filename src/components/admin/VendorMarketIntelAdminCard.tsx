@@ -177,7 +177,7 @@ export function VendorMarketIntelAdminCard({ vendorId, vendorName }: Props) {
             )}
             {row?.plan_label && (
               <span className="text-xs text-muted-foreground">
-                · {row.plan_label} ({formatPrice(row.monthly_price_cents)}/mois)
+                · {row.plan_label} ({fmtPrice(row.monthly_price_cents)}/mois)
               </span>
             )}
             {row?.billing_method === "stripe" && (
@@ -260,7 +260,7 @@ export function VendorMarketIntelAdminCard({ vendorId, vendorName }: Props) {
                 <SelectContent>
                   {plans.map((p) => (
                     <SelectItem key={p.id} value={p.id}>
-                      {p.label} — {formatPrice(p.monthly_price_cents)}/mois ({p.ean_quota ? `${p.ean_quota} EAN` : "illimité"})
+                      {p.label} — {fmtPrice(p.monthly_price_cents)}/mois ({p.ean_quota ? `${p.ean_quota} EAN` : "illimité"})
                     </SelectItem>
                   ))}
                 </SelectContent>

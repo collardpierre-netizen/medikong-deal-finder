@@ -306,7 +306,7 @@ export function BuyerRfqTracker({ rfqId }: { rfqId: string }) {
                     {r.responded_at && r.unit_price_excl_vat_cents != null ? (
                       <div>
                         <div className="font-semibold text-emerald-800">
-                          {formatPrice(r.unit_price_excl_vat_cents)}/u.
+                          {formatPrice(r.unit_price_excl_vat_cents, locale)}/u.
                         </div>
                         <div className="text-muted-foreground">
                           {r.delivery_days ? `livraison ${r.delivery_days} j` : ""}

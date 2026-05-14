@@ -107,6 +107,7 @@ function TimelineDot({
 }
 
 export function BuyerRfqTracker({ rfqId }: { rfqId: string }) {
+  const { locale } = useMoneyFormat();
   const { data: rows, isLoading } = useQuery({
     queryKey: ["buyer-rfq-tracker", rfqId],
     queryFn: async () => {

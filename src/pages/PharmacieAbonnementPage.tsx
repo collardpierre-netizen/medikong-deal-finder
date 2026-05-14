@@ -102,6 +102,8 @@ export default function PharmacieAbonnementPage() {
   const qc = useQueryClient();
   const [reason, setReason] = useState("");
   const [callbackWindow, setCallbackWindow] = useState("");
+  const { locale } = useMoneyFormat();
+  const fmtEUR = (amount: number | null | undefined) => fmtEURStatic(amount, locale);
 
   // Auto-ensure subscription exists on first visit
   useEffect(() => {

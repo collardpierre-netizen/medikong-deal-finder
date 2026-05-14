@@ -68,9 +68,10 @@ const STATUS_LABEL: Record<string, { label: string; variant: "default" | "second
 
 const ACTIVE_STATUSES = new Set(["draft", "open", "dispatched", "in_followup"]);
 
+import { formatMoneyFromCents } from "@/lib/money-format";
 function formatPrice(cents: number | null | undefined, locale?: string) {
   if (cents == null) return "—";
-  return formatMoneyFromCentsStatic(cents, { locale });
+  return formatMoneyFromCents(cents, locale ? { locale } : undefined);
 }
 
 export default function MesRfqPage() {

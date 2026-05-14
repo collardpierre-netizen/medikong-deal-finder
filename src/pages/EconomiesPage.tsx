@@ -56,6 +56,8 @@ const fmtMoneyStatic = (n: number | null | undefined, locale?: string) =>
   typeof n === "number" ? formatMoney(n, { locale }) : "—";
 
 export default function EconomiesPage() {
+  const { locale } = useMoneyFormat();
+  const fmtMoney = (n: number | null | undefined) => fmtMoneyStatic(n, locale);
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [supplier, setSupplier] = useState<Supplier>("febelco");
   const [file, setFile] = useState<File | null>(null);

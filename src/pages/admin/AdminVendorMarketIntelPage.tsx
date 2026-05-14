@@ -186,7 +186,7 @@ export default function AdminVendorMarketIntelPage() {
                         </td>
                         <td className="px-3 py-2">
                           {r.plan_label ? (
-                            <span>{r.plan_label} <span className="text-xs text-muted-foreground">· {formatPrice(r.monthly_price_cents)}/mois</span></span>
+                            <span>{r.plan_label} <span className="text-xs text-muted-foreground">· {fmtPrice(r.monthly_price_cents)}/mois</span></span>
                           ) : "—"}
                         </td>
                         <td className="px-3 py-2 text-xs">{deadline ? formatUpdatedAt(deadline) : "—"}</td>
@@ -256,7 +256,7 @@ export default function AdminVendorMarketIntelPage() {
                 <SelectContent>
                   {plans.map((p) => (
                     <SelectItem key={p.id} value={p.id}>
-                      {p.label} — {formatPrice(p.monthly_price_cents)}/mois ({p.ean_quota ? `${p.ean_quota} EAN` : "illimité"})
+                      {p.label} — {fmtPrice(p.monthly_price_cents)}/mois ({p.ean_quota ? `${p.ean_quota} EAN` : "illimité"})
                     </SelectItem>
                   ))}
                 </SelectContent>

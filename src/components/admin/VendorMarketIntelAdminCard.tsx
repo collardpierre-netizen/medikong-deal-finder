@@ -61,6 +61,8 @@ interface Props {
 
 export function VendorMarketIntelAdminCard({ vendorId, vendorName }: Props) {
   const qc = useQueryClient();
+  const { locale } = useMoneyFormat();
+  const fmtPrice = (c: number | null) => formatPrice(c, locale);
   const [trialOpen, setTrialOpen] = useState(false);
   const [trialDays, setTrialDays] = useState(180);
   const [activateOpen, setActivateOpen] = useState(false);

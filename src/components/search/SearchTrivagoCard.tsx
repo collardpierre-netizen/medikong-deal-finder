@@ -73,7 +73,7 @@ export default function SearchTrivagoCard({ product: p }: Props) {
             <img
               src={getProductImageSrc(p.imageUrls?.[0] || p.imageUrl)}
               alt={p.name}
-              className={`w-full h-full object-cover transition-opacity duration-200 ${imgLoaded ? "opacity-100" : "opacity-0"}`}
+              className={`w-full h-full object-cover transition-all duration-300 ease-out group-hover/img:scale-105 ${imgLoaded ? "opacity-100" : "opacity-0"}`}
               loading="lazy"
               referrerPolicy="no-referrer"
               onLoad={e => {

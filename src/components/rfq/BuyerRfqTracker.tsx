@@ -69,9 +69,9 @@ const STATUS_META: Record<
   lost: { icon: XCircle, tone: "text-muted-foreground bg-muted border-border", label: "Non retenu" },
 };
 
-function formatPrice(cents: number | null) {
+function formatPrice(cents: number | null, locale?: string) {
   if (cents == null) return "—";
-  return (cents / 100).toLocaleString("fr-BE", { style: "currency", currency: "EUR", minimumFractionDigits: 2 });
+  return formatMoneyFromCents(cents, locale ? { locale } : undefined);
 }
 
 function TimelineDot({

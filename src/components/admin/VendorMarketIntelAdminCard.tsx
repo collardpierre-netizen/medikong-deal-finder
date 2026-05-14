@@ -49,9 +49,9 @@ const STATUS_META: Record<Status, { label: string; cls: string }> = {
   cancelled: { label: "Annulé",         cls: "bg-rose-100 text-rose-800 border-rose-300" },
 };
 
-function formatPrice(c: number | null) {
+function formatPrice(c: number | null, locale?: string) {
   if (c == null) return "—";
-  return (c / 100).toLocaleString("fr-BE", { style: "currency", currency: "EUR" });
+  return formatMoneyFromCents(c, locale ? { locale } : undefined);
 }
 
 interface Props {

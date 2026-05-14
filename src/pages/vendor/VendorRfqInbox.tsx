@@ -361,7 +361,7 @@ function RfqDetailPanel({
           <Field label="Pays de livraison"><strong>{rfq.destination_country_code}</strong></Field>
           {rfq.target_price_excl_vat_cents != null && (
             <Field label="Prix cible HTVA">
-              <strong>{formatPriceCents(rfq.target_price_excl_vat_cents)}</strong> /u.
+              <strong>{formatPriceCents(rfq.target_price_excl_vat_cents, locale)}</strong> /u.
             </Field>
           )}
           {rfq.desired_delivery_date && (

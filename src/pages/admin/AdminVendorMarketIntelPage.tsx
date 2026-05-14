@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { toast } from "sonner";
 import { BarChart3, Sparkles, CreditCard, FileText, Loader2, XCircle, MailQuestion, CheckCircle2, History } from "lucide-react";
 import { formatUpdatedAt } from "@/lib/format-date";
+import { useMoneyFormat, formatMoneyFromCents } from "@/lib/money-format";
 
 type Row = {
   vendor_id: string;

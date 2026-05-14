@@ -34,7 +34,7 @@ export default function SearchTrivagoCard({ product: p }: Props) {
         <div
           onClick={() => navigate(`/produit/${p.slug}`, fromState)}
           className="w-full md:w-[190px] bg-white flex items-center justify-center relative shrink-0 cursor-pointer
-                     aspect-square md:aspect-square md:h-[220px] border-b md:border-b-0 md:border-r border-border"
+                     h-[180px] md:h-[220px] md:aspect-square border-b md:border-b-0 md:border-r border-border"
         >
           {pct > 0 && (
             <span className="absolute top-2.5 left-2.5 bg-destructive text-destructive-foreground

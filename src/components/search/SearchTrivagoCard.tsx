@@ -15,6 +15,8 @@ export default function SearchTrivagoCard({ product: p }: Props) {
   const location = useLocation();
   const fromState = { state: { from: location.pathname + location.search } };
   const [showMore, setShowMore] = useState(false);
+  const [imgLoaded, setImgLoaded] = useState(false);
+  const [imgError, setImgError] = useState(false);
   const { data: offers = [] } = useProductOffers(p.id);
 
   const bestOffer = offers[0];

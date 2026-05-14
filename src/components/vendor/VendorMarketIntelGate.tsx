@@ -12,9 +12,10 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { BarChart3, Lock, Sparkles, CalendarClock, ShieldCheck, CheckCircle2, Loader2, MailQuestion } from "lucide-react";
+import { useMoneyFormat, formatMoneyFromCents } from "@/lib/money-format";
 
-function formatPrice(cents: number) {
-  return (cents / 100).toLocaleString("fr-BE", { style: "currency", currency: "EUR", minimumFractionDigits: 0 });
+function formatPrice(cents: number, locale?: string) {
+  return formatMoneyFromCents(cents, { locale, fractionDigits: 0 });
 }
 
 /**

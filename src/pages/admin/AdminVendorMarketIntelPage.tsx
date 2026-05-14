@@ -43,6 +43,8 @@ function formatPrice(c: number | null, locale?: string) {
 
 export default function AdminVendorMarketIntelPage() {
   const qc = useQueryClient();
+  const { locale } = useMoneyFormat();
+  const fmtPrice = (c: number | null) => formatPrice(c, locale);
   const [search, setSearch] = useState("");
   const [trialDialog, setTrialDialog] = useState<{ vendorId: string; vendorName: string } | null>(null);
   const [trialDays, setTrialDays] = useState(180);

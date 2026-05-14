@@ -31,6 +31,7 @@ export function VendorMarketIntelGate({ children }: { children: React.ReactNode 
   const { data: plans = [] } = useVendorMarketIntelPlans();
   const { data: vendor } = useCurrentVendor();
   const { user } = useAuth();
+  const { locale } = useMoneyFormat();
   const [activating, setActivating] = useState(false);
   const [renewOpen, setRenewOpen] = useState(false);
   const [renewMsg, setRenewMsg] = useState("");

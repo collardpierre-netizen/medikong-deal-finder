@@ -217,7 +217,7 @@ export default function MesRfqPage() {
                       </CardTitle>
                       <p className="text-xs text-muted-foreground mt-1">
                         Qté <strong>{rfq.quantity.toLocaleString("fr-BE")}</strong> · livraison <strong>{rfq.destination_country_code}</strong>
-                        {rfq.target_price_excl_vat_cents != null && <> · cible <strong>{formatPrice(rfq.target_price_excl_vat_cents)}</strong>/u.</>}
+                        {rfq.target_price_excl_vat_cents != null && <> · cible <strong>{fmtPrice(rfq.target_price_excl_vat_cents)}</strong>/u.</>}
                         {rfq.desired_delivery_date && <> · pour le <strong>{formatUpdatedAt(rfq.desired_delivery_date)}</strong></>}
                         <> · créée le {formatUpdatedAt(rfq.created_at)}</>
                       </p>
@@ -225,7 +225,7 @@ export default function MesRfqPage() {
                     <div className="text-right">
                       <p className="text-xs text-muted-foreground">Offres reçues</p>
                       <p className="text-2xl font-bold leading-none">{c?.count ?? 0}</p>
-                      {c?.best != null && <p className="text-xs text-emerald-700 font-semibold mt-1">dès {formatPrice(c.best)}/u.</p>}
+                      {c?.best != null && <p className="text-xs text-emerald-700 font-semibold mt-1">dès {fmtPrice(c.best)}/u.</p>}
                       {c?.topScore != null && <p className="text-[10px] text-muted-foreground mt-0.5">Top score {c.topScore.toFixed(0)}/100</p>}
                     </div>
                   </div>

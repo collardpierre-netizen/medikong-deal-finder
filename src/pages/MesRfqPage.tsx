@@ -77,6 +77,8 @@ function formatPrice(cents: number | null | undefined, locale?: string) {
 export default function MesRfqPage() {
   const { user, isVerifiedBuyer } = useAuth();
   const [expanded, setExpanded] = useState<string | null>(null);
+  const { locale } = useMoneyFormat();
+  const fmtPrice = (c: number | null | undefined) => formatPrice(c, locale);
 
   const { data: rfqs, isLoading } = useQuery({
     queryKey: ["my-rfqs", user?.id],

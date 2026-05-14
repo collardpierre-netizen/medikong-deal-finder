@@ -11,26 +11,16 @@ import {
   trackShowcaseClick,
   type ShowcaseVariant,
 } from "@/lib/home-showcase-tracking";
+import { resolveMoneyLocale, formatMoney } from "@/lib/money-format";
 
 /**
  * Mini-encart "Exemple de comparaison live" affiché dans le hero de la home.
  * Mesure les impressions/clics via `home_showcase_events` + dataLayer GTM.
  */
 
-const LOCALE_MAP: Record<string, string> = {
-  fr: "fr-BE",
-  nl: "nl-BE",
-  en: "en-GB",
-  de: "de-DE",
-};
-
 const fmtFor = (lang: string) =>
   (n: number) =>
-    new Intl.NumberFormat(LOCALE_MAP[lang] ?? "fr-BE", {
-      style: "currency",
-      currency: "EUR",
-      minimumFractionDigits: 2,
-    }).format(n);
+    formatMoney(n, { locale: resolveMoneyLocale(lang) });
 
 type Display =
   | {

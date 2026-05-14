@@ -96,7 +96,7 @@ function CampaignPreview({ campaign, onClose }: { campaign: any; onClose: () => 
                     <p className="text-[10px] text-[#8B929C] mt-0.5">{GRADE_LABELS[o.grade] || "Bon état"}</p>
                   </div>
                   <div className="shrink-0 text-right">
-                    <p className="text-base font-bold text-[#1E252F]">{formatEur(o.price_ht)} €</p>
+                    <p className="text-base font-bold text-[#1E252F]">{formatEur(o.price_ht, locale)} €</p>
                     <p className="text-[10px] text-[#8B929C]">HTVA/unité</p>
                   </div>
                 </div>

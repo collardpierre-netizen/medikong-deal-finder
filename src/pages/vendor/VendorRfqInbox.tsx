@@ -64,9 +64,9 @@ const TAB_FILTERS = [
   { key: "all", label: "Toutes", statuses: [] },
 ] as const;
 
-function formatPriceCents(cents: number | null | undefined) {
+function formatPriceCents(cents: number | null | undefined, locale?: string) {
   if (cents == null) return "—";
-  return (cents / 100).toLocaleString("fr-BE", { style: "currency", currency: "EUR", minimumFractionDigits: 2 });
+  return formatMoneyFromCents(cents, locale ? { locale } : undefined);
 }
 
 export default function VendorRfqInbox() {

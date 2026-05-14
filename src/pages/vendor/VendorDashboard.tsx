@@ -44,7 +44,7 @@ export default function VendorDashboard() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <VStat
               label="CA du mois"
-              value={revenueEur > 0 ? eurFormatter.format(revenueEur) : "0 EUR"}
+              value={revenueEur > 0 ? formatMoney(revenueEur, { fractionDigits: 0 }) : "0 EUR"}
               icon="Euro"
               color="#1B5BDA"
               sub={revenueEur > 0 ? "ce mois" : "aucune vente"}

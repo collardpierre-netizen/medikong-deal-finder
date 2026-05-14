@@ -11,6 +11,7 @@ import {
   Image as ImageIcon, FileSpreadsheet, File as FileIcon, X,
 } from "lucide-react";
 import { formatUpdatedAt, formatUpdatedAtFull } from "@/lib/format-date";
+import { useMoneyFormat, formatMoneyFromCents } from "@/lib/money-format";
 import { VendorRfqResponseForm } from "@/components/vendor/VendorRfqResponseForm";
 import { Helmet } from "react-helmet-async";
 

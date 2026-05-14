@@ -335,6 +335,7 @@ function RfqDetailPanel({
   onAfter: () => void;
 }) {
   const rfq = row.rfq!;
+  const { locale } = useMoneyFormat();
   const status = STATUS_LABELS[row.status] || { label: row.status, tone: "bg-slate-100 text-slate-600" };
   const deadlinePassed = rfq.responses_deadline && new Date(rfq.responses_deadline) < new Date();
   const canRespond = !deadlinePassed && !["declined", "expired", "lost"].includes(row.status);

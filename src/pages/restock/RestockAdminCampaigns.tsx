@@ -6,9 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Plus, Mail, Eye, ShoppingCart, ExternalLink, FileSearch } from "lucide-react";
 import { toast } from "sonner";
+import { useMoneyFormat, formatMoney } from "@/lib/money-format";
 
-function formatEur(n: number) {
-  return n.toLocaleString("fr-BE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+function formatEur(n: number, locale?: string) {
+  return formatMoney(n, { locale, withSymbol: false });
 }
 
 const GRADE_LABELS: Record<string, string> = {
@@ -19,6 +20,7 @@ const GRADE_LABELS: Record<string, string> = {
 };
 
 function CampaignPreview({ campaign, onClose }: { campaign: any; onClose: () => void }) {
+  const { locale } = useMoneyFormat();
   const offerIds: string[] = campaign.offer_ids || [];
 
   const { data: offers = [] } = useQuery({

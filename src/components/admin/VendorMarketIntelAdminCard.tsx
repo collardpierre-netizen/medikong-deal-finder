@@ -15,6 +15,7 @@ import {
   BarChart3, Sparkles, CreditCard, FileText, Loader2, XCircle, ExternalLink,
 } from "lucide-react";
 import { formatUpdatedAt } from "@/lib/format-date";
+import { useMoneyFormat, formatMoneyFromCents } from "@/lib/money-format";
 import { Link } from "react-router-dom";
 
 /**

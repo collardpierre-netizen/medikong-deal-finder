@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tag, Download, ChevronRight, Award, Loader2, Clock, Inbox } from "lucide-react";
 import { formatUpdatedAt } from "@/lib/format-date";
-import { useMoneyFormat, formatMoneyFromCents as formatMoneyFromCentsStatic } from "@/lib/money-format";
+import { useMoneyFormat } from "@/lib/money-format";
 import { BuyerRfqTracker } from "@/components/rfq/BuyerRfqTracker";
 import { RfqActivityHistory } from "@/components/rfq/RfqActivityHistory";
 

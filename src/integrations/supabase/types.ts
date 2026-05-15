@@ -14251,6 +14251,124 @@ export type Database = {
           },
         ]
       }
+      vendor_order_tokens: {
+        Row: {
+          created_at: string
+          expires_at: string
+          order_id: string
+          order_number: string
+          sub_order_id: string
+          token: string
+          used_at: string | null
+          vendor_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          order_id: string
+          order_number: string
+          sub_order_id: string
+          token: string
+          used_at?: string | null
+          vendor_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          order_id?: string
+          order_number?: string
+          sub_order_id?: string
+          token?: string
+          used_at?: string | null
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_order_tokens_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "admin_orders_sla_overview_v"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "vendor_order_tokens_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_order_tokens_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders_visible_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_order_tokens_sub_order_id_fkey"
+            columns: ["sub_order_id"]
+            isOneToOne: true
+            referencedRelation: "admin_orders_sla_overview_v"
+            referencedColumns: ["sub_order_id"]
+          },
+          {
+            foreignKeyName: "vendor_order_tokens_sub_order_id_fkey"
+            columns: ["sub_order_id"]
+            isOneToOne: true
+            referencedRelation: "sub_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_order_tokens_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "admin_orders_sla_overview_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_order_tokens_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendor_trust_signals"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_order_tokens_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_order_tokens_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_market_intel_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_order_tokens_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_order_tokens_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_order_tokens_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vendor_price_alert_events: {
         Row: {
           best_price: number | null
@@ -18156,6 +18274,7 @@ export type Database = {
         Args: { _order_id: string }
         Returns: {
           line_count: number
+          magic_token: string
           order_number: string
           order_total_incl_vat: number
           sub_order_id: string

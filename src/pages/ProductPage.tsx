@@ -1573,6 +1573,43 @@ export default function ProductPage() {
               {/* ── Offers Tabs (only for verified buyers) ── */}
               {user && (isVerifiedBuyer || verificationLoading) && (
               <div ref={offerSectionRef}>
+                {/* Base de comparaison partagée (Pack / Unité / 100 u.) */}
+                <div className="mb-3 flex flex-wrap items-center gap-2">
+                  <span className="text-xs text-muted-foreground inline-flex items-center gap-1.5">
+                    Base de comparaison
+                    <TooltipProvider delayDuration={150}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button type="button" aria-label="Comment lire les bases de comparaison" className="text-muted-foreground/70 hover:text-foreground transition-colors">
+                            <HelpCircle size={13} />
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="max-w-[300px] text-[11px] leading-relaxed">
+                          <p><strong>Pack</strong> : prix d'un pack vendeur{bestOfferPackSize > 1 ? ` (ici : ${bestOfferPackSize} unités par pack)` : ''}.</p>
+                          <p className="mt-1"><strong>Unité</strong> : prix du pack ÷ taille du pack.</p>
+                          <p className="mt-1"><strong>/ 100 u.</strong> : prix unitaire × 100, base commune entre conditionnements.</p>
+                          <a href="/aide/packs-et-prix-100" target="_blank" rel="noopener noreferrer" className="mt-2 inline-block text-primary underline underline-offset-2">En savoir plus →</a>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    :
+                  </span>
+                  <div className="flex gap-1.5 flex-wrap">
+                    {([
+                      { key: 'pack', label: bestOfferPackSize > 1 ? `Pack (×${bestOfferPackSize})` : 'Pack' },
+                      { key: 'unit', label: 'Unité' },
+                      { key: 'hundred', label: '/ 100 u.' },
+                    ] as const).map(opt => (
+                      <button
+                        key={opt.key}
+                        onClick={() => { setCalcBasis(opt.key); setUserPrice(""); }}
+                        className={`px-2.5 py-1 rounded-md text-xs font-medium border transition-colors ${calcBasis === opt.key ? 'bg-primary text-primary-foreground border-primary' : 'bg-background text-muted-foreground border-border hover:border-primary/50'}`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 <Tabs defaultValue="marketplace" className="mb-6">
                   <TabsList className="w-full grid grid-cols-3 mb-4">
                     <TabsTrigger value="marketplace" className="text-xs sm:text-sm gap-1.5">

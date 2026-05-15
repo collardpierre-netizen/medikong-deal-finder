@@ -441,13 +441,27 @@ function OfferRow({
               >
                 <Minus size={14} aria-hidden />
               </button>
-              <span
-                className="flex-1 px-1 text-sm font-medium min-w-0 text-center tabular-nums"
-                aria-live="polite"
-                aria-atomic="true"
-              >
-                {qty}
-              </span>
+              <input
+                type="number"
+                inputMode="numeric"
+                value={qty}
+                min={step}
+                max={maxQty}
+                step={step}
+                onChange={(e) => {
+                  const raw = parseInt(e.target.value || "0", 10);
+                  if (Number.isNaN(raw)) return;
+                  setQty(raw);
+                }}
+                onBlur={(e) => {
+                  const raw = parseInt(e.target.value || "0", 10);
+                  const safe = Number.isNaN(raw) || raw < step ? step : raw;
+                  const clamped = Math.min(maxQty, Math.max(step, Math.round(safe / step) * step));
+                  setQty(clamped);
+                }}
+                className="flex-1 px-1 text-sm font-medium min-w-0 text-center tabular-nums bg-transparent outline-none focus:ring-2 focus:ring-primary/40 rounded [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                aria-label="Quantité"
+              />
               <button
                 type="button"
                 onClick={() => setQty((q) => Math.min(maxQty, q + step))}
@@ -585,13 +599,27 @@ function OfferRow({
             >
               <Minus size={14} aria-hidden />
             </button>
-            <span
-              className="flex-1 px-1 text-sm font-medium text-center min-w-0 tabular-nums"
-              aria-live="polite"
-              aria-atomic="true"
-            >
-              {qty}
-            </span>
+            <input
+              type="number"
+              inputMode="numeric"
+              value={qty}
+              min={step}
+              max={maxQty}
+              step={step}
+              onChange={(e) => {
+                const raw = parseInt(e.target.value || "0", 10);
+                if (Number.isNaN(raw)) return;
+                setQty(raw);
+              }}
+              onBlur={(e) => {
+                const raw = parseInt(e.target.value || "0", 10);
+                const safe = Number.isNaN(raw) || raw < step ? step : raw;
+                const clamped = Math.min(maxQty, Math.max(step, Math.round(safe / step) * step));
+                setQty(clamped);
+              }}
+              className="flex-1 px-1 text-sm font-medium text-center min-w-0 tabular-nums bg-transparent outline-none focus:ring-2 focus:ring-primary/40 rounded [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              aria-label="Quantité"
+            />
             <button
               type="button"
               onClick={() => setQty((q) => Math.min(maxQty, q + step))}

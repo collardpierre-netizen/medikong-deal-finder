@@ -16,7 +16,9 @@ const corsHeaders = {
 };
 
 const PAGE = 5000;
-const ENRICH_BATCH = 500;
+// 100 UUIDs ≈ 3.9 ko d'URL, sous la limite 8 ko du gateway PostgREST.
+// 500 provoquait des "error sending request" intermittents.
+const ENRICH_BATCH = 100;
 
 type Offer = {
   id: string;

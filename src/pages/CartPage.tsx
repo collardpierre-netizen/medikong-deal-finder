@@ -402,8 +402,11 @@ export default function CartPage() {
                             className="overflow-hidden"
                           >
                             <div className="mt-4 border border-mk-line rounded-lg divide-y divide-mk-line">
-                              {group.items.map(item => (
-                                <div key={item.id} className="px-4 py-3 flex items-center gap-3 flex-wrap">
+                              {group.items.map(item => {
+                                const itemError = itemErrorsByOffer.get(item.offer_id);
+                                return (
+                                <div key={item.id} className="px-4 py-3 flex flex-col gap-2">
+                                  <div className="flex items-center gap-3 flex-wrap">
                                   <div className="w-10 h-10 bg-muted rounded overflow-hidden flex items-center justify-center shrink-0">
                                     {item.product?.imageUrl ? (
                                       <img
@@ -455,8 +458,19 @@ export default function CartPage() {
                                       <Trash2 size={15} />
                                     </button>
                                   </div>
+                                  </div>
+                                  {itemError && (
+                                    <div className="flex items-start gap-1.5 text-xs text-destructive bg-red-50 border border-red-200 rounded px-2 py-1.5">
+                                      <AlertCircle size={12} className="mt-0.5 shrink-0" />
+                                      <span>
+                                        {itemError.type === "below_moq" && `Quantité minimum requise : ${itemError.details.required} (vous avez ${itemError.details.current}).`}
+                                        {itemError.type === "exceeds_stock" && `Stock maximum disponible : ${itemError.details.available} (vous avez ${itemError.details.current}).`}
+                                        {itemError.type === "offer_not_available" && `Offre indisponible.`}
+                                      </span>
+                                    </div>
+                                  )}
                                 </div>
-                              ))}
+                              );})}
                             </div>
                           </motion.div>
                         )}

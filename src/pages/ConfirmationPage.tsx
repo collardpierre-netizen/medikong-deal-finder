@@ -147,28 +147,6 @@ export default function ConfirmationPage() {
     });
   }, [historyKey, currentStatus, createdAt, updatedAtDb]);
 
-  // Factures vendors (générées par generate-vendor-invoices)
-  const orderId = (order as any)?.id as string | undefined;
-  const { data: invoices } = useQuery({
-    queryKey: ["order-invoices", orderId],
-    enabled: !!orderId && !!confirmed,
-    refetchInterval: (query) => {
-      const list = query.state.data as any[] | undefined;
-      // poll until at least one invoice arrives, max 24 attempts (~2 min)
-      if (list && list.length > 0) return false;
-      return 5000;
-    },
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("order_invoices")
-        .select("id, invoice_number, amount_incl_vat, pdf_url, hosted_url, status, vendor:vendors!order_invoices_vendor_id_fkey(name)")
-        .eq("order_id", orderId!)
-        .in("status", ["finalized", "paid"]);
-      if (error) throw error;
-      return data ?? [];
-    },
-  });
-
   // Considère une erreur "active" uniquement si on n'a pas encore de data fraîche
   const hasFetchError = !!error && !order;
 
@@ -192,6 +170,28 @@ export default function ConfirmationPage() {
 
   // Étape courante : 0 = créée, 1 = paiement en cours, 2 = confirmée
   const currentStep = failed ? -1 : confirmed ? 2 : paymentDone ? 2 : status ? 1 : 0;
+
+  // Factures vendors (générées par generate-vendor-invoices)
+  const orderId = (order as any)?.id as string | undefined;
+  const { data: invoices } = useQuery({
+    queryKey: ["order-invoices", orderId],
+    enabled: !!orderId && confirmed,
+    refetchInterval: (query) => {
+      const list = query.state.data as any[] | undefined;
+      if (list && list.length > 0) return false;
+      return 5000;
+    },
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("order_invoices")
+        .select("id, invoice_number, amount_incl_vat, pdf_url, hosted_url, status, vendor:vendors!order_invoices_vendor_id_fkey(name)")
+        .eq("order_id", orderId!)
+        .in("status", ["finalized", "paid"]);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
 
   const headline = failed
     ? status === "cancelled"

@@ -1,11 +1,9 @@
 // Edge Function: export-offers
-// Génère un export CSV (UTF-8 + BOM, ouvrable Excel) de toutes les offres,
-// uploade dans le bucket privé `db-backups` sous `exports/offers/...` et
-// renvoie une URL signée (1h). Réservé aux admins.
-//
-// Pourquoi CSV et pas XLSX : à 470k+ lignes, XLSX (zip + XML) sature la
-// mémoire de l'edge function (256 Mo). CSV streame proprement, s'ouvre dans
-// Excel/LibreOffice sans souci, et permet exactement les mêmes pivots.
+// Export CSV (UTF-8 + BOM) streamé en réponse HTTP : on pagine la table offers
+// et on pousse chaque page dans un ReadableStream renvoyé directement au
+// navigateur. Aucun buffer global → mémoire ~constante quel que soit le volume,
+// pas d'upload Storage, pas de 400 dû à un payload géant.
+// Réservé aux admins.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
@@ -14,9 +12,9 @@ const corsHeaders = {
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Expose-Headers": "content-disposition, x-total-rows",
 };
 
-const BUCKET = "db-backups";
 const PAGE = 5000;
 const ENRICH_BATCH = 500;
 
@@ -57,7 +55,7 @@ function csvEscape(v: unknown): string {
   return s;
 }
 
-function json(body: unknown, status = 200) {
+function jsonError(body: unknown, status = 500) {
   return new Response(JSON.stringify(body), {
     status,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -74,37 +72,40 @@ Deno.serve(async (req) => {
   const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
   const authHeader = req.headers.get("Authorization");
-  if (!authHeader) return json({ error: "Missing Authorization" }, 401);
+  if (!authHeader) return jsonError({ error: "Missing Authorization" }, 401);
 
-  // 1) Auth utilisateur
+  // 1) Auth
   const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     global: { headers: { Authorization: authHeader } },
   });
   const { data: userData, error: userErr } = await userClient.auth.getUser();
-  if (userErr || !userData.user) return json({ error: "Invalid auth" }, 401);
+  if (userErr || !userData.user) return jsonError({ error: "Invalid auth" }, 401);
   const userId = userData.user.id;
 
-  // 2) Vérification admin
+  // 2) Admin check
   const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
   const { data: isAdmin, error: adminErr } = await admin.rpc("is_admin", {
     _user_id: userId,
   });
-  if (adminErr || !isAdmin) return json({ error: "Admin only" }, 403);
+  if (adminErr || !isAdmin) return jsonError({ error: "Admin only" }, 403);
 
-  // 3) Body
+  // 3) Body / params
   let activeOnly = true;
-  try {
-    const body = await req.json();
-    if (typeof body?.activeOnly === "boolean") activeOnly = body.activeOnly;
-  } catch { /* default */ }
+  if (req.method === "POST") {
+    try {
+      const body = await req.json();
+      if (typeof body?.activeOnly === "boolean") activeOnly = body.activeOnly;
+    } catch { /* default */ }
+  } else {
+    const url = new URL(req.url);
+    if (url.searchParams.get("activeOnly") === "false") activeOnly = false;
+  }
 
-  const startedAt = Date.now();
-  const parts: string[] = ["\uFEFF" + HEADERS.join(",") + "\n"]; // BOM + header
-  let totalRows = 0;
-  let lastId: string | null = null;
-  let pages = 0;
+  const ts = new Date().toISOString().replace(/[:.]/g, "-").replace(/Z$/, "Z");
+  const filename = `medikong-offres${activeOnly ? "-actives" : ""}-${ts}.csv`;
 
-  // Cache enrich
+  // Caches d'enrichissement (réutilisés entre pages, bornés en pratique par
+  // les valeurs distinctes du dataset filtré)
   const productMap = new Map<string, { gtin?: string; name?: string; cnk_code?: string; brand_name?: string; category_name?: string }>();
   const vendorMap = new Map<string, { company_name?: string; name?: string; display_code?: string }>();
 
@@ -131,95 +132,95 @@ Deno.serve(async (req) => {
     }
   }
 
-  try {
-    while (true) {
-      let q = admin
-        .from("offers")
-        .select("id, product_id, vendor_id, country_code, price_excl_vat, price_incl_vat, vat_rate, stock_quantity, stock_status, moq, mov, mov_amount, mov_currency, delivery_days, is_active, purchase_price, qogita_base_price, applied_margin_percentage, margin_amount, is_qogita_backed")
-        .order("id", { ascending: true })
-        .limit(PAGE);
-      if (activeOnly) q = q.eq("is_active", true);
-      if (lastId) q = q.gt("id", lastId);
-      const { data, error } = await q;
-      if (error) throw new Error(`offers page ${pages + 1}: ${error.message}`);
-      if (!data || data.length === 0) break;
+  const encoder = new TextEncoder();
+  let totalRows = 0;
+  let pages = 0;
+  let lastId: string | null = null;
+  const startedAt = Date.now();
 
-      const offers = data as Offer[];
-      await enrichMissing(offers);
+  const stream = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      try {
+        // BOM + en-tête
+        controller.enqueue(encoder.encode("\uFEFF" + HEADERS.join(",") + "\n"));
 
-      const lines: string[] = [];
-      for (const o of offers) {
-        const p = (o.product_id ? productMap.get(o.product_id) : null) ?? {};
-        const v = (o.vendor_id ? vendorMap.get(o.vendor_id) : null) ?? {};
-        lines.push([
-          o.id,
-          p.gtin ?? "",
-          p.cnk_code ?? "",
-          p.name ?? "",
-          p.brand_name ?? "",
-          p.category_name ?? "",
-          v.company_name ?? v.name ?? v.display_code ?? "",
-          o.country_code ?? "",
-          o.price_excl_vat ?? "",
-          o.price_incl_vat ?? "",
-          o.vat_rate ?? "",
-          o.purchase_price ?? "",
-          o.qogita_base_price ?? "",
-          o.applied_margin_percentage ?? "",
-          o.margin_amount ?? "",
-          o.stock_quantity ?? "",
-          o.stock_status ?? "",
-          o.moq ?? "",
-          o.mov_amount ?? o.mov ?? "",
-          o.mov_currency ?? "",
-          o.delivery_days ?? "",
-          o.is_qogita_backed ? "Oui" : "Non",
-          o.is_active ? "Oui" : "Non",
-        ].map(csvEscape).join(",") + "\n");
+        while (true) {
+          let q = admin
+            .from("offers")
+            .select("id, product_id, vendor_id, country_code, price_excl_vat, price_incl_vat, vat_rate, stock_quantity, stock_status, moq, mov, mov_amount, mov_currency, delivery_days, is_active, purchase_price, qogita_base_price, applied_margin_percentage, margin_amount, is_qogita_backed")
+            .order("id", { ascending: true })
+            .limit(PAGE);
+          if (activeOnly) q = q.eq("is_active", true);
+          if (lastId) q = q.gt("id", lastId);
+          const { data, error } = await q;
+          if (error) throw new Error(`offers page ${pages + 1}: ${error.message}`);
+          if (!data || data.length === 0) break;
+
+          const offers = data as Offer[];
+          await enrichMissing(offers);
+
+          // Construit la chunk CSV de la page et l'enqueue d'un coup
+          let chunk = "";
+          for (const o of offers) {
+            const p = (o.product_id ? productMap.get(o.product_id) : null) ?? {};
+            const v = (o.vendor_id ? vendorMap.get(o.vendor_id) : null) ?? {};
+            chunk += [
+              o.id,
+              p.gtin ?? "",
+              p.cnk_code ?? "",
+              p.name ?? "",
+              p.brand_name ?? "",
+              p.category_name ?? "",
+              v.company_name ?? v.name ?? v.display_code ?? "",
+              o.country_code ?? "",
+              o.price_excl_vat ?? "",
+              o.price_incl_vat ?? "",
+              o.vat_rate ?? "",
+              o.purchase_price ?? "",
+              o.qogita_base_price ?? "",
+              o.applied_margin_percentage ?? "",
+              o.margin_amount ?? "",
+              o.stock_quantity ?? "",
+              o.stock_status ?? "",
+              o.moq ?? "",
+              o.mov_amount ?? o.mov ?? "",
+              o.mov_currency ?? "",
+              o.delivery_days ?? "",
+              o.is_qogita_backed ? "Oui" : "Non",
+              o.is_active ? "Oui" : "Non",
+            ].map(csvEscape).join(",") + "\n";
+          }
+          controller.enqueue(encoder.encode(chunk));
+
+          totalRows += offers.length;
+          lastId = offers[offers.length - 1].id;
+          pages += 1;
+
+          if (offers.length < PAGE) break;
+        }
+
+        console.log("[export-offers] OK", {
+          totalRows, pages, duration_ms: Date.now() - startedAt,
+        });
+        controller.close();
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        console.error("[export-offers] FAIL", { totalRows, pages, lastId, error: msg });
+        // Marqueur d'erreur en queue (visible à la fin du fichier)
+        controller.enqueue(encoder.encode(`\n# ERROR: ${msg}\n`));
+        controller.close();
       }
-      parts.push(lines.join(""));
+    },
+  });
 
-      totalRows += offers.length;
-      lastId = offers[offers.length - 1].id;
-      pages += 1;
-
-      if (offers.length < PAGE) break;
-    }
-
-    const csv = parts.join("");
-    const sizeBytes = new TextEncoder().encode(csv).length;
-    const ts = new Date().toISOString().replace(/[:.]/g, "-").replace(/Z$/, "Z");
-    const path = `exports/offers/${ts}_${activeOnly ? "actives" : "all"}_${totalRows}.csv`;
-
-    const { error: upErr } = await admin.storage
-      .from(BUCKET)
-      .upload(path, new Blob([csv], { type: "text/csv; charset=utf-8" }), {
-        cacheControl: "3600",
-        upsert: false,
-      });
-    if (upErr) throw new Error(`Upload: ${upErr.message}`);
-
-    const { data: signed, error: signErr } = await admin.storage
-      .from(BUCKET)
-      .createSignedUrl(path, 3600);
-    if (signErr) throw new Error(`Signed URL: ${signErr.message}`);
-
-    return json({
-      success: true,
-      total_rows: totalRows,
-      pages,
-      size_bytes: sizeBytes,
-      storage_path: path,
-      signed_url: signed?.signedUrl ?? null,
-      filename: `medikong-offres${activeOnly ? "-actives" : ""}-${ts}.csv`,
-      duration_ms: Date.now() - startedAt,
-    });
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    console.error("[export-offers] FAIL", { totalRows, pages, lastId, error: msg });
-    return json({
-      error: msg,
-      partial: { total_rows: totalRows, pages, last_id: lastId },
-    }, 500);
-  }
+  return new Response(stream, {
+    status: 200,
+    headers: {
+      ...corsHeaders,
+      "Content-Type": "text/csv; charset=utf-8",
+      "Content-Disposition": `attachment; filename="${filename}"`,
+      "Cache-Control": "no-store",
+      "X-Filename": filename,
+    },
+  });
 });

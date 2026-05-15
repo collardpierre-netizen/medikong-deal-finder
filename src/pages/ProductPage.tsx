@@ -2590,7 +2590,7 @@ export default function ProductPage() {
                         <p className="text-sm font-bold text-green-700">
                           Economie estimee : {formatEur(savingsAbs)} € ({savingsPct.toFixed(1)}%)
                         </p>
-                        <p className="text-xs text-green-600">par unite en passant par MediKong</p>
+                        <p className="text-xs text-green-600">{calcBasis === 'pack' ? (bestOfferPackSize > 1 ? `par pack de ${bestOfferPackSize}` : 'par pack') : calcBasis === 'hundred' ? 'pour 100 unités' : 'par unité'} en passant par MediKong</p>
                       </div>
                     </motion.div>
                   )}

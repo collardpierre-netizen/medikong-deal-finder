@@ -17822,6 +17822,17 @@ export type Database = {
         Args: { _source_hash: string }
         Returns: undefined
       }
+      calculate_offer_price_for_quantity: {
+        Args: { p_offer_id: string; p_quantity: number }
+        Returns: {
+          mov_threshold: number
+          price_excl_vat: number
+          price_incl_vat: number
+          tier_index: number
+          total_excl_vat: number
+          total_incl_vat: number
+        }[]
+      }
       can_vendor_set_suggested_price: {
         Args: { _product_id: string; _vendor_id: string }
         Returns: boolean

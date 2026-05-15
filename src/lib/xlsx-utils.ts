@@ -456,6 +456,19 @@ export async function importProducts(file: File, onProgress?: (p: ImportProgress
     if (p.gtin) existingGtins.set(String(p.gtin).trim(), p.id);
   });
 
+  // --- Pre-load category mapping context for non-blocking warnings ---
+  const VALID_SOURCES = ["qogita", "medikong", "vendor", "medi-market", "valerco", "vanheek"];
+  const knownCatNames = new Set<string>();
+  {
+    const { data: allCats } = await supabase.from("categories").select("name").limit(10000);
+    (allCats || []).forEach((c: any) => c.name && knownCatNames.add(String(c.name).toLowerCase()));
+  }
+  const aliasedCatNames = new Set<string>();
+  {
+    const { data: aliases } = await supabase.from("category_source_aliases").select("source_path").limit(10000);
+    (aliases || []).forEach((a: any) => a.source_path && aliasedCatNames.add(String(a.source_path).toLowerCase()));
+  }
+
   // --- Import products ---
   currentPhase = "products"; notify();
   for (let i = 0; i < rows.length; i++) {
@@ -464,6 +477,33 @@ export async function importProducts(file: File, onProgress?: (p: ImportProgress
     currentIdx = i + 1;
     if (i % 10 === 0) notify(); // throttle progress updates
     if (!r.name) { errors.push({ line: lineNum, name: "—", code: "MISSING_NAME", message: "Nom du produit manquant" }); skipped++; continue; }
+
+    // D-bug fix: hard-fail if `source` column is provided but not a valid enum value
+    const rawSource = r.source ? String(r.source).toLowerCase().trim() : "medikong";
+    if (!VALID_SOURCES.includes(rawSource)) {
+      errors.push({
+        line: lineNum,
+        name: String(r.name),
+        code: "INVALID_SOURCE",
+        message: `Valeur "source" non reconnue: "${r.source}". Valeurs autorisées: ${VALID_SOURCES.join(", ")}.`,
+      });
+      skipped++;
+      continue;
+    }
+
+    // D-bug fix: non-blocking warning when category_name is provided but unmappable
+    if (r.category_name) {
+      const cn = String(r.category_name).trim().toLowerCase();
+      if (!knownCatNames.has(cn) && !aliasedCatNames.has(cn)) {
+        errors.push({
+          line: lineNum,
+          name: String(r.name),
+          code: "CATEGORY_NOT_MAPPED",
+          message: `Catégorie "${r.category_name}" inconnue et sans alias dans category_source_aliases. La catégorie sera créée automatiquement mais aucun rattachement MK ne sera effectué.`,
+        });
+      }
+    }
+
     const slug = r.slug || slugify(r.name);
     const rawImageUrls = r.image_urls ?? r.image_url ?? r["Image URL"] ?? r["Image URL "] ?? r["image url"] ?? "";
     const imageUrls = String(rawImageUrls)

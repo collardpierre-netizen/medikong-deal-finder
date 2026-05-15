@@ -2577,47 +2577,12 @@ export default function ProductPage() {
 
                     return (
                       <>
-                        {/* Basis selector: pack / unit / 100u */}
-                        <div className="mb-4">
-                          <label className="text-xs text-muted-foreground mb-1.5 flex items-center gap-1.5">
-                            <span>Base de comparaison</span>
-                            <TooltipProvider delayDuration={150}>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <button type="button" aria-label="Comment lire les bases de comparaison" className="text-muted-foreground/70 hover:text-foreground transition-colors">
-                                    <HelpCircle size={13} />
-                                  </button>
-                                </TooltipTrigger>
-                                <TooltipContent side="top" className="max-w-[300px] text-[11px] leading-relaxed">
-                                  <p><strong>Pack</strong> : prix d'un pack vendeur{bestOfferPackSize > 1 ? ` (ici : ${bestOfferPackSize} unités par pack)` : ''}, à comparer à votre prix d'achat actuel exprimé sur la même base.</p>
-                                  <p className="mt-1"><strong>Unité</strong> : prix du pack ÷ taille du pack — utile si vous achetez et revendez à l'unité.</p>
-                                  <p className="mt-1"><strong>/ 100 u.</strong> : prix unitaire × 100, base commune pour comparer entre conditionnements différents.</p>
-                                  <a href="/aide/packs-et-prix-100" target="_blank" rel="noopener noreferrer" className="mt-2 inline-block text-primary underline underline-offset-2">En savoir plus →</a>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          </label>
-                          <div className="flex gap-2 flex-wrap">
-                            {([
-                              { key: 'pack', label: bestOfferPackSize > 1 ? `Pack (×${bestOfferPackSize})` : 'Pack' },
-                              { key: 'unit', label: 'Unité' },
-                              { key: 'hundred', label: '/ 100 u.' },
-                            ] as const).map(opt => (
-                              <button
-                                key={opt.key}
-                                onClick={() => { setCalcBasis(opt.key); setUserPrice(""); }}
-                                className={`px-3 py-1.5 rounded-md text-xs font-medium border transition-colors ${calcBasis === opt.key ? 'bg-primary text-primary-foreground border-primary' : 'bg-background text-muted-foreground border-border hover:border-primary/50'}`}
-                              >
-                                {opt.label}
-                              </button>
-                            ))}
-                          </div>
-                          {bestOfferPackSize > 1 && (
-                            <p className="text-[11px] text-muted-foreground mt-1.5">
-                              Pack de {bestOfferPackSize} · prix unitaire MediKong : {formatEur(bestOfferUnitPrice)} €
-                            </p>
-                          )}
-                        </div>
+                        {/* Base de comparaison déplacée au-dessus des onglets d'offres */}
+                        {bestOfferPackSize > 1 && (
+                          <p className="text-[11px] text-muted-foreground mb-3">
+                            Pack de {bestOfferPackSize} · prix unitaire MediKong : {formatEur(bestOfferUnitPrice)} €
+                          </p>
+                        )}
 
                         {hasAnyRef && (
                           <div className="mb-4">

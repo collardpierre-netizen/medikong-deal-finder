@@ -934,7 +934,31 @@ export default function ProductPage() {
   // Base de comparaison UNIFIÉE entre les 3 vues du comparateur
   // (cartes d'offres marketplace, prix externes/marché, calculateur de marge).
   // Changer la base depuis n'importe quelle vue propage à toutes les autres.
-  const [compareBasis, setCompareBasis] = useState<'pack' | 'unit' | 'hundred'>('unit');
+  // Persistance localStorage : la base choisie est restaurée au rechargement.
+  const COMPARE_BASIS_STORAGE_KEY = "medikong:compareBasis";
+  const [compareBasis, setCompareBasisState] = useState<'pack' | 'unit' | 'hundred'>(() => {
+    if (typeof window === "undefined") return 'unit';
+    try {
+      const saved = window.localStorage.getItem(COMPARE_BASIS_STORAGE_KEY);
+      if (saved === 'pack' || saved === 'unit' || saved === 'hundred') return saved;
+    } catch {
+      // localStorage indisponible (mode privé strict, quota) : on retombe sur le défaut.
+    }
+    return 'unit';
+  });
+  const setCompareBasis: typeof setCompareBasisState = (value) => {
+    setCompareBasisState((prev) => {
+      const next = typeof value === "function"
+        ? (value as (p: 'pack' | 'unit' | 'hundred') => 'pack' | 'unit' | 'hundred')(prev)
+        : value;
+      try {
+        window.localStorage.setItem(COMPARE_BASIS_STORAGE_KEY, next);
+      } catch {
+        // ignore
+      }
+      return next;
+    });
+  };
   const offerCompareBasis = compareBasis;
   const setOfferCompareBasis = setCompareBasis;
   const externalCompareBasis = compareBasis;

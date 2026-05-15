@@ -9,6 +9,7 @@ import { useCart } from "@/hooks/useCart";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCreateOrder } from "@/hooks/useOrders";
 import { supabase } from "@/integrations/supabase/client";
+import { validateCartNow } from "@/hooks/useCartValidation";
 import { toast } from "sonner";
 import { ShoppingCart, Loader2, Truck, Pencil } from "lucide-react";
 import { Input } from "@/components/ui/input";

@@ -1678,6 +1678,7 @@ export default function ProductPage() {
                                       <p><strong>€/pack</strong> : prix d'un pack vendeur tel qu'il est commandé{_mkPack.packSize > 1 ? ` (ici : ${_mkPack.packSize} unités par pack)` : ''}.</p>
                                       <p className="mt-1"><strong>€/unité</strong> : prix du pack ÷ taille du pack.</p>
                                       <p className="mt-1"><strong>€/100 u.</strong> : prix unitaire × 100, pour comparer des conditionnements de tailles différentes sur une base commune.</p>
+                                      <a href="/aide/packs-et-prix-100" target="_blank" rel="noopener noreferrer" className="mt-2 inline-block text-primary underline underline-offset-2">En savoir plus →</a>
                                     </TooltipContent>
                                   </Tooltip>
                                 </TooltipProvider>
@@ -1856,6 +1857,7 @@ export default function ProductPage() {
                                   <p><strong>€/pack</strong> : prix exact tel que relevé chez le vendeur externe (un pack contient un certain nombre d'unités, ex. 4×125 ml).</p>
                                   <p className="mt-1"><strong>€/unité</strong> : prix du pack ÷ taille du pack (extraite du libellé ou du conditionnement renseigné).</p>
                                   <p className="mt-1"><strong>€/100 u.</strong> : prix unitaire × 100, pour comparer des packs de tailles différentes sur une base commune.</p>
+                                  <a href="/aide/packs-et-prix-100" target="_blank" rel="noopener noreferrer" className="mt-2 inline-block text-primary underline underline-offset-2">En savoir plus →</a>
                                 </TooltipContent>
                               </Tooltip>
                             </TooltipProvider>
@@ -2113,6 +2115,7 @@ export default function ProductPage() {
                                   <p><strong>€/pack</strong> : prix d'un pack tel qu'importé depuis la source de marché (APB, PMR, etc.). Un pack regroupe plusieurs unités.</p>
                                   <p className="mt-1"><strong>€/unité</strong> : prix du pack ÷ taille du pack du produit.</p>
                                   <p className="mt-1"><strong>€/100 u.</strong> : prix unitaire × 100, pour comparer des conditionnements différents sur une base commune.</p>
+                                  <a href="/aide/packs-et-prix-100" target="_blank" rel="noopener noreferrer" className="mt-2 inline-block text-primary underline underline-offset-2">En savoir plus →</a>
                                 </TooltipContent>
                               </Tooltip>
                             </TooltipProvider>
@@ -2534,6 +2537,7 @@ export default function ProductPage() {
                                   <p><strong>Pack</strong> : prix d'un pack vendeur{bestOfferPackSize > 1 ? ` (ici : ${bestOfferPackSize} unités par pack)` : ''}, à comparer à votre prix d'achat actuel exprimé sur la même base.</p>
                                   <p className="mt-1"><strong>Unité</strong> : prix du pack ÷ taille du pack — utile si vous achetez et revendez à l'unité.</p>
                                   <p className="mt-1"><strong>/ 100 u.</strong> : prix unitaire × 100, base commune pour comparer entre conditionnements différents.</p>
+                                  <a href="/aide/packs-et-prix-100" target="_blank" rel="noopener noreferrer" className="mt-2 inline-block text-primary underline underline-offset-2">En savoir plus →</a>
                                 </TooltipContent>
                               </Tooltip>
                             </TooltipProvider>

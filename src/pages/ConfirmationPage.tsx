@@ -365,8 +365,45 @@ export default function ConfirmationPage() {
             </motion.div>
           )}
 
-          <div className="flex flex-col sm:flex-row justify-center gap-3 mb-8">
-            <Link to="/compte?tab=commandes" className="bg-mk-blue text-white text-sm font-semibold px-5 py-2.5 rounded-md">Mes commandes</Link>
+          {confirmed && (
+            <motion.div className="border border-mk-line rounded-lg p-5 mb-6 text-left"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.55 }}>
+              <h2 className="flex items-center gap-2 text-base font-semibold text-mk-navy mb-3">
+                <FileText size={16} className="text-mk-blue" /> Factures
+              </h2>
+              {invoices && invoices.length > 0 ? (
+                <ul className="space-y-2">
+                  {invoices.map((inv: any) => (
+                    <li key={inv.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 bg-mk-alt/40 rounded-md">
+                      <div>
+                        <div className="text-sm font-semibold text-mk-navy">{inv.vendor?.name ?? "Vendeur"}</div>
+                        <div className="text-xs text-mk-sec">
+                          Facture {inv.invoice_number ?? "—"} · {formatPrice(Number(inv.amount_incl_vat))} EUR TTC
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {inv.pdf_url && (
+                          <a href={inv.pdf_url} target="_blank" rel="noopener noreferrer"
+                             className="inline-flex items-center gap-1 text-xs font-semibold bg-mk-navy text-white px-3 py-1.5 rounded-md hover:opacity-90">
+                            <Download size={12} /> PDF
+                          </a>
+                        )}
+                        {inv.hosted_url && (
+                          <a href={inv.hosted_url} target="_blank" rel="noopener noreferrer"
+                             className="inline-flex items-center gap-1 text-xs font-semibold border border-mk-navy text-mk-navy px-3 py-1.5 rounded-md hover:bg-mk-alt">
+                            <ExternalLink size={12} /> Voir en ligne
+                          </a>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-xs text-mk-sec italic">Vos factures arriveront sous peu, cette page se met à jour automatiquement.</p>
+              )}
+            </motion.div>
+          )}
+
             <Link to="/recherche" className="border border-mk-navy text-mk-navy text-sm font-semibold px-5 py-2.5 rounded-md">Retour aux achats</Link>
           </div>
 

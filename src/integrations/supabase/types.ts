@@ -2028,6 +2028,7 @@ export type Database = {
           payment_terms_days: number
           phone: string | null
           postal_code: string
+          stripe_customer_id: string | null
           updated_at: string
           vat_number: string | null
         }
@@ -2048,6 +2049,7 @@ export type Database = {
           payment_terms_days?: number
           phone?: string | null
           postal_code: string
+          stripe_customer_id?: string | null
           updated_at?: string
           vat_number?: string | null
         }
@@ -2068,6 +2070,7 @@ export type Database = {
           payment_terms_days?: number
           phone?: string | null
           postal_code?: string
+          stripe_customer_id?: string | null
           updated_at?: string
           vat_number?: string | null
         }
@@ -5449,6 +5452,131 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      order_invoices: {
+        Row: {
+          amount_excl_vat: number
+          amount_incl_vat: number
+          created_at: string
+          error_message: string | null
+          hosted_url: string | null
+          id: string
+          invoice_number: string | null
+          order_id: string
+          pdf_url: string | null
+          status: string
+          stripe_customer_id: string | null
+          stripe_invoice_id: string | null
+          updated_at: string
+          vat_amount: number
+          vendor_id: string
+        }
+        Insert: {
+          amount_excl_vat?: number
+          amount_incl_vat?: number
+          created_at?: string
+          error_message?: string | null
+          hosted_url?: string | null
+          id?: string
+          invoice_number?: string | null
+          order_id: string
+          pdf_url?: string | null
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_invoice_id?: string | null
+          updated_at?: string
+          vat_amount?: number
+          vendor_id: string
+        }
+        Update: {
+          amount_excl_vat?: number
+          amount_incl_vat?: number
+          created_at?: string
+          error_message?: string | null
+          hosted_url?: string | null
+          id?: string
+          invoice_number?: string | null
+          order_id?: string
+          pdf_url?: string | null
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_invoice_id?: string | null
+          updated_at?: string
+          vat_amount?: number
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_invoices_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "admin_orders_sla_overview_v"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "order_invoices_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_invoices_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders_visible_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_invoices_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "admin_orders_sla_overview_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "order_invoices_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendor_trust_signals"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "order_invoices_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_invoices_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_market_intel_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "order_invoices_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "order_invoices_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_invoices_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors_public"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       order_items: {
         Row: {

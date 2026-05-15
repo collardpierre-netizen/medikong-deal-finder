@@ -296,6 +296,21 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
         .eq("id", transferRowId);
     }
   }
+
+  // 5. Génération factures vendor (post-transfers, non-bloquant)
+  try {
+    const { data: invoiceResult, error: invoiceErr } = await supabase.functions.invoke(
+      "generate-vendor-invoices",
+      { body: { order_id: session.metadata?.order_id, session_id: session.id } },
+    );
+    if (invoiceErr) {
+      console.error(`[stripe-webhook] generate-vendor-invoices error:`, invoiceErr);
+    } else {
+      console.log(`[stripe-webhook] Generated ${invoiceResult?.total_invoices ?? 0} invoices for order ${session.metadata?.order_number}`);
+    }
+  } catch (err) {
+    console.error(`[stripe-webhook] Invoice generation failed silently:`, err);
+  }
 }
 
 async function handlePaymentSucceeded(pi: Stripe.PaymentIntent) {

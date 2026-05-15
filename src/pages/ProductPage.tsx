@@ -2427,13 +2427,49 @@ export default function ProductPage() {
                   {/* Mode selector: manual vs % */}
                   {(() => {
                     const mpForProduct = marketPriceItems.filter(mp => mp.product_id === product?.id);
-                    const refPrixPublic = mpForProduct.reduce((best, mp) => mp.prix_public && mp.prix_public > 0 ? (best === 0 ? mp.prix_public : Math.min(best, mp.prix_public)) : best, 0);
-                    const refPrixPharmacien = mpForProduct.reduce((best, mp) => mp.prix_pharmacien && mp.prix_pharmacien > 0 ? (best === 0 ? mp.prix_pharmacien : Math.min(best, mp.prix_pharmacien)) : best, 0);
-                    const refPrixGrossiste = mpForProduct.reduce((best, mp) => mp.prix_grossiste && mp.prix_grossiste > 0 ? (best === 0 ? mp.prix_grossiste : Math.min(best, mp.prix_grossiste)) : best, 0);
+                    const refPackPublic = mpForProduct.reduce((best, mp) => mp.prix_public && mp.prix_public > 0 ? (best === 0 ? mp.prix_public : Math.min(best, mp.prix_public)) : best, 0);
+                    const refPackPharmacien = mpForProduct.reduce((best, mp) => mp.prix_pharmacien && mp.prix_pharmacien > 0 ? (best === 0 ? mp.prix_pharmacien : Math.min(best, mp.prix_pharmacien)) : best, 0);
+                    const refPackGrossiste = mpForProduct.reduce((best, mp) => mp.prix_grossiste && mp.prix_grossiste > 0 ? (best === 0 ? mp.prix_grossiste : Math.min(best, mp.prix_grossiste)) : best, 0);
+                    const toBasis = (packPrice: number) => {
+                      if (packPrice <= 0) return 0;
+                      const unit = bestOfferPackSize > 0 ? packPrice / bestOfferPackSize : packPrice;
+                      return priceFromUnit(unit, calcBasis as CompareBasis, bestOfferPackSize);
+                    };
+                    const refPrixPublic = toBasis(refPackPublic);
+                    const refPrixPharmacien = toBasis(refPackPharmacien);
+                    const refPrixGrossiste = toBasis(refPackGrossiste);
                     const hasAnyRef = refPrixPublic > 0 || refPrixPharmacien > 0 || refPrixGrossiste > 0;
+                    const basisLabel = calcBasis === 'pack'
+                      ? (bestOfferPackSize > 1 ? `/ pack de ${bestOfferPackSize}` : '/ pack')
+                      : calcBasis === 'unit' ? '/ unité' : '/ 100 u.';
 
                     return (
                       <>
+                        {/* Basis selector: pack / unit / 100u */}
+                        <div className="mb-4">
+                          <label className="text-xs text-muted-foreground mb-1.5 block">Base de comparaison</label>
+                          <div className="flex gap-2 flex-wrap">
+                            {([
+                              { key: 'pack', label: bestOfferPackSize > 1 ? `Pack (×${bestOfferPackSize})` : 'Pack' },
+                              { key: 'unit', label: 'Unité' },
+                              { key: 'hundred', label: '/ 100 u.' },
+                            ] as const).map(opt => (
+                              <button
+                                key={opt.key}
+                                onClick={() => { setCalcBasis(opt.key); setUserPrice(""); }}
+                                className={`px-3 py-1.5 rounded-md text-xs font-medium border transition-colors ${calcBasis === opt.key ? 'bg-primary text-primary-foreground border-primary' : 'bg-background text-muted-foreground border-border hover:border-primary/50'}`}
+                              >
+                                {opt.label}
+                              </button>
+                            ))}
+                          </div>
+                          {bestOfferPackSize > 1 && (
+                            <p className="text-[11px] text-muted-foreground mt-1.5">
+                              Pack de {bestOfferPackSize} · prix unitaire MediKong : {formatEur(bestOfferUnitPrice)} €
+                            </p>
+                          )}
+                        </div>
+
                         {hasAnyRef && (
                           <div className="mb-4">
                             <label className="text-xs text-muted-foreground mb-1.5 block">Mode de saisie</label>
@@ -2458,7 +2494,7 @@ export default function ProductPage() {
                           /* Manual mode */
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                              <label className="text-xs text-muted-foreground mb-1 block">Votre prix d'achat actuel ({isTVAC ? "TVAC" : "HTVA"})</label>
+                              <label className="text-xs text-muted-foreground mb-1 block">Votre prix d'achat actuel ({isTVAC ? "TVAC" : "HTVA"}) <span className="text-muted-foreground/70">{basisLabel}</span></label>
                               <div className="flex items-center border border-border rounded-lg overflow-hidden">
                                 <span className="px-3 py-2.5 bg-muted text-sm text-muted-foreground">€</span>
                                 <input
@@ -2471,7 +2507,7 @@ export default function ProductPage() {
                               </div>
                             </div>
                             <div>
-                              <label className="text-xs text-muted-foreground mb-1 block">Prix MediKong ({isTVAC ? "TVAC" : "HTVA"})</label>
+                              <label className="text-xs text-muted-foreground mb-1 block">Prix MediKong ({isTVAC ? "TVAC" : "HTVA"}) <span className="text-muted-foreground/70">{basisLabel}</span></label>
                               <div className="flex items-center border border-border rounded-lg overflow-hidden bg-muted">
                                 <span className="px-3 py-2.5 bg-muted text-sm text-muted-foreground">€</span>
                                 <span className="flex-1 px-3 py-2.5 text-sm font-bold text-green-700">{formatEur(clientPrice)}</span>

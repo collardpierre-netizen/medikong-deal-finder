@@ -931,8 +931,14 @@ export default function ProductPage() {
   // au même conditionnement pour comparer "des pommes à des pommes".
   // Défaut: 'pack' = prix exactement tel qu'importé chez le vendeur (le plus fidèle).
   // Les offres marketplace sont encodées à l'unité ; les relevés externes/marché restent affichés par pack par défaut.
-  const [offerCompareBasis, setOfferCompareBasis] = useState<'pack' | 'unit' | 'hundred'>('unit');
-  const [externalCompareBasis, setExternalCompareBasis] = useState<'pack' | 'unit' | 'hundred'>('pack');
+  // Base de comparaison UNIFIÉE entre les 3 vues du comparateur
+  // (cartes d'offres marketplace, prix externes/marché, calculateur de marge).
+  // Changer la base depuis n'importe quelle vue propage à toutes les autres.
+  const [compareBasis, setCompareBasis] = useState<'pack' | 'unit' | 'hundred'>('unit');
+  const offerCompareBasis = compareBasis;
+  const setOfferCompareBasis = setCompareBasis;
+  const externalCompareBasis = compareBasis;
+  const setExternalCompareBasis = setCompareBasis;
   const offerSectionRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
 
@@ -1123,7 +1129,9 @@ export default function ProductPage() {
   const [supplierName, setSupplierName] = useState<string>("");
   const [savingPrice, setSavingPrice] = useState(false);
   const [calcMode, setCalcMode] = useState<'manual' | 'pct'>('manual');
-  const [calcBasis, setCalcBasis] = useState<'pack' | 'unit' | 'hundred'>('unit');
+  // Base de comparaison du calculateur — partagée avec les autres vues du comparateur.
+  const calcBasis = compareBasis;
+  const setCalcBasis = setCompareBasis;
   const [priceSavedPopup, setPriceSavedPopup] = useState(false);
 
   // Load saved user price from user_price_watches (same table as "Mes prix" in account)

@@ -1129,7 +1129,9 @@ export default function ProductPage() {
   const [supplierName, setSupplierName] = useState<string>("");
   const [savingPrice, setSavingPrice] = useState(false);
   const [calcMode, setCalcMode] = useState<'manual' | 'pct'>('manual');
-  const [calcBasis, setCalcBasis] = useState<'pack' | 'unit' | 'hundred'>('unit');
+  // Base de comparaison du calculateur — partagée avec les autres vues du comparateur.
+  const calcBasis = compareBasis;
+  const setCalcBasis = setCompareBasis;
   const [priceSavedPopup, setPriceSavedPopup] = useState(false);
 
   // Load saved user price from user_price_watches (same table as "Mes prix" in account)

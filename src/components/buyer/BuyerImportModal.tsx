@@ -65,6 +65,8 @@ type ImportPayloadLine = {
   ean: string | null;
   cnk: string | null;
   sku: string | null;
+  raw_name: string | null;
+  raw_brand: string | null;
   quantity: number;
   currentPrice: number;
 };

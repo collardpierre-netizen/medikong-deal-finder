@@ -605,22 +605,42 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
 
     doc.setFontSize(18);
     doc.text("Analyse comparateur de prix MediKong", 40, 42);
-    doc.setFontSize(10);
-    doc.text(`Filtre : ${exportSummary.label}`, 40, 62);
-    doc.text(`Lignes exportées : ${exportSummary.exportedLines}`, 180, 62);
-    doc.text(`Trouvés : ${exportSummary.found}`, 320, 62);
-    doc.text(`Indispo : ${exportSummary.unavailable}`, 420, 62);
-    doc.text(`Moins chers : ${exportSummary.savings}`, 510, 62);
-    doc.text(`Plus chers : ${exportSummary.moreExpensive}`, 620, 62);
-    doc.text(`Économie potentielle : ${formatPrice(exportSummary.totalSavings)}`, 40, 78);
-    doc.text(`Exporté le ${generatedAt}`, 260, 78);
+    doc.setFontSize(9);
+    doc.setTextColor(107, 114, 128);
+    doc.text(`${exportSummary.label} · Exporté le ${generatedAt}`, 40, 58);
+    doc.setTextColor(31, 41, 55);
+
+    // Tableau KPI (miroir exact des KPI cards du popup et de la feuille Résumé XLS)
+    autoTable(doc, {
+      startY: 70,
+      head: [["Indicateur", "Valeur", "Détail"]],
+      body: [
+        ["Lignes importées", String(exportSummary.totalLines), ""],
+        ["Trouvés", String(exportSummary.found), `${exportSummary.found} / ${exportSummary.totalLines}`],
+        ["Indisponibles", String(exportSummary.unavailable), "Aucun match GTIN / CNK / SKU"],
+        ["Moins chers (MediKong)", String(exportSummary.savings), exportSummary.avgSavingPct > 0 ? `${exportSummary.avgSavingPct.toFixed(1)}% en moyenne` : ""],
+        ["Plus chers (MediKong)", String(exportSummary.moreExpensive), ""],
+        ["Économie potentielle (€)", formatPrice(exportSummary.totalSavings), "Σ (Votre prix − Prix MediKong) × Qté sur lignes Moins chères"],
+      ],
+      styles: { fontSize: 9, cellPadding: 5, textColor: [31, 41, 55] },
+      headStyles: { fillColor: [30, 37, 47], textColor: [255, 255, 255] },
+      columnStyles: {
+        0: { cellWidth: 170, fontStyle: "bold" },
+        1: { cellWidth: 90, halign: "right" },
+        2: { cellWidth: "auto", textColor: [107, 114, 128] },
+      },
+      margin: { left: 40, right: 40 },
+    });
 
     autoTable(doc, {
-      startY: 96,
-      head: [["Produit", "Codes", "Identifié par", "Qté", "Votre prix", "Prix MediKong", "Δ €", "Δ %", "Statut"]],
+      startY: (doc as any).lastAutoTable.finalY + 14,
+      head: [["Produit", "Codes", "Identifié par", "Vendeur", "Qté", "Votre prix", "Prix MediKong", "Δ €/u.", "Δ %", "Économie ligne", "Statut"]],
       body: exportSourceRows.map((r) => {
         const deltaPct = calcDeltaPct(r.currentPrice, r.mediPrice);
         const deltaAmount = getDeltaAmount(r);
+        const lineSaving = r.status === "found" && (r.saving || 0) > 0
+          ? (r.saving || 0) * r.quantity
+          : null;
 
         return [
           r.productName || "Non trouvé",
@@ -629,28 +649,33 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
             r.cnk ? `CNK: ${r.cnk}` : null,
             r.sku ? `SKU: ${r.sku}` : null,
           ].filter(Boolean).join(" · ") || "—",
-          r.matchedBy ? MATCH_FIELD_LABEL[r.matchedBy] : "—",
+          r.matchedBy ? MATCH_FIELD_LABEL[r.matchedBy] : "Aucun match",
+          r.status === "found" ? (r.vendorName || "—") : "—",
           String(r.quantity),
           r.currentPrice > 0 ? formatPrice(r.currentPrice) : "—",
           r.mediPrice != null ? formatPrice(r.mediPrice) : "—",
           deltaAmount != null ? `${deltaAmount > 0 ? "+" : ""}${formatPrice(Math.abs(deltaAmount)).replace("€", "").trim()}` : "—",
           deltaPct != null ? `${deltaPct > 0 ? "+" : ""}${deltaPct.toFixed(1)}%` : "—",
+          lineSaving != null ? formatPrice(lineSaving) : "—",
           getResultStatusLabel(r),
         ];
       }),
-      styles: { fontSize: 9, cellPadding: 6, textColor: [31, 41, 55] },
+      styles: { fontSize: 8, cellPadding: 4, textColor: [31, 41, 55] },
       headStyles: { fillColor: [37, 99, 235], textColor: [255, 255, 255] },
       columnStyles: {
-        0: { cellWidth: 180 },
-        1: { cellWidth: 110 },
-        2: { halign: "center", cellWidth: 60 },
-        3: { halign: "center", cellWidth: 32 },
-        4: { halign: "right", cellWidth: 60 },
-        5: { halign: "right", cellWidth: 75 },
-        6: { halign: "right", cellWidth: 50 },
-        7: { halign: "right", cellWidth: 50 },
-        8: { cellWidth: 80 },
+        0: { cellWidth: 150 },
+        1: { cellWidth: 95 },
+        2: { halign: "center", cellWidth: 55 },
+        3: { cellWidth: 90 },
+        4: { halign: "center", cellWidth: 28 },
+        5: { halign: "right", cellWidth: 52 },
+        6: { halign: "right", cellWidth: 60 },
+        7: { halign: "right", cellWidth: 44 },
+        8: { halign: "right", cellWidth: 44 },
+        9: { halign: "right", cellWidth: 60 },
+        10: { cellWidth: 70 },
       },
+      margin: { left: 40, right: 40 },
       didParseCell: (hookData) => {
         if (hookData.section !== "body") return;
         const row = exportSourceRows[hookData.row.index];

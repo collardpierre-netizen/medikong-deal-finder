@@ -97,6 +97,29 @@ export default function CartPage() {
 
   const vendorMap = useMemo(() => new Map(vendors.map(v => [v.id, v])), [vendors]);
 
+  // Server-side validation: MOQ, stock, vendor MOV (floor 500€), tier prices
+  const validationItems = useMemo(
+    () => items.map(i => ({ offer_id: i.offer_id, quantity: i.quantity })),
+    [items],
+  );
+  const { data: validation, loading: validating } = useCartValidation(validationItems, { enabled: items.length > 0 });
+
+  const vendorSummaryMap = useMemo(() => {
+    const m = new Map<string, { mov_required: number; mov_reached: boolean; subtotal_excl_vat: number; amount_missing: number }>();
+    validation?.vendors.forEach(v => m.set(v.vendor_id, v));
+    return m;
+  }, [validation]);
+
+  const itemErrorsByOffer = useMemo(() => {
+    const m = new Map<string, ValidationErrorLike>();
+    validation?.errors.forEach(e => {
+      if (e.offer_id && (e.type === "below_moq" || e.type === "exceeds_stock" || e.type === "offer_not_available")) {
+        m.set(e.offer_id, e as ValidationErrorLike);
+      }
+    });
+    return m;
+  }, [validation]);
+
   // Group items by vendor_id
   const supplierGroups = useMemo<SupplierGroup[]>(() => {
     const groups: Record<string, typeof items> = {};
@@ -108,9 +131,13 @@ export default function CartPage() {
     return Object.entries(groups).map(([vendorId, groupItems]) => {
       const total = groupItems.reduce((s, i) => s + (i.price_excl_vat || i.product?.price || 0) * i.quantity, 0);
       const vendor = vendorMap.get(vendorId);
-      const currentMov = getMovForVendor(vendorId);
-      const remaining = Math.max(currentMov - total, 0);
-      const progress = Math.min((total / currentMov) * 100, 100);
+      const summary = vendorSummaryMap.get(vendorId);
+      // Server-side MOV (with floor 500€) takes precedence; fallback to legacy hook before validation arrives.
+      const currentMov = summary?.mov_required ?? getMovForVendor(vendorId);
+      const subtotalForMov = summary?.subtotal_excl_vat ?? total;
+      const remaining = summary?.amount_missing ?? Math.max(currentMov - subtotalForMov, 0);
+      const progress = currentMov > 0 ? Math.min((subtotalForMov / currentMov) * 100, 100) : 100;
+      const meetsMinimum = summary ? summary.mov_reached : subtotalForMov >= currentMov;
       const showReal = vendor
         ? resolveVendorVisibility({ ...vendor, id: vendorId }, visRules as any, { country })
         : false;
@@ -124,10 +151,10 @@ export default function CartPage() {
         currentMov,
         remaining,
         progress,
-        meetsMinimum: total >= currentMov,
+        meetsMinimum,
       };
     });
-  }, [items, vendorMap, getMovForVendor, visRules, country]);
+  }, [items, vendorMap, getMovForVendor, visRules, country, vendorSummaryMap]);
 
   // Résolution dynamique des taux TVA (6% médicaments / 21% OTC) via RPC resolve_product_vat_rate
   const productIds = useMemo(() => [...new Set(items.map(i => i.product_id).filter(Boolean))] as string[], [items]);

@@ -481,8 +481,12 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
     });
   }, [results, filter]);
 
+  // Export = toute l'analyse (pas seulement le filtre actif) pour permettre de
+  // sonder en Excel/PDF les indispos et les lignes plus chères côté client.
+  const exportSourceRows = results;
+
   const exportRows = useMemo(() => {
-    return filteredResults.map((r) => {
+    return exportSourceRows.map((r) => {
       const deltaPct = calcDeltaPct(r.currentPrice, r.mediPrice);
       const deltaAmount = getDeltaAmount(r);
 
@@ -500,25 +504,25 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
         Statut: getResultStatusLabel(r),
       };
     });
-  }, [filteredResults]);
+  }, [exportSourceRows]);
 
   const exportSummary = useMemo(() => {
-    const exportFound = filteredResults.filter((r) => r.status === "found").length;
-    const exportUnavailable = filteredResults.filter((r) => r.status === "unavailable").length;
-    const exportSavings = filteredResults.filter((r) => r.status === "found" && (r.saving || 0) > 0);
-    const exportMoreExpensive = filteredResults.filter((r) => r.status === "found" && (!r.saving || r.saving <= 0)).length;
+    const exportFound = exportSourceRows.filter((r) => r.status === "found").length;
+    const exportUnavailable = exportSourceRows.filter((r) => r.status === "unavailable").length;
+    const exportSavings = exportSourceRows.filter((r) => r.status === "found" && (r.saving || 0) > 0);
+    const exportMoreExpensive = exportSourceRows.filter((r) => r.status === "found" && (!r.saving || r.saving <= 0)).length;
     const exportSavingsAmount = exportSavings.reduce((acc, r) => acc + (r.saving || 0) * r.quantity, 0);
 
     return {
-      label: getFilterLabel(filter),
-      exportedLines: filteredResults.length,
+      label: "Toute l'analyse",
+      exportedLines: exportSourceRows.length,
       found: exportFound,
       unavailable: exportUnavailable,
       savings: exportSavings.length,
       moreExpensive: exportMoreExpensive,
       totalSavings: exportSavingsAmount,
     };
-  }, [filteredResults, filter]);
+  }, [exportSourceRows]);
 
   const exportXlsx = useCallback(() => {
     if (exportRows.length === 0) {

@@ -460,6 +460,72 @@ const AdminProduits = () => {
 
   return (
     <div>
+      {exportState.status !== "idle" && (
+        <div className="fixed bottom-4 right-4 z-50 w-[360px] rounded-xl border bg-background shadow-lg p-4">
+          <div className="flex items-start justify-between gap-2 mb-2">
+            <div className="flex items-center gap-2">
+              {exportState.status === "running" && <Loader2 size={16} className="animate-spin text-primary" />}
+              {exportState.status === "done" && <Download size={16} className="text-green-600" />}
+              {exportState.status === "error" && <X size={16} className="text-destructive" />}
+              <div className="text-sm font-medium">
+                {exportState.status === "running" && `Export offres en cours${exportState.attempt > 1 ? ` (tentative ${exportState.attempt}/${exportState.maxAttempts})` : ""}`}
+                {exportState.status === "done" && "Export terminé"}
+                {exportState.status === "error" && "Export échoué"}
+              </div>
+            </div>
+            <button
+              onClick={() => setExportState(s => ({ ...s, status: "idle" }))}
+              className="text-muted-foreground hover:text-foreground"
+              aria-label="Fermer"
+              disabled={exportState.status === "running"}
+            >
+              <X size={14} />
+            </button>
+          </div>
+
+          <div className="space-y-1.5 text-xs text-muted-foreground">
+            <div className="flex justify-between">
+              <span>Lignes</span>
+              <span className="font-mono text-foreground">{exportState.lines.toLocaleString("fr-BE")}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Volume</span>
+              <span className="font-mono text-foreground">{(exportState.bytes / 1024 / 1024).toFixed(2)} Mo</span>
+            </div>
+            {exportState.startedAt && (
+              <div className="flex justify-between">
+                <span>Durée</span>
+                <span className="font-mono text-foreground">
+                  {(((exportState.finishedAt ?? Date.now()) - exportState.startedAt) / 1000).toFixed(1)} s
+                </span>
+              </div>
+            )}
+          </div>
+
+          {exportState.status === "running" && (
+            <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+              <div className="h-full w-1/3 animate-pulse bg-primary" />
+            </div>
+          )}
+
+          {exportState.status === "error" && (
+            <>
+              <div className="mt-2 text-xs text-destructive break-words">{exportState.error}</div>
+              <Button
+                size="sm"
+                variant="outline"
+                className="mt-3 w-full"
+                onClick={() => handleExportOffersServer()}
+              >
+                <Loader2 size={14} className="mr-1" />
+                Relancer l'export
+              </Button>
+            </>
+          )}
+        </div>
+      )}
+
+
       <AdminTopBar title={t("products")} subtitle="Catalogue PIM centralisé"
         actions={
           <div className="flex gap-2">

@@ -901,6 +901,45 @@ export type Database = {
         }
         Relationships: []
       }
+      buyer_impersonation_sessions: {
+        Row: {
+          admin_user_id: string
+          ended_at: string | null
+          ended_reason: string | null
+          id: string
+          reason: string | null
+          started_at: string
+          target_company_name: string | null
+          target_customer_id: string | null
+          target_email: string | null
+          target_user_id: string
+        }
+        Insert: {
+          admin_user_id: string
+          ended_at?: string | null
+          ended_reason?: string | null
+          id?: string
+          reason?: string | null
+          started_at?: string
+          target_company_name?: string | null
+          target_customer_id?: string | null
+          target_email?: string | null
+          target_user_id: string
+        }
+        Update: {
+          admin_user_id?: string
+          ended_at?: string | null
+          ended_reason?: string | null
+          id?: string
+          reason?: string | null
+          started_at?: string
+          target_company_name?: string | null
+          target_customer_id?: string | null
+          target_email?: string | null
+          target_user_id?: string
+        }
+        Relationships: []
+      }
       buyer_profiles: {
         Row: {
           created_at: string
@@ -17951,6 +17990,10 @@ export type Database = {
         Args: { _product_id: string }
         Returns: number
       }
+      end_buyer_impersonation: {
+        Args: { _ended_reason?: string; _session_id: string }
+        Returns: undefined
+      }
       enqueue_email: {
         Args: { payload: Json; queue_name: string }
         Returns: number
@@ -18712,6 +18755,10 @@ export type Database = {
         Returns: undefined
       }
       snapshot_vendor_offer_history: { Args: never; Returns: Json }
+      start_buyer_impersonation: {
+        Args: { _reason?: string; _target_user_id: string }
+        Returns: string
+      }
       start_vendor_market_intel_trial: {
         Args: { _notes?: string; _trial_days?: number; _vendor_id: string }
         Returns: {

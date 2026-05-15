@@ -261,6 +261,13 @@ export type Database = {
             foreignKeyName: "brand_official_distributors_brand_id_fkey"
             columns: ["brand_id"]
             isOneToOne: false
+            referencedRelation: "admin_sourcing_items_by_brand_v"
+            referencedColumns: ["brand_id"]
+          },
+          {
+            foreignKeyName: "brand_official_distributors_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
             referencedRelation: "brand_logistics_stats"
             referencedColumns: ["brand_id"]
           },
@@ -378,6 +385,13 @@ export type Database = {
           verified_buyer_orders_count?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "brand_reviews_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "admin_sourcing_items_by_brand_v"
+            referencedColumns: ["brand_id"]
+          },
           {
             foreignKeyName: "brand_reviews_brand_id_fkey"
             columns: ["brand_id"]
@@ -900,6 +914,151 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      buyer_comparator_sourcing_items: {
+        Row: {
+          admin_notes: string | null
+          admin_status: string
+          brand_id: string | null
+          buyer_price_avg_cents: number | null
+          buyer_price_max_cents: number | null
+          buyer_price_min_cents: number | null
+          buyer_price_samples: number
+          buyer_price_sum_cents: number
+          cnk: string | null
+          created_at: string
+          dedupe_key: string
+          distinct_user_ids: string[]
+          first_seen_at: string
+          gtin: string | null
+          id: string
+          import_count: number
+          last_seen_at: string
+          product_id: string | null
+          raw_brand: string | null
+          raw_name: string | null
+          status: string
+          total_quantity: number
+          updated_at: string
+          user_count: number
+        }
+        Insert: {
+          admin_notes?: string | null
+          admin_status?: string
+          brand_id?: string | null
+          buyer_price_avg_cents?: number | null
+          buyer_price_max_cents?: number | null
+          buyer_price_min_cents?: number | null
+          buyer_price_samples?: number
+          buyer_price_sum_cents?: number
+          cnk?: string | null
+          created_at?: string
+          dedupe_key: string
+          distinct_user_ids?: string[]
+          first_seen_at?: string
+          gtin?: string | null
+          id?: string
+          import_count?: number
+          last_seen_at?: string
+          product_id?: string | null
+          raw_brand?: string | null
+          raw_name?: string | null
+          status: string
+          total_quantity?: number
+          updated_at?: string
+          user_count?: number
+        }
+        Update: {
+          admin_notes?: string | null
+          admin_status?: string
+          brand_id?: string | null
+          buyer_price_avg_cents?: number | null
+          buyer_price_max_cents?: number | null
+          buyer_price_min_cents?: number | null
+          buyer_price_samples?: number
+          buyer_price_sum_cents?: number
+          cnk?: string | null
+          created_at?: string
+          dedupe_key?: string
+          distinct_user_ids?: string[]
+          first_seen_at?: string
+          gtin?: string | null
+          id?: string
+          import_count?: number
+          last_seen_at?: string
+          product_id?: string | null
+          raw_brand?: string | null
+          raw_name?: string | null
+          status?: string
+          total_quantity?: number
+          updated_at?: string
+          user_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "buyer_comparator_sourcing_items_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "admin_sourcing_items_by_brand_v"
+            referencedColumns: ["brand_id"]
+          },
+          {
+            foreignKeyName: "buyer_comparator_sourcing_items_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brand_logistics_stats"
+            referencedColumns: ["brand_id"]
+          },
+          {
+            foreignKeyName: "buyer_comparator_sourcing_items_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brands"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buyer_comparator_sourcing_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "admin_price_cockpit_mv"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "buyer_comparator_sourcing_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buyer_comparator_sourcing_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_pack_audit_v"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "buyer_comparator_sourcing_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buyer_comparator_sourcing_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products_with_country_stats_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buyer_comparator_sourcing_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
+          },
+        ]
       }
       buyer_impersonation_sessions: {
         Row: {
@@ -3022,6 +3181,13 @@ export type Database = {
             foreignKeyName: "home_featured_brands_brand_id_fkey"
             columns: ["brand_id"]
             isOneToOne: false
+            referencedRelation: "admin_sourcing_items_by_brand_v"
+            referencedColumns: ["brand_id"]
+          },
+          {
+            foreignKeyName: "home_featured_brands_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
             referencedRelation: "brand_logistics_stats"
             referencedColumns: ["brand_id"]
           },
@@ -3650,6 +3816,13 @@ export type Database = {
           vendor_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "margin_rules_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "admin_sourcing_items_by_brand_v"
+            referencedColumns: ["brand_id"]
+          },
           {
             foreignKeyName: "margin_rules_brand_id_fkey"
             columns: ["brand_id"]
@@ -7597,6 +7770,13 @@ export type Database = {
             foreignKeyName: "product_submissions_resulting_brand_id_fkey"
             columns: ["resulting_brand_id"]
             isOneToOne: false
+            referencedRelation: "admin_sourcing_items_by_brand_v"
+            referencedColumns: ["brand_id"]
+          },
+          {
+            foreignKeyName: "product_submissions_resulting_brand_id_fkey"
+            columns: ["resulting_brand_id"]
+            isOneToOne: false
             referencedRelation: "brand_logistics_stats"
             referencedColumns: ["brand_id"]
           },
@@ -7985,6 +8165,13 @@ export type Database = {
           width?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "products_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "admin_sourcing_items_by_brand_v"
+            referencedColumns: ["brand_id"]
+          },
           {
             foreignKeyName: "products_brand_id_fkey"
             columns: ["brand_id"]
@@ -10747,6 +10934,13 @@ export type Database = {
             foreignKeyName: "rfqs_brand_id_fkey"
             columns: ["brand_id"]
             isOneToOne: false
+            referencedRelation: "admin_sourcing_items_by_brand_v"
+            referencedColumns: ["brand_id"]
+          },
+          {
+            foreignKeyName: "rfqs_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
             referencedRelation: "brand_logistics_stats"
             referencedColumns: ["brand_id"]
           },
@@ -12576,6 +12770,13 @@ export type Database = {
           vendor_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "vendor_catalog_interests_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "admin_sourcing_items_by_brand_v"
+            referencedColumns: ["brand_id"]
+          },
           {
             foreignKeyName: "vendor_catalog_interests_brand_id_fkey"
             columns: ["brand_id"]
@@ -14573,6 +14774,13 @@ export type Database = {
             foreignKeyName: "vendor_price_alert_rules_brand_id_fkey"
             columns: ["brand_id"]
             isOneToOne: false
+            referencedRelation: "admin_sourcing_items_by_brand_v"
+            referencedColumns: ["brand_id"]
+          },
+          {
+            foreignKeyName: "vendor_price_alert_rules_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
             referencedRelation: "brand_logistics_stats"
             referencedColumns: ["brand_id"]
           },
@@ -15901,6 +16109,13 @@ export type Database = {
             foreignKeyName: "products_brand_id_fkey"
             columns: ["brand_id"]
             isOneToOne: false
+            referencedRelation: "admin_sourcing_items_by_brand_v"
+            referencedColumns: ["brand_id"]
+          },
+          {
+            foreignKeyName: "products_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
             referencedRelation: "brand_logistics_stats"
             referencedColumns: ["brand_id"]
           },
@@ -15933,6 +16148,22 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      admin_sourcing_items_by_brand_v: {
+        Row: {
+          brand_id: string | null
+          brand_key: string | null
+          brand_label: string | null
+          inactive_count: number | null
+          items_count: number | null
+          last_seen_at: string | null
+          no_offer_count: number | null
+          total_imports: number | null
+          total_quantity: number | null
+          total_users: number | null
+          unmatched_count: number | null
+        }
+        Relationships: []
       }
       admin_unmapped_categories: {
         Row: {
@@ -16007,6 +16238,13 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "products_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "admin_sourcing_items_by_brand_v"
+            referencedColumns: ["brand_id"]
+          },
           {
             foreignKeyName: "products_brand_id_fkey"
             columns: ["brand_id"]
@@ -16595,6 +16833,13 @@ export type Database = {
             foreignKeyName: "products_brand_id_fkey"
             columns: ["brand_id"]
             isOneToOne: false
+            referencedRelation: "admin_sourcing_items_by_brand_v"
+            referencedColumns: ["brand_id"]
+          },
+          {
+            foreignKeyName: "products_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
             referencedRelation: "brand_logistics_stats"
             referencedColumns: ["brand_id"]
           },
@@ -16674,6 +16919,13 @@ export type Database = {
             foreignKeyName: "home_featured_brands_brand_id_fkey"
             columns: ["brand_id"]
             isOneToOne: false
+            referencedRelation: "admin_sourcing_items_by_brand_v"
+            referencedColumns: ["brand_id"]
+          },
+          {
+            foreignKeyName: "home_featured_brands_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
             referencedRelation: "brand_logistics_stats"
             referencedColumns: ["brand_id"]
           },
@@ -16749,6 +17001,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "public_top_price_deltas"
             referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "products_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "admin_sourcing_items_by_brand_v"
+            referencedColumns: ["brand_id"]
           },
           {
             foreignKeyName: "products_brand_id_fkey"
@@ -17310,6 +17569,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "vendors_public"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rfqs_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "admin_sourcing_items_by_brand_v"
+            referencedColumns: ["brand_id"]
           },
           {
             foreignKeyName: "rfqs_brand_id_fkey"
@@ -19091,6 +19357,22 @@ export type Database = {
         }
       }
       upsert_market_prices: { Args: { rows: Json }; Returns: number }
+      upsert_sourcing_item: {
+        Args: {
+          _brand_id: string
+          _buyer_price_cents: number
+          _cnk: string
+          _dedupe_key: string
+          _gtin: string
+          _product_id: string
+          _quantity: number
+          _raw_brand: string
+          _raw_name: string
+          _status: string
+          _user_id: string
+        }
+        Returns: string
+      }
       user_has_ordered_brand: {
         Args: { _brand_id: string; _user_id: string }
         Returns: boolean

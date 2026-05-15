@@ -39,7 +39,7 @@ export function downloadProductTemplate() {
     ["unit_quantity", "Non", "Quantité par unité (défaut: 1)"],
     ["origin_country", "Non", "Code pays d'origine (ex: BE, FR, DE)"],
     ["image_urls", "Non", "URLs des images séparées par des points-virgules (;)"],
-    ["source", "Non", "Source du produit (défaut: medikong)"],
+    ["source", "Non", "Source du produit (défaut: medikong). Valeurs autorisées: qogita, medikong, vendor, medi-market, valerco, vanheek. Une valeur inconnue fait échouer la ligne."],
     ["is_active", "Non", "true ou false (défaut: true)"],
     ["pvp_ttc", "Non", "Prix Public Conseillé TTC en euros (ex: 24.90). Sert au calcul de marge potentielle pour l'acheteur."],
     ["pvp_source", "Non", "Source du PVP : apb (Belgique officiel), pmr (cosmétique), manufacturer, distributor, manual. Défaut: apb si pvp_ttc présent."],

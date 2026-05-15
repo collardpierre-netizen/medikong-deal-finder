@@ -528,7 +528,7 @@ const AdminProduits = () => {
   return (
     <div>
       {exportState.status !== "idle" && (
-        <div className="fixed bottom-4 right-4 z-50 w-[360px] rounded-xl border bg-background shadow-lg p-4">
+        <div className="fixed bottom-4 right-4 z-50 w-[420px] max-h-[80vh] overflow-y-auto rounded-xl border bg-background shadow-lg p-4">
           <div className="flex items-start justify-between gap-2 mb-2">
             <div className="flex items-center gap-2">
               {exportState.status === "running" && <Loader2 size={16} className="animate-spin text-primary" />}
@@ -575,9 +575,84 @@ const AdminProduits = () => {
             </div>
           )}
 
+          {/* ── Diagnostic ── */}
+          <div className="mt-3 rounded-md border border-border bg-muted/40 p-2.5 space-y-1.5 text-[11px]">
+            <div className="font-semibold text-foreground uppercase tracking-wide text-[10px]">Diagnostic</div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Étape</span>
+              <span className="font-mono text-foreground">
+                {({
+                  idle: "—",
+                  auth: "1/4 · Auth (récupération du token)",
+                  request: "2/4 · Requête edge function",
+                  streaming: "3/4 · Streaming CSV",
+                  finalizing: "4/4 · Finalisation (Blob + download)",
+                  downloaded: "✓ Téléchargé",
+                  failed: "✕ Échec",
+                } as Record<ExportStep, string>)[exportState.step]}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Tentative</span>
+              <span className="font-mono text-foreground">{exportState.attempt}/{exportState.maxAttempts}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">HTTP</span>
+              <span className="font-mono text-foreground">{exportState.httpStatus ?? "—"}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Batches reçus</span>
+              <span className="font-mono text-foreground">{exportState.chunks.toLocaleString("fr-BE")}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Dernier batch</span>
+              <span className="font-mono text-foreground">
+                {exportState.lastChunkBytes > 0
+                  ? `${(exportState.lastChunkBytes / 1024).toFixed(1)} Ko`
+                  : "—"}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Batch moyen</span>
+              <span className="font-mono text-foreground">
+                {exportState.chunks > 0
+                  ? `${(exportState.bytes / exportState.chunks / 1024).toFixed(1)} Ko`
+                  : "—"}
+              </span>
+            </div>
+            {exportState.filename && (
+              <div className="flex justify-between gap-2">
+                <span className="text-muted-foreground shrink-0">Fichier</span>
+                <span className="font-mono text-foreground truncate" title={exportState.filename}>
+                  {exportState.filename}
+                </span>
+              </div>
+            )}
+          </div>
+
           {exportState.status === "error" && (
             <>
-              <div className="mt-2 text-xs text-destructive break-words">{exportState.error}</div>
+              <div className="mt-3 rounded-md border border-destructive/30 bg-destructive/5 p-2.5 space-y-1.5">
+                <div className="font-semibold text-destructive uppercase tracking-wide text-[10px]">Erreur</div>
+                <div className="text-xs text-destructive break-words">{exportState.error}</div>
+                {exportState.errorDetails && (
+                  <details className="mt-1">
+                    <summary className="text-[11px] text-destructive cursor-pointer hover:underline">
+                      Réponse serveur complète ({exportState.errorDetails.length} car.)
+                    </summary>
+                    <pre className="mt-1 max-h-48 overflow-auto rounded bg-background p-2 text-[10px] font-mono text-foreground whitespace-pre-wrap break-all">
+{exportState.errorDetails}
+                    </pre>
+                    <button
+                      type="button"
+                      className="mt-1 text-[10px] underline text-muted-foreground hover:text-foreground"
+                      onClick={() => navigator.clipboard?.writeText(exportState.errorDetails || "")}
+                    >
+                      Copier
+                    </button>
+                  </details>
+                )}
+              </div>
               <Button
                 size="sm"
                 variant="outline"

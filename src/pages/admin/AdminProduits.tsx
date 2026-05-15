@@ -318,25 +318,40 @@ const AdminProduits = () => {
   };
 
   const handleExportOffersServer = async () => {
-    const toastId = toast.loading("Export offres côté serveur en cours… (peut prendre 1-2 min)");
+    const toastId = toast.loading("Export offres côté serveur en cours… (streaming)");
     try {
-      const { data, error } = await supabase.functions.invoke("export-offers-xlsx", {
-        body: { activeOnly: true },
+      const { data: sess } = await supabase.auth.getSession();
+      const token = sess.session?.access_token;
+      if (!token) throw new Error("Session expirée");
+      const url = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/export-offers`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        },
+        body: JSON.stringify({ activeOnly: true }),
       });
-      if (error) throw error;
-      const r = data as { success: boolean; total_rows: number; size_bytes: number; signed_url: string | null; filename: string; error?: string };
-      if (!r?.success || !r.signed_url) throw new Error(r?.error || "Réponse invalide");
+      if (!res.ok) {
+        const txt = await res.text();
+        throw new Error(`HTTP ${res.status} ${txt.slice(0, 200)}`);
+      }
+      const filename = res.headers.get("X-Filename") || `medikong-offres-${Date.now()}.csv`;
+      const blob = await res.blob();
       const a = document.createElement("a");
-      a.href = r.signed_url;
-      a.download = r.filename;
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
       document.body.appendChild(a);
       a.click();
       a.remove();
-      toast.success(`${r.total_rows.toLocaleString("fr-BE")} offres exportées (${(r.size_bytes / 1024 / 1024).toFixed(1)} Mo)`, { id: toastId });
+      URL.revokeObjectURL(a.href);
+      toast.success(`Export terminé (${(blob.size / 1024 / 1024).toFixed(1)} Mo)`, { id: toastId });
     } catch (e: any) {
       toast.error(`Export échoué : ${e?.message || "erreur inconnue"}`, { id: toastId });
     }
   };
+
 
   const handleImport = async (file: File) => {
     const jobId = "import-products-" + Date.now();

@@ -86,7 +86,7 @@ const getFilterLabel = (filter: ResultFilter) => {
 
 const getResultStatusLabel = (line: MatchedLine) => {
   if (line.status === "unavailable") return "Indispo";
-  return (line.saving || 0) > 0 ? "Dispo - moins cher" : "Dispo - plus cher";
+  return (line.saving || 0) > 0 ? "Dispo · Moins cher" : "Dispo · Plus cher";
 };
 
 const getDeltaAmount = (line: MatchedLine) => {

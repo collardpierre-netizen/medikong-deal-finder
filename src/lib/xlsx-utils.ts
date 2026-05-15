@@ -535,8 +535,7 @@ export async function importProducts(file: File, onProgress?: (p: ImportProgress
       short_description: r.short_description || null,
       unit_quantity: parseUnitQuantity(r.unit_quantity),
       origin_country: r.origin_country || null,
-      // source: validated below — invalid value will hard-fail this row (no silent fallback)
-
+      source: rawSource,
       is_active: r.is_active === false || r.is_active === "false" ? false : true,
     };
     // Always set both image_url and image_urls when images are provided

@@ -489,18 +489,23 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
     return exportSourceRows.map((r) => {
       const deltaPct = calcDeltaPct(r.currentPrice, r.mediPrice);
       const deltaAmount = getDeltaAmount(r);
+      const lineSaving = r.status === "found" && (r.saving || 0) > 0
+        ? Number(((r.saving || 0) * r.quantity).toFixed(2))
+        : null;
 
       return {
         Produit: r.productName || "Non trouvé",
         EAN: r.ean || "",
         CNK: r.cnk || "",
         SKU: r.sku || r.productSku || "",
-        "Identifié par": r.matchedBy ? MATCH_FIELD_LABEL[r.matchedBy] : "—",
+        "Identifié par": r.matchedBy ? MATCH_FIELD_LABEL[r.matchedBy] : "Aucun match (GTIN/CNK/SKU)",
+        Vendeur: r.status === "found" ? (r.vendorName || "—") : "—",
         "Qté": r.quantity,
         "Votre prix HT": r.currentPrice > 0 ? Number(r.currentPrice.toFixed(2)) : null,
         "Prix MediKong HT": r.mediPrice != null ? Number(r.mediPrice.toFixed(2)) : null,
-        "Δ €": deltaAmount,
+        "Δ €/u.": deltaAmount,
         "Δ %": deltaPct != null ? Number(deltaPct.toFixed(1)) : null,
+        "Économie ligne (€)": lineSaving,
         Statut: getResultStatusLabel(r),
       };
     });
@@ -512,15 +517,20 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
     const exportSavings = exportSourceRows.filter((r) => r.status === "found" && (r.saving || 0) > 0);
     const exportMoreExpensive = exportSourceRows.filter((r) => r.status === "found" && (!r.saving || r.saving <= 0)).length;
     const exportSavingsAmount = exportSavings.reduce((acc, r) => acc + (r.saving || 0) * r.quantity, 0);
+    const avgPct = exportSavings.length > 0
+      ? exportSavings.reduce((acc, r) => acc + (calcDeltaPct(r.currentPrice, r.mediPrice) ?? 0), 0) / exportSavings.length
+      : 0;
 
     return {
       label: "Toute l'analyse",
+      totalLines: exportSourceRows.length,
       exportedLines: exportSourceRows.length,
       found: exportFound,
       unavailable: exportUnavailable,
       savings: exportSavings.length,
       moreExpensive: exportMoreExpensive,
       totalSavings: exportSavingsAmount,
+      avgSavingPct: Math.abs(avgPct),
     };
   }, [exportSourceRows]);
 
@@ -531,34 +541,50 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
     }
 
     const wb = XLSX.utils.book_new();
+
+    // Feuille "Résumé" — reflète les KPI cards du popup à l'identique
     const summarySheet = XLSX.utils.aoa_to_sheet([
       ["Analyse comparateur de prix MediKong"],
-      [],
-      ["Filtre actif", exportSummary.label],
-      ["Lignes exportées", exportSummary.exportedLines],
-      ["Produits trouvés", exportSummary.found],
-      ["Indisponibles", exportSummary.unavailable],
-      ["Moins chers", exportSummary.savings],
-      ["Plus chers", exportSummary.moreExpensive],
-      ["Économie potentielle", Number(exportSummary.totalSavings.toFixed(2))],
       ["Exporté le", new Date().toLocaleString("fr-FR")],
+      [],
+      ["Indicateur", "Valeur", "Détail"],
+      ["Lignes importées", exportSummary.totalLines, ""],
+      ["Trouvés", exportSummary.found, `${exportSummary.found} / ${exportSummary.totalLines}`],
+      ["Indisponibles", exportSummary.unavailable, "Aucun match GTIN / CNK / SKU"],
+      ["Moins chers (MediKong)", exportSummary.savings, exportSummary.avgSavingPct > 0 ? `${exportSummary.avgSavingPct.toFixed(1)}% en moyenne` : ""],
+      ["Plus chers (MediKong)", exportSummary.moreExpensive, ""],
+      ["Économie potentielle (€)", Number(exportSummary.totalSavings.toFixed(2)), "Σ (Votre prix − Prix MediKong) × Qté sur lignes Moins chères"],
+      [],
+      ["Comment lire la feuille « Analyse »"],
+      ["Statut", "Indispo = produit non trouvé chez MediKong → à sourcer / proposer en RFQ"],
+      ["", "Dispo - moins cher = MediKong est moins cher que votre prix actuel"],
+      ["", "Dispo - plus cher = MediKong est plus cher → à challenger côté vendeur"],
+      ["Identifié par", "GTIN / CNK / SKU si match, sinon « Aucun match (GTIN/CNK/SKU) »"],
+      ["Δ €/u.", "Prix MediKong − Votre prix (par unité, HT)"],
+      ["Économie ligne", "(Votre prix − Prix MediKong) × Qté, uniquement si MediKong moins cher"],
     ]);
-    summarySheet["!cols"] = [{ wch: 24 }, { wch: 18 }];
+    summarySheet["!cols"] = [{ wch: 28 }, { wch: 18 }, { wch: 60 }];
 
     const detailsSheet = XLSX.utils.json_to_sheet(exportRows);
     detailsSheet["!cols"] = [
-      { wch: 38 },
-      { wch: 18 },
-      { wch: 14 },
-      { wch: 16 },
-      { wch: 14 },
-      { wch: 8 },
-      { wch: 16 },
-      { wch: 18 },
-      { wch: 10 },
-      { wch: 10 },
-      { wch: 20 },
+      { wch: 38 }, // Produit
+      { wch: 16 }, // EAN
+      { wch: 12 }, // CNK
+      { wch: 16 }, // SKU
+      { wch: 28 }, // Identifié par
+      { wch: 26 }, // Vendeur
+      { wch: 6 },  // Qté
+      { wch: 14 }, // Votre prix HT
+      { wch: 16 }, // Prix MediKong HT
+      { wch: 10 }, // Δ €/u.
+      { wch: 8 },  // Δ %
+      { wch: 16 }, // Économie ligne
+      { wch: 22 }, // Statut
     ];
+    // Auto-filter sur l'en-tête pour pouvoir trier/filtrer dans Excel
+    if (exportRows.length > 0) {
+      detailsSheet["!autofilter"] = { ref: detailsSheet["!ref"]! };
+    }
 
     XLSX.utils.book_append_sheet(wb, summarySheet, "Résumé");
     XLSX.utils.book_append_sheet(wb, detailsSheet, "Analyse");

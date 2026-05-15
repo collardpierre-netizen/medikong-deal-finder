@@ -43,18 +43,27 @@ Deno.serve(async (req) => {
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
 
     // Super_admin gate via RPC + open session row.
-    // IMPORTANT: must run with the admin's JWT so auth.uid() resolves inside the
-    // SECURITY DEFINER function. Use the userClient (anon + Authorization header).
-    const { data: sessionId, error: rpcErr } = await userClient.rpc(
-      "start_buyer_impersonation",
-      { _target_user_id: target_user_id, _reason: reason ?? null },
-    );
-    if (rpcErr) {
-      return new Response(JSON.stringify({ error: rpcErr.message }), {
+    // IMPORTANT: call PostgREST directly so the admin JWT is definitely forwarded;
+    // otherwise auth.uid() can be null inside the SECURITY DEFINER RPC.
+    const rpcRes = await fetch(`${SUPABASE_URL}/rest/v1/rpc/start_buyer_impersonation`, {
+      method: "POST",
+      headers: {
+        apikey: ANON_KEY,
+        Authorization: authHeader,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ _target_user_id: target_user_id, _reason: reason ?? null }),
+    });
+    const rpcText = await rpcRes.text();
+    if (!rpcRes.ok) {
+      let message = rpcText;
+      try { message = JSON.parse(rpcText)?.message ?? rpcText; } catch { /* keep raw text */ }
+      return new Response(JSON.stringify({ error: message }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    const sessionId = JSON.parse(rpcText);
 
     // Fetch target email
     const { data: targetRes, error: getErr } = await admin.auth.admin.getUserById(target_user_id);

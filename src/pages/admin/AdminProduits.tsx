@@ -297,17 +297,30 @@ const AdminProduits = () => {
   const [migratingImages, setMigratingImages] = useState(false);
 
   type ExportStatus = "idle" | "running" | "done" | "error";
+  type ExportStep =
+    | "idle"
+    | "auth"
+    | "request"
+    | "streaming"
+    | "finalizing"
+    | "downloaded"
+    | "failed";
   const [exportState, setExportState] = useState<{
     status: ExportStatus;
+    step: ExportStep;
     bytes: number;
     lines: number; // lignes CSV (hors header)
+    chunks: number; // nombre de batches reçus depuis le stream
+    lastChunkBytes: number; // taille du dernier batch (octets)
     attempt: number; // 1, 2, 3…
     maxAttempts: number;
+    httpStatus?: number;
     error?: string;
+    errorDetails?: string; // payload serveur complet (non tronqué)
     filename?: string;
     startedAt?: number;
     finishedAt?: number;
-  }>({ status: "idle", bytes: 0, lines: 0, attempt: 0, maxAttempts: 3 });
+  }>({ status: "idle", step: "idle", bytes: 0, lines: 0, chunks: 0, lastChunkBytes: 0, attempt: 0, maxAttempts: 3 });
 
   const handleMigrateImages = async () => {
     if (!confirm("Migrer les images externes vers le stockage MediKong ? Cela peut prendre quelques minutes.")) return;

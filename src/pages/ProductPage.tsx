@@ -1226,7 +1226,7 @@ export default function ProductPage() {
   const bestOfferPackPrice = bestOffer ? (isTVAC ? bestOffer.unitPriceInclVat : bestOffer.unitPriceEur) : 0;
   const bestOfferUnitPrice = bestOfferPackSize > 0 ? bestOfferPackPrice / bestOfferPackSize : bestOfferPackPrice;
   const bestOfferDisplayPrice = priceFromUnit(bestOfferUnitPrice, offerCompareBasis as CompareBasis, bestOfferPackSize);
-  const clientPrice = bestOfferUnitPrice;
+  const clientPrice = priceFromUnit(bestOfferUnitPrice, calcBasis as CompareBasis, bestOfferPackSize);
   const userPriceNum = parseFloat(userPrice.replace(",", ".")) || 0;
   const savingsAbs = userPriceNum > 0 ? userPriceNum - clientPrice : 0;
   const savingsPct = userPriceNum > 0 ? ((savingsAbs / userPriceNum) * 100) : 0;

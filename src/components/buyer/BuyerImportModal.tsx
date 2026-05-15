@@ -632,6 +632,26 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
       margin: { left: 40, right: 40 },
     });
 
+    // Légende — explique les KPI et les formules de calcul
+    autoTable(doc, {
+      startY: (doc as any).lastAutoTable.finalY + 12,
+      head: [["Légende — comment lire ce rapport"]],
+      body: [
+        ["Lignes importées : nombre total de lignes lues dans votre fichier source."],
+        ["Trouvés : lignes pour lesquelles MediKong a identifié le produit via GTIN, CNK ou SKU."],
+        ["Indisponibles : lignes sans correspondance dans le catalogue MediKong (à sourcer ou à proposer en RFQ)."],
+        ["Moins chers (MediKong) : lignes Trouvées où le prix MediKong est strictement inférieur à votre prix d'achat actuel. Le « % moyen » est la moyenne des écarts relatifs (Prix MediKong − Votre prix) / Votre prix sur ces lignes."],
+        ["Plus chers (MediKong) : lignes Trouvées où MediKong est ≥ à votre prix actuel — à challenger côté vendeur."],
+        ["Économie potentielle (€) : Σ ((Votre prix − Prix MediKong) × Qté) calculée uniquement sur les lignes « Moins chers (MediKong) ». Tous les prix sont HT."],
+        ["Économie ligne (colonne du tableau détail) : (Votre prix − Prix MediKong) × Qté de la ligne, affichée uniquement quand MediKong est moins cher. Sinon « — »."],
+        ["Δ €/u. : Prix MediKong − Votre prix, par unité, HT. Δ % : même écart exprimé en pourcentage de Votre prix."],
+        ["Couleurs : vert = Dispo · Moins cher, rouge = Dispo · Plus cher, orange = Indispo (mêmes codes que le popup)."],
+      ],
+      styles: { fontSize: 8, cellPadding: 5, textColor: [55, 65, 81], lineColor: [229, 231, 235], lineWidth: 0.5 },
+      headStyles: { fillColor: [243, 244, 246], textColor: [31, 41, 55], fontStyle: "bold" },
+      margin: { left: 40, right: 40 },
+    });
+
     autoTable(doc, {
       startY: (doc as any).lastAutoTable.finalY + 14,
       head: [["Produit", "Codes", "Identifié par", "Vendeur", "Qté", "Votre prix", "Prix MediKong", "Δ €/u.", "Δ %", "Économie ligne", "Statut"]],

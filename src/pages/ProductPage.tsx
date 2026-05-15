@@ -1123,6 +1123,7 @@ export default function ProductPage() {
   const [supplierName, setSupplierName] = useState<string>("");
   const [savingPrice, setSavingPrice] = useState(false);
   const [calcMode, setCalcMode] = useState<'manual' | 'pct'>('manual');
+  const [calcBasis, setCalcBasis] = useState<'pack' | 'unit' | 'hundred'>('unit');
   const [priceSavedPopup, setPriceSavedPopup] = useState(false);
 
   // Load saved user price from user_price_watches (same table as "Mes prix" in account)
@@ -1225,7 +1226,7 @@ export default function ProductPage() {
   const bestOfferPackPrice = bestOffer ? (isTVAC ? bestOffer.unitPriceInclVat : bestOffer.unitPriceEur) : 0;
   const bestOfferUnitPrice = bestOfferPackSize > 0 ? bestOfferPackPrice / bestOfferPackSize : bestOfferPackPrice;
   const bestOfferDisplayPrice = priceFromUnit(bestOfferUnitPrice, offerCompareBasis as CompareBasis, bestOfferPackSize);
-  const clientPrice = bestOfferUnitPrice;
+  const clientPrice = priceFromUnit(bestOfferUnitPrice, calcBasis as CompareBasis, bestOfferPackSize);
   const userPriceNum = parseFloat(userPrice.replace(",", ".")) || 0;
   const savingsAbs = userPriceNum > 0 ? userPriceNum - clientPrice : 0;
   const savingsPct = userPriceNum > 0 ? ((savingsAbs / userPriceNum) * 100) : 0;
@@ -2426,13 +2427,49 @@ export default function ProductPage() {
                   {/* Mode selector: manual vs % */}
                   {(() => {
                     const mpForProduct = marketPriceItems.filter(mp => mp.product_id === product?.id);
-                    const refPrixPublic = mpForProduct.reduce((best, mp) => mp.prix_public && mp.prix_public > 0 ? (best === 0 ? mp.prix_public : Math.min(best, mp.prix_public)) : best, 0);
-                    const refPrixPharmacien = mpForProduct.reduce((best, mp) => mp.prix_pharmacien && mp.prix_pharmacien > 0 ? (best === 0 ? mp.prix_pharmacien : Math.min(best, mp.prix_pharmacien)) : best, 0);
-                    const refPrixGrossiste = mpForProduct.reduce((best, mp) => mp.prix_grossiste && mp.prix_grossiste > 0 ? (best === 0 ? mp.prix_grossiste : Math.min(best, mp.prix_grossiste)) : best, 0);
+                    const refPackPublic = mpForProduct.reduce((best, mp) => mp.prix_public && mp.prix_public > 0 ? (best === 0 ? mp.prix_public : Math.min(best, mp.prix_public)) : best, 0);
+                    const refPackPharmacien = mpForProduct.reduce((best, mp) => mp.prix_pharmacien && mp.prix_pharmacien > 0 ? (best === 0 ? mp.prix_pharmacien : Math.min(best, mp.prix_pharmacien)) : best, 0);
+                    const refPackGrossiste = mpForProduct.reduce((best, mp) => mp.prix_grossiste && mp.prix_grossiste > 0 ? (best === 0 ? mp.prix_grossiste : Math.min(best, mp.prix_grossiste)) : best, 0);
+                    const toBasis = (packPrice: number) => {
+                      if (packPrice <= 0) return 0;
+                      const unit = bestOfferPackSize > 0 ? packPrice / bestOfferPackSize : packPrice;
+                      return priceFromUnit(unit, calcBasis as CompareBasis, bestOfferPackSize);
+                    };
+                    const refPrixPublic = toBasis(refPackPublic);
+                    const refPrixPharmacien = toBasis(refPackPharmacien);
+                    const refPrixGrossiste = toBasis(refPackGrossiste);
                     const hasAnyRef = refPrixPublic > 0 || refPrixPharmacien > 0 || refPrixGrossiste > 0;
+                    const basisLabel = calcBasis === 'pack'
+                      ? (bestOfferPackSize > 1 ? `/ pack de ${bestOfferPackSize}` : '/ pack')
+                      : calcBasis === 'unit' ? '/ unité' : '/ 100 u.';
 
                     return (
                       <>
+                        {/* Basis selector: pack / unit / 100u */}
+                        <div className="mb-4">
+                          <label className="text-xs text-muted-foreground mb-1.5 block">Base de comparaison</label>
+                          <div className="flex gap-2 flex-wrap">
+                            {([
+                              { key: 'pack', label: bestOfferPackSize > 1 ? `Pack (×${bestOfferPackSize})` : 'Pack' },
+                              { key: 'unit', label: 'Unité' },
+                              { key: 'hundred', label: '/ 100 u.' },
+                            ] as const).map(opt => (
+                              <button
+                                key={opt.key}
+                                onClick={() => { setCalcBasis(opt.key); setUserPrice(""); }}
+                                className={`px-3 py-1.5 rounded-md text-xs font-medium border transition-colors ${calcBasis === opt.key ? 'bg-primary text-primary-foreground border-primary' : 'bg-background text-muted-foreground border-border hover:border-primary/50'}`}
+                              >
+                                {opt.label}
+                              </button>
+                            ))}
+                          </div>
+                          {bestOfferPackSize > 1 && (
+                            <p className="text-[11px] text-muted-foreground mt-1.5">
+                              Pack de {bestOfferPackSize} · prix unitaire MediKong : {formatEur(bestOfferUnitPrice)} €
+                            </p>
+                          )}
+                        </div>
+
                         {hasAnyRef && (
                           <div className="mb-4">
                             <label className="text-xs text-muted-foreground mb-1.5 block">Mode de saisie</label>
@@ -2457,7 +2494,7 @@ export default function ProductPage() {
                           /* Manual mode */
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                              <label className="text-xs text-muted-foreground mb-1 block">Votre prix d'achat actuel ({isTVAC ? "TVAC" : "HTVA"})</label>
+                              <label className="text-xs text-muted-foreground mb-1 block">Votre prix d'achat actuel ({isTVAC ? "TVAC" : "HTVA"}) <span className="text-muted-foreground/70">{basisLabel}</span></label>
                               <div className="flex items-center border border-border rounded-lg overflow-hidden">
                                 <span className="px-3 py-2.5 bg-muted text-sm text-muted-foreground">€</span>
                                 <input
@@ -2470,7 +2507,7 @@ export default function ProductPage() {
                               </div>
                             </div>
                             <div>
-                              <label className="text-xs text-muted-foreground mb-1 block">Prix MediKong ({isTVAC ? "TVAC" : "HTVA"})</label>
+                              <label className="text-xs text-muted-foreground mb-1 block">Prix MediKong ({isTVAC ? "TVAC" : "HTVA"}) <span className="text-muted-foreground/70">{basisLabel}</span></label>
                               <div className="flex items-center border border-border rounded-lg overflow-hidden bg-muted">
                                 <span className="px-3 py-2.5 bg-muted text-sm text-muted-foreground">€</span>
                                 <span className="flex-1 px-3 py-2.5 text-sm font-bold text-green-700">{formatEur(clientPrice)}</span>
@@ -2553,7 +2590,7 @@ export default function ProductPage() {
                         <p className="text-sm font-bold text-green-700">
                           Economie estimee : {formatEur(savingsAbs)} € ({savingsPct.toFixed(1)}%)
                         </p>
-                        <p className="text-xs text-green-600">par unite en passant par MediKong</p>
+                        <p className="text-xs text-green-600">{calcBasis === 'pack' ? (bestOfferPackSize > 1 ? `par pack de ${bestOfferPackSize}` : 'par pack') : calcBasis === 'hundred' ? 'pour 100 unités' : 'par unité'} en passant par MediKong</p>
                       </div>
                     </motion.div>
                   )}

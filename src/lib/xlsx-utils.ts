@@ -495,11 +495,8 @@ export async function importProducts(file: File, onProgress?: (p: ImportProgress
       short_description: r.short_description || null,
       unit_quantity: parseUnitQuantity(r.unit_quantity),
       origin_country: r.origin_country || null,
-      source: (() => {
-        const raw = r.source ? String(r.source).toLowerCase().trim() : "medikong";
-        const validSources = ["qogita", "medikong", "vendor", "medi-market", "valerco"];
-        return validSources.includes(raw) ? raw : "vendor";
-      })(),
+      // source: validated below — invalid value will hard-fail this row (no silent fallback)
+
       is_active: r.is_active === false || r.is_active === "false" ? false : true,
     };
     // Always set both image_url and image_urls when images are provided

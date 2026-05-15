@@ -454,7 +454,7 @@ const App = () => (
               <Route path="cms/home/comparaison" element={<LP><AdminCmsHomeShowcase /></LP>} />
               <Route path="cms/partenaires-invest" element={<LP><AdminCmsPartnerLogos /></LP>} />
               <Route path="categories/non-mappees" element={<LP><AdminUnmappedCategories /></LP>} />
-              <Route path="sourcing-pipeline" element={<LP><AdminSourcingPipeline /></LP>} />
+              <Route path="sourcing/pipeline" element={<LP><AdminSourcingPipeline /></LP>} />
               <Route path="categories/anomalies" element={<LP><AdminCategoryAnomalies /></LP>} />
               <Route path="categories/anomalies/:id" element={<LP><AdminCategoryAnomalyDetail /></LP>} />
               <Route path="categories/qogita-mapping-llm" element={<LP><AdminQogitaLlmMapping /></LP>} />

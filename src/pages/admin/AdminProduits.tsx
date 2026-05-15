@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useI18n } from "@/contexts/I18nContext";
 import { useBrands, useManufacturers, useProductCount, useBrandCount, useActiveOfferCount, useVendors } from "@/hooks/useAdminData";
 import { ProductFormDialog } from "@/components/admin/ProductFormDialog";
-import { exportProducts, exportOffers, importProducts, downloadProductTemplate, type ImportProgress } from "@/lib/xlsx-utils";
+import { exportProducts, importProducts, downloadProductTemplate, type ImportProgress } from "@/lib/xlsx-utils";
 import { getProductImageSrc } from "@/lib/image-utils";
 import { toast } from "sonner";
 import { useImportJobs } from "@/contexts/ImportContext";
@@ -317,6 +317,27 @@ const AdminProduits = () => {
     }
   };
 
+  const handleExportOffersServer = async () => {
+    const toastId = toast.loading("Export offres côté serveur en cours… (peut prendre 1-2 min)");
+    try {
+      const { data, error } = await supabase.functions.invoke("export-offers", {
+        body: { activeOnly: true },
+      });
+      if (error) throw error;
+      const r = data as { success: boolean; total_rows: number; size_bytes: number; signed_url: string | null; filename: string; error?: string };
+      if (!r?.success || !r.signed_url) throw new Error(r?.error || "Réponse invalide");
+      const a = document.createElement("a");
+      a.href = r.signed_url;
+      a.download = r.filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      toast.success(`${r.total_rows.toLocaleString("fr-BE")} offres exportées (${(r.size_bytes / 1024 / 1024).toFixed(1)} Mo)`, { id: toastId });
+    } catch (e: any) {
+      toast.error(`Export échoué : ${e?.message || "erreur inconnue"}`, { id: toastId });
+    }
+  };
+
   const handleImport = async (file: File) => {
     const jobId = "import-products-" + Date.now();
     addJob(jobId, "Import produits");
@@ -357,7 +378,7 @@ const AdminProduits = () => {
               <a href="/admin/produits/mapping">🔗 Mapping</a>
             </Button>
             <Button variant="outline" size="sm" onClick={() => downloadProductTemplate()} title="Télécharger le template d'import"><FileSpreadsheet size={14} className="mr-1" />Template</Button>
-            <Button variant="outline" size="sm" onClick={() => activeTab === "offers" ? exportOffers() : exportProducts()}><Download size={14} className="mr-1" />{activeTab === "offers" ? "Export Offres" : "Export XLSX"}</Button>
+            <Button variant="outline" size="sm" onClick={() => activeTab === "offers" ? handleExportOffersServer() : exportProducts()}><Download size={14} className="mr-1" />{activeTab === "offers" ? "Export Offres" : "Export XLSX"}</Button>
             <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()}><Upload size={14} className="mr-1" />Import XLSX</Button>
             <input ref={fileRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={e => { if (e.target.files?.[0]) handleImport(e.target.files[0]); e.target.value = ""; }} />
             <Button variant="outline" size="sm" onClick={handleMigrateImages} disabled={migratingImages}>

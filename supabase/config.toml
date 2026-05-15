@@ -56,3 +56,9 @@ verify_jwt = true
 
 [functions.generate-savings-report]
 verify_jwt = false
+
+[functions.start-buyer-impersonation]
+verify_jwt = true
+
+[functions.end-buyer-impersonation]
+verify_jwt = true

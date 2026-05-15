@@ -203,6 +203,7 @@ Deno.serve(async (req) => {
           // Ne PAS sortir sur `offers.length < PAGE` : si PostgREST applique un
           // plafond `db.max_rows` inférieur à PAGE, on stopperait après la 1re page.
           // On boucle tant que la page suivante renvoie au moins 1 ligne.
+        }
 
         console.log("[export-offers] OK", {
           totalRows, pages, duration_ms: Date.now() - startedAt,

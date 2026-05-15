@@ -1123,6 +1123,7 @@ export default function ProductPage() {
   const [supplierName, setSupplierName] = useState<string>("");
   const [savingPrice, setSavingPrice] = useState(false);
   const [calcMode, setCalcMode] = useState<'manual' | 'pct'>('manual');
+  const [calcBasis, setCalcBasis] = useState<'pack' | 'unit' | 'hundred'>('unit');
   const [priceSavedPopup, setPriceSavedPopup] = useState(false);
 
   // Load saved user price from user_price_watches (same table as "Mes prix" in account)

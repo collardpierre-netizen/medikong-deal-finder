@@ -592,7 +592,7 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
     autoTable(doc, {
       startY: 96,
       head: [["Produit", "Codes", "Identifié par", "Qté", "Votre prix", "Prix MediKong", "Δ €", "Δ %", "Statut"]],
-      body: filteredResults.map((r) => {
+      body: exportSourceRows.map((r) => {
         const deltaPct = calcDeltaPct(r.currentPrice, r.mediPrice);
         const deltaAmount = getDeltaAmount(r);
 
@@ -627,7 +627,7 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
       },
       didParseCell: (hookData) => {
         if (hookData.section !== "body") return;
-        const row = filteredResults[hookData.row.index];
+        const row = exportSourceRows[hookData.row.index];
         if (!row) return;
 
         if (row.status === "unavailable") {
@@ -640,9 +640,9 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
       },
     });
 
-    doc.save(`comparateur-medikong-${filter}-${new Date().toISOString().slice(0, 10)}.pdf`);
-    toast.success("Export PDF téléchargé");
-  }, [exportRows, exportSummary, filteredResults, filter]);
+    doc.save(`comparateur-medikong-complet-${new Date().toISOString().slice(0, 10)}.pdf`);
+    toast.success(`Export PDF téléchargé (${exportSummary.exportedLines} lignes)`);
+  }, [exportRows, exportSummary, exportSourceRows]);
 
   const toggleAll = () => {
     const foundIndices = results.map((_, i) => i).filter(i => results[i].status === "found");

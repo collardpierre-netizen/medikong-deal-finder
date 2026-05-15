@@ -347,11 +347,16 @@ const AdminProduits = () => {
     const MAX_ATTEMPTS = 3;
     const baseState = {
       status: "running" as ExportStatus,
+      step: "auth" as ExportStep,
       bytes: 0,
       lines: 0,
+      chunks: 0,
+      lastChunkBytes: 0,
       attempt: 1,
       maxAttempts: MAX_ATTEMPTS,
+      httpStatus: undefined,
       error: undefined,
+      errorDetails: undefined,
       filename: undefined,
       startedAt: Date.now(),
       finishedAt: undefined,
@@ -359,13 +364,28 @@ const AdminProduits = () => {
     setExportState(baseState);
 
     let lastError = "";
+    let lastErrorDetails: string | undefined;
+    let lastHttpStatus: number | undefined;
     for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-      setExportState(s => ({ ...s, status: "running", attempt, bytes: 0, lines: 0, error: undefined }));
+      setExportState(s => ({
+        ...s,
+        status: "running",
+        step: "auth",
+        attempt,
+        bytes: 0,
+        lines: 0,
+        chunks: 0,
+        lastChunkBytes: 0,
+        httpStatus: undefined,
+        error: undefined,
+        errorDetails: undefined,
+      }));
       try {
         const { data: sess } = await supabase.auth.getSession();
         const token = sess.session?.access_token;
         if (!token) throw new Error("Session expirée");
         const url = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/export-offers`;
+        setExportState(s => ({ ...s, step: "request" }));
         const res = await fetch(url, {
           method: "POST",
           headers: {
@@ -375,8 +395,11 @@ const AdminProduits = () => {
           },
           body: JSON.stringify({ activeOnly: true }),
         });
+        lastHttpStatus = res.status;
+        setExportState(s => ({ ...s, httpStatus: res.status }));
         if (!res.ok) {
           const txt = await res.text();
+          lastErrorDetails = txt;
           throw new Error(`HTTP ${res.status} ${txt.slice(0, 200)}`);
         }
         const filename = res.headers.get("X-Filename") || `medikong-offres-${Date.now()}.csv`;
@@ -384,9 +407,12 @@ const AdminProduits = () => {
         // Lecture incrémentale du stream pour suivi en temps réel
         const reader = res.body?.getReader();
         if (!reader) throw new Error("ReadableStream indisponible");
+        setExportState(s => ({ ...s, step: "streaming", filename }));
         const chunks: Uint8Array[] = [];
         let bytes = 0;
         let lines = 0;
+        let chunkCount = 0;
+        let lastChunkBytes = 0;
         let lastTick = 0;
         // eslint-disable-next-line no-constant-condition
         while (true) {
@@ -395,14 +421,23 @@ const AdminProduits = () => {
           if (!value) continue;
           chunks.push(value);
           bytes += value.byteLength;
+          chunkCount++;
+          lastChunkBytes = value.byteLength;
           for (let i = 0; i < value.byteLength; i++) if (value[i] === 0x0a) lines++;
           const now = Date.now();
           if (now - lastTick > 250) {
             lastTick = now;
-            setExportState(s => ({ ...s, bytes, lines: Math.max(0, lines - 1) }));
+            setExportState(s => ({
+              ...s,
+              bytes,
+              lines: Math.max(0, lines - 1),
+              chunks: chunkCount,
+              lastChunkBytes,
+            }));
           }
         }
 
+        setExportState(s => ({ ...s, step: "finalizing", bytes, chunks: chunkCount, lastChunkBytes, lines: Math.max(0, lines - 1) }));
         const blob = new Blob(chunks as BlobPart[], { type: "text/csv;charset=utf-8" });
         const a = document.createElement("a");
         a.href = URL.createObjectURL(blob);
@@ -414,10 +449,14 @@ const AdminProduits = () => {
 
         setExportState({
           status: "done",
+          step: "downloaded",
           bytes,
           lines: Math.max(0, lines - 1),
+          chunks: chunkCount,
+          lastChunkBytes,
           attempt,
           maxAttempts: MAX_ATTEMPTS,
+          httpStatus: lastHttpStatus,
           filename,
           startedAt: baseState.startedAt,
           finishedAt: Date.now(),
@@ -427,11 +466,26 @@ const AdminProduits = () => {
       } catch (e: any) {
         lastError = e?.message || "erreur inconnue";
         if (attempt < MAX_ATTEMPTS && !manualRetry) {
-          setExportState(s => ({ ...s, status: "error", error: `${lastError} — relance ${attempt + 1}/${MAX_ATTEMPTS}…` }));
+          setExportState(s => ({
+            ...s,
+            status: "error",
+            step: "failed",
+            error: `${lastError} — relance ${attempt + 1}/${MAX_ATTEMPTS}…`,
+            errorDetails: lastErrorDetails,
+            httpStatus: lastHttpStatus,
+          }));
           await new Promise(r => setTimeout(r, 2000 * attempt));
           continue;
         }
-        setExportState(s => ({ ...s, status: "error", error: lastError, finishedAt: Date.now() }));
+        setExportState(s => ({
+          ...s,
+          status: "error",
+          step: "failed",
+          error: lastError,
+          errorDetails: lastErrorDetails,
+          httpStatus: lastHttpStatus,
+          finishedAt: Date.now(),
+        }));
         toast.error(`Export échoué : ${lastError}`);
         return;
       }

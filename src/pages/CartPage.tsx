@@ -357,6 +357,23 @@ export default function CartPage() {
                         </div>
                       </div>
 
+                      {!group.meetsMinimum && (
+                        <div className="mb-3 flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                          <AlertTriangle size={16} className="text-mk-red mt-0.5 shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-mk-red">
+                              Ajoutez {formatPrice(group.remaining)}€ de produits de {group.vendorName} pour valider votre commande.
+                            </p>
+                            <Link
+                              to={group.vendorSlug ? `/recherche?vendor=${group.vendorSlug}` : `/recherche`}
+                              className="inline-block mt-1.5 text-xs font-medium text-white bg-mk-red px-3 py-1.5 rounded-md hover:opacity-90"
+                            >
+                              Voir d'autres produits de {group.vendorName}
+                            </Link>
+                          </div>
+                        </div>
+                      )}
+
                       {/* MOV info */}
                       <div className="flex items-center gap-2 text-xs text-mk-sec mb-4 border-t border-mk-line pt-3">
                         <span className="flex items-center gap-1 font-medium">

@@ -421,7 +421,7 @@ function OfferRow({
             </div>
           )}
         </div>
-        <span className="text-sm text-foreground whitespace-nowrap tabular-nums">{offer.stockQuantity.toLocaleString("fr-FR")}</span>
+        <span className="text-sm text-foreground whitespace-nowrap tabular-nums text-right">{offer.stockQuantity.toLocaleString("fr-FR")}</span>
 
         {/* Actions */}
         <div className="flex flex-col items-stretch gap-1 w-full min-w-0">

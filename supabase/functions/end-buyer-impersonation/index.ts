@@ -1,5 +1,4 @@
 // Close a buyer impersonation session row.
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -25,16 +24,21 @@ Deno.serve(async (req) => {
       });
     }
 
-    // RPC must run with the admin's JWT so auth.uid() resolves inside SECURITY DEFINER
-    const userClient = createClient(SUPABASE_URL, ANON_KEY, {
-      global: { headers: { Authorization: authHeader } },
+    // RPC must run with the admin's JWT so auth.uid() resolves inside SECURITY DEFINER.
+    const rpcRes = await fetch(`${SUPABASE_URL}/rest/v1/rpc/end_buyer_impersonation`, {
+      method: "POST",
+      headers: {
+        apikey: ANON_KEY,
+        Authorization: authHeader,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ _session_id: session_id, _ended_reason: ended_reason ?? "manual" }),
     });
-    const { error } = await userClient.rpc(
-      "end_buyer_impersonation",
-      { _session_id: session_id, _ended_reason: ended_reason ?? "manual" },
-    );
-    if (error) {
-      return new Response(JSON.stringify({ error: error.message }), {
+    const rpcText = await rpcRes.text();
+    if (!rpcRes.ok) {
+      let message = rpcText;
+      try { message = JSON.parse(rpcText)?.message ?? rpcText; } catch { /* keep raw text */ }
+      return new Response(JSON.stringify({ error: message }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

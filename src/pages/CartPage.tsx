@@ -111,10 +111,10 @@ export default function CartPage() {
   }, [validation]);
 
   const itemErrorsByOffer = useMemo(() => {
-    const m = new Map<string, ValidationErrorLike>();
+    const m = new Map<string, { type: string; details: Record<string, any> }>();
     validation?.errors.forEach(e => {
       if (e.offer_id && (e.type === "below_moq" || e.type === "exceeds_stock" || e.type === "offer_not_available")) {
-        m.set(e.offer_id, e as ValidationErrorLike);
+        m.set(e.offer_id, { type: e.type, details: e.details });
       }
     });
     return m;

@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getVendorPublicName, resolveVendorVisibility } from "@/lib/vendor-display";
 import { useCountry } from "@/contexts/CountryContext";
 import { useVendorMov } from "@/hooks/useVendorMov";
+import { useCartValidation } from "@/hooks/useCartValidation";
 import { getProductImageSrc, MEDIKONG_PLACEHOLDER, isQogitaPlaceholder } from "@/lib/image-utils";
 import VendorDelegateCompact from "@/components/vendor/VendorDelegateCompact";
 import { QuantityInput } from "@/components/cart/QuantityInput";

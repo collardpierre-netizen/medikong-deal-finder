@@ -481,8 +481,12 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
     });
   }, [results, filter]);
 
+  // Export = toute l'analyse (pas seulement le filtre actif) pour permettre de
+  // sonder en Excel/PDF les indispos et les lignes plus chères côté client.
+  const exportSourceRows = results;
+
   const exportRows = useMemo(() => {
-    return filteredResults.map((r) => {
+    return exportSourceRows.map((r) => {
       const deltaPct = calcDeltaPct(r.currentPrice, r.mediPrice);
       const deltaAmount = getDeltaAmount(r);
 
@@ -500,25 +504,25 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
         Statut: getResultStatusLabel(r),
       };
     });
-  }, [filteredResults]);
+  }, [exportSourceRows]);
 
   const exportSummary = useMemo(() => {
-    const exportFound = filteredResults.filter((r) => r.status === "found").length;
-    const exportUnavailable = filteredResults.filter((r) => r.status === "unavailable").length;
-    const exportSavings = filteredResults.filter((r) => r.status === "found" && (r.saving || 0) > 0);
-    const exportMoreExpensive = filteredResults.filter((r) => r.status === "found" && (!r.saving || r.saving <= 0)).length;
+    const exportFound = exportSourceRows.filter((r) => r.status === "found").length;
+    const exportUnavailable = exportSourceRows.filter((r) => r.status === "unavailable").length;
+    const exportSavings = exportSourceRows.filter((r) => r.status === "found" && (r.saving || 0) > 0);
+    const exportMoreExpensive = exportSourceRows.filter((r) => r.status === "found" && (!r.saving || r.saving <= 0)).length;
     const exportSavingsAmount = exportSavings.reduce((acc, r) => acc + (r.saving || 0) * r.quantity, 0);
 
     return {
-      label: getFilterLabel(filter),
-      exportedLines: filteredResults.length,
+      label: "Toute l'analyse",
+      exportedLines: exportSourceRows.length,
       found: exportFound,
       unavailable: exportUnavailable,
       savings: exportSavings.length,
       moreExpensive: exportMoreExpensive,
       totalSavings: exportSavingsAmount,
     };
-  }, [filteredResults, filter]);
+  }, [exportSourceRows]);
 
   const exportXlsx = useCallback(() => {
     if (exportRows.length === 0) {
@@ -560,9 +564,9 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
     XLSX.utils.book_append_sheet(wb, detailsSheet, "Analyse");
 
     const date = new Date().toISOString().slice(0, 10);
-    XLSX.writeFile(wb, `comparateur-medikong-${filter}-${date}.xlsx`);
-    toast.success("Export XLS téléchargé");
-  }, [exportRows, exportSummary, filter]);
+    XLSX.writeFile(wb, `comparateur-medikong-complet-${date}.xlsx`);
+    toast.success(`Export XLS téléchargé (${exportSummary.exportedLines} lignes)`);
+  }, [exportRows, exportSummary]);
 
   const exportPdf = useCallback(() => {
     if (exportRows.length === 0) {
@@ -588,7 +592,7 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
     autoTable(doc, {
       startY: 96,
       head: [["Produit", "Codes", "Identifié par", "Qté", "Votre prix", "Prix MediKong", "Δ €", "Δ %", "Statut"]],
-      body: filteredResults.map((r) => {
+      body: exportSourceRows.map((r) => {
         const deltaPct = calcDeltaPct(r.currentPrice, r.mediPrice);
         const deltaAmount = getDeltaAmount(r);
 
@@ -623,7 +627,7 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
       },
       didParseCell: (hookData) => {
         if (hookData.section !== "body") return;
-        const row = filteredResults[hookData.row.index];
+        const row = exportSourceRows[hookData.row.index];
         if (!row) return;
 
         if (row.status === "unavailable") {
@@ -636,9 +640,9 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
       },
     });
 
-    doc.save(`comparateur-medikong-${filter}-${new Date().toISOString().slice(0, 10)}.pdf`);
-    toast.success("Export PDF téléchargé");
-  }, [exportRows, exportSummary, filteredResults, filter]);
+    doc.save(`comparateur-medikong-complet-${new Date().toISOString().slice(0, 10)}.pdf`);
+    toast.success(`Export PDF téléchargé (${exportSummary.exportedLines} lignes)`);
+  }, [exportRows, exportSummary, exportSourceRows]);
 
   const toggleAll = () => {
     const foundIndices = results.map((_, i) => i).filter(i => results[i].status === "found");

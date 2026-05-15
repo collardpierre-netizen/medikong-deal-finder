@@ -12,7 +12,7 @@ Deno.serve(async (req) => {
 
   try {
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-    const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
     const authHeader = req.headers.get("Authorization") ?? "";
 
     const body = await req.json().catch(() => ({}));
@@ -25,11 +25,13 @@ Deno.serve(async (req) => {
       });
     }
 
-    const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
-    const { error } = await admin.rpc(
+    // RPC must run with the admin's JWT so auth.uid() resolves inside SECURITY DEFINER
+    const userClient = createClient(SUPABASE_URL, ANON_KEY, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { error } = await userClient.rpc(
       "end_buyer_impersonation",
       { _session_id: session_id, _ended_reason: ended_reason ?? "manual" },
-      { headers: { Authorization: authHeader } } as any,
     );
     if (error) {
       return new Response(JSON.stringify({ error: error.message }), {

@@ -19,6 +19,8 @@ interface BuyerLine {
   ean?: string | null;
   cnk?: string | null;
   sku?: string | null;
+  raw_name?: string | null;
+  raw_brand?: string | null;
   quantity: number;
   currentPrice: number;
 }
@@ -34,10 +36,7 @@ const admin = () =>
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
-const updateJob = async (
-  jobId: string,
-  patch: Record<string, any>,
-) => {
+const updateJob = async (jobId: string, patch: Record<string, any>) => {
   const sb = admin();
   await sb.from("import_jobs").update({ ...patch, updated_at: new Date().toISOString() })
     .eq("id", jobId);
@@ -51,16 +50,28 @@ const failJob = async (jobId: string, message: string) => {
   });
 };
 
+const normalizeForKey = (s: string | null | undefined) =>
+  (s ?? "").toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 120);
+
 // ------- Buyer comparator processor -------
-async function processBuyerComparator(jobId: string, rows: BuyerLine[]) {
+async function processBuyerComparator(
+  jobId: string,
+  userId: string,
+  saveToAccount: boolean,
+  rows: BuyerLine[],
+) {
   const sb = admin();
   const allResults: any[] = new Array(rows.length);
   let processed = 0;
   let foundCount = 0;
   let unavailableCount = 0;
 
+  // Accumulate favorites/watches across all batches (matched only, dedupe by product_id)
+  const favoritesMap = new Map<string, { user_id: string; product_id: string }>();
+  const watchesMap = new Map<string, { user_id: string; product_id: string; user_price_excl_vat: number }>();
+
   for (let start = 0; start < rows.length; start += BATCH_SIZE) {
-    // cancel check
     const { data: jobCheck } = await sb
       .from("import_jobs").select("status").eq("id", jobId).single();
     if (jobCheck?.status === "cancelled") {
@@ -73,18 +84,17 @@ async function processBuyerComparator(jobId: string, rows: BuyerLine[]) {
     const cnks = [...new Set(chunk.map((l) => l.cnk).filter(Boolean))] as string[];
     const skus = [...new Set(chunk.map((l) => l.sku).filter(Boolean))] as string[];
 
+    // Lookup WITHOUT is_active filter — we want inactive matches too
+    const productCols = "id, name, image_url, gtin, cnk_code, sku, is_active, brand_id";
     const [byEan, byCnk, bySku] = await Promise.all([
       eans.length
-        ? sb.from("products").select("id, name, image_url, gtin, cnk_code, sku")
-            .in("gtin", eans).eq("is_active", true)
+        ? sb.from("products").select(productCols).in("gtin", eans)
         : Promise.resolve({ data: [], error: null }),
       cnks.length
-        ? sb.from("products").select("id, name, image_url, gtin, cnk_code, sku")
-            .in("cnk_code", cnks).eq("is_active", true)
+        ? sb.from("products").select(productCols).in("cnk_code", cnks)
         : Promise.resolve({ data: [], error: null }),
       skus.length
-        ? sb.from("products").select("id, name, image_url, gtin, cnk_code, sku")
-            .in("sku", skus).eq("is_active", true)
+        ? sb.from("products").select(productCols).in("sku", skus)
         : Promise.resolve({ data: [], error: null }),
     ]);
 
@@ -113,15 +123,19 @@ async function processBuyerComparator(jobId: string, rows: BuyerLine[]) {
       return { product: undefined, matchedBy: undefined };
     };
 
-    const productIds = [...new Set(
-      chunk.map((l) => resolveMatch(l).product?.id).filter(Boolean),
+    // Active products only have offers worth checking
+    const activeProductIds = [...new Set(
+      chunk.map((l) => {
+        const m = resolveMatch(l);
+        return m.product?.is_active ? m.product.id : null;
+      }).filter(Boolean),
     )] as string[];
 
     const offerByProduct = new Map<string, any>();
-    if (productIds.length) {
+    if (activeProductIds.length) {
       const { data: offers } = await sb.from("offers")
         .select("id, product_id, price_excl_vat, vendor_id")
-        .in("product_id", productIds)
+        .in("product_id", activeProductIds)
         .eq("is_active", true)
         .order("product_id", { ascending: true })
         .order("price_excl_vat", { ascending: true });
@@ -132,10 +146,65 @@ async function processBuyerComparator(jobId: string, rows: BuyerLine[]) {
 
     for (const line of chunk) {
       const { product, matchedBy } = resolveMatch(line);
-      const offer = product ? offerByProduct.get(product.id) : undefined;
+      const offer = product?.is_active ? offerByProduct.get(product.id) : undefined;
       const mediPrice = offer?.price_excl_vat != null ? Number(offer.price_excl_vat) : undefined;
       const status = product && offer ? "found" : "unavailable";
       if (status === "found") foundCount++; else unavailableCount++;
+
+      // Sourcing pipeline classification
+      let sourcingStatus: "unmatched" | "inactive_product" | "no_active_offer" | null = null;
+      if (!product) sourcingStatus = "unmatched";
+      else if (!product.is_active) sourcingStatus = "inactive_product";
+      else if (!offer) sourcingStatus = "no_active_offer";
+
+      if (sourcingStatus) {
+        // Build dedupe key
+        let dedupeKey: string;
+        if (product?.id) {
+          dedupeKey = `pid:${product.id}`;
+        } else if (line.ean) {
+          dedupeKey = `gtin:${line.ean}`;
+        } else if (line.cnk) {
+          dedupeKey = `cnk:${line.cnk}`;
+        } else if (line.raw_name) {
+          dedupeKey = `name:${normalizeForKey(line.raw_name)}`;
+        } else {
+          dedupeKey = `sku:${line.sku ?? "unknown"}`;
+        }
+
+        const buyerPriceCents = line.currentPrice > 0
+          ? Math.round(line.currentPrice * 100)
+          : null;
+
+        try {
+          await sb.rpc("upsert_sourcing_item", {
+            _dedupe_key: dedupeKey,
+            _product_id: product?.id ?? null,
+            _brand_id: product?.brand_id ?? null,
+            _gtin: line.ean ?? null,
+            _cnk: line.cnk ?? null,
+            _raw_name: line.raw_name ?? product?.name ?? null,
+            _raw_brand: line.raw_brand ?? null,
+            _status: sourcingStatus,
+            _user_id: userId,
+            _quantity: line.quantity ?? 1,
+            _buyer_price_cents: buyerPriceCents,
+          });
+        } catch (e) {
+          console.error("[sourcing] upsert failed", dedupeKey, e);
+        }
+      }
+
+      // Favorites + watch list: ALL matched lines (active or not), if save_to_account
+      if (saveToAccount && product?.id && line.currentPrice > 0) {
+        favoritesMap.set(product.id, { user_id: userId, product_id: product.id });
+        watchesMap.set(product.id, {
+          user_id: userId,
+          product_id: product.id,
+          user_price_excl_vat: line.currentPrice,
+        });
+      }
+
       allResults[line.index] = {
         ean: line.ean ?? undefined,
         cnk: line.cnk ?? undefined,
@@ -163,7 +232,20 @@ async function processBuyerComparator(jobId: string, rows: BuyerLine[]) {
     });
   }
 
-  // Save final results in payload
+  // Bulk upsert favorites + watches at the end
+  if (favoritesMap.size > 0) {
+    const favRows = Array.from(favoritesMap.values());
+    const { error: favErr } = await sb.from("favorites")
+      .upsert(favRows, { onConflict: "user_id,product_id", ignoreDuplicates: true });
+    if (favErr) console.error("[favorites] upsert failed", favErr);
+  }
+  if (watchesMap.size > 0) {
+    const watchRows = Array.from(watchesMap.values());
+    const { error: wErr } = await sb.from("user_price_watches")
+      .upsert(watchRows, { onConflict: "user_id,product_id" });
+    if (wErr) console.error("[watches] upsert failed", wErr);
+  }
+
   await sb.from("import_job_payload").update({
     results: allResults,
     updated_at: new Date().toISOString(),
@@ -179,6 +261,8 @@ async function processBuyerComparator(jobId: string, rows: BuyerLine[]) {
       total: rows.length,
       found: foundCount,
       unavailable: unavailableCount,
+      favorites_added: favoritesMap.size,
+      watches_added: watchesMap.size,
     },
   });
 }
@@ -275,7 +359,8 @@ async function runJob(jobId: string) {
 
     const rows = (payload.rows || []) as any[];
     if (job.job_type === "buyer_comparator") {
-      await processBuyerComparator(jobId, rows as BuyerLine[]);
+      const saveToAccount = !!job.metadata?.save_to_account;
+      await processBuyerComparator(jobId, job.user_id, saveToAccount, rows as BuyerLine[]);
     } else if (job.job_type === "product_submission") {
       const vendorId = (job.metadata?.vendor_id as string | null) ?? null;
       await processProductSubmission(jobId, job.user_id, vendorId, rows as SubmissionLine[]);
@@ -300,7 +385,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Ownership/auth check via JWT
     const authHeader = req.headers.get("Authorization") ?? "";
     const userClient = createClient(SUPABASE_URL, Deno.env.get("SUPABASE_ANON_KEY")!, {
       global: { headers: { Authorization: authHeader } },

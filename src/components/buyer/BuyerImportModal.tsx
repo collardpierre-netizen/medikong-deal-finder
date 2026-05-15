@@ -22,6 +22,8 @@ type ImportLine = {
   ean?: string;
   cnk?: string;
   sku?: string;
+  raw_name?: string;
+  raw_brand?: string;
   quantity: number;
   currentPrice: number;
 };
@@ -63,6 +65,8 @@ type ImportPayloadLine = {
   ean: string | null;
   cnk: string | null;
   sku: string | null;
+  raw_name: string | null;
+  raw_brand: string | null;
   quantity: number;
   currentPrice: number;
 };
@@ -360,10 +364,24 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
         return Number.isFinite(n) ? n : 0;
       };
 
+      const cleanText = (raw: any): string | undefined => {
+        if (raw === null || raw === undefined) return undefined;
+        const s = String(raw).trim();
+        if (!s || s.toLowerCase() === "undefined" || s.toLowerCase() === "null") return undefined;
+        return s.slice(0, 300);
+      };
+
       const lines: ImportLine[] = rows.map((r: any) => ({
         ean: cleanCode(r["EAN (ou CNK)"] ?? r["EAN"] ?? r["ean"] ?? r["GTIN"] ?? r["gtin"]),
         cnk: cleanCode(r["CNK (optionnel)"] ?? r["CNK"] ?? r["cnk"]),
         sku: cleanCode(r["SKU"] ?? r["sku"] ?? r["Référence"] ?? r["Reference"] ?? r["Ref"] ?? r["ref"]),
+        raw_name: cleanText(
+          r["Nom"] ?? r["nom"] ?? r["Désignation"] ?? r["Designation"] ?? r["designation"] ??
+          r["Libellé"] ?? r["Libelle"] ?? r["libelle"] ?? r["Product"] ?? r["Produit"] ?? r["produit"]
+        ),
+        raw_brand: cleanText(
+          r["Marque"] ?? r["marque"] ?? r["Brand"] ?? r["brand"] ?? r["Fabricant"] ?? r["fabricant"]
+        ),
         quantity: Number(r["Quantité"] || r["Quantite"] || r["quantity"] || r["Qty"] || 1),
         currentPrice: parsePrice(
           r["Prix actuel HTVA (€)"] ??
@@ -433,6 +451,8 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
         ean: line.ean ?? null,
         cnk: line.cnk ?? null,
         sku: line.sku ?? null,
+        raw_name: line.raw_name ?? null,
+        raw_brand: line.raw_brand ?? null,
         quantity: line.quantity,
         currentPrice: line.currentPrice,
       }));

@@ -62,3 +62,9 @@ verify_jwt = true
 
 [functions.end-buyer-impersonation]
 verify_jwt = true
+
+[functions.generate-vendor-invoices]
+verify_jwt = false
+
+[functions.send-invoices-email]
+verify_jwt = false

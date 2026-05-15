@@ -22,6 +22,8 @@ type ImportLine = {
   ean?: string;
   cnk?: string;
   sku?: string;
+  raw_name?: string;
+  raw_brand?: string;
   quantity: number;
   currentPrice: number;
 };

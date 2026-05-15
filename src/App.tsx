@@ -106,6 +106,7 @@ const ContactPage = lazyWithRetry(() => import("./pages/trust/ContactPage"), "Co
 const HelpCenterPage = lazyWithRetry(() => import("./pages/trust/HelpCenterPage"), "HelpCenterPage");
 const HelpArticlePage = lazyWithRetry(() => import("./pages/trust/HelpArticlePage"), "HelpArticlePage");
 const HelpCategoryPage = lazyWithRetry(() => import("./pages/trust/HelpCategoryPage"), "HelpCategoryPage");
+const PricingBasisHelpPage = lazyWithRetry(() => import("./pages/help/PricingBasisHelpPage"), "PricingBasisHelpPage");
 const UnsubscribePage = lazyWithRetry(() => import("./pages/UnsubscribePage"), "UnsubscribePage");
 
 // Legal pages
@@ -386,6 +387,7 @@ const App = () => (
             <Route path="/centre-aide" element={<LP><HelpCenterPage /></LP>} />
             <Route path="/centre-aide/categorie/:key" element={<LP><HelpCategoryPage /></LP>} />
             <Route path="/centre-aide/:slug" element={<LP><HelpArticlePage /></LP>} />
+            <Route path="/aide/packs-et-prix-100" element={<LP><PricingBasisHelpPage /></LP>} />
 
             {/* Legal */}
             <Route path="/mentions-legales" element={<LP><LegalNoticePage /></LP>} />

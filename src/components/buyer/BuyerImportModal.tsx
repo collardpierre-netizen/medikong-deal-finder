@@ -86,7 +86,7 @@ const getFilterLabel = (filter: ResultFilter) => {
 
 const getResultStatusLabel = (line: MatchedLine) => {
   if (line.status === "unavailable") return "Indispo";
-  return (line.saving || 0) > 0 ? "Dispo - moins cher" : "Dispo - plus cher";
+  return (line.saving || 0) > 0 ? "Dispo · Moins cher" : "Dispo · Plus cher";
 };
 
 const getDeltaAmount = (line: MatchedLine) => {
@@ -681,12 +681,33 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
         const row = exportSourceRows[hookData.row.index];
         if (!row) return;
 
-        if (row.status === "unavailable") {
-          hookData.cell.styles.fillColor = [255, 247, 237];
-        } else if ((row.saving || 0) > 0) {
-          hookData.cell.styles.fillColor = [236, 253, 245];
+        const isUnavailable = row.status === "unavailable";
+        const isSaving = row.status === "found" && (row.saving || 0) > 0;
+        const isMoreExpensive = row.status === "found" && !isSaving;
+
+        // Tinted row background matching popup row colors
+        if (isUnavailable) {
+          hookData.cell.styles.fillColor = [255, 247, 237]; // orange-50/40
+        } else if (isSaving) {
+          hookData.cell.styles.fillColor = [236, 253, 245]; // emerald-50/40
         } else {
-          hookData.cell.styles.fillColor = [254, 242, 242];
+          hookData.cell.styles.fillColor = [254, 242, 242]; // red-50/40
+        }
+
+        // Statut column (last) — colored badge matching popup pills
+        if (hookData.column.index === 10) {
+          hookData.cell.styles.halign = "center";
+          hookData.cell.styles.fontStyle = "bold";
+          if (isSaving) {
+            hookData.cell.styles.fillColor = [209, 250, 229]; // emerald-100
+            hookData.cell.styles.textColor = [4, 120, 87]; // emerald-700
+          } else if (isMoreExpensive) {
+            hookData.cell.styles.fillColor = [254, 226, 226]; // red-100
+            hookData.cell.styles.textColor = [220, 38, 38]; // red-600
+          } else {
+            hookData.cell.styles.fillColor = [255, 237, 213]; // orange-100
+            hookData.cell.styles.textColor = [234, 88, 12]; // orange-600
+          }
         }
       },
     });

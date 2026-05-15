@@ -1,9 +1,10 @@
 /**
- * /admin/sourcing-pipeline
+ * /admin/sourcing/pipeline
  *
  * Pipeline de sourcing alimenté par le comparateur acheteur (XLSX import).
- * Liste agrégée par référence : produits non matchés, désactivés, ou actifs
- * sans offre. Onglets Produits / Marques.
+ * Onglets : Produits à sourcer / Marques à sourcer.
+ *
+ * Tri par défaut : import_count × total_quantity DESC (signal demande × volume).
  *
  * Source : table `buyer_comparator_sourcing_items` + vue
  * `admin_sourcing_items_by_brand_v` (admin only).
@@ -11,8 +12,9 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Search, Package, Tag } from "lucide-react";
+import { ArrowLeft, Search, Package, Tag, Download } from "lucide-react";
 import { toast } from "sonner";
+import * as XLSX from "xlsx";
 
 import { supabase } from "@/integrations/supabase/client";
 import AdminTopBar from "@/components/admin/AdminTopBar";
@@ -31,6 +33,7 @@ const sb = supabase as any;
 
 type StatusFilter = "all" | "unmatched" | "inactive_product" | "no_active_offer";
 type AdminStatus = "todo" | "sourcing" | "refused" | "resolved";
+type BrandScope = "all" | "absent" | "thin";
 
 type Item = {
   id: string;
@@ -65,6 +68,7 @@ type BrandRow = {
   unmatched_count: number;
   inactive_count: number;
   no_offer_count: number;
+  medikong_active_products_count: number;
 };
 
 const STATUS_LABEL: Record<Item["status"], string> = {
@@ -92,11 +96,20 @@ const formatCents = (c: number | null) =>
 const formatDate = (s: string) =>
   new Date(s).toLocaleDateString("fr-BE", { day: "2-digit", month: "short", year: "numeric" });
 
+// Score demande × qty (signal de priorité sourcing)
+const demandScore = (it: { import_count: number; total_quantity: number }) =>
+  (it.import_count || 0) * Number(it.total_quantity || 0);
+
+const brandDemandScore = (b: BrandRow) =>
+  (b.total_imports || 0) * Number(b.total_quantity || 0);
+
 const AdminSourcingPipeline = () => {
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [adminStatusFilter, setAdminStatusFilter] = useState<AdminStatus | "all">("todo");
+  const [brandScope, setBrandScope] = useState<BrandScope>("all");
+  const [thinThreshold, setThinThreshold] = useState<number>(5);
 
   const { data: items = [], isLoading } = useQuery({
     queryKey: ["admin-sourcing-items", statusFilter, adminStatusFilter],
@@ -104,13 +117,13 @@ const AdminSourcingPipeline = () => {
       let q = sb
         .from("buyer_comparator_sourcing_items")
         .select("*")
-        .order("total_quantity", { ascending: false })
-        .limit(500);
+        .limit(2000);
       if (statusFilter !== "all") q = q.eq("status", statusFilter);
       if (adminStatusFilter !== "all") q = q.eq("admin_status", adminStatusFilter);
       const { data, error } = await q;
       if (error) throw error;
-      return (data || []) as Item[];
+      // Tri client : import_count × total_quantity DESC
+      return ((data || []) as Item[]).sort((a, b) => demandScore(b) - demandScore(a));
     },
   });
 
@@ -120,10 +133,9 @@ const AdminSourcingPipeline = () => {
       const { data, error } = await sb
         .from("admin_sourcing_items_by_brand_v")
         .select("*")
-        .order("total_quantity", { ascending: false })
-        .limit(200);
+        .limit(500);
       if (error) throw error;
-      return (data || []) as BrandRow[];
+      return ((data || []) as BrandRow[]).sort((a, b) => brandDemandScore(b) - brandDemandScore(a));
     },
   });
 
@@ -138,9 +150,17 @@ const AdminSourcingPipeline = () => {
 
   const filteredBrands = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return brands;
-    return brands.filter((b) => b.brand_label.toLowerCase().includes(q));
-  }, [brands, search]);
+    let rows = brands;
+    if (brandScope === "absent") {
+      rows = rows.filter((b) => b.medikong_active_products_count === 0);
+    } else if (brandScope === "thin") {
+      rows = rows.filter(
+        (b) => b.medikong_active_products_count > 0 && b.medikong_active_products_count < thinThreshold
+      );
+    }
+    if (q) rows = rows.filter((b) => b.brand_label.toLowerCase().includes(q));
+    return rows;
+  }, [brands, search, brandScope, thinThreshold]);
 
   const setAdminStatus = useMutation({
     mutationFn: async ({ id, admin_status }: { id: string; admin_status: AdminStatus }) => {
@@ -158,6 +178,53 @@ const AdminSourcingPipeline = () => {
     onError: (e: any) => toast.error(e?.message ?? "Erreur"),
   });
 
+  const exportProductsXlsx = () => {
+    const rows = filtered.map((it) => ({
+      Produit: it.raw_name ?? "",
+      Marque: it.raw_brand ?? "",
+      GTIN: it.gtin ?? "",
+      CNK: it.cnk ?? "",
+      Statut: STATUS_LABEL[it.status],
+      Traitement: ADMIN_STATUS_LABEL[it.admin_status],
+      "Score demande": demandScore(it),
+      Imports: it.import_count,
+      Acheteurs: it.user_count,
+      "Σ Quantité": Number(it.total_quantity),
+      "Prix achat min (€)": it.buyer_price_min_cents != null ? it.buyer_price_min_cents / 100 : "",
+      "Prix achat moy (€)": it.buyer_price_avg_cents != null ? it.buyer_price_avg_cents / 100 : "",
+      "Prix achat max (€)": it.buyer_price_max_cents != null ? it.buyer_price_max_cents / 100 : "",
+      "Première vue": it.first_seen_at,
+      "Dernière vue": it.last_seen_at,
+      "Product ID MK": it.product_id ?? "",
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Produits à sourcer");
+    XLSX.writeFile(wb, `sourcing-produits-${new Date().toISOString().slice(0, 10)}.xlsx`);
+  };
+
+  const exportBrandsXlsx = () => {
+    const rows = filteredBrands.map((b) => ({
+      Marque: b.brand_label,
+      "Présence MK": b.medikong_active_products_count === 0 ? "Absente" : "Présente",
+      "Produits actifs MK": b.medikong_active_products_count,
+      "Score demande": brandDemandScore(b),
+      "Réf. demandées": b.items_count,
+      Imports: b.total_imports,
+      Acheteurs: b.total_users,
+      "Σ Quantité": Number(b.total_quantity),
+      Inconnu: b.unmatched_count,
+      Désactivé: b.inactive_count,
+      "Sans offre": b.no_offer_count,
+      "Dernière vue": b.last_seen_at,
+      "Brand ID MK": b.brand_id ?? "",
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Marques à sourcer");
+    XLSX.writeFile(wb, `sourcing-marques-${new Date().toISOString().slice(0, 10)}.xlsx`);
+  };
+
   return (
     <div className="space-y-6">
       <AdminTopBar title="Pipeline sourcing" />
@@ -170,6 +237,7 @@ const AdminSourcingPipeline = () => {
           <h1 className="text-2xl font-bold mt-2">Pipeline sourcing — Comparateur acheteur</h1>
           <p className="text-sm text-muted-foreground">
             Références demandées par les acheteurs et indisponibles sur MediKong (non matchées, désactivées ou sans offre).
+            Tri par <strong>score demande</strong> = nb imports × Σ quantité.
           </p>
         </div>
       </div>
@@ -207,11 +275,16 @@ const AdminSourcingPipeline = () => {
 
       <Tabs defaultValue="products">
         <TabsList>
-          <TabsTrigger value="products"><Package className="w-4 h-4 mr-1" /> Produits ({filtered.length})</TabsTrigger>
-          <TabsTrigger value="brands"><Tag className="w-4 h-4 mr-1" /> Marques ({filteredBrands.length})</TabsTrigger>
+          <TabsTrigger value="products"><Package className="w-4 h-4 mr-1" /> Produits à sourcer ({filtered.length})</TabsTrigger>
+          <TabsTrigger value="brands"><Tag className="w-4 h-4 mr-1" /> Marques à sourcer ({filteredBrands.length})</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="products" className="mt-4">
+        <TabsContent value="products" className="mt-4 space-y-3">
+          <div className="flex justify-end">
+            <Button variant="outline" size="sm" onClick={exportProductsXlsx} disabled={filtered.length === 0}>
+              <Download className="w-4 h-4 mr-1" /> Export XLSX ({filtered.length})
+            </Button>
+          </div>
           <div className="rounded-lg border bg-card overflow-x-auto">
             <Table>
               <TableHeader>
@@ -219,6 +292,7 @@ const AdminSourcingPipeline = () => {
                   <TableHead>Produit / Référence</TableHead>
                   <TableHead>Marque</TableHead>
                   <TableHead>Statut</TableHead>
+                  <TableHead className="text-right">Score</TableHead>
                   <TableHead className="text-right">Imports</TableHead>
                   <TableHead className="text-right">Acheteurs</TableHead>
                   <TableHead className="text-right">Σ Qté</TableHead>
@@ -229,10 +303,10 @@ const AdminSourcingPipeline = () => {
               </TableHeader>
               <TableBody>
                 {isLoading && (
-                  <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-8">Chargement…</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-8">Chargement…</TableCell></TableRow>
                 )}
                 {!isLoading && filtered.length === 0 && (
-                  <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-8">Aucun item.</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-8">Aucun item.</TableCell></TableRow>
                 )}
                 {filtered.map((it) => (
                   <TableRow key={it.id}>
@@ -255,6 +329,7 @@ const AdminSourcingPipeline = () => {
                         {STATUS_LABEL[it.status]}
                       </Badge>
                     </TableCell>
+                    <TableCell className="text-right tabular-nums font-semibold">{demandScore(it).toLocaleString("fr-BE")}</TableCell>
                     <TableCell className="text-right tabular-nums">{it.import_count}</TableCell>
                     <TableCell className="text-right tabular-nums">{it.user_count}</TableCell>
                     <TableCell className="text-right tabular-nums">{Number(it.total_quantity).toLocaleString("fr-BE")}</TableCell>
@@ -282,12 +357,42 @@ const AdminSourcingPipeline = () => {
           </div>
         </TabsContent>
 
-        <TabsContent value="brands" className="mt-4">
+        <TabsContent value="brands" className="mt-4 space-y-3">
+          <div className="flex flex-wrap gap-2 items-center justify-between">
+            <div className="flex flex-wrap gap-2 items-center">
+              <Select value={brandScope} onValueChange={(v) => setBrandScope(v as BrandScope)}>
+                <SelectTrigger className="w-[220px]"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Toutes (absentes + faibles)</SelectItem>
+                  <SelectItem value="absent">Absentes de MediKong</SelectItem>
+                  <SelectItem value="thin">Présentes mais faibles (&lt; N produits actifs)</SelectItem>
+                </SelectContent>
+              </Select>
+              {brandScope === "thin" && (
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground">Seuil N :</span>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={50}
+                    value={thinThreshold}
+                    onChange={(e) => setThinThreshold(Math.max(1, Number(e.target.value) || 1))}
+                    className="w-20"
+                  />
+                </div>
+              )}
+            </div>
+            <Button variant="outline" size="sm" onClick={exportBrandsXlsx} disabled={filteredBrands.length === 0}>
+              <Download className="w-4 h-4 mr-1" /> Export XLSX ({filteredBrands.length})
+            </Button>
+          </div>
           <div className="rounded-lg border bg-card overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Marque</TableHead>
+                  <TableHead>Présence MK</TableHead>
+                  <TableHead className="text-right">Score</TableHead>
                   <TableHead className="text-right">Réf.</TableHead>
                   <TableHead className="text-right">Imports</TableHead>
                   <TableHead className="text-right">Acheteurs</TableHead>
@@ -300,30 +405,44 @@ const AdminSourcingPipeline = () => {
               </TableHeader>
               <TableBody>
                 {brandsLoading && (
-                  <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-8">Chargement…</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={11} className="text-center text-muted-foreground py-8">Chargement…</TableCell></TableRow>
                 )}
                 {!brandsLoading && filteredBrands.length === 0 && (
-                  <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-8">Aucune marque.</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={11} className="text-center text-muted-foreground py-8">Aucune marque.</TableCell></TableRow>
                 )}
-                {filteredBrands.map((b) => (
-                  <TableRow key={b.brand_key}>
-                    <TableCell className="font-medium">
-                      {b.brand_id ? (
-                        <Link to={`/marques`} className="hover:underline">{b.brand_label}</Link>
-                      ) : (
-                        <span className="text-muted-foreground italic">{b.brand_label}</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">{b.items_count}</TableCell>
-                    <TableCell className="text-right tabular-nums">{b.total_imports}</TableCell>
-                    <TableCell className="text-right tabular-nums">{b.total_users}</TableCell>
-                    <TableCell className="text-right tabular-nums">{Number(b.total_quantity).toLocaleString("fr-BE")}</TableCell>
-                    <TableCell className="text-right tabular-nums">{b.unmatched_count}</TableCell>
-                    <TableCell className="text-right tabular-nums">{b.inactive_count}</TableCell>
-                    <TableCell className="text-right tabular-nums">{b.no_offer_count}</TableCell>
-                    <TableCell className="text-xs whitespace-nowrap">{formatDate(b.last_seen_at)}</TableCell>
-                  </TableRow>
-                ))}
+                {filteredBrands.map((b) => {
+                  const presenceLabel = b.medikong_active_products_count === 0
+                    ? "Absente"
+                    : `${b.medikong_active_products_count} actif(s)`;
+                  const presenceClass = b.medikong_active_products_count === 0
+                    ? "bg-orange-100 text-orange-800 border-orange-200"
+                    : b.medikong_active_products_count < thinThreshold
+                      ? "bg-yellow-100 text-yellow-800 border-yellow-200"
+                      : "bg-green-100 text-green-800 border-green-200";
+                  return (
+                    <TableRow key={b.brand_key}>
+                      <TableCell className="font-medium">
+                        {b.brand_id ? (
+                          <Link to={`/marques`} className="hover:underline">{b.brand_label}</Link>
+                        ) : (
+                          <span className="text-muted-foreground italic">{b.brand_label}</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={presenceClass}>{presenceLabel}</Badge>
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums font-semibold">{brandDemandScore(b).toLocaleString("fr-BE")}</TableCell>
+                      <TableCell className="text-right tabular-nums">{b.items_count}</TableCell>
+                      <TableCell className="text-right tabular-nums">{b.total_imports}</TableCell>
+                      <TableCell className="text-right tabular-nums">{b.total_users}</TableCell>
+                      <TableCell className="text-right tabular-nums">{Number(b.total_quantity).toLocaleString("fr-BE")}</TableCell>
+                      <TableCell className="text-right tabular-nums">{b.unmatched_count}</TableCell>
+                      <TableCell className="text-right tabular-nums">{b.inactive_count}</TableCell>
+                      <TableCell className="text-right tabular-nums">{b.no_offer_count}</TableCell>
+                      <TableCell className="text-xs whitespace-nowrap">{formatDate(b.last_seen_at)}</TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </div>

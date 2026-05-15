@@ -317,6 +317,27 @@ const AdminProduits = () => {
     }
   };
 
+  const handleExportOffersServer = async () => {
+    const toastId = toast.loading("Export offres côté serveur en cours… (peut prendre 1-2 min)");
+    try {
+      const { data, error } = await supabase.functions.invoke("export-offers", {
+        body: { activeOnly: true },
+      });
+      if (error) throw error;
+      const r = data as { success: boolean; total_rows: number; size_bytes: number; signed_url: string | null; filename: string; error?: string };
+      if (!r?.success || !r.signed_url) throw new Error(r?.error || "Réponse invalide");
+      const a = document.createElement("a");
+      a.href = r.signed_url;
+      a.download = r.filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      toast.success(`${r.total_rows.toLocaleString("fr-BE")} offres exportées (${(r.size_bytes / 1024 / 1024).toFixed(1)} Mo)`, { id: toastId });
+    } catch (e: any) {
+      toast.error(`Export échoué : ${e?.message || "erreur inconnue"}`, { id: toastId });
+    }
+  };
+
   const handleImport = async (file: File) => {
     const jobId = "import-products-" + Date.now();
     addJob(jobId, "Import produits");

@@ -68,7 +68,7 @@ export default function ImpersonationBanner() {
           onClick={handleStop}
           className="px-3 py-1 rounded bg-white text-red-600 font-bold text-[12px] hover:bg-red-50 transition-colors"
         >
-          Quitter
+          Quitter immédiatement
         </button>
       </div>
     </div>

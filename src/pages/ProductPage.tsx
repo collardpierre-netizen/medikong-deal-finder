@@ -1842,9 +1842,23 @@ export default function ProductPage() {
                         {/* Sélecteur de base de comparaison : permet de ramener toutes les offres
                             externes (vendues en pack de 4, 24, 46…) sur la même unité de référence. */}
                         <div className="flex items-center justify-between flex-wrap gap-2 px-1">
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                             <BarChart3 size={14} />
                             <span>Comparer sur la base&nbsp;:</span>
+                            <TooltipProvider delayDuration={150}>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <button type="button" aria-label="Comment lire les bases de comparaison" className="text-muted-foreground/70 hover:text-foreground transition-colors">
+                                    <HelpCircle size={13} />
+                                  </button>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="max-w-[300px] text-[11px] leading-relaxed">
+                                  <p><strong>€/pack</strong> : prix exact tel que relevé chez le vendeur externe (un pack contient un certain nombre d'unités, ex. 4×125 ml).</p>
+                                  <p className="mt-1"><strong>€/unité</strong> : prix du pack ÷ taille du pack (extraite du libellé ou du conditionnement renseigné).</p>
+                                  <p className="mt-1"><strong>€/100 u.</strong> : prix unitaire × 100, pour comparer des packs de tailles différentes sur une base commune.</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
                           </div>
                           <ToggleGroup
                             type="single"

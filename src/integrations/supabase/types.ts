@@ -19054,6 +19054,7 @@ export type Database = {
         | "vendor"
         | "medi-market"
         | "valerco"
+        | "vanheek"
       product_submission_status:
         | "submitted"
         | "in_review"
@@ -19382,6 +19383,7 @@ export const Constants = {
         "vendor",
         "medi-market",
         "valerco",
+        "vanheek",
       ],
       product_submission_status: [
         "submitted",

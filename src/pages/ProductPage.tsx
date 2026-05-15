@@ -1664,9 +1664,23 @@ export default function ProductPage() {
                         <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
                           {showBasisToggle ? (
                             <div className="flex items-center gap-2 flex-wrap">
-                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                                 <BarChart3 size={14} />
                                 <span>Comparer sur la base&nbsp;:</span>
+                                <TooltipProvider delayDuration={150}>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <button type="button" aria-label="Comment lire les bases de comparaison" className="text-muted-foreground/70 hover:text-foreground transition-colors">
+                                        <HelpCircle size={13} />
+                                      </button>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top" className="max-w-[280px] text-[11px] leading-relaxed">
+                                      <p><strong>€/pack</strong> : prix d'un pack vendeur tel qu'il est commandé{_mkPack.packSize > 1 ? ` (ici : ${_mkPack.packSize} unités par pack)` : ''}.</p>
+                                      <p className="mt-1"><strong>€/unité</strong> : prix du pack ÷ taille du pack.</p>
+                                      <p className="mt-1"><strong>€/100 u.</strong> : prix unitaire × 100, pour comparer des conditionnements de tailles différentes sur une base commune.</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
                               </div>
                               <ToggleGroup
                                 type="single"
@@ -1828,9 +1842,23 @@ export default function ProductPage() {
                         {/* Sélecteur de base de comparaison : permet de ramener toutes les offres
                             externes (vendues en pack de 4, 24, 46…) sur la même unité de référence. */}
                         <div className="flex items-center justify-between flex-wrap gap-2 px-1">
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                             <BarChart3 size={14} />
                             <span>Comparer sur la base&nbsp;:</span>
+                            <TooltipProvider delayDuration={150}>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <button type="button" aria-label="Comment lire les bases de comparaison" className="text-muted-foreground/70 hover:text-foreground transition-colors">
+                                    <HelpCircle size={13} />
+                                  </button>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="max-w-[300px] text-[11px] leading-relaxed">
+                                  <p><strong>€/pack</strong> : prix exact tel que relevé chez le vendeur externe (un pack contient un certain nombre d'unités, ex. 4×125 ml).</p>
+                                  <p className="mt-1"><strong>€/unité</strong> : prix du pack ÷ taille du pack (extraite du libellé ou du conditionnement renseigné).</p>
+                                  <p className="mt-1"><strong>€/100 u.</strong> : prix unitaire × 100, pour comparer des packs de tailles différentes sur une base commune.</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
                           </div>
                           <ToggleGroup
                             type="single"
@@ -2071,9 +2099,23 @@ export default function ProductPage() {
                             les valeurs telles qu'importées (au pack) par défaut, et l'utilisateur
                             peut ramener à l'unité ou aux 100 unités d'un clic. */}
                         <div className="flex items-center justify-between flex-wrap gap-2 px-1">
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                             <BarChart3 size={14} />
                             <span>Comparer sur la base&nbsp;:</span>
+                            <TooltipProvider delayDuration={150}>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <button type="button" aria-label="Comment lire les bases de comparaison" className="text-muted-foreground/70 hover:text-foreground transition-colors">
+                                    <HelpCircle size={13} />
+                                  </button>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="max-w-[300px] text-[11px] leading-relaxed">
+                                  <p><strong>€/pack</strong> : prix d'un pack tel qu'importé depuis la source de marché (APB, PMR, etc.). Un pack regroupe plusieurs unités.</p>
+                                  <p className="mt-1"><strong>€/unité</strong> : prix du pack ÷ taille du pack du produit.</p>
+                                  <p className="mt-1"><strong>€/100 u.</strong> : prix unitaire × 100, pour comparer des conditionnements différents sur une base commune.</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
                           </div>
                           <ToggleGroup
                             type="single"
@@ -2479,7 +2521,23 @@ export default function ProductPage() {
                       <>
                         {/* Basis selector: pack / unit / 100u */}
                         <div className="mb-4">
-                          <label className="text-xs text-muted-foreground mb-1.5 block">Base de comparaison</label>
+                          <label className="text-xs text-muted-foreground mb-1.5 flex items-center gap-1.5">
+                            <span>Base de comparaison</span>
+                            <TooltipProvider delayDuration={150}>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <button type="button" aria-label="Comment lire les bases de comparaison" className="text-muted-foreground/70 hover:text-foreground transition-colors">
+                                    <HelpCircle size={13} />
+                                  </button>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="max-w-[300px] text-[11px] leading-relaxed">
+                                  <p><strong>Pack</strong> : prix d'un pack vendeur{bestOfferPackSize > 1 ? ` (ici : ${bestOfferPackSize} unités par pack)` : ''}, à comparer à votre prix d'achat actuel exprimé sur la même base.</p>
+                                  <p className="mt-1"><strong>Unité</strong> : prix du pack ÷ taille du pack — utile si vous achetez et revendez à l'unité.</p>
+                                  <p className="mt-1"><strong>/ 100 u.</strong> : prix unitaire × 100, base commune pour comparer entre conditionnements différents.</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </label>
                           <div className="flex gap-2 flex-wrap">
                             {([
                               { key: 'pack', label: bestOfferPackSize > 1 ? `Pack (×${bestOfferPackSize})` : 'Pack' },

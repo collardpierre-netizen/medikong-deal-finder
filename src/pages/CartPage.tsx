@@ -639,18 +639,33 @@ export default function CartPage() {
                   </div>
 
                   {/* Checkout button */}
-                  <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                    <Link
-                      to="/checkout"
-                      className={`block w-full text-center font-bold py-3.5 rounded-lg text-sm transition-colors ${
-                        readyCount > 0
-                          ? "bg-mk-navy text-white hover:opacity-90"
-                          : "bg-gray-200 text-mk-sec cursor-not-allowed pointer-events-none"
-                      }`}
-                    >
-                      Passer commande
-                    </Link>
-                  </motion.div>
+                  {(() => {
+                    const isInvalid = !!validation && !validation.valid;
+                    const reasons = validation?.errors.map(e => {
+                      if (e.type === "vendor_mov_not_reached") return `MOV non atteint pour ${e.vendor_name} (manque ${formatPrice(Number(e.details.missing))}€)`;
+                      if (e.type === "below_moq") return `Quantité minimum non respectée chez ${e.vendor_name}`;
+                      if (e.type === "exceeds_stock") return `Stock insuffisant chez ${e.vendor_name}`;
+                      if (e.type === "offer_not_available") return `Une offre n'est plus disponible`;
+                      return null;
+                    }).filter(Boolean) || [];
+                    const disabled = isInvalid || readyCount === 0;
+                    const tooltip = disabled ? (reasons.length > 0 ? reasons.join("\n") : "Atteignez les minimums vendeur pour continuer") : undefined;
+                    return (
+                      <motion.div whileHover={{ scale: disabled ? 1 : 1.02 }} whileTap={{ scale: disabled ? 1 : 0.98 }} title={tooltip}>
+                        <Link
+                          to="/checkout"
+                          aria-disabled={disabled}
+                          className={`block w-full text-center font-bold py-3.5 rounded-lg text-sm transition-colors ${
+                            !disabled
+                              ? "bg-mk-navy text-white hover:opacity-90"
+                              : "bg-gray-200 text-mk-sec cursor-not-allowed pointer-events-none"
+                          }`}
+                        >
+                          {validating ? "Vérification…" : "Passer commande"}
+                        </Link>
+                      </motion.div>
+                    );
+                  })()}
                 </div>
 
                 {/* Footer info */}

@@ -16157,6 +16157,7 @@ export type Database = {
           inactive_count: number | null
           items_count: number | null
           last_seen_at: string | null
+          medikong_active_products_count: number | null
           no_offer_count: number | null
           total_imports: number | null
           total_quantity: number | null

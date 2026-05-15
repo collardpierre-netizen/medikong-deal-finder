@@ -564,9 +564,9 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
     XLSX.utils.book_append_sheet(wb, detailsSheet, "Analyse");
 
     const date = new Date().toISOString().slice(0, 10);
-    XLSX.writeFile(wb, `comparateur-medikong-${filter}-${date}.xlsx`);
-    toast.success("Export XLS téléchargé");
-  }, [exportRows, exportSummary, filter]);
+    XLSX.writeFile(wb, `comparateur-medikong-complet-${date}.xlsx`);
+    toast.success(`Export XLS téléchargé (${exportSummary.exportedLines} lignes)`);
+  }, [exportRows, exportSummary]);
 
   const exportPdf = useCallback(() => {
     if (exportRows.length === 0) {

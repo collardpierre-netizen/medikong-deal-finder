@@ -320,7 +320,7 @@ const AdminProduits = () => {
   const handleExportOffersServer = async () => {
     const toastId = toast.loading("Export offres côté serveur en cours… (peut prendre 1-2 min)");
     try {
-      const { data, error } = await supabase.functions.invoke("export-offers", {
+      const { data, error } = await supabase.functions.invoke("export-offers-xlsx", {
         body: { activeOnly: true },
       });
       if (error) throw error;

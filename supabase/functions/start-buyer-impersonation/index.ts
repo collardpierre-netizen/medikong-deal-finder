@@ -42,12 +42,12 @@ Deno.serve(async (req) => {
 
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
 
-    // Super_admin gate via RPC + open session row
-    const { data: sessionId, error: rpcErr } = await admin.rpc(
+    // Super_admin gate via RPC + open session row.
+    // IMPORTANT: must run with the admin's JWT so auth.uid() resolves inside the
+    // SECURITY DEFINER function. Use the userClient (anon + Authorization header).
+    const { data: sessionId, error: rpcErr } = await userClient.rpc(
       "start_buyer_impersonation",
       { _target_user_id: target_user_id, _reason: reason ?? null },
-      // run as the calling admin so auth.uid() = admin
-      { headers: { Authorization: authHeader } } as any,
     );
     if (rpcErr) {
       return new Response(JSON.stringify({ error: rpcErr.message }), {

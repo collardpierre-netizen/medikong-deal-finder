@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getVendorPublicName, resolveVendorVisibility } from "@/lib/vendor-display";
 import { useCountry } from "@/contexts/CountryContext";
 import { useVendorMov } from "@/hooks/useVendorMov";
+import { useCartValidation } from "@/hooks/useCartValidation";
 import { getProductImageSrc, MEDIKONG_PLACEHOLDER, isQogitaPlaceholder } from "@/lib/image-utils";
 import VendorDelegateCompact from "@/components/vendor/VendorDelegateCompact";
 import { QuantityInput } from "@/components/cart/QuantityInput";
@@ -96,6 +97,29 @@ export default function CartPage() {
 
   const vendorMap = useMemo(() => new Map(vendors.map(v => [v.id, v])), [vendors]);
 
+  // Server-side validation: MOQ, stock, vendor MOV (floor 500€), tier prices
+  const validationItems = useMemo(
+    () => items.map(i => ({ offer_id: i.offer_id, quantity: i.quantity })),
+    [items],
+  );
+  const { data: validation, loading: validating } = useCartValidation(validationItems, { enabled: items.length > 0 });
+
+  const vendorSummaryMap = useMemo(() => {
+    const m = new Map<string, { mov_required: number; mov_reached: boolean; subtotal_excl_vat: number; amount_missing: number }>();
+    validation?.vendors.forEach(v => m.set(v.vendor_id, v));
+    return m;
+  }, [validation]);
+
+  const itemErrorsByOffer = useMemo(() => {
+    const m = new Map<string, { type: string; details: Record<string, any> }>();
+    validation?.errors.forEach(e => {
+      if (e.offer_id && (e.type === "below_moq" || e.type === "exceeds_stock" || e.type === "offer_not_available")) {
+        m.set(e.offer_id, { type: e.type, details: e.details });
+      }
+    });
+    return m;
+  }, [validation]);
+
   // Group items by vendor_id
   const supplierGroups = useMemo<SupplierGroup[]>(() => {
     const groups: Record<string, typeof items> = {};
@@ -107,9 +131,13 @@ export default function CartPage() {
     return Object.entries(groups).map(([vendorId, groupItems]) => {
       const total = groupItems.reduce((s, i) => s + (i.price_excl_vat || i.product?.price || 0) * i.quantity, 0);
       const vendor = vendorMap.get(vendorId);
-      const currentMov = getMovForVendor(vendorId);
-      const remaining = Math.max(currentMov - total, 0);
-      const progress = Math.min((total / currentMov) * 100, 100);
+      const summary = vendorSummaryMap.get(vendorId);
+      // Server-side MOV (with floor 500€) takes precedence; fallback to legacy hook before validation arrives.
+      const currentMov = summary?.mov_required ?? getMovForVendor(vendorId);
+      const subtotalForMov = summary?.subtotal_excl_vat ?? total;
+      const remaining = summary?.amount_missing ?? Math.max(currentMov - subtotalForMov, 0);
+      const progress = currentMov > 0 ? Math.min((subtotalForMov / currentMov) * 100, 100) : 100;
+      const meetsMinimum = summary ? summary.mov_reached : subtotalForMov >= currentMov;
       const showReal = vendor
         ? resolveVendorVisibility({ ...vendor, id: vendorId }, visRules as any, { country })
         : false;
@@ -123,10 +151,10 @@ export default function CartPage() {
         currentMov,
         remaining,
         progress,
-        meetsMinimum: total >= currentMov,
+        meetsMinimum,
       };
     });
-  }, [items, vendorMap, getMovForVendor, visRules, country]);
+  }, [items, vendorMap, getMovForVendor, visRules, country, vendorSummaryMap]);
 
   // Résolution dynamique des taux TVA (6% médicaments / 21% OTC) via RPC resolve_product_vat_rate
   const productIds = useMemo(() => [...new Set(items.map(i => i.product_id).filter(Boolean))] as string[], [items]);
@@ -329,6 +357,23 @@ export default function CartPage() {
                         </div>
                       </div>
 
+                      {!group.meetsMinimum && (
+                        <div className="mb-3 flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                          <AlertTriangle size={16} className="text-mk-red mt-0.5 shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-mk-red">
+                              Ajoutez {formatPrice(group.remaining)}€ de produits de {group.vendorName} pour valider votre commande.
+                            </p>
+                            <Link
+                              to={group.vendorSlug ? `/recherche?vendor=${group.vendorSlug}` : `/recherche`}
+                              className="inline-block mt-1.5 text-xs font-medium text-white bg-mk-red px-3 py-1.5 rounded-md hover:opacity-90"
+                            >
+                              Voir d'autres produits de {group.vendorName}
+                            </Link>
+                          </div>
+                        </div>
+                      )}
+
                       {/* MOV info */}
                       <div className="flex items-center gap-2 text-xs text-mk-sec mb-4 border-t border-mk-line pt-3">
                         <span className="flex items-center gap-1 font-medium">
@@ -374,8 +419,11 @@ export default function CartPage() {
                             className="overflow-hidden"
                           >
                             <div className="mt-4 border border-mk-line rounded-lg divide-y divide-mk-line">
-                              {group.items.map(item => (
-                                <div key={item.id} className="px-4 py-3 flex items-center gap-3 flex-wrap">
+                              {group.items.map(item => {
+                                const itemError = itemErrorsByOffer.get(item.offer_id);
+                                return (
+                                <div key={item.id} className="px-4 py-3 flex flex-col gap-2">
+                                  <div className="flex items-center gap-3 flex-wrap">
                                   <div className="w-10 h-10 bg-muted rounded overflow-hidden flex items-center justify-center shrink-0">
                                     {item.product?.imageUrl ? (
                                       <img
@@ -427,8 +475,19 @@ export default function CartPage() {
                                       <Trash2 size={15} />
                                     </button>
                                   </div>
+                                  </div>
+                                  {itemError && (
+                                    <div className="flex items-start gap-1.5 text-xs text-destructive bg-red-50 border border-red-200 rounded px-2 py-1.5">
+                                      <AlertCircle size={12} className="mt-0.5 shrink-0" />
+                                      <span>
+                                        {itemError.type === "below_moq" && `Quantité minimum requise : ${itemError.details.required} (vous avez ${itemError.details.current}).`}
+                                        {itemError.type === "exceeds_stock" && `Stock maximum disponible : ${itemError.details.available} (vous avez ${itemError.details.current}).`}
+                                        {itemError.type === "offer_not_available" && `Offre indisponible.`}
+                                      </span>
+                                    </div>
+                                  )}
                                 </div>
-                              ))}
+                              );})}
                             </div>
                           </motion.div>
                         )}
@@ -580,18 +639,33 @@ export default function CartPage() {
                   </div>
 
                   {/* Checkout button */}
-                  <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                    <Link
-                      to="/checkout"
-                      className={`block w-full text-center font-bold py-3.5 rounded-lg text-sm transition-colors ${
-                        readyCount > 0
-                          ? "bg-mk-navy text-white hover:opacity-90"
-                          : "bg-gray-200 text-mk-sec cursor-not-allowed pointer-events-none"
-                      }`}
-                    >
-                      Passer commande
-                    </Link>
-                  </motion.div>
+                  {(() => {
+                    const isInvalid = !!validation && !validation.valid;
+                    const reasons = validation?.errors.map(e => {
+                      if (e.type === "vendor_mov_not_reached") return `MOV non atteint pour ${e.vendor_name} (manque ${formatPrice(Number(e.details.missing))}€)`;
+                      if (e.type === "below_moq") return `Quantité minimum non respectée chez ${e.vendor_name}`;
+                      if (e.type === "exceeds_stock") return `Stock insuffisant chez ${e.vendor_name}`;
+                      if (e.type === "offer_not_available") return `Une offre n'est plus disponible`;
+                      return null;
+                    }).filter(Boolean) || [];
+                    const disabled = isInvalid || readyCount === 0;
+                    const tooltip = disabled ? (reasons.length > 0 ? reasons.join("\n") : "Atteignez les minimums vendeur pour continuer") : undefined;
+                    return (
+                      <motion.div whileHover={{ scale: disabled ? 1 : 1.02 }} whileTap={{ scale: disabled ? 1 : 0.98 }} title={tooltip}>
+                        <Link
+                          to="/checkout"
+                          aria-disabled={disabled}
+                          className={`block w-full text-center font-bold py-3.5 rounded-lg text-sm transition-colors ${
+                            !disabled
+                              ? "bg-mk-navy text-white hover:opacity-90"
+                              : "bg-gray-200 text-mk-sec cursor-not-allowed pointer-events-none"
+                          }`}
+                        >
+                          {validating ? "Vérification…" : "Passer commande"}
+                        </Link>
+                      </motion.div>
+                    );
+                  })()}
                 </div>
 
                 {/* Footer info */}

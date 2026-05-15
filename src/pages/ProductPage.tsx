@@ -481,6 +481,24 @@ function OfferRow({
               <span className="opacity-70">{priceLabel}</span>
             </span>
           </div>
+          {/* Stock + MOQ hint */}
+          <div className="flex items-center justify-end gap-2 text-[10px] text-muted-foreground w-full">
+            <span className="tabular-nums">Stock disponible : <span className="font-medium text-foreground">{offer.stockQuantity.toLocaleString("fr-FR")}</span> unité(s)</span>
+            {step > 1 && <span>· Min : {step}</span>}
+          </div>
+          {/* Real-time tier hint: next reachable tier */}
+          {hasOfferPriceTiers && (() => {
+            const sorted = [...offerPriceTiers].sort((a: any, b: any) => Number(a.mov_threshold) - Number(b.mov_threshold));
+            const currentTotal = qty * basePackPrice;
+            const nextTier = sorted.find((t: any) => Number(t.mov_threshold) > 0 && currentTotal < Number(t.mov_threshold) && Number(t.price_excl_vat) < basePackPrice);
+            if (!nextTier) return null;
+            const missing = Number(nextTier.mov_threshold) - currentTotal;
+            return (
+              <div className="text-[10px] text-green-700 bg-green-50 border border-green-200 rounded px-2 py-1 w-full text-right tabular-nums">
+                Vous pourriez obtenir {formatEur(Number(nextTier.price_excl_vat))} € à partir de {formatEur(Number(nextTier.mov_threshold))} € de commande (manque {formatEur(missing)} €).
+              </div>
+            );
+          })()}
         </div>
       </div>
 

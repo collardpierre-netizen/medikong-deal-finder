@@ -199,10 +199,10 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Load order lines with product info
+      // Load order lines with product info + offer_id (needed for cart validation)
       const { data: lines } = await supabase
         .from("order_lines")
-        .select("vendor_id, product_id, quantity, unit_price_incl_vat, line_total_incl_vat, product:products(name)")
+        .select("offer_id, vendor_id, product_id, quantity, unit_price_incl_vat, line_total_incl_vat, product:products(name)")
         .eq("order_id", order_id);
 
       if (!lines || lines.length === 0) {
@@ -212,11 +212,30 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Build vendor breakdown (same logic as create-payment-intent)
+      // SECURITY: Server-side cart validation (MOQ, stock, vendor MOV, recalculated tier prices)
+      const { validateCart } = await import("../_shared/validate-cart.ts");
+      const cartItems = lines
+        .filter((l: any) => l.offer_id)
+        .map((l: any) => ({ offer_id: l.offer_id as string, quantity: Number(l.quantity) }));
+      const validation = await validateCart(supabase, cartItems);
+      if (!validation.valid) {
+        return new Response(
+          JSON.stringify({ error: "cart_validation_failed", validation }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+
+      // Use RECALCULATED prices from validation (protect against client tampering)
+      const validatedByOffer = new Map(validation.items.map((v) => [v.offer_id, v]));
+      const productNameByOffer = new Map<string, string>();
+      for (const l of lines) {
+        productNameByOffer.set(l.offer_id, (l as any).product?.name || `Produit ${l.product_id}`);
+      }
+
+      // Vendor breakdown from validated prices
       const vendorTotals: Record<string, number> = {};
-      for (const line of lines) {
-        vendorTotals[line.vendor_id] =
-          (vendorTotals[line.vendor_id] || 0) + Number(line.line_total_incl_vat);
+      for (const v of validation.items) {
+        vendorTotals[v.vendor_id] = (vendorTotals[v.vendor_id] || 0) + v.total_incl_vat;
       }
       const vendorIds = Object.keys(vendorTotals);
       const { data: vendors } = await supabase
@@ -241,17 +260,17 @@ Deno.serve(async (req) => {
         };
       });
 
-      // Build Stripe line_items from order_lines
-      const lineItems = lines.map((l: any) => ({
+      // Build Stripe line_items from VALIDATED prices
+      const lineItems = validation.items.map((v) => ({
         price_data: {
           currency: "eur",
           product_data: {
-            name: l.product?.name || `Produit ${l.product_id}`,
-            metadata: { product_id: String(l.product_id) },
+            name: productNameByOffer.get(v.offer_id) || `Produit ${v.product_id}`,
+            metadata: { product_id: String(v.product_id) },
           },
-          unit_amount: Math.round(Number(l.unit_price_incl_vat) * 100),
+          unit_amount: Math.round(v.unit_price_incl_vat * 100),
         },
-        quantity: l.quantity,
+        quantity: v.quantity,
       }));
 
       const origin =

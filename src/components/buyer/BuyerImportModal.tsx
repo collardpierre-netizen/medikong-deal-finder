@@ -662,6 +662,8 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
       }),
       styles: { fontSize: 8, cellPadding: 4, textColor: [31, 41, 55] },
       headStyles: { fillColor: [37, 99, 235], textColor: [255, 255, 255] },
+      showHead: "everyPage",
+      rowPageBreak: "avoid",
       columnStyles: {
         0: { cellWidth: 150 },
         1: { cellWidth: 95 },

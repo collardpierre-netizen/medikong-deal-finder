@@ -31,17 +31,22 @@ export default function ImpersonationBanner() {
     navigate("/admin");
   };
 
+  const isBuyer = state.session.target_type === "buyer";
+
   return (
     <div
-      className="fixed top-0 left-0 right-0 h-11 flex items-center px-4 gap-3 text-white text-[13px] font-semibold"
+      className="fixed top-0 left-0 right-0 min-h-11 flex flex-wrap items-center px-4 py-1.5 gap-x-3 gap-y-1 text-white text-[13px] font-semibold"
       style={{ zIndex: 9999, background: "linear-gradient(90deg, #DC2626, #B91C1C)" }}
     >
       <Shield size={16} />
-      <span className="uppercase tracking-wider text-[11px]">Mode Admin</span>
+      <span className="uppercase tracking-wider text-[11px]">
+        {isBuyer ? "Act-As Acheteur" : "Mode Admin"}
+      </span>
       <span className="text-white/40">|</span>
       <span>
         Connecté en tant que <strong>{state.session.target_company_name}</strong>{" "}
-        ({state.session.target_type === "vendor" ? "vendeur" : "acheteur"})
+        <span className="text-white/80 font-normal">&lt;{state.session.target_email}&gt;</span>{" "}
+        ({isBuyer ? "acheteur" : "vendeur"})
       </span>
       <span className="text-white/40">|</span>
       <span className="text-white/70">Session active depuis {elapsed}</span>

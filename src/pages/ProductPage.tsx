@@ -1674,7 +1674,7 @@ export default function ProductPage() {
                           <span>
                             Prix {offerCompareBasis === 'pack' ? '/ pack' : offerCompareBasis === 'unit' ? '/ unité' : '/ 100 u.'} · MOV
                           </span>
-                          <span>Stock</span>
+                          <span className="text-right">Stock</span>
                           <span className="text-right">Commander</span>
                         </div>
 

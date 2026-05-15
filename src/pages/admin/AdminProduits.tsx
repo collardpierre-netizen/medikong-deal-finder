@@ -296,6 +296,19 @@ const AdminProduits = () => {
   const [importPanelOpen, setImportPanelOpen] = useState(false);
   const [migratingImages, setMigratingImages] = useState(false);
 
+  type ExportStatus = "idle" | "running" | "done" | "error";
+  const [exportState, setExportState] = useState<{
+    status: ExportStatus;
+    bytes: number;
+    lines: number; // lignes CSV (hors header)
+    attempt: number; // 1, 2, 3…
+    maxAttempts: number;
+    error?: string;
+    filename?: string;
+    startedAt?: number;
+    finishedAt?: number;
+  }>({ status: "idle", bytes: 0, lines: 0, attempt: 0, maxAttempts: 3 });
+
   const handleMigrateImages = async () => {
     if (!confirm("Migrer les images externes vers le stockage MediKong ? Cela peut prendre quelques minutes.")) return;
     setMigratingImages(true);
@@ -317,40 +330,101 @@ const AdminProduits = () => {
     }
   };
 
-  const handleExportOffersServer = async () => {
-    const toastId = toast.loading("Export offres côté serveur en cours… (streaming)");
-    try {
-      const { data: sess } = await supabase.auth.getSession();
-      const token = sess.session?.access_token;
-      if (!token) throw new Error("Session expirée");
-      const url = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/export-offers`;
-      const res = await fetch(url, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-        },
-        body: JSON.stringify({ activeOnly: true }),
-      });
-      if (!res.ok) {
-        const txt = await res.text();
-        throw new Error(`HTTP ${res.status} ${txt.slice(0, 200)}`);
+  const handleExportOffersServer = async (manualRetry = false) => {
+    const MAX_ATTEMPTS = 3;
+    const baseState = {
+      status: "running" as ExportStatus,
+      bytes: 0,
+      lines: 0,
+      attempt: 1,
+      maxAttempts: MAX_ATTEMPTS,
+      error: undefined,
+      filename: undefined,
+      startedAt: Date.now(),
+      finishedAt: undefined,
+    };
+    setExportState(baseState);
+
+    let lastError = "";
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+      setExportState(s => ({ ...s, status: "running", attempt, bytes: 0, lines: 0, error: undefined }));
+      try {
+        const { data: sess } = await supabase.auth.getSession();
+        const token = sess.session?.access_token;
+        if (!token) throw new Error("Session expirée");
+        const url = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/export-offers`;
+        const res = await fetch(url, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({ activeOnly: true }),
+        });
+        if (!res.ok) {
+          const txt = await res.text();
+          throw new Error(`HTTP ${res.status} ${txt.slice(0, 200)}`);
+        }
+        const filename = res.headers.get("X-Filename") || `medikong-offres-${Date.now()}.csv`;
+
+        // Lecture incrémentale du stream pour suivi en temps réel
+        const reader = res.body?.getReader();
+        if (!reader) throw new Error("ReadableStream indisponible");
+        const chunks: Uint8Array[] = [];
+        let bytes = 0;
+        let lines = 0;
+        let lastTick = 0;
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          if (!value) continue;
+          chunks.push(value);
+          bytes += value.byteLength;
+          for (let i = 0; i < value.byteLength; i++) if (value[i] === 0x0a) lines++;
+          const now = Date.now();
+          if (now - lastTick > 250) {
+            lastTick = now;
+            setExportState(s => ({ ...s, bytes, lines: Math.max(0, lines - 1) }));
+          }
+        }
+
+        const blob = new Blob(chunks as BlobPart[], { type: "text/csv;charset=utf-8" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(a.href);
+
+        setExportState({
+          status: "done",
+          bytes,
+          lines: Math.max(0, lines - 1),
+          attempt,
+          maxAttempts: MAX_ATTEMPTS,
+          filename,
+          startedAt: baseState.startedAt,
+          finishedAt: Date.now(),
+        });
+        toast.success(`Export terminé (${(bytes / 1024 / 1024).toFixed(1)} Mo)`);
+        return;
+      } catch (e: any) {
+        lastError = e?.message || "erreur inconnue";
+        if (attempt < MAX_ATTEMPTS && !manualRetry) {
+          setExportState(s => ({ ...s, status: "error", error: `${lastError} — relance ${attempt + 1}/${MAX_ATTEMPTS}…` }));
+          await new Promise(r => setTimeout(r, 2000 * attempt));
+          continue;
+        }
+        setExportState(s => ({ ...s, status: "error", error: lastError, finishedAt: Date.now() }));
+        toast.error(`Export échoué : ${lastError}`);
+        return;
       }
-      const filename = res.headers.get("X-Filename") || `medikong-offres-${Date.now()}.csv`;
-      const blob = await res.blob();
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(a.href);
-      toast.success(`Export terminé (${(blob.size / 1024 / 1024).toFixed(1)} Mo)`, { id: toastId });
-    } catch (e: any) {
-      toast.error(`Export échoué : ${e?.message || "erreur inconnue"}`, { id: toastId });
     }
   };
+
 
 
   const handleImport = async (file: File) => {
@@ -386,6 +460,72 @@ const AdminProduits = () => {
 
   return (
     <div>
+      {exportState.status !== "idle" && (
+        <div className="fixed bottom-4 right-4 z-50 w-[360px] rounded-xl border bg-background shadow-lg p-4">
+          <div className="flex items-start justify-between gap-2 mb-2">
+            <div className="flex items-center gap-2">
+              {exportState.status === "running" && <Loader2 size={16} className="animate-spin text-primary" />}
+              {exportState.status === "done" && <Download size={16} className="text-green-600" />}
+              {exportState.status === "error" && <X size={16} className="text-destructive" />}
+              <div className="text-sm font-medium">
+                {exportState.status === "running" && `Export offres en cours${exportState.attempt > 1 ? ` (tentative ${exportState.attempt}/${exportState.maxAttempts})` : ""}`}
+                {exportState.status === "done" && "Export terminé"}
+                {exportState.status === "error" && "Export échoué"}
+              </div>
+            </div>
+            <button
+              onClick={() => setExportState(s => ({ ...s, status: "idle" }))}
+              className="text-muted-foreground hover:text-foreground"
+              aria-label="Fermer"
+              disabled={exportState.status === "running"}
+            >
+              <X size={14} />
+            </button>
+          </div>
+
+          <div className="space-y-1.5 text-xs text-muted-foreground">
+            <div className="flex justify-between">
+              <span>Lignes</span>
+              <span className="font-mono text-foreground">{exportState.lines.toLocaleString("fr-BE")}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Volume</span>
+              <span className="font-mono text-foreground">{(exportState.bytes / 1024 / 1024).toFixed(2)} Mo</span>
+            </div>
+            {exportState.startedAt && (
+              <div className="flex justify-between">
+                <span>Durée</span>
+                <span className="font-mono text-foreground">
+                  {(((exportState.finishedAt ?? Date.now()) - exportState.startedAt) / 1000).toFixed(1)} s
+                </span>
+              </div>
+            )}
+          </div>
+
+          {exportState.status === "running" && (
+            <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+              <div className="h-full w-1/3 animate-pulse bg-primary" />
+            </div>
+          )}
+
+          {exportState.status === "error" && (
+            <>
+              <div className="mt-2 text-xs text-destructive break-words">{exportState.error}</div>
+              <Button
+                size="sm"
+                variant="outline"
+                className="mt-3 w-full"
+                onClick={() => handleExportOffersServer()}
+              >
+                <Loader2 size={14} className="mr-1" />
+                Relancer l'export
+              </Button>
+            </>
+          )}
+        </div>
+      )}
+
+
       <AdminTopBar title={t("products")} subtitle="Catalogue PIM centralisé"
         actions={
           <div className="flex gap-2">

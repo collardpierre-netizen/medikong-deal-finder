@@ -330,40 +330,101 @@ const AdminProduits = () => {
     }
   };
 
-  const handleExportOffersServer = async () => {
-    const toastId = toast.loading("Export offres côté serveur en cours… (streaming)");
-    try {
-      const { data: sess } = await supabase.auth.getSession();
-      const token = sess.session?.access_token;
-      if (!token) throw new Error("Session expirée");
-      const url = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/export-offers`;
-      const res = await fetch(url, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-        },
-        body: JSON.stringify({ activeOnly: true }),
-      });
-      if (!res.ok) {
-        const txt = await res.text();
-        throw new Error(`HTTP ${res.status} ${txt.slice(0, 200)}`);
+  const handleExportOffersServer = async (manualRetry = false) => {
+    const MAX_ATTEMPTS = 3;
+    const baseState = {
+      status: "running" as ExportStatus,
+      bytes: 0,
+      lines: 0,
+      attempt: 1,
+      maxAttempts: MAX_ATTEMPTS,
+      error: undefined,
+      filename: undefined,
+      startedAt: Date.now(),
+      finishedAt: undefined,
+    };
+    setExportState(baseState);
+
+    let lastError = "";
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+      setExportState(s => ({ ...s, status: "running", attempt, bytes: 0, lines: 0, error: undefined }));
+      try {
+        const { data: sess } = await supabase.auth.getSession();
+        const token = sess.session?.access_token;
+        if (!token) throw new Error("Session expirée");
+        const url = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/export-offers`;
+        const res = await fetch(url, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({ activeOnly: true }),
+        });
+        if (!res.ok) {
+          const txt = await res.text();
+          throw new Error(`HTTP ${res.status} ${txt.slice(0, 200)}`);
+        }
+        const filename = res.headers.get("X-Filename") || `medikong-offres-${Date.now()}.csv`;
+
+        // Lecture incrémentale du stream pour suivi en temps réel
+        const reader = res.body?.getReader();
+        if (!reader) throw new Error("ReadableStream indisponible");
+        const chunks: Uint8Array[] = [];
+        let bytes = 0;
+        let lines = 0;
+        let lastTick = 0;
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          if (!value) continue;
+          chunks.push(value);
+          bytes += value.byteLength;
+          for (let i = 0; i < value.byteLength; i++) if (value[i] === 0x0a) lines++;
+          const now = Date.now();
+          if (now - lastTick > 250) {
+            lastTick = now;
+            setExportState(s => ({ ...s, bytes, lines: Math.max(0, lines - 1) }));
+          }
+        }
+
+        const blob = new Blob(chunks as BlobPart[], { type: "text/csv;charset=utf-8" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(a.href);
+
+        setExportState({
+          status: "done",
+          bytes,
+          lines: Math.max(0, lines - 1),
+          attempt,
+          maxAttempts: MAX_ATTEMPTS,
+          filename,
+          startedAt: baseState.startedAt,
+          finishedAt: Date.now(),
+        });
+        toast.success(`Export terminé (${(bytes / 1024 / 1024).toFixed(1)} Mo)`);
+        return;
+      } catch (e: any) {
+        lastError = e?.message || "erreur inconnue";
+        if (attempt < MAX_ATTEMPTS && !manualRetry) {
+          setExportState(s => ({ ...s, status: "error", error: `${lastError} — relance ${attempt + 1}/${MAX_ATTEMPTS}…` }));
+          await new Promise(r => setTimeout(r, 2000 * attempt));
+          continue;
+        }
+        setExportState(s => ({ ...s, status: "error", error: lastError, finishedAt: Date.now() }));
+        toast.error(`Export échoué : ${lastError}`);
+        return;
       }
-      const filename = res.headers.get("X-Filename") || `medikong-offres-${Date.now()}.csv`;
-      const blob = await res.blob();
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(a.href);
-      toast.success(`Export terminé (${(blob.size / 1024 / 1024).toFixed(1)} Mo)`, { id: toastId });
-    } catch (e: any) {
-      toast.error(`Export échoué : ${e?.message || "erreur inconnue"}`, { id: toastId });
     }
   };
+
 
 
   const handleImport = async (file: File) => {

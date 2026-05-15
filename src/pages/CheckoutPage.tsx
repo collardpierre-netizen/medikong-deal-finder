@@ -147,6 +147,18 @@ export default function CheckoutPage() {
     let oid = orderId;
     let onum = orderNumber;
     try {
+      // Pre-flight server-side validation (MOQ, stock, vendor MOV with floor 500€)
+      const validation = await validateCartNow(items.map(it => ({ offer_id: it.offer_id, quantity: it.quantity })));
+      if (!validation.valid) {
+        const reasons = validation.errors.map(e => {
+          if (e.type === "vendor_mov_not_reached") return `MOV non atteint pour ${e.vendor_name} (manque ${Number(e.details.missing).toFixed(2)} €)`;
+          if (e.type === "below_moq") return `Quantité minimum non respectée (${e.details.current}/${e.details.required})`;
+          if (e.type === "exceeds_stock") return `Stock insuffisant (${e.details.current}/${e.details.available})`;
+          if (e.type === "offer_not_available") return `Offre indisponible`;
+          return null;
+        }).filter(Boolean).join(" — ");
+        throw new Error(reasons || "Panier invalide");
+      }
       // Step 1 : create order if not already created
       if (!oid || !onum) {
         const finalBilling = sameAsBilling ? shippingAddr : billingAddr;

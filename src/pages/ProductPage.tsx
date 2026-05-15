@@ -1664,9 +1664,23 @@ export default function ProductPage() {
                         <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
                           {showBasisToggle ? (
                             <div className="flex items-center gap-2 flex-wrap">
-                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                                 <BarChart3 size={14} />
                                 <span>Comparer sur la base&nbsp;:</span>
+                                <TooltipProvider delayDuration={150}>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <button type="button" aria-label="Comment lire les bases de comparaison" className="text-muted-foreground/70 hover:text-foreground transition-colors">
+                                        <HelpCircle size={13} />
+                                      </button>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top" className="max-w-[280px] text-[11px] leading-relaxed">
+                                      <p><strong>€/pack</strong> : prix d'un pack vendeur tel qu'il est commandé{_mkPack.packSize > 1 ? ` (ici : ${_mkPack.packSize} unités par pack)` : ''}.</p>
+                                      <p className="mt-1"><strong>€/unité</strong> : prix du pack ÷ taille du pack.</p>
+                                      <p className="mt-1"><strong>€/100 u.</strong> : prix unitaire × 100, pour comparer des conditionnements de tailles différentes sur une base commune.</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
                               </div>
                               <ToggleGroup
                                 type="single"

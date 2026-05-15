@@ -51,5 +51,8 @@ verify_jwt = false
 [functions.process-savings-upload]
 verify_jwt = false
 
+[functions.validate-cart]
+verify_jwt = true
+
 [functions.generate-savings-report]
 verify_jwt = false

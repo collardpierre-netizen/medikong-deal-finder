@@ -297,17 +297,30 @@ const AdminProduits = () => {
   const [migratingImages, setMigratingImages] = useState(false);
 
   type ExportStatus = "idle" | "running" | "done" | "error";
+  type ExportStep =
+    | "idle"
+    | "auth"
+    | "request"
+    | "streaming"
+    | "finalizing"
+    | "downloaded"
+    | "failed";
   const [exportState, setExportState] = useState<{
     status: ExportStatus;
+    step: ExportStep;
     bytes: number;
     lines: number; // lignes CSV (hors header)
+    chunks: number; // nombre de batches reçus depuis le stream
+    lastChunkBytes: number; // taille du dernier batch (octets)
     attempt: number; // 1, 2, 3…
     maxAttempts: number;
+    httpStatus?: number;
     error?: string;
+    errorDetails?: string; // payload serveur complet (non tronqué)
     filename?: string;
     startedAt?: number;
     finishedAt?: number;
-  }>({ status: "idle", bytes: 0, lines: 0, attempt: 0, maxAttempts: 3 });
+  }>({ status: "idle", step: "idle", bytes: 0, lines: 0, chunks: 0, lastChunkBytes: 0, attempt: 0, maxAttempts: 3 });
 
   const handleMigrateImages = async () => {
     if (!confirm("Migrer les images externes vers le stockage MediKong ? Cela peut prendre quelques minutes.")) return;
@@ -334,11 +347,16 @@ const AdminProduits = () => {
     const MAX_ATTEMPTS = 3;
     const baseState = {
       status: "running" as ExportStatus,
+      step: "auth" as ExportStep,
       bytes: 0,
       lines: 0,
+      chunks: 0,
+      lastChunkBytes: 0,
       attempt: 1,
       maxAttempts: MAX_ATTEMPTS,
+      httpStatus: undefined,
       error: undefined,
+      errorDetails: undefined,
       filename: undefined,
       startedAt: Date.now(),
       finishedAt: undefined,
@@ -346,13 +364,28 @@ const AdminProduits = () => {
     setExportState(baseState);
 
     let lastError = "";
+    let lastErrorDetails: string | undefined;
+    let lastHttpStatus: number | undefined;
     for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-      setExportState(s => ({ ...s, status: "running", attempt, bytes: 0, lines: 0, error: undefined }));
+      setExportState(s => ({
+        ...s,
+        status: "running",
+        step: "auth",
+        attempt,
+        bytes: 0,
+        lines: 0,
+        chunks: 0,
+        lastChunkBytes: 0,
+        httpStatus: undefined,
+        error: undefined,
+        errorDetails: undefined,
+      }));
       try {
         const { data: sess } = await supabase.auth.getSession();
         const token = sess.session?.access_token;
         if (!token) throw new Error("Session expirée");
         const url = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/export-offers`;
+        setExportState(s => ({ ...s, step: "request" }));
         const res = await fetch(url, {
           method: "POST",
           headers: {
@@ -362,8 +395,11 @@ const AdminProduits = () => {
           },
           body: JSON.stringify({ activeOnly: true }),
         });
+        lastHttpStatus = res.status;
+        setExportState(s => ({ ...s, httpStatus: res.status }));
         if (!res.ok) {
           const txt = await res.text();
+          lastErrorDetails = txt;
           throw new Error(`HTTP ${res.status} ${txt.slice(0, 200)}`);
         }
         const filename = res.headers.get("X-Filename") || `medikong-offres-${Date.now()}.csv`;
@@ -371,9 +407,12 @@ const AdminProduits = () => {
         // Lecture incrémentale du stream pour suivi en temps réel
         const reader = res.body?.getReader();
         if (!reader) throw new Error("ReadableStream indisponible");
+        setExportState(s => ({ ...s, step: "streaming", filename }));
         const chunks: Uint8Array[] = [];
         let bytes = 0;
         let lines = 0;
+        let chunkCount = 0;
+        let lastChunkBytes = 0;
         let lastTick = 0;
         // eslint-disable-next-line no-constant-condition
         while (true) {
@@ -382,14 +421,23 @@ const AdminProduits = () => {
           if (!value) continue;
           chunks.push(value);
           bytes += value.byteLength;
+          chunkCount++;
+          lastChunkBytes = value.byteLength;
           for (let i = 0; i < value.byteLength; i++) if (value[i] === 0x0a) lines++;
           const now = Date.now();
           if (now - lastTick > 250) {
             lastTick = now;
-            setExportState(s => ({ ...s, bytes, lines: Math.max(0, lines - 1) }));
+            setExportState(s => ({
+              ...s,
+              bytes,
+              lines: Math.max(0, lines - 1),
+              chunks: chunkCount,
+              lastChunkBytes,
+            }));
           }
         }
 
+        setExportState(s => ({ ...s, step: "finalizing", bytes, chunks: chunkCount, lastChunkBytes, lines: Math.max(0, lines - 1) }));
         const blob = new Blob(chunks as BlobPart[], { type: "text/csv;charset=utf-8" });
         const a = document.createElement("a");
         a.href = URL.createObjectURL(blob);
@@ -401,10 +449,14 @@ const AdminProduits = () => {
 
         setExportState({
           status: "done",
+          step: "downloaded",
           bytes,
           lines: Math.max(0, lines - 1),
+          chunks: chunkCount,
+          lastChunkBytes,
           attempt,
           maxAttempts: MAX_ATTEMPTS,
+          httpStatus: lastHttpStatus,
           filename,
           startedAt: baseState.startedAt,
           finishedAt: Date.now(),
@@ -414,11 +466,26 @@ const AdminProduits = () => {
       } catch (e: any) {
         lastError = e?.message || "erreur inconnue";
         if (attempt < MAX_ATTEMPTS && !manualRetry) {
-          setExportState(s => ({ ...s, status: "error", error: `${lastError} — relance ${attempt + 1}/${MAX_ATTEMPTS}…` }));
+          setExportState(s => ({
+            ...s,
+            status: "error",
+            step: "failed",
+            error: `${lastError} — relance ${attempt + 1}/${MAX_ATTEMPTS}…`,
+            errorDetails: lastErrorDetails,
+            httpStatus: lastHttpStatus,
+          }));
           await new Promise(r => setTimeout(r, 2000 * attempt));
           continue;
         }
-        setExportState(s => ({ ...s, status: "error", error: lastError, finishedAt: Date.now() }));
+        setExportState(s => ({
+          ...s,
+          status: "error",
+          step: "failed",
+          error: lastError,
+          errorDetails: lastErrorDetails,
+          httpStatus: lastHttpStatus,
+          finishedAt: Date.now(),
+        }));
         toast.error(`Export échoué : ${lastError}`);
         return;
       }
@@ -461,7 +528,7 @@ const AdminProduits = () => {
   return (
     <div>
       {exportState.status !== "idle" && (
-        <div className="fixed bottom-4 right-4 z-50 w-[360px] rounded-xl border bg-background shadow-lg p-4">
+        <div className="fixed bottom-4 right-4 z-50 w-[420px] max-h-[80vh] overflow-y-auto rounded-xl border bg-background shadow-lg p-4">
           <div className="flex items-start justify-between gap-2 mb-2">
             <div className="flex items-center gap-2">
               {exportState.status === "running" && <Loader2 size={16} className="animate-spin text-primary" />}
@@ -508,9 +575,84 @@ const AdminProduits = () => {
             </div>
           )}
 
+          {/* ── Diagnostic ── */}
+          <div className="mt-3 rounded-md border border-border bg-muted/40 p-2.5 space-y-1.5 text-[11px]">
+            <div className="font-semibold text-foreground uppercase tracking-wide text-[10px]">Diagnostic</div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Étape</span>
+              <span className="font-mono text-foreground">
+                {({
+                  idle: "—",
+                  auth: "1/4 · Auth (récupération du token)",
+                  request: "2/4 · Requête edge function",
+                  streaming: "3/4 · Streaming CSV",
+                  finalizing: "4/4 · Finalisation (Blob + download)",
+                  downloaded: "✓ Téléchargé",
+                  failed: "✕ Échec",
+                } as Record<ExportStep, string>)[exportState.step]}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Tentative</span>
+              <span className="font-mono text-foreground">{exportState.attempt}/{exportState.maxAttempts}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">HTTP</span>
+              <span className="font-mono text-foreground">{exportState.httpStatus ?? "—"}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Batches reçus</span>
+              <span className="font-mono text-foreground">{exportState.chunks.toLocaleString("fr-BE")}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Dernier batch</span>
+              <span className="font-mono text-foreground">
+                {exportState.lastChunkBytes > 0
+                  ? `${(exportState.lastChunkBytes / 1024).toFixed(1)} Ko`
+                  : "—"}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Batch moyen</span>
+              <span className="font-mono text-foreground">
+                {exportState.chunks > 0
+                  ? `${(exportState.bytes / exportState.chunks / 1024).toFixed(1)} Ko`
+                  : "—"}
+              </span>
+            </div>
+            {exportState.filename && (
+              <div className="flex justify-between gap-2">
+                <span className="text-muted-foreground shrink-0">Fichier</span>
+                <span className="font-mono text-foreground truncate" title={exportState.filename}>
+                  {exportState.filename}
+                </span>
+              </div>
+            )}
+          </div>
+
           {exportState.status === "error" && (
             <>
-              <div className="mt-2 text-xs text-destructive break-words">{exportState.error}</div>
+              <div className="mt-3 rounded-md border border-destructive/30 bg-destructive/5 p-2.5 space-y-1.5">
+                <div className="font-semibold text-destructive uppercase tracking-wide text-[10px]">Erreur</div>
+                <div className="text-xs text-destructive break-words">{exportState.error}</div>
+                {exportState.errorDetails && (
+                  <details className="mt-1">
+                    <summary className="text-[11px] text-destructive cursor-pointer hover:underline">
+                      Réponse serveur complète ({exportState.errorDetails.length} car.)
+                    </summary>
+                    <pre className="mt-1 max-h-48 overflow-auto rounded bg-background p-2 text-[10px] font-mono text-foreground whitespace-pre-wrap break-all">
+{exportState.errorDetails}
+                    </pre>
+                    <button
+                      type="button"
+                      className="mt-1 text-[10px] underline text-muted-foreground hover:text-foreground"
+                      onClick={() => navigator.clipboard?.writeText(exportState.errorDetails || "")}
+                    >
+                      Copier
+                    </button>
+                  </details>
+                )}
+              </div>
               <Button
                 size="sm"
                 variant="outline"

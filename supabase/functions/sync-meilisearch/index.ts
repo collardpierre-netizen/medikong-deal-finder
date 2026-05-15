@@ -264,6 +264,49 @@ serve(async (req) => {
       });
     }
 
+    if (action === "sync-product-ids") {
+      const ids: string[] = Array.isArray(body.product_ids) ? body.product_ids.filter((v: any) => typeof v === "string") : [];
+      if (ids.length === 0) {
+        return new Response(JSON.stringify({ error: "product_ids must be a non-empty array of UUIDs" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const { data, error } = await supabase
+        .from("products")
+        .select("id, name, slug, brand_name, gtin, cnk_code, short_description, image_url, image_urls, best_price_excl_vat, best_price_incl_vat, offer_count, is_in_stock, is_active, category_name")
+        .in("id", ids);
+      if (error) throw error;
+      const docs = (data ?? []).map((p: any) => ({
+        id: p.id,
+        name: p.name,
+        slug: p.slug,
+        brand_name: p.brand_name || "",
+        gtin: p.gtin || "",
+        cnk_code: p.cnk_code || "",
+        short_description: p.short_description || "",
+        image_url: p.image_urls?.[0] || p.image_url || "",
+        best_price_excl_vat: p.best_price_excl_vat || 0,
+        best_price_incl_vat: p.best_price_incl_vat || 0,
+        offer_count: p.offer_count || 0,
+        is_in_stock: p.is_in_stock,
+        is_active: p.is_active,
+        category_name: p.category_name || "",
+      }));
+      const cleanDocs = validateDocsForIndex("products", docs);
+      if (cleanDocs.length > 0) {
+        await meiliRequest("/indexes/products/documents", "POST", cleanDocs);
+      }
+      return new Response(JSON.stringify({
+        success: true,
+        requested: ids.length,
+        found: docs.length,
+        indexed: cleanDocs.length,
+        skipped_invalid: docs.length - cleanDocs.length,
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     if (action === "sync-products-batch") {
       const offset = body.offset || 0;
       const batchSize = body.batch_size || 2000;

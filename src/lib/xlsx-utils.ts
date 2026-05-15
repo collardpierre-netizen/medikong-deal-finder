@@ -39,7 +39,7 @@ export function downloadProductTemplate() {
     ["unit_quantity", "Non", "Quantité par unité (défaut: 1)"],
     ["origin_country", "Non", "Code pays d'origine (ex: BE, FR, DE)"],
     ["image_urls", "Non", "URLs des images séparées par des points-virgules (;)"],
-    ["source", "Non", "Source du produit (défaut: medikong)"],
+    ["source", "Non", "Source du produit (défaut: medikong). Valeurs autorisées: qogita, medikong, vendor, medi-market, valerco, vanheek. Une valeur inconnue fait échouer la ligne."],
     ["is_active", "Non", "true ou false (défaut: true)"],
     ["pvp_ttc", "Non", "Prix Public Conseillé TTC en euros (ex: 24.90). Sert au calcul de marge potentielle pour l'acheteur."],
     ["pvp_source", "Non", "Source du PVP : apb (Belgique officiel), pmr (cosmétique), manufacturer, distributor, manual. Défaut: apb si pvp_ttc présent."],
@@ -456,6 +456,19 @@ export async function importProducts(file: File, onProgress?: (p: ImportProgress
     if (p.gtin) existingGtins.set(String(p.gtin).trim(), p.id);
   });
 
+  // --- Pre-load category mapping context for non-blocking warnings ---
+  const VALID_SOURCES = ["qogita", "medikong", "vendor", "medi-market", "valerco", "vanheek"];
+  const knownCatNames = new Set<string>();
+  {
+    const { data: allCats } = await supabase.from("categories").select("name").limit(10000);
+    (allCats || []).forEach((c: any) => c.name && knownCatNames.add(String(c.name).toLowerCase()));
+  }
+  const aliasedCatNames = new Set<string>();
+  {
+    const { data: aliases } = await supabase.from("category_source_aliases").select("source_path").limit(10000);
+    (aliases || []).forEach((a: any) => a.source_path && aliasedCatNames.add(String(a.source_path).toLowerCase()));
+  }
+
   // --- Import products ---
   currentPhase = "products"; notify();
   for (let i = 0; i < rows.length; i++) {
@@ -464,6 +477,33 @@ export async function importProducts(file: File, onProgress?: (p: ImportProgress
     currentIdx = i + 1;
     if (i % 10 === 0) notify(); // throttle progress updates
     if (!r.name) { errors.push({ line: lineNum, name: "—", code: "MISSING_NAME", message: "Nom du produit manquant" }); skipped++; continue; }
+
+    // D-bug fix: hard-fail if `source` column is provided but not a valid enum value
+    const rawSource = r.source ? String(r.source).toLowerCase().trim() : "medikong";
+    if (!VALID_SOURCES.includes(rawSource)) {
+      errors.push({
+        line: lineNum,
+        name: String(r.name),
+        code: "INVALID_SOURCE",
+        message: `Valeur "source" non reconnue: "${r.source}". Valeurs autorisées: ${VALID_SOURCES.join(", ")}.`,
+      });
+      skipped++;
+      continue;
+    }
+
+    // D-bug fix: non-blocking warning when category_name is provided but unmappable
+    if (r.category_name) {
+      const cn = String(r.category_name).trim().toLowerCase();
+      if (!knownCatNames.has(cn) && !aliasedCatNames.has(cn)) {
+        errors.push({
+          line: lineNum,
+          name: String(r.name),
+          code: "CATEGORY_NOT_MAPPED",
+          message: `Catégorie "${r.category_name}" inconnue et sans alias dans category_source_aliases. La catégorie sera créée automatiquement mais aucun rattachement MK ne sera effectué.`,
+        });
+      }
+    }
+
     const slug = r.slug || slugify(r.name);
     const rawImageUrls = r.image_urls ?? r.image_url ?? r["Image URL"] ?? r["Image URL "] ?? r["image url"] ?? "";
     const imageUrls = String(rawImageUrls)
@@ -495,11 +535,7 @@ export async function importProducts(file: File, onProgress?: (p: ImportProgress
       short_description: r.short_description || null,
       unit_quantity: parseUnitQuantity(r.unit_quantity),
       origin_country: r.origin_country || null,
-      source: (() => {
-        const raw = r.source ? String(r.source).toLowerCase().trim() : "medikong";
-        const validSources = ["qogita", "medikong", "vendor", "medi-market", "valerco"];
-        return validSources.includes(raw) ? raw : "vendor";
-      })(),
+      source: rawSource,
       is_active: r.is_active === false || r.is_active === "false" ? false : true,
     };
     // Always set both image_url and image_urls when images are provided

@@ -58,10 +58,10 @@ verify_jwt = true
 verify_jwt = false
 
 [functions.start-buyer-impersonation]
-verify_jwt = true
+verify_jwt = false
 
 [functions.end-buyer-impersonation]
-verify_jwt = true
+verify_jwt = false
 
 [functions.generate-vendor-invoices]
 verify_jwt = false

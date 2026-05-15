@@ -5,6 +5,7 @@ import {
   type ImpersonationSession,
   type ImpersonationState,
 } from "./impersonation";
+import { enterBuyerSession, exitBuyerSession } from "@/lib/buyer-impersonation";
 
 const defaultState: ImpersonationState = {
   isImpersonating: false,
@@ -56,6 +57,20 @@ export function ImpersonationProvider({ children }: { children: ReactNode }) {
     targetCompany: string,
     targetVendorId?: string,
   ) => {
+    let authSwapSessionId: string | null = null;
+
+    // For buyers we perform a REAL auth-session swap so that all writes
+    // (cart, alerts, watch list, RFQ, preferences…) carry the buyer's auth.uid().
+    if (targetType === "buyer") {
+      try {
+        const res = await enterBuyerSession({ targetUserId });
+        authSwapSessionId = res.sessionId;
+      } catch (e) {
+        toast.error(`Connexion impossible : ${(e as Error).message}`);
+        return;
+      }
+    }
+
     const session: ImpersonationSession = {
       id: crypto.randomUUID(),
       admin_user_id: "admin",
@@ -65,6 +80,7 @@ export function ImpersonationProvider({ children }: { children: ReactNode }) {
       target_type: targetType,
       target_company_name: targetCompany,
       target_vendor_id: targetVendorId,
+      auth_swap_session_id: authSwapSessionId,
       actions_count: 0,
       started_at: new Date().toISOString(),
     };
@@ -77,13 +93,25 @@ export function ImpersonationProvider({ children }: { children: ReactNode }) {
 
     localStorage.setItem("mk_impersonation", JSON.stringify(newState));
     setState(newState);
-    toast.success(`Mode shadow activé pour ${targetCompany}`);
+    toast.success(
+      targetType === "buyer"
+        ? `Connecté en tant que ${targetCompany}`
+        : `Mode shadow activé pour ${targetCompany}`,
+    );
   }, []);
 
   const stopImpersonation = useCallback(async () => {
+    const sess = state.session;
+    if (sess?.target_type === "buyer") {
+      try {
+        await exitBuyerSession(sess.auth_swap_session_id ?? null);
+      } catch (e) {
+        toast.error(`Erreur fin de session : ${(e as Error).message}`);
+      }
+    }
     setState(defaultState);
     toast.info("Session d'impersonation terminée");
-  }, []);
+  }, [state.session]);
 
   const logAction = useCallback(async () => {}, []);
 
@@ -101,3 +129,4 @@ export function ImpersonationProvider({ children }: { children: ReactNode }) {
     </ImpersonationContext.Provider>
   );
 }
+

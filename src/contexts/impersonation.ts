@@ -9,6 +9,9 @@ export interface ImpersonationSession {
   target_type: string;
   target_company_name: string;
   target_vendor_id?: string;
+  // For buyer "act-as" sessions, the JS client holds the target's auth session
+  // and `auth_swap_session_id` points to the buyer_impersonation_sessions row.
+  auth_swap_session_id?: string | null;
   actions_count: number;
   started_at: string;
 }

@@ -1,6 +1,7 @@
 import { useI18n, Lang } from "@/contexts/I18nContext";
-import { Search, Home, ChevronRight } from "lucide-react";
+import { Home, ChevronRight } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
+import ImpersonateBuyerCommand from "./ImpersonateBuyerCommand";
 
 interface AdminTopBarProps {
   title: string;
@@ -97,13 +98,7 @@ const AdminTopBar = ({ title, subtitle, actions }: AdminTopBarProps) => {
         </div>
         <div className="flex items-center gap-3">
           {actions}
-          <div
-            className="flex items-center gap-2 px-3 py-2 rounded-md text-[13px]"
-            style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}
-          >
-            <Search size={14} style={{ color: "#8B95A5" }} />
-            <span style={{ color: "#8B95A5" }}>Rechercher...</span>
-          </div>
+          <ImpersonateBuyerCommand />
           <div
             className="flex rounded-md overflow-hidden"
             style={{ border: "1px solid #E2E8F0" }}

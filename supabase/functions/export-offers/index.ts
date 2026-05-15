@@ -15,7 +15,9 @@ const corsHeaders = {
   "Access-Control-Expose-Headers": "content-disposition, x-total-rows",
 };
 
-const PAGE = 5000;
+// PostgREST plafonne par défaut à db.max_rows = 1000, donc inutile de demander plus :
+// la pagination keyset (gt(id, lastId)) reste correcte page après page.
+const PAGE = 1000;
 // 100 UUIDs ≈ 3.9 ko d'URL, sous la limite 8 ko du gateway PostgREST.
 // 500 provoquait des "error sending request" intermittents.
 const ENRICH_BATCH = 100;
@@ -198,7 +200,9 @@ Deno.serve(async (req) => {
           lastId = offers[offers.length - 1].id;
           pages += 1;
 
-          if (offers.length < PAGE) break;
+          // Ne PAS sortir sur `offers.length < PAGE` : si PostgREST applique un
+          // plafond `db.max_rows` inférieur à PAGE, on stopperait après la 1re page.
+          // On boucle tant que la page suivante renvoie au moins 1 ligne.
         }
 
         console.log("[export-offers] OK", {

@@ -46,10 +46,12 @@ interface VendorOrderData {
 
 class VendorOrderPageError extends Error {
   status: number;
+  code: string | null;
 
-  constructor(status: number, message: string) {
+  constructor(status: number, message: string, code: string | null = null) {
     super(message);
     this.status = status;
+    this.code = code;
   }
 }
 
@@ -59,14 +61,24 @@ const errorMessages: Record<number, string> = {
   409: "Commande non finalisée",
 };
 
-const statusLabels: Record<string, string> = {
-  pending: "À préparer",
-  processing: "En préparation",
-  forwarded: "Transféré",
-  shipped: "Expédié",
-  delivered: "Livré",
-  cancelled: "Annulé",
+// Mapping par code d'erreur applicatif renvoyé dans le JSON body { error: "..." }
+const errorCodeMessages: Record<string, string> = {
+  not_found: "Lien invalide. Cette commande n'existe pas ou n'est plus accessible.",
+  invalid_token: "Lien invalide. Contactez support@medikong.pro",
+  token_expired: "Lien expiré. Demandez un nouveau lien à support@medikong.pro",
+  order_not_paid: "Commande non finalisée — le paiement n'a pas encore été confirmé.",
+  forbidden: "Action non autorisée pour cette commande.",
+  missing_params: "Paramètres manquants dans la requête.",
+  invalid_action: "Action inconnue.",
+  tracking_number_required: "Numéro de suivi requis pour marquer comme expédié.",
+  invalid_transition: "Transition de statut invalide : cette action n'est pas possible depuis le statut actuel.",
 };
+
+function resolveErrorMessage(err: VendorOrderPageError): string {
+  if (err.code && errorCodeMessages[err.code]) return errorCodeMessages[err.code];
+  if (errorMessages[err.status]) return errorMessages[err.status];
+  return err.message || "Une erreur est survenue.";
+}
 
 async function parseFunctionError(error: unknown): Promise<VendorOrderPageError> {
   const fallback = error instanceof Error ? error.message : "Erreur inconnue";
@@ -77,11 +89,21 @@ async function parseFunctionError(error: unknown): Promise<VendorOrderPageError>
   try {
     const text = await response.text();
     const payload = text ? JSON.parse(text) : null;
-    return new VendorOrderPageError(response.status, payload?.error || payload?.message || fallback);
+    const code = typeof payload?.error === "string" ? payload.error : null;
+    return new VendorOrderPageError(response.status, code || payload?.message || fallback, code);
   } catch {
     return new VendorOrderPageError(response.status, fallback);
   }
 }
+
+const statusLabels: Record<string, string> = {
+  pending: "À préparer",
+  processing: "En préparation",
+  forwarded: "Transféré",
+  shipped: "Expédié",
+  delivered: "Livré",
+  cancelled: "Annulé",
+};
 
 function formatMoney(value?: number | null): string {
   if (typeof value !== "number" || Number.isNaN(value)) return "—";
@@ -125,18 +147,18 @@ export default function VendorOrderPage() {
   const token = searchParams.get("token") || "";
   const [order, setOrder] = useState<VendorOrderData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [errorStatus, setErrorStatus] = useState<number | null>(null);
+  const [loadError, setLoadError] = useState<{ status: number; code: string | null; message: string } | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [trackingNumbers, setTrackingNumbers] = useState<Record<string, string>>({});
 
   const loadOrder = useCallback(async () => {
     setLoading(true);
-    setErrorStatus(null);
+    setLoadError(null);
     setActionError(null);
 
     if (!order_number || !token) {
-      setErrorStatus(404);
+      setLoadError({ status: 404, code: "not_found", message: "missing_params" });
       setLoading(false);
       return;
     }
@@ -147,7 +169,7 @@ export default function VendorOrderPage() {
 
     if (error) {
       const parsedError = await parseFunctionError(error);
-      setErrorStatus(parsedError.status);
+      setLoadError({ status: parsedError.status, code: parsedError.code, message: parsedError.message });
       setOrder(null);
       setLoading(false);
       return;
@@ -182,7 +204,7 @@ export default function VendorOrderPage() {
 
     if (error) {
       const parsedError = await parseFunctionError(error);
-      setActionError(errorMessages[parsedError.status] || parsedError.message);
+      setActionError(resolveErrorMessage(parsedError));
       setActionLoading(null);
       return;
     }
@@ -206,13 +228,14 @@ export default function VendorOrderPage() {
           </div>
         )}
 
-        {!loading && errorStatus && (
+        {!loading && loadError && (
           <Card className="mx-auto max-w-xl">
             <CardHeader>
               <CardTitle>Commande indisponible</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <p className="text-sm text-muted-foreground">{errorMessages[errorStatus] || "Impossible de charger cette commande. Contactez support@medikong.pro"}</p>
+              <p className="text-sm text-muted-foreground">{resolveErrorMessage(new VendorOrderPageError(loadError.status, loadError.message, loadError.code)) || "Impossible de charger cette commande. Contactez support@medikong.pro"}</p>
+              {loadError.code && <p className="text-xs text-muted-foreground/70">Code : <code className="font-mono">{loadError.code}</code></p>}
               <Button asChild>
                 <a href="mailto:support@medikong.pro">Contacter le support</a>
               </Button>
@@ -220,7 +243,7 @@ export default function VendorOrderPage() {
           </Card>
         )}
 
-        {!loading && !errorStatus && order && (
+        {!loading && !loadError && order && (
           <div className="space-y-6">
             <div>
               <h1 className="text-2xl font-bold">Espace fournisseur — {order.vendor_name}</h1>

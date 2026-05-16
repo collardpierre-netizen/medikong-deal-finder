@@ -159,19 +159,26 @@ export default function VendorOrderPage() {
   const token = searchParams.get("token") || "";
   const [order, setOrder] = useState<VendorOrderData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [loadError, setLoadError] = useState<{ status: number; code: string | null; message: string } | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [trackingNumbers, setTrackingNumbers] = useState<Record<string, string>>({});
 
-  const loadOrder = useCallback(async () => {
-    setLoading(true);
-    setLoadError(null);
-    setActionError(null);
+  const loadOrder = useCallback(async (options?: { silent?: boolean }) => {
+    const silent = options?.silent === true;
+    if (silent) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+      setLoadError(null);
+      setActionError(null);
+    }
 
     if (!order_number || !token) {
       setLoadError({ status: 404, code: "not_found", message: "missing_params" });
       setLoading(false);
+      setRefreshing(false);
       return;
     }
 
@@ -181,9 +188,14 @@ export default function VendorOrderPage() {
 
     if (error) {
       const parsedError = await parseFunctionError(error);
-      setLoadError({ status: parsedError.status, code: parsedError.code, message: parsedError.message });
-      setOrder(null);
+      if (silent) {
+        toast.error("Impossible d'actualiser la commande", { description: resolveErrorMessage(parsedError) });
+      } else {
+        setLoadError({ status: parsedError.status, code: parsedError.code, message: parsedError.message });
+        setOrder(null);
+      }
       setLoading(false);
+      setRefreshing(false);
       return;
     }
 
@@ -193,6 +205,7 @@ export default function VendorOrderPage() {
       Object.fromEntries(nextOrder.lines.map((line) => [line.id, line.tracking_number || ""])),
     );
     setLoading(false);
+    setRefreshing(false);
   }, [order_number, token]);
 
   useEffect(() => {

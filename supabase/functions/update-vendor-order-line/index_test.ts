@@ -123,19 +123,17 @@ Deno.test("HTTP: token inconnu → 401 invalid_token", opts, async () => {
 
 // ---------- 3. 410 UNIQUEMENT sur expires_at (used_at peut être posé) ----------
 
-async function pickSubOrderFixture(sb: ReturnType<typeof admin>) {
-  // PK de vendor_order_tokens = sub_order_id → on doit prendre un sub_order
-  // qui n'a PAS déjà un token enregistré (sinon insert duplicate).
-  const { data: existing } = await sb
+// vendor_order_tokens.PK = sub_order_id (1 token max par sub_order). Tous les
+// sub_orders existants ont déjà leur token en base, donc on ne peut PAS insérer
+// un token jetable. Stratégie : on emprunte un token réel, on mute
+// expires_at/used_at le temps du test, on restaure dans `finally`.
+async function borrowToken(sb: ReturnType<typeof admin>) {
+  const { data } = await sb
     .from("vendor_order_tokens")
-    .select("sub_order_id")
-    .limit(1000);
-  const usedIds = new Set((existing ?? []).map((r: any) => r.sub_order_id));
-  const { data: subs } = await sb
-    .from("sub_orders")
-    .select("id, order_id, vendor_id")
-    .limit(1000);
-  return (subs ?? []).find((s: any) => !usedIds.has(s.id)) ?? null;
+    .select("token, expires_at, used_at, order_id, vendor_id, sub_order_id")
+    .limit(1)
+    .maybeSingle();
+  return data;
 }
 
 Deno.test(
@@ -143,36 +141,31 @@ Deno.test(
   opts,
   async () => {
     const sb = admin();
-    const sub = await pickSubOrderFixture(sb);
-    if (!sub?.id) {
-      console.warn("Skip: pas de sub_order seed disponible");
+    const tk = await borrowToken(sb);
+    if (!tk?.token) {
+      console.warn("Skip: aucun vendor_order_token disponible à emprunter");
       return;
     }
-    const token = `test-expired-${crypto.randomUUID()}`;
     const past = new Date(Date.now() - 86_400_000).toISOString();
-    const ins = await sb.from("vendor_order_tokens").insert({
-      token,
-      order_id: sub.order_id,
-      vendor_id: sub.vendor_id,
-      sub_order_id: sub.id,
-      order_number: `TEST-${crypto.randomUUID().slice(0, 8)}`,
-      expires_at: past,
-      used_at: null,
-    }).select("token").maybeSingle();
-    if (ins.error) {
-      console.warn(`Skip insert token expiré: ${ins.error.message}`);
+    const mut = await sb.from("vendor_order_tokens")
+      .update({ expires_at: past, used_at: null })
+      .eq("token", tk.token);
+    if (mut.error) {
+      console.warn(`Skip mutate token expiré: ${mut.error.message}`);
       return;
     }
     try {
       const r = await call({
-        token,
+        token: tk.token,
         line_id: "00000000-0000-0000-0000-000000000000",
         action: "confirm",
       });
       assertEquals(r.status, 410);
       assertEquals(r.body?.error, "token_expired");
     } finally {
-      await sb.from("vendor_order_tokens").delete().eq("token", token);
+      await sb.from("vendor_order_tokens")
+        .update({ expires_at: tk.expires_at, used_at: tk.used_at })
+        .eq("token", tk.token);
     }
   },
 );
@@ -182,30 +175,24 @@ Deno.test(
   opts,
   async () => {
     const sb = admin();
-    const sub = await pickSubOrderFixture(sb);
-    if (!sub?.id) {
-      console.warn("Skip: pas de sub_order seed disponible");
+    const tk = await borrowToken(sb);
+    if (!tk?.token) {
+      console.warn("Skip: aucun vendor_order_token disponible à emprunter");
       return;
     }
-    const token = `test-used-${crypto.randomUUID()}`;
     const future = new Date(Date.now() + 7 * 86_400_000).toISOString();
-    const ins = await sb.from("vendor_order_tokens").insert({
-      token,
-      order_id: sub.order_id,
-      vendor_id: sub.vendor_id,
-      sub_order_id: sub.id,
-      order_number: `TEST-${crypto.randomUUID().slice(0, 8)}`,
-      expires_at: future,
-      used_at: new Date().toISOString(), // déjà utilisé
-    }).select("token").maybeSingle();
-    if (ins.error) {
-      console.warn(`Skip insert token used: ${ins.error.message}`);
+    const usedAt = new Date().toISOString();
+    const mut = await sb.from("vendor_order_tokens")
+      .update({ expires_at: future, used_at: usedAt })
+      .eq("token", tk.token);
+    if (mut.error) {
+      console.warn(`Skip mutate token used: ${mut.error.message}`);
       return;
     }
     try {
       // line_id bidon → on attend 403 forbidden, surtout PAS 410.
       const r = await call({
-        token,
+        token: tk.token,
         line_id: "00000000-0000-0000-0000-000000000000",
         action: "confirm",
       });
@@ -213,7 +200,9 @@ Deno.test(
       assertEquals(r.status, 403);
       assertEquals(r.body?.error, "forbidden");
     } finally {
-      await sb.from("vendor_order_tokens").delete().eq("token", token);
+      await sb.from("vendor_order_tokens")
+        .update({ expires_at: tk.expires_at, used_at: tk.used_at })
+        .eq("token", tk.token);
     }
   },
 );

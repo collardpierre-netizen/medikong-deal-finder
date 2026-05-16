@@ -14,6 +14,38 @@ function json(status: number, body: unknown) {
   });
 }
 
+// Returns a short, non-reversible fingerprint of the token for log correlation.
+// We hash the full token with SHA-256 and keep only the first 8 hex chars so
+// logs never contain the secret itself.
+async function tokenFingerprint(token: string): Promise<string> {
+  try {
+    const buf = new TextEncoder().encode(token);
+    const digest = await crypto.subtle.digest("SHA-256", buf);
+    const hex = Array.from(new Uint8Array(digest))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+    return hex.slice(0, 8);
+  } catch {
+    return "unhashable";
+  }
+}
+
+// Masks order_number for logs (keeps the last 4 chars, e.g. "****1234").
+function maskOrderNumber(orderNumber: string): string {
+  const s = String(orderNumber ?? "");
+  if (s.length <= 4) return "****";
+  return `****${s.slice(-4)}`;
+}
+
+function logEvent(event: string, fields: Record<string, unknown>) {
+  // Single-line structured log — no token, no addresses, no PII.
+  try {
+    console.log(`[get-vendor-order] ${event} ${JSON.stringify(fields)}`);
+  } catch {
+    console.log(`[get-vendor-order] ${event}`);
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 

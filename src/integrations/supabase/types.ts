@@ -5959,6 +5959,7 @@ export type Database = {
           tracking_url: string | null
           unit_price_excl_vat: number
           unit_price_incl_vat: number
+          updated_at: string
           vat_rate: number
           vendor_id: string
         }
@@ -5982,6 +5983,7 @@ export type Database = {
           tracking_url?: string | null
           unit_price_excl_vat: number
           unit_price_incl_vat: number
+          updated_at?: string
           vat_rate: number
           vendor_id: string
         }
@@ -6005,6 +6007,7 @@ export type Database = {
           tracking_url?: string | null
           unit_price_excl_vat?: number
           unit_price_incl_vat?: number
+          updated_at?: string
           vat_rate?: number
           vendor_id?: string
         }

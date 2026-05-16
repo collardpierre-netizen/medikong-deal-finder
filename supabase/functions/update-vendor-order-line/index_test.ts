@@ -124,12 +124,18 @@ Deno.test("HTTP: token inconnu → 401 invalid_token", opts, async () => {
 // ---------- 3. 410 UNIQUEMENT sur expires_at (used_at peut être posé) ----------
 
 async function pickSubOrderFixture(sb: ReturnType<typeof admin>) {
-  const { data } = await sb
+  // PK de vendor_order_tokens = sub_order_id → on doit prendre un sub_order
+  // qui n'a PAS déjà un token enregistré (sinon insert duplicate).
+  const { data: existing } = await sb
+    .from("vendor_order_tokens")
+    .select("sub_order_id")
+    .limit(1000);
+  const usedIds = new Set((existing ?? []).map((r: any) => r.sub_order_id));
+  const { data: subs } = await sb
     .from("sub_orders")
     .select("id, order_id, vendor_id")
-    .limit(1)
-    .maybeSingle();
-  return data;
+    .limit(1000);
+  return (subs ?? []).find((s: any) => !usedIds.has(s.id)) ?? null;
 }
 
 Deno.test(

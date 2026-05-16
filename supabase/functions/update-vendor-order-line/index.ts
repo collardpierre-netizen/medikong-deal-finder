@@ -158,7 +158,6 @@ Deno.serve(async (req) => {
       new_status: newStatus,
       updated_line_id: updatedLine?.id ?? line_id,
       sub_order_id: updatedSubOrderId,
-      line: updatedLine,
     });
   } catch (e) {
     return json(500, { error: String((e as Error).message ?? e) });

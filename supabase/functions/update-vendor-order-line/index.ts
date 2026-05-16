@@ -251,6 +251,8 @@ Deno.serve(async (req) => {
       sub_order_id: updatedSubOrderId,
     });
   } catch (e) {
-    return json(500, { error: String((e as Error).message ?? e) });
+    const msg = String((e as Error).message ?? e);
+    console.error(`[vendor_order_line.update.500] error=unhandled message=${msg}`);
+    return json(500, { error: msg });
   }
 });

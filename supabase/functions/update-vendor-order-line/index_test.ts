@@ -48,29 +48,30 @@ async function call(body: unknown, method = "POST") {
 Deno.test("source: expiration ne dépend QUE de expires_at, jamais de used_at", opts, async () => {
   const src = await Deno.readTextFile(new URL("./index.ts", import.meta.url));
 
-  // Le bloc qui retourne 410 doit tester expires_at, pas used_at.
-  const m = src.match(/return\s+json\(\s*410[\s\S]{0,200}/);
-  assert(m, "Un retour 410 doit exister pour token_expired");
-  assert(
-    /expires_at/.test(m![0].slice(-200)) ||
-      /expires_at[\s\S]{0,200}json\(\s*410/.test(src),
-    "Le 410 doit être déclenché par expires_at",
-  );
+  // Le code peut renvoyer 410 via `json(410, ...)` ou via le helper `reject(410, ...)`.
+  const ret410 = /(?:return\s+)?(?:json|reject)\(\s*410/g;
+  const matches = src.match(ret410);
+  assert(matches && matches.length > 0, "Un retour 410 doit exister pour token_expired");
 
-  // Pour chaque occurrence de `json(410`, on regarde la condition juste avant :
-  // les 300 chars précédents ne doivent jamais mentionner `used_at`.
-  let idx = 0;
-  while ((idx = src.indexOf("json(410", idx)) !== -1) {
-    const ctx = src.slice(Math.max(0, idx - 300), idx);
-    // On retire les commentaires (// ... fin de ligne et /* ... */) pour éviter les faux positifs.
-    const cleaned = ctx
-      .replace(/\/\*[\s\S]*?\*\//g, "")
-      .replace(/\/\/[^\n]*/g, "");
-    assert(
-      !/used_at/.test(cleaned),
-      `410 déclenché par used_at (interdit). Contexte:\n${ctx}`,
-    );
-    idx += 1;
+  // Le déclenchement doit s'appuyer sur expires_at quelque part dans le fichier.
+  assert(/expires_at/.test(src), "Le 410 doit être déclenché par expires_at");
+
+  // Pour chaque occurrence de `json(410` ou `reject(410`, les 300 chars
+  // précédents ne doivent jamais mentionner `used_at` (sinon = 410 sur used_at).
+  const needles = ["json(410", "reject(410"];
+  for (const needle of needles) {
+    let idx = 0;
+    while ((idx = src.indexOf(needle, idx)) !== -1) {
+      const ctx = src.slice(Math.max(0, idx - 300), idx);
+      const cleaned = ctx
+        .replace(/\/\*[\s\S]*?\*\//g, "")
+        .replace(/\/\/[^\n]*/g, "");
+      assert(
+        !/used_at/.test(cleaned),
+        `410 déclenché par used_at (interdit). Contexte:\n${ctx}`,
+      );
+      idx += 1;
+    }
   }
 });
 

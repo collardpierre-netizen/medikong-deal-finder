@@ -149,6 +149,7 @@ Deno.test(
       order_id: sub.order_id,
       vendor_id: sub.vendor_id,
       sub_order_id: sub.id,
+      order_number: `TEST-${crypto.randomUUID().slice(0, 8)}`,
       expires_at: past,
       used_at: null,
     }).select("token").maybeSingle();
@@ -187,6 +188,7 @@ Deno.test(
       order_id: sub.order_id,
       vendor_id: sub.vendor_id,
       sub_order_id: sub.id,
+      order_number: `TEST-${crypto.randomUUID().slice(0, 8)}`,
       expires_at: future,
       used_at: new Date().toISOString(), // déjà utilisé
     }).select("token").maybeSingle();

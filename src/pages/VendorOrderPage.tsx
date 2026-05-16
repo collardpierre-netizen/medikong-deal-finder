@@ -228,13 +228,14 @@ export default function VendorOrderPage() {
           </div>
         )}
 
-        {!loading && errorStatus && (
+        {!loading && loadError && (
           <Card className="mx-auto max-w-xl">
             <CardHeader>
               <CardTitle>Commande indisponible</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <p className="text-sm text-muted-foreground">{errorMessages[errorStatus] || "Impossible de charger cette commande. Contactez support@medikong.pro"}</p>
+              <p className="text-sm text-muted-foreground">{resolveErrorMessage(new VendorOrderPageError(loadError.status, loadError.message, loadError.code)) || "Impossible de charger cette commande. Contactez support@medikong.pro"}</p>
+              {loadError.code && <p className="text-xs text-muted-foreground/70">Code : <code className="font-mono">{loadError.code}</code></p>}
               <Button asChild>
                 <a href="mailto:support@medikong.pro">Contacter le support</a>
               </Button>
@@ -242,7 +243,7 @@ export default function VendorOrderPage() {
           </Card>
         )}
 
-        {!loading && !errorStatus && order && (
+        {!loading && !loadError && order && (
           <div className="space-y-6">
             <div>
               <h1 className="text-2xl font-bold">Espace fournisseur — {order.vendor_name}</h1>

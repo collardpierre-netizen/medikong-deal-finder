@@ -34,7 +34,38 @@ Deno.serve(async (req) => {
 
     if (!token || !line_id || !action) return json(400, { error: "missing_params" });
     if (!(action in TRANSITIONS)) return json(400, { error: "invalid_action" });
-    if (action === "ship" && !tracking_number?.trim()) return json(400, { error: "tracking_number_required" });
+
+    // Normalize + validate tracking fields
+    const trackingNumberClean = typeof tracking_number === "string" ? tracking_number.trim() : undefined;
+    const trackingUrlClean = typeof tracking_url === "string" ? tracking_url.trim() : undefined;
+
+    if (trackingNumberClean !== undefined) {
+      if (trackingNumberClean.length < 4 || trackingNumberClean.length > 100) {
+        return json(400, { error: "tracking_number_invalid" });
+      }
+      // Alphanumerique + tirets / underscores / espaces / points / slashes
+      if (!/^[A-Za-z0-9._\-\/\s]+$/.test(trackingNumberClean)) {
+        return json(400, { error: "tracking_number_invalid" });
+      }
+    }
+
+    if (trackingUrlClean !== undefined && trackingUrlClean.length > 0) {
+      if (trackingUrlClean.length > 2048) {
+        return json(400, { error: "tracking_url_invalid" });
+      }
+      try {
+        const parsed = new URL(trackingUrlClean);
+        if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+          return json(400, { error: "tracking_url_invalid" });
+        }
+      } catch {
+        return json(400, { error: "tracking_url_invalid" });
+      }
+    }
+
+    if (action === "ship" && (!trackingNumberClean || trackingNumberClean.length === 0)) {
+      return json(400, { error: "tracking_number_required" });
+    }
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -77,8 +108,8 @@ Deno.serve(async (req) => {
       fulfillment_status: newStatus,
       updated_at: new Date().toISOString(),
     };
-    if (tracking_number) linePatch.tracking_number = tracking_number;
-    if (tracking_url) linePatch.tracking_url = tracking_url;
+    if (trackingNumberClean) linePatch.tracking_number = trackingNumberClean;
+    if (trackingUrlClean) linePatch.tracking_url = trackingUrlClean;
 
     const { data: updatedLine, error: updErr } = await supabase
       .from("order_lines")

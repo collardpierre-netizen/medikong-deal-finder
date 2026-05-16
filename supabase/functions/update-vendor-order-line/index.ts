@@ -16,6 +16,7 @@ function json(status: number, body: unknown) {
 
 type Action = "confirm" | "ship" | "deliver" | "cancel";
 
+// FSM (allowed source statuses → target status)
 const TRANSITIONS: Record<Action, { from: string[]; to: string }> = {
   confirm: { from: ["pending"], to: "processing" },
   ship: { from: ["processing"], to: "shipped" },
@@ -39,11 +40,10 @@ Deno.serve(async (req) => {
     const trackingNumberClean = typeof tracking_number === "string" ? tracking_number.trim() : undefined;
     const trackingUrlClean = typeof tracking_url === "string" ? tracking_url.trim() : undefined;
 
-    if (trackingNumberClean !== undefined) {
+    if (trackingNumberClean !== undefined && trackingNumberClean.length > 0) {
       if (trackingNumberClean.length < 4 || trackingNumberClean.length > 100) {
         return json(400, { error: "tracking_number_invalid" });
       }
-      // Alphanumerique + tirets / underscores / espaces / points / slashes
       if (!/^[A-Za-z0-9._\-\/\s]+$/.test(trackingNumberClean)) {
         return json(400, { error: "tracking_number_invalid" });
       }
@@ -72,7 +72,7 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    // 1. Token
+    // 1. Token validation — table has NO `id` column, PK is `token`.
     const { data: tokenRow, error: tokenErr } = await supabase
       .from("vendor_order_tokens")
       .select("order_id, vendor_id, sub_order_id, expires_at")
@@ -80,6 +80,8 @@ Deno.serve(async (req) => {
       .maybeSingle();
     if (tokenErr) return json(500, { error: tokenErr.message });
     if (!tokenRow) return json(401, { error: "invalid_token" });
+
+    // Only expiration blocks. `used_at IS NOT NULL` is NOT a block.
     if (tokenRow.expires_at && new Date(tokenRow.expires_at).getTime() < Date.now()) {
       return json(410, { error: "token_expired" });
     }
@@ -95,18 +97,19 @@ Deno.serve(async (req) => {
     if (lineErr) return json(500, { error: lineErr.message });
     if (!line) return json(403, { error: "forbidden" });
 
-    // 3. FSM
+    // 3. FSM check
     const transition = TRANSITIONS[action];
     const currentStatus = String(line.fulfillment_status);
     if (!transition.from.includes(currentStatus)) {
       return json(400, { error: "invalid_transition", from: currentStatus, action });
     }
     const newStatus = transition.to;
+    const nowIso = new Date().toISOString();
 
-    // 4. Update line
+    // 4. Update order_lines (fulfillment_status enum). PostgREST applies the cast automatically.
     const linePatch: Record<string, unknown> = {
       fulfillment_status: newStatus,
-      updated_at: new Date().toISOString(),
+      updated_at: nowIso,
     };
     if (trackingNumberClean) linePatch.tracking_number = trackingNumberClean;
     if (trackingUrlClean) linePatch.tracking_url = trackingUrlClean;
@@ -119,44 +122,45 @@ Deno.serve(async (req) => {
       .maybeSingle();
     if (updErr) return json(500, { error: updErr.message });
 
-    // 5. Aggregate sub_order
-    let updatedSubOrder: unknown = null;
+    // 5. Update sub_orders in parallel of order_lines, per action.
+    let updatedSubOrderId: string | null = null;
     if (tokenRow.sub_order_id) {
-      const { data: siblings, error: sibErr } = await supabase
-        .from("order_lines")
-        .select("fulfillment_status")
-        .eq("order_id", tokenRow.order_id)
-        .eq("vendor_id", tokenRow.vendor_id);
-      if (sibErr) return json(500, { error: sibErr.message });
+      // Fetch current timestamps to emulate COALESCE(existing, now()).
+      const { data: currentSub, error: subFetchErr } = await supabase
+        .from("sub_orders")
+        .select("vendor_confirmed_at, shipped_at")
+        .eq("id", tokenRow.sub_order_id)
+        .maybeSingle();
+      if (subFetchErr) return json(500, { error: subFetchErr.message });
 
-      const statuses = new Set((siblings || []).map((s: any) => String(s.fulfillment_status)));
-      if (statuses.size === 1) {
-        const uniform = [...statuses][0];
-        const subPatch: Record<string, unknown> = { status: uniform, updated_at: new Date().toISOString() };
-        if (uniform === "processing") subPatch.vendor_confirmed_at = new Date().toISOString();
-        if (uniform === "shipped") subPatch.shipped_at = new Date().toISOString();
-
-        // COALESCE behaviour: only set timestamp if currently null
-        const { data: currentSub } = await supabase
-          .from("sub_orders")
-          .select("vendor_confirmed_at, shipped_at")
-          .eq("id", tokenRow.sub_order_id)
-          .maybeSingle();
-        if (currentSub?.vendor_confirmed_at && "vendor_confirmed_at" in subPatch) delete subPatch.vendor_confirmed_at;
-        if (currentSub?.shipped_at && "shipped_at" in subPatch) delete subPatch.shipped_at;
-
-        const { data: sub, error: subErr } = await supabase
-          .from("sub_orders")
-          .update(subPatch)
-          .eq("id", tokenRow.sub_order_id)
-          .select("id, status, vendor_confirmed_at, shipped_at")
-          .maybeSingle();
-        if (subErr) return json(500, { error: subErr.message });
-        updatedSubOrder = sub;
+      const subPatch: Record<string, unknown> = {
+        status: newStatus,
+        updated_at: nowIso,
+      };
+      if (action === "confirm" && !currentSub?.vendor_confirmed_at) {
+        subPatch.vendor_confirmed_at = nowIso;
       }
+      if (action === "ship" && !currentSub?.shipped_at) {
+        subPatch.shipped_at = nowIso;
+      }
+
+      const { data: subUpdated, error: subErr } = await supabase
+        .from("sub_orders")
+        .update(subPatch)
+        .eq("id", tokenRow.sub_order_id)
+        .select("id")
+        .maybeSingle();
+      if (subErr) return json(500, { error: subErr.message });
+      updatedSubOrderId = subUpdated?.id ?? tokenRow.sub_order_id;
     }
 
-    return json(200, { line: updatedLine, sub_order: updatedSubOrder });
+    return json(200, {
+      success: true,
+      new_status: newStatus,
+      updated_line_id: updatedLine?.id ?? line_id,
+      sub_order_id: updatedSubOrderId,
+      line: updatedLine,
+    });
   } catch (e) {
     return json(500, { error: String((e as Error).message ?? e) });
   }

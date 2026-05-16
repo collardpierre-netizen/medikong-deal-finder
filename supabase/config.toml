@@ -68,3 +68,9 @@ verify_jwt = false
 
 [functions.send-invoices-email]
 verify_jwt = false
+
+[functions.get-vendor-order]
+verify_jwt = false
+
+[functions.update-vendor-order-line]
+verify_jwt = false

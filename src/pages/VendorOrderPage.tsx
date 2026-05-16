@@ -194,9 +194,8 @@ export default function VendorOrderPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="border-b border-border bg-card">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
+        <div className="mx-auto flex max-w-6xl items-center px-4 py-4">
           <img src={logoHorizontal} alt="MediKong" className="h-14 w-auto" />
-          {order?.vendor_name && <div className="text-sm font-semibold text-muted-foreground">Espace fournisseur — {order.vendor_name}</div>}
         </div>
       </header>
 

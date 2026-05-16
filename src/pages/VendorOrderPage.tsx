@@ -218,6 +218,16 @@ export default function VendorOrderPage() {
     setActionError(null);
     setActionLoading(`${lineId}:${action}`);
 
+    const actionLabels: Record<VendorLineAction, { pending: string; success: string; error: string }> = {
+      confirm: { pending: "Confirmation en cours…", success: "Ligne confirmée", error: "Échec de la confirmation" },
+      ship: { pending: "Expédition en cours…", success: "Ligne marquée expédiée", error: "Échec de l'expédition" },
+      deliver: { pending: "Mise à jour en cours…", success: "Ligne marquée livrée", error: "Échec de la mise à jour" },
+      cancel: { pending: "Annulation en cours…", success: "Ligne annulée", error: "Échec de l'annulation" },
+    };
+    const labels = actionLabels[action];
+    const productName = order?.lines.find((l) => l.id === lineId)?.product_name;
+    const toastId = toast.loading(labels.pending, { description: productName });
+
     const body: { token: string; line_id: string; action: VendorLineAction; tracking_number?: string } = {
       token,
       line_id: lineId,
@@ -229,12 +239,15 @@ export default function VendorOrderPage() {
 
     if (error) {
       const parsedError = await parseFunctionError(error);
-      setActionError(resolveErrorMessage(parsedError));
+      const message = resolveErrorMessage(parsedError);
+      setActionError(message);
+      toast.error(labels.error, { id: toastId, description: message });
       setActionLoading(null);
       return;
     }
 
-    await loadOrder();
+    toast.success(labels.success, { id: toastId, description: productName });
+    await loadOrder({ silent: true });
     setActionLoading(null);
   };
 

@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
     const { data: tokenRow, error: tokenErr } = await supabase
       .from("vendor_order_tokens")
       .select(`
-        id, sub_order_id, order_id, vendor_id, order_number, expires_at, used_at,
+        sub_order_id, order_id, vendor_id, order_number, expires_at, used_at,
         orders:order_id ( id, order_number, created_at, shipping_address, billing_address, payment_status, status, subtotal_excl_vat, vat_amount, total_incl_vat ),
         vendors:vendor_id ( id, name, slug, commission_rate )
       `)
@@ -55,7 +55,7 @@ Deno.serve(async (req) => {
 
     // 2. Mark token first-used
     if (!tokenRow.used_at) {
-      await supabase.from("vendor_order_tokens").update({ used_at: new Date().toISOString() }).eq("id", tokenRow.id).is("used_at", null);
+      await supabase.from("vendor_order_tokens").update({ used_at: new Date().toISOString() }).eq("token", token).is("used_at", null);
     }
 
     // 3. Mark sub_order first viewed

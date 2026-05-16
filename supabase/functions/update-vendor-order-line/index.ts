@@ -18,6 +18,30 @@ function json(status: number, body: unknown) {
   });
 }
 
+// Logging structuré pour 4xx/410 — facilite le diagnostic depuis les logs Edge.
+// Tag : [vendor_order_line.update.<status>] error=<code> ctx=<json>
+function logRejection(status: number, errorCode: string, ctx: Record<string, unknown>) {
+  let payload: string;
+  try { payload = JSON.stringify(ctx); } catch { payload = String(ctx); }
+  const msg = `[vendor_order_line.update.${status}] error=${errorCode} ctx=${payload}`;
+  // 401/403/410/5xx → error ; 400 (input client) → warn pour ne pas polluer les alertes.
+  if (status >= 500 || status === 401 || status === 403 || status === 410) {
+    console.error(msg);
+  } else {
+    console.warn(msg);
+  }
+}
+
+function reject(
+  status: number,
+  errorCode: string,
+  ctx: Record<string, unknown>,
+  extra: Record<string, unknown> = {},
+) {
+  logRejection(status, errorCode, ctx);
+  return json(status, { error: errorCode, ...extra });
+}
+
 type Action = "confirm" | "ship" | "deliver" | "cancel";
 
 // FSM (allowed source statuses → target status)

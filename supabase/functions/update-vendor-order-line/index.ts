@@ -241,6 +241,7 @@ Deno.serve(async (req) => {
     // 4. Update order_lines (fulfillment_status enum). PostgREST applies the cast automatically.
     const linePatch: Record<string, unknown> = {
       fulfillment_status: newStatus,
+      updated_at: nowIso,
     };
     if (trackingNumberClean) linePatch.tracking_number = trackingNumberClean;
     if (trackingUrlClean) linePatch.tracking_url = trackingUrlClean;

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
-import { Loader2 } from "lucide-react";
+import { Loader2, RefreshCw } from "lucide-react";
+import { toast } from "sonner";
 import logoHorizontal from "@/assets/logo-medikong.png";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
@@ -158,19 +159,26 @@ export default function VendorOrderPage() {
   const token = searchParams.get("token") || "";
   const [order, setOrder] = useState<VendorOrderData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [loadError, setLoadError] = useState<{ status: number; code: string | null; message: string } | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [trackingNumbers, setTrackingNumbers] = useState<Record<string, string>>({});
 
-  const loadOrder = useCallback(async () => {
-    setLoading(true);
-    setLoadError(null);
-    setActionError(null);
+  const loadOrder = useCallback(async (options?: { silent?: boolean }) => {
+    const silent = options?.silent === true;
+    if (silent) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+      setLoadError(null);
+      setActionError(null);
+    }
 
     if (!order_number || !token) {
       setLoadError({ status: 404, code: "not_found", message: "missing_params" });
       setLoading(false);
+      setRefreshing(false);
       return;
     }
 
@@ -180,9 +188,14 @@ export default function VendorOrderPage() {
 
     if (error) {
       const parsedError = await parseFunctionError(error);
-      setLoadError({ status: parsedError.status, code: parsedError.code, message: parsedError.message });
-      setOrder(null);
+      if (silent) {
+        toast.error("Impossible d'actualiser la commande", { description: resolveErrorMessage(parsedError) });
+      } else {
+        setLoadError({ status: parsedError.status, code: parsedError.code, message: parsedError.message });
+        setOrder(null);
+      }
       setLoading(false);
+      setRefreshing(false);
       return;
     }
 
@@ -192,6 +205,7 @@ export default function VendorOrderPage() {
       Object.fromEntries(nextOrder.lines.map((line) => [line.id, line.tracking_number || ""])),
     );
     setLoading(false);
+    setRefreshing(false);
   }, [order_number, token]);
 
   useEffect(() => {
@@ -204,6 +218,16 @@ export default function VendorOrderPage() {
     setActionError(null);
     setActionLoading(`${lineId}:${action}`);
 
+    const actionLabels: Record<VendorLineAction, { pending: string; success: string; error: string }> = {
+      confirm: { pending: "Confirmation en cours…", success: "Ligne confirmée", error: "Échec de la confirmation" },
+      ship: { pending: "Expédition en cours…", success: "Ligne marquée expédiée", error: "Échec de l'expédition" },
+      deliver: { pending: "Mise à jour en cours…", success: "Ligne marquée livrée", error: "Échec de la mise à jour" },
+      cancel: { pending: "Annulation en cours…", success: "Ligne annulée", error: "Échec de l'annulation" },
+    };
+    const labels = actionLabels[action];
+    const productName = order?.lines.find((l) => l.id === lineId)?.product_name;
+    const toastId = toast.loading(labels.pending, { description: productName });
+
     const body: { token: string; line_id: string; action: VendorLineAction; tracking_number?: string } = {
       token,
       line_id: lineId,
@@ -215,12 +239,15 @@ export default function VendorOrderPage() {
 
     if (error) {
       const parsedError = await parseFunctionError(error);
-      setActionError(resolveErrorMessage(parsedError));
+      const message = resolveErrorMessage(parsedError);
+      setActionError(message);
+      toast.error(labels.error, { id: toastId, description: message });
       setActionLoading(null);
       return;
     }
 
-    await loadOrder();
+    toast.success(labels.success, { id: toastId, description: productName });
+    await loadOrder({ silent: true });
     setActionLoading(null);
   };
 
@@ -256,9 +283,17 @@ export default function VendorOrderPage() {
 
         {!loading && !loadError && order && (
           <div className="space-y-6">
-            <div>
-              <h1 className="text-2xl font-bold">Espace fournisseur — {order.vendor_name}</h1>
-              <p className="mt-1 text-sm text-muted-foreground">Commande {order.order_number}</p>
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h1 className="text-2xl font-bold">Espace fournisseur — {order.vendor_name}</h1>
+                <p className="mt-1 text-sm text-muted-foreground">Commande {order.order_number}</p>
+              </div>
+              {refreshing && (
+                <div className="flex items-center gap-2 rounded-md border border-border bg-muted/50 px-3 py-1.5 text-xs text-muted-foreground">
+                  <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                  <span>Mise à jour…</span>
+                </div>
+              )}
             </div>
 
             <div className="grid gap-4 md:grid-cols-3">
@@ -357,7 +392,7 @@ export default function VendorOrderPage() {
                             <div className="flex flex-col items-start gap-2">
                               {status === "pending" && (
                                 <Button size="sm" onClick={() => handleLineAction(line.id, "confirm")} disabled={actionLoading === `${line.id}:confirm`}>
-                                  {actionLoading === `${line.id}:confirm` && <Loader2 className="h-4 w-4 animate-spin" />}
+                                  {actionLoading === `${line.id}:confirm` && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                   Confirmer prise en charge
                                 </Button>
                               )}
@@ -374,14 +409,14 @@ export default function VendorOrderPage() {
                                     onClick={() => handleLineAction(line.id, "ship", trackingValue)}
                                     disabled={!trackingValue.trim() || actionLoading === `${line.id}:ship`}
                                   >
-                                    {actionLoading === `${line.id}:ship` && <Loader2 className="h-4 w-4 animate-spin" />}
+                                    {actionLoading === `${line.id}:ship` && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                     Marquer expédié
                                   </Button>
                                 </div>
                               )}
                               {status === "shipped" && (
                                 <Button size="sm" onClick={() => handleLineAction(line.id, "deliver")} disabled={actionLoading === `${line.id}:deliver`}>
-                                  {actionLoading === `${line.id}:deliver` && <Loader2 className="h-4 w-4 animate-spin" />}
+                                  {actionLoading === `${line.id}:deliver` && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                   Marquer livré
                                 </Button>
                               )}

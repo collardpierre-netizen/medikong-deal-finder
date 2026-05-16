@@ -73,8 +73,23 @@ Deno.serve(async (req) => {
       token?: string; line_id?: string; action?: Action; tracking_number?: string; tracking_url?: string;
     };
 
-    if (!token || !line_id || !action) return json(400, { error: "missing_params" });
-    if (!(action in TRANSITIONS)) return json(400, { error: "invalid_action" });
+    // Aperçu safe du token pour les logs (jamais le token complet).
+    const tokenPreview = typeof token === "string" && token.length > 0
+      ? `${token.slice(0, 6)}…(${token.length})`
+      : null;
+    const baseCtx = { action, line_id: line_id ?? null, token_preview: tokenPreview };
+
+    if (!token || !line_id || !action) {
+      return reject(400, "missing_params", {
+        ...baseCtx,
+        missing: {
+          token: !token, line_id: !line_id, action: !action,
+        },
+      });
+    }
+    if (!(action in TRANSITIONS)) {
+      return reject(400, "invalid_action", { ...baseCtx, received_action: action });
+    }
 
     // Normalize + validate tracking fields
     const trackingNumberClean = typeof tracking_number === "string" ? tracking_number.trim() : undefined;
@@ -82,29 +97,33 @@ Deno.serve(async (req) => {
 
     if (trackingNumberClean !== undefined && trackingNumberClean.length > 0) {
       if (trackingNumberClean.length < 4 || trackingNumberClean.length > 100) {
-        return json(400, { error: "tracking_number_invalid" });
+        return reject(400, "tracking_number_invalid", {
+          ...baseCtx, reason: "length", length: trackingNumberClean.length,
+        });
       }
       if (!/^[A-Za-z0-9._\-\/\s]+$/.test(trackingNumberClean)) {
-        return json(400, { error: "tracking_number_invalid" });
+        return reject(400, "tracking_number_invalid", { ...baseCtx, reason: "charset" });
       }
     }
 
     if (trackingUrlClean !== undefined && trackingUrlClean.length > 0) {
       if (trackingUrlClean.length > 2048) {
-        return json(400, { error: "tracking_url_invalid" });
+        return reject(400, "tracking_url_invalid", {
+          ...baseCtx, reason: "length", length: trackingUrlClean.length,
+        });
       }
       try {
         const parsed = new URL(trackingUrlClean);
         if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
-          return json(400, { error: "tracking_url_invalid" });
+          return reject(400, "tracking_url_invalid", { ...baseCtx, reason: "protocol", protocol: parsed.protocol });
         }
       } catch {
-        return json(400, { error: "tracking_url_invalid" });
+        return reject(400, "tracking_url_invalid", { ...baseCtx, reason: "parse" });
       }
     }
 
     if (action === "ship" && (!trackingNumberClean || trackingNumberClean.length === 0)) {
-      return json(400, { error: "tracking_number_required" });
+      return reject(400, "tracking_number_required", baseCtx);
     }
 
     const supabase = createClient(
@@ -118,12 +137,22 @@ Deno.serve(async (req) => {
       .select("order_id, vendor_id, sub_order_id, expires_at")
       .eq("token", token)
       .maybeSingle();
-    if (tokenErr) return json(500, { error: tokenErr.message });
-    if (!tokenRow) return json(401, { error: "invalid_token" });
+    if (tokenErr) {
+      console.error(`[vendor_order_line.update.500] error=token_lookup_failed db_message=${tokenErr.message}`);
+      return json(500, { error: tokenErr.message });
+    }
+    if (!tokenRow) {
+      return reject(401, "invalid_token", baseCtx);
+    }
 
     // Only expiration blocks. `used_at IS NOT NULL` is NOT a block.
     if (tokenRow.expires_at && new Date(tokenRow.expires_at).getTime() < Date.now()) {
-      return json(410, { error: "token_expired" });
+      return reject(410, "token_expired", {
+        ...baseCtx,
+        expires_at: tokenRow.expires_at,
+        sub_order_id: tokenRow.sub_order_id ?? null,
+        vendor_id: tokenRow.vendor_id ?? null,
+      });
     }
 
     // 2. Verify line belongs to vendor+order
@@ -134,14 +163,36 @@ Deno.serve(async (req) => {
       .eq("order_id", tokenRow.order_id)
       .eq("vendor_id", tokenRow.vendor_id)
       .maybeSingle();
-    if (lineErr) return json(500, { error: lineErr.message });
-    if (!line) return json(403, { error: "forbidden" });
+    if (lineErr) {
+      console.error(`[vendor_order_line.update.500] error=line_lookup_failed db_message=${lineErr.message}`);
+      return json(500, { error: lineErr.message });
+    }
+    if (!line) {
+      return reject(403, "forbidden", {
+        ...baseCtx,
+        token_order_id: tokenRow.order_id,
+        token_vendor_id: tokenRow.vendor_id,
+        token_sub_order_id: tokenRow.sub_order_id ?? null,
+      });
+    }
 
     // 3. FSM check
     const transition = TRANSITIONS[action];
     const currentStatus = String(line.fulfillment_status);
     if (!transition.from.includes(currentStatus)) {
-      return json(400, { error: "invalid_transition", from: currentStatus, action });
+      return reject(
+        400,
+        "invalid_transition",
+        {
+          ...baseCtx,
+          from: currentStatus,
+          to: transition.to,
+          allowed_from: transition.from,
+          sub_order_id: tokenRow.sub_order_id ?? null,
+          vendor_id: tokenRow.vendor_id ?? null,
+        },
+        { from: currentStatus, action },
+      );
     }
     const newStatus = transition.to;
     const nowIso = new Date().toISOString();

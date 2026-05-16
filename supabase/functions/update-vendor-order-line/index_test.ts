@@ -57,16 +57,20 @@ Deno.test("source: expiration ne dépend QUE de expires_at, jamais de used_at", 
     "Le 410 doit être déclenché par expires_at",
   );
 
-  // Aucun `if (... used_at ...)` ne doit déclencher un 410.
-  // On scanne les blocs `if (...) { ... json(410 ... }` et on interdit `used_at` dedans.
-  const ifBlocks = src.match(/if\s*\([^)]*\)\s*\{[^}]*json\(\s*410[^}]*\}/g) ?? [];
-  for (const b of ifBlocks) {
-    assert(!/used_at/.test(b), `410 ne doit pas dépendre de used_at:\n${b}`);
-  }
-  // Forme alternative sans accolades : `if (cond) return json(410, ...);`
-  const inlineIfs = src.match(/if\s*\([^)]*\)\s*return\s+json\(\s*410[^;]*;/g) ?? [];
-  for (const b of inlineIfs) {
-    assert(!/used_at/.test(b), `410 ne doit pas dépendre de used_at:\n${b}`);
+  // Pour chaque occurrence de `json(410`, on regarde la condition juste avant :
+  // les 300 chars précédents ne doivent jamais mentionner `used_at`.
+  let idx = 0;
+  while ((idx = src.indexOf("json(410", idx)) !== -1) {
+    const ctx = src.slice(Math.max(0, idx - 300), idx);
+    // On retire les commentaires (// ... fin de ligne et /* ... */) pour éviter les faux positifs.
+    const cleaned = ctx
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/\/\/[^\n]*/g, "");
+    assert(
+      !/used_at/.test(cleaned),
+      `410 déclenché par used_at (interdit). Contexte:\n${ctx}`,
+    );
+    idx += 1;
   }
 });
 

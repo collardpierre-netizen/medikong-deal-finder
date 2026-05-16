@@ -354,37 +354,71 @@ export default function VendorOrderPage() {
                             <Badge variant="outline">{statusLabels[status] || status}</Badge>
                           </TableCell>
                           <TableCell>
-                            {status === "pending" && (
-                              <Button size="sm" onClick={() => handleLineAction(line.id, "confirm")} disabled={actionLoading === `${line.id}:confirm`}>
-                                {actionLoading === `${line.id}:confirm` && <Loader2 className="h-4 w-4 animate-spin" />}
-                                Confirmer prise en charge
-                              </Button>
-                            )}
-                            {status === "processing" && (
-                              <div className="flex min-w-64 items-center gap-2">
-                                <Input
-                                  value={trackingValue}
-                                  onChange={(event) => setTrackingNumbers((prev) => ({ ...prev, [line.id]: event.target.value }))}
-                                  placeholder="Tracking number"
-                                  className="h-9"
-                                />
-                                <Button
-                                  size="sm"
-                                  onClick={() => handleLineAction(line.id, "ship", trackingValue)}
-                                  disabled={!trackingValue.trim() || actionLoading === `${line.id}:ship`}
-                                >
-                                  {actionLoading === `${line.id}:ship` && <Loader2 className="h-4 w-4 animate-spin" />}
-                                  Marquer expédié
+                            <div className="flex flex-col items-start gap-2">
+                              {status === "pending" && (
+                                <Button size="sm" onClick={() => handleLineAction(line.id, "confirm")} disabled={actionLoading === `${line.id}:confirm`}>
+                                  {actionLoading === `${line.id}:confirm` && <Loader2 className="h-4 w-4 animate-spin" />}
+                                  Confirmer prise en charge
                                 </Button>
-                              </div>
-                            )}
-                            {status === "shipped" && (
-                              <Button size="sm" onClick={() => handleLineAction(line.id, "deliver")} disabled={actionLoading === `${line.id}:deliver`}>
-                                {actionLoading === `${line.id}:deliver` && <Loader2 className="h-4 w-4 animate-spin" />}
-                                Marquer livré
-                              </Button>
-                            )}
-                            {!["pending", "processing", "shipped"].includes(status) && <span className="text-sm text-muted-foreground">—</span>}
+                              )}
+                              {status === "processing" && (
+                                <div className="flex min-w-64 items-center gap-2">
+                                  <Input
+                                    value={trackingValue}
+                                    onChange={(event) => setTrackingNumbers((prev) => ({ ...prev, [line.id]: event.target.value }))}
+                                    placeholder="Tracking number"
+                                    className="h-9"
+                                  />
+                                  <Button
+                                    size="sm"
+                                    onClick={() => handleLineAction(line.id, "ship", trackingValue)}
+                                    disabled={!trackingValue.trim() || actionLoading === `${line.id}:ship`}
+                                  >
+                                    {actionLoading === `${line.id}:ship` && <Loader2 className="h-4 w-4 animate-spin" />}
+                                    Marquer expédié
+                                  </Button>
+                                </div>
+                              )}
+                              {status === "shipped" && (
+                                <Button size="sm" onClick={() => handleLineAction(line.id, "deliver")} disabled={actionLoading === `${line.id}:deliver`}>
+                                  {actionLoading === `${line.id}:deliver` && <Loader2 className="h-4 w-4 animate-spin" />}
+                                  Marquer livré
+                                </Button>
+                              )}
+                              {(status === "pending" || status === "processing") && (
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="text-destructive hover:text-destructive"
+                                      disabled={actionLoading === `${line.id}:cancel`}
+                                    >
+                                      {actionLoading === `${line.id}:cancel` && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
+                                      Annuler
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Annuler cette ligne ?</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Vous êtes sur le point d'annuler « {line.product_name} » (qté {line.quantity}). Cette action est irréversible et notifiera l'acheteur.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Revenir</AlertDialogCancel>
+                                      <AlertDialogAction
+                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                        onClick={() => handleLineAction(line.id, "cancel")}
+                                      >
+                                        Confirmer l'annulation
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              )}
+                              {!["pending", "processing", "shipped"].includes(status) && <span className="text-sm text-muted-foreground">—</span>}
+                            </div>
                           </TableCell>
                         </TableRow>
                       );

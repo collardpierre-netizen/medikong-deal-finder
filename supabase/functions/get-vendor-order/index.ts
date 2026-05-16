@@ -38,16 +38,38 @@ Deno.serve(async (req) => {
       .eq("order_number", order_number)
       .maybeSingle();
 
-    if (tokenErr) return json(500, { error: tokenErr.message });
-    if (!tokenRow) return json(404, { error: "not_found" });
+    if (tokenErr) return json(500, { error: "server_error", message: tokenErr.message });
+    if (!tokenRow) {
+      return json(404, {
+        error: "token_not_found",
+        message: "Ce lien de commande est invalide ou n'existe pas.",
+      });
+    }
 
     if (tokenRow.expires_at && new Date(tokenRow.expires_at).getTime() < Date.now()) {
-      return json(410, { error: "token_expired" });
+      return json(410, {
+        error: "token_expired",
+        message: "Ce lien a expiré. Demandez un nouveau lien d'accès à la commande.",
+        expired_at: tokenRow.expires_at,
+      });
+    }
+
+    if (tokenRow.used_at) {
+      return json(410, {
+        error: "token_used",
+        message: "Ce lien a déjà été utilisé. Pour des raisons de sécurité, chaque lien n'est valable qu'une seule fois.",
+        used_at: tokenRow.used_at,
+      });
     }
 
     const order = (tokenRow as any).orders;
     const vendor = (tokenRow as any).vendors;
-    if (!order || !vendor) return json(404, { error: "not_found" });
+    if (!order || !vendor) {
+      return json(404, {
+        error: "order_not_found",
+        message: "La commande associée à ce lien est introuvable.",
+      });
+    }
 
     if (String(order.payment_status) !== "paid") {
       return json(409, { error: "order_not_paid" });

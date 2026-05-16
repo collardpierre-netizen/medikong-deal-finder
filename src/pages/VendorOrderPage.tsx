@@ -392,7 +392,7 @@ export default function VendorOrderPage() {
                             <div className="flex flex-col items-start gap-2">
                               {status === "pending" && (
                                 <Button size="sm" onClick={() => handleLineAction(line.id, "confirm")} disabled={actionLoading === `${line.id}:confirm`}>
-                                  {actionLoading === `${line.id}:confirm` && <Loader2 className="h-4 w-4 animate-spin" />}
+                                  {actionLoading === `${line.id}:confirm` && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                   Confirmer prise en charge
                                 </Button>
                               )}
@@ -409,14 +409,14 @@ export default function VendorOrderPage() {
                                     onClick={() => handleLineAction(line.id, "ship", trackingValue)}
                                     disabled={!trackingValue.trim() || actionLoading === `${line.id}:ship`}
                                   >
-                                    {actionLoading === `${line.id}:ship` && <Loader2 className="h-4 w-4 animate-spin" />}
+                                    {actionLoading === `${line.id}:ship` && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                     Marquer expédié
                                   </Button>
                                 </div>
                               )}
                               {status === "shipped" && (
                                 <Button size="sm" onClick={() => handleLineAction(line.id, "deliver")} disabled={actionLoading === `${line.id}:deliver`}>
-                                  {actionLoading === `${line.id}:deliver` && <Loader2 className="h-4 w-4 animate-spin" />}
+                                  {actionLoading === `${line.id}:deliver` && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                   Marquer livré
                                 </Button>
                               )}

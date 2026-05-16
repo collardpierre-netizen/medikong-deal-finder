@@ -1,10 +1,14 @@
 // Update a vendor order line status via shared token (no JWT required).
 import { createClient } from "npm:@supabase/supabase-js@2";
 
-const corsHeaders = {
+const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-api-version, x-requested-with, accept, accept-language",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Max-Age": "86400",
+  "Access-Control-Expose-Headers": "content-type, content-length",
+  "Vary": "Origin, Access-Control-Request-Headers",
 };
 
 function json(status: number, body: unknown) {

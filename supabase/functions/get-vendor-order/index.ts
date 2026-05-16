@@ -98,14 +98,9 @@ Deno.serve(async (req) => {
       });
     }
 
-    if (tokenRow.used_at) {
-      logEvent("token_used", { token_fp: tokenFp, order: orderMasked, used_at: tokenRow.used_at });
-      return json(410, {
-        error: "token_used",
-        message: "Ce lien a déjà été utilisé. Pour des raisons de sécurité, chaque lien n'est valable qu'une seule fois.",
-        used_at: tokenRow.used_at,
-      });
-    }
+    // Note: used_at is informational only (logs the first consultation).
+    // A non-null used_at must NOT block access — the vendor can revisit the
+    // order as long as expires_at is in the future.
 
     const order = (tokenRow as any).orders;
     const vendor = (tokenRow as any).vendors;

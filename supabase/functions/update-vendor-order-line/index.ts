@@ -108,8 +108,8 @@ Deno.serve(async (req) => {
       fulfillment_status: newStatus,
       updated_at: new Date().toISOString(),
     };
-    if (tracking_number) linePatch.tracking_number = tracking_number;
-    if (tracking_url) linePatch.tracking_url = tracking_url;
+    if (trackingNumberClean) linePatch.tracking_number = trackingNumberClean;
+    if (trackingUrlClean) linePatch.tracking_url = trackingUrlClean;
 
     const { data: updatedLine, error: updErr } = await supabase
       .from("order_lines")

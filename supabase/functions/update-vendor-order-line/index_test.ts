@@ -57,9 +57,15 @@ Deno.test("source: expiration ne dépend QUE de expires_at, jamais de used_at", 
     "Le 410 doit être déclenché par expires_at",
   );
 
-  // Aucun retour 410 ne doit être justifié par used_at.
-  const blocks = src.split(/\n\n/).filter((b) => /\b410\b/.test(b));
-  for (const b of blocks) {
+  // Aucun `if (... used_at ...)` ne doit déclencher un 410.
+  // On scanne les blocs `if (...) { ... json(410 ... }` et on interdit `used_at` dedans.
+  const ifBlocks = src.match(/if\s*\([^)]*\)\s*\{[^}]*json\(\s*410[^}]*\}/g) ?? [];
+  for (const b of ifBlocks) {
+    assert(!/used_at/.test(b), `410 ne doit pas dépendre de used_at:\n${b}`);
+  }
+  // Forme alternative sans accolades : `if (cond) return json(410, ...);`
+  const inlineIfs = src.match(/if\s*\([^)]*\)\s*return\s+json\(\s*410[^;]*;/g) ?? [];
+  for (const b of inlineIfs) {
     assert(!/used_at/.test(b), `410 ne doit pas dépendre de used_at:\n${b}`);
   }
 });

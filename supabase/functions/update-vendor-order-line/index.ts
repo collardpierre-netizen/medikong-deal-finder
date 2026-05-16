@@ -29,7 +29,19 @@ const TRANSITIONS: Record<Action, { from: string[]; to: string }> = {
 };
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  if (req.method === "OPTIONS") {
+    // Reflect requested headers so the browser never blocks a custom header we didn't list.
+    const requested = req.headers.get("Access-Control-Request-Headers");
+    const headers: Record<string, string> = { ...corsHeaders };
+    if (requested) headers["Access-Control-Allow-Headers"] = requested;
+    return new Response(null, { status: 204, headers });
+  }
+  if (req.method !== "POST") {
+    return new Response(JSON.stringify({ error: "method_not_allowed" }), {
+      status: 405,
+      headers: { ...corsHeaders, "Content-Type": "application/json", "Allow": "POST, OPTIONS" },
+    });
+  }
 
   try {
     const body = await req.json().catch(() => ({}));

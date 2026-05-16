@@ -42,6 +42,39 @@ function reject(
   return json(status, { error: errorCode, ...extra });
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Preflight schema guard : refuse de servir tant que `order_lines.updated_at`
+// n'existe pas (cause historique de 5xx `column ... does not exist`).
+// Exécuté une fois par cold start, résultat caché en mémoire.
+// ─────────────────────────────────────────────────────────────────────────────
+let preflightPromise: Promise<{ ok: true } | { ok: false; reason: string }> | null = null;
+
+function runPreflight(): Promise<{ ok: true } | { ok: false; reason: string }> {
+  if (preflightPromise) return preflightPromise;
+  preflightPromise = (async () => {
+    try {
+      const url = Deno.env.get("SUPABASE_URL");
+      const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+      if (!url || !key) return { ok: false as const, reason: "missing_service_role_env" };
+      const client = createClient(url, key, { auth: { persistSession: false } });
+      // Une seule requête PostgREST qui demande la colonne `updated_at` avec limit=0.
+      // Si la colonne est absente → 400 PGRST204/42703 → on bloque le déploiement runtime.
+      const { error } = await client.from("order_lines").select("updated_at").limit(0);
+      if (error) {
+        console.error(`[vendor_order_line.preflight] FAIL ${error.code ?? ""} ${error.message}`);
+        return { ok: false as const, reason: `order_lines.updated_at unavailable: ${error.message}` };
+      }
+      console.log("[vendor_order_line.preflight] OK order_lines.updated_at present");
+      return { ok: true as const };
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error(`[vendor_order_line.preflight] EXCEPTION ${msg}`);
+      return { ok: false as const, reason: `preflight_exception: ${msg}` };
+    }
+  })();
+  return preflightPromise;
+}
+
 type Action = "confirm" | "ship" | "deliver" | "cancel";
 
 // FSM (allowed source statuses → target status)
@@ -65,6 +98,14 @@ Deno.serve(async (req) => {
       status: 405,
       headers: { ...corsHeaders, "Content-Type": "application/json", "Allow": "POST, OPTIONS" },
     });
+  }
+
+  // Preflight schema guard — bloque toute requête tant que la colonne attendue
+  // n'est pas présente, avec un code 503 explicite (au lieu d'un 500 obscur en aval).
+  const preflight = await runPreflight();
+  if (!preflight.ok) {
+    console.error(`[vendor_order_line.preflight.block] ${preflight.reason}`);
+    return json(503, { error: "schema_preflight_failed", reason: preflight.reason });
   }
 
   try {

@@ -46,10 +46,12 @@ interface VendorOrderData {
 
 class VendorOrderPageError extends Error {
   status: number;
+  code: string | null;
 
-  constructor(status: number, message: string) {
+  constructor(status: number, message: string, code: string | null = null) {
     super(message);
     this.status = status;
+    this.code = code;
   }
 }
 
@@ -59,14 +61,24 @@ const errorMessages: Record<number, string> = {
   409: "Commande non finalisée",
 };
 
-const statusLabels: Record<string, string> = {
-  pending: "À préparer",
-  processing: "En préparation",
-  forwarded: "Transféré",
-  shipped: "Expédié",
-  delivered: "Livré",
-  cancelled: "Annulé",
+// Mapping par code d'erreur applicatif renvoyé dans le JSON body { error: "..." }
+const errorCodeMessages: Record<string, string> = {
+  not_found: "Lien invalide. Cette commande n'existe pas ou n'est plus accessible.",
+  invalid_token: "Lien invalide. Contactez support@medikong.pro",
+  token_expired: "Lien expiré. Demandez un nouveau lien à support@medikong.pro",
+  order_not_paid: "Commande non finalisée — le paiement n'a pas encore été confirmé.",
+  forbidden: "Action non autorisée pour cette commande.",
+  missing_params: "Paramètres manquants dans la requête.",
+  invalid_action: "Action inconnue.",
+  tracking_number_required: "Numéro de suivi requis pour marquer comme expédié.",
+  invalid_transition: "Transition de statut invalide : cette action n'est pas possible depuis le statut actuel.",
 };
+
+function resolveErrorMessage(err: VendorOrderPageError): string {
+  if (err.code && errorCodeMessages[err.code]) return errorCodeMessages[err.code];
+  if (errorMessages[err.status]) return errorMessages[err.status];
+  return err.message || "Une erreur est survenue.";
+}
 
 async function parseFunctionError(error: unknown): Promise<VendorOrderPageError> {
   const fallback = error instanceof Error ? error.message : "Erreur inconnue";
@@ -77,7 +89,8 @@ async function parseFunctionError(error: unknown): Promise<VendorOrderPageError>
   try {
     const text = await response.text();
     const payload = text ? JSON.parse(text) : null;
-    return new VendorOrderPageError(response.status, payload?.error || payload?.message || fallback);
+    const code = typeof payload?.error === "string" ? payload.error : null;
+    return new VendorOrderPageError(response.status, code || payload?.message || fallback, code);
   } catch {
     return new VendorOrderPageError(response.status, fallback);
   }

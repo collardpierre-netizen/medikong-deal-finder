@@ -204,7 +204,7 @@ export default function VendorOrderPage() {
 
     if (error) {
       const parsedError = await parseFunctionError(error);
-      setActionError(errorMessages[parsedError.status] || parsedError.message);
+      setActionError(resolveErrorMessage(parsedError));
       setActionLoading(null);
       return;
     }

@@ -1,10 +1,14 @@
 // Update a vendor order line status via shared token (no JWT required).
 import { createClient } from "npm:@supabase/supabase-js@2";
 
-const corsHeaders = {
+const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-api-version, x-requested-with, accept, accept-language",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Max-Age": "86400",
+  "Access-Control-Expose-Headers": "content-type, content-length",
+  "Vary": "Origin, Access-Control-Request-Headers",
 };
 
 function json(status: number, body: unknown) {
@@ -25,7 +29,19 @@ const TRANSITIONS: Record<Action, { from: string[]; to: string }> = {
 };
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  if (req.method === "OPTIONS") {
+    // Reflect requested headers so the browser never blocks a custom header we didn't list.
+    const requested = req.headers.get("Access-Control-Request-Headers");
+    const headers: Record<string, string> = { ...corsHeaders };
+    if (requested) headers["Access-Control-Allow-Headers"] = requested;
+    return new Response(null, { status: 204, headers });
+  }
+  if (req.method !== "POST") {
+    return new Response(JSON.stringify({ error: "method_not_allowed" }), {
+      status: 405,
+      headers: { ...corsHeaders, "Content-Type": "application/json", "Allow": "POST, OPTIONS" },
+    });
+  }
 
   try {
     const body = await req.json().catch(() => ({}));

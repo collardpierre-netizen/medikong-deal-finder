@@ -100,6 +100,14 @@ Deno.serve(async (req) => {
     });
   }
 
+  // Preflight schema guard — bloque toute requête tant que la colonne attendue
+  // n'est pas présente, avec un code 503 explicite (au lieu d'un 500 obscur en aval).
+  const preflight = await runPreflight();
+  if (!preflight.ok) {
+    console.error(`[vendor_order_line.preflight.block] ${preflight.reason}`);
+    return json(503, { error: "schema_preflight_failed", reason: preflight.reason });
+  }
+
   try {
     const body = await req.json().catch(() => ({}));
     const { token, line_id, action, tracking_number, tracking_url } = body as {

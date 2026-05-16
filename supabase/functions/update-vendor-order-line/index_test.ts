@@ -123,24 +123,32 @@ Deno.test("HTTP: token inconnu → 401 invalid_token", opts, async () => {
 
 // ---------- 3. 410 UNIQUEMENT sur expires_at (used_at peut être posé) ----------
 
+async function pickSubOrderFixture(sb: ReturnType<typeof admin>) {
+  const { data } = await sb
+    .from("sub_orders")
+    .select("id, order_id, vendor_id")
+    .limit(1)
+    .maybeSingle();
+  return data;
+}
+
 Deno.test(
   "HTTP: token expiré (expires_at passé) → 410, MÊME si used_at est null",
   opts,
   async () => {
     const sb = admin();
-    // On a besoin d'un order_id + vendor_id existants pour respecter les FKs éventuelles.
-    const { data: vendor } = await sb.from("vendors").select("id").limit(1).maybeSingle();
-    const { data: order } = await sb.from("orders").select("id").limit(1).maybeSingle();
-    if (!vendor?.id || !order?.id) {
-      console.warn("Skip: pas de vendor/order seed disponible");
+    const sub = await pickSubOrderFixture(sb);
+    if (!sub?.id) {
+      console.warn("Skip: pas de sub_order seed disponible");
       return;
     }
     const token = `test-expired-${crypto.randomUUID()}`;
     const past = new Date(Date.now() - 86_400_000).toISOString();
     const ins = await sb.from("vendor_order_tokens").insert({
       token,
-      order_id: order.id,
-      vendor_id: vendor.id,
+      order_id: sub.order_id,
+      vendor_id: sub.vendor_id,
+      sub_order_id: sub.id,
       expires_at: past,
       used_at: null,
     }).select("token").maybeSingle();
@@ -167,18 +175,18 @@ Deno.test(
   opts,
   async () => {
     const sb = admin();
-    const { data: vendor } = await sb.from("vendors").select("id").limit(1).maybeSingle();
-    const { data: order } = await sb.from("orders").select("id").limit(1).maybeSingle();
-    if (!vendor?.id || !order?.id) {
-      console.warn("Skip: pas de vendor/order seed disponible");
+    const sub = await pickSubOrderFixture(sb);
+    if (!sub?.id) {
+      console.warn("Skip: pas de sub_order seed disponible");
       return;
     }
     const token = `test-used-${crypto.randomUUID()}`;
     const future = new Date(Date.now() + 7 * 86_400_000).toISOString();
     const ins = await sb.from("vendor_order_tokens").insert({
       token,
-      order_id: order.id,
-      vendor_id: vendor.id,
+      order_id: sub.order_id,
+      vendor_id: sub.vendor_id,
+      sub_order_id: sub.id,
       expires_at: future,
       used_at: new Date().toISOString(), // déjà utilisé
     }).select("token").maybeSingle();

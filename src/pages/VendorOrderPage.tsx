@@ -147,7 +147,7 @@ export default function VendorOrderPage() {
   const token = searchParams.get("token") || "";
   const [order, setOrder] = useState<VendorOrderData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [errorStatus, setErrorStatus] = useState<number | null>(null);
+  const [loadError, setLoadError] = useState<{ status: number; code: string | null; message: string } | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [trackingNumbers, setTrackingNumbers] = useState<Record<string, string>>({});

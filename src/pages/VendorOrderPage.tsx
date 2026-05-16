@@ -96,6 +96,15 @@ async function parseFunctionError(error: unknown): Promise<VendorOrderPageError>
   }
 }
 
+const statusLabels: Record<string, string> = {
+  pending: "À préparer",
+  processing: "En préparation",
+  forwarded: "Transféré",
+  shipped: "Expédié",
+  delivered: "Livré",
+  cancelled: "Annulé",
+};
+
 function formatMoney(value?: number | null): string {
   if (typeof value !== "number" || Number.isNaN(value)) return "—";
   return new Intl.NumberFormat("fr-BE", { style: "currency", currency: "EUR" }).format(value);

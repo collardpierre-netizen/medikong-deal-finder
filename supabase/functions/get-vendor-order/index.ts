@@ -213,6 +213,7 @@ Deno.serve(async (req) => {
       sub_order_id: tokenRow.sub_order_id,
     });
   } catch (e) {
+    logEvent("unhandled_error", { message: String((e as Error).message ?? e) });
     return json(500, { error: String((e as Error).message ?? e) });
   }
 });

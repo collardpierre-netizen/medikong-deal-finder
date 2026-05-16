@@ -154,11 +154,11 @@ export default function VendorOrderPage() {
 
   const loadOrder = useCallback(async () => {
     setLoading(true);
-    setErrorStatus(null);
+    setLoadError(null);
     setActionError(null);
 
     if (!order_number || !token) {
-      setErrorStatus(404);
+      setLoadError({ status: 404, code: "not_found", message: "missing_params" });
       setLoading(false);
       return;
     }
@@ -169,7 +169,7 @@ export default function VendorOrderPage() {
 
     if (error) {
       const parsedError = await parseFunctionError(error);
-      setErrorStatus(parsedError.status);
+      setLoadError({ status: parsedError.status, code: parsedError.code, message: parsedError.message });
       setOrder(null);
       setLoading(false);
       return;

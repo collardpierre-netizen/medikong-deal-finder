@@ -1,0 +1,367 @@
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useParams, useSearchParams } from "react-router-dom";
+import { Loader2 } from "lucide-react";
+import logoHorizontal from "@/assets/logo-medikong.png";
+import { supabase } from "@/integrations/supabase/client";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+
+type VendorLineStatus = "pending" | "processing" | "forwarded" | "shipped" | "delivered" | "cancelled" | string;
+type VendorLineAction = "confirm" | "ship" | "deliver";
+
+interface VendorOrderLine {
+  id: string;
+  product_name: string;
+  gtin?: string | null;
+  sku?: string | null;
+  image_url?: string | null;
+  quantity: number;
+  unit_price_excl_vat: number;
+  line_total_excl_vat: number;
+  fulfillment_status: VendorLineStatus;
+  tracking_number?: string | null;
+  tracking_url?: string | null;
+}
+
+interface VendorOrderData {
+  order_number: string;
+  order_date?: string | null;
+  payment_status?: string | null;
+  status?: string | null;
+  vendor_id?: string;
+  vendor_name: string;
+  shipping_address?: unknown;
+  totals?: {
+    subtotal_excl_vat?: number | null;
+    subtotal_incl_vat?: number | null;
+    commission_rate?: number | null;
+    commission_amount?: number | null;
+    vendor_net_excl_vat?: number | null;
+  };
+  lines: VendorOrderLine[];
+}
+
+class VendorOrderPageError extends Error {
+  status: number;
+
+  constructor(status: number, message: string) {
+    super(message);
+    this.status = status;
+  }
+}
+
+const errorMessages: Record<number, string> = {
+  404: "Lien invalide. Contactez support@medikong.pro",
+  410: "Lien expiré. Demandez un nouveau lien à support@medikong.pro",
+  409: "Commande non finalisée",
+};
+
+const statusLabels: Record<string, string> = {
+  pending: "À préparer",
+  processing: "En préparation",
+  forwarded: "Transféré",
+  shipped: "Expédié",
+  delivered: "Livré",
+  cancelled: "Annulé",
+};
+
+async function parseFunctionError(error: unknown): Promise<VendorOrderPageError> {
+  const fallback = error instanceof Error ? error.message : "Erreur inconnue";
+  const response = (error as { context?: { response?: Response } })?.context?.response;
+
+  if (!response) return new VendorOrderPageError(500, fallback);
+
+  try {
+    const text = await response.text();
+    const payload = text ? JSON.parse(text) : null;
+    return new VendorOrderPageError(response.status, payload?.error || payload?.message || fallback);
+  } catch {
+    return new VendorOrderPageError(response.status, fallback);
+  }
+}
+
+function formatMoney(value?: number | null): string {
+  if (typeof value !== "number" || Number.isNaN(value)) return "—";
+  return new Intl.NumberFormat("fr-BE", { style: "currency", currency: "EUR" }).format(value);
+}
+
+function formatDate(value?: string | null): string {
+  if (!value) return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleString("fr-BE", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+}
+
+function formatAddress(address: unknown): string[] {
+  if (!address) return ["—"];
+  if (typeof address === "string") return [address];
+  if (typeof address !== "object") return ["—"];
+
+  const addr = address as Record<string, unknown>;
+  const cityLine = [addr.postal_code, addr.zip, addr.city].filter(Boolean).join(" ");
+  return [
+    addr.full_name || addr.name,
+    addr.company || addr.company_name,
+    addr.line1 || addr.street || addr.address_line1,
+    addr.line2 || addr.address_line2,
+    cityLine,
+    addr.country,
+  ]
+    .filter(Boolean)
+    .map(String);
+}
+
+function normalizeOrderPayload(data: unknown): VendorOrderData {
+  const payload = ((data as { order?: unknown })?.order ?? data) as VendorOrderData;
+  return { ...payload, lines: payload.lines ?? [] };
+}
+
+export default function VendorOrderPage() {
+  const { order_number } = useParams<{ order_number: string }>();
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get("token") || "";
+  const [order, setOrder] = useState<VendorOrderData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [errorStatus, setErrorStatus] = useState<number | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [trackingNumbers, setTrackingNumbers] = useState<Record<string, string>>({});
+
+  const loadOrder = useCallback(async () => {
+    setLoading(true);
+    setErrorStatus(null);
+    setActionError(null);
+
+    if (!order_number || !token) {
+      setErrorStatus(404);
+      setLoading(false);
+      return;
+    }
+
+    const { data, error } = await supabase.functions.invoke("get-vendor-order", {
+      body: { order_number, token },
+    });
+
+    if (error) {
+      const parsedError = await parseFunctionError(error);
+      setErrorStatus(parsedError.status);
+      setOrder(null);
+      setLoading(false);
+      return;
+    }
+
+    const nextOrder = normalizeOrderPayload(data);
+    setOrder(nextOrder);
+    setTrackingNumbers(
+      Object.fromEntries(nextOrder.lines.map((line) => [line.id, line.tracking_number || ""])),
+    );
+    setLoading(false);
+  }, [order_number, token]);
+
+  useEffect(() => {
+    loadOrder();
+  }, [loadOrder]);
+
+  const addressLines = useMemo(() => formatAddress(order?.shipping_address), [order?.shipping_address]);
+
+  const handleLineAction = async (lineId: string, action: VendorLineAction, trackingNumber?: string) => {
+    setActionError(null);
+    setActionLoading(`${lineId}:${action}`);
+
+    const body: { token: string; line_id: string; action: VendorLineAction; tracking_number?: string } = {
+      token,
+      line_id: lineId,
+      action,
+    };
+    if (trackingNumber) body.tracking_number = trackingNumber;
+
+    const { error } = await supabase.functions.invoke("update-vendor-order-line", { body });
+
+    if (error) {
+      const parsedError = await parseFunctionError(error);
+      setActionError(errorMessages[parsedError.status] || parsedError.message);
+      setActionLoading(null);
+      return;
+    }
+
+    await loadOrder();
+    setActionLoading(null);
+  };
+
+  return (
+    <div className="min-h-screen bg-background text-foreground">
+      <header className="border-b border-border bg-card">
+        <div className="mx-auto flex max-w-6xl items-center px-4 py-4">
+          <img src={logoHorizontal} alt="MediKong" className="h-14 w-auto" />
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-6xl px-4 py-8">
+        {loading && (
+          <div className="flex min-h-[50vh] items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        )}
+
+        {!loading && errorStatus && (
+          <Card className="mx-auto max-w-xl">
+            <CardHeader>
+              <CardTitle>Commande indisponible</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-muted-foreground">{errorMessages[errorStatus] || "Impossible de charger cette commande. Contactez support@medikong.pro"}</p>
+              <Button asChild>
+                <a href="mailto:support@medikong.pro">Contacter le support</a>
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {!loading && !errorStatus && order && (
+          <div className="space-y-6">
+            <div>
+              <h1 className="text-2xl font-bold">Espace fournisseur — {order.vendor_name}</h1>
+              <p className="mt-1 text-sm text-muted-foreground">Commande {order.order_number}</p>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-3">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Commande</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3 text-sm">
+                  <div className="flex justify-between gap-4">
+                    <span className="text-muted-foreground">N° commande</span>
+                    <span className="font-semibold">{order.order_number}</span>
+                  </div>
+                  <div className="flex justify-between gap-4">
+                    <span className="text-muted-foreground">Date</span>
+                    <span className="font-semibold">{formatDate(order.order_date)}</span>
+                  </div>
+                  <div className="flex justify-between gap-4">
+                    <span className="text-muted-foreground">Paiement</span>
+                    <Badge variant="outline">{order.payment_status || "paid"}</Badge>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Adresse livraison</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-1 text-sm text-muted-foreground">
+                  {addressLines.map((line, index) => (
+                    <div key={`${line}-${index}`}>{line}</div>
+                  ))}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Totaux vendor</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3 text-sm">
+                  <div className="flex justify-between gap-4">
+                    <span className="text-muted-foreground">Brut HT</span>
+                    <span className="font-semibold">{formatMoney(order.totals?.subtotal_excl_vat)}</span>
+                  </div>
+                  <div className="flex justify-between gap-4">
+                    <span className="text-muted-foreground">Commission</span>
+                    <span className="font-semibold">{formatMoney(order.totals?.commission_amount)}</span>
+                  </div>
+                  <div className="flex justify-between gap-4 border-t border-border pt-3">
+                    <span className="text-muted-foreground">Net HT</span>
+                    <span className="font-bold">{formatMoney(order.totals?.vendor_net_excl_vat)}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Articles</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {actionError && <div className="mb-4 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">{actionError}</div>}
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Produit</TableHead>
+                      <TableHead>Qté</TableHead>
+                      <TableHead>Prix unit. HT</TableHead>
+                      <TableHead>Total HT</TableHead>
+                      <TableHead>Statut</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {order.lines.map((line) => {
+                      const status = line.fulfillment_status;
+                      const trackingValue = trackingNumbers[line.id] || "";
+
+                      return (
+                        <TableRow key={line.id}>
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              {line.image_url && <img src={line.image_url} alt={line.product_name} className="h-12 w-12 rounded-md border border-border object-contain" />}
+                              <div>
+                                <div className="font-semibold">{line.product_name}</div>
+                                <div className="text-xs text-muted-foreground">{line.gtin || line.sku || "—"}</div>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>{line.quantity}</TableCell>
+                          <TableCell>{formatMoney(line.unit_price_excl_vat)}</TableCell>
+                          <TableCell>{formatMoney(line.line_total_excl_vat)}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{statusLabels[status] || status}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            {status === "pending" && (
+                              <Button size="sm" onClick={() => handleLineAction(line.id, "confirm")} disabled={actionLoading === `${line.id}:confirm`}>
+                                {actionLoading === `${line.id}:confirm` && <Loader2 className="h-4 w-4 animate-spin" />}
+                                Confirmer prise en charge
+                              </Button>
+                            )}
+                            {status === "processing" && (
+                              <div className="flex min-w-64 items-center gap-2">
+                                <Input
+                                  value={trackingValue}
+                                  onChange={(event) => setTrackingNumbers((prev) => ({ ...prev, [line.id]: event.target.value }))}
+                                  placeholder="Tracking number"
+                                  className="h-9"
+                                />
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleLineAction(line.id, "ship", trackingValue)}
+                                  disabled={!trackingValue.trim() || actionLoading === `${line.id}:ship`}
+                                >
+                                  {actionLoading === `${line.id}:ship` && <Loader2 className="h-4 w-4 animate-spin" />}
+                                  Marquer expédié
+                                </Button>
+                              </div>
+                            )}
+                            {status === "shipped" && (
+                              <Button size="sm" onClick={() => handleLineAction(line.id, "deliver")} disabled={actionLoading === `${line.id}:deliver`}>
+                                {actionLoading === `${line.id}:deliver` && <Loader2 className="h-4 w-4 animate-spin" />}
+                                Marquer livré
+                              </Button>
+                            )}
+                            {!["pending", "processing", "shipped"].includes(status) && <span className="text-sm text-muted-foreground">—</span>}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}

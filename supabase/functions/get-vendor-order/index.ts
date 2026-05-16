@@ -14,12 +14,51 @@ function json(status: number, body: unknown) {
   });
 }
 
+// Returns a short, non-reversible fingerprint of the token for log correlation.
+// We hash the full token with SHA-256 and keep only the first 8 hex chars so
+// logs never contain the secret itself.
+async function tokenFingerprint(token: string): Promise<string> {
+  try {
+    const buf = new TextEncoder().encode(token);
+    const digest = await crypto.subtle.digest("SHA-256", buf);
+    const hex = Array.from(new Uint8Array(digest))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+    return hex.slice(0, 8);
+  } catch {
+    return "unhashable";
+  }
+}
+
+// Masks order_number for logs (keeps the last 4 chars, e.g. "****1234").
+function maskOrderNumber(orderNumber: string): string {
+  const s = String(orderNumber ?? "");
+  if (s.length <= 4) return "****";
+  return `****${s.slice(-4)}`;
+}
+
+function logEvent(event: string, fields: Record<string, unknown>) {
+  // Single-line structured log — no token, no addresses, no PII.
+  try {
+    console.log(`[get-vendor-order] ${event} ${JSON.stringify(fields)}`);
+  } catch {
+    console.log(`[get-vendor-order] ${event}`);
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
     const { order_number, token } = await req.json().catch(() => ({}));
-    if (!order_number || !token) return json(400, { error: "missing_params" });
+    if (!order_number || !token) {
+      logEvent("missing_params", { has_order_number: !!order_number, has_token: !!token });
+      return json(400, { error: "missing_params" });
+    }
+
+    const tokenFp = await tokenFingerprint(String(token));
+    const orderMasked = maskOrderNumber(String(order_number));
+    logEvent("token_lookup_start", { token_fp: tokenFp, order: orderMasked });
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -38,8 +77,12 @@ Deno.serve(async (req) => {
       .eq("order_number", order_number)
       .maybeSingle();
 
-    if (tokenErr) return json(500, { error: "server_error", message: tokenErr.message });
+    if (tokenErr) {
+      logEvent("token_lookup_db_error", { token_fp: tokenFp, order: orderMasked, code: (tokenErr as any).code ?? null });
+      return json(500, { error: "server_error", message: tokenErr.message });
+    }
     if (!tokenRow) {
+      logEvent("token_not_found", { token_fp: tokenFp, order: orderMasked });
       return json(404, {
         error: "token_not_found",
         message: "Ce lien de commande est invalide ou n'existe pas.",
@@ -47,6 +90,7 @@ Deno.serve(async (req) => {
     }
 
     if (tokenRow.expires_at && new Date(tokenRow.expires_at).getTime() < Date.now()) {
+      logEvent("token_expired", { token_fp: tokenFp, order: orderMasked, expired_at: tokenRow.expires_at });
       return json(410, {
         error: "token_expired",
         message: "Ce lien a expiré. Demandez un nouveau lien d'accès à la commande.",
@@ -55,6 +99,7 @@ Deno.serve(async (req) => {
     }
 
     if (tokenRow.used_at) {
+      logEvent("token_used", { token_fp: tokenFp, order: orderMasked, used_at: tokenRow.used_at });
       return json(410, {
         error: "token_used",
         message: "Ce lien a déjà été utilisé. Pour des raisons de sécurité, chaque lien n'est valable qu'une seule fois.",
@@ -65,6 +110,12 @@ Deno.serve(async (req) => {
     const order = (tokenRow as any).orders;
     const vendor = (tokenRow as any).vendors;
     if (!order || !vendor) {
+      logEvent("order_or_vendor_missing", {
+        token_fp: tokenFp,
+        order: orderMasked,
+        has_order: !!order,
+        has_vendor: !!vendor,
+      });
       return json(404, {
         error: "order_not_found",
         message: "La commande associée à ce lien est introuvable.",
@@ -72,12 +123,24 @@ Deno.serve(async (req) => {
     }
 
     if (String(order.payment_status) !== "paid") {
+      logEvent("order_not_paid", { token_fp: tokenFp, order: orderMasked, payment_status: String(order.payment_status) });
       return json(409, { error: "order_not_paid" });
     }
 
+    logEvent("token_valid", { token_fp: tokenFp, order: orderMasked, vendor_id: vendor.id });
+
     // 2. Mark token first-used
     if (!tokenRow.used_at) {
-      await supabase.from("vendor_order_tokens").update({ used_at: new Date().toISOString() }).eq("token", token).is("used_at", null);
+      const { error: markErr } = await supabase
+        .from("vendor_order_tokens")
+        .update({ used_at: new Date().toISOString() })
+        .eq("token", token)
+        .is("used_at", null);
+      if (markErr) {
+        logEvent("token_mark_used_error", { token_fp: tokenFp, order: orderMasked, code: (markErr as any).code ?? null });
+      } else {
+        logEvent("token_marked_used", { token_fp: tokenFp, order: orderMasked });
+      }
     }
 
     // 3. Mark sub_order first viewed
@@ -101,7 +164,11 @@ Deno.serve(async (req) => {
       .eq("order_id", tokenRow.order_id)
       .eq("vendor_id", tokenRow.vendor_id);
 
-    if (linesErr) return json(500, { error: linesErr.message });
+    if (linesErr) {
+      logEvent("order_lines_error", { token_fp: tokenFp, order: orderMasked });
+      return json(500, { error: linesErr.message });
+    }
+    logEvent("order_lines_loaded", { token_fp: tokenFp, order: orderMasked, line_count: (lines || []).length });
 
     const normalizedLines = (lines || []).map((l: any) => ({
       id: l.id,
@@ -146,6 +213,7 @@ Deno.serve(async (req) => {
       sub_order_id: tokenRow.sub_order_id,
     });
   } catch (e) {
+    logEvent("unhandled_error", { message: String((e as Error).message ?? e) });
     return json(500, { error: String((e as Error).message ?? e) });
   }
 });

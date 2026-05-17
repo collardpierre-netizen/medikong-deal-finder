@@ -560,11 +560,9 @@ function OfferRow({
                     <span className={`text-sm tabular-nums ${i === 0 ? "font-bold text-green-700" : "text-muted-foreground"}`}>
                       {formatEur(tier.price || tier.minAmount)}&nbsp;€
                     </span>
-                    {i > 0 && <TierSavingBadge saving={saving} basePrice={basePrice} />}
-                    {tier.minAmount ? (
+                    {i === 0 ? <TierBaseLegend /> : <TierSavingBadge saving={saving} basePrice={basePrice} />}
+                    {tier.minAmount && i > 0 && (
                       <span className="text-xs text-muted-foreground tabular-nums">≥ MOV&nbsp;{formatEur(tier.minAmount)}&nbsp;€</span>
-                    ) : (
-                      <TierBaseLegend />
                     )}
                   </div>
                 );

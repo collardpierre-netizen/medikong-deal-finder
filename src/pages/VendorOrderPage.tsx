@@ -369,7 +369,7 @@ export default function VendorOrderPage() {
     setPartialQuantity("");
     setPartialReason("");
     setPartialLoading(false);
-    await loadOrder();
+    await loadOrder({ silent: true });
   };
 
   return (

@@ -516,6 +516,19 @@ export default function VendorOrderPage() {
                                   Annuler
                                 </Button>
                               )}
+                              {(status === "pending" || status === "processing") && line.quantity > 1 && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setPartialTarget(line);
+                                    setPartialQuantity("");
+                                    setPartialReason("");
+                                  }}
+                                >
+                                  Livraison partielle
+                                </Button>
+                              )}
                               {!["pending", "processing", "shipped"].includes(status) && <span className="text-sm text-muted-foreground">—</span>}
                             </div>
                           </TableCell>

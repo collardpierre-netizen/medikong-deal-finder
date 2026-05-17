@@ -579,6 +579,70 @@ export default function VendorOrderPage() {
                 </Table>
               </CardContent>
             </Card>
+
+            {(() => {
+              const refundedLines = order.lines.filter(
+                (line) => Number(line.refunded_amount_incl_vat || 0) > 0,
+              );
+              if (refundedLines.length === 0) return null;
+              const totalRefunded = refundedLines.reduce(
+                (sum, line) => sum + Number(line.refunded_amount_incl_vat || 0),
+                0,
+              );
+              return (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Remboursements</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Produit</TableHead>
+                          <TableHead>Type</TableHead>
+                          <TableHead>Montant TTC</TableHead>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Motif</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {refundedLines.map((line) => {
+                          const isCancelled = String(line.fulfillment_status) === "cancelled";
+                          const kind = isCancelled ? "total" : "partial";
+                          return (
+                            <TableRow key={line.id}>
+                              <TableCell>
+                                <div className="font-medium">{line.product_name}</div>
+                                <div className="text-xs text-muted-foreground">{line.gtin || line.sku || "—"}</div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant={kind === "total" ? "destructive" : "secondary"}>
+                                  {kind === "total" ? "Total" : "Partiel"}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="font-semibold">
+                                {formatMoney(Number(line.refunded_amount_incl_vat || 0))}
+                              </TableCell>
+                              <TableCell className="text-sm text-muted-foreground">
+                                {formatDate(line.cancelled_at)}
+                              </TableCell>
+                              <TableCell className="max-w-xs text-sm text-muted-foreground">
+                                {line.cancellation_reason || "—"}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                        <TableRow>
+                          <TableCell colSpan={2} className="text-right font-semibold">Total remboursé</TableCell>
+                          <TableCell className="font-bold">{formatMoney(totalRefunded)}</TableCell>
+                          <TableCell colSpan={2} />
+                        </TableRow>
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+              );
+            })()}
           </div>
         )}
 

@@ -290,6 +290,50 @@ export default function VendorOrderPage() {
     await loadOrder({ silent: true });
   };
 
+  const handlePartialRefund = async () => {
+    if (!partialTarget) return;
+    const trimmedReason = partialReason.trim();
+    const qty = Number.parseInt(partialQuantity, 10);
+    if (!Number.isInteger(qty) || qty < 1 || qty >= partialTarget.quantity) {
+      toast.error("Quantité invalide", {
+        description: `Indiquez une quantité entière entre 1 et ${partialTarget.quantity - 1}.`,
+      });
+      return;
+    }
+    if (!trimmedReason) {
+      toast.error("Motif requis", { description: "Merci d'expliquer la raison du remboursement partiel." });
+      return;
+    }
+    setPartialLoading(true);
+    const productName = partialTarget.product_name;
+    const toastId = toast.loading("Remboursement partiel en cours…", { description: productName });
+
+    const { error } = await supabase.functions.invoke("refund-order-line", {
+      body: {
+        token,
+        line_id: partialTarget.id,
+        action: "partial",
+        quantity_to_refund: qty,
+        reason: trimmedReason,
+      },
+    });
+
+    if (error) {
+      const parsedError = await parseFunctionError(error);
+      const message = resolveErrorMessage(parsedError);
+      toast.error("Échec du remboursement partiel", { id: toastId, description: message });
+      setPartialLoading(false);
+      return;
+    }
+
+    toast.success("Remboursement partiel effectué", { id: toastId, description: productName });
+    setPartialTarget(null);
+    setPartialQuantity("");
+    setPartialReason("");
+    setPartialLoading(false);
+    await loadOrder({ silent: true });
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="border-b border-border bg-card">

@@ -12,7 +12,7 @@ const corsHeaders = {
 };
 
 const PORTAL_URL = "https://medikong.pro/vendor/commandes";
-const MAGIC_LINK_BASE = "https://medikong.pro/vendor/order";
+const MAGIC_LINK_BASE = "https://medikong.pro/vendor/orders";
 
 const fmtEur = (n: number | string | null | undefined) => {
   const v = typeof n === "string" ? Number(n) : (n ?? 0);

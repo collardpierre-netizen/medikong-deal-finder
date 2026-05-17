@@ -774,7 +774,6 @@ function OfferRow({
                         <span className="text-[10px] text-muted-foreground tabular-nums leading-tight">≥ {formatEur(tier.mov_threshold)}&nbsp;€</span>
                       )}
                       {i === 0 ? <TierBaseLegend compact /> : <TierSavingBadge saving={saving} basePrice={basePrice} />}
-                      {i > 0 && <TierSavingBadge saving={saving} basePrice={basePrice} />}
                     </div>
                   );
                 })}

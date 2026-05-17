@@ -169,6 +169,17 @@ function OfferRow({
   // — hooks must be called at the top level, never inside an IIFE/callback.
   const vendorTrust = useVendorTrustForId(offer.sellerId);
 
+  // MOV pédagogique (cf. validate-cart : floor 500 € HT)
+  const DEFAULT_MEDIKONG_MOV = 500;
+  const effectiveMov = offer.movEur && offer.movEur > 0 ? offer.movEur : DEFAULT_MEDIKONG_MOV;
+  const refUnitPrice = offer.unitPriceEur > 0 ? offer.unitPriceEur : basePackPrice;
+  const minQtyForMov = refUnitPrice > 0 ? Math.ceil(effectiveMov / refUnitPrice) : 1;
+  const showMovHint = minQtyForMov > 1;
+  const currentTotalExclVat = qty * (offer.unitPriceEur || basePackPrice);
+  const movReached = currentTotalExclVat >= effectiveMov;
+  const movMissing = Math.max(0, effectiveMov - currentTotalExclVat);
+  const outOfStock = offer.stockQuantity <= 0;
+
   const handleAdd = () => {
     if (!user) {
       toast.error("Connectez-vous pour ajouter des produits au panier", {

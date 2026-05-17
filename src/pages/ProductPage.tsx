@@ -1548,6 +1548,7 @@ export default function ProductPage() {
       </Helmet>
 
       <PageTransition>
+        <TierSavingAdminAlert />
         {/* Back to results + Breadcrumb */}
         <div className="mk-container pt-3 pb-1 flex items-center gap-3">
           {(() => {

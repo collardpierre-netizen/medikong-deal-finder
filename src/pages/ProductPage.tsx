@@ -399,9 +399,11 @@ function OfferRow({
                 {offerPriceTiers
                   .sort((a, b) => a.tier_index - b.tier_index)
                   .map((tier, i) => {
-                    const basePrice = offerPriceTiers[0].price_excl_vat;
+                    const basePrice = offerPriceTiers[0]?.price_excl_vat ?? 0;
                     const tierPrice = isTVAC ? tier.price_incl_vat : tier.price_excl_vat;
-                    const saving = i > 0 ? ((basePrice - tier.price_excl_vat) / basePrice * 100).toFixed(1) : null;
+                    const saving = i > 0 && basePrice > 0 && Number.isFinite(tier.price_excl_vat)
+                      ? ((basePrice - tier.price_excl_vat) / basePrice * 100).toFixed(1)
+                      : null;
                     return (
                       <div key={tier.id} className="flex items-center gap-2 relative whitespace-nowrap" style={{ marginTop: i > 0 ? 4 : 0 }}>
                         <div className="absolute left-[-14px] top-1/2 -translate-y-1/2 w-[7px] h-[7px] rounded-full bg-primary" />

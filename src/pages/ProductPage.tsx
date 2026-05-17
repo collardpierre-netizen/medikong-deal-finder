@@ -1,5 +1,6 @@
 import { Layout } from "@/components/layout/Layout";
 import { computeTierSavingPercent, parseTierSavingValue, type TierSavingInput } from "@/lib/tier-saving";
+import { recordTierSavingIssue } from "@/lib/tier-saving-diagnostics";
 import { isValidProductImage, getProductImageSrc, MEDIKONG_PLACEHOLDER, isQogitaPlaceholder, getPreferredProductImageUrls } from "@/lib/image-utils";
 import { useProduct, useProductOffers, type Offer } from "@/hooks/useProducts";
 import { useCart } from "@/hooks/useCart";
@@ -142,6 +143,12 @@ export function TierSavingBadge({ saving }: { saving: TierSavingInput }) {
   const num = parseTierSavingValue(saving);
 
   if (num === null) {
+    // Diagnostic : remonter uniquement les vraies anomalies de donnée.
+    // `null` / `undefined` sont des signaux intentionnels (palier de base,
+    // pas de comparaison possible) → on ne log pas ces cas-là.
+    if (saving !== null && saving !== undefined) {
+      recordTierSavingIssue("badge_fallback_invalid_saving", { saving });
+    }
     return (
       <span
         className="inline-flex items-center rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground tabular-nums leading-none"
@@ -385,7 +392,19 @@ function OfferRow({
                 .sort((a, b) => a.mov_amount - b.mov_amount)
                 .map((tier, i) => {
                   const basePrice = discountTiers[0].unit_price;
-                  const saving = i > 0 ? computeTierSavingPercent(basePrice, tier.unit_price) : null;
+                  let saving: number | null = null;
+                  if (i > 0) {
+                    saving = computeTierSavingPercent(basePrice, tier.unit_price);
+                    if (saving === null) {
+                      recordTierSavingIssue("compute_returned_null", {
+                        where: "discountTiers",
+                        basePrice,
+                        unitPrice: tier.unit_price,
+                        offerId: offer.id,
+                        productId,
+                      });
+                    }
+                  }
                   return (
                     <div key={tier.id} className="grid grid-cols-[5.5rem_9rem_3rem] items-center gap-x-2 relative" style={{ marginTop: i > 0 ? 6 : 0 }}>
                       <div className="absolute left-[-14px] w-[7px] h-[7px] rounded-full bg-primary" />
@@ -411,9 +430,19 @@ function OfferRow({
                   .map((tier, i) => {
                     const basePrice = offerPriceTiers[0]?.price_excl_vat ?? 0;
                     const tierPrice = isTVAC ? tier.price_incl_vat : tier.price_excl_vat;
-                    const saving = i > 0
-                      ? computeTierSavingPercent(basePrice, tier.price_excl_vat)
-                      : null;
+                    let saving: number | null = null;
+                    if (i > 0) {
+                      saving = computeTierSavingPercent(basePrice, tier.price_excl_vat);
+                      if (saving === null) {
+                        recordTierSavingIssue("compute_returned_null", {
+                          where: "offerPriceTiers:desktop",
+                          basePrice,
+                          unitPrice: tier.price_excl_vat,
+                          offerId: offer.id,
+                          productId,
+                        });
+                      }
+                    }
                     return (
                       <div key={tier.id} className="flex items-center gap-2 relative whitespace-nowrap" style={{ marginTop: i > 0 ? 4 : 0 }}>
                         <div className="absolute left-[-14px] top-1/2 -translate-y-1/2 w-[7px] h-[7px] rounded-full bg-primary" />
@@ -636,9 +665,19 @@ function OfferRow({
                 .map((tier, i) => {
                   const basePrice = offerPriceTiers[0]?.price_excl_vat ?? 0;
                   const tierPrice = isTVAC ? tier.price_incl_vat : tier.price_excl_vat;
-                  const saving = i > 0
-                    ? computeTierSavingPercent(basePrice, tier.price_excl_vat)
-                    : null;
+                  let saving: number | null = null;
+                  if (i > 0) {
+                    saving = computeTierSavingPercent(basePrice, tier.price_excl_vat);
+                    if (saving === null) {
+                      recordTierSavingIssue("compute_returned_null", {
+                        where: "offerPriceTiers:mobile",
+                        basePrice,
+                        unitPrice: tier.price_excl_vat,
+                        offerId: offer.id,
+                        productId,
+                      });
+                    }
+                  }
                   return (
                     <div key={tier.id} className="flex flex-col items-start gap-0.5 rounded-sm bg-background px-2 py-1.5 border border-border/60">
                       <span className={`text-[12px] tabular-nums leading-tight ${i === 0 ? "font-bold text-green-700" : "font-semibold text-foreground"}`}>

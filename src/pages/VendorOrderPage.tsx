@@ -422,38 +422,6 @@ export default function VendorOrderPage() {
                                   Marquer livré
                                 </Button>
                               )}
-                              {(status === "pending" || status === "processing") && (
-                                <AlertDialog>
-                                  <AlertDialogTrigger asChild>
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      className="text-destructive hover:text-destructive"
-                                      disabled={actionLoading === `${line.id}:cancel`}
-                                    >
-                                      {actionLoading === `${line.id}:cancel` && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
-                                      Annuler
-                                    </Button>
-                                  </AlertDialogTrigger>
-                                  <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                      <AlertDialogTitle>Annuler cette ligne ?</AlertDialogTitle>
-                                      <AlertDialogDescription>
-                                        Vous êtes sur le point d'annuler « {line.product_name} » (qté {line.quantity}). Cette action est irréversible et notifiera l'acheteur.
-                                      </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                      <AlertDialogCancel>Revenir</AlertDialogCancel>
-                                      <AlertDialogAction
-                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                        onClick={() => handleLineAction(line.id, "cancel")}
-                                      >
-                                        Confirmer l'annulation
-                                      </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                  </AlertDialogContent>
-                                </AlertDialog>
-                              )}
                               {!["pending", "processing", "shipped"].includes(status) && <span className="text-sm text-muted-foreground">—</span>}
                             </div>
                           </TableCell>

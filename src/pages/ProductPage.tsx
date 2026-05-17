@@ -461,18 +461,34 @@ function OfferRow({
           ) : hasLegacyTiers ? (
             <div className="relative pl-4">
               <div className="absolute left-[3px] top-[7px] w-px border-l border-dashed border-muted-foreground/40" style={{ height: `calc(100% - 14px)` }} />
-              {tiers.map((tier: any, i: number) => (
-                <div key={i} className="grid grid-cols-[5.5rem_9rem_3rem] items-center gap-x-2 relative" style={{ marginTop: i > 0 ? 6 : 0 }}>
-                  <div className="absolute left-[-14px] w-[7px] h-[7px] rounded-full bg-primary" />
-                  <span className={`text-sm tabular-nums ${i === 0 ? "font-bold text-green-700" : "text-muted-foreground"}`}>
-                    {formatEur(tier.price || tier.minAmount)}&nbsp;€
-                  </span>
-                  {tier.minAmount ? (
-                    <span className="text-xs text-muted-foreground tabular-nums">MOV&nbsp;{formatEur(tier.minAmount)}&nbsp;€</span>
-                  ) : <span />}
-                  <span />
-                </div>
-              ))}
+              {tiers.map((tier: any, i: number) => {
+                const basePrice = tiers[0]?.price ?? tiers[0]?.minAmount;
+                let saving: number | null = null;
+                if (i > 0) {
+                  saving = computeTierSavingPercent(basePrice, tier.price);
+                  if (saving === null) {
+                    recordTierSavingIssue("compute_returned_null", {
+                      where: "legacyTiers",
+                      basePrice,
+                      unitPrice: tier.price,
+                      offerId: offer.id,
+                      productId,
+                    });
+                  }
+                }
+                return (
+                  <div key={i} className="grid grid-cols-[5.5rem_9rem_3rem] items-center gap-x-2 relative" style={{ marginTop: i > 0 ? 6 : 0 }}>
+                    <div className="absolute left-[-14px] w-[7px] h-[7px] rounded-full bg-primary" />
+                    <span className={`text-sm tabular-nums ${i === 0 ? "font-bold text-green-700" : "text-muted-foreground"}`}>
+                      {formatEur(tier.price || tier.minAmount)}&nbsp;€
+                    </span>
+                    {tier.minAmount ? (
+                      <span className="text-xs text-muted-foreground tabular-nums">MOV&nbsp;{formatEur(tier.minAmount)}&nbsp;€</span>
+                    ) : <span />}
+                    <div className="flex justify-end"><TierSavingBadge saving={saving} /></div>
+                  </div>
+                );
+              })}
             </div>
           ) : (
             <div className="flex flex-col gap-1">

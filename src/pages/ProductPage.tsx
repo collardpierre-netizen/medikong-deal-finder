@@ -169,17 +169,25 @@ export function TierSavingBadge({
       basePrice === null ||
       basePrice === undefined ||
       typeof basePrice !== "number" ||
-      !Number.isFinite(basePrice) ||
+      !Number.isFinite(basePrice);
+    const basePriceInvalid =
+      typeof basePrice === "number" &&
+      Number.isFinite(basePrice) &&
       basePrice <= 0;
     const formulaHint =
-      "L'économie est normalement calculée ainsi : (prix de base − prix unitaire du palier) ÷ prix de base × 100. Le fallback « — » s'affiche quand ce calcul n'est pas possible.";
+      "Formule : (prix de base − prix unitaire du palier) ÷ prix de base × 100. Le fallback « — » s'affiche dans 3 cas :\n" +
+      "1) Prix de base manquant (non fourni / null / non numérique).\n" +
+      "2) Prix de base invalide (≤ 0 ou non fini).\n" +
+      "3) Réduction non valide pour ce palier (prix unitaire invalide, ou prix du palier ≥ prix de base).";
     const reason =
-      basePrice === undefined
-        ? "Réduction non disponible (prix de base manquant)."
+      basePrice === undefined || basePrice === null
+        ? "Cas 1 — Prix de base manquant : aucune référence pour calculer l'économie de ce palier."
         : basePriceMissing
-          ? "Prix de base manquant ou invalide — économie impossible à calculer pour ce palier."
-          : "Réduction non valide pour ce palier (prix unitaire invalide, ou palier supérieur ou égal au prix de base).";
-    const title = `${reason} ${formulaHint}`;
+          ? "Cas 1 — Prix de base manquant ou non numérique : impossible de calculer l'économie."
+          : basePriceInvalid
+            ? "Cas 2 — Prix de base invalide (≤ 0 ou non fini) : calcul impossible."
+            : "Cas 3 — Réduction non valide pour ce palier (prix unitaire invalide, ou palier ≥ prix de base).";
+    const title = `${reason}\n\n${formulaHint}`;
 
     return (
       <span

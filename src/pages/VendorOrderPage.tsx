@@ -501,13 +501,13 @@ export default function VendorOrderPage() {
                           </TableCell>
                           <TableCell>
                             <div className="flex flex-col items-start gap-2">
-                              {status === "pending" && (
+                              {rawStatus === "pending" && (
                                 <Button size="sm" onClick={() => handleLineAction(line.id, "confirm")} disabled={actionLoading === `${line.id}:confirm`}>
                                   {actionLoading === `${line.id}:confirm` && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                   Confirmer prise en charge
                                 </Button>
                               )}
-                              {status === "processing" && (
+                              {rawStatus === "processing" && (
                                 <div className="flex min-w-64 items-center gap-2">
                                   <Input
                                     value={trackingValue}
@@ -525,13 +525,13 @@ export default function VendorOrderPage() {
                                   </Button>
                                 </div>
                               )}
-                              {status === "shipped" && (
+                              {rawStatus === "shipped" && (
                                 <Button size="sm" onClick={() => handleLineAction(line.id, "deliver")} disabled={actionLoading === `${line.id}:deliver`}>
                                   {actionLoading === `${line.id}:deliver` && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                   Marquer livré
                                 </Button>
                               )}
-                              {(status === "pending" || status === "processing" || status === "shipped") && (
+                              {(rawStatus === "pending" || rawStatus === "processing" || rawStatus === "shipped") && (
                                 <Button
                                   size="sm"
                                   variant="outline"
@@ -544,7 +544,7 @@ export default function VendorOrderPage() {
                                   Annuler
                                 </Button>
                               )}
-                              {(status === "pending" || status === "processing") && line.quantity > 1 && (
+                              {(rawStatus === "pending" || rawStatus === "processing") && line.quantity > 1 && (
                                 <Button
                                   size="sm"
                                   variant="outline"
@@ -557,7 +557,7 @@ export default function VendorOrderPage() {
                                   Livraison partielle
                                 </Button>
                               )}
-                              {!["pending", "processing", "shipped"].includes(status) && <span className="text-sm text-muted-foreground">—</span>}
+                              {!["pending", "processing", "shipped"].includes(rawStatus) && <span className="text-sm text-muted-foreground">—</span>}
                             </div>
                           </TableCell>
                         </TableRow>

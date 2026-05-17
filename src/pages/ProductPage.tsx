@@ -500,15 +500,50 @@ function OfferRow({
             </div>
             <button
               type="button"
-              className="bg-primary text-primary-foreground px-3 h-8 rounded-md text-sm font-semibold inline-flex items-center justify-center gap-1.5 whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 hover:bg-primary/90 active:bg-primary/80 transition-colors w-full min-w-0"
+              className="bg-primary text-primary-foreground px-3 h-8 rounded-md text-sm font-semibold inline-flex items-center justify-center gap-1.5 whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 hover:bg-primary/90 active:bg-primary/80 transition-colors w-full min-w-0 disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={handleAdd}
-              title={`Ajouter ${Math.min(qty, maxQty)} × ${formatEur(basePackPrice)} € au panier`}
+              disabled={outOfStock || qty < step || qty > maxQty}
+              title={outOfStock ? "Rupture de stock" : `Ajouter ${Math.min(qty, maxQty)} × ${formatEur(basePackPrice)} € au panier`}
               aria-label={`Ajouter ${Math.min(qty, maxQty)} unité(s) au panier — total ${formatEur(Math.min(qty, maxQty) * basePackPrice)} € ${priceLabel}`}
             >
               <ShoppingCart size={14} aria-hidden className="shrink-0" />
-              <span className="shrink-0">Ajouter</span>
+              <span className="shrink-0">{outOfStock ? "Rupture" : "Ajouter"}</span>
             </button>
           </div>
+          <div className="flex items-center justify-end gap-2 text-[10px] text-muted-foreground w-full min-w-0">
+            {step > 1 && (
+              <span className="tabular-nums" title={`Quantité minimum de commande : ${step}. Toute quantité doit être un multiple de ${step}.`}>
+                Lots de {step}
+              </span>
+            )}
+            <span className="tabular-nums" aria-live="polite">
+              Total&nbsp;<span className="font-semibold text-foreground">{formatEur(Math.min(qty, maxQty) * basePackPrice)}&nbsp;€</span>{" "}
+              <span className="opacity-70">{priceLabel}</span>
+            </span>
+          </div>
+          {/* Live MOV feedback — uniquement sur la "Meilleure offre" */}
+          {isBest && showMovHint && !outOfStock && (
+            movReached ? (
+              <div className="text-[10px] font-semibold text-green-700 bg-green-50 border border-green-200 rounded px-2 py-1 w-full text-right tabular-nums">
+                ✓ MOV atteint ({formatEur(effectiveMov)} € HT)
+              </div>
+            ) : (
+              <div className="flex flex-col items-end gap-1 w-full">
+                <span className="text-[10px] text-orange-700 tabular-nums text-right">
+                  Il manque <span className="font-semibold">{formatEur(movMissing)} €</span> pour atteindre le MOV vendor
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setQty(Math.min(maxQty, Math.max(step, minQtyForMov)))}
+                  disabled={minQtyForMov > maxQty}
+                  className="text-[10px] font-medium text-primary border border-primary/40 hover:bg-primary/5 disabled:opacity-50 disabled:cursor-not-allowed rounded px-2 py-1 tabular-nums"
+                  title={minQtyForMov > maxQty ? "Stock insuffisant pour atteindre le MOV" : undefined}
+                >
+                  Atteindre le MOV ({minQtyForMov.toLocaleString("fr-FR")} unités · {formatEur(minQtyForMov * (offer.unitPriceEur || basePackPrice))} €)
+                </button>
+              </div>
+            )
+          )}
           <div className="flex items-center justify-end gap-2 text-[10px] text-muted-foreground w-full min-w-0">
             {step > 1 && (
               <span className="tabular-nums" title={`Quantité minimum de commande : ${step}. Toute quantité doit être un multiple de ${step}.`}>

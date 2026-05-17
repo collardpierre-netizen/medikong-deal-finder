@@ -49,6 +49,20 @@ const MAX_WARNS_PER_REASON = 5;
 const counters = new Map<TierSavingIssueReason, ReasonStats>();
 const warnedCounts = new Map<TierSavingIssueReason, number>();
 
+type Listener = (reason: TierSavingIssueReason, stats: ReasonStats) => void;
+const listeners = new Set<Listener>();
+
+/**
+ * S'abonner aux incidents (UI admin / bannière). Retourne une fonction
+ * de désabonnement. N'altère pas le comportement existant.
+ */
+export function subscribeTierSavingIssues(listener: Listener): () => void {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+}
+
 function bumpCounter(
   reason: TierSavingIssueReason,
   ctx: TierSavingIssueContext,
@@ -91,6 +105,16 @@ export function recordTierSavingIssue(
     (window as unknown as {
       __tierSavingDiagnostics?: ReturnType<typeof getTierSavingDiagnostics>;
     }).__tierSavingDiagnostics = getTierSavingDiagnostics();
+  }
+
+  // Notifier les abonnés (bannière admin, etc.). Errors isolées par listener.
+  for (const listener of listeners) {
+    try {
+      listener(reason, stats);
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error("[TierSaving] listener error", err);
+    }
   }
 }
 

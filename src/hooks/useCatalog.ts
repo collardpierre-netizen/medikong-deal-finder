@@ -43,7 +43,7 @@ function mapCountryViewRow(row: any): CatalogProduct {
 }
 const CATALOG_QUERY_TIMEOUT_MS = 8000;
 const CATALOG_COUNT_TIMEOUT_MS = 4000;
-const CATEGORY_COUNT_TIMEOUT_MS = 3000;
+const CATEGORY_COUNT_TIMEOUT_MS = 6000;
 
 async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message = "La requête a expiré."): Promise<T> {
   let timeoutId: number | undefined;

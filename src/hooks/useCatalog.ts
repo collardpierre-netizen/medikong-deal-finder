@@ -60,6 +60,36 @@ async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message = 
 }
 
 /**
+ * Exécute `factory()` avec un timeout, et réessaie en backoff exponentiel
+ * (par défaut 2 retries: 250ms puis 750ms) en cas d'échec/timeout. Renvoie
+ * `null` si toutes les tentatives échouent (consommateurs gèrent le fallback).
+ */
+async function withTimeoutRetry<T>(
+  factory: () => Promise<T>,
+  timeoutMs: number,
+  message: string,
+  options: { retries?: number; baseDelayMs?: number } = {},
+): Promise<T | null> {
+  const retries = options.retries ?? 2;
+  const baseDelayMs = options.baseDelayMs ?? 250;
+  let lastError: unknown;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      return await withTimeout(factory(), timeoutMs, message);
+    } catch (err) {
+      lastError = err;
+      if (attempt === retries) break;
+      const delay = baseDelayMs * Math.pow(3, attempt); // 250ms, 750ms
+      await new Promise((r) => window.setTimeout(r, delay));
+    }
+  }
+  if (typeof console !== "undefined") {
+    console.warn(`[useCatalog] ${message} (échec après ${retries + 1} tentatives)`, lastError);
+  }
+  return null;
+}
+
+/**
  * Returns the IDs of all inactive categories AND every descendant of an inactive
  * category — even if those descendants are individually marked active.
  *

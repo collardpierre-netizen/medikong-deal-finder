@@ -289,7 +289,7 @@ export default function VendorOrderPage() {
     const productName = cancelTarget.product_name;
     const toastId = toast.loading("Annulation en cours…", { description: productName });
 
-    const { error } = await supabase.functions.invoke("refund-order-line", {
+    const { data, error } = await supabase.functions.invoke("refund-order-line", {
       body: { token, line_id: cancelTarget.id, action: "cancel", reason: trimmedReason },
     });
 
@@ -301,7 +301,11 @@ export default function VendorOrderPage() {
       return;
     }
 
-    toast.success("Ligne annulée et remboursée", { id: toastId, description: productName });
+    const refund = (data as { refund?: { stripe_refund_id?: string; amount_refunded?: number } })?.refund;
+    const amountStr = typeof refund?.amount_refunded === "number" ? formatMoney(refund.amount_refunded) : null;
+    const refundId = refund?.stripe_refund_id;
+    const descParts = [productName, amountStr ? `Remboursé : ${amountStr} TTC` : null, refundId ? `Transaction : ${refundId}` : null].filter(Boolean);
+    toast.success("Ligne annulée et remboursée", { id: toastId, description: descParts.join(" · ") });
     setCancelTarget(null);
     setCancelReason("");
     setCancelLoading(false);

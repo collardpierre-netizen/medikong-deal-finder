@@ -159,15 +159,6 @@ export function TierSavingBadge({ saving }: { saving: TierSavingInput }) {
       </span>
     );
   }
-      <span
-        className="inline-flex items-center rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground tabular-nums leading-none"
-        title="Réduction non disponible (prix de base manquant)"
-        aria-label="Réduction non disponible"
-      >
-        —
-      </span>
-    );
-  }
 
   return (
     <span className="inline-flex items-center rounded-full bg-green-50 px-1.5 py-0.5 text-[10px] font-semibold text-green-700 tabular-nums leading-none">

@@ -137,17 +137,10 @@ function formatRelative(iso?: string | null): string | null {
 
 
 /* ── Tier saving badge (unifié desktop + mobile) ───────── */
-export function TierSavingBadge({ saving }: { saving: string | number | null | undefined }) {
-  const isMissing =
-    saving === null || saving === undefined || saving === "";
-  const num = isMissing
-    ? NaN
-    : typeof saving === "number"
-      ? saving
-      : parseFloat(saving as string);
-  const isInvalid = !Number.isFinite(num) || num <= 0;
+export function TierSavingBadge({ saving }: { saving: TierSavingInput }) {
+  const num = parseTierSavingValue(saving);
 
-  if (isMissing || isInvalid) {
+  if (num === null) {
     return (
       <span
         className="inline-flex items-center rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground tabular-nums leading-none"
@@ -159,10 +152,9 @@ export function TierSavingBadge({ saving }: { saving: string | number | null | u
     );
   }
 
-  const formatted = num.toFixed(1);
   return (
     <span className="inline-flex items-center rounded-full bg-green-50 px-1.5 py-0.5 text-[10px] font-semibold text-green-700 tabular-nums leading-none">
-      -{formatted}%
+      -{num.toFixed(1)}%
     </span>
   );
 }

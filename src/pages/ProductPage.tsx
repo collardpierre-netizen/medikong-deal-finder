@@ -137,7 +137,7 @@ function formatRelative(iso?: string | null): string | null {
 
 
 /* ── Tier saving badge (unifié desktop + mobile) ───────── */
-function TierSavingBadge({ saving }: { saving: string | number | null | undefined }) {
+export function TierSavingBadge({ saving }: { saving: string | number | null | undefined }) {
   const isMissing =
     saving === null || saving === undefined || saving === "";
   const num = isMissing

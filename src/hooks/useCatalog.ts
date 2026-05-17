@@ -600,10 +600,11 @@ export function useCatalogCategories() {
           .eq("is_active", true)
           .order("display_order", { ascending: true }),
         withTimeoutRetry(
-          () => supabase.rpc("count_products_per_category").then((r) => {
+          async () => {
+            const r = await supabase.rpc("count_products_per_category");
             if (r.error) throw r.error;
             return r;
-          }),
+          },
           CATEGORY_COUNT_TIMEOUT_MS,
           "Le comptage des catégories est trop lent.",
           { retries: 2, baseDelayMs: 250 },

@@ -636,8 +636,8 @@ function OfferRow({
                 .map((tier, i) => {
                   const basePrice = offerPriceTiers[0]?.price_excl_vat ?? 0;
                   const tierPrice = isTVAC ? tier.price_incl_vat : tier.price_excl_vat;
-                  const saving = i > 0 && basePrice > 0 && Number.isFinite(tier.price_excl_vat)
-                    ? ((basePrice - tier.price_excl_vat) / basePrice * 100).toFixed(1)
+                  const saving = i > 0
+                    ? computeTierSavingPercent(basePrice, tier.price_excl_vat)
                     : null;
                   return (
                     <div key={tier.id} className="flex flex-col items-start gap-0.5 rounded-sm bg-background px-2 py-1.5 border border-border/60">

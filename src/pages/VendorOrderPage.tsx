@@ -470,17 +470,26 @@ export default function VendorOrderPage() {
                   </TableHeader>
                   <TableBody>
                     {order.lines.map((line) => {
-                      const status = line.fulfillment_status;
+                      const rawStatus = String(line.fulfillment_status || "pending");
+                      const status = getDisplayStatus(line);
                       const trackingValue = trackingNumbers[line.id] || "";
+                      const isCancelled = rawStatus === "cancelled";
+                      const shippedQty = Number(line.quantity_shipped || 0);
 
                       return (
-                        <TableRow key={line.id}>
+                        <TableRow key={line.id} className={isCancelled ? "opacity-60" : undefined}>
                           <TableCell>
                             <div className="flex items-center gap-3">
                               {line.image_url && <img src={line.image_url} alt={line.product_name} className="h-12 w-12 rounded-md border border-border object-contain" />}
                               <div>
                                 <div className="font-semibold">{line.product_name}</div>
                                 <div className="text-xs text-muted-foreground">{line.gtin || line.sku || "—"}</div>
+                                {isCancelled && line.cancellation_reason && (
+                                  <div className="mt-1 text-xs text-destructive">Motif : {line.cancellation_reason}</div>
+                                )}
+                                {status === "partially_shipped" && (
+                                  <div className="mt-1 text-xs text-muted-foreground">{shippedQty}/{line.quantity} expédié(s)</div>
+                                )}
                               </div>
                             </div>
                           </TableCell>
@@ -488,7 +497,7 @@ export default function VendorOrderPage() {
                           <TableCell>{formatMoney(line.unit_price_excl_vat)}</TableCell>
                           <TableCell>{formatMoney(line.line_total_excl_vat)}</TableCell>
                           <TableCell>
-                            <Badge variant="outline">{statusLabels[status] || status}</Badge>
+                            <Badge variant={statusBadgeVariant[status] || "outline"}>{statusLabels[status] || status}</Badge>
                           </TableCell>
                           <TableCell>
                             <div className="flex flex-col items-start gap-2">

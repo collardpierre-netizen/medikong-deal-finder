@@ -26,6 +26,8 @@ import { template as subscriptionExtensionApproved } from './subscription-extens
 import { template as subscriptionExtensionRejected } from './subscription-extension-rejected.tsx'
 import { template as adminVendorMarketIntelNotification } from './admin-vendor-market-intel-notification.tsx'
 import { template as vendorInvoices } from './vendor-invoices.tsx'
+import { template as orderLineRefundedCustomer } from './order-line-refunded-customer.tsx'
+import { template as orderLineRefundedAdmin } from './order-line-refunded-admin.tsx'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'vendor-invoices': vendorInvoices,
@@ -45,4 +47,6 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'subscription-extension-approved': subscriptionExtensionApproved,
   'subscription-extension-rejected': subscriptionExtensionRejected,
   'admin-vendor-market-intel-notification': adminVendorMarketIntelNotification,
+  'order-line-refunded-customer': orderLineRefundedCustomer,
+  'order-line-refunded-admin': orderLineRefundedAdmin,
 }

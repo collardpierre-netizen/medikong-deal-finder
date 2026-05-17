@@ -624,9 +624,11 @@ function OfferRow({
               {offerPriceTiers
                 .sort((a, b) => a.tier_index - b.tier_index)
                 .map((tier, i) => {
-                  const basePrice = offerPriceTiers[0].price_excl_vat;
+                  const basePrice = offerPriceTiers[0]?.price_excl_vat ?? 0;
                   const tierPrice = isTVAC ? tier.price_incl_vat : tier.price_excl_vat;
-                  const saving = i > 0 ? ((basePrice - tier.price_excl_vat) / basePrice * 100).toFixed(1) : null;
+                  const saving = i > 0 && basePrice > 0 && Number.isFinite(tier.price_excl_vat)
+                    ? ((basePrice - tier.price_excl_vat) / basePrice * 100).toFixed(1)
+                    : null;
                   return (
                     <div key={tier.id} className="flex flex-col items-start gap-0.5 rounded-sm bg-background px-2 py-1.5 border border-border/60">
                       <span className={`text-[12px] tabular-nums leading-tight ${i === 0 ? "font-bold text-green-700" : "font-semibold text-foreground"}`}>

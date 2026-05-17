@@ -1,4 +1,5 @@
 import { Layout } from "@/components/layout/Layout";
+import { computeTierSavingPercent, parseTierSavingValue, type TierSavingInput } from "@/lib/tier-saving";
 import { isValidProductImage, getProductImageSrc, MEDIKONG_PLACEHOLDER, isQogitaPlaceholder, getPreferredProductImageUrls } from "@/lib/image-utils";
 import { useProduct, useProductOffers, type Offer } from "@/hooks/useProducts";
 import { useCart } from "@/hooks/useCart";
@@ -137,17 +138,10 @@ function formatRelative(iso?: string | null): string | null {
 
 
 /* ── Tier saving badge (unifié desktop + mobile) ───────── */
-export function TierSavingBadge({ saving }: { saving: string | number | null | undefined }) {
-  const isMissing =
-    saving === null || saving === undefined || saving === "";
-  const num = isMissing
-    ? NaN
-    : typeof saving === "number"
-      ? saving
-      : parseFloat(saving as string);
-  const isInvalid = !Number.isFinite(num) || num <= 0;
+export function TierSavingBadge({ saving }: { saving: TierSavingInput }) {
+  const num = parseTierSavingValue(saving);
 
-  if (isMissing || isInvalid) {
+  if (num === null) {
     return (
       <span
         className="inline-flex items-center rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground tabular-nums leading-none"
@@ -159,10 +153,9 @@ export function TierSavingBadge({ saving }: { saving: string | number | null | u
     );
   }
 
-  const formatted = num.toFixed(1);
   return (
     <span className="inline-flex items-center rounded-full bg-green-50 px-1.5 py-0.5 text-[10px] font-semibold text-green-700 tabular-nums leading-none">
-      -{formatted}%
+      -{num.toFixed(1)}%
     </span>
   );
 }
@@ -392,7 +385,7 @@ function OfferRow({
                 .sort((a, b) => a.mov_amount - b.mov_amount)
                 .map((tier, i) => {
                   const basePrice = discountTiers[0].unit_price;
-                  const saving = i > 0 ? ((basePrice - tier.unit_price) / basePrice * 100).toFixed(1) : null;
+                  const saving = i > 0 ? computeTierSavingPercent(basePrice, tier.unit_price) : null;
                   return (
                     <div key={tier.id} className="grid grid-cols-[5.5rem_9rem_3rem] items-center gap-x-2 relative" style={{ marginTop: i > 0 ? 6 : 0 }}>
                       <div className="absolute left-[-14px] w-[7px] h-[7px] rounded-full bg-primary" />
@@ -418,8 +411,8 @@ function OfferRow({
                   .map((tier, i) => {
                     const basePrice = offerPriceTiers[0]?.price_excl_vat ?? 0;
                     const tierPrice = isTVAC ? tier.price_incl_vat : tier.price_excl_vat;
-                    const saving = i > 0 && basePrice > 0 && Number.isFinite(tier.price_excl_vat)
-                      ? ((basePrice - tier.price_excl_vat) / basePrice * 100).toFixed(1)
+                    const saving = i > 0
+                      ? computeTierSavingPercent(basePrice, tier.price_excl_vat)
                       : null;
                     return (
                       <div key={tier.id} className="flex items-center gap-2 relative whitespace-nowrap" style={{ marginTop: i > 0 ? 4 : 0 }}>
@@ -643,8 +636,8 @@ function OfferRow({
                 .map((tier, i) => {
                   const basePrice = offerPriceTiers[0]?.price_excl_vat ?? 0;
                   const tierPrice = isTVAC ? tier.price_incl_vat : tier.price_excl_vat;
-                  const saving = i > 0 && basePrice > 0 && Number.isFinite(tier.price_excl_vat)
-                    ? ((basePrice - tier.price_excl_vat) / basePrice * 100).toFixed(1)
+                  const saving = i > 0
+                    ? computeTierSavingPercent(basePrice, tier.price_excl_vat)
                     : null;
                   return (
                     <div key={tier.id} className="flex flex-col items-start gap-0.5 rounded-sm bg-background px-2 py-1.5 border border-border/60">

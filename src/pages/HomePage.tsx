@@ -665,7 +665,7 @@ export default function HomePage() {
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
           >
-            <h2 className="text-2xl md:text-3xl font-bold mb-3" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+            <h2 className="text-2xl md:text-3xl font-bold mb-3" style={{ fontFamily: "'Bricolage Grotesque', 'DM Sans', sans-serif", letterSpacing: "-0.03em" }}>
               {t("cta.title")}
             </h2>
             <p className="text-sm text-white/60 mb-8 max-w-md mx-auto">

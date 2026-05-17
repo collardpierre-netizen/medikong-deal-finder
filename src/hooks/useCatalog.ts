@@ -599,11 +599,15 @@ export function useCatalogCategories() {
           .like("slug", "mk-%")
           .eq("is_active", true)
           .order("display_order", { ascending: true }),
-        withTimeout(
-          (async () => await supabase.rpc("count_products_per_category"))(),
+        withTimeoutRetry(
+          () => supabase.rpc("count_products_per_category").then((r) => {
+            if (r.error) throw r.error;
+            return r;
+          }),
           CATEGORY_COUNT_TIMEOUT_MS,
-          "Le comptage des catégories est trop lent."
-        ).catch(() => null),
+          "Le comptage des catégories est trop lent.",
+          { retries: 2, baseDelayMs: 250 },
+        ),
       ]);
 
       if (catResult.error) throw catResult.error;

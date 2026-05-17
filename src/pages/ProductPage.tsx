@@ -256,6 +256,16 @@ function OfferRow({
         )}
       </div>
 
+      {/* MOV pédagogique (avant d'arriver au panier) */}
+      {showMovHint && !outOfStock && (
+        <div className="mb-2 inline-flex items-center gap-1.5 text-[11px] font-medium text-orange-700 bg-orange-50 border border-orange-200 px-2.5 py-1 rounded-full">
+          <Info size={12} aria-hidden />
+          <span className="tabular-nums">
+            Min. commande : {formatEur(effectiveMov)} € HT (≈ {minQtyForMov.toLocaleString("fr-FR")} unités)
+          </span>
+        </div>
+      )}
+
       {/* Mise à jour, origine, ancienneté & livraison sont regroupées dans la ligne méta du bas. */}
 
 

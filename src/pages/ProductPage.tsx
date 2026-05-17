@@ -730,19 +730,12 @@ function OfferRow({
                 .map((tier, i) => {
                   const basePrice = offerPriceTiers[0]?.price_excl_vat ?? 0;
                   const tierPrice = isTVAC ? tier.price_incl_vat : tier.price_excl_vat;
-                  let saving: number | null = null;
-                  if (i > 0) {
-                    saving = computeTierSavingPercent(basePrice, tier.price_excl_vat);
-                    if (saving === null) {
-                      recordTierSavingIssue("compute_returned_null", {
-                        where: "offerPriceTiers:mobile",
-                        basePrice,
-                        unitPrice: tier.price_excl_vat,
-                        offerId: offer.id,
-                        productId,
-                      });
-                    }
-                  }
+                  const { saving } = resolveTierSaving({
+                    index: i,
+                    basePrice,
+                    unitPrice: tier.price_excl_vat,
+                    context: { where: "offerPriceTiers:mobile", offerId: offer.id, productId },
+                  });
                   return (
                     <div key={tier.id} className="flex flex-col items-start gap-0.5 rounded-sm bg-background px-2 py-1.5 border border-border/60">
                       <span className={`text-[12px] tabular-nums leading-tight ${i === 0 ? "font-bold text-green-700" : "font-semibold text-foreground"}`}>

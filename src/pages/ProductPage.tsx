@@ -517,19 +517,12 @@ function OfferRow({
               <div className="absolute left-[3px] top-[7px] w-px border-l border-dashed border-muted-foreground/40" style={{ height: `calc(100% - 14px)` }} />
               {tiers.map((tier: any, i: number) => {
                 const basePrice = tiers[0]?.price ?? tiers[0]?.minAmount;
-                let saving: number | null = null;
-                if (i > 0) {
-                  saving = computeTierSavingPercent(basePrice, tier.price);
-                  if (saving === null) {
-                    recordTierSavingIssue("compute_returned_null", {
-                      where: "legacyTiers",
-                      basePrice,
-                      unitPrice: tier.price,
-                      offerId: offer.id,
-                      productId,
-                    });
-                  }
-                }
+                const { saving } = resolveTierSaving({
+                  index: i,
+                  basePrice,
+                  unitPrice: tier.price,
+                  context: { where: "legacyTiers", offerId: offer.id, productId },
+                });
                 return (
                   <div key={i} className="flex items-center gap-2 relative whitespace-nowrap" style={{ marginTop: i > 0 ? 4 : 0 }}>
                     <div className="absolute left-[-14px] top-1/2 -translate-y-1/2 w-[7px] h-[7px] rounded-full bg-primary" />

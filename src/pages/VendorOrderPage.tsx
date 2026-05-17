@@ -256,6 +256,36 @@ export default function VendorOrderPage() {
     setActionLoading(null);
   };
 
+  const handleCancelLine = async () => {
+    if (!cancelTarget) return;
+    const trimmedReason = cancelReason.trim();
+    if (!trimmedReason) {
+      toast.error("Motif requis", { description: "Merci d'expliquer la raison de l'annulation." });
+      return;
+    }
+    setCancelLoading(true);
+    const productName = cancelTarget.product_name;
+    const toastId = toast.loading("Annulation en cours…", { description: productName });
+
+    const { error } = await supabase.functions.invoke("refund-order-line", {
+      body: { token, line_id: cancelTarget.id, action: "cancel", reason: trimmedReason },
+    });
+
+    if (error) {
+      const parsedError = await parseFunctionError(error);
+      const message = resolveErrorMessage(parsedError);
+      toast.error("Échec de l'annulation", { id: toastId, description: message });
+      setCancelLoading(false);
+      return;
+    }
+
+    toast.success("Ligne annulée et remboursée", { id: toastId, description: productName });
+    setCancelTarget(null);
+    setCancelReason("");
+    setCancelLoading(false);
+    await loadOrder({ silent: true });
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="border-b border-border bg-card">

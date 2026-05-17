@@ -8,12 +8,13 @@ export function SubNav() {
   const { t } = useTranslation();
   const { data: features } = useSiteFeatures();
 
-  const tabs = [
+  const tabs: { label: string; path: string; badge?: string }[] = [
     { label: t("nav.shop"), path: "/shop" },
     { label: t("nav.brands"), path: "/marques" },
     { label: t("nav.promotions"), path: "/promotions" },
     { label: t("nav.sourcing"), path: "/sourcing" },
     { label: t("nav.professionals"), path: "/professionnels" },
+    { label: "Audit gratuit", path: "/audit-achats", badge: "Gratuit" },
     ...(features?.restockEnabled !== false ? [{ label: "ReStock", path: "/restock" }] : []),
   ];
 
@@ -52,6 +53,11 @@ export function SubNav() {
               }`}
             >
               {tab.label}
+              {tab.badge && (
+                <span className="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-700">
+                  {tab.badge}
+                </span>
+              )}
               {active && <span className="absolute bottom-0 left-2 right-2 h-0.5 bg-primary rounded-full" />}
             </Link>
           );

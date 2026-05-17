@@ -65,7 +65,7 @@ Deno.serve(async (req) => {
         emailsSkipped++;
         continue;
       }
-      // CTA magic-link : /vendor/order/<order_number>?token=<magic_token>
+      // CTA magic-link : /vendor/orders/<order_number>?token=<magic_token>
       // Fallback sur PORTAL_URL si pas de token (sécurité).
       const ctaUrl = v.magic_token && v.order_number
         ? `${MAGIC_LINK_BASE}/${encodeURIComponent(v.order_number)}?token=${encodeURIComponent(v.magic_token)}`

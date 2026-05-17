@@ -385,7 +385,7 @@ function OfferRow({
                 .sort((a, b) => a.mov_amount - b.mov_amount)
                 .map((tier, i) => {
                   const basePrice = discountTiers[0].unit_price;
-                  const saving = i > 0 ? ((basePrice - tier.unit_price) / basePrice * 100).toFixed(1) : null;
+                  const saving = i > 0 ? computeTierSavingPercent(basePrice, tier.unit_price) : null;
                   return (
                     <div key={tier.id} className="grid grid-cols-[5.5rem_9rem_3rem] items-center gap-x-2 relative" style={{ marginTop: i > 0 ? 6 : 0 }}>
                       <div className="absolute left-[-14px] w-[7px] h-[7px] rounded-full bg-primary" />

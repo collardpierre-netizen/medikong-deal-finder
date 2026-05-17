@@ -8,21 +8,21 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 type VendorLineStatus = "pending" | "processing" | "forwarded" | "shipped" | "delivered" | "cancelled" | string;
-type VendorLineAction = "confirm" | "ship" | "deliver" | "cancel";
+type VendorLineAction = "confirm" | "ship" | "deliver";
 
 interface VendorOrderLine {
   id: string;
@@ -32,7 +32,9 @@ interface VendorOrderLine {
   image_url?: string | null;
   quantity: number;
   unit_price_excl_vat: number;
+  unit_price_incl_vat?: number;
   line_total_excl_vat: number;
+  line_total_incl_vat?: number;
   fulfillment_status: VendorLineStatus;
   tracking_number?: string | null;
   tracking_url?: string | null;

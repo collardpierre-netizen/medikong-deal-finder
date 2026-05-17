@@ -166,6 +166,9 @@ export default function VendorOrderPage() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [trackingNumbers, setTrackingNumbers] = useState<Record<string, string>>({});
+  const [cancelTarget, setCancelTarget] = useState<VendorOrderLine | null>(null);
+  const [cancelReason, setCancelReason] = useState("");
+  const [cancelLoading, setCancelLoading] = useState(false);
 
   const loadOrder = useCallback(async (options?: { silent?: boolean }) => {
     const silent = options?.silent === true;

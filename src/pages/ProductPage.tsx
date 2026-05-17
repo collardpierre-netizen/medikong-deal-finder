@@ -1,6 +1,7 @@
 import { Layout } from "@/components/layout/Layout";
-import { computeTierSavingPercent, parseTierSavingValue, type TierSavingInput } from "@/lib/tier-saving";
+import { parseTierSavingValue, type TierSavingInput } from "@/lib/tier-saving";
 import { recordTierSavingIssue } from "@/lib/tier-saving-diagnostics";
+import { resolveTierSaving } from "@/lib/tier-saving-guard";
 import { TierSavingAdminAlert } from "@/components/admin/TierSavingAdminAlert";
 import { isValidProductImage, getProductImageSrc, MEDIKONG_PLACEHOLDER, isQogitaPlaceholder, getPreferredProductImageUrls } from "@/lib/image-utils";
 import { useProduct, useProductOffers, type Offer } from "@/hooks/useProducts";
@@ -457,19 +458,12 @@ function OfferRow({
                 .sort((a, b) => a.mov_amount - b.mov_amount)
                 .map((tier, i) => {
                   const basePrice = discountTiers[0].unit_price;
-                  let saving: number | null = null;
-                  if (i > 0) {
-                    saving = computeTierSavingPercent(basePrice, tier.unit_price);
-                    if (saving === null) {
-                      recordTierSavingIssue("compute_returned_null", {
-                        where: "discountTiers",
-                        basePrice,
-                        unitPrice: tier.unit_price,
-                        offerId: offer.id,
-                        productId,
-                      });
-                    }
-                  }
+                  const { saving } = resolveTierSaving({
+                    index: i,
+                    basePrice,
+                    unitPrice: tier.unit_price,
+                    context: { where: "discountTiers", offerId: offer.id, productId },
+                  });
                   return (
                     <div key={tier.id} className="grid grid-cols-[5.5rem_9rem_3rem] items-center gap-x-2 relative" style={{ marginTop: i > 0 ? 6 : 0 }}>
                       <div className="absolute left-[-14px] w-[7px] h-[7px] rounded-full bg-primary" />
@@ -495,19 +489,12 @@ function OfferRow({
                   .map((tier, i) => {
                     const basePrice = offerPriceTiers[0]?.price_excl_vat ?? 0;
                     const tierPrice = isTVAC ? tier.price_incl_vat : tier.price_excl_vat;
-                    let saving: number | null = null;
-                    if (i > 0) {
-                      saving = computeTierSavingPercent(basePrice, tier.price_excl_vat);
-                      if (saving === null) {
-                        recordTierSavingIssue("compute_returned_null", {
-                          where: "offerPriceTiers:desktop",
-                          basePrice,
-                          unitPrice: tier.price_excl_vat,
-                          offerId: offer.id,
-                          productId,
-                        });
-                      }
-                    }
+                    const { saving } = resolveTierSaving({
+                      index: i,
+                      basePrice,
+                      unitPrice: tier.price_excl_vat,
+                      context: { where: "offerPriceTiers:desktop", offerId: offer.id, productId },
+                    });
                     return (
                       <div key={tier.id} className="flex items-center gap-2 relative whitespace-nowrap" style={{ marginTop: i > 0 ? 4 : 0 }}>
                         <div className="absolute left-[-14px] top-1/2 -translate-y-1/2 w-[7px] h-[7px] rounded-full bg-primary" />
@@ -530,19 +517,12 @@ function OfferRow({
               <div className="absolute left-[3px] top-[7px] w-px border-l border-dashed border-muted-foreground/40" style={{ height: `calc(100% - 14px)` }} />
               {tiers.map((tier: any, i: number) => {
                 const basePrice = tiers[0]?.price ?? tiers[0]?.minAmount;
-                let saving: number | null = null;
-                if (i > 0) {
-                  saving = computeTierSavingPercent(basePrice, tier.price);
-                  if (saving === null) {
-                    recordTierSavingIssue("compute_returned_null", {
-                      where: "legacyTiers",
-                      basePrice,
-                      unitPrice: tier.price,
-                      offerId: offer.id,
-                      productId,
-                    });
-                  }
-                }
+                const { saving } = resolveTierSaving({
+                  index: i,
+                  basePrice,
+                  unitPrice: tier.price,
+                  context: { where: "legacyTiers", offerId: offer.id, productId },
+                });
                 return (
                   <div key={i} className="flex items-center gap-2 relative whitespace-nowrap" style={{ marginTop: i > 0 ? 4 : 0 }}>
                     <div className="absolute left-[-14px] top-1/2 -translate-y-1/2 w-[7px] h-[7px] rounded-full bg-primary" />
@@ -750,19 +730,12 @@ function OfferRow({
                 .map((tier, i) => {
                   const basePrice = offerPriceTiers[0]?.price_excl_vat ?? 0;
                   const tierPrice = isTVAC ? tier.price_incl_vat : tier.price_excl_vat;
-                  let saving: number | null = null;
-                  if (i > 0) {
-                    saving = computeTierSavingPercent(basePrice, tier.price_excl_vat);
-                    if (saving === null) {
-                      recordTierSavingIssue("compute_returned_null", {
-                        where: "offerPriceTiers:mobile",
-                        basePrice,
-                        unitPrice: tier.price_excl_vat,
-                        offerId: offer.id,
-                        productId,
-                      });
-                    }
-                  }
+                  const { saving } = resolveTierSaving({
+                    index: i,
+                    basePrice,
+                    unitPrice: tier.price_excl_vat,
+                    context: { where: "offerPriceTiers:mobile", offerId: offer.id, productId },
+                  });
                   return (
                     <div key={tier.id} className="flex flex-col items-start gap-0.5 rounded-sm bg-background px-2 py-1.5 border border-border/60">
                       <span className={`text-[12px] tabular-nums leading-tight ${i === 0 ? "font-bold text-green-700" : "font-semibold text-foreground"}`}>

@@ -629,11 +629,7 @@ function OfferRow({
                       <span className="text-[10px] text-muted-foreground tabular-nums leading-tight">
                         {tier.mov_threshold > 0 ? <>≥ {formatEur(tier.mov_threshold)}&nbsp;€</> : "Base"}
                       </span>
-                      {saving && (
-                        <span className="inline-flex items-center rounded-full bg-green-50 px-1.5 py-0.5 text-[10px] font-semibold text-green-700 tabular-nums leading-none">
-                          -{saving}%
-                        </span>
-                      )}
+                      <TierSavingBadge saving={saving} />
                     </div>
                   );
                 })}

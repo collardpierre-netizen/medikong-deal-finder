@@ -412,7 +412,7 @@ function OfferRow({
                         {formatEur(tier.unit_price)}&nbsp;€
                       </span>
                       <span className="text-xs text-muted-foreground tabular-nums whitespace-nowrap">MOV&nbsp;{formatEur(tier.mov_amount)}&nbsp;€</span>
-                      <div className="flex justify-end"><TierSavingBadge saving={saving} /></div>
+                      <div className="flex justify-end">{i > 0 && <TierSavingBadge saving={saving} />}</div>
                     </div>
                   );
                 })}
@@ -449,7 +449,7 @@ function OfferRow({
                         <span className={`text-sm tabular-nums ${i === 0 ? "font-bold text-green-700" : "text-muted-foreground"}`}>
                           {formatEur(tierPrice)}&nbsp;€
                         </span>
-                        <TierSavingBadge saving={saving} />
+                        {i > 0 && <TierSavingBadge saving={saving} />}
                         <span className="text-xs text-muted-foreground tabular-nums">
                           {tier.mov_threshold > 0 ? <>≥ MOV&nbsp;{formatEur(tier.mov_threshold)}&nbsp;€</> : "Prix de base"}
                         </span>
@@ -704,7 +704,7 @@ function OfferRow({
                       <span className="text-[10px] text-muted-foreground tabular-nums leading-tight">
                         {tier.mov_threshold > 0 ? <>≥ {formatEur(tier.mov_threshold)}&nbsp;€</> : "Base"}
                       </span>
-                      <TierSavingBadge saving={saving} />
+                      {i > 0 && <TierSavingBadge saving={saving} />}
                     </div>
                   );
                 })}

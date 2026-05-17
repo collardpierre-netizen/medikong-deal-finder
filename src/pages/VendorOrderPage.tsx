@@ -20,9 +20,20 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 type VendorLineStatus = "pending" | "processing" | "forwarded" | "shipped" | "delivered" | "cancelled" | string;
-type VendorLineAction = "confirm" | "ship" | "deliver";
+type VendorLineAction = "confirm" | "ship" | "deliver" | "cancel";
 
 interface VendorOrderLine {
   id: string;
@@ -224,6 +235,7 @@ export default function VendorOrderPage() {
       confirm: { pending: "Confirmation en cours…", success: "Ligne confirmée", error: "Échec de la confirmation" },
       ship: { pending: "Expédition en cours…", success: "Ligne marquée expédiée", error: "Échec de l'expédition" },
       deliver: { pending: "Mise à jour en cours…", success: "Ligne marquée livrée", error: "Échec de la mise à jour" },
+      cancel: { pending: "Annulation en cours…", success: "Ligne annulée", error: "Échec de l'annulation" },
     };
     const labels = actionLabels[action];
     const productName = order?.lines.find((l) => l.id === lineId)?.product_name;

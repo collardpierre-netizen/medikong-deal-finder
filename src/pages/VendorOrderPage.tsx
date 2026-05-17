@@ -729,67 +729,99 @@ export default function VendorOrderPage() {
           }}
         >
           <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Livraison partielle</DialogTitle>
-              <DialogDescription>
-                {partialTarget
-                  ? `« ${partialTarget.product_name} » — commandé ${partialTarget.quantity}. Indiquez le nombre d'unités à rembourser (1 à ${partialTarget.quantity - 1}). Le solde sera expédié normalement.`
-                  : ""}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="partial-quantity">Quantité à rembourser</Label>
-                <Input
-                  id="partial-quantity"
-                  type="number"
-                  min={1}
-                  max={partialTarget ? partialTarget.quantity - 1 : undefined}
-                  step={1}
-                  value={partialQuantity}
-                  onChange={(event) => setPartialQuantity(event.target.value)}
-                  disabled={partialLoading}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="partial-reason">Motif</Label>
-                <Textarea
-                  id="partial-reason"
-                  value={partialReason}
-                  onChange={(event) => setPartialReason(event.target.value)}
-                  placeholder="Ex. stock insuffisant pour la totalité de la commande…"
-                  rows={4}
-                  disabled={partialLoading}
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setPartialTarget(null);
-                  setPartialQuantity("");
-                  setPartialReason("");
-                }}
-                disabled={partialLoading}
-              >
-                Revenir
-              </Button>
-              <Button
-                onClick={handlePartialRefund}
-                disabled={
-                  partialLoading ||
-                  !partialReason.trim() ||
-                  !partialQuantity ||
-                  !Number.isInteger(Number.parseInt(partialQuantity, 10)) ||
-                  Number.parseInt(partialQuantity, 10) < 1 ||
-                  (partialTarget ? Number.parseInt(partialQuantity, 10) >= partialTarget.quantity : true)
-                }
-              >
-                {partialLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Confirmer le remboursement partiel
-              </Button>
-            </DialogFooter>
+            {(() => {
+              const remainingQty = partialTarget
+                ? Math.max(0, partialTarget.quantity - Number(partialTarget.quantity_shipped || 0))
+                : 0;
+              const parsedQty = Number.parseInt(partialQuantity, 10);
+              const qtyEntered = partialQuantity !== "";
+              const qtyIsInteger = Number.isInteger(parsedQty);
+              const qtyTooLow = qtyEntered && qtyIsInteger && parsedQty < 1;
+              const qtyTooHigh = qtyEntered && qtyIsInteger && parsedQty > remainingQty;
+              const qtyNotInteger = qtyEntered && !qtyIsInteger;
+              const qtyError =
+                remainingQty < 1
+                  ? "Aucune unité restante à expédier. Utilisez « Annuler » pour un remboursement total."
+                  : qtyNotInteger
+                    ? "Indiquez un nombre entier."
+                    : qtyTooLow
+                      ? "La quantité doit être au moins 1."
+                      : qtyTooHigh
+                        ? `La quantité dépasse le restant à expédier (${remainingQty}).`
+                        : null;
+              const canSubmit =
+                !partialLoading &&
+                !!partialReason.trim() &&
+                qtyEntered &&
+                qtyIsInteger &&
+                parsedQty >= 1 &&
+                parsedQty <= remainingQty &&
+                remainingQty >= 1;
+              return (
+                <>
+                  <DialogHeader>
+                    <DialogTitle>Livraison partielle</DialogTitle>
+                    <DialogDescription>
+                      {partialTarget
+                        ? `« ${partialTarget.product_name} » — commandé ${partialTarget.quantity}${
+                            Number(partialTarget.quantity_shipped || 0) > 0
+                              ? `, déjà expédié ${Number(partialTarget.quantity_shipped || 0)}`
+                              : ""
+                          }. Restant à expédier : ${remainingQty}. Indiquez le nombre d'unités à rembourser (1 à ${remainingQty}).`
+                        : ""}
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="partial-quantity">Quantité à rembourser</Label>
+                      <Input
+                        id="partial-quantity"
+                        type="number"
+                        min={1}
+                        max={remainingQty || undefined}
+                        step={1}
+                        value={partialQuantity}
+                        onChange={(event) => setPartialQuantity(event.target.value)}
+                        disabled={partialLoading || remainingQty < 1}
+                        aria-invalid={qtyError ? true : undefined}
+                        className={qtyError ? "border-destructive focus-visible:ring-destructive" : undefined}
+                      />
+                      {qtyError && (
+                        <p role="alert" className="text-xs text-destructive">{qtyError}</p>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="partial-reason">Motif</Label>
+                      <Textarea
+                        id="partial-reason"
+                        value={partialReason}
+                        onChange={(event) => setPartialReason(event.target.value)}
+                        placeholder="Ex. stock insuffisant pour la totalité de la commande…"
+                        rows={4}
+                        disabled={partialLoading}
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setPartialTarget(null);
+                        setPartialQuantity("");
+                        setPartialReason("");
+                      }}
+                      disabled={partialLoading}
+                    >
+                      Revenir
+                    </Button>
+                    <Button onClick={handlePartialRefund} disabled={!canSubmit}>
+                      {partialLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Confirmer le remboursement partiel
+                    </Button>
+                  </DialogFooter>
+                </>
+              );
+            })()}
           </DialogContent>
         </Dialog>
       </main>

@@ -273,7 +273,7 @@ export interface CategoryNode {
   name_fr: string | null;
   slug: string;
   parent_id: string | null;
-  product_count: number;
+  product_count: number | null;
   children?: CategoryNode[];
 }
 

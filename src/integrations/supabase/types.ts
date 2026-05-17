@@ -201,6 +201,84 @@ export type Database = {
         }
         Relationships: []
       }
+      audit_requests: {
+        Row: {
+          additional_notes: string | null
+          admin_notes: string | null
+          consent_text_version: string | null
+          consented_at: string
+          contact_email: string
+          contact_first_name: string
+          contact_last_name: string
+          contact_phone: string | null
+          created_at: string
+          economies_estimated_max: number | null
+          economies_estimated_min: number | null
+          id: string
+          pdf_storage_paths: Json | null
+          pharmacy_address: string | null
+          pharmacy_apb_number: string | null
+          pharmacy_city: string | null
+          pharmacy_country: string | null
+          pharmacy_name: string
+          pharmacy_postal_code: string | null
+          report_pdf_url: string | null
+          sent_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          additional_notes?: string | null
+          admin_notes?: string | null
+          consent_text_version?: string | null
+          consented_at?: string
+          contact_email: string
+          contact_first_name: string
+          contact_last_name: string
+          contact_phone?: string | null
+          created_at?: string
+          economies_estimated_max?: number | null
+          economies_estimated_min?: number | null
+          id?: string
+          pdf_storage_paths?: Json | null
+          pharmacy_address?: string | null
+          pharmacy_apb_number?: string | null
+          pharmacy_city?: string | null
+          pharmacy_country?: string | null
+          pharmacy_name: string
+          pharmacy_postal_code?: string | null
+          report_pdf_url?: string | null
+          sent_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          additional_notes?: string | null
+          admin_notes?: string | null
+          consent_text_version?: string | null
+          consented_at?: string
+          contact_email?: string
+          contact_first_name?: string
+          contact_last_name?: string
+          contact_phone?: string | null
+          created_at?: string
+          economies_estimated_max?: number | null
+          economies_estimated_min?: number | null
+          id?: string
+          pdf_storage_paths?: Json | null
+          pharmacy_address?: string | null
+          pharmacy_apb_number?: string | null
+          pharmacy_city?: string | null
+          pharmacy_country?: string | null
+          pharmacy_name?: string
+          pharmacy_postal_code?: string | null
+          report_pdf_url?: string | null
+          sent_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       be_city_to_province: {
         Row: {
           city_label: string

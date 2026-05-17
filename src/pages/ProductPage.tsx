@@ -489,19 +489,12 @@ function OfferRow({
                   .map((tier, i) => {
                     const basePrice = offerPriceTiers[0]?.price_excl_vat ?? 0;
                     const tierPrice = isTVAC ? tier.price_incl_vat : tier.price_excl_vat;
-                    let saving: number | null = null;
-                    if (i > 0) {
-                      saving = computeTierSavingPercent(basePrice, tier.price_excl_vat);
-                      if (saving === null) {
-                        recordTierSavingIssue("compute_returned_null", {
-                          where: "offerPriceTiers:desktop",
-                          basePrice,
-                          unitPrice: tier.price_excl_vat,
-                          offerId: offer.id,
-                          productId,
-                        });
-                      }
-                    }
+                    const { saving } = resolveTierSaving({
+                      index: i,
+                      basePrice,
+                      unitPrice: tier.price_excl_vat,
+                      context: { where: "offerPriceTiers:desktop", offerId: offer.id, productId },
+                    });
                     return (
                       <div key={tier.id} className="flex items-center gap-2 relative whitespace-nowrap" style={{ marginTop: i > 0 ? 4 : 0 }}>
                         <div className="absolute left-[-14px] top-1/2 -translate-y-1/2 w-[7px] h-[7px] rounded-full bg-primary" />

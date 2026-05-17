@@ -166,6 +166,9 @@ export default function VendorOrderPage() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [trackingNumbers, setTrackingNumbers] = useState<Record<string, string>>({});
+  const [cancelTarget, setCancelTarget] = useState<VendorOrderLine | null>(null);
+  const [cancelReason, setCancelReason] = useState("");
+  const [cancelLoading, setCancelLoading] = useState(false);
 
   const loadOrder = useCallback(async (options?: { silent?: boolean }) => {
     const silent = options?.silent === true;
@@ -251,6 +254,36 @@ export default function VendorOrderPage() {
     toast.success(labels.success, { id: toastId, description: productName });
     await loadOrder({ silent: true });
     setActionLoading(null);
+  };
+
+  const handleCancelLine = async () => {
+    if (!cancelTarget) return;
+    const trimmedReason = cancelReason.trim();
+    if (!trimmedReason) {
+      toast.error("Motif requis", { description: "Merci d'expliquer la raison de l'annulation." });
+      return;
+    }
+    setCancelLoading(true);
+    const productName = cancelTarget.product_name;
+    const toastId = toast.loading("Annulation en cours…", { description: productName });
+
+    const { error } = await supabase.functions.invoke("refund-order-line", {
+      body: { token, line_id: cancelTarget.id, action: "cancel", reason: trimmedReason },
+    });
+
+    if (error) {
+      const parsedError = await parseFunctionError(error);
+      const message = resolveErrorMessage(parsedError);
+      toast.error("Échec de l'annulation", { id: toastId, description: message });
+      setCancelLoading(false);
+      return;
+    }
+
+    toast.success("Ligne annulée et remboursée", { id: toastId, description: productName });
+    setCancelTarget(null);
+    setCancelReason("");
+    setCancelLoading(false);
+    await loadOrder({ silent: true });
   };
 
   return (
@@ -422,6 +455,19 @@ export default function VendorOrderPage() {
                                   Marquer livré
                                 </Button>
                               )}
+                              {(status === "pending" || status === "processing" || status === "shipped") && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="text-destructive hover:text-destructive"
+                                  onClick={() => {
+                                    setCancelTarget(line);
+                                    setCancelReason("");
+                                  }}
+                                >
+                                  Annuler
+                                </Button>
+                              )}
                               {!["pending", "processing", "shipped"].includes(status) && <span className="text-sm text-muted-foreground">—</span>}
                             </div>
                           </TableCell>
@@ -434,6 +480,58 @@ export default function VendorOrderPage() {
             </Card>
           </div>
         )}
+
+        <Dialog
+          open={cancelTarget !== null}
+          onOpenChange={(open) => {
+            if (!open && !cancelLoading) {
+              setCancelTarget(null);
+              setCancelReason("");
+            }
+          }}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Annuler cette ligne ?</DialogTitle>
+              <DialogDescription>
+                {cancelTarget
+                  ? `Vous êtes sur le point d'annuler « ${cancelTarget.product_name} » (qté ${cancelTarget.quantity}). Un remboursement Stripe sera émis et l'acheteur sera notifié.`
+                  : ""}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-2">
+              <Label htmlFor="cancel-reason">Motif de l'annulation</Label>
+              <Textarea
+                id="cancel-reason"
+                value={cancelReason}
+                onChange={(event) => setCancelReason(event.target.value)}
+                placeholder="Ex. rupture de stock, produit endommagé…"
+                rows={4}
+                disabled={cancelLoading}
+              />
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setCancelTarget(null);
+                  setCancelReason("");
+                }}
+                disabled={cancelLoading}
+              >
+                Revenir
+              </Button>
+              <Button
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={handleCancelLine}
+                disabled={cancelLoading || !cancelReason.trim()}
+              >
+                {cancelLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Confirmer l'annulation
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   );

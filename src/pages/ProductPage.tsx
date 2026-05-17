@@ -169,12 +169,15 @@ export function TierSavingBadge({
       typeof basePrice !== "number" ||
       !Number.isFinite(basePrice) ||
       basePrice <= 0;
-    const title =
+    const formulaHint =
+      "L'économie est normalement calculée ainsi : (prix de base − prix unitaire du palier) ÷ prix de base × 100. Le fallback « — » s'affiche quand ce calcul n'est pas possible.";
+    const reason =
       basePrice === undefined
-        ? "Réduction non disponible (prix de base manquant)"
+        ? "Réduction non disponible (prix de base manquant)."
         : basePriceMissing
-          ? "Prix de base manquant ou invalide — économie impossible à calculer pour ce palier"
-          : "Réduction non valide pour ce palier (prix unitaire invalide, ou palier supérieur ou égal au prix de base)";
+          ? "Prix de base manquant ou invalide — économie impossible à calculer pour ce palier."
+          : "Réduction non valide pour ce palier (prix unitaire invalide, ou palier supérieur ou égal au prix de base).";
+    const title = `${reason} ${formulaHint}`;
 
     return (
       <span

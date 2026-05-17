@@ -139,7 +139,19 @@ function formatRelative(iso?: string | null): string | null {
 
 
 /* ── Tier saving badge (unifié desktop + mobile) ───────── */
-export function TierSavingBadge({ saving }: { saving: TierSavingInput }) {
+export function TierSavingBadge({
+  saving,
+  basePrice,
+}: {
+  saving: TierSavingInput;
+  /**
+   * Prix de base utilisé pour calculer `saving`. Optionnel : si fourni, le
+   * tooltip du fallback distingue les deux causes possibles :
+   *   - basePrice manquant/invalide  → "Prix de base manquant…"
+   *   - basePrice OK mais saving null → "Réduction invalide pour ce palier…"
+   */
+  basePrice?: number | null;
+}) {
   const num = parseTierSavingValue(saving);
 
   if (num === null) {
@@ -149,10 +161,25 @@ export function TierSavingBadge({ saving }: { saving: TierSavingInput }) {
     if (saving !== null && saving !== undefined) {
       recordTierSavingIssue("badge_fallback_invalid_saving", { saving });
     }
+
+    // Choix du message en fonction de la cause réelle (si on a basePrice).
+    const basePriceMissing =
+      basePrice === null ||
+      basePrice === undefined ||
+      typeof basePrice !== "number" ||
+      !Number.isFinite(basePrice) ||
+      basePrice <= 0;
+    const title =
+      basePrice === undefined
+        ? "Réduction non disponible (prix de base manquant)"
+        : basePriceMissing
+          ? "Prix de base manquant ou invalide — économie impossible à calculer pour ce palier"
+          : "Réduction non valide pour ce palier (prix unitaire invalide, ou palier supérieur ou égal au prix de base)";
+
     return (
       <span
         className="inline-flex items-center rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground tabular-nums leading-none"
-        title="Réduction non disponible (prix de base manquant)"
+        title={title}
         aria-label="Réduction non disponible"
       >
         —

@@ -136,6 +136,16 @@ function formatRelative(iso?: string | null): string | null {
 }
 
 
+/* ── Tier saving badge (unifié desktop + mobile) ───────── */
+function TierSavingBadge({ saving }: { saving: string | null | undefined }) {
+  if (!saving) return null;
+  return (
+    <span className="inline-flex items-center rounded-full bg-green-50 px-1.5 py-0.5 text-[10px] font-semibold text-green-700 tabular-nums leading-none">
+      -{saving}%
+    </span>
+  );
+}
+
 /* ── Offer Row ─────────────────────────────────────────── */
 function OfferRow({
   offer, productId, productName, productSlug, productImageUrl, user, navigate, addToCart, isBest, delay = 0, isTVAC = false, categoryId, bestPrice, discountPercentage = 0,
@@ -394,11 +404,7 @@ function OfferRow({
                         <span className={`text-sm tabular-nums ${i === 0 ? "font-bold text-green-700" : "text-muted-foreground"}`}>
                           {formatEur(tierPrice)}&nbsp;€
                         </span>
-                        {saving && (
-                          <span className="inline-flex items-center rounded-full bg-green-50 px-1.5 py-0.5 text-[10px] font-semibold text-green-700 tabular-nums leading-none">
-                            -{saving}%
-                          </span>
-                        )}
+                        <TierSavingBadge saving={saving} />
                         <span className="text-xs text-muted-foreground tabular-nums">
                           {tier.mov_threshold > 0 ? <>≥ MOV&nbsp;{formatEur(tier.mov_threshold)}&nbsp;€</> : "Prix de base"}
                         </span>
@@ -623,11 +629,7 @@ function OfferRow({
                       <span className="text-[10px] text-muted-foreground tabular-nums leading-tight">
                         {tier.mov_threshold > 0 ? <>≥ {formatEur(tier.mov_threshold)}&nbsp;€</> : "Base"}
                       </span>
-                      {saving && (
-                        <span className="inline-flex items-center rounded-full bg-green-50 px-1.5 py-0.5 text-[10px] font-semibold text-green-700 tabular-nums leading-none">
-                          -{saving}%
-                        </span>
-                      )}
+                      <TierSavingBadge saving={saving} />
                     </div>
                   );
                 })}

@@ -12,7 +12,7 @@ const corsHeaders = {
 };
 
 const PORTAL_URL = "https://medikong.pro/vendor/commandes";
-const MAGIC_LINK_BASE = "https://medikong.pro/vendor/order";
+const MAGIC_LINK_BASE = "https://medikong.pro/vendor/orders";
 
 const fmtEur = (n: number | string | null | undefined) => {
   const v = typeof n === "string" ? Number(n) : (n ?? 0);
@@ -65,7 +65,7 @@ Deno.serve(async (req) => {
         emailsSkipped++;
         continue;
       }
-      // CTA magic-link : /vendor/order/<order_number>?token=<magic_token>
+      // CTA magic-link : /vendor/orders/<order_number>?token=<magic_token>
       // Fallback sur PORTAL_URL si pas de token (sécurité).
       const ctaUrl = v.magic_token && v.order_number
         ? `${MAGIC_LINK_BASE}/${encodeURIComponent(v.order_number)}?token=${encodeURIComponent(v.magic_token)}`

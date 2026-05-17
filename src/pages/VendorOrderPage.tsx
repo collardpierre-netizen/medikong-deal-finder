@@ -475,6 +475,13 @@ export default function VendorOrderPage() {
                       const trackingValue = trackingNumbers[line.id] || "";
                       const isCancelled = rawStatus === "cancelled";
                       const shippedQty = Number(line.quantity_shipped || 0);
+                      const refundedAmount = Number(line.refunded_amount_incl_vat || 0);
+                      const hasRefund = refundedAmount > 0;
+                      const refundKind: "total" | "partial" | null = isCancelled
+                        ? "total"
+                        : hasRefund
+                          ? "partial"
+                          : null;
 
                       return (
                         <TableRow key={line.id} className={isCancelled ? "opacity-60" : undefined}>
@@ -489,6 +496,12 @@ export default function VendorOrderPage() {
                                 )}
                                 {status === "partially_shipped" && (
                                   <div className="mt-1 text-xs text-muted-foreground">{shippedQty}/{line.quantity} expédié(s)</div>
+                                )}
+                                {refundKind && (
+                                  <div className={`mt-1 text-xs ${refundKind === "total" ? "text-destructive" : "text-amber-600 dark:text-amber-500"}`}>
+                                    {refundKind === "total" ? "Remboursement total" : "Remboursement partiel"} : {formatMoney(refundedAmount)} TTC
+                                    {refundKind === "total" && line.cancelled_at && <> · {formatDate(line.cancelled_at)}</>}
+                                  </div>
                                 )}
                               </div>
                             </div>

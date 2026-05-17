@@ -154,6 +154,7 @@ Deno.serve(async (req) => {
         id, quantity, unit_price_excl_vat, unit_price_incl_vat,
         line_total_excl_vat, line_total_incl_vat,
         fulfillment_status, tracking_number, tracking_url,
+        quantity_shipped, refunded_amount_incl_vat, cancellation_reason, cancelled_at,
         products:product_id ( name, gtin, sku, image_urls )
       `)
       .eq("order_id", tokenRow.order_id)
@@ -175,6 +176,10 @@ Deno.serve(async (req) => {
       fulfillment_status: String(l.fulfillment_status || "pending"),
       tracking_number: l.tracking_number,
       tracking_url: l.tracking_url,
+      quantity_shipped: Number(l.quantity_shipped || 0),
+      refunded_amount_incl_vat: Number(l.refunded_amount_incl_vat || 0),
+      cancellation_reason: l.cancellation_reason ?? null,
+      cancelled_at: l.cancelled_at ?? null,
       product_name: l.products?.name ?? "",
       gtin: l.products?.gtin ?? null,
       sku: l.products?.sku ?? null,

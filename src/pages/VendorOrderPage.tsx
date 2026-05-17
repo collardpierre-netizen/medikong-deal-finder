@@ -21,7 +21,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
-type VendorLineStatus = "pending" | "processing" | "forwarded" | "shipped" | "delivered" | "cancelled" | string;
+type VendorLineStatus = "pending" | "processing" | "forwarded" | "shipped" | "delivered" | "cancelled" | "partially_shipped" | string;
 type VendorLineAction = "confirm" | "ship" | "deliver";
 
 interface VendorOrderLine {
@@ -38,6 +38,10 @@ interface VendorOrderLine {
   fulfillment_status: VendorLineStatus;
   tracking_number?: string | null;
   tracking_url?: string | null;
+  quantity_shipped?: number | null;
+  refunded_amount_incl_vat?: number | null;
+  cancellation_reason?: string | null;
+  cancelled_at?: string | null;
 }
 
 interface VendorOrderData {
@@ -117,7 +121,22 @@ const statusLabels: Record<string, string> = {
   shipped: "Expédié",
   delivered: "Livré",
   cancelled: "Annulé",
+  partially_shipped: "Partiellement expédié",
 };
+
+const statusBadgeVariant: Record<string, "outline" | "destructive" | "secondary" | "default"> = {
+  cancelled: "destructive",
+  partially_shipped: "secondary",
+};
+
+function getDisplayStatus(line: VendorOrderLine): string {
+  const raw = String(line.fulfillment_status || "pending");
+  if (raw === "cancelled") return "cancelled";
+  const shipped = Number(line.quantity_shipped || 0);
+  const total = Number(line.quantity || 0);
+  if (shipped > 0 && total > 0 && shipped < total) return "partially_shipped";
+  return raw;
+}
 
 function formatMoney(value?: number | null): string {
   if (typeof value !== "number" || Number.isNaN(value)) return "—";

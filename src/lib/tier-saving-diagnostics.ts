@@ -106,6 +106,16 @@ export function recordTierSavingIssue(
       __tierSavingDiagnostics?: ReturnType<typeof getTierSavingDiagnostics>;
     }).__tierSavingDiagnostics = getTierSavingDiagnostics();
   }
+
+  // Notifier les abonnés (bannière admin, etc.). Errors isolées par listener.
+  for (const listener of listeners) {
+    try {
+      listener(reason, stats);
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error("[TierSaving] listener error", err);
+    }
+  }
 }
 
 export function getTierSavingDiagnostics(): Record<

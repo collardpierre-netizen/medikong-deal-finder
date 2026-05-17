@@ -169,6 +169,10 @@ export default function VendorOrderPage() {
   const [cancelTarget, setCancelTarget] = useState<VendorOrderLine | null>(null);
   const [cancelReason, setCancelReason] = useState("");
   const [cancelLoading, setCancelLoading] = useState(false);
+  const [partialTarget, setPartialTarget] = useState<VendorOrderLine | null>(null);
+  const [partialQuantity, setPartialQuantity] = useState<string>("");
+  const [partialReason, setPartialReason] = useState("");
+  const [partialLoading, setPartialLoading] = useState(false);
 
   const loadOrder = useCallback(async (options?: { silent?: boolean }) => {
     const silent = options?.silent === true;

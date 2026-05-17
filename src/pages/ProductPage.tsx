@@ -136,6 +136,16 @@ function formatRelative(iso?: string | null): string | null {
 }
 
 
+/* ── Tier saving badge (unifié desktop + mobile) ───────── */
+function TierSavingBadge({ saving }: { saving: string | null | undefined }) {
+  if (!saving) return null;
+  return (
+    <span className="inline-flex items-center rounded-full bg-green-50 px-1.5 py-0.5 text-[10px] font-semibold text-green-700 tabular-nums leading-none">
+      -{saving}%
+    </span>
+  );
+}
+
 /* ── Offer Row ─────────────────────────────────────────── */
 function OfferRow({
   offer, productId, productName, productSlug, productImageUrl, user, navigate, addToCart, isBest, delay = 0, isTVAC = false, categoryId, bestPrice, discountPercentage = 0,

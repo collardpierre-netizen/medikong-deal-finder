@@ -311,6 +311,37 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
   } catch (err) {
     console.error(`[stripe-webhook] Invoice generation failed silently:`, err);
   }
+
+  // 6. Décrémenter le stock des offers pour chaque order_line (atomic, non-bloquant)
+  try {
+    const { data: orderLines, error: linesErr } = await supabase
+      .from("order_lines")
+      .select("offer_id, quantity, product_id, vendor_id")
+      .eq("order_id", session.metadata?.order_id);
+
+    if (linesErr) {
+      console.error(`[stripe-webhook] Stock: could not load order_lines:`, linesErr);
+    } else {
+      for (const line of orderLines || []) {
+        if (!line.offer_id || !line.quantity) continue;
+        const { data: stockResult, error: stockErr } = await supabase.rpc(
+          "decrement_offer_stock",
+          { p_offer_id: line.offer_id, p_quantity: line.quantity },
+        );
+        if (stockErr) {
+          console.error(`[stripe-webhook] Stock decrement error for offer ${line.offer_id}:`, stockErr);
+        } else if ((stockResult as any)?.success === false) {
+          // Stock insuffisant détecté APRÈS le paiement (race condition).
+          // → log et continue, le vendor pourra refund via refund-order-line.
+          console.warn(`[stripe-webhook] Stock insufficient for offer ${line.offer_id}:`, stockResult);
+        } else {
+          console.log(`[stripe-webhook] Stock decremented for offer ${line.offer_id}: new=${(stockResult as any)?.new_stock}`);
+        }
+      }
+    }
+  } catch (err) {
+    console.error(`[stripe-webhook] Stock decrement block failed silently:`, err);
+  }
 }
 
 async function handlePaymentSucceeded(pi: Stripe.PaymentIntent) {

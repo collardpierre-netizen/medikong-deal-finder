@@ -5940,6 +5940,8 @@ export type Database = {
       }
       order_lines: {
         Row: {
+          cancellation_reason: string | null
+          cancelled_at: string | null
           cost_price: number | null
           fulfillment_status: Database["public"]["Enums"]["fulfillment_status"]
           fulfillment_type: Database["public"]["Enums"]["fulfillment_type"]
@@ -5955,6 +5957,9 @@ export type Database = {
           qogita_order_status: string
           qogita_seller_fid: string | null
           quantity: number
+          quantity_shipped: number | null
+          refunded_amount_incl_vat: number | null
+          stripe_refund_id: string | null
           tracking_number: string | null
           tracking_url: string | null
           unit_price_excl_vat: number
@@ -5964,6 +5969,8 @@ export type Database = {
           vendor_id: string
         }
         Insert: {
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
           cost_price?: number | null
           fulfillment_status?: Database["public"]["Enums"]["fulfillment_status"]
           fulfillment_type?: Database["public"]["Enums"]["fulfillment_type"]
@@ -5979,6 +5986,9 @@ export type Database = {
           qogita_order_status?: string
           qogita_seller_fid?: string | null
           quantity: number
+          quantity_shipped?: number | null
+          refunded_amount_incl_vat?: number | null
+          stripe_refund_id?: string | null
           tracking_number?: string | null
           tracking_url?: string | null
           unit_price_excl_vat: number
@@ -5988,6 +5998,8 @@ export type Database = {
           vendor_id: string
         }
         Update: {
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
           cost_price?: number | null
           fulfillment_status?: Database["public"]["Enums"]["fulfillment_status"]
           fulfillment_type?: Database["public"]["Enums"]["fulfillment_type"]
@@ -6003,6 +6015,9 @@ export type Database = {
           qogita_order_status?: string
           qogita_seller_fid?: string | null
           quantity?: number
+          quantity_shipped?: number | null
+          refunded_amount_incl_vat?: number | null
+          stripe_refund_id?: string | null
           tracking_number?: string | null
           tracking_url?: string | null
           unit_price_excl_vat?: number
@@ -18463,6 +18478,10 @@ export type Database = {
       }
       current_buyer_id: { Args: never; Returns: string }
       current_vendor_id: { Args: never; Returns: string }
+      decrement_offer_stock: {
+        Args: { p_offer_id: string; p_quantity: number }
+        Returns: Json
+      }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
@@ -18759,6 +18778,10 @@ export type Database = {
       grant_subscription_extension: {
         Args: { _months?: number; _notes?: string; _req_id: string }
         Returns: undefined
+      }
+      increment_offer_stock: {
+        Args: { p_offer_id: string; p_quantity: number }
+        Returns: Json
       }
       increment_proprietary_code_observation: {
         Args: { _code: string; _supplier: string }

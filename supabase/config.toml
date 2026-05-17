@@ -74,3 +74,6 @@ verify_jwt = false
 
 [functions.update-vendor-order-line]
 verify_jwt = false
+
+[functions.refund-order-line]
+verify_jwt = false

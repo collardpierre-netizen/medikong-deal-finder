@@ -259,9 +259,11 @@ export function CatalogSidebar({ filters, setFilter, clearAll, resultCategoryIds
                         }`}
                       >
                         <span className="truncate min-w-0 flex-1">{short}</span>
-                        {cat.product_count > 0 && (
+                        {cat.product_count === null ? (
+                          <span className="text-xs text-muted-foreground shrink-0" title="Comptage en cours…">—</span>
+                        ) : cat.product_count > 0 ? (
                           <span className="text-xs text-muted-foreground shrink-0">({cat.product_count.toLocaleString("fr-FR")})</span>
-                        )}
+                        ) : null}
                       </button>
                     );
                   })}

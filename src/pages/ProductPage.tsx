@@ -187,8 +187,20 @@ export function TierSavingBadge({
     );
   }
 
+  const hasBase =
+    typeof basePrice === "number" &&
+    Number.isFinite(basePrice) &&
+    basePrice > 0;
+  const savingTitle = hasBase
+    ? `Économie de ${num.toFixed(1)}% par rapport au prix unitaire de base (${(basePrice as number).toFixed(2)} €). Formule : (prix de base − prix unitaire du palier) ÷ prix de base × 100. Le fallback « — » s'affiche si le prix de base est manquant/invalide ou si la réduction ne peut pas être calculée pour ce palier.`
+    : `Économie de ${num.toFixed(1)}% par rapport au prix unitaire de base du produit. Formule : (prix de base − prix unitaire du palier) ÷ prix de base × 100. Le fallback « — » s'affiche si le prix de base est manquant/invalide ou si la réduction ne peut pas être calculée pour ce palier.`;
+
   return (
-    <span className="inline-flex items-center rounded-full bg-green-50 px-1.5 py-0.5 text-[10px] font-semibold text-green-700 tabular-nums leading-none">
+    <span
+      className="inline-flex items-center rounded-full bg-green-50 px-1.5 py-0.5 text-[10px] font-semibold text-green-700 tabular-nums leading-none"
+      title={savingTitle}
+      aria-label={`Économie de ${num.toFixed(1)} pour cent par rapport au prix de base`}
+    >
       -{num.toFixed(1)}%
     </span>
   );

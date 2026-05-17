@@ -168,6 +168,9 @@ const AdminParametres = lazyWithRetry(() => import("./pages/admin/AdminParametre
 const AdminLogs = lazyWithRetry(() => import("./pages/admin/AdminLogs"), "AdminLogs");
 const AdminUsers = lazyWithRetry(() => import("./pages/admin/AdminUsers"), "AdminUsers");
 const AdminAuditLog = lazyWithRetry(() => import("./pages/admin/AdminAuditLog"), "AdminAuditLog");
+const AuditAchatsPage = lazyWithRetry(() => import("./pages/AuditAchatsPage"), "AuditAchatsPage");
+const AuditAchatsConfirmationPage = lazyWithRetry(() => import("./pages/AuditAchatsConfirmationPage"), "AuditAchatsConfirmationPage");
+const AuditsAdminPage = lazyWithRetry(() => import("./pages/admin/AuditsAdminPage"), "AuditsAdminPage");
 const AdminContractAudit = lazyWithRetry(() => import("./pages/admin/AdminContractAudit"), "AdminContractAudit");
 const AdminDbBackups = lazyWithRetry(() => import("./pages/admin/AdminDbBackups"), "AdminDbBackups");
 const AdminBackupRlsAudit = lazyWithRetry(() => import("./pages/admin/AdminBackupRlsAudit"), "AdminBackupRlsAudit");
@@ -397,6 +400,8 @@ const App = () => (
             <Route path="/politique-confidentialite" element={<LP><PrivacyPage /></LP>} />
             <Route path="/cookies" element={<LP><CookiePolicyPage /></LP>} />
             <Route path="/unsubscribe" element={<LP><UnsubscribePage /></LP>} />
+            <Route path="/audit-achats" element={<AuditAchatsPage />} />
+            <Route path="/audit-achats/confirmation" element={<AuditAchatsConfirmationPage />} />
 
             <Route path="/admin/login" element={<LP><AdminLoginPage /></LP>} />
 
@@ -444,6 +449,7 @@ const App = () => (
               <Route path="market-delta-thresholds" element={<LP><AdminMarketDeltaThresholdsPage /></LP>} />
               <Route path="pack-audit" element={<LP><AdminPackAuditPage /></LP>} />
               <Route path="leads" element={<LP><AdminLeads /></LP>} />
+              <Route path="audits" element={<LP><AuditsAdminPage /></LP>} />
               <Route path="analytics" element={<LP><AdminAnalytics /></LP>} />
               <Route path="recherches" element={<LP><AdminRecherches /></LP>} />
               <Route path="reglementaire" element={<LP><AdminReglementaire /></LP>} />

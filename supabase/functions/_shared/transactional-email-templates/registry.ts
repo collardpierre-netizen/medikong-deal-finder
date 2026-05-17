@@ -28,6 +28,9 @@ import { template as adminVendorMarketIntelNotification } from './admin-vendor-m
 import { template as vendorInvoices } from './vendor-invoices.tsx'
 import { template as orderLineRefundedCustomer } from './order-line-refunded-customer.tsx'
 import { template as orderLineRefundedAdmin } from './order-line-refunded-admin.tsx'
+import { template as auditConfirmation } from './audit-confirmation.tsx'
+import { template as auditNewLead } from './audit-new-lead.tsx'
+import { template as auditReportReady } from './audit-report-ready.tsx'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'vendor-invoices': vendorInvoices,
@@ -49,4 +52,7 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'admin-vendor-market-intel-notification': adminVendorMarketIntelNotification,
   'order-line-refunded-customer': orderLineRefundedCustomer,
   'order-line-refunded-admin': orderLineRefundedAdmin,
+  'audit-confirmation': auditConfirmation,
+  'audit-new-lead': auditNewLead,
+  'audit-report-ready': auditReportReady,
 }

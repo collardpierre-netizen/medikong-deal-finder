@@ -143,12 +143,22 @@ export function TierSavingBadge({ saving }: { saving: TierSavingInput }) {
   const num = parseTierSavingValue(saving);
 
   if (num === null) {
-    // Diagnostic : remonter le cas où le badge reçoit une valeur invalide.
-    // Note : un appel intentionnel avec saving=null (palier de base i=0)
-    // tombe aussi ici ; les call sites peuvent passer un saving=undefined
-    // pour distinguer "base tier" de "donnée manquante" si besoin.
-    recordTierSavingIssue("badge_fallback_invalid_saving", { saving });
+    // Diagnostic : remonter uniquement les vraies anomalies de donnée.
+    // `null` / `undefined` sont des signaux intentionnels (palier de base,
+    // pas de comparaison possible) → on ne log pas ces cas-là.
+    if (saving !== null && saving !== undefined) {
+      recordTierSavingIssue("badge_fallback_invalid_saving", { saving });
+    }
     return (
+      <span
+        className="inline-flex items-center rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground tabular-nums leading-none"
+        title="Réduction non disponible (prix de base manquant)"
+        aria-label="Réduction non disponible"
+      >
+        —
+      </span>
+    );
+  }
       <span
         className="inline-flex items-center rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground tabular-nums leading-none"
         title="Réduction non disponible (prix de base manquant)"

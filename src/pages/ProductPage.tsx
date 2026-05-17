@@ -189,14 +189,29 @@ export function TierSavingBadge({
             ? "Cas 2 — Prix de base ≤ 0. Saisissez un prix > 0."
             : "Cas 3 — Palier invalide (prix ≥ base ou non numérique). Vérifiez ce palier.";
     const title = `${reason}\n\n${formulaHint}`;
+    // Libellé court visible à côté du badge — décrit le motif sans ouvrir le tooltip.
+    const shortLabel =
+      basePrice === undefined || basePrice === null || basePriceMissing
+        ? "base manquante"
+        : basePriceInvalid
+          ? "base invalide"
+          : "palier invalide";
 
     return (
       <span
-        className="inline-flex items-center rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground tabular-nums leading-none"
+        className="inline-flex items-center gap-1"
         title={title}
-        aria-label="Réduction non disponible"
+        aria-label={`Réduction non disponible — ${shortLabel}`}
       >
-        —
+        <span
+          className="inline-flex items-center rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground tabular-nums leading-none"
+          aria-hidden="true"
+        >
+          —
+        </span>
+        <span className="text-[10px] italic text-muted-foreground leading-none">
+          {shortLabel}
+        </span>
       </span>
     );
   }

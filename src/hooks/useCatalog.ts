@@ -586,10 +586,12 @@ export function useCatalogCategories() {
       }
 
       // Pas d'arborescence en V1 : 14 catégories à plat, l'ordre vient de display_order.
+      // Si le RPC a timeout/échoué, on renvoie `null` pour distinguer "compte inconnu" de "0 produit".
+      const countsAvailable = !!countResult?.data;
       return ((catResult.data || []) as any[]).map((c) => ({
         ...c,
         name: getLocalizedName(c),
-        product_count: countMap.get(c.id) || 0,
+        product_count: countsAvailable ? (countMap.get(c.id) || 0) : null,
         children: [] as CategoryNode[],
       })) as CategoryNode[];
     },

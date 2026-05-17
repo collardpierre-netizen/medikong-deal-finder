@@ -1,6 +1,7 @@
 import { Layout } from "@/components/layout/Layout";
-import { computeTierSavingPercent, parseTierSavingValue, type TierSavingInput } from "@/lib/tier-saving";
+import { parseTierSavingValue, type TierSavingInput } from "@/lib/tier-saving";
 import { recordTierSavingIssue } from "@/lib/tier-saving-diagnostics";
+import { resolveTierSaving } from "@/lib/tier-saving-guard";
 import { TierSavingAdminAlert } from "@/components/admin/TierSavingAdminAlert";
 import { isValidProductImage, getProductImageSrc, MEDIKONG_PLACEHOLDER, isQogitaPlaceholder, getPreferredProductImageUrls } from "@/lib/image-utils";
 import { useProduct, useProductOffers, type Offer } from "@/hooks/useProducts";

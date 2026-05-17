@@ -175,18 +175,19 @@ export function TierSavingBadge({
       Number.isFinite(basePrice) &&
       basePrice <= 0;
     const formulaHint =
-      "Formule : (prix de base − prix unitaire du palier) ÷ prix de base × 100. Le fallback « — » s'affiche dans 3 cas :\n" +
-      "1) Prix de base manquant (non fourni / null / non numérique).\n" +
-      "2) Prix de base invalide (≤ 0 ou non fini).\n" +
-      "3) Réduction non valide pour ce palier (prix unitaire invalide, ou prix du palier ≥ prix de base).";
+      "Formule : (base − palier) ÷ base × 100.\n" +
+      "3 cas de fallback :\n" +
+      "1) Prix de base manquant → renseigner le palier 0.\n" +
+      "2) Prix de base invalide (≤ 0) → corriger la valeur.\n" +
+      "3) Palier ≥ base ou prix invalide → vérifier le prix du palier.";
     const reason =
       basePrice === undefined || basePrice === null
-        ? "Cas 1 — Prix de base manquant : aucune référence pour calculer l'économie de ce palier."
+        ? "Cas 1 — Prix de base manquant. Renseignez le palier 0."
         : basePriceMissing
-          ? "Cas 1 — Prix de base manquant ou non numérique : impossible de calculer l'économie."
+          ? "Cas 1 — Prix de base non numérique. Corrigez la valeur."
           : basePriceInvalid
-            ? "Cas 2 — Prix de base invalide (≤ 0 ou non fini) : calcul impossible."
-            : "Cas 3 — Réduction non valide pour ce palier (prix unitaire invalide, ou palier ≥ prix de base).";
+            ? "Cas 2 — Prix de base ≤ 0. Saisissez un prix > 0."
+            : "Cas 3 — Palier invalide (prix ≥ base ou non numérique). Vérifiez ce palier.";
     const title = `${reason}\n\n${formulaHint}`;
 
     return (

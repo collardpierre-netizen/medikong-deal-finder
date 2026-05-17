@@ -330,7 +330,7 @@ export default function VendorOrderPage() {
     const productName = partialTarget.product_name;
     const toastId = toast.loading("Remboursement partiel en cours…", { description: productName });
 
-    const { error } = await supabase.functions.invoke("refund-order-line", {
+    const { data, error } = await supabase.functions.invoke("refund-order-line", {
       body: {
         token,
         line_id: partialTarget.id,
@@ -348,7 +348,16 @@ export default function VendorOrderPage() {
       return;
     }
 
-    toast.success("Remboursement partiel effectué", { id: toastId, description: productName });
+    const refund = (data as { refund?: { stripe_refund_id?: string; amount_refunded?: number } })?.refund;
+    const amountStr = typeof refund?.amount_refunded === "number" ? formatMoney(refund.amount_refunded) : null;
+    const refundId = refund?.stripe_refund_id;
+    const descParts = [
+      productName,
+      `${qty}/${partialTarget.quantity} unité(s) remboursée(s)`,
+      amountStr ? `${amountStr} TTC` : null,
+      refundId ? `Transaction : ${refundId}` : null,
+    ].filter(Boolean);
+    toast.success("Remboursement partiel effectué", { id: toastId, description: descParts.join(" · ") });
     setPartialTarget(null);
     setPartialQuantity("");
     setPartialReason("");

@@ -316,9 +316,16 @@ export default function VendorOrderPage() {
     if (!partialTarget) return;
     const trimmedReason = partialReason.trim();
     const qty = Number.parseInt(partialQuantity, 10);
-    if (!Number.isInteger(qty) || qty < 1 || qty >= partialTarget.quantity) {
+    const remainingQty = Math.max(0, partialTarget.quantity - Number(partialTarget.quantity_shipped || 0));
+    if (remainingQty < 1) {
+      toast.error("Aucune quantité restante", {
+        description: "Toutes les unités ont déjà été expédiées. Utilisez « Annuler » pour un remboursement total si nécessaire.",
+      });
+      return;
+    }
+    if (!Number.isInteger(qty) || qty < 1 || qty > remainingQty) {
       toast.error("Quantité invalide", {
-        description: `Indiquez une quantité entière entre 1 et ${partialTarget.quantity - 1}.`,
+        description: `La quantité doit être entière, entre 1 et ${remainingQty} (restant à expédier).`,
       });
       return;
     }

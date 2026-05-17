@@ -21,7 +21,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
-type VendorLineStatus = "pending" | "processing" | "forwarded" | "shipped" | "delivered" | "cancelled" | string;
+type VendorLineStatus = "pending" | "processing" | "forwarded" | "shipped" | "delivered" | "cancelled" | "partially_shipped" | string;
 type VendorLineAction = "confirm" | "ship" | "deliver";
 
 interface VendorOrderLine {
@@ -38,6 +38,10 @@ interface VendorOrderLine {
   fulfillment_status: VendorLineStatus;
   tracking_number?: string | null;
   tracking_url?: string | null;
+  quantity_shipped?: number | null;
+  refunded_amount_incl_vat?: number | null;
+  cancellation_reason?: string | null;
+  cancelled_at?: string | null;
 }
 
 interface VendorOrderData {
@@ -117,7 +121,22 @@ const statusLabels: Record<string, string> = {
   shipped: "Expédié",
   delivered: "Livré",
   cancelled: "Annulé",
+  partially_shipped: "Partiellement expédié",
 };
+
+const statusBadgeVariant: Record<string, "outline" | "destructive" | "secondary" | "default"> = {
+  cancelled: "destructive",
+  partially_shipped: "secondary",
+};
+
+function getDisplayStatus(line: VendorOrderLine): string {
+  const raw = String(line.fulfillment_status || "pending");
+  if (raw === "cancelled") return "cancelled";
+  const shipped = Number(line.quantity_shipped || 0);
+  const total = Number(line.quantity || 0);
+  if (shipped > 0 && total > 0 && shipped < total) return "partially_shipped";
+  return raw;
+}
 
 function formatMoney(value?: number | null): string {
   if (typeof value !== "number" || Number.isNaN(value)) return "—";
@@ -256,7 +275,7 @@ export default function VendorOrderPage() {
     }
 
     toast.success(labels.success, { id: toastId, description: productName });
-    await loadOrder({ silent: true });
+    await loadOrder();
     setActionLoading(null);
   };
 
@@ -331,7 +350,7 @@ export default function VendorOrderPage() {
     setPartialQuantity("");
     setPartialReason("");
     setPartialLoading(false);
-    await loadOrder({ silent: true });
+    await loadOrder();
   };
 
   return (
@@ -451,17 +470,26 @@ export default function VendorOrderPage() {
                   </TableHeader>
                   <TableBody>
                     {order.lines.map((line) => {
-                      const status = line.fulfillment_status;
+                      const rawStatus = String(line.fulfillment_status || "pending");
+                      const status = getDisplayStatus(line);
                       const trackingValue = trackingNumbers[line.id] || "";
+                      const isCancelled = rawStatus === "cancelled";
+                      const shippedQty = Number(line.quantity_shipped || 0);
 
                       return (
-                        <TableRow key={line.id}>
+                        <TableRow key={line.id} className={isCancelled ? "opacity-60" : undefined}>
                           <TableCell>
                             <div className="flex items-center gap-3">
                               {line.image_url && <img src={line.image_url} alt={line.product_name} className="h-12 w-12 rounded-md border border-border object-contain" />}
                               <div>
                                 <div className="font-semibold">{line.product_name}</div>
                                 <div className="text-xs text-muted-foreground">{line.gtin || line.sku || "—"}</div>
+                                {isCancelled && line.cancellation_reason && (
+                                  <div className="mt-1 text-xs text-destructive">Motif : {line.cancellation_reason}</div>
+                                )}
+                                {status === "partially_shipped" && (
+                                  <div className="mt-1 text-xs text-muted-foreground">{shippedQty}/{line.quantity} expédié(s)</div>
+                                )}
                               </div>
                             </div>
                           </TableCell>
@@ -469,17 +497,17 @@ export default function VendorOrderPage() {
                           <TableCell>{formatMoney(line.unit_price_excl_vat)}</TableCell>
                           <TableCell>{formatMoney(line.line_total_excl_vat)}</TableCell>
                           <TableCell>
-                            <Badge variant="outline">{statusLabels[status] || status}</Badge>
+                            <Badge variant={statusBadgeVariant[status] || "outline"}>{statusLabels[status] || status}</Badge>
                           </TableCell>
                           <TableCell>
                             <div className="flex flex-col items-start gap-2">
-                              {status === "pending" && (
+                              {rawStatus === "pending" && (
                                 <Button size="sm" onClick={() => handleLineAction(line.id, "confirm")} disabled={actionLoading === `${line.id}:confirm`}>
                                   {actionLoading === `${line.id}:confirm` && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                   Confirmer prise en charge
                                 </Button>
                               )}
-                              {status === "processing" && (
+                              {rawStatus === "processing" && (
                                 <div className="flex min-w-64 items-center gap-2">
                                   <Input
                                     value={trackingValue}
@@ -497,13 +525,13 @@ export default function VendorOrderPage() {
                                   </Button>
                                 </div>
                               )}
-                              {status === "shipped" && (
+                              {rawStatus === "shipped" && (
                                 <Button size="sm" onClick={() => handleLineAction(line.id, "deliver")} disabled={actionLoading === `${line.id}:deliver`}>
                                   {actionLoading === `${line.id}:deliver` && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                   Marquer livré
                                 </Button>
                               )}
-                              {(status === "pending" || status === "processing" || status === "shipped") && (
+                              {(rawStatus === "pending" || rawStatus === "processing" || rawStatus === "shipped") && (
                                 <Button
                                   size="sm"
                                   variant="outline"
@@ -516,7 +544,7 @@ export default function VendorOrderPage() {
                                   Annuler
                                 </Button>
                               )}
-                              {(status === "pending" || status === "processing") && line.quantity > 1 && (
+                              {(rawStatus === "pending" || rawStatus === "processing") && line.quantity > 1 && (
                                 <Button
                                   size="sm"
                                   variant="outline"
@@ -529,7 +557,7 @@ export default function VendorOrderPage() {
                                   Livraison partielle
                                 </Button>
                               )}
-                              {!["pending", "processing", "shipped"].includes(status) && <span className="text-sm text-muted-foreground">—</span>}
+                              {!["pending", "processing", "shipped"].includes(rawStatus) && <span className="text-sm text-muted-foreground">—</span>}
                             </div>
                           </TableCell>
                         </TableRow>

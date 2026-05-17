@@ -275,7 +275,7 @@ export default function VendorOrderPage() {
     }
 
     toast.success(labels.success, { id: toastId, description: productName });
-    await loadOrder({ silent: true });
+    await loadOrder();
     setActionLoading(null);
   };
 
@@ -350,7 +350,7 @@ export default function VendorOrderPage() {
     setPartialQuantity("");
     setPartialReason("");
     setPartialLoading(false);
-    await loadOrder({ silent: true });
+    await loadOrder();
   };
 
   return (

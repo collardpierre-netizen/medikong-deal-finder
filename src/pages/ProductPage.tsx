@@ -210,6 +210,28 @@ export function TierSavingBadge({
   );
 }
 
+/* ── Micro-légende Tier 0 ──────────────────────────────── */
+const TIER_BASE_LEGEND_TITLE =
+  "Tier 0 = prix unitaire de base. Aucune pastille d'économie n'est affichée par design : c'est la référence à partir de laquelle les paliers suivants sont calculés.";
+
+/**
+ * Petite mention `ⓘ Prix de base` (ou variante compacte) à afficher à côté
+ * du tier 0 pour expliquer l'absence volontaire de pastille d'économie.
+ * Le tooltip natif détaille la raison.
+ */
+function TierBaseLegend({ compact = false }: { compact?: boolean }) {
+  return (
+    <span
+      title={TIER_BASE_LEGEND_TITLE}
+      aria-label={TIER_BASE_LEGEND_TITLE}
+      className={`inline-flex items-center gap-0.5 italic text-muted-foreground/80 cursor-help ${compact ? "text-[10px]" : "text-[11px]"}`}
+    >
+      <span aria-hidden>ⓘ</span>
+      <span>{compact ? "base" : "prix de base"}</span>
+    </span>
+  );
+}
+
 /* ── Offer Row ─────────────────────────────────────────── */
 function OfferRow({
   offer, productId, productName, productSlug, productImageUrl, user, navigate, addToCart, isBest, delay = 0, isTVAC = false, categoryId, bestPrice, discountPercentage = 0,
@@ -455,7 +477,7 @@ function OfferRow({
                         {formatEur(tier.unit_price)}&nbsp;€
                       </span>
                       <span className="text-xs text-muted-foreground tabular-nums whitespace-nowrap">MOV&nbsp;{formatEur(tier.mov_amount)}&nbsp;€</span>
-                      <div className="flex justify-end">{i > 0 && <TierSavingBadge saving={saving} basePrice={basePrice} />}</div>
+                      <div className="flex justify-end">{i > 0 ? <TierSavingBadge saving={saving} basePrice={basePrice} /> : <TierBaseLegend />}</div>
                     </div>
                   );
                 })}
@@ -493,9 +515,11 @@ function OfferRow({
                           {formatEur(tierPrice)}&nbsp;€
                         </span>
                         {i > 0 && <TierSavingBadge saving={saving} basePrice={basePrice} />}
-                        <span className="text-xs text-muted-foreground tabular-nums">
-                          {tier.mov_threshold > 0 ? <>≥ MOV&nbsp;{formatEur(tier.mov_threshold)}&nbsp;€</> : "Prix de base"}
-                        </span>
+                        {tier.mov_threshold > 0 ? (
+                          <span className="text-xs text-muted-foreground tabular-nums">≥ MOV&nbsp;{formatEur(tier.mov_threshold)}&nbsp;€</span>
+                        ) : (
+                          <TierBaseLegend />
+                        )}
                       </div>
                     );
                   })}
@@ -529,7 +553,7 @@ function OfferRow({
                     {tier.minAmount ? (
                       <span className="text-xs text-muted-foreground tabular-nums">≥ MOV&nbsp;{formatEur(tier.minAmount)}&nbsp;€</span>
                     ) : (
-                      <span className="text-xs text-muted-foreground tabular-nums">Prix de base</span>
+                      <TierBaseLegend />
                     )}
                   </div>
                 );
@@ -744,9 +768,11 @@ function OfferRow({
                       <span className={`text-[12px] tabular-nums leading-tight ${i === 0 ? "font-bold text-green-700" : "font-semibold text-foreground"}`}>
                         {formatEur(tierPrice)}&nbsp;€
                       </span>
-                      <span className="text-[10px] text-muted-foreground tabular-nums leading-tight">
-                        {tier.mov_threshold > 0 ? <>≥ {formatEur(tier.mov_threshold)}&nbsp;€</> : "Base"}
-                      </span>
+                      {tier.mov_threshold > 0 ? (
+                        <span className="text-[10px] text-muted-foreground tabular-nums leading-tight">≥ {formatEur(tier.mov_threshold)}&nbsp;€</span>
+                      ) : (
+                        <TierBaseLegend compact />
+                      )}
                       {i > 0 && <TierSavingBadge saving={saving} basePrice={basePrice} />}
                     </div>
                   );

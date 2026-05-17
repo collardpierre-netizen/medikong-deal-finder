@@ -553,7 +553,7 @@ function OfferRow({
                     {tier.minAmount ? (
                       <span className="text-xs text-muted-foreground tabular-nums">≥ MOV&nbsp;{formatEur(tier.minAmount)}&nbsp;€</span>
                     ) : (
-                      <span className="text-xs text-muted-foreground tabular-nums">Prix de base</span>
+                      <TierBaseLegend />
                     )}
                   </div>
                 );

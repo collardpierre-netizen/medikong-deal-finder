@@ -404,11 +404,7 @@ function OfferRow({
                         <span className={`text-sm tabular-nums ${i === 0 ? "font-bold text-green-700" : "text-muted-foreground"}`}>
                           {formatEur(tierPrice)}&nbsp;€
                         </span>
-                        {saving && (
-                          <span className="inline-flex items-center rounded-full bg-green-50 px-1.5 py-0.5 text-[10px] font-semibold text-green-700 tabular-nums leading-none">
-                            -{saving}%
-                          </span>
-                        )}
+                        <TierSavingBadge saving={saving} />
                         <span className="text-xs text-muted-foreground tabular-nums">
                           {tier.mov_threshold > 0 ? <>≥ MOV&nbsp;{formatEur(tier.mov_threshold)}&nbsp;€</> : "Prix de base"}
                         </span>

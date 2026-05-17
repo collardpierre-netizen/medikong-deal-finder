@@ -137,11 +137,15 @@ function formatRelative(iso?: string | null): string | null {
 
 
 /* ── Tier saving badge (unifié desktop + mobile) ───────── */
-function TierSavingBadge({ saving }: { saving: string | null | undefined }) {
-  if (!saving) return null;
+function TierSavingBadge({ saving }: { saving: string | number | null | undefined }) {
+  if (saving === null || saving === undefined || saving === "") return null;
+  const num = typeof saving === "number" ? saving : parseFloat(saving);
+  if (!Number.isFinite(num) || num <= 0) return null;
+  const formatted = num.toFixed(1);
+  if (formatted === "0.0") return null;
   return (
     <span className="inline-flex items-center rounded-full bg-green-50 px-1.5 py-0.5 text-[10px] font-semibold text-green-700 tabular-nums leading-none">
-      -{saving}%
+      -{formatted}%
     </span>
   );
 }

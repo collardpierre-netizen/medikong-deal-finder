@@ -455,6 +455,19 @@ export default function VendorOrderPage() {
                                   Marquer livré
                                 </Button>
                               )}
+                              {(status === "pending" || status === "processing" || status === "shipped") && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="text-destructive hover:text-destructive"
+                                  onClick={() => {
+                                    setCancelTarget(line);
+                                    setCancelReason("");
+                                  }}
+                                >
+                                  Annuler
+                                </Button>
+                              )}
                               {!["pending", "processing", "shipped"].includes(status) && <span className="text-sm text-muted-foreground">—</span>}
                             </div>
                           </TableCell>
@@ -467,6 +480,58 @@ export default function VendorOrderPage() {
             </Card>
           </div>
         )}
+
+        <Dialog
+          open={cancelTarget !== null}
+          onOpenChange={(open) => {
+            if (!open && !cancelLoading) {
+              setCancelTarget(null);
+              setCancelReason("");
+            }
+          }}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Annuler cette ligne ?</DialogTitle>
+              <DialogDescription>
+                {cancelTarget
+                  ? `Vous êtes sur le point d'annuler « ${cancelTarget.product_name} » (qté ${cancelTarget.quantity}). Un remboursement Stripe sera émis et l'acheteur sera notifié.`
+                  : ""}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-2">
+              <Label htmlFor="cancel-reason">Motif de l'annulation</Label>
+              <Textarea
+                id="cancel-reason"
+                value={cancelReason}
+                onChange={(event) => setCancelReason(event.target.value)}
+                placeholder="Ex. rupture de stock, produit endommagé…"
+                rows={4}
+                disabled={cancelLoading}
+              />
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setCancelTarget(null);
+                  setCancelReason("");
+                }}
+                disabled={cancelLoading}
+              >
+                Revenir
+              </Button>
+              <Button
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={handleCancelLine}
+                disabled={cancelLoading || !cancelReason.trim()}
+              >
+                {cancelLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Confirmer l'annulation
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   );

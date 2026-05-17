@@ -264,7 +264,7 @@ export default function HomePage() {
         <div className="mk-container text-center max-w-2xl mx-auto">
           <motion.h1
             className="text-3xl md:text-[44px] leading-[1.15] font-bold text-mk-navy mb-4"
-            style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+            style={{ fontFamily: "'Bricolage Grotesque', 'DM Sans', sans-serif", letterSpacing: "-0.03em" }}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}

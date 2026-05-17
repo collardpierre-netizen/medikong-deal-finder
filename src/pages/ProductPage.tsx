@@ -439,7 +439,7 @@ function OfferRow({
                         {formatEur(tier.unit_price)}&nbsp;€
                       </span>
                       <span className="text-xs text-muted-foreground tabular-nums whitespace-nowrap">MOV&nbsp;{formatEur(tier.mov_amount)}&nbsp;€</span>
-                      <div className="flex justify-end">{i > 0 && <TierSavingBadge saving={saving} />}</div>
+                      <div className="flex justify-end">{i > 0 && <TierSavingBadge saving={saving} basePrice={basePrice} />}</div>
                     </div>
                   );
                 })}

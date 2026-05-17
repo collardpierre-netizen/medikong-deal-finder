@@ -205,9 +205,18 @@ export function TierSavingBadge({
     typeof basePrice === "number" &&
     Number.isFinite(basePrice) &&
     basePrice > 0;
+  // Mini exemple chiffré : si on a un basePrice réel, on dérive le prix unitaire
+  // de ce palier à partir de la réduction affichée. Sinon, on utilise un
+  // exemple générique 10 € → 9 € = 10 %.
+  const unitFromSaving = hasBase
+    ? (basePrice as number) * (1 - num / 100)
+    : null;
+  const example = hasBase
+    ? `Exemple : (${(basePrice as number).toFixed(2)} − ${unitFromSaving!.toFixed(2)}) ÷ ${(basePrice as number).toFixed(2)} × 100 = ${num.toFixed(1)} %.`
+    : "Exemple : (10,00 − 9,00) ÷ 10,00 × 100 = 10,0 %.";
   const savingTitle = hasBase
-    ? `Économie de ${num.toFixed(1)}% par rapport au prix unitaire de base (${(basePrice as number).toFixed(2)} €). Formule : (prix de base − prix unitaire du palier) ÷ prix de base × 100. Le fallback « — » s'affiche si le prix de base est manquant/invalide ou si la réduction ne peut pas être calculée pour ce palier.`
-    : `Économie de ${num.toFixed(1)}% par rapport au prix unitaire de base du produit. Formule : (prix de base − prix unitaire du palier) ÷ prix de base × 100. Le fallback « — » s'affiche si le prix de base est manquant/invalide ou si la réduction ne peut pas être calculée pour ce palier.`;
+    ? `Économie de ${num.toFixed(1)}% par rapport au prix unitaire de base (${(basePrice as number).toFixed(2)} €).\nFormule : (prix de base − prix unitaire du palier) ÷ prix de base × 100.\n${example}\nLe fallback « — » s'affiche si le prix de base est manquant/invalide ou si la réduction ne peut pas être calculée pour ce palier.`
+    : `Économie de ${num.toFixed(1)}% par rapport au prix unitaire de base du produit.\nFormule : (prix de base − prix unitaire du palier) ÷ prix de base × 100.\n${example}\nLe fallback « — » s'affiche si le prix de base est manquant/invalide ou si la réduction ne peut pas être calculée pour ce palier.`;
 
   return (
     <span

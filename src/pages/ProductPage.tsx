@@ -477,15 +477,17 @@ function OfferRow({
                   }
                 }
                 return (
-                  <div key={i} className="grid grid-cols-[5.5rem_9rem_3rem] items-center gap-x-2 relative" style={{ marginTop: i > 0 ? 6 : 0 }}>
-                    <div className="absolute left-[-14px] w-[7px] h-[7px] rounded-full bg-primary" />
+                  <div key={i} className="flex items-center gap-2 relative whitespace-nowrap" style={{ marginTop: i > 0 ? 4 : 0 }}>
+                    <div className="absolute left-[-14px] top-1/2 -translate-y-1/2 w-[7px] h-[7px] rounded-full bg-primary" />
                     <span className={`text-sm tabular-nums ${i === 0 ? "font-bold text-green-700" : "text-muted-foreground"}`}>
                       {formatEur(tier.price || tier.minAmount)}&nbsp;€
                     </span>
+                    {i > 0 && <TierSavingBadge saving={saving} />}
                     {tier.minAmount ? (
-                      <span className="text-xs text-muted-foreground tabular-nums">MOV&nbsp;{formatEur(tier.minAmount)}&nbsp;€</span>
-                    ) : <span />}
-                    <div className="flex justify-end"><TierSavingBadge saving={saving} /></div>
+                      <span className="text-xs text-muted-foreground tabular-nums">≥ MOV&nbsp;{formatEur(tier.minAmount)}&nbsp;€</span>
+                    ) : (
+                      <span className="text-xs text-muted-foreground tabular-nums">Prix de base</span>
+                    )}
                   </div>
                 );
               })}

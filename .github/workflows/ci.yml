@@ -40,5 +40,8 @@ jobs:
       - name: Typecheck
         run: bun run typecheck
 
+      - name: Unit tests (Vitest)
+        run: bun run test
+
       - name: Build
         run: bun run build

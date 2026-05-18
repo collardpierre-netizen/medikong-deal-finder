@@ -33,6 +33,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { AUDIT_NOTIFICATION_EMAIL } from "@/config/audit";
+import { AuditEmailLog } from "@/components/admin/AuditEmailLog";
 
 type AuditStatus = "pending" | "in_progress" | "sent" | "declined";
 
@@ -462,6 +463,10 @@ export default function AuditsAdminPage() {
                       </div>
                     ))}
                   </div>
+                </div>
+
+                <div className="border-t pt-3">
+                  <AuditEmailLog auditId={selected.id} />
                 </div>
 
                 {selected.status !== "sent" && selected.status !== "declined" && (

@@ -261,14 +261,14 @@ export default function AuditsAdminPage() {
           variant="outline"
           onClick={sendTestEmail}
           disabled={testingEmail}
-          title="Envoie un email de test au template audit-new-lead vers pcoll@medikong.pro"
+          title={`Envoie un email de test au template audit-new-lead vers ${AUDIT_NOTIFICATION_EMAIL}`}
         >
           {testingEmail ? (
             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
           ) : (
             <MailCheck className="h-4 w-4 mr-2" />
           )}
-          Test d'envoi → pcoll@medikong.pro
+          Test d'envoi → {AUDIT_NOTIFICATION_EMAIL}
         </Button>
       </div>
 

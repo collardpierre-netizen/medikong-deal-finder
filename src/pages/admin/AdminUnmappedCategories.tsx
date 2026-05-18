@@ -342,6 +342,15 @@ const AdminUnmappedCategories = () => {
           </div>
           <Button
             size="sm"
+            variant="outline"
+            disabled={selected.size === 0}
+            onClick={() => setBulkMapOpen(true)}
+          >
+            <Link2 className="mr-2 h-4 w-4" />
+            Rattacher à une catégorie existante ({selected.size})
+          </Button>
+          <Button
+            size="sm"
             variant="default"
             disabled={selected.size === 0}
             onClick={() => setBulkOpen(true)}

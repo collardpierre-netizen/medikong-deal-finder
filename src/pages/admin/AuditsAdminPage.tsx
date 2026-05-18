@@ -239,7 +239,7 @@ export default function AuditsAdminPage() {
         },
       });
       if (error) throw error;
-      toast.success("Email de test envoyé à pcoll@medikong.pro");
+      toast.success(`Email de test envoyé à ${AUDIT_NOTIFICATION_EMAIL}`);
     } catch (err: any) {
       console.error(err);
       toast.error(err?.message || "Échec de l'envoi du test");

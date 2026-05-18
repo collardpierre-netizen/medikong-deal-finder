@@ -23,6 +23,7 @@ import {
   Plus,
   Loader2,
   Wand2,
+  Link2,
 } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";

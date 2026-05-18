@@ -32,6 +32,7 @@ import { Loader2, Download, Eye, Upload, X, FileText, MailCheck } from "lucide-r
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { AUDIT_NOTIFICATION_EMAIL } from "@/config/audit";
 
 type AuditStatus = "pending" | "in_progress" | "sent" | "declined";
 

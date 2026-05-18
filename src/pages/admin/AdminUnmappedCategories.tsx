@@ -78,6 +78,9 @@ const AdminUnmappedCategories = () => {
   const [singleDialog, setSingleDialog] = useState<Row | null>(null);
   const [bulkOpen, setBulkOpen] = useState(false);
   const [bulkParent, setBulkParent] = useState<string>("");
+  const [bulkMapOpen, setBulkMapOpen] = useState(false);
+  const [bulkMapTarget, setBulkMapTarget] = useState<string>("");
+  const [bulkMapSearch, setBulkMapSearch] = useState<string>("");
 
   const { data: rows = [], isLoading, error } = useQuery({
     queryKey: ["admin-unmapped-categories", limit],

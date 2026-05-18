@@ -22,17 +22,38 @@ export default function AdminBrandProductCardPreview() {
       if (!brand) return [];
 
       const { data, error } = await supabase
-        .from("products_with_stats")
+        .from("products_with_country_stats_v")
         .select(
-          "id, slug, name, name_fr, name_nl, name_de, brand_name, gtin, cnk_code, image_url, image_urls, short_description, is_promotion, promotion_label, best_price_excl_vat, best_price_incl_vat, offer_count, total_stock, is_in_stock"
+          "id, slug, name, name_fr, name_nl, name_de, brand_name, gtin, cnk_code, image_url, image_urls, short_description, is_promotion, promotion_label, country_best_price_excl_vat, country_best_price_incl_vat, country_offer_count, country_total_stock, country_is_in_stock"
         )
         .eq("brand_id", brand.id)
         .eq("is_active", true)
-        .gt("offer_count", 0)
-        .order("offer_count", { ascending: false })
+        .eq("country_code", "BE")
+        .gt("country_offer_count", 0)
+        .order("country_offer_count", { ascending: false })
         .limit(8);
       if (error) throw error;
-      return (data ?? []) as unknown as BrandProductCardItem[];
+      return (data ?? []).map((row: any) => ({
+        id: row.id,
+        slug: row.slug,
+        name: row.name,
+        name_fr: row.name_fr,
+        name_nl: row.name_nl,
+        name_de: row.name_de,
+        brand_name: row.brand_name,
+        gtin: row.gtin,
+        cnk_code: row.cnk_code,
+        image_url: row.image_url,
+        image_urls: row.image_urls,
+        short_description: row.short_description,
+        is_promotion: row.is_promotion,
+        promotion_label: row.promotion_label,
+        best_price_excl_vat: row.country_best_price_excl_vat,
+        best_price_incl_vat: row.country_best_price_incl_vat,
+        offer_count: row.country_offer_count,
+        total_stock: row.country_total_stock,
+        is_in_stock: row.country_is_in_stock,
+      })) as BrandProductCardItem[];
     },
   });
 

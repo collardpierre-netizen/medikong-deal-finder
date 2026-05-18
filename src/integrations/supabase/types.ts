@@ -18098,10 +18098,36 @@ export type Database = {
         }
         Returns: Json
       }
+      admin_bulk_create_categories_and_map: {
+        Args: { _payload: Json }
+        Returns: {
+          category_id: string
+          error: string
+          products_updated: number
+          raw_label: string
+          slug: string
+        }[]
+      }
       admin_category_mapping_dashboard: { Args: never; Returns: Json }
       admin_claim_product_submission: {
         Args: { _submission_id: string }
         Returns: undefined
+      }
+      admin_create_category_and_map: {
+        Args: {
+          _name_en?: string
+          _name_fr?: string
+          _name_nl?: string
+          _parent_id: string
+          _raw_label: string
+          _source_locale?: string
+        }
+        Returns: {
+          category_id: string
+          name: string
+          products_updated: number
+          slug: string
+        }[]
       }
       admin_email_deliverability_kpis: {
         Args: never
@@ -19384,6 +19410,7 @@ export type Database = {
         Args: { _key: string; _value: string }
         Returns: undefined
       }
+      slugify_category_label: { Args: { _label: string }; Returns: string }
       snapshot_vendor_offer_history: { Args: never; Returns: Json }
       start_buyer_impersonation: {
         Args: { _reason?: string; _target_user_id: string }

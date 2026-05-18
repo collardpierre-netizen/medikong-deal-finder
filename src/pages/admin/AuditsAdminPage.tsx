@@ -213,15 +213,62 @@ export default function AuditsAdminPage() {
     toast.success("Marqué en cours");
   };
 
+  const [testingEmail, setTestingEmail] = useState(false);
+  const sendTestEmail = async () => {
+    setTestingEmail(true);
+    try {
+      const stamp = new Date().toISOString();
+      const { error } = await supabase.functions.invoke("send-transactional-email", {
+        body: {
+          templateName: "audit-new-lead",
+          recipientEmail: "pcoll@medikong.pro",
+          idempotencyKey: `audit-test-${Date.now()}`,
+          templateData: {
+            auditId: `TEST-${stamp}`,
+            pharmacyName: "[TEST] Pharmacie de démonstration",
+            contactName: "Test MediKong",
+            contactEmail: "pcoll@medikong.pro",
+            contactPhone: "+32 000 00 00 00",
+            city: "Ath",
+            country: "BE",
+            filesCount: 0,
+            files: [],
+            notes: `Email de test envoyé depuis /admin/audits à ${stamp}. Aucune demande réelle n'a été créée.`,
+          },
+        },
+      });
+      if (error) throw error;
+      toast.success("Email de test envoyé à pcoll@medikong.pro");
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err?.message || "Échec de l'envoi du test");
+    } finally {
+      setTestingEmail(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">Audits pharmaciens</h1>
           <p className="text-sm text-muted-foreground">
             Gestion des demandes d'audit reçues depuis /audit-achats
           </p>
         </div>
+        <Button
+          variant="outline"
+          onClick={sendTestEmail}
+          disabled={testingEmail}
+          title="Envoie un email de test au template audit-new-lead vers pcoll@medikong.pro"
+        >
+          {testingEmail ? (
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+          ) : (
+            <MailCheck className="h-4 w-4 mr-2" />
+          )}
+          Test d'envoi → pcoll@medikong.pro
+        </Button>
       </div>
 
       <Card className="p-4">

@@ -270,8 +270,65 @@ const AdminUnmappedCategories = () => {
     },
   });
 
+  // ──────────────────────────────────────────────────────────────────────────
+  // Relance manuelle de apply_category_aliases + journal d'exécution
+  // ──────────────────────────────────────────────────────────────────────────
+  type ApplyLog = {
+    id: string;
+    triggered_by: string | null;
+    started_at: string;
+    finished_at: string | null;
+    duration_ms: number | null;
+    updated_count: number | null;
+    status: string;
+    error_message: string | null;
+  };
+
+  const [logsOpen, setLogsOpen] = useState(false);
+
+  const logsQuery = useQuery({
+    queryKey: ["category-alias-apply-logs"],
+    queryFn: async (): Promise<ApplyLog[]> => {
+      const { data, error } = await sb
+        .from("category_alias_apply_logs")
+        .select("id, triggered_by, started_at, finished_at, duration_ms, updated_count, status, error_message")
+        .order("started_at", { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      return (data || []) as ApplyLog[];
+    },
+    staleTime: 30_000,
+  });
+
+  const runApply = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await sb.rpc("admin_run_apply_category_aliases");
+      if (error) throw error;
+      return data as ApplyLog;
+    },
+    onSuccess: (log) => {
+      toast({
+        title: "apply_category_aliases exécuté",
+        description: `${(log?.updated_count ?? 0).toLocaleString("fr-BE")} produit(s) rattaché(s) en ${log?.duration_ms ?? 0} ms.`,
+      });
+      setLogsOpen(true);
+      qc.invalidateQueries({ queryKey: ["category-alias-apply-logs"] });
+      refresh();
+    },
+    onError: (e: any) => {
+      toast({
+        title: "Échec apply_category_aliases",
+        description: e?.message ?? String(e),
+        variant: "destructive",
+      });
+      qc.invalidateQueries({ queryKey: ["category-alias-apply-logs"] });
+    },
+  });
+
   const allChecked = filtered.length > 0 && filtered.every((r) => selected.has(r.raw_label));
   const someChecked = filtered.some((r) => selected.has(r.raw_label)) && !allChecked;
+
+
 
   return (
     <div className="space-y-4">

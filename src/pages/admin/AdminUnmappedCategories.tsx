@@ -337,6 +337,24 @@ const AdminUnmappedCategories = () => {
         subtitle="Libellés de catégorie source pour lesquels aucun produit n'a encore reçu de primary_category_id."
         actions={
           <div className="flex gap-2 flex-wrap">
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => runApply.mutate()}
+              disabled={runApply.isPending}
+              title="Relance apply_category_aliases : rattache tous les produits sans catégorie dont le libellé source a un alias."
+            >
+              {runApply.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="mr-2 h-4 w-4" />
+              )}
+              Relancer apply_category_aliases
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setLogsOpen((v) => !v)}>
+              <History className="mr-2 h-4 w-4" />
+              Journal {logsQuery.data?.length ? `(${logsQuery.data.length})` : ""}
+            </Button>
             <Button asChild variant="secondary" size="sm">
               <Link to="/admin/categories/dashboard">
                 <TrendingUp className="mr-2 h-4 w-4" /> Tableau de bord
@@ -354,6 +372,7 @@ const AdminUnmappedCategories = () => {
             </Button>
           </div>
         }
+
       />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">

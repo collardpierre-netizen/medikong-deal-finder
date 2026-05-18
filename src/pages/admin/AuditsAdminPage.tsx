@@ -462,7 +462,10 @@ export default function AuditsAdminPage() {
                         </Button>
                       </div>
                     ))}
-                  </div>
+                </div>
+
+                <div className="border-t pt-3">
+                  <AuditEmailLog auditId={selected.id} />
                 </div>
 
                 {selected.status !== "sent" && selected.status !== "declined" && (

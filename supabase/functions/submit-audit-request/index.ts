@@ -5,6 +5,7 @@
 // two transactional emails (audit-confirmation + audit-new-lead).
 
 import { createClient } from 'npm:@supabase/supabase-js@2'
+import { AUDIT_NOTIFICATION_EMAIL } from '../_shared/audit-config.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',

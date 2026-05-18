@@ -222,7 +222,7 @@ export default function AuditsAdminPage() {
       const { error } = await supabase.functions.invoke("send-transactional-email", {
         body: {
           templateName: "audit-new-lead",
-          recipientEmail: "pcoll@medikong.pro",
+          recipientEmail: AUDIT_NOTIFICATION_EMAIL,
           idempotencyKey: `audit-test-${Date.now()}`,
           templateData: {
             auditId: `TEST-${stamp}`,

@@ -346,6 +346,13 @@ export type Database = {
             foreignKeyName: "brand_official_distributors_brand_id_fkey"
             columns: ["brand_id"]
             isOneToOne: false
+            referencedRelation: "brand_kpis"
+            referencedColumns: ["brand_id"]
+          },
+          {
+            foreignKeyName: "brand_official_distributors_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
             referencedRelation: "brand_logistics_stats"
             referencedColumns: ["brand_id"]
           },
@@ -468,6 +475,13 @@ export type Database = {
             columns: ["brand_id"]
             isOneToOne: false
             referencedRelation: "admin_sourcing_items_by_brand_v"
+            referencedColumns: ["brand_id"]
+          },
+          {
+            foreignKeyName: "brand_reviews_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brand_kpis"
             referencedColumns: ["brand_id"]
           },
           {
@@ -1078,6 +1092,13 @@ export type Database = {
             columns: ["brand_id"]
             isOneToOne: false
             referencedRelation: "admin_sourcing_items_by_brand_v"
+            referencedColumns: ["brand_id"]
+          },
+          {
+            foreignKeyName: "buyer_comparator_sourcing_items_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brand_kpis"
             referencedColumns: ["brand_id"]
           },
           {
@@ -3302,6 +3323,13 @@ export type Database = {
             foreignKeyName: "home_featured_brands_brand_id_fkey"
             columns: ["brand_id"]
             isOneToOne: false
+            referencedRelation: "brand_kpis"
+            referencedColumns: ["brand_id"]
+          },
+          {
+            foreignKeyName: "home_featured_brands_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
             referencedRelation: "brand_logistics_stats"
             referencedColumns: ["brand_id"]
           },
@@ -3935,6 +3963,13 @@ export type Database = {
             columns: ["brand_id"]
             isOneToOne: false
             referencedRelation: "admin_sourcing_items_by_brand_v"
+            referencedColumns: ["brand_id"]
+          },
+          {
+            foreignKeyName: "margin_rules_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brand_kpis"
             referencedColumns: ["brand_id"]
           },
           {
@@ -7909,6 +7944,13 @@ export type Database = {
             foreignKeyName: "product_submissions_resulting_brand_id_fkey"
             columns: ["resulting_brand_id"]
             isOneToOne: false
+            referencedRelation: "brand_kpis"
+            referencedColumns: ["brand_id"]
+          },
+          {
+            foreignKeyName: "product_submissions_resulting_brand_id_fkey"
+            columns: ["resulting_brand_id"]
+            isOneToOne: false
             referencedRelation: "brand_logistics_stats"
             referencedColumns: ["brand_id"]
           },
@@ -8302,6 +8344,13 @@ export type Database = {
             columns: ["brand_id"]
             isOneToOne: false
             referencedRelation: "admin_sourcing_items_by_brand_v"
+            referencedColumns: ["brand_id"]
+          },
+          {
+            foreignKeyName: "products_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brand_kpis"
             referencedColumns: ["brand_id"]
           },
           {
@@ -11073,6 +11122,13 @@ export type Database = {
             foreignKeyName: "rfqs_brand_id_fkey"
             columns: ["brand_id"]
             isOneToOne: false
+            referencedRelation: "brand_kpis"
+            referencedColumns: ["brand_id"]
+          },
+          {
+            foreignKeyName: "rfqs_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
             referencedRelation: "brand_logistics_stats"
             referencedColumns: ["brand_id"]
           },
@@ -12907,6 +12963,13 @@ export type Database = {
             columns: ["brand_id"]
             isOneToOne: false
             referencedRelation: "admin_sourcing_items_by_brand_v"
+            referencedColumns: ["brand_id"]
+          },
+          {
+            foreignKeyName: "vendor_catalog_interests_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brand_kpis"
             referencedColumns: ["brand_id"]
           },
           {
@@ -14913,6 +14976,13 @@ export type Database = {
             foreignKeyName: "vendor_price_alert_rules_brand_id_fkey"
             columns: ["brand_id"]
             isOneToOne: false
+            referencedRelation: "brand_kpis"
+            referencedColumns: ["brand_id"]
+          },
+          {
+            foreignKeyName: "vendor_price_alert_rules_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
             referencedRelation: "brand_logistics_stats"
             referencedColumns: ["brand_id"]
           },
@@ -16248,6 +16318,13 @@ export type Database = {
             foreignKeyName: "products_brand_id_fkey"
             columns: ["brand_id"]
             isOneToOne: false
+            referencedRelation: "brand_kpis"
+            referencedColumns: ["brand_id"]
+          },
+          {
+            foreignKeyName: "products_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
             referencedRelation: "brand_logistics_stats"
             referencedColumns: ["brand_id"]
           },
@@ -16314,6 +16391,20 @@ export type Database = {
         }
         Relationships: []
       }
+      brand_kpis: {
+        Row: {
+          active_offer_count: number | null
+          active_product_count: number | null
+          active_vendor_count: number | null
+          avg_delivery_days: number | null
+          brand_id: string | null
+          last_offer_update_at: string | null
+          min_price_excl_vat: number | null
+          ships_from_country_count: number | null
+          slug: string | null
+        }
+        Relationships: []
+      }
       brand_logistics_stats: {
         Row: {
           avg_delivery_days: number | null
@@ -16376,6 +16467,13 @@ export type Database = {
             columns: ["brand_id"]
             isOneToOne: false
             referencedRelation: "admin_sourcing_items_by_brand_v"
+            referencedColumns: ["brand_id"]
+          },
+          {
+            foreignKeyName: "products_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brand_kpis"
             referencedColumns: ["brand_id"]
           },
           {
@@ -16973,6 +17071,13 @@ export type Database = {
             foreignKeyName: "products_brand_id_fkey"
             columns: ["brand_id"]
             isOneToOne: false
+            referencedRelation: "brand_kpis"
+            referencedColumns: ["brand_id"]
+          },
+          {
+            foreignKeyName: "products_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
             referencedRelation: "brand_logistics_stats"
             referencedColumns: ["brand_id"]
           },
@@ -17053,6 +17158,13 @@ export type Database = {
             columns: ["brand_id"]
             isOneToOne: false
             referencedRelation: "admin_sourcing_items_by_brand_v"
+            referencedColumns: ["brand_id"]
+          },
+          {
+            foreignKeyName: "home_featured_brands_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brand_kpis"
             referencedColumns: ["brand_id"]
           },
           {
@@ -17140,6 +17252,13 @@ export type Database = {
             columns: ["brand_id"]
             isOneToOne: false
             referencedRelation: "admin_sourcing_items_by_brand_v"
+            referencedColumns: ["brand_id"]
+          },
+          {
+            foreignKeyName: "products_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brand_kpis"
             referencedColumns: ["brand_id"]
           },
           {
@@ -17708,6 +17827,13 @@ export type Database = {
             columns: ["brand_id"]
             isOneToOne: false
             referencedRelation: "admin_sourcing_items_by_brand_v"
+            referencedColumns: ["brand_id"]
+          },
+          {
+            foreignKeyName: "rfqs_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brand_kpis"
             referencedColumns: ["brand_id"]
           },
           {

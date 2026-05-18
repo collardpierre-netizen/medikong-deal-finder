@@ -134,7 +134,7 @@ export default function AuditAchatsPage() {
       console.error(err);
       toast.error(
         err?.message ||
-          "Une erreur est survenue. Réessayez ou contactez pit@medikong.pro",
+          "Une erreur est survenue. Réessayez ou contactez pcoll@medikong.pro",
       );
     } finally {
       setSubmitting(false);
@@ -582,7 +582,7 @@ export default function AuditAchatsPage() {
             <AccordionItem value="q5">
               <AccordionTrigger>Puis-je supprimer mes données ?</AccordionTrigger>
               <AccordionContent>
-                Oui, à tout moment. Écrivez-nous à pit@medikong.pro.
+                Oui, à tout moment. Écrivez-nous à pcoll@medikong.pro.
               </AccordionContent>
             </AccordionItem>
           </Accordion>
@@ -593,7 +593,7 @@ export default function AuditAchatsPage() {
       <footer className="border-t py-8 bg-slate-50">
         <div className="mk-container flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
           <div className="flex items-center gap-2">
-            <Clock size={14} /> Réponse sous 48h · pit@medikong.pro
+            <Clock size={14} /> Réponse sous 48h · pcoll@medikong.pro
           </div>
           <div className="flex items-center gap-4">
             <Link to="/cgv" className="hover:text-foreground">CGU</Link>

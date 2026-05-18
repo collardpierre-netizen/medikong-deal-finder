@@ -24,6 +24,9 @@ import {
   Loader2,
   Wand2,
   Link2,
+  RefreshCw,
+  History,
+  XCircle,
 } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -267,8 +270,65 @@ const AdminUnmappedCategories = () => {
     },
   });
 
+  // ──────────────────────────────────────────────────────────────────────────
+  // Relance manuelle de apply_category_aliases + journal d'exécution
+  // ──────────────────────────────────────────────────────────────────────────
+  type ApplyLog = {
+    id: string;
+    triggered_by: string | null;
+    started_at: string;
+    finished_at: string | null;
+    duration_ms: number | null;
+    updated_count: number | null;
+    status: string;
+    error_message: string | null;
+  };
+
+  const [logsOpen, setLogsOpen] = useState(false);
+
+  const logsQuery = useQuery({
+    queryKey: ["category-alias-apply-logs"],
+    queryFn: async (): Promise<ApplyLog[]> => {
+      const { data, error } = await sb
+        .from("category_alias_apply_logs")
+        .select("id, triggered_by, started_at, finished_at, duration_ms, updated_count, status, error_message")
+        .order("started_at", { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      return (data || []) as ApplyLog[];
+    },
+    staleTime: 30_000,
+  });
+
+  const runApply = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await sb.rpc("admin_run_apply_category_aliases");
+      if (error) throw error;
+      return data as ApplyLog;
+    },
+    onSuccess: (log) => {
+      toast({
+        title: "apply_category_aliases exécuté",
+        description: `${(log?.updated_count ?? 0).toLocaleString("fr-BE")} produit(s) rattaché(s) en ${log?.duration_ms ?? 0} ms.`,
+      });
+      setLogsOpen(true);
+      qc.invalidateQueries({ queryKey: ["category-alias-apply-logs"] });
+      refresh();
+    },
+    onError: (e: any) => {
+      toast({
+        title: "Échec apply_category_aliases",
+        description: e?.message ?? String(e),
+        variant: "destructive",
+      });
+      qc.invalidateQueries({ queryKey: ["category-alias-apply-logs"] });
+    },
+  });
+
   const allChecked = filtered.length > 0 && filtered.every((r) => selected.has(r.raw_label));
   const someChecked = filtered.some((r) => selected.has(r.raw_label)) && !allChecked;
+
+
 
   return (
     <div className="space-y-4">
@@ -277,6 +337,24 @@ const AdminUnmappedCategories = () => {
         subtitle="Libellés de catégorie source pour lesquels aucun produit n'a encore reçu de primary_category_id."
         actions={
           <div className="flex gap-2 flex-wrap">
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => runApply.mutate()}
+              disabled={runApply.isPending}
+              title="Relance apply_category_aliases : rattache tous les produits sans catégorie dont le libellé source a un alias."
+            >
+              {runApply.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="mr-2 h-4 w-4" />
+              )}
+              Relancer apply_category_aliases
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setLogsOpen((v) => !v)}>
+              <History className="mr-2 h-4 w-4" />
+              Journal {logsQuery.data?.length ? `(${logsQuery.data.length})` : ""}
+            </Button>
             <Button asChild variant="secondary" size="sm">
               <Link to="/admin/categories/dashboard">
                 <TrendingUp className="mr-2 h-4 w-4" /> Tableau de bord
@@ -294,6 +372,7 @@ const AdminUnmappedCategories = () => {
             </Button>
           </div>
         }
+
       />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -315,6 +394,96 @@ const AdminUnmappedCategories = () => {
           </div>
         </div>
       </div>
+
+      {logsOpen && (
+        <div className="rounded-xl border bg-card p-4 space-y-3">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div>
+              <div className="font-semibold flex items-center gap-2">
+                <History className="h-4 w-4" /> Journal d'exécution apply_category_aliases
+              </div>
+              <div className="text-xs text-muted-foreground">
+                20 dernières exécutions (manuelles ou via cette page).
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => qc.invalidateQueries({ queryKey: ["category-alias-apply-logs"] })}
+                disabled={logsQuery.isFetching}
+              >
+                {logsQuery.isFetching ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                )}
+                Rafraîchir
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setLogsOpen(false)}>
+                Fermer
+              </Button>
+            </div>
+          </div>
+
+          {logsQuery.isLoading ? (
+            <div className="text-sm text-muted-foreground py-6 text-center">
+              <Loader2 className="inline h-4 w-4 animate-spin mr-2" /> Chargement…
+            </div>
+          ) : !logsQuery.data?.length ? (
+            <div className="text-sm text-muted-foreground py-6 text-center">
+              Aucune exécution journalisée pour le moment.
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Démarré</TableHead>
+                  <TableHead>Statut</TableHead>
+                  <TableHead className="text-right">Produits rattachés</TableHead>
+                  <TableHead className="text-right">Durée</TableHead>
+                  <TableHead>Erreur</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {logsQuery.data.map((log) => (
+                  <TableRow key={log.id}>
+                    <TableCell className="font-mono text-xs">
+                      {new Date(log.started_at).toLocaleString("fr-BE")}
+                    </TableCell>
+                    <TableCell>
+                      {log.status === "success" ? (
+                        <Badge variant="secondary" className="gap-1">
+                          <CheckCircle2 className="h-3 w-3" /> success
+                        </Badge>
+                      ) : log.status === "error" ? (
+                        <Badge variant="destructive" className="gap-1">
+                          <XCircle className="h-3 w-3" /> error
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="gap-1">
+                          <Loader2 className="h-3 w-3 animate-spin" /> {log.status}
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {log.updated_count != null ? log.updated_count.toLocaleString("fr-BE") : "—"}
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums text-xs text-muted-foreground">
+                      {log.duration_ms != null ? `${log.duration_ms} ms` : "—"}
+                    </TableCell>
+                    <TableCell className="text-xs text-destructive max-w-[320px] truncate" title={log.error_message ?? undefined}>
+                      {log.error_message ?? ""}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </div>
+      )}
+
+
 
       <div className="rounded-xl border bg-card p-4 space-y-3">
         <div className="flex flex-wrap items-center gap-3">

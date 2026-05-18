@@ -1578,6 +1578,42 @@ export type Database = {
         }
         Relationships: []
       }
+      category_alias_apply_logs: {
+        Row: {
+          created_at: string
+          duration_ms: number | null
+          error_message: string | null
+          finished_at: string | null
+          id: string
+          started_at: string
+          status: string
+          triggered_by: string | null
+          updated_count: number | null
+        }
+        Insert: {
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          finished_at?: string | null
+          id?: string
+          started_at?: string
+          status?: string
+          triggered_by?: string | null
+          updated_count?: number | null
+        }
+        Update: {
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          finished_at?: string | null
+          id?: string
+          started_at?: string
+          status?: string
+          triggered_by?: string | null
+          updated_count?: number | null
+        }
+        Relationships: []
+      }
       category_bulk_actions: {
         Row: {
           action: string
@@ -18407,6 +18443,26 @@ export type Database = {
           _submission_id: string
         }
         Returns: Json
+      }
+      admin_run_apply_category_aliases: {
+        Args: never
+        Returns: {
+          created_at: string
+          duration_ms: number | null
+          error_message: string | null
+          finished_at: string | null
+          id: string
+          started_at: string
+          status: string
+          triggered_by: string | null
+          updated_count: number | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "category_alias_apply_logs"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       admin_search_kpis: { Args: { _days?: number }; Returns: Json }
       admin_search_top_queries: {

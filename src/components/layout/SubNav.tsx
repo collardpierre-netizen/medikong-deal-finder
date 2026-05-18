@@ -14,7 +14,7 @@ export function SubNav() {
     { label: t("nav.promotions"), path: "/promotions" },
     { label: t("nav.sourcing"), path: "/sourcing" },
     { label: t("nav.professionals"), path: "/professionnels" },
-    { label: "Audit gratuit", path: "/audit-achats", badge: "Gratuit" },
+    { label: t("nav.freeAudit", "Audit gratuit"), path: "/audit-achats", badge: t("common.free", "Gratuit") },
     ...(features?.restockEnabled !== false ? [{ label: "ReStock", path: "/restock" }] : []),
   ];
 

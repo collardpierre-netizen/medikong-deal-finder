@@ -34,7 +34,8 @@
     "signOut": "Abmelden",
     "stripeConnect": "Stripe Connect",
     "stripeRevenue": "Umsatz & Margen",
-    "productSubmissions": "Eingereichte Produkte"
+    "productSubmissions": "Eingereichte Produkte",
+    "free": "Kostenlos"
   },
   "nav": {
     "shop": "Shop",
@@ -44,7 +45,9 @@
     "professionals": "Fachleute",
     "sourcing": "Beschaffung",
     "account": "Mein Konto",
-    "manufacturers": "Hersteller"
+    "manufacturers": "Hersteller",
+    "myPrices": "Meine Preise",
+    "freeAudit": "Kostenlose Prüfung"
   },
   "trustBar": {
     "certifiedCE": "CE-zertifizierte Produkte",

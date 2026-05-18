@@ -146,7 +146,7 @@ export function Navbar() {
               )}
               <Link to="/mes-prix" className="flex items-center gap-1 text-xs font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full hover:bg-emerald-100 transition-colors">
                 <Tag size={13} />
-                <span>Mes Prix</span>
+                <span>{t("nav.myPrices", "Mes Prix")}</span>
               </Link>
               <Link
                 to="/compte"
@@ -234,7 +234,7 @@ export function Navbar() {
                     </Link>
                   )}
                   <Link to="/mes-prix" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 text-emerald-600 text-sm font-semibold py-1">
-                    <Tag size={16} /> Mes Prix
+                    <Tag size={16} /> {t("nav.myPrices", "Mes Prix")}
                   </Link>
                   <Link to="/compte" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 text-foreground text-sm py-1">
                     <Users size={16} /> {t("common.account")}

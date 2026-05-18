@@ -34,7 +34,8 @@
     "signOut": "Uitloggen",
     "stripeConnect": "Stripe Connect",
     "stripeRevenue": "Omzet & Marges",
-    "productSubmissions": "Ingediende producten"
+    "productSubmissions": "Ingediende producten",
+    "free": "Gratis"
   },
   "nav": {
     "shop": "Shop",
@@ -44,7 +45,9 @@
     "professionals": "Professionals",
     "sourcing": "Sourcing",
     "account": "Mijn account",
-    "manufacturers": "Fabrikanten"
+    "manufacturers": "Fabrikanten",
+    "myPrices": "Mijn prijzen",
+    "freeAudit": "Gratis audit"
   },
   "trustBar": {
     "certifiedCE": "CE-gecertificeerde producten",

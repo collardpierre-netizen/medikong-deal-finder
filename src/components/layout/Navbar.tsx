@@ -146,7 +146,7 @@ export function Navbar() {
               )}
               <Link to="/mes-prix" className="flex items-center gap-1 text-xs font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full hover:bg-emerald-100 transition-colors">
                 <Tag size={13} />
-                <span>Mes Prix</span>
+                <span>{t("nav.myPrices", "Mes Prix")}</span>
               </Link>
               <Link
                 to="/compte"

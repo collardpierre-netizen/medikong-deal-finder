@@ -18857,6 +18857,15 @@ export type Database = {
         Args: { _months?: number; _notes?: string; _req_id: string }
         Returns: undefined
       }
+      has_role:
+        | {
+            Args: {
+              _role: Database["public"]["Enums"]["app_role"]
+              _user_id: string
+            }
+            Returns: boolean
+          }
+        | { Args: { _role: string; _user_id: string }; Returns: boolean }
       increment_offer_stock: {
         Args: { p_offer_id: string; p_quantity: number }
         Returns: Json
@@ -19503,6 +19512,7 @@ export type Database = {
         | "resolved"
         | "auto_resolved"
       alert_type: "market_price" | "external_offer"
+      app_role: "super_admin" | "admin" | "moderator" | "user"
       catalog_submission_status:
         | "active"
         | "pending_review"
@@ -19822,6 +19832,7 @@ export const Constants = {
       alert_severity: ["info", "warning", "critical"],
       alert_status: ["new", "seen", "in_progress", "resolved", "auto_resolved"],
       alert_type: ["market_price", "external_offer"],
+      app_role: ["super_admin", "admin", "moderator", "user"],
       catalog_submission_status: [
         "active",
         "pending_review",

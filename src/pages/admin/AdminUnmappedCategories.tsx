@@ -24,6 +24,9 @@ import {
   Loader2,
   Wand2,
   Link2,
+  RefreshCw,
+  History,
+  XCircle,
 } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";

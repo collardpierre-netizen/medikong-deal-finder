@@ -32,6 +32,7 @@ import { Loader2, Download, Eye, Upload, X, FileText, MailCheck } from "lucide-r
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { AUDIT_NOTIFICATION_EMAIL } from "@/config/audit";
 
 type AuditStatus = "pending" | "in_progress" | "sent" | "declined";
 
@@ -221,13 +222,13 @@ export default function AuditsAdminPage() {
       const { error } = await supabase.functions.invoke("send-transactional-email", {
         body: {
           templateName: "audit-new-lead",
-          recipientEmail: "pcoll@medikong.pro",
+          recipientEmail: AUDIT_NOTIFICATION_EMAIL,
           idempotencyKey: `audit-test-${Date.now()}`,
           templateData: {
             auditId: `TEST-${stamp}`,
             pharmacyName: "[TEST] Pharmacie de démonstration",
             contactName: "Test MediKong",
-            contactEmail: "pcoll@medikong.pro",
+            contactEmail: AUDIT_NOTIFICATION_EMAIL,
             contactPhone: "+32 000 00 00 00",
             city: "Ath",
             country: "BE",
@@ -238,7 +239,7 @@ export default function AuditsAdminPage() {
         },
       });
       if (error) throw error;
-      toast.success("Email de test envoyé à pcoll@medikong.pro");
+      toast.success(`Email de test envoyé à ${AUDIT_NOTIFICATION_EMAIL}`);
     } catch (err: any) {
       console.error(err);
       toast.error(err?.message || "Échec de l'envoi du test");
@@ -260,14 +261,14 @@ export default function AuditsAdminPage() {
           variant="outline"
           onClick={sendTestEmail}
           disabled={testingEmail}
-          title="Envoie un email de test au template audit-new-lead vers pcoll@medikong.pro"
+          title={`Envoie un email de test au template audit-new-lead vers ${AUDIT_NOTIFICATION_EMAIL}`}
         >
           {testingEmail ? (
             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
           ) : (
             <MailCheck className="h-4 w-4 mr-2" />
           )}
-          Test d'envoi → pcoll@medikong.pro
+          Test d'envoi → {AUDIT_NOTIFICATION_EMAIL}
         </Button>
       </div>
 

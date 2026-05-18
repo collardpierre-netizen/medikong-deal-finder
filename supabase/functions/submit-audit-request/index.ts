@@ -5,6 +5,7 @@
 // two transactional emails (audit-confirmation + audit-new-lead).
 
 import { createClient } from 'npm:@supabase/supabase-js@2'
+import { AUDIT_NOTIFICATION_EMAIL } from '../_shared/audit-config.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -18,7 +19,7 @@ const MIN_FILES = 1
 const MAX_FILE_BYTES = 10 * 1024 * 1024 // 10 MB
 const ALLOWED_MIME = 'application/pdf'
 const RATE_LIMIT_PER_HOUR = 3
-const INTERNAL_NOTIFICATION_EMAIL = 'pcoll@medikong.pro'
+const INTERNAL_NOTIFICATION_EMAIL = AUDIT_NOTIFICATION_EMAIL
 
 // In-memory IP throttle (best-effort; per-instance only)
 const ipHits = new Map<string, number[]>()

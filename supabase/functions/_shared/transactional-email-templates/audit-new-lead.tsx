@@ -3,6 +3,7 @@ import {
   Body, Container, Head, Heading, Html, Preview, Text, Button, Hr, Section, Row, Column, Link,
 } from 'npm:@react-email/components@0.0.22'
 import type { TemplateEntry } from './registry.ts'
+import { AUDIT_NOTIFICATION_EMAIL } from '../audit-config.ts'
 
 interface AuditNewLeadProps {
   auditId?: string
@@ -78,7 +79,7 @@ export const template = {
   component: AuditNewLeadEmail,
   subject: (data: Record<string, any>) =>
     `[Lead] Nouvelle demande d'audit : ${data.pharmacyName || 'Pharmacie'}`,
-  to: 'pcoll@medikong.pro',
+  to: AUDIT_NOTIFICATION_EMAIL,
   displayName: 'Audit — notification nouveau lead',
   previewData: {
     auditId: 'demo-uuid',

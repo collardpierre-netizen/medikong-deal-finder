@@ -228,7 +228,7 @@ export default function AuditsAdminPage() {
             auditId: `TEST-${stamp}`,
             pharmacyName: "[TEST] Pharmacie de démonstration",
             contactName: "Test MediKong",
-            contactEmail: "pcoll@medikong.pro",
+            contactEmail: AUDIT_NOTIFICATION_EMAIL,
             contactPhone: "+32 000 00 00 00",
             city: "Ath",
             country: "BE",

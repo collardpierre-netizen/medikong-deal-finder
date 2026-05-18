@@ -462,6 +462,7 @@ export default function AuditsAdminPage() {
                         </Button>
                       </div>
                     ))}
+                  </div>
                 </div>
 
                 <div className="border-t pt-3">

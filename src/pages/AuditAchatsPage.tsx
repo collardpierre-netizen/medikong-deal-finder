@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/accordion";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import logoHorizontal from "@/assets/logo-medikong.png";
 
 const MAX_FILES = 5;
 const MAX_FILE_BYTES = 10 * 1024 * 1024;
@@ -160,8 +161,8 @@ export default function AuditAchatsPage() {
       {/* Top bar minimal */}
       <header className="border-b border-border bg-white">
         <div className="mk-container flex items-center justify-between h-14">
-          <Link to="/" className="font-bold text-lg text-primary">
-            MediKong
+          <Link to="/" className="flex items-center">
+            <img src={logoHorizontal} alt="MediKong" className="h-10" />
           </Link>
           <Link
             to="/"

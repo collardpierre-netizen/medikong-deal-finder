@@ -156,6 +156,7 @@ const AdminSourcingPipeline = lazyWithRetry(() => import("./pages/admin/AdminSou
 const AdminCategoryAnomalies = lazyWithRetry(() => import("./pages/admin/AdminCategoryAnomalies"), "AdminCategoryAnomalies");
 const AdminCategoryAnomalyDetail = lazyWithRetry(() => import("./pages/admin/AdminCategoryAnomalyDetail"), "AdminCategoryAnomalyDetail");
 const AdminQogitaLlmMapping = lazyWithRetry(() => import("./pages/admin/AdminQogitaLlmMapping"), "AdminQogitaLlmMapping");
+const AdminBrandProductCardPreview = lazyWithRetry(() => import("./pages/admin/AdminBrandProductCardPreview"), "AdminBrandProductCardPreview");
 const AdminQogitaAmbiguousReview = lazyWithRetry(() => import("./pages/admin/AdminQogitaAmbiguousReview"), "AdminQogitaAmbiguousReview");
 const AdminCategoryMappingDashboard = lazyWithRetry(() => import("./pages/admin/AdminCategoryMappingDashboard"), "AdminCategoryMappingDashboard");
 // AdminProductPrices supprimé : remplacé par offer_buyer_profile_prices (édition par offre dans /vendor/offers).
@@ -464,6 +465,7 @@ const App = () => (
               <Route path="sourcing/pipeline" element={<LP><AdminSourcingPipeline /></LP>} />
               <Route path="categories/anomalies" element={<LP><AdminCategoryAnomalies /></LP>} />
               <Route path="categories/anomalies/:id" element={<LP><AdminCategoryAnomalyDetail /></LP>} />
+              <Route path="preview/brand-product-card" element={<LP><AdminBrandProductCardPreview /></LP>} />`
               <Route path="categories/qogita-mapping-llm" element={<LP><AdminQogitaLlmMapping /></LP>} />
               <Route path="categories/qogita-mapping-review" element={<LP><AdminQogitaAmbiguousReview /></LP>} />
               <Route path="categories/dashboard" element={<LP><AdminCategoryMappingDashboard /></LP>} />

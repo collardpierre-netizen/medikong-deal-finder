@@ -395,6 +395,96 @@ const AdminUnmappedCategories = () => {
         </div>
       </div>
 
+      {logsOpen && (
+        <div className="rounded-xl border bg-card p-4 space-y-3">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div>
+              <div className="font-semibold flex items-center gap-2">
+                <History className="h-4 w-4" /> Journal d'exécution apply_category_aliases
+              </div>
+              <div className="text-xs text-muted-foreground">
+                20 dernières exécutions (manuelles ou via cette page).
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => qc.invalidateQueries({ queryKey: ["category-alias-apply-logs"] })}
+                disabled={logsQuery.isFetching}
+              >
+                {logsQuery.isFetching ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                )}
+                Rafraîchir
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setLogsOpen(false)}>
+                Fermer
+              </Button>
+            </div>
+          </div>
+
+          {logsQuery.isLoading ? (
+            <div className="text-sm text-muted-foreground py-6 text-center">
+              <Loader2 className="inline h-4 w-4 animate-spin mr-2" /> Chargement…
+            </div>
+          ) : !logsQuery.data?.length ? (
+            <div className="text-sm text-muted-foreground py-6 text-center">
+              Aucune exécution journalisée pour le moment.
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Démarré</TableHead>
+                  <TableHead>Statut</TableHead>
+                  <TableHead className="text-right">Produits rattachés</TableHead>
+                  <TableHead className="text-right">Durée</TableHead>
+                  <TableHead>Erreur</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {logsQuery.data.map((log) => (
+                  <TableRow key={log.id}>
+                    <TableCell className="font-mono text-xs">
+                      {new Date(log.started_at).toLocaleString("fr-BE")}
+                    </TableCell>
+                    <TableCell>
+                      {log.status === "success" ? (
+                        <Badge variant="secondary" className="gap-1">
+                          <CheckCircle2 className="h-3 w-3" /> success
+                        </Badge>
+                      ) : log.status === "error" ? (
+                        <Badge variant="destructive" className="gap-1">
+                          <XCircle className="h-3 w-3" /> error
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="gap-1">
+                          <Loader2 className="h-3 w-3 animate-spin" /> {log.status}
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {log.updated_count != null ? log.updated_count.toLocaleString("fr-BE") : "—"}
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums text-xs text-muted-foreground">
+                      {log.duration_ms != null ? `${log.duration_ms} ms` : "—"}
+                    </TableCell>
+                    <TableCell className="text-xs text-destructive max-w-[320px] truncate" title={log.error_message ?? undefined}>
+                      {log.error_message ?? ""}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </div>
+      )}
+
+
+
       <div className="rounded-xl border bg-card p-4 space-y-3">
         <div className="flex flex-wrap items-center gap-3">
           <div className="relative flex-1 min-w-[240px]">

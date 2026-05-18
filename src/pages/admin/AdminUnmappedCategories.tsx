@@ -211,6 +211,62 @@ const AdminUnmappedCategories = () => {
     },
   });
 
+  // Catégories existantes (toutes actives) pour le mode "rattacher à une catégorie existante"
+  const { data: allCategories = [] } = useQuery({
+    queryKey: ["admin-all-active-categories"],
+    queryFn: async (): Promise<{ id: string; slug: string; name: string }[]> => {
+      const { data, error } = await supabase
+        .from("categories")
+        .select("id, slug, name")
+        .eq("is_active", true)
+        .order("name");
+      if (error) throw error;
+      return (data || []) as any;
+    },
+    staleTime: 5 * 60 * 1000,
+    enabled: bulkMapOpen,
+  });
+
+  const filteredCategories = useMemo(() => {
+    const q = bulkMapSearch.trim().toLowerCase();
+    const base = allCategories;
+    if (!q) return base.slice(0, 200);
+    return base.filter((c) => c.name.toLowerCase().includes(q) || c.slug.toLowerCase().includes(q)).slice(0, 200);
+  }, [allCategories, bulkMapSearch]);
+
+  const bulkMap = useMutation({
+    mutationFn: async () => {
+      if (!bulkMapTarget) throw new Error("Choisis une catégorie cible");
+      if (selectedRows.length === 0) throw new Error("Aucun libellé sélectionné");
+      const { data, error } = await sb.rpc("admin_bulk_map_labels_to_category", {
+        _labels: selectedRows.map((r) => r.raw_label),
+        _category_id: bulkMapTarget,
+      });
+      if (error) throw error;
+      return data as Array<{ raw_label: string; products_updated: number; error: string | null }>;
+    },
+    onSuccess: (data) => {
+      const ok = data.filter((d) => !d.error);
+      const ko = data.filter((d) => d.error);
+      const totalProducts = ok.reduce((s, d) => s + Number(d.products_updated || 0), 0);
+      toast({
+        title: "Mapping appliqué",
+        description: `${ok.length} alias rattaché(s), ${totalProducts} produit(s) mis à jour${
+          ko.length ? `, ${ko.length} erreur(s) — première: ${ko[0].error}` : ""
+        }`,
+        variant: ko.length ? "destructive" : "default",
+      });
+      setBulkMapOpen(false);
+      setBulkMapTarget("");
+      setBulkMapSearch("");
+      setSelected(new Set());
+      refresh();
+    },
+    onError: (e: any) => {
+      toast({ title: "Échec du mapping", description: e?.message ?? String(e), variant: "destructive" });
+    },
+  });
+
   const allChecked = filtered.length > 0 && filtered.every((r) => selected.has(r.raw_label));
   const someChecked = filtered.some((r) => selected.has(r.raw_label)) && !allChecked;
 

@@ -28,7 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Download, Eye, Upload, X, FileText } from "lucide-react";
+import { Loader2, Download, Eye, Upload, X, FileText, MailCheck } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";

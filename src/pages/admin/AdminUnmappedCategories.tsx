@@ -23,6 +23,7 @@ import {
   Plus,
   Loader2,
   Wand2,
+  Link2,
 } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -77,6 +78,9 @@ const AdminUnmappedCategories = () => {
   const [singleDialog, setSingleDialog] = useState<Row | null>(null);
   const [bulkOpen, setBulkOpen] = useState(false);
   const [bulkParent, setBulkParent] = useState<string>("");
+  const [bulkMapOpen, setBulkMapOpen] = useState(false);
+  const [bulkMapTarget, setBulkMapTarget] = useState<string>("");
+  const [bulkMapSearch, setBulkMapSearch] = useState<string>("");
 
   const { data: rows = [], isLoading, error } = useQuery({
     queryKey: ["admin-unmapped-categories", limit],
@@ -207,6 +211,62 @@ const AdminUnmappedCategories = () => {
     },
   });
 
+  // Catégories existantes (toutes actives) pour le mode "rattacher à une catégorie existante"
+  const { data: allCategories = [] } = useQuery({
+    queryKey: ["admin-all-active-categories"],
+    queryFn: async (): Promise<{ id: string; slug: string; name: string }[]> => {
+      const { data, error } = await supabase
+        .from("categories")
+        .select("id, slug, name")
+        .eq("is_active", true)
+        .order("name");
+      if (error) throw error;
+      return (data || []) as any;
+    },
+    staleTime: 5 * 60 * 1000,
+    enabled: bulkMapOpen,
+  });
+
+  const filteredCategories = useMemo(() => {
+    const q = bulkMapSearch.trim().toLowerCase();
+    const base = allCategories;
+    if (!q) return base.slice(0, 200);
+    return base.filter((c) => c.name.toLowerCase().includes(q) || c.slug.toLowerCase().includes(q)).slice(0, 200);
+  }, [allCategories, bulkMapSearch]);
+
+  const bulkMap = useMutation({
+    mutationFn: async () => {
+      if (!bulkMapTarget) throw new Error("Choisis une catégorie cible");
+      if (selectedRows.length === 0) throw new Error("Aucun libellé sélectionné");
+      const { data, error } = await sb.rpc("admin_bulk_map_labels_to_category", {
+        _labels: selectedRows.map((r) => r.raw_label),
+        _category_id: bulkMapTarget,
+      });
+      if (error) throw error;
+      return data as Array<{ raw_label: string; products_updated: number; error: string | null }>;
+    },
+    onSuccess: (data) => {
+      const ok = data.filter((d) => !d.error);
+      const ko = data.filter((d) => d.error);
+      const totalProducts = ok.reduce((s, d) => s + Number(d.products_updated || 0), 0);
+      toast({
+        title: "Mapping appliqué",
+        description: `${ok.length} alias rattaché(s), ${totalProducts} produit(s) mis à jour${
+          ko.length ? `, ${ko.length} erreur(s) — première: ${ko[0].error}` : ""
+        }`,
+        variant: ko.length ? "destructive" : "default",
+      });
+      setBulkMapOpen(false);
+      setBulkMapTarget("");
+      setBulkMapSearch("");
+      setSelected(new Set());
+      refresh();
+    },
+    onError: (e: any) => {
+      toast({ title: "Échec du mapping", description: e?.message ?? String(e), variant: "destructive" });
+    },
+  });
+
   const allChecked = filtered.length > 0 && filtered.every((r) => selected.has(r.raw_label));
   const someChecked = filtered.some((r) => selected.has(r.raw_label)) && !allChecked;
 
@@ -280,6 +340,15 @@ const AdminUnmappedCategories = () => {
               </Button>
             ))}
           </div>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={selected.size === 0}
+            onClick={() => setBulkMapOpen(true)}
+          >
+            <Link2 className="mr-2 h-4 w-4" />
+            Rattacher à une catégorie existante ({selected.size})
+          </Button>
           <Button
             size="sm"
             variant="default"
@@ -449,6 +518,89 @@ const AdminUnmappedCategories = () => {
                 <Wand2 className="mr-2 h-4 w-4" />
               )}
               Lancer la création
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={bulkMapOpen} onOpenChange={setBulkMapOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rattacher la sélection à une catégorie existante</DialogTitle>
+            <DialogDescription>
+              {selectedRows.length} libellé(s) seront rattachés (création/écrasement d'alias)
+              à la catégorie choisie. Les produits actifs portant ces libellés bruts seront
+              automatiquement mis à jour.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 py-2">
+            <div className="space-y-1.5">
+              <Label>Catégorie cible</Label>
+              <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Rechercher par nom ou slug…"
+                  value={bulkMapSearch}
+                  onChange={(e) => setBulkMapSearch(e.target.value)}
+                  className="pl-8"
+                />
+              </div>
+              <div className="max-h-56 overflow-y-auto rounded border divide-y">
+                {filteredCategories.length === 0 ? (
+                  <div className="p-3 text-xs text-muted-foreground">Aucune catégorie correspondante.</div>
+                ) : (
+                  filteredCategories.map((c) => (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => setBulkMapTarget(c.id)}
+                      className={`w-full text-left px-3 py-2 text-sm hover:bg-accent flex items-center justify-between ${
+                        bulkMapTarget === c.id ? "bg-accent" : ""
+                      }`}
+                    >
+                      <span className="truncate">{c.name}</span>
+                      <span className="text-[10px] text-muted-foreground ml-2 truncate">{c.slug}</span>
+                    </button>
+                  ))
+                )}
+              </div>
+              {allCategories.length > filteredCategories.length && !bulkMapSearch && (
+                <p className="text-[11px] text-muted-foreground">
+                  Affichage des 200 premières — affine la recherche pour cibler une catégorie précise.
+                </p>
+              )}
+            </div>
+
+            <div>
+              <Label className="text-xs">Libellés à rattacher</Label>
+              <div className="mt-1 max-h-40 overflow-y-auto rounded border p-2 text-xs space-y-0.5">
+                {selectedRows.map((r) => (
+                  <div key={r.raw_label} className="flex justify-between gap-2">
+                    <span className="truncate">{r.raw_label}</span>
+                    <span className="text-muted-foreground tabular-nums">
+                      {Number(r.product_count).toLocaleString("fr-BE")}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBulkMapOpen(false)} disabled={bulkMap.isPending}>
+              Annuler
+            </Button>
+            <Button
+              onClick={() => bulkMap.mutate()}
+              disabled={!bulkMapTarget || bulkMap.isPending || selectedRows.length === 0}
+            >
+              {bulkMap.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Link2 className="mr-2 h-4 w-4" />
+              )}
+              Rattacher
             </Button>
           </DialogFooter>
         </DialogContent>

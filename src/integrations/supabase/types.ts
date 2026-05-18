@@ -18108,6 +18108,18 @@ export type Database = {
           slug: string
         }[]
       }
+      admin_bulk_map_labels_to_category: {
+        Args: {
+          _category_id: string
+          _labels: string[]
+          _source_locale?: string
+        }
+        Returns: {
+          error: string
+          products_updated: number
+          raw_label: string
+        }[]
+      }
       admin_category_mapping_dashboard: { Args: never; Returns: Json }
       admin_claim_product_submission: {
         Args: { _submission_id: string }

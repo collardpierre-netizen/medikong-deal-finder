@@ -465,7 +465,7 @@ const App = () => (
               <Route path="sourcing/pipeline" element={<LP><AdminSourcingPipeline /></LP>} />
               <Route path="categories/anomalies" element={<LP><AdminCategoryAnomalies /></LP>} />
               <Route path="categories/anomalies/:id" element={<LP><AdminCategoryAnomalyDetail /></LP>} />
-              <Route path="preview/brand-product-card" element={<LP><AdminBrandProductCardPreview /></LP>} />`
+              <Route path="preview/brand-product-card" element={<LP><AdminBrandProductCardPreview /></LP>} />
               <Route path="categories/qogita-mapping-llm" element={<LP><AdminQogitaLlmMapping /></LP>} />
               <Route path="categories/qogita-mapping-review" element={<LP><AdminQogitaAmbiguousReview /></LP>} />
               <Route path="categories/dashboard" element={<LP><AdminCategoryMappingDashboard /></LP>} />

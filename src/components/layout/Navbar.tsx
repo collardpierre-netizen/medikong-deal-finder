@@ -234,7 +234,7 @@ export function Navbar() {
                     </Link>
                   )}
                   <Link to="/mes-prix" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 text-emerald-600 text-sm font-semibold py-1">
-                    <Tag size={16} /> Mes Prix
+                    <Tag size={16} /> {t("nav.myPrices", "Mes Prix")}
                   </Link>
                   <Link to="/compte" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 text-foreground text-sm py-1">
                     <Users size={16} /> {t("common.account")}

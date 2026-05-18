@@ -57,7 +57,7 @@ const AuditReportReadyEmail = ({
           </Text>
           <Hr style={divider} />
           <Text style={footer}>
-            Une question ? Répondez à cet email ou écrivez-nous à pit@medikong.pro<br />
+            Une question ? Répondez à cet email ou écrivez-nous à pcoll@medikong.pro<br />
             {SITE_NAME}
           </Text>
         </Container>

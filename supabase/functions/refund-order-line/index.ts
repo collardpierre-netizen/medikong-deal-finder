@@ -318,7 +318,7 @@ Deno.serve(async (req) => {
       await supabase.functions.invoke("send-transactional-email", {
         body: {
           templateName: "order-line-refunded-admin",
-          recipientEmail: "pit@medikong.pro",
+          recipientEmail: "pcoll@medikong.pro",
           idempotencyKey: `refund-admin-${line.id}-${qtyToRefund}`,
           templateData,
         },

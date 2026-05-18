@@ -78,7 +78,7 @@ export const template = {
   component: AuditNewLeadEmail,
   subject: (data: Record<string, any>) =>
     `[Lead] Nouvelle demande d'audit : ${data.pharmacyName || 'Pharmacie'}`,
-  to: 'pit@medikong.pro',
+  to: 'pcoll@medikong.pro',
   displayName: 'Audit — notification nouveau lead',
   previewData: {
     auditId: 'demo-uuid',

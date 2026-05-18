@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/accordion";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import logoHorizontal from "@/assets/logo-medikong.png";
 
 const MAX_FILES = 5;
 const MAX_FILE_BYTES = 10 * 1024 * 1024;

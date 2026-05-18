@@ -89,7 +89,7 @@ export const template = {
     const n = data.orderNumber || '—'
     return `[Admin] Vendor refund — ${v} sur ${n}`
   }),
-  to: 'pit@medikong.pro',
+  to: 'pcoll@medikong.pro',
   displayName: 'Admin — Ligne remboursée par le vendeur',
   previewData: {
     orderNumber: 'MK-2026-000123',

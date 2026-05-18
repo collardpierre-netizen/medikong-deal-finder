@@ -43,7 +43,7 @@ const AuditConfirmationEmail = ({
         </Text>
         <Hr style={divider} />
         <Text style={footer}>
-          Pour toute question : pit@medikong.pro<br />
+          Pour toute question : pcoll@medikong.pro<br />
           {SITE_NAME} — Audit gratuit, sans engagement
         </Text>
       </Container>

@@ -399,7 +399,7 @@ export default function CartPage() {
                           </button>
                         </div>
                         <Link
-                          to={group.vendorSlug ? `/vendeur/${group.vendorSlug}` : `/recherche`}
+                          to={group.vendorDisplayCode ? `/vendeur/${group.vendorDisplayCode}` : `/recherche`}
                           className="border border-mk-line text-mk-navy text-sm font-medium px-4 py-2 rounded-md hover:bg-mk-alt transition-colors"
                         >
                           Voir inventaire fournisseur

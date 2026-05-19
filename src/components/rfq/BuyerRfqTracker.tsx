@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, CheckCircle2, XCircle, Clock, Eye, Send, AlertTriangle, Bell, Award, Mail, MailX } from "lucide-react";
 import { formatUpdatedAtFull } from "@/lib/format-date";
 import { useMoneyFormat, formatMoneyFromCents } from "@/lib/money-format";
+import { getVendorPublicName } from "@/lib/vendor-display";
 
 type VendorStatusRow = {
   rfq_id: string | null;

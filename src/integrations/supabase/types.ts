@@ -16016,7 +16016,7 @@ export type Database = {
           cover_image_url: string | null
           created_at: string
           description: string | null
-          display_code: string | null
+          display_code: string
           email: string | null
           facebook_url: string | null
           fixed_commission_amount: number | null
@@ -16095,7 +16095,7 @@ export type Database = {
           cover_image_url?: string | null
           created_at?: string
           description?: string | null
-          display_code?: string | null
+          display_code: string
           email?: string | null
           facebook_url?: string | null
           fixed_commission_amount?: number | null
@@ -16174,7 +16174,7 @@ export type Database = {
           cover_image_url?: string | null
           created_at?: string
           description?: string | null
-          display_code?: string | null
+          display_code?: string
           email?: string | null
           facebook_url?: string | null
           fixed_commission_amount?: number | null
@@ -19489,6 +19489,16 @@ export type Database = {
         Returns: {
           source: string
           vat_rate: number
+        }[]
+      }
+      resolve_vendor_by_public_code: {
+        Args: { _code: string }
+        Returns: {
+          country_code: string
+          created_at: string
+          display_code: string
+          id: string
+          is_active: boolean
         }[]
       }
       restore_brands_from_backup: {

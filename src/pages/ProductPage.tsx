@@ -945,7 +945,7 @@ function OfferRow({
       {offer.sellerId && (
         <VendorSuggestions
           vendorId={offer.sellerId}
-          vendorSlug={offer.sellerSlug}
+          vendorDisplayCode={offer.displayCode}
           vendorDisplayName={offer.sellerName}
           currentProductId={productId}
           categoryId={categoryId}

@@ -42,20 +42,28 @@ export function Breadcrumbs() {
   const segments = location.pathname.split("/").filter(Boolean);
   const hideBreadcrumbs = segments.length === 0 || segments[0] === "admin" || segments[0] === "produit";
 
-  // Fetch vendor display name when on /vendeur/:slug
-  const vendorSlug = !hideBreadcrumbs && segments[0] === "vendeur" && segments[1] ? segments[1] : null;
-  const { data: vendorLabel } = useQuery({
-    queryKey: ["breadcrumb-vendor", vendorSlug],
+  // Fetch vendor display name when on /vendeur/:code
+  // La route canonique est /vendeur/:code où :code = display_code MediKong
+  // (6 caractères alphanum, cf. mem `vendor-display-code-vs-qogita-alias`).
+  // On lookup par display_code et on retombe TOUJOURS sur `Fournisseur <code>`
+  // quand display_name est null — jamais sur le slug d'URL.
+  const vendorCode =
+    !hideBreadcrumbs && segments[0] === "vendeur" && segments[1]
+      ? segments[1].trim()
+      : null;
+  const vendorCodeIsValid = !!vendorCode && /^[A-Za-z0-9]{6}$/.test(vendorCode);
+  const { data: vendorLabel, isPending: isVendorPending } = useQuery({
+    queryKey: ["breadcrumb-vendor", vendorCode],
     queryFn: async () => {
       const { data } = await supabase
         .from("vendors_public")
         .select("display_name, display_code")
-        .eq("slug", vendorSlug!)
+        .eq("display_code", vendorCode!)
         .maybeSingle();
-      if (!data) return null;
-      return data.display_name || (data.display_code ? `Fournisseur ${data.display_code}` : null);
+      const code = data?.display_code || vendorCode!;
+      return data?.display_name || `Fournisseur ${code}`;
     },
-    enabled: !!vendorSlug,
+    enabled: vendorCodeIsValid,
     staleTime: 30 * 60 * 1000,
     gcTime: 24 * 60 * 60 * 1000,
     refetchOnMount: false,
@@ -101,7 +109,7 @@ export function Breadcrumbs() {
   // when navigating between categories, keepPreviousData provides a label
   // immediately so we never flash a skeleton.
   const categoryLabelPending = !!categorySlug && !categoryRow && isCategoryPending;
-  const vendorLabelPending = !!vendorSlug && !vendorLabel;
+  const vendorLabelPending = vendorCodeIsValid && isVendorPending && !vendorLabel;
 
   // Don't show on homepage
   if (hideBreadcrumbs) return null;

@@ -38,3 +38,5 @@ jobs:
         run: bun run check:i18n
       - name: Check French typography (quotes, NBSP, ellipsis, double-spaces)
         run: bun run check:fr-typo
+      - name: Vendor anonymity guard (no clear vendor identity outside admin)
+        run: bun run check:vendor-anonymity

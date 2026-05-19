@@ -11,7 +11,7 @@ type VendorStatusRow = {
   rfq_id: string | null;
   dispatch_id: string | null;
   vendor_id: string | null;
-  vendor_name: string | null;
+  // vendor_name volontairement absent : on n'accepte plus le nom en clair côté buyer.
   vendor_display_code: string | null;
   vendor_status: string | null;
   vendor_status_label: string | null;

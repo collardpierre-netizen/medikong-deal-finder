@@ -362,3 +362,65 @@ describe("Guard buyer-facing — pas d'affichage JSX de company_name / show_real
     }
   }
 });
+
+/**
+ * Garde-fou statique exports buyer-facing (XLSX / CSV / PDF) — interdit
+ * toute écriture en clair d'un champ vendeur sensible dans les cellules
+ * d'export. Tout libellé vendeur destiné à l'acheteur doit avoir été
+ * passé en amont par `getVendorPublicName` / `sanitizeVendorLabel` /
+ * `resolveVendorName`.
+ *
+ * Cible : fichiers qui *écrivent* l'export final (json_to_sheet, head/body
+ * autoTable, lignes CSV). Les pages qui pré-anonymisent en amont restent
+ * libres de lire `vendor_name` pour le router via l'helper.
+ */
+describe("Guard exports buyer-facing — pas de vendor_name / company_name brut dans les cellules", () => {
+  const BUYER_FACING_EXPORTS: readonly string[] = [
+    "../discount-export.ts",
+    "../../pages/OrderDetailPage.tsx",
+    "../../components/buyer/BuyerImportModal.tsx",
+  ];
+
+  const SAFE_CALLERS = "(?:resolveVendorName|sanitizeVendorLabel|getVendorPublicName)";
+
+  // Fuite type :
+  //   Vendeur: r.vendor_name || ""
+  //   vendor: it.vendor_name
+  //   r.vendor_name,           // ← dans un .map(... => [..])
+  // On autorise toute occurrence qui apparaît *à l'intérieur* d'un appel
+  // à un helper d'anonymisation reconnu (ex.: `sanitizeVendorLabel(r.vendor_name, null)`).
+  const FORBIDDEN_RAW_FIELD_WRITES = [
+    {
+      field: "vendor_name",
+      // Match `.vendor_name` qui n'est PAS précédé sur la même expression
+      // par un appel à un helper safe.
+      regex: new RegExp(
+        `(?<!${SAFE_CALLERS}\\([^()]*)\\b\\w+\\.vendor_name\\b\\s*(?:\\|\\||\\?\\?|,|\\))`,
+      ),
+    },
+    {
+      field: "company_name",
+      regex: new RegExp(
+        `(?<!${SAFE_CALLERS}\\([^()]*)\\b\\w+\\.company_name\\b\\s*(?:\\|\\||\\?\\?|,|\\))`,
+      ),
+    },
+  ];
+
+  for (const rel of BUYER_FACING_EXPORTS) {
+    const path = resolve(__dirname, rel);
+    if (!existsSync(path)) continue;
+    const src = readFileSync(path, "utf-8");
+
+    for (const { field, regex } of FORBIDDEN_RAW_FIELD_WRITES) {
+      it(`${rel} — interdit : écriture brute de \`.${field}\` dans un export`, () => {
+        const match = src.match(regex);
+        expect(
+          match,
+          match
+            ? `${rel} écrit \`.${field}\` en clair dans un export buyer-facing : « ${match[0].slice(0, 160)} ». Router via getVendorPublicName / sanitizeVendorLabel / resolveVendorName.`
+            : undefined,
+        ).toBeNull();
+      });
+    }
+  }
+});

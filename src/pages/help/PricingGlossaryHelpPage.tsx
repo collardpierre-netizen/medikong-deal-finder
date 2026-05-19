@@ -161,7 +161,7 @@ const FAQ_ITEMS: { q: string; a: React.ReactNode; plain: string }[] = [
 
 export default function PricingGlossaryHelpPage() {
   return (
-    <main className="container mx-auto max-w-3xl px-4 py-10">
+    <article className="container mx-auto max-w-3xl px-4 py-10">
       <Helmet>
         <title>Glossaire des prix : PVP, prix marché, prix public — MediKong</title>
         <meta
@@ -431,6 +431,6 @@ export default function PricingGlossaryHelpPage() {
           </Card>
         </section>
       </div>
-    </main>
+    </article>
   );
 }

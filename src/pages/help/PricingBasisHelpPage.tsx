@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 
 export default function PricingBasisHelpPage() {
   return (
-    <main className="container mx-auto max-w-3xl px-4 py-10">
+    <article className="container mx-auto max-w-3xl px-4 py-10">
       <Helmet>
         <title>Aide : packs et €/100 — MediKong</title>
         <meta
@@ -127,6 +127,6 @@ export default function PricingBasisHelpPage() {
           </CardContent>
         </Card>
       </div>
-    </main>
+    </article>
   );
 }

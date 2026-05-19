@@ -113,8 +113,33 @@ export function VendorTopBrands({
                   </Link>
                 );
               })}
+
+          {canLoadMore && !isLoading && (
+            <button
+              type="button"
+              onClick={() => setLimit((l) => Math.min(l + step, maxLimit))}
+              disabled={loadingMore}
+              className="shrink-0 w-[120px] h-[88px] rounded-lg border border-dashed border-border bg-card hover:border-primary hover:bg-accent/50 transition-all flex flex-col items-center justify-center gap-1.5 text-muted-foreground hover:text-primary disabled:opacity-60 disabled:cursor-wait"
+              aria-label="Voir plus de marques"
+            >
+              {loadingMore ? (
+                <Loader2 size={18} className="animate-spin" />
+              ) : (
+                <Plus size={18} />
+              )}
+              <span className="text-[11px] font-medium">
+                {loadingMore ? "Chargement…" : "Voir plus"}
+              </span>
+              {!loadingMore && (
+                <span className="text-[10px] text-muted-foreground/70">
+                  +{Math.min(step, maxLimit - limit)}
+                </span>
+              )}
+            </button>
+          )}
         </div>
       </div>
     </section>
+
   );
 }

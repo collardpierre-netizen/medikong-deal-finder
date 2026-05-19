@@ -657,11 +657,44 @@ export default function BonnesAffairesPage() {
                               <td className="py-2 pr-3 text-right tabular-nums text-xs text-muted-foreground">
                                 {r.mov_eur_cents > 0 ? fmtEur(r.mov_eur_cents) : "—"}
                               </td>
+                              <td className="py-2 pr-3 text-right tabular-nums">
+                                {cmp && cmp.pvpTtcCents != null && cmp.marketTtcCents != null ? (
+                                  <div className="flex flex-col items-end gap-0.5 leading-tight">
+                                    <div className="text-[11px] text-muted-foreground">
+                                      PVP <span className="text-foreground font-medium">{fmtEur(cmp.pvpTtcCents)}</span>
+                                      <span className="mx-1">·</span>
+                                      Marché <span className="text-foreground font-medium">{fmtEur(cmp.marketTtcCents)}</span>
+                                    </div>
+                                    {cmp.deltaCents != null && cmp.deltaPct != null ? (
+                                      <Badge
+                                        variant="secondary"
+                                        className={cn(
+                                          "h-5 px-1.5 text-[11px]",
+                                          cmp.deltaCents > 0
+                                            ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-100"
+                                            : cmp.deltaCents < 0
+                                            ? "bg-amber-100 text-amber-800 hover:bg-amber-100"
+                                            : ""
+                                        )}
+                                        title={`PVP TTC ${fmtEur(cmp.pvpTtcCents)} − Marché TTC ${fmtEur(cmp.marketTtcCents)} (TVA ${cmp.vatRatePct}%)`}
+                                      >
+                                        {cmp.deltaCents > 0 ? "−" : cmp.deltaCents < 0 ? "+" : ""}
+                                        {Math.abs(cmp.deltaPct).toLocaleString("fr-BE", { maximumFractionDigits: 1 })}%
+                                        <span className="mx-1">·</span>
+                                        {fmtEur(Math.abs(cmp.deltaCents))}
+                                      </Badge>
+                                    ) : null}
+                                  </div>
+                                ) : (
+                                  <span className="text-muted-foreground text-xs">—</span>
+                                )}
+                              </td>
                               <td className="py-2 pr-3 text-right">
                                 <Badge className="bg-emerald-600 hover:bg-emerald-600">−{r.discount_pct}%</Badge>
                               </td>
                             </tr>
-                          ))}
+                            );
+                          })}
                         </tbody>
                       </table>
 

@@ -118,3 +118,174 @@ describe("xlsx-utils — exports anonymisés (contrat statique)", () => {
     expect(SRC).toMatch(/getVendorPublicName|sanitizeVendorLabel|resolveVendorLabel|resolveVendorAnonMap/);
   });
 });
+
+/**
+ * 🔒 Fuzz / property test : getVendorPublicName ne doit JAMAIS fuiter
+ * la valeur reçue dans `name` ou `company_name` dans sa sortie,
+ * quel que soit le contenu (réel, vide, Qogita, accents, html, etc.).
+ */
+describe("getVendorPublicName — propriété : aucune fuite name/company_name", () => {
+  const NAMES = [
+    "Pharma Belgique SA",
+    "ACME Pharma",
+    "Qogita B.V.",
+    "<script>alert(1)</script>",
+    "Distributeur Médical Européen",
+    "  Multi   Space   Vendor  ",
+    "VENDOR_WITH_UNDERSCORES",
+    "Société Générale Pharmaceutique & Cie",
+    "🇧🇪 Pharma BE",
+    "X",
+    "a".repeat(200),
+  ];
+  const COMPANIES = [
+    "MegaCorp International",
+    "Tiny SARL",
+    "Qogita Marketplace EU",
+    "Distrib. Vétérinaire de l'Ouest",
+    "Holding 123 SA",
+    "",
+  ];
+
+  for (const name of NAMES) {
+    for (const company of COMPANIES) {
+      it(`anonymise (name="${name.slice(0, 20)}…", company="${company.slice(0, 20)}…")`, () => {
+        const out = getVendorPublicName({
+          display_code: "AB12CD",
+          name,
+          company_name: company,
+          show_real_name: true, // ignoré par contrat
+        });
+        // La sortie est figée
+        expect(out).toBe("Fournisseur AB12CD");
+        // Et ne contient strictement aucun morceau identifiable
+        if (name.length >= 3) expect(out).not.toContain(name);
+        if (company.length >= 3) expect(out).not.toContain(company);
+        expect(out).not.toMatch(/qogita/i);
+      });
+    }
+  }
+
+  it("fallback : sans display_code, retombe sur un code dérivé sans exposer le nom complet", () => {
+    const out = getVendorPublicName({
+      display_code: null,
+      name: "PharmaBelgique",
+      company_name: "Pharma Belgique SA",
+    });
+    expect(out).toMatch(/^Fournisseur /);
+    expect(out).not.toBe("Pharma Belgique SA");
+    expect(out).not.toContain("Pharma Belgique SA");
+  });
+});
+
+/**
+ * Contrat statique : tout export PDF/CSV/XLSX côté acheteur doit router
+ * les libellés vendeur via `getVendorPublicName` (ou helper équivalent),
+ * jamais via `vendor.company_name` / `vendor.name` brut.
+ */
+describe("Exports PDF/CSV buyer-facing — contrat statique", () => {
+  const TARGETS = [
+    "../../pages/OrderDetailPage.tsx",
+    "../../components/buyer/BuyerImportModal.tsx",
+  ];
+
+  for (const rel of TARGETS) {
+    const path = resolve(__dirname, rel);
+    const src = readFileSync(path, "utf-8");
+
+    it(`${rel} importe le garde-fou getVendorPublicName`, () => {
+      expect(src).toMatch(/getVendorPublicName|resolveVendorLabel/);
+    });
+
+    it(`${rel} ne contient pas de fuite \`v.company_name\`/\`v.name\` non routée`, () => {
+      // On interdit les patterns d'accès direct dans des structures de row export.
+      const forbidden = [
+        /vendor\.company_name(?!\s*\?\?\s*)/,
+        /vendor\?\.company_name(?!\s*\?\?)/,
+      ];
+      const violations = forbidden.filter((re) => re.test(src));
+      expect(
+        violations,
+        `${rel} fuit company_name vendeur en clair dans un export : ${violations.map((r) => r.source).join(", ")}`,
+      ).toEqual([]);
+    });
+  }
+});
+
+/**
+ * Contrat statique : les templates emails transactionnels buyer-facing
+ * ne doivent jamais lire `.company_name` ou `vendor.name` directement.
+ * Le seul vecteur autorisé est une prop déjà-rendue (ex : `vendorName`)
+ * qui DOIT être alimentée par le caller via `getVendorPublicName`.
+ */
+describe("Email templates buyer-facing — contrat statique", () => {
+  const TEMPLATES_DIR = resolve(
+    __dirname,
+    "../../../supabase/functions/_shared/transactional-email-templates",
+  );
+
+  // Templates dont la cible est l'acheteur (buyer / customer).
+  // Les templates vendor-* sont exclus : ils s'adressent au vendeur lui-même
+  // (légitime de voir son propre nom).
+  const BUYER_FACING = [
+    "order-confirmation.tsx",
+    "order-line-refunded-customer.tsx",
+    "buyer-registration.tsx",
+    "wholesale-savings-report.tsx",
+  ];
+
+  for (const file of BUYER_FACING) {
+    const path = join(TEMPLATES_DIR, file);
+    if (!existsSync(path)) continue;
+    const src = readFileSync(path, "utf-8");
+
+    it(`${file} ne lit jamais .company_name directement`, () => {
+      expect(src).not.toMatch(/\.company_name\b/);
+    });
+
+    it(`${file} ne lit pas \`vendor.name\` brut (utiliser prop pré-rendue)`, () => {
+      expect(src).not.toMatch(/\bvendor\.name\b/);
+      expect(src).not.toMatch(/\bvendors\.name\b/);
+    });
+  }
+
+  it("aucun template buyer-facing ne mentionne 'Qogita'", () => {
+    for (const file of BUYER_FACING) {
+      const path = join(TEMPLATES_DIR, file);
+      if (!existsSync(path)) continue;
+      const src = readFileSync(path, "utf-8");
+      expect(src, `${file} contient 'Qogita'`).not.toMatch(/qogita/i);
+    }
+  });
+});
+
+/**
+ * Contrat statique : les edge functions qui ENVOIENT des emails à
+ * l'acheteur doivent alimenter la prop `vendorName` via le helper
+ * d'anonymisation, jamais via `vendor.company_name || vendor.name`.
+ *
+ * ⚠️ Ce test échouera tant qu'une fuite résiduelle existe dans un
+ * caller — c'est le point. Si un test casse ici, fixer le caller
+ * (router via "Fournisseur <display_code>") avant de relâcher.
+ */
+describe("Edge functions buyer-facing — contrat statique callers email", () => {
+  const FUNCTIONS_DIR = resolve(__dirname, "../../../supabase/functions");
+
+  // Edge functions qui envoient des emails à l'acheteur (et passent vendorName).
+  const BUYER_CALLERS = ["refund-order-line"];
+
+  for (const fn of BUYER_CALLERS) {
+    const path = join(FUNCTIONS_DIR, fn, "index.ts");
+    if (!existsSync(path)) continue;
+    const src = readFileSync(path, "utf-8");
+
+    it(`${fn} ne construit pas vendorName via \`vendor.company_name || vendor.name\``, () => {
+      // Patterne typique de fuite : `const vendorName = vendor?.company_name || vendor?.name`
+      const leak = /vendorName\s*=\s*vendor\??\.?(company_name|name)/;
+      expect(
+        src,
+        `${fn}/index.ts construit vendorName à partir des champs en clair. Router via display_code → "Fournisseur <code>".`,
+      ).not.toMatch(leak);
+    });
+  }
+});

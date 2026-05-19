@@ -323,14 +323,7 @@ export function useProductOffers(productId: string | undefined) {
           updatedAt: o.updated_at ?? null,
           syncedAt: o.synced_at ?? null,
           isQogitaBacked: !!o.is_qogita_backed,
-          sellerName: (() => {
-            const showReal = resolveVendorVisibility(
-              { ...vendor, id: safeVendorId },
-              visRules,
-              { country }
-            );
-            return getVendorPublicName({ ...vendor, display_code: vendor?.display_code }, showReal);
-          })(),
+          sellerName: getVendorPublicName({ display_code: vendor?.display_code }),
           sellerSlug: vendor?.slug || undefined,
           isVerified: vendor?.is_verified || false,
           isTopRated: (vendor?.rating || 0) >= 4.5,

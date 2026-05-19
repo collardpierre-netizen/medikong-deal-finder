@@ -261,12 +261,13 @@ export default function VendorPublicPage() {
       vendor?.id,
       brandFilterReady ? serverBrandId : null,
     ],
-    queryFn: async () => {
+    queryFn: async ({ signal }) => {
       const PAGE = 1000;
       let all: any[] = [];
       let page = 0;
       let hasMore = true;
       while (hasMore) {
+        if (signal?.aborted) throw new DOMException("Aborted", "AbortError");
         const from = page * PAGE;
         let q = supabase
           .from("offers")
@@ -280,16 +281,20 @@ export default function VendorPublicPage() {
         if (brandFilterReady) {
           q = q.eq("products.brand_id", serverBrandId!);
         }
-        const { data } = await q.range(from, from + PAGE - 1);
+        const { data } = await q.range(from, from + PAGE - 1).abortSignal(signal);
         all = all.concat(data || []);
         hasMore = (data?.length || 0) === PAGE;
         page++;
       }
       return all;
     },
-    enabled: !!vendor?.id && !overFetchGuardActive,
+    enabled:
+      !!vendor?.id &&
+      !overFetchGuardActive &&
+      (serverBrandSlug == null || !!serverBrandId),
     staleTime: 5 * 60 * 1000,
   });
+
 
   // Map to display products (dedupe by product id, keep cheapest in-stock offer)
   const vendorProducts = useMemo(() => {

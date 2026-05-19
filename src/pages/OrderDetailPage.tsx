@@ -4,6 +4,7 @@ import { Download, FileText, FileSpreadsheet } from "lucide-react";
 import { formatPrice } from "@/data/mock";
 import { useOrderDetail } from "@/hooks/useOrders";
 import { ORDER_WORKFLOW_STEPS, getOrderStatusMeta, formatOrderDateTime } from "@/lib/order-status";
+import { getVendorPublicName } from "@/lib/vendor-display";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -26,12 +27,17 @@ export default function OrderDetailPage() {
     items.map((it: any) => {
       const qty = Number(it.quantity || 0);
       const unit = Number(it.unit_price_excl_vat || 0);
+      // 🔒 Anonymisation : libellé public uniquement, jamais vendor_name brut.
+      const vendorLabel = getVendorPublicName({
+        display_code: it.vendor_display_code,
+        name: it.vendor_name,
+      });
       return {
         name: it.product_name || it.name || "—",
         ean: it.product_gtin || "",
         cnk: it.product_cnk || "",
         sku: it.product_sku || "",
-        vendor: it.vendor_name || "",
+        vendor: vendorLabel,
         qty,
         unit,
         total: unit * qty,

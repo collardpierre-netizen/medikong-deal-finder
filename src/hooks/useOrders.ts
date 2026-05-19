@@ -165,7 +165,7 @@ export function useOrderDetail(orderId: string) {
       if (error) throw error;
       const { data: orderLines } = await supabase
         .from("order_lines")
-        .select("*, products:product_id(name, gtin, cnk_code, sku), vendors:vendor_id(name, slug)")
+        .select("*, products:product_id(name, gtin, cnk_code, sku), vendors:vendor_id(name, slug, display_code)")
         .eq("order_id", orderId);
       const items = (orderLines || []).map((l: any) => ({
         ...l,
@@ -175,6 +175,7 @@ export function useOrderDetail(orderId: string) {
         product_sku: l.products?.sku,
         vendor_name: l.vendors?.name,
         vendor_slug: l.vendors?.slug,
+        vendor_display_code: l.vendors?.display_code,
       }));
       // Fallback legacy order_items if no order_lines
       if (items.length === 0) {

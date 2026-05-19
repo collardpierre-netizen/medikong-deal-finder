@@ -44,6 +44,7 @@ export default function ImportHistoryPage() {
   const [jobs, setJobs] = useState<ImportJob[]>([]);
   const [loading, setLoading] = useState(true);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [replayingId, setReplayingId] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);

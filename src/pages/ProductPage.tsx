@@ -962,8 +962,8 @@ function OfferRow({
 }
 
 /* ── Vendor Suggestions (collapsible) ──────────────────── */
-function VendorSuggestions({ vendorId, vendorSlug, vendorDisplayName, currentProductId, categoryId }: {
-  vendorId: string; vendorSlug?: string; vendorDisplayName: string; currentProductId: string; categoryId?: string;
+function VendorSuggestions({ vendorId, vendorDisplayCode, vendorDisplayName, currentProductId, categoryId }: {
+  vendorId: string; vendorDisplayCode?: string; vendorDisplayName: string; currentProductId: string; categoryId?: string;
 }) {
   const [open, setOpen] = useState(false);
   const { data: suggestions = [], isLoading } = useQuery({

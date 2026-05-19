@@ -28,16 +28,18 @@ const ADMIN_ALLOWLIST = [
   "src/components/vendor/contract/",
   "src/lib/vendor-display.ts",
   "supabase/functions/_shared/admin-",
+  "supabase/functions/_shared/vendor-display.ts",
   "supabase/functions/invite-vendor/",
 ];
 
 const ALLOWED_FILE_EXACT = new Set<string>([
   "scripts/check-vendor-anonymity.ts",
   "src/lib/vendor-display.ts",
+  "src/lib/__tests__/vendor-display.test.ts",
   "src/integrations/supabase/types.ts",
 ]);
 
-// Motifs interdits hors allowlist
+// Motifs interdits (line-based) hors allowlist
 const FORBIDDEN_PATTERNS: { name: string; regex: RegExp; hint: string }[] = [
   {
     name: "getVendorAdminName",
@@ -45,9 +47,14 @@ const FORBIDDEN_PATTERNS: { name: string; regex: RegExp; hint: string }[] = [
     hint: "Réservé aux pages admin. Utilise getVendorPublicName().",
   },
   {
-    name: "vendor.company_name (JSX render)",
-    regex: /\{[^}]*\bvendors?\.company_name\b[^}]*\}/,
-    hint: "Ne jamais rendre company_name. Passe par getVendorPublicName().",
+    name: "vendor.company_name (accès direct)",
+    regex: /\bvendors?\??\.\s*company_name\b/,
+    hint: "Ne jamais lire/rendre company_name côté acheteur (PDF/CSV/email/UI). Passe par getVendorPublicName().",
+  },
+  {
+    name: "vendor.name (accès direct)",
+    regex: /\bvendors?\??\.\s*name\b/,
+    hint: "Ne jamais lire/rendre vendor.name côté acheteur. Utilise display_code + getVendorPublicName().",
   },
   {
     name: "vendor.show_real_name (render branch)",
@@ -55,6 +62,22 @@ const FORBIDDEN_PATTERNS: { name: string; regex: RegExp; hint: string }[] = [
     hint: "show_real_name ne doit jamais conditionner un rendu vendeur public.",
   },
 ];
+
+// Motifs interdits (multi-lignes, scan global du fichier) — couvre les
+// SELECT Supabase qui ramènent company_name / name depuis la table vendors,
+// y compris quand la chaîne `.from("vendors").select(...)` est répartie sur
+// plusieurs lignes (cas typique des edge functions).
+const FORBIDDEN_MULTILINE: { name: string; regex: RegExp; hint: string }[] = [
+  {
+    name: "supabase.from('vendors').select(... company_name|name ...)",
+    // Chaînage immédiat .from("vendors").select(...) — pas d'autre .from() ou
+    // .select() intermédiaire, pour éviter de capturer des .select() voisins
+    // sur d'autres tables (ex. products).
+    regex: /\.from\(\s*["'`]vendors["'`]\s*\)\s*\.select\(\s*["'`][^"'`]*\b(?:company_name|name)\b[^"'`]*["'`]/,
+    hint: "Une requête Supabase côté acheteur ne doit sélectionner que display_code. company_name/name sont réservés à l'admin.",
+  },
+];
+
 
 function walk(dir: string, out: string[] = []): string[] {
   let entries: string[] = [];
@@ -88,6 +111,9 @@ for (const abs of files) {
   const src = readFileSync(abs, "utf8");
   const lines = src.split("\n");
   lines.forEach((line, i) => {
+    // Ignorer les lignes de commentaire (la règle vise le code exécuté, pas la doc)
+    const trimmed = line.trim();
+    if (trimmed.startsWith("//") || trimmed.startsWith("*") || trimmed.startsWith("/*")) return;
     for (const p of FORBIDDEN_PATTERNS) {
       if (p.regex.test(line)) {
         violations.push({
@@ -100,6 +126,20 @@ for (const abs of files) {
       }
     }
   });
+  // Passe multi-lignes (SELECT Supabase éclatés sur plusieurs lignes)
+  for (const p of FORBIDDEN_MULTILINE) {
+    const m = p.regex.exec(src);
+    if (m) {
+      const lineNo = src.slice(0, m.index).split("\n").length;
+      violations.push({
+        file: rel,
+        line: lineNo,
+        pattern: p.name,
+        snippet: m[0].replace(/\s+/g, " ").trim().slice(0, 200),
+        hint: p.hint,
+      });
+    }
+  }
 }
 
 if (violations.length === 0) {

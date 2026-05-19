@@ -420,7 +420,7 @@ export default function VendorPublicPage() {
   }
 
   const stats = [
-    { icon: Package, label: "Produits", value: vendorProducts.length || "–" },
+    { icon: Package, label: "Produits", value: vendorOfferCount || vendorProducts.length || "–" },
     { icon: Star, label: "Note", value: vendor.rating ? `${Number(vendor.rating).toFixed(1)}/5` : "–" },
     { icon: Truck, label: "Ventes", value: vendor.total_sales || "–" },
     { icon: Clock, label: "Membre depuis", value: new Date(vendor.created_at).getFullYear().toString() },

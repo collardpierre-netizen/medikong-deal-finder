@@ -3,7 +3,7 @@ import { ChevronRight, Home } from "lucide-react";
 import { Helmet } from "react-helmet-async";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { getVendorPublicName } from "@/lib/vendor-display";
+
 
 const routeLabels: Record<string, string> = {
   recherche: "Recherche",
@@ -48,12 +48,12 @@ export function Breadcrumbs() {
     queryKey: ["breadcrumb-vendor", vendorSlug],
     queryFn: async () => {
       const { data } = await supabase
-        .from("vendors")
-        .select("name, company_name, display_code, show_real_name")
+        .from("vendors_public")
+        .select("display_name, display_code")
         .eq("slug", vendorSlug!)
-        .single();
+        .maybeSingle();
       if (!data) return null;
-      return getVendorPublicName(data);
+      return data.display_name || (data.display_code ? `Fournisseur ${data.display_code}` : null);
     },
     enabled: !!vendorSlug,
     staleTime: 30 * 60 * 1000,

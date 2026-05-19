@@ -439,9 +439,9 @@ function OfferRow({
               </span>
             );
           })()}
-          {offer.sellerSlug && (
+          {offer.displayCode && (
             <Link
-              to={`/vendeur/${offer.sellerSlug}`}
+              to={`/vendeur/${offer.displayCode}`}
               className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline w-fit"
               title={`Voir la boutique de ${sellerLabel}`}
             >

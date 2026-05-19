@@ -134,9 +134,10 @@ const fetchBestOffers = async (productIds: string[]) => {
     Array.from(bestOfferByProduct.values()).map((o: any) => o.vendor_id).filter(Boolean)
   )) as string[];
   if (vendorIds.length > 0) {
+    // 🔒 Anonymisation : on ne consomme JAMAIS name / company_name côté buyer.
     const { data: vendorsData } = await supabase
       .from("vendors_public" as any)
-      .select("id, display_code, name, company_name")
+      .select("id, display_code")
       .in("id", vendorIds);
     const vendorMap = new Map<string, any>(
       ((vendorsData || []) as any[]).map((v: any) => [v.id, v])

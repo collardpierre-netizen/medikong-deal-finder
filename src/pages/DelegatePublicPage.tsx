@@ -43,6 +43,7 @@ interface Delegate {
 interface Vendor {
   id: string;
   slug: string | null;
+  display_code: string | null;
   company_name: string | null;
   name: string | null;
   logo_url: string | null;

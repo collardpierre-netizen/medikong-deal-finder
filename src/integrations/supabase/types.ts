@@ -19269,6 +19269,7 @@ export type Database = {
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_verified_buyer_or_admin: { Args: { _uid?: string }; Returns: boolean }
       list_admin_users: {
         Args: never
         Returns: {
@@ -19748,6 +19749,36 @@ export type Database = {
         Returns: Json
       }
       run_pack_mismatch_alert_job: { Args: never; Returns: Json }
+      search_discount_offers: {
+        Args: {
+          _brand_ids?: string[]
+          _category_ids?: string[]
+          _country?: string
+          _limit?: number
+          _manufacturer_ids?: string[]
+          _min_discount_pct?: number
+          _offset?: number
+          _reference?: string
+        }
+        Returns: {
+          best_price_htva_cents: number
+          brand_id: string
+          brand_name: string
+          cnk: string
+          country_code: string
+          discount_pct: number
+          manufacturer_id: string
+          manufacturer_name: string
+          product_id: string
+          product_name: string
+          product_slug: string
+          reference_kind: string
+          reference_price_cents: number
+          total_count: number
+          vendor_id: string
+          vendor_name: string
+        }[]
+      }
       self_start_vendor_market_intel_trial: {
         Args: never
         Returns: {

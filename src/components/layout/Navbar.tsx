@@ -1,4 +1,4 @@
-import { Bell, ShoppingCart, Users, Menu, X, LogOut, Shield, Store, Tag } from "lucide-react";
+import { Bell, ShoppingCart, Users, Menu, X, LogOut, Shield, Store, Tag, Percent } from "lucide-react";
 import { usePriceDisplay } from "@/contexts/PriceDisplayContext";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
@@ -144,6 +144,10 @@ export function Navbar() {
                   </Link>
                 </div>
               )}
+              <Link to="/bonnes-affaires" className="flex items-center gap-1 text-xs font-semibold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full hover:bg-amber-100 transition-colors" title="Trouver tous les produits offrant X% de remise vs PVP ou prix marché">
+                <Percent size={13} />
+                <span>Bonnes affaires</span>
+              </Link>
               <Link to="/mes-prix" className="flex items-center gap-1 text-xs font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full hover:bg-emerald-100 transition-colors">
                 <Tag size={13} />
                 <span>{t("nav.myPrices", "Mes Prix")}</span>

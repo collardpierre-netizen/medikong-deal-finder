@@ -78,6 +78,7 @@ const RfqCreditsPage = lazyWithRetry(() => import("./pages/RfqCreditsPage"), "Rf
 const ImportHistoryPage = lazyWithRetry(() => import("./pages/ImportHistoryPage"), "ImportHistoryPage");
 const PharmacieAbonnementPage = lazyWithRetry(() => import("./pages/PharmacieAbonnementPage"), "PharmacieAbonnementPage");
 const EconomiesPage = lazyWithRetry(() => import("./pages/EconomiesPage"), "EconomiesPage");
+const BonnesAffairesPage = lazyWithRetry(() => import("./pages/BonnesAffairesPage"), "BonnesAffairesPage");
 
 // Segment landing pages
 const PharmaciesPage = lazyWithRetry(() => import("./pages/segment/PharmaciesPage"), "PharmaciesPage");
@@ -377,6 +378,7 @@ const App = () => (
             <Route path="/sourcing" element={<LP><SourcingPage /></LP>} />
             <Route path="/economies" element={<LP><EconomiesPage /></LP>} />
             <Route path="/calculateur-economies" element={<Navigate to="/economies" replace />} />
+            <Route path="/bonnes-affaires" element={<LP><BonnesAffairesPage /></LP>} />
             <Route path="/categories" element={<LP><CategoriesPage /></LP>} />
             <Route path="/mes-prix" element={<LP><MyPricesPage /></LP>} />
             <Route path="/mes-alertes-prix" element={<LP><MyPriceAlertsPage /></LP>} />

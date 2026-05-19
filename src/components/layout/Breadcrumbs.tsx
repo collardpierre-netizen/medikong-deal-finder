@@ -27,6 +27,10 @@ const routeLabels: Record<string, string> = {
   sourcing: "Sourcing",
   categories: "Catégories",
   catalogue: "Catalogue",
+  aide: "Aide",
+  "centre-aide": "Centre d'aide",
+  "glossaire-prix": "Glossaire des prix",
+  "packs-et-prix-100": "Packs, unités et €/100",
 };
 
 // Singular segments that should link to their plural list page
@@ -35,6 +39,8 @@ const parentRoutes: Record<string, string> = {
   fabricant: "/fabricants",
   categorie: "/categories",
   produit: "/catalogue",
+  // /aide n'a pas de page d'index — on renvoie vers le centre d'aide.
+  aide: "/centre-aide",
 };
 
 export function Breadcrumbs() {

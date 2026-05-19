@@ -391,9 +391,9 @@ export default function BonnesAffairesPage() {
           : sanitizeVendorLabel(r.vendor_name, null),
       }));
       if (format === "xlsx") {
-        exportDiscountXlsx(all, { reference: searchParams.reference, minDiscountPct: searchParams.minDiscountPct, country: searchParams.country });
+        exportDiscountXlsx(anonymised, { reference: searchParams.reference, minDiscountPct: searchParams.minDiscountPct, country: searchParams.country });
       } else {
-        exportDiscountCsv(all);
+        exportDiscountCsv(anonymised);
       }
       toast.success(`${all.length} ligne(s) exportées`, { id: tid });
     } catch (e: any) {

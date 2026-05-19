@@ -5,9 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Download, FileText, Loader2, RefreshCw, AlertCircle } from "lucide-react";
+import { Download, FileText, Loader2, RefreshCw, AlertCircle, Eye, RotateCw } from "lucide-react";
 import { formatUpdatedAt } from "@/lib/format-date";
 import { toast } from "@/hooks/use-toast";
+import { replayImportJob } from "@/hooks/useImportJob";
 
 type ImportJob = {
   id: string;
@@ -43,6 +44,7 @@ export default function ImportHistoryPage() {
   const [jobs, setJobs] = useState<ImportJob[]>([]);
   const [loading, setLoading] = useState(true);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [replayingId, setReplayingId] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -139,6 +141,31 @@ export default function ImportHistoryPage() {
     }
   };
 
+  const viewResults = (job: ImportJob) => {
+    if (job.job_type !== "buyer_comparator") {
+      toast({ title: "Aperçu indisponible", description: "Seuls les imports du comparateur acheteur peuvent être réinjectés.", variant: "destructive" });
+      return;
+    }
+    navigate(`/compte?tab=comparateur&import_job=${job.id}`);
+  };
+
+  const replay = async (job: ImportJob) => {
+    if (job.job_type !== "buyer_comparator") {
+      toast({ title: "Relance indisponible", description: "Seuls les imports du comparateur acheteur peuvent être rejoués pour le moment.", variant: "destructive" });
+      return;
+    }
+    setReplayingId(job.id);
+    try {
+      const newId = await replayImportJob(job.id);
+      toast({ title: "Import relancé", description: "Le même fichier est en cours de re-traitement." });
+      navigate(`/compte?tab=comparateur&import_job=${newId}`);
+    } catch (e: any) {
+      toast({ title: "Relance impossible", description: e?.message ?? String(e), variant: "destructive" });
+    } finally {
+      setReplayingId(null);
+    }
+  };
+
   return (
     <div className="container max-w-6xl py-8 space-y-6">
       <div className="flex items-start justify-between gap-4">
@@ -228,24 +255,56 @@ export default function ImportHistoryPage() {
                           )}
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            disabled={
-                              downloadingId === job.id ||
-                              !["completed", "failed"].includes(job.status)
-                            }
-                            onClick={() => downloadErrors(job)}
-                          >
-                            {downloadingId === job.id ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
+                          <div className="flex justify-end gap-1.5 flex-wrap">
+                            {job.job_type === "buyer_comparator" && (
                               <>
-                                <Download className="h-4 w-4 mr-1" />
-                                Erreurs CSV
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  disabled={job.status !== "completed"}
+                                  onClick={() => viewResults(job)}
+                                  title="Réinjecter les résultats dans le comparateur"
+                                >
+                                  <Eye className="h-4 w-4 mr-1" />
+                                  Voir
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  disabled={replayingId === job.id || !["completed", "failed", "cancelled"].includes(job.status)}
+                                  onClick={() => replay(job)}
+                                  title="Rejouer le même fichier (nouveau job)"
+                                >
+                                  {replayingId === job.id ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <>
+                                      <RotateCw className="h-4 w-4 mr-1" />
+                                      Relancer
+                                    </>
+                                  )}
+                                </Button>
                               </>
                             )}
-                          </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled={
+                                downloadingId === job.id ||
+                                !["completed", "failed"].includes(job.status)
+                              }
+                              onClick={() => downloadErrors(job)}
+                            >
+                              {downloadingId === job.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <>
+                                  <Download className="h-4 w-4 mr-1" />
+                                  Erreurs CSV
+                                </>
+                              )}
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     );

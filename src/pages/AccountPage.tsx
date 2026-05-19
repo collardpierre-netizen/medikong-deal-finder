@@ -155,6 +155,19 @@ export default function AccountPage() {
   };
   const [newListName, setNewListName] = useState("");
   const [importOpen, setImportOpen] = useState(false);
+  const importJobParam = searchParams.get("import_job");
+  useEffect(() => {
+    if (importJobParam) {
+      setActiveTab("comparateur");
+      setImportOpen(true);
+    }
+  }, [importJobParam]);
+  const handleImportOpenChange = (v: boolean) => {
+    setImportOpen(v);
+    if (!v && importJobParam) {
+      setSearchParams(prev => { const p = new URLSearchParams(prev); p.delete("import_job"); return p; }, { replace: true });
+    }
+  };
   const ORDER_PAGE_SIZES = [10, 20, 50, 100] as const;
   const orderStatusFilter = searchParams.get("orderStatus") || "all";
   const orderSort = (searchParams.get("orderSort") === "asc" ? "asc" : "desc") as "asc" | "desc";
@@ -1279,7 +1292,7 @@ export default function AccountPage() {
                           <p className="text-[10px] text-muted-foreground mt-1">Sélection groupée en un clic</p>
                         </div>
                       </div>
-                      <BuyerImportModal open={importOpen} onOpenChange={setImportOpen} />
+                      <BuyerImportModal open={importOpen} onOpenChange={handleImportOpenChange} initialJobId={importJobParam} />
                     </div>
                   )}
 

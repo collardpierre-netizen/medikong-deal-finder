@@ -186,6 +186,40 @@ export async function listMyImportJobs(jobType?: ImportJobType, limit = 20) {
   return (data ?? []) as ImportJob[];
 }
 
+/**
+ * Crée un NOUVEAU job en rejouant les lignes brutes d'un job source.
+ * Réutilise le payload `rows` de l'import original — pas besoin de re-uploader.
+ * Retourne l'id du nouveau job.
+ */
+export async function replayImportJob(sourceJobId: string): Promise<string> {
+  const { data: src, error: srcErr } = await supabase
+    .from("import_jobs")
+    .select("job_type, file_name, file_size_bytes, metadata")
+    .eq("id", sourceJobId)
+    .maybeSingle();
+  if (srcErr || !src) throw new Error(srcErr?.message ?? "Import source introuvable");
+
+  const { data: pay, error: payErr } = await supabase
+    .from("import_job_payload")
+    .select("rows")
+    .eq("job_id", sourceJobId)
+    .maybeSingle();
+  if (payErr) throw payErr;
+  const rows = Array.isArray(pay?.rows) ? (pay!.rows as any[]) : [];
+  if (rows.length === 0) {
+    throw new Error("Aucune ligne à rejouer (payload absent).");
+  }
+
+  const meta = (src.metadata ?? {}) as Record<string, any>;
+  return startImportJob({
+    jobType: src.job_type as ImportJobType,
+    fileName: src.file_name ?? undefined,
+    fileSizeBytes: src.file_size_bytes ?? undefined,
+    rows,
+    metadata: { ...meta, replayed_from: sourceJobId },
+  });
+}
+
 export const STATUS_LABEL: Record<ImportJobStatus, string> = {
   pending: "En attente",
   processing: "En cours",

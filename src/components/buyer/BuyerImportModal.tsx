@@ -57,6 +57,8 @@ const MATCH_FIELD_BADGE: Record<MatchField, string> = {
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Si fourni, le modal affiche/suit ce job au lieu de partir d'un nouvel upload (réinjection depuis l'historique). */
+  initialJobId?: string | null;
 };
 
 type ResultFilter = "all" | "found" | "savings" | "more_expensive" | "unavailable";
@@ -255,7 +257,7 @@ const queryMatchImportLines = async (payload: ImportPayloadLine[]) => {
   });
 };
 
-export function BuyerImportModal({ open, onOpenChange }: Props) {
+export function BuyerImportModal({ open, onOpenChange, initialJobId = null }: Props) {
   const [phase, setPhase] = useState<"instructions" | "loading" | "results">("instructions");
   const [results, setResults] = useState<MatchedLine[]>([]);
   const [selected, setSelected] = useState<Set<number>>(new Set());
@@ -282,6 +284,18 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
     if (!v) reset();
     onOpenChange(v);
   };
+
+  // Réinjection depuis l'historique : si on reçoit un initialJobId à l'ouverture, on suit ce job directement.
+  useEffect(() => {
+    if (!open) return;
+    if (!initialJobId) return;
+    if (jobId === initialJobId) return;
+    setJobId(initialJobId);
+    setPhase("loading");
+    setResults([]);
+    setSelected(new Set());
+    setSavedCount(null);
+  }, [open, initialJobId, jobId]);
 
   // Suit le job actif et bascule en "results" quand le worker a terminé
   const { job: activeJob } = useImportJob(jobId);

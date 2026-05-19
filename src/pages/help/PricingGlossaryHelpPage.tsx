@@ -173,7 +173,7 @@ export default function PricingGlossaryHelpPage() {
           </CardContent>
         </Card>
 
-
+        <Card>
           <CardHeader>
             <CardTitle className="text-base">Voir aussi</CardTitle>
           </CardHeader>

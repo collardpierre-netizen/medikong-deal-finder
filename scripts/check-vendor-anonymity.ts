@@ -70,7 +70,10 @@ const FORBIDDEN_PATTERNS: { name: string; regex: RegExp; hint: string }[] = [
 const FORBIDDEN_MULTILINE: { name: string; regex: RegExp; hint: string }[] = [
   {
     name: "supabase.from('vendors').select(... company_name|name ...)",
-    regex: /\.from\(\s*["'`]vendors["'`]\s*\)[\s\S]{0,400}?\.select\(\s*["'`][^"'`]*\b(?:company_name|name)\b[^"'`]*["'`]/,
+    // Chaînage immédiat .from("vendors").select(...) — pas d'autre .from() ou
+    // .select() intermédiaire, pour éviter de capturer des .select() voisins
+    // sur d'autres tables (ex. products).
+    regex: /\.from\(\s*["'`]vendors["'`]\s*\)\s*\.select\(\s*["'`][^"'`]*\b(?:company_name|name)\b[^"'`]*["'`]/,
     hint: "Une requête Supabase côté acheteur ne doit sélectionner que display_code. company_name/name sont réservés à l'admin.",
   },
 ];

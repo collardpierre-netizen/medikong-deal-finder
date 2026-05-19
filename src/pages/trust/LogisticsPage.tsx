@@ -11,9 +11,9 @@ import { logisticsFaqItems } from "@/data/trust-process-data";
 import { Truck, Clock, MapPin } from "lucide-react";
 
 const deliveryOptions = [
-  { icon: Truck, title: "Standard", delay: "2-5 jours", desc: "Livraison économique pour les commandes non urgentes." },
-  { icon: Clock, title: "Express", delay: "24-48h", desc: "Livraison rapide pour les commandes urgentes." },
-  { icon: MapPin, title: "Point relais", delay: "3-5 jours", desc: "Retrait dans l'un de nos 1 200 points relais en Belgique." },
+  { icon: Truck, title: "Standard", delay: "2-5 jours", desc: "Livraison économique pour les commandes non urgentes.", comingSoon: false },
+  { icon: Clock, title: "Express", delay: "24-48h", desc: "Livraison rapide pour les commandes urgentes.", comingSoon: true },
+  { icon: MapPin, title: "Point relais", delay: "3-5 jours", desc: "Retrait dans l'un de nos 1 200 points relais en Belgique.", comingSoon: true },
 ];
 
 export default function LogisticsPage() {
@@ -30,7 +30,12 @@ export default function LogisticsPage() {
       <Section title="Options de livraison" subtitle="Choisissez le mode de livraison adapté à vos besoins.">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {deliveryOptions.map(d => (
-            <div key={d.title} className="bg-white border border-mk-line rounded-2xl p-7 text-center hover:-translate-y-1 hover:shadow-lg transition-all duration-300">
+            <div key={d.title} className={`relative bg-white border border-mk-line rounded-2xl p-7 text-center transition-all duration-300 ${d.comingSoon ? "opacity-60" : "hover:-translate-y-1 hover:shadow-lg"}`}>
+              {d.comingSoon && (
+                <span className="absolute top-3 right-3 text-[10px] font-semibold uppercase tracking-wide bg-mk-navy/5 text-mk-navy border border-mk-line rounded-full px-2 py-0.5">
+                  Bientôt disponible
+                </span>
+              )}
               <div className="w-14 h-14 rounded-2xl bg-mk-blue/10 flex items-center justify-center mx-auto mb-5">
                 <d.icon size={22} className="text-mk-blue" />
               </div>

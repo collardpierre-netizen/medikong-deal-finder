@@ -249,51 +249,59 @@ export default function VendorPublicPage() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const SAFE_FETCH_LIMIT = 2000;
-  const brandFilterReady = !!serverBrandSlug && !!serverBrandId;
-  const overFetchGuardActive =
-    vendorOfferCount > SAFE_FETCH_LIMIT && !brandFilterReady;
+  // Phase 2 : pagination serveur via useInfiniteQuery.
+  // Tri serveur appliqué : ruptures en bas → prix HTVA croissant → plus récent.
+  // Filtres autres que "marque unique" restent appliqués côté client sur les
+  // pages déjà chargées (multi-marque, catégorie, search, prix, in-stock).
+  const PAGE_SIZE = 24;
 
-  // Fetch vendor offers — paginated, server-side filtré par brand_id si demandé.
-  const { data: offers = [] } = useQuery({
+  const {
+    data: offersPages,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading: offersLoading,
+  } = useInfiniteQuery({
     queryKey: [
       "vendor-offers-public",
       vendor?.id,
       brandFilterReady ? serverBrandId : null,
     ],
-    queryFn: async ({ signal }) => {
-      const PAGE = 1000;
-      let all: any[] = [];
-      let page = 0;
-      let hasMore = true;
-      while (hasMore) {
-        if (signal?.aborted) throw new DOMException("Aborted", "AbortError");
-        const from = page * PAGE;
-        let q = supabase
-          .from("offers")
-          .select(
-            brandFilterReady
-              ? "*, products!inner(id, slug, name, brand_name, brand_id, image_urls, category_name, category_id, brands(slug))"
-              : "*, products(id, slug, name, brand_name, brand_id, image_urls, category_name, category_id, brands(slug))"
-          )
-          .eq("vendor_id", vendor!.id)
-          .eq("is_active", true);
-        if (brandFilterReady) {
-          q = q.eq("products.brand_id", serverBrandId!);
-        }
-        const { data } = await q.range(from, from + PAGE - 1).abortSignal(signal);
-        all = all.concat(data || []);
-        hasMore = (data?.length || 0) === PAGE;
-        page++;
+    initialPageParam: 0,
+    queryFn: async ({ pageParam, signal }) => {
+      const from = (pageParam as number) * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
+      let q = supabase
+        .from("offers")
+        .select(
+          brandFilterReady
+            ? "*, products!inner(id, slug, name, brand_name, brand_id, image_urls, category_name, category_id, brands(slug))"
+            : "*, products(id, slug, name, brand_name, brand_id, image_urls, category_name, category_id, brands(slug))"
+        )
+        .eq("vendor_id", vendor!.id)
+        .eq("is_active", true)
+        // Tri serveur : OOS en bas, puis prix croissant, puis récence
+        .order("stock_status", { ascending: true, nullsFirst: false })
+        .order("price_excl_vat", { ascending: true, nullsFirst: false })
+        .order("created_at", { ascending: false });
+      if (brandFilterReady) {
+        q = q.eq("products.brand_id", serverBrandId!);
       }
-      return all;
+      const { data, error } = await q.range(from, to).abortSignal(signal);
+      if (error) throw error;
+      return data || [];
     },
+    getNextPageParam: (lastPage, allPages) =>
+      lastPage.length === PAGE_SIZE ? allPages.length : undefined,
     enabled:
-      !!vendor?.id &&
-      !overFetchGuardActive &&
-      (serverBrandSlug == null || !!serverBrandId),
+      !!vendor?.id && (serverBrandSlug == null || !!serverBrandId),
     staleTime: 5 * 60 * 1000,
   });
+
+  const offers = useMemo(
+    () => (offersPages?.pages ?? []).flat(),
+    [offersPages]
+  );
 
 
   // Map to display products (dedupe by product id, keep cheapest in-stock offer)

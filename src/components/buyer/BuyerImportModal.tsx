@@ -229,7 +229,7 @@ const queryMatchImportLines = async (payload: ImportPayloadLine[]) => {
     const { product, matchedBy } = resolveMatch({ ean, cnk, sku });
     const offer = product ? bestOfferByProduct.get(product.id) : undefined;
     const mediPrice = offer?.price_excl_vat != null ? Number(offer.price_excl_vat) : undefined;
-    const vendor = offer?.vendor_public as { display_code?: string | null; name?: string | null; company_name?: string | null } | null | undefined;
+    const vendor = offer?.vendor_public as { display_code?: string | null } | null | undefined;
 
     return {
       lineIndex: index,

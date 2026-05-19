@@ -19,6 +19,7 @@ import { useCountry } from "@/contexts/CountryContext";
 import VendorDelegatesPublic from "@/components/vendor/VendorDelegatesPublic";
 import VendorDelegateDetailDialog from "@/components/vendor/VendorDelegateDetailDialog";
 import VendorProductQuickView from "@/components/vendor/VendorProductQuickView";
+import { VendorTopBrands } from "@/components/vendor/VendorTopBrands";
 
 /* ───── helpers ───── */
 function slugify(t: string) {

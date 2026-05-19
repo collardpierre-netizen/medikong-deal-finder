@@ -20,9 +20,9 @@ const fmt = (n: number) => n.toLocaleString("fr-BE");
 const AdminMarques = () => {
   const qc = useQueryClient();
   const [selectedBrand, setSelectedBrand] = useState<any>(null);
-  const { data: brandsData = [], isLoading: loadingBrands } = useBrands();
+  const { data: brandsData = [], isLoading: loadingBrands, error: brandsError } = useBrands();
   const { data: manufacturersData = [] } = useManufacturers();
-  const { data: totalBrandCount = 0 } = useBrandCount();
+  const { data: totalBrandCount = 0, error: brandCountError } = useBrandCount();
 
   const [brandDialogOpen, setBrandDialogOpen] = useState(false);
   const [editBrand, setEditBrand] = useState<any>(null);
@@ -76,6 +76,18 @@ const AdminMarques = () => {
           <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Rechercher une marque..." className="pl-9 h-9 text-[12px]" />
         </div>
       </div>
+
+      {(brandsError || brandCountError) && (
+        <div className="mb-4 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-[12px] text-destructive" role="alert">
+          <div className="font-semibold mb-0.5">Impossible de charger les marques</div>
+          <div className="text-[11px] opacity-90 break-words">
+            {(brandsError as any)?.message || (brandCountError as any)?.message || "Erreur inconnue"}
+          </div>
+          <div className="text-[10px] mt-1 opacity-70">
+            Causes probables : session admin expirée, RLS, ou erreur réseau (CORS/extension). Rechargez la page (⌘+Shift+R) ou reconnectez-vous.
+          </div>
+        </div>
+      )}
 
       <div className="bg-white rounded-lg border overflow-hidden" style={{ borderColor: "#E2E8F0" }}>
         {loadingBrands ? <div className="py-12 text-center text-[13px]" style={{ color: "#8B95A5" }}>Chargement...</div> : (

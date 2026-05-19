@@ -1,6 +1,7 @@
 import * as XLSX from "xlsx";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { resolveVendorAnonMap, resolveVendorLabel } from "@/lib/vendor-anonymization-map";
 
 export function exportToXlsx(data: any[], filename: string, sheetName = "Data") {
   const ws = XLSX.utils.json_to_sheet(data);
@@ -235,31 +236,21 @@ export async function exportOffers(opts?: { activeOnly?: boolean }) {
       toast.loading(`Enrichissement produits... ${productMap.size.toLocaleString()}/${productIds.length.toLocaleString()}`, { id: toastId });
     }
 
-    const vendorMap = new Map<string, any>();
-    if (vendorIds.length > 0) {
-      const data = await withRetry(
-        async () => {
-          const res = await supabase
-            .from("vendors")
-            .select("id, company_name, display_code, name")
-            .in("id", vendorIds);
-          if (res.error) throw res.error;
-          return res.data || [];
+    // 🔒 Anonymisation vendeur : résolution via vendors_public + getVendorPublicName.
+    // Aucun accès à `vendors` brut. show_real_name volontairement ignoré.
+    const vendorAnonMap = await withRetry(
+      () => resolveVendorAnonMap(vendorIds),
+      {
+        label: "vendors_public",
+        onAttempt: (attempt) => {
+          diag.retries += 1;
+          toast.loading(`Réseau instable — retry vendeurs (${attempt})…`, { id: toastId });
         },
-        {
-          label: "vendors",
-          onAttempt: (attempt) => {
-            diag.retries += 1;
-            toast.loading(`Réseau instable — retry vendeurs (${attempt})…`, { id: toastId });
-          },
-        }
-      );
-      data.forEach(v => vendorMap.set(v.id, v));
-    }
+      }
+    );
 
     const rows = offers.map((o: any) => {
       const p = productMap.get(o.product_id) || {};
-      const v = vendorMap.get(o.vendor_id) || {};
       return {
         offer_id: o.id,
         gtin: p.gtin || "",
@@ -267,7 +258,7 @@ export async function exportOffers(opts?: { activeOnly?: boolean }) {
         product_name: p.name || "",
         brand_name: p.brand_name || "",
         category_name: p.category_name || "",
-        vendor: v.company_name || v.name || v.display_code || "",
+        vendor: resolveVendorLabel(vendorAnonMap, o.vendor_id),
         country: o.country_code || "",
         prix_ht: o.price_excl_vat,
         prix_ttc: o.price_incl_vat,

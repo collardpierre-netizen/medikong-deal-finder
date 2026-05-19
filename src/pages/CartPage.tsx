@@ -128,12 +128,12 @@ export default function CartPage() {
       const remaining = summary?.amount_missing ?? Math.max(currentMov - subtotalForMov, 0);
       const progress = currentMov > 0 ? Math.min((subtotalForMov / currentMov) * 100, 100) : 100;
       const meetsMinimum = summary ? summary.mov_reached : subtotalForMov >= currentMov;
-      const showReal = vendor
-        ? resolveVendorVisibility({ ...vendor, id: vendorId }, visRules as any, { country })
-        : false;
       return {
         vendorId,
-        vendorDisplayName: vendor ? getVendorPublicName(vendor, showReal) : `Fournisseur #${vendorId.slice(0, 6).toUpperCase()}`,
+        // 🔒 Anonymisation : libellé public uniquement, jamais name/company_name brut.
+        vendorDisplayName: vendor
+          ? getVendorPublicName({ display_code: (vendor as any).display_code })
+          : `Fournisseur #${vendorId.slice(0, 6).toUpperCase()}`,
         vendorSlug: vendor?.slug || undefined,
         vendorDisplayCode: (vendor as any)?.display_code || undefined,
         isVerified: vendor?.is_verified || false,
@@ -145,7 +145,7 @@ export default function CartPage() {
         meetsMinimum,
       };
     });
-  }, [items, vendorMap, getMovForVendor, visRules, country, vendorSummaryMap]);
+  }, [items, vendorMap, getMovForVendor, country, vendorSummaryMap]);
 
   // Résolution dynamique des taux TVA (6% médicaments / 21% OTC) via RPC resolve_product_vat_rate
   const productIds = useMemo(() => [...new Set(items.map(i => i.product_id).filter(Boolean))] as string[], [items]);

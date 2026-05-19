@@ -14,7 +14,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useBrands, useManufacturers } from "@/hooks/useAdminData";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import {
   useDiscountSearch,
   useDiscountByVendor,
@@ -251,8 +252,30 @@ export default function BonnesAffairesPage() {
     reference: DiscountReference; minPct: number; country: string; brandIds: string[]; mfIds: string[];
   }>(null);
 
-  const { data: brands = [] } = useBrands();
-  const { data: manufacturers = [] } = useManufacturers();
+  const { data: brands = [] } = useQuery({
+    queryKey: ["bonnes-affaires-brands-all"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("brands")
+        .select("id,name,product_count")
+        .order("product_count", { ascending: false })
+        .limit(10000);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+  const { data: manufacturers = [] } = useQuery({
+    queryKey: ["bonnes-affaires-manufacturers-all"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("manufacturers")
+        .select("id,name")
+        .order("name", { ascending: true })
+        .limit(10000);
+      if (error) throw error;
+      return data || [];
+    },
+  });
 
   const searchParams = submitted
     ? {

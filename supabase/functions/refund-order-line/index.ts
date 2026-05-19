@@ -2,6 +2,7 @@
 // No JWT: secured by vendor_order_tokens.
 import { createClient } from "npm:@supabase/supabase-js@2";
 import Stripe from "npm:stripe@14";
+import { getVendorPublicName } from "../_shared/vendor-display.ts";
 
 const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",

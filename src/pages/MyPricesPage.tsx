@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { motion } from "framer-motion";
 import { Helmet } from "react-helmet-async";
+import { PriceTypeInfo } from "@/components/product/PriceTypeInfo";
 
 function formatEur(n: number): string {
   return n.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -313,9 +314,13 @@ export default function MyPricesPage() {
                   <tr className="bg-muted/50 text-left">
                     <th className="px-4 py-3 font-semibold text-muted-foreground">Produit</th>
                     <th className="px-4 py-3 font-semibold text-muted-foreground">GTIN</th>
-                    <th className="px-4 py-3 font-semibold text-muted-foreground text-right">Mon prix</th>
+                    <th className="px-4 py-3 font-semibold text-muted-foreground text-right">
+                      <span className="inline-flex items-center gap-1.5">Mon prix <PriceTypeInfo type="my-purchase" /></span>
+                    </th>
                     <th className="px-4 py-3 font-semibold text-muted-foreground">Fournisseur</th>
-                    <th className="px-4 py-3 font-semibold text-muted-foreground text-right">Prix MediKong</th>
+                    <th className="px-4 py-3 font-semibold text-muted-foreground text-right">
+                      <span className="inline-flex items-center gap-1.5">Prix MediKong <PriceTypeInfo type="medikong-vs-mine" /></span>
+                    </th>
                     <th className="px-4 py-3 font-semibold text-muted-foreground text-right">Economie</th>
                     <th className="px-4 py-3 font-semibold text-muted-foreground text-right">%</th>
                     <th className="px-4 py-3 font-semibold text-muted-foreground text-center">Actions</th>

@@ -14,6 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PriceTypeInfo } from "@/components/product/PriceTypeInfo";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -471,7 +472,10 @@ export default function BonnesAffairesPage() {
           <CardContent className="space-y-6">
             <div className="grid lg:grid-cols-3 gap-6">
               <div className="space-y-2">
-                <Label>Prix de référence</Label>
+                <Label className="flex items-center gap-2">
+                  Prix de référence
+                  <PriceTypeInfo type={reference === "pvp" ? "pvp" : "market"} />
+                </Label>
                 <Tabs value={reference} onValueChange={(v) => setReference(v as DiscountReference)}>
                   <TabsList className="grid grid-cols-2 w-full">
                     <TabsTrigger value="pvp">PVP conseillé</TabsTrigger>

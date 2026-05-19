@@ -155,7 +155,10 @@ export default function OrderDetailPage() {
             <div className="px-4 py-6 text-sm text-mk-sec">Chargement…</div>
           ) : items.length === 0 ? (
             <div className="px-4 py-6 text-sm text-mk-sec">Aucun article</div>
-          ) : items.map((it, idx) => (
+          ) : items.map((it, idx) => {
+            // 🔒 Anonymisation : libellé public uniquement, jamais it.vendor_name brut.
+            const vLabel = getVendorPublicName({ display_code: it.vendor_display_code });
+            return (
             <div key={it.id || idx} className="grid grid-cols-5 gap-3 px-4 py-3 border-t border-mk-line text-sm items-center min-w-[640px]">
               <div>
                 <div className="font-medium text-mk-navy">{it.product_name || it.name || "—"}</div>
@@ -167,16 +170,16 @@ export default function OrderDetailPage() {
               </div>
               {it.vendor_display_code ? (
                 <a href={`/vendeur/${it.vendor_display_code}`} className="text-mk-primary hover:underline text-xs">
-                  {it.vendor_name || "—"}
+                  {vLabel}
                 </a>
               ) : (
-                <span className="text-mk-sec text-xs">{it.vendor_name || "—"}</span>
+                <span className="text-mk-sec text-xs">{vLabel}</span>
               )}
               <span className="text-mk-sec">{it.quantity}</span>
               <span className="text-mk-sec">{formatPrice(Number(it.unit_price_excl_vat || 0))} EUR</span>
               <span className="font-bold text-mk-navy">{formatPrice(Number(it.unit_price_excl_vat || 0) * Number(it.quantity || 0))} EUR</span>
             </div>
-          ))}
+          );})}
           <div className="border-t border-mk-line bg-mk-alt px-4 py-3 text-sm space-y-1 min-w-[640px]">
             <div className="flex justify-between"><span className="text-mk-sec">Sous-total HTVA</span><span className="text-mk-navy">{formatPrice(subtotal)} EUR</span></div>
             {shipping > 0 && <div className="flex justify-between"><span className="text-mk-sec">Livraison</span><span className="text-mk-navy">{formatPrice(shipping)} EUR</span></div>}

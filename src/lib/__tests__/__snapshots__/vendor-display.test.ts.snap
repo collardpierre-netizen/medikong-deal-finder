@@ -1,0 +1,58 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`getVendorPublicName — toujours anonymisé > snapshot — sortie figée 1`] = `"Fournisseur ZZ9999"`;
+
+exports[`sanitizeVendorLabel — neutralise toujours Qogita > snapshot — table de vérité Qogita 1`] = `
+[
+  {
+    "input": "Qogita",
+    "withCode": "Vendeur AB12CD",
+    "withoutCode": "Vendeur MediKong",
+  },
+  {
+    "input": "qogita",
+    "withCode": "Vendeur AB12CD",
+    "withoutCode": "Vendeur MediKong",
+  },
+  {
+    "input": "QOGITA",
+    "withCode": "Vendeur AB12CD",
+    "withoutCode": "Vendeur MediKong",
+  },
+  {
+    "input": "QoGiTa",
+    "withCode": "Vendeur AB12CD",
+    "withoutCode": "Vendeur MediKong",
+  },
+  {
+    "input": "Qogita B.V.",
+    "withCode": "Vendeur AB12CD",
+    "withoutCode": "Vendeur MediKong",
+  },
+  {
+    "input": "Qogita Marketplace",
+    "withCode": "Vendeur AB12CD",
+    "withoutCode": "Vendeur MediKong",
+  },
+  {
+    "input": "Vendeur Qogita FR",
+    "withCode": "Vendeur AB12CD",
+    "withoutCode": "Vendeur MediKong",
+  },
+  {
+    "input": "  qogita  ",
+    "withCode": "Vendeur AB12CD",
+    "withoutCode": "Vendeur MediKong",
+  },
+  {
+    "input": "powered by qogita",
+    "withCode": "Vendeur AB12CD",
+    "withoutCode": "Vendeur MediKong",
+  },
+  {
+    "input": "Distributeur QOGITA Europe",
+    "withCode": "Vendeur AB12CD",
+    "withoutCode": "Vendeur MediKong",
+  },
+]
+`;

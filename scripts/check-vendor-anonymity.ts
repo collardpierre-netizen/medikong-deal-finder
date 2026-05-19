@@ -111,6 +111,9 @@ for (const abs of files) {
   const src = readFileSync(abs, "utf8");
   const lines = src.split("\n");
   lines.forEach((line, i) => {
+    // Ignorer les lignes de commentaire (la règle vise le code exécuté, pas la doc)
+    const trimmed = line.trim();
+    if (trimmed.startsWith("//") || trimmed.startsWith("*") || trimmed.startsWith("/*")) return;
     for (const p of FORBIDDEN_PATTERNS) {
       if (p.regex.test(line)) {
         violations.push({

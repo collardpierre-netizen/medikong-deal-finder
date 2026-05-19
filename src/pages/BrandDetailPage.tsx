@@ -93,20 +93,14 @@ export default function BrandDetailPage() {
       const vendorIds = Array.from(offerCountByVendor.keys());
       if (vendorIds.length === 0) return [];
 
-      // Étape 3 : règles de visibilité granulaires (mêmes règles que la fiche produit)
-      const [{ data: vendorsData, error: vErr }, { data: rulesData }] = await Promise.all([
-        supabase
-          .from("vendors_public" as any)
-          .select("id, name, company_name, display_name, slug, is_verified, rating, total_sales, country_code, display_code, show_real_name")
-          .in("id", vendorIds),
-        supabase
-          .from("vendor_visibility_rules" as any)
-          .select("*")
-          .in("vendor_id", vendorIds),
-      ]);
+      // Étape 3 : récupère uniquement les champs publics non-PII. `name`,
+      // `company_name`, `show_real_name` ne sont JAMAIS sélectionnés côté buyer
+      // (cf. Vendor Anonymity Guardrail).
+      const { data: vendorsData, error: vErr } = await supabase
+        .from("vendors_public" as any)
+        .select("id, display_name, slug, is_verified, rating, total_sales, country_code, display_code")
+        .in("id", vendorIds);
       if (vErr) throw vErr;
-
-      const rules = (rulesData || []) as any[];
 
       const dedup = new Map<string, {
         id: string;
@@ -123,16 +117,10 @@ export default function BrandDetailPage() {
 
       for (const v of (vendorsData || []) as any[]) {
         if (!v?.id || dedup.has(v.id)) continue;
-        const showReal = resolveVendorVisibility(
-          { id: v.id, name: v.name, company_name: v.company_name, display_code: v.display_code, show_real_name: v.show_real_name },
-          rules,
-        );
         dedup.set(v.id, {
           id: v.id,
-          name: getVendorPublicName(
-            { name: v.name, company_name: v.company_name, display_code: v.display_code, show_real_name: v.show_real_name },
-            showReal,
-          ),
+          // 🔒 Anonymisation : libellé public uniquement, jamais name/company_name brut.
+          name: getVendorPublicName({ display_code: v.display_code }),
           slug: v.slug || "",
           displayCode: v.display_code || null,
           verified: !!v.is_verified,

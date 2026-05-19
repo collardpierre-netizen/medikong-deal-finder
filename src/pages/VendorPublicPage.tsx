@@ -1,5 +1,7 @@
 import { Layout } from "@/components/layout/Layout";
 import { useParams, Link, useSearchParams } from "react-router-dom";
+import NotFound from "@/pages/NotFound";
+
 import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -170,7 +172,7 @@ function VendorProductListRow({ product: p, addToCart, openDrawer, onQuickView }
 }
 
 export default function VendorPublicPage() {
-  const { slug } = useParams<{ slug: string }>();
+  const { code } = useParams<{ code: string }>();
   const [searchParams] = useSearchParams();
   const [view, setView] = useState<"grid" | "list">("grid");
   const initialBrand = searchParams.get("brand");
@@ -183,20 +185,44 @@ export default function VendorPublicPage() {
   const [quickViewProduct, setQuickViewProduct] = useState<any | null>(null);
   const [delegateDialogOpen, setDelegateDialogOpen] = useState(false);
 
-  const { data: vendor, isLoading } = useQuery({
-    queryKey: ["vendor-public", slug],
+  // Étape 1 : résolution opaque du code public → vendor_id via RPC anonymisé.
+  // Retourne uniquement {id, display_code, country_code, created_at, is_active}.
+  // Si la RPC ne renvoie rien (code inconnu ou vendeur inactif) → 404.
+  const { data: resolved, isLoading: resolving } = useQuery({
+    queryKey: ["vendor-resolve-by-code", code],
     queryFn: async () => {
-      // Vue publique : pas de PII (email, tel, adresse, TVA, IDs Stripe...)
+      const { data, error } = await supabase
+        .rpc("resolve_vendor_by_public_code", { _code: code! });
+      if (error) throw error;
+      const row = Array.isArray(data) ? data[0] : data;
+      return (row ?? null) as { id: string; display_code: string; country_code: string | null; created_at: string; is_active: boolean } | null;
+    },
+    enabled: !!code,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Étape 2 : chargement du reste du profil public via vendors_public (id),
+  // pour conserver le rendu existant (logo, description, KPIs…). Aucun champ
+  // sensible : la vue est déjà la version publique.
+  const { data: vendor, isLoading: loadingVendor } = useQuery({
+    queryKey: ["vendor-public", resolved?.id],
+    queryFn: async () => {
       const { data, error } = await supabase
         .from("vendors_public" as any)
         .select("*")
-        .eq("slug", slug!)
+        .eq("id", resolved!.id)
         .maybeSingle();
       if (error) throw error;
       return data as any;
     },
-    enabled: !!slug,
+    enabled: !!resolved?.id,
   });
+
+  const isLoading = resolving || (!!resolved && loadingVendor);
+  const codeNotFound = !resolving && !resolved;
+
+
+
 
   // Fetch visibility rules for this vendor
   const { data: visRules = [] } = useQuery({
@@ -430,6 +456,12 @@ export default function VendorPublicPage() {
   ) : false;
   const vendorName = vendor ? getVendorPublicName(vendor, showReal) : "Fournisseur";
 
+  // 404 normal : display_code inexistant ou vendeur désactivé.
+  // Placé APRES tous les hooks pour respecter Rules of Hooks.
+  if (codeNotFound) {
+    return <NotFound />;
+  }
+
   if (isLoading) {
     return (
       <Layout>
@@ -442,6 +474,7 @@ export default function VendorPublicPage() {
       </Layout>
     );
   }
+
 
   if (!vendor) {
     return (

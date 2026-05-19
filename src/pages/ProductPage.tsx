@@ -1040,8 +1040,8 @@ function VendorSuggestions({ vendorId, vendorDisplayCode, vendorDisplayName, cur
                 })}
               </div>
             )}
-            {vendorSlug && (
-              <Link to={`/vendeur/${vendorSlug}`} className="flex items-center justify-center gap-1 text-xs font-medium text-primary hover:underline mt-3 mb-1">
+            {vendorDisplayCode && (
+              <Link to={`/vendeur/${vendorDisplayCode}`} className="flex items-center justify-center gap-1 text-xs font-medium text-primary hover:underline mt-3 mb-1">
                 Voir tout le catalogue <ChevronRight size={14} />
               </Link>
             )}

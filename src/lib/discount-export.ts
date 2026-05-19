@@ -1,5 +1,6 @@
 import * as XLSX from "xlsx";
 import type { DiscountRow } from "@/hooks/useDiscountSearch";
+import { sanitizeVendorLabel } from "@/lib/vendor-display";
 
 interface ExportContext {
   reference: "pvp" | "market";
@@ -13,7 +14,12 @@ function rowsToObjects(rows: DiscountRow[]) {
     CNK: r.cnk || "",
     Marque: r.brand_name || "",
     Fabricant: r.manufacturer_name || "",
-    Vendeur: r.vendor_name || "",
+    // 🔒 Défense en profondeur : le caller pré-anonymise déjà via
+    // getVendorPublicName, mais on force ici un dernier passage par
+    // sanitizeVendorLabel pour garantir qu'aucune occurrence "Qogita"
+    // (ni équivalent) ne fuit dans l'export buyer-facing, même si un
+    // futur caller oublie l'étape d'anonymisation.
+    Vendeur: sanitizeVendorLabel(r.vendor_name ?? "", null),
     Pays: r.country_code,
     "Prix MediKong HTVA (€)": (r.best_price_htva_cents / 100).toFixed(2),
     "Prix référence (€)": (r.reference_price_cents / 100).toFixed(2),
@@ -27,6 +33,7 @@ function rowsToObjects(rows: DiscountRow[]) {
     "URL produit": r.product_slug ? `${window.location.origin}/produit/${r.product_slug}` : "",
   }));
 }
+
 
 export function exportDiscountXlsx(rows: DiscountRow[], ctx: ExportContext) {
   const wb = XLSX.utils.book_new();

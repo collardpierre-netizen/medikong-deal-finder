@@ -53,7 +53,7 @@ type ResponseRow = {
   score_availability: number | null;
   is_top_pick: boolean;
   compliance_flags: { moq_ok?: boolean; validity_ok?: boolean; beats_target_price?: boolean; admin_curated?: boolean } | null;
-  vendor?: { id: string; name: string | null; slug: string | null } | null;
+  vendor?: { id: string; name: string | null; display_code: string | null } | null;
 };
 
 const STATUS_LABEL: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
@@ -299,7 +299,7 @@ function RfqResponsesPanel({ rfqId }: { rfqId: string }) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("rfq_responses")
-        .select("id, rfq_id, vendor_id, unit_price_excl_vat_cents, moq, delivery_days, offer_validity_days, payment_terms, comment, rank_position, is_visible_to_buyer, awarded, created_at, score, score_price, score_delivery, score_compliance, score_availability, is_top_pick, compliance_flags, vendor:vendors!inner(id, name, slug)")
+        .select("id, rfq_id, vendor_id, unit_price_excl_vat_cents, moq, delivery_days, offer_validity_days, payment_terms, comment, rank_position, is_visible_to_buyer, awarded, created_at, score, score_price, score_delivery, score_compliance, score_availability, is_top_pick, compliance_flags, vendor:vendors!inner(id, name, display_code)")
         .eq("rfq_id", rfqId)
         .eq("is_visible_to_buyer", true)
         .order("score", { ascending: false, nullsFirst: false })
@@ -328,7 +328,7 @@ function RfqResponsesPanel({ rfqId }: { rfqId: string }) {
             <span className="text-sm font-bold">{fmtPrice(top.unit_price_excl_vat_cents)}/u.</span>
           </div>
           <p className="text-sm">
-            {top.vendor?.slug ? <Link to={`/vendeur/${top.vendor.slug}`} className="font-semibold hover:underline">{top.vendor.name}</Link> : top.vendor?.name}
+            {top.vendor?.display_code ? <Link to={`/vendeur/${top.vendor.display_code}`} className="font-semibold hover:underline">{top.vendor.name}</Link> : top.vendor?.name}
             {top.delivery_days && <span className="text-muted-foreground"> · livraison {top.delivery_days} j</span>}
             {top.moq && <span className="text-muted-foreground"> · MOQ {top.moq}</span>}
             {top.offer_validity_days && <span className="text-muted-foreground"> · validité {top.offer_validity_days} j</span>}
@@ -380,7 +380,7 @@ function RfqResponsesPanel({ rfqId }: { rfqId: string }) {
                   ) : "—"}
                 </td>
                 <td className="px-3 py-2">
-                  {r.vendor?.slug ? <Link to={`/vendeur/${r.vendor.slug}`} className="hover:underline">{r.vendor.name}</Link> : (r.vendor?.name || "—")}
+                  {r.vendor?.display_code ? <Link to={`/vendeur/${r.vendor.display_code}`} className="hover:underline">{r.vendor.name}</Link> : (r.vendor?.name || "—")}
                 </td>
                 <td className="px-3 py-2 text-right font-semibold">{fmtPrice(r.unit_price_excl_vat_cents)}/u.</td>
                 <td className="px-3 py-2 text-right">

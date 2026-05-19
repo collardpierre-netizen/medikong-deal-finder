@@ -439,9 +439,9 @@ function OfferRow({
               </span>
             );
           })()}
-          {offer.sellerSlug && (
+          {offer.displayCode && (
             <Link
-              to={`/vendeur/${offer.sellerSlug}`}
+              to={`/vendeur/${offer.displayCode}`}
               className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline w-fit"
               title={`Voir la boutique de ${sellerLabel}`}
             >
@@ -726,9 +726,9 @@ function OfferRow({
         <div className="flex items-center justify-between">
           <div className="flex flex-col gap-0.5">
             <span className="font-bold text-sm">{sellerLabel}</span>
-            {offer.sellerSlug && (
+            {offer.displayCode && (
               <Link
-                to={`/vendeur/${offer.sellerSlug}`}
+                to={`/vendeur/${offer.displayCode}`}
                 className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline w-fit"
               >
                 <Store size={11} /> Voir la boutique
@@ -945,7 +945,7 @@ function OfferRow({
       {offer.sellerId && (
         <VendorSuggestions
           vendorId={offer.sellerId}
-          vendorSlug={offer.sellerSlug}
+          vendorDisplayCode={offer.displayCode}
           vendorDisplayName={offer.sellerName}
           currentProductId={productId}
           categoryId={categoryId}
@@ -962,8 +962,8 @@ function OfferRow({
 }
 
 /* ── Vendor Suggestions (collapsible) ──────────────────── */
-function VendorSuggestions({ vendorId, vendorSlug, vendorDisplayName, currentProductId, categoryId }: {
-  vendorId: string; vendorSlug?: string; vendorDisplayName: string; currentProductId: string; categoryId?: string;
+function VendorSuggestions({ vendorId, vendorDisplayCode, vendorDisplayName, currentProductId, categoryId }: {
+  vendorId: string; vendorDisplayCode?: string; vendorDisplayName: string; currentProductId: string; categoryId?: string;
 }) {
   const [open, setOpen] = useState(false);
   const { data: suggestions = [], isLoading } = useQuery({
@@ -1040,8 +1040,8 @@ function VendorSuggestions({ vendorId, vendorSlug, vendorDisplayName, currentPro
                 })}
               </div>
             )}
-            {vendorSlug && (
-              <Link to={`/vendeur/${vendorSlug}`} className="flex items-center justify-center gap-1 text-xs font-medium text-primary hover:underline mt-3 mb-1">
+            {vendorDisplayCode && (
+              <Link to={`/vendeur/${vendorDisplayCode}`} className="flex items-center justify-center gap-1 text-xs font-medium text-primary hover:underline mt-3 mb-1">
                 Voir tout le catalogue <ChevronRight size={14} />
               </Link>
             )}

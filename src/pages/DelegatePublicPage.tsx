@@ -43,6 +43,7 @@ interface Delegate {
 interface Vendor {
   id: string;
   slug: string | null;
+  display_code: string | null;
   company_name: string | null;
   name: string | null;
   logo_url: string | null;
@@ -94,7 +95,7 @@ export default function DelegatePublicPage() {
       if (!delegate?.vendor_id) return null;
       const { data } = await supabase
         .from("vendors")
-        .select("id, slug, company_name, name, logo_url")
+        .select("id, slug, display_code, company_name, name, logo_url")
         .eq("id", delegate.vendor_id)
         .maybeSingle();
       return (data as unknown as Vendor) || null;
@@ -191,9 +192,9 @@ export default function DelegatePublicPage() {
         <div className="max-w-3xl mx-auto px-4 py-6 sm:py-10">
           {/* Breadcrumb / retour */}
           <div className="mb-6 flex items-center gap-2 text-sm text-muted-foreground">
-            {vendor?.slug && (
+            {vendor?.display_code && (
               <Link
-                to={`/vendeur/${vendor.slug}`}
+                to={`/vendeur/${vendor.display_code}`}
                 className="inline-flex items-center gap-1 hover:text-foreground"
               >
                 <ArrowLeft size={14} />
@@ -229,7 +230,7 @@ export default function DelegatePublicPage() {
                   )}
                   {vendor && (
                     <Link
-                      to={vendor.slug ? `/vendeur/${vendor.slug}` : "#"}
+                      to={vendor.display_code ? `/vendeur/${vendor.display_code}` : "#"}
                       className="mt-2 inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
                     >
                       {vendor.logo_url && (

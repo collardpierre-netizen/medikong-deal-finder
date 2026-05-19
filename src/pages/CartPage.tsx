@@ -22,6 +22,7 @@ interface SupplierGroup {
   vendorId: string;
   vendorDisplayName: string;
   vendorSlug?: string;
+  vendorDisplayCode?: string;
   isVerified: boolean;
   items: ReturnType<typeof useCart>["items"];
   total: number;
@@ -145,6 +146,7 @@ export default function CartPage() {
         vendorId,
         vendorDisplayName: vendor ? getVendorPublicName(vendor, showReal) : `Fournisseur #${vendorId.slice(0, 6).toUpperCase()}`,
         vendorSlug: vendor?.slug || undefined,
+        vendorDisplayCode: (vendor as any)?.display_code || undefined,
         isVerified: vendor?.is_verified || false,
         items: groupItems,
         total,
@@ -397,7 +399,7 @@ export default function CartPage() {
                           </button>
                         </div>
                         <Link
-                          to={group.vendorSlug ? `/vendeur/${group.vendorSlug}` : `/recherche`}
+                          to={group.vendorDisplayCode ? `/vendeur/${group.vendorDisplayCode}` : `/recherche`}
                           className="border border-mk-line text-mk-navy text-sm font-medium px-4 py-2 rounded-md hover:bg-mk-alt transition-colors"
                         >
                           Voir inventaire fournisseur

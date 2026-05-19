@@ -323,8 +323,8 @@ const AdminVendeurs = () => {
                         >
                           {(s as any).show_real_name ? <Eye size={10} /> : <EyeOff size={10} />}
                         </button>
-                        {s.slug && (
-                          <a href={`/vendeur/${s.slug}`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}
+                        {s.display_code && (
+                          <a href={`/vendeur/${s.display_code}`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}
                             className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-semibold hover:opacity-80 transition-opacity"
                             style={{ color: "#1B5BDA", backgroundColor: "#EEF2FF" }}>
                             <ExternalLink size={10} />

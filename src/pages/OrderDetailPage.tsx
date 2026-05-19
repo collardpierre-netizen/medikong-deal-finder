@@ -168,8 +168,8 @@ export default function OrderDetailPage() {
                   {it.product_sku && <span>SKU: {it.product_sku}</span>}
                 </div>
               </div>
-              {it.vendor_slug ? (
-                <a href={`/vendeur/${it.vendor_slug}`} className="text-mk-primary hover:underline text-xs">
+              {it.vendor_display_code ? (
+                <a href={`/vendeur/${it.vendor_display_code}`} className="text-mk-primary hover:underline text-xs">
                   {it.vendor_name || "—"}
                 </a>
               ) : (

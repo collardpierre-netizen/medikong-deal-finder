@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { getVendorPublicName, sanitizeVendorLabel } from "@/lib/vendor-display";
 
 const COUNTRIES = ["BE", "FR", "LU"];
 
@@ -134,7 +135,7 @@ function MultiPicker({ label, items, selected, setSelected, placeholder }: Multi
   );
 }
 
-function VendorMovCard({ group }: { group: VendorGroup }) {
+function VendorMovCard({ group, displayName }: { group: VendorGroup; displayName: string }) {
   const mov = group.max_mov_eur_cents || 0;
   const basket = Number(group.min_basket_at_moq_eur_cents || 0);
   const reach = mov > 0 ? Math.min(100, Math.round((basket / mov) * 100)) : 100;
@@ -150,7 +151,7 @@ function VendorMovCard({ group }: { group: VendorGroup }) {
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-2">
             <Store className="h-4 w-4 text-primary" />
-            <CardTitle className="text-base">{group.vendor_name || "Vendeur"}</CardTitle>
+            <CardTitle className="text-base">{displayName}</CardTitle>
             <Badge variant="secondary">{group.product_count} produit{group.product_count > 1 ? "s" : ""}</Badge>
           </div>
           <div className="flex items-center gap-2">
@@ -322,6 +323,43 @@ export default function BonnesAffairesPage() {
   const total = rows[0]?.total_count ?? 0;
   const vendorGroups = vendorsQuery.data ?? [];
 
+  // Collect all vendor IDs surfaced in the current results and resolve their
+  // public/anonymised display name via vendors_public + getVendorPublicName.
+  const vendorIds = useMemo(() => {
+    const set = new Set<string>();
+    rows.forEach((r) => { if (r.vendor_id) set.add(r.vendor_id); });
+    vendorGroups.forEach((g) => { if (g.vendor_id) set.add(g.vendor_id); });
+    return Array.from(set).sort();
+  }, [rows, vendorGroups]);
+
+  const { data: vendorMeta = [] } = useQuery({
+    queryKey: ["bonnes-affaires-vendors-public", vendorIds],
+    enabled: vendorIds.length > 0,
+    staleTime: 5 * 60 * 1000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("vendors_public")
+        .select("id,name,company_name,display_code,show_real_name,type")
+        .in("id", vendorIds);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const vendorNameById = useMemo(() => {
+    const m = new Map<string, string>();
+    vendorMeta.forEach((v: any) => {
+      m.set(v.id, getVendorPublicName(v));
+    });
+    return m;
+  }, [vendorMeta]);
+
+  const resolveVendorName = (vendor_id?: string | null, fallback?: string | null) => {
+    if (vendor_id && vendorNameById.has(vendor_id)) return vendorNameById.get(vendor_id)!;
+    // fallback: at minimum strip Qogita from raw label
+    return sanitizeVendorLabel(fallback ?? "", null);
+  };
+
   const reset = () => {
     setReference("pvp"); setMinPct(30); setBrandIds([]); setMfIds([]);
     setSubmitted(null);
@@ -333,10 +371,29 @@ export default function BonnesAffairesPage() {
     try {
       const all = await fetchAllDiscountResults(searchParams, 5000);
       if (!all.length) { toast.error("Aucun résultat à exporter", { id: tid }); return; }
+
+      // Anonymise vendor labels for export (resolve via vendors_public for the
+      // full set — current page map only covers visible results).
+      const exportIds = Array.from(new Set(all.map((r) => r.vendor_id).filter(Boolean) as string[]));
+      let exportMap = new Map(vendorNameById);
+      const missing = exportIds.filter((id) => !exportMap.has(id));
+      if (missing.length) {
+        const { data: extra } = await supabase
+          .from("vendors_public")
+          .select("id,name,company_name,display_code,show_real_name,type")
+          .in("id", missing);
+        (extra || []).forEach((v: any) => exportMap.set(v.id, getVendorPublicName(v)));
+      }
+      const anonymised = all.map((r) => ({
+        ...r,
+        vendor_name: r.vendor_id && exportMap.has(r.vendor_id)
+          ? exportMap.get(r.vendor_id)!
+          : sanitizeVendorLabel(r.vendor_name, null),
+      }));
       if (format === "xlsx") {
-        exportDiscountXlsx(all, { reference: searchParams.reference, minDiscountPct: searchParams.minDiscountPct, country: searchParams.country });
+        exportDiscountXlsx(anonymised, { reference: searchParams.reference, minDiscountPct: searchParams.minDiscountPct, country: searchParams.country });
       } else {
-        exportDiscountCsv(all);
+        exportDiscountCsv(anonymised);
       }
       toast.success(`${all.length} ligne(s) exportées`, { id: tid });
     } catch (e: any) {
@@ -550,7 +607,7 @@ export default function BonnesAffairesPage() {
                                 {r.cnk && <div className="text-[10px] text-muted-foreground">CNK {r.cnk}</div>}
                               </td>
                               <td className="py-2 pr-3 text-muted-foreground">{r.brand_name || "—"}</td>
-                              <td className="py-2 pr-3 text-muted-foreground">{r.vendor_name || "—"}</td>
+                              <td className="py-2 pr-3 text-muted-foreground">{resolveVendorName(r.vendor_id, r.vendor_name)}</td>
                               <td className="py-2 pr-3 text-right font-semibold tabular-nums">{fmtEur(r.best_price_htva_cents)}</td>
                               <td className="py-2 pr-3 text-right text-muted-foreground tabular-nums line-through">{fmtEur(r.reference_price_cents)}</td>
                               <td className="py-2 pr-3 text-right tabular-nums">{r.moq}</td>
@@ -613,7 +670,13 @@ export default function BonnesAffairesPage() {
                 </p>
               )}
 
-              {vendorGroups.map((g) => <VendorMovCard key={g.vendor_id} group={g} />)}
+              {vendorGroups.map((g) => (
+                <VendorMovCard
+                  key={g.vendor_id}
+                  group={g}
+                  displayName={resolveVendorName(g.vendor_id, g.vendor_name)}
+                />
+              ))}
             </TabsContent>
           </Tabs>
         )}

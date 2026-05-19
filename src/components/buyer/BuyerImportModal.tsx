@@ -13,6 +13,7 @@ import { useCart } from "@/hooks/useCart";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { startImportJob, useImportJob, fetchJobResults } from "@/hooks/useImportJob";
+import { getVendorPublicName } from "@/lib/vendor-display";
 import { ImportJobProgress } from "@/components/imports/ImportJobProgress";
 import { useEffect } from "react";
 
@@ -135,7 +136,7 @@ const fetchBestOffers = async (productIds: string[]) => {
   if (vendorIds.length > 0) {
     const { data: vendorsData } = await supabase
       .from("vendors_public" as any)
-      .select("id, name, company_name, display_name")
+      .select("id, display_code, name, company_name")
       .in("id", vendorIds);
     const vendorMap = new Map<string, any>(
       ((vendorsData || []) as any[]).map((v: any) => [v.id, v])
@@ -227,7 +228,7 @@ const queryMatchImportLines = async (payload: ImportPayloadLine[]) => {
     const { product, matchedBy } = resolveMatch({ ean, cnk, sku });
     const offer = product ? bestOfferByProduct.get(product.id) : undefined;
     const mediPrice = offer?.price_excl_vat != null ? Number(offer.price_excl_vat) : undefined;
-    const vendor = offer?.vendor_public as { company_name?: string | null; name?: string | null; display_name?: string | null } | null | undefined;
+    const vendor = offer?.vendor_public as { display_code?: string | null; name?: string | null; company_name?: string | null } | null | undefined;
 
     return {
       lineIndex: index,
@@ -243,7 +244,8 @@ const queryMatchImportLines = async (payload: ImportPayloadLine[]) => {
         productSku: product?.sku ?? undefined,
         mediPrice,
         offerId: offer?.id ?? undefined,
-        vendorName: vendor?.company_name || vendor?.name || vendor?.display_name || "—",
+        // 🔒 Anonymisation : libellé public uniquement, jamais company_name/name brut.
+        vendorName: vendor ? getVendorPublicName(vendor) : "—",
         matchedBy,
         status: product && offer ? "found" : "unavailable",
         saving: mediPrice != null && currentPrice > mediPrice ? Math.max(0, currentPrice - mediPrice) : 0,

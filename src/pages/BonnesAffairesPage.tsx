@@ -323,6 +323,43 @@ export default function BonnesAffairesPage() {
   const total = rows[0]?.total_count ?? 0;
   const vendorGroups = vendorsQuery.data ?? [];
 
+  // Collect all vendor IDs surfaced in the current results and resolve their
+  // public/anonymised display name via vendors_public + getVendorPublicName.
+  const vendorIds = useMemo(() => {
+    const set = new Set<string>();
+    rows.forEach((r) => { if (r.vendor_id) set.add(r.vendor_id); });
+    vendorGroups.forEach((g) => { if (g.vendor_id) set.add(g.vendor_id); });
+    return Array.from(set).sort();
+  }, [rows, vendorGroups]);
+
+  const { data: vendorMeta = [] } = useQuery({
+    queryKey: ["bonnes-affaires-vendors-public", vendorIds],
+    enabled: vendorIds.length > 0,
+    staleTime: 5 * 60 * 1000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("vendors_public")
+        .select("id,name,company_name,display_code,show_real_name,type")
+        .in("id", vendorIds);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const vendorNameById = useMemo(() => {
+    const m = new Map<string, string>();
+    vendorMeta.forEach((v: any) => {
+      m.set(v.id, getVendorPublicName(v));
+    });
+    return m;
+  }, [vendorMeta]);
+
+  const resolveVendorName = (vendor_id?: string | null, fallback?: string | null) => {
+    if (vendor_id && vendorNameById.has(vendor_id)) return vendorNameById.get(vendor_id)!;
+    // fallback: at minimum strip Qogita from raw label
+    return sanitizeVendorLabel(fallback ?? "", null);
+  };
+
   const reset = () => {
     setReference("pvp"); setMinPct(30); setBrandIds([]); setMfIds([]);
     setSubmitted(null);

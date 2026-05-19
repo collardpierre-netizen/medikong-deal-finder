@@ -480,8 +480,8 @@ export default function BonnesAffairesPage() {
                 </Tabs>
                 <p className="text-xs text-muted-foreground">
                   {reference === "pvp"
-                    ? "Compare au Prix Public Conseillé (APB / PMR / officiel)."
-                    : "Compare au prix marché public/grossiste agrégé."}
+                    ? "PVP conseillé : prix public TTC officiel (APB / PMR ou indiqué par le fabricant). Référence utilisée en pharmacie."
+                    : "Prix marché : prix HTVA médian observé chez les autres grossistes/plateformes B2B (veille concurrentielle agrégée). Indique le niveau de prix d'achat habituel pour les professionnels."}
                 </p>
               </div>
 

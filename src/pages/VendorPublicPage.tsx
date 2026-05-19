@@ -249,6 +249,8 @@ export default function VendorPublicPage() {
     staleTime: 5 * 60 * 1000,
   });
 
+  const brandFilterReady = !!serverBrandSlug && !!serverBrandId;
+
   // Phase 2 : pagination serveur via useInfiniteQuery.
   // Tri serveur appliqué : ruptures en bas → prix HTVA croissant → plus récent.
   // Filtres autres que "marque unique" restent appliqués côté client sur les

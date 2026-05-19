@@ -326,6 +326,13 @@ export default function BonnesAffairesPage() {
   const total = rows[0]?.total_count ?? 0;
   const vendorGroups = vendorsQuery.data ?? [];
 
+  // Comparatif PVP TTC vs Prix marché (HTVA → TTC) pour les lignes visibles.
+  const visibleProductIds = useMemo(
+    () => rows.map((r) => r.product_id).filter(Boolean),
+    [rows],
+  );
+  const { data: pvpVsMarket } = usePvpVsMarketComparison(visibleProductIds);
+
   // Collect all vendor IDs surfaced in the current results and resolve their
   // public/anonymised display name via vendors_public + getVendorPublicName.
   const vendorIds = useMemo(() => {

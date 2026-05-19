@@ -626,41 +626,47 @@ export default function VendorPublicPage() {
               </div>
             )}
 
-            {overFetchGuardActive ? (
-              <div className="text-center py-16 border border-dashed border-border rounded-xl bg-accent/30">
-                <Package size={40} className="mx-auto text-primary mb-3" />
-                <h3 className="text-base font-bold text-foreground mb-2">
-                  Ce fournisseur référence {vendorOfferCount.toLocaleString("fr-BE")} produits
-                </h3>
-                <p className="text-sm text-muted-foreground max-w-md mx-auto mb-4">
-                  Pour garder la navigation rapide, sélectionnez d'abord une marque
-                  ou utilisez la recherche ci-dessous afin d'affiner l'affichage.
-                </p>
-                <div className="relative max-w-xs mx-auto">
-                  <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    autoFocus
-                    placeholder="Rechercher un produit, une marque…"
-                    value={filters.search}
-                    onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value }))}
-                    className="pl-8 h-9 text-sm"
-                  />
-                </div>
+            {offersLoading && offers.length === 0 ? (
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="border border-border rounded-lg p-3 animate-pulse">
+                    <div className="aspect-square rounded-lg bg-muted mb-2" />
+                    <div className="h-3 w-1/2 bg-muted rounded mb-2" />
+                    <div className="h-4 w-3/4 bg-muted rounded mb-2" />
+                    <div className="h-5 w-1/3 bg-muted rounded" />
+                  </div>
+                ))}
               </div>
             ) : filteredProducts.length > 0 ? (
-              view === "grid" ? (
-                <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-                  {filteredProducts.map((p: any, i: number) => (
-                    <VendorProductCard key={p.id} product={p} index={i} addToCart={addToCart} openDrawer={openDrawer} onQuickView={setQuickViewProduct} />
-                  ))}
-                </div>
-              ) : (
-                <div className="border border-border rounded-xl overflow-hidden divide-y divide-border">
-                  {filteredProducts.map((p: any) => (
-                    <VendorProductListRow key={p.id} product={p} addToCart={addToCart} openDrawer={openDrawer} onQuickView={setQuickViewProduct} />
-                  ))}
-                </div>
-              )
+              <>
+                {view === "grid" ? (
+                  <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+                    {filteredProducts.map((p: any, i: number) => (
+                      <VendorProductCard key={p.id} product={p} index={i} addToCart={addToCart} openDrawer={openDrawer} onQuickView={setQuickViewProduct} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="border border-border rounded-xl overflow-hidden divide-y divide-border">
+                    {filteredProducts.map((p: any) => (
+                      <VendorProductListRow key={p.id} product={p} addToCart={addToCart} openDrawer={openDrawer} onQuickView={setQuickViewProduct} />
+                    ))}
+                  </div>
+                )}
+
+                {hasNextPage && (
+                  <div className="flex justify-center mt-6">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => fetchNextPage()}
+                      disabled={isFetchingNextPage}
+                      className="min-w-[200px]"
+                    >
+                      {isFetchingNextPage ? "Chargement…" : "Charger plus de produits"}
+                    </Button>
+                  </div>
+                )}
+              </>
             ) : (
               <div className="text-center py-16 border border-dashed border-border rounded-xl">
                 <Package size={40} className="mx-auto text-muted-foreground mb-3" />

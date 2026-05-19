@@ -338,7 +338,7 @@ export function useProductOffers(productId: string | undefined) {
           isVerified: vendor?.is_verified || false,
           isTopRated: (vendor?.rating || 0) >= 4.5,
           isTopSeller: vendor?.is_top_seller || false,
-          displayCode: vendor?.display_code || (safeVendorId ? safeVendorId.slice(0, 6).toUpperCase() : "------"),
+          displayCode: vendor?.display_code || undefined,
           isTraceable: o.is_traceable || false,
           hasExtendedDelivery: o.has_extended_delivery || false,
           minDeliveryDays: o.min_delivery_days || undefined,

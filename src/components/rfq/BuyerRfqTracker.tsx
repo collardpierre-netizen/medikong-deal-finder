@@ -244,10 +244,7 @@ export function BuyerRfqTracker({ rfqId }: { rfqId: string }) {
                   <td className="px-3 py-3">
                     <div className="font-medium">
                       {/* 🔒 Anonymisation : libellé public uniquement via getVendorPublicName. */}
-                      {(() => {
-                        const { getVendorPublicName } = require("@/lib/vendor-display");
-                        return getVendorPublicName({ display_code: r.vendor_display_code });
-                      })()}
+                      {getVendorPublicName({ display_code: r.vendor_display_code })}
                     </div>
                     {r.target_reason && (
                       <div className="text-[10px] text-muted-foreground mt-0.5">

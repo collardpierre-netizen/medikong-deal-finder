@@ -151,7 +151,7 @@ function VendorMovCard({ group, displayName }: { group: VendorGroup; displayName
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-2">
             <Store className="h-4 w-4 text-primary" />
-            <CardTitle className="text-base">{group.vendor_name || "Vendeur"}</CardTitle>
+            <CardTitle className="text-base">{displayName}</CardTitle>
             <Badge variant="secondary">{group.product_count} produit{group.product_count > 1 ? "s" : ""}</Badge>
           </div>
           <div className="flex items-center gap-2">

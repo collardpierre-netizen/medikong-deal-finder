@@ -66,6 +66,15 @@ const InvestPage = lazyWithRetry(() => import("./pages/InvestPage"), "InvestPage
 const ForgotPasswordPage = lazyWithRetry(() => import("./pages/ForgotPasswordPage"), "ForgotPasswordPage");
 const ResetPasswordPage = lazyWithRetry(() => import("./pages/ResetPasswordPage"), "ResetPasswordPage");
 const VendorPublicPage = lazyWithRetry(() => import("./pages/VendorPublicPage"), "VendorPublicPage");
+const VendorLegacySlugGone = lazyWithRetry(() => import("./pages/VendorLegacySlugGone"), "VendorLegacySlugGone");
+import { isLegacyVendorSlug } from "./pages/VendorLegacySlugGone";
+import { useParams as useParamsForVendorGate } from "react-router-dom";
+function VendorRouteGate() {
+  const { code } = useParamsForVendorGate<{ code: string }>();
+  // Ancien slug nominatif → 410 Gone (noindex,nofollow, sans redirect).
+  // display_code 6 chars alphanum → page vendeur publique anonymisée.
+  return isLegacyVendorSlug(code) ? <VendorLegacySlugGone /> : <VendorPublicPage />;
+}
 const DelegatePublicPage = lazyWithRetry(() => import("./pages/DelegatePublicPage"), "DelegatePublicPage");
 const ProfessionnelsPage = lazyWithRetry(() => import("./pages/ProfessionnelsPage"), "ProfessionnelsPage");
 const SourcingPage = lazyWithRetry(() => import("./pages/SourcingPage"), "SourcingPage");

@@ -299,7 +299,7 @@ function RfqResponsesPanel({ rfqId }: { rfqId: string }) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("rfq_responses")
-        .select("id, rfq_id, vendor_id, unit_price_excl_vat_cents, moq, delivery_days, offer_validity_days, payment_terms, comment, rank_position, is_visible_to_buyer, awarded, created_at, score, score_price, score_delivery, score_compliance, score_availability, is_top_pick, compliance_flags, vendor:vendors!inner(id, name, slug)")
+        .select("id, rfq_id, vendor_id, unit_price_excl_vat_cents, moq, delivery_days, offer_validity_days, payment_terms, comment, rank_position, is_visible_to_buyer, awarded, created_at, score, score_price, score_delivery, score_compliance, score_availability, is_top_pick, compliance_flags, vendor:vendors!inner(id, name, display_code)")
         .eq("rfq_id", rfqId)
         .eq("is_visible_to_buyer", true)
         .order("score", { ascending: false, nullsFirst: false })

@@ -339,7 +339,7 @@ export default function BonnesAffairesPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("vendors_public")
-        .select("id,name,company_name,display_code,show_real_name,type")
+        .select("id,display_code,type")
         .in("id", vendorIds);
       if (error) throw error;
       return data || [];

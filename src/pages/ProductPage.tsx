@@ -2530,7 +2530,7 @@ export default function ProductPage() {
                                   </Tooltip>
                                 </TooltipProvider>
                               </th>
-                              <th className="px-2 py-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider text-right">Relevé</th>
+                              <th className="sticky right-0 z-10 min-w-[76px] border-l border-border bg-muted px-2 py-2 text-right text-[10px] font-semibold uppercase tracking-wider text-foreground">Relevé</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-border">
@@ -2701,8 +2701,10 @@ export default function ProductPage() {
                                       </div>
                                     ) : <span className="text-muted-foreground">—</span>}
                                   </td>
-                                  <td className="px-2 py-2 text-right text-[10px] text-muted-foreground whitespace-nowrap">
-                                    {mp.imported_at ? new Date(mp.imported_at).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" }) : "—"}
+                                  <td className="sticky right-0 z-10 min-w-[76px] border-l border-border bg-background px-2 py-2 text-right whitespace-nowrap">
+                                    <span className="inline-flex rounded border border-border bg-muted/60 px-1.5 py-0.5 text-[11px] font-medium tabular-nums text-foreground">
+                                      {mp.imported_at ? new Date(mp.imported_at).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" }) : "—"}
+                                    </span>
                                   </td>
                                 </tr>
                               );

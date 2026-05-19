@@ -68,9 +68,8 @@ const ResetPasswordPage = lazyWithRetry(() => import("./pages/ResetPasswordPage"
 const VendorPublicPage = lazyWithRetry(() => import("./pages/VendorPublicPage"), "VendorPublicPage");
 const VendorLegacySlugGone = lazyWithRetry(() => import("./pages/VendorLegacySlugGone"), "VendorLegacySlugGone");
 import { isLegacyVendorSlug } from "./pages/VendorLegacySlugGone";
-import { useParams as useParamsForVendorGate } from "react-router-dom";
 function VendorRouteGate() {
-  const { code } = useParamsForVendorGate<{ code: string }>();
+  const { code } = useParams<{ code: string }>();
   // Ancien slug nominatif → 410 Gone (noindex,nofollow, sans redirect).
   // display_code 6 chars alphanum → page vendeur publique anonymisée.
   return isLegacyVendorSlug(code) ? <VendorLegacySlugGone /> : <VendorPublicPage />;

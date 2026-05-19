@@ -424,12 +424,13 @@ export default function VendorPublicPage() {
     );
   }
 
+  const productsStatValue = vendorOfferCount || vendorProducts.length || 0;
   const stats = [
-    { icon: Package, label: "Produits", value: vendorOfferCount || vendorProducts.length || "–" },
-    { icon: Star, label: "Note", value: vendor.rating ? `${Number(vendor.rating).toFixed(1)}/5` : "–" },
-    { icon: Truck, label: "Ventes", value: vendor.total_sales || "–" },
+    productsStatValue ? { icon: Package, label: "Produits", value: productsStatValue } : null,
+    vendor.rating ? { icon: Star, label: "Note", value: `${Number(vendor.rating).toFixed(1)}/5` } : null,
+    vendor.total_sales ? { icon: Truck, label: "Ventes", value: vendor.total_sales } : null,
     { icon: Clock, label: "Membre depuis", value: new Date(vendor.created_at).getFullYear().toString() },
-  ];
+  ].filter(Boolean) as { icon: typeof Package; label: string; value: string | number }[];
 
   return (
     <Layout>

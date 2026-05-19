@@ -35,7 +35,6 @@ export function Footer() {
             <h4 className="font-semibold text-sm text-mk-navy mb-3">{t("footer.howWeWork")}</h4>
             {[
               { label: t("footer.logistics"), to: "/logistique" },
-              { label: t("footer.deferredPayment"), to: "/paiement-differe" },
               { label: t("footer.becomeSeller"), to: "/devenir-vendeur" },
               { label: t("footer.testimonials"), to: "/temoignages" },
             ].map(l => (

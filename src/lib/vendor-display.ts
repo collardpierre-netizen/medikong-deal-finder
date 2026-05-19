@@ -66,25 +66,27 @@ export function sanitizeVendorLabel(name: string | null | undefined, displayCode
 }
 
 /**
- * Returns the public-facing display name for a vendor.
- * - If `show_real_name` is true → company_name or name (sanitized si Qogita)
- * - Otherwise → "Fournisseur <display_code>" (anonymized)
+ * 🔒 GARDE-FOU ANONYMISATION
+ * Retourne TOUJOURS le nom anonymisé "Fournisseur <display_code>".
+ * Le paramètre `showReal` et le flag DB `vendor.show_real_name` sont
+ * volontairement IGNORÉS pour tout rendu public (table, cartes, tooltips,
+ * emails, exports PDF/XLSX, logs). Pour le rendu admin interne, utiliser
+ * `getVendorAdminName` (allowlist côté lint scripts/check-vendor-anonymity.ts).
+ *
+ * @deprecated Le second paramètre `showReal` n'a plus d'effet ; il est conservé
+ * uniquement pour compatibilité d'appel. Tout retour expose désormais le code.
  */
-export function getVendorPublicName(vendor: VendorDisplayInput, showReal?: boolean): string {
-  const reveal = showReal !== undefined ? showReal : !!vendor.show_real_name;
+export function getVendorPublicName(vendor: VendorDisplayInput, _showReal?: boolean): string {
   const code = vendor.display_code || vendor.name?.slice(0, 6)?.toUpperCase() || "XXXXXX";
-  if (reveal && (vendor.company_name || vendor.name)) {
-    const real = vendor.company_name || vendor.name || "";
-    // Anonymise si la raison sociale contient "Qogita" (vendeur back-office)
-    if (/qogita/i.test(real)) return `Fournisseur ${code}`;
-    return real;
-  }
   return `Fournisseur ${code}`;
 }
 
 /**
  * Returns the admin-facing display name (always real name, jamais anonymisé).
+ * ⚠️ Allowlistée uniquement pour les pages `src/pages/admin/**` — toute
+ * utilisation hors admin est bloquée par le script `check-vendor-anonymity`.
  */
 export function getVendorAdminName(vendor: VendorDisplayInput): string {
   return vendor.company_name || vendor.name || `Vendeur ${vendor.display_code || "—"}`;
 }
+

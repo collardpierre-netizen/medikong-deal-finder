@@ -108,9 +108,8 @@ export async function validateCart(
     }
 
     const v = offer.vendors || {};
-    const vendorName: string = v.show_real_name === false
-      ? `Fournisseur ${v.display_code || offer.vendor_id.slice(0, 6).toUpperCase()}`
-      : (v.name || v.company_name || `Fournisseur ${offer.vendor_id.slice(0, 6).toUpperCase()}`);
+    // 🔒 GARDE-FOU : toujours anonymisé côté edge — show_real_name ignoré.
+    const vendorName: string = `Fournisseur ${v.display_code || offer.vendor_id.slice(0, 6).toUpperCase()}`;
 
     if (!Number.isFinite(qty) || qty <= 0) {
       errors.push({

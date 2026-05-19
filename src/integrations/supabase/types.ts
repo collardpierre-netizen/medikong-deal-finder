@@ -16095,7 +16095,7 @@ export type Database = {
           cover_image_url?: string | null
           created_at?: string
           description?: string | null
-          display_code: string
+          display_code?: string
           email?: string | null
           facebook_url?: string | null
           fixed_commission_amount?: number | null

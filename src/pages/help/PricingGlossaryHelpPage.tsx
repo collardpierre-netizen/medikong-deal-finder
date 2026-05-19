@@ -150,7 +150,30 @@ export default function PricingGlossaryHelpPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card id="faq">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <HelpCircle className="h-4 w-4 text-primary" />
+              FAQ — Comment lire les prix sur MediKong
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Accordion type="single" collapsible className="w-full">
+              {FAQ_ITEMS.map((item, idx) => (
+                <AccordionItem key={idx} value={`faq-${idx}`}>
+                  <AccordionTrigger className="text-left text-sm font-medium">
+                    {item.q}
+                  </AccordionTrigger>
+                  <AccordionContent className="text-sm text-muted-foreground space-y-2">
+                    {item.a}
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          </CardContent>
+        </Card>
+
+
           <CardHeader>
             <CardTitle className="text-base">Voir aussi</CardTitle>
           </CardHeader>

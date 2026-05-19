@@ -48,6 +48,7 @@ import { PvpEconomyBadge } from "@/components/product/PvpEconomyBadge";
 import RfqRequestButton from "@/components/product/RfqRequestButton";
 import { PriceAlertBellButton } from "@/components/product/PriceAlertBellButton";
 import { ProductDescription } from "@/components/product/ProductDescription";
+import { PriceTypeInfo } from "@/components/product/PriceTypeInfo";
 
 // Helpers de formatage harmonisés (locale fr-BE, suffixes uniques).
 // Cf. src/lib/price-format.ts pour la source de vérité.
@@ -1886,6 +1887,10 @@ export default function ProductPage() {
 
                   {/* ── Tab: Marketplace MediKong ── */}
                   <TabsContent value="marketplace">
+                    <div className="flex items-center gap-2 mb-3 text-xs text-muted-foreground">
+                      <PriceTypeInfo type="medikong" showLabel />
+                      <span>· prix HTVA fermes proposés sur MediKong</span>
+                    </div>
                     <VendorTrustProvider trustMap={trustMap}>
                     {/* Filters */}
                     <div className="bg-muted/50 border border-border rounded-xl p-4 mb-6">
@@ -2154,6 +2159,10 @@ export default function ProductPage() {
                   {/* Note: les prix relevés chez les vendeurs externes (e-commerce B2B) sont TTC.
                       On dérive le HTVA via le taux de TVA de la catégorie (fallback 21%). */}
                   <TabsContent value="external">
+                    <div className="flex items-center gap-2 mb-3 text-xs text-muted-foreground">
+                      <PriceTypeInfo type="external" showLabel />
+                      <span>· veille concurrentielle, commande hors MediKong</span>
+                    </div>
                     {externalOfferItems.length > 0 ? (
                       <div className="space-y-3">
                         {/* Sélecteur de base de comparaison : permet de ramener toutes les offres
@@ -2411,6 +2420,10 @@ export default function ProductPage() {
 
                   {/* ── Tab: Prix du marché ── */}
                   <TabsContent value="market">
+                    <div className="flex items-center gap-2 mb-3 text-xs text-muted-foreground">
+                      <PriceTypeInfo type="market" showLabel />
+                      <span>· médiane HTVA des prix B2B observés</span>
+                    </div>
                     {marketPriceItems.length > 0 ? (
                       <div className="space-y-3">
                         {/* Même bascule de comparaison que pour les offres externes : on garde

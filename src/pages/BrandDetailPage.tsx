@@ -134,6 +134,7 @@ export default function BrandDetailPage() {
             showReal,
           ),
           slug: v.slug || "",
+          displayCode: v.display_code || null,
           verified: !!v.is_verified,
           topRated: (Number(v.rating) || 0) >= 4.5,
           location: v.country_code || "BE",

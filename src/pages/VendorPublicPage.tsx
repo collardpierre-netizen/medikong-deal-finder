@@ -10,7 +10,7 @@ import {
   Star, Package, Truck, Grid, List,
   CheckCircle2, Building2, Search, X, Plus, Minus, ShoppingCart, Eye,
 } from "lucide-react";
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { getVendorPublicName, resolveVendorVisibility } from "@/lib/vendor-display";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";

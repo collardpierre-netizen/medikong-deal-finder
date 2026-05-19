@@ -230,7 +230,7 @@ export default function DelegatePublicPage() {
                   )}
                   {vendor && (
                     <Link
-                      to={vendor.slug ? `/vendeur/${vendor.slug}` : "#"}
+                      to={vendor.display_code ? `/vendeur/${vendor.display_code}` : "#"}
                       className="mt-2 inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
                     >
                       {vendor.logo_url && (

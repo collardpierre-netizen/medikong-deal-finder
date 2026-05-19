@@ -169,7 +169,20 @@ export default function PricingGlossaryHelpPage() {
           content="Comprendre les différentes notions de prix sur MediKong : PVP conseillé, prix marché HTVA et prix public TTC, avec exemples concrets."
         />
         <link rel="canonical" href="https://medikong.pro/aide/glossaire-prix" />
+        <link rel="canonical" href="https://medikong.pro/aide/glossaire-prix" />
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            mainEntity: FAQ_ITEMS.map((it) => ({
+              "@type": "Question",
+              name: it.q,
+              acceptedAnswer: { "@type": "Answer", text: it.plain },
+            })),
+          })}
+        </script>
       </Helmet>
+
 
       <Button asChild variant="ghost" size="sm" className="mb-4">
         <Link to="/centre-aide">

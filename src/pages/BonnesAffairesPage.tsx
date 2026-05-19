@@ -523,7 +523,15 @@ export default function BonnesAffairesPage() {
 
             <div className="flex flex-wrap gap-2 pt-3 border-t">
               <Button
-                onClick={() => setSubmitted({ reference, minPct, country, brandIds, mfIds })}
+                onClick={() => {
+                  // Option A : "tout sélectionné" = "aucun filtre" côté RPC.
+                  // Évite qu'une liste exhaustive soit interprétée comme un
+                  // sous-ensemble exclusif (qui exclurait les produits sans
+                  // brand/manufacturer).
+                  const effectiveBrandIds = brandIds.length === brands.length ? [] : brandIds;
+                  const effectiveMfIds = mfIds.length === manufacturers.length ? [] : mfIds;
+                  setSubmitted({ reference, minPct, country, brandIds: effectiveBrandIds, mfIds: effectiveMfIds });
+                }}
                 size="lg"
                 className="min-w-[140px]"
               >

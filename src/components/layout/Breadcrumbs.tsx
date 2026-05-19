@@ -109,7 +109,7 @@ export function Breadcrumbs() {
   // when navigating between categories, keepPreviousData provides a label
   // immediately so we never flash a skeleton.
   const categoryLabelPending = !!categorySlug && !categoryRow && isCategoryPending;
-  const vendorLabelPending = !!vendorSlug && !vendorLabel;
+  const vendorLabelPending = vendorCodeIsValid && isVendorPending && !vendorLabel;
 
   // Don't show on homepage
   if (hideBreadcrumbs) return null;

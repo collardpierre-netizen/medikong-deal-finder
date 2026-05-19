@@ -1292,7 +1292,7 @@ export default function AccountPage() {
                           <p className="text-[10px] text-muted-foreground mt-1">Sélection groupée en un clic</p>
                         </div>
                       </div>
-                      <BuyerImportModal open={importOpen} onOpenChange={setImportOpen} />
+                      <BuyerImportModal open={importOpen} onOpenChange={handleImportOpenChange} initialJobId={importJobParam} />
                     </div>
                   )}
 

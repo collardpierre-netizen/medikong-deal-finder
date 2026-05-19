@@ -28,10 +28,7 @@ export default function OrderDetailPage() {
       const qty = Number(it.quantity || 0);
       const unit = Number(it.unit_price_excl_vat || 0);
       // 🔒 Anonymisation : libellé public uniquement, jamais vendor_name brut.
-      const vendorLabel = getVendorPublicName({
-        display_code: it.vendor_display_code,
-        name: it.vendor_name,
-      });
+      const vendorLabel = getVendorPublicName({ display_code: it.vendor_display_code });
       return {
         name: it.product_name || it.name || "—",
         ean: it.product_gtin || "",

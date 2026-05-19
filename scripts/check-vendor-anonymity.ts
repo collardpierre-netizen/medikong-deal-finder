@@ -35,6 +35,7 @@ const ADMIN_ALLOWLIST = [
 const ALLOWED_FILE_EXACT = new Set<string>([
   "scripts/check-vendor-anonymity.ts",
   "src/lib/vendor-display.ts",
+  "src/lib/__tests__/vendor-display.test.ts",
   "src/integrations/supabase/types.ts",
 ]);
 

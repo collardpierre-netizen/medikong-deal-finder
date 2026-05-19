@@ -32,6 +32,8 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { getVendorPublicName, sanitizeVendorLabel } from "@/lib/vendor-display";
+import { usePvpVsMarketComparison } from "@/hooks/usePvpVsMarketComparison";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const COUNTRIES = ["BE", "FR", "LU"];
 

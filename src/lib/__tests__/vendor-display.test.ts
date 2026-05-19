@@ -292,3 +292,92 @@ describe("Edge functions buyer-facing — contrat statique callers email", () =>
     });
   }
 });
+
+/**
+ * Garde-fou statique buyer-facing — interdit toute SÉLECTION ou
+ * AFFICHAGE direct des champs sensibles (`company_name`,
+ * `show_real_name`, `vendor_name`) dans les composants/pages/hooks
+ * destinés à l'acheteur.
+ *
+ * Règles :
+ *  1. Aucun rendu JSX `{x.company_name}` / `{x.show_real_name}` /
+ *     `{x.vendor_name}` — toujours passer par `getVendorPublicName`
+ *     / `sanitizeVendorLabel` / `resolveVendorName`.
+ *  2. Aucun `supabase...select("... company_name ...")` ni
+ *     `select("... show_real_name ...")` dans ces fichiers — l'accès
+ *     en clair est réservé aux pages admin / vendor own-data /
+ *     `vendor-display.ts` / `vendor-anonymization-map.ts`.
+ *
+ * Si un test casse, NE PAS allowlister le fichier sans validation
+ * humaine : la fuite doit être corrigée à la source.
+ */
+describe("Guard buyer-facing — pas de SELECT ni d'affichage de company_name / show_real_name / vendor_name", () => {
+  // Fichiers acheteur déjà nettoyés (Cat A + D du plan d'anonymisation).
+  // Ajouter ici tout nouveau composant/page/hook côté acheteur.
+  const BUYER_FACING_CLEAN: readonly string[] = [
+    "../../pages/ProductPage.tsx",
+    "../../pages/VendorPublicPage.tsx",
+    "../../pages/OrderDetailPage.tsx",
+    "../../components/buyer/BuyerImportModal.tsx",
+    "../../hooks/useResolvedPvp.ts",
+  ];
+
+  // Rendu JSX direct des champs interdits — quel que soit l'accesseur (`a.b.company_name`).
+  const FORBIDDEN_JSX = [
+    {
+      label: ".company_name rendu en JSX",
+      regex: /\{[^{}]*\.company_name\b[^{}]*\}/,
+    },
+    {
+      label: ".show_real_name rendu en JSX",
+      regex: /\{[^{}]*\.show_real_name\b[^{}]*\}/,
+    },
+    {
+      label: ".vendor_name rendu en JSX (router via resolveVendorName/getVendorPublicName)",
+      // Autorise `resolveVendorName(..., x.vendor_name)` et `sanitizeVendorLabel(x.vendor_name, ...)`.
+      regex: /\{(?![^{}]*(?:resolveVendorName|sanitizeVendorLabel|getVendorPublicName)\s*\()[^{}]*\.vendor_name\b[^{}]*\}/,
+    },
+  ];
+
+  // SELECT() Supabase listant un champ interdit.
+  const FORBIDDEN_SELECT = [
+    {
+      label: 'select("... company_name ...")',
+      regex: /\.select\(\s*[`'"][^`'"]*\bcompany_name\b/,
+    },
+    {
+      label: 'select("... show_real_name ...")',
+      regex: /\.select\(\s*[`'"][^`'"]*\bshow_real_name\b/,
+    },
+  ];
+
+  for (const rel of BUYER_FACING_CLEAN) {
+    const path = resolve(__dirname, rel);
+    if (!existsSync(path)) continue;
+    const src = readFileSync(path, "utf-8");
+
+    for (const { label, regex } of FORBIDDEN_JSX) {
+      it(`${rel} — interdit : ${label}`, () => {
+        const match = src.match(regex);
+        expect(
+          match,
+          match
+            ? `${rel} affiche un champ sensible en clair : « ${match[0]} ». Router via getVendorPublicName / sanitizeVendorLabel / resolveVendorName.`
+            : undefined,
+        ).toBeNull();
+      });
+    }
+
+    for (const { label, regex } of FORBIDDEN_SELECT) {
+      it(`${rel} — interdit : ${label}`, () => {
+        const match = src.match(regex);
+        expect(
+          match,
+          match
+            ? `${rel} sélectionne un champ sensible (${match[0]}). Buyer-facing : retirer le champ du select() ou déplacer la requête vers une page admin / vendor.`
+            : undefined,
+        ).toBeNull();
+      });
+    }
+  }
+});

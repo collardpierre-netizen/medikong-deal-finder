@@ -127,6 +127,6 @@ export default function PricingBasisHelpPage() {
           </CardContent>
         </Card>
       </div>
-    </main>
+    </article>
   );
 }

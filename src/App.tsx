@@ -66,6 +66,14 @@ const InvestPage = lazyWithRetry(() => import("./pages/InvestPage"), "InvestPage
 const ForgotPasswordPage = lazyWithRetry(() => import("./pages/ForgotPasswordPage"), "ForgotPasswordPage");
 const ResetPasswordPage = lazyWithRetry(() => import("./pages/ResetPasswordPage"), "ResetPasswordPage");
 const VendorPublicPage = lazyWithRetry(() => import("./pages/VendorPublicPage"), "VendorPublicPage");
+const VendorLegacySlugGone = lazyWithRetry(() => import("./pages/VendorLegacySlugGone"), "VendorLegacySlugGone");
+import { isLegacyVendorSlug } from "./pages/VendorLegacySlugGone";
+function VendorRouteGate() {
+  const { code } = useParams<{ code: string }>();
+  // Ancien slug nominatif → 410 Gone (noindex,nofollow, sans redirect).
+  // display_code 6 chars alphanum → page vendeur publique anonymisée.
+  return isLegacyVendorSlug(code) ? <VendorLegacySlugGone /> : <VendorPublicPage />;
+}
 const DelegatePublicPage = lazyWithRetry(() => import("./pages/DelegatePublicPage"), "DelegatePublicPage");
 const ProfessionnelsPage = lazyWithRetry(() => import("./pages/ProfessionnelsPage"), "ProfessionnelsPage");
 const SourcingPage = lazyWithRetry(() => import("./pages/SourcingPage"), "SourcingPage");
@@ -325,7 +333,7 @@ const App = () => (
             <Route path="/marque/:slug" element={<RedirectBrandSingular />} />
             <Route path="/fabricants" element={<LP><FabricantsPage /></LP>} />
             <Route path="/fabricant/:slug" element={<LP><ManufacturerPage /></LP>} />
-            <Route path="/vendeur/:code" element={<LP><VendorPublicPage /></LP>} />
+            <Route path="/vendeur/:code" element={<LP><VendorRouteGate /></LP>} />
             <Route path="/delegue/:delegateId" element={<LP><DelegatePublicPage /></LP>} />
             <Route path="/panier" element={<LP><CartPage /></LP>} />
             <Route path="/compte" element={<LP><AccountPage /></LP>} />

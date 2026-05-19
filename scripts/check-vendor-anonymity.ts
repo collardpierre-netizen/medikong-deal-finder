@@ -17,11 +17,18 @@ const ROOT = process.cwd();
 const SCAN_DIRS = ["src", "supabase/functions"];
 
 // Allowlist : seuls ces préfixes ont le droit de rendre / manipuler le nom réel.
+// - admin/** : back-office MediKong (gestion vendeurs)
+// - pages/vendor/**, components/vendor/contract/** : surfaces vendeur-vers-soi
+//   (settings, mandat de facturation, contrat PDF) — le vendeur voit sa propre raison sociale
+// - invite-vendor edge fn : metadata auth (pas un rendu cross-tenant)
 const ADMIN_ALLOWLIST = [
   "src/pages/admin/",
   "src/components/admin/",
-  "src/lib/vendor-display.ts", // définit les helpers
-  "supabase/functions/_shared/admin-", // futurs helpers admin
+  "src/pages/vendor/",
+  "src/components/vendor/contract/",
+  "src/lib/vendor-display.ts",
+  "supabase/functions/_shared/admin-",
+  "supabase/functions/invite-vendor/",
 ];
 
 const ALLOWED_FILE_EXACT = new Set<string>([

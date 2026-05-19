@@ -312,11 +312,46 @@ describe("Edge functions buyer-facing — contrat statique callers email", () =>
 describe("Guard buyer-facing — pas d'affichage JSX de company_name / show_real_name / vendor_name", () => {
   // Composants/pages acheteur déjà nettoyés. Étendre cette liste à chaque
   // nouvelle vue buyer-facing pour la verrouiller.
+  // ⚠️ Tripwire : on inclut TOUTES les pages/sections acheteur connues, même
+  // celles qui ne lisent pas (encore) de champ vendeur, afin qu'une régression
+  // future (ajout d'un `{x.vendor_name}`, etc.) soit attrapée par le test.
+  // Les fichiers absents sont skip silencieusement (cf. `existsSync` plus bas).
   const BUYER_FACING_TSX: readonly string[] = [
-    "../../pages/ProductPage.tsx",
-    "../../pages/VendorPublicPage.tsx",
+    // — Pages buyer-facing (catalogue, fiche, panier, compte, RFQ, sourcing) —
+    "../../pages/AccountPage.tsx",
+    "../../pages/AuditAchatsPage.tsx",
+    "../../pages/AuditAchatsConfirmationPage.tsx",
+    "../../pages/BonnesAffairesPage.tsx",
+    "../../pages/BrandDetailPage.tsx",
+    "../../pages/BrandsPage.tsx",
+    "../../pages/BuyerCompletionPage.tsx",
+    "../../pages/CartPage.tsx",
+    "../../pages/CataloguePage.tsx",
+    "../../pages/CategoriesPage.tsx",
+    "../../pages/CategoryPage.tsx",
+    "../../pages/CheckoutPage.tsx",
+    "../../pages/ConfirmationPage.tsx",
+    "../../pages/DelegatePublicPage.tsx",
+    "../../pages/EconomiesPage.tsx",
+    "../../pages/FabricantsPage.tsx",
+    "../../pages/HomePage.tsx",
+    "../../pages/ImportHistoryPage.tsx",
+    "../../pages/ManufacturerPage.tsx",
+    "../../pages/MesCategoriesPage.tsx",
+    "../../pages/MesRfqPage.tsx",
+    "../../pages/MyPriceAlertsPage.tsx",
+    "../../pages/MyPricesPage.tsx",
     "../../pages/OrderDetailPage.tsx",
+    "../../pages/ProductPage.tsx",
+    "../../pages/PromotionsPage.tsx",
+    "../../pages/RfqCreditsPage.tsx",
+    "../../pages/SearchResultsPage.tsx",
+    "../../pages/SourcingPage.tsx",
+    "../../pages/VendorPublicPage.tsx",
+    // — Composants buyer-facing (modale import, panier, tracker RFQ) —
     "../../components/buyer/BuyerImportModal.tsx",
+    "../../components/cart/CartDrawer.tsx",
+    "../../components/rfq/BuyerRfqTracker.tsx",
   ];
 
   // On flag toute expression JSX `{ ... .field ... }` qui n'est pas un
@@ -376,9 +411,23 @@ describe("Guard buyer-facing — pas d'affichage JSX de company_name / show_real
  */
 describe("Guard exports buyer-facing — pas de vendor_name / company_name brut dans les cellules", () => {
   const BUYER_FACING_EXPORTS: readonly string[] = [
+    // ⚠️ Tripwire : on inclut tous les fichiers buyer-facing qui pourraient
+    // un jour produire un export (CSV / XLSX / PDF), même s'ils n'en font
+    // pas aujourd'hui. Les fichiers absents sont skip silencieusement.
     "../discount-export.ts",
+    "../../pages/AccountPage.tsx",
+    "../../pages/AuditAchatsPage.tsx",
+    "../../pages/BonnesAffairesPage.tsx",
+    "../../pages/CartPage.tsx",
+    "../../pages/CheckoutPage.tsx",
+    "../../pages/EconomiesPage.tsx",
+    "../../pages/ImportHistoryPage.tsx",
+    "../../pages/MesRfqPage.tsx",
+    "../../pages/MyPricesPage.tsx",
     "../../pages/OrderDetailPage.tsx",
+    "../../pages/SourcingPage.tsx",
     "../../components/buyer/BuyerImportModal.tsx",
+    "../../components/rfq/BuyerRfqTracker.tsx",
   ];
 
   const SAFE_CALLERS = "(?:resolveVendorName|sanitizeVendorLabel|getVendorPublicName)";

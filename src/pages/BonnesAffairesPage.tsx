@@ -32,6 +32,8 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { getVendorPublicName, sanitizeVendorLabel } from "@/lib/vendor-display";
+import { usePvpVsMarketComparison } from "@/hooks/usePvpVsMarketComparison";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const COUNTRIES = ["BE", "FR", "LU"];
 
@@ -324,6 +326,13 @@ export default function BonnesAffairesPage() {
   const total = rows[0]?.total_count ?? 0;
   const vendorGroups = vendorsQuery.data ?? [];
 
+  // Comparatif PVP TTC vs Prix marché (HTVA → TTC) pour les lignes visibles.
+  const visibleProductIds = useMemo(
+    () => rows.map((r) => r.product_id).filter(Boolean),
+    [rows],
+  );
+  const { data: pvpVsMarket } = usePvpVsMarketComparison(visibleProductIds);
+
   // Collect all vendor IDs surfaced in the current results and resolve their
   // public/anonymised display name via vendors_public + getVendorPublicName.
   const vendorIds = useMemo(() => {
@@ -604,11 +613,30 @@ export default function BonnesAffairesPage() {
                             <th className="py-2 pr-3 text-right">MOQ</th>
                             <th className="py-2 pr-3 text-right">Stock</th>
                             <th className="py-2 pr-3 text-right">MOV</th>
+                            <th className="py-2 pr-3 text-right">
+                              <span className="inline-flex items-center gap-1">
+                                PVP vs Marché (TTC)
+                                <TooltipProvider delayDuration={150}>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <span className="text-muted-foreground cursor-help" aria-label="Détails du calcul">ⓘ</span>
+                                    </TooltipTrigger>
+                                    <TooltipContent className="max-w-xs text-xs">
+                                      <p className="font-medium mb-1">Comparatif PVP vs prix marché</p>
+                                      <p>PVP conseillé (TTC) vs prix marché HTVA médian (autres grossistes B2B) converti en TTC via la TVA résolue du produit (6 % méd. / 21 % OTC).</p>
+                                      <p className="mt-1">Δ % et € : économie réalisée par rapport au PVP si l'on s'aligne sur le prix marché.</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              </span>
+                            </th>
                             <th className="py-2 pr-3 text-right">Économie</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {rows.map((r) => (
+                          {rows.map((r) => {
+                            const cmp = pvpVsMarket?.get(r.product_id);
+                            return (
                             <tr key={`${r.product_id}-${r.country_code}`} className="border-b hover:bg-muted/30">
                               <td className="py-2 pr-3 max-w-[280px]">
                                 {r.product_slug ? (
@@ -629,11 +657,44 @@ export default function BonnesAffairesPage() {
                               <td className="py-2 pr-3 text-right tabular-nums text-xs text-muted-foreground">
                                 {r.mov_eur_cents > 0 ? fmtEur(r.mov_eur_cents) : "—"}
                               </td>
+                              <td className="py-2 pr-3 text-right tabular-nums">
+                                {cmp && cmp.pvpTtcCents != null && cmp.marketTtcCents != null ? (
+                                  <div className="flex flex-col items-end gap-0.5 leading-tight">
+                                    <div className="text-[11px] text-muted-foreground">
+                                      PVP <span className="text-foreground font-medium">{fmtEur(cmp.pvpTtcCents)}</span>
+                                      <span className="mx-1">·</span>
+                                      Marché <span className="text-foreground font-medium">{fmtEur(cmp.marketTtcCents)}</span>
+                                    </div>
+                                    {cmp.deltaCents != null && cmp.deltaPct != null ? (
+                                      <Badge
+                                        variant="secondary"
+                                        className={cn(
+                                          "h-5 px-1.5 text-[11px]",
+                                          cmp.deltaCents > 0
+                                            ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-100"
+                                            : cmp.deltaCents < 0
+                                            ? "bg-amber-100 text-amber-800 hover:bg-amber-100"
+                                            : ""
+                                        )}
+                                        title={`PVP TTC ${fmtEur(cmp.pvpTtcCents)} − Marché TTC ${fmtEur(cmp.marketTtcCents)} (TVA ${cmp.vatRatePct}%)`}
+                                      >
+                                        {cmp.deltaCents > 0 ? "−" : cmp.deltaCents < 0 ? "+" : ""}
+                                        {Math.abs(cmp.deltaPct).toLocaleString("fr-BE", { maximumFractionDigits: 1 })}%
+                                        <span className="mx-1">·</span>
+                                        {fmtEur(Math.abs(cmp.deltaCents))}
+                                      </Badge>
+                                    ) : null}
+                                  </div>
+                                ) : (
+                                  <span className="text-muted-foreground text-xs">—</span>
+                                )}
+                              </td>
                               <td className="py-2 pr-3 text-right">
                                 <Badge className="bg-emerald-600 hover:bg-emerald-600">−{r.discount_pct}%</Badge>
                               </td>
                             </tr>
-                          ))}
+                            );
+                          })}
                         </tbody>
                       </table>
 

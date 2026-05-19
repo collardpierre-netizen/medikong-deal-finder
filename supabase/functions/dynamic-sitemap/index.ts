@@ -1,6 +1,9 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.100.1";
 
-const SITE = "https://medikong-deal-finder.lovable.app";
+// 🔒 Domaine canonique de production. JAMAIS de sous-domaine *.lovable.app
+// dans le sitemap public — Google indexerait des doublons.
+// Override possible via env SITE_URL (utile pour preview/staging uniquement).
+const SITE = (Deno.env.get("SITE_URL") || "https://medikong.pro").replace(/\/$/, "");
 
 Deno.serve(async () => {
   const supabase = createClient(

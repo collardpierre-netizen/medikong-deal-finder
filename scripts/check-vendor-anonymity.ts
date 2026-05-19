@@ -119,6 +119,20 @@ for (const abs of files) {
       }
     }
   });
+  // Passe multi-lignes (SELECT Supabase éclatés sur plusieurs lignes)
+  for (const p of FORBIDDEN_MULTILINE) {
+    const m = p.regex.exec(src);
+    if (m) {
+      const lineNo = src.slice(0, m.index).split("\n").length;
+      violations.push({
+        file: rel,
+        line: lineNo,
+        pattern: p.name,
+        snippet: m[0].replace(/\s+/g, " ").trim().slice(0, 200),
+        hint: p.hint,
+      });
+    }
+  }
 }
 
 if (violations.length === 0) {

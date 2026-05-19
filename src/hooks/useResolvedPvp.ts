@@ -9,7 +9,7 @@ export interface ResolvedPvp {
   source: PvpSource;
   sourceLabel: string;
   vendorId: string | null;
-  vendorName: string | null;
+  vendorDisplayName: string | null;
   updatedAt: string | null;
 }
 
@@ -41,7 +41,7 @@ export function useResolvedPvp(productId: string | undefined, countryCode = "BE"
         source: row.source as PvpSource,
         sourceLabel: row.source_label,
         vendorId: row.vendor_id,
-        vendorName: row.vendor_name,
+        vendorDisplayName: row.vendor_name,
         updatedAt: row.updated_at,
       };
     },

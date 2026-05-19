@@ -20,7 +20,7 @@ import { QuantityInput } from "@/components/cart/QuantityInput";
 
 interface SupplierGroup {
   vendorId: string;
-  vendorName: string;
+  vendorDisplayName: string;
   vendorSlug?: string;
   isVerified: boolean;
   items: ReturnType<typeof useCart>["items"];
@@ -143,7 +143,7 @@ export default function CartPage() {
         : false;
       return {
         vendorId,
-        vendorName: vendor ? getVendorPublicName(vendor, showReal) : `Fournisseur #${vendorId.slice(0, 6).toUpperCase()}`,
+        vendorDisplayName: vendor ? getVendorPublicName(vendor, showReal) : `Fournisseur #${vendorId.slice(0, 6).toUpperCase()}`,
         vendorSlug: vendor?.slug || undefined,
         isVerified: vendor?.is_verified || false,
         items: groupItems,
@@ -306,7 +306,7 @@ export default function CartPage() {
                         <div>
                           <div className="flex items-center gap-2 mb-1">
                             <span className="font-semibold text-mk-navy underline cursor-pointer">
-                              {group.vendorName}
+                              {group.vendorDisplayName}
                             </span>
                             <CheckCircle2 size={16} className="text-mk-green" />
                           </div>
@@ -362,13 +362,13 @@ export default function CartPage() {
                           <AlertTriangle size={16} className="text-mk-red mt-0.5 shrink-0" />
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-semibold text-mk-red">
-                              Ajoutez {formatPrice(group.remaining)}€ de produits de {group.vendorName} pour valider votre commande.
+                              Ajoutez {formatPrice(group.remaining)}€ de produits de {group.vendorDisplayName} pour valider votre commande.
                             </p>
                             <Link
                               to={group.vendorSlug ? `/recherche?vendor=${group.vendorSlug}` : `/recherche`}
                               className="inline-block mt-1.5 text-xs font-medium text-white bg-mk-red px-3 py-1.5 rounded-md hover:opacity-90"
                             >
-                              Voir d'autres produits de {group.vendorName}
+                              Voir d'autres produits de {group.vendorDisplayName}
                             </Link>
                           </div>
                         </div>

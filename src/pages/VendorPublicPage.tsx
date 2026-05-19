@@ -456,6 +456,12 @@ export default function VendorPublicPage() {
   ) : false;
   const vendorName = vendor ? getVendorPublicName(vendor, showReal) : "Fournisseur";
 
+  // 404 normal : display_code inexistant ou vendeur désactivé.
+  // Placé APRES tous les hooks pour respecter Rules of Hooks.
+  if (codeNotFound) {
+    return <NotFound />;
+  }
+
   if (isLoading) {
     return (
       <Layout>
@@ -468,6 +474,7 @@ export default function VendorPublicPage() {
       </Layout>
     );
   }
+
 
   if (!vendor) {
     return (

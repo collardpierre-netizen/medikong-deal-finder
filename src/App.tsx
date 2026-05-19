@@ -325,7 +325,7 @@ const App = () => (
             <Route path="/marque/:slug" element={<RedirectBrandSingular />} />
             <Route path="/fabricants" element={<LP><FabricantsPage /></LP>} />
             <Route path="/fabricant/:slug" element={<LP><ManufacturerPage /></LP>} />
-            <Route path="/vendeur/:slug" element={<LP><VendorPublicPage /></LP>} />
+            <Route path="/vendeur/:code" element={<LP><VendorPublicPage /></LP>} />
             <Route path="/delegue/:delegateId" element={<LP><DelegatePublicPage /></LP>} />
             <Route path="/panier" element={<LP><CartPage /></LP>} />
             <Route path="/compte" element={<LP><AccountPage /></LP>} />

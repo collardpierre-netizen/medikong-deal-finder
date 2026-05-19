@@ -114,7 +114,7 @@ export function BuyerRfqTracker({ rfqId }: { rfqId: string }) {
       const { data, error } = await supabase
         .from("rfq_vendor_status_v")
         .select(
-          "rfq_id, dispatch_id, vendor_id, vendor_name, vendor_display_code, vendor_status, vendor_status_label, target_reason, dispatched_at, email_opened_at, viewed_at, reminded_at, responded_at, declined_at, decline_reason, expired_at, awarded, rank_position, score, unit_price_excl_vat_cents, delivery_days, response_id, last_transition_at"
+          "rfq_id, dispatch_id, vendor_id, vendor_display_code, vendor_status, vendor_status_label, target_reason, dispatched_at, email_opened_at, viewed_at, reminded_at, responded_at, declined_at, decline_reason, expired_at, awarded, rank_position, score, unit_price_excl_vat_cents, delivery_days, response_id, last_transition_at"
         )
         .eq("rfq_id", rfqId)
         .order("last_transition_at", { ascending: false, nullsFirst: false });

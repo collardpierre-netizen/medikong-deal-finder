@@ -431,6 +431,6 @@ export default function PricingGlossaryHelpPage() {
           </Card>
         </section>
       </div>
-    </main>
+    </article>
   );
 }

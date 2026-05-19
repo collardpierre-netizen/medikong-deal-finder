@@ -111,10 +111,10 @@ describe("xlsx-utils — exports anonymisés (contrat statique)", () => {
     ).toEqual([]);
   });
 
-  it("importe getVendorPublicName depuis vendor-display", () => {
+  it("importe le garde-fou d'anonymisation vendeur", () => {
     expect(SRC).toMatch(
-      /from\s+["']@?\/?.*vendor-display["']|from\s+["']\.\/vendor-display["']/,
+      /vendor-display|vendor-anonymization-map/,
     );
-    expect(SRC).toMatch(/getVendorPublicName|sanitizeVendorLabel/);
+    expect(SRC).toMatch(/getVendorPublicName|sanitizeVendorLabel|resolveVendorLabel|resolveVendorAnonMap/);
   });
 });

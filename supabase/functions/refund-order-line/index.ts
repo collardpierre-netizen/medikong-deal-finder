@@ -273,9 +273,8 @@ Deno.serve(async (req) => {
         : { data: null };
 
       // 🔒 Anonymisation vendeur : ne JAMAIS sélectionner vendor.name / company_name.
-      // Le rendu acheteur (email order-line-refunded-customer) doit toujours afficher
-      // l'ID public MediKong (display_code) via getVendorPublicName — cf. memory
-      // "Vendor Anonymity Guardrail".
+      // Le rendu acheteur (email order-line-refunded-customer) passe toujours par
+      // getVendorPublicName — cf. memory "Vendor Anonymity Guardrail".
       const { data: vendor } = await supabase
         .from("vendors")
         .select("display_code")
@@ -290,8 +289,7 @@ Deno.serve(async (req) => {
             .maybeSingle()
         : { data: null };
 
-      const vendorDisplayCode = vendor?.display_code || "XXXXXX";
-      const vendorName = `Fournisseur ${vendorDisplayCode}`;
+      const vendorName = getVendorPublicName({ display_code: vendor?.display_code ?? null });
       const productName = product?.name || "votre article";
       const templateData = {
         orderNumber: order.order_number || "",

@@ -19,6 +19,7 @@ import { useCountry } from "@/contexts/CountryContext";
 import VendorDelegatesPublic from "@/components/vendor/VendorDelegatesPublic";
 import VendorDelegateDetailDialog from "@/components/vendor/VendorDelegateDetailDialog";
 import VendorProductQuickView from "@/components/vendor/VendorProductQuickView";
+import { VendorTopBrands } from "@/components/vendor/VendorTopBrands";
 
 /* ───── helpers ───── */
 function slugify(t: string) {
@@ -510,7 +511,10 @@ export default function VendorPublicPage() {
         </div>
       </div>
 
+      <VendorTopBrands vendorId={vendor.id} vendorSlug={vendor.slug} />
+
       <div className="mk-container py-6 md:py-8">
+
         <div className="flex gap-7">
           {/* ───── Sidebar with filters ───── */}
           <aside className="hidden lg:block w-[240px] shrink-0 space-y-5">

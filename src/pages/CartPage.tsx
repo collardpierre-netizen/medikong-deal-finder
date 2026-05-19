@@ -146,6 +146,7 @@ export default function CartPage() {
         vendorId,
         vendorDisplayName: vendor ? getVendorPublicName(vendor, showReal) : `Fournisseur #${vendorId.slice(0, 6).toUpperCase()}`,
         vendorSlug: vendor?.slug || undefined,
+        vendorDisplayCode: (vendor as any)?.display_code || undefined,
         isVerified: vendor?.is_verified || false,
         items: groupItems,
         total,

@@ -622,30 +622,58 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
       return;
     }
 
+    // jsPDF utilise Helvetica WinAnsi (Latin-1). On remplace les caractères Unicode
+    // hors-encodage qui sinon sortent en glyphes parasites (Σ→£, Δ→~, − U+2212→",
+    // ' U+2019→?, " U+201C/D→?, – U+2013→?, ≥→?, ≤→?, → →?).
+    const T = (s: string): string =>
+      s
+        .replace(/\u03A3/g, "Somme") // Σ
+        .replace(/\u0394/g, "Ecart") // Δ
+        .replace(/\u2212/g, "-")      // − minus sign
+        .replace(/\u2013/g, "-")      // – en dash
+        .replace(/[\u2018\u2019\u201A\u201B]/g, "'") // ‘ ’ ‚ ‛
+        .replace(/[\u201C\u201D\u201E\u201F]/g, '"') // “ ” „ ‟
+        .replace(/\u2265/g, ">=")    // ≥
+        .replace(/\u2264/g, "<=")    // ≤
+        .replace(/\u2192/g, "->")    // →
+        .replace(/\u2026/g, "...");  // …
+
     const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
     const generatedAt = new Date().toLocaleString("fr-FR");
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
 
-    doc.setFontSize(18);
-    doc.text("Analyse comparateur de prix MediKong", 40, 42);
+    // Bandeau d'en-tête (couleur navy MediKong)
+    doc.setFillColor(30, 37, 47);
+    doc.rect(0, 0, pageWidth, 64, "F");
+    doc.setFillColor(28, 88, 217); // accent Primary Blue
+    doc.rect(0, 64, pageWidth, 3, "F");
+
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    doc.text(T("Analyse comparateur de prix MediKong"), 40, 32);
+    doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
-    doc.setTextColor(107, 114, 128);
-    doc.text(`${exportSummary.label} · Exporté le ${generatedAt}`, 40, 58);
+    doc.setTextColor(203, 213, 225);
+    doc.text(T(`${exportSummary.label} · Exporté le ${generatedAt}`), 40, 50);
     doc.setTextColor(31, 41, 55);
 
     // Tableau KPI (miroir exact des KPI cards du popup et de la feuille Résumé XLS)
     autoTable(doc, {
-      startY: 70,
-      head: [["Indicateur", "Valeur", "Détail"]],
+      startY: 84,
+      head: [["Indicateur", "Valeur", "Détail"].map(T)],
       body: [
         ["Lignes importées", String(exportSummary.totalLines), ""],
         ["Trouvés", String(exportSummary.found), `${exportSummary.found} / ${exportSummary.totalLines}`],
         ["Indisponibles", String(exportSummary.unavailable), "Aucun match GTIN / CNK / SKU"],
         ["Moins chers (MediKong)", String(exportSummary.savings), exportSummary.avgSavingPct > 0 ? `${exportSummary.avgSavingPct.toFixed(1)}% en moyenne` : ""],
         ["Plus chers (MediKong)", String(exportSummary.moreExpensive), ""],
-        ["Économie potentielle (€)", formatPrice(exportSummary.totalSavings), "Σ (Votre prix − Prix MediKong) × Qté sur lignes Moins chères"],
-      ],
+        ["Économie potentielle (€)", formatPrice(exportSummary.totalSavings), "Total (Votre prix - Prix MediKong) x Qté sur lignes Moins chères"],
+      ].map((r) => r.map(T)),
       styles: { fontSize: 9, cellPadding: 5, textColor: [31, 41, 55] },
       headStyles: { fillColor: [30, 37, 47], textColor: [255, 255, 255] },
+      alternateRowStyles: { fillColor: [249, 250, 251] },
       columnStyles: {
         0: { cellWidth: 170, fontStyle: "bold" },
         1: { cellWidth: 90, halign: "right" },
@@ -657,18 +685,18 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
     // Légende — explique les KPI et les formules de calcul
     autoTable(doc, {
       startY: (doc as any).lastAutoTable.finalY + 12,
-      head: [["Légende — comment lire ce rapport"]],
+      head: [[T("Légende — comment lire ce rapport")]],
       body: [
         ["Lignes importées : nombre total de lignes lues dans votre fichier source."],
         ["Trouvés : lignes pour lesquelles MediKong a identifié le produit via GTIN, CNK ou SKU."],
         ["Indisponibles : lignes sans correspondance dans le catalogue MediKong (à sourcer ou à proposer en RFQ)."],
-        ["Moins chers (MediKong) : lignes Trouvées où le prix MediKong est strictement inférieur à votre prix d'achat actuel. Le « % moyen » est la moyenne des écarts relatifs (Prix MediKong − Votre prix) / Votre prix sur ces lignes."],
-        ["Plus chers (MediKong) : lignes Trouvées où MediKong est ≥ à votre prix actuel — à challenger côté vendeur."],
-        ["Économie potentielle (€) : Σ ((Votre prix − Prix MediKong) × Qté) calculée uniquement sur les lignes « Moins chers (MediKong) ». Tous les prix sont HT."],
-        ["Économie ligne (colonne du tableau détail) : (Votre prix − Prix MediKong) × Qté de la ligne, affichée uniquement quand MediKong est moins cher. Sinon « — »."],
-        ["Δ €/u. : Prix MediKong − Votre prix, par unité, HT. Δ % : même écart exprimé en pourcentage de Votre prix."],
+        ["Moins chers (MediKong) : lignes Trouvées où le prix MediKong est strictement inférieur à votre prix d'achat actuel. Le « % moyen » est la moyenne des écarts relatifs (Prix MediKong - Votre prix) / Votre prix sur ces lignes."],
+        ["Plus chers (MediKong) : lignes Trouvées où MediKong est >= à votre prix actuel - à challenger côté vendeur."],
+        ["Économie potentielle (€) : Somme ((Votre prix - Prix MediKong) x Qté) calculée uniquement sur les lignes « Moins chers (MediKong) ». Tous les prix sont HT."],
+        ["Économie ligne (colonne du tableau détail) : (Votre prix - Prix MediKong) x Qté de la ligne, affichée uniquement quand MediKong est moins cher. Sinon « - »."],
+        ["Écart €/u. : Prix MediKong - Votre prix, par unité, HT. Écart % : même écart exprimé en pourcentage de Votre prix."],
         ["Couleurs : vert = Dispo · Moins cher, rouge = Dispo · Plus cher, orange = Indispo (mêmes codes que le popup)."],
-      ],
+      ].map((r) => r.map(T)),
       styles: { fontSize: 8, cellPadding: 5, textColor: [55, 65, 81], lineColor: [229, 231, 235], lineWidth: 0.5 },
       headStyles: { fillColor: [243, 244, 246], textColor: [31, 41, 55], fontStyle: "bold" },
       margin: { left: 40, right: 40 },
@@ -676,7 +704,7 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
 
     autoTable(doc, {
       startY: (doc as any).lastAutoTable.finalY + 14,
-      head: [["Produit", "Codes", "Identifié par", "Vendeur", "Qté", "Votre prix", "Prix MediKong", "Δ €/u.", "Δ %", "Économie ligne", "Statut"]],
+      head: [["Produit", "Codes", "Identifié par", "Vendeur", "Qté", "Votre prix", "Prix MediKong", "Écart €/u.", "Écart %", "Économie ligne", "Statut"].map(T)],
       body: exportSourceRows.map((r) => {
         const deltaPct = calcDeltaPct(r.currentPrice, r.mediPrice);
         const deltaAmount = getDeltaAmount(r);
@@ -690,20 +718,20 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
             r.ean ? `EAN: ${r.ean}` : null,
             r.cnk ? `CNK: ${r.cnk}` : null,
             r.sku ? `SKU: ${r.sku}` : null,
-          ].filter(Boolean).join(" · ") || "—",
+          ].filter(Boolean).join(" · ") || "-",
           r.matchedBy ? MATCH_FIELD_LABEL[r.matchedBy] : "Aucun match",
-          r.status === "found" ? (r.vendorDisplayName || "—") : "—",
+          r.status === "found" ? (r.vendorDisplayName || "-") : "-",
           String(r.quantity),
-          r.currentPrice > 0 ? formatPrice(r.currentPrice) : "—",
-          r.mediPrice != null ? formatPrice(r.mediPrice) : "—",
-          deltaAmount != null ? `${deltaAmount > 0 ? "+" : ""}${formatPrice(Math.abs(deltaAmount)).replace("€", "").trim()}` : "—",
-          deltaPct != null ? `${deltaPct > 0 ? "+" : ""}${deltaPct.toFixed(1)}%` : "—",
-          lineSaving != null ? formatPrice(lineSaving) : "—",
+          r.currentPrice > 0 ? formatPrice(r.currentPrice) : "-",
+          r.mediPrice != null ? formatPrice(r.mediPrice) : "-",
+          deltaAmount != null ? `${deltaAmount > 0 ? "+" : "-"}${formatPrice(Math.abs(deltaAmount)).replace("€", "").trim()}` : "-",
+          deltaPct != null ? `${deltaPct > 0 ? "+" : ""}${deltaPct.toFixed(1)}%` : "-",
+          lineSaving != null ? formatPrice(lineSaving) : "-",
           getResultStatusLabel(r),
-        ];
+        ].map(T);
       }),
-      styles: { fontSize: 8, cellPadding: 4, textColor: [31, 41, 55] },
-      headStyles: { fillColor: [37, 99, 235], textColor: [255, 255, 255] },
+      styles: { fontSize: 8, cellPadding: 4, textColor: [31, 41, 55], lineColor: [229, 231, 235], lineWidth: 0.25 },
+      headStyles: { fillColor: [28, 88, 217], textColor: [255, 255, 255], fontStyle: "bold" },
       showHead: "everyPage",
       rowPageBreak: "avoid",
       columnStyles: {
@@ -714,12 +742,12 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
         4: { halign: "center", cellWidth: 28 },
         5: { halign: "right", cellWidth: 52 },
         6: { halign: "right", cellWidth: 60 },
-        7: { halign: "right", cellWidth: 44 },
+        7: { halign: "right", cellWidth: 50 },
         8: { halign: "right", cellWidth: 44 },
         9: { halign: "right", cellWidth: 60 },
         10: { cellWidth: 70 },
       },
-      margin: { left: 40, right: 40 },
+      margin: { left: 40, right: 40, bottom: 40 },
       didParseCell: (hookData) => {
         if (hookData.section !== "body") return;
         const row = exportSourceRows[hookData.row.index];
@@ -755,6 +783,17 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
         }
       },
     });
+
+    // Pied de page : pagination + mention sur toutes les pages
+    const pageCount = doc.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i += 1) {
+      doc.setPage(i);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.setTextColor(148, 163, 184);
+      doc.text(T("MediKong · Comparateur de prix B2B"), 40, pageHeight - 18);
+      doc.text(`Page ${i} / ${pageCount}`, pageWidth - 40, pageHeight - 18, { align: "right" });
+    }
 
     doc.save(`comparateur-medikong-complet-${new Date().toISOString().slice(0, 10)}.pdf`);
     toast.success(`Export PDF téléchargé (${exportSummary.exportedLines} lignes)`);

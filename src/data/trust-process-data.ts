@@ -153,10 +153,12 @@ export function getHelpCategories(t: (key: string) => string): HelpCategoryData[
       { label: t("helpCenter.categories.delivery.a2"), href: "/logistique" },
       { label: t("helpCenter.categories.delivery.a3"), href: "/centre-aide/retourner-produit" },
     ]},
-    { icon: FileText, title: t("helpCenter.categories.vat.title"), description: t("helpCenter.categories.vat.description"), articleCount: 4, articles: [
+    { icon: FileText, title: t("helpCenter.categories.vat.title"), description: t("helpCenter.categories.vat.description"), articleCount: 5, articles: [
       { label: t("helpCenter.categories.vat.a1"), href: "/centre-aide/tva-medikong" },
       { label: t("helpCenter.categories.vat.a2"), href: "/centre-aide/telecharger-factures" },
       { label: t("helpCenter.categories.vat.a3"), href: "/centre-aide/modifier-facturation" },
+      { label: "Glossaire des prix : PVP, marché, public TTC", href: "/aide/glossaire-prix" },
+      { label: "Packs, unités et €/100 — comment lire les prix", href: "/aide/packs-et-prix-100" },
     ]},
     { icon: ShieldAlert, title: t("helpCenter.categories.claims.title"), description: t("helpCenter.categories.claims.description"), articleCount: 6, articles: [
       { label: t("helpCenter.categories.claims.a1"), href: "/centre-aide/signaler-probleme" },

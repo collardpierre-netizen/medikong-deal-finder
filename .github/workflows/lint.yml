@@ -40,3 +40,35 @@ jobs:
         run: bun run check:fr-typo
       - name: Vendor anonymity guard (no clear vendor identity outside admin)
         run: bun run check:vendor-anonymity
+
+  vendor-anonymity-tripwire:
+    # 🔒 Blocant : exécute UNIQUEMENT le test garde-fou vendor anonymity
+    # (rendu JSX + exports buyer-facing). Toute fuite de
+    # `company_name` / `show_real_name` / `.vendor_name` dans un fichier
+    # buyer-facing fait échouer le job → merge bloqué tant que la PR n'a
+    # pas patché la fuite (router via getVendorPublicName /
+    # sanitizeVendorLabel / resolveVendorName).
+    # Sévérité : ERROR (job rouge, requis pour merge sur main).
+    # Pour ajouter ce check à la liste des "Required status checks" :
+    # Repo Settings → Branches → Branch protection rule sur `main`
+    # → cocher "Vendor anonymity tripwire (Vitest)".
+    name: Vendor anonymity tripwire (Vitest)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: Cache Bun install
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lockb', 'bun.lock', 'package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      - name: Run vendor anonymity guard tests (Vitest, blocking)
+        run: bunx vitest run src/lib/__tests__/vendor-display.test.ts --reporter=verbose
+

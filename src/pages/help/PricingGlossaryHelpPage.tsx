@@ -169,7 +169,10 @@ export default function PricingGlossaryHelpPage() {
           content="Comprendre les différentes notions de prix sur MediKong : PVP conseillé, prix marché HTVA et prix public TTC, avec exemples concrets."
         />
         <link rel="canonical" href="https://medikong.pro/aide/glossaire-prix" />
-        <link rel="canonical" href="https://medikong.pro/aide/glossaire-prix" />
+        <meta property="og:title" content="Glossaire des prix : PVP, prix marché, prix public — MediKong" />
+        <meta property="og:description" content="Comprendre PVP conseillé, prix marché HTVA et prix public TTC sur MediKong, avec exemples concrets et FAQ." />
+        <meta property="og:url" content="https://medikong.pro/aide/glossaire-prix" />
+        <meta property="og:type" content="article" />
         <script type="application/ld+json">
           {JSON.stringify({
             "@context": "https://schema.org",
@@ -179,6 +182,29 @@ export default function PricingGlossaryHelpPage() {
               name: it.q,
               acceptedAnswer: { "@type": "Answer", text: it.plain },
             })),
+          })}
+        </script>
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              { "@type": "ListItem", position: 1, name: "Accueil", item: "https://medikong.pro/" },
+              { "@type": "ListItem", position: 2, name: "Centre d'aide", item: "https://medikong.pro/centre-aide" },
+              { "@type": "ListItem", position: 3, name: "Glossaire des prix", item: "https://medikong.pro/aide/glossaire-prix" },
+            ],
+          })}
+        </script>
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Article",
+            headline: "Glossaire des prix : PVP, prix marché, prix public",
+            description: "Comprendre PVP conseillé, prix marché HTVA et prix public TTC sur MediKong.",
+            mainEntityOfPage: "https://medikong.pro/aide/glossaire-prix",
+            inLanguage: "fr-BE",
+            author: { "@type": "Organization", name: "MediKong" },
+            publisher: { "@type": "Organization", name: "MediKong" },
           })}
         </script>
       </Helmet>
@@ -200,8 +226,12 @@ export default function PricingGlossaryHelpPage() {
         produit.
       </p>
 
-      <div className="space-y-6">
-        <Card>
+      <div className="space-y-10">
+        <section aria-labelledby="h2-definitions" className="space-y-6">
+          <h2 id="h2-definitions" className="text-2xl font-semibold tracking-tight scroll-mt-20">
+            Les trois notions de prix à connaître
+          </h2>
+          <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <Tag className="h-4 w-4 text-primary" />
@@ -283,82 +313,123 @@ export default function PricingGlossaryHelpPage() {
             </p>
           </CardContent>
         </Card>
+        </section>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">
-              Récapitulatif — un même produit, trois prix
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 text-sm text-muted-foreground">
-            <p>
-              Pour un Dafalgan 500 mg 30 cp en Belgique, vous verrez par
-              exemple :
-            </p>
-            <ul className="space-y-2">
-              <li className="flex justify-between gap-4 border-b pb-2">
-                <span><strong>Prix MediKong</strong> (votre achat HTVA)</span>
-                <span className="font-mono">2,20 €</span>
-              </li>
-              <li className="flex justify-between gap-4 border-b pb-2">
-                <span><strong>Prix marché</strong> (HTVA, médian B2B)</span>
-                <span className="font-mono">2,40 €</span>
-              </li>
-              <li className="flex justify-between gap-4">
-                <span><strong>PVP conseillé</strong> (TTC, comptoir)</span>
-                <span className="font-mono">4,95 €</span>
-              </li>
-            </ul>
-            <p className="pt-2">
-              Lecture : vous achetez 8 % moins cher que le marché B2B, et
-              votre marge brute potentielle face au PVP est de l'ordre de
-              52 % (en tenant compte de la TVA 6 % à reverser).
-            </p>
-          </CardContent>
-        </Card>
+        <section aria-labelledby="h2-recap" className="space-y-4">
+          <h2 id="h2-recap" className="text-2xl font-semibold tracking-tight scroll-mt-20">
+            Récapitulatif — un même produit, trois prix
+          </h2>
+          <Card>
+            <CardContent className="space-y-3 text-sm text-muted-foreground pt-6">
+              <p>
+                Pour un Dafalgan 500 mg 30 cp en Belgique, vous verrez par
+                exemple :
+              </p>
+              <ul className="space-y-2">
+                <li className="flex justify-between gap-4 border-b pb-2">
+                  <span><strong>Prix MediKong</strong> (votre achat HTVA)</span>
+                  <span className="font-mono">2,20 €</span>
+                </li>
+                <li className="flex justify-between gap-4 border-b pb-2">
+                  <span><strong>Prix marché</strong> (HTVA, médian B2B)</span>
+                  <span className="font-mono">2,40 €</span>
+                </li>
+                <li className="flex justify-between gap-4">
+                  <span><strong>PVP conseillé</strong> (TTC, comptoir)</span>
+                  <span className="font-mono">4,95 €</span>
+                </li>
+              </ul>
+              <p className="pt-2">
+                Lecture : vous achetez 8 % moins cher que le marché B2B, et
+                votre marge brute potentielle face au PVP est de l'ordre de
+                52 % (en tenant compte de la TVA 6 % à reverser).
+              </p>
+            </CardContent>
+          </Card>
+        </section>
 
-        <Card id="faq">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <HelpCircle className="h-4 w-4 text-primary" />
-              FAQ — Comment lire les prix sur MediKong
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Accordion type="single" collapsible className="w-full">
-              {FAQ_ITEMS.map((item, idx) => (
-                <AccordionItem key={idx} value={`faq-${idx}`}>
-                  <AccordionTrigger className="text-left text-sm font-medium">
-                    {item.q}
-                  </AccordionTrigger>
-                  <AccordionContent className="text-sm text-muted-foreground space-y-2">
-                    {item.a}
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
-          </CardContent>
-        </Card>
+        <section aria-labelledby="h2-faq" className="space-y-4">
+          <h2 id="h2-faq" className="text-2xl font-semibold tracking-tight scroll-mt-20 flex items-center gap-2">
+            <HelpCircle className="h-5 w-5 text-primary" />
+            FAQ — Comment lire les prix sur MediKong
+          </h2>
+          <Card id="faq">
+            <CardContent className="pt-6">
+              <Accordion type="single" collapsible className="w-full">
+                {FAQ_ITEMS.map((item, idx) => (
+                  <AccordionItem key={idx} value={`faq-${idx}`}>
+                    <AccordionTrigger className="text-left text-sm font-medium">
+                      {item.q}
+                    </AccordionTrigger>
+                    <AccordionContent className="text-sm text-muted-foreground space-y-2">
+                      {item.a}
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+            </CardContent>
+          </Card>
+        </section>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Voir aussi</CardTitle>
-          </CardHeader>
-          <CardContent className="text-sm text-muted-foreground">
-            <ul className="list-disc pl-5 space-y-1">
-              <li>
-                <Link to="/aide/packs-et-prix-100" className="text-primary underline">
-                  Packs, unités et €/100 — comment lire les prix
-                </Link>
-              </li>
-              <li>
-                <Link to="/centre-aide" className="text-primary underline">
-                  Retour au centre d'aide
-                </Link>
-              </li>
-            </ul>
-          </CardContent>
-        </Card>
+        <section aria-labelledby="h2-voir-aussi" className="space-y-4">
+          <h2 id="h2-voir-aussi" className="text-2xl font-semibold tracking-tight scroll-mt-20">
+            Articles d'aide liés
+          </h2>
+          <Card>
+            <CardContent className="text-sm pt-6">
+              <ul className="grid sm:grid-cols-2 gap-3">
+                <li>
+                  <Link to="/aide/packs-et-prix-100" className="text-primary underline font-medium">
+                    Packs, unités et €/100 — comment lire les prix
+                  </Link>
+                  <p className="text-muted-foreground text-xs mt-1">
+                    Comparer deux conditionnements grâce au prix par unité et au €/100u.
+                  </p>
+                </li>
+                <li>
+                  <Link to="/centre-aide/tva-medikong" className="text-primary underline font-medium">
+                    TVA sur MediKong : 6 % vs 21 %
+                  </Link>
+                  <p className="text-muted-foreground text-xs mt-1">
+                    Quel taux s'applique selon le produit et comment il est résolu.
+                  </p>
+                </li>
+                <li>
+                  <Link to="/centre-aide/comparaison-prix" className="text-primary underline font-medium">
+                    Comparer un prix MediKong au marché
+                  </Link>
+                  <p className="text-muted-foreground text-xs mt-1">
+                    Méthodologie de la veille concurrentielle et lecture des écarts.
+                  </p>
+                </li>
+                <li>
+                  <Link to="/centre-aide/telecharger-factures" className="text-primary underline font-medium">
+                    Télécharger ses factures HTVA + TVA + TTC
+                  </Link>
+                  <p className="text-muted-foreground text-xs mt-1">
+                    Retrouver le détail des taxes appliquées à chaque commande.
+                  </p>
+                </li>
+                <li>
+                  <Link to="/bonnes-affaires" className="text-primary underline font-medium">
+                    Voir les Bonnes affaires en cours
+                  </Link>
+                  <p className="text-muted-foreground text-xs mt-1">
+                    Appliquer ce glossaire sur les meilleures remises du moment.
+                  </p>
+                </li>
+                <li>
+                  <Link to="/centre-aide" className="text-primary underline font-medium">
+                    Retour au centre d'aide
+                  </Link>
+                  <p className="text-muted-foreground text-xs mt-1">
+                    Toutes les rubriques d'aide MediKong.
+                  </p>
+                </li>
+              </ul>
+            </CardContent>
+          </Card>
+        </section>
       </div>
     </main>
   );

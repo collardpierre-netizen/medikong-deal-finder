@@ -95,7 +95,7 @@ export default function DelegatePublicPage() {
       if (!delegate?.vendor_id) return null;
       const { data } = await supabase
         .from("vendors")
-        .select("id, slug, company_name, name, logo_url")
+        .select("id, slug, display_code, company_name, name, logo_url")
         .eq("id", delegate.vendor_id)
         .maybeSingle();
       return (data as unknown as Vendor) || null;

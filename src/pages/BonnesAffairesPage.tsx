@@ -254,26 +254,47 @@ export default function BonnesAffairesPage() {
 
   const { data: brands = [] } = useQuery({
     queryKey: ["bonnes-affaires-brands-all"],
+    staleTime: 5 * 60 * 1000,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("brands")
-        .select("id,name,product_count")
-        .order("product_count", { ascending: false })
-        .limit(10000);
-      if (error) throw error;
-      return data || [];
+      const PAGE = 1000;
+      let all: { id: string; name: string; product_count: number | null }[] = [];
+      let page = 0;
+      while (true) {
+        const from = page * PAGE;
+        const { data, error } = await supabase
+          .from("brands")
+          .select("id,name,product_count")
+          .order("product_count", { ascending: false })
+          .order("id", { ascending: true })
+          .range(from, from + PAGE - 1);
+        if (error) throw error;
+        all = all.concat(data || []);
+        if (!data || data.length < PAGE) break;
+        page++;
+      }
+      return all;
     },
   });
   const { data: manufacturers = [] } = useQuery({
     queryKey: ["bonnes-affaires-manufacturers-all"],
+    staleTime: 5 * 60 * 1000,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("manufacturers")
-        .select("id,name")
-        .order("name", { ascending: true })
-        .limit(10000);
-      if (error) throw error;
-      return data || [];
+      const PAGE = 1000;
+      let all: { id: string; name: string }[] = [];
+      let page = 0;
+      while (true) {
+        const from = page * PAGE;
+        const { data, error } = await supabase
+          .from("manufacturers")
+          .select("id,name")
+          .order("name", { ascending: true })
+          .range(from, from + PAGE - 1);
+        if (error) throw error;
+        all = all.concat(data || []);
+        if (!data || data.length < PAGE) break;
+        page++;
+      }
+      return all;
     },
   });
 

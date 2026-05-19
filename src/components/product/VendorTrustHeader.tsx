@@ -144,7 +144,7 @@ export function VendorTrustHeader({ trust, variant = "full", className = "" }: P
           ) : (
             <>
               <span className="text-foreground">Fournisseur</span>
-              <span className="font-mono font-bold text-[15px] tracking-[0.15em] uppercase text-foreground bg-muted/70 rounded px-1.5 py-0.5">
+              <span className="font-mono font-bold text-sm tracking-wider uppercase text-foreground bg-muted border border-border rounded px-2 py-0.5 select-all">
                 {trust.publicIdentifier}
               </span>
             </>

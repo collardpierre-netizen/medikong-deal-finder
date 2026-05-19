@@ -10,7 +10,7 @@ import { useCatalogViewMode } from "@/hooks/useCatalogViewMode";
 import { BuyerImportModal } from "@/components/buyer/BuyerImportModal";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { getVendorPublicName, resolveVendorVisibility } from "@/lib/vendor-display";
+import { getVendorPublicName } from "@/lib/vendor-display";
 import { BrandFactSheet } from "@/components/brand/BrandFactSheet";
 import { Badge } from "@/components/ui/badge";
 import { useCountry } from "@/contexts/CountryContext";

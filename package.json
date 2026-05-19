@@ -26,7 +26,8 @@
     "check:i18n:list": "bun scripts/check-i18n-strings.ts --list",
     "check:i18n:update": "bun scripts/check-i18n-strings.ts --update",
     "check:fr-typo": "bun scripts/check-fr-typography.ts",
-    "check:fr-typo:fix": "bun scripts/check-fr-typography.ts --fix"
+    "check:fr-typo:fix": "bun scripts/check-fr-typography.ts --fix",
+    "check:vendor-anonymity": "bun scripts/check-vendor-anonymity.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

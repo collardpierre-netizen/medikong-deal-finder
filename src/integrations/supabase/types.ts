@@ -364,6 +364,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "brand_official_distributors_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_top_brands_mv"
+            referencedColumns: ["brand_id"]
+          },
+          {
             foreignKeyName: "brand_official_distributors_vendor_id_fkey"
             columns: ["vendor_id"]
             isOneToOne: false
@@ -497,6 +504,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "brands"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brand_reviews_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_top_brands_mv"
+            referencedColumns: ["brand_id"]
           },
         ]
       }
@@ -1114,6 +1128,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "brands"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buyer_comparator_sourcing_items_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_top_brands_mv"
+            referencedColumns: ["brand_id"]
           },
           {
             foreignKeyName: "buyer_comparator_sourcing_items_product_id_fkey"
@@ -3340,6 +3361,13 @@ export type Database = {
             referencedRelation: "brands"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "home_featured_brands_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_top_brands_mv"
+            referencedColumns: ["brand_id"]
+          },
         ]
       }
       home_featured_category_whitelist: {
@@ -3985,6 +4013,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "brands"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "margin_rules_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_top_brands_mv"
+            referencedColumns: ["brand_id"]
           },
           {
             foreignKeyName: "margin_rules_category_id_fkey"
@@ -7962,6 +7997,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "product_submissions_resulting_brand_id_fkey"
+            columns: ["resulting_brand_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_top_brands_mv"
+            referencedColumns: ["brand_id"]
+          },
+          {
             foreignKeyName: "product_submissions_resulting_manufacturer_id_fkey"
             columns: ["resulting_manufacturer_id"]
             isOneToOne: false
@@ -8366,6 +8408,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "brands"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_top_brands_mv"
+            referencedColumns: ["brand_id"]
           },
           {
             foreignKeyName: "products_category_id_fkey"
@@ -11140,6 +11189,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "rfqs_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_top_brands_mv"
+            referencedColumns: ["brand_id"]
+          },
+          {
             foreignKeyName: "rfqs_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
@@ -12985,6 +13041,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "brands"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_catalog_interests_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_top_brands_mv"
+            referencedColumns: ["brand_id"]
           },
           {
             foreignKeyName: "vendor_catalog_interests_category_id_fkey"
@@ -14994,6 +15057,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "vendor_price_alert_rules_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_top_brands_mv"
+            referencedColumns: ["brand_id"]
+          },
+          {
             foreignKeyName: "vendor_price_alert_rules_category_id_fkey"
             columns: ["category_id"]
             isOneToOne: false
@@ -16336,6 +16406,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "products_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_top_brands_mv"
+            referencedColumns: ["brand_id"]
+          },
+          {
             foreignKeyName: "products_category_id_fkey"
             columns: ["category_id"]
             isOneToOne: false
@@ -16489,6 +16566,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "brands"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_top_brands_mv"
+            referencedColumns: ["brand_id"]
           },
           {
             foreignKeyName: "products_primary_category_id_fkey"
@@ -17089,6 +17173,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "products_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_top_brands_mv"
+            referencedColumns: ["brand_id"]
+          },
+          {
             foreignKeyName: "products_category_id_fkey"
             columns: ["category_id"]
             isOneToOne: false
@@ -17180,6 +17271,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "brands"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "home_featured_brands_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_top_brands_mv"
+            referencedColumns: ["brand_id"]
           },
         ]
       }
@@ -17274,6 +17372,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "brands"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_top_brands_mv"
+            referencedColumns: ["brand_id"]
           },
           {
             foreignKeyName: "products_category_id_fkey"
@@ -17851,6 +17956,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "rfqs_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_top_brands_mv"
+            referencedColumns: ["brand_id"]
+          },
+          {
             foreignKeyName: "rfqs_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
@@ -18126,6 +18238,67 @@ export type Database = {
           vendor_id: string | null
         }
         Relationships: []
+      }
+      vendor_top_brands_mv: {
+        Row: {
+          brand_id: string | null
+          brand_logo_url: string | null
+          brand_name: string | null
+          brand_slug: string | null
+          offer_count: number | null
+          vendor_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "offers_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "admin_orders_sla_overview_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "offers_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendor_trust_signals"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "offers_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offers_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_market_intel_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "offers_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "offers_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offers_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors_public"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       vendors_public: {
         Row: {
@@ -19230,6 +19403,7 @@ export type Database = {
         Returns: Json
       }
       refresh_public_marketplace_metrics: { Args: never; Returns: undefined }
+      refresh_vendor_top_brands_mv_with_log: { Args: never; Returns: undefined }
       reject_extension_request: {
         Args: { _reason: string; _req_id: string }
         Returns: undefined
@@ -19716,6 +19890,16 @@ export type Database = {
         Args: { _vendor_id: string }
         Returns: boolean
       }
+      vendor_top_brands: {
+        Args: { _limit?: number; _vendor_id: string }
+        Returns: {
+          brand_id: string
+          brand_logo_url: string
+          brand_name: string
+          brand_slug: string
+          offer_count: number
+        }[]
+      }
     }
     Enums: {
       adjustment_trigger: "manual" | "quick_align" | "auto_align"
@@ -19885,6 +20069,7 @@ export type Database = {
         | "offers_detail"
         | "manual"
         | "offers_multi_vendor"
+        | "vendor_top_brands_mv"
       urgency_enum: "low" | "medium" | "high"
       vendor_market_intel_billing: "stripe" | "medikong_invoice"
       vendor_market_intel_status:
@@ -20226,6 +20411,7 @@ export const Constants = {
         "offers_detail",
         "manual",
         "offers_multi_vendor",
+        "vendor_top_brands_mv",
       ],
       urgency_enum: ["low", "medium", "high"],
       vendor_market_intel_billing: ["stripe", "medikong_invoice"],

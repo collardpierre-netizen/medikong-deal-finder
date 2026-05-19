@@ -74,25 +74,16 @@ export default function CartPage() {
     queryKey: ["cart-vendors", vendorIds],
     queryFn: async () => {
       if (vendorIds.length === 0) return [];
+      // 🔒 Anonymisation : on ne consomme JAMAIS name / company_name / show_real_name côté buyer.
       const { data } = await supabase
         .from("vendors")
-        .select("id, name, company_name, slug, is_verified, display_code, show_real_name")
+        .select("id, slug, is_verified, display_code")
         .in("id", vendorIds as string[]);
       return data || [];
     },
     enabled: vendorIds.length > 0,
   });
 
-  const { data: visRules = [] } = useQuery({
-    queryKey: ["cart-vendor-visibility-rules", vendorIds],
-    queryFn: async () => {
-      if (vendorIds.length === 0) return [];
-      const { data } = await supabase
-        .from("vendor_visibility_rules" as any)
-        .select("*")
-        .in("vendor_id", vendorIds as string[]);
-      return (data as any[]) || [];
-    },
     enabled: vendorIds.length > 0,
   });
 

@@ -141,6 +141,31 @@ export default function ImportHistoryPage() {
     }
   };
 
+  const viewResults = (job: ImportJob) => {
+    if (job.job_type !== "buyer_comparator") {
+      toast({ title: "Aperçu indisponible", description: "Seuls les imports du comparateur acheteur peuvent être réinjectés.", variant: "destructive" });
+      return;
+    }
+    navigate(`/compte?tab=comparateur&import_job=${job.id}`);
+  };
+
+  const replay = async (job: ImportJob) => {
+    if (job.job_type !== "buyer_comparator") {
+      toast({ title: "Relance indisponible", description: "Seuls les imports du comparateur acheteur peuvent être rejoués pour le moment.", variant: "destructive" });
+      return;
+    }
+    setReplayingId(job.id);
+    try {
+      const newId = await replayImportJob(job.id);
+      toast({ title: "Import relancé", description: "Le même fichier est en cours de re-traitement." });
+      navigate(`/compte?tab=comparateur&import_job=${newId}`);
+    } catch (e: any) {
+      toast({ title: "Relance impossible", description: e?.message ?? String(e), variant: "destructive" });
+    } finally {
+      setReplayingId(null);
+    }
+  };
+
   return (
     <div className="container max-w-6xl py-8 space-y-6">
       <div className="flex items-start justify-between gap-4">

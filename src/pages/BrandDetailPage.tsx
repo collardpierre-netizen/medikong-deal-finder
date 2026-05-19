@@ -112,6 +112,7 @@ export default function BrandDetailPage() {
         id: string;
         name: string;
         slug: string;
+        displayCode: string | null;
         verified: boolean;
         topRated: boolean;
         location: string;

@@ -411,9 +411,23 @@ describe("Guard buyer-facing — pas d'affichage JSX de company_name / show_real
  */
 describe("Guard exports buyer-facing — pas de vendor_name / company_name brut dans les cellules", () => {
   const BUYER_FACING_EXPORTS: readonly string[] = [
+    // ⚠️ Tripwire : on inclut tous les fichiers buyer-facing qui pourraient
+    // un jour produire un export (CSV / XLSX / PDF), même s'ils n'en font
+    // pas aujourd'hui. Les fichiers absents sont skip silencieusement.
     "../discount-export.ts",
+    "../../pages/AccountPage.tsx",
+    "../../pages/AuditAchatsPage.tsx",
+    "../../pages/BonnesAffairesPage.tsx",
+    "../../pages/CartPage.tsx",
+    "../../pages/CheckoutPage.tsx",
+    "../../pages/EconomiesPage.tsx",
+    "../../pages/ImportHistoryPage.tsx",
+    "../../pages/MesRfqPage.tsx",
+    "../../pages/MyPricesPage.tsx",
     "../../pages/OrderDetailPage.tsx",
+    "../../pages/SourcingPage.tsx",
     "../../components/buyer/BuyerImportModal.tsx",
+    "../../components/rfq/BuyerRfqTracker.tsx",
   ];
 
   const SAFE_CALLERS = "(?:resolveVendorName|sanitizeVendorLabel|getVendorPublicName)";

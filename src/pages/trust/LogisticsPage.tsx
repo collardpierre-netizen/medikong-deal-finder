@@ -11,9 +11,9 @@ import { logisticsFaqItems } from "@/data/trust-process-data";
 import { Truck, Clock, MapPin } from "lucide-react";
 
 const deliveryOptions = [
-  { icon: Truck, title: "Standard", delay: "2-5 jours", desc: "Livraison économique pour les commandes non urgentes." },
-  { icon: Clock, title: "Express", delay: "24-48h", desc: "Livraison rapide pour les commandes urgentes." },
-  { icon: MapPin, title: "Point relais", delay: "3-5 jours", desc: "Retrait dans l'un de nos 1 200 points relais en Belgique." },
+  { icon: Truck, title: "Standard", delay: "2-5 jours", desc: "Livraison économique pour les commandes non urgentes.", comingSoon: false },
+  { icon: Clock, title: "Express", delay: "24-48h", desc: "Livraison rapide pour les commandes urgentes.", comingSoon: true },
+  { icon: MapPin, title: "Point relais", delay: "3-5 jours", desc: "Retrait dans l'un de nos 1 200 points relais en Belgique.", comingSoon: true },
 ];
 
 export default function LogisticsPage() {

@@ -251,11 +251,28 @@ export default function VendorPublicPage() {
 
   const brandFilterReady = !!serverBrandSlug && !!serverBrandId;
 
+  // Recherche serveur : debounce 300 ms sur `filters.search`, poussée en
+  // `products.name ILIKE '%q%'` via l'embed !inner. Vide → pas de filtre serveur.
+  const [debouncedSearch, setDebouncedSearch] = useState(filters.search.trim());
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(filters.search.trim()), 300);
+    return () => clearTimeout(t);
+  }, [filters.search]);
+  // Échappe les wildcards SQL pour éviter qu'un % ou _ saisi par l'utilisateur
+  // ne casse la requête ou n'ouvre un pattern non voulu.
+  const serverSearchPattern = debouncedSearch
+    ? `%${debouncedSearch.replace(/[\\%_]/g, (c) => `\\${c}`)}%`
+    : null;
+
   // Phase 2 : pagination serveur via useInfiniteQuery.
   // Tri serveur appliqué : ruptures en bas → prix HTVA croissant → plus récent.
-  // Filtres autres que "marque unique" restent appliqués côté client sur les
-  // pages déjà chargées (multi-marque, catégorie, search, prix, in-stock).
+  // Filtres autres que "marque unique" / "recherche" restent appliqués côté
+  // client sur les pages déjà chargées (multi-marque, catégorie, prix, in-stock).
   const PAGE_SIZE = 24;
+
+  // L'embed products doit être !inner dès qu'on filtre sur une colonne de
+  // products (brand_id ou name), sinon le filtre est ignoré par PostgREST.
+  const needsInnerJoin = brandFilterReady || !!serverSearchPattern;
 
   const {
     data: offersPages,
@@ -268,6 +285,7 @@ export default function VendorPublicPage() {
       "vendor-offers-public",
       vendor?.id,
       brandFilterReady ? serverBrandId : null,
+      serverSearchPattern,
     ],
     initialPageParam: 0,
     queryFn: async ({ pageParam, signal }) => {
@@ -276,7 +294,7 @@ export default function VendorPublicPage() {
       let q = supabase
         .from("offers")
         .select(
-          brandFilterReady
+          needsInnerJoin
             ? "*, products!inner(id, slug, name, brand_name, brand_id, image_urls, category_name, category_id, brands(slug))"
             : "*, products(id, slug, name, brand_name, brand_id, image_urls, category_name, category_id, brands(slug))"
         )
@@ -288,6 +306,9 @@ export default function VendorPublicPage() {
         .order("created_at", { ascending: false });
       if (brandFilterReady) {
         q = q.eq("products.brand_id", serverBrandId!);
+      }
+      if (serverSearchPattern) {
+        q = q.ilike("products.name", serverSearchPattern);
       }
       const { data, error } = await q.range(from, to).abortSignal(signal);
       if (error) throw error;

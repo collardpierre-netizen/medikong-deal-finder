@@ -135,7 +135,7 @@ function MultiPicker({ label, items, selected, setSelected, placeholder }: Multi
   );
 }
 
-function VendorMovCard({ group }: { group: VendorGroup }) {
+function VendorMovCard({ group, displayName }: { group: VendorGroup; displayName: string }) {
   const mov = group.max_mov_eur_cents || 0;
   const basket = Number(group.min_basket_at_moq_eur_cents || 0);
   const reach = mov > 0 ? Math.min(100, Math.round((basket / mov) * 100)) : 100;

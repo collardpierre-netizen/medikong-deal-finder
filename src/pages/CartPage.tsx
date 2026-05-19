@@ -84,8 +84,6 @@ export default function CartPage() {
     enabled: vendorIds.length > 0,
   });
 
-    enabled: vendorIds.length > 0,
-  });
 
   const vendorMap = useMemo(() => new Map(vendors.map(v => [v.id, v])), [vendors]);
 

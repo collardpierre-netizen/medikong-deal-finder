@@ -116,6 +116,7 @@ const HelpCenterPage = lazyWithRetry(() => import("./pages/trust/HelpCenterPage"
 const HelpArticlePage = lazyWithRetry(() => import("./pages/trust/HelpArticlePage"), "HelpArticlePage");
 const HelpCategoryPage = lazyWithRetry(() => import("./pages/trust/HelpCategoryPage"), "HelpCategoryPage");
 const PricingBasisHelpPage = lazyWithRetry(() => import("./pages/help/PricingBasisHelpPage"), "PricingBasisHelpPage");
+const PricingGlossaryHelpPage = lazyWithRetry(() => import("./pages/help/PricingGlossaryHelpPage"), "PricingGlossaryHelpPage");
 const UnsubscribePage = lazyWithRetry(() => import("./pages/UnsubscribePage"), "UnsubscribePage");
 
 // Legal pages

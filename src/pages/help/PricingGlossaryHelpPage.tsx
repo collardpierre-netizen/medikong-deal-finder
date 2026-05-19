@@ -169,7 +169,10 @@ export default function PricingGlossaryHelpPage() {
           content="Comprendre les différentes notions de prix sur MediKong : PVP conseillé, prix marché HTVA et prix public TTC, avec exemples concrets."
         />
         <link rel="canonical" href="https://medikong.pro/aide/glossaire-prix" />
-        <link rel="canonical" href="https://medikong.pro/aide/glossaire-prix" />
+        <meta property="og:title" content="Glossaire des prix : PVP, prix marché, prix public — MediKong" />
+        <meta property="og:description" content="Comprendre PVP conseillé, prix marché HTVA et prix public TTC sur MediKong, avec exemples concrets et FAQ." />
+        <meta property="og:url" content="https://medikong.pro/aide/glossaire-prix" />
+        <meta property="og:type" content="article" />
         <script type="application/ld+json">
           {JSON.stringify({
             "@context": "https://schema.org",
@@ -179,6 +182,29 @@ export default function PricingGlossaryHelpPage() {
               name: it.q,
               acceptedAnswer: { "@type": "Answer", text: it.plain },
             })),
+          })}
+        </script>
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              { "@type": "ListItem", position: 1, name: "Accueil", item: "https://medikong.pro/" },
+              { "@type": "ListItem", position: 2, name: "Centre d'aide", item: "https://medikong.pro/centre-aide" },
+              { "@type": "ListItem", position: 3, name: "Glossaire des prix", item: "https://medikong.pro/aide/glossaire-prix" },
+            ],
+          })}
+        </script>
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Article",
+            headline: "Glossaire des prix : PVP, prix marché, prix public",
+            description: "Comprendre PVP conseillé, prix marché HTVA et prix public TTC sur MediKong.",
+            mainEntityOfPage: "https://medikong.pro/aide/glossaire-prix",
+            inLanguage: "fr-BE",
+            author: { "@type": "Organization", name: "MediKong" },
+            publisher: { "@type": "Organization", name: "MediKong" },
           })}
         </script>
       </Helmet>

@@ -242,7 +242,11 @@ export function BuyerRfqTracker({ rfqId }: { rfqId: string }) {
                 <tr key={r.dispatch_id || r.vendor_id} className="border-t align-top">
                   <td className="px-3 py-3">
                     <div className="font-medium">
-                      {r.vendor_name || (r.vendor_display_code ? `Vendeur ${r.vendor_display_code}` : "—")}
+                      {/* 🔒 Anonymisation : libellé public uniquement via getVendorPublicName. */}
+                      {(() => {
+                        const { getVendorPublicName } = require("@/lib/vendor-display");
+                        return getVendorPublicName({ display_code: r.vendor_display_code });
+                      })()}
                     </div>
                     {r.target_reason && (
                       <div className="text-[10px] text-muted-foreground mt-0.5">

@@ -5,6 +5,159 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
+const FAQ_ITEMS: { q: string; a: React.ReactNode; plain: string }[] = [
+  {
+    q: "Quelle est la différence entre PVP conseillé et prix marché ?",
+    plain:
+      "Le PVP conseillé est le prix public TTC recommandé pour la vente au comptoir (source APB/PMR ou fabricant). Le prix marché est le prix HTVA médian observé chez les autres grossistes B2B (Febelco, CERP, Medi-Market, Qogita). Le premier sert à calculer votre marge de revente, le second à benchmarker votre prix d'achat.",
+    a: (
+      <>
+        <p>
+          Le <strong>PVP conseillé</strong> est un prix <strong>TTC</strong>{" "}
+          destiné au consommateur final (source APB / PMR ou fabricant).
+          Vous l'utilisez pour calculer votre marge de revente.
+        </p>
+        <p>
+          Le <strong>prix marché</strong> est un prix <strong>HTVA</strong>{" "}
+          médian observé chez les autres grossistes B2B (Febelco, CERP,
+          Medi-Market, Qogita…). Vous l'utilisez pour vérifier que votre
+          prix d'achat MediKong est compétitif.
+        </p>
+      </>
+    ),
+  },
+  {
+    q: "HTVA ou TTC : quel prix vois-je par défaut sur MediKong ?",
+    plain:
+      "Par défaut, MediKong affiche tous les prix HTVA car la plateforme est strictement B2B. Un toggle HTVA/TTC est disponible sur la fiche produit pour basculer l'affichage. Le panier et le checkout affichent toujours le détail HTVA + TVA + TTC.",
+    a: (
+      <>
+        <p>
+          MediKong est une plateforme <strong>strictement B2B</strong> : par
+          défaut, les prix de vente, MOV et économies sont affichés{" "}
+          <strong>HTVA</strong>.
+        </p>
+        <p>
+          Sur la fiche produit, un toggle <code>HTVA / TTC</code> permet de
+          basculer l'affichage. Le panier et le checkout détaillent
+          systématiquement HTVA + TVA + TTC.
+        </p>
+      </>
+    ),
+  },
+  {
+    q: "Comment savoir si un produit est à 6 % ou 21 % de TVA ?",
+    plain:
+      "La TVA est résolue automatiquement par MediKong selon la règle : override produit > CNK exact > préfixe CNK > catégorie > fallback 21 %. Les médicaments enregistrés sont à 6 %, la parapharmacie / OTC à 21 % en Belgique. Le taux appliqué est visible dans le détail du prix (panier, checkout, fiche produit).",
+    a: (
+      <>
+        <p>
+          MediKong applique la TVA belge :{" "}
+          <strong>6 % pour les médicaments enregistrés</strong> et{" "}
+          <strong>21 % pour la parapharmacie / OTC</strong>.
+        </p>
+        <p>
+          La résolution est automatique selon l'ordre : override produit
+          &gt; CNK exact &gt; préfixe CNK &gt; catégorie &gt; fallback 21 %.
+          Le taux appliqué apparaît dans le détail du prix (panier,
+          checkout, ligne facture).
+        </p>
+      </>
+    ),
+  },
+  {
+    q: "Comment lire les remises (–X %) affichées sur les produits ?",
+    plain:
+      "Le pourcentage de remise compare le prix MediKong HTVA à un prix de référence : PVP conseillé converti en HTVA, ou prix marché HTVA médian, selon le toggle 'Prix de référence' sur la page Bonnes affaires. Sur la fiche produit, le badge 'PVP économie' montre l'écart en € et en % entre votre prix d'achat HTVA et le PVP TTC.",
+    a: (
+      <>
+        <p>
+          Le pourcentage de remise compare le <strong>prix MediKong HTVA</strong>{" "}
+          à un prix de référence configurable :
+        </p>
+        <ul className="list-disc pl-5 space-y-1">
+          <li>PVP conseillé (converti en HTVA pour rester comparable)</li>
+          <li>ou prix marché HTVA médian (autres grossistes B2B)</li>
+        </ul>
+        <p>
+          Sur la page <Link to="/bonnes-affaires" className="text-primary underline">Bonnes affaires</Link>{" "}
+          vous pouvez basculer entre les deux références. Sur la fiche
+          produit, le badge « PVP économie » montre directement l'écart en
+          € et en % entre votre achat et le PVP.
+        </p>
+      </>
+    ),
+  },
+  {
+    q: "Une promo flash modifie-t-elle le PVP ou seulement le prix MediKong ?",
+    plain:
+      "Une promo flash réduit uniquement le prix MediKong HTVA pendant la durée de l'opération. Le PVP conseillé reste inchangé : il sert toujours de référence officielle pour la revente au comptoir. La promo augmente donc mécaniquement votre marge brute sur le produit concerné.",
+    a: (
+      <>
+        <p>
+          Une promo flash réduit <strong>uniquement le prix MediKong HTVA</strong>{" "}
+          pendant la durée de l'opération.
+        </p>
+        <p>
+          Le PVP conseillé reste <strong>inchangé</strong> : il sert toujours
+          de référence officielle pour la revente au comptoir. Votre marge
+          brute augmente donc mécaniquement pendant la promo.
+        </p>
+      </>
+    ),
+  },
+  {
+    q: "Pourquoi le prix par unité (€/u.) diffère du prix affiché ?",
+    plain:
+      "Le prix affiché par défaut est le prix par pack (l'unité d'achat). Le €/u. divise ce prix par le nombre d'unités contenues dans le pack (ex. 4×125 ml = 4 unités) pour comparer plus facilement deux conditionnements différents. Le €/100u. normalise sur 100 unités pour les très petits formats.",
+    a: (
+      <>
+        <p>
+          Le prix par défaut est le <strong>prix par pack</strong> (l'unité
+          d'achat livrée). MediKong propose deux normalisations
+          complémentaires :
+        </p>
+        <ul className="list-disc pl-5 space-y-1">
+          <li>
+            <strong>€/u.</strong> : prix divisé par le nombre d'unités
+            contenues dans le pack (ex. 4×125 ml = 4 unités).
+          </li>
+          <li>
+            <strong>€/100u.</strong> : prix normalisé sur 100 unités, utile
+            pour comparer des très petits formats.
+          </li>
+        </ul>
+        <p>
+          Voir aussi :{" "}
+          <Link to="/aide/packs-et-prix-100" className="text-primary underline">
+            Packs, unités et €/100
+          </Link>
+          .
+        </p>
+      </>
+    ),
+  },
+  {
+    q: "« Votre prix » vs prix vitrine : que signifie ce badge ?",
+    plain:
+      "Le badge 'Votre prix' indique qu'un prix spécifique a été résolu pour votre profil professionnel (pharmacien, parapharmacie, grossiste…) ou qu'un vendeur a configuré un tarif différencié pour votre catégorie d'acheteur. Le prix vitrine est le prix HTVA par défaut visible par tous les acheteurs vérifiés.",
+    a: (
+      <>
+        <p>
+          Le badge <strong>« Votre prix »</strong> indique qu'un tarif
+          spécifique a été résolu pour votre profil professionnel
+          (pharmacien, parapharmacie, grossiste…) — soit par défaut global
+          MediKong, soit configuré par le vendeur pour votre catégorie.
+        </p>
+        <p>
+          Le <strong>prix vitrine</strong> est le prix HTVA par défaut
+          visible par tous les acheteurs vérifiés sans condition de profil.
+        </p>
+      </>
+    ),
+  },
+];
+
 export default function PricingGlossaryHelpPage() {
   return (
     <main className="container mx-auto max-w-3xl px-4 py-10">

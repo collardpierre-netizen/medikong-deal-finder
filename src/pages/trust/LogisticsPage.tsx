@@ -49,8 +49,6 @@ export default function LogisticsPage() {
       <Section bg="gray" title="Nos performances logistiques">
         <StatsRow stats={[
           { value: 24, suffix: "h", label: "Délai moyen d'expédition" },
-          { value: 98, suffix: "%", label: "Livraisons à l'heure" },
-          { value: 1200, suffix: "+", label: "Points relais" },
           { value: 0.5, suffix: "%", label: "Taux de colis endommagés" },
           { value: 4.8, suffix: "/5", label: "Note transporteurs" },
         ]} />

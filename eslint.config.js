@@ -61,4 +61,35 @@ export default tseslint.config(
       "no-fallthrough": "error",
     },
   },
+  // ── Vendor anonymity guardrail (client UI) ──────────────────────────
+  // Interdit le rendu JSX direct des champs vendeur sensibles
+  // (company_name / show_real_name / vendor_name) en dehors des helpers
+  // d'anonymisation (`getVendorPublicName`, `sanitizeVendorLabel`,
+  // `resolveVendorName`). Cf. mem://security/vendor-anonymity-guardrail.
+  {
+    files: ["src/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector:
+            'JSXExpressionContainer MemberExpression[property.name="company_name"]:not(CallExpression[callee.name=/^(getVendorPublicName|sanitizeVendorLabel|resolveVendorName)$/] *)',
+          message:
+            "Ne rendez jamais `.company_name` directement dans le JSX. Routez via getVendorPublicName / sanitizeVendorLabel / resolveVendorName.",
+        },
+        {
+          selector:
+            'JSXExpressionContainer MemberExpression[property.name="show_real_name"]:not(CallExpression[callee.name=/^(getVendorPublicName|sanitizeVendorLabel|resolveVendorName)$/] *)',
+          message:
+            "Ne rendez jamais `.show_real_name` directement dans le JSX. Routez via getVendorPublicName / sanitizeVendorLabel / resolveVendorName.",
+        },
+        {
+          selector:
+            'JSXExpressionContainer MemberExpression[property.name="vendor_name"]:not(CallExpression[callee.name=/^(getVendorPublicName|sanitizeVendorLabel|resolveVendorName)$/] *)',
+          message:
+            "Ne rendez jamais `.vendor_name` directement dans le JSX. Routez via getVendorPublicName / sanitizeVendorLabel / resolveVendorName.",
+        },
+      ],
+    },
+  },
 );

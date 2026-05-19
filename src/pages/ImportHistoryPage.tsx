@@ -5,9 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Download, FileText, Loader2, RefreshCw, AlertCircle } from "lucide-react";
+import { Download, FileText, Loader2, RefreshCw, AlertCircle, Eye, RotateCw } from "lucide-react";
 import { formatUpdatedAt } from "@/lib/format-date";
 import { toast } from "@/hooks/use-toast";
+import { replayImportJob } from "@/hooks/useImportJob";
 
 type ImportJob = {
   id: string;

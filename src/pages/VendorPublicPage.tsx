@@ -1,6 +1,6 @@
 import { Layout } from "@/components/layout/Layout";
 import { useParams, Link, useSearchParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 import { motion, AnimatePresence } from "framer-motion";
@@ -249,51 +249,61 @@ export default function VendorPublicPage() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const SAFE_FETCH_LIMIT = 2000;
   const brandFilterReady = !!serverBrandSlug && !!serverBrandId;
-  const overFetchGuardActive =
-    vendorOfferCount > SAFE_FETCH_LIMIT && !brandFilterReady;
 
-  // Fetch vendor offers — paginated, server-side filtré par brand_id si demandé.
-  const { data: offers = [] } = useQuery({
+  // Phase 2 : pagination serveur via useInfiniteQuery.
+  // Tri serveur appliqué : ruptures en bas → prix HTVA croissant → plus récent.
+  // Filtres autres que "marque unique" restent appliqués côté client sur les
+  // pages déjà chargées (multi-marque, catégorie, search, prix, in-stock).
+  const PAGE_SIZE = 24;
+
+  const {
+    data: offersPages,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading: offersLoading,
+  } = useInfiniteQuery({
     queryKey: [
       "vendor-offers-public",
       vendor?.id,
       brandFilterReady ? serverBrandId : null,
     ],
-    queryFn: async ({ signal }) => {
-      const PAGE = 1000;
-      let all: any[] = [];
-      let page = 0;
-      let hasMore = true;
-      while (hasMore) {
-        if (signal?.aborted) throw new DOMException("Aborted", "AbortError");
-        const from = page * PAGE;
-        let q = supabase
-          .from("offers")
-          .select(
-            brandFilterReady
-              ? "*, products!inner(id, slug, name, brand_name, brand_id, image_urls, category_name, category_id, brands(slug))"
-              : "*, products(id, slug, name, brand_name, brand_id, image_urls, category_name, category_id, brands(slug))"
-          )
-          .eq("vendor_id", vendor!.id)
-          .eq("is_active", true);
-        if (brandFilterReady) {
-          q = q.eq("products.brand_id", serverBrandId!);
-        }
-        const { data } = await q.range(from, from + PAGE - 1).abortSignal(signal);
-        all = all.concat(data || []);
-        hasMore = (data?.length || 0) === PAGE;
-        page++;
+    initialPageParam: 0,
+    queryFn: async ({ pageParam, signal }) => {
+      const from = (pageParam as number) * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
+      let q = supabase
+        .from("offers")
+        .select(
+          brandFilterReady
+            ? "*, products!inner(id, slug, name, brand_name, brand_id, image_urls, category_name, category_id, brands(slug))"
+            : "*, products(id, slug, name, brand_name, brand_id, image_urls, category_name, category_id, brands(slug))"
+        )
+        .eq("vendor_id", vendor!.id)
+        .eq("is_active", true)
+        // Tri serveur : OOS en bas, puis prix croissant, puis récence
+        .order("stock_status", { ascending: true, nullsFirst: false })
+        .order("price_excl_vat", { ascending: true, nullsFirst: false })
+        .order("created_at", { ascending: false });
+      if (brandFilterReady) {
+        q = q.eq("products.brand_id", serverBrandId!);
       }
-      return all;
+      const { data, error } = await q.range(from, to).abortSignal(signal);
+      if (error) throw error;
+      return data || [];
     },
+    getNextPageParam: (lastPage, allPages) =>
+      lastPage.length === PAGE_SIZE ? allPages.length : undefined,
     enabled:
-      !!vendor?.id &&
-      !overFetchGuardActive &&
-      (serverBrandSlug == null || !!serverBrandId),
+      !!vendor?.id && (serverBrandSlug == null || !!serverBrandId),
     staleTime: 5 * 60 * 1000,
   });
+
+  const offers = useMemo(
+    () => (offersPages?.pages ?? []).flat(),
+    [offersPages]
+  );
 
 
   // Map to display products (dedupe by product id, keep cheapest in-stock offer)
@@ -616,41 +626,47 @@ export default function VendorPublicPage() {
               </div>
             )}
 
-            {overFetchGuardActive ? (
-              <div className="text-center py-16 border border-dashed border-border rounded-xl bg-accent/30">
-                <Package size={40} className="mx-auto text-primary mb-3" />
-                <h3 className="text-base font-bold text-foreground mb-2">
-                  Ce fournisseur référence {vendorOfferCount.toLocaleString("fr-BE")} produits
-                </h3>
-                <p className="text-sm text-muted-foreground max-w-md mx-auto mb-4">
-                  Pour garder la navigation rapide, sélectionnez d'abord une marque
-                  ou utilisez la recherche ci-dessous afin d'affiner l'affichage.
-                </p>
-                <div className="relative max-w-xs mx-auto">
-                  <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    autoFocus
-                    placeholder="Rechercher un produit, une marque…"
-                    value={filters.search}
-                    onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value }))}
-                    className="pl-8 h-9 text-sm"
-                  />
-                </div>
+            {offersLoading && offers.length === 0 ? (
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="border border-border rounded-lg p-3 animate-pulse">
+                    <div className="aspect-square rounded-lg bg-muted mb-2" />
+                    <div className="h-3 w-1/2 bg-muted rounded mb-2" />
+                    <div className="h-4 w-3/4 bg-muted rounded mb-2" />
+                    <div className="h-5 w-1/3 bg-muted rounded" />
+                  </div>
+                ))}
               </div>
             ) : filteredProducts.length > 0 ? (
-              view === "grid" ? (
-                <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-                  {filteredProducts.map((p: any, i: number) => (
-                    <VendorProductCard key={p.id} product={p} index={i} addToCart={addToCart} openDrawer={openDrawer} onQuickView={setQuickViewProduct} />
-                  ))}
-                </div>
-              ) : (
-                <div className="border border-border rounded-xl overflow-hidden divide-y divide-border">
-                  {filteredProducts.map((p: any) => (
-                    <VendorProductListRow key={p.id} product={p} addToCart={addToCart} openDrawer={openDrawer} onQuickView={setQuickViewProduct} />
-                  ))}
-                </div>
-              )
+              <>
+                {view === "grid" ? (
+                  <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+                    {filteredProducts.map((p: any, i: number) => (
+                      <VendorProductCard key={p.id} product={p} index={i} addToCart={addToCart} openDrawer={openDrawer} onQuickView={setQuickViewProduct} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="border border-border rounded-xl overflow-hidden divide-y divide-border">
+                    {filteredProducts.map((p: any) => (
+                      <VendorProductListRow key={p.id} product={p} addToCart={addToCart} openDrawer={openDrawer} onQuickView={setQuickViewProduct} />
+                    ))}
+                  </div>
+                )}
+
+                {hasNextPage && (
+                  <div className="flex justify-center mt-6">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => fetchNextPage()}
+                      disabled={isFetchingNextPage}
+                      className="min-w-[200px]"
+                    >
+                      {isFetchingNextPage ? "Chargement…" : "Charger plus de produits"}
+                    </Button>
+                  </div>
+                )}
+              </>
             ) : (
               <div className="text-center py-16 border border-dashed border-border rounded-xl">
                 <Package size={40} className="mx-auto text-muted-foreground mb-3" />

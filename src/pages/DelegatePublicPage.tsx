@@ -192,9 +192,9 @@ export default function DelegatePublicPage() {
         <div className="max-w-3xl mx-auto px-4 py-6 sm:py-10">
           {/* Breadcrumb / retour */}
           <div className="mb-6 flex items-center gap-2 text-sm text-muted-foreground">
-            {vendor?.slug && (
+            {vendor?.display_code && (
               <Link
-                to={`/vendeur/${vendor.slug}`}
+                to={`/vendeur/${vendor.display_code}`}
                 className="inline-flex items-center gap-1 hover:text-foreground"
               >
                 <ArrowLeft size={14} />

@@ -138,8 +138,17 @@ export function VendorTrustHeader({ trust, variant = "full", className = "" }: P
           {initials}
         </span>
 
-        <span className="font-bold text-sm text-foreground truncate" title={displayName}>
-          {displayName}
+        <span className="font-bold text-sm text-foreground truncate flex items-baseline gap-1.5" title={displayName}>
+          {realName ? (
+            realName
+          ) : (
+            <>
+              <span className="text-foreground">Fournisseur</span>
+              <span className="font-mono font-bold text-[15px] tracking-[0.15em] uppercase text-foreground bg-muted/70 rounded px-1.5 py-0.5">
+                {trust.publicIdentifier}
+              </span>
+            </>
+          )}
         </span>
 
         {showRating && (

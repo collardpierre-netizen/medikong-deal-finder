@@ -27,7 +27,7 @@ export default function BonnesAffairesPage() {
 
   const [reference, setReference] = useState<DiscountReference>("pvp");
   const [minPct, setMinPct] = useState<number>(30);
-  const [country, setCountry] = useState<string>(currentCountry || "BE");
+  const [country, setCountry] = useState<string>(String(currentCountry || "BE"));
   const [brandIds, setBrandIds] = useState<string[]>([]);
   const [mfIds, setMfIds] = useState<string[]>([]);
   const [brandQuery, setBrandQuery] = useState("");

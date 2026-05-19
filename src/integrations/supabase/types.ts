@@ -19766,15 +19766,42 @@ export type Database = {
           brand_name: string
           cnk: string
           country_code: string
+          delivery_days: number
           discount_pct: number
           manufacturer_id: string
           manufacturer_name: string
+          moq: number
+          mov_eur_cents: number
+          offer_id: string
           product_id: string
           product_name: string
           product_slug: string
           reference_kind: string
           reference_price_cents: number
+          stock_quantity: number
           total_count: number
+          vendor_id: string
+          vendor_name: string
+        }[]
+      }
+      search_discount_offers_by_vendor: {
+        Args: {
+          _brand_ids?: string[]
+          _category_ids?: string[]
+          _country?: string
+          _limit?: number
+          _manufacturer_ids?: string[]
+          _max_products_per_vendor?: number
+          _min_discount_pct?: number
+          _reference?: string
+        }
+        Returns: {
+          avg_discount_pct: number
+          max_mov_eur_cents: number
+          min_basket_at_moq_eur_cents: number
+          product_count: number
+          products: Json
+          total_savings_eur_cents: number
           vendor_id: string
           vendor_name: string
         }[]

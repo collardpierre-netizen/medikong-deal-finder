@@ -1,12 +1,15 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Plus, Loader2 } from "lucide-react";
+import { useState } from "react";
 
 interface VendorTopBrandsProps {
   vendorId: string;
   vendorSlug?: string;
-  limit?: number;
+  initialLimit?: number;
+  step?: number;
+  maxLimit?: number;
 }
 
 type TopBrand = {
@@ -17,8 +20,16 @@ type TopBrand = {
   offer_count: number;
 };
 
-export function VendorTopBrands({ vendorId, vendorSlug, limit = 12 }: VendorTopBrandsProps) {
-  const { data, isLoading, isError } = useQuery({
+export function VendorTopBrands({
+  vendorId,
+  vendorSlug,
+  initialLimit = 12,
+  step = 12,
+  maxLimit = 96,
+}: VendorTopBrandsProps) {
+  const [limit, setLimit] = useState(initialLimit);
+
+  const { data, isLoading, isFetching, isError } = useQuery({
     queryKey: ["vendor-top-brands", vendorId, limit],
     queryFn: async () => {
       const { data, error } = await supabase.rpc("vendor_top_brands", {
@@ -30,10 +41,16 @@ export function VendorTopBrands({ vendorId, vendorSlug, limit = 12 }: VendorTopB
     },
     enabled: !!vendorId,
     staleTime: 5 * 60 * 1000,
+    placeholderData: keepPreviousData,
   });
 
   if (isError) return null;
   if (!isLoading && (!data || data.length === 0)) return null;
+
+  // Si on reçoit strictement moins que ce qu'on a demandé, on a atteint le bout.
+  const reachedEnd = !!data && data.length < limit;
+  const canLoadMore = !reachedEnd && limit < maxLimit;
+  const loadingMore = isFetching && !isLoading;
 
   return (
     <section className="border-b border-border bg-background">
@@ -42,11 +59,14 @@ export function VendorTopBrands({ vendorId, vendorSlug, limit = 12 }: VendorTopB
           <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
             <Sparkles size={12} className="text-primary" />
             Marques phares
+            {!isLoading && data && (
+              <span className="ml-1 text-muted-foreground/70 normal-case tracking-normal font-normal">
+                · {data.length}
+              </span>
+            )}
           </h2>
-          {!isLoading && data && data.length >= limit && (
-            <span className="text-[11px] text-muted-foreground">Top {limit}</span>
-          )}
         </div>
+
 
         <div className="flex gap-3 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-thin">
           {isLoading

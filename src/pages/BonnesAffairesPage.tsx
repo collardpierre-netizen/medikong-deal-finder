@@ -588,7 +588,7 @@ export default function BonnesAffairesPage() {
                                 {r.cnk && <div className="text-[10px] text-muted-foreground">CNK {r.cnk}</div>}
                               </td>
                               <td className="py-2 pr-3 text-muted-foreground">{r.brand_name || "—"}</td>
-                              <td className="py-2 pr-3 text-muted-foreground">{r.vendor_name || "—"}</td>
+                              <td className="py-2 pr-3 text-muted-foreground">{resolveVendorName(r.vendor_id, r.vendor_name)}</td>
                               <td className="py-2 pr-3 text-right font-semibold tabular-nums">{fmtEur(r.best_price_htva_cents)}</td>
                               <td className="py-2 pr-3 text-right text-muted-foreground tabular-nums line-through">{fmtEur(r.reference_price_cents)}</td>
                               <td className="py-2 pr-3 text-right tabular-nums">{r.moq}</td>

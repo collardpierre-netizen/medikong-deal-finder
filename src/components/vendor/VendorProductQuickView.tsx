@@ -22,7 +22,7 @@ interface QuickViewProduct {
   gtin?: string | null;
   vendorId: string;
   vendorDisplayName?: string | null;
-  vendorSlug?: string | null;
+  vendorDisplayCode?: string | null;
 }
 
 interface Props {

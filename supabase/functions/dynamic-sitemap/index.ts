@@ -8,6 +8,11 @@ Deno.serve(async () => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
   );
 
+  // ⚠️ NE JAMAIS ajouter d'entrées /vendeur/:slug ni /vendeur/:code à ce sitemap.
+  // Les fiches vendeur publiques sont volontairement exclues de l'indexation
+  // (anonymisation systématique des fournisseurs — cf. mem `vendor-anonymity-guardrail`).
+  // L'ancienne route /vendeur/:slug renvoie un 410 + meta noindex,nofollow
+  // (cf. VendorLegacySlugGone + supabase/functions/vendor-legacy-gone).
   const staticPages = [
     { loc: "/", priority: "1.0", changefreq: "daily" },
     { loc: "/catalogue", priority: "0.9", changefreq: "daily" },

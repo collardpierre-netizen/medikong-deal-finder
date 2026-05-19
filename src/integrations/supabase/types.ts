@@ -19885,6 +19885,7 @@ export type Database = {
         | "offers_detail"
         | "manual"
         | "offers_multi_vendor"
+        | "vendor_top_brands_mv"
       urgency_enum: "low" | "medium" | "high"
       vendor_market_intel_billing: "stripe" | "medikong_invoice"
       vendor_market_intel_status:
@@ -20226,6 +20227,7 @@ export const Constants = {
         "offers_detail",
         "manual",
         "offers_multi_vendor",
+        "vendor_top_brands_mv",
       ],
       urgency_enum: ["low", "medium", "high"],
       vendor_market_intel_billing: ["stripe", "medikong_invoice"],

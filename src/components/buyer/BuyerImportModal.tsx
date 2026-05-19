@@ -36,7 +36,7 @@ type MatchedLine = ImportLine & {
   productSku?: string;
   mediPrice?: number;
   offerId?: string;
-  vendorName?: string;
+  vendorDisplayName?: string;
   matchedBy?: MatchField;
   status: "found" | "unavailable";
   saving?: number;
@@ -245,7 +245,7 @@ const queryMatchImportLines = async (payload: ImportPayloadLine[]) => {
         mediPrice,
         offerId: offer?.id ?? undefined,
         // 🔒 Anonymisation : libellé public uniquement, jamais company_name/name brut.
-        vendorName: vendor ? getVendorPublicName(vendor) : "—",
+        vendorDisplayName: vendor ? getVendorPublicName(vendor) : "—",
         matchedBy,
         status: product && offer ? "found" : "unavailable",
         saving: mediPrice != null && currentPrice > mediPrice ? Math.max(0, currentPrice - mediPrice) : 0,
@@ -521,7 +521,7 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
         CNK: r.cnk || "",
         SKU: r.sku || r.productSku || "",
         "Identifié par": r.matchedBy ? MATCH_FIELD_LABEL[r.matchedBy] : "Aucun match (GTIN/CNK/SKU)",
-        Vendeur: r.status === "found" ? (r.vendorName || "—") : "—",
+        Vendeur: r.status === "found" ? (r.vendorDisplayName || "—") : "—",
         "Qté": r.quantity,
         "Votre prix HT": r.currentPrice > 0 ? Number(r.currentPrice.toFixed(2)) : null,
         "Prix MediKong HT": r.mediPrice != null ? Number(r.mediPrice.toFixed(2)) : null,
@@ -692,7 +692,7 @@ export function BuyerImportModal({ open, onOpenChange }: Props) {
             r.sku ? `SKU: ${r.sku}` : null,
           ].filter(Boolean).join(" · ") || "—",
           r.matchedBy ? MATCH_FIELD_LABEL[r.matchedBy] : "Aucun match",
-          r.status === "found" ? (r.vendorName || "—") : "—",
+          r.status === "found" ? (r.vendorDisplayName || "—") : "—",
           String(r.quantity),
           r.currentPrice > 0 ? formatPrice(r.currentPrice) : "—",
           r.mediPrice != null ? formatPrice(r.mediPrice) : "—",

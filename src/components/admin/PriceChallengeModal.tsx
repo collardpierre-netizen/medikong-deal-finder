@@ -23,7 +23,7 @@ const REASON_LABEL: Record<string, string> = {
 
 export interface ChallengeContext {
   vendorId: string;
-  vendorName: string;
+  vendorDisplayName: string;
   productId: string;
   productName: string;
   offerId: string | null;
@@ -155,7 +155,7 @@ export default function PriceChallengeModal({ open, onOpenChange, ctx, quickSend
                 recipientEmail,
                 idempotencyKey: `price-challenge-${notif?.id ?? `${ctx.vendorId}-${ctx.productId}-${Date.now()}`}`,
                 templateData: {
-                  vendorName: vendor?.company_name || vendor?.name || ctx.vendorName,
+                  vendorName: vendor?.company_name || vendor?.name || ctx.vendorDisplayName,
                   productName: ctx.productName,
                   cnk: (prod as any)?.cnk_code ?? null,
                   mkPriceHt: ctx.mkPriceHt,
@@ -177,11 +177,11 @@ export default function PriceChallengeModal({ open, onOpenChange, ctx, quickSend
       }
 
       if (emailStatus === "sent") {
-        toast.success(`Challenge envoyé à ${ctx.vendorName} (notification + email)`);
+        toast.success(`Challenge envoyé à ${ctx.vendorDisplayName} (notification + email)`);
       } else if (emailStatus === "failed") {
-        toast.warning(`Notification créée pour ${ctx.vendorName}, mais l'email n'a pas pu être envoyé.`);
+        toast.warning(`Notification créée pour ${ctx.vendorDisplayName}, mais l'email n'a pas pu être envoyé.`);
       } else {
-        toast.success(`Challenge envoyé à ${ctx.vendorName} (notification — email vendeur non renseigné)`);
+        toast.success(`Challenge envoyé à ${ctx.vendorDisplayName} (notification — email vendeur non renseigné)`);
       }
       onOpenChange(false);
       setMessage("");
@@ -232,7 +232,7 @@ export default function PriceChallengeModal({ open, onOpenChange, ctx, quickSend
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Zap className="w-5 h-5 text-mk-blue" /> Envoi rapide à {ctx.vendorName}
+              <Zap className="w-5 h-5 text-mk-blue" /> Envoi rapide à {ctx.vendorDisplayName}
             </DialogTitle>
           </DialogHeader>
           {CooldownBanner}
@@ -257,7 +257,7 @@ export default function PriceChallengeModal({ open, onOpenChange, ctx, quickSend
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Challenger {ctx.vendorName}</DialogTitle>
+          <DialogTitle>Challenger {ctx.vendorDisplayName}</DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
           {CooldownBanner}

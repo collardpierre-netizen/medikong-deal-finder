@@ -255,24 +255,56 @@ export default function ImportHistoryPage() {
                           )}
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            disabled={
-                              downloadingId === job.id ||
-                              !["completed", "failed"].includes(job.status)
-                            }
-                            onClick={() => downloadErrors(job)}
-                          >
-                            {downloadingId === job.id ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
+                          <div className="flex justify-end gap-1.5 flex-wrap">
+                            {job.job_type === "buyer_comparator" && (
                               <>
-                                <Download className="h-4 w-4 mr-1" />
-                                Erreurs CSV
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  disabled={job.status !== "completed"}
+                                  onClick={() => viewResults(job)}
+                                  title="Réinjecter les résultats dans le comparateur"
+                                >
+                                  <Eye className="h-4 w-4 mr-1" />
+                                  Voir
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  disabled={replayingId === job.id || !["completed", "failed", "cancelled"].includes(job.status)}
+                                  onClick={() => replay(job)}
+                                  title="Rejouer le même fichier (nouveau job)"
+                                >
+                                  {replayingId === job.id ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <>
+                                      <RotateCw className="h-4 w-4 mr-1" />
+                                      Relancer
+                                    </>
+                                  )}
+                                </Button>
                               </>
                             )}
-                          </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled={
+                                downloadingId === job.id ||
+                                !["completed", "failed"].includes(job.status)
+                              }
+                              onClick={() => downloadErrors(job)}
+                            >
+                              {downloadingId === job.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <>
+                                  <Download className="h-4 w-4 mr-1" />
+                                  Erreurs CSV
+                                </>
+                              )}
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     );

@@ -78,9 +78,8 @@ interface Props {
  */
 export function VendorTrustHeader({ trust, variant = "full", className = "" }: Props) {
   const isAnonymous = trust.displayMode === "anonymous";
-  const displayName = isAnonymous
-    ? `Fournisseur ${trust.publicIdentifier}`
-    : trust.companyName ?? `Fournisseur ${trust.publicIdentifier}`;
+  const realName = !isAnonymous ? trust.companyName ?? null : null;
+  const displayName = realName ?? `Fournisseur ${trust.publicIdentifier}`;
 
   const chips: React.ReactNode[] = [];
 

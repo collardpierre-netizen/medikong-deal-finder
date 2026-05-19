@@ -53,7 +53,7 @@ type ResponseRow = {
   score_availability: number | null;
   is_top_pick: boolean;
   compliance_flags: { moq_ok?: boolean; validity_ok?: boolean; beats_target_price?: boolean; admin_curated?: boolean } | null;
-  vendor?: { id: string; name: string | null; slug: string | null } | null;
+  vendor?: { id: string; name: string | null; display_code: string | null } | null;
 };
 
 const STATUS_LABEL: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {

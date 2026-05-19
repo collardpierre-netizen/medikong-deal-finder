@@ -405,6 +405,7 @@ const App = () => (
             <Route path="/centre-aide/categorie/:key" element={<LP><HelpCategoryPage /></LP>} />
             <Route path="/centre-aide/:slug" element={<LP><HelpArticlePage /></LP>} />
             <Route path="/aide/packs-et-prix-100" element={<LP><PricingBasisHelpPage /></LP>} />
+            <Route path="/aide/glossaire-prix" element={<LP><PricingGlossaryHelpPage /></LP>} />
 
             {/* Legal */}
             <Route path="/mentions-legales" element={<LP><LegalNoticePage /></LP>} />

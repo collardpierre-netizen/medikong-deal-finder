@@ -31,9 +31,11 @@ export async function resolveVendorAnonMap(
   );
   if (ids.length === 0) return map;
 
+  // 🔒 Anonymisation : on ne consomme JAMAIS les valeurs en clair (name / company_name).
+  // Seul display_code est lu — getVendorPublicName s'en sert pour produire "Fournisseur <code>".
   const { data, error } = await supabase
     .from("vendors_public")
-    .select("id, display_code, name, company_name")
+    .select("id, display_code")
     .in("id", ids);
 
   if (error) {

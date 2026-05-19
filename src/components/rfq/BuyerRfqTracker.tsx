@@ -6,12 +6,13 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, CheckCircle2, XCircle, Clock, Eye, Send, AlertTriangle, Bell, Award, Mail, MailX } from "lucide-react";
 import { formatUpdatedAtFull } from "@/lib/format-date";
 import { useMoneyFormat, formatMoneyFromCents } from "@/lib/money-format";
+import { getVendorPublicName } from "@/lib/vendor-display";
 
 type VendorStatusRow = {
   rfq_id: string | null;
   dispatch_id: string | null;
   vendor_id: string | null;
-  vendor_name: string | null;
+  // vendor_name volontairement absent : on n'accepte plus le nom en clair côté buyer.
   vendor_display_code: string | null;
   vendor_status: string | null;
   vendor_status_label: string | null;
@@ -114,7 +115,7 @@ export function BuyerRfqTracker({ rfqId }: { rfqId: string }) {
       const { data, error } = await supabase
         .from("rfq_vendor_status_v")
         .select(
-          "rfq_id, dispatch_id, vendor_id, vendor_name, vendor_display_code, vendor_status, vendor_status_label, target_reason, dispatched_at, email_opened_at, viewed_at, reminded_at, responded_at, declined_at, decline_reason, expired_at, awarded, rank_position, score, unit_price_excl_vat_cents, delivery_days, response_id, last_transition_at"
+          "rfq_id, dispatch_id, vendor_id, vendor_display_code, vendor_status, vendor_status_label, target_reason, dispatched_at, email_opened_at, viewed_at, reminded_at, responded_at, declined_at, decline_reason, expired_at, awarded, rank_position, score, unit_price_excl_vat_cents, delivery_days, response_id, last_transition_at"
         )
         .eq("rfq_id", rfqId)
         .order("last_transition_at", { ascending: false, nullsFirst: false });
@@ -242,7 +243,8 @@ export function BuyerRfqTracker({ rfqId }: { rfqId: string }) {
                 <tr key={r.dispatch_id || r.vendor_id} className="border-t align-top">
                   <td className="px-3 py-3">
                     <div className="font-medium">
-                      {r.vendor_name || (r.vendor_display_code ? `Vendeur ${r.vendor_display_code}` : "—")}
+                      {/* 🔒 Anonymisation : libellé public uniquement via getVendorPublicName. */}
+                      {getVendorPublicName({ display_code: r.vendor_display_code })}
                     </div>
                     {r.target_reason && (
                       <div className="text-[10px] text-muted-foreground mt-0.5">

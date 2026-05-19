@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getPreferredProductImageUrls, isValidProductImage } from "@/lib/image-utils";
 import { useCountry } from "@/contexts/CountryContext";
-import { resolveVendorVisibility, getVendorPublicName } from "@/lib/vendor-display";
+import { getVendorPublicName } from "@/lib/vendor-display";
 import { applyHiddenCategoryFilter } from "@/lib/catalog-filters";
 import { useBuyerProfileId } from "@/hooks/useResolvedOfferPrice";
 import { resolvePriceCascade, type PriceCascadeSource } from "@/lib/price-cascade";
@@ -262,21 +262,18 @@ export function useProductOffers(productId: string | undefined) {
 
 
       // Fetch vendors and discount tiers in parallel
-      const [vendorsResult, tiersResult, visRulesResult, priceTiersResult] = await Promise.all([
+      // 🔒 Anonymisation : on ne consomme JAMAIS name / company_name / show_real_name côté buyer.
+      const [vendorsResult, tiersResult, priceTiersResult] = await Promise.all([
         vendorIds.length > 0
-          ? supabase.from("vendors_public" as any).select("id, name, company_name, display_name, slug, is_verified, rating, display_code, is_top_seller, type, show_real_name").in("id", vendorIds)
+          ? supabase.from("vendors_public" as any).select("id, display_name, slug, is_verified, rating, display_code, is_top_seller, type").in("id", vendorIds)
           : Promise.resolve({ data: [] }),
         offerIds.length > 0
           ? supabase.from("discount_tiers").select("*").in("offer_id", offerIds).order("mov_amount", { ascending: true })
-          : Promise.resolve({ data: [] }),
-        vendorIds.length > 0
-          ? supabase.from("vendor_visibility_rules" as any).select("*").in("vendor_id", vendorIds)
           : Promise.resolve({ data: [] }),
         offerIds.length > 0
           ? supabase.from("offer_price_tiers").select("*").in("offer_id", offerIds).order("tier_index", { ascending: true })
           : Promise.resolve({ data: [] }),
       ]);
-      const visRules: any[] = (visRulesResult as any).data || [];
 
       const vendorMap = new Map((vendorsResult.data || []).map((v: any) => [v.id, v]));
       const tiersMap = new Map<string, any[]>();
@@ -326,14 +323,7 @@ export function useProductOffers(productId: string | undefined) {
           updatedAt: o.updated_at ?? null,
           syncedAt: o.synced_at ?? null,
           isQogitaBacked: !!o.is_qogita_backed,
-          sellerName: (() => {
-            const showReal = resolveVendorVisibility(
-              { ...vendor, id: safeVendorId },
-              visRules,
-              { country }
-            );
-            return getVendorPublicName({ ...vendor, display_code: vendor?.display_code }, showReal);
-          })(),
+          sellerName: getVendorPublicName({ display_code: vendor?.display_code }),
           sellerSlug: vendor?.slug || undefined,
           isVerified: vendor?.is_verified || false,
           isTopRated: (vendor?.rating || 0) >= 4.5,

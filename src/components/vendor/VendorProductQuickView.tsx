@@ -102,9 +102,9 @@ export default function VendorProductQuickView({ product, open, onOpenChange }: 
             {product.vendorDisplayName && (
               <div className="mt-2 inline-flex items-center gap-1 text-[12px] text-muted-foreground">
                 <Building2 size={12} /> Vendu par
-                {product.vendorSlug ? (
+                {product.vendorDisplayCode ? (
                   <Link
-                    to={`/vendeur/${product.vendorSlug}`}
+                    to={`/vendeur/${product.vendorDisplayCode}`}
                     className="font-semibold text-foreground hover:text-primary"
                   >
                     {product.vendorDisplayName}

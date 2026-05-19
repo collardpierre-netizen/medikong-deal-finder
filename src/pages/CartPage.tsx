@@ -10,7 +10,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { PageTransition } from "@/components/shared/PageTransition";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { getVendorPublicName, resolveVendorVisibility } from "@/lib/vendor-display";
+import { getVendorPublicName } from "@/lib/vendor-display";
 import { useCountry } from "@/contexts/CountryContext";
 import { useVendorMov } from "@/hooks/useVendorMov";
 import { useCartValidation } from "@/hooks/useCartValidation";

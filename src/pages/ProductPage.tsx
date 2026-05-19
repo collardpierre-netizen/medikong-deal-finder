@@ -2490,7 +2490,7 @@ export default function ProductPage() {
                             </div>
                           )}
 
-                      <div className="rounded-xl border border-border overflow-hidden">
+                      <div className="rounded-xl border border-border overflow-x-auto">
                         <table className="w-full text-sm">
                           <thead>
                             <tr className="bg-muted/50 border-b border-border text-left">

@@ -613,11 +613,30 @@ export default function BonnesAffairesPage() {
                             <th className="py-2 pr-3 text-right">MOQ</th>
                             <th className="py-2 pr-3 text-right">Stock</th>
                             <th className="py-2 pr-3 text-right">MOV</th>
+                            <th className="py-2 pr-3 text-right">
+                              <span className="inline-flex items-center gap-1">
+                                PVP vs Marché (TTC)
+                                <TooltipProvider delayDuration={150}>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <span className="text-muted-foreground cursor-help" aria-label="Détails du calcul">ⓘ</span>
+                                    </TooltipTrigger>
+                                    <TooltipContent className="max-w-xs text-xs">
+                                      <p className="font-medium mb-1">Comparatif PVP vs prix marché</p>
+                                      <p>PVP conseillé (TTC) vs prix marché HTVA médian (autres grossistes B2B) converti en TTC via la TVA résolue du produit (6 % méd. / 21 % OTC).</p>
+                                      <p className="mt-1">Δ % et € : économie réalisée par rapport au PVP si l'on s'aligne sur le prix marché.</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              </span>
+                            </th>
                             <th className="py-2 pr-3 text-right">Économie</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {rows.map((r) => (
+                          {rows.map((r) => {
+                            const cmp = pvpVsMarket?.get(r.product_id);
+                            return (
                             <tr key={`${r.product_id}-${r.country_code}`} className="border-b hover:bg-muted/30">
                               <td className="py-2 pr-3 max-w-[280px]">
                                 {r.product_slug ? (

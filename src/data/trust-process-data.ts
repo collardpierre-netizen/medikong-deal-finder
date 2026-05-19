@@ -222,10 +222,12 @@ export const helpCategories: HelpCategoryData[] = [
     { label: "Quels sont les délais de livraison ?", href: "/logistique" },
     { label: "Comment retourner un produit ?", href: "/centre-aide/retourner-produit" },
   ]},
-  { icon: FileText, title: "TVA & Facturation", description: "Comprendre la TVA, télécharger vos factures et gérer vos données fiscales.", articleCount: 4, articles: [
+  { icon: FileText, title: "TVA & Facturation", description: "Comprendre la TVA, télécharger vos factures et gérer vos données fiscales.", articleCount: 5, articles: [
     { label: "Comment fonctionne la TVA sur MediKong ?", href: "/centre-aide/tva-medikong" },
     { label: "Où télécharger mes factures ?", href: "/centre-aide/telecharger-factures" },
     { label: "Comment modifier mes données de facturation ?", href: "/centre-aide/modifier-facturation" },
+    { label: "Glossaire des prix : PVP, marché, public TTC", href: "/aide/glossaire-prix" },
+    { label: "Packs, unités et €/100 — comment lire les prix", href: "/aide/packs-et-prix-100" },
   ]},
   { icon: ShieldAlert, title: "Réclamations & Remboursements", description: "Signaler un problème, suivre une réclamation et obtenir un remboursement.", articleCount: 6, articles: [
     { label: "Comment signaler un problème avec ma commande ?", href: "/centre-aide/signaler-probleme" },

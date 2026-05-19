@@ -208,9 +208,59 @@ export default function VendorPublicPage() {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Fetch ALL vendor offers (paginated past 1000 limit)
+  // Server-side brand filter : on ne pousse le filtre côté DB que si UN seul
+  // filtre marque est sélectionné (cas dominant : arrivée depuis
+  // /marques/<slug>?vendor=…). Multi-marque reste client-side.
+  const serverBrandSlug =
+    filters.brands.length === 1 ? filters.brands[0] : null;
+
+  // Résolution brand_slug → brand_id (cache 1h, partagée entre vendeurs)
+  const { data: serverBrandId } = useQuery({
+    queryKey: ["brand-id-by-slug", serverBrandSlug],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("brands")
+        .select("id")
+        .eq("slug", serverBrandSlug!)
+        .maybeSingle();
+      if (error) throw error;
+      return (data?.id as string) || null;
+    },
+    enabled: !!serverBrandSlug,
+    staleTime: 60 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
+  });
+
+  // Compteur global d'offres actives du vendeur (HEAD count).
+  // Sert à : (a) afficher le vrai compteur Hero indépendamment des filtres, et
+  // (b) déclencher la garde-fou anti-fetch massif sans filtre marque.
+  // NB : UNIQUE(vendor_id, product_id) sur offers → count(offers) == count(distinct product).
+  const { data: vendorOfferCount = 0 } = useQuery({
+    queryKey: ["vendor-offers-count", vendor?.id],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("offers")
+        .select("id", { count: "exact", head: true })
+        .eq("vendor_id", vendor!.id)
+        .eq("is_active", true);
+      return count || 0;
+    },
+    enabled: !!vendor?.id,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const SAFE_FETCH_LIMIT = 2000;
+  const brandFilterReady = !!serverBrandSlug && !!serverBrandId;
+  const overFetchGuardActive =
+    vendorOfferCount > SAFE_FETCH_LIMIT && !brandFilterReady;
+
+  // Fetch vendor offers — paginated, server-side filtré par brand_id si demandé.
   const { data: offers = [] } = useQuery({
-    queryKey: ["vendor-offers-public", vendor?.id],
+    queryKey: [
+      "vendor-offers-public",
+      vendor?.id,
+      brandFilterReady ? serverBrandId : null,
+    ],
     queryFn: async () => {
       const PAGE = 1000;
       let all: any[] = [];
@@ -218,19 +268,26 @@ export default function VendorPublicPage() {
       let hasMore = true;
       while (hasMore) {
         const from = page * PAGE;
-        const { data } = await supabase
+        let q = supabase
           .from("offers")
-          .select("*, products(id, slug, name, brand_name, brand_id, image_urls, category_name, category_id, brands(slug))")
+          .select(
+            brandFilterReady
+              ? "*, products!inner(id, slug, name, brand_name, brand_id, image_urls, category_name, category_id, brands(slug))"
+              : "*, products(id, slug, name, brand_name, brand_id, image_urls, category_name, category_id, brands(slug))"
+          )
           .eq("vendor_id", vendor!.id)
-          .eq("is_active", true)
-          .range(from, from + PAGE - 1);
+          .eq("is_active", true);
+        if (brandFilterReady) {
+          q = q.eq("products.brand_id", serverBrandId!);
+        }
+        const { data } = await q.range(from, from + PAGE - 1);
         all = all.concat(data || []);
         hasMore = (data?.length || 0) === PAGE;
         page++;
       }
       return all;
     },
-    enabled: !!vendor?.id,
+    enabled: !!vendor?.id && !overFetchGuardActive,
     staleTime: 5 * 60 * 1000,
   });
 
@@ -363,7 +420,7 @@ export default function VendorPublicPage() {
   }
 
   const stats = [
-    { icon: Package, label: "Produits", value: vendorProducts.length || "–" },
+    { icon: Package, label: "Produits", value: vendorOfferCount || vendorProducts.length || "–" },
     { icon: Star, label: "Note", value: vendor.rating ? `${Number(vendor.rating).toFixed(1)}/5` : "–" },
     { icon: Truck, label: "Ventes", value: vendor.total_sales || "–" },
     { icon: Clock, label: "Membre depuis", value: new Date(vendor.created_at).getFullYear().toString() },
@@ -394,7 +451,7 @@ export default function VendorPublicPage() {
                 {showReal && vendor.description && <p className="text-sm text-muted-foreground mb-2 max-w-[600px]">{vendor.description}</p>}
                 <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                   {vendor.city && showReal && <span className="flex items-center gap-1"><MapPin size={12} /> {vendor.city}, {vendor.country_code}</span>}
-                  <span className="flex items-center gap-1"><Package size={12} /> {vendorProducts.length} produits</span>
+                  <span className="flex items-center gap-1"><Package size={12} /> {vendorOfferCount || vendorProducts.length} produits</span>
                 </div>
               </div>
             </div>
@@ -553,7 +610,28 @@ export default function VendorPublicPage() {
               </div>
             )}
 
-            {filteredProducts.length > 0 ? (
+            {overFetchGuardActive ? (
+              <div className="text-center py-16 border border-dashed border-border rounded-xl bg-accent/30">
+                <Package size={40} className="mx-auto text-primary mb-3" />
+                <h3 className="text-base font-bold text-foreground mb-2">
+                  Ce fournisseur référence {vendorOfferCount.toLocaleString("fr-BE")} produits
+                </h3>
+                <p className="text-sm text-muted-foreground max-w-md mx-auto mb-4">
+                  Pour garder la navigation rapide, sélectionnez d'abord une marque
+                  ou utilisez la recherche ci-dessous afin d'affiner l'affichage.
+                </p>
+                <div className="relative max-w-xs mx-auto">
+                  <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    autoFocus
+                    placeholder="Rechercher un produit, une marque…"
+                    value={filters.search}
+                    onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value }))}
+                    className="pl-8 h-9 text-sm"
+                  />
+                </div>
+              </div>
+            ) : filteredProducts.length > 0 ? (
               view === "grid" ? (
                 <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
                   {filteredProducts.map((p: any, i: number) => (

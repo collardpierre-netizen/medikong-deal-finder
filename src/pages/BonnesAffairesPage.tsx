@@ -371,6 +371,25 @@ export default function BonnesAffairesPage() {
     try {
       const all = await fetchAllDiscountResults(searchParams, 5000);
       if (!all.length) { toast.error("Aucun résultat à exporter", { id: tid }); return; }
+
+      // Anonymise vendor labels for export (resolve via vendors_public for the
+      // full set — current page map only covers visible results).
+      const exportIds = Array.from(new Set(all.map((r) => r.vendor_id).filter(Boolean) as string[]));
+      let exportMap = new Map(vendorNameById);
+      const missing = exportIds.filter((id) => !exportMap.has(id));
+      if (missing.length) {
+        const { data: extra } = await supabase
+          .from("vendors_public")
+          .select("id,name,company_name,display_code,show_real_name,type")
+          .in("id", missing);
+        (extra || []).forEach((v: any) => exportMap.set(v.id, getVendorPublicName(v)));
+      }
+      const anonymised = all.map((r) => ({
+        ...r,
+        vendor_name: r.vendor_id && exportMap.has(r.vendor_id)
+          ? exportMap.get(r.vendor_id)!
+          : sanitizeVendorLabel(r.vendor_name, null),
+      }));
       if (format === "xlsx") {
         exportDiscountXlsx(all, { reference: searchParams.reference, minDiscountPct: searchParams.minDiscountPct, country: searchParams.country });
       } else {

@@ -651,7 +651,13 @@ export default function BonnesAffairesPage() {
                 </p>
               )}
 
-              {vendorGroups.map((g) => <VendorMovCard key={g.vendor_id} group={g} />)}
+              {vendorGroups.map((g) => (
+                <VendorMovCard
+                  key={g.vendor_id}
+                  group={g}
+                  displayName={resolveVendorName(g.vendor_id, g.vendor_name)}
+                />
+              ))}
             </TabsContent>
           </Tabs>
         )}

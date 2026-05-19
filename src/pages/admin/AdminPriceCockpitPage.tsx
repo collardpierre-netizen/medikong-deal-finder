@@ -208,7 +208,7 @@ export default function AdminPriceCockpitPage() {
     const deltaPct = ((row.mk_best_ht - best.price) / best.price) * 100;
     setChallenge({
       vendorId: row.mk_best_vendor_id,
-      vendorName: row.mk_best_vendor_name ?? "Vendeur",
+      vendorDisplayName: row.mk_best_vendor_name ?? "Vendeur",
       productId: row.product_id,
       productName: row.product_name,
       offerId: row.mk_best_offer_id,

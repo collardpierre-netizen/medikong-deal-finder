@@ -21,7 +21,7 @@ interface QuickViewProduct {
   description?: string | null;
   gtin?: string | null;
   vendorId: string;
-  vendorName?: string | null;
+  vendorDisplayName?: string | null;
   vendorSlug?: string | null;
 }
 
@@ -99,7 +99,7 @@ export default function VendorProductQuickView({ product, open, onOpenChange }: 
               )}
             </div>
 
-            {product.vendorName && (
+            {product.vendorDisplayName && (
               <div className="mt-2 inline-flex items-center gap-1 text-[12px] text-muted-foreground">
                 <Building2 size={12} /> Vendu par
                 {product.vendorSlug ? (
@@ -107,10 +107,10 @@ export default function VendorProductQuickView({ product, open, onOpenChange }: 
                     to={`/vendeur/${product.vendorSlug}`}
                     className="font-semibold text-foreground hover:text-primary"
                   >
-                    {product.vendorName}
+                    {product.vendorDisplayName}
                   </Link>
                 ) : (
-                  <span className="font-semibold text-foreground">{product.vendorName}</span>
+                  <span className="font-semibold text-foreground">{product.vendorDisplayName}</span>
                 )}
               </div>
             )}

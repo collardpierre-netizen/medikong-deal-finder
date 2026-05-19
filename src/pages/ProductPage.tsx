@@ -946,7 +946,7 @@ function OfferRow({
         <VendorSuggestions
           vendorId={offer.sellerId}
           vendorSlug={offer.sellerSlug}
-          vendorName={offer.sellerName}
+          vendorDisplayName={offer.sellerName}
           currentProductId={productId}
           categoryId={categoryId}
         />
@@ -962,8 +962,8 @@ function OfferRow({
 }
 
 /* ── Vendor Suggestions (collapsible) ──────────────────── */
-function VendorSuggestions({ vendorId, vendorSlug, vendorName, currentProductId, categoryId }: {
-  vendorId: string; vendorSlug?: string; vendorName: string; currentProductId: string; categoryId?: string;
+function VendorSuggestions({ vendorId, vendorSlug, vendorDisplayName, currentProductId, categoryId }: {
+  vendorId: string; vendorSlug?: string; vendorDisplayName: string; currentProductId: string; categoryId?: string;
 }) {
   const [open, setOpen] = useState(false);
   const { data: suggestions = [], isLoading } = useQuery({

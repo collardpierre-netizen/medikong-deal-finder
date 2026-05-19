@@ -339,7 +339,7 @@ const AdminVendeurDetail = () => {
               <InfoRow label="Pays" value={vendor.country_code} />
             </div>
           </div>
-          <VendorMarketIntelAdminCard vendorId={vendor.id} vendorName={vendor.company_name || vendor.name} />
+          <VendorMarketIntelAdminCard vendorId={vendor.id} vendorDisplayName={vendor.company_name || vendor.name} />
         </div>
       )}
 
@@ -350,7 +350,7 @@ const AdminVendeurDetail = () => {
       {activeTab === "visibility" && (
         <VendorVisibilityTab
           vendorId={id!}
-          vendorName={vendor.company_name || vendor.name}
+          vendorDisplayName={vendor.company_name || vendor.name}
           showRealName={!!(vendor as any).show_real_name}
           rules={visibilityRules}
           onAddRule={addVisibilityRule}
@@ -688,9 +688,9 @@ const COUNTRIES = [
   { value: "DE", label: "🇩🇪 Allemagne" },
 ];
 
-function VendorVisibilityTab({ vendorId, vendorName, showRealName, rules, onAddRule, onDeleteRule }: {
+function VendorVisibilityTab({ vendorId, vendorDisplayName, showRealName, rules, onAddRule, onDeleteRule }: {
   vendorId: string;
-  vendorName: string;
+  vendorDisplayName: string;
   showRealName: boolean;
   rules: any[];
   onAddRule: (r: { country_code: string | null; customer_type: string | null; show_real_name: boolean; priority: number }) => void;
@@ -705,7 +705,7 @@ function VendorVisibilityTab({ vendorId, vendorName, showRealName, rules, onAddR
     <div className="space-y-4">
       <div className="p-5 rounded-[10px]" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
         <h3 className="text-[14px] font-bold mb-1" style={{ color: "#1D2530" }}>
-          Visibilité publique — {vendorName}
+          Visibilité publique — {vendorDisplayName}
         </h3>
         <p className="text-[12px] mb-4" style={{ color: "#8B95A5" }}>
           Par défaut : <strong>{showRealName ? "Nom réel visible" : "Anonymisé"}</strong>. Les règles ci-dessous permettent de surcharger ce comportement selon le pays et/ou le profil client. La règle avec la priorité la plus élevée l'emporte.

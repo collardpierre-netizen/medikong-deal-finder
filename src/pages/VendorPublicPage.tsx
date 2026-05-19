@@ -454,7 +454,7 @@ export default function VendorPublicPage() {
     visRules,
     { country: String(currentCountry) }
   ) : false;
-  const vendorName = vendor ? getVendorPublicName(vendor, showReal) : "Fournisseur";
+  const vendorDisplayName = vendor ? getVendorPublicName(vendor, showReal) : "Fournisseur";
 
   // 404 normal : display_code inexistant ou vendeur désactivé.
   // Placé APRES tous les hooks pour respecter Rules of Hooks.
@@ -505,14 +505,14 @@ export default function VendorPublicPage() {
             <div className="flex flex-col sm:flex-row items-start gap-4 md:gap-6">
               <div className="w-16 h-16 md:w-20 md:h-20 rounded-xl border border-border bg-background shadow-sm flex items-center justify-center shrink-0 overflow-hidden">
                 {vendor.logo_url && showReal ? (
-                  <img src={vendor.logo_url} alt={vendorName} className="w-full h-full object-contain p-1" />
+                  <img src={vendor.logo_url} alt={vendorDisplayName} className="w-full h-full object-contain p-1" />
                 ) : (
-                  <span className="text-xl font-bold text-primary">{vendorName[0]}</span>
+                  <span className="text-xl font-bold text-primary">{vendorDisplayName[0]}</span>
                 )}
               </div>
               <div className="flex-1">
                 <div className="flex flex-wrap items-center gap-2 mb-1">
-                  <h1 className="text-xl md:text-2xl font-bold text-foreground">{vendorName}</h1>
+                  <h1 className="text-xl md:text-2xl font-bold text-foreground">{vendorDisplayName}</h1>
                   {vendor.is_verified && (
                     <span className="inline-flex items-center gap-1 text-[10px] font-semibold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">
                       <CheckCircle2 size={10} /> Vérifié
@@ -757,7 +757,7 @@ export default function VendorPublicPage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-[12px] font-medium text-foreground">
-                      Panier {vendorName} : <span className="font-bold">{vendorCartTotal.toFixed(2)} €</span> HTVA
+                      Panier {vendorDisplayName} : <span className="font-bold">{vendorCartTotal.toFixed(2)} €</span> HTVA
                     </span>
                      {vendorMov > 0 ? (
                        <span className="text-[11px]">
@@ -814,7 +814,7 @@ export default function VendorPublicPage() {
                 description: quickViewProduct.description,
                 gtin: quickViewProduct.gtin,
                 vendorId: quickViewProduct.vendorId || vendor?.id,
-                vendorName: getVendorPublicName(vendor),
+                vendorDisplayName: getVendorPublicName(vendor),
                 vendorSlug: vendor?.slug,
               }
             : null

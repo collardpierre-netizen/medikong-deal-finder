@@ -215,7 +215,7 @@ describe("Exports PDF/CSV buyer-facing — contrat statique", () => {
 /**
  * Contrat statique : les templates emails transactionnels buyer-facing
  * ne doivent jamais lire `.company_name` ou `vendor.name` directement.
- * Le seul vecteur autorisé est une prop déjà-rendue (ex : `vendorName`)
+ * Le seul vecteur autorisé est une prop déjà-rendue (ex : `vendorDisplayName`)
  * qui DOIT être alimentée par le caller via `getVendorPublicName`.
  */
 describe("Email templates buyer-facing — contrat statique", () => {
@@ -261,7 +261,8 @@ describe("Email templates buyer-facing — contrat statique", () => {
 
 /**
  * Contrat statique : les edge functions qui ENVOIENT des emails à
- * l'acheteur doivent alimenter la prop `vendorName` via le helper
+ * l'acheteur doivent alimenter la prop `vendorDisplayName` (ou la
+ * variante legacy `vendorName` côté template-payload) via le helper
  * d'anonymisation, jamais via `vendor.company_name || vendor.name`.
  *
  * ⚠️ Ce test échouera tant qu'une fuite résiduelle existe dans un
@@ -271,7 +272,7 @@ describe("Email templates buyer-facing — contrat statique", () => {
 describe("Edge functions buyer-facing — contrat statique callers email", () => {
   const FUNCTIONS_DIR = resolve(__dirname, "../../../supabase/functions");
 
-  // Edge functions qui envoient des emails à l'acheteur (et passent vendorName).
+  // Edge functions qui envoient des emails à l'acheteur (et passent vendorDisplayName/vendorName).
   const BUYER_CALLERS = ["refund-order-line"];
 
   for (const fn of BUYER_CALLERS) {
@@ -279,12 +280,14 @@ describe("Edge functions buyer-facing — contrat statique callers email", () =>
     if (!existsSync(path)) continue;
     const src = readFileSync(path, "utf-8");
 
-    it(`${fn} ne construit pas vendorName via \`vendor.company_name || vendor.name\``, () => {
-      // Patterne typique de fuite : `const vendorName = vendor?.company_name || vendor?.name`
-      const leak = /vendorName\s*=\s*vendor\??\.?(company_name|name)/;
+    it(`${fn} ne construit pas vendorDisplayName/vendorName via \`vendor.company_name || vendor.name\``, () => {
+      // Patternes typiques de fuite :
+      //   const vendorName = vendor?.company_name || vendor?.name
+      //   const vendorDisplayName = vendor?.company_name || vendor?.name
+      const leak = /vendor(Name|DisplayName)\s*=\s*vendor\??\.?(company_name|name)/;
       expect(
         src,
-        `${fn}/index.ts construit vendorName à partir des champs en clair. Router via display_code → "Fournisseur <code>".`,
+        `${fn}/index.ts construit vendorDisplayName/vendorName à partir des champs en clair. Router via display_code → "Fournisseur <code>".`,
       ).not.toMatch(leak);
     });
   }

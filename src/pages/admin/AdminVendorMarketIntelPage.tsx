@@ -46,9 +46,9 @@ export default function AdminVendorMarketIntelPage() {
   const { locale } = useMoneyFormat();
   const fmtPrice = (c: number | null) => formatPrice(c, locale);
   const [search, setSearch] = useState("");
-  const [trialDialog, setTrialDialog] = useState<{ vendorId: string; vendorName: string } | null>(null);
+  const [trialDialog, setTrialDialog] = useState<{ vendorId: string; vendorDisplayName: string } | null>(null);
   const [trialDays, setTrialDays] = useState(180);
-  const [activateDialog, setActivateDialog] = useState<{ vendorId: string; vendorName: string } | null>(null);
+  const [activateDialog, setActivateDialog] = useState<{ vendorId: string; vendorDisplayName: string } | null>(null);
   const [planId, setPlanId] = useState<string>("");
   const [billing, setBilling] = useState<"stripe" | "medikong_invoice">("medikong_invoice");
 
@@ -197,12 +197,12 @@ export default function AdminVendorMarketIntelPage() {
                         </td>
                         <td className="px-3 py-2 text-right whitespace-nowrap">
                           {(r.status === "none" || r.status === "expired" || r.status === "cancelled") && (
-                            <Button size="sm" variant="outline" onClick={() => { setTrialDays(180); setTrialDialog({ vendorId: r.vendor_id, vendorName: r.vendor_name || "" }); }}>
+                            <Button size="sm" variant="outline" onClick={() => { setTrialDays(180); setTrialDialog({ vendorId: r.vendor_id, vendorDisplayName: r.vendor_name || "" }); }}>
                               <Sparkles className="h-3 w-3 mr-1" /> Démarrer essai
                             </Button>
                           )}
                           {(r.status === "trial" || r.status === "expired") && (
-                            <Button size="sm" className="ml-2" onClick={() => setActivateDialog({ vendorId: r.vendor_id, vendorName: r.vendor_name || "" })}>
+                            <Button size="sm" className="ml-2" onClick={() => setActivateDialog({ vendorId: r.vendor_id, vendorDisplayName: r.vendor_name || "" })}>
                               <CreditCard className="h-3 w-3 mr-1" /> Activer abonnement
                             </Button>
                           )}
@@ -228,7 +228,7 @@ export default function AdminVendorMarketIntelPage() {
       {/* Dialog démarrer essai */}
       <Dialog open={!!trialDialog} onOpenChange={(o) => !o && setTrialDialog(null)}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Démarrer l'essai gratuit · {trialDialog?.vendorName}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Démarrer l'essai gratuit · {trialDialog?.vendorDisplayName}</DialogTitle></DialogHeader>
           <div className="space-y-3 py-2">
             <label className="text-sm">Durée de l'essai (jours)</label>
             <Input type="number" min={1} max={365} value={trialDays} onChange={(e) => setTrialDays(parseInt(e.target.value) || 180)} />
@@ -247,7 +247,7 @@ export default function AdminVendorMarketIntelPage() {
       {/* Dialog activer abonnement */}
       <Dialog open={!!activateDialog} onOpenChange={(o) => !o && setActivateDialog(null)}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Activer l'abonnement · {activateDialog?.vendorName}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Activer l'abonnement · {activateDialog?.vendorDisplayName}</DialogTitle></DialogHeader>
           <div className="space-y-3 py-2">
             <div>
               <label className="text-sm">Plan</label>

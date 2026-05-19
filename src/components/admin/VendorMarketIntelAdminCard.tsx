@@ -56,10 +56,10 @@ function formatPrice(c: number | null, locale?: string) {
 
 interface Props {
   vendorId: string;
-  vendorName?: string | null;
+  vendorDisplayName?: string | null;
 }
 
-export function VendorMarketIntelAdminCard({ vendorId, vendorName }: Props) {
+export function VendorMarketIntelAdminCard({ vendorId, vendorDisplayName }: Props) {
   const qc = useQueryClient();
   const { locale } = useMoneyFormat();
   const fmtPrice = (c: number | null) => formatPrice(c, locale);
@@ -80,7 +80,7 @@ export function VendorMarketIntelAdminCard({ vendorId, vendorName }: Props) {
       if (error) throw error;
       return ((data as unknown) as Row | null) ?? ({
         vendor_id: vendorId,
-        vendor_name: vendorName ?? null,
+        vendor_name: vendorDisplayName ?? null,
         status: "none" as const,
         trial_started_at: null,
         trial_ends_at: null,
@@ -226,7 +226,7 @@ export function VendorMarketIntelAdminCard({ vendorId, vendorName }: Props) {
       {/* Dialog démarrer essai */}
       <Dialog open={trialOpen} onOpenChange={setTrialOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Démarrer l'essai gratuit · {vendorName || ""}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Démarrer l'essai gratuit · {vendorDisplayName || ""}</DialogTitle></DialogHeader>
           <div className="space-y-3 py-2">
             <label className="text-sm">Durée de l'essai (jours)</label>
             <Input
@@ -251,7 +251,7 @@ export function VendorMarketIntelAdminCard({ vendorId, vendorName }: Props) {
       {/* Dialog activer abonnement */}
       <Dialog open={activateOpen} onOpenChange={setActivateOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Activer l'abonnement · {vendorName || ""}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Activer l'abonnement · {vendorDisplayName || ""}</DialogTitle></DialogHeader>
           <div className="space-y-3 py-2">
             <div>
               <label className="text-sm">Plan</label>

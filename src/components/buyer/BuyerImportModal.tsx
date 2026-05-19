@@ -57,6 +57,8 @@ const MATCH_FIELD_BADGE: Record<MatchField, string> = {
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Si fourni, le modal affiche/suit ce job au lieu de partir d'un nouvel upload (réinjection depuis l'historique). */
+  initialJobId?: string | null;
 };
 
 type ResultFilter = "all" | "found" | "savings" | "more_expensive" | "unavailable";

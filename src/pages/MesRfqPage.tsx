@@ -380,7 +380,7 @@ function RfqResponsesPanel({ rfqId }: { rfqId: string }) {
                   ) : "—"}
                 </td>
                 <td className="px-3 py-2">
-                  {r.vendor?.slug ? <Link to={`/vendeur/${r.vendor.slug}`} className="hover:underline">{r.vendor.name}</Link> : (r.vendor?.name || "—")}
+                  {r.vendor?.display_code ? <Link to={`/vendeur/${r.vendor.display_code}`} className="hover:underline">{r.vendor.name}</Link> : (r.vendor?.name || "—")}
                 </td>
                 <td className="px-3 py-2 text-right font-semibold">{fmtPrice(r.unit_price_excl_vat_cents)}/u.</td>
                 <td className="px-3 py-2 text-right">

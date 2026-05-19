@@ -726,9 +726,9 @@ function OfferRow({
         <div className="flex items-center justify-between">
           <div className="flex flex-col gap-0.5">
             <span className="font-bold text-sm">{sellerLabel}</span>
-            {offer.sellerSlug && (
+            {offer.displayCode && (
               <Link
-                to={`/vendeur/${offer.sellerSlug}`}
+                to={`/vendeur/${offer.displayCode}`}
                 className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline w-fit"
               >
                 <Store size={11} /> Voir la boutique

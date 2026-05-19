@@ -46,7 +46,21 @@ export function useCartValidation(items: ValidateCartItemInput[], opts: { deboun
   const [data, setData] = useState<ValidateCartResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hasSession, setHasSession] = useState<boolean | null>(null);
   const reqIdRef = useRef(0);
+
+  // L'edge function validate-cart exige un Authorization Bearer.
+  // On évite l'appel (et donc le 401) quand l'utilisateur n'est pas connecté.
+  useEffect(() => {
+    let mounted = true;
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (mounted) setHasSession(!!session);
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+      setHasSession(!!session);
+    });
+    return () => { mounted = false; sub.subscription.unsubscribe(); };
+  }, []);
 
   // Stable signature to trigger refetches
   const sig = useMemo(
@@ -55,8 +69,10 @@ export function useCartValidation(items: ValidateCartItemInput[], opts: { deboun
   );
 
   useEffect(() => {
-    if (!enabled || items.length === 0) {
+    if (!enabled || items.length === 0 || !hasSession) {
       setData(null);
+      setError(null);
+      setLoading(false);
       return;
     }
     const myReq = ++reqIdRef.current;
@@ -80,7 +96,7 @@ export function useCartValidation(items: ValidateCartItemInput[], opts: { deboun
     }, debounceMs);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sig, enabled, debounceMs]);
+  }, [sig, enabled, debounceMs, hasSession]);
 
   return { data, loading, error };
 }

@@ -1,5 +1,7 @@
 import { Layout } from "@/components/layout/Layout";
 import { useParams, Link, useSearchParams } from "react-router-dom";
+import NotFound from "@/pages/NotFound";
+
 import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 

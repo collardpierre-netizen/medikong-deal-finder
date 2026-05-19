@@ -226,8 +226,12 @@ export default function PricingGlossaryHelpPage() {
         produit.
       </p>
 
-      <div className="space-y-6">
-        <Card>
+      <div className="space-y-10">
+        <section aria-labelledby="h2-definitions" className="space-y-6">
+          <h2 id="h2-definitions" className="text-2xl font-semibold tracking-tight scroll-mt-20">
+            Les trois notions de prix à connaître
+          </h2>
+          <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <Tag className="h-4 w-4 text-primary" />

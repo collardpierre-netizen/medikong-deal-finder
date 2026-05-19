@@ -328,7 +328,7 @@ function RfqResponsesPanel({ rfqId }: { rfqId: string }) {
             <span className="text-sm font-bold">{fmtPrice(top.unit_price_excl_vat_cents)}/u.</span>
           </div>
           <p className="text-sm">
-            {top.vendor?.slug ? <Link to={`/vendeur/${top.vendor.slug}`} className="font-semibold hover:underline">{top.vendor.name}</Link> : top.vendor?.name}
+            {top.vendor?.display_code ? <Link to={`/vendeur/${top.vendor.display_code}`} className="font-semibold hover:underline">{top.vendor.name}</Link> : top.vendor?.name}
             {top.delivery_days && <span className="text-muted-foreground"> · livraison {top.delivery_days} j</span>}
             {top.moq && <span className="text-muted-foreground"> · MOQ {top.moq}</span>}
             {top.offer_validity_days && <span className="text-muted-foreground"> · validité {top.offer_validity_days} j</span>}

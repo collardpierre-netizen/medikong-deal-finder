@@ -22,6 +22,7 @@ interface SupplierGroup {
   vendorId: string;
   vendorDisplayName: string;
   vendorSlug?: string;
+  vendorDisplayCode?: string;
   isVerified: boolean;
   items: ReturnType<typeof useCart>["items"];
   total: number;

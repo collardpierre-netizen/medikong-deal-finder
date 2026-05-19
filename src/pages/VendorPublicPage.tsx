@@ -219,11 +219,9 @@ export default function VendorPublicPage() {
   });
 
   const isLoading = resolving || (!!resolved && loadingVendor);
+  const codeNotFound = !resolving && !resolved;
 
-  // 404 normal : display_code inexistant / vendeur désactivé.
-  if (!resolving && !resolved) {
-    return <NotFound />;
-  }
+
 
 
   // Fetch visibility rules for this vendor

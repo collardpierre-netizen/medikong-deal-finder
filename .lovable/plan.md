@@ -1,83 +1,84 @@
-## Contexte
+## Objectif
 
-Aujourd'hui le formatage monétaire est dispersé en 3 helpers (`src/lib/price-format.ts`, `src/lib/pricing.ts`, `src/lib/formatCount.ts`) **et** dupliqué en local dans ~30 fichiers via des `(cents/100).toLocaleString("fr-BE", { style: "currency", currency: "EUR" })`. Tout est figé sur `fr-BE` / `EUR`, donc un utilisateur en EN/NL/DE voit toujours `12,34 €` (virgule, espace insécable) au lieu d'un format adapté à sa locale.
+Permettre à un acheteur vérifié de chercher tous les produits/offres offrant au moins X% de remise vs un prix de référence (PVP **ou** prix marché), filtrer par marque/fabricant et exporter le résultat. Le même filtre est aussi exposé en sidebar sur `/catalogue`.
 
-Aucun hook ni contexte de devise/locale dynamique n'existe encore.
+## Périmètre
 
-## Ambiguïtés à lever AVANT implémentation
+### 1. Backend — RPC `search_discount_offers`
+Nouvelle fonction SQL `security_invoker = true`, restreinte aux acheteurs vérifiés (sinon `raise exception 'unauthorized'`).
 
-Vu l'ampleur (~100 occurrences `fr-BE`, ~80 fichiers), et la règle « do EXACTLY what the prompt asks », j'ai besoin de tes décisions :
+Paramètres :
+- `_reference text` — `'pvp'` ou `'market'`
+- `_min_discount_pct numeric` — ex. 50 (= 50% mini)
+- `_brand_ids uuid[]` — optionnel
+- `_manufacturer_ids uuid[]` — optionnel
+- `_country text` — `BE`/`FR`/`LU`/`ALL`
+- `_categories uuid[]` — optionnel
+- `_limit int default 100`, `_offset int default 0`
 
-### 1. Source de la locale d'affichage
-- **Option A** — `i18n.language` (fr / en / nl / de) → mapping `fr→fr-BE`, `en→en-GB`, `nl→nl-BE`, `de→de-DE`. Cohérent avec le switcher de langue déjà en place.
-- **Option B** — Pays utilisateur (`useUserCountry` BE/FR/LU/NL) → `BE→fr-BE`, `FR→fr-FR`, `LU→fr-LU`, `NL→nl-NL`. Indépendant de la langue UI.
-- **Option C** — Hybride : langue pour le format des nombres, pays pour la devise (utile si EUR un jour cohabite avec d'autres devises RFQ — la mémoire mentionne `rfqs.currency_code`).
+Retourne par ligne : `product_id, product_name, brand_id, brand_name, manufacturer_id, manufacturer_name, vendor_id, vendor_name, best_price_htva_cents, reference_price_cents, discount_pct, country, pack_size, total_count`.
 
-### 2. Périmètre exact de « tous les composants »
-- **Strict (recommandé)** : uniquement les helpers monétaires (`formatEur`, `formatPriceEur`, `formatAmount`, `formatPriceRaw`) + les ~30 montants inline `toLocaleString("fr-BE", { style: "currency"|undefined, ... })` qui formatent un montant en €.
-- **Étendu** : inclure aussi les `toLocaleString("fr-BE")` sur quantités (`rfq.quantity.toLocaleString`, `brand.count.toLocaleString`) → ces nombres entiers bénéficient aussi d'une locale dynamique mais ce n'est pas du « monétaire ».
-- **Hors scope quoi qu'il arrive** : les `toLocaleDateString("fr-BE")` / `toLocaleTimeString("fr-BE")` (~40 occurrences) — c'est du formatage de dates, pas de la monnaie. Tu as déjà des helpers `formatUpdatedAt` / `formatUpdatedAtFull` mémorisés pour les dates.
+Source : `effective_offer_prices_v` (meilleur prix par produit/pays) jointe à `products_with_country_stats_v` (pour `market_price_*`) et `resolve_product_pvp(product_id)` (PVP). Calcul du delta côté SQL, filtre `discount_pct >= _min_discount_pct`, tri `discount_pct DESC`. `total_count` via window function.
 
-### 3. Contextes admin / vendeur
-Certains écrans vendeur/admin (`VendorMarketIntel`, `AdminVendeurDetail`, `RestockAdminCampaigns`, `VendorDashboard`…) sont **toujours en FR** côté UI, indépendamment de la langue utilisateur acheteur. Faut-il :
-- **A** — Forcer `fr-BE` sur ces écrans (laisser les `fr-BE` en dur dans `src/pages/admin/**` et `src/pages/vendor/**`) ?
-- **B** — Passer ces écrans aussi sur le formatter dynamique (cohérent si l'admin/vendeur change de langue) ?
+### 2. Page dédiée `/bonnes-affaires`
+Nouvelle route protégée par `RequireVerifiedBuyer` (composant existant).
 
-## Plan d'implémentation (sous réserve des réponses ci-dessus)
+Layout :
+- En-tête : titre + sous-titre explicatif
+- Bloc "Critères" (sticky desktop) :
+  - Toggle référence : **PVP conseillé** / **Prix marché moyen** (par défaut PVP)
+  - Slider + input numérique : remise mini (10–90%, défaut 30%)
+  - MultiSelect Marques (réutilise `useBrands`)
+  - MultiSelect Fabricants (réutilise `useManufacturers`)
+  - Select pays
+  - Boutons : Rechercher / Réinitialiser / **Exporter XLSX** / **Exporter CSV**
+- Résultats : tableau paginé (100/page, useInfiniteQuery) — colonnes Produit, Marque, Fabricant, Vendeur, Prix HTVA, Prix réf., Économie %, Stock + lien fiche produit. État empty/loading/error explicites.
 
-Hypothèse de travail si tu valides : **Option 1.A + 2.Strict + 3.B** (le plus simple et cohérent avec ton infra i18next existante).
+### 3. Entrée menu
+Ajout dans `Header` (menu principal acheteur) d'un lien "Bonnes affaires" (icône `Tag` ou `Percent`) visible uniquement si `isVerifiedBuyer`. Pour les non-vérifiés : route accessible mais affiche un teaser → CTA vers KYC.
 
-### Étape 1 — Créer `src/lib/money-format.ts` + hook `useMoneyFormat`
-- Fonction pure `formatMoney(amountEur, { locale, currency = "EUR", withSymbol = true, fractionDigits = 2 })`.
-- Fonction pure `formatMoneyFromCents(cents, opts)` (raccourci ÷ 100).
-- Fonction pure `formatDelta(deltaEur, opts)` qui ajoute un signe `+` / `−` explicite et préserve la couleur via classe (laissée au composant).
-- Hook `useMoneyFormat()` retourne `{ formatMoney, formatMoneyFromCents, formatDelta, formatBasisLabel, locale, currency }` en lisant `i18n.language` via `useTranslation` (mapping interne).
-- Conserve la signature et la sortie 1:1 quand `locale = fr-BE` pour ne pas casser les snapshots / styles existants.
+### 4. Filtre sidebar `/catalogue`
+Dans `CatalogFilters` :
+- Nouveau bloc collapsible "Remise vs prix public" avec :
+  - Mini-toggle PVP / Marché
+  - Slider 0–90% (défaut 0 = inactif)
+- Branchement dans `useCatalogProducts` : nouveaux params `minDiscountPct` + `discountReference`. Côté SQL, on ajoute deux helpers dans `products_with_country_stats_v` (déjà colonnes `country_min_price_cents` et `country_market_price_cents`) + lecture de `pvp_ttc_cents` directement sur `products`. Filtre :
+  - `discount = 1 - (best_price_htva / reference_ttc_or_htva)`
+  - On compare HTVA vs HTVA (PVP TTC ramené HTVA via `resolve_product_vat_rate`).
+- Query string : `?remise=50&ref=pvp` (partageable).
 
-### Étape 2 — Migrer les 3 helpers historiques
-- `formatEur` / `formatAmount` (`price-format.ts`) → délèguent à `formatMoney` avec un fallback `fr-BE` (pour les contextes serveur / SSR / tests sans React).
-- `formatPriceEur` / `formatPriceRaw` (`pricing.ts`) → idem, marqués `@deprecated, prefer useMoneyFormat()`.
-- `formatBasisLabel` reste textuel mais bascule via t() si tu valides — sinon on le garde tel quel.
+### 5. Export
+- **XLSX** : helper `exportDiscountResultsXlsx` (basé sur `xlsx` déjà utilisé dans le comparateur acheteur) — onglet "Bonnes affaires", colonnes alignées sur le tableau, filtres appliqués mentionnés en en-tête.
+- **CSV** : export client (Blob `text/csv;charset=utf-8`), même colonnes, séparateur `;` (Excel-FR).
+- Export full résultat (jusqu'à 5000 lignes, RPC appelée avec `_limit=5000`).
 
-### Étape 3 — Migrer les composants prix / deltas / badges
-Cibles confirmées (montants en €) :
+## Détails techniques
 
 ```
-src/pages/RfqCreditsPage.tsx                  (formatEur local)
-src/pages/MesRfqPage.tsx                       (formatEur local + 1 quantity)
-src/pages/PharmacieAbonnementPage.tsx         (Intl local)
-src/pages/vendor/VendorDashboard.tsx           (eurFormatter local)
-src/pages/vendor/VendorRfqInbox.tsx            (formatEur local + 2 quantity)
-src/pages/restock/RestockAdminCampaigns.tsx    (toLocaleString FR-BE 2 décimales)
-src/pages/admin/AdminVendorMarketIntelPage.tsx (Intl local)
-src/pages/EconomiesPage.tsx                    (Intl local)
-src/pages/InvestPage.tsx                       (5 lignes "€" inline)
-src/pages/ConfirmationPage.tsx                 (montants si présents — à re-scanner)
-+ tous les composants de Cards/Badges qui affichent un prix : `MarginBreakdownDetails`, `PvpEconomyBadge`, `PriceDeltaShowcase`, `SearchTrivagoCard`, `BuyerComparator`, `OfferSuggestedRetailPriceEditor`, `AdjustPriceModal`…
+src/
+  pages/BonnesAffairesPage.tsx                (nouvelle route)
+  components/discount/
+    DiscountCriteriaForm.tsx
+    DiscountResultsTable.tsx
+    DiscountExportButtons.tsx
+  hooks/useDiscountSearch.ts                  (RPC + infinite query)
+  lib/discount-export.ts                      (xlsx + csv)
+src/components/catalog/CatalogFilters.tsx     (+ bloc Remise)
+src/hooks/useCatalogProducts.ts               (+ params minDiscountPct/ref)
+src/components/Header.tsx                     (+ lien menu)
+src/App.tsx                                   (+ <Route path="/bonnes-affaires">)
+supabase/migrations/*.sql                     (RPC search_discount_offers + grants)
 ```
 
-Pour chaque fichier : remplacer le formatter local par `const { formatMoneyFromCents } = useMoneyFormat()` (composants React) ou `formatMoney(eur, { locale })` (utilitaires non-React).
+Aucune modif des autres pages, aucune autre migration. Pas de cache MV — la RPC requête à la volée (PVP+market déjà denormalisés dans la vue).
 
-### Étape 4 — Garde-fou
-- Ajout d'une règle `eslint-plugin-no-restricted-syntax` qui interdit `toLocaleString("fr-BE"` et `Intl.NumberFormat("fr-BE"` dans `src/**` (sauf le helper `money-format.ts` lui-même, et les utilitaires de date).
-- Échec en CI si quelqu'un réintroduit un format monétaire en dur.
+## Hors périmètre (à confirmer plus tard)
 
-### Étape 5 — Vérifications
-- Build TS (`bunx tsc --noEmit`).
-- Test manuel rapide : changer la langue UI → vérifier qu'un prix sur `/catalogue`, `/produit/:slug`, `/panier`, `/vendor/dashboard` change de format (point décimal en EN/DE, virgule en FR/NL).
-- Snapshot d'un prix en chaque locale fourni en réponse.
+- Sauvegarde des "recherches favorites" (alertes email auto si nouveaux produits matchent)
+- Filtre par catégorie (le multiselect catégorie reste sur /catalogue — ajout possible v2)
+- Export PDF
+- Visibilité partielle pour non-vérifiés (teaser uniquement)
 
-### Hors scope explicite (ne sera PAS modifié sans validation)
-- Les ~40 `toLocaleDateString("fr-BE")` / `toLocaleTimeString("fr-BE")`.
-- Le helper `formatCount.ts` (compteurs marketing — pas de monnaie).
-- La logique TVA / pricing.ts `applyMargin` (pas de format).
-- Les exports CSV (`AccountPage`, `MesRfqPage` ligne 431, `RfqCreditsPage`) qui utilisent `fr-BE` pour rester compatibles avec Excel FR — cas particulier à confirmer.
+## Question ouverte avant code
 
-## Volume estimé
-- 1 nouveau fichier (`money-format.ts` + hook).
-- ~30-40 fichiers modifiés.
-- 0 migration DB.
-
-## Question(s) bloquantes
-
-Réponds-moi sur **1.A/B/C, 2.Strict/Étendu, 3.A/B**, et confirme le hors-scope « dates et exports CSV ». Je lance ensuite la migration en un seul passage.
+Le filtre côté `/catalogue` doit-il **persister** dans `profiles.preferences` (comme le toggle Trivago/Grid) ou rester volatile par session ? Par défaut je pars sur **volatile + query string** — plus simple, partageable, et n'altère pas les préférences globales.

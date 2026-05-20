@@ -447,7 +447,7 @@ export default function BuyerActivationPage() {
           <Button variant="outline" asChild>
             <Link to="/compte/statut">Annuler</Link>
           </Button>
-          <Button onClick={handleActivate} disabled={submitting || !profile}>
+          <Button onClick={handleActivate} disabled={submitting || !profile || !draftValid}>
             {submitting ? "Activation…" : "Activer mon compte acheteur"}
             <ArrowRight className="ml-1.5 h-4 w-4" />
           </Button>

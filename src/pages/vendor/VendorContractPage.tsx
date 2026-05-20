@@ -1,12 +1,15 @@
 import { useMemo } from "react";
 import { Link, Navigate, useSearchParams } from "react-router-dom";
-import { Loader2, ArrowLeft, BookOpen, PenLine, CheckCircle2, RefreshCw } from "lucide-react";
+import { Loader2, ArrowLeft, BookOpen, PenLine, CheckCircle2, RefreshCw, AlertTriangle, Settings } from "lucide-react";
 import { useCurrentVendor } from "@/hooks/useCurrentVendor";
 import { MandatFacturationFlow } from "@/components/vendor/contract/MandatFacturationFlow";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { CONTRACT_VERSION, type ContractVendorData } from "@/lib/contract/mandat-facturation-template";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 /**
  * Standalone screen mounting the Convention de mandat de facturation flow.
@@ -19,6 +22,7 @@ export default function VendorContractPage() {
   const [searchParams] = useSearchParams();
   const { data: vendor, isLoading } = useCurrentVendor();
 
+  const queryClient = useQueryClient();
   const requestedScreen = searchParams.get("screen");
   const initialScreen =
     requestedScreen === "sign" || requestedScreen === "read" ? requestedScreen : undefined;
@@ -129,6 +133,55 @@ export default function VendorContractPage() {
           Document légal obligatoire — article 53 §2 du Code TVA belge.
         </p>
       </div>
+
+      {(() => {
+        if (isSignedCurrent) return null;
+        const missing: { key: string; label: string }[] = [];
+        if (!contractVendorData.bce?.trim()) missing.push({ key: "bce", label: "Numéro BCE (entreprise)" });
+        if (!contractVendorData.representative_name?.trim()) missing.push({ key: "rep_name", label: "Nom du représentant légal" });
+        if (!contractVendorData.representative_role?.trim()) missing.push({ key: "rep_role", label: "Fonction du représentant (ex. Gérant, Administrateur)" });
+        if (!contractVendorData.company_name?.trim()) missing.push({ key: "company", label: "Raison sociale" });
+        if (!contractVendorData.vat?.trim()) missing.push({ key: "vat", label: "Numéro de TVA" });
+        if (!contractVendorData.address?.trim()) missing.push({ key: "address", label: "Adresse postale complète" });
+        if (missing.length === 0) return null;
+
+        const handleReload = async () => {
+          await queryClient.invalidateQueries({ queryKey: ["current-vendor"] });
+          toast.success("Données rechargées depuis votre fiche vendeur.");
+        };
+
+        return (
+          <Alert variant="destructive" className="border-red-300 bg-red-50 text-red-900">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle className="font-semibold">
+              Informations légales manquantes ({missing.length})
+            </AlertTitle>
+            <AlertDescription className="space-y-3">
+              <p className="text-sm">
+                Ces champs sont obligatoires pour générer un mandat valide. Complétez-les dans vos
+                paramètres vendeur, puis rechargez les données ici (inutile de vider le cache).
+              </p>
+              <ul className="list-disc pl-5 text-sm space-y-0.5">
+                {missing.map((m) => (
+                  <li key={m.key}>{m.label}</li>
+                ))}
+              </ul>
+              <div className="flex flex-wrap gap-2 pt-1">
+                <Button asChild size="sm" variant="default">
+                  <Link to="/vendor/settings">
+                    <Settings className="w-4 h-4 mr-1.5" />
+                    Compléter mes informations
+                  </Link>
+                </Button>
+                <Button size="sm" variant="outline" onClick={handleReload}>
+                  <RefreshCw className="w-4 h-4 mr-1.5" />
+                  Ré-enregistrer les données
+                </Button>
+              </div>
+            </AlertDescription>
+          </Alert>
+        );
+      })()}
 
       {!isSignedCurrent && (
         <Card className="border-sky-200 bg-sky-50/50">

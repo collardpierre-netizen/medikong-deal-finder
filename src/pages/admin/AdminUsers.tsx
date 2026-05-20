@@ -171,12 +171,28 @@ export default function AdminUsers() {
 
   async function handleValidate(userId: string | null) {
     if (!userId) return;
-    const { error } = await supabase
+    const { data: updated, error } = await supabase
       .from("customers")
       .update({ is_verified: true } as any)
-      .eq("auth_user_id", userId);
+      .eq("auth_user_id", userId)
+      .eq("is_verified", false)
+      .select("id, email, company_name, is_verified")
+      .maybeSingle();
     if (error) { toast.error("Erreur: " + error.message); return; }
     toast.success("✅ Compte acheteur validé");
+
+    // Notify buyer that their account is now verified (transactional)
+    if (updated?.email) {
+      supabase.functions.invoke("send-transactional-email", {
+        body: {
+          templateName: "buyer-verified",
+          recipientEmail: updated.email,
+          idempotencyKey: `buyer-verified-${updated.id}`,
+          templateData: { companyName: updated.company_name || undefined },
+        },
+      }).catch((e) => console.warn("buyer-verified email failed:", e));
+    }
+
     loadUsers();
     if (buyerDetail) setBuyerDetail({ ...buyerDetail, is_verified: true });
   }

@@ -168,7 +168,7 @@ describe("BonnesAffairesPage — gate par buyerStatus", () => {
     const primary = screen.getByRole("link", {
       name: /activer mon compte acheteur/i,
     });
-    expect(primary).toHaveAttribute("href", "/onboarding?role=buyer");
+    expect(primary).toHaveAttribute("href", "/compte/activer-acheteur");
     const secondary = screen.getByRole("link", {
       name: /retour au portail vendeur/i,
     });

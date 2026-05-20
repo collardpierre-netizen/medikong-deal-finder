@@ -57,17 +57,21 @@ Deno.serve(async (req: Request) => {
     scanned: 0,
     skipped_no_email: 0,
     skipped_already_signed: 0,
+    skipped_not_approved: 0,
     skipped_too_early: 0,
     sent: { level1: 0, level2: 0, level3: 0 },
     errors: [] as string[],
   }
 
   try {
-    // Vendeurs actifs/validés sans signature
+    // Vendeurs strictement APPROUVÉS et n'ayant pas encore accepté le mandat
+    // commissionnaire. Exclut explicitement pending/rejected/suspended.
     const { data: vendors, error } = await supabase
       .from('vendors')
-      .select('id, company_name, email, contact_name, validated_at, created_at')
+      .select('id, company_name, email, contact_name, validated_at, created_at, validation_status, commissionnaire_agreement_accepted_at')
       .eq('is_active', true)
+      .eq('validation_status', 'approved')
+      .is('commissionnaire_agreement_accepted_at', null)
       .returns<VendorRow[]>()
 
     if (error) throw error

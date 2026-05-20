@@ -97,7 +97,7 @@ const TARGET_PROFILES = [
 ];
 
 const empty: Omit<Delegate, "id" | "vendor_id"> = {
-  first_name: "", last_name: "", job_title: "", email: "", phone: "", booking_url: "", photo_url: "", bio: "",
+  first_name: "", last_name: "", job_title: "", email: "", phone: "", booking_url: "", linkedin_url: "", photo_url: "", bio: "",
   languages: [], country_codes: [], regions: [], postal_codes: [], target_profiles: [], primary_target_profiles: [], is_active: true, display_order: 0,
   availability_status: "available", availability_message: "", availability_until: null,
 };

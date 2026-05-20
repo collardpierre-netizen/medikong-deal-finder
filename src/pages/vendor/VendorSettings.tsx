@@ -44,11 +44,14 @@ export default function VendorSettings() {
         email: vendor.email || "",
         phone: vendor.phone || "",
         vat_number: vendor.vat_number || "",
+        bce_number: (vendor as any).bce_number || "",
         address_line1: vendor.address_line1 || "",
         city: vendor.city || "",
         postal_code: vendor.postal_code || "",
         country_code: vendor.country_code || "BE",
         description: vendor.description || "",
+        representative_name: (vendor as any).representative_name || "",
+        representative_role: (vendor as any).representative_role || "",
       });
     }
   }, [vendor]);

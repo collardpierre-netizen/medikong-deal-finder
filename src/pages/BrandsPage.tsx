@@ -20,7 +20,14 @@ interface BrandItem {
 export default function BrandsPage() {
   const [activeLetter, setActiveLetter] = useState("A");
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const listRef = useRef<HTMLDivElement>(null);
+
+  // Debounce search input (250 ms) avant de lancer la requête serveur.
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search.trim()), 250);
+    return () => clearTimeout(t);
+  }, [search]);
 
   // Fetch only brands with products (638 rows — fast)
   const { data: brands = [], isLoading } = useQuery<BrandItem[]>({
@@ -60,12 +67,32 @@ export default function BrandsPage() {
     return map;
   }, [brands]);
 
-  // Search results
-  const searchResults = useMemo(() => {
-    if (!search.trim()) return null;
-    const q = search.trim().toLowerCase();
-    return brands.filter(b => b.name.toLowerCase().includes(q));
-  }, [brands, search]);
+  // Search server-side (ilike sur name + slug), débouncée, min 2 caractères.
+  // Évite de filtrer en mémoire un cache potentiellement >1000 lignes et
+  // permet de matcher des marques absentes du cache.
+  const searchActive = debouncedSearch.length >= 2;
+  const { data: serverSearchResults, isFetching: isSearching } = useQuery<BrandItem[]>({
+    queryKey: ["brands-page-search", debouncedSearch],
+    enabled: searchActive,
+    queryFn: async () => {
+      // Échappe les wildcards utilisateurs pour éviter qu'ils ne changent
+      // le sens du LIKE côté Postgres.
+      const escaped = debouncedSearch.replace(/[\\%_,]/g, "\\$&");
+      const pattern = `%${escaped}%`;
+      const { data, error } = await supabase
+        .from("brands")
+        .select("id, name, slug, product_count")
+        .eq("is_active", true)
+        .gt("product_count", 0)
+        .or(`name.ilike.${pattern},slug.ilike.${pattern}`)
+        .order("name")
+        .limit(200);
+      if (error) throw error;
+      return data || [];
+    },
+    staleTime: 60 * 1000,
+  });
+  const searchResults: BrandItem[] | null = searchActive ? (serverSearchResults || []) : null;
 
   // Available letters
   const availableLetters = useMemo(() => new Set(Object.keys(grouped)), [grouped]);
@@ -78,8 +105,6 @@ export default function BrandsPage() {
   }, [availableLetters, activeLetter]);
 
   const totalProducts = useMemo(() => brands.reduce((s, b) => s + (b.product_count || 0), 0), [brands]);
-
-  const currentBrands = searchResults !== null ? searchResults : (grouped[activeLetter] || []);
 
   // Group search results by letter for display
   const searchGrouped = useMemo(() => {

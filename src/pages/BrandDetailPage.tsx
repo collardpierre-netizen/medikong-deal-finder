@@ -158,6 +158,27 @@ export default function BrandDetailPage() {
     },
   });
 
+  // Fallback : marques de la même catégorie principale, pour suggérer un rebond
+  // quand la page marque n'a aucun produit (ou aucun produit pour le filtre actif).
+  const { data: categoryBrands = [] } = useQuery({
+    queryKey: ["brand-category-suggestions", brandData?.main_category, brandData?.slug],
+    enabled: !!brandData?.main_category && !!brandData?.slug,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("brands")
+        .select("name, slug, product_count, logo_url")
+        .eq("is_active", true)
+        .eq("main_category", brandData!.main_category as string)
+        .neq("slug", brandData!.slug)
+        .gt("product_count", 0)
+        .order("product_count", { ascending: false })
+        .limit(8);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+
   const { data: catChips = [] } = useQuery({
     queryKey: ["brand-category-chips", brandData?.id],
     enabled: !!brandData?.id,

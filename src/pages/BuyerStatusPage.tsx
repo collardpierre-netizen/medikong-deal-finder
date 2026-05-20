@@ -1,11 +1,27 @@
 import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { Layout } from "@/components/layout/Layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CheckCircle2, Clock, AlertTriangle, UserX, ArrowRight, Store, ShoppingCart, FileCheck, Mail } from "lucide-react";
+import {
+  CheckCircle2,
+  Clock,
+  AlertTriangle,
+  UserX,
+  ArrowRight,
+  Store,
+  ShoppingCart,
+  FileCheck,
+  Mail,
+  CreditCard,
+  ShieldCheck,
+  FileSignature,
+  XCircle,
+} from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 type Step = {
   icon: React.ComponentType<{ className?: string }>;
@@ -15,8 +31,77 @@ type Step = {
   done?: boolean;
 };
 
+type ChecklistState = "done" | "pending" | "todo" | "blocked";
+
+type ChecklistItem = {
+  key: string;
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  description: string;
+  state: ChecklistState;
+  cta?: { label: string; to: string; variant?: "default" | "outline" };
+};
+
+const stateStyles: Record<ChecklistState, { badge: string; label: string; iconWrap: string }> = {
+  done: {
+    badge: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    label: "OK",
+    iconWrap: "bg-emerald-50 text-emerald-700",
+  },
+  pending: {
+    badge: "bg-amber-50 text-amber-700 border-amber-200",
+    label: "En cours",
+    iconWrap: "bg-amber-50 text-amber-700",
+  },
+  todo: {
+    badge: "bg-sky-50 text-sky-700 border-sky-200",
+    label: "À faire",
+    iconWrap: "bg-sky-50 text-sky-700",
+  },
+  blocked: {
+    badge: "bg-red-50 text-red-700 border-red-200",
+    label: "Bloqué",
+    iconWrap: "bg-red-50 text-red-700",
+  },
+};
+
+function StateIcon({ state, Fallback }: { state: ChecklistState; Fallback: React.ComponentType<{ className?: string }> }) {
+  if (state === "done") return <CheckCircle2 className="h-5 w-5" />;
+  if (state === "pending") return <Clock className="h-5 w-5" />;
+  if (state === "blocked") return <XCircle className="h-5 w-5" />;
+  return <Fallback className="h-5 w-5" />;
+}
+
 export default function BuyerStatusPage() {
   const { user, buyerStatus, hasVendorAccount, verificationLoading } = useAuth();
+
+  // Vendor details for the status checklist (Stripe + validation + contract).
+  const { data: vendorDetails, isLoading: vendorLoading } = useQuery({
+    queryKey: ["buyer-status:vendor-details", user?.id],
+    enabled: !!user?.id && hasVendorAccount,
+    queryFn: async () => {
+      const { data: vendor } = await supabase
+        .from("vendors")
+        .select(
+          "id, validation_status, is_verified, stripe_account_id, stripe_onboarding_complete, commissionnaire_agreement_accepted_at"
+        )
+        .eq("auth_user_id", user!.id)
+        .maybeSingle();
+
+      if (!vendor) return null;
+
+      const { data: contract } = await supabase
+        .from("seller_contracts")
+        .select("id, signed_at, contract_type")
+        .eq("vendor_id", vendor.id)
+        .eq("contract_type", "mandat_facturation")
+        .order("signed_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      return { vendor, contract };
+    },
+  });
 
   const statusMeta: Record<
     typeof buyerStatus,
@@ -78,6 +163,121 @@ export default function BuyerStatusPage() {
           ? "bg-red-50 text-red-700 border-red-200"
           : "bg-muted text-muted-foreground border-border";
 
+  // Buyer-side checklist (always shown for logged-in users)
+  const buyerChecklist: ChecklistItem[] = (() => {
+    if (buyerStatus === "anonymous") return [];
+
+    if (buyerStatus === "missing") {
+      return [
+        {
+          key: "buyer-profile",
+          icon: FileCheck,
+          title: "Profil acheteur",
+          description: hasVendorAccount
+            ? "Activez votre compte acheteur — vos infos vendeur sont pré-remplies."
+            : "Créez votre profil acheteur professionnel pour accéder aux prix.",
+          state: "todo",
+          cta: {
+            label: hasVendorAccount ? "Activer mon compte acheteur" : "Créer mon profil",
+            to: hasVendorAccount ? "/compte/activer-acheteur" : "/onboarding?role=buyer",
+          },
+        },
+      ];
+    }
+
+    return [
+      {
+        key: "buyer-profile",
+        icon: FileCheck,
+        title: "Profil acheteur",
+        description: "Vos informations professionnelles ont été enregistrées.",
+        state: "done",
+      },
+      {
+        key: "buyer-verification",
+        icon: ShieldCheck,
+        title: "Vérification MediKong",
+        description:
+          buyerStatus === "verified"
+            ? "Votre compte est vérifié. Vous voyez les prix HTVA et pouvez commander."
+            : "Vérification manuelle par notre équipe. Délai habituel : 24 à 48 h ouvrées. Un email sera envoyé dès validation.",
+        state: buyerStatus === "verified" ? "done" : "pending",
+      },
+    ];
+  })();
+
+  // Vendor-side checklist (only when user also has a vendor account)
+  const vendorChecklist: ChecklistItem[] = (() => {
+    if (!hasVendorAccount || vendorLoading || !vendorDetails) return [];
+    const v = vendorDetails.vendor;
+    const contract = vendorDetails.contract;
+
+    const validationState: ChecklistState =
+      v.validation_status === "approved"
+        ? "done"
+        : v.validation_status === "rejected"
+          ? "blocked"
+          : "pending";
+
+    const stripeDone = !!v.stripe_account_id && v.stripe_onboarding_complete === true;
+    const stripeState: ChecklistState = stripeDone
+      ? "done"
+      : v.stripe_account_id
+        ? "pending"
+        : "todo";
+
+    const contractSigned = !!contract?.signed_at || !!v.commissionnaire_agreement_accepted_at;
+    const contractState: ChecklistState = contractSigned ? "done" : "todo";
+
+    return [
+      {
+        key: "vendor-validation",
+        icon: ShieldCheck,
+        title: "Validation du compte vendeur",
+        description:
+          validationState === "done"
+            ? "Votre compte vendeur est approuvé par MediKong."
+            : validationState === "blocked"
+              ? "Votre dossier a été refusé. Contactez le support pour connaître les motifs."
+              : "Vérification en cours par notre équipe (KYC, documents légaux). Délai 24-48 h ouvrées.",
+        state: validationState,
+      },
+      {
+        key: "vendor-stripe",
+        icon: CreditCard,
+        title: "Stripe Connect (encaissement)",
+        description: stripeDone
+          ? "Compte Stripe relié et activé — vous pouvez recevoir des paiements."
+          : v.stripe_account_id
+            ? "Compte Stripe créé, mais l'onboarding n'est pas terminé. Reprenez les étapes restantes."
+            : "Connectez votre compte Stripe pour recevoir les paiements de vos ventes.",
+        state: stripeState,
+        cta: stripeDone
+          ? undefined
+          : {
+              label: v.stripe_account_id ? "Terminer Stripe" : "Configurer Stripe",
+              to: "/vendor/stripe-onboarding",
+              variant: stripeState === "todo" ? "default" : "outline",
+            },
+      },
+      {
+        key: "vendor-contract",
+        icon: FileSignature,
+        title: "Mandat de facturation",
+        description: contractSigned
+          ? "Mandat signé — MediKong peut émettre les factures en votre nom."
+          : "Signez le mandat de facturation pour activer la facturation automatique (self-billing).",
+        state: contractState,
+        cta: contractSigned
+          ? undefined
+          : {
+              label: "Signer le mandat",
+              to: "/vendor/settings?tab=contract",
+            },
+      },
+    ];
+  })();
+
   const steps: Step[] = (() => {
     switch (buyerStatus) {
       case "anonymous":
@@ -96,7 +296,6 @@ export default function BuyerStatusPage() {
             ];
       case "pending":
         return [
-          { icon: Clock, title: "Validation en cours", description: "Notre équipe vérifie vos pièces sous 24-48 h ouvrées.", done: true },
           { icon: Mail, title: "Surveillez vos emails", description: `Une confirmation sera envoyée à ${user?.email ?? "votre adresse email"}.` },
           { icon: ShoppingCart, title: "En attendant", description: "Vous pouvez parcourir le catalogue (les prix s'afficheront une fois vérifié).", cta: { label: "Explorer le catalogue", to: "/catalogue", variant: "outline" } },
         ];
@@ -108,6 +307,36 @@ export default function BuyerStatusPage() {
         ];
     }
   })();
+
+  const renderChecklist = (items: ChecklistItem[]) => (
+    <div className="space-y-3">
+      {items.map((item) => {
+        const styles = stateStyles[item.state];
+        return (
+          <div key={item.key} className="flex items-start gap-4 rounded-lg border p-4">
+            <div className={`rounded-full p-2 ${styles.iconWrap}`}>
+              <StateIcon state={item.state} Fallback={item.icon} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <p className="font-medium">{item.title}</p>
+                <Badge variant="outline" className={styles.badge}>{styles.label}</Badge>
+              </div>
+              <p className="text-sm text-muted-foreground mt-0.5">{item.description}</p>
+            </div>
+            {item.cta && (
+              <Button asChild size="sm" variant={item.cta.variant ?? "default"}>
+                <Link to={item.cta.to}>
+                  {item.cta.label}
+                  <ArrowRight className="ml-1.5 h-4 w-4" />
+                </Link>
+              </Button>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
 
   return (
     <Layout>
@@ -132,6 +361,43 @@ export default function BuyerStatusPage() {
             </div>
           </CardHeader>
         </Card>
+
+        {buyerChecklist.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>État de votre compte acheteur</CardTitle>
+              <CardDescription>Suivi détaillé des étapes de validation côté acheteur.</CardDescription>
+            </CardHeader>
+            <CardContent>{renderChecklist(buyerChecklist)}</CardContent>
+          </Card>
+        )}
+
+        {hasVendorAccount && (
+          <Card>
+            <CardHeader>
+              <CardTitle>État de votre compte vendeur</CardTitle>
+              <CardDescription>Validation MediKong, Stripe Connect et mandat de facturation.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {vendorLoading ? (
+                <div className="space-y-3">
+                  <Skeleton className="h-16 w-full" />
+                  <Skeleton className="h-16 w-full" />
+                  <Skeleton className="h-16 w-full" />
+                </div>
+              ) : vendorChecklist.length > 0 ? (
+                renderChecklist(vendorChecklist)
+              ) : (
+                <p className="text-sm text-muted-foreground">Aucune information vendeur disponible.</p>
+              )}
+              <div className="mt-4">
+                <Button asChild variant="outline" size="sm">
+                  <Link to="/vendor">Accéder au portail vendeur <ArrowRight className="ml-1.5 h-4 w-4" /></Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <Card>
           <CardHeader>
@@ -163,20 +429,6 @@ export default function BuyerStatusPage() {
             })}
           </CardContent>
         </Card>
-
-        {hasVendorAccount && buyerStatus !== "anonymous" && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Compte vendeur détecté</CardTitle>
-              <CardDescription>Vous disposez également d'un portail vendeur actif.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button asChild variant="outline" size="sm">
-                <Link to="/vendor">Accéder au portail vendeur <ArrowRight className="ml-1.5 h-4 w-4" /></Link>
-              </Button>
-            </CardContent>
-          </Card>
-        )}
       </div>
     </Layout>
   );

@@ -84,3 +84,7 @@ verify_jwt = false
 [functions.upload-media-asset]
 verify_jwt = true
 
+[functions.replace-media-thumbnail]
+verify_jwt = true
+
+

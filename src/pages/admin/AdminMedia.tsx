@@ -12,7 +12,7 @@ import { Progress } from "@/components/ui/progress";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, Upload, Trash2, ExternalLink, RefreshCw } from "lucide-react";
+import { Loader2, Upload, Trash2, ExternalLink, RefreshCw, Image as ImageIcon } from "lucide-react";
 
 const ASSET_TYPES = ["catalogue", "affiche", "video", "fiche", "brochure"] as const;
 const LANGS = ["fr", "nl", "en", "de"] as const;
@@ -467,6 +467,9 @@ function AssetRow({ asset, onChanged }: { asset: any; onChanged: () => void }) {
   const [active, setActive] = useState<boolean>(asset.is_active);
   const [thumbUrl, setThumbUrl] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [replacingThumb, setReplacingThumb] = useState(false);
+  const replaceThumbRef = useRef<HTMLInputElement>(null);
+
 
   useEffect(() => {
     let cancelled = false;
@@ -525,6 +528,44 @@ function AssetRow({ asset, onChanged }: { asset: any; onChanged: () => void }) {
     }
     window.open(data.signedUrl, "_blank");
   };
+  const onPickReplacementThumb = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) void replaceThumbnail(file);
+    if (replaceThumbRef.current) replaceThumbRef.current.value = "";
+  };
+
+  const replaceThumbnail = async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "Format invalide", description: "Image requise.", variant: "destructive" });
+      return;
+    }
+    setReplacingThumb(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) throw new Error("Session expirée");
+      const form = new FormData();
+      form.append("asset_id", asset.id);
+      form.append("thumbnail", file);
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/replace-media-thumbnail`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: form,
+      });
+      if (!res.ok) {
+        const msg = (await res.json().catch(() => null))?.error ?? `HTTP ${res.status}`;
+        throw new Error(msg);
+      }
+      toast({ title: "Thumbnail mis à jour" });
+      onChanged();
+    } catch (e) {
+      toast({ title: "Échec", description: (e as Error).message, variant: "destructive" });
+    } finally {
+      setReplacingThumb(false);
+    }
+  };
+
 
   const ownerName = asset.brands?.name ?? asset.manufacturers?.name ?? "—";
   const ownerKind = asset.brand_id ? "Marque" : "Fabricant";
@@ -558,8 +599,24 @@ function AssetRow({ asset, onChanged }: { asset: any; onChanged: () => void }) {
       <TableCell><Switch checked={active} onCheckedChange={setActive} /></TableCell>
       <TableCell>
         <div className="flex gap-1">
+          <input
+            ref={replaceThumbRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={onPickReplacementThumb}
+          />
           <Button size="sm" variant="ghost" onClick={openSigned} title="Ouvrir">
             <ExternalLink className="h-4 w-4" />
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => replaceThumbRef.current?.click()}
+            disabled={replacingThumb}
+            title="Remplacer le thumbnail"
+          >
+            {replacingThumb ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImageIcon className="h-4 w-4" />}
           </Button>
           <Button size="sm" variant="ghost" onClick={save} disabled={!dirty || saving} title="Enregistrer">
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
@@ -568,6 +625,7 @@ function AssetRow({ asset, onChanged }: { asset: any; onChanged: () => void }) {
             <Trash2 className="h-4 w-4 text-destructive" />
           </Button>
         </div>
+
       </TableCell>
     </TableRow>
   );

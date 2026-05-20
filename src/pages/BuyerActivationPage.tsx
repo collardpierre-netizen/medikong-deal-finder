@@ -324,6 +324,77 @@ export default function BuyerActivationPage() {
           </Card>
         )}
 
+        <Card className={addressIncomplete ? "border-amber-300 bg-amber-50/40" : undefined}>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              Adresse de facturation
+              {addressIncomplete && (
+                <Badge variant="outline" className="border-amber-300 bg-amber-100 text-amber-800">
+                  À compléter
+                </Badge>
+              )}
+            </CardTitle>
+            <CardDescription>
+              {addressIncomplete
+                ? "Votre compte vendeur n'a pas d'adresse postale complète. Renseignez-la ici avant d'activer (les valeurs « 0000 » par défaut ne sont plus acceptées)."
+                : "Vérifiez ou corrigez l'adresse reprise de votre compte vendeur."}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-6 gap-3">
+              <div className="sm:col-span-6">
+                <Label htmlFor="addr-line1" className="text-xs">Rue et numéro</Label>
+                <Input
+                  id="addr-line1"
+                  maxLength={200}
+                  placeholder="Rue de la Procession 23"
+                  value={addressDraft.address_line1}
+                  onChange={(e) => setAddressDraft((d) => ({ ...d, address_line1: e.target.value }))}
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <Label htmlFor="addr-pc" className="text-xs">Code postal</Label>
+                <Input
+                  id="addr-pc"
+                  maxLength={10}
+                  placeholder="7822"
+                  value={addressDraft.postal_code}
+                  onChange={(e) => setAddressDraft((d) => ({ ...d, postal_code: e.target.value }))}
+                />
+              </div>
+              <div className="sm:col-span-3">
+                <Label htmlFor="addr-city" className="text-xs">Ville</Label>
+                <Input
+                  id="addr-city"
+                  maxLength={100}
+                  placeholder="Ath"
+                  value={addressDraft.city}
+                  onChange={(e) => setAddressDraft((d) => ({ ...d, city: e.target.value }))}
+                />
+              </div>
+              <div className="sm:col-span-1">
+                <Label htmlFor="addr-cc" className="text-xs">Pays</Label>
+                <Input
+                  id="addr-cc"
+                  maxLength={2}
+                  placeholder="BE"
+                  value={addressDraft.country_code}
+                  onChange={(e) =>
+                    setAddressDraft((d) => ({ ...d, country_code: e.target.value.toUpperCase().slice(0, 2) }))
+                  }
+                />
+              </div>
+            </div>
+            {!draftValid && (
+              <p className="text-xs text-amber-700 mt-3">
+                Renseignez une rue, un code postal (3 à 10 caractères) et une ville valides pour activer votre compte acheteur.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+
+
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Votre profil acheteur</CardTitle>

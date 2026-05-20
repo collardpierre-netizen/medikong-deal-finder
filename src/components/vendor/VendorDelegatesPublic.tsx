@@ -171,46 +171,53 @@ export default function VendorDelegatesPublic({ vendorId }: Props) {
         </div>
       </div>
 
-      {/* Contacts + CTA */}
-      <div className="flex flex-wrap gap-2">
-        {d.email && (
-          <a
-            href={`mailto:${d.email}`}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-muted/60 hover:bg-muted rounded-md transition-colors text-xs text-foreground"
-            title={d.email}
-          >
-            <Mail size={12} className="text-muted-foreground" />
-            Email
-          </a>
-        )}
-        {d.phone && (
-          <a
-            href={`tel:${d.phone.replace(/\s/g, "")}`}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-muted/60 hover:bg-muted rounded-md transition-colors text-xs text-foreground"
-            title={d.phone}
-          >
-            <Phone size={12} className="text-muted-foreground" />
-            Téléphone
-          </a>
-        )}
+      {/* Contacts (email + tel sur 2 colonnes en mobile, inline en sm+) */}
+      {(d.email || d.phone) && (
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
+          {d.email && (
+            <a
+              href={`mailto:${d.email}`}
+              className="inline-flex items-center justify-center sm:justify-start gap-1.5 px-2.5 py-1.5 bg-muted/60 hover:bg-muted rounded-md transition-colors text-xs text-foreground min-w-0"
+              title={d.email}
+            >
+              <Mail size={12} className="text-muted-foreground shrink-0" />
+              <span className="truncate">Email</span>
+            </a>
+          )}
+          {d.phone && (
+            <a
+              href={`tel:${d.phone.replace(/\s/g, "")}`}
+              className="inline-flex items-center justify-center sm:justify-start gap-1.5 px-2.5 py-1.5 bg-muted/60 hover:bg-muted rounded-md transition-colors text-xs text-foreground min-w-0"
+              title={d.phone}
+            >
+              <Phone size={12} className="text-muted-foreground shrink-0" />
+              <span className="truncate">Téléphone</span>
+            </a>
+          )}
+        </div>
+      )}
+
+      {/* CTA RDV + Profil : full-width mobile, inline desktop */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:flex-wrap gap-2">
         {d.booking_url && (
           <a
             href={d.booking_url}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-md transition-colors text-xs font-semibold"
+            className="inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-md transition-colors text-xs font-semibold w-full sm:w-auto"
           >
-            <CalendarDays size={12} />
-            RDV
+            <CalendarDays size={14} className="shrink-0" />
+            <span className="truncate">Prendre rendez-vous</span>
           </a>
         )}
         <Link
           to={`/delegue/${d.id}`}
-          className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-primary hover:underline ml-auto"
+          className="inline-flex items-center justify-center sm:justify-start gap-1 px-2.5 py-1.5 text-xs font-semibold text-primary hover:underline sm:ml-auto"
         >
           Profil →
         </Link>
       </div>
+
 
       {/* Footer : langues + régions */}
       {(d.languages.length > 0 || d.regions.length > 0) && (

@@ -144,12 +144,27 @@ export default function VendorDelegatesPublic({ vendorId }: Props) {
               {d.first_name} {d.last_name}
             </Link>
             {isReferent(d) && (
-              <span className="inline-flex items-center gap-1 bg-primary/10 text-primary px-2 py-0.5 rounded-full text-[10px] font-bold">
-                <Star size={9} className="fill-current" />
-                Référent
-              </span>
+              <TooltipProvider delayDuration={150}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span
+                      role="img"
+                      aria-label={`${d.first_name} ${d.last_name} est votre référent commercial dédié à votre profil`}
+                      tabIndex={0}
+                      className="inline-flex items-center gap-1 bg-primary/10 text-primary px-2 py-0.5 rounded-full text-[10px] font-bold cursor-help focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1"
+                    >
+                      <Star size={9} className="fill-current" aria-hidden="true" />
+                      Référent
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-[220px] text-xs">
+                    Délégué commercial dédié à votre profil professionnel et à votre zone géographique.
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             )}
           </div>
+
           {d.job_title && (
             <p className="text-xs text-muted-foreground truncate">{d.job_title}</p>
           )}

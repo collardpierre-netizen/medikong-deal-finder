@@ -1,0 +1,1 @@
+DELETE FROM public.media_assets WHERE title = 'PR8 RLS Test';

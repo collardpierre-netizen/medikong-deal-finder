@@ -1,12 +1,22 @@
-// Lists active media_assets for a given brand_id, with seasonal sort:
-// assets tagged with the current season are surfaced first, then sort_order ASC
-// NULLS LAST, then published_at DESC NULLS LAST.
+// Lists active media_assets for a given brand_id.
 //
-// Visibility is enforced by RLS on media_assets via the caller's JWT
-// (anon for public assets, authenticated/verified for the rest).
+// Query params:
+//   brand_id     (required, uuid)
+//   language     (optional, eq filter)
+//   asset_type   (optional, eq filter)
+//   tag          (optional, exact array contains)
+//   q            (optional, search in title / description / tags)
+//   sort         (optional) one of: seasonal (default) | recent | oldest | title | sort_order
+//   order        (optional) asc | desc — overrides default direction
+//   page         (optional, 1-based, default 1)
+//   page_size    (optional, default 24, max 100)
+//
+// Visibility is enforced by RLS on media_assets via the caller's JWT.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+
+const SEASONAL_FETCH_CAP = 500;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -16,32 +26,138 @@ Deno.serve(async (req) => {
 
   const url = new URL(req.url);
   const brand_id = url.searchParams.get("brand_id");
-  const language = url.searchParams.get("language"); // optional filter
-  const asset_type = url.searchParams.get("asset_type"); // optional filter
   if (!brand_id) return json({ error: "Missing brand_id" }, 400);
+
+  const params = parseListParams(url);
+  if ("error" in params) return json({ error: params.error }, 400);
 
   const authHeader = req.headers.get("Authorization") ?? "";
   const client = createClient(SUPABASE_URL, ANON_KEY, {
     global: authHeader ? { headers: { Authorization: authHeader } } : undefined,
   });
 
-  let q = client
-    .from("media_assets")
-    .select(
-      "id, asset_type, language, visibility, title, description, file_path, thumbnail_path, mime_type, file_size_bytes, duration_seconds, page_count, tags, sort_order, published_at"
-    )
-    .eq("brand_id", brand_id)
-    .eq("is_active", true);
+  return await listMedia(client, { ownerField: "brand_id", ownerId: brand_id, ...params });
+});
 
-  if (language) q = q.eq("language", language);
-  if (asset_type) q = q.eq("asset_type", asset_type);
+type ListParams = {
+  language: string | null;
+  asset_type: string | null;
+  tag: string | null;
+  q: string | null;
+  sort: "seasonal" | "recent" | "oldest" | "title" | "sort_order";
+  order: "asc" | "desc" | null;
+  page: number;
+  page_size: number;
+};
 
-  const { data, error } = await q;
+function parseListParams(url: URL): ListParams | { error: string } {
+  const language = url.searchParams.get("language");
+  const asset_type = url.searchParams.get("asset_type");
+  const tag = url.searchParams.get("tag");
+  const q = url.searchParams.get("q");
+  const sortRaw = (url.searchParams.get("sort") ?? "seasonal").toLowerCase();
+  const orderRaw = url.searchParams.get("order")?.toLowerCase() ?? null;
+
+  const allowedSort = ["seasonal", "recent", "oldest", "title", "sort_order"] as const;
+  if (!allowedSort.includes(sortRaw as any)) return { error: `sort must be one of ${allowedSort.join(", ")}` };
+  if (orderRaw && orderRaw !== "asc" && orderRaw !== "desc") return { error: "order must be asc or desc" };
+
+  const page = Math.max(1, Number(url.searchParams.get("page") ?? 1) || 1);
+  const page_size = Math.min(100, Math.max(1, Number(url.searchParams.get("page_size") ?? 24) || 24));
+
+  return {
+    language,
+    asset_type,
+    tag,
+    q,
+    sort: sortRaw as ListParams["sort"],
+    order: orderRaw as ListParams["order"],
+    page,
+    page_size,
+  };
+}
+
+async function listMedia(
+  client: ReturnType<typeof createClient>,
+  opts: ListParams & { ownerField: "brand_id" | "manufacturer_id"; ownerId: string },
+) {
+  const { ownerField, ownerId, language, asset_type, tag, q, sort, order, page, page_size } = opts;
+
+  const selectCols =
+    "id, asset_type, language, visibility, title, description, file_path, thumbnail_path, mime_type, file_size_bytes, duration_seconds, page_count, tags, sort_order, published_at";
+
+  const applyFilters = (qb: any) => {
+    let x = qb.eq(ownerField, ownerId).eq("is_active", true);
+    if (language) x = x.eq("language", language);
+    if (asset_type) x = x.eq("asset_type", asset_type);
+    if (tag) x = x.contains("tags", [tag]);
+    if (q && q.trim()) {
+      const safe = q.trim().replace(/[,()]/g, " ");
+      // ilike on title/description + array contains on the exact tag
+      x = x.or(`title.ilike.%${safe}%,description.ilike.%${safe}%,tags.cs.{${safe}}`);
+    }
+    return x;
+  };
+
+  if (sort === "seasonal") {
+    // Need full result set to apply seasonal boost, then paginate in memory.
+    const { data, error, count } = await applyFilters(
+      client.from("media_assets").select(selectCols, { count: "exact" }),
+    ).limit(SEASONAL_FETCH_CAP);
+    if (error) return json({ error: error.message }, 500);
+
+    const sorted = applySeasonalSort(data ?? []);
+    const from = (page - 1) * page_size;
+    const items = sorted.slice(from, from + page_size);
+    return json({
+      items,
+      count: items.length,
+      total: count ?? sorted.length,
+      page,
+      page_size,
+      sort,
+      season: currentSeason(),
+      truncated: (count ?? 0) > SEASONAL_FETCH_CAP,
+    });
+  }
+
+  // DB-side sort + range pagination
+  const direction = order ?? defaultDirection(sort);
+  const ascending = direction === "asc";
+  let column: string = "sort_order";
+  if (sort === "recent" || sort === "oldest") column = "published_at";
+  else if (sort === "title") column = "title";
+  else if (sort === "sort_order") column = "sort_order";
+
+  const from = (page - 1) * page_size;
+  const to = from + page_size - 1;
+
+  const { data, error, count } = await applyFilters(
+    client.from("media_assets").select(selectCols, { count: "exact" }),
+  )
+    .order(column, { ascending, nullsFirst: false })
+    .order("published_at", { ascending: false, nullsFirst: false })
+    .range(from, to);
+
   if (error) return json({ error: error.message }, 500);
 
-  const sorted = applySeasonalSort(data ?? []);
-  return json({ items: sorted, count: sorted.length, season: currentSeason() });
-});
+  return json({
+    items: data ?? [],
+    count: data?.length ?? 0,
+    total: count ?? 0,
+    page,
+    page_size,
+    sort,
+    order: direction,
+  });
+}
+
+function defaultDirection(sort: ListParams["sort"]): "asc" | "desc" {
+  if (sort === "recent") return "desc";
+  if (sort === "oldest") return "asc";
+  if (sort === "title") return "asc";
+  return "asc"; // sort_order
+}
 
 function currentSeason(): "hiver" | "printemps" | "ete" | "automne" {
   const m = new Date().getUTCMonth() + 1; // 1..12
@@ -52,7 +168,7 @@ function currentSeason(): "hiver" | "printemps" | "ete" | "automne" {
 }
 
 function applySeasonalSort<T extends { tags?: string[] | null; sort_order?: number | null; published_at?: string | null }>(
-  rows: T[]
+  rows: T[],
 ): T[] {
   const season = currentSeason();
   const seasonAliases: Record<string, string[]> = {

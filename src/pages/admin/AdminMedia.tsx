@@ -528,6 +528,44 @@ function AssetRow({ asset, onChanged }: { asset: any; onChanged: () => void }) {
     }
     window.open(data.signedUrl, "_blank");
   };
+  const onPickReplacementThumb = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) void replaceThumbnail(file);
+    if (replaceThumbRef.current) replaceThumbRef.current.value = "";
+  };
+
+  const replaceThumbnail = async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "Format invalide", description: "Image requise.", variant: "destructive" });
+      return;
+    }
+    setReplacingThumb(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) throw new Error("Session expirée");
+      const form = new FormData();
+      form.append("asset_id", asset.id);
+      form.append("thumbnail", file);
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/replace-media-thumbnail`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: form,
+      });
+      if (!res.ok) {
+        const msg = (await res.json().catch(() => null))?.error ?? `HTTP ${res.status}`;
+        throw new Error(msg);
+      }
+      toast({ title: "Thumbnail mis à jour" });
+      onChanged();
+    } catch (e) {
+      toast({ title: "Échec", description: (e as Error).message, variant: "destructive" });
+    } finally {
+      setReplacingThumb(false);
+    }
+  };
+
 
   const ownerName = asset.brands?.name ?? asset.manufacturers?.name ?? "—";
   const ownerKind = asset.brand_id ? "Marque" : "Fabricant";

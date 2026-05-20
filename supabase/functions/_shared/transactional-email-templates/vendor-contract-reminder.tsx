@@ -76,6 +76,8 @@ const VendorContractReminderEmail = ({
   reminderLevel = 1,
   contractVersion,
   contractUrl,
+  vendorSettingsUrl,
+  buyerActivationUrl,
 }: VendorContractReminderProps) => {
   const level = ([1, 2, 3].includes(reminderLevel) ? reminderLevel : 1) as ReminderLevel
   const copy = LEVEL_COPY[level]

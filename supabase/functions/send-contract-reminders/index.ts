@@ -23,6 +23,8 @@ interface VendorRow {
   contact_name: string | null
   validated_at: string | null
   created_at: string
+  validation_status: string | null
+  commissionnaire_agreement_accepted_at: string | null
 }
 
 interface ReminderPlan {
@@ -55,17 +57,21 @@ Deno.serve(async (req: Request) => {
     scanned: 0,
     skipped_no_email: 0,
     skipped_already_signed: 0,
+    skipped_not_approved: 0,
     skipped_too_early: 0,
     sent: { level1: 0, level2: 0, level3: 0 },
     errors: [] as string[],
   }
 
   try {
-    // Vendeurs actifs/validés sans signature
+    // Vendeurs strictement APPROUVÉS et n'ayant pas encore accepté le mandat
+    // commissionnaire. Exclut explicitement pending/rejected/suspended.
     const { data: vendors, error } = await supabase
       .from('vendors')
-      .select('id, company_name, email, contact_name, validated_at, created_at')
+      .select('id, company_name, email, contact_name, validated_at, created_at, validation_status, commissionnaire_agreement_accepted_at')
       .eq('is_active', true)
+      .eq('validation_status', 'approved')
+      .is('commissionnaire_agreement_accepted_at', null)
       .returns<VendorRow[]>()
 
     if (error) throw error
@@ -83,6 +89,11 @@ Deno.serve(async (req: Request) => {
     const signedSet = new Set((signed ?? []).map((r: any) => r.vendor_id))
 
     for (const v of vendors ?? []) {
+      // Double garde : statut strictement approved et mandat non accepté
+      if (v.validation_status !== 'approved' || v.commissionnaire_agreement_accepted_at !== null) {
+        summary.skipped_not_approved++
+        continue
+      }
       if (signedSet.has(v.id)) {
         summary.skipped_already_signed++
         continue

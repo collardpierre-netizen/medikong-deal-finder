@@ -969,18 +969,58 @@ function downloadTemplate() {
   XLSX.writeFile(wb, "template_offres_medikong.xlsx");
 }
 
-function exportOffers(
+async function exportOffers(
   offers: any[],
   profileRulesMap?: Map<string, any[]>,
   priceTiersMap?: Map<string, any[]>,
   commissionConfig?: import("@/lib/vendorMargin").VendorCommissionConfig | null,
 ) {
   if (offers.length === 0) { toast.error("Aucune offre à exporter"); return; }
-  const cfg = commissionConfig ?? { commission_model: "flat_percentage" as const, commission_rate: 0 };
+  const fallbackCfg = commissionConfig ?? { commission_model: "flat_percentage" as const, commission_rate: 0 };
+
+  // Résout la commission effective par offre via la cascade
+  // offer override > product override > vendor default (RPC resolve_effective_commission).
+  // Batché en parallèle par lots de 20 pour rester poli côté DB.
+  const toastId = toast.loading(`Résolution des commissions (${offers.length} offres)…`);
+  const effectiveMap = new Map<string, { cfg: import("@/lib/vendorMargin").VendorCommissionConfig; source: string }>();
+  const CONCURRENCY = 20;
+  try {
+    for (let i = 0; i < offers.length; i += CONCURRENCY) {
+      const chunk = offers.slice(i, i + CONCURRENCY);
+      await Promise.all(chunk.map(async (o: any) => {
+        try {
+          const { data, error } = await supabase.rpc("resolve_effective_commission", { _offer_id: o.id });
+          if (error) throw error;
+          const row: any = Array.isArray(data) ? data[0] : data;
+          if (row) {
+            effectiveMap.set(o.id, {
+              source: row.source ?? "vendor",
+              cfg: {
+                commission_model: (row.commission_model ?? "flat_percentage") as any,
+                commission_rate: row.commission_rate ?? null,
+                margin_split_pct: row.margin_split_pct ?? null,
+                fixed_commission_amount: row.fixed_commission_amount ?? null,
+              },
+            });
+          }
+        } catch {
+          /* fallback to vendor default */
+        }
+      }));
+    }
+    toast.dismiss(toastId);
+  } catch (e: any) {
+    toast.dismiss(toastId);
+    toast.error(`Erreur résolution commissions : ${e?.message ?? e}`);
+  }
+
   const rows: any[] = [];
   const tiersRows: any[] = [];
   for (const o of offers) {
     const stockDisplay = o.stock_quantity >= 99999 ? "" : o.stock_quantity;
+    const resolved = effectiveMap.get(o.id);
+    const cfg = resolved?.cfg ?? fallbackCfg;
+    const source = resolved?.source ?? "vendor (défaut)";
     const m = computeMargin(o.price_excl_vat ?? 0, o.purchase_price ?? null, cfg);
     rows.push({
       "Produit": (o.products as any)?.name || "",
@@ -994,6 +1034,7 @@ function exportOffers(
       "Marge %": o.purchase_price && o.purchase_price > 0 ? Math.round((o.price_excl_vat - o.purchase_price) / o.purchase_price * 10000) / 100 : "",
       "Commission MediKong €": m.commission,
       "Commission MediKong %": m.commissionPct,
+      "Commission Source": source,
       "Net en poche HT €": m.netRevenue,
       "Marge nette HT €": o.purchase_price ? m.netMargin : "",
       "Prix TTC": o.price_incl_vat,
@@ -1023,6 +1064,8 @@ function exportOffers(
       rows.push({
         "Produit": "", "EAN": (o.products as any)?.gtin || "", "CNK": (o.products as any)?.cnk_code || "",
         "Marque": "", "Catégorie": "", "Prix HT": "", "Prix_Achat_HT": "", "Marge €": "", "Marge %": "",
+        "Commission MediKong €": "", "Commission MediKong %": "", "Commission Source": "",
+        "Net en poche HT €": "", "Marge nette HT €": "",
         "Prix TTC": "", "TVA": "", "Stock": "", "MOQ": "", "MOV": "", "Délai": "", "Pays": "", "Conditionnement": "", "Conditionnement_Source": "", "Statut": "",
         "Profil": r.profile_type, "Profil_Pays": r.country_code || "",
         "Prix_Profil_HT": r.custom_price_excl_vat ?? "", "Remise_%": r.discount_percentage ?? "",

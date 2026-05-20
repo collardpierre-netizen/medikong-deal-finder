@@ -10,7 +10,7 @@ import {
   Shield, Upload, MessageSquare, Layout, Truck, ShieldCheck, Settings, FileText,
   LogOut, Users, ClipboardList, Percent, RefreshCw, Key, Book, Factory, Globe, Hash, ExternalLink,
   CreditCard, TrendingUp, TrendingDown, AlertTriangle, Zap, Recycle, LayoutGrid, Users2, Mail, ShieldCheck as ShieldCheckAlt,
-  Search,
+  Search, Image as ImageIcon,
 } from "lucide-react";
 
 interface NavItem {
@@ -83,6 +83,7 @@ const sections: NavSection[] = [
       { labelKey: "crm", path: "/admin/crm", icon: MessageSquare },
       { labelKey: "cms", path: "/admin/cms", icon: Layout },
       { label: "Home — Marques", path: "/admin/cms/home/marques", icon: Tag },
+      { label: "Médias marques/fabricants", path: "/admin/media", icon: ImageIcon },
       { label: "Home — Produits", path: "/admin/cms/home/produits", icon: Package },
       { label: "Home — Comparaison live", path: "/admin/cms/home/comparaison", icon: TrendingDown },
       { labelKey: "onboardingCms", path: "/admin/onboarding-cms", icon: ClipboardList },

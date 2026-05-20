@@ -948,8 +948,12 @@ export default function OnboardingPage() {
       goNext();
     } catch (err: any) {
       console.error("Signup error:", err);
-      alert(err.message || "Erreur lors de l'inscription");
+      toast.error("Erreur lors de l'inscription", {
+        description: err?.message || "Veuillez réessayer ou contacter le support.",
+        duration: 10000,
+      });
     } finally {
+
       setSubmitting(false);
     }
   };

@@ -341,6 +341,7 @@ const App = () => (
             <Route path="/panier" element={<LP><CartPage /></LP>} />
             <Route path="/compte" element={<LP><AccountPage /></LP>} />
             <Route path="/compte/statut" element={<LP><BuyerStatusPage /></LP>} />
+            <Route path="/compte/activer-acheteur" element={<LP><BuyerActivationPage /></LP>} />
             <Route path="/compte/mes-categories" element={<LP><MesCategoriesPage /></LP>} />
             <Route path="/compte/mes-rfq" element={<LP><MesRfqPage /></LP>} />
             <Route path="/compte/rfq-credits" element={<LP><RfqCreditsPage /></LP>} />

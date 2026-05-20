@@ -87,6 +87,7 @@ const ImportHistoryPage = lazyWithRetry(() => import("./pages/ImportHistoryPage"
 const PharmacieAbonnementPage = lazyWithRetry(() => import("./pages/PharmacieAbonnementPage"), "PharmacieAbonnementPage");
 const EconomiesPage = lazyWithRetry(() => import("./pages/EconomiesPage"), "EconomiesPage");
 const BonnesAffairesPage = lazyWithRetry(() => import("./pages/BonnesAffairesPage"), "BonnesAffairesPage");
+const BuyerStatusPage = lazyWithRetry(() => import("./pages/BuyerStatusPage"), "BuyerStatusPage");
 
 // Segment landing pages
 const PharmaciesPage = lazyWithRetry(() => import("./pages/segment/PharmaciesPage"), "PharmaciesPage");
@@ -338,6 +339,7 @@ const App = () => (
             <Route path="/delegue/:delegateId" element={<LP><DelegatePublicPage /></LP>} />
             <Route path="/panier" element={<LP><CartPage /></LP>} />
             <Route path="/compte" element={<LP><AccountPage /></LP>} />
+            <Route path="/compte/statut" element={<LP><BuyerStatusPage /></LP>} />
             <Route path="/compte/mes-categories" element={<LP><MesCategoriesPage /></LP>} />
             <Route path="/compte/mes-rfq" element={<LP><MesRfqPage /></LP>} />
             <Route path="/compte/rfq-credits" element={<LP><RfqCreditsPage /></LP>} />

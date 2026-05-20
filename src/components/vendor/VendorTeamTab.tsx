@@ -187,7 +187,7 @@ export default function VendorTeamTab({ vendor }: Props) {
     setEditing(d);
     setForm({
       first_name: d.first_name, last_name: d.last_name, job_title: d.job_title || "",
-      email: d.email || "", phone: d.phone || "", booking_url: d.booking_url || "",
+      email: d.email || "", phone: d.phone || "", booking_url: d.booking_url || "", linkedin_url: d.linkedin_url || "",
       photo_url: d.photo_url || "", bio: d.bio || "",
       languages: d.languages || [], country_codes: d.country_codes || [],
       regions: d.regions || [], postal_codes: d.postal_codes || [], target_profiles: d.target_profiles || [],

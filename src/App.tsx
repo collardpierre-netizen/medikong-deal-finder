@@ -87,6 +87,7 @@ const ImportHistoryPage = lazyWithRetry(() => import("./pages/ImportHistoryPage"
 const PharmacieAbonnementPage = lazyWithRetry(() => import("./pages/PharmacieAbonnementPage"), "PharmacieAbonnementPage");
 const EconomiesPage = lazyWithRetry(() => import("./pages/EconomiesPage"), "EconomiesPage");
 const BonnesAffairesPage = lazyWithRetry(() => import("./pages/BonnesAffairesPage"), "BonnesAffairesPage");
+const BuyerStatusPage = lazyWithRetry(() => import("./pages/BuyerStatusPage"), "BuyerStatusPage");
 
 // Segment landing pages
 const PharmaciesPage = lazyWithRetry(() => import("./pages/segment/PharmaciesPage"), "PharmaciesPage");

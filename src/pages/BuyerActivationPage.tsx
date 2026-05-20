@@ -101,6 +101,18 @@ export default function BuyerActivationPage() {
     }
     setSubmitting(true);
     try {
+      // Map professional profile → customer_type enum (pharmacy|hospital|clinic|lab|other).
+      // DB default is 'pharmacy' (NOT NULL) — incorrect pour un vendeur devenu acheteur
+      // qui n'est généralement pas une officine, donc on envoie explicitement la valeur.
+      const customerTypeMap: Record<string, "pharmacy" | "hospital" | "clinic" | "lab" | "other"> = {
+        pharmacist: "pharmacy",
+        care_facility: "hospital", // hôpital / clinique / EHPAD / MR-MRS
+        health_pro: "other",       // médecin, kiné, dentiste, infirmier
+        purchasing_group: "other", // centrale d'achat
+        reseller: "other",         // revendeur / distributeur
+      };
+      const customerType = customerTypeMap[profile] ?? "other";
+
       const { error: insertErr } = await supabase.from("customers").insert({
         auth_user_id: user.id,
         company_name: prefill.company_name || user.email || "Compte acheteur",
@@ -111,6 +123,7 @@ export default function BuyerActivationPage() {
         address_line1: prefill.address_line1,
         city: prefill.city,
         postal_code: prefill.postal_code,
+        customer_type: customerType,
         is_verified: false,
       });
       if (insertErr) throw insertErr;

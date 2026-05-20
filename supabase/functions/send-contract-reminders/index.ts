@@ -23,6 +23,8 @@ interface VendorRow {
   contact_name: string | null
   validated_at: string | null
   created_at: string
+  validation_status: string | null
+  commissionnaire_agreement_accepted_at: string | null
 }
 
 interface ReminderPlan {

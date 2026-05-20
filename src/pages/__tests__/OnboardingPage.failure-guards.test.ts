@@ -26,19 +26,10 @@ const SOURCE = readFileSync(
 function extractHandleSubmit(): string {
   const start = SOURCE.indexOf("const handleSubmit = async () => {");
   expect(start, "handleSubmit must exist").toBeGreaterThan(-1);
-  // naive brace balance
-  let depth = 0;
-  let i = SOURCE.indexOf("{", start);
-  const begin = i;
-  for (; i < SOURCE.length; i++) {
-    const c = SOURCE[i];
-    if (c === "{") depth++;
-    else if (c === "}") {
-      depth--;
-      if (depth === 0) return SOURCE.slice(begin, i + 1);
-    }
-  }
-  throw new Error("Could not extract handleSubmit body");
+  // Borne basse fiable : commentaire de section suivant.
+  const end = SOURCE.indexOf("/* ─── Email Confirmation Screen", start);
+  expect(end, "end marker must exist").toBeGreaterThan(start);
+  return SOURCE.slice(start, end);
 }
 
 const HANDLE = extractHandleSubmit();

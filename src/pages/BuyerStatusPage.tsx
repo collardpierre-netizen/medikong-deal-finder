@@ -88,7 +88,7 @@ export default function BuyerStatusPage() {
       case "missing":
         return hasVendorAccount
           ? [
-              { icon: ShoppingCart, title: "Activer votre compte acheteur", description: "Complétez l'onboarding acheteur pour acheter en plus de vendre.", cta: { label: "Activer mon compte acheteur", to: "/onboarding?role=buyer" } },
+              { icon: ShoppingCart, title: "Activer votre compte acheteur", description: "Vos infos vendeur sont pré-remplies — quelques secondes suffisent.", cta: { label: "Activation rapide", to: "/compte/activer-acheteur" } },
               { icon: Store, title: "Retour au portail vendeur", description: "Continuer la gestion de votre catalogue et de vos commandes.", cta: { label: "Aller au portail vendeur", to: "/vendor", variant: "outline" } },
             ]
           : [

@@ -969,12 +969,20 @@ function downloadTemplate() {
   XLSX.writeFile(wb, "template_offres_medikong.xlsx");
 }
 
-function exportOffers(offers: any[], profileRulesMap?: Map<string, any[]>, priceTiersMap?: Map<string, any[]>) {
+function exportOffers(
+  offers: any[],
+  profileRulesMap?: Map<string, any[]>,
+  priceTiersMap?: Map<string, any[]>,
+  commissionConfig?: import("@/lib/vendorMargin").VendorCommissionConfig | null,
+) {
   if (offers.length === 0) { toast.error("Aucune offre à exporter"); return; }
+  const { computeMargin } = require("@/lib/vendorMargin") as typeof import("@/lib/vendorMargin");
+  const cfg = commissionConfig ?? { commission_model: "flat_percentage" as const, commission_rate: 0 };
   const rows: any[] = [];
   const tiersRows: any[] = [];
   for (const o of offers) {
     const stockDisplay = o.stock_quantity >= 99999 ? "" : o.stock_quantity;
+    const m = computeMargin(o.price_excl_vat ?? 0, o.purchase_price ?? null, cfg);
     rows.push({
       "Produit": (o.products as any)?.name || "",
       "EAN": (o.products as any)?.gtin || "",
@@ -985,6 +993,10 @@ function exportOffers(offers: any[], profileRulesMap?: Map<string, any[]>, price
       "Prix_Achat_HT": o.purchase_price ?? "",
       "Marge €": o.purchase_price ? Math.round((o.price_excl_vat - o.purchase_price) * 100) / 100 : "",
       "Marge %": o.purchase_price && o.purchase_price > 0 ? Math.round((o.price_excl_vat - o.purchase_price) / o.purchase_price * 10000) / 100 : "",
+      "Commission MediKong €": m.commission,
+      "Commission MediKong %": m.commissionPct,
+      "Net en poche HT €": m.netRevenue,
+      "Marge nette HT €": o.purchase_price ? m.netMargin : "",
       "Prix TTC": o.price_incl_vat,
       "TVA": o.vat_rate,
       "Stock": stockDisplay,

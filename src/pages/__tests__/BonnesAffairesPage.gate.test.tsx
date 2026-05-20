@@ -18,6 +18,17 @@ import { MemoryRouter } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
+// jsdom n'implémente pas ResizeObserver — Radix Slider en a besoin pour
+// le rendu de la page principale (cas "verified").
+if (typeof globalThis.ResizeObserver === "undefined") {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (globalThis as any).ResizeObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  };
+}
+
 // ---------- Mocks ----------
 
 // AuthContext — contrôlé par chaque test via setAuthState()

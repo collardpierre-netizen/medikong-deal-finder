@@ -313,7 +313,9 @@ export default function BuyerActivationPage() {
                 <div className="sm:col-span-2">
                   <dt className="text-muted-foreground">Adresse</dt>
                   <dd className="font-medium">
-                    {prefill.address_line1}, {prefill.postal_code} {prefill.city} ({prefill.country_code})
+                    {draftValid
+                      ? `${prefill.address_line1}, ${prefill.postal_code} ${prefill.city} (${prefill.country_code})`
+                      : "À compléter ci-dessous"}
                   </dd>
                 </div>
               </dl>

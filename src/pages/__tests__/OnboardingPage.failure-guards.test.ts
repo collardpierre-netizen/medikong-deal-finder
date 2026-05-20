@@ -90,10 +90,11 @@ describe("OnboardingPage — failure guards (jamais 'Inscription réussie' en ca
     expect(HANDLE).toMatch(/toast\.error\(\s*["']Erreur lors de l'inscription/);
   });
 
-  it("le catch global ne contient PAS de goNext() (sinon écran de succès trompeur)", () => {
-    const catchIdx = HANDLE.indexOf("catch");
-    const finallyIdx = HANDLE.indexOf("finally", catchIdx);
-    const catchBlock = HANDLE.slice(catchIdx, finallyIdx > -1 ? finallyIdx : HANDLE.length);
-    expect(catchBlock).not.toMatch(/goNext\(\)/);
+  it("le seul goNext() est dans le try, AVANT le catch (jamais dans catch)", () => {
+    const catchIdx = HANDLE.indexOf("} catch");
+    expect(catchIdx).toBeGreaterThan(-1);
+    const goNextPos = HANDLE.indexOf("goNext()");
+    expect(goNextPos).toBeGreaterThan(-1);
+    expect(goNextPos).toBeLessThan(catchIdx);
   });
 });

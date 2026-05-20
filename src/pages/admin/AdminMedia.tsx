@@ -12,7 +12,7 @@ import { Progress } from "@/components/ui/progress";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, Upload, Trash2, ExternalLink, RefreshCw } from "lucide-react";
+import { Loader2, Upload, Trash2, ExternalLink, RefreshCw, Image as ImageIcon } from "lucide-react";
 
 const ASSET_TYPES = ["catalogue", "affiche", "video", "fiche", "brochure"] as const;
 const LANGS = ["fr", "nl", "en", "de"] as const;

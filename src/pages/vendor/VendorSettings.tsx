@@ -108,7 +108,9 @@ export default function VendorSettings() {
     ["Ville", form.city || "—"],
     ["Code postal", form.postal_code || "—"],
     ["Pays", countryLabels[form.country_code] || form.country_code],
-    ["Commission", `${vendor.commission_rate}%`],
+    ["Commission en vigueur", activeMarginRule
+      ? `${Number(activeMarginRule.margin_percentage).toFixed(2)}% — ${activeMarginRule.name}`
+      : "Règle globale (aucune règle vendeur dédiée)"],
     ["Statut", vendor.is_active ? "Actif" : "En attente"],
     ["Membre depuis", new Date(vendor.created_at).toLocaleDateString("fr-BE", { month: "long", year: "numeric" })],
   ];

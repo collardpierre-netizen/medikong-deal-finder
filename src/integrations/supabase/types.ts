@@ -13484,6 +13484,7 @@ export type Database = {
           job_title: string | null
           languages: string[]
           last_name: string
+          linkedin_url: string | null
           phone: string | null
           photo_url: string | null
           postal_codes: string[]
@@ -13509,6 +13510,7 @@ export type Database = {
           job_title?: string | null
           languages?: string[]
           last_name: string
+          linkedin_url?: string | null
           phone?: string | null
           photo_url?: string | null
           postal_codes?: string[]
@@ -13534,6 +13536,7 @@ export type Database = {
           job_title?: string | null
           languages?: string[]
           last_name?: string
+          linkedin_url?: string | null
           phone?: string | null
           photo_url?: string | null
           postal_codes?: string[]

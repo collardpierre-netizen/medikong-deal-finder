@@ -18,6 +18,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { useCurrentVendor } from "@/hooks/useCurrentVendor";
+import { useVendorActiveMarginRule } from "@/hooks/useVendorActiveMarginRule";
 
 export default function VendorSettings() {
   const [activeTab, setActiveTab] = useState("profile");

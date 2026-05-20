@@ -80,3 +80,7 @@ verify_jwt = false
 
 [functions.vendor-legacy-gone]
 verify_jwt = false
+
+[functions.upload-media-asset]
+verify_jwt = true
+

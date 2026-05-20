@@ -10,7 +10,7 @@ import {
   Shield, Upload, MessageSquare, Layout, Truck, ShieldCheck, Settings, FileText,
   LogOut, Users, ClipboardList, Percent, RefreshCw, Key, Book, Factory, Globe, Hash, ExternalLink,
   CreditCard, TrendingUp, TrendingDown, AlertTriangle, Zap, Recycle, LayoutGrid, Users2, Mail, ShieldCheck as ShieldCheckAlt,
-  Search,
+  Search, Image as ImageIcon,
 } from "lucide-react";
 
 interface NavItem {

@@ -617,6 +617,32 @@ export default function VendorTeamTab({ vendor }: Props) {
               </div>
             </Field>
 
+            <Field label="Profil LinkedIn">
+              <input
+                type="url"
+                value={form.linkedin_url || ""}
+                onChange={e => setForm(f => ({ ...f, linkedin_url: e.target.value }))}
+                className={inputCls}
+                placeholder="https://www.linkedin.com/in/laure-durant"
+              />
+              <div className="flex items-center justify-between mt-1">
+                <p className="text-[10px] text-[#8B95A5]">
+                  URL complète. Un lien « LinkedIn » s'affichera sur la fiche du délégué.
+                </p>
+                {form.linkedin_url && (
+                  <a
+                    href={/^https?:\/\//i.test(form.linkedin_url) ? form.linkedin_url : `https://${form.linkedin_url}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#1B5BDA] hover:underline"
+                  >
+                    <Linkedin size={11} /> Tester le lien
+                  </a>
+                )}
+              </div>
+            </Field>
+
+
             {/* Langues */}
             <Field label="Langues parlées">
               <div className="flex flex-wrap gap-1.5">

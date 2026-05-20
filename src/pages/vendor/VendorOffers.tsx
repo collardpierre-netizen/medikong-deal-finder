@@ -1035,6 +1035,14 @@ async function exportOffers(
       "Commission MediKong €": m.commission,
       "Commission MediKong %": m.commissionPct,
       "Commission Source": source,
+      "Commission Type": cfg.commission_model,
+      "Commission Valeur": cfg.commission_model === "flat_percentage"
+        ? (cfg.commission_rate != null ? `${cfg.commission_rate}%` : "")
+        : cfg.commission_model === "margin_split"
+          ? (cfg.margin_split_pct != null ? `${cfg.margin_split_pct}% de la marge` : "")
+          : cfg.commission_model === "fixed_amount"
+            ? (cfg.fixed_commission_amount != null ? `${cfg.fixed_commission_amount} € / unité` : "")
+            : "",
       "Net en poche HT €": m.netRevenue,
       "Marge nette HT €": o.purchase_price ? m.netMargin : "",
       "Prix TTC": o.price_incl_vat,
@@ -1064,7 +1072,7 @@ async function exportOffers(
       rows.push({
         "Produit": "", "EAN": (o.products as any)?.gtin || "", "CNK": (o.products as any)?.cnk_code || "",
         "Marque": "", "Catégorie": "", "Prix HT": "", "Prix_Achat_HT": "", "Marge €": "", "Marge %": "",
-        "Commission MediKong €": "", "Commission MediKong %": "", "Commission Source": "",
+        "Commission MediKong €": "", "Commission MediKong %": "", "Commission Source": "", "Commission Type": "", "Commission Valeur": "",
         "Net en poche HT €": "", "Marge nette HT €": "",
         "Prix TTC": "", "TVA": "", "Stock": "", "MOQ": "", "MOV": "", "Délai": "", "Pays": "", "Conditionnement": "", "Conditionnement_Source": "", "Statut": "",
         "Profil": r.profile_type, "Profil_Pays": r.country_code || "",

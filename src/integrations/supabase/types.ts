@@ -4890,6 +4890,169 @@ export type Database = {
           },
         ]
       }
+      media_assets: {
+        Row: {
+          asset_type: Database["public"]["Enums"]["media_asset_type"]
+          brand_id: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          duration_seconds: number | null
+          file_path: string
+          file_size_bytes: number | null
+          id: string
+          is_active: boolean
+          language: string
+          manufacturer_id: string | null
+          mime_type: string | null
+          page_count: number | null
+          published_at: string | null
+          sort_order: number
+          tags: string[]
+          thumbnail_path: string | null
+          title: string
+          updated_at: string
+          visibility: Database["public"]["Enums"]["media_visibility"]
+        }
+        Insert: {
+          asset_type: Database["public"]["Enums"]["media_asset_type"]
+          brand_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          duration_seconds?: number | null
+          file_path: string
+          file_size_bytes?: number | null
+          id?: string
+          is_active?: boolean
+          language?: string
+          manufacturer_id?: string | null
+          mime_type?: string | null
+          page_count?: number | null
+          published_at?: string | null
+          sort_order?: number
+          tags?: string[]
+          thumbnail_path?: string | null
+          title: string
+          updated_at?: string
+          visibility?: Database["public"]["Enums"]["media_visibility"]
+        }
+        Update: {
+          asset_type?: Database["public"]["Enums"]["media_asset_type"]
+          brand_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          duration_seconds?: number | null
+          file_path?: string
+          file_size_bytes?: number | null
+          id?: string
+          is_active?: boolean
+          language?: string
+          manufacturer_id?: string | null
+          mime_type?: string | null
+          page_count?: number | null
+          published_at?: string | null
+          sort_order?: number
+          tags?: string[]
+          thumbnail_path?: string | null
+          title?: string
+          updated_at?: string
+          visibility?: Database["public"]["Enums"]["media_visibility"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "media_assets_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "admin_sourcing_items_by_brand_v"
+            referencedColumns: ["brand_id"]
+          },
+          {
+            foreignKeyName: "media_assets_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brand_kpis"
+            referencedColumns: ["brand_id"]
+          },
+          {
+            foreignKeyName: "media_assets_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brand_logistics_stats"
+            referencedColumns: ["brand_id"]
+          },
+          {
+            foreignKeyName: "media_assets_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brands"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "media_assets_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_top_brands_mv"
+            referencedColumns: ["brand_id"]
+          },
+          {
+            foreignKeyName: "media_assets_manufacturer_id_fkey"
+            columns: ["manufacturer_id"]
+            isOneToOne: false
+            referencedRelation: "manufacturers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      media_downloads: {
+        Row: {
+          country_code: string | null
+          downloaded_at: string
+          id: string
+          ip_address: unknown
+          media_asset_id: string
+          profile_id: string | null
+          referrer: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          country_code?: string | null
+          downloaded_at?: string
+          id?: string
+          ip_address?: unknown
+          media_asset_id: string
+          profile_id?: string | null
+          referrer?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          country_code?: string | null
+          downloaded_at?: string
+          id?: string
+          ip_address?: unknown
+          media_asset_id?: string
+          profile_id?: string | null
+          referrer?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "media_downloads_media_asset_id_fkey"
+            columns: ["media_asset_id"]
+            isOneToOne: false
+            referencedRelation: "media_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "media_downloads_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       offer_buyer_profile_prices: {
         Row: {
           buyer_profile_id: string
@@ -20037,6 +20200,8 @@ export type Database = {
         | "failed"
         | "cancelled"
       import_job_type: "buyer_comparator" | "product_submission"
+      media_asset_type: "catalogue" | "affiche" | "video" | "fiche" | "brochure"
+      media_visibility: "public" | "authenticated" | "premium"
       notification_channel: "in_app" | "email" | "push"
       notification_sender: "system" | "superadmin"
       order_source: "web" | "api"
@@ -20367,6 +20532,8 @@ export const Constants = {
         "cancelled",
       ],
       import_job_type: ["buyer_comparator", "product_submission"],
+      media_asset_type: ["catalogue", "affiche", "video", "fiche", "brochure"],
+      media_visibility: ["public", "authenticated", "premium"],
       notification_channel: ["in_app", "email", "push"],
       notification_sender: ["system", "superadmin"],
       order_source: ["web", "api"],

@@ -7,7 +7,7 @@ import { VBadge } from "@/components/vendor/ui/VBadge";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Loader2, Plus, Edit2, Trash2, Upload, Mail, Phone, CalendarDays, MapPin, Users, Globe, User as UserIcon, Search, X, Star, Clock, CheckCircle2, Plane, AlertOctagon, CalendarClock } from "lucide-react";
+import { Loader2, Plus, Edit2, Trash2, Upload, Mail, Phone, CalendarDays, MapPin, Users, Globe, User as UserIcon, Search, X, Star, Clock, CheckCircle2, Plane, AlertOctagon, CalendarClock, Linkedin } from "lucide-react";
 
 interface Props {
   vendor: any;
@@ -24,6 +24,7 @@ interface Delegate {
   email: string | null;
   phone: string | null;
   booking_url: string | null;
+  linkedin_url: string | null;
   photo_url: string | null;
   bio: string | null;
   languages: string[];
@@ -96,7 +97,7 @@ const TARGET_PROFILES = [
 ];
 
 const empty: Omit<Delegate, "id" | "vendor_id"> = {
-  first_name: "", last_name: "", job_title: "", email: "", phone: "", booking_url: "", photo_url: "", bio: "",
+  first_name: "", last_name: "", job_title: "", email: "", phone: "", booking_url: "", linkedin_url: "", photo_url: "", bio: "",
   languages: [], country_codes: [], regions: [], postal_codes: [], target_profiles: [], primary_target_profiles: [], is_active: true, display_order: 0,
   availability_status: "available", availability_message: "", availability_until: null,
 };
@@ -147,7 +148,18 @@ export default function VendorTeamTab({ vendor }: Props) {
           throw new Error("Lien d'agenda invalide. Utilise une URL complète (https://…)");
         }
       }
-      const payload = { ...form, booking_url: bookingUrl || null, vendor_id: vendor.id };
+      // Normalise LinkedIn (optionnel)
+      let linkedinUrl = (form.linkedin_url || "").trim();
+      if (linkedinUrl) {
+        if (!/^https?:\/\//i.test(linkedinUrl)) linkedinUrl = "https://" + linkedinUrl;
+        try {
+          const u = new URL(linkedinUrl);
+          if (!/^https?:$/.test(u.protocol)) throw new Error("invalid");
+        } catch {
+          throw new Error("Lien LinkedIn invalide. Utilise une URL complète (https://www.linkedin.com/in/…)");
+        }
+      }
+      const payload = { ...form, booking_url: bookingUrl || null, linkedin_url: linkedinUrl || null, vendor_id: vendor.id };
       if (editing) {
         const { error } = await supabase.from("vendor_delegates" as any).update(payload as any).eq("id", editing.id);
         if (error) throw error;
@@ -186,7 +198,7 @@ export default function VendorTeamTab({ vendor }: Props) {
     setEditing(d);
     setForm({
       first_name: d.first_name, last_name: d.last_name, job_title: d.job_title || "",
-      email: d.email || "", phone: d.phone || "", booking_url: d.booking_url || "",
+      email: d.email || "", phone: d.phone || "", booking_url: d.booking_url || "", linkedin_url: d.linkedin_url || "",
       photo_url: d.photo_url || "", bio: d.bio || "",
       languages: d.languages || [], country_codes: d.country_codes || [],
       regions: d.regions || [], postal_codes: d.postal_codes || [], target_profiles: d.target_profiles || [],
@@ -478,6 +490,11 @@ export default function VendorTeamTab({ vendor }: Props) {
                         <CalendarDays size={11} />Prendre rendez-vous
                       </a>
                     )}
+                    {d.linkedin_url && (
+                      <a href={d.linkedin_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-[#1B5BDA] hover:underline truncate">
+                        <Linkedin size={11} />LinkedIn
+                      </a>
+                    )}
                   </div>
 
                   {(d.country_codes.length > 0 || d.regions.length > 0) && (
@@ -604,6 +621,32 @@ export default function VendorTeamTab({ vendor }: Props) {
                 )}
               </div>
             </Field>
+
+            <Field label="Profil LinkedIn">
+              <input
+                type="url"
+                value={form.linkedin_url || ""}
+                onChange={e => setForm(f => ({ ...f, linkedin_url: e.target.value }))}
+                className={inputCls}
+                placeholder="https://www.linkedin.com/in/laure-durant"
+              />
+              <div className="flex items-center justify-between mt-1">
+                <p className="text-[10px] text-[#8B95A5]">
+                  URL complète. Un lien « LinkedIn » s'affichera sur la fiche du délégué.
+                </p>
+                {form.linkedin_url && (
+                  <a
+                    href={/^https?:\/\//i.test(form.linkedin_url) ? form.linkedin_url : `https://${form.linkedin_url}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#1B5BDA] hover:underline"
+                  >
+                    <Linkedin size={11} /> Tester le lien
+                  </a>
+                )}
+              </div>
+            </Field>
+
 
             {/* Langues */}
             <Field label="Langues parlées">

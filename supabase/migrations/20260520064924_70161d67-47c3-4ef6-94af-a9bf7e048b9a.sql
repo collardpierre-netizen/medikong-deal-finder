@@ -1,0 +1,1 @@
+ALTER TABLE public.vendor_delegates ADD COLUMN IF NOT EXISTS linkedin_url text;

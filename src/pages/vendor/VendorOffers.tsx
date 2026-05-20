@@ -1072,7 +1072,7 @@ async function exportOffers(
       rows.push({
         "Produit": "", "EAN": (o.products as any)?.gtin || "", "CNK": (o.products as any)?.cnk_code || "",
         "Marque": "", "Catégorie": "", "Prix HT": "", "Prix_Achat_HT": "", "Marge €": "", "Marge %": "",
-        "Commission MediKong €": "", "Commission MediKong %": "", "Commission Source": "",
+        "Commission MediKong €": "", "Commission MediKong %": "", "Commission Source": "", "Commission Type": "", "Commission Valeur": "",
         "Net en poche HT €": "", "Marge nette HT €": "",
         "Prix TTC": "", "TVA": "", "Stock": "", "MOQ": "", "MOV": "", "Délai": "", "Pays": "", "Conditionnement": "", "Conditionnement_Source": "", "Statut": "",
         "Profil": r.profile_type, "Profil_Pays": r.country_code || "",

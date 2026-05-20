@@ -430,7 +430,7 @@ export default function BonnesAffairesPage() {
       // Vendeur sans profil acheteur → proposer l'activation
       title = "Activez aussi votre compte acheteur";
       description = "Votre compte vendeur est actif, mais vous n'avez pas encore de profil acheteur sur MediKong. Activez-le en quelques clics pour accéder aux Bonnes affaires, comparer les prix et passer commande auprès des autres vendeurs.";
-      primaryCta = { label: "Activer mon compte acheteur", href: "/onboarding?role=buyer" };
+      primaryCta = { label: "Activer mon compte acheteur", href: "/compte/activer-acheteur" };
       secondaryCta = { label: "Retour au portail vendeur", href: "/vendor" };
     } else if (buyerStatus === "missing") {
       title = "Créer un profil acheteur";

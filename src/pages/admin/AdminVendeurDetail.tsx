@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import { EntityDelegatesSection } from "@/components/admin/EntityDelegatesSection";
 import { ContractHistoryTable } from "@/components/vendor/ContractHistoryTable";
 import { VendorMarketIntelAdminCard } from "@/components/admin/VendorMarketIntelAdminCard";
+import { useVendorActiveMarginRule } from "@/hooks/useVendorActiveMarginRule";
 
 type VendorValidationStatus = "pending_review" | "under_review" | "accepted" | "approved" | "rejected";
 

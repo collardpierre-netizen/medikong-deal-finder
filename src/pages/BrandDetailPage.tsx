@@ -301,49 +301,9 @@ export default function BrandDetailPage() {
       )}
 
       <div id="brand-products" className="mk-container py-6 md:py-8">
-        {/* Sellers for this brand */}
-        {brandSellers.length > 0 && (
-          <div className="mb-6">
-            <h2 className="text-lg font-bold text-mk-navy mb-1 flex items-center gap-2">
-              <Store size={18} /> Vendeurs proposant {brand.name}
-              <span className="text-sm font-normal text-mk-sec">({brandSellers.length})</span>
-            </h2>
-            <p className="text-xs text-mk-sec mb-3">
-              Sur l'ensemble des {brand.count} références {brand.name}. Le nombre d'offres par produit peut varier.
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {brandSellers.slice(0, showAllSellers ? undefined : 6).map(s => (
-                <Link key={s.id} to={s.displayCode ? `/vendeur/${s.displayCode}?brand=${brand.slug}` : "#"} className="border border-mk-line rounded-lg p-4 flex items-center gap-3 hover:shadow-sm hover:border-mk-blue transition-all">
-                  <div className="w-10 h-10 rounded-full bg-mk-alt flex items-center justify-center text-sm font-bold text-mk-navy shrink-0">
-                    {s.name[0]}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-sm font-semibold text-mk-navy truncate">{s.name}</span>
-                      {s.verified && <span className="text-[10px] bg-mk-deal text-mk-green px-1.5 py-0.5 rounded font-medium">Vérifié</span>}
-                      {s.topRated && <span className="text-[10px] bg-mk-deal text-mk-green px-1.5 py-0.5 rounded font-medium">Top</span>}
-                    </div>
-                    <div className="flex items-center gap-3 text-[11px] text-mk-sec mt-0.5 flex-wrap">
-                      <span className="flex items-center gap-1"><MapPin size={10} />{s.location}</span>
-                      <span className="flex items-center gap-1"><Star size={10} fill="currentColor" className="text-mk-amber" />{s.rating || "-"}</span>
-                      <span className="flex items-center gap-1" title={`${s.offerCount} offre(s) actives sur cette marque`}>
-                        <Store size={10} />{s.offerCount} offre{s.offerCount > 1 ? "s" : ""}
-                      </span>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-            {brandSellers.length > 6 && !showAllSellers && (
-              <button
-                onClick={() => setShowAllSellers(true)}
-                className="mt-3 flex items-center gap-1 text-sm font-medium text-primary hover:underline mx-auto"
-              >
-                Voir tous les vendeurs ({brandSellers.length}) <ChevronRight size={14} />
-              </button>
-            )}
-          </div>
-        )}
+        {/* 🔒 Vendor block intentionally hidden on brand page (anonymisation marque).
+            Le lien vendeur ne doit pas être exposé via la page marque. */}
+
 
         {/* Sibling brands from same manufacturer */}
         {siblingBrands.length > 0 && (

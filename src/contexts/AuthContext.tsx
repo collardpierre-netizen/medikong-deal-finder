@@ -12,6 +12,12 @@ interface AuthContextType {
   isVerifiedVendor: boolean;
   /** Whether account verification status is still loading */
   verificationLoading: boolean;
+  /** True if a `customers` row exists for the current user (regardless of verification) */
+  hasCustomerRow: boolean;
+  /** True if a `vendors` row exists for the current user */
+  hasVendorAccount: boolean;
+  /** Fine-grained buyer status to drive UI gates */
+  buyerStatus: "verified" | "pending" | "missing" | "anonymous";
   signUp: (email: string, password: string, metadata?: Record<string, string>) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null; user?: User | null }>;
   signOut: () => Promise<void>;
@@ -26,12 +32,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isVerifiedBuyer, setIsVerifiedBuyer] = useState(false);
   const [isVerifiedVendor, setIsVerifiedVendor] = useState(false);
   const [verificationLoading, setVerificationLoading] = useState(true);
+  const [hasCustomerRow, setHasCustomerRow] = useState(false);
+  const [hasVendorAccount, setHasVendorAccount] = useState(false);
+  const [buyerStatus, setBuyerStatus] = useState<"verified" | "pending" | "missing" | "anonymous">("anonymous");
 
   // Fetch verification status when user changes
   useEffect(() => {
     if (!user) {
       setIsVerifiedBuyer(false);
       setIsVerifiedVendor(false);
+      setHasCustomerRow(false);
+      setHasVendorAccount(false);
+      setBuyerStatus("anonymous");
       setVerificationLoading(false);
       return;
     }
@@ -41,7 +53,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const fetchVerification = async () => {
       try {
-        // Check if user is admin — admins bypass buyer verification
         const { data: adminRow } = await supabase
           .from("admin_users")
           .select("id")
@@ -51,14 +62,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         const isAdmin = !!adminRow;
 
-        // Check buyer (customer) verification
         const { data: customer } = await supabase
           .from("customers")
           .select("is_verified")
           .eq("auth_user_id", user.id)
           .maybeSingle();
 
-        // Check vendor verification
         const { data: vendor } = await supabase
           .from("vendors")
           .select("is_verified, validation_status")
@@ -66,9 +75,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .maybeSingle();
 
         if (!cancelled) {
-          setIsVerifiedBuyer(isAdmin || (customer?.is_verified ?? false));
+          const customerExists = !!customer;
+          const customerVerified = customer?.is_verified === true;
+          setHasCustomerRow(customerExists);
+          setHasVendorAccount(!!vendor);
+          setIsVerifiedBuyer(isAdmin || customerVerified);
           setIsVerifiedVendor(
             vendor?.is_verified === true && vendor?.validation_status === "approved"
+          );
+          setBuyerStatus(
+            isAdmin || customerVerified
+              ? "verified"
+              : customerExists
+                ? "pending"
+                : "missing"
           );
           setVerificationLoading(false);
         }
@@ -129,6 +149,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
     setIsVerifiedBuyer(false);
     setIsVerifiedVendor(false);
+    setHasCustomerRow(false);
+    setHasVendorAccount(false);
+    setBuyerStatus("anonymous");
     setVerificationLoading(false);
     setLoading(false);
   };
@@ -137,6 +160,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     <AuthContext.Provider value={{
       user, session, loading,
       isVerifiedBuyer, isVerifiedVendor, verificationLoading,
+      hasCustomerRow, hasVendorAccount, buyerStatus,
       signUp, signIn, signOut,
     }}>
       {children}

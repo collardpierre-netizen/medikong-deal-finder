@@ -17,6 +17,8 @@ interface VendorContractReminderProps {
   reminderLevel?: ReminderLevel
   contractVersion?: string
   contractUrl?: string
+  vendorSettingsUrl?: string
+  buyerActivationUrl?: string
 }
 
 type LevelCopy = {
@@ -74,6 +76,8 @@ const VendorContractReminderEmail = ({
   reminderLevel = 1,
   contractVersion,
   contractUrl,
+  vendorSettingsUrl,
+  buyerActivationUrl,
 }: VendorContractReminderProps) => {
   const level = ([1, 2, 3].includes(reminderLevel) ? reminderLevel : 1) as ReminderLevel
   const copy = LEVEL_COPY[level]
@@ -127,6 +131,27 @@ const VendorContractReminderEmail = ({
             </Button>
           ) : null}
 
+          {(vendorSettingsUrl || buyerActivationUrl) ? (
+            <Section style={{ margin: '18px 0 4px' }}>
+              <Text style={{ ...small, margin: '0 0 6px', fontWeight: 600, color: '#1D2530' }}>
+                Autres actions utiles
+              </Text>
+              {vendorSettingsUrl ? (
+                <Text style={small}>
+                  • Compléter ou mettre à jour vos infos légales (BCE, représentant) :{' '}
+                  <a href={vendorSettingsUrl} style={link}>Paramètres vendeur</a>
+                </Text>
+              ) : null}
+              {buyerActivationUrl ? (
+                <Text style={small}>
+                  • Activer aussi votre compte acheteur pour profiter des bonnes affaires :{' '}
+                  <a href={buyerActivationUrl} style={link}>Activer mon compte acheteur</a>
+                </Text>
+              ) : null}
+            </Section>
+          ) : null}
+
+
           <Text style={small}>
             La signature électronique est gratuite et prend moins de 2 minutes.
             Aucun frais n'est lié à la convention — seule la commission MediKong
@@ -166,6 +191,8 @@ export const template = {
     reminderLevel: 2,
     contractVersion: 'v1.0',
     contractUrl: 'https://medikong.pro/vendor/contract',
+    vendorSettingsUrl: 'https://medikong.pro/vendor/settings',
+    buyerActivationUrl: 'https://medikong.pro/compte/activer-acheteur',
   },
 } satisfies TemplateEntry
 

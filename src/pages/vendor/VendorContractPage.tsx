@@ -1,12 +1,15 @@
 import { useMemo } from "react";
 import { Link, Navigate, useSearchParams } from "react-router-dom";
-import { Loader2, ArrowLeft, BookOpen, PenLine, CheckCircle2, RefreshCw } from "lucide-react";
+import { Loader2, ArrowLeft, BookOpen, PenLine, CheckCircle2, RefreshCw, AlertTriangle, Settings } from "lucide-react";
 import { useCurrentVendor } from "@/hooks/useCurrentVendor";
 import { MandatFacturationFlow } from "@/components/vendor/contract/MandatFacturationFlow";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { CONTRACT_VERSION, type ContractVendorData } from "@/lib/contract/mandat-facturation-template";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 /**
  * Standalone screen mounting the Convention de mandat de facturation flow.

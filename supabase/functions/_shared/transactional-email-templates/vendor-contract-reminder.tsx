@@ -17,6 +17,8 @@ interface VendorContractReminderProps {
   reminderLevel?: ReminderLevel
   contractVersion?: string
   contractUrl?: string
+  vendorSettingsUrl?: string
+  buyerActivationUrl?: string
 }
 
 type LevelCopy = {

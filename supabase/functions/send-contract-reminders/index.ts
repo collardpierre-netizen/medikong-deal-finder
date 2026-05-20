@@ -89,6 +89,11 @@ Deno.serve(async (req: Request) => {
     const signedSet = new Set((signed ?? []).map((r: any) => r.vendor_id))
 
     for (const v of vendors ?? []) {
+      // Double garde : statut strictement approved et mandat non accepté
+      if (v.validation_status !== 'approved' || v.commissionnaire_agreement_accepted_at !== null) {
+        summary.skipped_not_approved++
+        continue
+      }
       if (signedSet.has(v.id)) {
         summary.skipped_already_signed++
         continue
